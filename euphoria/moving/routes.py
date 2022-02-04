@@ -1,5 +1,4 @@
 from flask import Blueprint, redirect, render_template, request, url_for
-from flask import current_app as app
 from euphoria import box_db as db
 
 moving_bp = Blueprint(
@@ -17,7 +16,7 @@ def convert_box_id_to_name(results, mapping):
 
 
 @moving_bp.route('/', methods=['GET', 'POST'])
-def index():
+def packing():
     last_box_id = request.args.get('last_box_id')
     box_sort_1 = request.form.get('box_sort_1')
     box_sort_2 = request.form.get('box_sort_2')
@@ -26,7 +25,7 @@ def index():
     selected_box = db.get_box(box_id)
     selected_box_items = db.get_box_items(box_id)
     return render_template(
-        'index.html',
+        'packing.html',
         boxes=boxes,
         selected_box=selected_box,
         selected_box_items=selected_box_items,

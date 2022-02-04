@@ -11,15 +11,15 @@
 
 <body>
     <div id="navtable">
-        <span class="navtab"><a href={{ url_for('moving_bp.index') }}>Pack Boxes</a></span>
-        <span class="navtab"><a href={{ url_for('moving_bp.search') }}>Search for Items</a></span>
+        <span class="navtab"><a href="{{ url_for('moving_bp.packing') }}">Pack Boxes</a></span>
+        <span class="navtab"><a href="{{ url_for('moving_bp.search') }}">Search for Items</a></span>
     </div>
 
     <div id="container">
         <table width='100%'>
             <tr>
                 <td id="left-column">
-                    <form method="POST" action="{{ url_for('moving_bp.index') }}">
+                    <form method="POST" action="{{ url_for('moving_bp.packing') }}">
                         <select class="big-button box-sort" name="box_sort_1"
                             id="box_sort_1">
                             <option value="none" selected disabled hidden>Box Sort Order 1
@@ -63,7 +63,7 @@
                     {% endfor %}
                 </td>
                 <td id="middle-column">
-                    <form method="POST" action="{{ url_for('moving_bp.index') }}">
+                    <form method="POST" action="{{ url_for('moving_bp.packing') }}">
                         <select class="big-button" name="selected_box_id"
                             id="selected_box_id" onchange="this.form.submit()">
                             <option value="none" selected disabled hidden>Select a Box
