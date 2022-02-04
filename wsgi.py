@@ -2,7 +2,7 @@
 import platform
 from euphoria import create_app
 
-develop = False
+develop = True
 
 app = create_app()
 
