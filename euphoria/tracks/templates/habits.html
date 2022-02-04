@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Habits</title>
+    <link rel="stylesheet" href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+</head>
+
+<body>
+    {% include 'navigation.html' %}
+    <div id='outer-grid'>
+        <div id='column1' class="tab-wrap">
+
+            <!-- active tab on page load gets checked attribute -->
+            <input type="radio" id="tab1-1" name="tabGroup1" class="tab" checked>
+            <label for="tab1-1">Daily Habits</label>
+
+            <input type="radio" id="tab1-2" name="tabGroup1" class="tab">
+            <label for="tab1-2">Add / Remove Habits</label>
+
+            <input type="radio" id="tab1-3" name="tabGroup1" class="tab">
+            <label for="tab1-3">Journal</label>
+
+            <div class="tab__content">
+                <div id="habit_display">
+                    <table class="habit-table">
+                        <form method="POST" action="">
+                            <tr>
+                                <td colspan="2" align="center">
+                                    <h2><label for="date">{{ long_date }}</label></h2>
+                                    <input type="date" id="date" name="date"
+                                        class="textbox box-3d" value="{{ date }}"
+                                        onchange="selectDate(this.form)">
+                                    <input type="hidden" id="datepicked"
+                                        name="datepicked">
+                                </td>
+                            </tr>
+                            {% for cat in categories %}
+                            {% if loop.index == 1 %}
+                            <tr>
+                                {% endif %}
+                                <td>
+                                    <h3>{{ cat.title() }}</h3>
+                                    {% for name, values in categories.get(cat).items() %}
+                                    {% if values.get('checked') == "1" %}
+                                    <label class="specialbox completed"
+                                        for="{{ name }}">{{ name }}
+                                        <input type="checkbox" id="{{ name }}"
+                                            name="{{ name }}" value=1 checked>
+                                        <span class="checkmark box-3d"></span>
+                                    </label>
+                                    {% else %}
+                                    <label class="specialbox" for="{{ name }}">{{ name }}
+                                        <input type="checkbox" id="{{ name }}"
+                                            name="{{ name }}" value=1>
+                                        <span class="checkmark box-3d"></span>
+                                    </label>
+
+                                    {% endif %}
+                                    <input type="hidden" id="{{ name }}" name="{{ name }}"
+                                        value=0>
+                                    <br />
+                                    {% endfor %}
+                                </td>
+                                {% if loop.index % 2 == 0 %}
+                            </tr>
+                            {% endif %}
+                            {% if loop.index % 2 == 0 and loop.index < categories|length
+                                %} <tr>
+                                {% endif %}
+                                {% endfor %}
+                                <tr>
+                                    <td colspan="2" align="center">
+                                        <button type="submit"
+                                            class="button box-3d">Submit</button>
+                                    </td>
+                                </tr>
+                        </form>
+                    </table>
+                </div>
+            </div>
+            <div class="tab__content">
+                <div id="habit-add-remove">
+                    <table class="habit-table">
+                        <tr>
+                            <td colspan="2" align="center">
+                                <h2>Add / Remove Habits</h2>
+                            </td>
+                        </tr>
+                        {% for cat in current_categories %}
+                        {% if loop.index == 1 %}
+                        <tr>
+                            {% endif %}
+                            <td>
+                                <h3>{{ cat.title() }}</h3>
+                                {% for habit, values in
+                                current_categories.get(cat).items() %}
+                                <form method="POST"
+                                    action="{{ url_for('tracks_bp.delete_habit') }}">
+                                    <input type="hidden" name="habit_name"
+                                        value="{{ habit }}">
+                                    <input type="hidden" name="habit_category"
+                                        value="{{ values.get('category') }}">
+                                    <input type="submit" class="button box-3d"
+                                        value="Delete">
+                                    {{ habit }}
+                                </form>
+                                {% endfor %}
+                            </td>
+                            {% if loop.index % 2 == 0 %}
+                        </tr>
+                        {% endif %}
+                        {% if loop.index % 2 == 0 and loop.index <
+                            current_categories|length %} <tr>
+                            {% endif %}
+                            {% endfor %}
+                            <tr>
+                                <td colspan="2" align="center">
+                                    <h4>Add New Habit:</h4>
+                                </td>
+                            </tr>
+                            <tr>
+                                <form method="POST" action="{{ url_for('tracks_bp.add_habit') }}">
+                                    <td>
+                                        <label for="habit_name">Name:</label>
+                                        <input type="text" size="30"
+                                            class="textbox box-3d" name="habit_name"
+                                            id="habit_name">
+                                        <br /><br />
+                                        <label for="habit_category">Category:</label>
+                                        <select class="textbox" name="habit_category"
+                                            id="habit_category">
+                                            {% for cat in current_categories %}
+                                            <option value="{{ cat }}">{{ cat.title() }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+
+                                    <td>
+                                        <input type="submit" class="button box-3d"
+                                            value="Add New Habit">
+                                    </td>
+                                </form>
+                            </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="tab__content">
+                <table id="journal">
+                    <tr>
+                        <td>
+                            <form method="POST" action="{{ url_for('tracks_bp.journal_entry') }}">
+                                <h2><label id="journalDateLabel"
+                                        for="journalDate"></label></h2>
+                                <input type="date" id="journalDate" name="journalDate"
+                                    class="textbox box-3d" value="{{ date }}"
+                                    onchange="changeDate(this.form.journalDate.value)">
+                                <br /><br />
+                                <textarea rows="30" cols="90" class="textbox box-3d"
+                                    name="entry" id="entry"></textarea>
+                                <br /><br />
+                                <h3>Feeling:</h3>
+                                <div class="feeling-buttons">
+
+                                    <input type="radio" id="radio-terrible"
+                                        class="feelbutton" name="feeling"
+                                        value="terrible">
+                                    <label for="radio-terrible">Terrible</label>
+
+                                    <input type="radio" id="radio-depressed"
+                                        class="feelbutton" name="feeling"
+                                        value="depressed">
+                                    <label for="radio-depressed">Depressed</label>
+
+                                    <input type="radio" id="radio-bad" class="feelbutton"
+                                        name="feeling" value="bad">
+                                    <label for="radio-bad">Bad</label>
+
+                                    <input type="radio" id="radio-frustrated"
+                                        class="feelbutton" name="feeling"
+                                        value="frustrated">
+                                    <label for="radio-frustrated">Frustrated</label>
+
+                                    <input type="radio" id="radio-neutral"
+                                        class="feelbutton" name="feeling" value="neutral">
+                                    <label for="radio-neutral">Neutral</label>
+
+                                    <input type="radio" id="radio-fine" class="feelbutton"
+                                        name="feeling" value="fine">
+                                    <label for="radio-fine">Fine</label>
+
+                                    <input type="radio" id="radio-good" class="feelbutton"
+                                        name="feeling" value="good">
+                                    <label for="radio-good">Good</label>
+
+                                    <input type="radio" id="radio-happy"
+                                        class="feelbutton" name="feeling" value="happy">
+                                    <label for="radio-happy">Happy</label>
+
+                                    <input type="radio" id="radio-great"
+                                        class="feelbutton" name="feeling" value="great">
+                                    <label for="radio-great">Great</label>
+                                </div>
+                                <br />
+                                <br />
+                                <input type="submit" class="button box-3d"
+                                    value="Add Journal Entry">
+                            </form>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div id='column2' class="tab-wrap">
+
+            <input type="radio" id="tab2-1" name="tabGroup2" class="tab" checked>
+            <label for="tab2-1">Current Habits</label>
+
+            <input type="radio" id="tab2-2" name="tabGroup2" class="tab">
+            <label for="tab2-2">Graphs</label>
+
+            <div class="tab__content">
+                {{ habit_tasks | safe }}
+            </div>
+
+            <div class="tab__content">
+                <h3>Graphs</h3>
+                <p>Streamlit???</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        function makeLongDate(short_date) {
+            var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            var long_date = short_date.toDateString(options)
+            return long_date
+        }
+        function getLongToday() {
+            const today = new Date()
+            var long_today = makeLongDate(today)
+            return long_today
+        }
+        function changeDate(new_date) {
+            let d = new Date(`${new_date}T00:00:00`)
+            var long_date = makeLongDate(d)
+            document.getElementById("journalDateLabel").innerHTML = long_date
+        }
+        function selectDate(form) {
+            form.datepicked.value = 'true'
+            form.submit()
+        }
+        document.getElementById("journalDate").value = new Date()
+        document.getElementById("journalDateLabel").innerHTML = getLongToday()
+    </script>
+</body>
+
+</html>

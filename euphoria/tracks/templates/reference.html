@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracks</title>
+    <link rel="stylesheet" href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+</head>
+
+<body>
+    {% include 'navigation.html' %}
+    <div id='wide-column' class="tab-wrap">
+        <!-- active tab on page load gets checked attribute -->
+        <input type="radio" id="tab1-1" name="tabGroup1" class="tab" checked>
+        <label for="tab1-1">Stretching</label>
+
+        <input type="radio" id="tab1-2" name="tabGroup1" class="tab">
+        <label for="tab1-2">Yoga Stretching</label>
+
+        <input type="radio" id="tab1-3" name="tabGroup1" class="tab">
+        <label for="tab1-3">Yoga Workout</label>
+
+        <input type="radio" id="tab1-4" name="tabGroup1" class="tab">
+        <label for="tab1-4">Links</label>
+
+        <div class="tab__content">
+            <a href="https://youtu.be/_U6cRWRaawg?list=PLFvEt5egiBHdqHSnE4G-YiLSQrsOkEu8w&t=303">Strength Side Stretching</a>
+            <br />
+            {{ stetching | safe }}
+        </div>
+
+        <div class="tab__content">
+            {{ yoga_stretching | safe }}
+        </div>
+
+        <div class="tab__content">
+            {{ yoga_workout | safe }}
+        </div>
+
+        <div class="tab__content">
+            <h1>Yoga</h1>
+            <a href="https://www.youtube.com/watch?v=HmZFwoUU3WQ&list=PLFvEt5egiBHdqHSnE4G-YiLSQrsOkEu8w&index=2&t=13s">Vinyasa Flow Yoga</a>
+            <br />
+            <a href="https://www.youtube.com/playlist?list=PLFvEt5egiBHdqHSnE4G-YiLSQrsOkEu8w">Yoga Playlist</a>
+            <br />
+
+        </div>
+    </div>
+</body>
+
+</html>

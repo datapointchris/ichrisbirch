@@ -1,0 +1,13 @@
+[Unit]
+Description=Tracks To Do List
+After=multi-user.target
+
+[Service]
+User=chris
+Type=idle
+WorkingDirectory=/home/chris/github/tracks/tracks
+Environment="PATH=/home/chris/github/tracks/.venv/bin"
+ExecStart=/home/chris/github/tracks/.venv/bin/python /home/chris/github/tracks/tracks/app.py
+
+[Install]
+WantedBy=multi-user.target
