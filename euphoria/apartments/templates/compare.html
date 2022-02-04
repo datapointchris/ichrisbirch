@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Comparison</title>
+    <link rel="stylesheet" href="{{ url_for('apartments_bp.static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('apartments_bp.static', filename='css/navigation.css') }}">
+</head>
+
+<body>
+    <div id="header">
+        <span class="link"><a href="{{ url_for('apartments_bp.compare') }}" class="selected">Apartment Comparison</a></span>
+        <span class="main">Apartment Comparison</span>
+        <span class="link"><a href="{{ url_for('apartments_bp.manage') }}">Manage Apartments</a></span>
+    </div>
+    <div id="apartment-list">
+        <ul>
+            {% for apartment in apartments %}
+            {% if apartment.get('id') == aptid %}
+            <li><a class="active" href="#">{{ apartment.get('name') }}</a></li>
+            {% else %}
+            <li><a href="/{{ apartment.get('id') }}">{{ apartment.get('name')
+                    }}</a></li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="add-feature">
+        <h2>Add a New Feature:</h2>
+        <form method="POST" action="{{ url_for('apartments_bp.add_feature') }}">
+            <input type="hidden" id="aptid" name="aptid" value="{{ aptid }}">
+            <input class="bigbox" type="text" size="20" name="name" id="name">
+            <h2>Type:</h2>
+            <select class="bigbox" name="type" id="type">
+                <option value="text">text</option>
+                <option value="integer">integer</option>
+                <option value="boolean">boolean</option>
+            </select><br />
+            <input class="bigbox" type="submit" value="Add New Feature">
+        </form>
+    </div>
+    <div id="content">
+        <div id="apartment">
+            <div class="feature-list">
+                <h1 class="title">{{ name.upper() }}</h1>
+                <h2>
+                    <a href="http://www.google.com/maps/place/{{ address }}"
+                        target="_blank">{{ address }}</a>
+                </h2>
+                <h2><a href="{{ url }}" target="_blank">{{ url }}</a></h2>
+            </div>
+            <form method="POST" action="{{ url_for('apartments_bp.compare') }}">
+                <input type="hidden" id="id" name="id" value="{{ aptid }}">
+                <input type="hidden" id="name" name="name" value="{{ name }}">
+                <input type="hidden" id="address" name="address" value="{{ address }}">
+                <input type="hidden" id="url" name="url" value="{{ url }}">
+                <div id="apt-features">
+                    {% for feature, value in current_apt.items() %}
+                    <div class="feature-box">
+                        {% if feature_type_map.get(feature) == 'integer' %}
+                        <h2>{{ feature.replace('_', ' ').upper() }}</h2>
+                        <input class="bigbox" type="text" size="20" name="{{ feature }}"
+                            value="{{ value }}">
+                        {% endif %}
+                        {% if feature_type_map.get(feature) == 'text' %}
+                        <h2>{{ feature.replace('_', ' ').upper() }}</h2>
+                        <input type="text" class="bigbox" size="20" name="{{ feature }}"
+                            value="{{ value }}">
+                        {% endif %}
+                        {% if feature_type_map.get(feature) == 'boolean' %}
+                        {% if value == 1 %}
+                        <label class="checkboxes">
+                            <h2>{{ feature.replace('_', ' ').upper() }}
+                                <input type="checkbox" id="{{ feature }}-true"
+                                    name="{{ feature }}" value=1 checked="checked" />
+                                <span class="checkmark"></span>
+                            </h2>
+                        </label>
+                        {% else %}
+                        <label class="checkboxes">
+                            <h2>{{ feature.replace('_', ' ').upper() }}
+                                <input type="checkbox" id="{{ feature }}-true"
+                                    name="{{ feature }}" value=1 />
+                                <span class="checkmark"></span>
+                            </h2>
+                        </label>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="feature-list">
+                    <h2>NOTES</h2>
+                    <textarea class="bigbox" rows="20" cols="150" name="notes">
+                    {{ notes }}</textarea>
+                    <br /><br /><br /><br /><br /><br /><br /><br />
+                    <input class="manage-box" type="submit" value="Edit Apartment Info">
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>

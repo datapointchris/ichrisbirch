@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Comparison</title>
+    <link rel="stylesheet" href="{{ url_for('apartments_bp.static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('apartments_bp.static', filename='css/navigation.css') }}">
+</head>
+
+<body>
+    <div id="header">
+        <span class="link"><a href="{{ url_for('apartments_bp.compare') }}">Apartment Comparison</a></span>
+        <span class="main">Apartment Comparison</span>
+        <span class="link"><a href="{{ url_for('apartments_bp.manage') }}" class="selected">Manage Apartments</a></span>
+    </div>
+    <div id="apartment-list">
+        <ul>
+            {% for apartment in apartments %}
+            {% if apartment.get('id') == aptid %}
+            <li><a class="active" href="#">{{ apartment.get('name') }}</a></li>
+            {% else %}
+            <li><a href="/manage/{{ apartment.get('id') }}">{{ apartment.get('name')
+                    }}</a></li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="content">
+        <div id="apartment">
+            <div class="feature-list">
+                <h1 class="title">{{ name.upper() }}</h1>
+                <h2>Edit Apartment Data:</h2>
+                <form method="POST" action="{{ url_for('apartments_bp.update_apartment') }}">
+                    <input type="hidden" id="id" name="id" value="{{ aptid }}">
+                    <input type="text" class="manage-box" size="90" name="name"
+                        value="{{ name }}">
+                    <input type="text" class="manage-box" size="90" name="address"
+                        value="{{ address }}">
+                    <input type="text" class="manage-box" size="90" name="url"
+                        value="{{ url }}">
+                    <br /><br /><br />
+                    <input class="manage-box" type="submit" value="Update Apartment">
+                </form>
+            </div>
+            <br /><br /><br /><br /><br /><br />
+            <div class="feature-list">
+                <form method="POST" action="{{ url_for('apartments_bp.delete_apartment') }}">
+                    <input type="hidden" id="id" name="id" value="{{ aptid }}">
+                    <input class="manage-box warning" type="submit"
+                        value="DELETE Apartment">
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

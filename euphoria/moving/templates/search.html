@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Packing</title>
+    <link rel="stylesheet" href="{{ url_for('moving_bp.static', filename='css/styling.css') }}">
+</head>
+
+<body>
+    <div id="navtable">
+        <span class="navtab"><a href={{ url_for('moving_bp.index') }}>Pack Boxes</a></span>
+        <span class="navtab"><a href={{ url_for('moving_bp.search') }}>Search for Items</a></span>
+    </div>
+
+    <div id="searchbox">
+        <form method="POST" action="{{ url_for('moving_bp.search') }}">
+            <h3>Search for Items</h3>
+            <label for="search_text">Search Text:</label>
+            <input class=big-button type="text" name="search_text" id="search_text">
+            <input class="big-button" type="submit" value="Search">
+        </form>
+    </div>
+
+    {% if results %}
+    <table id="search-results">
+        <tr class="search-header">
+            <td width="35%">Box</td>
+            <td width="35%">Name</td>
+            <td width="10%">Essential</td>
+            <td width="10%">Warm</td>
+            <td width="10%">Liquid</td>
+        </tr>
+        {% for result in results %}
+        <tr class="box-item-search-list">
+            <td width="30%">{{ result.box }}</td>
+            <td width="30%">{{ result.name }}</td>
+            <td class="essential" width="10%">
+                {% if result.essential == 1 %}
+                Essential
+                {% endif %}
+            </td>
+            <td class="warm" width="10%">
+                {% if result.warm == 1 %}
+                Warm
+                {% endif %}
+            </td>
+            <td class="liquid" width="10%">
+                {% if result.liquid == 1 %}
+                Liquid
+                {% endif %}
+            </td>
+        </tr>
+        <br />
+        {% endfor %}
+        {% endif %}
+    </table>
+    </div>
+</body>
+
+</html>
