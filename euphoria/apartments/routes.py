@@ -1,5 +1,4 @@
 from flask import Blueprint, redirect, render_template, request, url_for
-from flask import current_app as app
 from euphoria import apt_db as db
 from euphoria.apartments.helpers import convert_data_types_from_strings
 
