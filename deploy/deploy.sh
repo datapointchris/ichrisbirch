@@ -16,7 +16,7 @@ sudo ln -s /etc/nginx/sites-available/$PROJECT_NAME.conf /etc/nginx/sites-enable
 sudo cp supervisor.conf /etc/supervisor/conf.d/$PROJECT_NAME.conf
 
 # Create log directories as specified in `supervisor.conf`
-sudo mkdir /var/log/$PROJECT_NAME
+sudo mkdir -p /var/log/$PROJECT_NAME
 sudo touch /var/log/$PROJECT_NAME/out.log
 sudo touch /var/log/$PROJECT_NAME/err.log
 
