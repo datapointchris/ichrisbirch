@@ -4,7 +4,7 @@
 # Change name in `supervisor.conf` to PROJECT_NAME
 
 # Project name
-$PROJECT_NAME=euphoria
+PROJECT_NAME=euphoria
 
 # Copy nginx file to sites-available
 sudo cp nginx.conf /etc/nginx/sites-available/$PROJECT_NAME.conf
