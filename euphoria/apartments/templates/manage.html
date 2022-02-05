@@ -22,7 +22,7 @@
             {% if apartment.get('id') == aptid %}
             <li><a class="active" href="#">{{ apartment.get('name') }}</a></li>
             {% else %}
-            <li><a href="/manage/{{ apartment.get('id') }}">{{ apartment.get('name')
+            <li><a href="{{ url_for('apartments_bp.compare', aptid=apartment.get('id')) }}">{{ apartment.get('name')
                     }}</a></li>
             {% endif %}
             {% endfor %}
