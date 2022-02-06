@@ -23,7 +23,7 @@
                     {% if loop.index % 3 == 0 %}
                 <td class="third">{% endif %}
                     <div id="countdown-container">
-                        <form method="POST" action="{{ url_for('delete_countdown') }}">
+                        <form method="POST" action="{{ url_for('tracks_bp.delete_countdown') }}">
                             <div class="countdown-row-left">
                                 <input type="submit" class="button box-3d" value="Delete">
                             </div>
@@ -58,7 +58,7 @@
                 <td>
                     <h4>Add New Countdown:</h4>
                     <br />
-                    <form method="POST" action="{{ url_for('add_countdown') }}">
+                    <form method="POST" action="{{ url_for('tracks_bp.add_countdown') }}">
                         <label for="name">Name:</label>
                         <input type="text" size="30" class="textbox box-3d" name="name"
                             id="name">
