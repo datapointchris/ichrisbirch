@@ -39,6 +39,7 @@ def compare(aptid=1):
 @apartments_bp.route('/add_feature/', methods=['POST'])
 def add_feature():
     name = request.form.get('name')
+    name = name.replace(' ', '_').lower()
     type = request.form.get('type')
     aptid = request.form.get('aptid')
     db.add_feature(name, type)

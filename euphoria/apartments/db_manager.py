@@ -37,9 +37,19 @@ class ApartmentsDBManager:
 
     def get_apartment(self, id):
         apt = self._execute(f'select * from apartments where id = {id}').fetchone()
-        return dict(apt)
+        if apt is not None:
+            return dict(apt)
+        else:
+            id += 1
+            return self.get_apartment(id)
 
     def add_apartment(self, apartment):
+        # TODO: This doesnt make sense to get an entire apartment but then have to
+        # make a query to the database to retrieve the columns.
+        # the columns should be in the apartment object.
+        # APARTMENT SHOULD BE AN OBJECT
+        # Oh it was because this is built from command line so it didn't expect a form
+        # or proper dictionary I guess
         columns = self._get_column_names_from_table('apartments')
         insert_query_sql = self._create_column_insert_query(columns)
         self._execute(insert_query_sql, params=apartment)
@@ -53,8 +63,8 @@ class ApartmentsDBManager:
             apartment['id'],
         ])
         print(values)
-        manage_sql = 'update apartments set name = ?, address = ?, url = ? where id = ?'
-        self._execute(manage_sql, values)
+        update_sql = 'update apartments set name = ?, address = ?, url = ? where id = ?'
+        self._execute(update_sql, values)
 
     def update_features(self, info):
         id = info.pop('id')
