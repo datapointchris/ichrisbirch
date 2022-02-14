@@ -9,7 +9,7 @@ from euphoria.tracks.helpers import (
 )
 
 tracks_bp = Blueprint(
-    'tracks_bp', __name__, template_folder='templates', static_folder='static'
+    'tracks_bp', __name__, template_folder='templates/tracks', static_folder='static'
 )
 
 

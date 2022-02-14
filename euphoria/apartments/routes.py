@@ -3,7 +3,7 @@ from euphoria import apt_db as db
 from euphoria.apartments.helpers import convert_data_types_from_strings
 
 apartments_bp = Blueprint(
-    'apartments_bp', __name__, template_folder='templates', static_folder='static'
+    'apartments_bp', __name__, template_folder='templates/apartments', static_folder='static'
 )
 
 with apartments_bp.open_resource('schema.sql') as f:

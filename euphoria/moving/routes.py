@@ -2,7 +2,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from euphoria import box_db as db
 
 moving_bp = Blueprint(
-    'moving_bp', __name__, template_folder='templates', static_folder='static'
+    'moving_bp', __name__, template_folder='templates/moving', static_folder='static'
 )
 
 
