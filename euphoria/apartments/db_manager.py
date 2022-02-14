@@ -56,12 +56,14 @@ class ApartmentsDBManager:
 
     def update_apartment(self, apartment):
         # id, name, address, url
-        values = tuple([
-            apartment['name'],
-            apartment['address'],
-            apartment['url'],
-            apartment['id'],
-        ])
+        values = tuple(
+            [
+                apartment['name'],
+                apartment['address'],
+                apartment['url'],
+                apartment['id'],
+            ]
+        )
         print(values)
         update_sql = 'update apartments set name = ?, address = ?, url = ? where id = ?'
         self._execute(update_sql, values)
@@ -82,6 +84,7 @@ class ApartmentsDBManager:
         if apartment:
             self._execute(f'delete from apartments where id = {id}')
 
+    # TODO: Delete this when these are merged
     def execute_sql_file(self, file):
         with open(file, 'r') as f:
             with self.connection as conn:
