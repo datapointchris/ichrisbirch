@@ -45,8 +45,18 @@ def create_app():
     # setup with the configuration provided
     # app.config.from_object('config.DevelopmentConfig')
 
-    # setup all our dependencies
+    # TODO: This is something I need to research more
+    # Initialize plugins
+
+    # ApartmentsDBManager.init_app(app)
+    # BoxDBManager.init_app(app)
+    # HabitsDBManager.init_app(app)
+    # JournalDBManager.init_app(app)
+    # CountdownsDBManager.init_app(app)
     # database.init_app(app)
+    # database.init_app(app)
+    # database.init_app(app)
+
     with app.app_context():
         app.register_blueprint(home_bp)
         app.register_blueprint(cockpit_bp, url_prefix='/cockpit')
