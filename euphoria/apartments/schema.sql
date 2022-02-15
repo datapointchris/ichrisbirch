@@ -38,10 +38,10 @@ notes text
 
 create table if not exists feature_types_mapping (
 id integer primary key not null,
-name text,
+name text unique,
 type text);
 
-insert into feature_types_mapping(name, type)
+insert or ignore into feature_types_mapping(name, type)
 VALUES
     ('id', 'integer'),
     ('name', 'text'),
