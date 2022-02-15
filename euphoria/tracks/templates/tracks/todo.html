@@ -6,7 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tracks</title>
-    <link rel="stylesheet" href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+    <link rel="stylesheet"
+        href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
     <script src="{{ url_for('tracks_bp.static', filename='js/countdowns.js') }}"></script>
 </head>
 
@@ -64,8 +65,11 @@
             <input type="radio" id="tab2-4" name="tabGroup2" class="tab">
             <label for="tab2-4">Life Plan</label>
 
-            <input type="radio" id="tab2-5" name="tabGroup2" class="tab" checked>
-            <label for="tab2-5">Countdowns</label>
+            <input type="radio" id="tab2-5" name="tabGroup2" class="tab">
+            <label for="tab2-5">Event Calendar</label>
+
+            <input type="radio" id="tab2-6" name="tabGroup2" class="tab" checked>
+            <label for="tab2-6">Countdowns</label>
 
             <div class="tab__content">
                 {{ big_todo | safe }}
@@ -86,6 +90,48 @@
             </div>
 
             <div class="tab__content">
+                <div class="index-events">
+                    {% for event in events %}
+                    <ul id="event.id">
+                        <li>
+                            <span class="field-name">Name:</span>
+                            <span class="field-value">{{ event.name }}</span>
+                        </li>
+                        <li>
+                            <span class="field-name">Date:</span>
+                            <span class="field-value">{{ event.date.strftime('%Y-%m-%d') }}</span>
+                        </li>
+                        <li>
+                            <span class="field-name">Venue:</span>
+                            <span class="field-value">{{ event.venue }}</span>
+                        </li>
+                        <li>
+                            <span class="field-name">URL:</span>
+                            <span class="field-value">{{ event.url }}</span>
+                        </li>
+                        <li>
+                            <span class="field-name">Ticket Price:</span>
+                            <span class="field-value">{{ event.cost }}</span>
+                        </li>
+                        <li>
+                            <span class="field-name">Attending:</span>
+                            <span class="field-value">{{ event.attending }}</span>
+                        </li>
+                        <li>
+                            <span class="field-name">Notes:</span>
+                            <span class="field-value">{{ event.notes }}</span>
+                        </li>
+                    </ul>
+                    {% endfor %}
+                    <br />
+                    <!-- This does not need to be a form but I want the button. -->
+                    <form method="GET" action="{{ url_for('tracks_bp.manage_events') }}">
+                        <input type="submit" class="button box-3d" value="Manage Events">
+                    </form>
+                </div>
+            </div>
+
+            <div class="tab__content">
                 <div class="index-countdowns">
                     {% for name, deadline, id in deadlines %}
                     <h1>{{ name }}</h1>
@@ -94,19 +140,14 @@
                     </script>
                     <br />
                     {% endfor %}
+                    <br />
                     <form method="POST" action="{{ url_for('tracks_bp.countdowns') }}">
-
-                        <br />
                         <input type="submit" class="button box-3d"
                             value="Manage Countdowns">
                     </form>
                 </div>
-                
-
-
-
-
             </div>
+
         </div>
 
 

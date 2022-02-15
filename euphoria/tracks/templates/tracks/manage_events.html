@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracks</title>
+    <link rel="stylesheet"
+        href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+</head>
+
+<body>
+    {% include 'navigation.html' %}
+
+    <div id="events">
+        <h1>Manage Events</h1>
+        {% for event in events %}
+        <form method="POST" action="{{ url_for('tracks_bp.manage_events') }}">
+            <label for="name">Name:</label>
+            <input type="text" size="30" class="textbox box-3d" name="name" id="name"
+                value="{{ event.name }}">
+            <br /><br />
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" class="textbox box-3d"
+                value="{{ event.date.strftime('%Y-%m-%d') }}">
+            <br /><br />
+            <label for="url">URL:</label>
+            <input type="text" size="30" class="textbox box-3d" name="url" id="url"
+                value="{{ event.url }}">
+            <br /><br />
+            <label for="cost">Cost:</label>
+            <input type="number" id="cost" name="cost" class="textbox box-3d"
+                value="{{ event.cost }}">
+            <br /><br />
+            <label for="attending">Attending:</label>
+            <input type="checkbox" id="attending" name="attending" class="textbox box-3d"
+                value="{{ event.attending }}">
+            <br /><br />
+            <label for="notes">Notes:</label>
+            <textarea rows="4" cols="30" id="notes" name="notes"
+                class="textbox box-3d">{{ event.notes }}</textarea>
+            <br /><br />
+            <input type="submit" name="update" id="update" class="button box-3d"
+                value="Update">
+            <input type="submit" name="delete" id="delete" class="button box-3d"
+                value="Delete">
+        </form>
+        {% endfor %}
+    </div>
+    <br /><br />
+    <div id="add-event">
+        <h4>Add New Event:</h4>
+        <form method="POST" action="{{ url_for('tracks_bp.manage_events') }}">
+            <label for="name">Name:</label>
+            <input type="text" size="30" class="textbox box-3d" name="name" id="name">
+            <br /><br />
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" class="textbox box-3d">
+            <br /><br />
+            <label for="url">URL:</label>
+            <input type="text" size="30" class="textbox box-3d" name="url" id="url">
+            <br /><br />
+            <label for="cost">Cost:</label>
+            <input type="number" id="cost" name="cost" class="textbox box-3d">
+            <br /><br />
+            <label for="attending">Attending:</label>
+            <input type="checkbox" id="attending" name="attending" class="textbox box-3d"
+                value=1>
+            <br /><br />
+            <label for="notes">Notes:</label>
+            <input type="textarea" rows="20" cols="150" id="notes" name="notes"
+                class="textbox box-3d"></textarea>
+            <br /><br />
+            <input type="submit" name="add" id="add" class="button box-3d"
+                value="Add New Event">
+        </form>
+        </td>
+        </tr>
+        </table>
+</body>
+
+</html>

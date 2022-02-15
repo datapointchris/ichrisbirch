@@ -1,12 +1,14 @@
 import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for
-from euphoria import habit_db, journal_db, countdown_db
+import sqlalchemy
+from euphoria import habit_db, journal_db, countdown_db, event_db
 from euphoria.tracks.helpers import (
     md_to_html,
     get_form_habits,
     create_sorted_habit_category_dict,
 )
+from euphoria.tracks.models import Event
 
 tracks_bp = Blueprint(
     'tracks_bp', __name__, template_folder='templates/tracks', static_folder='static'
@@ -19,6 +21,7 @@ def todo():
     big_todo = md_to_html('big_todo_list.md')
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
+    events = Event.query.all()
     deadlines = countdown_db.get_countdowns()
     return render_template(
         'todo.html',
@@ -26,6 +29,7 @@ def todo():
         big_todo=big_todo,
         goals=goals,
         new_apt_checklist=new_apt_checklist,
+        events=events,
         deadlines=deadlines,
     )
 
@@ -146,6 +150,42 @@ def delete_countdown():
     return redirect(url_for('tracks_bp.countdowns'))
 
 
+@tracks_bp.route('/manage_events/', methods=['GET', 'POST'])
+def manage_events():
+    if request.method == 'POST':
+        add = request.form.get('add')
+        update = request.form.get('update')
+        delete = request.form.get('delete')
+        event = dict(
+            name=request.form.get('name'),
+            date=datetime.datetime.strptime(request.form.get('date'), '%Y-%m-%d'),
+            url=request.form.get('url'),
+            cost=request.form.get('cost'),
+            attending=True if request.form.get('attending') == '1' else False,
+            notes=request.form.get('notes'),
+        )
+        if add:
+            event_db.session.add(Event(**event))
+        elif update:
+            event_db.session.execute(
+                sqlalchemy.update(Event)
+                .where(Event.name == event.get('name'))
+                .values(**event)
+            )
+        elif delete:
+            event_db.session.execute(
+                sqlalchemy.delete(Event).where(Event.name == event.get('name'))
+            )
+        event_db.session.commit()
+    events = (
+        event_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        .scalars()
+        .all()
+    )
+    return render_template('manage_events.html', events=events)
+
+
+# This is for testing position of buttons and home nav
 @tracks_bp.route('/position/')
 def position():
     return render_template('position.html')
