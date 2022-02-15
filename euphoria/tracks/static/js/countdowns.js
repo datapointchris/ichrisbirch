@@ -9,7 +9,7 @@ function calculateDays(deadline, id) {
     var daysUntil = setInterval(function () {
         var now = new Date().getTime();
         var distance = deadlineDate - now;
-        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24)) + 1;
         document.getElementById(id).innerHTML = days
         if (days < 31) {
             document.getElementById(id).style.color = "green";
