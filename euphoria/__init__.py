@@ -16,13 +16,8 @@ from euphoria.tracks.mongomanagers import (
 # Make them take the same connection maybe even.  Just grab the tables for each connection
 
 event_db = SQLAlchemy()
-
 apt_db = ApartmentsDBManager('apartments.db')
-# db.execute_sql_file(url_for('static', filename='sql/create_tables.sql'))
-
 box_db = BoxDBManager('moving.db')
-# with open('box_packing/static/sql/create_db.sql', 'r') as f:
-#             db.run_sql_script(f)
 
 MONGODB_LOCAL = 'mongodb://127.0.0.1:27017'
 DATABASE = 'tracks'
