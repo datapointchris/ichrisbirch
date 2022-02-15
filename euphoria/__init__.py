@@ -9,9 +9,17 @@ from euphoria.tracks.mongomanagers import (
     CountdownsDBManager,
 )
 
+# Blueprints
+from euphoria.home.routes import home_bp
+from euphoria.cockpit.routes import cockpit_bp
+from euphoria.portfolio.routes import portfolio_bp
+from euphoria.apartments.routes import apartments_bp
+from euphoria.moving.routes import moving_bp
+from euphoria.tracks.routes import tracks_bp
+
 # from database import database
 
-### DATABASES ###
+# DATABASES #
 # TODO: These need to have the same DB format, probably a base class or protocol!!!!
 # Make them take the same connection maybe even.  Just grab the tables for each connection
 
@@ -27,14 +35,6 @@ journal_db = JournalDBManager(client=CLIENT, database=DATABASE, collection='jour
 countdown_db = CountdownsDBManager(
     client=CLIENT, database=DATABASE, collection='countdowns'
 )
-
-# Blueprints
-from euphoria.home.routes import home_bp
-from euphoria.cockpit.routes import cockpit_bp
-from euphoria.portfolio.routes import portfolio_bp
-from euphoria.apartments.routes import apartments_bp
-from euphoria.moving.routes import moving_bp
-from euphoria.tracks.routes import tracks_bp
 
 
 def create_app():
