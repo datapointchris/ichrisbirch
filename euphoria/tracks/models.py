@@ -6,9 +6,10 @@ class Event(db.Model):
 
     __tablename__ = 'tracks.events'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), index=False, unique=True, nullable=False)
+    name = db.Column(db.String(64), index=False, unique=False, nullable=False)
     date = db.Column(db.DateTime, index=False, unique=False, nullable=False)
-    url = db.Column(db.String(256), index=False, unique=True, nullable=False)
+    venue = db.Column(db.String(64), index=False, unique=False, nullable=False)
+    url = db.Column(db.String(256), index=False, unique=False, nullable=True)
     cost = db.Column(db.Float, index=False, unique=False, nullable=False)
     attending = db.Column(db.Boolean, index=False, unique=False, nullable=False)
     notes = db.Column(db.Text, index=False, unique=False, nullable=True)
