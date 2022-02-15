@@ -94,7 +94,7 @@
                     {% for event in events %}
                     <ul id="{{ event.id }}" class="{{ 'attending' if event.attending }}">
                         <li class="title">{{ event.name }}</li>
-                        <li>{{ event.date.strftime('%Y-%m-%d') }}</li>
+                        <li>{{ event.date.strftime('%A %B %d, %Y') }}</li>
                         <li>{{ event.venue }}</li>
                         <li>{{ '$%.2f'|format(event.cost) }}</li>
                         <li>Going: {{ 'YES' if event.attending else 'No' }}</li>

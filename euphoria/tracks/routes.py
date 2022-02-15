@@ -163,6 +163,7 @@ def manage_events():
         event = dict(
             name=request.form.get('name'),
             date=datetime.datetime.strptime(request.form.get('date'), '%Y-%m-%d'),
+            venue=request.form.get('venue'),
             url=request.form.get('url'),
             cost=request.form.get('cost'),
             attending=True if request.form.get('attending') == '1' else False,
