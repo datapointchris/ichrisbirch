@@ -92,35 +92,14 @@
             <div class="tab__content">
                 <div class="index-events">
                     {% for event in events %}
-                    <ul id="event.id">
-                        <li>
-                            <span class="field-name">Name:</span>
-                            <span class="field-value">{{ event.name }}</span>
-                        </li>
-                        <li>
-                            <span class="field-name">Date:</span>
-                            <span class="field-value">{{ event.date.strftime('%Y-%m-%d') }}</span>
-                        </li>
-                        <li>
-                            <span class="field-name">Venue:</span>
-                            <span class="field-value">{{ event.venue }}</span>
-                        </li>
-                        <li>
-                            <span class="field-name">URL:</span>
-                            <span class="field-value">{{ event.url }}</span>
-                        </li>
-                        <li>
-                            <span class="field-name">Ticket Price:</span>
-                            <span class="field-value">{{ event.cost }}</span>
-                        </li>
-                        <li>
-                            <span class="field-name">Attending:</span>
-                            <span class="field-value">{{ event.attending }}</span>
-                        </li>
-                        <li>
-                            <span class="field-name">Notes:</span>
-                            <span class="field-value">{{ event.notes }}</span>
-                        </li>
+                    <ul id="{{ event.id }}" class="{{ 'attending' if event.attending }}">
+                        <li class="title">{{ event.name }}</li>
+                        <li>{{ event.date.strftime('%Y-%m-%d') }}</li>
+                        <li>{{ event.venue }}</li>
+                        <li>{{ '$%.2f'|format(event.cost) }}</li>
+                        <li>Going: {{ 'YES' if event.attending else 'No' }}</li>
+                        <li><a href="{{ event.url }}" target="_blank">{{ event.url }}</a></li>
+                        <li>Notes: {{ event.notes }}</li>
                     </ul>
                     {% endfor %}
                     <br />

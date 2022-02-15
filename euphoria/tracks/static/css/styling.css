@@ -10,7 +10,7 @@ body {
   font-family: Menlo;
   font-size: 1.5em;
   color: #eee;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 li {
@@ -318,6 +318,29 @@ li {
   line-height: .25em;
 }
 
+.index-events {
+  margin: auto;
+  text-align: center;
+}
+
+.index-events > ul {
+  padding: 10px;
+  margin: 50px 10px;
+  border: 1px solid orange;
+}
+
+.index-events > ul.attending {
+  border: 1px solid green;
+}
+
+.index-events > ul > li {
+  list-style: none;
+}
+
+.index-events > ul > li.title {
+  font-weight: bold;
+}
+
 /*     HABITS     */
 #habit-add-remove {
   line-height: 1.5em;
@@ -345,6 +368,23 @@ li {
 
 .completed {
   color: green;
+}
+
+/*     COUNTDOWNS     */
+.events {
+  margin: auto;
+  text-align: center;
+  width: 90%;
+}
+
+.events__listing {
+  padding: 10px;
+  margin: 50px 10px;
+  border: 1px solid gray;
+}
+
+#add-event {
+  border: 1px dashed orange;
 }
 
 /*     COUNTDOWNS     */

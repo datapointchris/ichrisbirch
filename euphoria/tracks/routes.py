@@ -21,7 +21,11 @@ def todo():
     big_todo = md_to_html('big_todo_list.md')
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
-    events = Event.query.all()
+    events = (
+        event_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        .scalars()
+        .all()
+    )
     deadlines = countdown_db.get_countdowns()
     return render_template(
         'todo.html',

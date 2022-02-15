@@ -23,7 +23,7 @@ body {
   font-family     : Menlo;
   font-size       : 1.5em;
   color           : $all-text-color;
-  height          : 100vh;
+  min-height      : 100vh;
 }
 
 li {
@@ -279,6 +279,33 @@ li {
   }
 }
 
+///// EVENTS /////
+.index-events {
+  margin    : auto;
+  text-align: center;
+
+
+
+  >ul {
+    padding: 10px;
+    margin : 50px 10px;
+    border : 1px solid orange;
+
+    &.attending {
+      border: 1px solid green;
+    }
+
+    >li {
+      list-style: none;
+
+      &.title {
+        font-weight: bold;
+      }
+    }
+  }
+}
+
+
 
 /////////////////////
 /*     HABITS     */
@@ -313,6 +340,26 @@ li {
   color: green;
 }
 
+
+/////////////////////////
+/*     COUNTDOWNS     */
+///////////////////////
+
+.events {
+  margin    : auto;
+  text-align: center;
+  width     : 90%;
+}
+
+.events__listing {
+  padding: 10px;
+  margin : 50px 10px;
+  border : 1px solid gray;
+}
+
+#add-event {
+  border: 1px dashed orange;
+}
 
 /////////////////////////
 /*     COUNTDOWNS     */
