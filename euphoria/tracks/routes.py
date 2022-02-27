@@ -44,16 +44,10 @@ def habits():
         date = request.form.get('date')
         datepicked = request.form.get('datepicked')
         if datepicked:
-            print('POST')
-            print(f'{date=}')
-            print('datepicked SET')
             habits = habits_db.get_habits_for_date(date)
             if not habits:
                 habits = habits_db.get_current_habits()
         else:
-            print('POST')
-            print(f'{date=}')
-            print('datepicked Empty')
             form_habits = get_form_habits(request.values)
             habits = habits_db.append_habit_categories(form_habits)
             print(habits)
@@ -63,9 +57,7 @@ def habits():
         habits = habits_db.get_habits_for_date(date)
         if not habits:
             habits = habits_db.get_current_habits()
-        print('GET')
-        print(f'{date=}')
-        print(habits)
+
     long_date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime('%A %B %d, %Y')
     habit_tasks = md_to_html('current_habits.md')
     categories = create_sorted_habit_category_dict(habits)
