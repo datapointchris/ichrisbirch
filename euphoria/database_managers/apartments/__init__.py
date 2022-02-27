@@ -1,11 +1,24 @@
 import sqlite3
+from euphoria.database_managers.base import SQLiteManager
 
 
-class ApartmentsDBManager:
-    def __init__(self, db_file):
-        self.db_file = db_file
-        self.connection = sqlite3.connect(self.db_file, check_same_thread=False)
+class ApartmentsDBManager(SQLiteManager):
+    """SQLite DB Manager for Apartments App"""
+
+    def __init__(self):
+        self.app = None
+        self.connection = None
+
+    def init_app(self, app):
+        self.app = app
+        db_file = self.app.config.get('SQLITE_DATABASE_URI')
+        self.connection = sqlite3.connect(db_file, check_same_thread=False)
         self.connection.row_factory = sqlite3.Row
+
+    def create_all(self):
+        with self.app.open_resource('database_managers/apartments/schema.sql') as f:
+            sql = f.read().decode('utf-8')
+            self.connection.executescript(sql)
 
     def _execute(self, sql, params=None):
         with self.connection as conn:

@@ -1,12 +1,24 @@
-from flask import url_for
 import sqlite3
+from euphoria.database_managers.base import SQLiteManager
 
 
-class BoxDBManager:
-    def __init__(self, db_file):
-        self.db_file = db_file
-        self.connection = sqlite3.connect(self.db_file, check_same_thread=False)
+class BoxDBManager(SQLiteManager):
+    """SQLite DB Manager for Moving App"""
+
+    def __init__(self):
+        self.app = None
+        self.connection = None
+
+    def init_app(self, app):
+        self.app = app
+        db_file = app.config.get('SQLITE_DATABASE_URI')
+        self.connection = sqlite3.connect(db_file, check_same_thread=False)
         self.connection.row_factory = sqlite3.Row
+
+    def create_all(self):
+        with self.app.open_resource('database_managers/moving/schema.sql') as f:
+            sql = f.read().decode('utf-8')
+            self.connection.executescript(sql)
 
     def _execute(self, sql, params=None):
         with self.connection as conn:
@@ -16,19 +28,6 @@ class BoxDBManager:
             else:
                 cursor.execute(sql)
             return cursor
-
-    def run_sql_script(self, opened_file):
-        with self.connection as conn:
-            cursor = conn.cursor()
-            sql = opened_file.read()
-            cursor.executescript(sql)
-
-    def reset_db(self):
-        with self.connection as conn:
-            cursor = conn.cursor()
-            with open(url_for('static', filename='sql/reset_db.sql'), 'r') as f:
-                sql = f.read()
-                cursor.executescript(sql)
 
     def get_all_boxes(self, sort_1=None, sort_2=None):
         query = 'select * from boxes'

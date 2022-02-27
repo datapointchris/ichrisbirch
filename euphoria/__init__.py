@@ -1,33 +1,30 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import pymongo
-from euphoria.apartments.db_manager import ApartmentsDBManager
-from euphoria.moving.db_manager import BoxDBManager
-from euphoria.tracks.mongomanagers import (
+
+from euphoria.database_managers.apartments import ApartmentsDBManager
+from euphoria.database_managers.moving import BoxDBManager
+
+from euphoria.database_managers.tracks import (
     HabitsDBManager,
     JournalDBManager,
     CountdownsDBManager,
 )
 
 
-# from database import database
+import dotenv
 
-# DATABASES #
-# TODO: These need to have the same DB format, probably a base class or protocol!!!!
-# Make them take the same connection maybe even.  Just grab the tables for each connection
+# this should load the FLASK_ENV variable and set the environment
+dotenv.load_dotenv()
 
-event_db = SQLAlchemy()
-apt_db = ApartmentsDBManager('apartments.db')
-box_db = BoxDBManager('moving.db')
+# Postgres
+events_db = SQLAlchemy()
+apt_db = ApartmentsDBManager()
+box_db = BoxDBManager()
 
-MONGODB_LOCAL = 'mongodb://127.0.0.1:27017'
-DATABASE = 'tracks'
-CLIENT = pymongo.MongoClient(MONGODB_LOCAL)
-habit_db = HabitsDBManager(client=CLIENT, database=DATABASE, collection='habits')
-journal_db = JournalDBManager(client=CLIENT, database=DATABASE, collection='journal')
-countdown_db = CountdownsDBManager(
-    client=CLIENT, database=DATABASE, collection='countdowns'
-)
+# MongoDB
+habits_db = HabitsDBManager()
+journal_db = JournalDBManager()
+countdowns_db = CountdownsDBManager()
 
 # Blueprints
 from euphoria.home.routes import home_bp
@@ -40,31 +37,14 @@ from euphoria.tracks.routes import tracks_bp
 
 def create_app():
     app = Flask(__name__)
-    # setup with the configuration provided
-    # app.config.from_object('config.DevelopmentConfig')
+    app.config.from_object('config.DevelopmentConfig')
 
-    # hardcoded for now for testing
-    # TODO: this database URI will eventually be the postgres installation
-    # TODO: it also should end up in the config file so it gets configured automatically and
-    # does not leave the config out in the open
-    # TODO: use instance folder here --> Must research first
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
-
-    app.config['MONGODB_DATABASE_URI'] = 'mongodb://127.0.0.1:27017'
-
-    # TODO: This is something I need to research more
-    # Initialize plugins
-
-    # TODO: Eventually these won't be separate managers that need init
-    # They will be the same db but point to different tables
-    # TODO: How do I do advanced functionality in SQL with SQLAlchemy?
-    # apt_db.init_app(app)
-    # box_db.init_app(app)
-    # habit_db.init_app(app)
-    # box_db.init_app(app)
-    # countdown_db.init_app(app)
-
-    event_db.init_app(app)
+    events_db.init_app(app)
+    apt_db.init_app(app)
+    box_db.init_app(app)
+    habits_db.init_app(app, db='tracks', collection='habits')
+    journal_db.init_app(app, db='tracks', collection='journal')
+    countdowns_db.init_app(app, db='tracks', collection='countdowns')
 
     with app.app_context():
         app.register_blueprint(home_bp)
@@ -74,6 +54,8 @@ def create_app():
         app.register_blueprint(moving_bp, url_prefix='/moving')
         app.register_blueprint(tracks_bp, url_prefix='/tracks')
 
-        event_db.create_all()
+        events_db.create_all()
+        apt_db.create_all()
+        box_db.create_all()
 
         return app

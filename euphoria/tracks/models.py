@@ -1,9 +1,8 @@
-from euphoria import event_db as db
+from euphoria import events_db as db
 
 
 class Event(db.Model):
     """Data Model for Events Happening"""
-
     __tablename__ = 'tracks.events'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=False, unique=False, nullable=False)

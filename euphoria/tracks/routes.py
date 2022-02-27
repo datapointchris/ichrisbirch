@@ -2,7 +2,7 @@ import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for
 import sqlalchemy
-from euphoria import habit_db, journal_db, countdown_db, event_db
+from euphoria import habits_db, journal_db, countdowns_db, events_db
 from euphoria.tracks.helpers import (
     md_to_html,
     get_form_habits,
@@ -22,11 +22,11 @@ def todo():
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
     events = (
-        event_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        events_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
         .scalars()
         .all()
     )
-    deadlines = countdown_db.get_countdowns()
+    deadlines = countdowns_db.get_countdowns()
     return render_template(
         'todo.html',
         todo=todo,
@@ -47,29 +47,29 @@ def habits():
             print('POST')
             print(f'{date=}')
             print('datepicked SET')
-            habits = habit_db.get_habits_for_date(date)
+            habits = habits_db.get_habits_for_date(date)
             if not habits:
-                habits = habit_db.get_current_habits()
+                habits = habits_db.get_current_habits()
         else:
             print('POST')
             print(f'{date=}')
             print('datepicked Empty')
             form_habits = get_form_habits(request.values)
-            habits = habit_db.append_habit_categories(form_habits)
+            habits = habits_db.append_habit_categories(form_habits)
             print(habits)
-            habit_db.record_daily_habits(date, habits)
+            habits_db.record_daily_habits(date, habits)
     else:
         date = datetime.datetime.today().strftime("%Y-%m-%d")
-        habits = habit_db.get_habits_for_date(date)
+        habits = habits_db.get_habits_for_date(date)
         if not habits:
-            habits = habit_db.get_current_habits()
+            habits = habits_db.get_current_habits()
         print('GET')
         print(f'{date=}')
         print(habits)
     long_date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime('%A %B %d, %Y')
     habit_tasks = md_to_html('current_habits.md')
     categories = create_sorted_habit_category_dict(habits)
-    current_habits = habit_db.get_current_habits()
+    current_habits = habits_db.get_current_habits()
     current_categories = create_sorted_habit_category_dict(current_habits)
     return render_template(
         'habits.html',
@@ -86,8 +86,8 @@ def add_habit():
     habit = request.form.get('habit_name')
     category = request.form.get('habit_category')
     new_habit = {habit: {'checked': 0, 'category': category}}
-    habit_db.add_habit(new_habit)
-    habit_db.add_to_master_habit_list(new_habit)
+    habits_db.add_habit(new_habit)
+    habits_db.add_to_master_habit_list(new_habit)
     return redirect(url_for('tracks_bp.habits'))
 
 
@@ -96,7 +96,7 @@ def delete_habit():
     habit = request.form.get('habit_name')
     category = request.form.get('habit_category')
     new_habit = {habit: {'checked': 0, 'category': category}}
-    habit_db.delete_habit(new_habit)
+    habits_db.delete_habit(new_habit)
     return redirect(url_for('tracks_bp.habits'))
 
 
@@ -126,8 +126,8 @@ def reference():
 
 @tracks_bp.route('/countdowns/', methods=['GET', 'POST'])
 def countdowns():
-    countdowns = countdown_db.get_countdowns()
-    countdowns = countdown_db.remove_time_from_dates(countdowns)
+    countdowns = countdowns_db.get_countdowns()
+    countdowns = countdowns_db.remove_time_from_dates(countdowns)
     return render_template('countdowns.html', countdowns=countdowns)
 
 
@@ -136,9 +136,9 @@ def add_countdown():
     name = request.form.get('name')
     date = request.form.get('date')
     date = datetime.datetime.strptime(date, '%Y-%m-%d')
-    name_id = countdown_db.make_countdown_id_from_name(name)
+    name_id = countdowns_db.make_countdown_id_from_name(name)
     countdown = {'name': name, 'date': date, 'name_id': name_id}
-    countdown_db.add_countdown(countdown)
+    countdowns_db.add_countdown(countdown)
     return redirect(url_for('tracks_bp.countdowns'))
 
 
@@ -150,7 +150,7 @@ def delete_countdown():
     name_id = request.form.get('name_id')
     countdown = {'name': name, 'date': date, 'name_id': name_id}
     print(countdown)
-    countdown_db.delete_countdown(countdown)
+    countdowns_db.delete_countdown(countdown)
     return redirect(url_for('tracks_bp.countdowns'))
 
 
@@ -170,20 +170,20 @@ def manage_events():
             notes=request.form.get('notes'),
         )
         if add:
-            event_db.session.add(Event(**event))
+            events_db.session.add(Event(**event))
         elif update:
-            event_db.session.execute(
+            events_db.session.execute(
                 sqlalchemy.update(Event)
                 .where(Event.name == event.get('name'))
                 .values(**event)
             )
         elif delete:
-            event_db.session.execute(
+            events_db.session.execute(
                 sqlalchemy.delete(Event).where(Event.name == event.get('name'))
             )
-        event_db.session.commit()
+        events_db.session.commit()
     events = (
-        event_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        events_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
         .scalars()
         .all()
     )
