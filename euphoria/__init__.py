@@ -26,7 +26,7 @@ habits_db = HabitsDBManager()
 journal_db = JournalDBManager()
 countdowns_db = CountdownsDBManager()
 
-# Blueprints
+# Blueprints (cannot import at top due to circular imports)
 from euphoria.home.routes import home_bp
 from euphoria.cockpit.routes import cockpit_bp
 from euphoria.portfolio.routes import portfolio_bp
@@ -58,4 +58,4 @@ def create_app():
         apt_db.create_all()
         box_db.create_all()
 
-        return app
+    return app
