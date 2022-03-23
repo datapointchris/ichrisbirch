@@ -1,3 +1,28 @@
+
+
+
+
+
+## How it Works
+
+### Backups
+1. Install AWS-CLI
+2. `aws configure` - Use credentials for 
+MongDB Backup:
+https://www.cloudsavvyit.com/6059/how-to-set-up-automated-mongodb-backups-to-s3/
+
+Postgres Backup:
+
+
+
+
+
+
+
+
+
+======== NOT README STUFF ========
+
 # Use Python 3.10.1 everywhere
 
 # TODO
@@ -12,6 +37,7 @@
   - https://hackersandslackers.app/flask-login-user-authentication/
 
 - Create script to copy files in deploy to directories
+  - THIS should eventually be CI/CD -> Github Actions
   - deploy.sh
   - Use the examples from Hackers and Slackers
     - https://github.com/hackersandslackers/flask-session-tutorial
