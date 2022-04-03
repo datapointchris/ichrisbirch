@@ -23,8 +23,7 @@ class Task(db.Model):
     complete_date = db.Column(db.DateTime, index=False, unique=False, nullable=True)
 
     def __repr__(self):
-        return f'''
-            Task(name = {self.name}, category = {self.category},
+        return f'''Task(name = {self.name}, category = {self.category},
             subcategory1 = {self.subcategory1}, subcategory2 = {self.subcategory2},
             priority = {self.priority}, 
             add_date = {self.add_date}, complete_date = {self.complete_date}

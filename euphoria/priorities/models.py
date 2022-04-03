@@ -1,4 +1,5 @@
 from euphoria import priorities_db as db
+from datetime import datetime
 
 
 class Task(db.Model):
@@ -11,13 +12,16 @@ class Task(db.Model):
     subcategory1 = db.Column(db.String(64), index=False, unique=False, nullable=True)
     subcategory2 = db.Column(db.String(64), index=False, unique=False, nullable=True)
     priority = db.Column(db.Integer, index=False, unique=False, nullable=False)
-    add_date = db.Column(db.DateTime, index=False, unique=False, nullable=False)
-    complete_date = db.Column(db.DateTime, index=False, unique=False, nullable=True)
+    add_date = db.Column(
+        db.DateTime(timezone=True),
+        index=False,
+        unique=False,
+        nullable=False,
+        default=datetime.now(),
+    )
+    complete_date = db.Column(
+        db.DateTime(timezone=True), index=False, unique=False, nullable=True
+    )
 
     def __repr__(self):
-        return f'''
-            Task(name={self.name}, category={self.category},
-            subcategory1={self.subcategory1}, subcategory2={self.subcategory2},
-            add_date={self.add_date}, complete_date={self.complete_date}
-            '''
-
+        return f'Task(name = {self.name}, priority = {self.priority}, category = {self.category}, subcategory1 = {self.subcategory1}, subcategory2 = {self.subcategory2}, , add_date = {self.add_date}, complete_date = {self.complete_date})'
