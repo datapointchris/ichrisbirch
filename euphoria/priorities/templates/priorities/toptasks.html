@@ -1,0 +1,21 @@
+<html>
+
+<head>
+    <title>Priorities</title>
+</head>
+
+<body>
+    <h1> Top 5 Priorities for Today</h1>
+
+    <div id="top-5">
+        <ul>
+        {% for task in top_5_tasks %}
+            <li>{{ task.name }} --- Priority: {{ task.priority }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div id="add-task">
+        
+</body>
+
+</html>
