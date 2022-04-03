@@ -7,16 +7,6 @@ body {
   padding-top: 100px;
 }
 
-button.demo {
-  background-color: #1481b8;
-  border: 1px solid #0f618a;
-}
-
-button.signup {
-  background-color: #b81414;
-  border: 1px solid #8a0f0f;
-}
-
 a {
   color: white;
   text-decoration: none;
@@ -32,7 +22,7 @@ a:visited {
 }
 
 button {
-  margin: 0 50px;
+  margin: 25px 10px;
   width: 360px;
   height: 120px;
   border-radius: 40px;
@@ -46,30 +36,40 @@ button {
           animation: float 6s infinite ease-in-out alternate;
 }
 
+button.cockpit {
+  -webkit-animation-delay: 0.0s;
+          animation-delay: 0.0s;
+}
+
 button.portfolio {
-  -webkit-animation-delay: .5s;
-          animation-delay: .5s;
+  -webkit-animation-delay: 1s;
+          animation-delay: 1s;
 }
 
 button.apartments {
-  -webkit-animation-delay: 1.0s;
-          animation-delay: 1.0s;
+  -webkit-animation-delay: 2s;
+          animation-delay: 2s;
 }
 
 button.moving {
-  -webkit-animation-delay: 1.5s;
-          animation-delay: 1.5s;
+  -webkit-animation-delay: 3s;
+          animation-delay: 3s;
 }
 
 button.tracks {
-  -webkit-animation-delay: 2.0s;
-          animation-delay: 2.0s;
+  -webkit-animation-delay: 4s;
+          animation-delay: 4s;
+}
+
+button.priorities {
+  -webkit-animation-delay: 5s;
+          animation-delay: 5s;
 }
 
 @-webkit-keyframes float {
   100% {
-    -webkit-transform: translateY(800px) translateX(200px) rotate(2.05turn);
-            transform: translateY(800px) translateX(200px) rotate(2.05turn);
+    -webkit-transform: translateX(200px);
+            transform: translateX(200px);
     -webkit-box-shadow: 0 40px 10px -18px rgba(0, 0, 0, 0.2), 0 40px 16px -12px rgba(0, 0, 0, 0.2);
             box-shadow: 0 40px 10px -18px rgba(0, 0, 0, 0.2), 0 40px 16px -12px rgba(0, 0, 0, 0.2);
   }
@@ -77,8 +77,8 @@ button.tracks {
 
 @keyframes float {
   100% {
-    -webkit-transform: translateY(800px) translateX(200px) rotate(2.05turn);
-            transform: translateY(800px) translateX(200px) rotate(2.05turn);
+    -webkit-transform: translateX(200px);
+            transform: translateX(200px);
     -webkit-box-shadow: 0 40px 10px -18px rgba(0, 0, 0, 0.2), 0 40px 16px -12px rgba(0, 0, 0, 0.2);
             box-shadow: 0 40px 10px -18px rgba(0, 0, 0, 0.2), 0 40px 16px -12px rgba(0, 0, 0, 0.2);
   }

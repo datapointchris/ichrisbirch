@@ -7,16 +7,6 @@ body {
     padding-top: 100px;
 }
 
-button.demo {
-    background-color: hsl(200, 80%, 40%);
-    border          : 1px solid hsl(200, 80%, 30%);
-}
-
-button.signup {
-    background-color: hsl(0, 80%, 40%);
-    border          : 1px solid hsl(0, 80%, 30%);
-}
-
 a {
     color          : white;
     text-decoration: none;
@@ -32,7 +22,7 @@ a {
 }
 
 button {
-    margin          : 0 50px;
+    margin          : 25px 10px;
     width           : 360px;
     height          : 120px;
     border-radius   : 40px;
@@ -45,26 +35,34 @@ button {
     animation: float 6s infinite ease-in-out alternate;
 }
 
+button.cockpit {
+    animation-delay: 0.0s;
+}
+
 button.portfolio {
-    animation-delay: .5s;
+    animation-delay: 1s;
 }
 
 button.apartments {
-    animation-delay: 1.0s;
+    animation-delay: 2s;
 }
 
 button.moving {
-    animation-delay: 1.5s;
+    animation-delay: 3s;
 }
 
 button.tracks {
-    animation-delay: 2.0s;
+    animation-delay: 4s;
+}
+
+button.priorities {
+    animation-delay: 5s;
 }
 
 
 @keyframes float {
     100% {
-        transform: translateY(800px) translateX(200px) rotate(2.05turn);
+        transform:  translateX(200px);
         box-shadow: 0 40px 10px -18px hsla(0, 0%, 0%, .2),
             0 40px 16px -12px hsla(0, 0%, 0%, .2);
     }
