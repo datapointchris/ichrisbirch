@@ -1,10 +1,20 @@
 <html>
 
-<head>
-    <title>Priorities</title>
-</head>
-
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Priorities</title>
+        <link rel="stylesheet"
+            href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+    </head>
+<!-- 
+    NOTE:  How do I make all three of these be the same and only include the 
+    changing body portion?  Include something in the content block.
+    Have to research this for jinja templates
+-->
 <body>
+    {% include 'priorities-navigation.html' %}
     <h1> Top 5 Priorities for Today</h1>
 
     <div id="top-5">

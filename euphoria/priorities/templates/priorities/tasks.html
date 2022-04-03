@@ -11,6 +11,7 @@
 </head>
 
 <body>
+    {% include 'priorities-navigation.html' %}
     <div id="tasks">
         {% for task in tasks %}
         <h2>{{ task.name }}</h2>
@@ -18,7 +19,7 @@
         Add Date: {{ task.add_date }}<br />
         Complete Date: {{ task.complete_date }}<br />
         <br /><br />
-    {% endfor %}
+        {% endfor %}
     </div>
 </body>
 
