@@ -73,4 +73,9 @@ def delete_task():
 
 @priorities_bp.route('/tasks/')
 def all_tasks():
-    tasks = Task.query.all()
+    tasks = (
+        Task.query.filter(Task.complete_date.is_(None))
+        .order_by(Task.priority.asc(), Task.add_date.asc())
+        .all()
+    )
+    return render_template('all_tasks.html', tasks=tasks)
