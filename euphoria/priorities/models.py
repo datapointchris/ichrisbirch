@@ -10,6 +10,7 @@ class Task(db.Model):
     category = db.Column(db.String(64), index=False, unique=False, nullable=True)
     subcategory1 = db.Column(db.String(64), index=False, unique=False, nullable=True)
     subcategory2 = db.Column(db.String(64), index=False, unique=False, nullable=True)
+    priority = db.Column(db.Integer, index=False, unique=False, nullable=False)
     add_date = db.Column(db.DateTime, index=False, unique=False, nullable=False)
     complete_date = db.Column(db.DateTime, index=False, unique=False, nullable=True)
 
@@ -19,3 +20,4 @@ class Task(db.Model):
             subcategory1={self.subcategory1}, subcategory2={self.subcategory2},
             add_date={self.add_date}, complete_date={self.complete_date}
             '''
+

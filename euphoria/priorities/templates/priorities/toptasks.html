@@ -10,7 +10,7 @@
     <div id="top-5">
         <ul>
         {% for task in top_5_tasks %}
-            <li>{{ task.name }} --- Priority: {{ task.priority }}</li>
+            <li>{{ task.name }} --- Priority: {{ task.priority }} --- Add Date: {{ task.add_date }}</li>
         {% endfor %}
         </ul>
     </div>
