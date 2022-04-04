@@ -1,0 +1,9 @@
+{
+    "version": 3,
+    "mappings": "AAAA,AAAA,KAAK,CAAC;EACF,MAAM,EAAG,IAAI;EACb,OAAO,EAAE,IAAI;EACb,MAAM,EAAG,gBAAgB;CAO5B;;AAVD,AAKI,KALC,AAKA,UAAU,CAAC;EAER,KAAK,EAAE,OAAO;EACd,MAAM,EAAE,eAAe;CAC1B",
+    "sources": [
+        "priorities.scss"
+    ],
+    "names": [],
+    "file": "priorities.css"
+}

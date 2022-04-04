@@ -1,26 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Completed</title>
-    <link rel="stylesheet"
-        href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
-</head>
+{% block header %}
+<h1>{% block title %}Completed Tasks{% endblock %}</h1>
+{% endblock %}
 
-<body>
-    {% include 'priorities-navigation.html' %}
-    <div id="completed">
-        {% for task in completed %}
-        <h2>{{ task.name }}</h2>
-        <h3>Priority: {{ task.priority }}</h3>
+{% block content %}
+<div id="completed">
+    {% for task in completed %}
+    <div class="task completed">
+        <h1>{{ task.name }}</h1>
         Add Date: {{ task.add_date }}<br />
         Complete Date: {{ task.complete_date }}<br />
-        <br /><br />
-        {% endfor %}
+        Time to Complete: {{ task.time_to_complete }}
     </div>
-</body>
-
-</html>
+    {% endfor %}
+</div>
+{% endblock %}

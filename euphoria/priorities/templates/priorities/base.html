@@ -1,0 +1,43 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet"
+        href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+    <link rel="stylesheet"
+        href="{{ url_for('priorities_bp.static', filename='css/priorities.css') }}">
+</head>
+
+<body>
+    <div id="navigation">
+        <div id="priorities-navigation" class="navigation">
+            <span class="navigation-tab">
+                <a href="{{ url_for('priorities_bp.priority') }}">Priority
+                    Tasks</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('priorities_bp.tasks') }}">All Tasks</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('priorities_bp.completed') }}">Completed
+                    Tasks</a></span>
+        </div>
+    </div>
+    <div id="content">
+        <header>
+            {% block header %}{% endblock %}
+        </header>
+        {% for message in get_flashed_messages() %}
+        <div id="flash">{{ message }}</div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </div>
+    <div id="footer">
+        <div id="add-task-footer">
+            {% include 'addtask.html' %}
+        </div>
+    </div>
+</body>
+
+</html>

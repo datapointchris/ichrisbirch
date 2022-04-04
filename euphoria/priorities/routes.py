@@ -31,7 +31,7 @@ def add_fake_tasks(number):
 
 
 @priorities_bp.route('/', methods=['GET'])
-def priorities():
+def priority():
     # add_fake_tasks(10)
     top_5_tasks = (
         Task.query.filter(Task.complete_date.is_(None))
@@ -39,45 +39,31 @@ def priorities():
         .limit(5)
         .all()
     )
-    # print(top_5_tasks)
-
-    return render_template('priorities.html', top_5_tasks=top_5_tasks)
+    return render_template('priority.html', top_5_tasks=top_5_tasks)
 
 
 @priorities_bp.route('/add/', methods=['POST'])
 def add_task():
     db.session.add(Task(**request.form))
     db.session.commit()
-    return redirect(url_for('priorities_bp.priorities'))
+    return redirect(url_for('priorities_bp.priority'))
 
 
 # TODO: Make this do the completed task
 @priorities_bp.route('/complete/', methods=['POST'])
 def complete_task():
     task = Task.query.filter_by(id=request.form.get('id')).first()
-    db.session.execute(sqlalchemy.update(Task).where(Task.id == task.id).values(**task))
+    task.complete_date = datetime.now()
     db.session.commit()
-    return redirect(url_for('priorities_bp.priorities'))
-
-
-@priorities_bp.route('/update/', methods=['POST'])
-def update_task():
-    task = Task.query.filter_by(id=request.form.get('id')).first()
-    db.session.execute(sqlalchemy.update(Task).where(Task.id == task.id).values(**task))
-    db.session.commit()
-    return redirect(url_for('priorities_bp.priorities'))
+    return redirect(url_for('priorities_bp.priority'))
 
 
 @priorities_bp.route('/delete/', methods=['POST'])
 def delete_task():
-    print('DELETE DELETE')
-    print(request.form.get('id'))
     task = Task.query.filter_by(id=request.form.get('id')).first()
-    print('TASK')
-    print(task)
     db.session.execute(sqlalchemy.delete(Task).where(Task.id == task.id))
     db.session.commit()
-    return redirect(url_for('priorities_bp.priorities'))
+    return redirect(url_for('priorities_bp.priority'))
 
 
 @priorities_bp.route('/tasks/')
@@ -94,7 +80,7 @@ def tasks():
 def completed():
     completed = (
         Task.query.filter(Task.complete_date.is_not(None))
-        .order_by(Task.complete_date.asc())
+        .order_by(Task.complete_date.desc())
         .all()
     )
     return render_template('completed.html', completed=completed)

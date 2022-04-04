@@ -1,0 +1,11 @@
+.task {
+  margin: 50px;
+  padding: 50px;
+  border: 2px solid orange;
+}
+
+.task.completed {
+  color: #f0f0f0;
+  border: 2px solid green;
+}
+/*# sourceMappingURL=priorities.css.map */

@@ -1,0 +1,24 @@
+<div id="add-task">
+    <h3>Add New Task:</h3>
+        <form method="POST" action="{{ url_for('priorities_bp.add_task') }}">
+            <label for="name">Name:</label>
+            <input type="text" size="30" class="textbox box-3d" name="name" id="name">
+            <br /><br />
+            <label for="category">category:</label>
+            <input type="text" size="30" class="textbox box-3d" name="category"
+                id="category">
+            <br /><br />
+            <label for="subcategory1">subcategory1:</label>
+            <input type="text" size="30" class="textbox box-3d" name="subcategory1"
+                id="subcategory1">
+            <br /><br />
+            <label for="subcategory2">subcategory2:</label>
+            <input type="text" size="30" class="textbox box-3d" name="subcategory2"
+                id="subcategory2">
+            <br /><br />
+            <label for="priority">priority:</label>
+            <input type="number" class="textbox box-3d" name="priority" id="priority">
+            <br /><br />
+            <input type="submit" class="button box-3d" value="Add New Task">
+        </form>
+</div>
