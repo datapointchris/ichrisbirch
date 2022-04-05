@@ -5,13 +5,24 @@
 {% endblock %}
 
 {% block content %}
-<div id="completed">
+<div id="completed-filters">
+    <h3>Filters</h3>
+    <form method="POST" action="{{ url_for('priorities_bp.completed') }}">
+        <input type="hidden" name="id" id="id" value="">
+        <input type="submit" value="Delete Task" disabled>
+    </form>
+    Filter: Year: {dropdown} | Month: {dropdown} | Last Week | This Week
+</div>
+<div id="completed-averages">
+    <h2> Average Completion Time: {{ average_completion }}</h2>
+</div>
+<div id="completed-tasks">
     {% for task in completed %}
     <div class="task completed">
         <h1>{{ task.name }}</h1>
         Add Date: {{ task.add_date }}<br />
         Complete Date: {{ task.complete_date }}<br />
-        Time to Complete: {{ task.time_to_complete }}
+        Time to Complete: {{ task.weeks_to_complete }}
     </div>
     {% endfor %}
 </div>
