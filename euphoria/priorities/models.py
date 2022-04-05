@@ -34,7 +34,9 @@ class Task(db.Model):
 
     @property
     def weeks_to_complete(self):
-        total_days = self.days_to_complete
-        weeks, days = divmod(total_days, 7)
-        return f'{weeks} weeks, {days} days'
+        if self.complete_date:
+            total_days = self.days_to_complete
+            weeks, days = divmod(total_days, 7)
+            return f'{weeks} weeks, {days} days'
+        return None
 

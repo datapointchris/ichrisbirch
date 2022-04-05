@@ -1,7 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
+from sqlalchemy import select
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///task.db'
@@ -33,21 +34,34 @@ class Task(db.Model):
 db.init_app(app)
 db.create_all()
 
-top_5_tasks = Task.query.order_by(Task.priority.asc(), Task.add_date.asc()).limit(5).all()
-print(top_5_tasks)
+
+def add_fake_tasks(number):
+    completed = (datetime.utcnow(), None, None, None)
+    for _ in range(number):
+        task = {
+            'name': f'task {random.random()}',
+            'category': 'financial',
+            'subcategory1': None,
+            'subcategory2': None,
+            'priority': random.randint(0, 100),
+            'add_date': datetime.utcnow() - timedelta(days=random.randint(0, 100)),
+            'complete_date': random.choice(completed),
+        }
+        db.session.add(Task(**task))
+    db.session.commit()
 
 
-completed = (datetime.utcnow(), None, None, None)
-for i in range(30):
-    t = {
-        'name': f'task {i}',
-        'category': 'financial',
-        'subcategory1': None,
-        'subcategory2': None,
-        'priority': random.randint(0, 100),
-        'add_date': datetime.utcnow(),
-        'complete_date': random.choice(completed),
-    }
-    db.session.add(Task(**t))
+add_fake_tasks(100)
 
-db.session.commit()
+# top_5_tasks = (
+#         Task.query.filter(Task.complete_date.is_(None))
+#         .order_by(Task.priority.asc(), Task.add_date.asc())
+#         .limit(5)
+#         .all()
+#     )
+
+
+# print(top_5_tasks, end='\n\n')
+
+# completed_today = Task.query.filter(Task.complete_date.)
+

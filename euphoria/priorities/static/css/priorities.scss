@@ -1,11 +1,154 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+$max-tab-count           : 6;
+$tab-wrap-border-radius  : 20px;
+$dark-background         :#222;
+$tab-color               : #444;
+$tab-highlight-color     : #888;
+$all-text-color          : #eee;
+$button-box-border-radius: 6px;
+$navigation-height       : 40px;
+
+@font-face {
+    font-family: Menlo;
+    src        : url('../Menlo.ttc');
+}
+
+
+//////////////////////////////
+/*     GENERAL STYLING     */
+////////////////////////////
+
+body {
+    background-color: black;
+    font-family     : Menlo;
+    color           : $all-text-color;
+    min-height      : 100vh;
+}
+
+#priorities-navigation {
+    display                   : inline-flex;
+    width                     : 90%;
+    height                    : 40px;
+    margin-bottom             : 0;
+    margin-top                : 0px;
+    margin-left               : auto;
+    margin-right              : auto;
+    padding-top               : 15px;
+    padding-bottom            : 5px;
+    padding-left              : 50px;
+    padding-right             : 50px;
+    background-color          : $tab-color;
+    border-bottom-right-radius: 5em;
+    border-bottom-left-radius : 5em;
+    font-size                 : 20px;
+    font-weight               : bold;
+    text-decoration           : none;
+    color                     : $all-text-color;
+    box-shadow                :
+        0 5px 10px #646464,
+        0 -2px 2px #666,
+        rgba(0, 0, 0, 0.07) 0px 4px 4px,
+        inset 0 -10px 10px rgba(0, 0, 0, 0.5),
+        rgba(0, 0, 0, 0.07) 0px 16px 16px;
+
+    .navigation-tab {
+        display        : inline-block;
+        text-align     : center;
+        width          : 100%;
+
+        a {
+            color: $all-text-color;
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+}
+
+#content-layout-grid {
+    display              : grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap             : 40px;
+    padding              : 10px;
+    align-items: flex-start;
+}
+
+.task-list {
+    margin: auto;
+    align-items: flex-start;
+}
+
+.task-header {
+    text-align: center;
+}
+
 .task {
-    margin : 50px;
-    padding: 50px;
-    border : 2px solid orange;
+    margin       : 20px;
+    padding      : 10px;
+    border       : 2px solid gray;
+    border-radius: 30px;
 
     &.completed {
-        // color: $all-text-color;
-        color: #f0f0f0;
-        border: 2px solid green;
+        border-color: green;
+    }
+}
+
+///// Submit, Delete, Add Buttons /////
+
+.button {
+    border-radius: $button-box-border-radius;
+    font-size    : large;
+    padding      : 10px 25px;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.box-3d {
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px $tab-highlight-color,
+        inset -5px -5px 4px -2px $tab-highlight-color;
+}
+
+.textbox {
+    border-radius: $button-box-border-radius;
+    font-size    : large;
+    padding      : 10px 25px;
+}
+
+
+///// ADD TASK FOOTER /////
+
+#footer {
+    position: fixed;
+    bottom  : 0;
+    left    : 0;
+    width   : 100%;
+}
+
+#add-task {
+    display: inline-flex;
+    width: 100%;
+    margin : auto;
+    padding: 25px;
+    background-color: $dark-background;
+    border-top: 3px solid gray;
+
+    +label {
+        display        : inline-block;
+        text-align     : center;
+        width          : 100%;
+        margin-left: 20px;
+    }
+    h3 {
+        padding-left: 10px;
+        padding-right: 50px;
+    }
+    .button {
+        margin-left: 50px;
     }
 }

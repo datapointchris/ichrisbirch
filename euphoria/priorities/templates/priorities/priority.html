@@ -1,22 +1,36 @@
 {% extends 'base.html' %}
 
-{% block header %}
-<h1>{% block title %}Priority Tasks{% endblock %}</h1>
-{% endblock %}
+{% block title %}Priority Tasks{% endblock %}
 
 {% block content %}
-<div id="priorities">
-    {% for task in top_5_tasks %}
-    <div class="task">
-        <h1>{{ task.name }}</h1>
-        <h2>Priority: {{ task.priority }}</h2>
-        <h3>Category: {{ task.category }}</h3>
-        Add Date: {{ task.add_date }}<br />
-        <form method="POST" action="{{ url_for('priorities_bp.complete_task') }}">
-            <input type="hidden" name="id" id="id" value="{{ task.id }}">
-            <input type="submit" value="Complete Task">
-        </form>
+<div id="content-layout-grid">
+    <div id="left-column" class="task-list">
+        <h2 class="task-header">Priority Tasks</h2>
+        {% for task in top_5_tasks %}
+        <div class="task">
+            <h3>{{ task.name }}</h3>
+            Priority: {{ task.priority }}<br />
+            Category: {{ task.category }}<br />
+            Add Date: {{ task.add_date }}
+            <form method="POST" action="{{ url_for('priorities_bp.complete_task') }}">
+                <input type="hidden" name="id" id="id" value="{{ task.id }}">
+                <input type="submit" class="button box-3d" value="Complete Task">
+            </form>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    <div id="right-column" class="task-list">
+        <h2 class="task-header">Completed Today</h2>
+        {% for task in completed_today %}
+        <div class="task completed">
+            <h3>{{ task.name }}</h3>
+            Category: {{ task.category }}<br />
+            Add Date: {{ task.add_date }}<br />
+            Complete Date: {{ task.complete_date }}<br />
+            Time to Complete: {{ task.weeks_to_complete }}
+        </div>
+        {% endfor %}
+    </div>
+
 </div>
 {% endblock %}
