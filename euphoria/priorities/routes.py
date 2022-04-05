@@ -18,18 +18,18 @@ priorities_bp = Blueprint(
 
 @priorities_bp.route('/', methods=['GET'])
 def priority():
-    top_5_tasks = (
-        Task.query.filter(Task.complete_date.is_(None))
-        .order_by(Task.priority.asc(), Task.add_date.asc())
-        .limit(5)
-        .all()
-    )
     today = datetime.combine(date.today(), time())
     tomorrow = today + timedelta(days=1)
     completed_today = db.session.execute(
         select(Task).where(Task.complete_date > today, Task.complete_date < tomorrow)
-    ).scalars()
-    # print(completed_today)
+    ).scalars().all()
+    top_5_tasks = (
+        Task.query.filter(Task.complete_date.is_(None))
+        .order_by(Task.priority.asc(), Task.add_date.asc())
+        .limit(5 - len(completed_today))
+        .all()
+    )
+
     return render_template(
         'priority.html', top_5_tasks=top_5_tasks, completed_today=completed_today
     )
