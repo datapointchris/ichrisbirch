@@ -20,13 +20,21 @@ priorities_bp = Blueprint(
 def priority():
     today = datetime.combine(date.today(), time())
     tomorrow = today + timedelta(days=1)
-    completed_today = db.session.execute(
-        select(Task).where(Task.complete_date > today, Task.complete_date < tomorrow)
-    ).scalars().all()
+    completed_today = (
+        db.session.execute(
+            select(Task).where(Task.complete_date > today, Task.complete_date < tomorrow)
+        )
+        .scalars()
+        .all()
+    )
     top_5_tasks = (
-        Task.query.filter(Task.complete_date.is_(None))
-        .order_by(Task.priority.asc(), Task.add_date.asc())
-        .limit(5 - len(completed_today))
+        db.session.execute(
+            select(Task)
+            .where(Task.complete_date.is_(None))
+            .order_by(Task.priority.asc(), Task.add_date.asc())
+            .limit(5 - len(completed_today))
+        )
+        .scalars()
         .all()
     )
 
