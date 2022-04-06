@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, date, time
+import calendar
 from flask import Blueprint, render_template, request, redirect, url_for
 from euphoria import priorities_db as db
 import random
@@ -15,20 +16,31 @@ priorities_bp = Blueprint(
     static_folder='static',
 )
 
-TODAY = datetime.combine(date.today(), time())
-TOMORROW = TODAY + timedelta(days=1)
-
+today = datetime.combine(date.today(), time())
+tomorrow = today + timedelta(days=1)
+yesterday = today - timedelta(days=1)
+previous_7 = today - timedelta(days=7)
+previous_30 = today - timedelta(days=30)
+week_start = datetime.combine(
+    date.fromisocalendar(today.year, today.isocalendar().week, 1), time()
+)
+week_end = week_start + timedelta(days=7)
+_month_days = calendar.monthrange(today.year, today.month)[1]
+month_start = datetime(today.year, today.month, 1)
+month_end = datetime(today.year, today.month, _month_days)
+year_start = datetime(today.year, 1, 1)
+year_end = datetime(today.year, 12, 31)
 
 @priorities_bp.route('/', methods=['GET'])
 def priority():
     completed_today = (
         db.session.execute(
-            select(Task).where(Task.complete_date > TODAY, Task.complete_date < TOMORROW)
+            select(Task).where(Task.complete_date > today, Task.complete_date < tomorrow)
         )
         .scalars()
         .all()
     )
-    top_5_tasks = (
+    top_tasks = (
         db.session.execute(
             select(Task)
             .where(Task.complete_date.is_(None))
@@ -38,9 +50,8 @@ def priority():
         .scalars()
         .all()
     )
-
     return render_template(
-        'priority.html', top_5_tasks=top_5_tasks, completed_today=completed_today
+        'priority.html', top_tasks=top_tasks, completed_today=completed_today
     )
 
 
@@ -110,14 +121,27 @@ def completed():
     # radio buttons seems to be the best option here
     # so that each can have the same name and different values
     # today, yesterday, this week, 7 days, this month, 30 days, this year, 365 days, all
-    if request.method == 'POST':
-        selected_filter = request.form.get('filter')
     filters = {
-        'no_filter': Task.complete_date.is_not(None),
+        'all': (Task.complete_date.is_not(None)),
+        'today': (Task.complete_date > today, Task.complete_date < tomorrow),
+        'yesterday': (Task.complete_date > yesterday, Task.complete_date < today),
+        'this_week': (Task.complete_date > week_start, Task.complete_date < week_end),
+        'last_7': (Task.complete_date > previous_7, Task.complete_date < today),
+        'this_month': (Task.complete_date > month_start, Task.complete_date < month_end),
+        'last_30': (Task.complete_date > previous_30, Task.complete_date < today),
+        'this_year': (Task.complete_date > year_start, Task.complete_date < year_end),
     }
+    if request.method == 'POST':
+        selected_filter = filters[request.form.get('filter')]
+    else:
+        selected_filter = filters['all']
     completed = (
-        Task.query.filter(Task.complete_date.is_not(None))
-        .order_by(Task.complete_date.desc())
+        db.session.execute(
+            select(Task)
+            .where(selected_filter)
+            .order_by(Task.complete_date.desc())
+        )
+        .scalars()
         .all()
     )
     average_completion = calculate_average_completion_time(completed)

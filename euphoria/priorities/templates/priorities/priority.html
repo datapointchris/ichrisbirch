@@ -6,7 +6,7 @@
 <div id="content-layout-grid">
     <div id="left-column" class="task-list">
         <h2 class="task-header">Priority Tasks</h2>
-        {% for task in top_5_tasks %}
+        {% for task in top_tasks %}
         <div class="task">
             <h3>{{ task.name }}</h3>
             Priority: {{ task.priority }}<br />
