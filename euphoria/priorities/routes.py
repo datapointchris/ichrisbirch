@@ -31,6 +31,7 @@ month_end = datetime(today.year, today.month, _month_days)
 year_start = datetime(today.year, 1, 1)
 year_end = datetime(today.year, 12, 31)
 
+
 @priorities_bp.route('/', methods=['GET'])
 def priority():
     completed_today = (
@@ -115,14 +116,10 @@ def tasks():
     return render_template('tasks.html', tasks=tasks)
 
 
-@priorities_bp.route('/completed/')
+@priorities_bp.route('/completed/', methods=['GET', 'POST'])
 def completed():
-    # TODO: FILTERS this with filters for display
-    # radio buttons seems to be the best option here
-    # so that each can have the same name and different values
-    # today, yesterday, this week, 7 days, this month, 30 days, this year, 365 days, all
     filters = {
-        'all': (Task.complete_date.is_not(None)),
+        'all': (Task.complete_date.is_not(None),),
         'today': (Task.complete_date > today, Task.complete_date < tomorrow),
         'yesterday': (Task.complete_date > yesterday, Task.complete_date < today),
         'this_week': (Task.complete_date > week_start, Task.complete_date < week_end),
@@ -132,19 +129,22 @@ def completed():
         'this_year': (Task.complete_date > year_start, Task.complete_date < year_end),
     }
     if request.method == 'POST':
-        selected_filter = filters[request.form.get('filter')]
+        selected_filter = request.form.get('filter')
     else:
-        selected_filter = filters['all']
+        selected_filter = 'all'
+    query_filter = filters.get(selected_filter, 'all')
     completed = (
         db.session.execute(
-            select(Task)
-            .where(selected_filter)
-            .order_by(Task.complete_date.desc())
+            select(Task).where(*query_filter).order_by(Task.complete_date.desc())
         )
         .scalars()
         .all()
     )
     average_completion = calculate_average_completion_time(completed)
     return render_template(
-        'completed.html', completed=completed, average_completion=average_completion
+        'completed.html',
+        completed=completed,
+        average_completion=average_completion,
+        filters=filters,
+        selected_filter=selected_filter,
     )
