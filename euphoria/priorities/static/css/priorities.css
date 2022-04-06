@@ -64,10 +64,8 @@ body {
 }
 
 .task-list {
-  margin: auto;
-  -webkit-box-align: start;
-      -ms-flex-align: start;
-          align-items: flex-start;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .task-header {

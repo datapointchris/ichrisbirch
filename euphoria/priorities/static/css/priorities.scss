@@ -76,8 +76,9 @@ body {
 }
 
 .task-list {
-    margin: auto;
-    align-items: flex-start;
+    // margin-auto will vertical center!
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .task-header {

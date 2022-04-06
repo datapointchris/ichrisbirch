@@ -15,14 +15,15 @@ priorities_bp = Blueprint(
     static_folder='static',
 )
 
+TODAY = datetime.combine(date.today(), time())
+TOMORROW = TODAY + timedelta(days=1)
+
 
 @priorities_bp.route('/', methods=['GET'])
 def priority():
-    today = datetime.combine(date.today(), time())
-    tomorrow = today + timedelta(days=1)
     completed_today = (
         db.session.execute(
-            select(Task).where(Task.complete_date > today, Task.complete_date < tomorrow)
+            select(Task).where(Task.complete_date > TODAY, Task.complete_date < TOMORROW)
         )
         .scalars()
         .all()
@@ -105,7 +106,10 @@ def tasks():
 
 @priorities_bp.route('/completed/')
 def completed():
-    # TODO: Finish this with filters for display
+    # TODO: FILTERS this with filters for display
+    # radio buttons seems to be the best option here
+    # so that each can have the same name and different values
+    # today, yesterday, this week, 7 days, this month, 30 days, this year, 365 days, all
     if request.method == 'POST':
         selected_filter = request.form.get('filter')
     filters = {
