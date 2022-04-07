@@ -121,12 +121,6 @@ def tasks():
 
 @priorities_bp.route('/completed/', methods=['GET', 'POST'])
 def completed():
-    # TODO: build some simple graphs in this page, on the right hand side.
-    # Title goes in center of page
-    # filters should be at the top on the right, graph below
-    # graph should have a line at 5 per day, with the graph being divided
-    # by the number of days in the filter
-    # average completion time should be under the filters
     filters = {
         'all': (Task.complete_date.is_not(None),),
         'today': (Task.complete_date > today, Task.complete_date < tomorrow),
@@ -154,14 +148,12 @@ def completed():
     # Graph
     fig = Figure()
     ax = fig.subplots()
-    count = Counter(task.complete_date.day for task in completed)
+    count = Counter(task.complete_date for task in completed)
     x = count.keys()
     y = count.values()
     ax.bar(x, y)
-    # Save it to a temporary buffer.
     buffer = BytesIO()
     fig.savefig(buffer, format="png")
-    # Embed the result in the html output.
     image_data = base64.b64encode(buffer.getbuffer()).decode("ascii")
 
     return render_template(
@@ -170,23 +162,5 @@ def completed():
         average_completion=average_completion,
         filters=filters,
         selected_filter=selected_filter,
-        image_data=image_data
+        image_data=image_data,
     )
-
-
-
-
-
-@priorities_bp.route('/image/', methods=['GET', 'POST'])
-def image():
-    completed = (
-        db.session.execute(
-            select(Task)
-            .where(Task.complete_date > month_start, Task.complete_date < month_end)
-            .order_by(Task.priority.asc(), Task.add_date.asc())
-        )
-        .scalars()
-        .all()
-    )
-
-    return f"<img src='data:image/png;base64,{data}'/>"
