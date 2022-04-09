@@ -221,8 +221,8 @@ def completed():
     x_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
     fig = Figure(figsize=(16, 6))
     ax = fig.subplots()
-    ax.set_xticklabels(labels=x_labels)
     ax.bar(x, y)
+    ax.set_xticklabels(labels=x_labels)
     buffer = BytesIO()
     fig.savefig(buffer, format="png")
     image_data = base64.b64encode(buffer.getbuffer()).decode("ascii")
