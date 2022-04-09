@@ -1,8 +1,8 @@
-import datetime
+from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for
 import sqlalchemy
-from euphoria import habits_db, journal_db, countdowns_db, events_db
+from euphoria import habits_db, journal_db, countdowns_db, db
 from euphoria.tracks.helpers import (
     md_to_html,
     get_form_habits,
@@ -22,7 +22,7 @@ def todo():
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
     events = (
-        events_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
         .scalars()
         .all()
     )
@@ -53,12 +53,12 @@ def habits():
             print(habits)
             habits_db.record_daily_habits(date, habits)
     else:
-        date = datetime.datetime.today().strftime("%Y-%m-%d")
+        date = datetime.today().strftime("%Y-%m-%d")
         habits = habits_db.get_habits_for_date(date)
         if not habits:
             habits = habits_db.get_current_habits()
 
-    long_date = datetime.datetime.strptime(date, "%Y-%m-%d").strftime('%A %B %d, %Y')
+    long_date = datetime.strptime(date, "%Y-%m-%d").strftime('%A %B %d, %Y')
     habit_tasks = md_to_html('current_habits.md')
     categories = create_sorted_habit_category_dict(habits)
     current_habits = habits_db.get_current_habits()
@@ -127,7 +127,7 @@ def countdowns():
 def add_countdown():
     name = request.form.get('name')
     date = request.form.get('date')
-    date = datetime.datetime.strptime(date, '%Y-%m-%d')
+    date = datetime.strptime(date, '%Y-%m-%d')
     name_id = countdowns_db.make_countdown_id_from_name(name)
     countdown = {'name': name, 'date': date, 'name_id': name_id}
     countdowns_db.add_countdown(countdown)
@@ -138,7 +138,7 @@ def add_countdown():
 def delete_countdown():
     name = request.form.get('name')
     date = request.form.get('date')
-    date = datetime.datetime.strptime(date, '%B %d %Y')
+    date = datetime.strptime(date, '%B %d %Y')
     name_id = request.form.get('name_id')
     countdown = {'name': name, 'date': date, 'name_id': name_id}
     print(countdown)
@@ -154,7 +154,7 @@ def manage_events():
         delete = request.form.get('delete')
         event = dict(
             name=request.form.get('name'),
-            date=datetime.datetime.strptime(request.form.get('date'), '%Y-%m-%d'),
+            date=datetime.strptime(request.form.get('date'), '%Y-%m-%d'),
             venue=request.form.get('venue'),
             url=request.form.get('url'),
             cost=request.form.get('cost'),
@@ -162,20 +162,20 @@ def manage_events():
             notes=request.form.get('notes'),
         )
         if add:
-            events_db.session.add(Event(**event))
+            db.session.add(Event(**event))
         elif update:
-            events_db.session.execute(
+            db.session.execute(
                 sqlalchemy.update(Event)
                 .where(Event.name == event.get('name'))
                 .values(**event)
             )
         elif delete:
-            events_db.session.execute(
+            db.session.execute(
                 sqlalchemy.delete(Event).where(Event.name == event.get('name'))
             )
-        events_db.session.commit()
+        db.session.commit()
     events = (
-        events_db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
         .scalars()
         .all()
     )

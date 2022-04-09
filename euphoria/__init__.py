@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.schema import CreateSchema
 
 from euphoria.database_managers.apartments import ApartmentsDBManager
 from euphoria.database_managers.moving import BoxDBManager
@@ -10,15 +11,16 @@ from euphoria.database_managers.tracks import (
     CountdownsDBManager,
 )
 
-
-import dotenv
+# TODO: Does this need to be imported here?  I don't believe so
+# import dotenv
 
 # this should load the FLASK_ENV variable and set the environment
-dotenv.load_dotenv()
+# dotenv.load_dotenv()
 
 # Postgres
-priorities_db = SQLAlchemy()
-events_db = SQLAlchemy()
+# TODO: Convert Apartments DBManager
+# TODO: Convert BoxDBManager
+db = SQLAlchemy()
 apt_db = ApartmentsDBManager()
 box_db = BoxDBManager()
 
@@ -27,7 +29,7 @@ habits_db = HabitsDBManager()
 journal_db = JournalDBManager()
 countdowns_db = CountdownsDBManager()
 
-# Blueprints (cannot import at top due to circular imports)
+# Blueprints (cannot import at top due to circular imports of db)
 from euphoria.home.routes import home_bp
 from euphoria.cockpit.routes import cockpit_bp
 from euphoria.portfolio.routes import portfolio_bp
@@ -43,8 +45,7 @@ def create_app():
 
     apt_db.init_app(app)
     box_db.init_app(app)
-    events_db.init_app(app)
-    priorities_db.init_app(app)
+    db.init_app(app)
     habits_db.init_app(app, db='tracks', collection='habits')
     journal_db.init_app(app, db='tracks', collection='journal')
     countdowns_db.init_app(app, db='tracks', collection='countdowns')
@@ -58,8 +59,12 @@ def create_app():
         app.register_blueprint(tracks_bp, url_prefix='/tracks')
         app.register_blueprint(priorities_bp, url_prefix='/priorities')
 
-        priorities_db.create_all()
-        events_db.create_all()
+        schemas = ['tracks', 'priorities']
+        for schema in schemas:
+            if not db.engine.dialect.has_schema(db.engine, schema):
+                db.session.execute(CreateSchema(schema))
+                db.session.commit()
+        db.create_all()
         apt_db.create_all()
         box_db.create_all()
 

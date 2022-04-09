@@ -1,9 +1,11 @@
-from euphoria import events_db as db
+from euphoria import db
 
 
 class Event(db.Model):
     """Data Model for Events Happening"""
-    __tablename__ = 'tracks.events'
+
+    __table_args__ = {'schema': 'tracks'}
+    __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=False, unique=False, nullable=False)
     date = db.Column(db.DateTime, index=False, unique=False, nullable=False)
@@ -14,4 +16,4 @@ class Event(db.Model):
     notes = db.Column(db.Text, index=False, unique=False, nullable=True)
 
     def __repr__(self):
-        return f'Event(name={self.name}, date={self.date}, url={self.url}, cost={self.cost}, attending={self.attending}, notes={self.notes}'
+        return f'Event(name={self.name}, date={self.date}, url={self.url}, venue={self.venue}, cost={self.cost}, attending={self.attending}, notes={self.notes}'

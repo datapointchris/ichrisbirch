@@ -1,10 +1,11 @@
-from euphoria import priorities_db as db
+from euphoria import db
 from datetime import datetime
 
 
 class Task(db.Model):
-    """Data Model for Events Happening"""
+    """Data Model for Priority Tasks"""
 
+    __table_args__ = {'schema': 'priorities'}
     __tablename__ = 'tasks'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=False, unique=False, nullable=False)
@@ -39,4 +40,3 @@ class Task(db.Model):
             weeks, days = divmod(total_days, 7)
             return f'{weeks} weeks, {days} days'
         return None
-
