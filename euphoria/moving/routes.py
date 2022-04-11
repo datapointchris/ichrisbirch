@@ -7,6 +7,8 @@ moving_bp = Blueprint(
 
 
 def convert_box_id_to_name(results, mapping):
+    # TODO: Confusing what this is converting
+    # Maybe this is something that a foreign key is for?  ID -> name
     for result in results:
         id = result.get('box_id')
         box = mapping.get(id)

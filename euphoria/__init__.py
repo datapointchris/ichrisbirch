@@ -11,11 +11,6 @@ from euphoria.database_managers.tracks import (
     CountdownsDBManager,
 )
 
-# TODO: Does this need to be imported here?  I don't believe so
-# import dotenv
-
-# this should load the FLASK_ENV variable and set the environment
-# dotenv.load_dotenv()
 
 # Postgres
 # TODO: Convert Apartments DBManager
