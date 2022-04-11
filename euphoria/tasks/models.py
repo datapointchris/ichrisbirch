@@ -18,7 +18,7 @@ class Task(db.Model):
         index=False,
         unique=False,
         nullable=False,
-        default=datetime.now(),
+        default=datetime.now,
     )
     complete_date = db.Column(
         db.DateTime(), index=False, unique=False, nullable=True

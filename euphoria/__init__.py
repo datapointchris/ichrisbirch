@@ -54,7 +54,7 @@ def create_app():
         app.register_blueprint(tracks_bp, url_prefix='/tracks')
         app.register_blueprint(tasks_bp, url_prefix='/tasks')
 
-        schemas = ['tracks', 'tasks']
+        schemas = ['tracks', 'tasks', 'moving', 'apartments', 'porfolio']
         for schema in schemas:
             if not db.engine.dialect.has_schema(db.engine, schema):
                 db.session.execute(CreateSchema(schema))

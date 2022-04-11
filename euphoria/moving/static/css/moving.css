@@ -7,9 +7,10 @@ body {
 }
 
 /*     NAVIGATION     */
-#navtable {
-  display: table;
-  table-layout: fixed;
+#moving-navigation {
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
   width: 90%;
   height: 40px;
   margin-bottom: 30px;
@@ -29,19 +30,33 @@ body {
           box-shadow: 0 5px 10px #646464, 0 -2px 2px #666, rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
 }
 
-#navtable .navtab {
-  display: table-cell;
+#moving-navigation .navigation-tab {
+  display: inline-block;
   text-align: center;
   font-size: x-large;
-  width: 50%;
+  width: 100%;
 }
 
-#navtable .navtab a {
+#moving-navigation .navigation-tab a {
   color: #eee;
 }
 
-#navtable .navtab a:hover {
+#moving-navigation .navigation-tab a:hover {
   text-decoration: none;
+}
+
+#content-layout-grid {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
+  grid-gap: 40px;
+  padding: 10px;
+  -webkit-box-align: start;
+      -ms-flex-align: start;
+          align-items: flex-start;
+  overflow: auto;
+  margin-bottom: 200px;
 }
 
 #left-column {
@@ -178,4 +193,4 @@ body {
   border-bottom: 1px dotted orange;
   border-bottom: 1px dotted orange;
 }
-/*# sourceMappingURL=styling.css.map */
+/*# sourceMappingURL=moving.css.map */

@@ -11,9 +11,8 @@ body {
 /*     NAVIGATION     */
 ///////////////////////
 
-#navtable {
-    display                   : table;
-    table-layout              : fixed;
+#moving-navigation {
+    display                   : inline-flex;
     width                     : 90%;
     height                    : 40px;
     margin-bottom             : 30px;
@@ -36,11 +35,11 @@ body {
         inset 0 -10px 10px rgba(0, 0, 0, 0.5),
         rgba(0, 0, 0, 0.07) 0px 16px 16px;
 
-    .navtab {
-        display   : table-cell;
+    .navigation-tab {
+        display   : inline-block;
         text-align: center;
         font-size : x-large;
-        width     : 50%;
+        width     : 100%;
 
         a {
             color: #eee;
@@ -52,6 +51,16 @@ body {
     }
 }
 
+
+#content-layout-grid {
+    display              : grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap             : 40px;
+    padding              : 10px;
+    align-items          : flex-start;
+    overflow             : auto;
+    margin-bottom        : 200px;
+}
 
 
 #left-column {
