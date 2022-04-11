@@ -8,7 +8,7 @@
 <div id="content-layout-grid">
     <div id="left-column" class="task-list">
         <div id="completed-tasks">
-            {% for task in completed %}
+            {% for task in completed_tasks %}
             <div class="task completed">
                 <h1>{{ task.name }}</h1>
                 Add Date: {{ task.add_date }}<br />
@@ -20,7 +20,7 @@
     </div>
     <div id="right-column" class="task-list">
         <div id="completed-filters">
-            <form method="POST" action="{{ url_for('priorities_bp.completed') }}">
+            <form method="POST" action="{{ url_for('tasks_bp.completed') }}">
                 <div class="filter-buttons">
                     {% for filter in filters %}
                     {% if filter == selected_filter %}

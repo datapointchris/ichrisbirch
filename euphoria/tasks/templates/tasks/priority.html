@@ -12,7 +12,7 @@
             Priority: {{ task.priority }}<br />
             Category: {{ task.category }}<br />
             Add Date: {{ task.add_date }}
-            <form method="POST" action="{{ url_for('priorities_bp.complete_task') }}">
+            <form method="POST" action="{{ url_for('tasks_bp.complete_task') }}">
                 <input type="hidden" name="id" id="id" value="{{ task.id }}">
                 <input type="submit" class="button box-3d" value="Complete Task">
             </form>

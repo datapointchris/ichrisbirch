@@ -5,7 +5,7 @@ from datetime import datetime
 class Task(db.Model):
     """Data Model for Priority Tasks"""
 
-    __table_args__ = {'schema': 'priorities'}
+    __table_args__ = {'schema': 'tasks'}
     __tablename__ = 'tasks'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=False, unique=False, nullable=False)
@@ -14,14 +14,14 @@ class Task(db.Model):
     subcategory2 = db.Column(db.String(64), index=False, unique=False, nullable=True)
     priority = db.Column(db.Integer, index=False, unique=False, nullable=False)
     add_date = db.Column(
-        db.DateTime(timezone=True),
+        db.DateTime(),
         index=False,
         unique=False,
         nullable=False,
         default=datetime.now(),
     )
     complete_date = db.Column(
-        db.DateTime(timezone=True), index=False, unique=False, nullable=True
+        db.DateTime(), index=False, unique=False, nullable=True
     )
 
     def __repr__(self):

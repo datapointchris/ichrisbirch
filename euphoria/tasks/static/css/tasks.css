@@ -12,7 +12,7 @@ body {
   min-height: 100vh;
 }
 
-#priorities-navigation {
+#tasks-navigation {
   display: -webkit-inline-box;
   display: -ms-inline-flexbox;
   display: inline-flex;
@@ -37,17 +37,17 @@ body {
           box-shadow: 0 5px 10px #646464, 0 -2px 2px #666, rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
 }
 
-#priorities-navigation .navigation-tab {
+#tasks-navigation .navigation-tab {
   display: inline-block;
   text-align: center;
   width: 100%;
 }
 
-#priorities-navigation .navigation-tab a {
+#tasks-navigation .navigation-tab a {
   color: #eee;
 }
 
-#priorities-navigation .navigation-tab a:hover {
+#tasks-navigation .navigation-tab a:hover {
   text-decoration: none;
 }
 
@@ -221,4 +221,4 @@ body {
 #add-task .button {
   margin-left: 50px;
 }
-/*# sourceMappingURL=priorities.css.map */
+/*# sourceMappingURL=tasks.css.map */

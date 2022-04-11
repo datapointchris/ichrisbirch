@@ -31,7 +31,7 @@ from euphoria.portfolio.routes import portfolio_bp
 from euphoria.apartments.routes import apartments_bp
 from euphoria.moving.routes import moving_bp
 from euphoria.tracks.routes import tracks_bp
-from euphoria.priorities.routes import priorities_bp
+from euphoria.tasks.routes import tasks_bp
 
 
 def create_app():
@@ -52,9 +52,9 @@ def create_app():
         app.register_blueprint(apartments_bp, url_prefix='/apartments')
         app.register_blueprint(moving_bp, url_prefix='/moving')
         app.register_blueprint(tracks_bp, url_prefix='/tracks')
-        app.register_blueprint(priorities_bp, url_prefix='/priorities')
+        app.register_blueprint(tasks_bp, url_prefix='/tasks')
 
-        schemas = ['tracks', 'priorities']
+        schemas = ['tracks', 'tasks']
         for schema in schemas:
             if not db.engine.dialect.has_schema(db.engine, schema):
                 db.session.execute(CreateSchema(schema))
