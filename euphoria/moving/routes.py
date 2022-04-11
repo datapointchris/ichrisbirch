@@ -8,9 +8,6 @@ moving_bp = Blueprint(
 )
 
 
-
-
-
 @moving_bp.route('/', methods=['GET', 'POST'])
 def packing():
     last_box_id = request.args.get('last_box_id')
@@ -19,8 +16,12 @@ def packing():
     box_id = last_box_id or request.form.get('selected_box_id', 1)
     # TODO: WTForms to get the Box.order_by
     boxes = db.session.execute(select(Box)).scalars().all()
-    selected_box = db.session.execute(select(Box).where(Box.id == box_id)).scalars().first()
-    box_items = db.session.execute(select(Item).where(Item.box_id == box_id)).scalars().all()
+    selected_box = (
+        db.session.execute(select(Box).where(Box.id == box_id)).scalars().first()
+    )
+    box_items = (
+        db.session.execute(select(Item).where(Item.box_id == box_id)).scalars().all()
+    )
     return render_template(
         'packing.html',
         boxes=boxes,
@@ -67,5 +68,3 @@ def delete_item():
     db.session.execute(delete(Item).where(Item.id == request.form.get('id')))
     db.session.commit()
     return redirect(url_for('moving_bp.packing'))
-
-

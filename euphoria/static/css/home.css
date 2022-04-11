@@ -36,11 +36,6 @@ button {
           animation: float 6s infinite ease-in-out alternate;
 }
 
-button.cockpit {
-  -webkit-animation-delay: 0.0s;
-          animation-delay: 0.0s;
-}
-
 button.portfolio {
   -webkit-animation-delay: 1s;
           animation-delay: 1s;
