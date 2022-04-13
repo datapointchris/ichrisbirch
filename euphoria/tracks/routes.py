@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for
-import sqlalchemy
+from sqlalchemy import select, update, delete
 from euphoria import habits_db, journal_db, countdowns_db, db
 from euphoria.tracks.helpers import (
     md_to_html,
@@ -22,7 +22,7 @@ def todo():
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
     events = (
-        db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        db.session.execute(select(Event).order_by(Event.date))
         .scalars()
         .all()
     )
@@ -149,9 +149,10 @@ def delete_countdown():
 @tracks_bp.route('/manage_events/', methods=['GET', 'POST'])
 def manage_events():
     if request.method == 'POST':
-        add = request.form.get('add')
-        update = request.form.get('update')
-        delete = request.form.get('delete')
+        # TODO: Fix naming, or separate out
+        do_add = request.form.get('add')
+        do_update = request.form.get('update')
+        do_delete = request.form.get('delete')
         event = dict(
             name=request.form.get('name'),
             date=datetime.strptime(request.form.get('date'), '%Y-%m-%d'),
@@ -161,21 +162,21 @@ def manage_events():
             attending=True if request.form.get('attending') == '1' else False,
             notes=request.form.get('notes'),
         )
-        if add:
+        if do_add:
             db.session.add(Event(**event))
-        elif update:
+        elif do_update:
             db.session.execute(
-                sqlalchemy.update(Event)
+                update(Event)
                 .where(Event.name == event.get('name'))
                 .values(**event)
             )
-        elif delete:
+        elif do_delete:
             db.session.execute(
-                sqlalchemy.delete(Event).where(Event.name == event.get('name'))
+                delete(Event).where(Event.name == event.get('name'))
             )
         db.session.commit()
     events = (
-        db.session.execute(sqlalchemy.select(Event).order_by(Event.date))
+        db.session.execute(select(Event).order_by(Event.date))
         .scalars()
         .all()
     )

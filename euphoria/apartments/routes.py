@@ -1,6 +1,8 @@
 from flask import Blueprint, redirect, render_template, request, url_for
-from euphoria import apt_db as db
+from euphoria import db
 from euphoria.apartments.helpers import convert_data_types_from_strings
+from euphoria.apartments.models import Apartment, Feature
+from sqlalchemy import select, delete, update
 
 apartments_bp = Blueprint(
     'apartments_bp',
@@ -11,76 +13,71 @@ apartments_bp = Blueprint(
 
 
 @apartments_bp.route('/', methods=['GET', 'POST'])
-@apartments_bp.route('/<int:aptid>/', methods=['GET', 'POST'])
-def compare(aptid=1):
-    feature_type_map = db.get_feature_types()
-    if request.method == 'POST':
-        aptid = request.form.get('id')
-        features = request.form
-        features = convert_data_types_from_strings(features, feature_type_map)
-        db.update_features(features)
-    current_apt = db.get_apartment(aptid)
-    current_apt.pop('id')
-    name = current_apt.pop('name')
-    address = current_apt.pop('address')
-    url = current_apt.pop('url')
-    notes = current_apt.pop('notes')
-    apartments = db.get_all_apartments()
+@apartments_bp.route('/<int:id>/', methods=['GET', 'POST'])
+def apartments(id=1):
+    apartment = (
+        db.session.execute(select(Apartment).where(Apartment.id == id)).scalars().first()
+    )
+    features = db.session.execute(select(Feature).where(Feature.apartment_id == id)).scalars().all()
+    print(features)
+    apartments = db.session.execute(select(Apartment)).scalars().all()
     return render_template(
-        'compare.html',
+        'apartments.html',
+        apartment=apartment,
         apartments=apartments,
-        aptid=aptid,
-        current_apt=current_apt,
-        name=name,
-        address=address,
-        url=url,
-        notes=notes,
-        feature_type_map=feature_type_map,
+        features=features
     )
 
 
-@apartments_bp.route('/add_feature/', methods=['POST'])
-def add_feature():
-    name = request.form.get('name')
-    name = name.replace(' ', '_').lower()
-    type = request.form.get('type')
-    aptid = request.form.get('aptid')
-    db.add_feature(name, type)
-    return redirect(url_for('apartments_bp.compare', aptid=aptid))
+@apartments_bp.route('/manage/')
+@apartments_bp.route('/manage/<int:id>/')
+def manage(id=1):
+    apartment = (
+        db.session.execute(select(Apartment).where(Apartment.id == id)).scalars().first()
+    )
+    apartments = db.session.execute(select(Apartment)).scalars().all()
+    return render_template(
+        'manage.html',
+        apartment=apartment,
+        apartments=apartments,
+    )
 
 
-@apartments_bp.route('/delete_apartment/', methods=['POST'])
-def delete_apartment():
-    id = request.form.get('id')
-    print(request.form)
-    db.delete_apartment(id)
-    return redirect(url_for('apartments_bp.manage'))
+# not implemented
+@apartments_bp.route('/add_apartment/', methods=['POST'])
+def add_apartment():
+    db.session.add(Apartment(**request.form))
+    db.session.commit()
+    return redirect(url_for('apartments_bp.apartments'))
 
 
 @apartments_bp.route('/update_apartment/', methods=['POST'])
 def update_apartment():
-    id = request.form.get('id')
-    update_info = request.form
-    print(update_info)
-    db.update_apartment(update_info)
-    return redirect(url_for('apartments_bp.manage', aptid=id))
-
-
-@apartments_bp.route('/manage/', methods=['GET', 'POST'])
-@apartments_bp.route('/manage/<int:aptid>/', methods=['GET', 'POST'])
-def manage(aptid=1):
-    apartments = db.get_all_apartments()
-    apt = db.get_apartment(aptid)
-    id = apt.get('id')
-    name = apt.get('name')
-    address = apt.get('address')
-    url = apt.get('url')
-    return render_template(
-        'manage.html',
-        apartments=apartments,
-        aptid=aptid,
-        id=id,
-        name=name,
-        address=address,
-        url=url,
+    apartment = request.form
+    db.session.execute(
+        update(Apartment).where(Apartment.id == apartment.get('id')).values(**apartment)
     )
+    db.session.commit()
+    return redirect(url_for('apartments_bp.apartments', aptid=apartment.get('id')))
+
+
+@apartments_bp.route('/delete_apartment/', methods=['POST'])
+def delete_apartment():
+    db.session.execute(delete(Apartment).where(Apartment.id == request.form.get('id')))
+    db.session.commit()
+    return redirect(url_for('apartments_bp.apartments'))
+
+
+@apartments_bp.route('/add_feature/', methods=['POST'])
+def add_feature():
+    db.session.add(Feature(**request.form))
+    db.session.commit()
+    return redirect(url_for('apartments_bp.apartments', aptid=request.form.get('apt_id')))
+
+
+# not implemented right now
+@apartments_bp.route('/delete_feature/', methods=['POST'])
+def delete_feature():
+    db.session.execute(delete(Feature).where(Feature.id == request.form.get('id')))
+    db.session.commit()
+    return redirect(url_for('apartments_bp.manage'))
