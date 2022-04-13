@@ -34,9 +34,12 @@
         </div>
         <form method="POST" action="{{ url_for('apartments_bp.apartments') }}">
             <input type="hidden" id="apartment.id" name="id" value="{{ apartment.id }}">
-            <input type="hidden" id="apartment.name" name="name" value="{{ apartment.name }}">
-            <input type="hidden" id="apartment.address" name="address" value="{{ apartment.address }}">
-            <input type="hidden" id="apartment.url" name="url" value="{{ apartment.url }}">
+            <input type="hidden" id="apartment.name" name="name"
+                value="{{ apartment.name }}">
+            <input type="hidden" id="apartment.address" name="address"
+                value="{{ apartment.address }}">
+            <input type="hidden" id="apartment.url" name="url"
+                value="{{ apartment.url }}">
             <div id="apt-features">
                 {% for feature in features %}
                 <div class="feature-box">
@@ -49,14 +52,14 @@
                         value="{{ feature.name }}">
                     {% elif feature.type == 'boolean' %}
                     <label class="checkboxes">
-                            {% if value == 1 %}
-                            <input type="checkbox" id="{{ feature.name }}-true"
-                                name="{{ feature.name }}" value=1 checked="checked" />
-                            {% else %}
-                            <input type="checkbox" id="{{ feature }}-true"
-                                name="{{ feature.name }}" value=1 />
-                            {% endif %}
-                            <span class="checkmark"></span>
+                        {% if value == 1 %}
+                        <input type="checkbox" id="{{ feature.name }}-true"
+                            name="{{ feature.name }}" value=1 checked="checked" />
+                        {% else %}
+                        <input type="checkbox" id="{{ feature }}-true"
+                            name="{{ feature.name }}" value=1 />
+                        {% endif %}
+                        <span class="checkmark"></span>
                         </h2>
                     </label>
                     {% endif %}

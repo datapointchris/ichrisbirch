@@ -1,6 +1,5 @@
 from flask import Blueprint, redirect, render_template, request, url_for
 from euphoria import db
-from euphoria.apartments.helpers import convert_data_types_from_strings
 from euphoria.apartments.models import Apartment, Feature
 from sqlalchemy import select, delete, update
 
@@ -18,14 +17,15 @@ def apartments(id=1):
     apartment = (
         db.session.execute(select(Apartment).where(Apartment.id == id)).scalars().first()
     )
-    features = db.session.execute(select(Feature).where(Feature.apartment_id == id)).scalars().all()
+    features = (
+        db.session.execute(select(Feature).where(Feature.apartment_id == id))
+        .scalars()
+        .all()
+    )
     print(features)
     apartments = db.session.execute(select(Apartment)).scalars().all()
     return render_template(
-        'apartments.html',
-        apartment=apartment,
-        apartments=apartments,
-        features=features
+        'apartments.html', apartment=apartment, apartments=apartments, features=features
     )
 
 

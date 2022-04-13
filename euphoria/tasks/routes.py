@@ -160,6 +160,7 @@ def completed():
     )
 
 # TODO: When the API is working, use those endpoints instead of these
+# Not really sure if that will work
 
 @tasks_bp.route('/add/', methods=['POST'])
 def add_task():

@@ -2,8 +2,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import CreateSchema
 
-from euphoria.database_managers.apartments import ApartmentsDBManager
-
 from euphoria.database_managers.tracks import (
     HabitsDBManager,
     JournalDBManager,
@@ -12,10 +10,7 @@ from euphoria.database_managers.tracks import (
 
 
 # Postgres
-# TODO: Convert Apartments DBManager
 db = SQLAlchemy()
-apt_db = ApartmentsDBManager()
-
 
 # MongoDB
 habits_db = HabitsDBManager()
@@ -35,7 +30,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('config.DevelopmentConfig')
 
-    apt_db.init_app(app)
     db.init_app(app)
     habits_db.init_app(app, db='tracks', collection='habits')
     journal_db.init_app(app, db='tracks', collection='journal')
@@ -49,12 +43,12 @@ def create_app():
         app.register_blueprint(tracks_bp, url_prefix='/tracks')
         app.register_blueprint(tasks_bp, url_prefix='/tasks')
 
+        # Have yet to figure out a better way to do this
         schemas = ['tracks', 'tasks', 'moving', 'apartments', 'porfolio']
         for schema in schemas:
             if not db.engine.dialect.has_schema(db.engine, schema):
                 db.session.execute(CreateSchema(schema))
                 db.session.commit()
         db.create_all()
-        apt_db.create_all()
 
     return app
