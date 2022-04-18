@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from euphoria import db
 from datetime import datetime
 
@@ -14,14 +15,14 @@ class Task(db.Model):
     subcategory2 = db.Column(db.String(64), index=False, unique=False, nullable=True)
     priority = db.Column(db.Integer, index=False, unique=False, nullable=False)
     add_date = db.Column(
-        db.DateTime(),
+        db.DateTime(timezone=True),
         index=False,
         unique=False,
         nullable=False,
-        default=datetime.now,
+        default=datetime.now(tzinfo=ZoneInfo("America/Chicago")),
     )
     complete_date = db.Column(
-        db.DateTime(), index=False, unique=False, nullable=True
+        db.DateTime(timezone=True), index=False, unique=False, nullable=True
     )
 
     def __repr__(self):

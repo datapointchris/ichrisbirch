@@ -4,6 +4,7 @@ import random
 from collections import Counter
 from datetime import date, datetime, time, timedelta
 from io import BytesIO
+from zoneinfo import ZoneInfo
 
 from euphoria import db
 from euphoria.tasks.helpers import calculate_average_completion_time
@@ -172,7 +173,7 @@ def add_task():
 @tasks_bp.route('/complete/', methods=['POST'])
 def complete_task():
     task = Task.query.filter_by(id=request.form.get('id')).first()
-    task.complete_date = datetime.now()
+    task.complete_date = datetime.now(tzinfo=ZoneInfo("America/Chicago"))
     db.session.commit()
     return redirect(url_for('tasks_bp.priority'))
 
