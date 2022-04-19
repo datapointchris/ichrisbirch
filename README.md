@@ -28,7 +28,20 @@ Postgres Backup:
   - Choosing not to separate these for now, one file.
 
 ### .env-secret
-What is the process?
+
+#### Making a Secret
+1. `git secret init` - for new repository
+2. `git secret tell ichrisbirch@gmail.com`
+   1. This user has to have a public GPG key on THIS computer
+3. `git secret tell 'user@email.com'`
+   1. Import this user's public GPG key
+4. `git secret add .env`
+5. `git secret hide`
+6. Add and commit new .secret file(s)
+
+#### Getting a Secret
+1. Git pull the .secret file(s)
+2. `git secret reveal`
 
 ### Deploy
 What does this folder contain?
