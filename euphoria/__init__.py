@@ -1,13 +1,13 @@
+import os
+
+import config
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import CreateSchema
 
-from euphoria.database_managers.tracks import (
-    HabitsDBManager,
-    JournalDBManager,
-    CountdownsDBManager,
-)
-
+from euphoria.database_managers.tracks import (CountdownsDBManager,
+                                               HabitsDBManager,
+                                               JournalDBManager)
 
 # Postgres
 db = SQLAlchemy()
@@ -18,17 +18,19 @@ journal_db = JournalDBManager()
 countdowns_db = CountdownsDBManager()
 
 # Blueprints (cannot import at top due to circular imports of db)
-from euphoria.home.routes import home_bp
-from euphoria.portfolio.routes import portfolio_bp
 from euphoria.apartments.routes import apartments_bp
+from euphoria.home.routes import home_bp
 from euphoria.moving.routes import moving_bp
-from euphoria.tracks.routes import tracks_bp
+from euphoria.portfolio.routes import portfolio_bp
 from euphoria.tasks.routes import tasks_bp
+from euphoria.tracks.routes import tracks_bp
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object('config.DevelopmentConfig')
+    env = os.environ.get('FLASK_ENV')
+    env_object = config.get_env_config(env)
+    app.config.from_object(env_object)
 
     db.init_app(app)
     habits_db.init_app(app, db='tracks', collection='habits')

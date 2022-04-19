@@ -1,4 +1,22 @@
+# Standards
 
+## Versioning
+Each milestone is a new version.
+
+
+## Technologies
+
+### Python
+Python 3.10.1
+
+### Postgres
+Postgres 14.2
+
+### DynamoDB
+Version managed by AWS
+
+### MongoDB
+Version managed in Atlas
 
 
 # How to Do Things

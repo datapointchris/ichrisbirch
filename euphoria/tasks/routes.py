@@ -160,8 +160,10 @@ def completed():
         image_data=image_data,
     )
 
+
 # TODO: When the API is working, use those endpoints instead of these
 # Not really sure if that will work
+
 
 @tasks_bp.route('/add/', methods=['POST'])
 def add_task():
@@ -173,7 +175,7 @@ def add_task():
 @tasks_bp.route('/complete/', methods=['POST'])
 def complete_task():
     task = Task.query.filter_by(id=request.form.get('id')).first()
-    task.complete_date = datetime.now(tzinfo=ZoneInfo("America/Chicago"))
+    task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago"))
     db.session.commit()
     return redirect(url_for('tasks_bp.priority'))
 

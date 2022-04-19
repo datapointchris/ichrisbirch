@@ -1,8 +1,6 @@
 # Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
 ---
 Prod only, further ahead will figure out how to sync dev and "testing" (god help me) to the prod environment
-### Elastic IP
-[Elastic IP addresses - Amazon Elastic Compute Cloud](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html)
 
 
 
@@ -12,6 +10,17 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
    1. Should the features each be a field or should there be a field with "features"?
 2. Find scripts I've already written for other programs
 3. New DynamoDB Table and Connection
+
+
+
+# Backups
+---
+## Postgres
+
+## MongoDB
+
+## DynamoDB
+
 
 
 # User Login
@@ -81,6 +90,7 @@ Ranking
 - [ ] Each task has a button that says `Tomorrow` so it can be moved to the next day if there are blockers.
 - [ ] API with FastAPI
   - [ ] https://fastapi.tiangolo.com/tutorial/
+- [ ] tasks.ichrisbirch.com
 - [ ] Alexa skill, use the to-do API to add a task
 - [ ] Make an Alfred shortcut for todo
 	- [ ] This will change later when I do the todo in another way
@@ -101,6 +111,7 @@ Ranking
 ## Tracks
 - [ ] Quote of the day!
 - [ ] DELETE the Todo Part. This is being handled by `Tasks` and Obsidian for notes
+- [ ] Re-design the tabs so that they are layered, eliminate tabs within tabs
 
 ### Events
 - [ ] Add the Day of week to event date

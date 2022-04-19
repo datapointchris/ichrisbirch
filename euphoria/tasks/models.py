@@ -19,7 +19,7 @@ class Task(db.Model):
         index=False,
         unique=False,
         nullable=False,
-        default=datetime.now(tzinfo=ZoneInfo("America/Chicago")),
+        default=datetime.now(tz=ZoneInfo("America/Chicago")),
     )
     complete_date = db.Column(
         db.DateTime(timezone=True), index=False, unique=False, nullable=True

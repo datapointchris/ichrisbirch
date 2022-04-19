@@ -33,8 +33,31 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     TESTING = False
     DEVELOPMENT = False
-    SQLALCHEMY_ECHO = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_ECHO = True
     DYNAMODB_DATABASE_URI = os.environ.get('PROD_DYNAMODB_DATABASE_URI')
     MONGODB_DATABASE_URI = os.environ.get('PROD_MONGODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('PROD_SQLITE_DATABASE_URI')
+    POSTGRES_URL = os.environ.get('PROD_POSTGRES_URL')
+    POSTGRES_USER = os.environ.get('PROD_POSTGRES_USER')
+    POSTGRES_PASSWORD = os.environ.get('PROD_POSTGRES_PASSWORD')
+    SQLALCHEMY_DATABASE_URI = (
+        f'postgresql://{POSTGRES_USER}:eifF7e9*df094m@{POSTGRES_URL}:5432/euphoria'
+    )
+
+
+def get_env_config(environment: str) -> Config:
+    """Configures app for specified environment
+
+    Args:
+        environment (str): One of 'development', 'testing', 'production'
+        Defaults to 'production'
+
+    Returns:
+        Config: Configuration object for selected environment
+    """
+    envs = {
+        'development': DevelopmentConfig,
+        'testing': TestingConfig,
+        'production': ProductionConfig,
+    }
+    return envs.get(environment, ProductionConfig)
