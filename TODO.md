@@ -72,7 +72,13 @@ Realpython
 - [ ] Nav on the bottom that when you click it, it comes up with rotating gears on each side.
 	- [ ] [Floating Buttons](https://codepen.io/rashiq/pen/eqGEzw)
 	- [ ] [Animated BottomBar Experiment (CSS Transitions only)](https://codepen.io/chrisbautista/pen/NWXjqLN)
-
+- [ ] GEARS
+  - [ ] https://webdevtrick.com/cog-loading-animation/
+  - [ ] https://css-challenges.com/rotating-gears/
+  - [ ] https://www.script-tutorials.com/demos/247/index.html
+  - [ ] https://jsfiddle.net/LukaszWiktor/4qpcqymp/
+  - [ ] https://codepen.io/alextebbs/pen/tHhrz
+  - [ ] https://www.script-tutorials.com/css3-animated-gears/
 - [ ] Integrate with bookmarks
   - [ ] Article of the Day
 
