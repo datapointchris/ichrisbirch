@@ -17,6 +17,7 @@ Flask-SQLAlchemy = "^2.5.1"
 python-dotenv = "^0.19.2"
 matplotlib = "^3.5.1"
 psycopg2 = "^2.9.3"
+psycopg2-binary = "^2.9.3"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
