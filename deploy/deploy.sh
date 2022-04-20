@@ -1,8 +1,3 @@
-# shebang
-
-# PREREQUESITES
-# Change name in `supervisor.conf` to PROJECT_NAME
-
 # Project name
 PROJECT_NAME=euphoria
 
@@ -12,7 +7,7 @@ sudo cp nginx.conf /etc/nginx/sites-available/$PROJECT_NAME.conf
 # Symlink the nginx file to sites-enabled
 sudo ln -s /etc/nginx/sites-available/$PROJECT_NAME.conf /etc/nginx/sites-enabled/$PROJECT_NAME.conf
 
-# Copy supervisor config file with .conf
+# Copy supervisor config file
 sudo cp supervisor.conf /etc/supervisor/conf.d/$PROJECT_NAME.conf
 
 # Create log directories as specified in `supervisor.conf`

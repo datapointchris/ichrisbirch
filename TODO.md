@@ -1,19 +1,22 @@
 # Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
 ---
 Prod only, further ahead will figure out how to sync dev and "testing" (god help me) to the prod environment
+- [ ] pg_cron and update task priorities
+- [ ] MongoDB move to Atlas
+- [ ] DynamoDB Apartments (set up only)
 
 
-
-# Migrate Apartments to DynamoDB
+# v0.3.0 --> Migrate Apartments to DynamoDB
 ---
 1. "Schema" of the apartments
    1. Should the features each be a field or should there be a field with "features"?
 2. Find scripts I've already written for other programs
+   1. These are in Snippets Project
 3. New DynamoDB Table and Connection
 
 
 
-# Backups
+# v0.4.0 --> Backups
 ---
 ## Postgres
 
@@ -23,7 +26,7 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 
 
 
-# User Login
+# v0.5.0 --> User Login
 ---
 - [ ] Create login for all apps as a main page.
 	- [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
@@ -34,7 +37,7 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 
 
 
-# Testing
+# v0.6.0 --> Testing
 ---
 Udemy Class
 I have pytest book somewhere
@@ -42,13 +45,13 @@ Realpython
 
 
 
-# Typing
+# v0.7.0 --> Typing
 ---
 [Using mypy with an existing codebase — Mypy 0.942 documentation](https://mypy.readthedocs.io/en/stable/existing_code.html)
 
 
 
-# Continuous Integration / Github Actions
+# v0.8.0 --> Continuous Integration / Github Actions
 ---
 
 [Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
@@ -56,6 +59,22 @@ Realpython
 [https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/](https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/)
 [Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
 
+
+
+# v0.9.0 --> Documentation
+- Docs/notes for each page and function
+- Hopefully a lot of this is done as I'm testing and doing type hinting
+
+
+
+# v0.10.0 --> Re-structure CSS and Navigation
+- [ ] CSS to inheret from main
+  - [ ] Both the classes and site-wide variables
+- [ ] There is a style of CSS naming convention, find that again.
+
+
+
+# v1.0.0 --> Basic Main page and Portfolio
 
 
 
@@ -118,10 +137,13 @@ Ranking
 - [ ] Quote of the day!
 - [ ] DELETE the Todo Part. This is being handled by `Tasks` and Obsidian for notes
 - [ ] Re-design the tabs so that they are layered, eliminate tabs within tabs
+- [ ] Daily Habits date changes at wrong time.  Set time to be local
 
 ### Events
 - [ ] Add the Day of week to event date
 - [ ] Delete Past events
+- [ ] Add time remaining for events
+- [ ] Turn long URLs into `Event Link` 
 
 
 
