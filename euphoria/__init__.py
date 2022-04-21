@@ -5,25 +5,11 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import CreateSchema
 
-from euphoria.database_managers.tracks import (CountdownsMongoManager,
-                                               HabitsMongoManager,
-                                               JournalMongoManager)
+from euphoria.database import DynamoDBConnection, MongoDBConnection
 
-# Postgres
 db = SQLAlchemy()
-
-# MongoDB
-habits_db = HabitsMongoManager()
-journal_db = JournalMongoManager()
-countdowns_db = CountdownsMongoManager()
-
-# Blueprints (cannot import at top due to circular imports of db)
-from euphoria.apartments.routes import apartments_bp
-from euphoria.home.routes import home_bp
-from euphoria.moving.routes import moving_bp
-from euphoria.portfolio.routes import portfolio_bp
-from euphoria.tasks.routes import tasks_bp
-from euphoria.tracks.routes import tracks_bp
+mongodb = MongoDBConnection()
+dynamodb = DynamoDBConnection()
 
 
 def create_app():
@@ -33,9 +19,16 @@ def create_app():
     app.config.from_object(env_object)
 
     db.init_app(app)
-    habits_db.init_app(app, collection='tracks.habits')
-    journal_db.init_app(app, collection='tracks.journal')
-    countdowns_db.init_app(app, collection='countdowns')
+    mongodb.init_app(app)
+    dynamodb.init_app(app)
+
+    # Blueprints
+    from euphoria.apartments.routes import apartments_bp
+    from euphoria.home.routes import home_bp
+    from euphoria.moving.routes import moving_bp
+    from euphoria.portfolio.routes import portfolio_bp
+    from euphoria.tasks.routes import tasks_bp
+    from euphoria.tracks.routes import tracks_bp
 
     with app.app_context():
         app.register_blueprint(home_bp)

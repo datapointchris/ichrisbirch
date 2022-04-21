@@ -23,9 +23,11 @@ tasks_bp = Blueprint(
 
 @tasks_bp.route('/')
 def tasks():
-    tasks = (
-        Task.query.filter(Task.complete_date.is_(None))
+    tasks = db.session.execute(
+        select(Task)
+        .where(Task.complete_date.is_(None))
         .order_by(Task.priority.asc(), Task.add_date.asc())
+        .scalars()
         .all()
     )
     return render_template('tasks.html', tasks=tasks)

@@ -2,13 +2,22 @@ from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for
 from sqlalchemy import select, update, delete
-from euphoria import habits_db, journal_db, countdowns_db, db
+from euphoria import mongodb, db
 from euphoria.tracks.helpers import (
     md_to_html,
     get_form_habits,
     create_sorted_habit_category_dict,
 )
 from euphoria.tracks.models import Event
+from euphoria.tracks.mongo import (
+    CountdownsMongoManager,
+    HabitsMongoManager,
+    JournalMongoManager,
+)
+
+countdowns_db = CountdownsMongoManager(mongodb)
+habits_db = HabitsMongoManager(mongodb)
+journal_db = JournalMongoManager(mongodb)
 
 tracks_bp = Blueprint(
     'tracks_bp', __name__, template_folder='templates/tracks', static_folder='static'
@@ -21,11 +30,7 @@ def todo():
     big_todo = md_to_html('big_todo_list.md')
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
-    events = (
-        db.session.execute(select(Event).order_by(Event.date))
-        .scalars()
-        .all()
-    )
+    events = db.session.execute(select(Event).order_by(Event.date)).scalars().all()
     deadlines = countdowns_db.get_countdowns()
     return render_template(
         'todo.html',
@@ -166,20 +171,12 @@ def manage_events():
             db.session.add(Event(**event))
         elif do_update:
             db.session.execute(
-                update(Event)
-                .where(Event.name == event.get('name'))
-                .values(**event)
+                update(Event).where(Event.name == event.get('name')).values(**event)
             )
         elif do_delete:
-            db.session.execute(
-                delete(Event).where(Event.name == event.get('name'))
-            )
+            db.session.execute(delete(Event).where(Event.name == event.get('name')))
         db.session.commit()
-    events = (
-        db.session.execute(select(Event).order_by(Event.date))
-        .scalars()
-        .all()
-    )
+    events = db.session.execute(select(Event).order_by(Event.date)).scalars().all()
     return render_template('manage_events.html', events=events)
 
 
