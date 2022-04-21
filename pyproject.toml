@@ -10,7 +10,7 @@ python = "^3.10"
 Flask = "^2.0.2"
 jupyter = "^1.0.0"
 pandas = "^1.4.0"
-pymongo = "^4.0.1"
+pymongo = {extras = ["srv"], version = "^4.1.1"}
 Markdown = "^3.3.6"
 gunicorn = "^20.1.0"
 Flask-SQLAlchemy = "^2.5.1"

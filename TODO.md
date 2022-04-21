@@ -1,8 +1,8 @@
 # Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
 ---
 Prod only, further ahead will figure out how to sync dev and "testing" (god help me) to the prod environment
-- [ ] pg_cron and update task priorities
-- [ ] MongoDB move to Atlas
+- [X] pg_cron and update task priorities
+- [X] MongoDB move to Atlas
 - [ ] DynamoDB Apartments (set up only)
 
 

@@ -9,6 +9,16 @@
 ### Commits
 Conventional Commits
 https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13
+`feat:` that adds a new feature
+`fix:` that fixes a bug
+`refactor:` that rewrite/restructure your code, however does not change any behaviour
+`perf:`are special refactor commits, that improve performance
+`style:` that do not affect the meaning (white-space, formatting, missing semi-colons, etc)
+`test:` that add missing tests or correcting existing tests
+`docs:` that affect documentation only
+`build:` that affect build components like build tool, ci pipeline, dependencies, project version, ...
+`ops:` that affect operational components like infrastructure, deployment, backup, recovery, ...
+`chore:` Miscellaneous commits e.g. modifying .gitignore
 
 ### Issues and Milestones
 TBD
