@@ -4,14 +4,14 @@ import os
 from euphoria.tracks.static.base_habits import DEFAULT_HABITS
 import pymongo
 
-CLIENT = pymongo.MongoClient(os.environ.get('MONGODB_DATABASE_URI'))
+# CLIENT = pymongo.MongoClient(os.environ.get('MONGODB_DATABASE_URI'))
 
 
-class HabitsDBManager:
+class HabitsMongoManager:
     def __init__(self):
         self.coll = None
 
-    def init_app(self, app, db, collection):
+    def init_app(self, app, collection):
         host = app.config.get('MONGODB_DATABASE_URI')
         client = pymongo.MongoClient(host)
         db = client[db]
@@ -76,7 +76,7 @@ class HabitsDBManager:
         )
 
 
-class JournalDBManager:
+class JournalMongoManager:
     def __init__(self):
         self.coll = None
 
@@ -102,7 +102,8 @@ class JournalDBManager:
         return [entry for entry in self.coll.find({})]
 
 
-class CountdownsDBManager:
+# TODO: This will be deleted and moved over to Postgres
+class CountdownsMongoManager:
     def __init__(self):
         self.coll = None
 

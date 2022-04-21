@@ -5,17 +5,17 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import CreateSchema
 
-from euphoria.database_managers.tracks import (CountdownsDBManager,
-                                               HabitsDBManager,
-                                               JournalDBManager)
+from euphoria.database_managers.tracks import (CountdownsMongoManager,
+                                               HabitsMongoManager,
+                                               JournalMongoManager)
 
 # Postgres
 db = SQLAlchemy()
 
 # MongoDB
-habits_db = HabitsDBManager()
-journal_db = JournalDBManager()
-countdowns_db = CountdownsDBManager()
+habits_db = HabitsMongoManager()
+journal_db = JournalMongoManager()
+countdowns_db = CountdownsMongoManager()
 
 # Blueprints (cannot import at top due to circular imports of db)
 from euphoria.apartments.routes import apartments_bp
@@ -33,9 +33,9 @@ def create_app():
     app.config.from_object(env_object)
 
     db.init_app(app)
-    habits_db.init_app(app, db='tracks', collection='habits')
-    journal_db.init_app(app, db='tracks', collection='journal')
-    countdowns_db.init_app(app, db='tracks', collection='countdowns')
+    habits_db.init_app(app, collection='tracks.habits')
+    journal_db.init_app(app, collection='tracks.journal')
+    countdowns_db.init_app(app, collection='countdowns')
 
     with app.app_context():
         app.register_blueprint(home_bp)

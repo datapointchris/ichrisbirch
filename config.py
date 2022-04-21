@@ -35,13 +35,19 @@ class ProductionConfig(Config):
     DEVELOPMENT = False
     SQLALCHEMY_ECHO = True
     DYNAMODB_DATABASE_URI = os.environ.get('PROD_DYNAMODB_DATABASE_URI')
-    MONGODB_DATABASE_URI = os.environ.get('PROD_MONGODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('PROD_SQLITE_DATABASE_URI')
+    
+    MONGODB_URL = os.environ.get('PROD_MONGODB_URL')
+    MONGODB_USER = os.environ.get('PROD_MONGODB_USER')
+    MONGODB_PASSWORD = os.environ.get('PROD_MONGODB_PASSWORD')
+    MONGODB_DATABASE_URI = (
+        f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_URL}/euphoria?retryWrites=true&w=majority'
+    )
     POSTGRES_URL = os.environ.get('PROD_POSTGRES_URL')
     POSTGRES_USER = os.environ.get('PROD_POSTGRES_USER')
     POSTGRES_PASSWORD = os.environ.get('PROD_POSTGRES_PASSWORD')
     SQLALCHEMY_DATABASE_URI = (
-        f'postgresql://{POSTGRES_USER}:eifF7e9*df094m@{POSTGRES_URL}:5432/euphoria'
+        f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URL}:5432/euphoria'
     )
 
 
