@@ -23,10 +23,12 @@ tasks_bp = Blueprint(
 
 @tasks_bp.route('/')
 def tasks():
-    tasks = db.session.execute(
-        select(Task)
-        .where(Task.complete_date.is_(None))
-        .order_by(Task.priority.asc(), Task.add_date.asc())
+    tasks = (
+        db.session.execute(
+            select(Task)
+            .where(Task.complete_date.is_(None))
+            .order_by(Task.priority.asc(), Task.add_date.asc())
+        )
         .scalars()
         .all()
     )
