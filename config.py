@@ -14,10 +14,18 @@ class DevelopmentConfig(Config):
     TESTING = False
     DEVELOPMENT = True
     SQLALCHEMY_ECHO = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_SQLALCHEMY_DATABASE_URI')
     DYNAMODB_DATABASE_URI = os.environ.get('DEV_DYNAMODB_DATABASE_URI')
-    MONGODB_DATABASE_URI = os.environ.get('DEV_MONGODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('DEV_SQLITE_DATABASE_URI')
+    
+    MONGODB_URL = os.environ.get('DEV_MONGODB_URL')
+    MONGODB_USER = os.environ.get('DEV_MONGODB_USER')
+    MONGODB_PASSWORD = os.environ.get('DEV_MONGODB_PASSWORD')
+    MONGODB_DATABASE_URI = f'{MONGODB_URL}/euphoria'
+
+    POSTGRES_URL = os.environ.get('DEV_POSTGRES_URL')
+    POSTGRES_USER = os.environ.get('DEV_POSTGRES_USER')
+    POSTGRES_PASSWORD = os.environ.get('DEV_POSTGRES_PASSWORD')
+    SQLALCHEMY_DATABASE_URI = f'{POSTGRES_URL}/euphoria'
 
 
 class TestingConfig(Config):

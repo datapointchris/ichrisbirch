@@ -3,17 +3,42 @@
 Prod only, further ahead will figure out how to sync dev and "testing" (god help me) to the prod environment
 - [X] pg_cron and update task priorities
 - [X] MongoDB move to Atlas
-- [ ] DynamoDB Apartments (set up only)
 
 
-# v0.3.0 --> Migrate Apartments to DynamoDB
+# v0.3.0 --> Migrate Databases
 ---
+Countdowns -> SQLAlchemy
+Apartments -> SQLAlchemy
 1. "Schema" of the apartments
    1. Should the features each be a field or should there be a field with "features"?
 2. Find scripts I've already written for other programs
    1. These are in Snippets Project
 3. New DynamoDB Table and Connection
+{
+    "first_name": "Paul",
+    "surname": "Miller",
+    "cell": "447557505611",
+    "city": "London",
+    "location": [45.123, 47.232],
+    "profession": ["banking", "finance", "trader"],
+    "cars": [
+        {
+            "model": "Bentley",
+            "year": 1973
+        },
+        {
+            "model": "Rolls Royce",
+            "year": 1965
+        }
+    ]
+}
 
+
+
+
+# v0.3.1 --> Update nginx.conf
+Use the new file so that the static files are served by nginx
+Does this reach into all static folders?'
 
 
 # v0.4.0 --> Backups
@@ -53,6 +78,7 @@ Realpython
 
 # v0.8.0 --> Continuous Integration / Github Actions
 ---
+Pre-commit - What is the difference between this and CI/CD
 
 [Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
 [How to Run Github Actions Builds on Your Own Servers With Self-Hosted Runners – CloudSavvy IT](https://www.cloudsavvyit.com/15503/how-to-run-github-actions-builds-on-your-own-servers-with-self-hosted-runners/)
@@ -109,27 +135,23 @@ Ranking
 
 
 ## Tasks
-- [ ] For every week that a task is on the list, it should get bumped an extra 5 points so that it's priority goes up and eventually it makes it to the top. 5 points X 20 == 100 so it would be top priority in 20 weeks ~ < 6 months.  Perfect.
-- [ ] For each task on the today list, THERE CAN ONLY BE 5 AT A TIME, it goes by priority.  Only tasks with priority 0 get put on the list as extra and put to the top.  Priority 0 is Emergency and should be used very sparingly, to avoid daily bloat and slowdown.
-- [ ] Description for each task can be markdown, and it will format it.
+- [ ] Remove the Fake Tasks and Delete Tasks
+- [ ] Chart.js
+- [ ] https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/
 - [ ] Each task has a button that says `Tomorrow` so it can be moved to the next day if there are blockers.
 - [ ] API with FastAPI
+- [ ] FastAPI and Flask together?  Maybe not possible
   - [ ] https://fastapi.tiangolo.com/tutorial/
 - [ ] tasks.ichrisbirch.com
-- [ ] Alexa skill, use the to-do API to add a task
-- [ ] Make an Alfred shortcut for todo
-	- [ ] This will change later when I do the todo in another way
-	- [ ] Make app?
-	- [ ] Make API and give it a simple HTTP request with the info
-		- [ ] Authenticate?
-		- [ ] Yes it will be a part of the login
 - [ ] Make a "Completed This Month" List
 	- [ ] Add things like courses done, big parts of projects, nagging chores
 	- [ ] Anything that is good to know you got done, so you can add to the list
 	- [ ] Okay, automate this thing so it saves the list every month
 	- [ ] Probably a mongodb collection, one collection for each month and just a list of items, simple
-- [ ] Graphs for all
-- [ ] I think a better idea is to use a browser (javascript) based graphical if going beyond simple matplotlib graphs.  Stremlit requires it to have its own server, and python graphical libraries are not meant for the web.
+- [ ] Alexa skill, use the to-do API to add a task
+- [ ] Make an Alfred shortcut for todo
+  - [ ] Using API most likely
+
 
 
 
