@@ -167,6 +167,7 @@ def completed():
 
 # TODO: When the API is working, use those endpoints instead of these
 # Not really sure if that will work
+# API Endpoints won't work because browsers can't send DELETE or PUT
 
 
 @tasks_bp.route('/add/', methods=['POST'])
