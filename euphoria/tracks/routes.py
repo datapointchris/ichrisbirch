@@ -141,10 +141,13 @@ def countdowns():
 
 @tracks_bp.route('/deadlines/', methods=['POST'])
 def deadlines():
-    if request.form.get('add'):
-        db.session.add(Deadline(**request.form))
-    if request.form.get('delete'):
-        db.session.execute(delete(Deadline).where(Deadline.id == request.form.get('id')))
+    deadline = {**request.form}
+    if deadline.get('add'):
+        deadline.pop('add')
+        db.session.add(Deadline(**deadline))
+    if deadline.get('delete'):
+        deadline.pop('delete')
+        db.session.execute(delete(Deadline).where(Deadline.name == deadline.get('name')))
     db.session.commit()
     return redirect(url_for('tracks_bp.countdowns'))
 

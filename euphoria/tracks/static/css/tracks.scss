@@ -51,7 +51,7 @@ li {
   padding-bottom            : 5px;
   padding-left              : 50px;
   padding-right             : 50px;
-  background-color          : $tab-color;
+  background-color          : rgb(51, 55, 58);
   border-bottom-right-radius: 5em;
   border-bottom-left-radius : 5em;
   font-size                 : 20px;
@@ -365,7 +365,7 @@ li {
 /*     COUNTDOWNS     */
 ///////////////////////
 
-#content {
+#countdown-content {
   margin    : auto;
   text-align: center;
 }
@@ -373,36 +373,44 @@ li {
 #countdowns {
   display              : grid;
   grid-template-columns: repeat(3, 1fr);
-  gap                  : 50px 30px;
+  gap                  : 50px 50px;
+  width                : 80%;
+  margin               : auto;
   padding              : 50px;
 }
 
 .countdown-box {
-  margin: 10px;
-  width : 33%;
-  border: 3px solid $all-text-color;
+  border       : 2px solid rgb(117, 109, 96);
+  border-bottom: none;
+  border-right: none;
+  border-radius: 15px;
+  box-shadow   :
+    6px 4px 2px 0px rgb(60, 60, 80),
+    inset -5px -5px 4px -2px rgb(60, 60, 80);
 
 }
 
-.countdown-row-left {
+.countdown-box-left {
   float     : left;
-  width     : 33%;
+  width     : 20%;
   padding   : 25px;
   text-align: center;
 }
 
-.countdown-row-right {
-  padding   : 25px;
-  text-align: center;
+.countdown-box-right {
+  padding       : 25px;
+  text-align    : center;
+  vertical-align: middle;
 }
 
 #add-countdown {
-  margin    : auto;
-  margin-top: 40px;
-  width     : 30%;
-  padding   : 40px;
-  border    : 3px solid $all-text-color;
-  text-align: center;
+  width           : 25%;
+  padding         : 40px;
+  margin          : 100px auto;
+  background-color: $dark-background;
+  border          : 3px solid gray;
+  border-radius   : 25px;
+  text-align      : center;
 }
 
 
@@ -412,6 +420,8 @@ li {
   border-radius: $button-box-border-radius;
   font-size    : large;
   padding      : 10px 25px;
+  background-color: rgb(24, 26, 27);
+  color: $all-text-color;
 
   &:hover {
     text-decoration: underline;
@@ -421,14 +431,16 @@ li {
 .box-3d {
   box-shadow:
     5px 5px 5px 0px black,
-    inset 0px 0px 5px 0px $tab-highlight-color,
-    inset -5px -5px 4px -2px $tab-highlight-color;
+    inset 0px 0px 5px 0px $tab-color,
+    inset -5px -5px 4px -2px $tab-color;
 }
 
 .textbox {
   border-radius: $button-box-border-radius;
   font-size    : large;
   padding      : 10px 25px;
+  background-color: rgb(24, 26, 27);
+  color: $all-text-color
 }
 
 ///// Special Checkboxes /////

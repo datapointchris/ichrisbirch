@@ -34,7 +34,7 @@ li {
   padding-bottom: 5px;
   padding-left: 50px;
   padding-right: 50px;
-  background-color: #444;
+  background-color: #33373a;
   border-bottom-right-radius: 5em;
   border-bottom-left-radius: 5em;
   font-size: 20px;
@@ -388,7 +388,7 @@ li {
 }
 
 /*     COUNTDOWNS     */
-#content {
+#countdown-content {
   margin: auto;
   text-align: center;
 }
@@ -398,34 +398,41 @@ li {
   display: grid;
   -ms-grid-columns: (1fr)[3];
       grid-template-columns: repeat(3, 1fr);
-  gap: 50px 30px;
+  gap: 50px 50px;
+  width: 80%;
+  margin: auto;
   padding: 50px;
 }
 
 .countdown-box {
-  margin: 10px;
-  width: 33%;
-  border: 3px solid #eee;
+  border: 2px solid #756d60;
+  border-bottom: none;
+  border-right: none;
+  border-radius: 15px;
+  -webkit-box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
+          box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
 }
 
-.countdown-row-left {
+.countdown-box-left {
   float: left;
-  width: 33%;
+  width: 20%;
   padding: 25px;
   text-align: center;
 }
 
-.countdown-row-right {
+.countdown-box-right {
   padding: 25px;
   text-align: center;
+  vertical-align: middle;
 }
 
 #add-countdown {
-  margin: auto;
-  margin-top: 40px;
-  width: 30%;
+  width: 25%;
   padding: 40px;
-  border: 3px solid #eee;
+  margin: 100px auto;
+  background-color: #222;
+  border: 3px solid gray;
+  border-radius: 25px;
   text-align: center;
 }
 
@@ -433,6 +440,8 @@ li {
   border-radius: 6px;
   font-size: large;
   padding: 10px 25px;
+  background-color: #181a1b;
+  color: #eee;
 }
 
 .button:hover {
@@ -440,14 +449,16 @@ li {
 }
 
 .box-3d {
-  -webkit-box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #888, inset -5px -5px 4px -2px #888;
-          box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #888, inset -5px -5px 4px -2px #888;
+  -webkit-box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #444, inset -5px -5px 4px -2px #444;
+          box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #444, inset -5px -5px 4px -2px #444;
 }
 
 .textbox {
   border-radius: 6px;
   font-size: large;
   padding: 10px 25px;
+  background-color: #181a1b;
+  color: #eee;
 }
 
 /* The container */

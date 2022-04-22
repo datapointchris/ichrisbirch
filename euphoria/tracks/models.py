@@ -23,7 +23,6 @@ class Deadline(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), index=False, unique=False, nullable=False)
     date = db.Column(db.DateTime, index=False, unique=False, nullable=False)
-    note = db.Column(db.Text, index=False, unique=False, nullable=True)
 
     def __repr__(self):
-        return f'Deadline(name={self.name}, date={self.date}, note={self.note}'
+        return f'Deadline(name={self.name}, date={self.date}'
