@@ -1,19 +1,19 @@
 <div id="add-task">
     <h3>Add New Task:</h3>
-        <form method="POST" action="{{ url_for('tasks_bp.add_task') }}">
-            <label for="name">Name:</label>
-            <input type="text" size="20" class="textbox box-3d" name="name" id="name">
-            <label for="category">Category:</label>
-            <input type="text" size="20" class="textbox box-3d" name="category"
-                id="category">
-            <label for="subcategory1">Subcategory1:</label>
-            <input type="text" size="20" class="textbox box-3d" name="subcategory1"
-                id="subcategory1">
-            <label for="subcategory2">Subcategory2:</label>
-            <input type="text" size="20" class="textbox box-3d" name="subcategory2"
-                id="subcategory2">
-            <label for="priority">Priority:</label>
-            <input type="number" min="0" max="100" class="textbox box-3d" name="priority" id="priority">
-            <input type="submit" class="button box-3d" value="Add New Task">
-        </form>
+    <form method="POST" action="{{ url_for('tasks_bp.add_task') }}">
+        <label for="name">Name:</label>
+        <input type="text" size="20" class="textbox box-3d" name="name" id="name">
+        <label for="category">Category:</label>
+        <input type="text" size="20" class="textbox box-3d" name="category"
+            id="category">
+        <label for="subcategory1">Subcategory1:</label>
+        <input type="text" size="20" class="textbox box-3d" name="subcategory1"
+            id="subcategory1">
+        <label for="subcategory2">Subcategory2:</label>
+        <input type="text" size="20" class="textbox box-3d" name="subcategory2"
+            id="subcategory2">
+        <label for="priority">Priority:</label>
+        <input type="number" min="0" max="100" class="textbox box-3d" name="priority" id="priority">
+        <input type="submit" class="button box-3d" value="Add New Task">
+    </form>
 </div>
