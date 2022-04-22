@@ -6,71 +6,51 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tracks</title>
-    <link rel="stylesheet" href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+    <link rel="stylesheet"
+        href="{{ url_for('tracks_bp.static', filename='css/tracks.css') }}">
 </head>
 
 <body>
     {% include 'navigation.html' %}
 
-    <div class="countdowns">
+    <div id="content">
         <h1>Manage Countdowns</h1>
-        <table class="countdown-list">
-            {% for name, date, name_id in countdowns %}
-            {% if loop.index % 3 == 1 %}<tr>
-                <td class="third">{% endif %}
-                    {% if loop.index % 3 == 2 %}
-                <td class="third">{% endif %}
-                    {% if loop.index % 3 == 0 %}
-                <td class="third">{% endif %}
-                    <div id="countdown-container">
-                        <form method="POST" action="{{ url_for('tracks_bp.delete_countdown') }}">
-                            <div class="countdown-row-left">
-                                <input type="submit" class="button box-3d" value="Delete">
-                            </div>
-                            <div class="countdown-row-right">
-                                <input type="hidden" name="name" value="{{ name }}">
-                                <input type="hidden" name="date" value="{{ date }}">
-                                <input type="hidden" name="name_id" value="{{ name_id }}">
-                                {{ name }}<br />
-                                {{ date }}
-                            </div>
-                        </form>
+        <div id="countdowns">
+            {% for name, date, note in deadlines %}
+            <div class="countdown-box">
+                <form method="POST" action="{{ url_for('tracks_bp.deadlines') }}">
+                    <input type="hidden" name="name" value="{{ name }}">
+                    <input type="hidden" name="date" value="{{ date }}">
+                    <input type="hidden" name="note" value="{{ note }}">
+                    <input type="hidden" name="delete" value="True">
+                    <div class="countdown-row-left">
+                        <input type="submit" class="button box-3d" value="Delete">
                     </div>
-                    {% if loop.index % 3 == 1 %}
-                </td>{% endif %}
-                {% if loop.index % 3 == 2 %}
-                </td>{% endif %}
-                {% if loop.index % 3 == 0 %}
-                </td>
-            </tr>{% endif %}
+                    <div class="countdown-row-right">
+                        {{ name }}<br />
+                        {{ date }}
+                    </div>
+                </form>
+            </div>
             {% endfor %}
-            <!-- Clean up end of table if there are partial columns -->
-            {% if countdowns|length % 3 == 1 %}
-            <td class="third"></td>
-            <td class="third"></td>
-            </tr>{% endif %}
-            {% if countdowns|length % 3 == 2 %}
-            <td class="third"></td>
-            </tr>{% endif %}
-        </table>
-        <table class="add-countdown">
-            <tr>
-                <td>
-                    <h4>Add New Countdown:</h4>
-                    <br />
-                    <form method="POST" action="{{ url_for('tracks_bp.add_countdown') }}">
-                        <label for="name">Name:</label>
-                        <input type="text" size="30" class="textbox box-3d" name="name"
-                            id="name">
-                        <br /><br />
-                        <label for="date">Deadline:</label>
-                        <input type="date" id="date" name="date" class="textbox box-3d">
-                        <br /><br />
-                        <input type="submit" class="button box-3d" value="Add New Countdown">
-                    </form>
-                </td>
-            </tr>
-        </table>
+        </div>
+        <div id="add-countdown">
+            <h4>Add New Countdown:</h4>
+            <br />
+            <form method="POST" action="{{ url_for('tracks_bp.deadlines') }}">
+                <label for="name">Name:</label>
+                <input type="text" size="30" class="textbox box-3d" name="name" id="name">
+                <br /><br />
+                <label for="date">Deadline:</label>
+                <input type="date" id="date" name="date" class="textbox box-3d">
+                <br /><br />
+                <label for="name">Note:</label>
+                <input type="text" size="50" class="textbox box-3d" name="note" id="note">
+                <br /><br />
+                <input type="hidden" name="add" value="True">
+                <input type="submit" class="button box-3d" value="Add New Countdown">
+            </form>
+        </div>
     </div>
 </body>
 

@@ -8,14 +8,12 @@ from euphoria.tracks.helpers import (
     get_form_habits,
     create_sorted_habit_category_dict,
 )
-from euphoria.tracks.models import Event
+from euphoria.tracks.models import Event, Deadline
 from euphoria.tracks.mongo import (
-    CountdownsMongoManager,
     HabitsMongoManager,
     JournalMongoManager,
 )
 
-countdowns_db = CountdownsMongoManager(mongodb)
 habits_db = HabitsMongoManager(mongodb)
 journal_db = JournalMongoManager(mongodb)
 
@@ -31,7 +29,9 @@ def todo():
     goals = md_to_html('goals.md')
     new_apt_checklist = md_to_html('new_apt_checklist.md')
     events = db.session.execute(select(Event).order_by(Event.date)).scalars().all()
-    deadlines = countdowns_db.get_countdowns()
+    deadlines = (
+        db.session.execute(select(Deadline).order_by(Deadline.date)).scalars().all()
+    )
     return render_template(
         'todo.html',
         todo=todo,
@@ -41,6 +41,9 @@ def todo():
         events=events,
         deadlines=deadlines,
     )
+
+
+# ==================== Habits ==================== #
 
 
 @tracks_bp.route('/habits/', methods=['GET', 'POST'])
@@ -97,8 +100,12 @@ def delete_habit():
     return redirect(url_for('tracks_bp.habits'))
 
 
+# ==================== Journal ==================== #
+
+
 @tracks_bp.route('/add_journal_entry/', methods=['POST'])
 def journal_entry():
+    # TODO: Journal Entry class
     date = request.form.get('journalDate')
     entry = request.form.get('entry')
     feeling = request.form.get('feeling')
@@ -121,43 +128,34 @@ def reference():
     )
 
 
+# ==================== Countdowns ==================== #
+
+
 @tracks_bp.route('/countdowns/', methods=['GET', 'POST'])
 def countdowns():
-    countdowns = countdowns_db.get_countdowns()
-    countdowns = countdowns_db.remove_time_from_dates(countdowns)
-    return render_template('countdowns.html', countdowns=countdowns)
+    deadlines = (
+        db.session.execute(select(Deadline).order_by(Deadline.date)).scalars().all()
+    )
+    return render_template('countdowns.html', deadlines=deadlines)
 
 
-@tracks_bp.route('/add_countdown/', methods=['POST'])
-def add_countdown():
-    name = request.form.get('name')
-    date = request.form.get('date')
-    date = datetime.strptime(date, '%Y-%m-%d')
-    name_id = countdowns_db.make_countdown_id_from_name(name)
-    countdown = {'name': name, 'date': date, 'name_id': name_id}
-    countdowns_db.add_countdown(countdown)
+@tracks_bp.route('/deadlines/', methods=['POST'])
+def deadlines():
+    if request.form.get('add'):
+        db.session.add(Deadline(**request.form))
+    if request.form.get('delete'):
+        db.session.execute(delete(Deadline).where(Deadline.id == request.form.get('id')))
+    db.session.commit()
     return redirect(url_for('tracks_bp.countdowns'))
 
 
-@tracks_bp.route('/delete_countdown/', methods=['POST'])
-def delete_countdown():
-    name = request.form.get('name')
-    date = request.form.get('date')
-    date = datetime.strptime(date, '%B %d %Y')
-    name_id = request.form.get('name_id')
-    countdown = {'name': name, 'date': date, 'name_id': name_id}
-    print(countdown)
-    countdowns_db.delete_countdown(countdown)
-    return redirect(url_for('tracks_bp.countdowns'))
+# ==================== Events ==================== #
 
 
 @tracks_bp.route('/manage_events/', methods=['GET', 'POST'])
 def manage_events():
     if request.method == 'POST':
-        # TODO: Fix naming, or separate out
-        do_add = request.form.get('add')
-        do_update = request.form.get('update')
-        do_delete = request.form.get('delete')
+        # TODO: Use the Event class, fix date somewhere else
         event = dict(
             name=request.form.get('name'),
             date=datetime.strptime(request.form.get('date'), '%Y-%m-%d'),
@@ -167,13 +165,13 @@ def manage_events():
             attending=True if request.form.get('attending') == '1' else False,
             notes=request.form.get('notes'),
         )
-        if do_add:
+        if request.form.get('add'):
             db.session.add(Event(**event))
-        elif do_update:
+        elif request.form.get('update'):
             db.session.execute(
                 update(Event).where(Event.name == event.get('name')).values(**event)
             )
-        elif do_delete:
+        elif request.form.get('delete'):
             db.session.execute(delete(Event).where(Event.name == event.get('name')))
         db.session.commit()
     events = db.session.execute(select(Event).order_by(Event.date)).scalars().all()
