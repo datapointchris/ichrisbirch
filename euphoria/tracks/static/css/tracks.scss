@@ -342,7 +342,7 @@ li {
 
 
 /////////////////////////
-/*     COUNTDOWNS     */
+/*     EVENTS     */
 ///////////////////////
 
 .events {
@@ -365,19 +365,19 @@ li {
 /*     COUNTDOWNS     */
 ///////////////////////
 
-.countdowns {
+#content {
   margin    : auto;
   text-align: center;
 }
 
-.countdown-list {
-  margin        : auto;
-  width         : 90%;
-  border-spacing: 25px;
-
+#countdowns {
+  display              : grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap                  : 50px 30px;
+  padding              : 50px;
 }
 
-.third {
+.countdown-box {
   margin: 10px;
   width : 33%;
   border: 3px solid $all-text-color;
@@ -396,7 +396,7 @@ li {
   text-align: center;
 }
 
-.add-countdown {
+#add-countdown {
   margin    : auto;
   margin-top: 40px;
   width     : 30%;

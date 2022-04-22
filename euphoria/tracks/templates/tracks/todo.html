@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tracks</title>
     <link rel="stylesheet"
-        href="{{ url_for('tracks_bp.static', filename='css/styling.css') }}">
+        href="{{ url_for('tracks_bp.static', filename='css/tracks.css') }}">
     <script src="{{ url_for('tracks_bp.static', filename='js/countdowns.js') }}"></script>
 </head>
 
@@ -98,15 +98,17 @@
                         <li>{{ event.venue }}</li>
                         <li>{{ '$%.2f'|format(event.cost) }}</li>
                         <li>Going: {{ 'YES' if event.attending else 'No' }}</li>
-                        <li><a href="{{ event.url }}" target="_blank">{{ event.url }}</a></li>
+                        <li><a href="{{ event.url }}" target="_blank">Event URL</a></li>
                         <li>Notes: {{ event.notes }}</li>
                     </ul>
                     {% endfor %}
                     <br />
                     <!-- This does not need to be a form but I want the button. -->
-                    <form method="GET" action="{{ url_for('tracks_bp.manage_events') }}">
-                        <input type="submit" class="button box-3d" value="Manage Events">
-                    </form>
+                    <!-- <form method="POST" action="{{ url_for('tracks_bp.manage_events') }}"> -->
+                        <a href="{{ url_for('tracks_bp.manage_events') }}">
+                            <input type="submit" class="button box-3d" value="Manage Events">
+                        </a>
+                    <!-- </form> -->
                 </div>
             </div>
 
