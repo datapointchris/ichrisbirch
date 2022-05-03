@@ -21,7 +21,7 @@ tasks_bp = Blueprint(
 )
 
 
-@tasks_bp.route('/')
+@tasks_bp.route('/all')
 def tasks():
     tasks = (
         db.session.execute(
@@ -35,7 +35,7 @@ def tasks():
     return render_template('tasks.html', tasks=tasks)
 
 
-@tasks_bp.route('/priority/', methods=['GET'])
+@tasks_bp.route('/', methods=['GET'])
 def priority():
     today = datetime.combine(date.today(), time())
     tomorrow = today + timedelta(days=1)
@@ -165,10 +165,6 @@ def completed():
     )
 
 
-# TODO: When the API is working, use those endpoints instead of these
-# Not really sure if that will work
-# API Endpoints won't work because browsers can't send DELETE or PUT
-
 
 @tasks_bp.route('/add/', methods=['POST'])
 def add_task():
@@ -195,9 +191,9 @@ def delete_task():
 @tasks_bp.route('/fake/', methods=['GET'])
 def fake_tasks():
     for _ in range(100):
-        tstamp = datetime.utcnow() - timedelta(days=random.randint(0, 100))
+        tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(days=random.randint(0, 100))
         completed = (
-            tstamp + timedelta(days=random.randint(0, 100)),
+            (tstamp + timedelta(days=random.randint(0, 100))).isoformat(),
             None,
             None,
             None,
@@ -205,10 +201,8 @@ def fake_tasks():
         task = {
             'name': f'task {round(random.random() * 100, 2)}',
             'category': random.choice(['financial', 'coding', 'chore', 'car', 'misc']),
-            'subcategory1': None,
-            'subcategory2': None,
             'priority': random.randint(0, 100),
-            'add_date': tstamp,
+            'add_date': tstamp.isoformat(),
             'complete_date': random.choice(completed),
         }
         db.session.add(Task(**task))

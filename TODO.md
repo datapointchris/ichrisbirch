@@ -7,31 +7,10 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 
 # v0.3.0 --> Migrate Databases
 ---
-Countdowns -> SQLAlchemy
-Apartments -> SQLAlchemy
-1. "Schema" of the apartments
-   1. Should the features each be a field or should there be a field with "features"?
-2. Find scripts I've already written for other programs
-   1. These are in Snippets Project
-3. New DynamoDB Table and Connection
-{
-    "first_name": "Paul",
-    "surname": "Miller",
-    "cell": "447557505611",
-    "city": "London",
-    "location": [45.123, 47.232],
-    "profession": ["banking", "finance", "trader"],
-    "cars": [
-        {
-            "model": "Bentley",
-            "year": 1973
-        },
-        {
-            "model": "Rolls Royce",
-            "year": 1965
-        }
-    ]
-}
+- [X] Countdowns -> SQLAlchemy
+- [ ] Apartments -> PynamoDB
+- [ ] Simplify Journal Entry MongoDB
+- [ ] Get rid of Events dict
 
 
 
@@ -39,6 +18,17 @@ Apartments -> SQLAlchemy
 # v0.3.1 --> Update nginx.conf
 Use the new file so that the static files are served by nginx
 Does this reach into all static folders?'
+
+
+# v0.4.0 --> FastAPI
+API is being run on a different port/subdomain
+api.ichrisbirch.com
+- [ ] Update Nginx to serve both sites
+- [ ] Update Endpoints to point to API
+  - [ ] Apartments
+  - [ ] Box-Packing
+    - [ ] Rename `moving` to `box-packing`
+  - [ ] 
 
 
 # v0.4.0 --> Backups
@@ -86,7 +76,6 @@ Pre-commit - What is the difference between this and CI/CD
 [Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
 
 
-
 # v0.9.0 --> Documentation
 - Docs/notes for each page and function
 - Hopefully a lot of this is done as I'm testing and doing type hinting
@@ -99,9 +88,19 @@ Pre-commit - What is the difference between this and CI/CD
 - [ ] There is a style of CSS naming convention, find that again.
 
 
+# v0.11.0 --> Build Portfolio Page
+- [ ] code this entirely by hand, using small code packages
+  - [ ] Dataset
+  - [ ] Dataset-orm
+- [ ] Use templates for everything
+
 
 # v1.0.0 --> Basic Main page and Portfolio
 
+
+# v1.1.0 --> Front-end Framework
+Test this out on the portfolio page
+- resume page
 
 
 ===================================================
@@ -167,6 +166,8 @@ Ranking
 - [ ] Add time remaining for events
 - [ ] Turn long URLs into `Event Link` 
 
+### Countdowns
+- [ ] Automatically put a countdown for any Event that I am attending
 
 
 ## Box Moving

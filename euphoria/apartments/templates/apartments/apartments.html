@@ -9,7 +9,7 @@
 
 <div id="add-feature">
     <h2>Add a New Feature:</h2>
-    <form method="POST" action="{{ url_for('apartments_bp.add_feature') }}">
+    <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
         <input type="hidden" id="apartment_id" name="apartment_id" value="{{ aptid }}">
         <input class="bigbox" type="text" size="20" name="name" id="name">
         <h2>Type:</h2>
@@ -23,6 +23,7 @@
 </div>
 
 <div id="content">
+    {% if apartment %}
     <div id="apartment">
         <div class="feature-list">
             <h1 class="title">{{ apartment.name.upper() }}</h1>
@@ -31,49 +32,31 @@
                     target="_blank">{{ apartment.address }}</a>
             </h2>
             <h2><a href="{{ apartment.url }}" target="_blank">{{ apartment.url }}</a></h2>
-        </div>
-        <form method="POST" action="{{ url_for('apartments_bp.apartments') }}">
-            <input type="hidden" id="apartment.id" name="id" value="{{ apartment.id }}">
-            <input type="hidden" id="apartment.name" name="name"
-                value="{{ apartment.name }}">
-            <input type="hidden" id="apartment.address" name="address"
-                value="{{ apartment.address }}">
-            <input type="hidden" id="apartment.url" name="url"
-                value="{{ apartment.url }}">
             <div id="apt-features">
                 {% for feature in features %}
                 <div class="feature-box">
                     <h2>{{ feature.name.upper() }}</h2>
-                    {% if feature.type == 'integer' %}
-                    <input class="bigbox" type="text" size="20" name="{{ feature.name }}"
-                        value="{{ feature.name }}">
-                    {% elif feature.type == 'text' %}
-                    <input type="text" class="bigbox" size="20" name="{{ feature.name }}"
-                        value="{{ feature.name }}">
-                    {% elif feature.type == 'boolean' %}
-                    <label class="checkboxes">
-                        {% if value == 1 %}
-                        <input type="checkbox" id="{{ feature.name }}-true"
-                            name="{{ feature.name }}" value=1 checked="checked" />
-                        {% else %}
-                        <input type="checkbox" id="{{ feature }}-true"
-                            name="{{ feature.name }}" value=1 />
-                        {% endif %}
-                        <span class="checkmark"></span>
-                        </h2>
-                    </label>
-                    {% endif %}
+                    <h2>{{ feature.value }}</h2>
                 </div>
                 {% endfor %}
             </div>
-            <div class="feature-list">
-                <h2>NOTES</h2>
-                <textarea class="bigbox" rows="20" cols="150" name="notes">
-                    {{ apartment.notes }}</textarea>
-                <br /><br /><br /><br /><br /><br /><br /><br />
-                <input class="manage-box" type="submit" value="Update Apartment Info">
-            </div>
-        </form>
+        </div>
+        <div class="feature-list">
+            <h2>NOTES</h2>
+            {{ apartment.notes }}
+            <br /><br /><br /><br /><br /><br /><br /><br />
+            <a href="{{ url_for('apartments_bp.edit', name=apartment.name) }}">
+                <input class="manage-box" type="submit" value="Edit Apartment Info">
+            </a>
+            </form>
+        </div>
     </div>
+    {% else %}
+    <div id="apartment">
+        <div class="feature-list">
+            <h1 class="title">{{ message }}</h1>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

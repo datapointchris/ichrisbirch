@@ -103,21 +103,18 @@
                     </ul>
                     {% endfor %}
                     <br />
-                    <!-- This does not need to be a form but I want the button. -->
-                    <!-- <form method="POST" action="{{ url_for('tracks_bp.manage_events') }}"> -->
                         <a href="{{ url_for('tracks_bp.manage_events') }}">
                             <input type="submit" class="button box-3d" value="Manage Events">
                         </a>
-                    <!-- </form> -->
                 </div>
             </div>
 
             <div class="tab__content">
                 <div class="index-countdowns">
-                    {% for name, deadline, id in deadlines %}
-                    <h1>{{ name }}</h1>
-                    <h1 class="daysleft" id="{{ id }}"></h1>
-                    <script>calculateDays('{{ deadline }}', '{{ id }}');
+                    {% for deadline in deadlines %}
+                    <h1>{{ deadline.name }}</h1>
+                    <h1 class="daysleft" id="{{ deadline.id }}"></h1>
+                    <script>calculateDays('{{ deadline.date.strftime("%B %d %Y %X") }}', '{{ deadline.id }}');
                     </script>
                     <br />
                     {% endfor %}

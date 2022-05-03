@@ -1,8 +1,25 @@
-# Standards
+Standards
+=========
+
+
+## API
+======
+There are many HTTP methods, but the most important ones are:
+POST for creating resources
+POST /users
+GET for reading resources (both single resources and collections)
+GET /users
+GET /users/{id}
+PATCH for applying partial updates to a resource
+PATCH /users/{id}
+PUT for applying full updates to a resource (replaces the current resource)
+PUT /users/{id}
+DELETE for deleting resources
+DELETE /users/{id}
 
 
 ## Git
-
+======
 ### Branching
 `{app_name}-{purpose-of-branch}
 
@@ -26,11 +43,13 @@ Each milestone is a new minor version
 
 
 ## Versioning
+=============
 SemVer
 https://semver.org
 
 
 ## Technologies
+===============
 Python 3.10.1  
 Postgres 14.2  
 DynamoDB
@@ -38,7 +57,8 @@ MongoDB
 
 
 
-# Deploy
+Deploy
+======
 Location: `/deploy`
 `nginx.conf`
   1. Set the server name and static folder location
@@ -53,7 +73,8 @@ Location: `/deploy`
 
 
 
-# Set up pg_cron
+Set up pg_cron
+================
 Location: `/deploy`
 1. pg_cron must be added to 'shared_preload_libraries'
    1. Reboot required
@@ -63,7 +84,8 @@ Location: `/deploy`
 
 
 
-# Backups
+Backups
+=======
 Location: `/backup_scripts`
 1. Install AWS-CLI
 2. `aws configure` - Use credentials for 
@@ -74,7 +96,8 @@ Postgres Backup:
 
 
 
-# Environment
+Environment
+=============
 Location: `/`
 `.env` - Holds all of the environment constants
   - Choosing not to separate these for now, one file.
@@ -97,6 +120,7 @@ Location: `/`
 
 
 
-# Configuration
+Configuration
+=============
 Location: `/`
 `config.py` - Config classes for environments

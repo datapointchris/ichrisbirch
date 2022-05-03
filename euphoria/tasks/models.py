@@ -1,6 +1,7 @@
 from zoneinfo import ZoneInfo
 from euphoria import db
 from datetime import datetime
+from sqlalchemy.sql import func
 
 
 class Task(db.Model):
@@ -11,22 +12,20 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=False, unique=False, nullable=False)
     category = db.Column(db.String(64), index=False, unique=False, nullable=True)
-    subcategory1 = db.Column(db.String(64), index=False, unique=False, nullable=True)
-    subcategory2 = db.Column(db.String(64), index=False, unique=False, nullable=True)
     priority = db.Column(db.Integer, index=False, unique=False, nullable=False)
     add_date = db.Column(
         db.DateTime(timezone=True),
         index=False,
         unique=False,
         nullable=False,
-        default=datetime.now(tz=ZoneInfo("America/Chicago")),
+        server_default=func.now()
     )
     complete_date = db.Column(
         db.DateTime(timezone=True), index=False, unique=False, nullable=True
     )
 
     def __repr__(self):
-        return f'Task(name = {self.name}, priority = {self.priority}, category = {self.category}, subcategory1 = {self.subcategory1}, subcategory2 = {self.subcategory2}, , add_date = {self.add_date}, complete_date = {self.complete_date})'
+        return f'Task(name = {self.name}, priority = {self.priority}, category = {self.category}, add_date = {self.add_date}, complete_date = {self.complete_date})'
 
     @property
     def days_to_complete(self):

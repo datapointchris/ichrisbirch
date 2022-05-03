@@ -1,7 +1,7 @@
-from flask import Blueprint, redirect, render_template, request, url_for
-from euphoria import db
+from flask import Blueprint, redirect, render_template, request, url_for, current_app
 from euphoria.apartments.models import Apartment, Feature
-from sqlalchemy import select, delete, update
+import os
+import requests
 
 apartments_bp = Blueprint(
     'apartments_bp',
@@ -10,74 +10,85 @@ apartments_bp = Blueprint(
     static_folder='static',
 )
 
-
-@apartments_bp.route('/', methods=['GET', 'POST'])
-@apartments_bp.route('/<int:id>/', methods=['GET', 'POST'])
-def apartments(id=1):
-    apartment = (
-        db.session.execute(select(Apartment).where(Apartment.id == id)).scalars().first()
-    )
-    features = (
-        db.session.execute(select(Feature).where(Feature.apartment_id == id))
-        .scalars()
-        .all()
-    )
-    print(features)
-    apartments = db.session.execute(select(Apartment)).scalars().all()
+@apartments_bp.route('/')
+def apartments():
+    apartments = [apt for apt in Apartment.scan()]
     return render_template(
-        'apartments.html', apartment=apartment, apartments=apartments, features=features
-    )
-
-
-@apartments_bp.route('/manage/')
-@apartments_bp.route('/manage/<int:id>/')
-def manage(id=1):
-    apartment = (
-        db.session.execute(select(Apartment).where(Apartment.id == id)).scalars().first()
-    )
-    apartments = db.session.execute(select(Apartment)).scalars().all()
-    return render_template(
-        'manage.html',
-        apartment=apartment,
+        'apartments.html',
         apartments=apartments,
+        apartment=None,
+        features=None,
+        message='No apartment selected',
     )
 
 
-# not implemented
-@apartments_bp.route('/add_apartment/', methods=['POST'])
-def add_apartment():
-    db.session.add(Apartment(**request.form))
-    db.session.commit()
-    return redirect(url_for('apartments_bp.apartments'))
+@apartments_bp.route('/<string:name>/')
+def apartment(name):
+    apartments = [apt for apt in Apartment.scan()]
+    if apartment := next((apt for apt in apartments if apt.name == name), None):
+        features = [Feature(**f) for f in apartment.features]
+        return render_template(
+            'apartments.html',
+            apartments=apartments,
+            apartment=apartment,
+            features=features,
+            message=None,
+        )
+    else:
+        return render_template(
+            'apartments.html',
+            apartments=apartments,
+            apartment=None,
+            features=None,
+            message=f'{name} apartment does not exist',
+        )
 
 
-@apartments_bp.route('/update_apartment/', methods=['POST'])
-def update_apartment():
-    apartment = request.form
-    db.session.execute(
-        update(Apartment).where(Apartment.id == apartment.get('id')).values(**apartment)
+# transparently redirect to main page
+@apartments_bp.route('/edit/')
+def noedit():
+    apartments = [apt for apt in Apartment.scan()]
+    return render_template(
+        'apartments.html',
+        apartments=apartments,
+        apartment=None,
+        features=None,
+        message='No apartment selected',
     )
-    db.session.commit()
-    return redirect(url_for('apartments_bp.apartments', aptid=apartment.get('id')))
 
 
-@apartments_bp.route('/delete_apartment/', methods=['POST'])
-def delete_apartment():
-    db.session.execute(delete(Apartment).where(Apartment.id == request.form.get('id')))
-    db.session.commit()
-    return redirect(url_for('apartments_bp.apartments'))
+@apartments_bp.route('/edit/<string:name>/')
+def edit(name):
+    apartments = [apt for apt in Apartment.scan()]
+    if apartment := next((apt for apt in apartments if apt.name == name), None):
+        features = [Feature(**f) for f in apartment.features]
+        return render_template(
+            'edit.html',
+            apartments=apartments,
+            apartment=apartment,
+            features=features,
+            message=None,
+        )
+    else:
+        return render_template(
+            'apartments.html',
+            apartments=apartments,
+            apartment=None,
+            features=None,
+            message=f'{name} apartment does not exist',
+        )
 
 
-@apartments_bp.route('/add_feature/', methods=['POST'])
-def add_feature():
-    db.session.add(Feature(**request.form))
-    db.session.commit()
-    return redirect(url_for('apartments_bp.apartments', aptid=request.form.get('apt_id')))
-
-
-# not implemented right now
-@apartments_bp.route('/delete_feature/', methods=['POST'])
-def delete_feature():
-    db.session.execute(delete(Feature).where(Feature.id == request.form.get('id')))
-    db.session.commit()
-    return redirect(url_for('apartments_bp.manage'))
+@apartments_bp.route('/form/', methods=['POST'])
+def crud():
+    api_url = current_app.config.get('API_URL')
+    data = request.form.to_dict()
+    method = data.pop('method')
+    apt = Apartment(**data)
+    if method == 'add':
+        response = requests.post(f'{api_url}/tasks', data=apt)
+    elif method == 'update':
+        response = requests.put(f'{api_url}//tasks', data=apt)
+    elif method == 'delete':
+        response = requests.delete(f'{api_url}//tasks', data=apt)
+    return redirect(url_for('apartments_bp.apartment', name=data.get('name')))

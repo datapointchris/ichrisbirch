@@ -1,10 +1,10 @@
 <div id="apartment-list">
     <ul>
         {% for apt in apartments %}
-        {% if apt.id == aptid %}
+        {% if apartment.name == apt.name %}
         <li><a class="active" href="#">{{ apt.name }}</a></li>
         {% else %}
-        <li><a href="{{ url_for('apartments_bp.apartments', aptid=apt.id) }}">
+        <li><a href="{{ url_for('apartments_bp.apartments', name=apt.name) }}">
                 {{ apt.name }}</a></li>
         {% endif %}
         {% endfor %}
