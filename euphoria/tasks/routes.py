@@ -1,7 +1,7 @@
 import base64
 import calendar
 import random
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, datetime, time, timedelta
 from io import BytesIO
 from zoneinfo import ZoneInfo
@@ -56,9 +56,12 @@ def priority():
         .scalars()
         .all()
     )
-    return render_template(
-        'priority.html', top_tasks=top_tasks, completed_today=completed_today
-    )
+    return render_template('priority.html', top_tasks=top_tasks, completed_today=completed_today)
+
+
+class Filter:
+    def __init__(self):
+        pass
 
 
 @tasks_bp.route('/completed/', methods=['GET', 'POST'])
@@ -71,29 +74,26 @@ def completed():
     previous_30 = today - timedelta(days=30)
     _month_days = calendar.monthrange(today.year, today.month)[1]
     week_number = today.isocalendar().week
-    week_start = datetime.combine(
-        date.fromisocalendar(today.year, week_number, 1), time()
-    )
+    week_start = datetime.combine(date.fromisocalendar(today.year, week_number, 1), time())
     week_end = week_start + timedelta(days=7)
     this_month = datetime(today.year, today.month, 1)
     next_month = this_month + timedelta(days=_month_days)
     this_year = datetime(today.year, 1, 1)
     next_year = datetime(today.year + 1, 1, 1)
 
+    # TODO: These need to become methods of the Task class
+    # to call then is ??
+    # Hmm where do these custom queries go?
     first_completed_task = (
         db.session.execute(
-            select(Task)
-            .where(Task.complete_date.is_not(None))
-            .order_by(Task.complete_date.asc())
+            select(Task).where(Task.complete_date.is_not(None)).order_by(Task.complete_date.asc())
         )
         .scalars()
         .first()
     )
     last_completed_task = (
         db.session.execute(
-            select(Task)
-            .where(Task.complete_date.is_not(None))
-            .order_by(Task.complete_date.desc())
+            select(Task).where(Task.complete_date.is_not(None)).order_by(Task.complete_date.desc())
         )
         .scalars()
         .first()
@@ -110,17 +110,17 @@ def completed():
     }
 
     if request.method == 'POST':
-        selected_filter = request.form.get('filter')
+        date_filter = request.form.get('filter')
     else:
-        selected_filter = 'this_week'
+        date_filter = 'this_week'
 
-    filter_start_date, filter_end_date = filters.get(selected_filter)
+    date_filter_start, date_filter_end = filters.get(date_filter)
     completed_tasks = (
         db.session.execute(
             select(Task)
             .where(
-                Task.complete_date >= filter_start_date,
-                Task.complete_date < filter_end_date,
+                Task.complete_date >= date_filter_start,
+                Task.complete_date < date_filter_end,
             )
             .order_by(Task.complete_date.desc())
         )
@@ -131,19 +131,20 @@ def completed():
     average_completion = calculate_average_completion_time(completed_tasks)
 
     # Graph
-    tstamps = [
-        filter_start_date + timedelta(days=x)
-        for x in range((filter_end_date - filter_start_date).days)
-    ]
-    all_dates = {dt: 0 for dt in tstamps}
-    task_complete_dates = [
-        datetime(
-            task.complete_date.year, task.complete_date.month, task.complete_date.day
-        )
-        for task in completed_tasks
-    ]
-    task_counts = Counter(task_complete_dates)
-    all_dates_with_counts = {**all_dates, **task_counts}
+    filter_timestamps = {
+        dt: 0
+        for dt in [
+            date_filter_start + timedelta(days=x)
+            for x in range((date_filter_end - date_filter_start).days)
+        ]
+    }
+    completed_task_timestamps = Counter(
+        [
+            datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day)
+            for task in completed_tasks
+        ]
+    )
+    all_dates_with_counts = {**filter_timestamps, **completed_task_timestamps}
     x = all_dates_with_counts.keys()
     y = all_dates_with_counts.values()
     x_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
@@ -160,12 +161,15 @@ def completed():
         completed_tasks=completed_tasks,
         average_completion=average_completion,
         filters=filters,
-        selected_filter=selected_filter,
+        date_filter=date_filter,
         image_data=image_data,
     )
 
-
-
+# FIXME: When adding a task, the date is stuck at 4/21
+# Most likely a problem when postgres started and the default value.
+# I think the fix is that I need to set the default in SQLAlchemy
+# and the db will be created with the proper default by Alembic
+# Christ! whenever I get around to adding Alembic as well
 @tasks_bp.route('/add/', methods=['POST'])
 def add_task():
     db.session.add(Task(**request.form))
@@ -191,19 +195,19 @@ def delete_task():
 @tasks_bp.route('/fake/', methods=['GET'])
 def fake_tasks():
     for _ in range(100):
-        tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(days=random.randint(0, 100))
-        completed = (
-            (tstamp + timedelta(days=random.randint(0, 100))).isoformat(),
-            None,
-            None,
-            None,
+        tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(
+            days=random.randint(0, 100)
         )
         task = {
             'name': f'task {round(random.random() * 100, 2)}',
             'category': random.choice(['financial', 'coding', 'chore', 'car', 'misc']),
             'priority': random.randint(0, 100),
             'add_date': tstamp.isoformat(),
-            'complete_date': random.choice(completed),
+            'complete_date': random.choices(
+                [(tstamp + timedelta(days=random.randint(0, 100))).isoformat(), None],
+                k=1,
+                weights=[1, 3],
+            ),
         }
         db.session.add(Task(**task))
     db.session.commit()

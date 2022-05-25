@@ -1,16 +1,78 @@
-# Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
+# v0.2.0 --> Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
 ---
 Prod only, further ahead will figure out how to sync dev and "testing" (god help me) to the prod environment
 - [X] pg_cron and update task priorities
 - [X] MongoDB move to Atlas
 
 
+
+# v0.3.0 --> Get rid of Flask-SQLAlchemy
+- [ ] Use regular SQLAlchemy instead.
+
+
+
 # v0.3.0 --> Migrate Databases
----
+
 - [X] Countdowns -> SQLAlchemy
-- [ ] Apartments -> PynamoDB
+- [ ] Apartments -> SQLAlchemy
 - [ ] Simplify Journal Entry MongoDB
 - [ ] Get rid of Events dict
+  - [ ] Maybe with Pydantic Models
+
+
+
+# v0.4.0 --> Migrate Databases
+- [ ] Alembic
+- [ ] https://alembic.sqlalchemy.org/en/latest/tutorial.html
+
+
+<!-- SMALL THINGS THAT NEED TO BE ADDRESSED -->
+1. [ ] Take code out of `__init__.py` files
+   1. [ ] Put them in `main.py` for the module or name of module
+   2. [ ] Import the names in the `__init__.py` file for better top level imports
+2. [ ] Main Site Navigation
+   1. [ ] Put this on base page that all pages inherit from
+   2. [ ] Inherit CSS as well
+   3. [ ] Restructure site so that all apps are top level
+      1. [ ] events
+      2. [ ] countdowns
+      3. [ ] journal
+      4. [ ] habits
+
+<!-- END OF SMALL THINGS -->
+
+# v0.4.0 --> FastAPI
+- FastAPI Course
+API is being run on a different port/subdomain
+api.ichrisbirch.com
+https://adamtheautomator.com/nginx-subdomain/
+https://hackprogramming.com/how-to-setup-subdomain-or-host-multiple-domains-using-nginx-in-linux-server/
+https://blog.logrocket.com/how-to-build-web-app-with-multiple-subdomains-nginx/
+https://stackoverflow.com/questions/64955127/nginx-multiple-node-apps-with-multiple-subdomains
+
+- [ ] Update Nginx to serve both sites
+  - [ ] 
+- [ ] Update Endpoints to point to API
+  - [ ] Apartments
+  - [ ] Box-Packing
+    - [ ] Rename `moving` to `box-packing`
+
+FastAPI:
+- [ ] Tasks
+- [ ] Countdowns
+- [ ] Events
+- [ ] Journal
+- [ ] Apartments
+- [ ] Box Packing
+
+Flask:
+- [ ] Tasks
+- [ ] Countdowns
+- [ ] Events
+- [ ] Journal
+- [ ] Apartments
+- [ ] Box Packing
+
 
 
 
@@ -20,15 +82,8 @@ Use the new file so that the static files are served by nginx
 Does this reach into all static folders?'
 
 
-# v0.4.0 --> FastAPI
-API is being run on a different port/subdomain
-api.ichrisbirch.com
-- [ ] Update Nginx to serve both sites
-- [ ] Update Endpoints to point to API
-  - [ ] Apartments
-  - [ ] Box-Packing
-    - [ ] Rename `moving` to `box-packing`
-  - [ ] 
+
+
 
 
 # v0.4.0 --> Backups
@@ -45,25 +100,42 @@ api.ichrisbirch.com
 ---
 - [ ] Create login for all apps as a main page.
 	- [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
+	- [ ] https://flask-login.readthedocs.io/en/latest/
+	- [ ] https://github.com/maxcountryman/flask-login
 
 - SSL for nginx
   - https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-18-04
     - Step 6 - Securing the Application
+
+- Flask Admin -- NO
+- https://github.com/flask-admin/flask-admin
+
+- JSON Web Tokens
+https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d
+
+
+
+# v0.6.0 --> WTForms
+Is this something I want to do?
 
 
 
 # v0.6.0 --> Testing
 ---
 Udemy Class
+- 
 I have pytest book somewhere
 Realpython
+- Books on datapointchris.com
+- pytest
+- test driven dev in python
 
 
 
 # v0.7.0 --> Typing
 ---
 [Using mypy with an existing codebase — Mypy 0.942 documentation](https://mypy.readthedocs.io/en/stable/existing_code.html)
-
+- [ ] Pydantic Models
 
 
 # v0.8.0 --> Continuous Integration / Github Actions
@@ -87,6 +159,10 @@ Pre-commit - What is the difference between this and CI/CD
   - [ ] Both the classes and site-wide variables
 - [ ] There is a style of CSS naming convention, find that again.
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_file('static/favicon.ico')
+
 
 # v0.11.0 --> Build Portfolio Page
 - [ ] code this entirely by hand, using small code packages
@@ -96,6 +172,29 @@ Pre-commit - What is the difference between this and CI/CD
 
 
 # v1.0.0 --> Basic Main page and Portfolio
+- Portfolio
+  - [ ] Of course have the stupid carousel portfolio
+    - [ ] When hover on project, get the 'highlights' reel.
+
+
+
+# v1.1.0 --> Employers
+- Super awesome employers only link
+  - Enter their super special employer code
+  - Customized short video (my own voice from computer)
+
+
+
+# v1.1.0 --> ML Models
+- [ ] API
+- [ ] Corresponding Flask interface
+  - [ ] Choose models
+  - [ ] Choose dataset
+    - [ ] Use the scikit-learn toy datasets to get a feel
+  - [ ] Graphing, maybe this is part of Front-End
+https://towardsdatascience.com/how-to-properly-ship-and-deploy-your-machine-learning-model-8a8664b763c4
+https://testdriven.io/blog/fastapi-machine-learning/
+
 
 
 # v1.1.0 --> Front-end Framework
@@ -200,6 +299,11 @@ Upon opening it should check if there is a new github repository and alert me so
 
 ## * ~ New Project ~ *
 # Postgres Permissions Graphical Interface with Approvals
+# Postgres Stats
+- [ ] Make the SQL queries first
+- [ ] Make each SQL query a function
+- [ ] Be able to call these functions in API
+- [ ] Tabbed interface for the different functions / stats
 class PermissionRequest
 
 
