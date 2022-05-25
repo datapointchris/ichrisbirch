@@ -1,4 +1,4 @@
-Standards
+# Standards
 =========
 
 
@@ -46,6 +46,11 @@ Each milestone is a new minor version
 =============
 SemVer
 https://semver.org
+
+
+## CSS
+======
+BEM
 
 
 ## Technologies
