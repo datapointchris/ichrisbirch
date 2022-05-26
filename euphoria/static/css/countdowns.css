@@ -1,0 +1,30 @@
+#countdowns {
+  width: 80%;
+  margin: 50px, auto;
+  padding: 50px;
+  text-align: center;
+}
+
+.countdown-box {
+  border: 2px solid #756d60;
+  border-radius: 15px;
+  -webkit-box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
+          box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
+}
+
+.daysleft {
+  line-height: .25em;
+}
+
+#add-countdown {
+  width: 25%;
+  margin: 100px auto;
+  padding: 40px;
+  background-color: #444;
+  text-align: center;
+  border: 2px solid #756d60;
+  border-radius: 15px;
+  -webkit-box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
+          box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
+}
+/*# sourceMappingURL=countdowns.css.map */

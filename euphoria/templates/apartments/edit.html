@@ -1,0 +1,62 @@
+{% extends 'apartments/base.html' %}
+
+{% block title %}Edit Apartment{% endblock %}
+
+{% block content %}
+
+{% include 'apartment_list.jinja' %}
+
+<div id="content">
+    <div id="apartment">
+        <div class="feature-list">
+            <h1 class="title">{{ apartment.name.upper() }}</h1>
+            <h2>Edit Apartment Data:</h2>
+            <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
+                <input type="hidden" id="id" name="id" value="{{ aptid }}">
+                <input type="text" class="manage-box" size="90" name="name"
+                    value="{{ name }}">
+                <input type="text" class="manage-box" size="90" name="address"
+                    value="{{ address }}">
+                <input type="text" class="manage-box" size="90" name="url"
+                    value="{{ url }}">
+                <br /><br /><br />
+                <div id="apt-features">
+                    {% for feature in features %}
+                    <div class="feature-box">
+                        <h2>{{ feature.name.upper() }}</h2>
+                        {% if feature.type == 'integer' %}
+                        <input class="bigbox" type="text" size="20" name="{{ feature.name }}"
+                            value="{{ feature.name }}">
+                        {% elif feature.type == 'text' %}
+                        <input type="text" class="bigbox" size="20" name="{{ feature.name }}"
+                            value="{{ feature.name }}">
+                        {% elif feature.type == 'boolean' %}
+                        <label class="checkboxes">
+                            {% if value == 1 %}
+                            <input type="checkbox" id="{{ feature.name }}-true"
+                                name="{{ feature.name }}" value=1 checked="checked" />
+                            {% else %}
+                            <input type="checkbox" id="{{ feature }}-true"
+                                name="{{ feature.name }}" value=1 />
+                            {% endif %}
+                            <span class="checkmark"></span>
+                            </h2>
+                        </label>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <input class="manage-box" type="submit" value="Update Apartment">
+            </form>
+        </div>
+        <br /><br /><br /><br /><br /><br />
+        <div class="feature-list">
+            <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
+                <input type="hidden" id="id" name="id" value="{{ aptid }}">
+                <input class="manage-box warning" type="submit" value="DELETE Apartment">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

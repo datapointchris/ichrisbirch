@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block stylesheet %}
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/app1.css') }}">
+{% endblock %}
+
+{% block app_navigation %}
+<div id="app1-navigation">
+    <span class="navigation-tab">
+        <a href="{{ url_for('app1.index') }}">Index</a></span>
+    <span class="navigation-tab">
+        <a href="{{ url_for('app1.page1') }}">Page 1</a></span>
+    <span class="navigation-tab">
+        <a href="{{ url_for('app1.page2') }}">Page 2</a></span>
+</div>
+{% endblock %}
+
+{% block content %}{% endblock %}

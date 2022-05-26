@@ -1,0 +1,171 @@
+{% extends 'box_packing/base.html' %}
+
+{% block title %}Box Packing{% endblock %}
+
+{% block content %}
+<div id="container">
+    <table width='100%'>
+        <tr>
+            <td id="middle-column">
+                <form method="POST" action="{{ url_for('box_packing.index') }}">
+                    <select class="big-button" name="selected_box_id" id="selected_box_id"
+                        onchange="this.form.submit()">
+                        <option value="none" selected disabled hidden>Select a Box
+                        </option>
+                        {% for box in boxes %}
+                        <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}
+                        </option>
+                        {% endfor %}
+                    </select><br /><br />
+                </form>
+                {% if selected_box %}
+                <div id="selected-box">
+                    <h1 class="selected this-box">Box {{ selected_box.id }}: {{
+                        selected_box.name }}</h1>
+                    <ul>
+                        <li>Size: {{ selected_box.size }}</li>
+                        {% if selected_box.essential == 1 %}
+                        <li class="essential">Essential</li>
+                        {% endif %}
+                        {% if selected_box.warm == 1 %}
+                        <li class="warm">Warm</li>
+                        {% endif %}
+                        {% if selected_box.liquid == 1 %}
+                        <li class="liquid">Liquid</li>
+                        {% endif %}
+                    </ul>
+                    <h2><u>Items in Box</u></h2>
+                    <table width=100%>
+                        {% for item in box_items %}
+                        <tr>
+                            <td colspan="3">
+                                <h3>{{ item.name }}</h3>
+                            </td>
+                        </tr>
+                        <tr class="box-item-table-list">
+                            <td class="essential">
+                                {% if item.essential == 1 %}
+                                Essential
+                                {% endif %}
+                            </td>
+                            <td class="warm">
+                                {% if item.warm == 1 %}
+                                Warm
+                                {% endif %}
+                            </td>
+                            <td class="liquid">
+                                {% if item.liquid == 1 %}
+                                Liquid
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% endif %}
+            </td>
+            <td id="right-column">
+                {% if selected_box %}
+                <div class="box-function">
+                    <form method="POST" action="{{ url_for('box_packing.form') }}">
+                        <h3>Add Item to <span class="selected">Box {{ selected_box.id
+                                }}: {{ selected_box.name }}</span></h3>
+                        <input type="hidden" name="box_id" id="box_id" value={{
+                            selected_box.id }}>
+                        <label for="name">Name:</label>
+                        <input class=big-button type="text" name="name" id="name">
+                        <br /><br />
+                        <input type="checkbox" name="essential" id="essential" value=1>
+                        <label for="essential">Essential</label>
+                        <br /><br />
+                        <input type="checkbox" name="warm" id="warm" value=1>
+                        <label for="warm">Warm</label>
+                        <br /><br />
+                        <input type="checkbox" name="liquid" id="liquid" value=1>
+                        <label for="liquid">Liquid</label>
+                        <br /><br />
+                        <input type="hidden" name="method" id="method" value="add_item">
+                        <input class="big-button" type="submit" value="Add Item">
+                    </form>
+                </div>
+
+                <div class="box-function">
+                    <form method="POST" action="{{ url_for('box_packing.form') }}">
+                        <h3>Delete Item from <span class="selected">Box {{
+                                selected_box.id }}: {{ selected_box.name }}</span>
+                        </h3>
+                        <input type="hidden" name="box_id" id="box_id" value={{
+                            selected_box.id }}>
+                        <select class=big-button name="item_id" id="item_id">
+                            <option value="none" selected disabled hidden>Select an
+                                Item
+                            </option>
+                            {% for item in box_items %}
+                            <option value={{ item.id }}>{{ item.name }}</option>
+                            {% endfor %}
+                        </select><br /><br />
+                        <input type="hidden" name="method" id="method"
+                            value="delete_item">
+                        <input class="big-button" type="submit" value="Delete Item">
+                    </form>
+                </div>
+
+                <div class="box-function">
+                    <form method="POST" action="{{ url_for('box_packing.form') }}">
+                        <h3>Add a New Box</h3>
+                        <label for="name">Name:</label>
+                        <input class=big-button type="text" name="name" id="name">
+                        <br /><br />
+                        <label for="size">Size</label>
+                        <select class='big-button' name="size" id="size">
+                            <option value='xsmall'>xsmall</option>
+                            <option value='small'>small</option>
+                            <option value='medium'>medium</option>
+                            <option value='xlarge'>xlarge</option>
+                            <option value='kcup'>kcup</option>
+                            <option value='bag'>bag</option>
+                            <option value='other'>other</option>
+                        </select>
+                        <br /><br />
+                        <input type="checkbox" name="essential" id="essential" value=1>
+                        <label for="essential">Essential</label>
+                        <br /><br />
+                        <input type="checkbox" name="warm" id="warm" value=1>
+                        <label for="warm">Warm</label>
+                        <br /><br />
+                        <input type="checkbox" name="liquid" id="liquid" value=1>
+                        <label for="liquid">Liquid</label>
+                        <br /><br />
+                        <input type="hidden" name="method" id="method" value="add_box">
+                        <input class="big-button" type="submit" value="Add Box">
+                    </form>
+                </div>
+
+                <div class="box-function">
+                    <form method="POST" action="{{ url_for('box_packing.form') }}">
+                        <h3>Delete <span class="selected">Box {{ selected_box.id }}:
+                                {{ selected_box.name }}</span></h3>
+                        <input type="hidden" name="box_id" id="box_id" value={{
+                            selected_box.id }}>
+                        <input type="hidden" name="method" id="method"
+                            value="delete_item">
+                        <input class="big-button" type="submit" value="Delete Box">
+                    </form>
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+
+    </table>
+</div>
+<script type="text/javascript">
+    // when page is ready
+    $(document).ready(function () {
+        // on form submit
+        $("#form").on('submit', function () {
+            // to each unchecked checkbox
+            $(this).find('input[type=checkbox]:not(:checked)').prop('checked', true).val(0);
+        })
+    })
+</script>
+{% endblock %}

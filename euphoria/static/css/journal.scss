@@ -1,0 +1,89 @@
+@import "./variables";
+
+
+#journal {
+    width     : 100%;
+    margin    : auto;
+    text-align: center;
+  }
+  
+  .feeling-buttons {
+    display     : inline-flex;
+    margin      : 0;
+    margin-left : auto;
+    margin-right: auto;
+    text-align  : center;
+    border      : 0;
+    box-sizing  : border-box;
+  }
+  
+  .feelbutton {
+    &:first-of-type:not(:last-of-type)+label {
+      border-top-right-radius   : 0;
+      border-bottom-right-radius: 0;
+      margin                    : 3px;
+      margin-right              : 0px;
+    }
+  
+    &:not(:first-of-type):not(:last-of-type)+label {
+      border-radius: 0;
+      margin       : 0px;
+      margin-top   : 3px;
+      margin-bottom: 3px;
+    }
+  
+    &:last-of-type:not(:first-of-type)+label {
+      border-top-left-radius   : 0;
+      border-bottom-left-radius: 0;
+      margin                   : 3px;
+      margin-left              : 0px;
+    }
+  }
+  
+  .feeling-buttons input[type="radio"] {
+    opacity : 0;
+    position: fixed;
+    width   : 0;
+  }
+  
+  .feeling-buttons label {
+    display      : inline-block;
+    padding      : 15px 20px;
+    font-size    : .7em;
+    border-radius: $button-box-border-radius;
+    box-shadow   :
+      5px 5px 5px 0px black,
+      inset 0px 0px 5px 0px $med-shadow,
+      inset -5px -5px 4px -2px $dark-shadow;
+  }
+  
+  .feeling-buttons input[type="radio"]:checked+label {
+    color           : green;
+    font-weight     : bold;
+    background-color: $dark-gray;
+    box-shadow      :
+      inset 5px 5px 5px 0px black,
+      inset -3px -3px 5px 0px $dark-shadow;
+  }
+  
+  .feeling-buttons label:hover {
+    font-style : italic;
+    font-weight: bold;
+  }
+
+  //// Search page /////
+
+  #searchbox {
+    width         : 75%;
+    margin        : auto;
+    margin-bottom : 0;
+    padding-bottom: 0;
+    text-align    : center;
+}
+
+#search-results {
+    width          : 80%;
+    margin         : auto;
+    margin-top     : 0;
+    padding-top    : 0;
+}

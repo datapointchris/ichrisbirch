@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+    {% block stylesheet %}{% endblock %}
+
+</head>
+
+<body>
+    <div id="global-navigation" class="navigation">
+        <span class="navigation-tab">
+            <a href="{{ url_for('main.index') }}">Home</a></span>
+        <span class="navigation-tab">
+            <a href="{{ url_for('box_packing.index') }}">Box Packing</a></span>
+        <span class="navigation-tab">
+            <a href="{{ url_for('countdowns.index') }}">Countdowns</a></span>
+        <span class="navigation-tab">
+            <a href="{{ url_for('events.index') }}">Events</a></span>
+        <span class="navigation-tab">
+            <a href="{{ url_for('journal.index') }}">Journal</a></span>
+    </div>
+    {% block app_navigation %}{% endblock %}
+
+    <div id="content">
+        <header>
+            {% block header %}{% endblock %}
+        </header>
+        {% for message in get_flashed_messages() %}
+        <div id="flash">{{ message }}</div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+
+</html>
