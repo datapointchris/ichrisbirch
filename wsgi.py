@@ -1,6 +1,6 @@
 """App Entry Point"""
 import platform
-from euphoria import create_app
+from euphoria.app import create_app
 
 app = create_app()
 
