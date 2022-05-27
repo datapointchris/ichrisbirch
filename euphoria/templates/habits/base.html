@@ -2,17 +2,17 @@
 
 {% block stylesheet %}
 <link rel="stylesheet"
-href="{{ url_for('static', filename='css/app1.css') }}">
+href="{{ url_for('static', filename='css/habits.css') }}">
 {% endblock %}
 
 {% block app_navigation %}
-<div id="app1-navigation">
+<div id="habits-navigation">
     <span class="navigation-tab">
-        <a href="{{ url_for('app1.index') }}">Index</a></span>
+        <a href="{{ url_for('habits.index') }}">Daily Habits</a></span>
     <span class="navigation-tab">
-        <a href="{{ url_for('app1.page1') }}">Page 1</a></span>
+        <a href="{{ url_for('habits.completed') }}">Completed Habits</a></span>
     <span class="navigation-tab">
-        <a href="{{ url_for('app1.page2') }}">Page 2</a></span>
+        <a href="{{ url_for('habits.manage') }}">Manage Habits</a></span>
 </div>
 {% endblock %}
 
