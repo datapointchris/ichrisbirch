@@ -1,23 +1,13 @@
-# v0.2.0 --> Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
----
-Prod only, further ahead will figure out how to sync dev and "testing" (god help me) to the prod environment
-- [X] pg_cron and update task priorities
-- [X] MongoDB move to Atlas
-
-
-
-# v0.3.0 --> Get rid of Flask-SQLAlchemy
-- [ ] Use regular SQLAlchemy instead.
-
 
 
 # v0.3.0 --> Migrate Databases
 
 - [X] Countdowns -> SQLAlchemy
-- [ ] Apartments -> SQLAlchemy
-- [ ] Simplify Journal Entry MongoDB
-- [ ] Get rid of Events dict
-  - [ ] Maybe with Pydantic Models
+- [ ] Apartments -> MongoDB
+  - [ ] Skipping for now
+- [X] Simplify Journal Entry MongoDB
+- [X] Get rid of Events dict
+  - [X] Maybe with Pydantic Models
 
 
 
@@ -27,16 +17,16 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 
 
 <!-- SMALL THINGS THAT NEED TO BE ADDRESSED -->
-1. [ ] Take code out of `__init__.py` files
-   1. [ ] Put them in `main.py` for the module or name of module
-   2. [ ] Import the names in the `__init__.py` file for better top level imports
-2. [ ] Main Site Navigation
-   1. [ ] Put this on base page that all pages inherit from
-   2. [ ] Inherit CSS as well
-   3. [ ] Restructure site so that all apps are top level
-      1. [ ] events
-      2. [ ] countdowns
-      3. [ ] journal
+1. [X] Take code out of `__init__.py` files
+   1. [X] Put them in `main.py` for the module or name of module
+   2. [X] Import the names in the `__init__.py` file for better top level imports
+2. [X] Main Site Navigation
+   1. [X] Put this on base page that all pages inherit from
+   2. [X] Inherit CSS as well
+3. [ ] Restructure site so that all apps are top level
+      1. [X] events
+      2. [X] countdowns
+      3. [X] journal
       4. [ ] habits
 
 <!-- END OF SMALL THINGS -->
@@ -129,6 +119,9 @@ Realpython
 - Books on datapointchris.com
 - pytest
 - test driven dev in python
+- https://www.youtube.com/watch?v=B1j6k2j2eJg
+- https://www.youtube.com/watch?v=ULxMQ57engo
+- https://www.youtube.com/watch?v=NI5IGAim8XU
 
 
 
