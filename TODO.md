@@ -314,3 +314,23 @@ Measuring their average or std or whatever over time and plotting it should give
   - Update Command line Version
   - Maybe use rich?
     - https://github.com/Textualize/rich
+
+
+
+## * ~ New Project ~ *
+# Learning
+
+
+
+## * ~ New Project ~ *
+# Goals
+
+
+
+## * ~ New Project ~ *
+# Overview
+
+
+
+## * ~ New Project ~ *
+# Budget
