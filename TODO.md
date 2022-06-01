@@ -1,4 +1,7 @@
-
+<!-- MISC THINGS TO DO -->
+- [ ] Check REST API for structure
+  - [ ] /resource/id/complete
+  - [ ] or -> /resource/complete/id
 
 # v0.3.0 --> Migrate Databases
 
@@ -330,3 +333,17 @@ Measuring their average or std or whatever over time and plotting it should give
 
 ## * ~ New Project ~ *
 # Budget
+
+
+
+## * ~ New Project ~ *
+# Deep Dream
+
+
+
+## * ~ New Project ~ *
+# User specific
+- color scheme
+- timezone
+- session / cookies
+  - I don't know anything about this
