@@ -17,7 +17,7 @@ def index():
         completed_today = session.query(CompletedHabit).where(
             CompletedHabit.completed_date == date.today()
         )
-        not_completed = current_habits.except_(completed_today).all()
+        not_completed = session.query(Habit).join()
 
     return render_template(
         'index.html', completed_today=completed_today, not_completed=not_completed
