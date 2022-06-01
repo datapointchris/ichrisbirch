@@ -1,0 +1,48 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Completed Tasks{% endblock %}
+
+{% block content %}
+<div id="content-layout-grid">
+    <div id="left-column" class="task-list">
+        <div id="completed-tasks">
+            {% for task in completed_tasks %}
+            <div class="task completed">
+                <h1>{{ task.name }}</h1>
+                Add Date: {{ task.add_date }}<br />
+                Complete Date: {{ task.complete_date }}<br />
+                Time to Complete: {{ task.weeks_to_complete }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div id="right-column" class="task-list">
+        <div id="completed-filters">
+            <form method="POST" action="{{ url_for('tasks.completed') }}">
+                <div class="filter-buttons">
+                    {% for filter in filters %}
+                    {% if filter == selected_filter %}
+                    <input type="radio" id="radio-{{ filter }}" class="filterbutton"
+                        name="filter" value="{{ filter }}" checked>
+                    <label for="radio-{{ filter }}">{{ filter.title() }}</label>
+                    {% else %}
+                    <input type="radio" id="radio-{{ filter }}" class="filterbutton"
+                        name="filter" value="{{ filter }}">
+                    <label for="radio-{{ filter }}">{{ filter.title() }}</label>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                </br /><br />
+                <input type="submit" class="button box-3d" value="Filter Tasks">
+            </form>
+        </div>
+        <div id="completed-averages">
+            <h2> Average Completion Time: {{ average_completion }}</h2>
+        </div>
+        <div id="graph">
+            <img src='data:image/png;base64,{{ image_data }}' />
+        </div>
+    </div>
+</div>
+{% endblock %}
+

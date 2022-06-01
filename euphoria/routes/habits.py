@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, current_app, url_for, redirect
-from ..models.habits import Habit, Category, CompletedHabit
-from ..database.sqlalchemy import session
-from datetime import date, timedelta
-import calendar
+from datetime import date
+
 import requests
+from flask import (Blueprint, current_app, redirect, render_template, request,
+                   url_for)
+
+from ..database.sqlalchemy import session
+from ..easy_dates import EasyDate
+from ..models.habits import Category, CompletedHabit, Habit
 
 blueprint = Blueprint(
     'habits', __name__, template_folder='templates/habits', static_folder='static'
@@ -32,20 +35,6 @@ def completed():
     else:
         selected_habit = None
         date_filter = 'this_week'
-    # Easy to use dates for filters
-    today = date.today()
-    tomorrow = today + timedelta(days=1)
-    yesterday = today - timedelta(days=1)
-    previous_7 = today - timedelta(days=7)
-    previous_30 = today - timedelta(days=30)
-    _month_days = calendar.monthrange(today.year, today.month)[1]
-    _week_number = today.isocalendar().week
-    week_start = date.fromisocalendar(today.year, _week_number, 1)
-    week_end = week_start + timedelta(days=7)
-    this_month = date(today.year, today.month, 1)
-    next_month = this_month + timedelta(days=_month_days)
-    this_year = date(today.year, 1, 1)
-    next_year = date(today.year + 1, 1, 1)
 
     with session:
         q = session.query(CompletedHabit)
@@ -57,24 +46,25 @@ def completed():
 
         habits = session.query(Habit).all()
 
+    ed = EasyDate()
     filters = {
-        'today': (today, tomorrow),
-        'yesterday': (yesterday, today),
-        'this_week': (week_start, week_end),
-        'last_7': (previous_7, today),
-        'this_month': (this_month, next_month),
-        'last_30': (previous_30, today),
-        'this_year': (this_year, next_year),
+        'today': (ed.today, ed.tomorrow),
+        'yesterday': (ed.yesterday, ed.today),
+        'this_week': (ed.week_start, ed.week_end),
+        'last_7': (ed.previous_7, ed.today),
+        'this_month': (ed.this_month, ed.next_month),
+        'last_30': (ed.previous_30, ed.today),
+        'this_year': (ed.this_year, ed.next_year),
         'all': (first_completed.complete_date, last_completed.complete_date),
     }
 
-    date_filter_start, date_filter_end = filters.get(date_filter)
+    start_date, end_date = filters.get(date_filter)
 
     with session:
         q = session.query(CompletedHabit)
         q = q.where(
-            CompletedHabit.completed_date >= date_filter_start,
-            CompletedHabit.completed_date < date_filter_end,
+            CompletedHabit.completed_date >= start_date,
+            CompletedHabit.completed_date < end_date,
         )
         completed = q.order_by(CompletedHabit.completed_date.desc()).all()
 
@@ -84,7 +74,7 @@ def completed():
         completed=completed,
         filters=filters,
         date_filter=date_filter,
-        long_date=today.strftime('%A %B %d, %Y'),
+        long_date=ed.today.strftime('%A %B %d, %Y'),
     )
 
 
