@@ -1,7 +1,9 @@
-<!-- MISC THINGS TO DO -->
+<!-- SMALL THINGS THAT NEED TO BE ADDRESSED -->
 - [ ] Check REST API for structure
   - [ ] /resource/id/complete
   - [ ] or -> /resource/complete/id
+<!-- END OF SMALL THINGS -->
+
 
 # v0.3.0 --> Migrate Databases
 
@@ -19,10 +21,7 @@
 - [ ] https://alembic.sqlalchemy.org/en/latest/tutorial.html
 
 
-<!-- SMALL THINGS THAT NEED TO BE ADDRESSED -->
 
-
-<!-- END OF SMALL THINGS -->
 
 # v0.4.0 --> FastAPI
 - FastAPI Course
