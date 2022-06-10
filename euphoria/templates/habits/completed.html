@@ -20,25 +20,24 @@
             <form method="POST" action="{{ url_for('habits.completed') }}">
                 <div class="habit__selected">
                     <label for="habit">Select a Habit:</label>
-                        <select class="textbox" name="habit"
-                            id="habit">
-                            <option value="None">All</option>
-                            {% for habit in habits %}
-                            <option value="{{ habit }}">{{ habit.title() }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                    <select class="textbox" name="habit" id="habit">
+                        <option value="None">All</option>
+                        {% for habit in habits %}
+                        <option value="{{ habit }}">{{ habit.title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
 
-                <div class="filter-buttons">
-                    {% for filter in filters %}
-                    <input type="radio" id="radio-{{ filter }}" class="filterbutton"
-                        name="filter" value="{{ filter }}" {{ "checked" if
-                        filter=date_filter }}>
-                    <label for="radio-{{ filter }}">{{ filter.title() }}</label>
-                    {% endfor %}
-                </div>
-                </br /><br />
-                <input type="submit" class="button box-3d" value="Filter habits">
+                    <div class="filter-buttons">
+                        {% for filter in filters %}
+                        <input type="radio" id="radio-{{ filter }}" class="filterbutton"
+                            name="filter" value="{{ filter }}" {{ "checked" if
+                            filter=date_filter }}>
+                        <label for="radio-{{ filter }}">{{ filter.title() }}</label>
+                        {% endfor %}
+                    </div>
+                    </br /><br />
+                    <input type="submit" class="button box-3d" value="Filter habits">
             </form>
         </div>
     </div>

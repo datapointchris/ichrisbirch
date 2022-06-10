@@ -24,7 +24,7 @@ def entry():
     api_url = current_app.config.get('API_URL')
     if request.method == 'POST':
         entry = JournalEntry(**request.form)
-        response = requests.post(f'{api_url}/journal', data=entry)
+        requests.post(f'{api_url}/journal', data=entry)
         return redirect(url_for('journal.index'))
 
     return render_template('journal/entry.html')

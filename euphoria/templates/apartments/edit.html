@@ -25,11 +25,11 @@
                     <div class="feature-box">
                         <h2>{{ feature.name.upper() }}</h2>
                         {% if feature.type == 'integer' %}
-                        <input class="bigbox" type="text" size="20" name="{{ feature.name }}"
-                            value="{{ feature.name }}">
+                        <input class="bigbox" type="text" size="20"
+                            name="{{ feature.name }}" value="{{ feature.name }}">
                         {% elif feature.type == 'text' %}
-                        <input type="text" class="bigbox" size="20" name="{{ feature.name }}"
-                            value="{{ feature.name }}">
+                        <input type="text" class="bigbox" size="20"
+                            name="{{ feature.name }}" value="{{ feature.name }}">
                         {% elif feature.type == 'boolean' %}
                         <label class="checkboxes">
                             {% if value == 1 %}
@@ -59,4 +59,3 @@
     </div>
 </div>
 {% endblock %}
-

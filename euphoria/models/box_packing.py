@@ -14,7 +14,8 @@ class Box(Base):
     items = relationship('Item', back_populates='box', cascade='all, delete')
 
     def __repr__(self):
-        return f'Box(name={self.name!r}, size={self.size!r}, essential={self.essential!r}, warm={self.warm!r}, liquid={self.liquid!r})'
+        return f'''Box(name={self.name!r}, size={self.size!r}, essential={self.essential!r},
+            warm={self.warm!r}, liquid={self.liquid!r})'''
 
 
 class Item(Base):
@@ -28,4 +29,5 @@ class Item(Base):
     box = relationship('Box', back_populates='items')
 
     def __repr__(self):
-        return f'Item(box_id={self.box_id!r}, name={self.name!r}, essential={self.essential!r}, warm={self.warm!r}, liquid={self.liquid!r})'
+        return f'''Item(box_id={self.box_id!r}, name={self.name!r}, essential={self.essential!r},
+            warm={self.warm!r}, liquid={self.liquid!r})'''

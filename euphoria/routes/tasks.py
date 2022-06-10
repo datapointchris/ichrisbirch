@@ -1,5 +1,4 @@
 import base64
-import calendar
 import random
 from collections import Counter
 from datetime import date, datetime, time, timedelta
@@ -144,13 +143,13 @@ def form():
     match method:
         case ['add']:
             task = Task(**data)
-            response = requests.post(f'{api_url}/tasks', data=task)
+            requests.post(f'{api_url}/tasks', data=task)
         case ['complete']:
             task_id = data.get('id')
-            response = requests.post(f'{api_url}/tasks/{task_id}/complete')
+            requests.post(f'{api_url}/tasks/{task_id}/complete')
         case ['delete']:
             task_id = data.get('id')
-            response = requests.delete(f'{api_url}/tasks/{task_id}')
+            requests.delete(f'{api_url}/tasks/{task_id}')
 
     return redirect(url_for('tasks.index'))
 

@@ -1,8 +1,7 @@
 from datetime import date
 
 import requests
-from flask import (Blueprint, current_app, redirect, render_template, request,
-                   url_for)
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
 
 from ..database.sqlalchemy import session
 from ..easy_dates import EasyDate
@@ -96,18 +95,18 @@ def form():
     match method:
         case ['add_habit']:
             habit = Habit(**data)
-            response = requests.post(f'{api_url}/habits', data=habit)
+            requests.post(f'{api_url}/habits', data=habit)
         case ['delete_habit']:
             habit = Habit(**data)
-            response = requests.delete(f'{api_url}/habits/{habit.id}')
+            requests.delete(f'{api_url}/habits/{habit.id}')
         case ['complete_habit']:
             habit = Habit(**data)
-            response = requests.post(f'{api_url}/habits/completed', data=habit)
+            requests.post(f'{api_url}/habits/completed', data=habit)
         case ['add_category']:
             category = Category(**data)
-            response = requests.post(f'{api_url}/habits/categories', data=category)
+            requests.post(f'{api_url}/habits/categories', data=category)
         case ['delete_category']:
             category = Category(**data)
-            response = requests.delete(f'{api_url}/habits/categories/{category.id}')
+            requests.delete(f'{api_url}/habits/categories/{category.id}')
 
     return redirect(url_for('habits.index'))

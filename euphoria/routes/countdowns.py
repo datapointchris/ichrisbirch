@@ -20,9 +20,9 @@ def index():
         match method:
             case ['add']:
                 countdown = Countdown(**data)
-                response = requests.post(f'{api_url}/countdowns', data=countdown)
+                requests.post(f'{api_url}/countdowns', data=countdown)
             case ['delete']:
                 countdown_id = data.get('id')
-                response = requests.delete(f'{api_url}/countdowns/{countdown_id}')
+                requests.delete(f'{api_url}/countdowns/{countdown_id}')
 
     return render_template('countdowns/index.html', countdowns=countdowns)

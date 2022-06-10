@@ -2,6 +2,9 @@
 - [ ] Check REST API for structure
   - [ ] /resource/id/complete
   - [ ] or -> /resource/complete/id
+- [ ] CSS files
+  - [ ] Need to have reset
+  - [ ] Body in Apartments
 <!-- END OF SMALL THINGS -->
 
 

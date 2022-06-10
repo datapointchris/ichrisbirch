@@ -20,9 +20,9 @@ def index():
         match method:
             case ['add']:
                 event = Event(**data)
-                response = requests.post(f'{api_url}/events', data=event)
+                requests.post(f'{api_url}/events', data=event)
             case ['delete']:
                 event_id = data.get('id')
-                response = requests.delete(f'{api_url}/events/{event_id}')
+                requests.delete(f'{api_url}/events/{event_id}')
 
     return render_template('events/index.html', events=events)

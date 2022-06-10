@@ -1,6 +1,5 @@
 from flask import Blueprint, redirect, render_template, request, url_for, current_app
-from euphoria.apartments.models import Apartment, Feature
-import os
+from ..models.apartments import Apartment, Feature
 import requests
 
 blueprint = Blueprint(
@@ -87,9 +86,9 @@ def crud():
     method = data.pop('method')
     apt = Apartment(**data)
     if method == 'add':
-        response = requests.post(f'{api_url}/tasks', data=apt)
+        requests.post(f'{api_url}/tasks', data=apt)
     elif method == 'update':
-        response = requests.put(f'{api_url}//tasks', data=apt)
+        requests.put(f'{api_url}//tasks', data=apt)
     elif method == 'delete':
-        response = requests.delete(f'{api_url}//tasks', data=apt)
+        requests.delete(f'{api_url}//tasks', data=apt)
     return redirect(url_for('apartments.apartment', name=data.get('name')))

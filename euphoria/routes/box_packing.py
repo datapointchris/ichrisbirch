@@ -63,15 +63,15 @@ def form():
     match method:
         case ['add_box']:
             box = Box(**data)
-            response = requests.post(f'{api_url}/boxes', data=box)
+            requests.post(f'{api_url}/boxes', data=box)
         case ['delete_box']:
             box = Box(**data)
-            response = requests.delete(f'{api_url}/boxes/{box.id}')
+            requests.delete(f'{api_url}/boxes/{box.id}')
         case ['add_item']:
             item = Item(**data)
-            response = requests.post(f'{api_url}/boxes/items', data=box)
+            requests.post(f'{api_url}/boxes/items', data=box)
         case ['delete_item']:
             item = Item(**data)
-            response = requests.delete(f'{api_url}/boxes/items/{item.id}')
+            requests.delete(f'{api_url}/boxes/items/{item.id}')
 
     return redirect(url_for('box_packing.index'))

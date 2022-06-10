@@ -14,4 +14,5 @@ class Event(Base):
     notes = Column(Text, nullable=True)
 
     def __repr__(self):
-        return f'Event(name={self.name}, date={self.date}, url={self.url}, venue={self.venue}, cost={self.cost}, attending={self.attending}, notes={self.notes}'
+        return f'''Event(name={self.name}, date={self.date}, url={self.url}, venue={self.venue},
+            cost={self.cost}, attending={self.attending}, notes={self.notes}'''
