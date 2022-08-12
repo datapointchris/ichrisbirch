@@ -5,6 +5,8 @@
 - [ ] CSS files
   - [ ] Need to have reset
   - [ ] Body in Apartments
+- [ ] Code Repo Structure
+  - [ ] https://githubnext.com/projects/repo-visualization/
 <!-- END OF SMALL THINGS -->
 
 
@@ -102,6 +104,8 @@ https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-
 
 # v0.6.0 --> WTForms
 Is this something I want to do?
+- https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html
+- https://flask-wtf.readthedocs.io/en/latest/quickstart/
 
 
 
@@ -118,6 +122,14 @@ Realpython
 - https://www.youtube.com/watch?v=ULxMQ57engo
 - https://www.youtube.com/watch?v=NI5IGAim8XU
 
+
+# v0.6.1 --> Logging
+--------------------
+https://www.palkeo.com/en/blog/python-logging.html
+https://guicommits.com/how-to-log-in-python-like-a-pro/
+https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
+https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial
+https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44
 
 
 # v0.7.0 --> Security
@@ -136,22 +148,29 @@ https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-6152
 ---
 Pre-commit - What is the difference between this and CI/CD
 
+https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/
+https://lab.github.com/githubtraining/devops-with-github-actions
 [Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
 [How to Run Github Actions Builds on Your Own Servers With Self-Hosted Runners – CloudSavvy IT](https://www.cloudsavvyit.com/15503/how-to-run-github-actions-builds-on-your-own-servers-with-self-hosted-runners/)
 [https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/](https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/)
 [Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
-
+https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
+https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
 
 # v0.9.0 --> Documentation
 - Docs/notes for each page and function
 - Hopefully a lot of this is done as I'm testing and doing type hinting
-
+https://realpython.com/python-project-documentation-with-mkdocs/
 
 
 # v0.10.0 --> Re-structure CSS and Navigation
 - [ ] CSS to inheret from main
   - [ ] Both the classes and site-wide variables
 - [ ] There is a style of CSS naming convention, find that again.
+- [ ] https://github.com/bem/bem-sdk#naming
+- [ ] https://en.bem.info/toolbox/
+- [ ] https://en.bem.info/methodology/css/
+- [ ] 
 
 @app.route('/favicon.ico')
 def favicon():
@@ -276,6 +295,17 @@ Ranking
 - [ ] Edit box name
 
 
+## Journal
+- [ ] Default Template to give a start
+  EX: `3 Things Thankful:`
+      (Write here)
+      `5 New Ideas:`
+      (Write here)
+- [ ] Weekly / Monthly Themes
+  - [ ] Integrated with the templates
+  - [ ] Possibly even a color theme for effect
+  - [ ] Music theme for repetition 
+
 
 ## * ~ New Project ~ *
 ## Manage Github
@@ -340,6 +370,14 @@ Measuring their average or std or whatever over time and plotting it should give
 
 ## * ~ New Project ~ *
 # Deep Dream
+https://www.tensorflow.org/tutorials/generative/deepdream
+
+
+## * ~ New Project ~ *
+# Ummmm and Like counter
+- submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
+- You can select which common phrases you want to find in the audio
+- 
 
 
 

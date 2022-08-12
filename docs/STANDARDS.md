@@ -1,5 +1,27 @@
 # Standards
+===========
+Sardonic:
+- disdainfully or skeptically humorous; derisively mocking
+
+## Style Guide
+==============
+https://github.com/google/styleguide/blob/gh-pages/pyguide.md
+
+
+
+## SQL STYLING
+==============
+https://github.com/dbt-labs/corp/blob/main/dbt_style_guide.md
+https://gist.github.com/fredbenenson/7bb92718e19138c20591
+
+
+## Naming
 =========
+--> Column Names
+    Booleans - should start with an “is_” , “has_” or ““ and should always been a “True” or “False” value and not “Y” or “N'“ or other variants.
+    Dates - should end in “_date”
+    Timestamps -- should end with “_ts”
+
 
 
 ## API
@@ -16,6 +38,7 @@ PUT for applying full updates to a resource (replaces the current resource)
 PUT /users/{id}
 DELETE for deleting resources
 DELETE /users/{id}
+
 
 
 ## Git
@@ -42,15 +65,18 @@ TBD
 Each milestone is a new minor version
 
 
+
 ## Versioning
 =============
 SemVer
 https://semver.org
 
 
+
 ## CSS
 ======
 BEM
+
 
 
 ## Technologies
