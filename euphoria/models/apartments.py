@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Boolean
-from sqlalchemy.orm import relationship, declarative_base
-
-Base = declarative_base()
+from sqlalchemy.orm import relationship
+from ..database.sqlalchemy import Base
 
 
 class Apartment(Base):
