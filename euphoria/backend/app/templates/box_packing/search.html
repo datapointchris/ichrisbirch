@@ -1,0 +1,49 @@
+{% extends 'box_packing/base.html' %}
+
+{% block title %}Box Packing - Search{% endblock %}
+
+{% block content %}
+<div id="searchbox">
+    <form method="POST" action="{{ url_for('box_packing.search') }}">
+        <h3>Search for Items</h3>
+        <label for="search_text">Search Text:</label>
+        <input class=big-button type="text" name="search_text" id="search_text">
+        <input class="big-button" type="submit" value="Search">
+    </form>
+</div>
+
+{% if results %}
+<table id="search-results">
+    <tr class="search-header">
+        <td width="35%">Box ID</td>
+        <td width="35%">Name</td>
+        <td width="10%">Essential</td>
+        <td width="10%">Warm</td>
+        <td width="10%">Liquid</td>
+    </tr>
+    {% for result in results %}
+    <tr class="box-item-search-list">
+        <td width="30%">{{ result.box_id }}</td>
+        <td width="30%">{{ result.name }}</td>
+        <td class="essential" width="10%">
+            {% if result.essential == 1 %}
+            Essential
+            {% endif %}
+        </td>
+        <td class="warm" width="10%">
+            {% if result.warm == 1 %}
+            Warm
+            {% endif %}
+        </td>
+        <td class="liquid" width="10%">
+            {% if result.liquid == 1 %}
+            Liquid
+            {% endif %}
+        </td>
+    </tr>
+    <br />
+    {% endfor %}
+    {% endif %}
+</table>
+</div>
+{% endblock %}

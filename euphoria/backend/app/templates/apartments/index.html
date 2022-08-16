@@ -1,0 +1,63 @@
+{% extends 'apartments/base.html' %}
+
+{% block title %}
+{% apartment.name if apartment else 'Apartments' %}
+{% endblock %}
+
+{% block content %}
+
+{% include 'apartment_list.jinja' %}
+
+<div id="add-feature">
+    <h2>Add a New Feature:</h2>
+    <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
+        <input type="hidden" id="apartment_id" name="apartment_id" value="{{ aptid }}">
+        <input class="bigbox" type="text" size="20" name="name" id="name">
+        <h2>Type:</h2>
+        <select class="bigbox" name="type" id="type">
+            <option value="text">text</option>
+            <option value="integer">integer</option>
+            <option value="boolean">boolean</option>
+        </select><br />
+        <input class="bigbox" type="submit" value="Add New Feature">
+    </form>
+</div>
+
+<div id="content">
+    {% if apartment %}
+    <div id="apartment">
+        <div class="feature-list">
+            <h1 class="title">{{ apartment.name.upper() }}</h1>
+            <h2>
+                <a href="http://www.google.com/maps/place/{{ address }}"
+                    target="_blank">{{ apartment.address }}</a>
+            </h2>
+            <h2><a href="{{ apartment.url }}" target="_blank">{{ apartment.url }}</a></h2>
+            <div id="apt-features">
+                {% for feature in features %}
+                <div class="feature-box">
+                    <h2>{{ feature.name.upper() }}</h2>
+                    <h2>{{ feature.value }}</h2>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="feature-list">
+            <h2>NOTES</h2>
+            {{ apartment.notes }}
+            <br /><br /><br /><br /><br /><br /><br /><br />
+            <a href="{{ url_for('apartments_bp.edit', name=apartment.name) }}">
+                <input class="manage-box" type="submit" value="Edit Apartment Info">
+            </a>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div id="apartment">
+        <div class="feature-list">
+            <h1 class="title">{{ message }}</h1>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

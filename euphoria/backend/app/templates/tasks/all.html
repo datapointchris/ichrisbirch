@@ -1,0 +1,27 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Page1 - Application 1{% endblock %}
+
+{% block content %}
+<div id="tasks">
+    {% for task in tasks %}
+    <div class="task">
+        <h1>{{ task.name }}</h1>
+        <h2>Priority: {{ task.priority }}</h2>
+        <h3>Category: {{ task.category }}</h3>
+        Add Date: {{ task.add_date }}<br />
+        {% if loop.index > 5 %}
+        <form method="POST" action="{{ url_for('tasks.form') }}">
+            <input type="hidden" name="id" id="id" value="{{ task.id }}">
+            <input type="hidden" name="method" id="method" value="delete">
+            <input type="submit" value="Delete Task">
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="task">
+        <h2>No Tasks</h2>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'events/base.html' %}
+
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div id="events">
+    {% for event in events %}
+    <ul id="{{ event.id }}" class="{{ 'attending' if event.attending }}">
+        <li class="title">{{ event.name }}</li>
+        <li>{{ event.date.strftime('%A %B %d, %Y') }}</li>
+        <li>{{ event.venue }}</li>
+        <li>{{ '$%.2f'|format(event.cost) }}</li>
+        <li>Going: {{ 'YES' if event.attending else 'No' }}</li>
+        <li><a href="{{ event.url }}" target="_blank">Event URL</a></li>
+        <li>Notes: {{ event.notes }}</li>
+    </ul>
+    <form method="POST" action="{{ url_for('events.index') }}">
+        <input type="hidden" name="id" value="event.id">
+        <input type="hidden" name="method" value="delete">
+        <input type="submit" name="delete" id="delete" class="button box-3d"
+            value="Delete">
+    </form>
+    {% endfor %}
+    <br /><br /><br />
+</div>
+<div id="add-event">
+    <h4>Add New Event:</h4>
+    <form method="POST" action="{{ url_for('events.index') }}">
+        <label for="name">Name:</label>
+        <input type="text" size="30" class="textbox box-3d" name="name" id="name">
+        <br /><br />
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" class="textbox box-3d">
+        <br /><br />
+        <label for="url">URL:</label>
+        <input type="text" size="30" class="textbox box-3d" name="url" id="url">
+        <br /><br />
+        <label for="venue">Venue:</label>
+        <input type="text" size="30" class="textbox box-3d" name="venue" id="venue">
+        <br /><br />
+        <label for="cost">Cost:</label>
+        <input type="number" id="cost" name="cost" class="textbox box-3d">
+        <br /><br />
+        <label for="attending">Attending:</label>
+        <input type="checkbox" id="attending" name="attending" class="textbox box-3d"
+            value=1>
+        <br /><br />
+        <label for="notes">Notes:</label>
+        <input type="textarea" rows="20" cols="150" id="notes" name="notes"
+            class="textbox box-3d"></textarea>
+        <br /><br />
+        <input type="submit" name="add" id="add" class="button box-3d"
+            value="Add New Event">
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'habits/base.html' %}
+
+{% block title %}Manage Habits{% endblock %}
+
+{% block content %}
+<div id="habit-add-remove">
+    <table class="habit-table">
+        <tr>
+            <td colspan="2" align="center">
+                <h2>Add / Remove Habits</h2>
+            </td>
+        </tr>
+        {% for cat in current_categories %}
+        {% if loop.index == 1 %}
+        <tr>
+            {% endif %}
+            <td>
+                <h3>{{ cat.title() }}</h3>
+                {% for habit, values in
+                current_categories.get(cat).items() %}
+                <form method="POST" action="{{ url_for('tracks_bp.delete_habit') }}">
+                    <input type="hidden" name="habit_name" value="{{ habit }}">
+                    <input type="hidden" name="habit_category"
+                        value="{{ values.get('category') }}">
+                    <input type="submit" class="button box-3d" value="Delete">
+                    {{ habit }}
+                </form>
+                {% endfor %}
+            </td>
+            {% if loop.index % 2 == 0 %}
+        </tr>
+        {% endif %}
+        {% if loop.index % 2 == 0 and loop.index < current_categories|length %} <tr>
+            {% endif %}
+            {% endfor %}
+            <tr>
+                <td colspan="2" align="center">
+                    <h4>Add New Habit:</h4>
+                </td>
+            </tr>
+            <tr>
+                <form method="POST" action="{{ url_for('tracks_bp.add_habit') }}">
+                    <td>
+                        <label for="habit_name">Name:</label>
+                        <input type="text" size="30" class="textbox box-3d"
+                            name="habit_name" id="habit_name">
+                        <br /><br />
+                        <label for="habit_category">Category:</label>
+                        <select class="textbox" name="habit_category" id="habit_category">
+                            {% for cat in current_categories %}
+                            <option value="{{ cat }}">{{ cat.title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+
+                    <td>
+                        <input type="submit" class="button box-3d" value="Add New Habit">
+                    </td>
+                </form>
+            </tr>
+    </table>
+</div>
+{% endblock %}

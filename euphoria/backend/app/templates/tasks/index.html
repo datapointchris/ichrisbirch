@@ -1,0 +1,37 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Priority Tasks{% endblock %}
+
+{% block content %}
+<div id="content-layout-grid">
+    <div id="left-column" class="task-list">
+        <h2 class="task-header">Priority Tasks</h2>
+        {% for task in top_tasks %}
+        <div class="task">
+            <h3>{{ task.name }}</h3>
+            Priority: {{ task.priority }}<br />
+            Category: {{ task.category }}<br />
+            Add Date: {{ task.add_date }}
+            <form method="POST" action="{{ url_for('tasks.form') }}">
+                <input type="hidden" name="id" id="id" value="{{ task.id }}">
+                <input type="hidden" name="method" id="method" value="complete">
+                <input type="submit" class="button box-3d" value="Complete Task">
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="right-column" class="task-list">
+        <h2 class="task-header">Completed Today</h2>
+        {% for task in completed_today %}
+        <div class="task completed">
+            <h3>{{ task.name }}</h3>
+            Category: {{ task.category }}<br />
+            Add Date: {{ task.add_date }}<br />
+            Complete Date: {{ task.complete_date }}<br />
+            Time to Complete: {{ task.weeks_to_complete }}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

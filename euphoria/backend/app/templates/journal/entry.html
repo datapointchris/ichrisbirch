@@ -1,0 +1,60 @@
+{% extends 'journal/base.html' %}
+
+{% block title %}Journal Entry{% endblock %}
+
+{% block content %}
+<div id="journal">
+
+    <form method="POST" action="{{ url_for('journal.index') }}">
+        <h2><label id="journalDateLabel" for="journalDate"></label></h2>
+        <input type="date" id="journalDate" name="journalDate" class="textbox box-3d"
+            value="{{ date }}" onchange="changeDate(this.form.journalDate.value)">
+        <br /><br />
+        <textarea rows="30" cols="90" class="textbox box-3d" name="entry"
+            id="entry"></textarea>
+        <br /><br />
+        <h3>Feeling:</h3>
+        <div class="feeling-buttons">
+
+            <input type="radio" id="radio-terrible" class="feelbutton" name="feeling"
+                value="terrible">
+            <label for="radio-terrible">Terrible</label>
+
+            <input type="radio" id="radio-depressed" class="feelbutton" name="feeling"
+                value="depressed">
+            <label for="radio-depressed">Depressed</label>
+
+            <input type="radio" id="radio-bad" class="feelbutton" name="feeling"
+                value="bad">
+            <label for="radio-bad">Bad</label>
+
+            <input type="radio" id="radio-frustrated" class="feelbutton" name="feeling"
+                value="frustrated">
+            <label for="radio-frustrated">Frustrated</label>
+
+            <input type="radio" id="radio-neutral" class="feelbutton" name="feeling"
+                value="neutral">
+            <label for="radio-neutral">Neutral</label>
+
+            <input type="radio" id="radio-fine" class="feelbutton" name="feeling"
+                value="fine">
+            <label for="radio-fine">Fine</label>
+
+            <input type="radio" id="radio-good" class="feelbutton" name="feeling"
+                value="good">
+            <label for="radio-good">Good</label>
+
+            <input type="radio" id="radio-happy" class="feelbutton" name="feeling"
+                value="happy">
+            <label for="radio-happy">Happy</label>
+
+            <input type="radio" id="radio-great" class="feelbutton" name="feeling"
+                value="great">
+            <label for="radio-great">Great</label>
+        </div>
+        <br />
+        <br />
+        <input type="submit" class="button box-3d" value="Add Journal Entry">
+    </form>
+</div>
+{% endblock %}
