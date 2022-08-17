@@ -6,6 +6,7 @@ from datetime import date, datetime, time, timedelta
 from io import BytesIO
 from zoneinfo import ZoneInfo
 import json
+import logging
 
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
@@ -15,7 +16,7 @@ from matplotlib.figure import Figure
 from ..db.sqlalchemy import session
 from ..easy_dates import EasyDateTime
 from ..models.tasks import Task, calculate_average_completion_time
-from ...common.schemas.tasks import Task as TaskSchema
+from ...common import schemas
 
 blueprint = Blueprint(
     'tasks',
@@ -24,7 +25,7 @@ blueprint = Blueprint(
     static_folder='static',
 )
 
-
+logger = logging.getLogger(__name__)
 
 
 @blueprint.route('/', methods=['GET'])
@@ -37,8 +38,8 @@ def index():
     top_tasks = requests.get(
         f'{app.config["API_URL"]}/tasks/', params={'limit': 5}
     ).json()
-    completed_today = [Task(**TaskSchema(**task).dict()) for task in completed_today]
-    top_tasks = [Task(**TaskSchema(**task).dict()) for task in top_tasks]
+    completed_today = [Task(**schemas.TaskSchema(**task).dict()) for task in completed_today]
+    top_tasks = [Task(**schemas.TaskSchema(**task).dict()) for task in top_tasks]
     return render_template('tasks/index.html', top_tasks=top_tasks, completed_today=completed_today)
 
 
@@ -79,7 +80,7 @@ def completed():
         params={'start_date': start_date, 'end_date': end_date},
     ).json()
 
-    completed_tasks = [Task(**TaskSchema(**task).dict()) for task in completed_tasks]
+    completed_tasks = [Task(**schemas.TaskSchema(**task).dict()) for task in completed_tasks]
     average_completion = calculate_average_completion_time(completed_tasks)
 
     # Graph
@@ -128,21 +129,23 @@ def completed():
 def form():
     data = request.form.to_dict()
     method = data.pop('method')
-    print(f'{method=}')
+    logger.debug(f'{method=}')
+    logger.debug(data)
     match method:
         case 'add':
-            task = Task(**data)
-            requests.post(f'{app.config["API_URL"]}/tasks', data=task)
+            task = schemas.TaskCreate(**data).json()
+            response = requests.post(f'{app.config["API_URL"]}/tasks/', data=task)
+            logger.debug(response.text)
             return redirect(url_for('tasks.index'))  # TODO: Redirect back to referring page
         case 'complete':
             task_id = data.get('id')
-            requests.post(f'{app.config["API_URL"]}/tasks/complete/{task_id}')
+            response = requests.post(f'{app.config["API_URL"]}/tasks/complete/{task_id}')
+            logger.debug(response.text)
             return redirect(url_for('tasks.index'))
         case 'delete':
-            print('IN DELETE')
             task_id = data.get('id')
             response = requests.delete(f'{app.config["API_URL"]}/tasks/{task_id}')
-            print(response)
+            logger.debug(response.text)
             return redirect(url_for('tasks.all'))
 
 

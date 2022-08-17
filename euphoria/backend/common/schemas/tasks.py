@@ -1,5 +1,4 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 
 
@@ -9,7 +8,7 @@ class TaskCreate(BaseModel):
     priority: int
 
 
-class Task(BaseModel):
+class TaskSchema(BaseModel):
     id: int
     name: str
     category: str
@@ -21,5 +20,5 @@ class Task(BaseModel):
         orm_mode = True
 
 
-class TaskUpdate(Task):
+class TaskUpdate(TaskSchema):
     ...

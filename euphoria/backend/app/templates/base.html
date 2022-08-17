@@ -12,35 +12,41 @@
 </head>
 
 <body>
-    <div id="global-navigation" class="navigation">
-        <span class="navigation-tab">
-            <a href="{{ url_for('main.index') }}">Home</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('portfolio.index') }}">Portfolio</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('box_packing.index') }}">Box Packing</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('countdowns.index') }}">Countdowns</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('events.index') }}">Events</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('journal.index') }}">Journal</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('habits.index') }}">Habits</a></span>
-        <span class="navigation-tab">
-            <a href="{{ url_for('tasks.index') }}">Tasks</a></span>
-    </div>
-    {% block app_navigation %}{% endblock %}
-
-    <div id="content">
+    <section id="nav">
+        <div id="global-navigation" class="navigation">
+            <span class="navigation-tab">
+                <a href="{{ url_for('main.index') }}">Home</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('portfolio.index') }}">Portfolio</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('box_packing.index') }}">Box Packing</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('countdowns.index') }}">Countdowns</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('events.index') }}">Events</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('journal.index') }}">Journal</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('habits.index') }}">Habits</a></span>
+            <span class="navigation-tab">
+                <a href="{{ url_for('tasks.index') }}">Tasks</a></span>
+        </div>
+        {% block app_navigation %}{% endblock %}
+    </section>
+    <section id="content">
         <header>
             {% block header %}{% endblock %}
+            <div id="flash">
+                {% for message in get_flashed_messages() %}
+                {{ message }}
+                {% endfor %}
+            </div>
         </header>
-        {% for message in get_flashed_messages() %}
-        <div id="flash">{{ message }}</div>
-        {% endfor %}
+
         {% block content %}{% endblock %}
-    </div>
+
+        {% block footer %}{% endblock %}
+    </section>
 </body>
 
 </html>
