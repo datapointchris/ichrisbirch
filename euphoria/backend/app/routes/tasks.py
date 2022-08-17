@@ -24,11 +24,12 @@ blueprint = Blueprint(
     static_folder='static',
 )
 
-ed = EasyDateTime()
+
 
 
 @blueprint.route('/', methods=['GET'])
 def index():
+    ed = EasyDateTime()
     completed_today = requests.get(
         f'{app.config["API_URL"]}/tasks/completed/',
         params={'start_date': ed.today, 'end_date': ed.tomorrow},
@@ -49,6 +50,7 @@ def all():
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
+    ed = EasyDateTime()
     filters = {
         'today': (ed.today, ed.tomorrow),
         'yesterday': (ed.yesterday, ed.today),

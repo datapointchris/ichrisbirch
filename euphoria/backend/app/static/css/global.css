@@ -47,4 +47,8 @@ body {
 .navigation .navigation-tab a:hover {
   text-decoration: none;
 }
+
+.navigation.secondary {
+  width: 80%;
+}
 /*# sourceMappingURL=global.css.map */

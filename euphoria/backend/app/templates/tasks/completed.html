@@ -21,7 +21,7 @@
             <form method="POST" action="{{ url_for('tasks.completed') }}">
                 <div class="filter-buttons">
                     {% for filter in filters %}
-                    {% if filter == selected_filter %}
+                    {% if filter == date_filter %}
                     <input type="radio" id="radio-{{ filter }}" class="filterbutton"
                         name="filter" value="{{ filter }}" checked>
                     <label for="radio-{{ filter }}">{{ filter.title() }}</label>

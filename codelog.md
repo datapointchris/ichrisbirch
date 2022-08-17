@@ -37,11 +37,9 @@ Ending Notes:
   - The endpoint for completing a task does not work
 
 
-
-
 ### Monday, August 15, 2022: 
 Goals:
-- [API Endpoint tests] 
+- [ ] API Endpoint tests
 - [ ] 
 - [ ] 
 - [ ] 
@@ -53,5 +51,24 @@ Ending Notes:
   - 422 Unprocessable entity - have not tracked it down yet
 - Moving on to creating some automated requests tests for the API endpoints so I can see the failure pattern and find out what is causing the issue with the id not being integer type.
 - Mother FUCKER it was the ordering of the endpoints!!!  Stupid dumbass cryptic messages and it was just some sill side note in the documentation!
+
+
+### Tuesday, August 16, 2022: 
+Goals:
+- [ ] Get all endpoints functioning
+- [ ] Get all of frontend functioning
+- [ ] Make automated tests for all endpoints
+- [ ] 
+Notes:
+- 
+
+Ending Notes:
+- Tasks frontend and backend are working.
+  - Frontend is ugly and is not getting all the css correctly.
+- All endpoints are working and tested
+- I think the next order of business is to actually skip ahead and work on creating tests for these endpoints so that when I create the other endpoints and corresponding API calls I can easily test them without having to set up postman for all of that bullshit.
+
+
+
 
 
