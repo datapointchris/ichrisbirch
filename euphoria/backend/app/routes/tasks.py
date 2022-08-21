@@ -70,8 +70,8 @@ def completed():
         last = requests.get(
             f'{app.config["API_URL"]}/tasks/completed/', params={'last': True}
         ).json()
-        start_date = TaskSchema(**first).complete_date
-        end_date = TaskSchema(**last).complete_date
+        start_date = schemas.TaskSchema(**first).complete_date
+        end_date = schemas.TaskSchema(**last).complete_date
     else:
         start_date, end_date = filters.get(date_filter)
 

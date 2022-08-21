@@ -55,8 +55,8 @@ Ending Notes:
 
 ### Tuesday, August 16, 2022: 
 Goals:
-- [ ] Get all endpoints functioning
-- [ ] Get all of frontend functioning
+- [X] Get all endpoints functioning
+- [X] Get all of frontend functioning
 - [ ] Make automated tests for all endpoints
 - [ ] 
 Notes:
@@ -67,6 +67,35 @@ Ending Notes:
   - Frontend is ugly and is not getting all the css correctly.
 - All endpoints are working and tested
 - I think the next order of business is to actually skip ahead and work on creating tests for these endpoints so that when I create the other endpoints and corresponding API calls I can easily test them without having to set up postman for all of that bullshit.
+
+
+### Wednesday, August 17, 2022: 
+Goals:
+- [X] pytest 
+- [X] endpoint tests
+- [ ] 
+- [ ] 
+Notes:
+- 
+
+Ending Notes:
+- All endpoint tests are working.  I need to next make it create a fake db in each of the tests so that I don't mess up my dev db each time I test.
+- It should be in memory if possible and just put a few `things` in there.
+  - Future of the db creation is being able to pass models and schemas into it to test that they are validating the information correctly on both ends.  
+
+
+### Saturday, August 20, 2022: 
+Goals:
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
+Notes:
+- 
+
+Ending Notes:
+- 
+
 
 
 
