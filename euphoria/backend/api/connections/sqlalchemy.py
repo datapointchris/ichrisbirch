@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from ..config import get_config_for_environment
+from ...common.config import get_config_for_environment
 
 config = get_config_for_environment()
 

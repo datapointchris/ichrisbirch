@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI
 
 from .dependencies import get_query_token, get_token_header
 from .endpoints import tasks
-from .config import get_config_for_environment
+from ..common.config import get_config_for_environment
 import logging
 import random
 import string

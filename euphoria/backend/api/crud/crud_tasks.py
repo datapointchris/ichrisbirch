@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from app.crud.base import CRUDBase
-from app.models.tasks import Task
-from app.schemas.tasks import TaskCreate, TaskUpdate
+from .base import CRUDBase
+from ...common.models.tasks import Task
+from ...common.schemas.tasks import TaskCreate, TaskUpdate
 
 import logging
 

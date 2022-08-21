@@ -2,10 +2,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..dependencies import auth
-from ..schemas.tasks import TaskCreate, Task
+from ...common.schemas.tasks import TaskCreate, TaskSchema
 
 from datetime import datetime
-from app import crud
+from ...api import crud
 from sqlalchemy.orm import Session
 from ..connections.sqlalchemy import sqlalchemy_session
 
@@ -15,13 +15,13 @@ router = APIRouter(prefix='/tasks', tags=['tasks'])
 
 
 # WORKING
-@router.get("/", response_model=List[Task])
+@router.get("/", response_model=List[TaskSchema])
 async def read_many(db: Session = Depends(sqlalchemy_session), skip: int = 0, limit: int = 5000):
     return crud.tasks.read_many(db, skip=skip, limit=limit)
 
 
 # WORKING
-@router.get("/completed/", response_model=List[Task] | Task)
+@router.get("/completed/", response_model=List[TaskSchema] | TaskSchema)
 async def completed(
     db: Session = Depends(sqlalchemy_session),
     start_date: str = None,
@@ -35,22 +35,22 @@ async def completed(
 
 
 # WORKING
-@router.post("/", response_model=Task)
+@router.post("/", response_model=TaskSchema)
 async def create(db: Session = Depends(sqlalchemy_session), task: TaskCreate = None):
     return crud.tasks.create(db, obj_in=task)
 
 
 # WORKING
-@router.get("/{task_id}/", response_model=Task)
+@router.get("/{task_id}/", response_model=TaskSchema)
 async def read_one(db: Session = Depends(sqlalchemy_session), task_id: int = None):
     if not (task := crud.tasks.read_one(db, id=task_id)):
-        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+        raise HTTPException(status_code=404, detail=f"TaskSchema {task_id} not found")
     return task
 
 
 # Not using, keep for reference
-# @router.post("/{task_id}/", response_model=Task)
-# async def update(db: Session = Depends(sqlalchemy_session), task: Task = None):
+# @router.post("/{task_id}/", response_model=TaskSchema)
+# async def update(db: Session = Depends(sqlalchemy_session), task: TaskSchema = None):
 #     return crud.tasks.update(db, obj_in=task)
 
 # WORKING
@@ -60,6 +60,6 @@ async def delete(db: Session = Depends(sqlalchemy_session), task_id: int = None)
 
 
 # WORKING
-@router.post("/complete/{task_id}/", response_model=Task)
+@router.post("/complete/{task_id}/", response_model=TaskSchema)
 async def complete(db: Session = Depends(sqlalchemy_session), task_id: int = None):
     return crud.tasks.complete_task(db, id=task_id)
