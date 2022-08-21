@@ -7,7 +7,7 @@ from ...common.schemas.tasks import TaskCreate, TaskSchema
 from datetime import datetime
 from ...api import crud
 from sqlalchemy.orm import Session
-from ..connections.sqlalchemy import sqlalchemy_session
+from ...common.db.sqlalchemy import sqlalchemy_session
 
 router = APIRouter(prefix='/tasks', tags=['tasks'])
 

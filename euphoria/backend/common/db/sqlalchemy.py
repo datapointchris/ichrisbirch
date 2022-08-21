@@ -1,17 +1,24 @@
-from sqlite3 import ProgrammingError
-import sqlalchemy
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-engine = create_engine('postgresql:///euphoria', echo=False, future=True)
-session = Session(engine, future=True)
+from ..config import get_config_for_environment
 
-# TODO: This can be removed when moving to Alembic to create the schemas and tables
-# schemas = ['apartments', 'box_packing', 'countdowns', 'events', 'habits', 'journal', 'portfolio', 'tasks']
-# with session:
-#     for schema_name in schemas:
-#         session.execute(f'CREATE SCHEMA IF NOT EXISTS {schema_name};')
+config = get_config_for_environment()
 
+engine = create_engine(
+    config.SQLALCHEMY_DATABASE_URI, echo=False, future=True
+)  # connect_args={'check_same_thread': False}
 
 Base = declarative_base()
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
+
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
+
+
+async def sqlalchemy_session() -> SessionLocal:
+    """Yields sqlalchemy Session using try, finally to avoid indentation using `with`"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

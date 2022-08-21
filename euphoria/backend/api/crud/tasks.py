@@ -33,38 +33,42 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
         first: bool | None = None,
         last: bool | None = None
     ):
+        first_result = (
+            db.query(Task)
+            .filter(Task.complete_date.is_not(None))
+            .order_by(Task.complete_date.asc())
+            .first()
+        )
+        last_result = (
+            db.query(Task)
+            .filter(Task.complete_date.is_not(None))
+            .order_by(Task.complete_date.desc())
+            .first()
+        )
+        all_dates_result = (
+            db.query(Task)
+            .filter(Task.complete_date.is_not(None))
+            .order_by(Task.complete_date.desc())
+            .all()
+        )
+        filtered_date_result = (
+            db.query(Task)
+            .filter(
+                Task.complete_date >= start_date,
+                Task.complete_date < end_date,
+            )
+            .order_by(Task.complete_date.desc())
+            .all()
+        )
+
         if first:
-            result = (
-                db.query(Task)
-                .filter(Task.complete_date.is_not(None))
-                .order_by(Task.complete_date.asc())
-                .first()
-            )
+            return first_result
         elif last:
-            result = (
-                db.query(Task)
-                .filter(Task.complete_date.is_not(None))
-                .order_by(Task.complete_date.desc())
-                .first()
-            )
-        elif start_date is None and end_date is None:
-            result = (
-                db.query(Task)
-                .filter(Task.complete_date.is_not(None))
-                .order_by(Task.complete_date.desc())
-                .all()
-            )
+            return last_result
+        elif start_date is None or end_date is None:
+            return all_dates_result
         else:
-            result = (
-                db.query(Task)
-                .filter(
-                    Task.complete_date >= start_date,
-                    Task.complete_date < end_date,
-                )
-                .order_by(Task.complete_date.desc())
-                .all()
-            )
-        return result
+            return filtered_date_result
 
     def complete_task(self, db: Session, id: int):
         task = self.read_one(db, id)
