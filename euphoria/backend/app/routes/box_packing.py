@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, render_template, request, url_for, current_app
-from ..models.box_packing import Box, Item
-from ..db.sqlalchemy import session
+from ...common.models.box_packing import Box, Item
+from ...common.db.sqlalchemy import session
 import requests
 
 blueprint = Blueprint(

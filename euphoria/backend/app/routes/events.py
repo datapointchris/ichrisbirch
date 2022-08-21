@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, current_app
-from ..models.events import Event
-from ..db.sqlalchemy import session
+from ...common.models.events import Event
+from ...common.db.sqlalchemy import session
 import requests
 
 blueprint = Blueprint(

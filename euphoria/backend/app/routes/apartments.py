@@ -1,5 +1,5 @@
 from flask import Blueprint, redirect, render_template, request, url_for, current_app
-from ..models.apartments import Apartment, Feature
+from ...common.models.apartments import Apartment, Feature
 import requests
 
 blueprint = Blueprint(

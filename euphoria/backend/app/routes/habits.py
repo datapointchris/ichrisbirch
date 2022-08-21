@@ -3,9 +3,9 @@ from datetime import date
 import requests
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
 
-from ..db.sqlalchemy import session
+from ...common.db.sqlalchemy import session
 from ..easy_dates import EasyDate
-from ..models.habits import Category, CompletedHabit, Habit
+from ...common.models.habits import Category, CompletedHabit, Habit
 
 blueprint = Blueprint(
     'habits', __name__, template_folder='templates/habits', static_folder='static'

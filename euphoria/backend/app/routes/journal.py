@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, current_app, url_for, redirect
-from ..models.journal import JournalEntry
+from ...common.models.journal import JournalEntry
 import requests
 
 blueprint = Blueprint(

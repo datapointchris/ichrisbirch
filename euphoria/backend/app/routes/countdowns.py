@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, current_app
-from ..models.countdowns import Countdown
-from ..db.sqlalchemy import session
+from ...common.models.countdowns import Countdown
+from ...common.db.sqlalchemy import session
 import requests
 
 blueprint = Blueprint(

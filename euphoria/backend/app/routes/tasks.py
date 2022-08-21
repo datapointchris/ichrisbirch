@@ -1,5 +1,4 @@
 import base64
-from email.utils import parsedate_to_datetime, parsedate_tz
 import random
 from collections import Counter
 from datetime import date, datetime, time, timedelta
@@ -13,9 +12,9 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from flask import current_app as app
 from matplotlib.figure import Figure
 
-from ..db.sqlalchemy import session
+from ...common.db.sqlalchemy import session
 from ..easy_dates import EasyDateTime
-from ..models.tasks import Task, calculate_average_completion_time
+from ...common.models.tasks import Task, calculate_average_completion_time
 from ...common import schemas
 
 blueprint = Blueprint(
@@ -35,9 +34,7 @@ def index():
         f'{app.config["API_URL"]}/tasks/completed/',
         params={'start_date': ed.today, 'end_date': ed.tomorrow},
     ).json()
-    top_tasks = requests.get(
-        f'{app.config["API_URL"]}/tasks/', params={'limit': 5}
-    ).json()
+    top_tasks = requests.get(f'{app.config["API_URL"]}/tasks/', params={'limit': 5}).json()
     completed_today = [Task(**schemas.TaskSchema(**task).dict()) for task in completed_today]
     top_tasks = [Task(**schemas.TaskSchema(**task).dict()) for task in top_tasks]
     return render_template('tasks/index.html', top_tasks=top_tasks, completed_today=completed_today)
