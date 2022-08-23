@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from ..db.sqlalchemy import Base
+from ..db.sqlalchemy.base_class import Base
 
 
 class Countdown(Base):

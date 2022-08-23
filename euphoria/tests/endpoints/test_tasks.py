@@ -1,14 +1,13 @@
 import os
-import requests
+
 os.environ['ENVIRONMENT'] = 'development'
+
+import requests
 import pytest
 import sqlite3
-from app.main import app
-from app.config import get_config_for_environment
-from fastapi.testclient import TestClient
+from backend.api.main import app
+from backend.common.config import get_config_for_environment
 import json
-
-# client = TestClient(app)
 
 
 config = get_config_for_environment('development')
@@ -32,9 +31,10 @@ TASKS_TO_CREATE = create_tasks_test_database()
 def disable_network_calls(monkeypatch):
     def disabled():
         raise RuntimeError("Network access not allowed during testing!")
+
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: disabled())
-    monkeypatch.setattr(requests, "create", lambda *args, **kwargs: disabled())
     monkeypatch.setattr(requests, "post", lambda *args, **kwargs: disabled())
+    monkeypatch.setattr(requests, "put", lambda *args, **kwargs: disabled())
     monkeypatch.setattr(requests, "delete", lambda *args, **kwargs: disabled())
 
 
@@ -45,24 +45,24 @@ def disable_network_calls(monkeypatch):
 # ----- CRUD ----- #
 
 
-def test_read_one_task():
+def test_read_one_task(client):
     response = client.get(ENDPOINT + '830')
     assert response.status_code == 200
 
 
-def test_read_many_tasks():
+def test_read_many_tasks(client):
     response = client.get(ENDPOINT)
     assert response.status_code == 200
     # assert len(response.json()) == 5
 
 
-def test_create_task():
+def test_create_task(client):
     print(TASKS_TO_CREATE[0])
     response = client.post(ENDPOINT, data=json.dumps(TASKS_TO_CREATE[0]))
     assert response.status_code == 200
 
 
-def test_delete_task():
+def test_delete_task(client):
     tasks = client.get(ENDPOINT).json()
     task_to_delete = tasks[0]
     response = client.delete(f'{ENDPOINT}{task_to_delete["id"]}/')
@@ -72,18 +72,18 @@ def test_delete_task():
 # ----- EXTRA ENDPOINTS ----- #
 
 
-def test_complete_task():
+def test_complete_task(client):
     response = client.post(ENDPOINT + 'complete/830/', data=TEST_TASK_IDS[0])
     assert response.status_code == 200
 
 
-def test_read_completed_tasks():
+def test_read_completed_tasks(client):
     response = client.get(ENDPOINT + 'completed/')
     print(ENDPOINT + 'completed/')
     assert response.status_code == 200
 
 
-def test_task_lifecycle():
+def test_task_lifecycle(client):
     original_task = TASKS_TO_CREATE[1]
     created_task = client.post(ENDPOINT, data=json.dumps(original_task)).json()
     assert created_task['name'] == original_task['name']

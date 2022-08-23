@@ -3,6 +3,8 @@ from fastapi import Depends, FastAPI
 from .dependencies import get_query_token, get_token_header
 from .endpoints import tasks
 from ..common.config import get_config_for_environment
+from ..common.db.sqlalchemy.base_class import Base
+from ..common.db.sqlalchemy.session import engine
 import logging
 import random
 import string
@@ -22,8 +24,18 @@ import time
 
 
 # app = FastAPI(dependencies=[Depends(get_query_token)])
+
+# 1. Create app
 app = FastAPI()
+
+# 2. Add config to ride around
 app.config = get_config_for_environment()
+
+# 3. Create tables
+Base.metadata.create_all(bind=engine)
+
+
+
 # @app.middleware("http")
 # async def log_requests(request, call_next):
 #     idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))

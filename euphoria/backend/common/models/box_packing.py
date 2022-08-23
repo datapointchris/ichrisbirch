@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Boolean, String, ForeignKey
 from sqlalchemy.orm import relationship
-from ..db.sqlalchemy import Base
+from ..db.sqlalchemy.base_class import Base
 
 
 class Box(Base):

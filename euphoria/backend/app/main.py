@@ -7,7 +7,7 @@ from ..common.config import get_config_for_environment
 # TODO: Delete this when moving to Alembic migrations
 # It is only here to create tables on the first run
 # from .models.tasks import Task
-# from .db.sqlalchemy import Base, engine
+# from .db.base_class import Base, engine
 
 # Base.metadata.create_all(bind=engine)
 

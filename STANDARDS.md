@@ -85,3 +85,13 @@ Python 3.10.1
 Postgres 14.2  
 DynamoDB
 MongoDB
+
+
+## For A Release
+================
+- [ ] All tests passing
+- [ ] Test on local dev
+- [ ] (optional) Test on `test` environment
+  - [ ] subject to implementation
+- [ ] git tag something or other
+- [ ] pull request the merge
