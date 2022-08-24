@@ -5,7 +5,7 @@ from ..helpers import endpoint
 from ..test_config import test_config
 
 ENDPOINT = 'tasks'
-task_faker = TaskDataGenerator(ENDPOINT, test_config.SEED)
+task_faker = TaskDataGenerator(test_config.SEED)
 fake_tasks = task_faker.generate(test_config.NUM_FAKE)
 
 
