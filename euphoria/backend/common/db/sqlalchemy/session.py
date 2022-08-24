@@ -14,7 +14,7 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, futu
 
 
 async def sqlalchemy_session() -> Session:
-    """Yields sqlalchemy Session using try, finally to avoid indentation using `with`"""
+    """Yields sqlalchemy Session"""
     session = SessionLocal()
     try:
         yield session
