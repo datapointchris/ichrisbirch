@@ -5,8 +5,6 @@ from ..helpers import endpoint
 from ..test_config import test_config
 
 ENDPOINT = 'tasks'
-
-
 task_faker = TaskDataGenerator(ENDPOINT, test_config.SEED)
 fake_tasks = task_faker.generate(test_config.NUM_FAKE)
 
@@ -14,9 +12,6 @@ fake_tasks = task_faker.generate(test_config.NUM_FAKE)
 @pytest.fixture(autouse=True)
 def test_data() -> list[dict]:
     return fake_tasks
-
-
-# ----- CRUD ----- #
 
 
 @pytest.mark.parametrize('task_id', task_faker.ids_from_generated(test_config.NUM_TEST))
@@ -45,9 +40,6 @@ def test_delete_task(task_id, client):
     assert response.status_code == 200
     assert response.json() == task.json()
     assert deleted.status_code == 404
-
-
-# # ----- EXTRA ENDPOINTS ----- #
 
 
 @pytest.mark.parametrize('task_id', task_faker.ids_from_generated(test_config.NUM_TEST))
