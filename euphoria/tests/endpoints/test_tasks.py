@@ -1,19 +1,14 @@
 import pytest
 import json
-from .fake_data_generators import FakeTaskDataGenerator
+from ..data_generators import TaskDataGenerator
+from ..helpers import endpoint
+from ..test_config import test_config
 
-SEED = 777
 ENDPOINT = 'tasks'
-NUM_FAKE_TASKS = 1000
-NUM_TEST_TASKS = 5
-
-task_faker = FakeTaskDataGenerator(ENDPOINT, SEED)
-fake_tasks = task_faker.generate(NUM_FAKE_TASKS)
 
 
-def endpoint(*paths: str | list | int) -> str:
-    paths = [paths] if isinstance(paths, str) else paths
-    return f'/{"/".join([str(s) for s in paths])}/'
+task_faker = TaskDataGenerator(ENDPOINT, test_config.SEED)
+fake_tasks = task_faker.generate(test_config.NUM_FAKE)
 
 
 @pytest.fixture(autouse=True)
@@ -24,7 +19,7 @@ def test_data() -> list[dict]:
 # ----- CRUD ----- #
 
 
-@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(NUM_TEST_TASKS))
+@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(test_config.NUM_TEST))
 def test_read_one_task(task_id, client):
     response = client.get(endpoint(ENDPOINT, task_id))
     assert response.status_code == 200
@@ -36,13 +31,13 @@ def test_read_many_tasks(client):
     assert len(response.json()) == 1000
 
 
-@pytest.mark.parametrize('test_task', task_faker.records_from_generated(NUM_TEST_TASKS))
+@pytest.mark.parametrize('test_task', task_faker.records_from_generated(test_config.NUM_TEST))
 def test_create_task(test_task, client):
     response = client.post(endpoint(ENDPOINT), data=json.dumps(test_task))
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(NUM_TEST_TASKS))
+@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(test_config.NUM_TEST))
 def test_delete_task(task_id, client):
     task = client.get(endpoint(ENDPOINT, task_id))
     response = client.delete(endpoint(ENDPOINT, task_id))
@@ -55,13 +50,13 @@ def test_delete_task(task_id, client):
 # # ----- EXTRA ENDPOINTS ----- #
 
 
-@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(NUM_TEST_TASKS))
+@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(test_config.NUM_TEST))
 def test_complete_task(task_id, client):
     response = client.post(endpoint(ENDPOINT, 'complete', task_id))
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(NUM_TEST_TASKS))
+@pytest.mark.parametrize('task_id', task_faker.ids_from_generated(test_config.NUM_TEST))
 def test_read_completed_tasks(task_id, client):
     client.post(endpoint(ENDPOINT, 'complete', task_id))
     response = client.get(endpoint(ENDPOINT, 'completed'))
@@ -69,7 +64,7 @@ def test_read_completed_tasks(task_id, client):
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize('test_task', task_faker.records_from_generated(NUM_TEST_TASKS))
+@pytest.mark.parametrize('test_task', task_faker.records_from_generated(test_config.NUM_TEST))
 def test_task_lifecycle(test_task, client):
     created_task = client.post(endpoint(ENDPOINT), data=json.dumps(test_task)).json()
     task_id = created_task.get('id')

@@ -1,23 +1,25 @@
 import random
+from faker import Faker
 
 
-class FakeTaskDataGenerator:
-    """Generate fake task data
-    """
+class TaskDataGenerator:
+    """Generate fake task data"""
 
     def __init__(self, endpoint, seed):
         self.endpoint = endpoint
         self.seed = seed
         self.generated_data = None
+        self.fake = Faker()
 
         if self.seed:
             random.seed(seed)
+            Faker.seed(seed)
 
     def generate(self, num_records: int) -> list[dict]:
         self.generated_data = [
             {
-                "name": f"task-{num:03}",
-                "category": f"category-{num:03}",
+                "name": self.fake.catch_phrase(),
+                "category": random.choice(['financial', 'coding', 'chore', 'car', 'misc']),
                 "priority": random.randint(1, 100),
             }
             for num in range(num_records)

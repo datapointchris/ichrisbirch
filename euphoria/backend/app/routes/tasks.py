@@ -6,6 +6,7 @@ from io import BytesIO
 from zoneinfo import ZoneInfo
 import json
 import logging
+from faker import Faker
 
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
@@ -148,13 +149,14 @@ def form():
 
 @blueprint.route('/fake/', methods=['GET'])
 def fake_tasks():
+    fake = Faker()
     with session:
         for _ in range(1000):
             tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(
                 days=random.randint(0, 100)
             )
             task = {
-                'name': f'task {round(random.random() * 100, 2)}',
+                'name': fake.catch_phrase(),
                 'category': random.choice(['financial', 'coding', 'chore', 'car', 'misc']),
                 'priority': random.randint(1, 100),
                 'add_date': tstamp.isoformat(),
