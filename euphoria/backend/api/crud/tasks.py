@@ -31,53 +31,52 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
         start_date: str | None = None,
         end_date: str | None = None,
         first: bool | None = None,
-        last: bool | None = None
+        last: bool | None = None,
     ):
-        first_result = (
-            db.query(Task)
-            .filter(Task.complete_date.is_not(None))
-            .order_by(Task.complete_date.asc())
-            .first()
-        )
-        last_result = (
-            db.query(Task)
-            .filter(Task.complete_date.is_not(None))
-            .order_by(Task.complete_date.desc())
-            .first()
-        )
-        all_dates_result = (
-            db.query(Task)
-            .filter(Task.complete_date.is_not(None))
-            .order_by(Task.complete_date.desc())
-            .all()
-        )
-        filtered_date_result = (
-            db.query(Task)
-            .filter(
-                Task.complete_date >= start_date,
-                Task.complete_date < end_date,
-            )
-            .order_by(Task.complete_date.desc())
-            .all()
-        )
-
         if first:
-            return first_result
+            return (
+                db.query(Task)
+                .filter(Task.complete_date.is_not(None))
+                .order_by(Task.complete_date.asc())
+                .first()
+            )
+
         elif last:
-            return last_result
+            return (
+                db.query(Task)
+                .filter(Task.complete_date.is_not(None))
+                .order_by(Task.complete_date.desc())
+                .first()
+            )
+
         elif start_date is None or end_date is None:
-            return all_dates_result
+            return (
+                db.query(Task)
+                .filter(Task.complete_date.is_not(None))
+                .order_by(Task.complete_date.desc())
+                .all()
+            )
+
         else:
-            return filtered_date_result
+            return (
+                db.query(Task)
+                .filter(
+                    Task.complete_date >= start_date,
+                    Task.complete_date < end_date,
+                )
+                .order_by(Task.complete_date.desc())
+                .all()
+            )
 
     def complete_task(self, db: Session, id: int):
-        task = self.read_one(db, id)
-        print(task)
-        task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()
-        db.add(task)
-        db.commit()
-        db.refresh(task)
-        return task
+        if task := db.query(Task).filter(Task.id == id).first():
+            task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+            return task
+        else:
+            return None
 
 
 tasks = CRUDTask(Task)
