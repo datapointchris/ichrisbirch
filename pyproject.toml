@@ -26,6 +26,7 @@ fastapi = "^0.79.0"
 uvicorn = "^0.18.2"
 docker = "^6.0.0"
 Faker = "^14.1.0"
+pydeps = "^1.10.22"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"

@@ -121,6 +121,7 @@ Realpython
 - https://www.youtube.com/watch?v=B1j6k2j2eJg
 - https://www.youtube.com/watch?v=ULxMQ57engo
 - https://www.youtube.com/watch?v=NI5IGAim8XU
+- https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/
 
 
 # v0.6.1 --> Logging
@@ -161,6 +162,8 @@ https://ravilach.medium.com/continuous-integration-developer-getting-started-gui
 - Docs/notes for each page and function
 - Hopefully a lot of this is done as I'm testing and doing type hinting
 https://realpython.com/python-project-documentation-with-mkdocs/
+- Code and architecture Diagramming
+- https://github.com/mingrammer/diagrams
 
 
 # v0.10.0 --> Re-structure CSS and Navigation
