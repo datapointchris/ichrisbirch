@@ -118,8 +118,7 @@ Flask:
 # v0.3.1 --> Update nginx.conf
 Use the new file so that the static files are served by nginx
 Does this reach into all static folders?'
-
-
+https://www.youtube.com/watch?v=WqrCnVAkLIo
 
 # v0.8.0 --> Continuous Integration / Github Actions
 ---
@@ -196,6 +195,7 @@ Realpython
 - https://www.youtube.com/watch?v=ULxMQ57engo
 - https://www.youtube.com/watch?v=NI5IGAim8XU
 - https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/
+- https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514
 
 
 # v0.6.1 --> Logging

@@ -3,6 +3,11 @@
 
 
 # First time
+## DB
+Run `backend/init_db.py`
+Run `alembic revision --autogenerate -m 'init_tables'`
+Run `alembic upgrade head`
+
 
 
 ### FastAPI Crud Endpoints
@@ -22,11 +27,14 @@ Note: Config is not actually setting anything in tests, but the config is called
 - [ ] Test on local dev
 - [ ] (optional) Test on `test` environment
   - [ ] subject to implementation
+- [ ] 
 - [ ] git merge `feature/{feature}` into `master`
   - [ ] git checkout master
   - [ ] git merge feature/{feature}
 - [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
-  - [ ] git commit -m 'release: v0.3.0 - Migrate Databases'
+- [ ] Create an alembic migration with the release
+  - [ ] alembic revision --autogenerate -m 'release_v0.3.0'
+  - [ ] git commit -am 'release: v0.3.0 - Migrate Databases'
 - [ ] Create a git tag after the bump so that the tag references the bump commit
   - [ ] git tag -m 'v0.3.0'
 - [ ] Push branch and tags

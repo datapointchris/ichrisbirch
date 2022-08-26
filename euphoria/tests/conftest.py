@@ -5,16 +5,14 @@ from typing import Any, Generator
 import docker
 import pytest
 from backend.api.endpoints import tasks
-from backend.common.db.sqlalchemy.base_class import Base
-from backend.common.db.sqlalchemy.session import sqlalchemy_session
+from backend.common.db.sqlalchemy.base import Base
+from backend.common.db.sqlalchemy.session import sqlalchemy_session, engine
+from backend.common.config import env_config
 from backend.common.models.tasks import Task
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateSchema
-
-SCHEMAS = ['apartments', 'habits', 'moving', 'portfolio', 'priorities', 'tasks', 'tracks']
 
 
 def insert_test_data_in_db(test_data: callable, db_session: Session, data_model):
@@ -50,11 +48,10 @@ def create_postgres_in_docker():
     return testdb
 
 
-engine = create_engine("postgresql://postgres:postgres@localhost:5434", echo=False, future=True)
 SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 
 
-def get_db_session() -> Session:
+def get_testing_session() -> Session:
     session = SessionTesting()
     try:
         yield session
@@ -62,7 +59,7 @@ def get_db_session() -> Session:
         session.close()
 
 
-def create_db_schemas(schemas, engine, db_session):
+def create_schemas(schemas, db_session):
     session = next(db_session())
     for schema_name in schemas:
         session.execute(CreateSchema(schema_name))
@@ -79,7 +76,7 @@ def create_app_with_routes():
 def setup_test_db():
     testdb = create_postgres_in_docker()
     time.sleep(2)  # Must sleep to allow creation of detached Docker container
-    create_db_schemas(SCHEMAS, engine, get_db_session)
+    create_schemas(env_config.SCHEMAS, engine, get_testing_session)
     yield
     testdb.stop()
 
@@ -107,12 +104,12 @@ def client(setup_test_db, test_data) -> Generator[TestClient, Any, None]:
     # Create test data
 
     # Insert the test data
-    insert_test_data_in_db(test_data, db_session=get_db_session, data_model=Task)
+    insert_test_data_in_db(test_data, db_session=get_testing_session, data_model=Task)
 
     # 4. Create the app
     app = create_app_with_routes()
 
-    app.dependency_overrides[sqlalchemy_session] = get_db_session
+    app.dependency_overrides[sqlalchemy_session] = get_testing_session
 
     # 6. Use TestClient to mimic requests
     try:
