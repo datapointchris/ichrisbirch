@@ -5,12 +5,6 @@ from enum import Enum, auto
 dotenv.load_dotenv()
 
 
-class Environment(Enum):
-    Development = auto()
-    Testing = auto()
-    Production = auto()
-
-
 class EnvironmentConfig:
     CSRF_ENABLED = True
     SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -37,6 +31,7 @@ class DevelopmentConfig(EnvironmentConfig):
     TESTING = False
     DEVELOPMENT = True
     SQLALCHEMY_ECHO = True
+    API_URL = os.environ.get('DEV_API_URL')
     DYNAMODB_DATABASE_URI = os.environ.get('DEV_DYNAMODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('DEV_SQLITE_DATABASE_URI')
 
@@ -50,25 +45,23 @@ class DevelopmentConfig(EnvironmentConfig):
     POSTGRES_PASSWORD = os.environ.get('DEV_POSTGRES_PASSWORD')
     SQLALCHEMY_DATABASE_URI = f'{POSTGRES_URL}/euphoria'
 
-    API_URL = os.environ.get('DEV_API_URL')
-
 
 class TestingConfig(EnvironmentConfig):
     TESTING = True
     DEVELOPMENT = True
     SQLALCHEMY_ECHO = True
+    API_URL = os.environ.get('TEST_API_URL')
     SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_SQLALCHEMY_DATABASE_URI')
     DYNAMODB_DATABASE_URI = os.environ.get('TEST_DYNAMODB_DATABASE_URI')
     MONGODB_DATABASE_URI = os.environ.get('TEST_MONGODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('TEST_SQLITE_DATABASE_URI')
-
-    API_URL = os.environ.get('TEST_API_URL')
 
 
 class ProductionConfig(EnvironmentConfig):
     TESTING = False
     DEVELOPMENT = False
     SQLALCHEMY_ECHO = True
+    API_URL = os.environ.get('PROD_API_URL')
     DYNAMODB_DATABASE_URI = os.environ.get('PROD_DYNAMODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('PROD_SQLITE_DATABASE_URI')
 
@@ -83,21 +76,16 @@ class ProductionConfig(EnvironmentConfig):
         f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URL}:5432/euphoria'
     )
 
-    API_URL = os.environ.get('PROD_API_URL')
 
-
-def get_config_for_environment(
-    environment: str = os.environ.get('ENVIRONMENT'),
-) -> EnvironmentConfig:
+def get_config_for_environment(environment: str = 'production') -> EnvironmentConfig:
     """Configures app for specified environment
 
     Args:
-        environment (Environment):
-        Possible values:
-            `Environment.Development`
-            `Environment.Testing`
-            `Environment.Production`
-        Default: `Environment.Production`
+        environment:
+            `development`
+            `testing`
+            `production`
+        Default: `production`
 
     Returns:
         EnvironmentConfig: Configuration object for selected environment
@@ -114,3 +102,6 @@ def get_config_for_environment(
                 f'Unrecognized Environment Variable: {environment}'
                 '  --> Did you set ENVIRONMENT before starting the program?'
             )
+
+
+env_config = get_config_for_environment(os.environ.get('ENVIRONMENT'))

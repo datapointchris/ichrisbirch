@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI
 
 from .dependencies import get_query_token, get_token_header
 from .endpoints import tasks
-from ..common.config import get_config_for_environment
+from ..common.config import env_config
 from ..common.db.sqlalchemy.base_class import Base
 from ..common.db.sqlalchemy.session import engine
 import logging
@@ -29,7 +29,8 @@ import time
 app = FastAPI()
 
 # 2. Add config to ride around
-app.config = get_config_for_environment()
+# Do I need to do this
+app.config = env_config
 
 # 3. Create tables
 Base.metadata.create_all(bind=engine)

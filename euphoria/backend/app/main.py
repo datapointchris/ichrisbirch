@@ -1,7 +1,6 @@
 from flask import Flask
-import sqlalchemy
 from .routes import main, box_packing, countdowns, events, journal, habits, portfolio, tasks
-from ..common.config import get_config_for_environment
+from ..common.config import env_config
 
 
 # TODO: Delete this when moving to Alembic migrations
@@ -14,10 +13,9 @@ from ..common.config import get_config_for_environment
 
 def create_app():
     app = Flask(__name__)
-    config_object = get_config_for_environment()
 
     with app.app_context():
-        app.config.from_object(config_object)
+        app.config.from_object(env_config)
 
         app.register_blueprint(main.blueprint)
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
