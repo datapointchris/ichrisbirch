@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Boolean
-from ..db.sqlalchemy.base_class import Base
+from ..db.sqlalchemy.base import Base
 
 
 class Event(Base):

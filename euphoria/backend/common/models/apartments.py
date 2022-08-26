@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import relationship
-from ..db.sqlalchemy.base_class import Base
+from ..db.sqlalchemy.base import Base
 
 
 class Apartment(Base):

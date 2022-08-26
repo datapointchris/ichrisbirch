@@ -1,14 +1,12 @@
+import logging
+
 from fastapi import Depends, FastAPI
 
+from ..common.config import env_config
+from ..common.db.sqlalchemy.base import Base
+from ..common.db.sqlalchemy.session import engine
 from .dependencies import get_query_token, get_token_header
 from .endpoints import tasks
-from ..common.config import env_config
-from ..common.db.sqlalchemy.base_class import Base
-from ..common.db.sqlalchemy.session import engine
-import logging
-import random
-import string
-import time
 
 # logger = logging.getLogger()
 # logger.setLevel(logging.DEBUG)
@@ -34,7 +32,6 @@ app.config = env_config
 
 # 3. Create tables
 Base.metadata.create_all(bind=engine)
-
 
 
 # @app.middleware("http")

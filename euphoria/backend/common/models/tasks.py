@@ -1,6 +1,6 @@
 from sqlalchemy.sql import func
 from sqlalchemy import Column, Integer, String, DateTime
-from ..db.sqlalchemy.base_class import Base
+from ..db.sqlalchemy.base import Base
 
 
 class Task(Base):
