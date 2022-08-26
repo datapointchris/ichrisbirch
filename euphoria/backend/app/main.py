@@ -3,14 +3,6 @@ from .routes import main, box_packing, countdowns, events, journal, habits, port
 from ..common.config import env_config
 
 
-# TODO: Delete this when moving to Alembic migrations
-# It is only here to create tables on the first run
-# from .models.tasks import Task
-# from .db.base_class import Base, engine
-
-# Base.metadata.create_all(bind=engine)
-
-
 def create_app():
     app = Flask(__name__)
 

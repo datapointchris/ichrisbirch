@@ -19,7 +19,58 @@ def health() -> dict:
 ```
 <!-- END OF SMALL THINGS -->
 
-
+- [v0.4.0 --> Migrate Databases](#v040----migrate-databases)
+- [v0.5.0 --> FastAPI](#v050----fastapi)
+- [v0.3.1 --> Update nginx.conf](#v031----update-nginxconf)
+  - [# v0.8.0 --> Continuous Integration / Github Actions](#-v080----continuous-integration--github-actions)
+  - [# v0.4.0 --> Backups](#-v040----backups)
+  - [# v0.5.0 --> User Login](#-v050----user-login)
+  - [# v0.6.0 --> WTForms](#-v060----wtforms)
+  - [# v0.6.0 --> Testing](#-v060----testing)
+  - [# v0.6.1 --> Logging](#-v061----logging)
+  - [# v0.7.0 --> Security](#-v070----security)
+  - [# v0.7.0 --> Typing](#-v070----typing)
+- [v0.9.0 --> Documentation](#v090----documentation)
+- [v0.10.0 --> Re-structure CSS and Navigation](#v0100----re-structure-css-and-navigation)
+- [v0.11.0 --> Build Portfolio Page](#v0110----build-portfolio-page)
+- [v1.0.0 --> Basic Main page and Portfolio](#v100----basic-main-page-and-portfolio)
+- [v1.1.0 --> Employers](#v110----employers)
+- [v1.1.0 --> ML Models](#v110----ml-models)
+- [v1.1.0 --> Front-end Framework](#v110----front-end-framework)
+- [# Project Specific New / Future Possible Features](#-project-specific-new--future-possible-features)
+  - [## Euphoria](#-euphoria)
+  - [Apartments](#apartments)
+  - [Tasks](#tasks)
+  - [Tracks](#tracks)
+    - [Events](#events)
+    - [Countdowns](#countdowns)
+  - [Box Moving](#box-moving)
+  - [Journal](#journal)
+  - [* ~ New Project ~ *](#--new-project--)
+  - [Manage Github](#manage-github)
+  - [* ~ New Project ~ *](#--new-project---1)
+- [Postgres Permissions Graphical Interface with Approvals](#postgres-permissions-graphical-interface-with-approvals)
+- [Postgres Stats](#postgres-stats)
+  - [* ~ New Project ~ *](#--new-project---2)
+- [Webstore Project](#webstore-project)
+  - [* ~ New Project ~ *](#--new-project---3)
+- [Interview Star Questions](#interview-star-questions)
+  - [* ~ New Project ~ *](#--new-project---4)
+- [Learning](#learning)
+  - [* ~ New Project ~ *](#--new-project---5)
+- [Goals](#goals)
+  - [* ~ New Project ~ *](#--new-project---6)
+- [Overview](#overview)
+  - [* ~ New Project ~ *](#--new-project---7)
+- [Budget](#budget)
+  - [* ~ New Project ~ *](#--new-project---8)
+- [Time Tracker](#time-tracker)
+  - [* ~ New Project ~ *](#--new-project---9)
+- [Deep Dream](#deep-dream)
+  - [* ~ New Project ~ *](#--new-project---10)
+- [Ummmm and Like counter](#ummmm-and-like-counter)
+  - [* ~ New Project ~ *](#--new-project---11)
+- [User specific](#user-specific)
 
 # v0.4.0 --> Migrate Databases
 - [ ] Alembic
@@ -28,7 +79,7 @@ def health() -> dict:
 
 
 
-# v0.4.0 --> FastAPI
+# v0.5.0 --> FastAPI
 - FastAPI Course
 API is being run on a different port/subdomain
 api.ichrisbirch.com
@@ -70,6 +121,24 @@ Does this reach into all static folders?'
 
 
 
+# v0.8.0 --> Continuous Integration / Github Actions
+---
+Pre-commit - What is the difference between this and CI/CD
+Tox:
+https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
+
+https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/
+https://lab.github.com/githubtraining/devops-with-github-actions
+[Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
+[How to Run Github Actions Builds on Your Own Servers With Self-Hosted Runners – CloudSavvy IT](https://www.cloudsavvyit.com/15503/how-to-run-github-actions-builds-on-your-own-servers-with-self-hosted-runners/)
+[https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/](https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/)
+[Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
+https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
+https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
+https://betterprogramming.pub/
+
+
+
 
 
 
@@ -105,6 +174,7 @@ https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-
 
 
 # v0.6.0 --> WTForms
+---
 Is this something I want to do?
 - https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html
 - https://flask-wtf.readthedocs.io/en/latest/quickstart/
@@ -120,6 +190,8 @@ Realpython
 - Books on datapointchris.com
 - pytest
 - test driven dev in python
+- https://www.cosmicpython.com/blog/2020-01-25-testing_external_api_calls.html
+- https://lyz-code.github.io/blue-book/coding/python/pytest/
 - https://www.youtube.com/watch?v=B1j6k2j2eJg
 - https://www.youtube.com/watch?v=ULxMQ57engo
 - https://www.youtube.com/watch?v=NI5IGAim8XU
@@ -147,20 +219,6 @@ https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-6152
 - [ ] Pydantic Models
 
 
-# v0.8.0 --> Continuous Integration / Github Actions
----
-Pre-commit - What is the difference between this and CI/CD
-Tox:
-https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
-
-https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/
-https://lab.github.com/githubtraining/devops-with-github-actions
-[Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
-[How to Run Github Actions Builds on Your Own Servers With Self-Hosted Runners – CloudSavvy IT](https://www.cloudsavvyit.com/15503/how-to-run-github-actions-builds-on-your-own-servers-with-self-hosted-runners/)
-[https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/](https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/)
-[Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
-https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
-https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
 
 
 # v0.9.0 --> Documentation

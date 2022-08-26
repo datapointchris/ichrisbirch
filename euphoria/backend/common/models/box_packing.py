@@ -4,6 +4,7 @@ from ..db.sqlalchemy.base import Base
 
 
 class Box(Base):
+    __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'boxes'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -19,9 +20,10 @@ class Box(Base):
 
 
 class Item(Base):
+    __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'items'
     id = Column(Integer, primary_key=True)
-    box_id = Column(Integer, ForeignKey('boxes.id'), nullable=False)
+    box_id = Column(Integer, ForeignKey('box_packing.boxes.id'), nullable=False)
     name = Column(String, nullable=False)
     essential = Column(Boolean, nullable=False)
     warm = Column(Boolean, nullable=False)

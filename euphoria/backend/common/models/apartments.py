@@ -4,11 +4,12 @@ from ..db.sqlalchemy.base import Base
 
 
 class Apartment(Base):
+    __table_args__ = {'schema': 'apartments'}
     __tablename__ = 'apartments'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    address = Column(String, index=True)
-    url = Column(Integer, ForeignKey("user.id"))
+    address = Column(String)
+    url = Column(String)
     notes = Column(String)
     features = relationship('Feature', back_populates='apartment', cascade='all, delete')
 
@@ -18,9 +19,10 @@ class Apartment(Base):
 
 
 class Feature(Base):
+    __table_args__ = {'schema': 'apartments'}
     __tablename__ = 'features'
     id = Column(Integer, primary_key=True, index=True)
-    apt_id = Column(Integer, ForeignKey('apartments.id'), nullable=False)
+    apt_id = Column(Integer, ForeignKey('apartments.apartments.id'), nullable=False)
     name = Column(String)
     value_bool = Column(Boolean, nullable=True)
     value_str = Column(String, nullable=True)

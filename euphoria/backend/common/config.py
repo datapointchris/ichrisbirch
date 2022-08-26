@@ -9,11 +9,11 @@ class EnvironmentConfig:
     CSRF_ENABLED: bool = True
     SECRET_KEY: str = os.environ.get('SECRET_KEY')
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-
     TESTING: bool
     DEVELOPMENT: bool
     SQLALCHEMY_ECHO: bool
     API_URL: str
+    SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
 
     POSTGRES_URI: str
     POSTGRES_USER: str
@@ -52,13 +52,11 @@ class DevelopmentConfig(EnvironmentConfig):
     DYNAMODB_USER = os.environ.get('PROD_DYNAMODB_USER')
     DYNAMODB_PASSWORD = os.environ.get('PROD_DYNAMODB_PASSWORD')
 
-    POSTGRES_DATABASE_URI = (
-        f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URI}:5432/euphoria'
-    )
+    POSTGRES_DATABASE_URI = f'{POSTGRES_URI}/euphoria'
     MONGODB_DATABASE_URI = f'{MONGODB_URI}/euphoria'
     DYNAMODB_DATABASE_URI = os.environ.get('DEV_DYNAMODB_DATABASE_URI')
     SQLITE_DATABASE_URI = os.environ.get('DEV_SQLITE_DATABASE_URI')
-    SQLALCHEMY_DATABASE_URI = f'{POSTGRES_URI}/euphoria'
+    SQLALCHEMY_DATABASE_URI = POSTGRES_DATABASE_URI
 
 
 class TestingConfig(EnvironmentConfig):
@@ -115,7 +113,7 @@ class ProductionConfig(EnvironmentConfig):
     SQLALCHEMY_DATABASE_URI = POSTGRES_DATABASE_URI
 
 
-def get_config_for_environment(environment: str = 'production') -> EnvironmentConfig:
+def get_config_for_environment(environment: str = None) -> EnvironmentConfig:
     """Configures app for specified environment
 
     Args:
@@ -123,7 +121,6 @@ def get_config_for_environment(environment: str = 'production') -> EnvironmentCo
             `development`
             `testing`
             `production`
-        Default: `production`
 
     Returns:
         EnvironmentConfig: Configuration object for selected environment

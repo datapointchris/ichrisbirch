@@ -31,7 +31,8 @@ app = FastAPI()
 app.config = env_config
 
 # 3. Create tables
-Base.metadata.create_all(bind=engine)
+# Handled by Alembic now
+# Base.metadata.create_all(bind=engine)
 
 
 # @app.middleware("http")

@@ -1,12 +1,23 @@
 from logging.config import fileConfig
 
+from common.config import env_config
+from common.db.sqlalchemy.base import Base
+from common.db.sqlalchemy.session import engine
+
+# Need the models imported for Base to find the tables
+from common.models.apartments import Apartment
+from common.models.box_packing import Box, Item
+from common.models.countdowns import Countdown
+from common.models.events import Event
+from common.models.habits import Habit
+from common.models.journal import JournalEntry
+from common.models.portfolio import PortfolioProject
+from common.models.tasks import Task
+
 # from sqlalchemy import engine_from_config
-from sqlalchemy import create_engine
 from sqlalchemy import pool
 
 from alembic import context
-from common.config import env_config
-from common.db.sqlalchemy.base import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -38,12 +49,13 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = alembic_config.get_main_option("sqlalchemy.url")
+    url = env_config.SQLALCHEMY_DATABASE_URI
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
     )
 
     with context.begin_transaction():
@@ -57,17 +69,15 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = create_engine(env_config.SQLALCHEMY_DATABASE_URI)
+    # connectable = engine
     # connectable = engine_from_config(
     #     alembic_config.get_section(alembic_config.config_ini_section),
     #     prefix="sqlalchemy.",
     #     poolclass=pool.NullPool,
     # )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+    with engine.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

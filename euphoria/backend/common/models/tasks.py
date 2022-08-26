@@ -4,9 +4,6 @@ from ..db.sqlalchemy.base import Base
 
 
 class Task(Base):
-    """Data Model for Priority Tasks"""
-
-    __table_args__ = {'schema': 'tasks'}
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False)
