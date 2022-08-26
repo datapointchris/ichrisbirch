@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
-from euphoria.backend.common.db.sqlalchemy.base_class import Base
+from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.models.tasks import Task
 
 client = docker.DockerClient()

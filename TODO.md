@@ -7,17 +7,17 @@
   - [ ] Body in Apartments
 - [ ] Code Repo Structure
   - [ ] https://githubnext.com/projects/repo-visualization/
+- [ ] Add a health endpoint
+
+``` python
+@api_router.get("/health", response_model=schemas.Health, status_code=200)
+def health() -> dict:
+    """
+    Root Get
+    """
+    return {"name": "Example API", "version": __version__}
+```
 <!-- END OF SMALL THINGS -->
-
-
-# v0.3.0 --> Migrate Databases
-
-- [X] Countdowns -> SQLAlchemy
-- [ ] Apartments -> MongoDB
-  - [ ] Skipping for now
-- [X] Simplify Journal Entry MongoDB
-- [X] Get rid of Events dict
-  - [X] Maybe with Pydantic Models
 
 
 
@@ -75,11 +75,11 @@ Does this reach into all static folders?'
 
 # v0.4.0 --> Backups
 ---
-## Postgres
-
-## MongoDB
-
-## DynamoDB
+- [ ] Postgres
+- [ ] MongoDB
+- [ ] DynamoDB
+- [X] Code
+  - [X] Github
 
 
 
@@ -100,6 +100,8 @@ Does this reach into all static folders?'
 - JSON Web Tokens
 https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d
 
+- FastAPI Signup
+- https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py
 
 
 # v0.6.0 --> WTForms
@@ -148,6 +150,8 @@ https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-6152
 # v0.8.0 --> Continuous Integration / Github Actions
 ---
 Pre-commit - What is the difference between this and CI/CD
+Tox:
+https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
 
 https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/
 https://lab.github.com/githubtraining/devops-with-github-actions
@@ -157,6 +161,7 @@ https://lab.github.com/githubtraining/devops-with-github-actions
 [Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
 https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
 https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
+
 
 # v0.9.0 --> Documentation
 - Docs/notes for each page and function

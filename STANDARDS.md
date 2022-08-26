@@ -59,6 +59,7 @@ https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13
 `build:` that affect build components like build tool, ci pipeline, dependencies, project version, ...
 `ops:` that affect operational components like infrastructure, deployment, backup, recovery, ...
 `chore:` Miscellaneous commits e.g. modifying .gitignore
+`wip:` Work in progress, checkpoint
 
 ### Issues and Milestones
 TBD
