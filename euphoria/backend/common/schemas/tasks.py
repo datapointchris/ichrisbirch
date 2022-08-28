@@ -8,7 +8,7 @@ class TaskCreate(BaseModel):
     priority: int
 
 
-class TaskSchema(BaseModel):
+class Task(BaseModel):
     id: int
     name: str
     category: str
@@ -20,5 +20,5 @@ class TaskSchema(BaseModel):
         orm_mode = True
 
 
-class TaskUpdate(TaskSchema):
+class TaskUpdate(Task):
     ...

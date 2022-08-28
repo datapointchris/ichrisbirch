@@ -1,6 +1,5 @@
 import os
 import dotenv
-from enum import Enum, auto
 
 dotenv.load_dotenv()
 
