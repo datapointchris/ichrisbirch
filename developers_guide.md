@@ -36,7 +36,7 @@ Note: Config is not actually setting anything in tests, but the config is called
   - [ ] alembic revision --autogenerate -m 'release_v0.3.0'
   - [ ] git commit -am 'release: v0.3.0 - Migrate Databases'
 - [ ] Create a git tag after the bump so that the tag references the bump commit
-  - [ ] git tag -m 'v0.3.0'
+  - [ ] git tag 'v0.3.0'
 - [ ] Push branch and tags
   - [ ] git push --tags
 - [ ] Pray to Dionysus

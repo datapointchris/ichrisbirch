@@ -4,7 +4,12 @@ from abc import ABC, abstractmethod
 
 
 class FakeDataGenerator(ABC):
-    """Base class for data generators"""
+    """Base class for data generators
+
+    To Implement:
+        The `generate` function must assign the generated data to `self.generated_data`
+        Set the seed to get reproducable
+    """
 
     def __init__(self, seed: int = None):
         self.seed = seed
@@ -17,17 +22,17 @@ class FakeDataGenerator(ABC):
 
     @abstractmethod
     def generate(self, num_records: int) -> list[dict]:
-        """Generates fake data
+        """Generate or regenerate fake data
 
-        This method needs to also assign the generated data to `self.generated_data`
+        Identical data if generator seed is set, random if no seed
         """
 
-    def ids_from_generated(self, num_records: int) -> list[int]:
+    def random_ids(self, num_records: int) -> list[int]:
         if not self.generated_data:
             return AttributeError('No data has been generated')
         return random.choices(range(0, len(self.generated_data) - 1), k=num_records)
 
-    def records_from_generated(self, num_records: int) -> list[dict]:
+    def random_records(self, num_records: int) -> list[dict]:
         if not self.generated_data:
             return AttributeError('No data has been generated')
         return random.choices(self.generated_data, k=num_records)

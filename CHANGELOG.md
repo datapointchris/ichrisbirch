@@ -9,7 +9,7 @@
       1. [X] events
       2. [X] countdowns
       3. [X] journal
-      4. [x] habits
+      4. [X] habits
 
 
 
@@ -29,3 +29,9 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 - [X] Simplify Journal Entry MongoDB
 - [X] Get rid of Events dict
   - [X] Maybe with Pydantic Models
+
+
+
+# v0.4.0 --> Migrate Databases
+- [X] Alembic
+- [X] https://alembic.sqlalchemy.org/en/latest/tutorial.html

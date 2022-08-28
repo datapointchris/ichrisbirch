@@ -1,7 +1,47 @@
-<!-- SMALL THINGS THAT NEED TO BE ADDRESSED -->
-- [ ] Check REST API for structure
-  - [ ] /resource/id/complete
-  - [ ] or -> /resource/complete/id
+
+- [-- Misc --](#---misc---)
+- [v0.5.0 --> FastAPI and Nginx](#v050----fastapi-and-nginx)
+- [v0.7.0 --> Continuous Integration / Github Actions](#v070----continuous-integration--github-actions)
+- [v0.4.0 --> Backups](#v040----backups)
+- [v0.5.0 --> User Login](#v050----user-login)
+- [v0.6.0 --> WTForms](#v060----wtforms)
+- [v0.6.0 --> Testing](#v060----testing)
+- [v0.6.1 --> Logging](#v061----logging)
+- [v0.7.0 --> Security](#v070----security)
+- [v0.7.0 --> Typing](#v070----typing)
+- [v0.9.0 --> Documentation](#v090----documentation)
+- [v0.10.0 --> Re-structure CSS and Navigation](#v0100----re-structure-css-and-navigation)
+- [v0.11.0 --> Build Portfolio Page](#v0110----build-portfolio-page)
+- [v1.0.0 --> Basic Main page and Portfolio](#v100----basic-main-page-and-portfolio)
+- [v1.1.0 --> Employers](#v110----employers)
+- [v1.1.0 --> ML Models](#v110----ml-models)
+- [v1.1.0 --> Front-end Framework](#v110----front-end-framework)
+- [# Project Specific](#-project-specific)
+  - [Euphoria](#euphoria)
+  - [Apartments](#apartments)
+  - [Tasks](#tasks)
+  - [Tracks](#tracks)
+    - [Events](#events)
+    - [Countdowns](#countdowns)
+  - [Box Moving](#box-moving)
+  - [Journal](#journal)
+- [# Future Projects](#-future-projects)
+  - [Manage Github](#manage-github)
+  - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
+  - [Webstore Project](#webstore-project)
+  - [Interview Star Questions](#interview-star-questions)
+  - [Learning](#learning)
+  - [Goals](#goals)
+  - [Overview](#overview)
+  - [Budget](#budget)
+  - [Time Tracker](#time-tracker)
+  - [Deep Dream](#deep-dream)
+  - [Ummmm and Like counter](#ummmm-and-like-counter)
+  - [User Customization](#user-customization)
+
+
+
+# -- Misc --
 - [ ] CSS files
   - [ ] Need to have reset
   - [ ] Body in Apartments
@@ -17,69 +57,10 @@ def health() -> dict:
     """
     return {"name": "Example API", "version": __version__}
 ```
-<!-- END OF SMALL THINGS -->
-
-- [v0.4.0 --> Migrate Databases](#v040----migrate-databases)
-- [v0.5.0 --> FastAPI](#v050----fastapi)
-- [v0.3.1 --> Update nginx.conf](#v031----update-nginxconf)
-  - [# v0.8.0 --> Continuous Integration / Github Actions](#-v080----continuous-integration--github-actions)
-  - [# v0.4.0 --> Backups](#-v040----backups)
-  - [# v0.5.0 --> User Login](#-v050----user-login)
-  - [# v0.6.0 --> WTForms](#-v060----wtforms)
-  - [# v0.6.0 --> Testing](#-v060----testing)
-  - [# v0.6.1 --> Logging](#-v061----logging)
-  - [# v0.7.0 --> Security](#-v070----security)
-  - [# v0.7.0 --> Typing](#-v070----typing)
-- [v0.9.0 --> Documentation](#v090----documentation)
-- [v0.10.0 --> Re-structure CSS and Navigation](#v0100----re-structure-css-and-navigation)
-- [v0.11.0 --> Build Portfolio Page](#v0110----build-portfolio-page)
-- [v1.0.0 --> Basic Main page and Portfolio](#v100----basic-main-page-and-portfolio)
-- [v1.1.0 --> Employers](#v110----employers)
-- [v1.1.0 --> ML Models](#v110----ml-models)
-- [v1.1.0 --> Front-end Framework](#v110----front-end-framework)
-- [# Project Specific New / Future Possible Features](#-project-specific-new--future-possible-features)
-  - [## Euphoria](#-euphoria)
-  - [Apartments](#apartments)
-  - [Tasks](#tasks)
-  - [Tracks](#tracks)
-    - [Events](#events)
-    - [Countdowns](#countdowns)
-  - [Box Moving](#box-moving)
-  - [Journal](#journal)
-  - [* ~ New Project ~ *](#--new-project--)
-  - [Manage Github](#manage-github)
-  - [* ~ New Project ~ *](#--new-project---1)
-- [Postgres Permissions Graphical Interface with Approvals](#postgres-permissions-graphical-interface-with-approvals)
-- [Postgres Stats](#postgres-stats)
-  - [* ~ New Project ~ *](#--new-project---2)
-- [Webstore Project](#webstore-project)
-  - [* ~ New Project ~ *](#--new-project---3)
-- [Interview Star Questions](#interview-star-questions)
-  - [* ~ New Project ~ *](#--new-project---4)
-- [Learning](#learning)
-  - [* ~ New Project ~ *](#--new-project---5)
-- [Goals](#goals)
-  - [* ~ New Project ~ *](#--new-project---6)
-- [Overview](#overview)
-  - [* ~ New Project ~ *](#--new-project---7)
-- [Budget](#budget)
-  - [* ~ New Project ~ *](#--new-project---8)
-- [Time Tracker](#time-tracker)
-  - [* ~ New Project ~ *](#--new-project---9)
-- [Deep Dream](#deep-dream)
-  - [* ~ New Project ~ *](#--new-project---10)
-- [Ummmm and Like counter](#ummmm-and-like-counter)
-  - [* ~ New Project ~ *](#--new-project---11)
-- [User specific](#user-specific)
-
-# v0.4.0 --> Migrate Databases
-- [ ] Alembic
-- [ ] https://alembic.sqlalchemy.org/en/latest/tutorial.html
 
 
 
-
-# v0.5.0 --> FastAPI
+# v0.5.0 --> FastAPI and Nginx
 - FastAPI Course
 API is being run on a different port/subdomain
 api.ichrisbirch.com
@@ -111,17 +92,13 @@ Flask:
 - [ ] Apartments
 - [ ] Box Packing
 
-
-
-
-
-# v0.3.1 --> Update nginx.conf
 Use the new file so that the static files are served by nginx
-Does this reach into all static folders?'
+Does this reach into all static folders?
 https://www.youtube.com/watch?v=WqrCnVAkLIo
 
-# v0.8.0 --> Continuous Integration / Github Actions
----
+
+
+# v0.7.0 --> Continuous Integration / Github Actions
 Pre-commit - What is the difference between this and CI/CD
 Tox:
 https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
@@ -142,7 +119,6 @@ https://betterprogramming.pub/
 
 
 # v0.4.0 --> Backups
----
 - [ ] Postgres
 - [ ] MongoDB
 - [ ] DynamoDB
@@ -152,7 +128,6 @@ https://betterprogramming.pub/
 
 
 # v0.5.0 --> User Login
----
 - [ ] Create login for all apps as a main page.
 	- [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
 	- [ ] https://flask-login.readthedocs.io/en/latest/
@@ -173,7 +148,6 @@ https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-
 
 
 # v0.6.0 --> WTForms
----
 Is this something I want to do?
 - https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html
 - https://flask-wtf.readthedocs.io/en/latest/quickstart/
@@ -181,7 +155,6 @@ Is this something I want to do?
 
 
 # v0.6.0 --> Testing
----
 Udemy Class
 - 
 I have pytest book somewhere
@@ -199,7 +172,6 @@ Realpython
 
 
 # v0.6.1 --> Logging
---------------------
 https://www.palkeo.com/en/blog/python-logging.html
 https://guicommits.com/how-to-log-in-python-like-a-pro/
 https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
@@ -208,13 +180,11 @@ https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add
 
 
 # v0.7.0 --> Security
----------------------
 https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be
 
 
 
 # v0.7.0 --> Typing
----
 [Using mypy with an existing codebase — Mypy 0.942 documentation](https://mypy.readthedocs.io/en/stable/existing_code.html)
 - [ ] Pydantic Models
 
@@ -227,7 +197,7 @@ https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-6152
 https://realpython.com/python-project-documentation-with-mkdocs/
 - Code and architecture Diagramming
 - https://github.com/mingrammer/diagrams
-
+https://vale.sh
 
 # v0.10.0 --> Re-structure CSS and Navigation
 - [ ] CSS to inheret from main
@@ -281,12 +251,11 @@ Test this out on the portfolio page
 - resume page
 
 
-===================================================
-# Project Specific New / Future Possible Features
-===================================================
+==================
+# Project Specific
+==================
 
 ## Euphoria
----
 - [ ] Command to bring up the menu, like in github
 - [ ] Make a home tab that is present in every page somewhere
 - [ ] `Report an Issue` button at the bottom or floating somewhere in the footer or nav that pops up a form in the middle that they submit easily and it goes to the correct repository as an issue on github and auto assigns me and I get an email.
@@ -373,7 +342,11 @@ Ranking
   - [ ] Music theme for repetition 
 
 
-## * ~ New Project ~ *
+=================
+# Future Projects
+=================
+
+
 ## Manage Github
 Use API to pull github projects
 If they have issues that need taken care of display those.
@@ -387,9 +360,7 @@ Upon opening it should check if there is a new github repository and alert me so
 
 
 
-## * ~ New Project ~ *
-# Postgres Permissions Graphical Interface with Approvals
-# Postgres Stats
+## Postgres Permissions Graphical Interface with Approvals / Stats
 - [ ] Make the SQL queries first
 - [ ] Make each SQL query a function
 - [ ] Be able to call these functions in API
@@ -398,15 +369,13 @@ class PermissionRequest
 
 
 
-## * ~ New Project ~ *
-# Webstore Project
+## Webstore Project
 I want to make the sales follow a pattern that I specify, like sin waves or certain shapes, then see if the models can pick up on the shapes as a visual guide to accuracy.
 Measuring their average or std or whatever over time and plotting it should give the right numbers.  See if the model can guess the correct shape.
 
 
 
-## * ~ New Project ~ *
-# Interview Star Questions
+## Interview Star Questions
   - Have it talk to the command line version
   - Update Command line Version
   - Maybe use rich?
@@ -414,28 +383,23 @@ Measuring their average or std or whatever over time and plotting it should give
 
 
 
-## * ~ New Project ~ *
-# Learning
+## Learning
 
 
 
-## * ~ New Project ~ *
-# Goals
+## Goals
 
 
 
-## * ~ New Project ~ *
-# Overview
+## Overview
 
 
 
-## * ~ New Project ~ *
-# Budget
+## Budget
 
 
 
-## * ~ New Project ~ *
-# Time Tracker
+## Time Tracker
 Fields:
 - Description
 - Category
@@ -447,21 +411,19 @@ Kind of like budgeting, but only for time.
 
 
 
-## * ~ New Project ~ *
-# Deep Dream
+## Deep Dream
 https://www.tensorflow.org/tutorials/generative/deepdream
 
 
-## * ~ New Project ~ *
-# Ummmm and Like counter
+
+## Ummmm and Like counter
 - submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
 - You can select which common phrases you want to find in the audio
 - 
 
 
 
-## * ~ New Project ~ *
-# User specific
+## User Customization
 - color scheme
 - timezone
 - session / cookies
