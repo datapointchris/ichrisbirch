@@ -36,6 +36,9 @@ livereload = "^2.6.3"
 jupyterthemes = "^0.20.0"
 pytest = "^7.1.1"
 pytest-cov = "^3.0.0"
+pytest-md = "^0.2.0"
+wily = "^1.23.0"
+coverage = "^6.4.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,5 +1,10 @@
 
+- [v0.4.1 --> Hotfix: Add Stats to release](#v041----hotfix-add-stats-to-release)
 - [-- Misc --](#---misc---)
+  - [CSS files](#css-files)
+  - [Code Repo Structure](#code-repo-structure)
+  - [Tokei Output Charts](#tokei-output-charts)
+  - [Config](#config)
 - [v0.5.0 --> FastAPI and Nginx](#v050----fastapi-and-nginx)
 - [v0.7.0 --> Continuous Integration / Github Actions](#v070----continuous-integration--github-actions)
 - [v0.4.0 --> Backups](#v040----backups)
@@ -39,29 +44,68 @@
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
 
-
+# v0.4.1 --> Hotfix: Add Stats to release
+- [ ] Output of tokei
+- [ ] Pytest with coverage
+- [ ] wily
+- [ ] 
+- [ ] Make it easy to add more in the future
 
 # -- Misc --
-- [ ] CSS files
+
+## CSS files
   - [ ] Need to have reset
   - [ ] Body in Apartments
-- [ ] Code Repo Structure
+## Code Repo Structure
   - [ ] https://githubnext.com/projects/repo-visualization/
-- [ ] Add a health endpoint
+## Tokei Output Charts
+  - [ ] https://github.com/laixintao/tokei-pie/blob/main/tokei_pie/main.py
+  - [ ] Should I contribute or make my own?
+  - [ ] Make it easy to add another chart
+  - [ ] Model the structure of the output data so that it makes sense and is easy
+    - [ ] Use Pydantic dataclasses to create the structure and for dot notation access
+    - [ ] Good docs about the structure the objects are coming out as
+    - [ ] Use streamlit for interactive charts?
+## Config
+  - [ ] maybe this should be settings
+  - [ ] Need to split out the settings to separate classes and instantiate them in base class
+  - [ ] pydantic `BaseSettings` class
+  - [ ] Change the config to have different env files I think
+  - [ ] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
+```python
+class DBSettings(BaseSettings):
+    SQLALCHEMY_DATABASE_URI: str = "sqlite:///example.db"
+    FIRST_SUPERUSER: EmailStr = "admin@recipeapi.com"
+    FIRST_SUPERUSER_PW: str = "CHANGEME"
 
-``` python
-@api_router.get("/health", response_model=schemas.Health, status_code=200)
-def health() -> dict:
-    """
-    Root Get
-    """
-    return {"name": "Example API", "version": __version__}
+
+class LoggingSettings(BaseSettings):
+    LOGGING_LEVEL: int = logging.INFO  # logging levels are ints
+
+
+class Settings(BaseSettings):
+    API_V1_STR: str = "/api/v1"
+    JWT_SECRET: str = "TEST_SECRET_DO_NOT_USE_IN_PROD"
+    ALGORITHM: str = "HS256"
+
+    db: DBSettings = DBSettings()
+    email: EmailSettings = EmailSettings()
+    logging: LoggingSettings = LoggingSettings()
+
+    class Config:
+        case_sensitive = True
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+settings = Settings()
 ```
 
 
 
 # v0.5.0 --> FastAPI and Nginx
 - FastAPI Course
+- [X] https://academy.christophergs.com/courses/fastapi-for-busy-engineers/curriculum
 API is being run on a different port/subdomain
 api.ichrisbirch.com
 https://adamtheautomator.com/nginx-subdomain/
@@ -71,17 +115,14 @@ https://stackoverflow.com/questions/64955127/nginx-multiple-node-apps-with-multi
 
 - [ ] Update Nginx to serve both sites
   - [ ] 
-- [ ] Update Endpoints to point to API
-  - [ ] Apartments
-  - [ ] Box-Packing
-    - [ ] Rename `moving` to `box-packing`
+- [X] Update Endpoints to point to API
+- [X] Rename `moving` to `box_packing`
 
 FastAPI:
 - [ ] Tasks
 - [ ] Countdowns
 - [ ] Events
 - [ ] Journal
-- [ ] Apartments
 - [ ] Box Packing
 
 Flask:
@@ -89,7 +130,6 @@ Flask:
 - [ ] Countdowns
 - [ ] Events
 - [ ] Journal
-- [ ] Apartments
 - [ ] Box Packing
 
 Use the new file so that the static files are served by nginx
@@ -169,6 +209,12 @@ Realpython
 - https://www.youtube.com/watch?v=NI5IGAim8XU
 - https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/
 - https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514
+- DynamoDB
+  - https://pypi.org/project/pytest-dynamodb/
+- MongoDB
+  - https://pypi.org/project/pytest-mongo/
+  - https://pypi.org/project/pytest-mongodb/
+- 
 
 
 # v0.6.1 --> Logging
