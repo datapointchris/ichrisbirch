@@ -1,6 +1,6 @@
 
 # Run in .../euphoria/
-# ./create_version.sh v0.5.0 'FastAPI Integration'
+# ./create_version.sh v0.5.0 "FastAPI Integration"
 
 pwd
 # Get the version from command line
@@ -51,11 +51,11 @@ wily diff . -r master > euphoria/version_stats/$VERSION/complexity.txt
 echo "Created Code Complexity Report"
 
 # Commit version stats files and create a version tag
-git commit -am \'release: $VERSION - $VERSION_DESCRIPTION\'
+git commit -am "release: $VERSION - $VERSION_DESCRIPTION"
 echo "Add and Commit Reports"
 
 # Create a git tag for the commit
-git tag '$VERSION'
+git tag $VERSION
 echo "Created git tag for release"
 
 # Push branch and tags
