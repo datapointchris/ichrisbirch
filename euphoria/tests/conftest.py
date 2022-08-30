@@ -4,6 +4,7 @@ from typing import Any, Generator
 import docker
 import pytest
 from docker.errors import DockerException
+from euphoria.backend.common.config import env_config
 from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.db.sqlalchemy.session import sqlalchemy_session
 from fastapi import APIRouter, FastAPI
@@ -11,7 +12,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateSchema
-from euphoria.backend.common.config import env_config
 
 engine = create_engine('postgresql://postgres:postgres@localhost:5434', echo=True, future=True)
 SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)

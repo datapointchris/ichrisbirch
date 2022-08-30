@@ -152,7 +152,7 @@ https://lab.github.com/githubtraining/devops-with-github-actions
 https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
 https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
 https://betterprogramming.pub/
-
+https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485
 
 
 
@@ -195,6 +195,18 @@ Is this something I want to do?
 
 
 # v0.6.0 --> Testing
+1. Development
+   - [ ] Should pull real data from prod
+   - [ ] Needs to have a `reset` file or process to delete bad data and restart
+
+2. Testing
+   - [ ] Should pull data from prod
+   - [ ] Should closely resemble prod
+   - [ ] TBD if on local network or AWS
+   - [ ] Would be cool to have pre-def infrastructure
+
+3. Production
+  - [ ] Should have some type of monitoring rather than testing on prod
 Udemy Class
 - 
 I have pytest book somewhere
@@ -211,6 +223,7 @@ Realpython
 - https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514
 - DynamoDB
   - https://pypi.org/project/pytest-dynamodb/
+  - https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/
 - MongoDB
   - https://pypi.org/project/pytest-mongo/
   - https://pypi.org/project/pytest-mongodb/
