@@ -8,6 +8,12 @@ Run `backend/init_db.py`
 Run `alembic revision --autogenerate -m 'init_tables'`
 Run `alembic upgrade head`
 
+## Requirements
+Poetry
+
+## Dev Requirements
+Docker
+tokei
 
 
 ### FastAPI Crud Endpoints
@@ -23,20 +29,43 @@ Note: Config is not actually setting anything in tests, but the config is called
 
 ## For A Release
 ================
-- [ ] All tests passing
-- [ ] Test on local dev
-- [ ] (optional) Test on `test` environment
-  - [ ] subject to implementation
-- [ ] 
-- [ ] git merge `feature/{feature}` into `master`
-  - [ ] git checkout master
-  - [ ] git merge feature/{feature}
-- [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
-- [ ] Create an alembic migration with the release
-  - [ ] alembic revision --autogenerate -m 'release_v0.3.0'
-  - [ ] git commit -am 'release: v0.3.0 - Migrate Databases'
+1. Checks
+  - [ ] All tests passing
+  - [ ] Test on local dev
+  - [ ] Black formatting
+  - [ ] Pylint checks
+  - [ ] (optional) Test on `test` environment
+    - [ ] subject to implementation
+
+=====
+TESTING
+=====
+Swap 2 and 3
+
+2. Merge Feature Branch
+  `git checkout master`
+  `git merge feature/{feature}`
+
+3. Update Version and Stats --> Run commands in `...euphoria/euphoria/` directory
+   - [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
+   - [ ] Create an alembic migration with the release - Run in `...euphoria/euphoria/`
+    `alembic revision --autogenerate -m {version}`
+   - [ ] Create a new stats file json and text
+    `tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ > euphoria/version_stats/{version}lines_of_code.txt`
+    `tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ -o json > euphoria/version_stats/{version}lines_of_code.json`
+   - [ ] Create a Coverage Report
+    `pytest --cov`
+    `coverage report -m > euphoria/version_stats/{version}/coverage.txt`
+    `coverage json -o euphoria/version_stats/{version}/coverage.json`
+
+   - [ ] Run Wily Code Complexity
+   - [ ] wily does not have json output at the moment
+    `wily diff . -r master > euphoria/version_stats/{version}/complexity.txt`
+  
+4. Commit version stats files and create a version tag
+  `git commit -am 'release: v0.3.0 - Migrate Databases'`
 - [ ] Create a git tag after the bump so that the tag references the bump commit
-  - [ ] git tag -m 'v0.3.0'
+  - [ ] git tag 'v0.3.0'
 - [ ] Push branch and tags
   - [ ] git push --tags
 - [ ] Pray to Dionysus

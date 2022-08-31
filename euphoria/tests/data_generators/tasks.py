@@ -4,7 +4,7 @@ from .base import FakeDataGenerator
 
 
 class TaskDataGenerator(FakeDataGenerator):
-    """Generate fake task data"""
+    """Fake Task Data"""
 
     def __init__(self, seed):
         super().__init__(seed)
@@ -18,4 +18,3 @@ class TaskDataGenerator(FakeDataGenerator):
             }
             for num in range(num_records)
         ]
-        return self.generated_data

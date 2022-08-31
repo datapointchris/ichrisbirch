@@ -36,8 +36,8 @@ def index():
         params={'start_date': ed.today, 'end_date': ed.tomorrow},
     ).json()
     top_tasks = requests.get(f'{app.config["API_URL"]}/tasks/', params={'limit': 5}).json()
-    completed_today = [Task(**schemas.TaskSchema(**task).dict()) for task in completed_today]
-    top_tasks = [Task(**schemas.TaskSchema(**task).dict()) for task in top_tasks]
+    completed_today = [Task(**schemas.Task(**task).dict()) for task in completed_today]
+    top_tasks = [Task(**schemas.Task(**task).dict()) for task in top_tasks]
     return render_template('tasks/index.html', top_tasks=top_tasks, completed_today=completed_today)
 
 
@@ -68,8 +68,8 @@ def completed():
         last = requests.get(
             f'{app.config["API_URL"]}/tasks/completed/', params={'last': True}
         ).json()
-        start_date = schemas.TaskSchema(**first).complete_date
-        end_date = schemas.TaskSchema(**last).complete_date
+        start_date = schemas.Task(**first).complete_date
+        end_date = schemas.Task(**last).complete_date
     else:
         start_date, end_date = filters.get(date_filter)
 
@@ -78,7 +78,7 @@ def completed():
         params={'start_date': start_date, 'end_date': end_date},
     ).json()
 
-    completed_tasks = [Task(**schemas.TaskSchema(**task).dict()) for task in completed_tasks]
+    completed_tasks = [Task(**schemas.Task(**task).dict()) for task in completed_tasks]
     average_completion = calculate_average_completion_time(completed_tasks)
 
     # Graph

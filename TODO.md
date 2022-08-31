@@ -1,35 +1,19 @@
-<!-- SMALL THINGS THAT NEED TO BE ADDRESSED -->
-- [ ] Check REST API for structure
-  - [ ] /resource/id/complete
-  - [ ] or -> /resource/complete/id
-- [ ] CSS files
-  - [ ] Need to have reset
-  - [ ] Body in Apartments
-- [ ] Code Repo Structure
-  - [ ] https://githubnext.com/projects/repo-visualization/
-- [ ] Add a health endpoint
 
-``` python
-@api_router.get("/health", response_model=schemas.Health, status_code=200)
-def health() -> dict:
-    """
-    Root Get
-    """
-    return {"name": "Example API", "version": __version__}
-```
-<!-- END OF SMALL THINGS -->
-
-- [v0.4.0 --> Migrate Databases](#v040----migrate-databases)
-- [v0.5.0 --> FastAPI](#v050----fastapi)
-- [v0.3.1 --> Update nginx.conf](#v031----update-nginxconf)
-  - [# v0.8.0 --> Continuous Integration / Github Actions](#-v080----continuous-integration--github-actions)
-  - [# v0.4.0 --> Backups](#-v040----backups)
-  - [# v0.5.0 --> User Login](#-v050----user-login)
-  - [# v0.6.0 --> WTForms](#-v060----wtforms)
-  - [# v0.6.0 --> Testing](#-v060----testing)
-  - [# v0.6.1 --> Logging](#-v061----logging)
-  - [# v0.7.0 --> Security](#-v070----security)
-  - [# v0.7.0 --> Typing](#-v070----typing)
+- [v0.4.1 --> Hotfix: Add Stats to release](#v041----hotfix-add-stats-to-release)
+- [-- Misc --](#---misc---)
+  - [CSS files](#css-files)
+  - [Code Repo Structure](#code-repo-structure)
+  - [Tokei Output Charts](#tokei-output-charts)
+  - [Config](#config)
+- [v0.5.0 --> FastAPI and Nginx](#v050----fastapi-and-nginx)
+- [v0.7.0 --> Continuous Integration / Github Actions](#v070----continuous-integration--github-actions)
+- [v0.4.0 --> Backups](#v040----backups)
+- [v0.5.0 --> User Login](#v050----user-login)
+- [v0.6.0 --> WTForms](#v060----wtforms)
+- [v0.6.0 --> Testing](#v060----testing)
+- [v0.6.1 --> Logging](#v061----logging)
+- [v0.7.0 --> Security](#v070----security)
+- [v0.7.0 --> Typing](#v070----typing)
 - [v0.9.0 --> Documentation](#v090----documentation)
 - [v0.10.0 --> Re-structure CSS and Navigation](#v0100----re-structure-css-and-navigation)
 - [v0.11.0 --> Build Portfolio Page](#v0110----build-portfolio-page)
@@ -37,8 +21,8 @@ def health() -> dict:
 - [v1.1.0 --> Employers](#v110----employers)
 - [v1.1.0 --> ML Models](#v110----ml-models)
 - [v1.1.0 --> Front-end Framework](#v110----front-end-framework)
-- [# Project Specific New / Future Possible Features](#-project-specific-new--future-possible-features)
-  - [## Euphoria](#-euphoria)
+- [# Project Specific](#-project-specific)
+  - [Euphoria](#euphoria)
   - [Apartments](#apartments)
   - [Tasks](#tasks)
   - [Tracks](#tracks)
@@ -46,41 +30,82 @@ def health() -> dict:
     - [Countdowns](#countdowns)
   - [Box Moving](#box-moving)
   - [Journal](#journal)
-  - [* ~ New Project ~ *](#--new-project--)
+- [# Future Projects](#-future-projects)
   - [Manage Github](#manage-github)
-  - [* ~ New Project ~ *](#--new-project---1)
-- [Postgres Permissions Graphical Interface with Approvals](#postgres-permissions-graphical-interface-with-approvals)
-- [Postgres Stats](#postgres-stats)
-  - [* ~ New Project ~ *](#--new-project---2)
-- [Webstore Project](#webstore-project)
-  - [* ~ New Project ~ *](#--new-project---3)
-- [Interview Star Questions](#interview-star-questions)
-  - [* ~ New Project ~ *](#--new-project---4)
-- [Learning](#learning)
-  - [* ~ New Project ~ *](#--new-project---5)
-- [Goals](#goals)
-  - [* ~ New Project ~ *](#--new-project---6)
-- [Overview](#overview)
-  - [* ~ New Project ~ *](#--new-project---7)
-- [Budget](#budget)
-  - [* ~ New Project ~ *](#--new-project---8)
-- [Time Tracker](#time-tracker)
-  - [* ~ New Project ~ *](#--new-project---9)
-- [Deep Dream](#deep-dream)
-  - [* ~ New Project ~ *](#--new-project---10)
-- [Ummmm and Like counter](#ummmm-and-like-counter)
-  - [* ~ New Project ~ *](#--new-project---11)
-- [User specific](#user-specific)
+  - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
+  - [Webstore Project](#webstore-project)
+  - [Interview Star Questions](#interview-star-questions)
+  - [Learning](#learning)
+  - [Goals](#goals)
+  - [Overview](#overview)
+  - [Budget](#budget)
+  - [Time Tracker](#time-tracker)
+  - [Deep Dream](#deep-dream)
+  - [Ummmm and Like counter](#ummmm-and-like-counter)
+  - [User Customization](#user-customization)
 
-# v0.4.0 --> Migrate Databases
-- [ ] Alembic
-- [ ] https://alembic.sqlalchemy.org/en/latest/tutorial.html
+# v0.4.1 --> Hotfix: Add Stats to release
+- [ ] Output of tokei
+- [ ] Pytest with coverage
+- [ ] wily
+- [ ] 
+- [ ] Make it easy to add more in the future
+
+# -- Misc --
+
+## CSS files
+  - [ ] Need to have reset
+  - [ ] Body in Apartments
+## Code Repo Structure
+  - [ ] https://githubnext.com/projects/repo-visualization/
+## Tokei Output Charts
+  - [ ] https://github.com/laixintao/tokei-pie/blob/main/tokei_pie/main.py
+  - [ ] Should I contribute or make my own?
+  - [ ] Make it easy to add another chart
+  - [ ] Model the structure of the output data so that it makes sense and is easy
+    - [ ] Use Pydantic dataclasses to create the structure and for dot notation access
+    - [ ] Good docs about the structure the objects are coming out as
+    - [ ] Use streamlit for interactive charts?
+## Config
+  - [ ] maybe this should be settings
+  - [ ] Need to split out the settings to separate classes and instantiate them in base class
+  - [ ] pydantic `BaseSettings` class
+  - [ ] Change the config to have different env files I think
+  - [ ] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
+```python
+class DBSettings(BaseSettings):
+    SQLALCHEMY_DATABASE_URI: str = "sqlite:///example.db"
+    FIRST_SUPERUSER: EmailStr = "admin@recipeapi.com"
+    FIRST_SUPERUSER_PW: str = "CHANGEME"
+
+
+class LoggingSettings(BaseSettings):
+    LOGGING_LEVEL: int = logging.INFO  # logging levels are ints
+
+
+class Settings(BaseSettings):
+    API_V1_STR: str = "/api/v1"
+    JWT_SECRET: str = "TEST_SECRET_DO_NOT_USE_IN_PROD"
+    ALGORITHM: str = "HS256"
+
+    db: DBSettings = DBSettings()
+    email: EmailSettings = EmailSettings()
+    logging: LoggingSettings = LoggingSettings()
+
+    class Config:
+        case_sensitive = True
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+settings = Settings()
+```
 
 
 
-
-# v0.5.0 --> FastAPI
+# v0.5.0 --> FastAPI and Nginx
 - FastAPI Course
+- [X] https://academy.christophergs.com/courses/fastapi-for-busy-engineers/curriculum
 API is being run on a different port/subdomain
 api.ichrisbirch.com
 https://adamtheautomator.com/nginx-subdomain/
@@ -90,17 +115,14 @@ https://stackoverflow.com/questions/64955127/nginx-multiple-node-apps-with-multi
 
 - [ ] Update Nginx to serve both sites
   - [ ] 
-- [ ] Update Endpoints to point to API
-  - [ ] Apartments
-  - [ ] Box-Packing
-    - [ ] Rename `moving` to `box-packing`
+- [X] Update Endpoints to point to API
+- [X] Rename `moving` to `box_packing`
 
 FastAPI:
 - [ ] Tasks
 - [ ] Countdowns
 - [ ] Events
 - [ ] Journal
-- [ ] Apartments
 - [ ] Box Packing
 
 Flask:
@@ -108,20 +130,15 @@ Flask:
 - [ ] Countdowns
 - [ ] Events
 - [ ] Journal
-- [ ] Apartments
 - [ ] Box Packing
 
-
-
-
-
-# v0.3.1 --> Update nginx.conf
 Use the new file so that the static files are served by nginx
-Does this reach into all static folders?'
+Does this reach into all static folders?
 https://www.youtube.com/watch?v=WqrCnVAkLIo
 
-# v0.8.0 --> Continuous Integration / Github Actions
----
+
+
+# v0.7.0 --> Continuous Integration / Github Actions
 Pre-commit - What is the difference between this and CI/CD
 Tox:
 https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
@@ -135,14 +152,13 @@ https://lab.github.com/githubtraining/devops-with-github-actions
 https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
 https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
 https://betterprogramming.pub/
-
+https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485
 
 
 
 
 
 # v0.4.0 --> Backups
----
 - [ ] Postgres
 - [ ] MongoDB
 - [ ] DynamoDB
@@ -152,7 +168,6 @@ https://betterprogramming.pub/
 
 
 # v0.5.0 --> User Login
----
 - [ ] Create login for all apps as a main page.
 	- [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
 	- [ ] https://flask-login.readthedocs.io/en/latest/
@@ -173,7 +188,6 @@ https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-
 
 
 # v0.6.0 --> WTForms
----
 Is this something I want to do?
 - https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html
 - https://flask-wtf.readthedocs.io/en/latest/quickstart/
@@ -181,7 +195,18 @@ Is this something I want to do?
 
 
 # v0.6.0 --> Testing
----
+1. Development
+   - [ ] Should pull real data from prod
+   - [ ] Needs to have a `reset` file or process to delete bad data and restart
+
+2. Testing
+   - [ ] Should pull data from prod
+   - [ ] Should closely resemble prod
+   - [ ] TBD if on local network or AWS
+   - [ ] Would be cool to have pre-def infrastructure
+
+3. Production
+  - [ ] Should have some type of monitoring rather than testing on prod
 Udemy Class
 - 
 I have pytest book somewhere
@@ -196,10 +221,16 @@ Realpython
 - https://www.youtube.com/watch?v=NI5IGAim8XU
 - https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/
 - https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514
+- DynamoDB
+  - https://pypi.org/project/pytest-dynamodb/
+  - https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/
+- MongoDB
+  - https://pypi.org/project/pytest-mongo/
+  - https://pypi.org/project/pytest-mongodb/
+- 
 
 
 # v0.6.1 --> Logging
---------------------
 https://www.palkeo.com/en/blog/python-logging.html
 https://guicommits.com/how-to-log-in-python-like-a-pro/
 https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
@@ -208,13 +239,11 @@ https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add
 
 
 # v0.7.0 --> Security
----------------------
 https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be
 
 
 
 # v0.7.0 --> Typing
----
 [Using mypy with an existing codebase — Mypy 0.942 documentation](https://mypy.readthedocs.io/en/stable/existing_code.html)
 - [ ] Pydantic Models
 
@@ -227,7 +256,7 @@ https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-6152
 https://realpython.com/python-project-documentation-with-mkdocs/
 - Code and architecture Diagramming
 - https://github.com/mingrammer/diagrams
-
+https://vale.sh
 
 # v0.10.0 --> Re-structure CSS and Navigation
 - [ ] CSS to inheret from main
@@ -281,12 +310,11 @@ Test this out on the portfolio page
 - resume page
 
 
-===================================================
-# Project Specific New / Future Possible Features
-===================================================
+==================
+# Project Specific
+==================
 
 ## Euphoria
----
 - [ ] Command to bring up the menu, like in github
 - [ ] Make a home tab that is present in every page somewhere
 - [ ] `Report an Issue` button at the bottom or floating somewhere in the footer or nav that pops up a form in the middle that they submit easily and it goes to the correct repository as an issue on github and auto assigns me and I get an email.
@@ -373,7 +401,11 @@ Ranking
   - [ ] Music theme for repetition 
 
 
-## * ~ New Project ~ *
+=================
+# Future Projects
+=================
+
+
 ## Manage Github
 Use API to pull github projects
 If they have issues that need taken care of display those.
@@ -387,9 +419,7 @@ Upon opening it should check if there is a new github repository and alert me so
 
 
 
-## * ~ New Project ~ *
-# Postgres Permissions Graphical Interface with Approvals
-# Postgres Stats
+## Postgres Permissions Graphical Interface with Approvals / Stats
 - [ ] Make the SQL queries first
 - [ ] Make each SQL query a function
 - [ ] Be able to call these functions in API
@@ -398,15 +428,13 @@ class PermissionRequest
 
 
 
-## * ~ New Project ~ *
-# Webstore Project
+## Webstore Project
 I want to make the sales follow a pattern that I specify, like sin waves or certain shapes, then see if the models can pick up on the shapes as a visual guide to accuracy.
 Measuring their average or std or whatever over time and plotting it should give the right numbers.  See if the model can guess the correct shape.
 
 
 
-## * ~ New Project ~ *
-# Interview Star Questions
+## Interview Star Questions
   - Have it talk to the command line version
   - Update Command line Version
   - Maybe use rich?
@@ -414,28 +442,23 @@ Measuring their average or std or whatever over time and plotting it should give
 
 
 
-## * ~ New Project ~ *
-# Learning
+## Learning
 
 
 
-## * ~ New Project ~ *
-# Goals
+## Goals
 
 
 
-## * ~ New Project ~ *
-# Overview
+## Overview
 
 
 
-## * ~ New Project ~ *
-# Budget
+## Budget
 
 
 
-## * ~ New Project ~ *
-# Time Tracker
+## Time Tracker
 Fields:
 - Description
 - Category
@@ -447,21 +470,19 @@ Kind of like budgeting, but only for time.
 
 
 
-## * ~ New Project ~ *
-# Deep Dream
+## Deep Dream
 https://www.tensorflow.org/tutorials/generative/deepdream
 
 
-## * ~ New Project ~ *
-# Ummmm and Like counter
+
+## Ummmm and Like counter
 - submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
 - You can select which common phrases you want to find in the audio
 - 
 
 
 
-## * ~ New Project ~ *
-# User specific
+## User Customization
 - color scheme
 - timezone
 - session / cookies

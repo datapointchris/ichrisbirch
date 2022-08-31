@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..dependencies import auth
-from ...common.schemas.tasks import TaskCreate, TaskSchema
+# from ..dependencies import auth
+from ...common import schemas
 
-from datetime import datetime
 from ...api import crud
 from sqlalchemy.orm import Session
 from ...common.db.sqlalchemy.session import sqlalchemy_session
@@ -14,13 +13,13 @@ router = APIRouter(prefix='/tasks', tags=['tasks'])
 
 
 # WORKING
-@router.get("/", response_model=list[TaskSchema])
+@router.get("/", response_model=list[schemas.Task])
 async def read_many(db: Session = Depends(sqlalchemy_session), skip: int = 0, limit: int = 5000):
     return crud.tasks.read_many(db, skip=skip, limit=limit)
 
 
 # WORKING
-@router.get("/completed/", response_model=list[TaskSchema] | TaskSchema | list)
+@router.get("/completed/", response_model=list[schemas.Task] | schemas.Task | list)
 async def completed(
     db: Session = Depends(sqlalchemy_session),
     start_date: str = None,
@@ -39,13 +38,13 @@ async def completed(
 
 
 # WORKING
-@router.post("/", response_model=TaskSchema)
-async def create(db: Session = Depends(sqlalchemy_session), task: TaskCreate = None):
+@router.post("/", response_model=schemas.Task)
+async def create(db: Session = Depends(sqlalchemy_session), task: schemas.TaskCreate = None):
     return crud.tasks.create(db, obj_in=task)
 
 
 # WORKING
-@router.get("/{task_id}/", response_model=TaskSchema)
+@router.get("/{task_id}/", response_model=schemas.Task)
 async def read_one(db: Session = Depends(sqlalchemy_session), task_id: int = None):
     if not (task := crud.tasks.read_one(db, id=task_id)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
@@ -53,8 +52,8 @@ async def read_one(db: Session = Depends(sqlalchemy_session), task_id: int = Non
 
 
 # Not using, keep for reference
-# @router.post("/{task_id}/", response_model=TaskSchema)
-# async def update(db: Session = Depends(sqlalchemy_session), task: TaskSchema = None):
+# @router.post("/{task_id}/", response_model=schemas.Task)
+# async def update(db: Session = Depends(sqlalchemy_session), task: schemas.Task = None):
 #     return crud.tasks.update(db, obj_in=task)
 
 # WORKING
@@ -66,7 +65,7 @@ async def delete(db: Session = Depends(sqlalchemy_session), task_id: int = None)
 
 
 # WORKING
-@router.post("/complete/{task_id}/", response_model=TaskSchema)
+@router.post("/complete/{task_id}/", response_model=schemas.Task)
 async def complete(db: Session = Depends(sqlalchemy_session), task_id: int = None):
     if not (task := crud.tasks.complete_task(db, id=task_id)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")

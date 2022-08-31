@@ -8,6 +8,9 @@ def endpoint(*paths: str | list | int) -> str:
     >>> endpoint('tasks', 'complete', 3)
     >>> '/tasks/complete/3/'
 
+    >>> endpoint('health')
+    >>> '/health/'
+
     """
     paths = [paths] if isinstance(paths, str) else paths
     return f'/{"/".join([str(s) for s in paths])}/'
