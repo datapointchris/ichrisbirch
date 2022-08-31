@@ -4,6 +4,7 @@ from typing import Any, Generator
 import docker
 import pytest
 from docker.errors import DockerException
+from euphoria.backend.common.config import env_config
 from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.db.sqlalchemy.session import sqlalchemy_session
 from fastapi import APIRouter, FastAPI

@@ -10,7 +10,7 @@
 - [v0.4.0 --> Backups](#v040----backups)
 - [v0.5.0 --> User Login](#v050----user-login)
 - [v0.6.0 --> WTForms](#v060----wtforms)
-- [v0.6.0 --> Testing](#v060----testing)
+  - [# v0.6.0 --> Testing](#-v060----testing)
 - [v0.6.1 --> Logging](#v061----logging)
 - [v0.7.0 --> Security](#v070----security)
 - [v0.7.0 --> Typing](#v070----typing)
@@ -152,7 +152,7 @@ https://lab.github.com/githubtraining/devops-with-github-actions
 https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
 https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
 https://betterprogramming.pub/
-
+https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485
 
 
 
@@ -195,6 +195,7 @@ Is this something I want to do?
 
 
 # v0.6.0 --> Testing
+---
 Udemy Class
 - 
 I have pytest book somewhere
@@ -211,6 +212,7 @@ Realpython
 - https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514
 - DynamoDB
   - https://pypi.org/project/pytest-dynamodb/
+  - https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/
 - MongoDB
   - https://pypi.org/project/pytest-mongo/
   - https://pypi.org/project/pytest-mongodb/
