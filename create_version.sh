@@ -51,7 +51,8 @@ wily diff . -r master > euphoria/version_stats/$VERSION/complexity.txt
 echo "Created Code Complexity Report"
 
 # Commit version stats files and create a version tag
-git commit -am "release: $VERSION - $VERSION_DESCRIPTION"
+git add -A
+git commit -m "release: $VERSION - $VERSION_DESCRIPTION"
 echo "Add and Commit Reports"
 
 # Create a git tag for the commit
