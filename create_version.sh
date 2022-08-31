@@ -47,6 +47,7 @@ echo "Created Lines of Code Files"
 
 # Run Wily Code Complexity
 # wily does not have json output at the moment
+wily build .
 wily diff . -r master > euphoria/version_stats/$VERSION/complexity.txt
 echo "Created Code Complexity Report"
 
