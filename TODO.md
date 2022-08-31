@@ -43,6 +43,7 @@
   - [Deep Dream](#deep-dream)
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
+  - [Git Graph Maker](#git-graph-maker)
 
 # v0.4.1 --> Hotfix: Add Stats to release
 - [ ] Output of tokei
@@ -487,3 +488,13 @@ https://www.tensorflow.org/tutorials/generative/deepdream
 - timezone
 - session / cookies
   - I don't know anything about this
+
+
+## Git Graph Maker
+- functions that make commits and try with different methods
+  - merge
+  - merge with squash
+  - rebase
+  - rebase with squash
+  - create release
+  - tag release
