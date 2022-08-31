@@ -37,16 +37,7 @@ Note: Config is not actually setting anything in tests, but the config is called
   - [ ] (optional) Test on `test` environment
     - [ ] subject to implementation
 
-=====
-TESTING
-=====
-Swap 2 and 3
-
-2. Merge Feature Branch
-  `git checkout master`
-  `git merge feature/{feature}`
-
-3. Update Version and Stats --> Run commands in `...euphoria/euphoria/` directory
+2. Update Version and Stats --> Run commands in `...euphoria/euphoria/` directory
    - [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
    - [ ] Create an alembic migration with the release - Run in `...euphoria/euphoria/`
     `alembic revision --autogenerate -m {version}`
@@ -62,10 +53,14 @@ Swap 2 and 3
    - [ ] wily does not have json output at the moment
     `wily diff . -r master > euphoria/version_stats/{version}/complexity.txt`
   
-4. Commit version stats files and create a version tag
+3. Commit version stats files and create a version tag
   `git commit -am 'release: v0.3.0 - Migrate Databases'`
 - [ ] Create a git tag after the bump so that the tag references the bump commit
   - [ ] git tag 'v0.3.0'
 - [ ] Push branch and tags
   - [ ] git push --tags
 - [ ] Pray to Dionysus
+
+4. Merge Feature Branch
+  `git checkout master`
+  `git merge feature/{feature}`
