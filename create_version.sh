@@ -19,6 +19,8 @@ pwd
 echo "__version__ = '$VERSION'" > __init__.py
 echo "Updated version"
 
+# TODO: Update the version in pyproject.toml
+
 cd backend/
 pwd
 

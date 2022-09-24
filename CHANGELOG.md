@@ -35,3 +35,11 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 # v0.4.0 --> Migrate Databases
 - [X] Alembic
 - [X] https://alembic.sqlalchemy.org/en/latest/tutorial.html
+
+
+
+# v0.4.1 --> Hotfix: Add Stats to release
+- [X] Output of tokei
+- [X] Pytest with coverage
+- [X] wily
+- [X] Make it easy to add more in the future

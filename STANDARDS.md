@@ -49,10 +49,10 @@ DELETE /users/{id}
 ### Commits
 Conventional Commits
 https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13
-`feat:` that adds a new feature
-`fix:` that fixes a bug
+`feature:` that adds a new feature
+`bugfix:` that fixes a bug
 `refactor:` that rewrite/restructure your code, however does not change any behaviour
-`perf:`are special refactor commits, that improve performance
+`performance:`are special refactor commits, that improve performance
 `style:` that do not affect the meaning (white-space, formatting, missing semi-colons, etc)
 `test:` that add missing tests or correcting existing tests
 `docs:` that affect documentation only

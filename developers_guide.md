@@ -39,6 +39,7 @@ Note: Config is not actually setting anything in tests, but the config is called
 
 2. Update Version and Stats --> Run commands in `...euphoria/euphoria/` directory
    - [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
+   - [ ] Bump the version in `pyproject.toml`
    - [ ] Create an alembic migration with the release - Run in `...euphoria/euphoria/`
     `alembic revision --autogenerate -m {version}`
    - [ ] Create a new stats file json and text
@@ -64,3 +65,6 @@ Note: Config is not actually setting anything in tests, but the config is called
 4. Merge Feature Branch
   `git checkout master`
   `git merge feature/{feature}`
+
+5. Re-install project
+6. `poetry install`

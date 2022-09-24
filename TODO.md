@@ -1,5 +1,4 @@
 
-- [v0.4.1 --> Hotfix: Add Stats to release](#v041----hotfix-add-stats-to-release)
 - [-- Misc --](#---misc---)
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
@@ -31,6 +30,7 @@
   - [Box Moving](#box-moving)
   - [Journal](#journal)
 - [# Future Projects](#-future-projects)
+  - [Books](#books)
   - [Manage Github](#manage-github)
   - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
   - [Webstore Project](#webstore-project)
@@ -45,12 +45,7 @@
   - [User Customization](#user-customization)
   - [Git Graph Maker](#git-graph-maker)
 
-# v0.4.1 --> Hotfix: Add Stats to release
-- [ ] Output of tokei
-- [ ] Pytest with coverage
-- [ ] wily
-- [ ] 
-- [ ] Make it easy to add more in the future
+
 
 # -- Misc --
 
@@ -68,40 +63,12 @@
     - [ ] Good docs about the structure the objects are coming out as
     - [ ] Use streamlit for interactive charts?
 ## Config
-  - [ ] maybe this should be settings
-  - [ ] Need to split out the settings to separate classes and instantiate them in base class
-  - [ ] pydantic `BaseSettings` class
-  - [ ] Change the config to have different env files I think
-  - [ ] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
-```python
-class DBSettings(BaseSettings):
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:///example.db"
-    FIRST_SUPERUSER: EmailStr = "admin@recipeapi.com"
-    FIRST_SUPERUSER_PW: str = "CHANGEME"
-
-
-class LoggingSettings(BaseSettings):
-    LOGGING_LEVEL: int = logging.INFO  # logging levels are ints
-
-
-class Settings(BaseSettings):
-    API_V1_STR: str = "/api/v1"
-    JWT_SECRET: str = "TEST_SECRET_DO_NOT_USE_IN_PROD"
-    ALGORITHM: str = "HS256"
-
-    db: DBSettings = DBSettings()
-    email: EmailSettings = EmailSettings()
-    logging: LoggingSettings = LoggingSettings()
-
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-
-
-settings = Settings()
-```
-
+  - [X] maybe this should be settings
+  - [X] Need to split out the settings to separate classes and instantiate them in base class
+  - [X] pydantic `BaseSettings` class
+  - [X] Change the config to have different env files I think
+  - [X] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
+    - [X] Not applicable when using multiple .env files based on ENVIRONMENT env variable
 
 
 # v0.5.0 --> FastAPI and Nginx
@@ -114,27 +81,25 @@ https://hackprogramming.com/how-to-setup-subdomain-or-host-multiple-domains-usin
 https://blog.logrocket.com/how-to-build-web-app-with-multiple-subdomains-nginx/
 https://stackoverflow.com/questions/64955127/nginx-multiple-node-apps-with-multiple-subdomains
 
-- [ ] Update Nginx to serve both sites
-  - [ ] 
+- [X] Update Nginx to serve both sites 
 - [X] Update Endpoints to point to API
 - [X] Rename `moving` to `box_packing`
 
 FastAPI:
-- [ ] Tasks
+- [X] Tasks
 - [ ] Countdowns
 - [ ] Events
 - [ ] Journal
 - [ ] Box Packing
 
 Flask:
-- [ ] Tasks
-- [ ] Countdowns
-- [ ] Events
-- [ ] Journal
-- [ ] Box Packing
+- [X] Tasks
+- [X] Countdowns
+- [X] Events
+- [X] Journal
+- [X] Box Packing
 
-Use the new file so that the static files are served by nginx
-Does this reach into all static folders?
+- [X] Serve Static Files
 https://www.youtube.com/watch?v=WqrCnVAkLIo
 
 
@@ -247,6 +212,13 @@ https://realpython.com/python-project-documentation-with-mkdocs/
 - Code and architecture Diagramming
 - https://github.com/mingrammer/diagrams
 https://vale.sh
+- https://software-documentation-template.readthedocs.io/en/latest/readme.html
+- https://www.sitepoint.com/writing-software-documentation/
+- https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/
+- https://helpjuice.com/blog/software-documentation
+- https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f
+- https://upplabs.com/blog/how-to-prepare-the-documentation-for-successful-software-project-development/
+- 
 
 # v0.10.0 --> Re-structure CSS and Navigation
 - [ ] CSS to inheret from main
@@ -395,6 +367,9 @@ Ranking
 # Future Projects
 =================
 
+## Books
+https://stackabuse.com/file-management-with-aws-s3-python-and-flask/
+https://stackoverflow.com/questions/73211035/how-do-i-configure-nginx-to-serve-static-files-from-an-aws-s3-bucket
 
 ## Manage Github
 Use API to pull github projects
