@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 
-from common.config import env_config
+from common import config
 from common.db.sqlalchemy.base import Base
 from common.db.sqlalchemy.session import engine
 
@@ -49,7 +49,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = env_config.SQLALCHEMY_DATABASE_URI
+    url = config.sqlalchemy.SQLALCHEMY_DATABASE_URI
     context.configure(
         url=url,
         target_metadata=target_metadata,
