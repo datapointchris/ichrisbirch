@@ -17,11 +17,13 @@ https://gist.github.com/fredbenenson/7bb92718e19138c20591
 
 ## Naming
 =========
---> Column Names
+### Column Names
     Booleans - should start with an “is_” , “has_” or ““ and should always been a “True” or “False” value and not “Y” or “N'“ or other variants.
     Dates - should end in “_date”
     Timestamps -- should end with “_ts”
 
+### Environment Specific Files
+    {env.project.resource.}
 
 
 ## API
