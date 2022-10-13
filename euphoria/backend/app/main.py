@@ -7,7 +7,7 @@ def create_app():
     app = Flask(__name__)
 
     with app.app_context():
-        app.config.from_object(SETTINGS)
+        app.config.from_object(SETTINGS.flask)
 
         app.register_blueprint(main.blueprint)
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')

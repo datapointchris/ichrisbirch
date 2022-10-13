@@ -1,16 +1,16 @@
 import os
 import dotenv
 import logging
-from pydantic import BaseSettings
+from dataclasses import dataclass, field
 
 
 match environment := os.getenv('ENVIRONMENT'):
     case 'development':
-        dotenv.find_dotenv('.dev.env')
+        dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))
     case 'testing':
-        dotenv.find_dotenv('.test.env')
+        dotenv.load_dotenv(dotenv.find_dotenv('.test.env'))
     case 'production':
-        dotenv.find_dotenv('.prod.env')
+        dotenv.load_dotenv(dotenv.find_dotenv('.prod.env'))
     case _:
         raise ValueError(
             f'Unrecognized Environment Variable: {environment}'
@@ -18,7 +18,13 @@ match environment := os.getenv('ENVIRONMENT'):
         )
 
 
-class PostgresSettings(BaseSettings):
+@dataclass
+class FlaskSettings:
+    SECRET_KEY: str = os.getenv('SECRET_KEY')
+
+
+@dataclass
+class PostgresSettings:
     POSTGRES_URI: str = os.getenv('POSTGRES_URI')
     POSTGRES_USER: str = os.getenv('POSTGRES_USER')
     POSTGRES_PASSWORD: str = os.getenv('POSTGRES_PASSWORD')
@@ -27,47 +33,54 @@ class PostgresSettings(BaseSettings):
     )
 
 
-class SQLAlchemySettings(BaseSettings):
+@dataclass
+class SQLAlchemySettings:
     SQLALCHEMY_ECHO: bool = True
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-    SECRET_KEY: str = os.getenv('SECRET_KEY')
-    SQLALCHEMY_DATABASE_URI: str = PostgresSettings.POSTGRES_DATABASE_URI
+    SQLALCHEMY_DATABASE_URI: str = ""
 
 
-class MongoDBSettings(BaseSettings):
+@dataclass
+class MongoDBSettings:
     MONGODB_URI: str = os.getenv('MONGODB_URI')
     MONGODB_USER: str = os.getenv('MONGODB_USER')
     MONGODB_PASSWORD: str = os.getenv('MONGODB_PASSWORD')
     MONGODB_DATABASE_URI: str = f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_URI}/euphoria?retryWrites=true&w=majority'
 
 
-class DynamoDBSettings(BaseSettings):
+@dataclass
+class DynamoDBSettings:
     DYNAMODB_URL: str = os.getenv('DYNAMODB_URL')
     DYNAMODB_USER: str = os.getenv('DYNAMODB_USER')
     DYNAMODB_PASSWORD: str = os.getenv('DYNAMODB_PASSWORD')
     DYNAMODB_DATABASE_URI: str = os.getenv('DYNAMODB_DATABASE_URI')
 
 
-class SQLiteSettings(BaseSettings):
+@dataclass
+class SQLiteSettings:
     SQLITE_DATABASE_URI: str = os.getenv('SQLITE_DATABASE_URI')
 
 
-class LoggingSettings(BaseSettings):
+@dataclass
+class LoggingSettings:
     LOGGING_LEVEL: int = logging.INFO
 
 
-class Settings(BaseSettings):
+@dataclass
+class Settings:
     ENVIRONMENT: str = os.getenv('ENVIRONMENT')
-    CSRF_ENABLED: bool = True
     API_URL: str = os.getenv('API_URL')
-    DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
+    DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
 
+    flask: FlaskSettings = FlaskSettings()
     postgres: PostgresSettings = PostgresSettings()
     sqlalchemy: SQLAlchemySettings = SQLAlchemySettings()
     mongodb: MongoDBSettings = MongoDBSettings()
     dynamodb: DynamoDBSettings = DynamoDBSettings()
     sqlite: SQLiteSettings = SQLiteSettings()
     logging: LoggingSettings = LoggingSettings()
+
+    sqlalchemy.SQLALCHEMY_DATABASE_URI = postgres.POSTGRES_DATABASE_URI
 
 
 SETTINGS = Settings()
