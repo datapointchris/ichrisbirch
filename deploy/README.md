@@ -1,5 +1,7 @@
 # Deploy the project in professional fashion
 
+If you are getting supervisor.sock no such file, make sure directories and files for logs are created.
+
 ## Dev
 **`Dev`** assumes MacOS and homebrew installations
 **`HOST:`** 0.0.0.0
