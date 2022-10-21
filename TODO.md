@@ -3,11 +3,10 @@
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
-  - [Config](#config)
-- [v0.5.0 --> FastAPI and Nginx](#v050----fastapi-and-nginx)
+- [v0.5.1 --> {Patch} Fix dev config](#v051----patch-fix-dev-config)
 - [v0.5.1 --> {Patch} Add "notes" to tasks](#v051----patch-add-notes-to-tasks)
-- [v0.5.1 --> {Patch} Add "notes" to tasks](#v051----patch-add-notes-to-tasks-1)
 - [v0.5.2 --> {Patch} Use Enum for task categories](#v052----patch-use-enum-for-task-categories)
+- [v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
 - [v0.6.0 --> Add Countdowns to API routes](#v060----add-countdowns-to-api-routes)
 - [v0.7.0 --> Add Events to API routes](#v070----add-events-to-api-routes)
 - [v0.7.0 --> Continuous Integration / Github Actions](#v070----continuous-integration--github-actions)
@@ -67,46 +66,10 @@
     - [ ] Use Pydantic dataclasses to create the structure and for dot notation access
     - [ ] Good docs about the structure the objects are coming out as
     - [ ] Use streamlit for interactive charts?
-## Config
-  - [X] maybe this should be settings
-  - [X] Need to split out the settings to separate classes and instantiate them in base class
-  - [X] pydantic `BaseSettings` class
-  - [X] Change the config to have different env files I think
-  - [X] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
-    - [X] Not applicable when using multiple .env files based on ENVIRONMENT env variable
-
-
-# v0.5.0 --> FastAPI and Nginx
-- FastAPI Course
-- [X] https://academy.christophergs.com/courses/fastapi-for-busy-engineers/curriculum
-API is being run on a different port/subdomain
-api.ichrisbirch.com
-https://adamtheautomator.com/nginx-subdomain/
-https://hackprogramming.com/how-to-setup-subdomain-or-host-multiple-domains-using-nginx-in-linux-server/
-https://blog.logrocket.com/how-to-build-web-app-with-multiple-subdomains-nginx/
-https://stackoverflow.com/questions/64955127/nginx-multiple-node-apps-with-multiple-subdomains
-
-- [X] Update Nginx to serve both sites 
-- [X] Update Endpoints to point to API
-- [X] Rename `moving` to `box_packing`
-
-FastAPI:
-- [X] Tasks
-- [ ] Countdowns
-- [ ] Events
-
-Flask:
-- [X] Tasks
-- [X] Countdowns
-- [X] Events
-- [X] Journal
-- [X] Box Packing
-
-- [X] Serve Static Files
 
 
 
-# v0.5.1 --> {Patch} Add "notes" to tasks
+# v0.5.1 --> {Patch} Fix dev config
 - [ ] Flask settings are maybe messed up
 - [ ] Dev doesn't work
   - [ ] Test with and without nginx and supervisor running
@@ -126,11 +89,19 @@ Flask:
 # v0.5.2 --> {Patch} Use Enum for task categories
 - [ ] !! __MAKE NOTES__ !!
 - [ ] https://realpython.com/python-enum/
+- [ ] https://docs.python.org/3/library/enum.html
 - [ ] SQLAlchemy model
 - [ ] Pydantic model
 - [ ] Migration
 - [ ] Cut a release
   - [ ] Make notes
+
+
+
+# v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page
+- [ ] Should be for all of the tasks after the first 5
+  - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
+  - [ ] Similar to the delete button
 
 
 
@@ -151,7 +122,6 @@ FastAPI:
 
 # v0.7.0 --> Continuous Integration / Github Actions
 Pre-commit - What is the difference between this and CI/CD
-Tox:
 https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
 https://www.youtube.com/watch?v=TLB5MY9BBa4
 https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/

@@ -43,3 +43,31 @@ Prod only, further ahead will figure out how to sync dev and "testing" (god help
 - [X] Pytest with coverage
 - [X] wily
 - [X] Make it easy to add more in the future
+
+
+
+# v0.5.0 --> FastAPI and Nginx
+- FastAPI Course
+- [X] https://academy.christophergs.com/courses/fastapi-for-busy-engineers/curriculum
+API is being run on a different port/subdomain
+api.ichrisbirch.com
+https://adamtheautomator.com/nginx-subdomain/
+https://hackprogramming.com/how-to-setup-subdomain-or-host-multiple-domains-using-nginx-in-linux-server/
+https://blog.logrocket.com/how-to-build-web-app-with-multiple-subdomains-nginx/
+https://stackoverflow.com/questions/64955127/nginx-multiple-node-apps-with-multiple-subdomains
+
+- [X] Update Nginx to serve both sites 
+- [X] Serve Static Files
+- [X] Update Endpoints to point to API
+- [X] Rename `moving` to `box_packing`
+
+FastAPI:
+- [X] Tasks
+
+## Config
+  - [X] maybe this should be settings
+  - [X] Need to split out the settings to separate classes and instantiate them in base class
+  - [X] pydantic `BaseSettings` class
+  - [X] Change the config to have different env files I think
+  - [X] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
+    - [X] Not applicable when using multiple .env files based on ENVIRONMENT env variable
