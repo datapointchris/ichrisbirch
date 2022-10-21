@@ -1,9 +1,11 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
 # from .dependencies import get_query_token, get_token_header
 from .endpoints import tasks
+from euphoria import __version__
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -18,7 +20,18 @@ logger.addHandler(ch)  # Exporting logs to the screen
 logger.addHandler(fh)  # Exporting logs to a file
 
 # app = FastAPI(dependencies=[Depends(get_query_token)])
-app = FastAPI()
+
+api_description = """
+### All API are awesome
+
+- Do markdown here
+"""
+
+app = FastAPI(
+    title='Euphoria API',
+    description=api_description,
+    version=__version__
+)
 
 # @app.middleware("http")
 # async def log_requests(request, call_next):
@@ -50,6 +63,6 @@ app.include_router(tasks.router, responses=responses)
 logger.info('RUNNING FASTAPI')
 
 
-@app.get("/")
-async def root():
-    return {"message": "This is the API"}
+@app.get("/", include_in_schema=False)
+async def docs_redirect():
+    return RedirectResponse(url='/docs')

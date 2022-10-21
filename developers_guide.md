@@ -3,10 +3,15 @@
 
 
 # First time
+==============================
+
 ## DB
-Run `backend/init_db.py`
-Run `alembic revision --autogenerate -m 'init_tables'`
-Run `alembic upgrade head`
+`init_db.py` to add the schemas
+`alembic revision --autogenerate -m 'init_tables'`
+`alembic upgrade head`
+
+
+
 
 ## Requirements
 Poetry
@@ -14,21 +19,31 @@ Poetry
 ## Dev Requirements
 Docker
 tokei
+tools
 
 
-### FastAPI Crud Endpoints
+# Notes
+==============================
+
+## Alembic Revision
+Run in `euphoria/backend/`
+`alembic revision --autogenerate -m $VERSION`
+TODO: Do I run `alembic upgrade head` in prod environment?
+
+
+## FastAPI Crud Endpoints
 You have to specify keyword arguments after `db` because of the function signature with `*`
 Order matters with endpoints, dynamic routes `route/endpoint/{id}` are last
 
 
 # Testing
-In order to run pytest, you have to set `ENVIRONMENT=development` so that the config
-can pick it up and set the correct variables.
+==============================
+In order to run pytest, you have to set `ENVIRONMENT=development` so that the config can pick it up and set the correct variables.
 Note: Config is not actually setting anything in tests, but the config is called in some of the files that are imported and it will error if not set.
 
 
 ## For A Release
-================
+==============================
 1. Checks
   - [ ] All tests passing
   - [ ] Test on local dev
@@ -39,6 +54,7 @@ Note: Config is not actually setting anything in tests, but the config is called
 
 2. Update Version and Stats --> Run commands in `...euphoria/euphoria/` directory
    - [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
+   - [ ] Bump the version in `pyproject.toml`
    - [ ] Create an alembic migration with the release - Run in `...euphoria/euphoria/`
     `alembic revision --autogenerate -m {version}`
    - [ ] Create a new stats file json and text
@@ -64,3 +80,6 @@ Note: Config is not actually setting anything in tests, but the config is called
 4. Merge Feature Branch
   `git checkout master`
   `git merge feature/{feature}`
+
+5. Re-install project
+6. `poetry install`

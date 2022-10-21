@@ -1,13 +1,13 @@
 from flask import Flask
 from .routes import main, box_packing, countdowns, events, journal, habits, portfolio, tasks
-from ..common.config import env_config
+from backend.common.config import SETTINGS
 
 
 def create_app():
     app = Flask(__name__)
 
     with app.app_context():
-        app.config.from_object(env_config)
+        app.config.from_object(SETTINGS.flask)
 
         app.register_blueprint(main.blueprint)
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')

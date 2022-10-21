@@ -2,18 +2,20 @@
 PROJECT_NAME=euphoria
 
 # Copy nginx file to sites-available
-sudo cp nginx.conf /etc/nginx/sites-available/$PROJECT_NAME.conf
+sudo cp test.nginx.conf /etc/nginx/sites-available/$PROJECT_NAME.conf
 
 # Symlink the nginx file to sites-enabled
 sudo ln -s /etc/nginx/sites-available/$PROJECT_NAME.conf /etc/nginx/sites-enabled/$PROJECT_NAME.conf
 
 # Copy supervisor config file
-sudo cp supervisor.conf /etc/supervisor/conf.d/$PROJECT_NAME.conf
+sudo cp test.supervisor.conf /etc/supervisor/conf.d/$PROJECT_NAME.conf
 
 # Create log directories as specified in `supervisor.conf`
 sudo mkdir -p /var/log/$PROJECT_NAME
-sudo touch /var/log/$PROJECT_NAME/out.log
-sudo touch /var/log/$PROJECT_NAME/err.log
+sudo touch /var/log/$PROJECT_NAME/app/out.log
+sudo touch /var/log/$PROJECT_NAME/app/err.log
+sudo touch /var/log/$PROJECT_NAME/api/out.log
+sudo touch /var/log/$PROJECT_NAME/api/err.log
 
 # Change permissions for www folder
 sudo chown -R $USER:www-data /var/www

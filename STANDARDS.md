@@ -17,11 +17,13 @@ https://gist.github.com/fredbenenson/7bb92718e19138c20591
 
 ## Naming
 =========
---> Column Names
+### Column Names
     Booleans - should start with an “is_” , “has_” or ““ and should always been a “True” or “False” value and not “Y” or “N'“ or other variants.
     Dates - should end in “_date”
     Timestamps -- should end with “_ts”
 
+### Environment Specific Files
+    {env.project.resource.}
 
 
 ## API
@@ -49,17 +51,17 @@ DELETE /users/{id}
 ### Commits
 Conventional Commits
 https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13
-`feat:` that adds a new feature
-`fix:` that fixes a bug
-`refactor:` that rewrite/restructure your code, however does not change any behaviour
-`perf:`are special refactor commits, that improve performance
-`style:` that do not affect the meaning (white-space, formatting, missing semi-colons, etc)
-`test:` that add missing tests or correcting existing tests
-`docs:` that affect documentation only
-`build:` that affect build components like build tool, ci pipeline, dependencies, project version, ...
-`ops:` that affect operational components like infrastructure, deployment, backup, recovery, ...
-`chore:` Miscellaneous commits e.g. modifying .gitignore
+`feature:` Feature work
 `wip:` Work in progress, checkpoint
+`test:` Add, modify, refactor tests
+`refactor:` Rewrite/restructure your code, however does not change any behavior
+`bugfix:` Fix a bug
+`performance:` Refactor to improve performance
+`style:` Code style, lint or formatting
+`docs:` Documentation
+`build:` Build components like build tool, ci pipeline, dependencies, project version
+`ops:` Operational components like infrastructure, deployment, backup, recovery
+`chore:` Miscellaneous commits e.g. modifying .gitignore moving or renaming files or directories
 
 ### Issues and Milestones
 TBD

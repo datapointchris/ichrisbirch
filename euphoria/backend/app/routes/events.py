@@ -14,7 +14,7 @@ def index():
         events = session.query(Event).order_by(Event.date).all()
 
     if request.method == 'POST':
-        api_url = current_app.config.get('API_URL')
+        api_url = SETTINGS.API_URL
         data = request.form.to_dict()
         method = data.pop('method')
         match method:

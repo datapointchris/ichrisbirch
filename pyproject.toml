@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "euphoria"
-version = "0.2.1"
+version = "0.4.3"
 description = ""
 authors = ["Chris Birch <datapointchris@gmail.com>"]
 license = "MIT"

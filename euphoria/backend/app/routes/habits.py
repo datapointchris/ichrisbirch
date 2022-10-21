@@ -89,7 +89,7 @@ def manage():
 
 @blueprint.route('/form/', methods=['POST'])
 def form():
-    api_url = current_app.config.get('API_URL')
+    api_url = SETTINGS.API_URL
     data = request.form.to_dict()
     method = data.pop('method')
     match method:
