@@ -2,16 +2,17 @@
 PROJECT_NAME=euphoria
 SUPERVISOR_LOG_DIR=/var/log/supervisor
 
-# Copy nginx file to sites-available
+# Copy nginx project files to sites-available
 sudo cp nginx-app.conf /etc/nginx/sites-available/$PROJECT_NAME-app.conf
 sudo cp nginx-api.conf /etc/nginx/sites-available/$PROJECT_NAME-api.conf
 
-# Symlink the nginx file to sites-enabled
+# Symlink the nginx project files to sites-enabled
 sudo ln -s /etc/nginx/sites-available/$PROJECT_NAME-app.conf /etc/nginx/sites-enabled/$PROJECT_NAME-app.conf
 sudo ln -s /etc/nginx/sites-available/$PROJECT_NAME-api.conf /etc/nginx/sites-enabled/$PROJECT_NAME-api.conf
 
-# Copy supervisor config file
-sudo cp supervisor.conf /etc/supervisor/conf.d/$PROJECT_NAME.conf
+# Copy supervisor project config files
+sudo cp supervisor-app.conf /etc/supervisor/conf.d/$PROJECT_NAME-app.conf
+sudo cp supervisor-api.conf /etc/supervisor/conf.d/$PROJECT_NAME-api.conf
 
 # Create log directories as specified in `supervisor.conf`
 sudo mkdir -p SUPERVISOR_LOG_DIR/$PROJECT_NAME
