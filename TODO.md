@@ -3,8 +3,7 @@
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
-- [v0.5.1 --> {Patch} Fix dev config](#v051----patch-fix-dev-config)
-- [v0.5.1 --> {Patch} Add "notes" to tasks](#v051----patch-add-notes-to-tasks)
+- [v0.5.1 --> {Patch} Add "notes" field to tasks](#v051----patch-add-notes-field-to-tasks)
 - [v0.5.2 --> {Patch} Use Enum for task categories](#v052----patch-use-enum-for-task-categories)
 - [v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
 - [v0.6.0 --> Add Countdowns to API routes](#v060----add-countdowns-to-api-routes)
@@ -69,14 +68,7 @@
 
 
 
-# v0.5.1 --> {Patch} Fix dev config
-- [ ] Flask settings are maybe messed up
-- [ ] Dev doesn't work
-  - [ ] Test with and without nginx and supervisor running
-
-
-
-# v0.5.1 --> {Patch} Add "notes" to tasks
+# v0.5.1 --> {Patch} Add "notes" field to tasks
 - [ ] !! __MAKE NOTES__ !!
 - [ ] SQLAlchemy model
 - [ ] Pydantic model

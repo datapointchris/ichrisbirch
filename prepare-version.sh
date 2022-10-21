@@ -21,36 +21,43 @@
 # ./prepare-version.sh 0.5.2 "Add API Endpoint"
 ################################################################################
 
+# Commandline Colors
+bold=$(tput bold)
+blue=$(tput setaf 4)
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+normal=$(tput sgr0)
+
 # SEMVER is format: 1.1.1 -> useful for string replacement in files
 # VERISON is format: v1.1.1 -> useful for folder and file names
 SEMVER=$1
 VERSION="v$1"
 VERSION_DESCRIPTION=$2
 
-echo "----- Preparing Release for $VERSION - $VERSION_DESCRIPTION -----"
+echo "${bold}${blue}----- Preparing Release for $VERSION - $VERSION_DESCRIPTION -----${normal}"
 
 # Make version stats directory
 mkdir -p euphoria/stats/$VERSION
 
 # Coverage Report
+echo "${green}Creating Pytest Coverage Report${normal}"
 cd euphoria/
 coverage report -m > stats/$VERSION/coverage.txt
 coverage json -o stats/$VERSION/coverage.json
-echo "Created Pytest Coverage Report"
 
 # Lines of Code Files
+echo "${green}Creating Lines of Code Files${normal}"
 cd ../
 tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ > euphoria/stats/$VERSION/lines_of_code.txt
 tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ -o json > euphoria/stats/$VERSION/lines_of_code.json
-echo "Created Lines of Code Files"
 
 # Wily Code Complexity
 # wily does not have json output at the moment
+echo "${green}Creating Code Complexity Report${normal}"
 wily build .
 wily diff . -r master > euphoria/stats/$VERSION/complexity.txt
-echo "Created Code Complexity Report"
 
-echo "Version stats saved: euphoria/stats/$VERSION"
+echo "${green}Version stats saved: euphoria/stats/$VERSION${normal}"
 
 # Update the version in pyproject.toml
 poetry version $SEMVER
@@ -58,5 +65,6 @@ poetry version $SEMVER
 # Update the version in euphoria/__init__.py
 echo "__version__ = '$SEMVER'" > euphoria/__init__.py
 
-echo "Updated version in pyproject.toml"
-echo "Updated version in euphoria/__init__.py"
+echo "${green}Updated version in pyproject.toml${normal}"
+echo "${green}Updated version in euphoria/__init__.py${normal}"
+echo "${blue}Finished with Release${normal}"
