@@ -27,31 +27,19 @@ SEMVER=$1
 VERSION="v$1"
 VERSION_DESCRIPTION=$2
 
-echo "Preparing Release for version $SEMVER"
+echo "----- Preparing Release for $VERSION - $VERSION_DESCRIPTION -----"
 
-# Make version directory
+# Make version stats directory
 mkdir -p euphoria/stats/$VERSION
-echo "Version Stats Directory Created"
 
-# Update the version in pyproject.toml
-sed -ri "s/version = \"[0-9]+\.[0-9]+\.[0-9]+\"/version = \"$SEMVER\"/" pyproject.toml
-echo "Version updated in pyproject.toml"
-
-# Update the version in euphoria/__init__.py
-echo "__version__ = '$SEMVER'" > euphoria/__init__.py
-echo "Updated version in euphoria/__init__.py"
-
-# Pytest and Coverage Report
+# Coverage Report
 cd euphoria/
-pwd
-pytest --cov
 coverage report -m > stats/$VERSION/coverage.txt
 coverage json -o stats/$VERSION/coverage.json
 echo "Created Pytest Coverage Report"
 
 # Lines of Code Files
 cd ../
-pwd
 tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ > euphoria/stats/$VERSION/lines_of_code.txt
 tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ -o json > euphoria/stats/$VERSION/lines_of_code.json
 echo "Created Lines of Code Files"
@@ -61,3 +49,14 @@ echo "Created Lines of Code Files"
 wily build .
 wily diff . -r master > euphoria/stats/$VERSION/complexity.txt
 echo "Created Code Complexity Report"
+
+echo "Version stats saved: euphoria/stats/$VERSION"
+
+# Update the version in pyproject.toml
+poetry version $SEMVER
+
+# Update the version in euphoria/__init__.py
+echo "__version__ = '$SEMVER'" > euphoria/__init__.py
+
+echo "Updated version in pyproject.toml"
+echo "Updated version in euphoria/__init__.py"

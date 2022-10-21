@@ -1,4 +1,4 @@
-from ..helpers import endpoint
+from euphoria.tests.helpers import endpoint
 from euphoria import __version__
 import pytest
 from euphoria.backend.api.endpoints import health

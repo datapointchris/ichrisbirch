@@ -1,7 +1,7 @@
 import pytest
 import json
-from ..data_generators import TaskDataGenerator
-from ..helpers import endpoint
+from euphoria.tests.data_generators import TaskDataGenerator
+from euphoria.tests.helpers import endpoint
 from euphoria.backend.common.models.tasks import Task
 from euphoria.backend.api.endpoints import tasks
 
