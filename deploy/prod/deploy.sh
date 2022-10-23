@@ -12,11 +12,13 @@ echo "${bold}${blue}----- Deploying $PROJECT -----${normal}"
 
 # NGINX
 SITES_AVAILABLE="/etc/nginx/sites-available"
-sudo cp nginx-$PROJECT.conf $SITES_AVAILABLE/$PROJECT.conf
-echo "Copied NGINX project config file to $SITES_AVAILABLE/"
+sudo cp nginx-api.conf $SITES_AVAILABLE/$PROJECT-api.conf
+sudo cp nginx-app.conf $SITES_AVAILABLE/$PROJECT-app.conf
+echo "Copied NGINX project config files to $SITES_AVAILABLE/"
 
 SITES_ENABLED="/etc/nginx/sites-enabled"
-sudo ln -sf $SITES_AVAILABLE/$PROJECT.conf $SITES_ENABLED/$PROJECT.conf
+sudo ln -sf $SITES_AVAILABLE/$PROJECT-api.conf $SITES_ENABLED/$PROJECT-api.conf
+sudo ln -sf $SITES_AVAILABLE/$PROJECT-app.conf $SITES_ENABLED/$PROJECT-app.conf
 echo "Symlinked NGINX project config files to $SITES_ENABLED/"
 
 # SUPERVISOR
