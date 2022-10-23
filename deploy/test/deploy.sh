@@ -1,4 +1,3 @@
-
 # Commandline Colors
 bold=$(tput bold)
 blue=$(tput setaf 4)
@@ -6,17 +5,19 @@ green=$(tput setaf 2)
 red=$(tput setaf 1)
 normal=$(tput sgr0)
 
-# PROJECT
-PROJECT=euphoria
-echo "${bold}${blue}----- Deploying $PROJECT -----${normal}"
+# PROJECT VARS
+PROJECT_NAME=euphoria
+echo "${bold}${blue}----- Deploying $PROJECT_NAME -----${normal}"
 
 # NGINX
 SITES_AVAILABLE="/etc/nginx/sites-available"
-sudo cp nginx-$PROJECT.conf $SITES_AVAILABLE/$PROJECT.conf
-echo "Copied NGINX project config file to $SITES_AVAILABLE/"
+sudo cp nginx-app.conf $SITES_AVAILABLE/$PROJECT_NAME-app.conf
+sudo cp nginx-api.conf $SITES_AVAILABLE/$PROJECT_NAME-api.conf
+echo "Copied NGINX project config files to $SITES_AVAILABLE/"
 
 SITES_ENABLED="/etc/nginx/sites-enabled"
-sudo ln -sf $SITES_AVAILABLE/$PROJECT.conf $SITES_ENABLED/$PROJECT.conf
+sudo ln -sf $SITES_AVAILABLE/$PROJECT_NAME-app.conf $SITES_ENABLED/$PROJECT_NAME-app.conf
+sudo ln -sf $SITES_AVAILABLE/$PROJECT_NAME-api.conf $SITES_ENABLED/$PROJECT_NAME-api.conf
 echo "Symlinked NGINX project config files to $SITES_ENABLED/"
 
 # SUPERVISOR
@@ -25,18 +26,18 @@ sudo cp supervisord.conf $SUPERVISOR_DIR/supervisord.conf
 echo "Copied supervisord config file to $SUPERVISOR_DIR/"
 
 # Copy project config files
-sudo cp supervisor-app.conf $SUPERVISOR_DIR/conf.d/$PROJECT-app.conf
-sudo cp supervisor-api.conf $SUPERVISOR_DIR/conf.d/$PROJECT-api.conf
+sudo cp supervisor-app.conf $SUPERVISOR_DIR/conf.d/$PROJECT_NAME-app.conf
+sudo cp supervisor-api.conf $SUPERVISOR_DIR/conf.d/$PROJECT_NAME-api.conf
 echo "Copied supervisor project config files to $SUPERVISOR_DIR/conf.d/"
 
 # Note: Make sure log direcitories match entries in `supervisord.conf`
 SUPERVISOR_LOG_DIR=/var/log/supervisor
-sudo mkdir -p $SUPERVISOR_LOG_DIR/$PROJECT
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app-out.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app-error.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-out.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-error.log
-echo "Created supervisor log files in $SUPERVISOR_LOG_DIR/$PROJECT/"
+sudo mkdir -p $SUPERVISOR_LOG_DIR/$PROJECT_NAME
+sudo touch $SUPERVISOR_LOG_DIR/$PROJECT_NAME-app-out.log
+sudo touch $SUPERVISOR_LOG_DIR/$PROJECT_NAME-app-error.log
+sudo touch $SUPERVISOR_LOG_DIR/$PROJECT_NAME-api-out.log
+sudo touch $SUPERVISOR_LOG_DIR/$PROJECT_NAME-api-error.log
+echo "Created supervisor log files in $SUPERVISOR_LOG_DIR/$PROJECT_NAME/"
 
 ## APACHE
 # Change permissions for www folder

@@ -20,19 +20,7 @@ Or, if you don't want/need a background service you can just run:
   /usr/local/opt/nginx/bin/nginx -g daemon off;
 
 
-Deploy
-======
-Location: `/deploy`
-`nginx.conf`
-  1. Set the server name and static folder location
 
-`supervisor.conf`
-  1. Set the project name
-
-1. Run `deploy.sh` script as sudo and let it copy all of the information
-2. Make sure everything is started and running
-   1. `sudo supervisorctl status <project-name>`
-   2. `tail /var/log/nginx/error.log`
 
 
 
