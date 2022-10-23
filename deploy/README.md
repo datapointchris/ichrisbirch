@@ -1,5 +1,8 @@
 # Deploy the project in professional fashion
 
+Note: If you are getting ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
+`sudo apt install python3-cachecontrol`
+
 Note: If you are getting supervisor.sock no such file, make sure directories and files for logs are created.
 
 Note: If you get bind() to 0.0.0.0:80 failed (98: Address already in use)
