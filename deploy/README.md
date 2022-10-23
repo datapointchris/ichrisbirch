@@ -57,7 +57,7 @@ sudo apt update
 sudo apt upgrade -y
 
 ## Installs
-sudo apt install -y tmux htop python3.10 python3-poetry nginx supervisor
+sudo apt install -y tmux htop libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor
 
 ## Clone Project
 sudo git clone https://github.com/datapointchris/euphoria.git /var/www/
@@ -66,6 +66,7 @@ sudo git clone https://github.com/datapointchris/euphoria.git /var/www/
 scp -i ~/.ssh/apps.pem ~/github/projects/euphoria/deploy/prod/.prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/deploy/prod/.prod.env
 
 ## Install project
+poetry config virtualenvs.in-project true
 poetry install --without dev
 
 ## Run deploy script to copy supervisor and nginx config files
