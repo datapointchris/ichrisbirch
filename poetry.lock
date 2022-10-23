@@ -355,7 +355,7 @@ tests = ["asttokens", "littleutils", "pytest", "rich"]
 name = "faker"
 version = "14.2.1"
 description = "Faker is a Python package that generates fake data for you."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1988,7 +1988,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<=3.10.6"
-content-hash = "a658bd15803ab0cb2cb451993b896834ba68dd042479588504431d978e191ea4"
+content-hash = "770f19cf1b1f2a256b2c68eeeaf900ef5224b44461d0d663c10fb8086ba6771c"
 
 [metadata.files]
 alembic = [

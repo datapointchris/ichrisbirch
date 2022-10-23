@@ -22,6 +22,7 @@ fastapi = "^0.79.0"
 uvicorn = "^0.18.2"
 pydeps = "^1.10.22"
 sqlalchemy = "^1.4.42"
+Faker = "^14.1.0"
 
 [tool.poetry.dev-dependencies]
 alembic = "^1.8.1"
@@ -29,7 +30,6 @@ black = {version = "^22.1.0", allow-prereleases = true}
 coverage = "^6.4.4"
 docker = "^6.0.0"
 flake8 = "^4.0.1"
-Faker = "^14.1.0"
 livereload = "^2.6.3"
 jupyter = "^1.0.0"
 jupyterthemes = "^0.20.0"
