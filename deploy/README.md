@@ -2,12 +2,16 @@
 
 Note: If you are getting supervisor.sock no such file, make sure directories and files for logs are created.
 
+Note: If you get bind() to 0.0.0.0:80 failed (98: Address already in use)
+`sudo pkill -f nginx & wait $!`
+`sudo systemctl start nginx`
+
+
 ## Dev
 **`Dev`** assumes MacOS and homebrew installations
 **`HOST:`** 0.0.0.0
 **`APP PORT:`** 4000
 **`API PORT:`** 4200
-
 
 
 
@@ -19,17 +23,17 @@ Note: If you are getting supervisor.sock no such file, make sure directories and
 
 
 
-
 ## Prod
 **`Prod`** assumes Ubuntu and apt installations
 **`HOST:`** ichrisbirch.com
 **`APP PORT:`** 8000
 **`API PORT:`** 8200
 
-1. Decrypt or Copy `.prod.env`
+1. Decrypt or copy environment file
+ `scp -i ~/.ssh/apps.pem ~/github/projects/euphoria/deploy/prod/.prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/deploy/prod/.prod.env`
 
 2. Install the project
-`poetry install`
+`poetry install --without dev`
 Note: if there is pyscopg2 error about gcc:
 `sudo apt install libpq-dev`
 
@@ -51,6 +55,12 @@ sudo apt install -y tmux htop python3.10 python3-poetry nginx supervisor
 
 ## Clone Project
 sudo git clone https://github.com/datapointchris/euphoria.git /var/www/
+
+## Secure copy the environment file (from local)
+scp -i ~/.ssh/apps.pem ~/github/projects/euphoria/deploy/prod/.prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/deploy/prod/.prod.env
+
+## Install project
+poetry install --without dev
 
 ## Run deploy script to copy supervisor and nginx config files
 sudo chmod +x /var/www/euphoria/deploy/prod/deploy.sh
