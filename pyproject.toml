@@ -22,7 +22,7 @@ fastapi = "^0.79.0"
 uvicorn = "^0.18.2"
 pydeps = "^1.10.22"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.dev-dependencies]
 alembic = "^1.8.1"
 black = {version = "^22.1.0", allow-prereleases = true}
 coverage = "^6.4.4"
