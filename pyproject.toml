@@ -21,7 +21,7 @@ requests = "^2.27.1"
 fastapi = "^0.79.0"
 uvicorn = "^0.18.2"
 pydeps = "^1.10.22"
-setuptools = "^65.5.0"
+sqlalchemy = "^1.4.42"
 
 [tool.poetry.dev-dependencies]
 alembic = "^1.8.1"
