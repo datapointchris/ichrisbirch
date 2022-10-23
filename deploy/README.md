@@ -3,6 +3,9 @@
 Note: If you are getting ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
 `sudo apt install python3-cachecontrol`
 
+Note: If you are getting ERROR: Can not execute `setup.py` since setuptools is not available in the build environment:
+`sudo apt install libffi-dev`
+
 Note: If you are getting supervisor.sock no such file, make sure directories and files for logs are created.
 
 Note: If you get bind() to 0.0.0.0:80 failed (98: Address already in use)

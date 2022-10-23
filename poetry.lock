@@ -1950,7 +1950,7 @@ test = ["pytest (>=7.1.2,<7.2.0)", "pytest-cov (>=3.0.0,<3.1.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "00d076e697e7cbb5858fa1a73eeea3f018bf65d4dc3996c53e5d0898a3c74ec7"
+content-hash = "bde862c238244ea1710c14615a52f035c78e1b9cd2a59ec77ea790abcf78fca4"
 
 [metadata.files]
 alembic = [
