@@ -4,7 +4,9 @@ import logging
 from dataclasses import dataclass, field
 
 
-match environment := os.getenv('ENVIRONMENT'):
+environment = os.getenv('ENVIRONMENT')
+print('ENVIRO: ', environment)
+match environment:
     case 'development':
         dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))
     case 'testing':
