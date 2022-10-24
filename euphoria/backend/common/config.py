@@ -15,6 +15,7 @@ match environment:
         dotenv.load_dotenv(dotenv.find_dotenv('.prod.env'))
         print("LOADED PROD")
         print(os.getenv('API_URL'))
+        print("dotenv is here:", dotenv.find_dotenv('.prod.env'))
     case _:
         raise ValueError(
             f'Unrecognized Environment Variable: {environment}\n'
