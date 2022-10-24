@@ -1,6 +1,6 @@
 # Test the updated server configs
 git pull
-
-sudo prod/deploy.sh
+cd deplot/prod
+sudo deploy.sh
 
 sudo nginx -s reload

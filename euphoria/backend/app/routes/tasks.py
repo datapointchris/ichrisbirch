@@ -7,11 +7,11 @@ from io import BytesIO
 from zoneinfo import ZoneInfo
 
 import requests
-from euphoria.backend.app.easy_dates import EasyDateTime
-from euphoria.backend.common import schemas
-from euphoria.backend.common.config import SETTINGS
-from euphoria.backend.common.db.sqlalchemy import session
-from euphoria.backend.common.models.tasks import Task, avg_completion_time
+from backend.app.easy_dates import EasyDateTime
+from backend.common import schemas
+from backend.common.config import SETTINGS
+from backend.common.db.sqlalchemy import session
+from backend.common.models.tasks import Task, avg_completion_time
 from faker import Faker
 from flask import Blueprint, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
