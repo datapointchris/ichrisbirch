@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, current_app, url_for, redirect
-from ...common.models.journal import JournalEntry
+from flask import Blueprint, render_template, request, url_for, redirect
+from euphoria.backend.common.models.journal import JournalEntry
+from euphoria.backend.common.config import SETTINGS
 import requests
 
 blueprint = Blueprint(

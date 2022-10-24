@@ -6,7 +6,8 @@
 - [v0.5.1 --> {Patch} Add "notes" field to tasks](#v051----patch-add-notes-field-to-tasks)
 - [v0.5.2 --> {Patch} Use Enum for task categories](#v052----patch-use-enum-for-task-categories)
 - [v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
-- [v0.6.0 --> Add Countdowns to API routes](#v060----add-countdowns-to-api-routes)
+- [v0.6.0 --> Rename entire project to ichrisbirch](#v060----rename-entire-project-to-ichrisbirch)
+- [v0.7.0 --> Add Countdowns to API routes](#v070----add-countdowns-to-api-routes)
 - [v0.7.0 --> Add Events to API routes](#v070----add-events-to-api-routes)
 - [v0.7.0 --> Continuous Integration / Github Actions](#v070----continuous-integration--github-actions)
 - [v0.4.0 --> Backups](#v040----backups)
@@ -97,7 +98,18 @@
 
 
 
-# v0.6.0 --> Add Countdowns to API routes
+# v0.6.0 --> Rename entire project to ichrisbirch
+FastAPI:
+- [ ] nginx files
+- [ ] supervisor files
+- [ ] folders
+- [ ] name of keys
+- [ ] name of security group
+- [ ] name of mongo servers
+- [ ] Do a grep for all things euphoria
+
+
+# v0.7.0 --> Add Countdowns to API routes
 FastAPI:
 - [ ] Countdowns
 - [ ] Cut a release

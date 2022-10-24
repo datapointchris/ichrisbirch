@@ -1,21 +1,20 @@
 import base64
+import logging
 import random
 from collections import Counter
 from datetime import datetime, timedelta
 from io import BytesIO
 from zoneinfo import ZoneInfo
-import logging
-from faker import Faker
-from backend.common.config import SETTINGS
 
 import requests
+from euphoria.backend.app.easy_dates import EasyDateTime
+from euphoria.backend.common import schemas
+from euphoria.backend.common.config import SETTINGS
+from euphoria.backend.common.db.sqlalchemy import session
+from euphoria.backend.common.models.tasks import Task, avg_completion_time
+from faker import Faker
 from flask import Blueprint, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
-
-from backend.common.db.sqlalchemy import session
-from backend.app.easy_dates import EasyDateTime
-from backend.common.models.tasks import Task, calculate_average_completion_time
-from backend.common import schemas
 
 blueprint = Blueprint(
     'tasks',
@@ -74,7 +73,7 @@ def completed():
     ).json()
 
     completed_tasks = [Task(**schemas.Task(**task).dict()) for task in completed_tasks]
-    average_completion = calculate_average_completion_time(completed_tasks)
+    average_completion = avg_completion_time(completed_tasks)
 
     # Graph
     # TODO: Update this to something better for graphing

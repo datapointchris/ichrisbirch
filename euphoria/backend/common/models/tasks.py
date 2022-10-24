@@ -31,7 +31,7 @@ class Task(Base):
         return None
 
 
-def calculate_average_completion_time(completed: list[Task]) -> str:
+def avg_completion_time(completed: list[Task]) -> str:
     if not completed:
         return 'No tasks completed for this time period'
     total_days = sum(task.days_to_complete for task in completed)
