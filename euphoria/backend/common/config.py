@@ -11,9 +11,11 @@ match environment := os.getenv('ENVIRONMENT'):
         dotenv.load_dotenv(dotenv.find_dotenv('.test.env'))
     case 'production':
         dotenv.load_dotenv(dotenv.find_dotenv('.prod.env'))
+        print("LOADED PROD")
+        print(os.getenv('API_URL'))
     case _:
         raise ValueError(
-            f'Unrecognized Environment Variable: {environment}'
+            f'Unrecognized Environment Variable: {environment}\n'
             'Did you set ENVIRONMENT before starting the program?'
         )
 
