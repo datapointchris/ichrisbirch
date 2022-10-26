@@ -6,6 +6,7 @@
 - [v0.5.1 --> {Patch} Add "notes" field to tasks](#v051----patch-add-notes-field-to-tasks)
 - [v0.5.2 --> {Patch} Use Enum for task categories](#v052----patch-use-enum-for-task-categories)
 - [v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
+- [v0.5.4 --> {Patch} Create /priority endpoint in tasks](#v054----patch-create-priority-endpoint-in-tasks)
 - [v0.6.0 --> Rename entire project to ichrisbirch](#v060----rename-entire-project-to-ichrisbirch)
 - [v0.7.0 --> Add Countdowns to API routes](#v070----add-countdowns-to-api-routes)
 - [v0.7.0 --> Add Events to API routes](#v070----add-events-to-api-routes)
@@ -98,6 +99,12 @@
 
 
 
+# v0.5.4 --> {Patch} Create /priority endpoint in tasks
+- [ ] Call this endpoint in the app instead of doing the query
+  - This makes it so that other things can easily get the data with just an API call instead of constructing the query again
+
+
+
 # v0.6.0 --> Rename entire project to ichrisbirch
 FastAPI:
 - [ ] nginx files
@@ -184,6 +191,7 @@ Udemy Class
 - 
 I have pytest book somewhere
 Realpython
+https://flask.palletsprojects.com/en/2.2.x/testing/
 - Books on datapointchris.com
 - pytest
 - test driven dev in python

@@ -36,10 +36,12 @@ Note: If you get bind() to 0.0.0.0:80 failed (98: Address already in use)
 **`API PORT:`** 8200
 Number of workers is 1 for each in supervisor conf files because of small EC2 instance
 
-
+TODO: This is not right
+Probably encrypt and decrypt them all
 1. Decrypt or copy environment file
  `scp -i ~/.ssh/apps.pem ~/github/projects/euphoria/deploy/prod/.prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/deploy/prod/.prod.env`
 
+TODO: This does not work on Ubuntu
 2. Install the project
 `poetry install --without dev`
 Note: if there is pyscopg2 error about gcc:
@@ -59,7 +61,7 @@ sudo apt update
 sudo apt upgrade -y
 
 ## Installs
-sudo apt install -y tmux htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor
+sudo apt install -y tmux tmuxinator tree htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor
 
 ## Clone Project
 sudo git clone https://github.com/datapointchris/euphoria.git /var/www/

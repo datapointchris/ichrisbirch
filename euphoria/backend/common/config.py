@@ -4,9 +4,12 @@ import logging
 from dataclasses import dataclass, field
 
 
-environment = os.getenv('ENVIRONMENT')
-print('ENVIRO: ', environment)
-match environment:
+ENVIRONMENT: str = os.getenv('ENVIRONMENT')
+API_URL: str = os.getenv('API_URL')
+DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
+
+
+match ENVIRONMENT:
     case 'development':
         dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))
     case 'testing':
@@ -18,7 +21,7 @@ match environment:
         print("dotenv is here:", dotenv.find_dotenv('.prod.env'))
     case _:
         raise ValueError(
-            f'Unrecognized Environment Variable: {environment}\n'
+            f'Unrecognized Environment Variable: {ENVIRONMENT}\n'
             'Did you set ENVIRONMENT before starting the program?'
         )
 
@@ -26,6 +29,7 @@ match environment:
 @dataclass
 class FlaskSettings:
     SECRET_KEY: str = os.getenv('SECRET_KEY')
+    ENV: str = ENVIRONMENT
 
 
 @dataclass
@@ -71,21 +75,11 @@ class LoggingSettings:
     LOGGING_LEVEL: int = logging.INFO
 
 
-@dataclass
-class Settings:
-    ENVIRONMENT: str = os.getenv('ENVIRONMENT')
-    API_URL: str = os.getenv('API_URL')
-    DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
-
-    flask: FlaskSettings = FlaskSettings()
-    postgres: PostgresSettings = PostgresSettings()
-    sqlalchemy: SQLAlchemySettings = SQLAlchemySettings()
-    mongodb: MongoDBSettings = MongoDBSettings()
-    dynamodb: DynamoDBSettings = DynamoDBSettings()
-    sqlite: SQLiteSettings = SQLiteSettings()
-    logging: LoggingSettings = LoggingSettings()
-
-    sqlalchemy.SQLALCHEMY_DATABASE_URI = postgres.POSTGRES_DATABASE_URI
-
-
-SETTINGS = Settings()
+log = LoggingSettings()
+flask = FlaskSettings()
+sqlite = SQLiteSettings()
+mongodb = MongoDBSettings()
+dynamodb = DynamoDBSettings()
+postgres = PostgresSettings()
+sqlalchemy = SQLAlchemySettings()
+sqlalchemy.SQLALCHEMY_DATABASE_URI = postgres.POSTGRES_DATABASE_URI

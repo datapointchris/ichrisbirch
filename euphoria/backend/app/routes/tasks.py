@@ -8,8 +8,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 from backend.app.easy_dates import EasyDateTime
-from backend.common import schemas
-from backend.common.config import SETTINGS
+from backend.common import config, schemas
 from backend.common.db.sqlalchemy import session
 from backend.common.models.tasks import Task, avg_completion_time
 from faker import Faker
@@ -30,10 +29,10 @@ logger = logging.getLogger(__name__)
 def index():
     ed = EasyDateTime()
     completed_today = requests.get(
-        f'{SETTINGS.API_URL}/tasks/completed/',
+        f'{config.API_URL}/tasks/completed/',
         params={'start_date': ed.today, 'end_date': ed.tomorrow},
     ).json()
-    top_tasks = requests.get(f'{SETTINGS.API_URL}/tasks/', params={'limit': 5}).json()
+    top_tasks = requests.get(f'{config.API_URL}/tasks/', params={'limit': 5}).json()
     completed_today = [Task(**schemas.Task(**task).dict()) for task in completed_today]
     top_tasks = [Task(**schemas.Task(**task).dict()) for task in top_tasks]
     return render_template('tasks/index.html', top_tasks=top_tasks, completed_today=completed_today)
@@ -41,7 +40,7 @@ def index():
 
 @blueprint.route('/all')
 def all():
-    tasks = requests.get(f'{SETTINGS.API_URL}/tasks/').json()
+    tasks = requests.get(f'{config.API_URL}/tasks/').json()
     return render_template('tasks/all.html', tasks=tasks)
 
 
@@ -60,15 +59,15 @@ def completed():
     }
     date_filter = request.form.get('filter') if request.method == 'POST' else 'this_week'
     if date_filter == 'all':  # have to query db to get first and last
-        first = requests.get(f'{SETTINGS.API_URL}/tasks/completed/', params={'first': True}).json()
-        last = requests.get(f'{SETTINGS.API_URL}/tasks/completed/', params={'last': True}).json()
+        first = requests.get(f'{config.API_URL}/tasks/completed/', params={'first': True}).json()
+        last = requests.get(f'{config.API_URL}/tasks/completed/', params={'last': True}).json()
         start_date = schemas.Task(**first).complete_date
         end_date = schemas.Task(**last).complete_date
     else:
         start_date, end_date = filters.get(date_filter)
 
     completed_tasks = requests.get(
-        f'{SETTINGS.API_URL}/tasks/completed/',
+        f'{config.API_URL}/tasks/completed/',
         params={'start_date': start_date, 'end_date': end_date},
     ).json()
 
@@ -126,17 +125,17 @@ def form():
     match method:
         case 'add':
             task = schemas.TaskCreate(**data).json()
-            response = requests.post(f'{SETTINGS.API_URL}/tasks/', data=task)
+            response = requests.post(f'{config.API_URL}/tasks/', data=task)
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))  # TODO: Redirect back to referring page
         case 'complete':
             task_id = data.get('id')
-            response = requests.post(f'{SETTINGS.API_URL}/tasks/complete/{task_id}')
+            response = requests.post(f'{config.API_URL}/tasks/complete/{task_id}')
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))
         case 'delete':
             task_id = data.get('id')
-            response = requests.delete(f'{SETTINGS.API_URL}/tasks/{task_id}')
+            response = requests.delete(f'{config.API_URL}/tasks/{task_id}')
             logger.debug(response.text)
             return redirect(url_for('tasks.all'))
 
