@@ -1,14 +1,14 @@
 import os
 import dotenv
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 ENVIRONMENT: str = os.getenv('ENVIRONMENT')
 API_URL: str = os.getenv('API_URL')
 DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
 
-
+# TODO: [2022/10/27] - Add logging here for env location and successful load
 match ENVIRONMENT:
     case 'development':
         dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))

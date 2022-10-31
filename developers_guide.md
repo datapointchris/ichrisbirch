@@ -1,5 +1,12 @@
 # Project Structure
 
+# ERRORS
+==============================
+Flask:
+- If you are getting blank pages but no errors, try a different port.
+  - Sometimes the port is busy or used, but does not give a 'port in use' error
+
+
 
 # New Server
 ==============================

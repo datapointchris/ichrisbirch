@@ -1,5 +1,6 @@
 
 - [-- Misc --](#---misc---)
+- [Sitewide $PROJECT variable](#sitewide-project-variable)
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
@@ -53,6 +54,7 @@
 
 
 # -- Misc --
+# Sitewide $PROJECT variable
 
 ## CSS files
   - [ ] Need to have reset
