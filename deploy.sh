@@ -231,33 +231,33 @@ echo ""
 
 #------------------------------ SUPERVISOR ------------------------------#
 echo_section_title "SUPERVISOR"
-SUPERVISOR_DIR="$OS_PREFIX/etc/supervisor"
-SUPERVISOR_CONFIG_DIR="$SUPERVISOR_DIR/conf.d"
+BASE_DIR="$OS_PREFIX/etc"
+SUPERVISOR_CONFIG_DIR="$BASE_DIR/supervisor.d"
 SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
 # Note: Make sure log direcitories match entries in `supervisord.conf`
 
-sudo mkdir -p $SUPERVISOR_DIR
-sudo mkdir -p $SUPERVISOR_CONFIG_DIR/conf.d
-sudo mkdir -p $SUPERVISOR_LOG_DIR/$PROJECT
-echo_create "$SUPERVISOR_DIR"
-echo_create "$SUPERVISOR_LOG_DIR"
+sudo mkdir -p $SUPERVISOR_CONFIG_DIR
+sudo mkdir -p $SUPERVISOR_LOG_DIR
 echo_create "$SUPERVISOR_CONFIG_DIR"
+echo_create "$SUPERVISOR_LOG_DIR"
 
+sudo touch $SUPERVISOR_LOG_DIR/supervisord.log
 sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-out.log
 sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-error.log
 sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app-out.log
 sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app-error.log
+echo_create "$SUPERVISOR_LOG_DIR/supervisord.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api-out.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api-error.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app-out.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app-error.log"
 
-sudo cp $ENV_CONFIG_DIR/supervisord.conf $SUPERVISOR_DIR/supervisord.conf
-sudo cp $ENV_CONFIG_DIR/supervisor-app.conf $SUPERVISOR_DIR/conf.d/$PROJECT-app.conf
-sudo cp $ENV_CONFIG_DIR/supervisor-api.conf $SUPERVISOR_DIR/conf.d/$PROJECT-api.conf
-echo_copy "$ENV_CONFIG_DIR/supervisord.conf" "$SUPERVISOR_DIR/supervisord.conf"
-echo_copy "$ENV_CONFIG_DIR/supervisor-app.conf" "$SUPERVISOR_DIR/conf.d/$PROJECT-app.conf"
-echo_copy "$ENV_CONFIG_DIR/supervisor-api.conf" "$SUPERVISOR_DIR/conf.d/$PROJECT-api.conf"
+sudo cp $ENV_CONFIG_DIR/supervisord.conf $BASE_DIR/supervisord.conf
+sudo cp $ENV_CONFIG_DIR/supervisor-app.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf
+sudo cp $ENV_CONFIG_DIR/supervisor-api.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf
+echo_copy "$ENV_CONFIG_DIR/supervisord.conf" "$BASE_DIR/supervisord.conf"
+echo_copy "$ENV_CONFIG_DIR/supervisor-app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
+echo_copy "$ENV_CONFIG_DIR/supervisor-api.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
 echo ""
 
 
