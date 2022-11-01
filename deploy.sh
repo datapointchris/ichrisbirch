@@ -208,7 +208,6 @@ NGINX_DIR="$OS_PREFIX/etc/nginx"
 SITES_AVAILABLE="$NGINX_DIR/sites-available"
 SITES_ENABLED="$NGINX_DIR/sites-enabled"
 
-sudo mkdir -p $NGINX_DIR
 sudo mkdir -p $SITES_AVAILABLE
 sudo mkdir -p $SITES_ENABLED
 echo_create "$NGINX_DIR"
@@ -236,11 +235,21 @@ SUPERVISOR_CONFIG_DIR="$BASE_DIR/supervisor.d"
 SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
 # Note: Make sure log direcitories match entries in `supervisord.conf`
 
+# Directories
 sudo mkdir -p $SUPERVISOR_CONFIG_DIR
 sudo mkdir -p $SUPERVISOR_LOG_DIR
 echo_create "$SUPERVISOR_CONFIG_DIR"
 echo_create "$SUPERVISOR_LOG_DIR"
 
+# Configuration
+sudo cp $ENV_CONFIG_DIR/supervisord.conf $BASE_DIR/supervisord.conf
+sudo cp $ENV_CONFIG_DIR/supervisor-app.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf
+sudo cp $ENV_CONFIG_DIR/supervisor-api.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf
+echo_copy "$ENV_CONFIG_DIR/supervisord.conf" "$BASE_DIR/supervisord.conf"
+echo_copy "$ENV_CONFIG_DIR/supervisor-app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
+echo_copy "$ENV_CONFIG_DIR/supervisor-api.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
+
+# Logs
 sudo touch $SUPERVISOR_LOG_DIR/supervisord.log
 sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-out.log
 sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-error.log
@@ -251,14 +260,21 @@ echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api-out.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api-error.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app-out.log"
 echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app-error.log"
-
-sudo cp $ENV_CONFIG_DIR/supervisord.conf $BASE_DIR/supervisord.conf
-sudo cp $ENV_CONFIG_DIR/supervisor-app.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf
-sudo cp $ENV_CONFIG_DIR/supervisor-api.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf
-echo_copy "$ENV_CONFIG_DIR/supervisord.conf" "$BASE_DIR/supervisord.conf"
-echo_copy "$ENV_CONFIG_DIR/supervisor-app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
-echo_copy "$ENV_CONFIG_DIR/supervisor-api.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
 echo ""
+
+# Set owner on MacOS in dev
+if [[ $ENVIRONMENT = "dev" ]]; then
+    echo_section_title "PERMISSIONS"
+    sudo chown -R $USER $NGINX_DIR
+    sudo chown -R $USER $BASE_DIR/supervisord.conf
+    sudo chown -R $USER $SUPERVISOR_CONFIG_DIR
+    sudo chown -R $USER $SUPERVISOR_LOG_DIR
+    echo "Change owner of ${green}$NGINX_DIR/${normal} to user: ${blue}$USER${normal}"
+    echo "Change owner of ${green}$BASE_DIR/supervisord.conf${normal} to user: ${blue}$USER${normal}"
+    echo "Change owner of ${green}$SUPERVISOR_CONFIG_DIR/${normal} to user: ${blue}$USER${normal}"
+    echo "Change owner of ${green}$SUPERVISOR_LOG_DIR/${normal} to user: ${blue}$USER${normal}"
+    echo ""
+fi
 
 
 #------------------------------ APACHE ------------------------------#

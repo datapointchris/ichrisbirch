@@ -12,6 +12,10 @@ Note: If you get bind() to 0.0.0.0:80 failed (98: Address already in use)
 `sudo pkill -f nginx & wait $!`
 `sudo systemctl start nginx`
 
+Note: SUPERVISOR: If you are getting BACKOFF can't find command... that is pointing to .venv
+    Prod: Check that the project is installed
+    Dev: Check the symlink isn't broken
+
 
 ## Dev
 **`Dev`** assumes MacOS and homebrew installations
@@ -61,6 +65,7 @@ sudo apt update
 sudo apt upgrade -y
 
 ## Installs
+ TODO: [2022/10/31] - Put zsh and dotfiles on here
 sudo apt install -y tmux tmuxinator tree htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor
 
 ## Clone Project

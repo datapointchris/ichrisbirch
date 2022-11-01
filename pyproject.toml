@@ -38,6 +38,9 @@ pytest-cov = "^3.0.0"
 pytest-md = "^0.2.0"
 wily = "^1.23.0"
 
+[tool.poetry.group.dev.dependencies]
+colorama = "^0.4.6"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

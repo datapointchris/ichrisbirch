@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 # from .dependencies import get_query_token, get_token_header
-from .endpoints import tasks
+from .endpoints import tasks, health
 from euphoria import __version__
 
 logger = logging.getLogger(__name__)
@@ -59,6 +59,7 @@ responses = {
 # dependencies=[Depends(auth)],
 
 api.include_router(tasks.router, responses=responses)
+api.include_router(health.router, responses=responses)
 # api.include_router(items.router)
 logger.info('RUNNING FASTAPI')
 
