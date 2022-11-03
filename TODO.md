@@ -70,7 +70,7 @@
     - [ ] Good docs about the structure the objects are coming out as
     - [ ] Use streamlit for interactive charts?
 
-
+ TODO: [2022/11/02] - Add the release versions here then move to CHANGELOG.md
 
 # v0.5.1 --> {Patch} Add "notes" field to tasks
 - [ ] !! __MAKE NOTES__ !!
