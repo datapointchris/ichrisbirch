@@ -95,32 +95,40 @@ function echo_error() {
 
 
 ################################################################################
+SCRIPT_NAME="$0"
 ABOUT="
-$(echo_section_title "*-*-*  Prepare a Release Version  *-*-*")
+$(echo_section_title "*-*-*  Create a Release  *-*-*")
 
   ${green}USAGE${normal}
-  Run as ./prepare-version.sh {version} 'Version Description'
+  Run as $SCRIPT_NAME {version} 'Version Description'
   The project name is the working directory
   MUST leave off the v in version:
   YES => 0.5.0
   NO => v0.5.0
 
   ${green}EXAMPLE${normal}
-  ./prepare-version.sh 0.5.2 'Add API Endpoint'
+  $SCRIPT_NAME 0.5.2 'Add API Endpoint'
 
   ${green}INTERACTIVE MODE${normal}
-  ./prepare-version.sh --interactive
+  $SCRIPT_NAME --interactive
  
   ${green}HELP${normal}
-  ./prepare-version.sh --help
+  $SCRIPT_NAME --help
  
   ${green}ACTIONS${normal}
-  1. Create directory '{project}/stats/{version}'
-  2. Update 'pyproject.toml'
-  3. Update '{project}/__init__.py'
-  4. Run pytest and create coverage report
-  5. Run tokei and create lines of code report
-  6. Run wily and create code complexity report
+  ${yellow}NOTE:${normal} Make sure feature branch is merged in develop
+  01. Create release branch from develop
+  02. Create directory '{project}/stats/{version}'
+  03. Update 'pyproject.toml'
+  04. Update '{project}/__init__.py'
+  05. Run pytest and create coverage report
+  06. Run tokei and create lines of code report
+  07. Run wily and create code complexity report
+  08. Commit version stats to release branch
+  09. Merge release branch into master
+  10. Create a git tag on master using the version
+  11. Merge release branch into develop
+  12. Push all changes
  
   ${green}DEPENDENCIES${normal}
   tokei
@@ -163,9 +171,11 @@ function help() {
 function usage() { 
     echo "${bold}${green}Usage:${normal}"
     echo "${green}Command Line with Arguments:${normal}"
-    echo "./prepare-version.sh 0.5.2 'Add API Endpoint'"
+    echo "$SCRIPT_NAME 0.5.2 'Add API Endpoint'"
     echo "${green}Interactive:${normal}"
-    echo "./prepare-version.sh interactive"
+    echo "$SCRIPT_NAME --interactive"
+    echo "${green}Help:${normal}"
+    echo "$SCRIPT_NAME --help"
     1>&2;
     }
 
@@ -178,10 +188,11 @@ function interactive() {
 }
 
 
-#------------------------------ SCRIPT PROCESSING ------------------------------#
+#------------------------------ SCRIPT PRE-PROCESSING ------------------------------#
 # Get project name from current dir
 PROJECT=$(basename $PWD)
 CURRENT_VERSION=$(grep --only-matching "\d.\d.\d" "$PROJECT/__init__.py")
+COMMAND_WAIT_TIME=2
 
 # -- Check for arguments -- #
 # The pattern:
@@ -219,39 +230,42 @@ fi
 #------------------------------ SCRIPT TITLE ------------------------------#
 echo ""
 echo_colorchar "-" "black"
-echo_center_text "$(echo_colorchar "-" "blue" 5)  \t${blue}${underline}Preparing Release for $VERSION - $VERSION_DESCRIPTION${normal}\t    $(echo_colorchar "-" "blue" 5)"
+echo_center_text "$(echo_colorchar "-" "blue" 5)  \t${blue}${underline}Creating Release for $VERSION - $VERSION_DESCRIPTION${normal}\t    $(echo_colorchar "-" "blue" 5)"
 echo_colorchar "=" "black"
 echo ""
 
+#------------------------------ CREATE RELEASE BRANCH ------------------------------#
+RELEASE_BRANCH="release/$VERSION-${VERSION_DESCRIPTION//" "/-}" # space to hyphen
+git checkout develop
+git checkout -b $RELEASE_BRANCH
 
-#------------------------------ VERSION DIRECTORY ------------------------------#
-VERSION_DIR="$PROJECT/stats/$VERSION"
-mkdir -p $VERSION_DIR
-echo_create $VERSION_DIR
-
+#------------------------------ VERSION STATS DIRECTORY ------------------------------#
+VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
+mkdir -p $VERSION_STATS_DIR
+echo_create $VERSION_STATS_DIR
 
 #------------------------------ COVERAGE REPORT ------------------------------#
 cd $PROJECT/
 coverage report -m > stats/$VERSION/coverage.txt
 coverage json -o stats/$VERSION/coverage.json
-echo_create "$VERSION_DIR/coverage.txt"
-echo_create "$VERSION_DIR/coverage.json"
-
+echo_create "$VERSION_STATS_DIR/coverage.txt"
+echo_create "$VERSION_STATS_DIR/coverage.json"
+sleep $COMMAND_WAIT_TIME
 
 #------------------------------ TOKEI LINES OF CODE ------------------------------#
 cd ../
-tokei . --exclude .venv --exclude $PROJECT/backend/alembic/versions/ > $VERSION_DIR/lines_of_code.txt
-echo_create "$VERSION_DIR/lines_of_code.txt"
-tokei . --exclude .venv --exclude $PROJECT/backend/alembic/versions/ -o json > $VERSION_DIR/lines_of_code.json
-echo_create "$VERSION_DIR/lines_of_code.json"
-
+tokei . --exclude .venv --exclude $PROJECT/backend/alembic/versions/ > $VERSION_STATS_DIR/lines_of_code.txt
+echo_create "$VERSION_STATS_DIR/lines_of_code.txt"
+tokei . --exclude .venv --exclude $PROJECT/backend/alembic/versions/ -o json > $VERSION_STATS_DIR/lines_of_code.json
+echo_create "$VERSION_STATS_DIR/lines_of_code.json"
+sleep $COMMAND_WAIT_TIME
 
 #------------------------------ WILY CODE COMPLEXITY ------------------------------#
 # wily does not have json output at the moment
 wily build .
-wily diff . -r master > $VERSION_DIR/complexity.txt
-echo_create "$VERSION_DIR/complexity.txt"
-
+wily diff . -r master > $VERSION_STATS_DIR/complexity.txt
+echo_create "$VERSION_STATS_DIR/complexity.txt"
+sleep $COMMAND_WAIT_TIME
 
 #------------------------------ UPDATE VERSIONS IN FILES ------------------------------#
 poetry version $SEMVER
@@ -259,6 +273,23 @@ echo_update "pyproject.toml $CURRENT_VERSION" "$SEMVER"
 
 echo "__version__ = '$SEMVER'" > $PROJECT/__init__.py
 echo_update "$PROJECT/__init__.py $CURRENT_VERSION" "$SEMVER"
+sleep $COMMAND_WAIT_TIME
+
+#------------------------------ COMMIT CHANGES AND CREATE GIT TAG ------------------------------#
+git commit -am "release: $VERSION - Create version stats"
+sleep $COMMAND_WAIT_TIME
+
+#------------------------------ MERGE BRANCHES, TAG, AND PUSH ALL CHANGES------------------------------#
+git checkout master
+git merge $RELEASE_BRANCH
+git tag $VERSION
+git checkout develop
+git merge $RELEASE_BRANCH
+git push --tags
+sleep $COMMAND_WAIT_TIME
+
+#------------------------------ REINSTALL PROGRAM ------------------------------#
+poetry install
 
 
 #------------------------------ SUCCESS ------------------------------#
