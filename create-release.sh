@@ -256,9 +256,11 @@ echo_create "$VERSION_STATS_DIR/lines_of_code.json"
 
 #------------------------------ WILY CODE COMPLEXITY ------------------------------#
 # wily does not have json output at the moment
+git stash
 wily build .
 wily diff . -r master > $VERSION_STATS_DIR/complexity.txt
 echo_create "$VERSION_STATS_DIR/complexity.txt"
+git stash pop
 
 
 #------------------------------ UPDATE VERSIONS IN FILES ------------------------------#
