@@ -214,6 +214,7 @@ https://flask.palletsprojects.com/en/2.2.x/testing/
 
 
 # v0.8.0 --> Logging
+https://medium.com/@petefison/logging-in-python-doesnt-get-simpler-than-this-50a7f24af1f4
 https://www.palkeo.com/en/blog/python-logging.html
 https://guicommits.com/how-to-log-in-python-like-a-pro/
 https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
