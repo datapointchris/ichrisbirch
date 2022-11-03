@@ -182,7 +182,6 @@ function interactive() {
 # Get project name from current dir
 PROJECT=$(basename $PWD)
 CURRENT_VERSION=$(grep --only-matching "\d.\d.\d" "$PROJECT/__init__.py")
-COMMAND_WAIT_TIME=2
 
 # -- Check for arguments -- #
 # The pattern:
@@ -224,15 +223,18 @@ echo_center_text "$(echo_colorchar "-" "blue" 5)  \t${blue}${underline}Creating 
 echo_colorchar "=" "black"
 echo ""
 
+
 #------------------------------ CREATE RELEASE BRANCH ------------------------------#
 RELEASE_BRANCH="release/$VERSION-${VERSION_DESCRIPTION//" "/-}" # space to hyphen
 git checkout develop
 git checkout -b $RELEASE_BRANCH
 
+
 #------------------------------ VERSION STATS DIRECTORY ------------------------------#
 VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
 mkdir -p $VERSION_STATS_DIR
 echo_create $VERSION_STATS_DIR
+
 
 #------------------------------ COVERAGE REPORT ------------------------------#
 cd $PROJECT
@@ -242,7 +244,7 @@ coverage json -o stats/$VERSION/coverage.json
 coverage html -d stats/$VERSION/coverage_html/
 echo_create "$VERSION_STATS_DIR/coverage.txt"
 echo_create "$VERSION_STATS_DIR/coverage.json"
-# sleep $COMMAND_WAIT_TIME
+
 
 #------------------------------ TOKEI LINES OF CODE ------------------------------#
 cd ../
@@ -250,14 +252,14 @@ tokei . --exclude .venv --exclude $PROJECT/backend/alembic/versions/ > $VERSION_
 echo_create "$VERSION_STATS_DIR/lines_of_code.txt"
 tokei . --exclude .venv --exclude $PROJECT/backend/alembic/versions/ -o json > $VERSION_STATS_DIR/lines_of_code.json
 echo_create "$VERSION_STATS_DIR/lines_of_code.json"
-# sleep $COMMAND_WAIT_TIME
+
 
 #------------------------------ WILY CODE COMPLEXITY ------------------------------#
 # wily does not have json output at the moment
 wily build .
 wily diff . -r master > $VERSION_STATS_DIR/complexity.txt
 echo_create "$VERSION_STATS_DIR/complexity.txt"
-# sleep $COMMAND_WAIT_TIME
+
 
 #------------------------------ UPDATE VERSIONS IN FILES ------------------------------#
 poetry version $SEMVER
@@ -265,11 +267,12 @@ echo_update "pyproject.toml $CURRENT_VERSION" "$SEMVER"
 
 echo "__version__ = '$SEMVER'" > $PROJECT/__init__.py
 echo_update "$PROJECT/__init__.py $CURRENT_VERSION" "$SEMVER"
-# sleep $COMMAND_WAIT_TIME
+
 
 #------------------------------ COMMIT CHANGES AND CREATE GIT TAG ------------------------------#
-git commit -am "release: $VERSION - Create version stats"
-# sleep $COMMAND_WAIT_TIME
+git add -A
+git commit -m "release: $VERSION - Create version stats"
+
 
 #------------------------------ MERGE BRANCHES, TAG, AND PUSH ALL CHANGES------------------------------#
 git checkout master
@@ -277,12 +280,13 @@ git merge $RELEASE_BRANCH
 git tag $VERSION
 git checkout develop
 git merge $RELEASE_BRANCH
+git push
 git push --tags
-# sleep $COMMAND_WAIT_TIME
+
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
 poetry install
-# sleep $COMMAND_WAIT_TIME
+
 
 #------------------------------ SUCCESS ------------------------------#
 echo ""
