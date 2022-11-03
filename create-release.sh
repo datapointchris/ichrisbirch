@@ -278,10 +278,11 @@ git commit -m "release: $VERSION - Create version stats"
 git checkout master
 git merge $RELEASE_BRANCH
 git tag $VERSION
+git push
+git push --tags
 git checkout develop
 git merge $RELEASE_BRANCH
 git push
-git push --tags
 
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
