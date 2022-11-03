@@ -290,7 +290,7 @@ sleep $COMMAND_WAIT_TIME
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
 poetry install
-
+sleep $COMMAND_WAIT_TIME
 
 #------------------------------ SUCCESS ------------------------------#
 echo ""
