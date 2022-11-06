@@ -238,6 +238,8 @@ echo_create $VERSION_STATS_DIR
 
 #------------------------------ COVERAGE REPORT ------------------------------#
 cd $PROJECT
+# TODO: [2022/11/05] - Check if docker desktop is running
+export ENVIRONMENT='development' # pytest needs this to run and will only ever be run in dev
 coverage run --module pytest
 coverage report -m > stats/$VERSION/coverage.txt
 coverage json -o stats/$VERSION/coverage.json
@@ -288,16 +290,8 @@ git push
 
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
-<<<<<<< Updated upstream
 poetry install
 
-||||||| Stash base
-poetry install
-sleep $COMMAND_WAIT_TIME
-=======
-poetry installgst
-sleep $COMMAND_WAIT_TIME
->>>>>>> Stashed changes
 
 #------------------------------ SUCCESS ------------------------------#
 echo ""
