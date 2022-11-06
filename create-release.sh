@@ -290,22 +290,8 @@ git push
 
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 poetry install
 
-||||||| Stash base
-poetry install
-||||||| Stash base
-poetry install
-=======
-poetry installgst
->>>>>>> Stashed changes
-sleep $COMMAND_WAIT_TIME
-=======
-poetry installgst
-sleep $COMMAND_WAIT_TIME
->>>>>>> Stashed changes
 
 #------------------------------ SUCCESS ------------------------------#
 echo ""
