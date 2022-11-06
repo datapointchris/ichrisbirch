@@ -18,7 +18,7 @@ def health() -> dict:
     return {
         "name": "Euphoria API",
         "version": __version__,
-        "environment": os.getenv('ENVIRONMENT'),
-        "api_url": os.getenv('API_URL'),
+        "environment": os.getenv('ENVIRONMENT') or 'NOT SET',
+        "api_url": os.getenv('API_URL') or 'NOT SET',
         "server_time": datetime.now().isoformat(),
     }
