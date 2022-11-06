@@ -37,8 +37,6 @@ pytest = "^7.1.1"
 pytest-cov = "^3.0.0"
 pytest-md = "^0.2.0"
 wily = "^1.23.0"
-
-[tool.poetry.group.dev.dependencies]
 colorama = "^0.4.6"
 
 [build-system]
