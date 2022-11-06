@@ -1,20 +1,6 @@
 # Deploy the project in professional fashion
 
-Note: If you are getting ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
-`sudo apt install python3-cachecontrol`
 
-Note: If you are getting ERROR: Can not execute `setup.py` since setuptools is not available in the build environment:
-`sudo apt install libffi-dev`
-
-Note: If you are getting supervisor.sock no such file, make sure directories and files for logs are created.
-
-Note: If you get bind() to 0.0.0.0:80 failed (98: Address already in use)
-`sudo pkill -f nginx & wait $!`
-`sudo systemctl start nginx`
-
-Note: SUPERVISOR: If you are getting BACKOFF can't find command... that is pointing to .venv
-    Prod: Check that the project is installed
-    Dev: Check the symlink isn't broken
 
 
 ## Dev
@@ -43,7 +29,7 @@ Number of workers is 1 for each in supervisor conf files because of small EC2 in
 TODO: This is not right
 Probably encrypt and decrypt them all
 1. Decrypt or copy environment file
- `scp -i ~/.ssh/apps.pem ~/github/projects/euphoria/deploy/prod/.prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/deploy/prod/.prod.env`
+ `scp -i ~/.ssh/apps.pem .prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/`
 
 TODO: This does not work on Ubuntu
 2. Install the project

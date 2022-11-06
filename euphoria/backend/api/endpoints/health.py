@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from ...common import schemas
 from euphoria import __version__
 from datetime import datetime
+import os
 
 
 router = APIRouter(prefix='/health', tags=['health'])
@@ -17,5 +18,7 @@ def health() -> dict:
     return {
         "name": "Euphoria API",
         "version": __version__,
+        "environment": os.getenv('ENVIRONMENT'),
+        "api_url": os.getenv('API_URL'),
         "server_time": datetime.now().isoformat(),
     }

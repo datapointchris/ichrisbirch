@@ -2,10 +2,58 @@
 
 # ERRORS
 ==============================
-Flask:
-- If you are getting blank pages but no errors, try a different port.
+## Flask:
+### Error:
+blank pages but no errors, try a different port.
   - Sometimes the port is busy or used, but does not give a 'port in use' error
 
+
+## Linux
+### Error:
+ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
+### Solution
+`sudo apt install python3-cachecontrol`
+
+
+## Poetry
+### Error:
+Can not execute `setup.py` since setuptools is not available in the build environment:
+### Solution
+Poetry is not updated in Linux yet, so compatibility with requiring or removing setuptools.
+MUST do the following:
+:: Dev (MacOS) :: _Poetry Version 1.2.2_
+`poetry export > requirments.txt`
+:: Prod (Linux) :: _Poetry Version 1.1.12_
+`sudo rm -rf .venv`
+`python -m venv .venv`
+`source .venv/bin/activate`
+`python -m pip install -r requirements.txt`
+`python -m pip install -e .`
+This last command installs the package at that location, but in editable mode.
+I don't believe this should be editable mode, but it is the only way to put the project
+root here.
+TODO: [2022/11/05] - Find out a better way for project root than editable
+
+
+## Supervisor
+### Error:
+supervisor.sock no such file
+### Solution
+make sure directories and files for logs are created.
+
+### Error:
+BACKOFF can't find command... that is pointing to .venv
+### Solution
+Prod: Check that the project is installed
+Dev: Check the symlink isn't broken
+
+
+## NGINX
+### Error:
+bind() to 0.0.0.0:80 failed (98: Address already in use)
+### Solution
+`sudo pkill -f nginx & wait $!`
+`sudo systemctl start nginx`
 
 
 # New Server
