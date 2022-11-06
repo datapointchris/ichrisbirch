@@ -225,9 +225,9 @@ echo ""
 
 
 #------------------------------ CREATE RELEASE BRANCH ------------------------------#
-RELEASE_BRANCH="release/$VERSION-${VERSION_DESCRIPTION//" "/-}" # space to hyphen
+# RELEASE_BRANCH="release/$VERSION-${VERSION_DESCRIPTION//" "/-}" # space to hyphen
 git checkout develop
-git checkout -b $RELEASE_BRANCH
+# git checkout -b $RELEASE_BRANCH
 
 
 #------------------------------ VERSION STATS DIRECTORY ------------------------------#
@@ -275,31 +275,24 @@ echo_update "$PROJECT/__init__.py $CURRENT_VERSION" "$SEMVER"
 
 #------------------------------ COMMIT CHANGES AND CREATE GIT TAG ------------------------------#
 git add -A
-git commit -m "release: $VERSION - Create version stats"
+git commit -m "release: $VERSION - $VERSION_DESCRIPTION"
 
 
 #------------------------------ MERGE BRANCHES, TAG, AND PUSH ALL CHANGES------------------------------#
 git checkout master
-git merge $RELEASE_BRANCH
+git merge develop
+# git merge $RELEASE_BRANCH
 git tag $VERSION
 git push
 git push --tags
 git checkout develop
-git merge $RELEASE_BRANCH
-git push
+# git merge $RELEASE_BRANCH
+# git push
 
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
-<<<<<<< Updated upstream
 poetry install
 
-||||||| Stash base
-poetry install
-sleep $COMMAND_WAIT_TIME
-=======
-poetry installgst
-sleep $COMMAND_WAIT_TIME
->>>>>>> Stashed changes
 
 #------------------------------ SUCCESS ------------------------------#
 echo ""
