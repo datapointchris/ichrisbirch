@@ -1,0 +1,10 @@
+Name                         Stmts   Miss  Cover   Missing
+----------------------------------------------------------
+__init__.py                      1      0   100%
+backend/__init__.py              0      0   100%
+backend/common/__init__.py       0      0   100%
+backend/common/config.py        60     47    22%   14, 16, 18-21, 29-85
+tests/__init__.py                0      0   100%
+tests/conftest.py               55     49    11%   8-95
+----------------------------------------------------------
+TOTAL                          116     96    17%
