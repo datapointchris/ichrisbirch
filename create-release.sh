@@ -218,9 +218,9 @@ fi
 
 #------------------------------ SCRIPT TITLE ------------------------------#
 echo ""
+echo_colorchar "="
+echo_center_text "$(echo_colorchar "*" "green" 5)  \t${blue}${underline}Creating Release for $VERSION - $VERSION_DESCRIPTION${normal}\t    $(echo_colorchar "*" "green" 5)"
 echo_colorchar "-" "black"
-echo_center_text "$(echo_colorchar "-" "blue" 5)  \t${blue}${underline}Creating Release for $VERSION - $VERSION_DESCRIPTION${normal}\t    $(echo_colorchar "-" "blue" 5)"
-echo_colorchar "=" "black"
 echo ""
 
 
@@ -288,17 +288,11 @@ git push
 
 
 #------------------------------ REINSTALL PROGRAM ------------------------------#
-<<<<<<< Updated upstream
 poetry install
 
-||||||| Stash base
-poetry install
-sleep $COMMAND_WAIT_TIME
-=======
-poetry installgst
-sleep $COMMAND_WAIT_TIME
->>>>>>> Stashed changes
 
 #------------------------------ SUCCESS ------------------------------#
 echo ""
+echo_colorchar "-" "black"
 echo_center_text "${black}=====-----=====-----===== ${green} Successfully Created Release: $VERSION ${black} =====-----=====-----=====${normal}"
+echo_colorchar "="

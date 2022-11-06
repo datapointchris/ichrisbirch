@@ -237,6 +237,9 @@ https://dev.to/vaultree/designing-a-secure-api-4059
 # v0.11.0 --> Documentation
 - Docs/notes for each page and function
 - Hopefully a lot of this is done as I'm testing and doing type hinting
+- https://realpython.com/python-doctest/
+- https://github.com/lyz-code/blue-book
+- https://lyz-code.github.io/blue-book/documentation/
 https://realpython.com/python-project-documentation-with-mkdocs/
 - Code and architecture Diagramming
 - https://github.com/mingrammer/diagrams

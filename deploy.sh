@@ -97,7 +97,7 @@ ABOUT="
 $(echo_section_title "*-*-*  Deploy Supervisor and NGINX Config Files  *-*-*")
 
   ${green}USAGE${normal}
-  Run as ./deploy.sh {environment} 'Version Description'
+  Run as ./deploy.sh {environment}
 
   ${green}EXAMPLE${normal}
   ./deploy.sh dev
