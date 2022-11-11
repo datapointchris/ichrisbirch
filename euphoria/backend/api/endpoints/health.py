@@ -1,9 +1,8 @@
-from fastapi import APIRouter
-from ...common import schemas
-from euphoria import __version__
-from datetime import datetime
 import os
-
+from datetime import datetime
+from fastapi import APIRouter
+from euphoria import __version__
+from euphoria.backend.common import schemas
 
 router = APIRouter(prefix='/health', tags=['health'])
 

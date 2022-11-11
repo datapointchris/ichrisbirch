@@ -52,7 +52,7 @@ sudo apt upgrade -y
 
 ## Installs
  TODO: [2022/10/31] - Put zsh and dotfiles on here
-sudo apt install -y tmux tmuxinator tree htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor
+sudo apt install -y tmux tmuxinator tree htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor zsh
 
 ## Clone Project
 sudo git clone https://github.com/datapointchris/euphoria.git /var/www/

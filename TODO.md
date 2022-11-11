@@ -70,9 +70,9 @@
     - [ ] Good docs about the structure the objects are coming out as
     - [ ] Use streamlit for interactive charts?
 
- TODO: [2022/11/02] - Add the release versions here then move to CHANGELOG.md
+TODO: [2022/11/02] - Add the release versions here then move to CHANGELOG.md
 
-  TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
+TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 
 # v0.5.1 --> {Patch} Add "notes" field to tasks
 - [ ] !! __MAKE NOTES__ !!
@@ -151,6 +151,13 @@ https://betterprogramming.pub/
 https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485
 https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s
 
+Pre-commit Possibilites:
+- Black
+- Flake8
+- isort
+- https://github.com/dosisod/refurb
+- https://github.com/asottile/pyupgrade
+- https://github.com/python/mypy
 
 
 
@@ -213,6 +220,7 @@ https://flask.palletsprojects.com/en/2.2.x/testing/
   - https://pypi.org/project/pytest-mongo/
   - https://pypi.org/project/pytest-mongodb/
 - https://testdriven.io/blog/pytest-for-beginners/
+- https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/
 
 
 # v0.8.0 --> Logging
