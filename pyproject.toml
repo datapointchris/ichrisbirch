@@ -23,6 +23,7 @@ uvicorn = "^0.18.2"
 pydeps = "^1.10.22"
 sqlalchemy = "^1.4.42"
 Faker = "^14.1.0"
+colorama = "^0.4.6"
 
 [tool.poetry.dev-dependencies]
 alembic = "^1.8.1"
