@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 # from .dependencies import get_query_token, get_token_header
 from .endpoints import tasks, health
 from euphoria import __version__
+from euphoria.backend.common import config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -62,6 +63,9 @@ api.include_router(tasks.router, responses=responses)
 api.include_router(health.router, responses=responses)
 # api.include_router(items.router)
 logger.info('RUNNING FASTAPI')
+logger.info('ENVIRONMENT: ', config.ENVIRONMENT)
+logger.info('API_URL: ', config.API_URL)
+logger.info('POSTGRES_URI: ', config.postgres.POSTGRES_URI)
 
 
 @api.get("/", include_in_schema=False)
