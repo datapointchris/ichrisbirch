@@ -7,40 +7,44 @@ logger = logging.getLogger(__name__)
 
 ENVIRONMENT: str = os.getenv('ENVIRONMENT')
 logger.info(f"GETTING ENVIRONMENT::: {ENVIRONMENT}")
-API_URL: str = os.getenv('API_URL')
-DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
+print(f"GETTING ENVIRONMENT::: {ENVIRONMENT}")
 
 # TODO: [2022/10/27] - Add logging here for env location and successful load
 match ENVIRONMENT:
     case 'development':
+        dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))
         print("LOADED DEV")
         print(os.getenv('API_URL'))
         print("dotenv is here:", dotenv.find_dotenv('.dev.env'))
         logger.info("LOADED DEV")
         logger.info(os.getenv('API_URL'))
         logger.info("dotenv is here:", dotenv.find_dotenv('.dev.env'))
-        dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))
     case 'testing':
+        dotenv.load_dotenv(dotenv.find_dotenv('.test.env'))
         print("LOADED TEST")
         print(os.getenv('API_URL'))
         print("dotenv is here:", dotenv.find_dotenv('.test.env'))
         logger.info("LOADED TEST")
         logger.info(os.getenv('API_URL'))
         logger.info("dotenv is here:", dotenv.find_dotenv('.test.env'))
-        dotenv.load_dotenv(dotenv.find_dotenv('.test.env'))
     case 'production':
+        dotenv.load_dotenv(dotenv.find_dotenv('.prod.env'))
         print("LOADED PROD")
         print(os.getenv('API_URL'))
         print("dotenv is here:", dotenv.find_dotenv('.prod.env'))
         logger.info("LOADED PROD")
         logger.info(os.getenv('API_URL'))
         logger.info("dotenv is here:", dotenv.find_dotenv('.prod.env'))
-        dotenv.load_dotenv(dotenv.find_dotenv('.prod.env'))
     case _:
         raise ValueError(
             f'Unrecognized Environment Variable: {ENVIRONMENT}\n'
             'Did you set ENVIRONMENT before starting the program?'
         )
+
+API_URL: str = os.getenv('API_URL')
+logger.info(f"API_URL: {API_URL}")
+print(f"API_URL: {API_URL}")
+DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
 
 
 @dataclass

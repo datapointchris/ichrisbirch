@@ -62,10 +62,14 @@ responses = {
 api.include_router(tasks.router, responses=responses)
 api.include_router(health.router, responses=responses)
 # api.include_router(items.router)
+print('RUNNING FASTAPI')
+print(f'config.ENVIRONMENT: {config.ENVIRONMENT}')
+print(f'config.API_URL: {config.API_URL}')
+print(f'config.POSTGRES_URI: {config.postgres.POSTGRES_URI}')
 logger.info('RUNNING FASTAPI')
-logger.info(f'ENVIRONMENT: {config.ENVIRONMENT}')
-logger.info(f'API_URL: {config.API_URL}')
-logger.info(f'POSTGRES_URI: {config.postgres.POSTGRES_URI}')
+logger.info(f'config.ENVIRONMENT: {config.ENVIRONMENT}')
+logger.info(f'config.API_URL: {config.API_URL}')
+logger.info(f'config.POSTGRES_URI: {config.postgres.POSTGRES_URI}')
 
 
 @api.get("/", include_in_schema=False)
