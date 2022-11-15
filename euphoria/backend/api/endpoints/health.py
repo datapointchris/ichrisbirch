@@ -18,9 +18,8 @@ def health() -> dict:
         'name': 'Euphoria API',
         'version': __version__,
         'environment': os.getenv('ENVIRONMENT', 'NOT SET'),
+        'configENVIRONMENT': config.ENVIRONMENT,
         'api_url': os.getenv('API_URL', 'NOT SET'),
-        'config.ENVIRONMENT': config.ENVIRONMENT,
-        'config.API_URL': config.API_URL,
+        'configAPI_URL': config.API_URL,
         'server_time': datetime.now().isoformat(),
-        'test': 'TEST SHIT'
     }

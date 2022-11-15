@@ -74,6 +74,15 @@ TODO: [2022/11/02] - Add the release versions here then move to CHANGELOG.md
 
 TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 
+
+Troubleshooting:
+`api.ichrisbirch.com/tasks/` - 502 Bad Gateway
+`api.ichrisbirch.com` Success redirect to `/docs`
+`ichrisbirch.com` redirects to www in browser but error with requests
+`www.ichrisbirch.com/tasks/` - Internal Server Error
+
+
+
 # v0.5.1 --> {Patch} Add "notes" field to tasks
 - [ ] !! __MAKE NOTES__ !!
 - [ ] SQLAlchemy model
