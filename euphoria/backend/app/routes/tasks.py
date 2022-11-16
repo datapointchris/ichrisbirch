@@ -8,9 +8,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 from euphoria.backend.app.easy_dates import EasyDateTime
-from euphoria.backend.common import config, schemas
+from euphoria.backend.common import config, schemas, models
 from euphoria.backend.common.db.sqlalchemy import session
-from euphoria.backend.common.models.tasks import Task, avg_completion_time
 from faker import Faker
 from flask import Blueprint, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
@@ -33,8 +32,8 @@ def index():
         params={'start_date': ed.today, 'end_date': ed.tomorrow},
     ).json()
     top_tasks = requests.get(f'{config.API_URL}/tasks/', params={'limit': 5}).json()
-    completed_today = [Task(**schemas.Task(**task).dict()) for task in completed_today]
-    top_tasks = [Task(**schemas.Task(**task).dict()) for task in top_tasks]
+    completed_today = [models.Task(**schemas.Task(**task).dict()) for task in completed_today]
+    top_tasks = [models.Task(**schemas.Task(**task).dict()) for task in top_tasks]
     return render_template('tasks/index.html', top_tasks=top_tasks, completed_today=completed_today)
 
 
@@ -66,13 +65,16 @@ def completed():
     else:
         start_date, end_date = filters.get(date_filter)
 
-    completed_tasks = requests.get(
+    if completed_tasks := requests.get(
         f'{config.API_URL}/tasks/completed/',
         params={'start_date': start_date, 'end_date': end_date},
-    ).json()
-
-    completed_tasks = [Task(**schemas.Task(**task).dict()) for task in completed_tasks]
-    average_completion = avg_completion_time(completed_tasks)
+    ).json():
+        task_models = [models.Task(**schemas.Task(**task).dict()) for task in completed_tasks]
+        average_days = sum(task.days_to_complete for task in task_models) / len(task_models)
+        weeks, days = divmod(average_days, 7)
+        average_completion = f'{int(weeks)} weeks, {int(days)} days'
+    else:
+        average_completion = 'No tasks completed for this time period'
 
     # Graph
     # TODO: Update this to something better for graphing
@@ -159,7 +161,7 @@ def fake_tasks():
                     weights=[1, 3],
                 )[0],
             }
-            session.add(Task(**task))
+            session.add(models.Task(**task))
         session.commit()
     return redirect(url_for('tasks.index'))
 
@@ -168,6 +170,6 @@ def fake_tasks():
 def drop_tasks():
     with session:
         # session.execute(delete(Task))
-        session.delete(Task)
+        session.delete(models.Task)
         session.commit()
     return redirect(url_for('tasks.index'))

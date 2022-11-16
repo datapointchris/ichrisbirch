@@ -65,11 +65,11 @@ api.include_router(health.router, responses=responses)
 print('RUNNING FASTAPI')
 print(f'config.ENVIRONMENT: {config.ENVIRONMENT}')
 print(f'config.API_URL: {config.API_URL}')
-print(f'config.POSTGRES_URI: {config.postgres.POSTGRES_URI}')
+print(f'config.SQLALCHEMY_DATABASE_URI: {config.sqlalchemy.SQLALCHEMY_DATABASE_URI}')
 logger.info('RUNNING FASTAPI')
 logger.info(f'config.ENVIRONMENT: {config.ENVIRONMENT}')
 logger.info(f'config.API_URL: {config.API_URL}')
-logger.info(f'config.POSTGRES_URI: {config.postgres.POSTGRES_URI}')
+logger.info(f'config.POSTGRES_DATABASE_URI: {config.postgres.POSTGRES_DATABASE_URI}')
 
 
 @api.get("/", include_in_schema=False)

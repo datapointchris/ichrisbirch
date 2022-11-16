@@ -1,6 +1,6 @@
 from sqlalchemy.sql import func
 from sqlalchemy import Column, Integer, String, DateTime
-from ..db.sqlalchemy.base import Base
+from euphoria.backend.common.db.sqlalchemy.base import Base
 
 
 class Task(Base):
@@ -17,7 +17,7 @@ class Task(Base):
             add_date = {self.add_date}, complete_date = {self.complete_date})'''
 
     @property
-    def days_to_complete(self):
+    def days_to_complete(self) -> int:
         if self.complete_date:
             return (self.complete_date - self.add_date).days + 1
         return None
@@ -31,10 +31,4 @@ class Task(Base):
         return None
 
 
-def avg_completion_time(completed: list[Task]) -> str:
-    if not completed:
-        return 'No tasks completed for this time period'
-    total_days = sum(task.days_to_complete for task in completed)
-    average_days = total_days / len(completed)
-    weeks, days = divmod(average_days, 7)
-    return f'{int(weeks)} weeks, {int(days)} days'
+

@@ -4,6 +4,7 @@
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
+- [Troubleshooting:](#troubleshooting)
 - [v0.5.1 --> {Patch} Add "notes" field to tasks](#v051----patch-add-notes-field-to-tasks)
 - [v0.5.2 --> {Patch} Use Enum for task categories](#v052----patch-use-enum-for-task-categories)
 - [v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
@@ -75,11 +76,16 @@ TODO: [2022/11/02] - Add the release versions here then move to CHANGELOG.md
 TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 
 
-Troubleshooting:
+# Troubleshooting: ###
+
 `api.ichrisbirch.com/tasks/` - 502 Bad Gateway
 `api.ichrisbirch.com` Success redirect to `/docs`
 `ichrisbirch.com` redirects to www in browser but error with requests
 `www.ichrisbirch.com/tasks/` - Internal Server Error
+Can connect to prod server with DBeaver
+Verified that the connection info is the same.
+Seems that the API is not connecting to postgres instance
+
 
 
 

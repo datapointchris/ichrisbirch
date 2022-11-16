@@ -1,15 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-
-# from ..dependencies import auth
-from ...common import schemas
-
-from ...api import crud
 from sqlalchemy.orm import Session
-from ...common.db.sqlalchemy.session import sqlalchemy_session
+
+from euphoria.backend.api import crud
+# from ..dependencies import auth
+from euphoria.backend.common import schemas
+from euphoria.backend.common.db.sqlalchemy.session import sqlalchemy_session
 
 router = APIRouter(prefix='/tasks', tags=['tasks'])
-
-# ----- CRUD ----- #
 
 
 @router.get("/", response_model=list[schemas.Task])
