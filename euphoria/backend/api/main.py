@@ -74,4 +74,5 @@ logger.info(f'config.POSTGRES_DATABASE_URI: {config.postgres.POSTGRES_DATABASE_U
 
 @api.get("/", include_in_schema=False)
 async def docs_redirect():
-    return RedirectResponse(url='/docs')
+    # return RedirectResponse(url='/docs')
+    return {'message': 'This is the home page, no redirction'}

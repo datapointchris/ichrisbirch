@@ -29,6 +29,3 @@ class Task(Base):
             weeks, days = divmod(total_days, 7)
             return f'{weeks} weeks, {days} days'
         return None
-
-
-
