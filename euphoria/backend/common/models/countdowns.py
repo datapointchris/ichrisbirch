@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from ..db.sqlalchemy.base import Base
+from euphoria.backend.common.db.sqlalchemy.base import Base
 
 
 class Countdown(Base):

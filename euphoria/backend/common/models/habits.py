@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, Boolean, String, Date, ForeignKey
-from ..db.sqlalchemy.base import Base
+from euphoria.backend.common.db.sqlalchemy.base import Base
 
 
 class Habit(Base):

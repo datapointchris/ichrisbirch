@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import relationship
-from ..db.sqlalchemy.base import Base
+from euphoria.backend.common.db.sqlalchemy.base import Base
 
 
 class Apartment(Base):

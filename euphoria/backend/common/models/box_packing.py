@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Boolean, String, ForeignKey
 from sqlalchemy.orm import relationship
-from ..db.sqlalchemy.base import Base
+from euphoria.backend.common.db.sqlalchemy.base import Base
 
 
 class Box(Base):
