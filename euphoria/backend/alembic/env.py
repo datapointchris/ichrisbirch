@@ -1,5 +1,10 @@
 from logging.config import fileConfig
 
+from alembic import context
+
+# from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
 from euphoria.backend.common import config
 from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.db.sqlalchemy.session import engine
@@ -13,11 +18,6 @@ from euphoria.backend.common.models.habits import Habit
 from euphoria.backend.common.models.journal import JournalEntry
 from euphoria.backend.common.models.portfolio import PortfolioProject
 from euphoria.backend.common.models.tasks import Task
-
-# from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
-from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

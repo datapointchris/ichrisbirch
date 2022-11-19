@@ -85,17 +85,20 @@ TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 Can connect to prod server with DBeaver
 Verified that the connection info is the same.
 Seems that the API is not connecting to postgres instance
-__macmini.local__
-App and API are both working
-api.macmini.local/
-api.macmini.local/docs
-api.macmini.local/tasks
-api.macmini.local/tasks/1
-api.macmini.local/tasks/completed
 
-WHAT IS DIFFERENT?
+__api.macmini.local__
+WORKING api.macmini.local/
+WORKING api.macmini.local/docs
+WORKING api.macmini.local/tasks
+WORKING api.macmini.local/tasks/1
+WORKING api.macmini.local/tasks/completed
 
-
+__ichrisbirch.com__
+WORKING api.ichrisbirch.com/
+WORKING api.ichrisbirch.com/docs
+ERROR api.ichrisbirch.com/tasks
+ERROR api.ichrisbirch.com/tasks/1
+ERROR api.ichrisbirch.com/tasks/completed
 
 
 

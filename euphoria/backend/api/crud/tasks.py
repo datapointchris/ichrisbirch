@@ -1,14 +1,12 @@
-from typing import Any, Dict, Optional, Union, List
-
-from sqlalchemy.orm import Session
+import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from .base import CRUDBase
+from sqlalchemy.orm import Session
+
+from euphoria.backend.api.crud.base import CRUDBase
 from euphoria.backend.common.models.tasks import Task
 from euphoria.backend.common.schemas.tasks import TaskCreate, TaskUpdate
-
-import logging
 
 logger = logging.getLogger(__name__)
 

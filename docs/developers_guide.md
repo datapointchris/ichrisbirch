@@ -67,8 +67,18 @@ bind() to 0.0.0.0:80 failed (98: Address already in use)
 ==============================
 
 ## DB
-`init_db.py` to add the schemas
+
+### Schemas
+SQLAlchemy cannot create the schemas, neither can alembic, have to create them manually first time
+`create-schemas.py` to add the schemas
+
+### Alembic
+Run in `euphoria/backend/`
+
+Create the initial tables from the SQLAlchemy models (purpose of --autogenerate) 
 `alembic revision --autogenerate -m 'init_tables'`
+
+Run the upgrade to actually create the tables
 `alembic upgrade head`
 
 
@@ -88,8 +98,13 @@ tools
 
 ## Alembic Revision
 Run in `euphoria/backend/`
-`alembic revision --autogenerate -m $VERSION`
-TODO: Do I run `alembic upgrade head` in prod environment?
+
+Run a revision to pickup changes in code
+`alembic revision -m 'v0.5.0'`
+
+Do the upgrade to the tables
+Note: Run in all environments!
+`alembic upgrade head`
 
 
 ## FastAPI Crud Endpoints
