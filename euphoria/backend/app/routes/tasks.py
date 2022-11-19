@@ -65,12 +65,13 @@ def completed():
     else:
         start_date, end_date = filters.get(date_filter)
 
-    if completed_tasks := requests.get(
+    completed_tasks = requests.get(
         f'{config.API_URL}/tasks/completed/',
         params={'start_date': start_date, 'end_date': end_date},
-    ).json():
-        task_models = [models.Task(**schemas.Task(**task).dict()) for task in completed_tasks]
-        average_days = sum(task.days_to_complete for task in task_models) / len(task_models)
+    ).json()
+    completed_tasks = [models.Task(**schemas.Task(**task).dict()) for task in completed_tasks]
+    if completed_tasks:
+        average_days = sum(task.days_to_complete for task in completed_tasks) / len(completed_tasks)
         weeks, days = divmod(average_days, 7)
         average_completion = f'{int(weeks)} weeks, {int(days)} days'
     else:
