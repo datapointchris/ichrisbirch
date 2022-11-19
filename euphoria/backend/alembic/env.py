@@ -1,18 +1,18 @@
 from logging.config import fileConfig
 
-from common import config
-from common.db.sqlalchemy.base import Base
-from common.db.sqlalchemy.session import engine
+from euphoria.backend.common import config
+from euphoria.backend.common.db.sqlalchemy.base import Base
+from euphoria.backend.common.db.sqlalchemy.session import engine
 
 # Need the models imported for Base to find the tables
-from common.models.apartments import Apartment
-from common.models.box_packing import Box, Item
-from common.models.countdowns import Countdown
-from common.models.events import Event
-from common.models.habits import Habit
-from common.models.journal import JournalEntry
-from common.models.portfolio import PortfolioProject
-from common.models.tasks import Task
+from euphoria.backend.common.models.apartments import Apartment
+from euphoria.backend.common.models.box_packing import Box, Item
+from euphoria.backend.common.models.countdowns import Countdown
+from euphoria.backend.common.models.events import Event
+from euphoria.backend.common.models.habits import Habit
+from euphoria.backend.common.models.journal import JournalEntry
+from euphoria.backend.common.models.portfolio import PortfolioProject
+from euphoria.backend.common.models.tasks import Task
 
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool

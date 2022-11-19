@@ -5,8 +5,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from .base import CRUDBase
-from ...common.models.tasks import Task
-from ...common.schemas.tasks import TaskCreate, TaskUpdate
+from euphoria.backend.common.models.tasks import Task
+from euphoria.backend.common.schemas.tasks import TaskCreate, TaskUpdate
 
 import logging
 

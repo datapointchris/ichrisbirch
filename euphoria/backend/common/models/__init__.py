@@ -1,1 +1,1 @@
-from .tasks import Task
+from euphoria.backend.common.models.tasks import Task # noqa
