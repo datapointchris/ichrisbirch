@@ -184,17 +184,13 @@ PROJECT=$(basename $PWD)
 CURRENT_VERSION=$(grep --only-matching "\d.\d.\d" "$PROJECT/__init__.py")
 
 # -- Check for arguments -- #
-# The pattern:
-# 1. If no arguments: show usage, no error
-# 2. Check for particular flags
-# 3. Check all required arguments supplied
-# 4. Looks good, assign variables
-# NOTE: No exit codes inside the functions so they can be more generic
 
+# 1. If no arguments: show usage, no error
 if [[ -z "$1" ]]; then
     usage
     exit 0;
 
+# 2. Check for help or interactive flags
 elif [[ "$1" = "--help" ]]; then
     shift
     help "$@"
@@ -203,10 +199,12 @@ elif [[ "$1" = "--help" ]]; then
 elif [[ "$1" = "--interactive" ]]; then
     interactive 
 
+# 3. Error if version and description not both supplied
 elif [[ -z "$1" ]] || [[ -z "$2" ]]; then
     echo_error "Incorrect arguments"
     usage
     exit 1;
+# 4. Assing version and description
 else
     SEMVER=$1
     # SEMVER is format: 1.1.1 -> useful for string replacement in files
