@@ -5,36 +5,20 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
+NAME: str = 'ichrisbirch.com'
+DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
 ENVIRONMENT: str = os.getenv('ENVIRONMENT')
-logger.info(f"GETTING ENVIRONMENT::: {ENVIRONMENT}")
-print(f"GETTING ENVIRONMENT::: {ENVIRONMENT}")
 
-# TODO: [2022/10/27] - Add logging here for env location and successful load
 match ENVIRONMENT:
     case 'development':
-        dotenv.load_dotenv(dotenv.find_dotenv('.dev.env'))
-        print("LOADED DEV")
-        print(os.getenv('API_URL'))
-        print("dotenv is here:", dotenv.find_dotenv('.dev.env'))
-        logger.info("LOADED DEV")
-        logger.info(os.getenv('API_URL'))
-        logger.info("dotenv is here:", dotenv.find_dotenv('.dev.env'))
+        env_file = dotenv.find_dotenv('.dev.env')
+        dotenv.load_dotenv(env_file)
     case 'testing':
-        dotenv.load_dotenv(dotenv.find_dotenv('.test.env'))
-        print("LOADED TEST")
-        print(os.getenv('API_URL'))
-        print("dotenv is here:", dotenv.find_dotenv('.test.env'))
-        logger.info("LOADED TEST")
-        logger.info(os.getenv('API_URL'))
-        logger.info("dotenv is here:", dotenv.find_dotenv('.test.env'))
+        env_file = dotenv.find_dotenv('.test.env')
+        dotenv.load_dotenv(env_file)
     case 'production':
-        dotenv.load_dotenv(dotenv.find_dotenv('.prod.env'))
-        print("LOADED PROD")
-        print(os.getenv('API_URL'))
-        print("dotenv is here:", dotenv.find_dotenv('.prod.env'))
-        logger.info("LOADED PROD")
-        logger.info(os.getenv('API_URL'))
-        logger.info("dotenv is here:", dotenv.find_dotenv('.prod.env'))
+        env_file = dotenv.find_dotenv('.prod.env')
+        dotenv.load_dotenv(env_file)
     case _:
         raise ValueError(
             f'Unrecognized Environment Variable: {ENVIRONMENT}\n'
@@ -42,9 +26,13 @@ match ENVIRONMENT:
         )
 
 API_URL: str = os.getenv('API_URL')
-logger.info(f"API_URL: {API_URL}")
-print(f"API_URL: {API_URL}")
-DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
+LOG_LEVEL: str = os.getenv('LOG_LEVEL')
+
+logger.debug(f"Starting: {NAME}")
+logger.debug(f"Loaded: {env_file}")
+logger.debug(f"Environment: {ENVIRONMENT}")
+logger.debug(f"API URL: {API_URL}")
+logger.debug(f"Log level: {LOG_LEVEL}")
 
 
 @dataclass
@@ -93,7 +81,7 @@ class SQLiteSettings:
 
 @dataclass
 class LoggingSettings:
-    LOGGING_LEVEL: int = logging.INFO
+    LOG_LEVEL: int = logging.getLevelName(LOG_LEVEL)
 
 
 log = LoggingSettings()

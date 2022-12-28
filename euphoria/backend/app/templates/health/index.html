@@ -1,0 +1,15 @@
+{% extends 'health/base.html' %}
+
+{% block title %}Health Check{% endblock %}
+
+{% block content %}
+<ul class="config-info">
+    <li>Name: {{ config.NAME }}</li>
+    <li>Version: {{ version }}</li>
+    <li>Environment: {{ config.ENVIRONMENT }}</li>
+    <li>API URL: {{ config.API_URL }}</li>
+    <li>Log Level: {{ config.LOG_LEVEL }}</li>
+    <li>Server time: {{ server_time }}</li>
+    <li>Local time: {{ local_time }}</li>
+</ul>
+{% endblock %}

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from euphoria.backend.common import config
+from euphoria import config
 
 blueprint = Blueprint(
     'main',
@@ -11,5 +11,4 @@ blueprint = Blueprint(
 
 @blueprint.route('/')
 def index():
-    print('RENDER INDEX')
     return render_template('index.html', settings=config)
