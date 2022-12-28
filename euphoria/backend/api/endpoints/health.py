@@ -1,8 +1,9 @@
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter
 from euphoria import __version__
-from euphoria.backend.common import schemas, config
+from euphoria.backend.common import schemas
 
 router = APIRouter(prefix='/health', tags=['health'])
 
@@ -18,8 +19,8 @@ def health() -> dict:
         'name': 'Euphoria API',
         'version': __version__,
         'environment': os.getenv('ENVIRONMENT', 'NOT SET'),
-        'configENVIRONMENT': config.ENVIRONMENT,
         'api_url': os.getenv('API_URL', 'NOT SET'),
-        'configAPI_URL': config.API_URL,
+        'log_level': os.getenv('LOG_LEVEL', 'NOT SET'),
         'server_time': datetime.now().isoformat(),
+        'local_time': datetime.now(tz=ZoneInfo('America/Chicago')).isoformat()
     }
