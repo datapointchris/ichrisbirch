@@ -5,29 +5,32 @@
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
 - [Troubleshooting:](#troubleshooting)
-- [v0.5.1 --> {Patch} Add "notes" field to tasks](#v051----patch-add-notes-field-to-tasks)
-- [v0.5.2 --> {Patch} Use Enum for task categories](#v052----patch-use-enum-for-task-categories)
-- [v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
-- [v0.5.4 --> {Patch} Create /priority endpoint in tasks](#v054----patch-create-priority-endpoint-in-tasks)
-- [v0.6.0 --> Rename entire project to ichrisbirch](#v060----rename-entire-project-to-ichrisbirch)
-- [v0.7.0 --> Add Countdowns to API routes](#v070----add-countdowns-to-api-routes)
-- [v0.7.0 --> Add Events to API routes](#v070----add-events-to-api-routes)
-- [v0.7.0 --> Continuous Integration / Github Actions](#v070----continuous-integration--github-actions)
-- [v0.4.0 --> Backups](#v040----backups)
-- [v0.5.0 --> User Login](#v050----user-login)
-- [v0.6.0 --> WTForms](#v060----wtforms)
-- [v0.7.0 --> Testing](#v070----testing)
-- [v0.8.0 --> Logging](#v080----logging)
-- [v0.9.0 --> Security](#v090----security)
-- [v0.10.0 --> Typing](#v0100----typing)
-- [v0.11.0 --> Documentation](#v0110----documentation)
-- [v0.12.0 --> Re-structure CSS and Navigation](#v0120----re-structure-css-and-navigation)
-- [v0.13.0 --> Build Portfolio Page](#v0130----build-portfolio-page)
-- [v1.0.0 --> Basic Main page and Portfolio](#v100----basic-main-page-and-portfolio)
-- [v1.1.0 --> Employers](#v110----employers)
-- [v1.1.0 --> ML Models](#v110----ml-models)
-- [v1.1.0 --> Front-end Framework](#v110----front-end-framework)
-- [# Project Specific](#-project-specific)
+- [v0.5.1 --\> Move info to health check](#v051----move-info-to-health-check)
+- [v0.5.1 --\> Change to localtime instead of server time.](#v051----change-to-localtime-instead-of-server-time)
+- [v0.5.2 --\> {Patch} Add "notes" field to tasks](#v052----patch-add-notes-field-to-tasks)
+- [v0.5.3 --\> {Patch} Use Enum for task categories](#v053----patch-use-enum-for-task-categories)
+- [v0.5.3 --\> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
+- [v0.5.4 --\> {Patch} Create /priority endpoint in tasks](#v054----patch-create-priority-endpoint-in-tasks)
+- [v0.6.0 --\> {Minor} Rename entire project to ichrisbirch](#v060----minor-rename-entire-project-to-ichrisbirch)
+- [v0.7.0 --\> {Minor} Add Events to API routes](#v070----minor-add-events-to-api-routes)
+- [v0.7.0 --\> {Minor} Add Countdowns to API routes](#v070----minor-add-countdowns-to-api-routes)
+- [v0.7.0 --\> {Minor} Continuous Integration / Github Actions](#v070----minor-continuous-integration--github-actions)
+- [v0.4.0 --\> Backups](#v040----backups)
+- [v0.5.0 --\> User Login](#v050----user-login)
+- [v0.6.0 --\> WTForms](#v060----wtforms)
+- [v0.7.0 --\> Testing](#v070----testing)
+  - [Udemy Class](#udemy-class)
+- [v0.8.0 --\> Logging](#v080----logging)
+- [v0.9.0 --\> Security](#v090----security)
+- [v0.10.0 --\> Typing](#v0100----typing)
+- [v0.11.0 --\> Documentation](#v0110----documentation)
+- [v0.12.0 --\> Re-structure CSS and Navigation](#v0120----re-structure-css-and-navigation)
+- [v0.13.0 --\> Build Portfolio Page](#v0130----build-portfolio-page)
+- [v1.0.0 --\> Basic Main page and Portfolio](#v100----basic-main-page-and-portfolio)
+- [v1.1.0 --\> Employers](#v110----employers)
+- [v1.1.0 --\> ML Models](#v110----ml-models)
+- [v1.1.0 --\> Front-end Framework](#v110----front-end-framework)
+- [Project Specific](#project-specific)
   - [Euphoria](#euphoria)
   - [Apartments](#apartments)
   - [Tasks](#tasks)
@@ -36,7 +39,7 @@
     - [Countdowns](#countdowns)
   - [Box Moving](#box-moving)
   - [Journal](#journal)
-- [# Future Projects](#-future-projects)
+- [Future Projects](#future-projects)
   - [Books](#books)
   - [Manage Github](#manage-github)
   - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
@@ -102,7 +105,23 @@ ERROR api.ichrisbirch.com/tasks/completed
 
 
 
-# v0.5.1 --> {Patch} Add "notes" field to tasks
+# v0.5.1 --> Move info to health check
+- [ ] Move info
+- [ ] Add server time
+- [ ] Add local time
+  - [ ] How do I do this?
+
+
+
+# v0.5.1 --> Change to localtime instead of server time.
+- [ ] Pydantic Models?
+- [ ] SQLAlchemy models?
+- [ ] Migration most likely
+
+
+
+
+# v0.5.2 --> {Patch} Add "notes" field to tasks
 - [ ] !! __MAKE NOTES__ !!
 - [ ] SQLAlchemy model
 - [ ] Pydantic model
@@ -112,7 +131,7 @@ ERROR api.ichrisbirch.com/tasks/completed
 
 
 
-# v0.5.2 --> {Patch} Use Enum for task categories
+# v0.5.3 --> {Patch} Use Enum for task categories
 - [ ] !! __MAKE NOTES__ !!
 - [ ] https://realpython.com/python-enum/
 - [ ] https://docs.python.org/3/library/enum.html
@@ -137,7 +156,7 @@ ERROR api.ichrisbirch.com/tasks/completed
 
 
 
-# v0.6.0 --> Rename entire project to ichrisbirch
+# v0.6.0 --> {Minor} Rename entire project to ichrisbirch
 FastAPI:
 - [ ] nginx files
 - [ ] supervisor files
@@ -148,7 +167,14 @@ FastAPI:
 - [ ] Do a grep for all things euphoria
 
 
-# v0.7.0 --> Add Countdowns to API routes
+# v0.7.0 --> {Minor} Add Events to API routes
+FastAPI:
+- [ ] Events
+- [ ] Cut a release
+  - [ ] Notes
+
+
+# v0.7.0 --> {Minor} Add Countdowns to API routes
 FastAPI:
 - [ ] Countdowns
 - [ ] Cut a release
@@ -156,15 +182,9 @@ FastAPI:
 
 
 
-# v0.7.0 --> Add Events to API routes
-FastAPI:
-- [ ] Events
-- [ ] Cut a release
-  - [ ] Notes
-
-
-# v0.7.0 --> Continuous Integration / Github Actions
+# v0.7.0 --> {Minor} Continuous Integration / Github Actions
 Pre-commit - What is the difference between this and CI/CD
+https://www.youtube.com/watch?v=9flcoQ1R0Y4
 https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
 https://www.youtube.com/watch?v=TLB5MY9BBa4
 https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/

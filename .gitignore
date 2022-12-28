@@ -221,6 +221,9 @@ pip-selfcheck.json
 *.db
 .gitsecret/keys/random_seed
 !*.secret
+
 *.dev.env
 *.test.env
 *.prod.env
+
+TESTING.*
