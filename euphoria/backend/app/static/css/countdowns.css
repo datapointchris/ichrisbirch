@@ -6,14 +6,13 @@
 }
 
 .countdown-box {
-  border: 2px solid #756d60;
+  border: 2px solid rgb(117, 109, 96);
   border-radius: 15px;
-  -webkit-box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
-          box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
+  box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
 }
 
 .daysleft {
-  line-height: .25em;
+  line-height: 0.25em;
 }
 
 #add-countdown {
@@ -22,9 +21,7 @@
   padding: 40px;
   background-color: #444;
   text-align: center;
-  border: 2px solid #756d60;
+  border: 2px solid rgb(117, 109, 96);
   border-radius: 15px;
-  -webkit-box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
-          box-shadow: 6px 4px 2px 0px #3c3c50, inset -5px -5px 4px -2px #3c3c50;
-}
-/*# sourceMappingURL=countdowns.css.map */
+  box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+}/*# sourceMappingURL=countdowns.css.map */

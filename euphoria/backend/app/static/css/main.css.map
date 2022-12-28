@@ -1,10 +1,1 @@
-{
-    "version": 3,
-    "mappings": "AAGA,AAAA,mBAAmB,CAAC;EAChB,gBAAgB,EAAE,IAAI;EACtB,MAAM,EAAY,sBAAsB;EACxC,aAAa,EAAK,IAAI;CACzB",
-    "sources": [
-        "main.scss",
-        "variables.scss"
-    ],
-    "names": [],
-    "file": "main.css"
-}
+{"version":3,"sources":["main.scss","main.css"],"names":[],"mappings":"AAGA;EACI,sBAAA;EACA,8BAAA;EACA,mBAAA;ACFJ","file":"main.css"}

@@ -3,21 +3,17 @@
   text-align: center;
   width: 90%;
 }
-
 #events > ul {
   margin: 50px 10px;
   padding: 10px;
   border: 1px solid orange;
 }
-
 #events > ul.attending {
   border: 1px solid green;
 }
-
 #events > ul > li {
   list-style: none;
 }
-
 #events > ul > li.title {
   font-weight: bold;
 }
@@ -28,5 +24,4 @@
   padding: 10px;
   text-align: center;
   border: 1px dashed orange;
-}
-/*# sourceMappingURL=events.css.map */
+}/*# sourceMappingURL=events.css.map */
