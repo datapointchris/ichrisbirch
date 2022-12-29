@@ -1,5 +1,5 @@
-import backend.app.main
-import backend.api.main
+import euphoria.backend.app.main
+import euphoria.backend.api.main
 
-app = backend.app.main.create_app()
-api = backend.api.main.api
+app = euphoria.backend.app.main.create_app()
+api = euphoria.backend.api.main.api
