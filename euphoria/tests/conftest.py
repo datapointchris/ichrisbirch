@@ -4,7 +4,7 @@ from typing import Any, Generator
 import docker
 import pytest
 from docker.errors import DockerException
-from euphoria.backend.common import config
+from euphoria import settings
 from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.db.sqlalchemy.session import sqlalchemy_session
 from fastapi import APIRouter, FastAPI
@@ -64,7 +64,7 @@ def postgres_testdb_in_docker():
             session.commit()
             session.close()
 
-        create_schemas(config.DB_SCHEMAS, get_testing_session)
+        create_schemas(settings.DB_SCHEMAS, get_testing_session)
 
         yield testdb
     except DockerException as e:

@@ -3,7 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from euphoria import __version__
-from euphoria.backend.common import config
+from euphoria import settings
 
 blueprint = Blueprint(
     'health',
@@ -17,7 +17,7 @@ blueprint = Blueprint(
 def health():
     return render_template(
         'health/index.html',
-        config=config,
+        settings=settings,
         version=__version__,
         server_time=datetime.now().isoformat(),
         local_time=datetime.now(tz=ZoneInfo('America/Chicago')).isoformat(),

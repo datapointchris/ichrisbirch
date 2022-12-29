@@ -3,12 +3,12 @@
 {% block title %}Health Check{% endblock %}
 
 {% block content %}
-<ul class="config-info">
-    <li>Name: {{ config.NAME }}</li>
+<ul class="settings-info">
+    <li>Name: {{ settings.NAME }}</li>
     <li>Version: {{ version }}</li>
-    <li>Environment: {{ config.ENVIRONMENT }}</li>
-    <li>API URL: {{ config.API_URL }}</li>
-    <li>Log Level: {{ config.LOG_LEVEL }}</li>
+    <li>Environment: {{ settings.ENVIRONMENT }}</li>
+    <li>API URL: {{ settings.API_URL }}</li>
+    <li>Log Level: {{ settings.LOG_LEVEL }}</li>
     <li>Server time: {{ server_time }}</li>
     <li>Local time: {{ local_time }}</li>
 </ul>

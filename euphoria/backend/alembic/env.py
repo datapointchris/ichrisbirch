@@ -5,19 +5,19 @@ from alembic import context
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from euphoria.backend.common import config
+from euphoria import settings
 from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.db.sqlalchemy.session import engine
 
 # Need the models imported for Base to find the tables
-from euphoria.backend.common.models.apartments import Apartment
-from euphoria.backend.common.models.box_packing import Box, Item
-from euphoria.backend.common.models.countdowns import Countdown
-from euphoria.backend.common.models.events import Event
-from euphoria.backend.common.models.habits import Habit
-from euphoria.backend.common.models.journal import JournalEntry
-from euphoria.backend.common.models.portfolio import PortfolioProject
-from euphoria.backend.common.models.tasks import Task
+from euphoria.backend.common.models.apartments import Apartment  # noqa
+from euphoria.backend.common.models.box_packing import Box, Item  # noqa
+from euphoria.backend.common.models.countdowns import Countdown  # noqa
+from euphoria.backend.common.models.events import Event  # noqa
+from euphoria.backend.common.models.habits import Habit  # noqa
+from euphoria.backend.common.models.journal import JournalEntry  # noqa
+from euphoria.backend.common.models.portfolio import PortfolioProject  # noqa
+from euphoria.backend.common.models.tasks import Task  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -49,7 +49,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.sqlalchemy.SQLALCHEMY_DATABASE_URI
+    url = settings.sqlalchemy.SQLALCHEMY_DATABASE_URI
     context.configure(
         url=url,
         target_metadata=target_metadata,

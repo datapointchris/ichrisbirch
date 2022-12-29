@@ -1,0 +1,24 @@
+import logging
+import os
+
+import dotenv
+
+if environment := os.getenv('ENVIRONMENT'):
+    match environment:
+        case 'development':
+            env_file = dotenv.find_dotenv('.dev.env')
+            dotenv.load_dotenv(env_file)
+        case 'testing':
+            env_file = dotenv.find_dotenv('.test.env')
+            dotenv.load_dotenv(env_file)
+        case 'production':
+            env_file = dotenv.find_dotenv('.prod.env')
+            dotenv.load_dotenv(env_file)
+        case _:
+            raise ValueError(
+                f'Unrecognized Environment Variable: {environment}\n'
+                'Did you set ENVIRONMENT before starting the program?'
+            )
+
+logger = logging.getLogger(__name__)
+logger.debug(f"Loaded env file: {env_file}")
