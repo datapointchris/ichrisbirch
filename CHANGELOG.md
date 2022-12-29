@@ -79,3 +79,15 @@ FastAPI:
 - [ ] Add server time
 - [ ] Add local time
   - [ ] How do I do this?
+
+
+# --> {Patch} Change to localtime instead of server time.
+- [X] Pydantic Models?
+  - [ ] No
+- [X] SQLAlchemy models?
+  - [ ] No
+- [X] Migration most likely
+  - [ ] No
+- [X] Timezone cannot be displayed for all date ranges
+
+

@@ -4,7 +4,6 @@
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
-- [--\> {Patch} Change to localtime instead of server time.](#---patch-change-to-localtime-instead-of-server-time)
 - [--\> {Patch} Add "notes" field to tasks](#---patch-add-notes-field-to-tasks)
 - [--\> {Patch} Use Enum for task categories](#---patch-use-enum-for-task-categories)
 - [--\> {Patch} Add 'Complete Task' button on All Tasks page](#---patch-add-complete-task-button-on-all-tasks-page)
@@ -19,6 +18,11 @@
 - [--\> Testing](#---testing)
   - [Udemy Class](#udemy-class)
 - [--\> Logging](#---logging)
+- [v0.8.0 --\> Logging](#v080----logging)
+- [v0.8.0 --\> Logging](#v080----logging-1)
+- [--\> Logging](#---logging-1)
+- [https://guicommits.com/how-to-log-in-python-like-a-pro/](#httpsguicommitscomhow-to-log-in-python-like-a-pro)
+- [--\> Logging](#---logging-2)
 - [--\> Security](#---security)
 - [v0.10.0 --\> Typing](#v0100----typing)
 - [v0.11.0 --\> Documentation](#v0110----documentation)
@@ -73,13 +77,6 @@
     - [ ] Use streamlit for interactive charts?
 
 TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
-
-
-
-# --> {Patch} Change to localtime instead of server time.
-- [ ] Pydantic Models?
-- [ ] SQLAlchemy models?
-- [ ] Migration most likely
 
 
 
