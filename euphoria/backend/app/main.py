@@ -1,13 +1,22 @@
+import logging
+
 from flask import Flask
-from .routes import main, box_packing, countdowns, events, journal, habits, health, portfolio, tasks
-from backend.common import config
+
+from euphoria import settings
+from euphoria.backend.app.routes import (box_packing, countdowns, events,
+                                         habits, health, journal, main,
+                                         portfolio, tasks)
+
+logger = logging.getLogger(__name__)
 
 
 def create_app():
     app = Flask(__name__)
+    logger.debug(f'{app.import_name} App Started')
 
     with app.app_context():
-        app.config.from_object(config.flask)
+        app.config.from_object(settings.flask)
+        logger.debug('Configured App')
 
         app.register_blueprint(main.blueprint)
         app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')
@@ -18,4 +27,5 @@ def create_app():
         app.register_blueprint(journal.blueprint, url_prefix='/journal')
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(tasks.blueprint, url_prefix='/tasks')
+        logger.debug('Registered App Blueprints')
     return app

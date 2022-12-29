@@ -237,10 +237,25 @@ https://flask.palletsprojects.com/en/2.2.x/testing/
 - https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/
 
 
+<<<<<<< Updated upstream
+# --> Logging
+||||||| Stash base
+# v0.8.0 --> Logging
+=======
+<<<<<<< Updated upstream
+# v0.8.0 --> Logging
+>>>>>>> Stashed changes
+https://medium.com/@petefison/logging-in-python-doesnt-get-simpler-than-this-50a7f24af1f4
+https://www.palkeo.com/en/blog/python-logging.html
+https://guicommits.com/how-to-log-in-python-like-a-pro/
+||||||| Stash base
 # --> Logging
 https://medium.com/@petefison/logging-in-python-doesnt-get-simpler-than-this-50a7f24af1f4
 https://www.palkeo.com/en/blog/python-logging.html
 https://guicommits.com/how-to-log-in-python-like-a-pro/
+=======
+# --> Logging
+>>>>>>> Stashed changes
 https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
 https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial
 https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44
