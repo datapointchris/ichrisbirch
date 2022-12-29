@@ -3,20 +3,22 @@
 # ERRORS
 ==============================
 ## Flask:
-### Error:
+### ERROR
 blank pages but no errors, try a different port.
   - Sometimes the port is busy or used, but does not give a 'port in use' error
 
 
 ## Linux
-### Error:
+### ERROR
 ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
 ### Solution
 `sudo apt install python3-cachecontrol`
 
-
+------------------------------
+TODO: [2022/12/28] - Check if this is the case in next version
+I Believe this below part is no longer necessary.
 ## Poetry
-### Error:
+### ERROR
 Can not execute `setup.py` since setuptools is not available in the build environment:
 ### Solution
 Poetry is not updated in Linux yet, so compatibility with requiring or removing setuptools.
@@ -36,12 +38,12 @@ TODO: [2022/11/05] - Find out a better way for project root than editable
 
 
 ## Supervisor
-### Error:
+### ERROR
 supervisor.sock no such file
 ### Solution
 make sure directories and files for logs are created.
 
-### Error:
+### ERROR
 BACKOFF can't find command... that is pointing to .venv
 ### Solution
 Prod: Check that the project is installed
@@ -49,11 +51,46 @@ Dev: Check the symlink isn't broken
 
 
 ## NGINX
-### Error:
+### ERROR
 bind() to 0.0.0.0:80 failed (98: Address already in use)
 ### Solution
 `sudo pkill -f nginx & wait $!`
 `sudo systemctl start nginx`
+
+
+## API Postgres
+### ERROR
+Local changes were working but nothing that connected to prod postgres.
+
+
+`api.ichrisbirch.com/tasks/` - 502 Bad Gateway
+`api.ichrisbirch.com` Success redirect to `/docs`
+`ichrisbirch.com` redirects to www in browser but error with requests
+`www.ichrisbirch.com/tasks/` - Internal Server Error
+Can connect to prod server with DBeaver
+Verified that the connection info is the same.
+Seems that the API is not connecting to postgres instance
+
+__api.macmini.local__
+WORKING api.macmini.local/
+WORKING api.macmini.local/docs
+WORKING api.macmini.local/tasks
+WORKING api.macmini.local/tasks/1
+WORKING api.macmini.local/tasks/completed
+
+__ichrisbirch.com__
+WORKING api.ichrisbirch.com/
+WORKING api.ichrisbirch.com/docs
+ERROR api.ichrisbirch.com/tasks
+ERROR api.ichrisbirch.com/tasks/1
+ERROR api.ichrisbirch.com/tasks/completed
+
+# SOLUTION
+The issue was resolved by modifying the security group of the postgres instance to allow the ec2 instance to connect by allowing it's security group.
+
+
+
+
 
 
 # New Server

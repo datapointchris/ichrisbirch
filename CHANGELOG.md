@@ -71,3 +71,11 @@ FastAPI:
   - [X] Change the config to have different env files I think
   - [X] Pydantic can get the env automatically so I don't have to do `environ.get('KEY')`
     - [X] Not applicable when using multiple .env files based on ENVIRONMENT env variable
+
+
+
+# --> {Patch} Move info to health check
+- [ ] Move info
+- [ ] Add server time
+- [ ] Add local time
+  - [ ] How do I do this?

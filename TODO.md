@@ -4,32 +4,30 @@
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
-- [Troubleshooting:](#troubleshooting)
-- [v0.5.1 --\> Move info to health check](#v051----move-info-to-health-check)
-- [v0.5.1 --\> Change to localtime instead of server time.](#v051----change-to-localtime-instead-of-server-time)
-- [v0.5.2 --\> {Patch} Add "notes" field to tasks](#v052----patch-add-notes-field-to-tasks)
-- [v0.5.3 --\> {Patch} Use Enum for task categories](#v053----patch-use-enum-for-task-categories)
-- [v0.5.3 --\> {Patch} Add 'Complete Task' button on All Tasks page](#v053----patch-add-complete-task-button-on-all-tasks-page)
-- [v0.5.4 --\> {Patch} Create /priority endpoint in tasks](#v054----patch-create-priority-endpoint-in-tasks)
-- [v0.6.0 --\> {Minor} Rename entire project to ichrisbirch](#v060----minor-rename-entire-project-to-ichrisbirch)
-- [v0.7.0 --\> {Minor} Add Events to API routes](#v070----minor-add-events-to-api-routes)
-- [v0.7.0 --\> {Minor} Add Countdowns to API routes](#v070----minor-add-countdowns-to-api-routes)
-- [v0.7.0 --\> {Minor} Continuous Integration / Github Actions](#v070----minor-continuous-integration--github-actions)
-- [v0.4.0 --\> Backups](#v040----backups)
-- [v0.5.0 --\> User Login](#v050----user-login)
-- [v0.6.0 --\> WTForms](#v060----wtforms)
-- [v0.7.0 --\> Testing](#v070----testing)
+- [--\> {Patch} Change to localtime instead of server time.](#---patch-change-to-localtime-instead-of-server-time)
+- [--\> {Patch} Add "notes" field to tasks](#---patch-add-notes-field-to-tasks)
+- [--\> {Patch} Use Enum for task categories](#---patch-use-enum-for-task-categories)
+- [--\> {Patch} Add 'Complete Task' button on All Tasks page](#---patch-add-complete-task-button-on-all-tasks-page)
+- [--\> {Patch} Create /priority endpoint in tasks](#---patch-create-priority-endpoint-in-tasks)
+- [--\> {Minor} Rename entire project to ichrisbirch](#---minor-rename-entire-project-to-ichrisbirch)
+- [--\> {Minor} Add Events to API routes](#---minor-add-events-to-api-routes)
+- [--\> {Minor} Add Countdowns to API routes](#---minor-add-countdowns-to-api-routes)
+- [--\> {Minor} Continuous Integration / Github Actions](#---minor-continuous-integration--github-actions)
+- [--\> Backups](#---backups)
+- [--\> User Login](#---user-login)
+- [--\> WTForms](#---wtforms)
+- [--\> Testing](#---testing)
   - [Udemy Class](#udemy-class)
-- [v0.8.0 --\> Logging](#v080----logging)
-- [v0.9.0 --\> Security](#v090----security)
+- [--\> Logging](#---logging)
+- [--\> Security](#---security)
 - [v0.10.0 --\> Typing](#v0100----typing)
 - [v0.11.0 --\> Documentation](#v0110----documentation)
 - [v0.12.0 --\> Re-structure CSS and Navigation](#v0120----re-structure-css-and-navigation)
 - [v0.13.0 --\> Build Portfolio Page](#v0130----build-portfolio-page)
-- [v1.0.0 --\> Basic Main page and Portfolio](#v100----basic-main-page-and-portfolio)
-- [v1.1.0 --\> Employers](#v110----employers)
-- [v1.1.0 --\> ML Models](#v110----ml-models)
-- [v1.1.0 --\> Front-end Framework](#v110----front-end-framework)
+- [--\> Basic Main page and Portfolio](#---basic-main-page-and-portfolio)
+- [--\> Employers](#---employers)
+- [--\> ML Models](#---ml-models)
+- [--\> Front-end Framework](#---front-end-framework)
 - [Project Specific](#project-specific)
   - [Euphoria](#euphoria)
   - [Apartments](#apartments)
@@ -74,54 +72,18 @@
     - [ ] Good docs about the structure the objects are coming out as
     - [ ] Use streamlit for interactive charts?
 
-TODO: [2022/11/02] - Add the release versions here then move to CHANGELOG.md
-
 TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 
 
-# Troubleshooting: ###
 
-`api.ichrisbirch.com/tasks/` - 502 Bad Gateway
-`api.ichrisbirch.com` Success redirect to `/docs`
-`ichrisbirch.com` redirects to www in browser but error with requests
-`www.ichrisbirch.com/tasks/` - Internal Server Error
-Can connect to prod server with DBeaver
-Verified that the connection info is the same.
-Seems that the API is not connecting to postgres instance
-
-__api.macmini.local__
-WORKING api.macmini.local/
-WORKING api.macmini.local/docs
-WORKING api.macmini.local/tasks
-WORKING api.macmini.local/tasks/1
-WORKING api.macmini.local/tasks/completed
-
-__ichrisbirch.com__
-WORKING api.ichrisbirch.com/
-WORKING api.ichrisbirch.com/docs
-ERROR api.ichrisbirch.com/tasks
-ERROR api.ichrisbirch.com/tasks/1
-ERROR api.ichrisbirch.com/tasks/completed
-
-
-
-# v0.5.1 --> Move info to health check
-- [ ] Move info
-- [ ] Add server time
-- [ ] Add local time
-  - [ ] How do I do this?
-
-
-
-# v0.5.1 --> Change to localtime instead of server time.
+# --> {Patch} Change to localtime instead of server time.
 - [ ] Pydantic Models?
 - [ ] SQLAlchemy models?
 - [ ] Migration most likely
 
 
 
-
-# v0.5.2 --> {Patch} Add "notes" field to tasks
+# --> {Patch} Add "notes" field to tasks
 - [ ] !! __MAKE NOTES__ !!
 - [ ] SQLAlchemy model
 - [ ] Pydantic model
@@ -131,7 +93,7 @@ ERROR api.ichrisbirch.com/tasks/completed
 
 
 
-# v0.5.3 --> {Patch} Use Enum for task categories
+# --> {Patch} Use Enum for task categories
 - [ ] !! __MAKE NOTES__ !!
 - [ ] https://realpython.com/python-enum/
 - [ ] https://docs.python.org/3/library/enum.html
@@ -143,20 +105,20 @@ ERROR api.ichrisbirch.com/tasks/completed
 
 
 
-# v0.5.3 --> {Patch} Add 'Complete Task' button on All Tasks page
+# --> {Patch} Add 'Complete Task' button on All Tasks page
 - [ ] Should be for all of the tasks after the first 5
   - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
   - [ ] Similar to the delete button
 
 
 
-# v0.5.4 --> {Patch} Create /priority endpoint in tasks
+# --> {Patch} Create /priority endpoint in tasks
 - [ ] Call this endpoint in the app instead of doing the query
   - This makes it so that other things can easily get the data with just an API call instead of constructing the query again
 
 
 
-# v0.6.0 --> {Minor} Rename entire project to ichrisbirch
+# --> {Minor} Rename entire project to ichrisbirch
 FastAPI:
 - [ ] nginx files
 - [ ] supervisor files
@@ -167,14 +129,14 @@ FastAPI:
 - [ ] Do a grep for all things euphoria
 
 
-# v0.7.0 --> {Minor} Add Events to API routes
+# --> {Minor} Add Events to API routes
 FastAPI:
 - [ ] Events
 - [ ] Cut a release
   - [ ] Notes
 
 
-# v0.7.0 --> {Minor} Add Countdowns to API routes
+# --> {Minor} Add Countdowns to API routes
 FastAPI:
 - [ ] Countdowns
 - [ ] Cut a release
@@ -182,7 +144,9 @@ FastAPI:
 
 
 
-# v0.7.0 --> {Minor} Continuous Integration / Github Actions
+# --> {Minor} Continuous Integration / Github Actions
+https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration
+https://www.martinfowler.com/articles/branching-patterns.html
 Pre-commit - What is the difference between this and CI/CD
 https://www.youtube.com/watch?v=9flcoQ1R0Y4
 https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
@@ -209,7 +173,7 @@ Pre-commit Possibilites:
 
 
 
-# v0.4.0 --> Backups
+# --> Backups
 - [ ] Postgres
 - [ ] MongoDB
 - [ ] DynamoDB
@@ -218,7 +182,7 @@ Pre-commit Possibilites:
 
 
 
-# v0.5.0 --> User Login
+# --> User Login
 - [ ] Create login for all apps as a main page.
 	- [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
 	- [ ] https://flask-login.readthedocs.io/en/latest/
@@ -238,14 +202,16 @@ https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-
 - https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py
 
 
-# v0.6.0 --> WTForms
+# --> WTForms
 Is this something I want to do?
 - https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html
 - https://flask-wtf.readthedocs.io/en/latest/quickstart/
 
 
 
-# v0.7.0 --> Testing
+# --> Testing
+https://www.martinfowler.com/articles/branching-patterns.html
+https://martinfowler.com/articles/practical-test-pyramid.html
 Udemy Class
 - 
 I have pytest book somewhere
@@ -271,7 +237,7 @@ https://flask.palletsprojects.com/en/2.2.x/testing/
 - https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/
 
 
-# v0.8.0 --> Logging
+# --> Logging
 https://medium.com/@petefison/logging-in-python-doesnt-get-simpler-than-this-50a7f24af1f4
 https://www.palkeo.com/en/blog/python-logging.html
 https://guicommits.com/how-to-log-in-python-like-a-pro/
@@ -280,7 +246,7 @@ https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial
 https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44
 
 
-# v0.9.0 --> Security
+# --> Security
 https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be
 https://dev.to/vaultree/designing-a-secure-api-4059
 
@@ -331,21 +297,21 @@ def favicon():
 - [ ] Use templates for everything
 
 
-# v1.0.0 --> Basic Main page and Portfolio
+# --> Basic Main page and Portfolio
 - Portfolio
   - [ ] Of course have the stupid carousel portfolio
     - [ ] When hover on project, get the 'highlights' reel.
 
 
 
-# v1.1.0 --> Employers
+# --> Employers
 - Super awesome employers only link
   - Enter their super special employer code
   - Customized short video (my own voice from computer)
 
 
 
-# v1.1.0 --> ML Models
+# --> ML Models
 - [ ] API
 - [ ] Corresponding Flask interface
   - [ ] Choose models
@@ -357,7 +323,7 @@ https://testdriven.io/blog/fastapi-machine-learning/
 
 
 
-# v1.1.0 --> Front-end Framework
+# --> Front-end Framework
 Test this out on the portfolio page
 - resume page
 
