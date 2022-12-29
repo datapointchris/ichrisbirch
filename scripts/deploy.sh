@@ -191,7 +191,20 @@ case $ENVIRONMENT in
        usage 
        exit 1 ;;
 esac
-ENV_CONFIG_DIR="deploy/$ENVIRONMENT"
+
+
+#------------------------------ VARIABLES ------------------------------#
+ETC_DIR="$OS_PREFIX/etc"
+ENV_DEPLOY_DIR="deploy/$ENVIRONMENT"
+
+NGINX_OS_DIR="$OS_PREFIX/etc/nginx"
+NGINX_SITES_AVAILABLE="$NGINX_OS_DIR/sites-available"
+NGINX_SITES_ENABLED="$NGINX_OS_DIR/sites-enabled"
+NGINX_DEPLOY_DIR="$ENV_DEPLOY_DIR/nginx"
+
+SUPERVISOR_CONFIG_DIR="$ETC_DIR/supervisor.d"
+SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
+SUPERVISOR_DEPLOY_DIR="$ENV_DEPLOY_DIR/supervisor"
 
 
 #------------------------------ SCRIPT TITLE ------------------------------#
@@ -204,73 +217,71 @@ echo ""
 
 #------------------------------ NGINX ------------------------------#
 echo_section_title "NGINX"
-NGINX_DIR="$OS_PREFIX/etc/nginx"
-SITES_AVAILABLE="$NGINX_DIR/sites-available"
-SITES_ENABLED="$NGINX_DIR/sites-enabled"
 
-sudo mkdir -p $SITES_AVAILABLE
-sudo mkdir -p $SITES_ENABLED
-echo_create "$NGINX_DIR"
-echo_create "$SITES_AVAILABLE"
-echo_create "$SITES_ENABLED"
+# Directories
+sudo mkdir -p $NGINX_SITES_AVAILABLE
+sudo mkdir -p $NGINX_SITES_ENABLED
 
-sudo cp $ENV_CONFIG_DIR/nginx.conf $NGINX_DIR/nginx.conf
-sudo cp $ENV_CONFIG_DIR/nginx-api.conf $SITES_AVAILABLE/$PROJECT-api.conf
-sudo cp $ENV_CONFIG_DIR/nginx-app.conf $SITES_AVAILABLE/$PROJECT-app.conf
-echo_copy "$ENV_CONFIG_DIR/nginx.conf" "$NGINX_DIR/nginx.conf"
-echo_copy "$ENV_CONFIG_DIR/nginx-api.conf" "$SITES_AVAILABLE/$PROJECT-api.conf"
-echo_copy "$ENV_CONFIG_DIR/nginx-app.conf" "$SITES_AVAILABLE/$PROJECT-app.conf"
+echo_create "$NGINX_SITES_AVAILABLE"
+echo_create "$NGINX_SITES_ENABLED"
 
-sudo ln -sf $SITES_AVAILABLE/$PROJECT-api.conf $SITES_ENABLED/$PROJECT-api.conf
-sudo ln -sf $SITES_AVAILABLE/$PROJECT-app.conf $SITES_ENABLED/$PROJECT-app.conf
-echo_symlink "$SITES_AVAILABLE/$PROJECT-api.conf" "$SITES_ENABLED/$PROJECT-api.conf"
-echo_symlink "$SITES_AVAILABLE/$PROJECT-app.conf" "$SITES_ENABLED/$PROJECT-app.conf"
+# Configuration
+sudo cp $NGINX_DEPLOY_DIR/nginx.conf $NGINX_OS_DIR/nginx.conf
+sudo cp $NGINX_DEPLOY_DIR/api.conf $NGINX_SITES_AVAILABLE/$PROJECT-api.conf
+sudo cp $NGINX_DEPLOY_DIR/app.conf $NGINX_SITES_AVAILABLE/$PROJECT-app.conf
+
+echo_copy "$NGINX_DEPLOY_DIR/nginx.conf" "$NGINX_OS_DIR/nginx.conf"
+echo_copy "$NGINX_DEPLOY_DIR/api.conf" "$NGINX_SITES_AVAILABLE/$PROJECT-api.conf"
+echo_copy "$NGINX_DEPLOY_DIR/app.conf" "$NGINX_SITES_AVAILABLE/$PROJECT-app.conf"
+
+# Symlink from sites-available to sites-enabled
+sudo ln -sf $NGINX_SITES_AVAILABLE/$PROJECT-api.conf $NGINX_SITES_ENABLED/$PROJECT-api.conf
+sudo ln -sf $NGINX_SITES_AVAILABLE/$PROJECT-app.conf $NGINX_SITES_ENABLED/$PROJECT-app.conf
+
+echo_symlink "$NGINX_SITES_AVAILABLE/$PROJECT-api.conf" "$NGINX_SITES_ENABLED/$PROJECT-api.conf"
+echo_symlink "$NGINX_SITES_AVAILABLE/$PROJECT-app.conf" "$NGINX_SITES_ENABLED/$PROJECT-app.conf"
 echo ""
 
 
 #------------------------------ SUPERVISOR ------------------------------#
 echo_section_title "SUPERVISOR"
-BASE_DIR="$OS_PREFIX/etc"
-SUPERVISOR_CONFIG_DIR="$BASE_DIR/supervisor.d"
-SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
 # Note: Make sure log direcitories match entries in `supervisord.conf`
 
 # Directories
 sudo mkdir -p $SUPERVISOR_CONFIG_DIR
 sudo mkdir -p $SUPERVISOR_LOG_DIR
+
 echo_create "$SUPERVISOR_CONFIG_DIR"
 echo_create "$SUPERVISOR_LOG_DIR"
 
 # Configuration
-sudo cp $ENV_CONFIG_DIR/supervisord.conf $BASE_DIR/supervisord.conf
-sudo cp $ENV_CONFIG_DIR/supervisor-app.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf
-sudo cp $ENV_CONFIG_DIR/supervisor-api.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf
-echo_copy "$ENV_CONFIG_DIR/supervisord.conf" "$BASE_DIR/supervisord.conf"
-echo_copy "$ENV_CONFIG_DIR/supervisor-app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
-echo_copy "$ENV_CONFIG_DIR/supervisor-api.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
+sudo cp $SUPERVISOR_DEPLOY_DIR/supervisord.conf $ETC_DIR/supervisord.conf
+sudo cp $SUPERVISOR_DEPLOY_DIR/app.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf
+sudo cp $SUPERVISOR_DEPLOY_DIR/api.conf $SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf
+
+echo_copy "$SUPERVISOR_DEPLOY_DIR/supervisord.conf" "$ETC_DIR/supervisord.conf"
+echo_copy "$SUPERVISOR_DEPLOY_DIR/app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
+echo_copy "$SUPERVISOR_DEPLOY_DIR/api.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
 
 # Logs
 sudo touch $SUPERVISOR_LOG_DIR/supervisord.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-out.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api-error.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app-out.log
-sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app-error.log
+sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-app.log
+sudo touch $SUPERVISOR_LOG_DIR/$PROJECT-api.log
+
 echo_create "$SUPERVISOR_LOG_DIR/supervisord.log"
-echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api-out.log"
-echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api-error.log"
-echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app-out.log"
-echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app-error.log"
+echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-app.log"
+echo_create "$SUPERVISOR_LOG_DIR/$PROJECT-api.log"
 echo ""
 
 # Set owner on MacOS in dev
 if [[ $ENVIRONMENT = "dev" ]]; then
     echo_section_title "PERMISSIONS"
-    sudo chown -R $USER $NGINX_DIR
-    sudo chown -R $USER $BASE_DIR/supervisord.conf
+    sudo chown -R $USER $NGINX_OS_DIR
+    sudo chown -R $USER $ETC_DIR/supervisord.conf
     sudo chown -R $USER $SUPERVISOR_CONFIG_DIR
     sudo chown -R $USER $SUPERVISOR_LOG_DIR
-    echo "Change owner of ${green}$NGINX_DIR/${normal} to user: ${blue}$USER${normal}"
-    echo "Change owner of ${green}$BASE_DIR/supervisord.conf${normal} to user: ${blue}$USER${normal}"
+    echo "Change owner of ${green}$NGINX_OS_DIR/${normal} to user: ${blue}$USER${normal}"
+    echo "Change owner of ${green}$ETC_DIR/supervisord.conf${normal} to user: ${blue}$USER${normal}"
     echo "Change owner of ${green}$SUPERVISOR_CONFIG_DIR/${normal} to user: ${blue}$USER${normal}"
     echo "Change owner of ${green}$SUPERVISOR_LOG_DIR/${normal} to user: ${blue}$USER${normal}"
     echo ""
