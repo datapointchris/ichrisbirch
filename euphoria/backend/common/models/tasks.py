@@ -1,5 +1,5 @@
 from sqlalchemy.sql import func
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from euphoria.backend.common.db.sqlalchemy.base import Base
 
 
@@ -7,6 +7,7 @@ class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False)
+    notes = Column(Text())
     category = Column(String(64))
     priority = Column(Integer, nullable=False)
     add_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

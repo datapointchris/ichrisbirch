@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class TaskCreate(BaseModel):
     name: str
+    notes: str | None
     category: str
     priority: int
 
@@ -11,6 +12,7 @@ class TaskCreate(BaseModel):
 class Task(BaseModel):
     id: int
     name: str
+    notes: str
     category: str
     priority: int
     add_date: datetime
