@@ -6,9 +6,12 @@
 <div id="tasks">
     {% for task in tasks %}
     <div class="task">
-        <h1>{{ task.name }}</h1>
-        <h2>Priority: {{ task.priority }}</h2>
-        <h3>Category: {{ task.category }}</h3>
+        <h2>{{ task.name }}</h2>
+        {% if task.notes %}
+        <strong>Notes: </strong>{{ task.notes }}<br />
+        {% endif %}
+        Priority: {{ task.priority }}<br />
+        Category: {{ task.category }}<br />
         Add Date: {{ task.add_date }}<br />
         {% if loop.index > 5 %}
         <form method="POST" action="{{ url_for('tasks.form') }}">

@@ -19,9 +19,10 @@
 
 .task {
   margin: 20px;
-  padding: 10px;
+  padding: 20px;
   border: 2px solid gray;
   border-radius: 30px;
+  line-height: 1.5em;
 }
 .task.completed {
   border-color: green;

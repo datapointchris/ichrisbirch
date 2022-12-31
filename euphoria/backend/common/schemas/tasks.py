@@ -12,7 +12,7 @@ class TaskCreate(BaseModel):
 class Task(BaseModel):
     id: int
     name: str
-    notes: str
+    notes: str | None
     category: str
     priority: int
     add_date: datetime

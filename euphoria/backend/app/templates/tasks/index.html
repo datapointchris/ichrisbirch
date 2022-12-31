@@ -8,7 +8,10 @@
         <h2 class="task-header">Priority Tasks</h2>
         {% for task in top_tasks %}
         <div class="task">
-            <h3>{{ task.name }}</h3>
+            <h2>{{ task.name }}</h2>
+            {% if task.notes %}
+            <strong>Notes: </strong>{{ task.notes }}<br />
+            {% endif %}
             Priority: {{ task.priority }}<br />
             Category: {{ task.category }}<br />
             Add Date: {{ task.add_date }}
@@ -24,7 +27,10 @@
         <h2 class="task-header">Completed Today</h2>
         {% for task in completed_today %}
         <div class="task completed">
-            <h3>{{ task.name }}</h3>
+            <h2>{{ task.name }}</h2>
+            {% if task.notes %}
+            <strong>Notes: </strong>{{ task.notes }}<br />
+            {% endif %}
             Category: {{ task.category }}<br />
             Add Date: {{ task.add_date }}<br />
             Complete Date: {{ task.complete_date }}<br />
