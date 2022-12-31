@@ -1,6 +1,5 @@
 
 - [-- Misc --](#---misc---)
-- [Sitewide $PROJECT variable](#sitewide-project-variable)
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
@@ -60,7 +59,8 @@
 
 
 # -- Misc --
-# Sitewide $PROJECT variable
+- [ ] Sitewide $PROJECT variable
+- [ ] Catch error when priority is not specified in add task, currently there is a server error
 
 ## CSS files
   - [ ] Need to have reset
@@ -217,6 +217,7 @@ https://flask.palletsprojects.com/en/2.2.x/testing/
 - Books on datapointchris.com
 - pytest
 - test driven dev in python
+- https://towardsdatascience.com/pytest-with-marking-mocking-and-fixtures-in-10-minutes-678d7ccd2f70
 - https://www.cosmicpython.com/blog/2020-01-25-testing_external_api_calls.html
 - https://lyz-code.github.io/blue-book/coding/python/pytest/
 - https://www.youtube.com/watch?v=B1j6k2j2eJg

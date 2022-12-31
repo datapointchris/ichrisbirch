@@ -134,14 +134,23 @@ tools
 ==============================
 
 ## Alembic Revision
+
 Run in `euphoria/backend/`
 
-Run a revision to pickup changes in code
-`alembic revision -m 'v0.5.0'`
+1. Make the changes to the models and schemas
 
-Do the upgrade to the tables
-Note: Run in all environments!
-`alembic upgrade head`
+2. Run a revision to pickup changes in code
+`alembic revision --autogenerate -m 'Add notes field to tasks table'`
+> Note: If this doesn't work perfectly, you must edit the revision file
+
+3. Do the upgrade to the tables
+> __Note:__ Run in all environments!
+```bash
+export ENVIRONMENT='development'
+alembic upgrade head
+```
+
+
 
 
 ## FastAPI Crud Endpoints
