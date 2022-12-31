@@ -1,16 +1,22 @@
-def endpoint(*paths: str | list | int) -> str:
+from typing import Sequence
+
+
+def endpoint(paths: str | int | float | set | Sequence) -> str:
     """Converts string arguments to path with leading and trailing slashes
 
     Accepts any argument that can be converted to a string
 
     Ex:
 
-    >>> endpoint('tasks', 'complete', 3)
+    >>> endpoint(['tasks', 'complete', 3])
     >>> '/tasks/complete/3/'
 
     >>> endpoint('health')
     >>> '/health/'
 
     """
-    paths = [paths] if isinstance(paths, str) else paths
-    return f'/{"/".join([str(s) for s in paths])}/'
+    if isinstance(paths, (str, int, float)):
+        return f'/{paths}/'
+
+    if isinstance(paths, (set, Sequence)):
+        return f'/{"/".join([str(s) for s in paths])}/'
