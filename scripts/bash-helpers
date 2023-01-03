@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+
+######################################################################
+# BASH HELPERS
+######################################################################
+
+#-------------------- COLORS --------------------#
+black() {
+    local color
+    color=$(tput setaf 0)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+red() {
+    local color
+    color=$(tput setaf 1)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+green() {
+    local color
+    color=$(tput setaf 2)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+yellow() {
+    local color
+    color=$(tput setaf 3)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+blue() {
+    local color
+    color=$(tput setaf 4)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+magenta() {
+    local color
+    color=$(tput setaf 5)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+cyan() {
+    local color
+    color=$(tput setaf 6)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+white() {
+    local color
+    color=$(tput setaf 7)
+    local msg="${color}$1${normal}"
+    echo "$msg"
+}
+
+#-------------------- FORMATTERS --------------------#
+
+bold=$(tput bold)
+underline=$(tput smul)
+normal=$(tput sgr0)
+
+print_title() {
+    local title="$1"
+    local message
+    message=$(
+        cat <<-EOF
+		$(terminal_width_separator "=")
+		$(center_text "$(green "$1")")
+		$(terminal_width_separator "-")
+	EOF
+    )
+    echo "$message"
+    echo ""
+}
+
+print_section() {
+    local title="${underline}        $1          ${normal}"
+    echo "$title"
+}
+
+center_text() {
+    local columns
+    columns="$(tput cols)"
+    local str_length
+    str_length=$(echo "$1" | sed -r 's/\x1b\[[0-9;]*m//g' | wc -c)
+    local filler_length="$(((columns - str_length) / 2 - 4))"
+    local spaces=""
+    for ((i = 0; i < filler_length; i++)); do
+        spaces="$spaces "
+    done
+    local centered="$spaces$1$spaces"
+    echo "$centered"
+}
+
+filename_to_title() {
+    if [[ -z "$1" ]]; then exit 0; fi
+    IFS=' ' read -r -a no_hyphen <<<"${@//-/ }"
+    set "${no_hyphen[@],,}"
+    set "${@,,}"
+    set "${@^}"
+    for f in "${@}"; do
+        case $f in A | The | Is | Of | And | Or | But | About | To | In | By | For | With)
+            echo -n "${f,,} "
+            ;;
+        *) echo -n "$f " ;;
+        esac
+    done
+    echo
+}
+
+terminal_width_separator() {
+    # TODO: [2023/01/01] - How to do this without two variables
+    local sep="$1"
+    local sep2="$1"
+    : "${sep:=_}"  # default to underscore
+    : "${sep2:=_}" # default to underscore
+    local terminal_width
+    terminal_width=$(tput cols)
+    for ((i = 0; i < terminal_width - 1; i++)); do
+        sep="$sep$sep2"
+    done
+    echo "$sep"
+}
+
+#-------------------- Notifications --------------------#
+
+notify_create() { yellow "Create:${normal} $1"; }
+notify_update() { green "Update:${normal} $1 $(green " --> ${normal} $2")"; }
+notify_copy() { green "Copy:${normal} $1 $(green " --> ${normal} $2")"; }
+notify_symlink() { magenta "Symlink:${normal} $1 $(magenta " --> ${normal} $2")"; }
+notify_error() { red "${bold}ERROR:${normal} $(red "$1")"; }
+
+# print a repeated character certain number of times
+character_repeat() {
+    local character="$1"
+    local temp="$1"
+    : "${character:=_}" # default to underscore
+    : "${temp:=_}"      # default to underscore
+
+    local num_chars="$2"
+    : "${num_chars:=5}" # default to 5
+
+    for ((i = 0; i < num_chars - 1; i++)); do
+        character="$character$temp"
+    done
+    echo "$character"
+}
+
+rainbow() {
+    local black
+    local red
+    local green
+    local yellow
+    local blue
+    local magenta
+    local cyan
+    local white
+
+    black=$(tput setaf 0)
+    red=$(tput setaf 1)
+    green=$(tput setaf 2)
+    yellow=$(tput setaf 3)
+    blue=$(tput setaf 4)
+    magenta=$(tput setaf 5)
+    cyan=$(tput setaf 6)
+    white=$(tput setaf 7)
+
+    colors=("$black" "$red" "$green" "$yellow" "$blue" "$magenta" "$cyan" "$white")
+    if [ -n "$1" ]; then
+        local sep="$1"
+        local sep2="$1"
+    else
+        local sep="*"
+        local sep2="*"
+    fi
+
+    if [ -n "$2" ]; then
+        local num_chars="$2"
+    else
+        local num_chars=5
+    fi
+    for ((i = 0; i < num_chars; i++)); do
+        rand_color_idx=$((RANDOM % ${#colors[@]}))
+        rand_color=${colors[$rand_color_idx]}
+        sep="$sep$rand_color$sep2"
+    done
+    sep="$sep${normal}"
+    echo "$sep"
+}
+
+#------------------------------ SCRIPT HELPER  ------------------------------#
+yell() {
+    echo "$0: $*" >&2
+}
+
+die() {
+    yell "$*"
+    exit 1
+}
+
+try() {
+    "$@" || die "cannot $*"
+}
