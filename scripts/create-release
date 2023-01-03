@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+
+######################################################################
+# Create a Release
+######################################################################
+
+# Fail script on command fail
+set -e
+
+# Include the bash helpers for color and formatting
+# shellcheck source=./bash-helpers
+source bash-helpers
+
+
+SCRIPT_NAME="$0"
+export ENVIRONMENT='development' # pytest needs this to run and will only ever be run in DEV environment
+
+usage() {
+    local message
+    message=$(cat <<-EOF
+$(green "$(print_section "Create a Release")")
+
+$(green "Usage:")
+$(blue "Command Line with Arguments:")
+$SCRIPT_NAME 0.5.2 'Add API Endpoint'
+
+$(blue "Interactive:")
+$SCRIPT_NAME --interactive
+
+$(blue "Help:")
+$SCRIPT_NAME --help
+EOF
+)
+    echo "$message"
+}
+
+help() {
+    local message
+    message=$(cat <<-EOF
+$(usage)
+
+$(green "Script Actions")
+Create directory '{project}/stats/{version}'
+Update 'pyproject.toml'
+Update '{project}/__init__.py'
+Run pytest and create coverage report
+Run tokei and create lines of code report
+Run wily and create code complexity report
+Commit version stats to release branch
+Merge release branch into master
+Create a git tag on master using the version
+Merge release branch into develop
+Push all changes
+
+$(green "Dependencies:")
+tokei
+wily
+EOF
+)
+    echo "$message"
+}
+
+interactive() {
+    echo "Release version:"
+    read -r VERSION
+    echo "Version description: "
+    read -r VERSION_DESCRIPTION
+}
+
+#-------------------- SCRIPT PRE-PROCESSING --------------------#
+# Get project name from current dir
+PROJECT=$(basename "$PWD")
+CURRENT_VERSION=$(grep --only-matching "\d.\d.\d" "$PROJECT/__init__.py")
+
+# -- Check for arguments -- #
+
+# 1. If no arguments: show usage, no error
+if [[ -z "$1" ]]; then
+    usage
+    exit 0
+
+# 2. Check for help or interactive flags
+elif [[ "$1" = "--help" ]]; then
+    shift
+    help "$@"
+    exit 0
+
+elif [[ "$1" = "--interactive" ]]; then
+    interactive
+
+# 3. Error if version and description not both supplied
+elif [[ -z "$1" ]] || [[ -z "$2" ]]; then
+    notify_error "Incorrect arguments"
+    usage
+    exit 1
+
+# 4. Assing version and description
+else
+    VERSION=$1
+    # VERSION is SEMVER format: X.X.X
+    VERSION_DESCRIPTION=$2
+fi
+
+#-------------------- MAIN SCRIPT --------------------#
+
+title "Creating Release for $VERSION - $VERSION_DESCRIPTION"
+
+
+# Create Stats Directory for Version
+VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
+mkdir -p "$VERSION_STATS_DIR"
+notify_create "$VERSION_STATS_DIR"
+
+
+# Coverage Report
+cd "$PROJECT"
+# TODO: [2022/11/05] - Check if docker desktop is running
+coverage run --module pytest
+coverage report -m >stats/"$VERSION"/coverage.txt
+coverage json -o stats/"$VERSION"/coverage.json
+coverage html -d stats/"$VERSION"/coverage_html/
+notify_create "$VERSION_STATS_DIR/coverage.txt"
+notify_create "$VERSION_STATS_DIR/coverage.json"
+
+
+# Tokei Lines of Code
+cd ../
+tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ >"$VERSION_STATS_DIR"/lines_of_code.txt
+tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ -o json >"$VERSION_STATS_DIR"/lines_of_code.json
+notify_create "$VERSION_STATS_DIR/lines_of_code.txt"
+notify_create "$VERSION_STATS_DIR/lines_of_code.json"
+
+
+# Wily Code Complexity
+# wily does not have json output at the moment
+git stash
+wily build .
+wily diff . -r master >"$VERSION_STATS_DIR"/complexity.txt
+notify_create "$VERSION_STATS_DIR/complexity.txt"
+git stash pop
+
+
+# Update Version
+poetry version "$VERSION"
+notify_update "pyproject.toml $CURRENT_VERSION" "$VERSION"
+
+echo "__version__ = '$VERSION'" >"$PROJECT"/__init__.py
+notify_update "$PROJECT/__init__.py $CURRENT_VERSION" "$VERSION"
+
+
+# Tag with Version and push changes 
+git tag "$VERSION"
+git push
+git push --tags
+git checkout develop
+
+
+# Reinstall app locally
+poetry install
+
+
+# Notify Success
+title "Successfully Created Release: $VERSION"
