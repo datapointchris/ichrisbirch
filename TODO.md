@@ -5,7 +5,7 @@
   - [Tokei Output Charts](#tokei-output-charts)
 - [--\> {Patch} Add "notes" field to tasks](#---patch-add-notes-field-to-tasks)
 - [--\> {Patch} Use Enum for task categories](#---patch-use-enum-for-task-categories)
-- [--\> {Patch} Add 'Complete Task' button on All Tasks page](#---patch-add-complete-task-button-on-all-tasks-page)
+- [--\> {Patch} All Tasks page improvments](#---patch-all-tasks-page-improvments)
 - [--\> {Patch} Create /priority endpoint in tasks](#---patch-create-priority-endpoint-in-tasks)
 - [--\> {Minor} Rename entire project to ichrisbirch](#---minor-rename-entire-project-to-ichrisbirch)
 - [--\> {Minor} Add Events to API routes](#---minor-add-events-to-api-routes)
@@ -60,7 +60,12 @@
 
 # -- Misc --
 - [ ] Sitewide $PROJECT variable
-- [ ] Catch error when priority is not specified in add task, currently there is a server error
+  - [ ] This should most likely be an environment variable, if any at all
+  - [ ] What was the purpose of this?
+- [ ] AWS lambda function to backup postgres to AWS
+  - [ ] use boto3 to connect, duh
+  - [ ] Set up S3 bucket to only keep 30 days of backups
+  - [ ] Send notification of failure to ichrisbirch
 
 ## CSS files
   - [ ] Need to have reset
@@ -81,31 +86,41 @@ TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 
 
 # --> {Patch} Add "notes" field to tasks
-- [ ] !! __MAKE NOTES__ !!
-- [ ] SQLAlchemy model
-- [ ] Pydantic model
-- [ ] Migration
-- [ ] Cut a release
-  - [ ] Make notes
+- [X] !! __MAKE NOTES__ !!
+- [X] SQLAlchemy model
+- [X] Pydantic model
+- [X] Migration
+- [X] Cut a release
+  - I've decided that a release should include all of these related features
+  - And it should be a tag on the main branch, instead of a release branch which gets deleted anyway
 
 
 
 # --> {Patch} Use Enum for task categories
-- [ ] !! __MAKE NOTES__ !!
 - [ ] https://realpython.com/python-enum/
 - [ ] https://docs.python.org/3/library/enum.html
+- [ ] Does Postres support enum
 - [ ] SQLAlchemy model
 - [ ] Pydantic model
 - [ ] Migration
+- [ ] Make the tests take the new ENUM in the data generator
 - [ ] Cut a release
   - [ ] Make notes
 
 
 
-# --> {Patch} Add 'Complete Task' button on All Tasks page
-- [ ] Should be for all of the tasks after the first 5
-  - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
+# --> {Patch} All Tasks page improvments
+- [ ] Add `Complete` button for all tasks
+  - [ ] Should be for all of the tasks after the first 5
+    - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
   - [ ] Similar to the delete button
+- [ ] Add filtering of `All | Completed | Not Completed` tasks.
+  - [ ] Sort options as well?
+- [ ] Add SEARCH capability!
+- [ ] Delete for all tasks.  
+  - [ ] Sometimes a task is added in error and needs to be deletedq
+  - [ ] This is on purpose instead of being able to edit tasks to keep honest
+- [ ] Catch error when priority is not specified in add task, currently there is a server error
 
 
 
@@ -123,6 +138,7 @@ FastAPI:
 - [ ] name of keys
 - [ ] name of security group
 - [ ] name of mongo servers
+- [ ] database names
 - [ ] Do a grep for all things euphoria
 
 
@@ -164,6 +180,8 @@ Pre-commit Possibilites:
 - Black
 - Flake8
 - isort
+- bandit
+- shellcheck
 - https://github.com/dosisod/refurb
 - https://github.com/asottile/pyupgrade
 - https://github.com/python/mypy
