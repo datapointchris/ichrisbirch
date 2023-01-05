@@ -16,7 +16,8 @@ ENVIRONMENTS = {
             'api.macmini.local',
             # 'random.address',
         ],
-        'ports': [80, 4000, 4200, 6000, 6200],
+        'endpoints': ['', '/tasks', '/health'],
+        'ports': ['', ':80', ':4000', ':4200', ':6000', ':6200'],
     },
     'test': {
         'protocols': ['http://'],
@@ -28,24 +29,24 @@ ENVIRONMENTS = {
             'api.macmini.local',
             'random.address',
         ],
-        'ports': [80, 4000, 4200, 6000, 6200, 8000, 8200],
+        'endpoints': ['', '/tasks', '/health'],
+        'ports': ['', ':80', ':4000', ':4200', ':6000', ':6200', ':8000', ':8200'],
     },
     'prod': {
-        'protocols': ['http://'],
+        'protocols': ['', 'http://'],
         'host_names': [
             'ichrisbirch.com',
             'www.ichrisbirch.com',
-            # 'www.ichrisbirch.com/tasks',
             'api.ichrisbirch.com',
-            # 'api.ichrisbirch.com/health',
-            # 'api.ichrisbirch.com/tasks',
         ],
-        'ports': [80],
+        'endpoints': ['', '/tasks', '/health'],
+        'ports': ['', ':80'],
     },
 }
 
 STATUS_CODE_COLORS = {
     '200': Fore.GREEN,
+    '404': Fore.RED,
     '502': Fore.RED,
     'EXCEPTION': Fore.YELLOW,
     'default': Fore.RED,
@@ -57,19 +58,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not (env := ENVIRONMENTS.get(args.environment)):
-        print('ENVIRONMENT WRONG: ', env)
+        print(f'{Fore.RED}Unrecognized ENVIRONMENT: {env}')
     else:
         pings = []
-        for proto, host, port in itertools.product(
-            env.get('protocols'), env.get('host_names'), env.get('ports')
+        for protocol, host, endpoint, port in itertools.product(
+            env.get('protocols'), env.get('host_names'), env.get('endpoints'), env.get('ports')
         ):
-            address = f'{proto}{host}:{port}'
+            address = f'{protocol if protocol else ""}{host}{endpoint if endpoint else ""}{port if port else ""}'
             try:
-                res = requests.get(address)
-                pings.append((address, str(res.status_code)))
-            except Exception:
-                pings.append((address, 'EXCEPTION'))
+                res = requests.get(address, allow_redirects=True)
+                pings.append((address, str(res.status_code), ''))
+            except Exception as e:
+                pings.append((address, 'EXCEPTION', e))
 
-        for (address, status) in sorted(pings):
-            color = STATUS_CODE_COLORS.get(status, 'default')
-            print(f'{color}{address:<40}{status}')
+        for (address, status, message) in sorted(pings):
+            color = STATUS_CODE_COLORS.get(status, Fore.RED)
+            print(f'{color}{address:<40}{status:<11}{str(message)[:50]}')

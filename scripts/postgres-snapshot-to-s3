@@ -6,8 +6,10 @@ set -e # fail script on command fail
 ######################################################################
 # TODO: [2023/01/02] - Run this thing with airflow
 # TODO: [2023/01/02] - Move the loading of the Environment to an environment helper script
+# TODO: [2023/01/02] - LOADING PROGRESS :) :) :)
 
 # -------------------- Instructions -------------------- #
+# TODO: [2023/01/02] - These instructions are outdated!!
 # Make sure to:
 # 1) Name this file `backup.sh` and place it in /home/ubuntu
 # 2) Run sudo apt install awscli to install the AWSCLI

@@ -17,11 +17,6 @@
 - [--\> Testing](#---testing)
   - [Udemy Class](#udemy-class)
 - [--\> Logging](#---logging)
-- [v0.8.0 --\> Logging](#v080----logging)
-- [v0.8.0 --\> Logging](#v080----logging-1)
-- [--\> Logging](#---logging-1)
-- [https://guicommits.com/how-to-log-in-python-like-a-pro/](#httpsguicommitscomhow-to-log-in-python-like-a-pro)
-- [--\> Logging](#---logging-2)
 - [--\> Security](#---security)
 - [v0.10.0 --\> Typing](#v0100----typing)
 - [v0.11.0 --\> Documentation](#v0110----documentation)
@@ -43,7 +38,9 @@
 - [Future Projects](#future-projects)
   - [Books](#books)
   - [Manage Github](#manage-github)
+  - [Stable Diffusion](#stable-diffusion)
   - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
+  - [Desktop App](#desktop-app)
   - [Webstore Project](#webstore-project)
   - [Interview Star Questions](#interview-star-questions)
   - [Learning](#learning)
@@ -175,12 +172,15 @@ https://ravilach.medium.com/continuous-integration-developer-getting-started-gui
 https://betterprogramming.pub/
 https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485
 https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s
+https://stackabuse.com/getting-started-with-github-actions-software-automation/
 
 Pre-commit Possibilites:
 - Black
 - Flake8
 - isort
 - bandit
+- Interrogate
+- doctest
 - shellcheck
 - https://github.com/dosisod/refurb
 - https://github.com/asottile/pyupgrade
@@ -253,29 +253,11 @@ https://flask.palletsprojects.com/en/2.2.x/testing/
 - https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/
 
 
-<<<<<<< Updated upstream
 # --> Logging
-||||||| Stash base
-# v0.8.0 --> Logging
-=======
-<<<<<<< Updated upstream
-# v0.8.0 --> Logging
->>>>>>> Stashed changes
-https://medium.com/@petefison/logging-in-python-doesnt-get-simpler-than-this-50a7f24af1f4
-https://www.palkeo.com/en/blog/python-logging.html
-https://guicommits.com/how-to-log-in-python-like-a-pro/
-||||||| Stash base
-# --> Logging
-https://medium.com/@petefison/logging-in-python-doesnt-get-simpler-than-this-50a7f24af1f4
-https://www.palkeo.com/en/blog/python-logging.html
-https://guicommits.com/how-to-log-in-python-like-a-pro/
-=======
-# --> Logging
->>>>>>> Stashed changes
 https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
 https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial
 https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44
-
+https://realpython.com/python-logging-source-code/
 
 # --> Security
 https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be
@@ -470,6 +452,10 @@ This should have an API that I can call in a python script to download all of th
 Upon opening it should check if there is a new github repository and alert me so that I can properly add it.
 
 
+## Stable Diffusion
+Because why not?
+https://github.com/huggingface/diffusers
+
 
 ## Postgres Permissions Graphical Interface with Approvals / Stats
 - [ ] Make the SQL queries first
@@ -480,6 +466,8 @@ Upon opening it should check if there is a new github repository and alert me so
 - [ ] https://github.com/AykutSarac/jsoncrack.com?utm_source=substack&utm_medium=email
 
 
+## Desktop App
+https://github.com/TomSchimansky/CustomTkinter
 
 
 ## Webstore Project

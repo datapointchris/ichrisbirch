@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+######################################################################
+# Postgres Snapshot Backup to S3
+######################################################################
+
+# Script Layout
+# 1. shebang
+# 2. Title
+# 3. Description
+# 4. includes
+# 5. set statements
+# 6. constants
+# 7. functions
+# 8. main function (for long scripts)
+# 9. last line: main "$@"
+
+
+
+set -e # fail script on command fail
+SCRIPT_NAME="$0"
+
+echo "START test"
+
+source bash-helpers
+
+
+
+# DRY=true
+# if it is not dry run, then
+if [[ -z $DRY ]]; then echo "dry"; fi
+
+
+
+echo "END test"
