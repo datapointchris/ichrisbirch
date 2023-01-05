@@ -47,11 +47,17 @@ class SQLiteSettings:
 
 
 @dataclass
+class LoggingSettings:
+    LOG_PATH: str = os.getenv('BASE_LOG_PATH')
+    LOG_FORMAT: str = os.getenv('LOG_FORMAT')
+    LOG_LEVEL: str = os.getenv('LOG_LEVEL')
+
+
+@dataclass
 class Settings:
     NAME: str = 'ichrisbirch.com'
     DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
     API_URL: str = os.getenv('API_URL')
-    LOG_LEVEL: str = os.getenv('LOG_LEVEL')
     ENVIRONMENT: str = os.getenv('ENVIRONMENT')
 
     flask = FlaskSettings()
@@ -60,4 +66,5 @@ class Settings:
     dynamodb = DynamoDBSettings()
     postgres = PostgresSettings()
     sqlalchemy = SQLAlchemySettings()
+    logging = LoggingSettings()
     sqlalchemy.SQLALCHEMY_DATABASE_URI = postgres.POSTGRES_DATABASE_URI

@@ -1,19 +1,21 @@
 import logging
 
-
-formatter = logging.Formatter("%(asctime)s | %(name)s:%(lineno)d | %(levelname)s: %(message)s")
-log_location = '/usr/local/var/log/ichrisbirch/log.log'
-
-ch = logging.StreamHandler()
-ch.setFormatter(formatter)
-
-fh = logging.FileHandler(filename=log_location)
-fh.setFormatter(formatter)
+from euphoria import settings
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logger.addHandler(ch)
-logger.addHandler(fh)
-logger.debug(f'Log Location: {log_location}')
+
+formatter = logging.Formatter(settings.logging.LOG_FORMAT)
+
+console_log = logging.StreamHandler()
+console_log.setFormatter(formatter)
+
+file_log = logging.FileHandler(filename=settings.logging.LOG_PATH)
+file_log.setFormatter(formatter)
+
+logger.addHandler(console_log)
+logger.addHandler(file_log)
+
+logger.setLevel(settings.logging.LOG_LEVEL)
+logger.debug(f'Log Location: {settings.logging.LOG_PATH}')
 
 logging.getLogger('matplotlib').setLevel(logging.INFO)
