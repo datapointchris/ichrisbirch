@@ -49,6 +49,11 @@ BACKOFF can't find command... that is pointing to .venv
 Prod: Check that the project is installed
 Dev: Check the symlink isn't broken
 
+### ERROR
+error: <class 'FileNotFoundError'>, [Errno 2] No such file or directory: file: /usr/local/Cellar/supervisor/4.2.5/libexec/lib/python3.11/site-packages/supervisor/xmlrpc.py line: 55
+### Solution
+Start and run supervisor with homebrew: `brew services start supervisor`
+
 
 ## NGINX
 ### ERROR
@@ -56,6 +61,24 @@ bind() to 0.0.0.0:80 failed (98: Address already in use)
 ### Solution
 `sudo pkill -f nginx & wait $!`
 `sudo systemctl start nginx`
+
+__DEV__
+bind() to 127.0.0.1:80 failed (13: Permission denied)
+### Solution
+NGINX is not running as root.  It does not run reliably with homebrew.
+Use `sudo nginx -s reload` or instead of homebrew.
+
+
+Warning: Taking root:admin ownership of some nginx paths:                                               ║➜ ll
+  /usr/local/Cellar/nginx/1.23.3/bin                                                                    ║total 0
+  /usr/local/Cellar/nginx/1.23.3/bin/nginx                                                              ║drwxr-xr-x  15 chris  staff   480B Oct 25 23:13 ames-housing/
+  /usr/local/opt/nginx                                                                                  ║drwxr-xr-x  16 chris  staff   512B Jan 26  2022 ellevation-data-challenge/
+  /usr/local/opt/nginx/bin                                                                              ║drwxr-xr-x  19 chris  staff   608B Aug 23 16:11 elt-housing/
+  /usr/local/var/homebrew/linked/nginx                                                                  ║drwxr-xr-x  22 chris  staff   704B Jan  2 17:27 euphoria/
+This will require manual removal of these paths using `sudo rm` on                                      ║drwxr-xr-x  21 chris  staff   672B Dec 30 22:03 euphoria_api/
+brew upgrade/reinstall/uninstall.                                                                       ║drwxr-xr-x  13 chris  staff   416B Oct 25 23:13 flask-test/
+Warning: nginx must be run as non-root to start at user login!                                          ║drwxr-xr-x   7 chris  staff   224B Oct 25 23:13 full-stack-fastapi-postgresql/
+==> Successfully started `nginx` (label: homebrew.mxcl.nginx)
 
 
 ## API Postgres
@@ -143,8 +166,7 @@ Run in `euphoria/backend/`
 `alembic revision --autogenerate -m 'Add notes field to tasks table'`
 > Note: If this doesn't work perfectly, you must edit the revision file
 
-3. Do the upgrade to the tables
-> __Note:__ Run in all environments!
+3. Run the upgrade in the environments
 ```bash
 export ENVIRONMENT='development'
 alembic upgrade head

@@ -94,11 +94,12 @@ TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
 
 
 # --> {Patch} Use Enum for task categories
-- [ ] https://realpython.com/python-enum/
-- [ ] https://docs.python.org/3/library/enum.html
-- [ ] Does Postres support enum
-- [ ] SQLAlchemy model
-- [ ] Pydantic model
+- [X] https://realpython.com/python-enum/
+- [X] https://docs.python.org/3/library/enum.html
+- [X] Does Postgres support enum
+  - Yes
+- [X] SQLAlchemy model
+- [X] Pydantic model
 - [ ] Migration
 - [ ] Make the tests take the new ENUM in the data generator
 - [ ] Cut a release
