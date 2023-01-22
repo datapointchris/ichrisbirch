@@ -8,7 +8,7 @@
 set -e
 
 # Include the bash helpers for color and formatting
-source bash-helpers
+source scripts/bash-helpers
 
 
 SCRIPT_NAME="$0"
@@ -104,7 +104,7 @@ SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
 SUPERVISOR_DEPLOY_DIR="$ENV_DEPLOY_DIR/supervisor"
 
 
-title "Deploying $PROJECT project in $ENVIRONMENT environment"
+print_title "Deploying $PROJECT project in $ENVIRONMENT environment"
 
 
 # ---------- NGINX ----------- #
@@ -165,7 +165,8 @@ notify_create "$SUPERVISOR_LOG_DIR/$PROJECT-app.log"
 notify_create "$SUPERVISOR_LOG_DIR/$PROJECT-api.log"
 echo ""
 
-# Set owner on MacOS in dev
+
+# ---------- Set owner on MacOS in dev ---------- #
 if [[ $ENVIRONMENT = "dev" ]]; then
     print_section "PERMISSIONS"
     sudo chown -R "$USER" $NGINX_OS_DIR
@@ -189,7 +190,7 @@ fi
 
 
 # ---------- Success ---------- #
-title "All files copied"
+print_title "All files copied"
 echo ""
 blue "Remember to restart nginx and supervisor:"
 echo "sudo supervisorctl reload"

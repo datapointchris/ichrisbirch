@@ -9,7 +9,7 @@ set -e
 
 # Include the bash helpers for color and formatting
 # shellcheck source=./bash-helpers
-source bash-helpers
+source scripts/bash-helpers
 
 
 SCRIPT_NAME="$0"
