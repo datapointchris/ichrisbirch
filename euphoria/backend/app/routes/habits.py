@@ -1,8 +1,10 @@
 from datetime import date
+import logging
 
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
+from euphoria import settings
 from euphoria.backend.common.models.habits import Category, CompletedHabit, Habit
 from euphoria.backend.common.db.sqlalchemy import session
 from euphoria.backend.app.easy_dates import EasyDate
@@ -11,6 +13,9 @@ blueprint = Blueprint(
     'habits', __name__, template_folder='templates/habits', static_folder='static'
 )
 
+logger = logging.getLogger(__name__)
+
+HABITS_URL = f'{settings.API_URL}/habits'
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():

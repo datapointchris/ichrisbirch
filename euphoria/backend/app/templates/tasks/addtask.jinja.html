@@ -4,7 +4,13 @@
         <label for="name">Name:</label>
         <input type="text" size="20" class="textbox box-3d" name="name" id="name">
         <label for="category">Category:</label>
-        <input type="text" size="20" class="textbox box-3d" name="category" id="category">
+        <select class="textbox box-3d" name="category" id="category">
+            {% for category in task_categories %}
+            <option value="{{ category }}">{{ category }}
+            </option>
+            {% endfor %}
+        </select>
+        
         <label for="priority">Priority:</label>
         <input type="number" min="1" max="100" class="textbox box-3d" name="priority"
         id="priority">

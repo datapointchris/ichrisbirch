@@ -1,6 +1,19 @@
+import enum
+
 from sqlalchemy.sql import func
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, Enum
 from euphoria.backend.common.db.sqlalchemy.base import Base
+
+
+class TaskCategory(enum.Enum):
+    Automotive = 'Automotive'
+    Home = 'Home'
+    Chore = 'Chore'
+    Dingo = 'Dingo'
+    Research = 'Research'
+    Learn = 'Learn'
+    Computer = 'Computer'
+    Financial = 'Financial'
 
 
 class Task(Base):
@@ -8,7 +21,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False)
     notes = Column(Text())
-    category = Column(String(64))
+    category = Column(Enum(TaskCategory))
     priority = Column(Integer, nullable=False)
     add_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     complete_date = Column(DateTime(timezone=True), nullable=True)

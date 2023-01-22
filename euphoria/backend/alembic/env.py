@@ -5,7 +5,7 @@ from alembic import context
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from euphoria import settings
+import euphoria
 from euphoria.backend.common.db.sqlalchemy.base import Base
 from euphoria.backend.common.db.sqlalchemy.session import engine
 
@@ -49,7 +49,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.sqlalchemy.SQLALCHEMY_DATABASE_URI
+    url = euphoria.settings.sqlalchemy.SQLALCHEMY_DATABASE_URI
     context.configure(
         url=url,
         target_metadata=target_metadata,

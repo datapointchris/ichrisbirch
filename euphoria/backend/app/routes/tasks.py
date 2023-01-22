@@ -10,11 +10,12 @@ import requests
 from faker import Faker
 from flask import Blueprint, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
-from euphoria import settings
 
+from euphoria import settings
 from euphoria.backend.app.easy_dates import EasyDateTime
 from euphoria.backend.common import models, schemas
 from euphoria.backend.common.db.sqlalchemy import session
+from euphoria.backend.common.models.tasks import TaskCategory
 
 blueprint = Blueprint(
     'tasks',
@@ -25,30 +26,53 @@ blueprint = Blueprint(
 
 logger = logging.getLogger(__name__)
 
+TASKS_URL = f'{settings.API_URL}/tasks'
+TASK_CATEGORIES = [t.value for t in TaskCategory]
+
+
+def validate_json_tasks(tasks) -> list[models.Task]:
+    validated = [schemas.Task(**task) for task in tasks]
+    return [models.Task(**(task.dict())) for task in validated]
+
+
+def calculate_average_completion(tasks: list[models.Task]) -> str:
+    if not tasks:
+        return 'No tasks completed for this time period'
+    average_days = sum(task.days_to_complete for task in tasks) / len(tasks)
+    weeks, days = divmod(average_days, 7)
+    return f'{int(weeks)} weeks, {int(days)} days'
+
 
 @blueprint.route('/', methods=['GET'])
 def index():
     ed = EasyDateTime()
-    completed_today = requests.get(
-        f'{settings.API_URL}/tasks/completed/',
-        params={'start_date': ed.today, 'end_date': ed.tomorrow},
-    ).json()
-    top_tasks = requests.get(f'{settings.API_URL}/tasks/', params={'limit': 5}).json()
-    completed_today = [models.Task(**schemas.Task(**task).dict()) for task in completed_today]
-    top_tasks = [models.Task(**schemas.Task(**task).dict()) for task in top_tasks]
-    return render_template('tasks/index.html', top_tasks=top_tasks, completed_today=completed_today)
+    today_filter = {'start_date': ed.today, 'end_date': ed.tomorrow}
+
+    top_tasks_json = requests.get(TASKS_URL, params={'limit': 5}).json()
+    top_tasks = validate_json_tasks(top_tasks_json)
+
+    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=today_filter).json()
+    completed_today = validate_json_tasks(completed_tasks_json)
+
+    return render_template(
+        'tasks/index.html',
+        top_tasks=top_tasks,
+        completed_today=completed_today,
+        task_categories=TASK_CATEGORIES,
+    )
 
 
 @blueprint.route('/all')
 def all():
-    tasks = requests.get(f'{settings.API_URL}/tasks/').json()
-    return render_template('tasks/all.html', tasks=tasks)
+    all_tasks_json = requests.get(f'{settings.API_URL}/tasks/').json()
+    all_tasks = validate_json_tasks(all_tasks_json)
+    return render_template('tasks/all.html', tasks=all_tasks, task_categories=TASK_CATEGORIES)
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
     ed = EasyDateTime()
-    filters = {
+    date_filters = {
         'today': (ed.today, ed.tomorrow),
         'yesterday': (ed.yesterday, ed.today),
         'this_week': (ed.week_start, ed.week_end),
@@ -60,26 +84,18 @@ def completed():
     }
     date_filter = request.form.get('filter') if request.method == 'POST' else 'this_week'
     if date_filter == 'all':  # have to query db to get first and last
-        first = requests.get(f'{settings.API_URL}/tasks/completed/', params={'first': True}).json()
-        last = requests.get(f'{settings.API_URL}/tasks/completed/', params={'last': True}).json()
+        first = requests.get(f'{TASKS_URL}/completed/', params={'first': True}).json()
+        last = requests.get(f'{TASKS_URL}/completed/', params={'last': True}).json()
         start_date = schemas.Task(**first).complete_date
         end_date = schemas.Task(**last).complete_date + timedelta(seconds=1)
     else:
-        start_date, end_date = filters.get(date_filter)
+        start_date, end_date = date_filters.get(date_filter)
     logger.debug(f'Date filter: {date_filter} = {start_date} - {end_date}')
-    print(f'Date filter: {date_filter} = {start_date} - {end_date}')
 
-    completed_tasks = requests.get(
-        f'{settings.API_URL}/tasks/completed/',
-        params={'start_date': start_date, 'end_date': end_date},
-    ).json()
-    completed_tasks = [models.Task(**schemas.Task(**task).dict()) for task in completed_tasks]
-    if completed_tasks:
-        average_days = sum(task.days_to_complete for task in completed_tasks) / len(completed_tasks)
-        weeks, days = divmod(average_days, 7)
-        average_completion = f'{int(weeks)} weeks, {int(days)} days'
-    else:
-        average_completion = 'No tasks completed for this time period'
+    tasks_filter = {'start_date': start_date, 'end_date': end_date}
+    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=tasks_filter).json()
+    completed_tasks = validate_json_tasks(completed_tasks_json)
+    average_completion = calculate_average_completion(completed_tasks)
 
     # Graph
     # TODO: Update this to something better for graphing
@@ -110,9 +126,10 @@ def completed():
         'tasks/completed.html',
         completed_tasks=completed_tasks,
         average_completion=average_completion,
-        filters=filters,
+        filters=date_filters,
         date_filter=date_filter,
         image_data=image_data,
+        task_categories=TASK_CATEGORIES,
     )
 
 
@@ -125,17 +142,17 @@ def form():
     match method:
         case 'add':
             task = schemas.TaskCreate(**data).json()
-            response = requests.post(f'{settings.API_URL}/tasks/', data=task)
+            response = requests.post(TASKS_URL, data=task)
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))  # TODO: Redirect back to referring page
         case 'complete':
             task_id = data.get('id')
-            response = requests.post(f'{settings.API_URL}/tasks/complete/{task_id}')
+            response = requests.post(f'{TASKS_URL}/complete/{task_id}')
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))
         case 'delete':
             task_id = data.get('id')
-            response = requests.delete(f'{settings.API_URL}/tasks/{task_id}')
+            response = requests.delete(f'{TASKS_URL}/{task_id}')
             logger.debug(response.text)
             return redirect(url_for('tasks.all'))
 

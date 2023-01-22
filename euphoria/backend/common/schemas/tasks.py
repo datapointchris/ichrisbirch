@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
+from euphoria.backend.common.models.tasks import TaskCategory
 
 
 class TaskCreate(BaseModel):
@@ -13,13 +14,14 @@ class Task(BaseModel):
     id: int
     name: str
     notes: str | None
-    category: str
+    category: TaskCategory
     priority: int
     add_date: datetime
     complete_date: datetime | None
 
-    class Config:  # must be set for mapping to SQLAlchemy
-        orm_mode = True
+    class Config:
+        orm_mode = True  # must be set for mapping to SQLAlchemy
+        use_enum_values = True
 
 
 class TaskUpdate(Task):
