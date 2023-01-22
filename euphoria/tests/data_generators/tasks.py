@@ -1,6 +1,7 @@
 import random
 
 from .base import FakeDataGenerator
+from euphoria.backend.common.models.tasks import TaskCategory
 
 
 class TaskDataGenerator(FakeDataGenerator):
@@ -14,7 +15,7 @@ class TaskDataGenerator(FakeDataGenerator):
             {
                 'name': self.fake.catch_phrase(),
                 'notes': self.fake.sentence(),
-                'category': random.choice(['financial', 'coding', 'chore', 'car', 'misc']),
+                'category': random.choice([task.value for task in TaskCategory]),
                 'priority': random.randint(1, 100),  # TODO: Is this taking seed?
             }
             for num in range(num_records)

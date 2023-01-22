@@ -2,7 +2,7 @@ import logging
 
 from euphoria import settings
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 formatter = logging.Formatter(settings.logging.LOG_FORMAT)
 
@@ -18,4 +18,5 @@ logger.addHandler(file_log)
 logger.setLevel(settings.logging.LOG_LEVEL)
 logger.debug(f'Log Location: {settings.logging.LOG_PATH}')
 
+# quiet matplotlib noisy output when in debug mode
 logging.getLogger('matplotlib').setLevel(logging.INFO)

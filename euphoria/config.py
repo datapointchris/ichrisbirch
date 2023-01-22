@@ -48,7 +48,7 @@ class SQLiteSettings:
 
 @dataclass
 class LoggingSettings:
-    LOG_PATH: str = os.getenv('BASE_LOG_PATH')
+    LOG_PATH: str = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
     LOG_FORMAT: str = os.getenv('LOG_FORMAT')
     LOG_LEVEL: str = os.getenv('LOG_LEVEL')
 
@@ -59,6 +59,7 @@ class Settings:
     DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
     API_URL: str = os.getenv('API_URL')
     ENVIRONMENT: str = os.getenv('ENVIRONMENT')
+    OS_PREFIX: str = os.getenv('OS_PREFIX')
 
     flask = FlaskSettings()
     sqlite = SQLiteSettings()
