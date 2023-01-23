@@ -3,8 +3,6 @@
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
-- [--\> {Patch} Add "notes" field to tasks](#---patch-add-notes-field-to-tasks)
-- [--\> {Patch} Use Enum for task categories](#---patch-use-enum-for-task-categories)
 - [--\> {Patch} All Tasks page improvments](#---patch-all-tasks-page-improvments)
 - [--\> {Patch} Create /priority endpoint in tasks](#---patch-create-priority-endpoint-in-tasks)
 - [--\> {Minor} Rename entire project to ichrisbirch](#---minor-rename-entire-project-to-ichrisbirch)
@@ -79,32 +77,6 @@
     - [ ] Use streamlit for interactive charts?
 
 TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
-
-
-
-# --> {Patch} Add "notes" field to tasks
-- [X] !! __MAKE NOTES__ !!
-- [X] SQLAlchemy model
-- [X] Pydantic model
-- [X] Migration
-- [X] Cut a release
-  - I've decided that a release should include all of these related features
-  - And it should be a tag on the main branch, instead of a release branch which gets deleted anyway
-
-
-
-# --> {Patch} Use Enum for task categories
-- [X] https://realpython.com/python-enum/
-- [X] https://docs.python.org/3/library/enum.html
-- [X] Does Postgres support enum
-  - Yes
-- [X] SQLAlchemy model
-- [X] Pydantic model
-- [ ] Migration
-- [ ] Make the tests take the new ENUM in the data generator
-- [ ] Cut a release
-  - [ ] Make notes
-
 
 
 # --> {Patch} All Tasks page improvments

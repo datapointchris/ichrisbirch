@@ -91,3 +91,27 @@ FastAPI:
 - [X] Timezone cannot be displayed for all date ranges
 
 
+# --> {Patch} Add "notes" field to tasks
+- [X] !! __MAKE NOTES__ !!
+- [X] SQLAlchemy model
+- [X] Pydantic model
+- [X] Migration
+- [X] Cut a release
+  - I've decided that a release should include all of these related features
+  - And it should be a tag on the main branch, instead of a release branch which gets deleted anyway
+
+
+
+# --> {Patch} Use Enum for task categories
+- [X] https://realpython.com/python-enum/
+- [X] https://docs.python.org/3/library/enum.html
+- [X] Does Postgres support enum
+  - Yes
+- [X] SQLAlchemy model
+- [X] Pydantic model
+- [X] Migration
+- [X] Make the tests take the new ENUM in the data generator
+- [X] Cut a release
+  - [X] Make notes
+
+
