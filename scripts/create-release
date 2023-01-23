@@ -11,32 +11,38 @@ set -e
 # shellcheck source=./bash-helpers
 source scripts/bash-helpers
 
-
-SCRIPT_NAME="$0"
+SCRIPT_NAME=$(basename "$0")
+SCRIPT_TITLE="$(filename_to_title "$SCRIPT_NAME")"
 export ENVIRONMENT='development' # pytest needs this to run and will only ever be run in DEV environment
+
+# ----------------- Script Functions ----------------- #
 
 usage() {
     local message
-    message=$(cat <<-EOF
-$(green "$(print_section "Create a Release")")
+    message=$(
+        cat <<-EOF
 
 $(green "Usage:")
 $(blue "Command Line with Arguments:")
-$SCRIPT_NAME 0.5.2 'Add API Endpoint'
+./$SCRIPT_NAME 0.5.2 'Add API Endpoint'
 
 $(blue "Interactive:")
-$SCRIPT_NAME --interactive
+./$SCRIPT_NAME --interactive
 
 $(blue "Help:")
-$SCRIPT_NAME --help
+./$SCRIPT_NAME --help
+
+$(blue "Dry Run:")
+./$SCRIPT_NAME --dry-run 0.5.2 'Add API Endpoint'
 EOF
-)
+    )
     echo "$message"
 }
 
 help() {
     local message
-    message=$(cat <<-EOF
+    message=$(
+        cat <<-EOF
 $(usage)
 
 $(green "Script Actions")
@@ -46,17 +52,14 @@ Update '{project}/__init__.py'
 Run pytest and create coverage report
 Run tokei and create lines of code report
 Run wily and create code complexity report
-Commit version stats to release branch
-Merge release branch into master
 Create a git tag on master using the version
-Merge release branch into develop
 Push all changes
 
 $(green "Dependencies:")
 tokei
 wily
 EOF
-)
+    )
     echo "$message"
 }
 
@@ -67,7 +70,8 @@ interactive() {
     read -r VERSION_DESCRIPTION
 }
 
-#-------------------- SCRIPT PRE-PROCESSING --------------------#
+# ----------------- Script Pre-Processing ----------------- #
+
 # Get project name from current dir
 PROJECT=$(basename "$PWD")
 CURRENT_VERSION=$(grep --only-matching "\d.\d.\d" "$PROJECT/__init__.py")
@@ -88,76 +92,109 @@ elif [[ "$1" = "--help" ]]; then
 elif [[ "$1" = "--interactive" ]]; then
     interactive
 
+elif [[ "$1" = "--dry-run" ]]; then
+    if [[ -z "$2" ]] || [[ -z "$3" ]]; then
+        notify_error "Version and Version Description required for --dry-run"
+        usage
+        exit 1
+    fi
+    DRY_RUN=true
+    VERSION=$2
+    # VERSION is SEMVER format: X.X.X
+    VERSION_DESCRIPTION=$3
+    VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
+    print_title "$(blue "Executing Dry Run of $SCRIPT_TITLE")"
+
 # 3. Error if version and description not both supplied
 elif [[ -z "$1" ]] || [[ -z "$2" ]]; then
     notify_error "Incorrect arguments"
     usage
     exit 1
 
-# 4. Assing version and description
+# 4. Assign version and description
 else
     VERSION=$1
     # VERSION is SEMVER format: X.X.X
     VERSION_DESCRIPTION=$2
+    VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
 fi
 
-#-------------------- MAIN SCRIPT --------------------#
+#-------------------- Functions for Release --------------------#
 
-title "Creating Release for $VERSION - $VERSION_DESCRIPTION"
+# TODO: [2022/11/05] - Check if docker desktop is running
+run_coverage_report() {
+    coverage run --module pytest
+    coverage report -m >"$VERSION_STATS_DIR/coverage.txt"
+    coverage json -o "$VERSION_STATS_DIR/coverage.json"
+    coverage html -d "$VERSION_STATS_DIR/coverage_html/"
+}
 
+tokei_lines_of_code_report() {
+    tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ >"$VERSION_STATS_DIR"/lines_of_code.txt
+    tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ -o json >"$VERSION_STATS_DIR"/lines_of_code.json
 
-# Create Stats Directory for Version
-VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
-mkdir -p "$VERSION_STATS_DIR"
+}
+
+# wily does not have json output at the moment
+wily_code_complexity_report() {
+    git stash
+    wily build .
+    wily diff . -r master >"$VERSION_STATS_DIR"/complexity.txt
+    git stash pop
+}
+
+update_poetry_version() {
+    poetry version "$VERSION"
+}
+
+update_project_version() {
+    sed -E -i "s/[0-9]+(\.[0-9]+)*/$VERSION/" "$PROJECT"/__init__.py
+}
+
+git_add_and_commit_version_stats() {
+    git add -A
+    git commit -m "release: $VERSION - $VERSION_DESCRIPTION"
+}
+
+git_tag_and_push_version() {
+    git tag "$VERSION"
+    git push
+    git push --tags
+}
+
+# ----------------- Main Script ----------------- #
+
+print_title "Creating Release: $VERSION - $VERSION_DESCRIPTION"
+
+if [[ -z $DRY_RUN ]]; then mkdir -p "$VERSION_STATS_DIR"; fi
 notify_create "$VERSION_STATS_DIR"
 
-
-# Coverage Report
-cd "$PROJECT"
-# TODO: [2022/11/05] - Check if docker desktop is running
-coverage run --module pytest
-coverage report -m >stats/"$VERSION"/coverage.txt
-coverage json -o stats/"$VERSION"/coverage.json
-coverage html -d stats/"$VERSION"/coverage_html/
+if [[ -z $DRY_RUN ]]; then run_coverage_report; fi
 notify_create "$VERSION_STATS_DIR/coverage.txt"
 notify_create "$VERSION_STATS_DIR/coverage.json"
+notify_create "$VERSION_STATS_DIR/coverage_html/"
 
-
-# Tokei Lines of Code
-cd ../
-tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ >"$VERSION_STATS_DIR"/lines_of_code.txt
-tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ -o json >"$VERSION_STATS_DIR"/lines_of_code.json
+if [[ -z $DRY_RUN ]]; then tokei_lines_of_code_report; fi
 notify_create "$VERSION_STATS_DIR/lines_of_code.txt"
 notify_create "$VERSION_STATS_DIR/lines_of_code.json"
 
-
-# Wily Code Complexity
-# wily does not have json output at the moment
-git stash
-wily build .
-wily diff . -r master >"$VERSION_STATS_DIR"/complexity.txt
+if [[ -z $DRY_RUN ]]; then wily_code_complexity_report; fi
 notify_create "$VERSION_STATS_DIR/complexity.txt"
-git stash pop
 
-
-# Update Version
-poetry version "$VERSION"
+if [[ -z $DRY_RUN ]]; then update_poetry_version; fi
 notify_update "pyproject.toml $CURRENT_VERSION" "$VERSION"
 
-echo "__version__ = '$VERSION'" >"$PROJECT"/__init__.py
+if [[ -z $DRY_RUN ]]; then update_project_version; fi
 notify_update "$PROJECT/__init__.py $CURRENT_VERSION" "$VERSION"
 
+if [[ -z $DRY_RUN ]]; then git_add_and_commit_version_stats; fi
+notify_create "Create Git commit: 'release: $VERSION - $VERSION_DESCRIPTION'"
 
-# Tag with Version and push changes 
-git tag "$VERSION"
-git push
-git push --tags
-git checkout develop
+if [[ -z $DRY_RUN ]]; then git_tag_and_push_version; fi
+notify_create "Git Tag: $VERSION"
+echo "$(blue "Push: ") Push changes to Github"
 
+if [[ -z $DRY_RUN ]]; then poetry install; fi
+notify_update "Reinstall project locally: $CURRENT_VERSION" "$VERSION"
 
-# Reinstall app locally
-poetry install
-
-
-# Notify Success
-title "Successfully Created Release: $VERSION"
+print_title "Successfully Created Release: $VERSION - $VERSION_DESCRIPTION"

@@ -20,7 +20,7 @@ set -e # fail script on command fail
 #    0 0 * * * /home/ubuntu/backup.sh > /home/ubuntu/backup.log
 
 # ----- Helpers ----- #
-source bash-helpers
+source scripts/bash-helpers
 
 SCRIPT_NAME=$(basename "$0")
 SCRIPT_TITLE="$(filename_to_title "$SCRIPT_NAME")"
