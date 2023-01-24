@@ -1,4 +1,4 @@
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 import ichrisbirch.environment  # noqa
 from ichrisbirch.config import Settings

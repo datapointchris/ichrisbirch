@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ichrisbirch"
-version = "0.7.0"
+version = "0.7.1"
 description = ""
 authors = ["Chris Birch <datapointchris@gmail.com>"]
 license = "MIT"
