@@ -90,18 +90,21 @@ esac
 
 #-------------------- MAIN SCRIPT --------------------#
 
-# Variables
-ETC_DIR="$OS_PREFIX/etc"
+# Project File Locations
 ENV_DEPLOY_DIR="deploy/$ENVIRONMENT"
-
-NGINX_OS_DIR="$OS_PREFIX/etc/nginx"
-NGINX_SITES_AVAILABLE="$NGINX_OS_DIR/sites-available"
-NGINX_SITES_ENABLED="$NGINX_OS_DIR/sites-enabled"
 NGINX_DEPLOY_DIR="$ENV_DEPLOY_DIR/nginx"
-
-SUPERVISOR_CONFIG_DIR="$ETC_DIR/supervisor.d"
-SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
 SUPERVISOR_DEPLOY_DIR="$ENV_DEPLOY_DIR/supervisor"
+
+# Config Locations
+ETC_DIR="$OS_PREFIX/etc"
+
+NGINX_DIR="$ETC_DIR/nginx"
+NGINX_SITES_AVAILABLE="$NGINX_DIR/sites-available"
+NGINX_SITES_ENABLED="$NGINX_DIR/sites-enabled"
+
+SUPERVISOR_DIR="$ETC_DIR/supervisor"
+SUPERVISOR_CONFIG_DIR="$SUPERVISOR_DIR/conf.d"
+SUPERVISOR_LOG_DIR="$OS_PREFIX/var/log/supervisor"
 
 
 print_title "Deploying $PROJECT project in $ENVIRONMENT environment"
@@ -114,25 +117,25 @@ print_section "NGINX"
 sudo mkdir -p $NGINX_SITES_AVAILABLE
 sudo mkdir -p $NGINX_SITES_ENABLED
 
-notify_create "$NGINX_SITES_AVAILABLE"
-notify_create "$NGINX_SITES_ENABLED"
+notify_create $NGINX_SITES_AVAILABLE
+notify_create $NGINX_SITES_ENABLED
 
 # Configuration
-sudo cp "$NGINX_DEPLOY_DIR"/nginx.conf $NGINX_OS_DIR/nginx.conf
-sudo cp "$NGINX_DEPLOY_DIR"/api.conf $NGINX_SITES_AVAILABLE/"$PROJECT"-api.conf
-sudo cp "$NGINX_DEPLOY_DIR"/app.conf $NGINX_SITES_AVAILABLE/"$PROJECT"-app.conf
+sudo cp "$NGINX_DEPLOY_DIR/nginx.conf" "$NGINX_DIR/nginx.conf"
+sudo cp "$NGINX_DEPLOY_DIR/api.conf" "$NGINX_SITES_AVAILABLE/$PROJECT-api.conf"
+sudo cp "$NGINX_DEPLOY_DIR/app.conf" "$NGINX_SITES_AVAILABLE/$PROJECT-app.conf"
 
-notify_copy "$NGINX_DEPLOY_DIR/nginx.conf" "$NGINX_OS_DIR/nginx.conf"
+notify_copy "$NGINX_DEPLOY_DIR/nginx.conf" "$NGINX_DIR/nginx.conf"
 notify_copy "$NGINX_DEPLOY_DIR/api.conf" "$NGINX_SITES_AVAILABLE/$PROJECT-api.conf"
 notify_copy "$NGINX_DEPLOY_DIR/app.conf" "$NGINX_SITES_AVAILABLE/$PROJECT-app.conf"
 
 # Symlink from sites-available to sites-enabled
-sudo ln -sf $NGINX_SITES_AVAILABLE/"$PROJECT"-api.conf $NGINX_SITES_ENABLED/"$PROJECT"-api.conf
-sudo ln -sf $NGINX_SITES_AVAILABLE/"$PROJECT"-app.conf $NGINX_SITES_ENABLED/"$PROJECT"-app.conf
+sudo ln -sf "$NGINX_SITES_AVAILABLE/$PROJECT-api.conf" "$NGINX_SITES_ENABLED/$PROJECT-api.conf"
+sudo ln -sf "$NGINX_SITES_AVAILABLE/$PROJECT-app.conf" "$NGINX_SITES_ENABLED/$PROJECT-app.conf"
 
 notify_symlink "$NGINX_SITES_AVAILABLE/$PROJECT-api.conf" "$NGINX_SITES_ENABLED/$PROJECT-api.conf"
 notify_symlink "$NGINX_SITES_AVAILABLE/$PROJECT-app.conf" "$NGINX_SITES_ENABLED/$PROJECT-app.conf"
-echo ""
+echo
 
 
 # ---------- Supervisor ---------- #
@@ -140,25 +143,27 @@ print_section "SUPERVISOR"
 # Note: Make sure log direcitories match entries in `supervisord.conf`
 
 # Directories
+sudo mkdir -p $SUPERVISOR_DIR
 sudo mkdir -p $SUPERVISOR_CONFIG_DIR
 sudo mkdir -p $SUPERVISOR_LOG_DIR
 
-notify_create "$SUPERVISOR_CONFIG_DIR"
-notify_create "$SUPERVISOR_LOG_DIR"
+notify_create $SUPERVISOR_DIR
+notify_create $SUPERVISOR_CONFIG_DIR
+notify_create $SUPERVISOR_LOG_DIR
 
 # Configs
-sudo cp "$SUPERVISOR_DEPLOY_DIR"/supervisord.conf $ETC_DIR/supervisord.conf
-sudo cp "$SUPERVISOR_DEPLOY_DIR"/app.conf $SUPERVISOR_CONFIG_DIR/"$PROJECT"-app.conf
-sudo cp "$SUPERVISOR_DEPLOY_DIR"/api.conf $SUPERVISOR_CONFIG_DIR/"$PROJECT"-api.conf
+sudo cp "$SUPERVISOR_DEPLOY_DIR/supervisord.conf" "$SUPERVISOR_DIR/supervisord.conf"
+sudo cp "$SUPERVISOR_DEPLOY_DIR/app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
+sudo cp "$SUPERVISOR_DEPLOY_DIR"/api.conf "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
 
-notify_copy "$SUPERVISOR_DEPLOY_DIR/supervisord.conf" "$ETC_DIR/supervisord.conf"
+notify_copy "$SUPERVISOR_DEPLOY_DIR/supervisord.conf" "$SUPERVISOR_DIR/supervisord.conf"
 notify_copy "$SUPERVISOR_DEPLOY_DIR/app.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-app.conf"
 notify_copy "$SUPERVISOR_DEPLOY_DIR/api.conf" "$SUPERVISOR_CONFIG_DIR/$PROJECT-api.conf"
 
 # Logs
-sudo touch $SUPERVISOR_LOG_DIR/supervisord.log
-sudo touch $SUPERVISOR_LOG_DIR/"$PROJECT"-app.log
-sudo touch $SUPERVISOR_LOG_DIR/"$PROJECT"-api.log
+sudo touch "$SUPERVISOR_LOG_DIR/supervisord.log"
+sudo touch "$SUPERVISOR_LOG_DIR/$PROJECT-app.log"
+sudo touch "$SUPERVISOR_LOG_DIR/$PROJECT-api.log"
 
 notify_create "$SUPERVISOR_LOG_DIR/supervisord.log"
 notify_create "$SUPERVISOR_LOG_DIR/$PROJECT-app.log"
@@ -169,15 +174,13 @@ echo ""
 # ---------- Set owner on MacOS in dev ---------- #
 if [[ $ENVIRONMENT = "dev" ]]; then
     print_section "PERMISSIONS"
-    sudo chown -R "$USER" $NGINX_OS_DIR
-    sudo chown -R "$USER" $ETC_DIR/supervisord.conf
-    sudo chown -R "$USER" $SUPERVISOR_CONFIG_DIR
+    sudo chown -R "$USER" $NGINX_DIR
+    sudo chown -R "$USER" $SUPERVISOR_DIR
     sudo chown -R "$USER" $SUPERVISOR_LOG_DIR
-    echo "Change owner of $(green "$NGINX_OS_DIR/") to user: $(blue "$USER")"
-    echo "Change owner of $(green "$ETC_DIR/supervisord.conf") to user: $(blue "$USER")"
-    echo "Change owner of $(green "$SUPERVISOR_CONFIG_DIR/") to user: $(blue "$USER")"
+    echo "Change owner of $(green "$NGINX_DIR/") to user: $(blue "$USER")"
+    echo "Change owner of $(green "$SUPERVISOR_DIR/") to user: $(blue "$USER")"
     echo "Change owner of $(green "$SUPERVISOR_LOG_DIR/") to user: $(blue "$USER")"
-    echo ""
+    echo
 fi
 
 
@@ -191,8 +194,8 @@ fi
 
 # ---------- Success ---------- #
 print_title "All files copied"
-echo ""
+echo
 blue "Remember to restart nginx and supervisor:"
 echo "sudo supervisorctl reload"
 echo "sudo nginx -s reload"
-echo ""
+echo

@@ -66,7 +66,7 @@ __DEV__
 bind() to 127.0.0.1:80 failed (13: Permission denied)
 ### Solution
 NGINX is not running as root.  It does not run reliably with homebrew.
-Use `sudo nginx -s reload` or instead of homebrew.
+Use `sudo nginx -s reload` instead of homebrew.
 
 
 ## API Postgres
