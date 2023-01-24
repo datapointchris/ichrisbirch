@@ -1,4 +1,5 @@
 
+- [Learn](#learn)
 - [-- Misc --](#---misc---)
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
@@ -51,7 +52,12 @@
   - [User Customization](#user-customization)
   - [Git Graph Maker](#git-graph-maker)
 
-
+# Learn
+- [ ] https://github.com/jlevy/the-art-of-command-line#basics
+- [ ] https://wiki.bash-hackers.org
+- [ ] https://mywiki.wooledge.org/BashGuide
+- [ ] https://www.learnenough.com/command-line-tutorial/basics
+- [ ] https://raimonster.com/scripting-field-guide/
 
 # -- Misc --
 - [ ] Sitewide $PROJECT variable
