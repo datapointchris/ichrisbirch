@@ -20,7 +20,7 @@ api_description = """
 - Do markdown here
 """
 
-api = FastAPI(title='Euphoria API', description=api_description, version=__version__)
+api = FastAPI(title='iChrisBirch API', description=api_description, version=__version__)
 logger.debug(f'{api.title} {api.version} Started')
 
 

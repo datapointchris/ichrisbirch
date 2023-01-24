@@ -25,7 +25,7 @@
 - [--\> ML Models](#---ml-models)
 - [--\> Front-end Framework](#---front-end-framework)
 - [Project Specific](#project-specific)
-  - [Euphoria](#euphoria)
+  - [ichrisbirch](#ichrisbirch)
   - [Apartments](#apartments)
   - [Tasks](#tasks)
   - [Tracks](#tracks)
@@ -318,7 +318,7 @@ Test this out on the portfolio page
 # Project Specific
 ==================
 
-## Euphoria
+## ichrisbirch
 - [ ] Command to bring up the menu, like in github
 - [ ] Make a home tab that is present in every page somewhere
 - [ ] `Report an Issue` button at the bottom or floating somewhere in the footer or nav that pops up a form in the middle that they submit easily and it goes to the correct repository as an issue on github and auto assigns me and I get an email.

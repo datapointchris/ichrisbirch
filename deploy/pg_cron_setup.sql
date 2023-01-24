@@ -40,7 +40,7 @@ AND (
 UPDATE
   cron.job
 SET
-  DATABASE = 'euphoria'
+  DATABASE = 'ichrisbirch'
 WHERE
   jobid = 1;
 

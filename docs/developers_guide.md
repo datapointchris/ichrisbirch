@@ -69,18 +69,6 @@ NGINX is not running as root.  It does not run reliably with homebrew.
 Use `sudo nginx -s reload` or instead of homebrew.
 
 
-Warning: Taking root:admin ownership of some nginx paths:                                               ║➜ ll
-  /usr/local/Cellar/nginx/1.23.3/bin                                                                    ║total 0
-  /usr/local/Cellar/nginx/1.23.3/bin/nginx                                                              ║drwxr-xr-x  15 chris  staff   480B Oct 25 23:13 ames-housing/
-  /usr/local/opt/nginx                                                                                  ║drwxr-xr-x  16 chris  staff   512B Jan 26  2022 ellevation-data-challenge/
-  /usr/local/opt/nginx/bin                                                                              ║drwxr-xr-x  19 chris  staff   608B Aug 23 16:11 elt-housing/
-  /usr/local/var/homebrew/linked/nginx                                                                  ║drwxr-xr-x  22 chris  staff   704B Jan  2 17:27 euphoria/
-This will require manual removal of these paths using `sudo rm` on                                      ║drwxr-xr-x  21 chris  staff   672B Dec 30 22:03 euphoria_api/
-brew upgrade/reinstall/uninstall.                                                                       ║drwxr-xr-x  13 chris  staff   416B Oct 25 23:13 flask-test/
-Warning: nginx must be run as non-root to start at user login!                                          ║drwxr-xr-x   7 chris  staff   224B Oct 25 23:13 full-stack-fastapi-postgresql/
-==> Successfully started `nginx` (label: homebrew.mxcl.nginx)
-
-
 ## API Postgres
 ### ERROR
 Local changes were working but nothing that connected to prod postgres.
@@ -133,7 +121,7 @@ SQLAlchemy cannot create the schemas, neither can alembic, have to create them m
 `create-schemas.py` to add the schemas
 
 ### Alembic
-Run in `euphoria/backend/`
+Run in `ichrisbirch`
 
 Create the initial tables from the SQLAlchemy models (purpose of --autogenerate) 
 `alembic revision --autogenerate -m 'init_tables'`
@@ -158,7 +146,7 @@ tools
 
 ## Alembic Revision
 
-Run in `euphoria/backend/`
+Run in `ichrisbirch`
 
 1. Make the changes to the models and schemas
 
@@ -196,22 +184,22 @@ Note: Config is not actually setting anything in tests, but the config is called
   - [ ] (optional) Test on `test` environment
     - [ ] subject to implementation
 
-2. Update Version and Stats --> Run commands in `...euphoria/euphoria/` directory
-   - [ ] Bump the version in the main `__init__.py` file in `euphoria` directory
+2. Update Version and Stats --> Run commands in `...ichrisbirch/ichrisbirch/` directory
+   - [ ] Bump the version in the main `__init__.py` file in `ichrisbirch` directory
    - [ ] Bump the version in `pyproject.toml`
-   - [ ] Create an alembic migration with the release - Run in `...euphoria/euphoria/`
+   - [ ] Create an alembic migration with the release - Run in `...ichrisbirch/ichrisbirch/`
     `alembic revision --autogenerate -m {version}`
    - [ ] Create a new stats file json and text
-    `tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ > euphoria/version_stats/{version}lines_of_code.txt`
-    `tokei . --exclude .venv --exclude euphoria/backend/alembic/versions/ -o json > euphoria/version_stats/{version}lines_of_code.json`
+    `tokei . --exclude .venv --exclude ichrisbirch/alembic/versions/ > ichrisbirch/version_stats/{version}lines_of_code.txt`
+    `tokei . --exclude .venv --exclude ichrisbirch/alembic/versions/ -o json > ichrisbirch/version_stats/{version}lines_of_code.json`
    - [ ] Create a Coverage Report
     `pytest --cov`
-    `coverage report -m > euphoria/version_stats/{version}/coverage.txt`
-    `coverage json -o euphoria/version_stats/{version}/coverage.json`
+    `coverage report -m > ichrisbirch/version_stats/{version}/coverage.txt`
+    `coverage json -o ichrisbirch/version_stats/{version}/coverage.json`
 
    - [ ] Run Wily Code Complexity
    - [ ] wily does not have json output at the moment
-    `wily diff . -r master > euphoria/version_stats/{version}/complexity.txt`
+    `wily diff . -r master > ichrisbirch/version_stats/{version}/complexity.txt`
   
 3. Commit version stats files and create a version tag
   `git commit -am 'release: v0.3.0 - Migrate Databases'`

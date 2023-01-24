@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "euphoria"
+name = "ichrisbirch"
 version = "0.6.0"
 description = ""
 authors = ["Chris Birch <datapointchris@gmail.com>"]

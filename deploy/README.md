@@ -29,7 +29,7 @@ Number of workers is 1 for each in supervisor conf files because of small EC2 in
 TODO: This is not right
 Probably encrypt and decrypt them all
 1. Decrypt or copy environment file
- `scp -i ~/.ssh/apps.pem .prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/`
+ `scp -i ~/.ssh/apps.pem .prod.env ubuntu@$ICHRISBIRCH_IP:/var/www/ichrisbirch/`
 
 TODO: This does not work on Ubuntu
 2. Install the project
@@ -55,22 +55,22 @@ sudo apt upgrade -y
 sudo apt install -y tmux tmuxinator tree htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor zsh
 
 ## Clone Project
-sudo git clone https://github.com/datapointchris/euphoria.git /var/www/
+sudo git clone https://github.com/datapointchris/ichrisbirch.git /var/www/
 
 ## Secure copy the environment file (from local)
-scp -i ~/.ssh/apps.pem ~/github/projects/euphoria/deploy/prod/.prod.env ubuntu@$EUPHORIA_IP:/var/www/euphoria/deploy/prod/.prod.env
+scp -i ~/.ssh/apps.pem ~/github/projects/ichrisbirch/deploy/prod/.prod.env ubuntu@$ICHRISBIRCH_IP:/var/www/ichrisbirch/deploy/prod/.prod.env
 
 ## Install project
 poetry config virtualenvs.in-project true
 poetry install --without dev
 
 ## Run deploy script to copy supervisor and nginx config files
-sudo chmod +x /var/www/euphoria/deploy/prod/deploy.sh
-sudo /var/www/euphoria/deploy/prod/deploy.sh
+sudo chmod +x /var/www/ichrisbirch/deploy/prod/deploy.sh
+sudo /var/www/ichrisbirch/deploy/prod/deploy.sh
 
 ## Restart nginx and supervisor
 sudo supervisorctl reload
 sudo nginx -s reload
 
 ## ** Locally ** Make sure of no errors
-tmuxinator euphoria-prod-monitoring
+tmuxinator ichrisbirch-prod-monitoring

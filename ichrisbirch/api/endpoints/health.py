@@ -16,7 +16,7 @@ def health() -> dict:
     Root Get
     """
     return {
-        'name': 'Euphoria API',
+        'name': 'iChrisBirch API',
         'version': __version__,
         'environment': os.getenv('ENVIRONMENT', 'NOT SET'),
         'api_url': os.getenv('API_URL', 'NOT SET'),

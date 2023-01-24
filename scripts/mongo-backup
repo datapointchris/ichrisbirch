@@ -29,7 +29,7 @@ DATE=$(/bin/date +%Y-%m-%d)
 HOST=localhost
 
 # S3 bucket name
-BUCKET=euphoria-backups
+BUCKET=ichrisbirch-backups
 
 # Mongo DB Name
 MONGO_DBNAME=database
@@ -41,13 +41,13 @@ POSTGRES_DBNAME=database
 echo "Backing up $HOST/$MONGO_DBNAME to s3://$BUCKET/ on $DATE";
 
 # Stream the backup to S3 because it is tiny
-/usr/bin/mongodump --archive --db $MONGO_DBNAME |  aws s3 cp --storage-class STANDARD_IA - s3://$BUCKET/mongo/$DATE.dump
+/usr/bin/mongodump --archive --db $MONGO_DBNAME |  aws s3 cp --storage-class STANDARD_IA - s3://$BUCKET/mongo/"$DATE".dump
 
 # Log
 echo "Backing up $HOST/$POSTGRES_DBNAME to s3://$BUCKET/ on $DATE";
 
 # Stream the backup to S3 because it is tiny
 # -Fc format is compressed by Postgres
-/usr/bin/pg_dump -Fc $POSTGRES_DBNAME | aws s3 cp --storage-class STANDARD_IA - s3://$BUCKET/postgres/$DATE.dump
+/usr/bin/pg_dump -Fc $POSTGRES_DBNAME | aws s3 cp --storage-class STANDARD_IA - s3://$BUCKET/postgres/"$DATE".dump
 
 echo "Finished Backups"

@@ -14,7 +14,7 @@ class PostgresSettings:
     POSTGRES_USER: str = os.getenv('POSTGRES_USER')
     POSTGRES_PASSWORD: str = os.getenv('POSTGRES_PASSWORD')
     POSTGRES_DATABASE_URI: str = (
-        f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URI}:5432/euphoria'
+        f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URI}:5432/ichrisbirch'
     )
 
 
@@ -30,7 +30,7 @@ class MongoDBSettings:
     MONGODB_URI: str = os.getenv('MONGODB_URI')
     MONGODB_USER: str = os.getenv('MONGODB_USER')
     MONGODB_PASSWORD: str = os.getenv('MONGODB_PASSWORD')
-    MONGODB_DATABASE_URI: str = f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_URI}/euphoria?retryWrites=true&w=majority'
+    MONGODB_DATABASE_URI: str = f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_URI}/ichrisbirch?retryWrites=true&w=majority'
 
 
 @dataclass
