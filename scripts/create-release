@@ -98,13 +98,13 @@ elif [[ "$1" = "--dry-run" ]]; then
         usage
         exit 1
     fi
+    print_title "$(blue "Executing Dry Run of $SCRIPT_TITLE")"
     DRY_RUN=true
     # SEMVER format: X.X.X
     SEMVER=$2
     VERSION="v$SEMVER"
     VERSION_DESCRIPTION=$3
     VERSION_STATS_DIR="$PROJECT/stats/$VERSION"
-    print_title "$(blue "Executing Dry Run of $SCRIPT_TITLE")"
 
 # 3. Error if version and description not both supplied
 elif [[ -z "$1" ]] || [[ -z "$2" ]]; then

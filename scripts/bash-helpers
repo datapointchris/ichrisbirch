@@ -67,39 +67,27 @@ bold=$(tput bold)
 underline=$(tput smul)
 normal=$(tput sgr0)
 
+print_section() { echo "${underline}        $1          ${normal}"; }
+
+center_text() { printf "%*s\n" $((($(tput cols) + ${#1}) / 2)) "$1"; }
+
+section_separater() { printf "${underline}%0$(tput cols)d${normal}\n\n" 0 | tr '0' " "; }
+
+terminal_width_separator() { printf "%0$(tput cols)d" 0 | tr '0' "${1:-_}"; }
+
 print_title() {
-    local title="$1"
-    local message
-    message=$(
-        cat <<-EOF
+    local message=$(
+        cat <<-TITLE
         
 		$(terminal_width_separator "=")
 		$(center_text "$(green "$1")")
 		$(terminal_width_separator "-")
-	EOF
+	TITLE
     )
     echo "$message"
-    echo ""
+    echo
 }
 
-print_section() {
-    local title="${underline}        $1          ${normal}"
-    echo "$title"
-}
-
-center_text() {
-    local columns
-    columns="$(tput cols)"
-    local str_length
-    str_length=$(echo "$1" | sed -r 's/\x1b\[[0-9;]*m//g' | wc -c)
-    local filler_length="$(((columns - str_length) / 2 - 4))"
-    local spaces=""
-    for ((i = 0; i < filler_length; i++)); do
-        spaces="$spaces "
-    done
-    local centered="$spaces$1$spaces"
-    echo "$centered"
-}
 
 filename_to_title() {
     if [[ -z "$1" ]]; then exit 0; fi
@@ -117,20 +105,6 @@ filename_to_title() {
     echo
 }
 
-terminal_width_separator() {
-    # TODO: [2023/01/01] - How to do this without two variables
-    local sep="$1"
-    local sep2="$1"
-    : "${sep:=_}"  # default to underscore
-    : "${sep2:=_}" # default to underscore
-    local terminal_width
-    terminal_width=$(tput cols)
-    for ((i = 0; i < terminal_width - 1; i++)); do
-        sep="$sep$sep2"
-    done
-    echo "$sep"
-}
-
 #-------------------- Notifications --------------------#
 
 notify_create() { yellow "Create:${normal} $1"; }
@@ -141,40 +115,23 @@ notify_error() { red "${bold}ERROR:${normal} $(red "$1")"; }
 
 # print a repeated character certain number of times
 character_repeat() {
-    local character="$1"
-    local temp="$1"
-    : "${character:=_}" # default to underscore
-    : "${temp:=_}"      # default to underscore
+    local char="${1:=_}"      # default to underscore
+    local num_chars="${2:=5}" # default to 5
+    printf "%0${num_chars}d" 0 | tr '0' "$char"
 
-    local num_chars="$2"
-    : "${num_chars:=5}" # default to 5
-
-    for ((i = 0; i < num_chars - 1; i++)); do
-        character="$character$temp"
-    done
-    echo "$character"
 }
 
 rainbow() {
-    local black
-    local red
-    local green
-    local yellow
-    local blue
-    local magenta
-    local cyan
-    local white
+    local black=$(tput setaf 0)
+    local red=$(tput setaf 1)
+    local green=$(tput setaf 2)
+    local yellow=$(tput setaf 3)
+    local blue=$(tput setaf 4)
+    local magenta=$(tput setaf 5)
+    local cyan=$(tput setaf 6)
+    local white=$(tput setaf 7)
+    local colors=("$black" "$red" "$green" "$yellow" "$blue" "$magenta" "$cyan" "$white")
 
-    black=$(tput setaf 0)
-    red=$(tput setaf 1)
-    green=$(tput setaf 2)
-    yellow=$(tput setaf 3)
-    blue=$(tput setaf 4)
-    magenta=$(tput setaf 5)
-    cyan=$(tput setaf 6)
-    white=$(tput setaf 7)
-
-    colors=("$black" "$red" "$green" "$yellow" "$blue" "$magenta" "$cyan" "$white")
     if [ -n "$1" ]; then
         local sep="$1"
         local sep2="$1"
@@ -211,11 +168,10 @@ try() {
     "$@" || die "cannot $*"
 }
 
-
 # ----- Logging and Output ----- #
 
 err() {
-  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+    echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
 }
 # if ! do_something; then
 #   err "Unable to do_something"

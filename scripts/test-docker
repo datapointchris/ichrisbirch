@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+if pgrep -x "docker" >/dev/null; then
+    echo "Docker is running"
+else
+    echo "Docker is not running, starting..."
+    open -ga "Docker Desktop"
+    sleep 30
+    echo "Docker started"
+fi

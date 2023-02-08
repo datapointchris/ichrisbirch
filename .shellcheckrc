@@ -1,0 +1,11 @@
+# Add the script directory to the search path for source statements
+source-path=SCRIPTDIR
+
+# Follow arbitrary file paths in source statements
+external-sources=true
+
+# Enable all checks (inc. optional)
+# enable=all
+
+# Disable some checks
+disable=SC2155

@@ -16,20 +16,190 @@
 # 9. last line: main "$@"
 
 
+# Enable xtrace if the DEBUG environment variable is set
+if [[ ${DEBUG-} =~ ^1|yes|true$ ]]; then
+    set -o xtrace       # Trace the execution of the script (debug)
+fi
 
-set -e # fail script on command fail
-SCRIPT_NAME="$0"
+# Only enable these shell behaviours if we're not being sourced
+# Approach via: https://stackoverflow.com/a/28776166/8787985
+if ! (return 0 2> /dev/null); then
+    # A better class of script...
+    set -o errexit      # Exit on most errors (see the manual)
+    # set -o nounset      # Disallow expansion of unset variables --> but this doesn't allow for [[ if -z $VAR ]]
+    set -o pipefail     # Use last non-zero exit code in a pipeline
+fi
 
-echo "START test"
-
-source bash-helpers
-
-
-
-# DRY=true
-# if it is not dry run, then
-if [[ -z $DRY ]]; then echo "dry"; fi
-
+# Enable errtrace or the error trap handler will not work as expected
+set -o errtrace         # Ensure the error trap handler is inherited
 
 
-echo "END test"
+RETURN_CODE_SUCCESS=0
+RETURN_CODE_ERROR=1
+
+VERSION="0.1.0"
+AUTHOR="Chris Birch https://www.github.com/datapointchris"
+
+DEBUG_PRINTS_ON="true"  # "true" or "false"; can also be passed in as an option: `-d` or `--debug`
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+VERSION_SHORT_STR="'$SCRIPT_NAME' version $VERSION"
+VERSION_LONG_STR="\
+$VERSION_SHORT_STR
+Author = $AUTHOR
+See '$SCRIPT_NAME -h' for more info.
+"
+
+HELP_STR="\
+$VERSION_SHORT_STR
+This is a general program template intended to be used for medium to large-sized bash programs. Just
+copy-paste it as a starting point for your program. Be sure to cite me and any other sources you
+use to write your program. Please provide a URL in your program to link back to this file in my
+eRCaGuy_hello_world repo.
+USAGE
+    $SCRIPT_NAME [options] [positional_arg1] [positional_arg2]
+OPTIONS
+    -h, -?, --help
+        Print help menu
+    -v, --version
+        Print version information.
+    --run_tests
+        Run unit tests.
+    -d, --debug
+        Turn on debug prints.
+    -a <arg>, --arga <arg>
+        Pass in custom argument a.
+    -b <arg>, --argb <arg>
+        Pass in custom argument b.
+    -c <arg>, --argc <arg>
+        Pass in custom argument c.
+EXAMPLE USAGES:
+    $SCRIPT_NAME -h
+        Print help menu.
+    $SCRIPT_NAME --help
+        Print help menu.
+    $SCRIPT_NAME -a 'hello world'
+        Pass in 'hello world' for custom argument a.
+    $SCRIPT_NAME --arga 'hello world' --argb 'Nice to meet you!' --argc 789
+        Pass in custom arguments a, b, and c.
+    $SCRIPT_NAME -a 'hello world' -b 'Nice to meet you!' -c 789
+        Same as above.
+    $SCRIPT_NAME --argc 789 one two
+        Pass in '789' as custom argument c, 'one' as posiitonal_arg1, and 'two' as positional_arg2
+    $SCRIPT_NAME one --argc 789 two
+        Same as above, just in a different order.
+    $SCRIPT_NAME one two --argc 789
+        Same as above, just in a different order again.
+    $SCRIPT_NAME -a 'hello world' one two -b 'Nice to meet you!' -c 789 three
+        Pass in custom arguments a, b, and c, as well as 'one' for 'posiitonal_arg1', 'two' for
+        'positional_arg2', and 'three' as a 3rd positional argument which is unused but will also
+        get captured into the 'POSITIONAL_ARGS_ARRAY'.
+    $SCRIPT_NAME -a 'some invalid argument' one two -b 'Nice to meet you!' -c 789 three
+        Same as above, except make argument a be invalid so the code will exit early and print an
+        error about it.
+This program is part of eRCaGuy_dotfiles: https://github.com/ElectricRCAircraftGuy/eRCaGuy_dotfiles
+by Gabriel Staples.
+"
+
+
+source "$SCRIPT_DIR/bash-helpers"
+
+
+print_help() {
+    echo "$HELP_STR" | less -RFX
+}
+
+print_version() {
+    echo "$VERSION_LONG_STR"
+}
+
+
+# DESC: Parameter parser
+# ARGS: $@ (optional): Arguments provided to the script
+# OUTS: Variables indicating command-line parameters and options
+function parse_args() {
+    local param
+    while [[ $# -gt 0 ]]; do
+        param="$1"
+        shift
+        case $param in
+            -h | --help)
+                script_usage
+                exit 0
+                ;;
+            -v | --verbose)
+                verbose=true
+                ;;
+            -nc | --no-colour)
+                no_colour=true
+                ;;
+            -cr | --cron)
+                cron=true
+                ;;
+            *)
+                script_exit "Invalid parameter was provided: $param" 1
+                ;;
+        esac
+    done
+}
+
+
+
+main() {
+    print_title "$(filename_to_title "$SCRIPT_NAME")"
+    print_version
+
+    print_section "Copy Files"
+    
+    files=("file1" "file2" "file3" "file4" "file5")
+    file_counter=1
+    for file in "${files[@]}":
+    do
+        echo "Copy file $file_counter of ${#files}"
+        echo "Copy file: $file"
+        sleep .1
+        ((file_counter++))
+    done
+    
+    section_separater
+
+    # DRY=true
+    # if it is not dry run, then
+    if [[ -z $DRY ]]; then echo "Not dry run"; else "$(yellow "--dry-run")"; fi
+
+    echo "END test"
+    section_separater
+
+}
+
+print_debug_info() {
+    # Disable the error trap handler to prevent potential recursion
+    trap - SIGINT ERR EXIT SIGTERM
+
+    # Print basic debugging information
+    local debug_info="\
+    $(blue "***** DEBUG INFO *****")
+    Script was run from: |$(green "$PWD")
+    Relative Path: |$(green "$0")
+    Script Parameters: |$(green "$*")
+    Script Exit Code: |$(green "$?")
+    Script Name: |$(green "$SCRIPT_NAME")
+    Script Dir: |$(green "$SCRIPT_DIR")
+    "
+    echo "$debug_info" | column -s \| -t
+}
+
+
+
+# if __name__ == '__main__': equivalent
+if [ "${BASH_SOURCE[0]}" == "$0" ]; then
+    echo "  This script is being EXECUTED."
+    trap print_debug_info SIGINT ERR EXIT SIGTERM
+    parse_args "$@"
+    main "$@"
+else
+    echo "  This script is being SOURCED."
+fi
+
+
