@@ -1,16 +1,18 @@
-
-- [Learn](#learn)
-- [-- Misc --](#---misc---)
+# TODO
+- [TODO](#todo)
+- [--\> {Minor} Continuous Integration / Github Actions](#---minor-continuous-integration--github-actions)
+  - [Learn](#learn)
+  - [Misc](#misc)
   - [CSS files](#css-files)
   - [Code Repo Structure](#code-repo-structure)
   - [Tokei Output Charts](#tokei-output-charts)
 - [--\> {Patch} All Tasks page improvments](#---patch-all-tasks-page-improvments)
-- [--\> {Patch} Create /priority endpoint in tasks](#---patch-create-priority-endpoint-in-tasks)
-- [--\> {Minor} Rename entire project to ichrisbirch](#---minor-rename-entire-project-to-ichrisbirch)
+- [--\> {Patch} Add categories to tasks ENUM](#---patch-add-categories-to-tasks-enum)
+- [--\> {Patch} Create tasks/priority endpoint in tasks](#---patch-create-taskspriority-endpoint-in-tasks)
+- [--\> {Patch} Create /autochore endpoint](#---patch-create-autochore-endpoint)
 - [--\> {Minor} Add Events to API routes](#---minor-add-events-to-api-routes)
 - [--\> {Minor} Add Countdowns to API routes](#---minor-add-countdowns-to-api-routes)
-- [--\> {Minor} Continuous Integration / Github Actions](#---minor-continuous-integration--github-actions)
-- [--\> Backups](#---backups)
+- [--\> Infrastructure Management](#---infrastructure-management)
 - [--\> User Login](#---user-login)
 - [--\> WTForms](#---wtforms)
 - [--\> Testing](#---testing)
@@ -52,14 +54,51 @@
   - [User Customization](#user-customization)
   - [Git Graph Maker](#git-graph-maker)
 
-# Learn
-- [ ] https://github.com/jlevy/the-art-of-command-line#basics
-- [ ] https://wiki.bash-hackers.org
-- [ ] https://mywiki.wooledge.org/BashGuide
-- [ ] https://www.learnenough.com/command-line-tutorial/basics
-- [ ] https://raimonster.com/scripting-field-guide/
+# --> {Minor} Continuous Integration / Github Actions
+<https://brntn.me/blog/open-source-python-ci/>
+<https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration>
+<https://www.martinfowler.com/articles/branching-patterns.html>
+Pre-commit - What is the difference between this and CI/CD
+<https://www.youtube.com/watch?v=9flcoQ1R0Y4>
+<https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/>
+<https://www.youtube.com/watch?v=TLB5MY9BBa4>
+<https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/>
+<https://lab.github.com/githubtraining/devops-with-github-actions>
+[Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
+[How to Run Github Actions Builds on Your Own Servers With Self-Hosted Runners – CloudSavvy IT](https://www.cloudsavvyit.com/15503/how-to-run-github-actions-builds-on-your-own-servers-with-self-hosted-runners/)
+[https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/](https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/)
+[Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
+<https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c>
+<https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3>
+<https://betterprogramming.pub/>
+<https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485>
+<https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s>
+<https://stackabuse.com/getting-started-with-github-actions-software-automation/>
 
-# -- Misc --
+Pre-commit Possibilites:
+
+- Black
+- Flake8
+- isort
+- bandit
+- Interrogate
+- doctest
+- shellcheck
+- <https://github.com/dosisod/refurb>
+- <https://github.com/asottile/pyupgrade>
+- <https://github.com/python/mypy>
+
+
+## Learn
+
+- [ ] <https://github.com/jlevy/the-art-of-command-line#basics>
+- [ ] <https://wiki.bash-hackers.org>
+- [ ] <https://mywiki.wooledge.org/BashGuide>
+- [ ] <https://www.learnenough.com/command-line-tutorial/basics>
+- [ ] <https://raimonster.com/scripting-field-guide/>
+
+## Misc
+
 - [ ] Sitewide $PROJECT variable
   - [ ] This should most likely be an environment variable, if any at all
   - [ ] What was the purpose of this?
@@ -69,23 +108,30 @@
   - [ ] Send notification of failure to ichrisbirch
 
 ## CSS files
-  - [ ] Need to have reset
-  - [ ] Body in Apartments
+
+- [ ] Need to have reset
+- [ ] Body in Apartments
+
 ## Code Repo Structure
-  - [ ] https://githubnext.com/projects/repo-visualization/
+
+- [ ] <https://githubnext.com/projects/repo-visualization/>
+
 ## Tokei Output Charts
-  - [ ] https://github.com/laixintao/tokei-pie/blob/main/tokei_pie/main.py
-  - [ ] Should I contribute or make my own?
-  - [ ] Make it easy to add another chart
-  - [ ] Model the structure of the output data so that it makes sense and is easy
-    - [ ] Use Pydantic dataclasses to create the structure and for dot notation access
-    - [ ] Good docs about the structure the objects are coming out as
-    - [ ] Use streamlit for interactive charts?
+
+- [ ] <https://github.com/laixintao/tokei-pie/blob/main/tokei_pie/main.py>
+- [ ] Should I contribute or make my own?
+- [ ] Make it easy to add another chart
+- [ ] Model the structure of the output data so that it makes sense and is easy
+  - [ ] Use Pydantic dataclasses to create the structure and for dot notation access
+  - [ ] Good docs about the structure the objects are coming out as
+  - [ ] Use streamlit for interactive charts?
 
 TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
-
+TODO: [2023/01/25] - Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
+TODO: [2023/01/25] - Optionally, lock in an image with the stuff necessary to run server and use that image
 
 # --> {Patch} All Tasks page improvments
+
 - [ ] Add `Complete` button for all tasks
   - [ ] Should be for all of the tasks after the first 5
     - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
@@ -98,295 +144,266 @@ TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
   - [ ] This is on purpose instead of being able to edit tasks to keep honest
 - [ ] Catch error when priority is not specified in add task, currently there is a server error
 
+# --> {Patch} Add categories to tasks ENUM
 
+- [ ] Compare this with the initial adding of the ENUM
+  - [ ] Purchase
+  - [ ] Work
+  - [ ] Kitchen
+  - [ ] Combine Learn = Research
+    - [ ] Remove 'Research'
 
-# --> {Patch} Create /priority endpoint in tasks
+# --> {Patch} Create tasks/priority endpoint in tasks
+
 - [ ] Call this endpoint in the app instead of doing the query
   - This makes it so that other things can easily get the data with just an API call instead of constructing the query again
 
+# --> {Patch} Create /autochore endpoint
 
-
-# --> {Minor} Rename entire project to ichrisbirch
-FastAPI:
-- [ ] nginx files
-- [ ] supervisor files
-- [ ] folders
-- [ ] name of keys
-- [ ] name of security group
-- [ ] name of mongo servers
-- [ ] database names
-- [ ] Do a grep for all things euphoria
-
+- [ ] Simple storage of chores that need to be added to the priority list
+  - [ ] Columns
+    - Same as [tasks] columns
+    - Additionally:
+      - Add date for autochore
+      - Priority to give it each time
+      - How often to add it (days)
 
 # --> {Minor} Add Events to API routes
+
 FastAPI:
+
 - [ ] Events
 - [ ] Cut a release
   - [ ] Notes
 
-
 # --> {Minor} Add Countdowns to API routes
+
 FastAPI:
+
 - [ ] Countdowns
 - [ ] Cut a release
   - [ ] Notes
 
 
 
-# --> {Minor} Continuous Integration / Github Actions
-https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration
-https://www.martinfowler.com/articles/branching-patterns.html
-Pre-commit - What is the difference between this and CI/CD
-https://www.youtube.com/watch?v=9flcoQ1R0Y4
-https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/
-https://www.youtube.com/watch?v=TLB5MY9BBa4
-https://github.blog/2022-06-03-a-beginners-guide-to-ci-cd-and-automation-on-github/
-https://lab.github.com/githubtraining/devops-with-github-actions
-[Should You Use Github Actions for Continuous Integration (CI)? – CloudSavvy IT](https://www.cloudsavvyit.com/15499/should-you-use-github-actions-for-continuous-integration-ci/)
-[How to Run Github Actions Builds on Your Own Servers With Self-Hosted Runners – CloudSavvy IT](https://www.cloudsavvyit.com/15503/how-to-run-github-actions-builds-on-your-own-servers-with-self-hosted-runners/)
-[https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/](https://jacobtomlinson.dev/posts/2019/creating-github-actions-in-python/)
-[Ultimate CI Pipeline for All of Your Python Projects | by Martin Heinz | Mar, 2022 | Towards Data Science](https://towardsdatascience.com/ultimate-ci-pipeline-for-all-of-your-python-projects-27f9019ea71a)
-https://towardsdatascience.com/ultimate-setup-for-your-next-python-project-179bda8a7c2c
-https://ravilach.medium.com/continuous-integration-developer-getting-started-guide-zero-to-pipeline-4a59553617f3
-https://betterprogramming.pub/
-https://towardsdatascience.com/simplify-your-python-code-automating-code-complexity-analysis-with-wily-5c1e90c9a485
-https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s
-https://stackabuse.com/getting-started-with-github-actions-software-automation/
+# --> Infrastructure Management
 
-Pre-commit Possibilites:
-- Black
-- Flake8
-- isort
-- bandit
-- Interrogate
-- doctest
-- shellcheck
-- https://github.com/dosisod/refurb
-- https://github.com/asottile/pyupgrade
-- https://github.com/python/mypy
-
-
-
-# --> Backups
-- [ ] Postgres
-- [ ] MongoDB
-- [ ] DynamoDB
-- [X] Code
-  - [X] Github
-
-
+- [ ] Open Stack
+  - <https://www.patreon.com/posts/how-to-manage-1-78070880>
 
 # --> User Login
+
 - [ ] Create login for all apps as a main page.
-	- [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
-	- [ ] https://flask-login.readthedocs.io/en/latest/
-	- [ ] https://github.com/maxcountryman/flask-login
+  - [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
+  - [ ] <https://flask-login.readthedocs.io/en/latest/>
+  - [ ] <https://github.com/maxcountryman/flask-login>
 
 - SSL for nginx
-  - https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-18-04
+  - <https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-18-04>
     - Step 6 - Securing the Application
 
 - Flask Admin -- NO
-- https://github.com/flask-admin/flask-admin
+- <https://github.com/flask-admin/flask-admin>
 
 - JSON Web Tokens
-https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d
+<https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d>
 
 - FastAPI Signup
-- https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py
-
+- <https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py>
 
 # --> WTForms
+
 Is this something I want to do?
-- https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html
-- https://flask-wtf.readthedocs.io/en/latest/quickstart/
 
-
+- <https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html>
+- <https://flask-wtf.readthedocs.io/en/latest/quickstart/>
 
 # --> Testing
-https://www.martinfowler.com/articles/branching-patterns.html
-https://martinfowler.com/articles/practical-test-pyramid.html
+<https://www.martinfowler.com/articles/branching-patterns.html>
+<https://martinfowler.com/articles/practical-test-pyramid.html>
 Udemy Class
-- 
+-
+
 I have pytest book somewhere
 Realpython
-https://flask.palletsprojects.com/en/2.2.x/testing/
+<https://flask.palletsprojects.com/en/2.2.x/testing/>
+
 - Books on datapointchris.com
 - pytest
 - test driven dev in python
-- https://towardsdatascience.com/pytest-with-marking-mocking-and-fixtures-in-10-minutes-678d7ccd2f70
-- https://www.cosmicpython.com/blog/2020-01-25-testing_external_api_calls.html
-- https://lyz-code.github.io/blue-book/coding/python/pytest/
-- https://www.youtube.com/watch?v=B1j6k2j2eJg
-- https://www.youtube.com/watch?v=ULxMQ57engo
-- https://www.youtube.com/watch?v=NI5IGAim8XU
-- https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/
-- https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514
+- <https://towardsdatascience.com/pytest-with-marking-mocking-and-fixtures-in-10-minutes-678d7ccd2f70>
+- <https://www.cosmicpython.com/blog/2020-01-25-testing_external_api_calls.html>
+- <https://lyz-code.github.io/blue-book/coding/python/pytest/>
+- <https://www.youtube.com/watch?v=B1j6k2j2eJg>
+- <https://www.youtube.com/watch?v=ULxMQ57engo>
+- <https://www.youtube.com/watch?v=NI5IGAim8XU>
+- <https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/>
+- <https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514>
 - DynamoDB
-  - https://pypi.org/project/pytest-dynamodb/
-  - https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/
+  - <https://pypi.org/project/pytest-dynamodb/>
+  - <https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/>
 - MongoDB
-  - https://pypi.org/project/pytest-mongo/
-  - https://pypi.org/project/pytest-mongodb/
-- https://testdriven.io/blog/pytest-for-beginners/
-- https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/
-
+  - <https://pypi.org/project/pytest-mongo/>
+  - <https://pypi.org/project/pytest-mongodb/>
+- <https://testdriven.io/blog/pytest-for-beginners/>
+- <https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/>
+- <https://pythontest.com/lean-tdd/>
 
 # --> Logging
-https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700
-https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial
-https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44
-https://realpython.com/python-logging-source-code/
+<https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700>
+<https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial>
+<https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44>
+<https://realpython.com/python-logging-source-code/>
+<https://www.youtube.com/watch?v=pxuXaaT1u3k>
 
 # --> Security
-https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be
-https://dev.to/vaultree/designing-a-secure-api-4059
-
+<https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be>
+<https://dev.to/vaultree/designing-a-secure-api-4059>
 
 # v0.10.0 --> Typing
+
 [Using mypy with an existing codebase — Mypy 0.942 documentation](https://mypy.readthedocs.io/en/stable/existing_code.html)
+
 - [ ] Pydantic Models
 
-
-
-
 # v0.11.0 --> Documentation
+
 - Docs/notes for each page and function
 - Hopefully a lot of this is done as I'm testing and doing type hinting
-- https://realpython.com/python-doctest/
-- https://github.com/lyz-code/blue-book
-- https://lyz-code.github.io/blue-book/documentation/
-https://realpython.com/python-project-documentation-with-mkdocs/
+- <https://realpython.com/python-doctest/>
+- <https://github.com/lyz-code/blue-book>
+- <https://lyz-code.github.io/blue-book/documentation/>
+<https://realpython.com/python-project-documentation-with-mkdocs/>
 - Code and architecture Diagramming
-- https://github.com/mingrammer/diagrams
-https://vale.sh
-- https://software-documentation-template.readthedocs.io/en/latest/readme.html
-- https://www.sitepoint.com/writing-software-documentation/
-- https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/
-- https://helpjuice.com/blog/software-documentation
-- https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f
-- https://upplabs.com/blog/how-to-prepare-the-documentation-for-successful-software-project-development/
-- 
+- <https://github.com/mingrammer/diagrams>
+<https://vale.sh>
+- <https://software-documentation-template.readthedocs.io/en/latest/readme.html>
+- <https://www.sitepoint.com/writing-software-documentation/>
+- <https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/>
+- <https://helpjuice.com/blog/software-documentation>
+- <https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f>
+- <https://upplabs.com/blog/how-to-prepare-the-documentation-for-successful-software-project-development/>
+-
 
 # v0.12.0 --> Re-structure CSS and Navigation
+
 - [ ] CSS to inheret from main
   - [ ] Both the classes and site-wide variables
 - [ ] There is a style of CSS naming convention, find that again.
-- [ ] https://github.com/bem/bem-sdk#naming
-- [ ] https://en.bem.info/toolbox/
-- [ ] https://en.bem.info/methodology/css/
-- [ ] 
+- [ ] <https://github.com/bem/bem-sdk#naming>
+- [ ] <https://en.bem.info/toolbox/>
+- [ ] <https://en.bem.info/methodology/css/>
+- [ ]
 
 @app.route('/favicon.ico')
 def favicon():
     return send_file('static/favicon.ico')
 
-
 # v0.13.0 --> Build Portfolio Page
+
 - [ ] code this entirely by hand, using small code packages
   - [ ] Dataset
   - [ ] Dataset-orm
 - [ ] Use templates for everything
 
-
 # --> Basic Main page and Portfolio
+
 - Portfolio
   - [ ] Of course have the stupid carousel portfolio
     - [ ] When hover on project, get the 'highlights' reel.
 
-
-
 # --> Employers
+
 - Super awesome employers only link
   - Enter their super special employer code
   - Customized short video (my own voice from computer)
 
-
-
 # --> ML Models
+
 - [ ] API
 - [ ] Corresponding Flask interface
   - [ ] Choose models
   - [ ] Choose dataset
     - [ ] Use the scikit-learn toy datasets to get a feel
   - [ ] Graphing, maybe this is part of Front-End
-https://towardsdatascience.com/how-to-properly-ship-and-deploy-your-machine-learning-model-8a8664b763c4
-https://testdriven.io/blog/fastapi-machine-learning/
-
-
+<https://towardsdatascience.com/how-to-properly-ship-and-deploy-your-machine-learning-model-8a8664b763c4>
+<https://testdriven.io/blog/fastapi-machine-learning/>
 
 # --> Front-end Framework
+
 Test this out on the portfolio page
+
 - resume page
 
-
 ==================
+
 # Project Specific
+
 ==================
 
 ## ichrisbirch
+
 - [ ] Command to bring up the menu, like in github
 - [ ] Make a home tab that is present in every page somewhere
 - [ ] `Report an Issue` button at the bottom or floating somewhere in the footer or nav that pops up a form in the middle that they submit easily and it goes to the correct repository as an issue on github and auto assigns me and I get an email.
 - [ ] Automated web testing of all the buttons and forms?
 - [ ] Nav on the bottom that when you click it, it comes up with rotating gears on each side.
-	- [ ] [Floating Buttons](https://codepen.io/rashiq/pen/eqGEzw)
-	- [ ] [Animated BottomBar Experiment (CSS Transitions only)](https://codepen.io/chrisbautista/pen/NWXjqLN)
+  - [ ] [Floating Buttons](https://codepen.io/rashiq/pen/eqGEzw)
+  - [ ] [Animated BottomBar Experiment (CSS Transitions only)](https://codepen.io/chrisbautista/pen/NWXjqLN)
 - [ ] GEARS
-  - [ ] https://webdevtrick.com/cog-loading-animation/
-  - [ ] https://css-challenges.com/rotating-gears/
-  - [ ] https://www.script-tutorials.com/demos/247/index.html
-  - [ ] https://jsfiddle.net/LukaszWiktor/4qpcqymp/
-  - [ ] https://codepen.io/alextebbs/pen/tHhrz
-  - [ ] https://www.script-tutorials.com/css3-animated-gears/
+  - [ ] <https://webdevtrick.com/cog-loading-animation/>
+  - [ ] <https://css-challenges.com/rotating-gears/>
+  - [ ] <https://www.script-tutorials.com/demos/247/index.html>
+  - [ ] <https://jsfiddle.net/LukaszWiktor/4qpcqymp/>
+  - [ ] <https://codepen.io/alextebbs/pen/tHhrz>
+  - [ ] <https://www.script-tutorials.com/css3-animated-gears/>
 - [ ] Integrate with bookmarks
   - [ ] Article of the Day
 
-
 ## Apartments
+
 Ranking
-	[Slider with value and ruler](https://codepen.io/thebabydino/pen/RwjWrKz)
-
-
+ [Slider with value and ruler](https://codepen.io/thebabydino/pen/RwjWrKz)
 
 ## Tasks
+
 - [ ] Remove the Fake Tasks and Delete Tasks
 - [ ] Chart.js
-- [ ] https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/
+- [ ] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
 - [ ] Each task has a button that says `Tomorrow` so it can be moved to the next day if there are blockers.
 - [ ] API with FastAPI
 - [ ] FastAPI and Flask together?  Maybe not possible
-  - [ ] https://fastapi.tiangolo.com/tutorial/
+  - [ ] <https://fastapi.tiangolo.com/tutorial/>
 - [ ] tasks.ichrisbirch.com
 - [ ] Make a "Completed This Month" List
-	- [ ] Add things like courses done, big parts of projects, nagging chores
-	- [ ] Anything that is good to know you got done, so you can add to the list
-	- [ ] Okay, automate this thing so it saves the list every month
-	- [ ] Probably a mongodb collection, one collection for each month and just a list of items, simple
+  - [ ] Add things like courses done, big parts of projects, nagging chores
+  - [ ] Anything that is good to know you got done, so you can add to the list
+  - [ ] Okay, automate this thing so it saves the list every month
+  - [ ] Probably a mongodb collection, one collection for each month and just a list of items, simple
 - [ ] Alexa skill, use the to-do API to add a task
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely
 
-
-
-
 ## Tracks
+
 - [ ] Quote of the day!
 - [ ] DELETE the Todo Part. This is being handled by `Tasks` and Obsidian for notes
 - [ ] Re-design the tabs so that they are layered, eliminate tabs within tabs
 - [ ] Daily Habits date changes at wrong time.  Set time to be local
 
 ### Events
+
 - [ ] Add the Day of week to event date
 - [ ] Delete Past events
 - [ ] Add time remaining for events
-- [ ] Turn long URLs into `Event Link` 
+- [ ] Turn long URLs into `Event Link`
 
 ### Countdowns
+
 - [ ] Automatically put a countdown for any Event that I am attending
 
-
 ## Box Moving
+
 - [ ] Cascade on delete to delete box items
 - [ ] Add box # to search results
 - [ ] Make check boxes bigger on main page
@@ -398,8 +415,8 @@ Ranking
 - [ ] Make search results clickable
 - [ ] Edit box name
 
-
 ## Journal
+
 - [ ] Default Template to give a start
   EX: `3 Things Thankful:`
       (Write here)
@@ -408,79 +425,72 @@ Ranking
 - [ ] Weekly / Monthly Themes
   - [ ] Integrated with the templates
   - [ ] Possibly even a color theme for effect
-  - [ ] Music theme for repetition 
-
+  - [ ] Music theme for repetition
 
 =================
+
 # Future Projects
+
 =================
 
 ## Books
-https://stackabuse.com/file-management-with-aws-s3-python-and-flask/
-https://stackoverflow.com/questions/73211035/how-do-i-configure-nginx-to-serve-static-files-from-an-aws-s3-bucket
+<https://stackabuse.com/file-management-with-aws-s3-python-and-flask/>
+<https://stackoverflow.com/questions/73211035/how-do-i-configure-nginx-to-serve-static-files-from-an-aws-s3-bucket>
 
 ## Manage Github
+
 Use API to pull github projects
 If they have issues that need taken care of display those.
 Make a link to go to the issues.
 Each github project should have:
+
 - Name
 - Link
 - local directory {projects, apps, tutorials, etc}
 This should have an API that I can call in a python script to download all of them.
 Upon opening it should check if there is a new github repository and alert me so that I can properly add it.
 
-
 ## Stable Diffusion
-Because why not?
-https://github.com/huggingface/diffusers
 
+Because why not?
+<https://github.com/huggingface/diffusers>
 
 ## Postgres Permissions Graphical Interface with Approvals / Stats
+
 - [ ] Make the SQL queries first
 - [ ] Make each SQL query a function
 - [ ] Be able to call these functions in API
 - [ ] Tabbed interface for the different functions / stats
 - [ ] class PermissionRequest
-- [ ] https://github.com/AykutSarac/jsoncrack.com?utm_source=substack&utm_medium=email
-
+- [ ] <https://github.com/AykutSarac/jsoncrack.com?utm_source=substack&utm_medium=email>
 
 ## Desktop App
-https://github.com/TomSchimansky/CustomTkinter
-
+<https://github.com/TomSchimansky/CustomTkinter>
 
 ## Webstore Project
+
 I want to make the sales follow a pattern that I specify, like sin waves or certain shapes, then see if the models can pick up on the shapes as a visual guide to accuracy.
 Measuring their average or std or whatever over time and plotting it should give the right numbers.  See if the model can guess the correct shape.
 
-
-
 ## Interview Star Questions
-  - Have it talk to the command line version
-  - Update Command line Version
-  - Maybe use rich?
-    - https://github.com/Textualize/rich
 
-
+- Have it talk to the command line version
+- Update Command line Version
+- Maybe use rich?
+  - <https://github.com/Textualize/rich>
 
 ## Learning
 
-
-
 ## Goals
-
-
 
 ## Overview
 
-
-
 ## Budget
 
-
-
 ## Time Tracker
+
 Fields:
+
 - Description
 - Category
 - Duration
@@ -489,28 +499,24 @@ Fields:
 On the main summary/overview page, should display top 3/5 activities that take time over previous selectable timespan.  Selectable to particular categories and/or subcategories.  Also able to exclude categories and/or subcategories.
 Kind of like budgeting, but only for time.
 
-
-
 ## Deep Dream
-https://www.tensorflow.org/tutorials/generative/deepdream
-
-
+<https://www.tensorflow.org/tutorials/generative/deepdream>
 
 ## Ummmm and Like counter
+
 - submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
 - You can select which common phrases you want to find in the audio
-- 
-
-
+-
 
 ## User Customization
+
 - color scheme
 - timezone
 - session / cookies
   - I don't know anything about this
 
-
 ## Git Graph Maker
+
 - functions that make commits and try with different methods
   - merge
   - merge with squash

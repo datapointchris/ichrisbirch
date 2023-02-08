@@ -115,3 +115,21 @@ FastAPI:
   - [X] Make notes
 
 
+# --> {0.7.0} Rename entire project to ichrisbirch
+FastAPI:
+- [X] nginx files
+- [X] supervisor files
+- [X] folders
+- [X] name of keys
+- [X] name of security group
+- [X] name of mongo servers
+- [X] database names
+- [X] Do a grep for all things euphoria
+
+# --> Backups
+- [X] Postgres
+- [x] MongoDB
+- [x] DynamoDB
+- [X] Code
+  - [X] Github
+
