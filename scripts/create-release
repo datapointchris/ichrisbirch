@@ -138,12 +138,14 @@ run_coverage_report() {
     coverage run --module pytest
     coverage report -m >"$VERSION_STATS_DIR/coverage.txt"
     coverage json -o "$VERSION_STATS_DIR/coverage.json"
+    echo >> "$VERSION_STATS_DIR/coverage.json" # add newline to end of file
     coverage html -d "$VERSION_STATS_DIR/coverage_html/"
 }
 
 tokei_lines_of_code_report() {
-    tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ >"$VERSION_STATS_DIR"/lines_of_code.txt
-    tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ -o json >"$VERSION_STATS_DIR"/lines_of_code.json
+    tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ >"$VERSION_STATS_DIR/lines_of_code.txt"
+    tokei . --exclude .venv --exclude "$PROJECT"/backend/alembic/versions/ -o json >"$VERSION_STATS_DIR/lines_of_code.json"
+    echo >> "$VERSION_STATS_DIR/lines_of_code.json" # add newline to end of file
 
 }
 
@@ -202,14 +204,7 @@ notify_update "pyproject.toml $CURRENT_VERSION" "$SEMVER"
 if [[ -z $DRY_RUN ]]; then update_project_version; fi
 notify_update "$PROJECT/__init__.py $CURRENT_VERSION" "$SEMVER"
 
-if [[ -z $DRY_RUN ]]; then
-    git add -A
-
-    # echo "$(blue "Pre-commit: ") Running..."
-    # pre-commit run
-
-    git commit -m "release: $VERSION - $VERSION_DESCRIPTION"
-fi
+if [[ -z $DRY_RUN ]]; then git_add_and_commit_version_stats; fi
 notify_create "Create Git commit: 'release: $VERSION - $VERSION_DESCRIPTION'"
 
 if [[ -z $DRY_RUN ]]; then git_tag_and_push_version; fi
