@@ -30,7 +30,7 @@ AND (
   SELECT
     -- Except for first day
     EXTRACT(DAY FROM now() - add_date)::integer != 0)$$);
-  
+
 
 
 --------------------------------------------------

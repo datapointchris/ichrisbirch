@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, request
-from ichrisbirch.models.events import Event
-from ichrisbirch.db.sqlalchemy import session
 import requests
+from flask import Blueprint, render_template, request
+
 from ichrisbirch import settings
-blueprint = Blueprint(
-    'events', __name__, template_folder='templates/events', static_folder='static'
-)
+from ichrisbirch.db.sqlalchemy import session
+from ichrisbirch.models.events import Event
+
+blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

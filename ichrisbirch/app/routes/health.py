@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from ichrisbirch import __version__
-from ichrisbirch import settings
+from flask import Blueprint, render_template
+
+from ichrisbirch import __version__, settings
 
 blueprint = Blueprint(
     'health',

@@ -1,12 +1,14 @@
 from logging.config import fileConfig
 
 from alembic import context
+
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 import ichrisbirch  # this is to load the environment and logger in __init__.py
 from ichrisbirch.db.sqlalchemy.base import Base
 from ichrisbirch.db.sqlalchemy.session import engine
+
 # Need the models imported for Base to find the tables
 from ichrisbirch.models.apartments import Apartment  # noqa
 from ichrisbirch.models.box_packing import Box, Item  # noqa

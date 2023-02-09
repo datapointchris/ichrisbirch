@@ -1,13 +1,11 @@
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
+from ichrisbirch import settings
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.box_packing import Box, Item
-from ichrisbirch import settings
 
-blueprint = Blueprint(
-    'box_packing', __name__, template_folder='templates/box_packing', static_folder='static'
-)
+blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_packing', static_folder='static')
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

@@ -1,8 +1,8 @@
-from ichrisbirch.tests.helpers import endpoint
-from ichrisbirch import __version__
 import pytest
-from ichrisbirch.api.endpoints import health
 
+from ichrisbirch import __version__
+from ichrisbirch.api.endpoints import health
+from ichrisbirch.tests.helpers import endpoint
 
 ENDPOINT = 'health'
 

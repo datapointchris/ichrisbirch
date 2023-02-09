@@ -4,12 +4,14 @@ import string
 import time
 
 from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
 
 from ichrisbirch import __version__
 
 # from .dependencies import get_query_token, get_token_header
 from .endpoints import health, tasks
+
+# from fastapi.responses import RedirectResponse
+
 
 logger = logging.getLogger(__name__)
 # app = FastAPI(dependencies=[Depends(get_query_token)])
@@ -34,9 +36,7 @@ async def log_requests(request, call_next):
 
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.2f}'.format(process_time)
-    logger.debug(
-        f"rid={idem} completed_in={formatted_process_time}ms status_code={response.status_code}"
-    )
+    logger.debug(f"rid={idem} completed_in={formatted_process_time}ms status_code={response.status_code}")
     return response
 
 

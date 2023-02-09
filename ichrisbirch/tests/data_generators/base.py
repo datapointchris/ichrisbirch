@@ -1,6 +1,7 @@
 import random
-from faker import Faker
 from abc import ABC, abstractmethod
+
+from faker import Faker
 
 
 class FakeDataGenerator(ABC):

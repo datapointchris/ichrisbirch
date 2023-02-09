@@ -5,9 +5,8 @@ Revises:
 Create Date: 2022-11-18 22:36:50.716104
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '0f98f2e006f5'
@@ -28,9 +27,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         schema='apartments',
     )
-    op.create_index(
-        op.f('ix_apartments_apartments_id'), 'apartments', ['id'], unique=False, schema='apartments'
-    )
+    op.create_index(op.f('ix_apartments_apartments_id'), 'apartments', ['id'], unique=False, schema='apartments')
     op.create_index(
         op.f('ix_apartments_apartments_name'),
         'apartments',
@@ -93,9 +90,7 @@ def upgrade() -> None:
         'journal',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('title', sa.String(), nullable=True),
-        sa.Column(
-            'date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False
-        ),
+        sa.Column('date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('content', sa.String(), nullable=True),
         sa.Column('feeling', sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint('id'),
@@ -104,9 +99,7 @@ def upgrade() -> None:
         'portfolio',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(), nullable=True),
-        sa.Column(
-            'date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False
-        ),
+        sa.Column('date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('content', sa.String(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
     )
@@ -116,9 +109,7 @@ def upgrade() -> None:
         sa.Column('name', sa.String(length=64), nullable=False),
         sa.Column('category', sa.String(length=64), nullable=True),
         sa.Column('priority', sa.Integer(), nullable=False),
-        sa.Column(
-            'add_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False
-        ),
+        sa.Column('add_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('complete_date', sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint('id'),
     )
@@ -138,9 +129,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         schema='apartments',
     )
-    op.create_index(
-        op.f('ix_apartments_features_id'), 'features', ['id'], unique=False, schema='apartments'
-    )
+    op.create_index(op.f('ix_apartments_features_id'), 'features', ['id'], unique=False, schema='apartments')
     op.create_table(
         'items',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -173,9 +162,7 @@ def downgrade() -> None:
     op.drop_table('events')
     op.drop_table('countdowns')
     op.drop_table('boxes', schema='box_packing')
-    op.drop_index(
-        op.f('ix_apartments_apartments_name'), table_name='apartments', schema='apartments'
-    )
+    op.drop_index(op.f('ix_apartments_apartments_name'), table_name='apartments', schema='apartments')
     op.drop_index(op.f('ix_apartments_apartments_id'), table_name='apartments', schema='apartments')
     op.drop_table('apartments', schema='apartments')
     # ### end Alembic commands ###

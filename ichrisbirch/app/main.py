@@ -3,17 +3,7 @@ import logging
 from flask import Flask
 
 from ichrisbirch import settings
-from ichrisbirch.app.routes import (
-    box_packing,
-    countdowns,
-    events,
-    habits,
-    health,
-    journal,
-    main,
-    portfolio,
-    tasks,
-)
+from ichrisbirch.app.routes import box_packing, countdowns, events, habits, health, journal, main, portfolio, tasks
 
 logger = logging.getLogger(__name__)
 

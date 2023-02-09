@@ -1,12 +1,11 @@
-from flask import Blueprint, render_template, request
-from ichrisbirch.models.countdowns import Countdown
-from ichrisbirch.db.sqlalchemy import session
 import requests
-from ichrisbirch import settings
+from flask import Blueprint, render_template, request
 
-blueprint = Blueprint(
-    'countdowns', __name__, template_folder='templates/countdowns', static_folder='static'
-)
+from ichrisbirch import settings
+from ichrisbirch.db.sqlalchemy import session
+from ichrisbirch.models.countdowns import Countdown
+
+blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

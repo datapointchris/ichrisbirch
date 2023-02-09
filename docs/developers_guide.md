@@ -2,51 +2,35 @@
 
 - [Developer's Guide](#developers-guide)
   - [Creating a Release](#creating-a-release)
-- [ERRORS](#errors)
+  - [ERRORS](#errors)
   - [Flask](#flask)
-    - [ERROR](#error)
   - [Linux](#linux)
-    - [ERROR](#error-1)
-    - [Solution](#solution)
   - [Supervisor](#supervisor)
-    - [ERROR](#error-2)
-    - [Solution](#solution-1)
-    - [ERROR](#error-3)
-    - [Solution](#solution-2)
-    - [ERROR](#error-4)
-    - [Solution](#solution-3)
   - [NGINX](#nginx)
-    - [ERROR](#error-5)
-    - [Solution](#solution-4)
-    - [Solution](#solution-5)
   - [API Postgres](#api-postgres)
-    - [ERROR](#error-6)
-- [SOLUTION](#solution-6)
-- [New Server](#new-server)
-  - [Change default shell to zsh and install all of the goodies](#change-default-shell-to-zsh-and-install-all-of-the-goodies)
-- [First time](#first-time)
-  - [DB](#db)
-    - [Schemas](#schemas)
-    - [Alembic](#alembic)
-  - [Requirements](#requirements)
-  - [Dev Requirements](#dev-requirements)
-- [Notes](#notes)
+  - [New Server](#new-server)
+    - [Change default shell to zsh and install all of the goodies](#change-default-shell-to-zsh-and-install-all-of-the-goodies)
+  - [First time](#first-time)
+    - [DB](#db)
+      - [Schemas](#schemas)
+      - [Alembic](#alembic)
+    - [Requirements](#requirements)
+    - [Dev Requirements](#dev-requirements)
+  - [Notes](#notes)
   - [Alembic Revision](#alembic-revision)
   - [FastAPI Crud Endpoints](#fastapi-crud-endpoints)
-- [Testing](#testing)
+  - [Testing](#testing)
 
 ## Creating a Release
 
 1. Change(s) should be committed/merged to `master`
 2. run `/scripts/create-release X.X.X 'Release Description'
 
-# ERRORS
+## ERRORS
 
 ==============================
 
 ## Flask
-
-### ERROR
 
 blank pages but no errors, try a different port.
 
@@ -54,11 +38,11 @@ blank pages but no errors, try a different port.
 
 ## Linux
 
-### ERROR
+> **Error**  
 
 ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
 
-### Solution
+> **Solution**  
 
 `sudo apt install python3-cachecontrol`
 
@@ -66,53 +50,55 @@ ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
 
 ## Supervisor
 
-### ERROR
+> **Error**  
 
 supervisor.sock no such file
 
-### Solution
+> **Solution**  
 
 make sure directories and files for logs are created.
 
-### ERROR
+> **Error**  
 
 BACKOFF can't find command... that is pointing to .venv
 
-### Solution
+> **Solution**  
 
 Prod: Check that the project is installed
 Dev: Check the symlink isn't broken
 
-### ERROR
+> **Error**  
 
+```bash
 error: <class 'FileNotFoundError'>, [Errno 2] No such file or directory: file: /usr/local/Cellar/supervisor/4.2.5/libexec/lib/python3.11/site-packages/supervisor/xmlrpc.py line: 55
+```
 
-### Solution
+> **Solution**  
 
 Start and run supervisor with homebrew: `brew services start supervisor`
 
 ## NGINX
 
-### ERROR
+> **Error**  
 
 bind() to 0.0.0.0:80 failed (98: Address already in use)
 
-### Solution
+> **Solution**  
 
 `sudo pkill -f nginx & wait $!`
 `sudo systemctl start nginx`
 
-__DEV__
+**DEV**
 bind() to 127.0.0.1:80 failed (13: Permission denied)
 
-### Solution
+> **Solution**  
 
 NGINX is not running as root.  It does not run reliably with homebrew.
 Use `sudo nginx -s reload` instead of homebrew.
 
 ## API Postgres
 
-### ERROR
+> **Error**  
 
 Local changes were working but nothing that connected to prod postgres.
 
@@ -124,29 +110,29 @@ Can connect to prod server with DBeaver
 Verified that the connection info is the same.
 Seems that the API is not connecting to postgres instance
 
-__api.macmini.local__
+**api.macmini.local**
 WORKING api.macmini.local/
 WORKING api.macmini.local/docs
 WORKING api.macmini.local/tasks
 WORKING api.macmini.local/tasks/1
 WORKING api.macmini.local/tasks/completed
 
-__ichrisbirch.com__
+**ichrisbirch.com**
 WORKING api.ichrisbirch.com/
 WORKING api.ichrisbirch.com/docs
 ERROR api.ichrisbirch.com/tasks
 ERROR api.ichrisbirch.com/tasks/1
 ERROR api.ichrisbirch.com/tasks/completed
 
-# SOLUTION
+> **Solution**  
 
 The issue was resolved by modifying the security group of the postgres instance to allow the ec2 instance to connect by allowing it's security group.
 
-# New Server
+## New Server
 
 ==============================
 
-## Change default shell to zsh and install all of the goodies
+### Change default shell to zsh and install all of the goodies
 
 ```bash
 # Install ZSH
@@ -167,18 +153,18 @@ source ~/.dotfiles/symlinks-ec2
 sudo apt install bpytop -y
 ```
 
-# First time
+## First time
 
 ==============================
 
-## DB
+### DB
 
-### Schemas
+#### Schemas
 
 SQLAlchemy cannot create the schemas, neither can alembic, have to create them manually first time
 `create-schemas.py` to add the schemas
 
-### Alembic
+#### Alembic
 
 Run in `ichrisbirch`
 
@@ -188,17 +174,17 @@ Create the initial tables from the SQLAlchemy models (purpose of --autogenerate)
 Run the upgrade to actually create the tables
 `alembic upgrade head`
 
-## Requirements
+### Requirements
 
 Poetry
 
-## Dev Requirements
+### Dev Requirements
 
 Docker
 tokei
 tools
 
-# Notes
+## Notes
 
 ==============================
 
@@ -211,7 +197,8 @@ Run in `ichrisbirch`
 2. Run a revision to pickup changes in code
 `alembic revision --autogenerate -m 'Add notes field to tasks table'`
 
-> Note: If this doesn't work perfectly, you must edit the revision file
+    > **Note**  
+    > If this doesn't work perfectly, you must edit the revision file
 
 3. Run the upgrade in the environments
 
@@ -225,7 +212,7 @@ alembic upgrade head
 You have to specify keyword arguments after `db` because of the function signature with `*`
 Order matters with endpoints, dynamic routes `route/endpoint/{id}` are last
 
-# Testing
+## Testing
 
 ==============================
 In order to run pytest, you have to set `ENVIRONMENT=development` so that the config can pick it up and set the correct variables.

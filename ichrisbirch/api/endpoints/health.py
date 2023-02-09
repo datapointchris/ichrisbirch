@@ -1,9 +1,10 @@
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
 from fastapi import APIRouter
-from ichrisbirch import __version__
-from ichrisbirch import schemas
+
+from ichrisbirch import __version__, schemas
 
 router = APIRouter(prefix='/health', tags=['health'])
 

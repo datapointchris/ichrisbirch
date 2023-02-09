@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Test the updated server configs
 import argparse
 import itertools
@@ -71,6 +73,6 @@ if __name__ == '__main__':
             except Exception as e:
                 pings.append((address, 'EXCEPTION', e))
 
-        for (address, status, message) in sorted(pings):
+        for address, status, message in sorted(pings):
             color = STATUS_CODE_COLORS.get(status, Fore.RED)
             print(f'{color}{address:<40}{status:<11}{str(message)[:50]}')

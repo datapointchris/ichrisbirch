@@ -1,7 +1,8 @@
-from flask import Blueprint, redirect, render_template, request, url_for
-from ichrisbirch.models.apartments import Apartment, Feature
 import requests
+from flask import Blueprint, redirect, render_template, request, url_for
+
 from ichrisbirch import settings
+from ichrisbirch.models.apartments import Apartment, Feature
 
 blueprint = Blueprint(
     'apartments',

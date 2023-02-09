@@ -1,17 +1,15 @@
-from datetime import date
 import logging
+from datetime import date
 
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch import settings
-from ichrisbirch.models.habits import Category, CompletedHabit, Habit
-from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.app.easy_dates import EasyDate
+from ichrisbirch.db.sqlalchemy import session
+from ichrisbirch.models.habits import Category, CompletedHabit, Habit
 
-blueprint = Blueprint(
-    'habits', __name__, template_folder='templates/habits', static_folder='static'
-)
+blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +19,11 @@ HABITS_URL = f'{settings.API_URL}/habits'
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
     with session:
-        current_habits = session.query(Habit).where(Habit.current.is_(True))
-        completed_today = session.query(CompletedHabit).where(
-            CompletedHabit.completed_date == date.today()
-        )
+        # current_habits = session.query(Habit).where(Habit.current.is_(True))
+        completed_today = session.query(CompletedHabit).where(CompletedHabit.completed_date == date.today())
         not_completed = session.query(Habit).join()
 
-    return render_template(
-        'index.html', completed_today=completed_today, not_completed=not_completed
-    )
+    return render_template('index.html', completed_today=completed_today, not_completed=not_completed)
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
@@ -89,6 +83,7 @@ def manage():
         data = request.form.to_dict()
         method = data.pop('method')
         habit = Habit(**data)
+        print(method, habit)
 
     return render_template('habits/manage.html')
 

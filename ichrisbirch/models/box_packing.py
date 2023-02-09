@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, Boolean, String, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
 from ichrisbirch.db.sqlalchemy.base import Base
 
 

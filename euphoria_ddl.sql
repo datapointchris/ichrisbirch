@@ -95,7 +95,7 @@ VALUES
 ('ceiling_fans', 5),
 ('guest_parking', 8),
 ('speed_bumps', 2);
-    
+
 
 INSERT INTO apartments.apartments(name, address, url, notes)
 VALUES
@@ -121,12 +121,12 @@ VALUES
 (880, 1, 3),
 (1200, 6, 3);
 
-SELECT 
+SELECT
   a.name AS apartment,
   a.id AS apartment_id,
-  f.name AS feature, 
+  f.name AS feature,
   f.id AS feature_id,
-  f.weight, 
+  f.weight,
   af.value,
   avg(value) OVER() AS avg_value,
   value / (avg(value) OVER()) AS PERCENT,
@@ -235,10 +235,3 @@ insert into search_items (rowid, name)
 values (new.id, new.name);
 
 end;
-   
-   
-   
-   
-   
-   
-   

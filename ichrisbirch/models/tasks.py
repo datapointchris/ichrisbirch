@@ -1,7 +1,8 @@
 import enum
 
+from sqlalchemy import Column, DateTime, Enum, Integer, String, Text
 from sqlalchemy.sql import func
-from sqlalchemy import Column, Integer, String, DateTime, Text, Enum
+
 from ichrisbirch.db.sqlalchemy.base import Base
 
 

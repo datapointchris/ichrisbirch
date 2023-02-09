@@ -1,2 +1,2 @@
-from .tasks import Task, TaskCreate # noqa
-from .health import Health # noqa
+from .health import Health  # noqa
+from .tasks import Task, TaskCreate  # noqa

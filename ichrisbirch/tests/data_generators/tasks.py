@@ -1,7 +1,8 @@
 import random
 
-from .base import FakeDataGenerator
 from ichrisbirch.models.tasks import TaskCategory
+
+from .base import FakeDataGenerator
 
 
 class TaskDataGenerator(FakeDataGenerator):

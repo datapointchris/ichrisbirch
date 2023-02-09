@@ -32,28 +32,13 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
         last: bool | None = None,
     ):
         if first:
-            return (
-                db.query(Task)
-                .filter(Task.complete_date.is_not(None))
-                .order_by(Task.complete_date.asc())
-                .first()
-            )
+            return db.query(Task).filter(Task.complete_date.is_not(None)).order_by(Task.complete_date.asc()).first()
 
         elif last:
-            return (
-                db.query(Task)
-                .filter(Task.complete_date.is_not(None))
-                .order_by(Task.complete_date.desc())
-                .first()
-            )
+            return db.query(Task).filter(Task.complete_date.is_not(None)).order_by(Task.complete_date.desc()).first()
 
         elif start_date is None or end_date is None:
-            return (
-                db.query(Task)
-                .filter(Task.complete_date.is_not(None))
-                .order_by(Task.complete_date.desc())
-                .all()
-            )
+            return db.query(Task).filter(Task.complete_date.is_not(None)).order_by(Task.complete_date.desc()).all()
 
         else:
             return (

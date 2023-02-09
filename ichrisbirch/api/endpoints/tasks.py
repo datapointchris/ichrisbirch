@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ichrisbirch.api import crud
-
 # from ..dependencies import auth
 from ichrisbirch import schemas
+from ichrisbirch.api import crud
 from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
 
 router = APIRouter(prefix='/tasks', tags=['tasks'])

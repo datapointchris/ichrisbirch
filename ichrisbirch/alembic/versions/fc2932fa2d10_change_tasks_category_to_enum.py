@@ -5,11 +5,11 @@ Revises: c119daabf840
 Create Date: 2023-01-16 02:00:52.070281
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
-from ichrisbirch.models.tasks import TaskCategory
 
+from ichrisbirch.models.tasks import TaskCategory
 
 # revision identifiers, used by Alembic.
 revision = 'fc2932fa2d10'

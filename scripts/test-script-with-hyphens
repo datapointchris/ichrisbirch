@@ -151,7 +151,7 @@ main() {
     print_version
 
     print_section "Copy Files"
-    
+
     files=("file1" "file2" "file3" "file4" "file5")
     file_counter=1
     for file in "${files[@]}":
@@ -161,7 +161,7 @@ main() {
         sleep .1
         ((file_counter++))
     done
-    
+
     section_separater
 
     # DRY=true
@@ -201,5 +201,3 @@ if [ "${BASH_SOURCE[0]}" == "$0" ]; then
 else
     echo "  This script is being SOURCED."
 fi
-
-

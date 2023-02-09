@@ -1,11 +1,10 @@
-from flask import Blueprint, render_template, request, url_for, redirect
-from ichrisbirch.models.journal import JournalEntry
-from ichrisbirch import settings
 import requests
+from flask import Blueprint, redirect, render_template, request, url_for
 
-blueprint = Blueprint(
-    'journal', __name__, template_folder='templates/journal', static_folder='static'
-)
+from ichrisbirch import settings
+from ichrisbirch.models.journal import JournalEntry
+
+blueprint = Blueprint('journal', __name__, template_folder='templates/journal', static_folder='static')
 
 
 @blueprint.route('/<int:id>/')

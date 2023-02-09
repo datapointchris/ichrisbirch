@@ -78,7 +78,7 @@ terminal_width_separator() { printf "%0$(tput cols)d" 0 | tr '0' "${1:-_}"; }
 print_title() {
     local message=$(
         cat <<-TITLE
-        
+
 		$(terminal_width_separator "=")
 		$(center_text "$(green "$1")")
 		$(terminal_width_separator "-")

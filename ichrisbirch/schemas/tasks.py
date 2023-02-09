@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from pydantic import BaseModel
+
 from ichrisbirch.models.tasks import TaskCategory
 
 

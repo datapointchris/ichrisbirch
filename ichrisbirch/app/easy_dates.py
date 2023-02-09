@@ -1,6 +1,6 @@
 import calendar
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, time
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -32,9 +32,7 @@ class EasyDateTime:
     previous_30: datetime = today - timedelta(days=30)
     _month_days: int = calendar.monthrange(today.year, today.month)[1]
     _week_number: int = today.isocalendar().week
-    week_start: datetime = datetime.combine(
-        date.fromisocalendar(today.year, _week_number, 1), time()
-    )
+    week_start: datetime = datetime.combine(date.fromisocalendar(today.year, _week_number, 1), time())
     week_end: datetime = week_start + timedelta(days=7)
     this_month: datetime = datetime(today.year, today.month, 1)
     next_month: datetime = this_month + timedelta(days=_month_days)

@@ -1,10 +1,11 @@
-import pytest
 import json
+
+import pytest
+
+from ichrisbirch.api.endpoints import tasks
+from ichrisbirch.models.tasks import Task
 from ichrisbirch.tests.data_generators import TaskDataGenerator
 from ichrisbirch.tests.helpers import endpoint
-from ichrisbirch.models.tasks import Task
-from ichrisbirch.api.endpoints import tasks
-
 
 ENDPOINT = 'tasks'
 SEED = 777

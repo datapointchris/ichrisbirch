@@ -1,37 +1,30 @@
 # Deploy the project in professional fashion
 
-
-
-
 ## Dev
+
 **`Dev`** assumes MacOS and homebrew installations
 **`HOST:`** 0.0.0.0
 **`APP PORT:`** 4000
 **`API PORT:`** 4200
 
-
-
 ## Test
+
 **`Test`** assumes Ubuntu and apt installations
 **`HOST:`** 0.0.0.0
 **`APP PORT:`** 4000
 **`API PORT:`** 4200
 
-
-
 ## Prod
+
 **`Prod`** assumes Ubuntu and apt installations
 **`HOST:`** ichrisbirch.com
 **`APP PORT:`** 8000
 **`API PORT:`** 8200
 Number of workers is 1 for each in supervisor conf files because of small EC2 instance
 
-TODO: This is not right
-Probably encrypt and decrypt them all
 1. Decrypt or copy environment file
  `scp -i ~/.ssh/apps.pem .prod.env ubuntu@$ICHRISBIRCH_IP:/var/www/ichrisbirch/`
 
-TODO: This does not work on Ubuntu
 2. Install the project
 `poetry install --without dev`
 Note: if there is pyscopg2 error about gcc:
@@ -41,36 +34,41 @@ Note: if there is pyscopg2 error about gcc:
 
 4. Restart supervisor and nginx
 
+## New Server
 
+### Check for updates
 
-
-# New Server
-
-## Check for updates 
 sudo apt update
 sudo apt upgrade -y
 
-## Installs
+### Installs
+
  TODO: [2022/10/31] - Put zsh and dotfiles on here
 sudo apt install -y tmux tmuxinator tree htop sysstat procps tldr libpq-dev libffi-dev python3-cachecontrol python3.10 python3-poetry nginx supervisor zsh
 
-## Clone Project
-sudo git clone https://github.com/datapointchris/ichrisbirch.git /var/www/
+### Clone Project
 
-## Secure copy the environment file (from local)
+sudo git clone <https://github.com/datapointchris/ichrisbirch.git> /var/www/
+
+### Secure copy the environment file (from local)
+
 scp -i ~/.ssh/apps.pem ~/github/projects/ichrisbirch/deploy/prod/.prod.env ubuntu@$ICHRISBIRCH_IP:/var/www/ichrisbirch/deploy/prod/.prod.env
 
-## Install project
+### Install project
+
 poetry config virtualenvs.in-project true
 poetry install --without dev
 
-## Run deploy script to copy supervisor and nginx config files
+### Run deploy script to copy supervisor and nginx config files
+
 sudo chmod +x /var/www/ichrisbirch/deploy/prod/deploy.sh
 sudo /var/www/ichrisbirch/deploy/prod/deploy.sh
 
-## Restart nginx and supervisor
+### Restart nginx and supervisor
+
 sudo supervisorctl reload
 sudo nginx -s reload
 
-## ** Locally ** Make sure of no errors
+### **Locally** Make sure of no errors
+
 tmuxinator ichrisbirch-prod-monitoring

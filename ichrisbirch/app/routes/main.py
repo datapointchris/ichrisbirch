@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template
+
 from ichrisbirch import config
 
 blueprint = Blueprint(

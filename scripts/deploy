@@ -84,7 +84,7 @@ case $ENVIRONMENT in
     test) OS_PREFIX="" ;;
     prod) OS_PREFIX="" ;;
     *) echo_error "Unsupported environment flag: $ENVIRONMENT"
-       usage 
+       usage
        exit 1 ;;
 esac
 

@@ -11,9 +11,8 @@ from faker import Faker
 from flask import Blueprint, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
 
-from ichrisbirch import settings
+from ichrisbirch import models, schemas, settings
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch import models, schemas
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.tasks import TaskCategory
 
@@ -101,8 +100,7 @@ def completed():
     # TODO: Update this to something better for graphing
     # This is quick and dirty for now
     timestamps_for_filter = {
-        dt: 0
-        for dt in [start_date + timedelta(days=x) for x in range((end_date - start_date).days)]
+        dt: 0 for dt in [start_date + timedelta(days=x) for x in range((end_date - start_date).days)]
     }
     completed_task_timestamps = Counter(
         [
@@ -162,9 +160,7 @@ def fake_tasks():
     fake = Faker()
     with session:
         for _ in range(1000):
-            tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(
-                days=random.randint(0, 100)
-            )
+            tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(days=random.randint(0, 100))
             task = {
                 'name': fake.catch_phrase(),
                 'category': random.choice(['financial', 'coding', 'chore', 'car', 'misc']),

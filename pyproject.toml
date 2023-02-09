@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "ichrisbirch"
-version = "0.7.2"
+version = "0.8.0"
 description = ""
 authors = ["Chris Birch <datapointchris@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/datapointchris/ichrisbirch"
+homepage = "http://www.ichrisbirch.com"
 
 [tool.poetry.dependencies]
 python = "^3.10.1"
@@ -24,6 +27,7 @@ pydeps = "^1.10.22"
 sqlalchemy = "^1.4.42"
 Faker = "^14.1.0"
 colorama = "^0.4.6"
+pre-commit = "^3.0.4"
 
 [tool.poetry.dev-dependencies]
 alembic = "^1.8.1"
@@ -39,6 +43,33 @@ pytest-cov = "^3.0.0"
 pytest-md = "^0.2.0"
 wily = "^1.23.0"
 colorama = "^0.4.6"
+
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+line_length = 120
+profile = "black"
+skip = [".gitignore"]
+extend_skip = [".md", ".json"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "scripts/ping-test.py"]
+skips = ["B311"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

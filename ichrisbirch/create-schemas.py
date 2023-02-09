@@ -1,9 +1,10 @@
 import logging
 
 import sqlalchemy
-from ichrisbirch import settings
 from db.sqlalchemy.session import SessionLocal, engine
 from sqlalchemy.schema import CreateSchema
+
+from ichrisbirch import settings
 
 logger = logging.getLogger(__name__)
 inspector = sqlalchemy.inspect(engine)
