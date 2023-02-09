@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034
+
 
 ######################################################################
 # Postgres Snapshot Backup to S3
@@ -34,13 +36,13 @@ fi
 set -o errtrace         # Ensure the error trap handler is inherited
 
 
-RETURN_CODE_SUCCESS=0
-RETURN_CODE_ERROR=1
+# RETURN_CODE_SUCCESS=0
+# RETURN_CODE_ERROR=1
 
 VERSION="0.1.0"
 AUTHOR="Chris Birch https://www.github.com/datapointchris"
 
-DEBUG_PRINTS_ON="true"  # "true" or "false"; can also be passed in as an option: `-d` or `--debug`
+# DEBUG_PRINTS_ON="true"  # "true" or "false"; can also be passed in as an option: `-d` or `--debug`
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")

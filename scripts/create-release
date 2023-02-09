@@ -183,6 +183,7 @@ if [[ -z $DRY_RUN ]]; then mkdir -p "$VERSION_STATS_DIR"; fi
 notify_create "$VERSION_STATS_DIR"
 
 if [[ -z $DRY_RUN ]]; then check_and_start_docker; fi
+
 if [[ -z $DRY_RUN ]]; then run_coverage_report; fi
 notify_create "$VERSION_STATS_DIR/coverage.txt"
 notify_create "$VERSION_STATS_DIR/coverage.json"
@@ -201,7 +202,14 @@ notify_update "pyproject.toml $CURRENT_VERSION" "$SEMVER"
 if [[ -z $DRY_RUN ]]; then update_project_version; fi
 notify_update "$PROJECT/__init__.py $CURRENT_VERSION" "$SEMVER"
 
-if [[ -z $DRY_RUN ]]; then git_add_and_commit_version_stats; fi
+if [[ -z $DRY_RUN ]]; then
+    git add -A
+
+    # echo "$(blue "Pre-commit: ") Running..."
+    # pre-commit run
+
+    git commit -m "release: $VERSION - $VERSION_DESCRIPTION"
+fi
 notify_create "Create Git commit: 'release: $VERSION - $VERSION_DESCRIPTION'"
 
 if [[ -z $DRY_RUN ]]; then git_tag_and_push_version; fi

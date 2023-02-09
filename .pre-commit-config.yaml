@@ -1,42 +1,47 @@
 repos:
-    - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.4.0
-      hooks:
-          - id: check-yaml
-          - id: check-toml
-          - id: check-json
-          - id: end-of-file-fixer
-          - id: trailing-whitespace
-            args: [--markdown-linebreak-ext=md]
-          - id: check-executables-have-shebangs
-          - id: check-shebang-scripts-are-executable
-    - repo: https://github.com/psf/black
-      rev: 23.1.0
-      hooks:
-          - id: black
-    - repo: https://github.com/pycqa/flake8
-      rev: 6.0.0 # pick a git hash / tag to point to
-      hooks:
-          - id: flake8
-    - repo: https://github.com/pycqa/isort
-      rev: 5.12.0
-      hooks:
-          - id: isort
-    - repo: https://github.com/adamchainz/blacken-docs
-      rev: 1.13.0 # replace with latest tag on GitHub
-      hooks:
-          - id: blacken-docs
-    - repo: https://github.com/PyCQA/bandit
-      rev: 1.7.4
-      hooks:
-          - id: bandit
-            args: ["-c", "pyproject.toml"]
-            additional_dependencies: ["bandit[toml]"]
-    # - repo: https://github.com/wemake-services/dotenv-linter
-    #   rev: 0.4.0 # Use the ref you want to point at
-    #   hooks:
-    #       - id: dotenv-linter
-    - repo: https://github.com/igorshubovych/markdownlint-cli
-      rev: v0.33.0
-      hooks:
-          - id: markdownlint
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0 # pick a git hash / tag to point to
+    hooks:
+      - id: flake8
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.13.0 # replace with latest tag on GitHub
+    hooks:
+      - id: blacken-docs
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+  # - repo: https://github.com/wemake-services/dotenv-linter
+  #   rev: 0.4.0 # Use the ref you want to point at
+  #   hooks:
+  #       - id: dotenv-linter
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.33.0
+    hooks:
+      - id: markdownlint
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.9.0
+    hooks:
+      - id: shellcheck
+      #       args: ["--severity=warning"]  # Optionally only show errors and warnings
