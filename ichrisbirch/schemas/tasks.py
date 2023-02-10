@@ -6,6 +6,8 @@ from ichrisbirch.models.tasks import TaskCategory
 
 
 class TaskCreate(BaseModel):
+    """Pydantic model for creating a task"""
+
     name: str
     notes: str | None
     category: str
@@ -13,6 +15,8 @@ class TaskCreate(BaseModel):
 
 
 class Task(BaseModel):
+    """Pydantic model for a task"""
+
     id: int
     name: str
     notes: str | None
@@ -27,4 +31,6 @@ class Task(BaseModel):
 
 
 class TaskUpdate(Task):
+    """Pydantic model for updating a task"""
+
     ...

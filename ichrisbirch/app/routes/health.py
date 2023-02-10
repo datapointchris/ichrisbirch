@@ -15,6 +15,7 @@ blueprint = Blueprint(
 
 @blueprint.route('/')
 def health():
+    """Health and info endpoint for app"""
     return render_template(
         'health/index.html',
         settings=settings,

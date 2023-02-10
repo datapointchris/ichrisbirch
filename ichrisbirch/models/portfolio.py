@@ -5,6 +5,8 @@ from ichrisbirch.db.sqlalchemy.base import Base
 
 
 class PortfolioProject(Base):
+    """SQLAlchemy model for portfolio table"""
+
     __tablename__ = 'portfolio'
     id = Column(Integer, primary_key=True)
     name = Column(String())

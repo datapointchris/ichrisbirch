@@ -73,22 +73,27 @@ exclude_dirs = ["tests", "scripts/ping-test.py"]
 skips = ["B311"]
 
 [tool.interrogate]
-fail-under = 75
+fail-under = 80
 ignore-init-method = true
 ignore-semiprivate = true
 ignore-private = true
 ignore-magic = true
 ignore-module = true
-ignore-nested-functions = true
+ignore-nested-functions = false
 ignore-init-module = false
 ignore-property-decorators = false
-exclude = ["ichrisbirch/alembic"]
+exclude = ["alembic"]
 verbose = 2
 omit-covered-files = false
 quiet = false
 whitelist-regex = []
 ignore-regex = []
 color = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=ichrisbirch"
+minversion = "6.0"
+testpaths = ["ichrisbirch/tests"]
 
 [tool.coverage.run]
 parallel = true
@@ -100,7 +105,7 @@ omit = ["ichrisbirch/alembic"]
 source = ["ichrisbirch"]
 
 [tool.coverage.report]
-fail_under = 75
+fail_under = 80
 show_missing = true
 exclude_lines = ["pragma: no cover"]
 

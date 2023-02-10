@@ -12,4 +12,5 @@ blueprint = Blueprint(
 
 @blueprint.route('/')
 def index():
+    """Website main homepage"""
     return render_template('index.html', settings=config)

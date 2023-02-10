@@ -18,6 +18,7 @@ HABITS_URL = f'{settings.API_URL}/habits'
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    """Habits homepage"""
     with session:
         # current_habits = session.query(Habit).where(Habit.current.is_(True))
         completed_today = session.query(CompletedHabit).where(CompletedHabit.completed_date == date.today())
@@ -28,6 +29,7 @@ def index():
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
+    """Completed habits"""
     if request.method == 'POST':
         selected_habit = request.form.get('habit')
         date_filter = request.form.get('filter')
@@ -79,6 +81,7 @@ def completed():
 
 @blueprint.route('/manage/', methods=['GET', 'POST'])
 def manage():
+    """Manage habits page"""
     if request.method == 'POST':
         data = request.form.to_dict()
         method = data.pop('method')
@@ -88,8 +91,10 @@ def manage():
     return render_template('habits/manage.html')
 
 
+# TODO: [2023/02/10] - change form to crud
 @blueprint.route('/form/', methods=['POST'])
 def form():
+    """CRUD operations for habits"""
     api_url = settings.API_URL
     data = request.form.to_dict()
     method = data.pop('method')

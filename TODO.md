@@ -71,7 +71,8 @@ Pre-commit Possibilites:
 - [X] isort
 - [X] bandit
 - [X] Interrogate
-- [no] doctest
+- [N] pydoctest
+- [N] doctest
 - [X] shellcheck
 - [X] <https://github.com/dosisod/refurb>
 - [X] <https://github.com/asottile/pyupgrade>

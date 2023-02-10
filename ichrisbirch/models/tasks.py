@@ -18,6 +18,8 @@ class TaskCategory(enum.Enum):
 
 
 class Task(Base):
+    """SQLAlchemy model for tasks table"""
+
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False)
@@ -33,12 +35,14 @@ class Task(Base):
 
     @property
     def days_to_complete(self) -> int:
+        """Calculate days it took to complete task"""
         if self.complete_date:
             return (self.complete_date - self.add_date).days + 1
         return None
 
     @property
     def weeks_to_complete(self):
+        """Calculate weeks and days it took to complete task"""
         if self.complete_date:
             total_days = self.days_to_complete
             weeks, days = divmod(total_days, 7)

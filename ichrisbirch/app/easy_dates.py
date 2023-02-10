@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo
 
 @dataclass
 class EasyDate:
+    """Create easy to use python date filters"""
+
     today: date = date.today()
     tomorrow: date = today + timedelta(days=1)
     yesterday: date = today - timedelta(days=1)
@@ -25,6 +27,8 @@ class EasyDate:
 
 @dataclass
 class EasyDateTime:
+    """Create easy to use python datetime filters"""
+
     today: datetime = datetime.combine(date.today(), time(), tzinfo=ZoneInfo("America/Chicago"))
     tomorrow: datetime = today + timedelta(days=1)
     yesterday: datetime = today - timedelta(days=1)

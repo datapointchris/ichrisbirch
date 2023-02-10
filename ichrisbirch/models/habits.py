@@ -4,6 +4,8 @@ from ichrisbirch.db.sqlalchemy.base import Base
 
 
 class Habit(Base):
+    """SQLAlchemy model for habits.habits table"""
+
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'habits'
     id = Column(Integer, primary_key=True)
@@ -11,6 +13,8 @@ class Habit(Base):
 
 
 class Category(Base):
+    """SQLAlchemy model for habits.categories table"""
+
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'categories'
     id = Column(Integer, primary_key=True)
@@ -18,6 +22,8 @@ class Category(Base):
 
 
 class CompletedHabit(Base):
+    """SQLAlchemy model for habits.completed table"""
+
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'completed'
     id = Column(Integer, primary_key=True)

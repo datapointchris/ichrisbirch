@@ -10,6 +10,7 @@ blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdo
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    """Countdowns home"""
     with session:
         countdowns = session.query(Countdown).order_by(Countdown.date).all()
 

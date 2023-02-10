@@ -10,6 +10,7 @@ blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_pa
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    """Box packing homepage"""
     last_box_id = request.args.get('last_box_id')
     box_id = last_box_id or request.form.get('selected_box_id')
     with session:
@@ -33,6 +34,7 @@ def index():
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
+    """All packed boxes"""
     sort_1 = request.form.get('sort_1', '')
     sort_2 = request.form.get('sort_2', '')
     with session:
@@ -47,6 +49,7 @@ def all():
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
+    """Search for a packed box"""
     search_text = request.form.get('search_text')
     results = session.query(Item).filter(Item.name.match(search_text)).all()
     return render_template(
@@ -55,8 +58,10 @@ def search():
     )
 
 
+# TODO: [2023/02/10] - Make this crud instead of form
 @blueprint.route('/form/', methods=['POST'])
 def form():
+    """CRUD operations for boxes"""
     api_url = settings.API_URL
     data = request.form.to_dict()
     method = data.pop('method')

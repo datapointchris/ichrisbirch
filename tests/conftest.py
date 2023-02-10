@@ -21,6 +21,7 @@ SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, fu
 
 @dataclass
 class TestConfig:
+    """Global testing configuration"""
     SEED: int = 777
     NUM_FAKE: int = 1000
     NUM_TEST: int = 5
@@ -30,6 +31,7 @@ test_config = TestConfig()
 
 
 def get_testing_session() -> Session:
+    """Get SQLAlchemy Session for testing"""
     session = SessionTesting()
     try:
         yield session
@@ -68,8 +70,11 @@ def postgres_testdb_in_docker():
         )
         time.sleep(2)  # Must sleep to allow creation of detached Docker container
 
-        # SQLAlchemy will not create the schemas automatically
         def create_schemas(schemas, db_session):
+            """Create schemas in the db
+            
+            SQLAlchemy will not create the schemas automatically
+            """
             session = next(db_session())
             for schema_name in schemas:
                 session.execute(CreateSchema(schema_name))
@@ -87,11 +92,12 @@ def postgres_testdb_in_docker():
 
 
 @pytest.fixture(scope='function')
-def insert_test_data(test_data, data_model):
+def insert_test_data(test_data: list[dict], data_model):
+    """Insert test data into db using the supplied SQLAlchemy model (data_model)"""
     session = next(get_testing_session())
     Base.metadata.create_all(engine)
-    for datum in test_data:
-        session.add(data_model(**datum))
+    for data in test_data:
+        session.add(data_model(**data))
     session.commit()
     yield
     Base.metadata.drop_all(engine)
@@ -100,6 +106,7 @@ def insert_test_data(test_data, data_model):
 
 @pytest.fixture(scope='function')
 def test_app(router: APIRouter) -> Generator[TestClient, Any, None]:
+    """Create a FastAPI app for testing"""
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[sqlalchemy_session] = get_testing_session

@@ -2,6 +2,8 @@ from pydantic import BaseModel
 
 
 class Health(BaseModel):
+    """Pydantic Model for Health endpoint"""
+
     name: str
     version: str
     environment: str

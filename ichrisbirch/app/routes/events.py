@@ -10,6 +10,7 @@ blueprint = Blueprint('events', __name__, template_folder='templates/events', st
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    """Events home"""
     with session:
         events = session.query(Event).order_by(Event.date).all()
 

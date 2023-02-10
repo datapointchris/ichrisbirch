@@ -10,6 +10,7 @@ blueprint = Blueprint('journal', __name__, template_folder='templates/journal', 
 @blueprint.route('/<int:id>/')
 @blueprint.route('/')
 def index(id=None):
+    """Journal home endpoint"""
     api_url = settings.API_URL
     if id:
         entry = requests.get(f'{api_url}/journal/{id}/')
@@ -21,6 +22,7 @@ def index(id=None):
 
 @blueprint.route('/entry/', methods=['GET', 'POST'])
 def entry():
+    """Journal entry endpoint"""
     api_url = settings.API_URL
     if request.method == 'POST':
         entry = JournalEntry(**request.form)
@@ -32,6 +34,7 @@ def entry():
 
 @blueprint.route('/search/')
 def search():
+    """Endpoint to search for a journal entry"""
     api_url = settings.API_URL
     search_text = request.form.get('search_text')
     results = requests.get(f'{api_url}/journal/search', data=search_text)

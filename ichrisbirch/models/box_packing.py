@@ -5,6 +5,8 @@ from ichrisbirch.db.sqlalchemy.base import Base
 
 
 class Box(Base):
+    """SQLAlchemy model for box_packing.boxes table"""
+
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'boxes'
     id = Column(Integer, primary_key=True)
@@ -21,6 +23,8 @@ class Box(Base):
 
 
 class Item(Base):
+    """SQLAlchemy model for box_packing.items table"""
+
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'items'
     id = Column(Integer, primary_key=True)

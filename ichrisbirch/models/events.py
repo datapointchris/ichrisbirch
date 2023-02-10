@@ -4,6 +4,8 @@ from ichrisbirch.db.sqlalchemy.base import Base
 
 
 class Event(Base):
+    """SQLAlchemy model for events table"""
+
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
     name = Column(String(256), nullable=False)

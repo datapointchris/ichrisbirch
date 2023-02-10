@@ -29,12 +29,14 @@ TASKS_URL = f'{settings.API_URL}/tasks'
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 
-def validate_json_tasks(tasks) -> list[models.Task]:
+def validate_json_tasks(tasks: list[dict] | dict) -> list[models.Task]:
+    """Validates returned JSON with Pydantic schema and SQLAlchemy Model"""
     validated = [schemas.Task(**task) for task in tasks]
     return [models.Task(**(task.dict())) for task in validated]
 
 
 def calculate_average_completion(tasks: list[models.Task]) -> str:
+    """ "Calculate the average completion time of the supplied completed tasks"""
     if not tasks:
         return 'No tasks completed for this time period'
     average_days = sum(task.days_to_complete for task in tasks) / len(tasks)
@@ -44,6 +46,7 @@ def calculate_average_completion(tasks: list[models.Task]) -> str:
 
 @blueprint.route('/', methods=['GET'])
 def index():
+    """Tasks home endpoint"""
     ed = EasyDateTime()
     today_filter = {'start_date': ed.today, 'end_date': ed.tomorrow}
 
@@ -63,6 +66,7 @@ def index():
 
 @blueprint.route('/all')
 def all():
+    """All tasks endpoint"""
     all_tasks_json = requests.get(f'{settings.API_URL}/tasks/').json()
     all_tasks = validate_json_tasks(all_tasks_json)
     return render_template('tasks/all.html', tasks=all_tasks, task_categories=TASK_CATEGORIES)
@@ -70,6 +74,7 @@ def all():
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
+    """Completed tasks endpoint.  Filtered by date selection."""
     ed = EasyDateTime()
     date_filters = {
         'today': (ed.today, ed.tomorrow),
@@ -131,8 +136,10 @@ def completed():
     )
 
 
+# TODO: [2023/02/10] - change form to crud
 @blueprint.route('/form/', methods=['POST'])
 def form():
+    """CRUD endpoint for tasks"""
     data = request.form.to_dict()
     method = data.pop('method')
     logger.debug(f'{method=}')
@@ -157,6 +164,9 @@ def form():
 
 @blueprint.route('/fake/', methods=['GET'])
 def fake_tasks():
+    """Endpoint to create fake tasks for testing.
+    NOTE: Not currently being used.
+    """
     fake = Faker()
     with session:
         for _ in range(1000):
@@ -179,6 +189,9 @@ def fake_tasks():
 
 @blueprint.route('/drop/', methods=['GET'])
 def drop_tasks():
+    """Endpoint for dropping all tasks from table.
+    NOTE: Not currently being used, as it is scary.
+    """
     with session:
         # session.execute(delete(Task))
         session.delete(models.Task)

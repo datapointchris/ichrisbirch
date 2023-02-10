@@ -8,7 +8,12 @@ from ichrisbirch.app.routes import box_packing, countdowns, events, habits, heal
 logger = logging.getLogger(__name__)
 
 
-def create_app():
+def create_app() -> Flask:
+    """Flask app factory
+
+    Returns:
+        app: Flask app
+    """
     app = Flask(__name__)
     logger.debug(f'{app.import_name} App Started')
 

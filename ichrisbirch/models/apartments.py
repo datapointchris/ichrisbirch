@@ -5,6 +5,8 @@ from ichrisbirch.db.sqlalchemy.base import Base
 
 
 class Apartment(Base):
+    """SQLAlchemy model for apartments.apartments table"""
+
     __table_args__ = {'schema': 'apartments'}
     __tablename__ = 'apartments'
     id = Column(Integer, primary_key=True, index=True)
@@ -20,6 +22,8 @@ class Apartment(Base):
 
 
 class Feature(Base):
+    """SQLAlchemy model for apartments.features table"""
+
     __table_args__ = {'schema': 'apartments'}
     __tablename__ = 'features'
     id = Column(Integer, primary_key=True, index=True)
