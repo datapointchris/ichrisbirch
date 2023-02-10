@@ -64,12 +64,70 @@ exclude = '''
 [tool.isort]
 line_length = 120
 profile = "black"
+atomic = true
 skip = [".gitignore"]
 extend_skip = [".md", ".json"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "scripts/ping-test.py"]
 skips = ["B311"]
+
+[tool.interrogate]
+fail-under = 75
+ignore-init-method = true
+ignore-semiprivate = true
+ignore-private = true
+ignore-magic = true
+ignore-module = true
+ignore-nested-functions = true
+ignore-init-module = false
+ignore-property-decorators = false
+exclude = ["ichrisbirch/alembic"]
+verbose = 2
+omit-covered-files = false
+quiet = false
+whitelist-regex = []
+ignore-regex = []
+color = true
+
+[tool.coverage.run]
+parallel = true
+branch = true
+source = ["ichrisbirch"]
+omit = ["ichrisbirch/alembic"]
+
+[tool.coverage.paths]
+source = ["ichrisbirch"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+exclude_lines = ["pragma: no cover"]
+
+# these settings will be applied globally
+[tool.refurb]
+enable_all = true
+
+# these will only be applied to the "src" folder
+# [[tool.refurb.amend]]
+# path = "src"
+# ignore = ["FURB123", "FURB120"]
+
+# these will only be applied to the "src/util.py" file
+# [[tool.refurb.amend]]
+# path = "src/util.py"
+# ignore = ["FURB125", "FURB148"]
+
+[tool.mypy]
+
+warn_return_any = false
+
+# [[tool.mypy.overrides]]
+# module = [
+#     "somelibrary",
+#     "some_other_library"
+# ]
+# ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

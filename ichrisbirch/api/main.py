@@ -28,6 +28,7 @@ logger.debug(f'{api.title} {api.version} Started')
 
 @api.middleware("http")
 async def log_requests(request, call_next):
+    """Logs all requests from the API"""
     idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     logger.debug(f"rid={idem} start request path={request.url.path}")
     start_time = time.time()
@@ -35,7 +36,7 @@ async def log_requests(request, call_next):
     response = await call_next(request)
 
     process_time = (time.time() - start_time) * 1000
-    formatted_process_time = '{0:.2f}'.format(process_time)
+    formatted_process_time = '{:.2f}'.format(process_time)
     logger.debug(f"rid={idem} completed_in={formatted_process_time}ms status_code={response.status_code}")
     return response
 
@@ -56,5 +57,6 @@ api.include_router(health.router, responses=responses)
 
 @api.get("/", include_in_schema=False)
 async def docs_redirect():
+    """Homepage of API"""
     # return RedirectResponse(url='/docs')
     return {'message': 'This is the home page, no redirction'}

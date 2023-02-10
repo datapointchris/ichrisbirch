@@ -58,23 +58,24 @@
 
 <https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s>
 
-<https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/>
 <https://www.youtube.com/watch?v=TLB5MY9BBa4>
 <https://www.youtube.com/watch?v=9flcoQ1R0Y4>
 <https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration>
 <https://www.martinfowler.com/articles/branching-patterns.html>
+<https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/>
+
 Pre-commit Possibilites:
 
-- Black
-- Flake8
-- isort
-- bandit
-- Interrogate
-- doctest
-- shellcheck
-- <https://github.com/dosisod/refurb>
-- <https://github.com/asottile/pyupgrade>
-- <https://github.com/python/mypy>
+- [X] Black
+- [X] Flake8
+- [X] isort
+- [X] bandit
+- [X] Interrogate
+- [no] doctest
+- [X] shellcheck
+- [X] <https://github.com/dosisod/refurb>
+- [X] <https://github.com/asottile/pyupgrade>
+- [X] <https://github.com/python/mypy>
 
 ## Learn
 

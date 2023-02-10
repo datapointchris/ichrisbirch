@@ -145,6 +145,8 @@ production)
 esac
 
 ENV_PATH=$(findup $env_file)
+
+# shellcheck disable=SC1090
 source "$ENV_PATH"
 
 # ----- Constants ----- #
