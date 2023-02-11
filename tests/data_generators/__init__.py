@@ -1,1 +1,1 @@
-from .tasks import TaskDataGenerator  # noqa
+from .tasks import TaskDataGenerator

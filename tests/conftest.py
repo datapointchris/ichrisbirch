@@ -22,9 +22,10 @@ SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, fu
 @dataclass
 class TestConfig:
     """Global testing configuration"""
+
     SEED: int = 777
-    NUM_FAKE: int = 1000
-    NUM_TEST: int = 5
+    NUM_FAKE: int = 100
+    NUM_TEST: int = 10
 
 
 test_config = TestConfig()
@@ -72,7 +73,7 @@ def postgres_testdb_in_docker():
 
         def create_schemas(schemas, db_session):
             """Create schemas in the db
-            
+
             SQLAlchemy will not create the schemas automatically
             """
             session = next(db_session())

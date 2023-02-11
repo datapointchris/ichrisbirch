@@ -1,39 +1,34 @@
 import random
-from abc import ABC, abstractmethod
+from functools import cached_property
+from typing import Optional, Protocol
 
-from faker import Faker
 
-
-class FakeDataGenerator(ABC):
+class FakeDataGenerator(Protocol):
     """Base class for data generators
 
     To Implement:
-        The `generate` function must assign the generated data to `self.generated_data`
-        Set the seed to get reproducable
+        The `generate` function simply needs to return
+        Set the seed to get reproducable output
     """
 
-    def __init__(self, seed: int = None):
-        self.seed = seed
-        self.generated_data = None
-        self.fake = Faker()
+    total_records: int
+    num_test_records: int
+    seed: Optional[int]
 
-        if self.seed:
-            random.seed(seed)
-            Faker.seed(seed)
+    @cached_property
+    def generated_data(self):
+        """Generated fake data"""
+        return self.generate()
 
-    @abstractmethod
-    def generate(self, num_records: int) -> list[dict]:
-        """Generate or regenerate fake data
+    def generate(self) -> list[dict]:
+        ...
 
-        Identical data if generator seed is set, random if no seed
-        """
+    @property
+    def random_ids(self) -> list[int]:
+        """Returns a list of random record ids from generated data"""
+        return random.choices(range(0, len(self.generated_data) - 1), k=self.num_test_records)
 
-    def random_ids(self, num_records: int) -> list[int]:
-        if not self.generated_data:
-            return AttributeError('No data has been generated')
-        return random.choices(range(0, len(self.generated_data) - 1), k=num_records)
-
-    def random_records(self, num_records: int) -> list[dict]:
-        if not self.generated_data:
-            return AttributeError('No data has been generated')
-        return random.choices(self.generated_data, k=num_records)
+    @property
+    def random_records(self) -> list[dict]:
+        """Returns a list of random records from generated data"""
+        return random.choices(self.generated_data, k=self.num_test_records)
