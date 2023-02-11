@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import Optional
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
@@ -54,42 +55,25 @@ class CRUDTask(CRUDBase[models.Task, schemas.TaskCreate, schemas.TaskUpdate]):
         Returns:
             list[Task] | Task: SQLAlchemy Task model(s)
         """
-        if first:
-            return (
-                db.query(models.Task)
-                .filter(models.Task.complete_date.is_not(None))
-                .order_by(models.Task.complete_date.asc())
-                .first()
-            )
+        query = db.query(models.Task)
+        completed = query.filter(models.Task.complete_date.is_not(None))
 
-        elif last:
-            return (
-                db.query(models.Task)
-                .filter(models.Task.complete_date.is_not(None))
-                .order_by(models.Task.complete_date.desc())
-                .first()
-            )
+        if first:  # first completed task
+            return completed.order_by(models.Task.complete_date.asc()).first()
 
-        elif start_date is None or end_date is None:
-            return (
-                db.query(models.Task)
-                .filter(models.Task.complete_date.is_not(None))
-                .order_by(models.Task.complete_date.desc())
-                .all()
-            )
+        if last:  # most recent (last) completed task
+            return completed.order_by(models.Task.complete_date.desc()).first()
 
-        else:
-            return (
-                db.query(models.Task)
-                .filter(
-                    models.Task.complete_date >= start_date,
-                    models.Task.complete_date < end_date,
-                )
-                .order_by(models.Task.complete_date.desc())
-                .all()
-            )
+        if start_date is None or end_date is None:  # return all if no start or end date
+            return completed.order_by(models.Task.complete_date.desc()).all()
 
-    def complete_task(self, db: Session, id: int) -> models.Task | None:
+        return (  # filtered by start and end date
+            query.filter(models.Task.complete_date >= start_date, models.Task.complete_date < end_date)
+            .order_by(models.Task.complete_date.desc())
+            .all()
+        )
+
+    def complete_task(self, db: Session, id: Optional[int]) -> models.Task | None:
         """Complete task with specified id
 
         Args:
@@ -105,8 +89,7 @@ class CRUDTask(CRUDBase[models.Task, schemas.TaskCreate, schemas.TaskUpdate]):
             db.commit()
             db.refresh(task)
             return task
-        else:
-            return None
+        return None
 
 
 tasks = CRUDTask(models.Task)

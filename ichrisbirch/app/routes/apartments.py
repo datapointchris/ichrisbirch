@@ -31,20 +31,12 @@ def apartment(name):
     apartments = [apt for apt in Apartment.scan()]
     if apartment := next((apt for apt in apartments if apt.name == name), None):
         features = [Feature(**f) for f in apartment.features]
-        return render_template(
-            'apartments.html',
-            apartments=apartments,
-            apartment=apartment,
-            features=features,
-            message=None,
-        )
+        message = None
     else:
+        features = None
+        message = (f'{name} apartment does not exist',)
         return render_template(
-            'apartments.html',
-            apartments=apartments,
-            apartment=None,
-            features=None,
-            message=f'{name} apartment does not exist',
+            'apartments.html', apartments=apartments, apartment=apartment, features=features, message=message
         )
 
 
@@ -54,11 +46,7 @@ def noedit():
     """Redirect from edit page to apartments home"""
     apartments = [apt for apt in Apartment.scan()]
     return render_template(
-        'apartments.html',
-        apartments=apartments,
-        apartment=None,
-        features=None,
-        message='No apartment selected',
+        'apartments.html', apartments=apartments, apartment=None, features=None, message='No apartment selected'
     )
 
 
@@ -68,21 +56,13 @@ def edit(name):
     apartments = [apt for apt in Apartment.scan()]
     if apartment := next((apt for apt in apartments if apt.name == name), None):
         features = [Feature(**f) for f in apartment.features]
-        return render_template(
-            'edit.html',
-            apartments=apartments,
-            apartment=apartment,
-            features=features,
-            message=None,
-        )
+        page = 'edit.html'
+        message = None
     else:
-        return render_template(
-            'apartments.html',
-            apartments=apartments,
-            apartment=None,
-            features=None,
-            message=f'{name} apartment does not exist',
-        )
+        features = None
+        page = 'apartments.html'
+        message = (f'{name} apartment does not exist',)
+    return render_template(page, apartments=apartments, apartment=apartment, features=features, message=message)
 
 
 @blueprint.route('/form/', methods=['POST'])

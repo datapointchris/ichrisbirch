@@ -64,15 +64,15 @@ if __name__ == '__main__':
     else:
         pings = []
         for protocol, host, endpoint, port in itertools.product(
-            env.get('protocols'), env.get('host_names'), env.get('endpoints'), env.get('ports')
+            env['protocols'], env['host_names'], env['endpoints'], env['ports']
         ):
-            address = f'{protocol if protocol else ""}{host}{endpoint if endpoint else ""}{port if port else ""}'
+            address = f'{protocol}{host}{endpoint}{port}'
             try:
                 res = requests.get(address, allow_redirects=True)
                 pings.append((address, str(res.status_code), ''))
             except Exception as e:
-                pings.append((address, 'EXCEPTION', e))
+                pings.append((address, 'EXCEPTION', str(e)))
 
         for address, status, message in sorted(pings):
             color = STATUS_CODE_COLORS.get(status, Fore.RED)
-            print(f'{color}{address:<40}{status:<11}{str(message)[:50]}')
+            print(f'{color}{address:<40}{status:<11}{message[:50]}')

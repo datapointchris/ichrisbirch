@@ -1,3 +1,5 @@
+from typing import Union
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -15,14 +17,14 @@ async def read_many(db: Session = Depends(sqlalchemy_session), skip: int = 0, li
     return crud.tasks.read_many(db, skip=skip, limit=limit)
 
 
-@router.get("/completed/", response_model=list[schemas.Task] | schemas.Task | list)
+@router.get("/completed/", response_model=Union[list[schemas.Task], list])
 async def completed(
     db: Session = Depends(sqlalchemy_session),
-    start_date: str = None,
-    end_date: str = None,
-    first: bool = None,
-    last: bool = None,
-) -> list[schemas.Task] | list:
+    start_date: Union[str, None] = None,
+    end_date: Union[str, None] = None,
+    first: Union[bool, None] = None,
+    last: Union[bool, None] = None,
+) -> Union[list[schemas.Task], list]:
     """API method to get completed tasks.  Passes request to crud.tasks module"""
     if not (
         completed := crud.tasks.completed(
@@ -34,40 +36,39 @@ async def completed(
         )
     ):
         return []
-    else:
-        return completed
+    return completed
 
 
 @router.post("/", response_model=schemas.Task)
-async def create(db: Session = Depends(sqlalchemy_session), task: schemas.TaskCreate = None):
+async def create(task: schemas.TaskCreate, db: Session = Depends(sqlalchemy_session)):
     """API method to create a new task.  Passes request to crud.tasks module"""
-    return crud.tasks.create(db, obj_in=task)
+    return crud.tasks.create(task, db)
 
 
 @router.get("/{task_id}/", response_model=schemas.Task)
-async def read_one(db: Session = Depends(sqlalchemy_session), task_id: int = None):
+async def read_one(task_id: int, db: Session = Depends(sqlalchemy_session)):
     """API method to read one task.  Passes request to crud.tasks module"""
-    if not (task := crud.tasks.read_one(db, id=task_id)):
+    if not (task := crud.tasks.read_one(task_id, db)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
     return task
 
 
 # Not using, keep for reference
 # @router.post("/{task_id}/", response_model=schemas.Task)
-# async def update(db: Session = Depends(sqlalchemy_session), task: schemas.Task = None):
+# async def update(task: schemas.Task, db: Session = Depends(sqlalchemy_session)):
 #     return crud.tasks.update(db, obj_in=task)
 
 
 @router.delete("/{task_id}/", status_code=200)
-async def delete(db: Session = Depends(sqlalchemy_session), task_id: int = None):
+async def delete(task_id: int, db: Session = Depends(sqlalchemy_session)):
     """API method to delete a task.  Passes request to crud.tasks module"""
-    if not (task := crud.tasks.delete(db, id=task_id)):
+    if not (task := crud.tasks.delete(task_id, db)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
     return task
 
 
 @router.post("/complete/{task_id}/", response_model=schemas.Task)
-async def complete(db: Session = Depends(sqlalchemy_session), task_id: int = None):
+async def complete(task_id: int, db: Session = Depends(sqlalchemy_session)):
     """API method to complete a task.  Passes request to crud.tasks module"""
     if not (task := crud.tasks.complete_task(db, id=task_id)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")

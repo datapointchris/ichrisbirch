@@ -39,7 +39,8 @@ def calculate_average_completion(tasks: list[models.Task]) -> str:
     """ "Calculate the average completion time of the supplied completed tasks"""
     if not tasks:
         return 'No tasks completed for this time period'
-    average_days = sum(task.days_to_complete for task in tasks) / len(tasks)
+    total_days = sum(task.days_to_complete for task in tasks)
+    average_days = total_days / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
 

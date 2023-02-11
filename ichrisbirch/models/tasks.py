@@ -36,15 +36,10 @@ class Task(Base):
     @property
     def days_to_complete(self) -> int:
         """Calculate days it took to complete task"""
-        if self.complete_date:
-            return (self.complete_date - self.add_date).days + 1
-        return None
+        return (self.complete_date - self.add_date).days + 1
 
     @property
-    def weeks_to_complete(self):
+    def weeks_to_complete(self) -> str:
         """Calculate weeks and days it took to complete task"""
-        if self.complete_date:
-            total_days = self.days_to_complete
-            weeks, days = divmod(total_days, 7)
-            return f'{weeks} weeks, {days} days'
-        return None
+        weeks, days = divmod(self.days_to_complete, 7)
+        return f'{weeks} weeks, {days} days'

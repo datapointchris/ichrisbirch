@@ -23,7 +23,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def read_one(self, db: Session, id: Any) -> Optional[ModelType]:
+    def read_one(self, id: Any, db: Session) -> Optional[ModelType]:
         """Default method for reading one row from db
 
         Args:
@@ -48,7 +48,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         return db.query(self.model).order_by(self.model.id).offset(skip).limit(limit).all()
 
-    def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
+    def create(self, obj_in: CreateSchemaType, db: Session) -> ModelType:
         """Insert row in db from SQLAlchemy model
 
         Args:
@@ -65,7 +65,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def update(self, db: Session, *, db_obj: ModelType, obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> ModelType:
+    def update(self, db_obj: ModelType, obj_in: Union[UpdateSchemaType, Dict[str, Any]], db: Session) -> ModelType:
         """Update db row
 
         Args:
@@ -89,7 +89,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def delete(self, db: Session, *, id: int) -> ModelType:
+    def delete(self, id: int, db: Session) -> ModelType | None:
         """Delete row from db
 
         Args:
@@ -104,5 +104,4 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.delete(obj)
             db.commit()
             return obj
-        else:
-            return None
+        return None
