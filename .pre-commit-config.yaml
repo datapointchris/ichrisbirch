@@ -5,7 +5,7 @@ repos:
         name: pytest with coverage
         stages: [commit]
         language: system
-        entry: pytest
+        entry: pytest --cov=ichrisbirch
         types: [python]
         pass_filenames: false
         always_run: true
