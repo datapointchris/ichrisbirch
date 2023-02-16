@@ -39,7 +39,8 @@ jobs:
       run: |
         # sudo apt-get update && sudo apt-get upgrade
         # sudo apt-get remove docker docker-engine docker.io containerd runc
-        sudo apt-get install moby-engine:armhf moby-cli:armhf moby-engine:arm64 moby-cli:arm64 moby-engine moby-cli
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sudo sh get-docker.sh
 
     - run: python -m pip install --upgrade pip
 
