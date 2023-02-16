@@ -48,7 +48,7 @@ jobs:
 
     - uses: jpetrucciani/mypy-check@master
       with:
-        mypy_flags: '--install-types --non-interactive'
+        mypy_flags: '--install-types --non-interactive --config-file pyproject.toml'
 
     - run: flake8 .
       continue-on-error: true
