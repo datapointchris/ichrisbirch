@@ -31,9 +31,9 @@ jobs:
       run: |
         # sudo apt-get update && sudo apt-get upgrade
         # sudo apt-get remove docker docker-engine docker.io containerd runc
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sudo sh get-docker.sh
-        sudo rm get-docker.sh
+        # curl -fsSL https://get.docker.com -o get-docker.sh
+        # sudo sh get-docker.sh
+        # sudo rm get-docker.sh
     
     - uses: actions/setup-python@v4
       with:
@@ -53,9 +53,7 @@ jobs:
 
     - uses: ludeeus/action-shellcheck@master
 
-    - uses: jpetrucciani/mypy-check@master
-      with:
-        mypy_flags: '--install-types --non-interactive --config-file pyproject.toml'
+    - run: mypy --install-types --non-interactive --config-file pyproject.toml
 
     - run: flake8 .
       continue-on-error: true
