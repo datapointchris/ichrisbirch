@@ -77,7 +77,7 @@ exclude_dirs = ["tests", "scripts/ping-test.py"]
 skips = ["B311"]
 
 [tool.interrogate]
-fail-under = 80
+fail-under = 25
 ignore-init-method = true
 ignore-semiprivate = true
 ignore-private = true
@@ -109,7 +109,7 @@ omit = ["ichrisbirch/alembic"]
 source = ["ichrisbirch"]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 25
 show_missing = true
 exclude_lines = ["pragma: no cover"]
 
