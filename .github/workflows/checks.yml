@@ -29,9 +29,6 @@ jobs:
         options: "--check --verbose --color"
     - uses: isort/isort-action@master
     - uses: ludeeus/action-shellcheck@master
-    - uses: JackMcKew/python-interrogate-check@main
-      with:
-        args: '--config=pyproject.toml'
     - uses: jpetrucciani/mypy-check@master
 
     - run: python -m pip install --upgrade pip
@@ -39,6 +36,7 @@ jobs:
     - run: flake8 .
       continue-on-error: true
     - run: isort --check .
+    - run: interrogate -c pyproject.toml
     - run: bandit -c pyproject.toml -r .
     - run: coverage run -m pytest discover
     - run: coverage report -m --fail-under=25
