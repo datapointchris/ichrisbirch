@@ -30,6 +30,8 @@ jobs:
     - uses: isort/isort-action@master
     - uses: ludeeus/action-shellcheck@master
     - uses: jpetrucciani/mypy-check@master
+      with:
+        mypy_flags: '--install-types, --non-interactive'
 
     - run: python -m pip install --upgrade pip
     - run: poetry install --only cicd
