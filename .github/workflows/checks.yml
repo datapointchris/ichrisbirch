@@ -37,7 +37,7 @@ jobs:
     - run: poetry install --only cicd
     - run: flake8 .
       continue-on-error: true
-    - run: isort --check .
+    - run: isort . --check
     - run: interrogate -c pyproject.toml
     - run: bandit -c pyproject.toml -r .
     - run: coverage run -m pytest discover
