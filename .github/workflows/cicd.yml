@@ -19,14 +19,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - uses: abatilo/actions-poetry@v2
-      with:
-        poetry-version: ${{ matrix.poetry-version }}
-
     - if: matrix.os == 'macOS-latest'
       run: |
         brew install md5sha1sum 
@@ -41,6 +33,15 @@ jobs:
         # sudo apt-get remove docker docker-engine docker.io containerd runc
         curl -fsSL https://get.docker.com -o get-docker.sh
         sudo sh get-docker.sh
+        sudo rm get-docker.sh
+    
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - uses: abatilo/actions-poetry@v2
+      with:
+        poetry-version: ${{ matrix.poetry-version }}
 
     - run: python -m pip install --upgrade pip
 
