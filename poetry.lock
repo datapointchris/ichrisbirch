@@ -2666,7 +2666,7 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 name = "psycopg2"
 version = "2.9.5"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -2687,7 +2687,7 @@ files = [
 name = "psycopg2-binary"
 version = "2.9.5"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -4059,4 +4059,4 @@ test = ["pytest (>=7.1.2,<7.2.0)", "pytest-cov (>=3.0.0,<3.1.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.1"
-content-hash = "a570c7eed62b5b4b23362f7d38c8f419d1b7bcf3b06d1a9a967847fa45c383ec"
+content-hash = "d43efce5707a1390358e93f40bd8cf3a75dd224390bcff83822f1dc6814410e3"

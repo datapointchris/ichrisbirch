@@ -22,15 +22,15 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      
+
       - if: matrix.os == 'macOS-latest'
         run: |
           brew install md5sha1sum
           brew install docker
-      
+
       - if: matrix.os == 'windows-latest'
         run: choco install docker
-      
+
       - if: matrix.os == 'ubuntu-latest'
         run: |
           # sudo apt-get update && sudo apt-get upgrade
@@ -38,7 +38,7 @@ jobs:
           # curl -fsSL https://get.docker.com -o get-docker.sh
           # sudo sh get-docker.sh
           # sudo rm get-docker.sh
-          sudo apt-get install git-secret gpg
+          sudo apt-get install git-secret
 
       - name: "git-secret Reveal .env files"
         run: |
