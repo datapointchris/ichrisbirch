@@ -36,7 +36,7 @@ jobs:
           # sudo sh get-docker.sh
           # sudo rm get-docker.sh
           sudo apt-get install git-secret gpg
-      
+
       - name: "git-secret Reveal .env files"
         run: |
           # Import private key and avoid the "Inappropriate ioctl for device" error
@@ -78,6 +78,7 @@ jobs:
         run: |
           # Create log file
           touch /home/runner/work/ichrisbirch/ichrisbirch/pylogger.log
+          chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/pylogger.log
           python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
           coverage run -m pytest discover
           coverage report -m --fail-under=25
