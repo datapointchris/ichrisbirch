@@ -73,7 +73,7 @@ jobs:
       - name: Run coverage
         run: |
           python -m pip install pytest coverage
-          run coverage run -m pytest discover
-          run coverage report -m --fail-under=25
+          coverage run -m pytest discover
+          coverage report -m --fail-under=25
           # poetry run coverage run -m pytest discover
           # poetry run coverage report -m --fail-under=25
