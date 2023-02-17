@@ -56,6 +56,10 @@ def postgres_testdb_in_docker():
     """
     try:
         docker_client = docker.DockerClient()
+    except DockerException as e:
+        pytest.exit('Failed to start Docker client: ', e)
+
+    try:
         testdb = docker_client.containers.run(
             'postgres:14',
             detach=True,
@@ -87,7 +91,7 @@ def postgres_testdb_in_docker():
         yield testdb
     except DockerException as e:
         print(e)
-        pytest.exit('Failed to Initialize Postgres in Docker')
+        pytest.exit('Failed to Initialize Postgres in Docker: ', e)
     finally:
         testdb.stop()
 
