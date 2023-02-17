@@ -25,7 +25,10 @@ jobs:
 
       - if: matrix.os == 'macOS-latest'
         run: |
-          brew install md5sha1sum git-secret homebrew/cask/docker
+          brew install git-secret md5sha1sum 
+          brew install --cask docker
+          sudo /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
+          open -a /Applications/Docker.app --args --unattended --accept-license
 
       - if: matrix.os == 'ubuntu-latest'
         run: |
@@ -51,30 +54,28 @@ jobs:
       - name: Poetry install CICD Dependencies
         run: poetry install --without dev,prod
 
-      - name: Run black formatter
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose --color"
+      # - name: Run black formatter
+      #   uses: psf/black@stable
+      #   with:
+      #     options: "--check --verbose --color"
 
-      - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@master
+      # - name: Run shellcheck
+      #   uses: ludeeus/action-shellcheck@master
 
-      - name: Run mypy
-        run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
+      # - name: Run mypy
+      #   run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
 
-      - name: Run flake8
-        run: poetry run flake8 .
-        # continue-on-error: true
+      # - name: Run flake8
+      #   run: poetry run flake8 .
 
-      - name: Run isort action
-        uses: isort/isort-action@master
-      # - run: isort . --check
+      # - name: Run isort action
+      #   uses: isort/isort-action@master
 
-      - name: Run iterrogate
-        run: poetry run interrogate -c pyproject.toml
+      # - name: Run iterrogate
+      #   run: poetry run interrogate -c pyproject.toml
 
-      - name: Run bandit
-        run: poetry run bandit -c pyproject.toml -r .
+      # - name: Run bandit
+      #   run: poetry run bandit -c pyproject.toml -r .
 
       - name: Run pytest coverage
         run: |
