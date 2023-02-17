@@ -78,6 +78,12 @@ Pre-commit Possibilites:
 - [X] <https://github.com/asottile/pyupgrade>
 - [X] <https://github.com/python/mypy>
 
+- [ ] Deploy action upon push of tags
+  - [ ] Actions
+    - [ ] Create GitHub release
+    - [ ] Deploy to ichrisbirch
+    - [ ] Send an email about successful deployment
+
 ## Learn
 
 - [ ] <https://github.com/jlevy/the-art-of-command-line#basics>
