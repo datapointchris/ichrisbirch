@@ -36,15 +36,18 @@ jobs:
           # sudo rm get-docker.sh
       - name: 'Create env file'
         run: echo "${{ secrets.DEV_ENV_FILE }}" > .dev.env
+      
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      
+      - name: Install poetry
+        run: python -m pip install poetry==${{ matrix.poetry-version }}
+      
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-      - name: Install poetry
-        run: python -m pip install poetry==${{ matrix.poetry-version }}
       - name: Install CICD Dependencies
         run: poetry install --without dev,prod
       - name: Run black formatter
