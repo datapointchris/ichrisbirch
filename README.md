@@ -91,7 +91,6 @@ Add this to the CICD workflow:
 - name: "git-secret Reveal .env files"
   run: |
     echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' > ./cicd-gpg-key.gpg
-    cat cicd-gpg-key.gpg
     # Import private key and avoid the "Inappropriate ioctl for device" error
     gpg --batch --yes --pinentry-mode loopback --import ./cicd-gpg-key.gpg
     git secret reveal

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  ENVIRONMENT: 'development'
+  ENVIRONMENT: 'testing'
 
 jobs:
   validate:
