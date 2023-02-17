@@ -15,7 +15,7 @@ repos:
         name: hide secrets
         stages: [commit]
         language: system
-        entry: git-secret hide
+        entry: git-secret hide -m
         pass_filenames: false
         always_run: true
   - repo: https://github.com/python-poetry/poetry

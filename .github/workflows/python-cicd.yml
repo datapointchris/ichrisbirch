@@ -77,8 +77,8 @@ jobs:
       - name: Run coverage
         run: |
           # Create log file
-          touch /home/runner/work/ichrisbirch/ichrisbirch/pylogger.log
-          chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/pylogger.log
+          sudo touch /home/runner/work/ichrisbirch/ichrisbirch/pylogger.log
+          sudo chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/pylogger.log
           python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
           coverage run -m pytest discover
           coverage report -m --fail-under=25
