@@ -9,6 +9,13 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
+  - rep: local
+    hooks:
+      - id: git-secret
+        name: hide secrets
+        stages: [commit]
+        language: system
+        entry: git-secret hide
   - repo: https://github.com/python-poetry/poetry
     rev: '1.3.2'
     hooks:
