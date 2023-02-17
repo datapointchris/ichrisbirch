@@ -80,7 +80,7 @@ jobs:
           mkdir test-logging
           touch test-logging/pylogger.log
           # echo "POS" > test-logging/pylogger.log
-          # ls -l
+          ls -l
           # ls test-logging
           # cat test-logging/pylogger.log
           # sudo chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/test-logging/pylogger.log
@@ -90,4 +90,4 @@ jobs:
           # coverage report -m --fail-under=25
           # poetry run coverage run -m pytest discover
           # poetry run coverage report -m --fail-under=25
-        working-directory: .
+        working-directory: ichrisbirch
