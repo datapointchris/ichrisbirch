@@ -9,8 +9,6 @@ on:
 
 jobs:
   validate:
-    env:
-      ENVIRONMENT: development
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -35,7 +33,11 @@ jobs:
           # sudo sh get-docker.sh
           # sudo rm get-docker.sh
       - name: 'Create env file'
-        run: echo ${{ secrets.DEV_ENV_FILE }} > .dev.env
+        env:
+          ENVIRONMENT: development
+          DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
+        run: |
+          echo ${{ secrets.DEV_ENV_FILE }} > .dev.env
       
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
