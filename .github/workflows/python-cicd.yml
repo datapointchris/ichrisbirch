@@ -26,19 +26,25 @@ jobs:
       - name: MacOS brew installs
         if: matrix.os == 'macOS-latest'
         run: |
-          brew install git-secret md5sha1sum
-          brew install --cask docker
+          brew install git-secret md5sha1sum 
+          brew install docker colima
+          # brew install --cask docker
           ls /Applications
 
-      - name: MacOS start Docker
+      - name: MacOS start colima for Docker
         if: matrix.os == 'macOS-latest'
         run: |
-            # brew install --cask docker
-            /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
-            open -a /Applications/Docker.app --args --unattended --accept-license
-            echo "We are waiting for Docker to be up and running. It can take over 2 minutes..."
-            while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
-            shell: /bin/bash -e {0}
+          colima start
+
+      # - name: MacOS start Docker
+      #   if: matrix.os == 'macOS-latest'
+      #   run: |
+      #       # brew install --cask docker
+      #       /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
+      #       open -a /Applications/Docker.app --args --unattended --accept-license
+      #       echo "We are waiting for Docker to be up and running. It can take over 2 minutes..."
+      #       while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
+      #       shell: /bin/bash -e {0}
 
       - name: Ubuntu installs
         if: matrix.os == 'ubuntu-latest'
