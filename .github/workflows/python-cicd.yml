@@ -35,7 +35,9 @@ jobs:
           # Import private key and avoid the "Inappropriate ioctl for device" error
           echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
           git secret reveal
+          sleep 3
           ls -la
+          sleep 1
           cat .test.env
 
       - name: Set up Python ${{ matrix.python-version }}
