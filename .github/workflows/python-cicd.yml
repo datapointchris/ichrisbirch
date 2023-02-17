@@ -27,8 +27,9 @@ jobs:
         if: matrix.os == 'macOS-latest'
         run: |
           brew install git-secret md5sha1sum 
-          brew install docker colima
-          # brew install --cask docker
+          brew install docker
+          brew install homebrew/cask/docker
+          brew install colima
           ls /Applications
 
       - name: MacOS start colima for Docker
