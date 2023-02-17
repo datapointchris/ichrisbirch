@@ -78,8 +78,8 @@ jobs:
       - name: Run pytest coverage
         run: |
           # Create log file
-          touch ichrisbirch/pylogger.log
-          ls -l
+          # touch ichrisbirch/pylogger.log
+          python -m pip install psycopg2-binary
           # python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv pytest-cov
           poetry run pytest --cov=ichrisbirch
           # poetry run coverage run -m pytest discover
