@@ -10,29 +10,17 @@ homepage = "http://www.ichrisbirch.com"
 
 [tool.poetry.dependencies]
 python = "^3.10.1"
-Flask = "^2.0.2"
-pandas = "^1.4.0"
-pymongo = {extras = ["srv"], version = "^4.1.1"}
-Markdown = "^3.3.6"
-gunicorn = "^20.1.0"
-python-dotenv = "^0.19.2"
-matplotlib = "^3.5.1"
-psycopg2-binary = "^2.9.3"
-psycopg2 = "^2.9.3"
-pynamodb = "^5.2.1"
-requests = "^2.27.1"
 fastapi = "^0.79.0"
-uvicorn = "^0.18.2"
-pydeps = "^1.10.22"
 sqlalchemy = "^1.4.42"
-colorama = "^0.4.6"
-wily = "^1.23.0"
 
 [tool.poetry.group.dev.dependencies]
+pandas = "^1.4.0"
 alembic = "^1.8.1"
 livereload = "^2.6.3"
 jupyter = "^1.0.0"
 jupyterthemes = "^0.20.0"
+wily = "^1.23.0"
+pre-commit = "^3.0.4"
 
 [tool.poetry.group.cicd.dependencies]
 Faker = "^14.1.0"
@@ -44,11 +32,25 @@ pytest-md = "^0.2.0"
 pytest = "^7.1.1"
 pytest-cov = "^3.0.0"
 mypy = "^1.0.0"
-pre-commit = "^3.0.4"
 pytest-asyncio = "^0.20.3"
 bandit = "^1.7.4"
 interrogate = "^1.5.0"
 isort = "^5.12.0"
+
+[tool.poetry.group.prod.dependencies]
+Flask = "^2.0.2"
+pynamodb = "^5.2.1"
+uvicorn = "^0.18.2"
+pydeps = "^1.10.22"
+requests = "^2.27.1"
+colorama = "^0.4.6"
+pymongo = {extras = ["srv"], version = "^4.1.1"}
+Markdown = "^3.3.6"
+gunicorn = "^20.1.0"
+python-dotenv = "^0.19.2"
+matplotlib = "^3.5.1"
+psycopg2-binary = "^2.9.3"
+psycopg2 = "^2.9.3"
 
 
 [tool.black]
