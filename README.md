@@ -71,6 +71,21 @@ Location: `/`
 1. Git pull the .secret file(s)
 2. `git secret reveal`
 
+### Make a secret for CICD
+```bash
+# Generate new key, no passphrase
+gpg --gen-key
+# Export the secret key as one line, multiline not allowed
+gpg --armor --export-secret-key datapointchris@github.com | tr '\n' ',' > cicd-gpg-key.gpg
+# In the repository:
+git secret reveal
+git secret tell datapointchris@github.com
+git secret hide
+```
+
+
+
+
 ## Configuration
 
 Location: `/`
