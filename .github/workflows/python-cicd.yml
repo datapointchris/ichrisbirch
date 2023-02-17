@@ -37,7 +37,7 @@ jobs:
           # sudo rm get-docker.sh
       - name: "Create env file"
         run: |
-          echo ${{ env.DEV_ENV_FILE }} > .dev.env
+          cat ${{ env.DEV_ENV_FILE }} > .dev.env
           echo $DEV_ENV_FILE
           echo .dev.env
 
