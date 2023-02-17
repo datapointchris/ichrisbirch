@@ -27,16 +27,29 @@ jobs:
         if: matrix.os == 'macOS-latest'
         run: |
           brew install git-secret md5sha1sum 
-          # brew install docker
-          brew install homebrew/cask/docker
-          brew install colima
-          ls /Applications
 
-      - name: MacOS start colima for Docker
+      - name: MacOS install minikube for Docker
         if: matrix.os == 'macOS-latest'
         run: |
-          export DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock"
-          colima start
+          # Install hyperkit and minikube
+          brew install hyperkit
+          brew install minikube
+
+          # Install Docker CLI
+          brew install docker
+          brew install docker-compose
+
+          # Start minikube
+          minikube start
+
+          # Tell Docker CLI to talk to minikube's VM
+          eval $(minikube docker-env)
+
+          # Save IP to a hostname
+          echo "`minikube ip` docker.local" | sudo tee -a /etc/hosts > /dev/null
+
+          # Test
+          # docker run hello-world
 
       # - name: MacOS start Docker
       #   if: matrix.os == 'macOS-latest'
