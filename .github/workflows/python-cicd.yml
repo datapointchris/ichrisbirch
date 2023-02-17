@@ -15,28 +15,13 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [macOS-latest]
-        python-version: ["3.10"]
-        poetry-version: ["1.3.2"]
+        os: [ubuntu-22.04, ubuntu-20.04]
+        python-version: ["3.10", "3.11"]
+        poetry-version: ["1.2.0", "1.3.2"]
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: MacOS brew installs
-        if: matrix.os == 'macOS-latest'
-        run: |
-          brew install git-secret md5sha1sum 
-
-      - name: MacOS start Docker
-        if: matrix.os == 'macOS-latest'
-        run: |
-            brew install --cask docker
-            /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
-            open -a /Applications/Docker.app --args --unattended --accept-license
-            echo "We are waiting for Docker to be up and running. It can take over 2 minutes..."
-            while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
-            shell: /bin/bash -e {0}
 
       - name: Ubuntu installs
         if: matrix.os == 'ubuntu-latest'
