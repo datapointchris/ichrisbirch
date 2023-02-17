@@ -74,7 +74,7 @@ jobs:
       #   run: poetry run interrogate -c pyproject.toml
       # - name: Run bandit
       #   run: poetry run bandit -c pyproject.toml -r .
-      - name: Run coverage
+      - name: Run pytest coverage
         run: |
           # Create log file
           mkdir test-logging
@@ -85,8 +85,9 @@ jobs:
           # cat test-logging/pylogger.log
           # sudo chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/test-logging/pylogger.log
           python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
-          coverage run -m pytest discover
-          coverage report -m --fail-under=25
+          pytest --cov=ichrisbirch
+          # coverage run -m pytest discover
+          # coverage report -m --fail-under=25
           # poetry run coverage run -m pytest discover
           # poetry run coverage report -m --fail-under=25
         working-directory: ichrisbirch
