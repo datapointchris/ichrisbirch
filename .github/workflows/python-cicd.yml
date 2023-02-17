@@ -79,7 +79,10 @@ jobs:
           # Create log file
           mkdir test-logging
           touch test-logging/pylogger.log
+          echo "POS" > test-logging/pylogger.log
           ls -l
+          ls test-logging
+          cat test-logging/pylogger.log
           # sudo chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/test-logging/pylogger.log
           # python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
           # coverage run -m pytest discover
