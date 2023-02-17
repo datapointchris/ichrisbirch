@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -17,7 +17,7 @@ async def read_many(db: Session = Depends(sqlalchemy_session), skip: int = 0, li
     return crud.tasks.read_many(db, skip=skip, limit=limit)
 
 
-@router.get("/completed/", response_model=Union[list[schemas.Task], list])
+@router.get("/completed/", response_model=Optional[list[schemas.Task]])  # type: ignore
 async def completed(
     db: Session = Depends(sqlalchemy_session),
     start_date: Union[str, None] = None,

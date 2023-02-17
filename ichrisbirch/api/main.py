@@ -2,6 +2,7 @@ import logging
 import random
 import string
 import time
+from typing import Any, Optional, Union
 
 from fastapi import FastAPI
 
@@ -42,7 +43,7 @@ async def log_requests(request, call_next):
 
 
 # responses for all apis
-responses = {
+responses: Optional[dict[Union[int, str], dict[str, Any]]] = {
     404: {'description': 'Not found'},
     403: {"description": "Operation forbidden"},
 }
