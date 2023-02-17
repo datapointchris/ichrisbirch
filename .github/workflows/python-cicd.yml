@@ -25,7 +25,7 @@ jobs:
 
       - if: matrix.os == 'macOS-latest'
         run: |
-          brew install md5sha1sum git-secret docker
+          brew install md5sha1sum git-secret homebrew/cask/docker
 
       - if: matrix.os == 'ubuntu-latest'
         run: |
