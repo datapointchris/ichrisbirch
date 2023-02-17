@@ -43,19 +43,20 @@ jobs:
           echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
           git secret reveal
 
-      # - name: Upgrade pip
-      #   run: python -m pip install --upgrade pip
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
 
-      # - name: Install poetry
-      #   run: python -m pip install poetry==${{ matrix.poetry-version }}
+      - name: Install poetry
+        run: python -m pip install poetry==${{ matrix.poetry-version }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          # cache: "poetry"
-      # - name: Install CICD Dependencies
-      #   run: poetry install --without dev,prod
+          cache: "poetry"
+      
+      - name: Install CICD Dependencies
+        run: poetry install --without dev,prod
       # - name: Run black formatter
       #   uses: psf/black@stable
       #   with:
@@ -77,12 +78,10 @@ jobs:
       - name: Run pytest coverage
         run: |
           # Create log file
-          # mkdir test-logging
           touch ichrisbirch/pylogger.log
-          touch pylogger.log
           ls -l
-          python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv pytest-cov
-          pytest --cov=ichrisbirch
+          # python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv pytest-cov
+          poetry run pytest --cov=ichrisbirch
           # poetry run coverage run -m pytest discover
           # poetry run coverage report -m --fail-under=25
         # working-directory: ichrisbirch
