@@ -33,15 +33,15 @@ jobs:
           # curl -fsSL https://get.docker.com -o get-docker.sh
           # sudo sh get-docker.sh
           # sudo rm get-docker.sh
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: ${{ matrix.poetry-version }}
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
       - name: Install CICD Dependencies
