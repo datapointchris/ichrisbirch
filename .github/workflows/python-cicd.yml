@@ -34,6 +34,7 @@ jobs:
       - name: MacOS start colima for Docker
         if: matrix.os == 'macOS-latest'
         run: |
+          export DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock"
           colima start
 
       # - name: MacOS start Docker
