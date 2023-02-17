@@ -28,7 +28,8 @@ jobs:
       - name: Ubuntu installs
         # if: matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-22.04'
         run: |
-          sudo apt-get install git-secret
+          sudo apt-get update && sudo apt-get upgrade -y
+          sudo apt-get install git-secret gpg
 
       - name: "git-secret Reveal .env files"
         run: |
