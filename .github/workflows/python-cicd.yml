@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  ENVIRONMENT: 'testing'
+  ENVIRONMENT: "testing"
 
 jobs:
   validate:
@@ -22,12 +22,15 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+      
       - if: matrix.os == 'macOS-latest'
         run: |
           brew install md5sha1sum
           brew install docker
+      
       - if: matrix.os == 'windows-latest'
         run: choco install docker
+      
       - if: matrix.os == 'ubuntu-latest'
         run: |
           # sudo apt-get update && sudo apt-get upgrade
@@ -54,34 +57,35 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-      
+
       - name: Install CICD Dependencies
         run: poetry install --without dev,prod
-      # - name: Run black formatter
-      #   uses: psf/black@stable
-      #   with:
-      #     options: "--check --verbose --color"
-      # - name: Run shellcheck
-      #   uses: ludeeus/action-shellcheck@master
-      # - name: Run mypy
-      #   run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
-      # - name: Run flake8
-      #   run: poetry run flake8 .
-      #   # continue-on-error: true
-      # - name: Run isort action
-      #   uses: isort/isort-action@master
-      # # - run: isort . --check
-      # - name: Run iterrogate
-      #   run: poetry run interrogate -c pyproject.toml
-      # - name: Run bandit
-      #   run: poetry run bandit -c pyproject.toml -r .
+
+      - name: Run black formatter
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose --color"
+
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@master
+
+      - name: Run mypy
+        run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
+
+      - name: Run flake8
+        run: poetry run flake8 .
+        # continue-on-error: true
+
+      - name: Run isort action
+        uses: isort/isort-action@master
+      # - run: isort . --check
+
+      - name: Run iterrogate
+        run: poetry run interrogate -c pyproject.toml
+
+      - name: Run bandit
+        run: poetry run bandit -c pyproject.toml -r .
+
       - name: Run pytest coverage
         run: |
-          # Create log file
-          # touch ichrisbirch/pylogger.log
-          python -m pip install psycopg2-binary
-          # python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv pytest-cov
           poetry run pytest --cov=ichrisbirch
-          # poetry run coverage run -m pytest discover
-          # poetry run coverage report -m --fail-under=25
-        # working-directory: ichrisbirch
