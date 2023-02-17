@@ -11,7 +11,9 @@ env:
   ENVIRONMENT: "testing"
 
 jobs:
+
   validate:
+    name: Validate project
     runs-on: ${{matrix.os}}
     strategy:
       fail-fast: false
@@ -26,7 +28,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Ubuntu installs
-        # if: matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-22.04'
+        if: matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install git-secret gpg
@@ -55,28 +57,28 @@ jobs:
       - name: Poetry install CICD Dependencies
         run: poetry install --without dev,prod
 
-      # - name: Run black formatter
-      #   uses: psf/black@stable
-      #   with:
-      #     options: "--check --verbose --color"
+      - name: Run black formatter
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose --color"
 
-      # - name: Run shellcheck
-      #   uses: ludeeus/action-shellcheck@master
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@master
 
-      # - name: Run mypy
-      #   run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
+      - name: Run mypy
+        run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
 
-      # - name: Run flake8
-      #   run: poetry run flake8 .
+      - name: Run flake8
+        run: poetry run flake8 .
 
-      # - name: Run isort action
-      #   uses: isort/isort-action@master
+      - name: Run isort action
+        uses: isort/isort-action@master
 
-      # - name: Run iterrogate
-      #   run: poetry run interrogate -c pyproject.toml
+      - name: Run iterrogate
+        run: poetry run interrogate -c pyproject.toml
 
-      # - name: Run bandit
-      #   run: poetry run bandit -c pyproject.toml -r .
+      - name: Run bandit
+        run: poetry run bandit -c pyproject.toml -r .
 
       - name: Run pytest coverage
         run: |

@@ -1,6 +1,8 @@
 import os
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Any, Union
+
+from ichrisbirch import __version__
 
 
 @dataclass
@@ -9,6 +11,20 @@ class FlaskSettings:
 
     SECRET_KEY: str | None = os.getenv('SECRET_KEY')
     ENV: str | None = os.getenv('ENVIRONMENT')
+
+
+@dataclass
+class FastAPISettings:
+    """Config settings for FastAPI"""
+
+    TITLE: str = 'iChrisBirch API'
+    DESCRIPTION: str = """## With all the fixins"""
+    RESPONSES: dict[Union[int, str], dict[str, Any]] = field(
+        default_factory=lambda: {
+            404: {'description': 'Not found'},
+            403: {"description": "Operation forbidden"},
+        }
+    )
 
 
 @dataclass
@@ -73,12 +89,14 @@ class Settings:
     """Base settings class that contains all other settings."""
 
     NAME: str = 'ichrisbirch.com'
+    VERSION: str = __version__
     DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
     API_URL: str | None = os.getenv('API_URL')
     ENVIRONMENT: str | None = os.getenv('ENVIRONMENT')
     OS_PREFIX: str | None = os.getenv('OS_PREFIX')
 
     flask = FlaskSettings()
+    fastapi = FastAPISettings()
     sqlite = SQLiteSettings()
     mongodb = MongoDBSettings()
     dynamodb = DynamoDBSettings()

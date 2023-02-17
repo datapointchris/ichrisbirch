@@ -12,7 +12,7 @@ def create_app() -> Flask:
     """Flask app factory
 
     Returns:
-        app: Flask app
+        Flask: Flask app
     """
     app = Flask(__name__)
     logger.debug(f'{app.import_name} App Started')
