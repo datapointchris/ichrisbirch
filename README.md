@@ -85,7 +85,7 @@ git secret hide
 ```
 
 Add the key to the CICD environment secrets.
-Add this to the CICD workflow:  
+Add this to the CICD workflow, which will re-create the line breaks and import into gpg
 
 ```yaml
 - name: "git-secret Reveal .env files"
