@@ -58,7 +58,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
 
-      - name: Install CICD Dependencies
+      - name: Poetry install CICD Dependencies
         run: poetry install --without dev,prod
 
       - name: Run black formatter
