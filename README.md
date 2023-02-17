@@ -96,7 +96,9 @@ Add this to the CICD workflow, which will re-create the line breaks and import i
 ```
 
 #### Note for Ubuntu 20.04
+
 It is necessary to downgrade the version of gpg in MacOS to be compatible with the version running on Ubuntu 20.04, specifically the runners on GitHub Actions.
+<https://github.com/sobolevn/git-secret/issues/760#issuecomment-1126163319>
 
 ```bash
 brew uninstall git-secret
