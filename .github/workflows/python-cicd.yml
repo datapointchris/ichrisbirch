@@ -36,7 +36,7 @@ jobs:
           # sudo rm get-docker.sh
       - name: "Create env file"
         run: |
-          echo ${{ secrets.DEV_ENV_FILE }} > .dev.env
+          echo ${{ variables.DEV_ENV_FILE }} > .dev.env
           cat .dev.env
 
       # - name: Upgrade pip
