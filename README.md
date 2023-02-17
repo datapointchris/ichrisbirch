@@ -72,6 +72,7 @@ Location: `/`
 2. `git secret reveal`
 
 ### Make a secret for CICD
+
 ```bash
 # Generate new key, no passphrase
 gpg --gen-key
@@ -83,6 +84,18 @@ git secret tell datapointchris@github.com
 git secret hide
 ```
 
+Add the key to the CICD environment secrets.
+Add this to the CICD workflow:  
+
+```yaml
+- name: "git-secret Reveal .env files"
+  run: |
+    echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' > ./cicd-gpg-key.gpg
+    cat cicd-gpg-key.gpg
+    # Import private key and avoid the "Inappropriate ioctl for device" error
+    gpg --batch --yes --pinentry-mode loopback --import ./cicd-gpg-key.gpg
+    git secret reveal
+    ```
 
 
 

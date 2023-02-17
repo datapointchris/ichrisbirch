@@ -45,8 +45,6 @@ jobs:
           gpg --batch --yes --pinentry-mode loopback --import ./cicd-gpg-key.gpg
           git secret reveal
 
-      - name: Create env file
-        run: cat .dev.env
       # - name: Upgrade pip
       #   run: python -m pip install --upgrade pip
 
@@ -78,10 +76,10 @@ jobs:
       #   run: poetry run interrogate -c pyproject.toml
       # - name: Run bandit
       #   run: poetry run bandit -c pyproject.toml -r .
-      # - name: Run coverage
-      #   run: |
-      #     python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
-      #     coverage run -m pytest discover
-      #     coverage report -m --fail-under=25
-      #     # poetry run coverage run -m pytest discover
-      #     # poetry run coverage report -m --fail-under=25
+      - name: Run coverage
+        run: |
+          python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
+          coverage run -m pytest discover
+          coverage report -m --fail-under=25
+          # poetry run coverage run -m pytest discover
+          # poetry run coverage report -m --fail-under=25
