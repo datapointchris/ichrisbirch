@@ -35,12 +35,13 @@ jobs:
           # curl -fsSL https://get.docker.com -o get-docker.sh
           # sudo sh get-docker.sh
           # sudo rm get-docker.sh
+          sudo apt install git-secret
       
       - name: "git-secret Reveal .env files"
         run: |
           echo ${{ env.CICD_GPG_KEY }} | tr ',' '\n' > cicd-gpg-key.gpg
           # Import private key and avoid the "Inappropriate ioctl for device" error
-          gpg --batch --yes --pinentry-mode loopback --import private_key.gpg
+          gpg --batch --yes --pinentry-mode loopback --import cicd-gpg-key.gpg
           git secret reveal
 
       - name: Create env file
