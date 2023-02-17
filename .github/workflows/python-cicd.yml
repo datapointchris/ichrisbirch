@@ -34,8 +34,10 @@ jobs:
         if: matrix.os == 'macOS-latest'
         run: |
           # open -ga "Docker Desktop" -- THIS DOES NOT WORK
-          # /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
+          # open -ga "Docker"
           open -a /Applications/Docker.app --args --unattended --accept-license
+          # /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
+          while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
 
       - name: Ubuntu installs
         if: matrix.os == 'ubuntu-latest'
