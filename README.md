@@ -112,6 +112,8 @@ git secret clean
 git secret hide
 ```
 
+SUCCESS!!!
+
 ## Configuration
 
 Location: `/`

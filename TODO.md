@@ -30,6 +30,7 @@
   - [Project Specific](#project-specific)
     - [ichrisbirch](#ichrisbirch)
     - [Apartments](#apartments)
+    - [Habits](#habits)
     - [Tasks](#tasks)
     - [Tracks](#tracks)
     - [Events](#events)
@@ -357,6 +358,10 @@ Test this out on the portfolio page
   - [ ] Article of the Day
 
 ### Apartments
+
+### Habits
+
+<https://github.com/flatpickr/flatpickr>
 
 Ranking
  [Slider with value and ruler](https://codepen.io/thebabydino/pen/RwjWrKz)
