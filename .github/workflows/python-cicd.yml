@@ -20,65 +20,51 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - if: matrix.os == 'macOS-latest'
+      - if: matrix.os == "macOS-latest"
         run: |
           brew install md5sha1sum 
           brew install docker
-
-      - if: matrix.os == 'windows-latest'
+      - if: matrix.os == "windows-latest"
         run: choco install docker
-
-      - if: matrix.os == 'ubuntu-latest'
+      - if: matrix.os == "ubuntu-latest"
         run: |
           # sudo apt-get update && sudo apt-get upgrade
           # sudo apt-get remove docker docker-engine docker.io containerd runc
           # curl -fsSL https://get.docker.com -o get-docker.sh
           # sudo sh get-docker.sh
           # sudo rm get-docker.sh
-
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
+          cache: "poetry"
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: ${{ matrix.poetry-version }}
-
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
-
       - name: Install CICD Dependencies
         run: poetry install --only cicd
-
       - name: Run black formatter
         uses: psf/black@stable
         with:
           options: "--check --verbose --color"
-
       - name: Run shellcheck
         uses: ludeeus/action-shellcheck@master
-
       - name: Run mypy
-        run: mypy --install-types --non-interactive --config-file pyproject.toml
-
+        run: poetry run mypy --install-types --non-interactive --config-file pyproject.toml
       - name: Run flake8
-        run: flake8 .
+        run: poetry run flake8 .
         # continue-on-error: true
-
       - name: Run isort action
         uses: isort/isort-action@master
       # - run: isort . --check
-
       - name: Run iterrogate
-        run: interrogate -c pyproject.toml
-
+        run: poetry run interrogate -c pyproject.toml
       - name: Run bandit
-        run: bandit -c pyproject.toml -r .
-
+        run: poetry run bandit -c pyproject.toml -r .
       - name: Run coverage
         run: |
-          coverage run -m pytest discover
-          coverage report -m --fail-under=25
+          poetry run coverage run -m pytest discover
+          poetry run coverage report -m --fail-under=25
