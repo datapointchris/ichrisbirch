@@ -28,38 +28,15 @@ jobs:
         run: |
           brew install git-secret md5sha1sum 
 
-      - name: MacOS install minikube for Docker
+      - name: MacOS start Docker
         if: matrix.os == 'macOS-latest'
         run: |
-          # Install hyperkit and minikube
-          brew install hyperkit
-          brew install minikube
-
-          # Install Docker CLI
-          brew install docker
-          brew install docker-compose
-
-          # Start minikube
-          minikube start
-
-          # Tell Docker CLI to talk to minikube's VM
-          eval $(minikube docker-env)
-
-          # Save IP to a hostname
-          echo "`minikube ip` docker.local" | sudo tee -a /etc/hosts > /dev/null
-
-          # Test
-          # docker run hello-world
-
-      # - name: MacOS start Docker
-      #   if: matrix.os == 'macOS-latest'
-      #   run: |
-      #       # brew install --cask docker
-      #       /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
-      #       open -a /Applications/Docker.app --args --unattended --accept-license
-      #       echo "We are waiting for Docker to be up and running. It can take over 2 minutes..."
-      #       while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
-      #       shell: /bin/bash -e {0}
+            brew install --cask docker
+            /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
+            open -a /Applications/Docker.app --args --unattended --accept-license
+            echo "We are waiting for Docker to be up and running. It can take over 2 minutes..."
+            while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
+            shell: /bin/bash -e {0}
 
       - name: Ubuntu installs
         if: matrix.os == 'ubuntu-latest'
