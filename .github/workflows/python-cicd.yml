@@ -15,10 +15,10 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
-        # os: [ubuntu-22.04, ubuntu-20.04]
-        python-version: ["3.10"]
-        # python-version: ["3.10", "3.11"]
+        # os: [ubuntu-22.04]
+        os: [ubuntu-22.04, ubuntu-20.04]
+        # python-version: ["3.10"]
+        python-version: ["3.10", "3.11"]
         # Current poetry.lock file incompatible < 1.3.2
         poetry-version: ["1.3.2"]
 
@@ -36,8 +36,6 @@ jobs:
           # Import private key and avoid the "Inappropriate ioctl for device" error
           echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
           git secret reveal
-          ls -l
-          cat .test.env
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
