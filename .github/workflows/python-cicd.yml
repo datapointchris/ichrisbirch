@@ -34,7 +34,7 @@ jobs:
           # sudo rm get-docker.sh
       - name: 'Create env file'
         env:
-          ENVIRONMENT: development
+          ENVIRONMENT: 'development'
           DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
         run: |
           echo ${{ secrets.DEV_ENV_FILE }} > .dev.env
