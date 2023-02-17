@@ -79,6 +79,7 @@ jobs:
           # Create log file
           # mkdir test-logging
           touch ichrisbirch/pylogger.log
+          touch pylogger.log
           ls -l
           python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv pytest-cov
           pytest --cov=ichrisbirch
