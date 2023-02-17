@@ -24,4 +24,3 @@ if environment := os.getenv('ENVIRONMENT'):
             )
 
 logger.debug(f"Loaded env file: {env_file}")
-print(f"Loaded env file: {env_file}")
