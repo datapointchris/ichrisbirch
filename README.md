@@ -93,9 +93,22 @@ Add this to the CICD workflow, which will re-create the line breaks and import i
     # Import private key and avoid the "Inappropriate ioctl for device" error
     echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
     git secret reveal
-    ```
+```
 
+#### Note for Ubuntu 20.04
+It is necessary to downgrade the version of gpg in MacOS to be compatible with the version running on Ubuntu 20.04, specifically the runners on GitHub Actions.
 
+```bash
+brew uninstall git-secret
+brew uninstall gpg
+brew cleanup
+brew install gnupg@2.2
+# MUST add /usr/local/opt/gnupg@2.2/bin to PATH in dotfiles
+brew install git-secret
+# brew says it installs gnupg with git-secret, but after gpg still points to 2.2
+git secret clean
+git secret hide
+```
 
 ## Configuration
 
