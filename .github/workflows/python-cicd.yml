@@ -23,12 +23,15 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Brew installs
+      - name: MacOS brew installs
         if: matrix.os == 'macOS-latest'
         run: |
           brew install git-secret md5sha1sum
           brew install --cask docker
-          # Start Docker so it has time to load for pytest
+
+      - name: MacOS start Docker
+        if: matrix.os == 'macOS-latest'
+        run: |
           /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
           open -a /Applications/Docker.app --args --unattended --accept-license
 
