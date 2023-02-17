@@ -86,7 +86,7 @@ jobs:
           # sudo chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/test-logging/pylogger.log
           python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv
           coverage run -m pytest discover
-          # coverage report -m --fail-under=25
+          coverage report -m --fail-under=25
           # poetry run coverage run -m pytest discover
           # poetry run coverage report -m --fail-under=25
         working-directory: ichrisbirch
