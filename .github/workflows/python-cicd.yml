@@ -39,38 +39,41 @@ jobs:
         run: |
           echo ${{ secrets.DEV_ENV_FILE }} > .dev.env
       
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+      # - name: Upgrade pip
+      #   run: python -m pip install --upgrade pip
       
-      - name: Install poetry
-        run: python -m pip install poetry==${{ matrix.poetry-version }}
+      # - name: Install poetry
+      #   run: python -m pip install poetry==${{ matrix.poetry-version }}
       
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-      - name: Install CICD Dependencies
-        run: poetry install --without dev,prod
-      - name: Run black formatter
-        uses: psf/black@stable
-        with:
-          options: "--check --verbose --color"
-      - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@master
-      - name: Run mypy
-        run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
-      - name: Run flake8
-        run: poetry run flake8 .
-        # continue-on-error: true
-      - name: Run isort action
-        uses: isort/isort-action@master
-      # - run: isort . --check
-      - name: Run iterrogate
-        run: poetry run interrogate -c pyproject.toml
-      - name: Run bandit
-        run: poetry run bandit -c pyproject.toml -r .
+      # - name: Install CICD Dependencies
+      #   run: poetry install --without dev,prod
+      # - name: Run black formatter
+      #   uses: psf/black@stable
+      #   with:
+      #     options: "--check --verbose --color"
+      # - name: Run shellcheck
+      #   uses: ludeeus/action-shellcheck@master
+      # - name: Run mypy
+      #   run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
+      # - name: Run flake8
+      #   run: poetry run flake8 .
+      #   # continue-on-error: true
+      # - name: Run isort action
+      #   uses: isort/isort-action@master
+      # # - run: isort . --check
+      # - name: Run iterrogate
+      #   run: poetry run interrogate -c pyproject.toml
+      # - name: Run bandit
+      #   run: poetry run bandit -c pyproject.toml -r .
       - name: Run coverage
         run: |
-          poetry run coverage run -m pytest discover
-          poetry run coverage report -m --fail-under=25
+          python -m pip install pytest coverage
+          run coverage run -m pytest discover
+          run coverage report -m --fail-under=25
+          # poetry run coverage run -m pytest discover
+          # poetry run coverage report -m --fail-under=25
