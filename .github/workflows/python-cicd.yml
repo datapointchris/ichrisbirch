@@ -7,10 +7,11 @@ on:
     branches: [master]
   workflow_dispatch:
 
+env:
+  DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
+
 jobs:
   validate:
-    env:
-      DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -36,8 +37,9 @@ jobs:
           # sudo rm get-docker.sh
       - name: "Create env file"
         run: |
-          echo ${{ variables.DEV_ENV_FILE }} > .dev.env
+          echo ${{ env.DEV_ENV_FILE }} > .dev.env
           cat .dev.env
+          echo "DEV_ENV_FILE $DEV_ENV_FILE"
 
       # - name: Upgrade pip
       #   run: python -m pip install --upgrade pip
