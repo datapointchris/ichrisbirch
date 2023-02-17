@@ -77,17 +77,11 @@ jobs:
       - name: Run pytest coverage
         run: |
           # Create log file
-          mkdir test-logging
-          touch test-logging/pylogger.log
-          # echo "POS" > test-logging/pylogger.log
+          # mkdir test-logging
+          touch ichrisbirch/pylogger.log
           ls -l
-          # ls test-logging
-          # cat test-logging/pylogger.log
-          # sudo chmod 777 /home/runner/work/ichrisbirch/ichrisbirch/test-logging/pylogger.log
           python -m pip install pytest coverage docker fastapi httpx sqlalchemy python-dotenv pytest-cov
-          pytest --cov
-          # coverage run -m pytest discover
-          # coverage report -m --fail-under=25
+          pytest --cov=ichrisbirch
           # poetry run coverage run -m pytest discover
           # poetry run coverage report -m --fail-under=25
         # working-directory: ichrisbirch
