@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
-router = APIRouter(prefix='/tasks', tags=['main'], include_in_schema=False)
+router = APIRouter(prefix='', tags=['main'], include_in_schema=False)
 
 
 @router.get("/", include_in_schema=False)

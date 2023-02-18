@@ -1,7 +1,7 @@
 from typing import Sequence
 
 
-def endpoint(paths: str | int | float | set | Sequence) -> str:
+def format_endpoint(paths: str | int | float | set | Sequence) -> str:
     """Converts string arguments to path with leading and trailing slashes
 
     Accepts any argument that can be converted to a string
