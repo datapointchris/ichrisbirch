@@ -80,7 +80,7 @@ class LoggingSettings:
     """Config settings for Logging"""
 
     LOG_PATH: str | None = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
-    LOG_FORMAT: str | None = os.getenv('LOG_FORMAT')
+    LOG_FORMAT: str | None = "%(asctime)s | %(name)s:%(lineno)d | %(levelname)s: %(message)s"
     LOG_LEVEL: Union[int, str] = os.getenv('LOG_LEVEL', 'DEBUG')
 
 
