@@ -5,7 +5,7 @@ from ichrisbirch import settings
 logger = logging.getLogger(__name__)
 log_file = f'{settings.logging.LOG_PATH}/pylogger.log'
 
-formatter = logging.Formatter(settings.logging.LOG_FORMAT)
+formatter = logging.Formatter(settings.logging.LOG_FORMAT, settings.logging.LOG_DATE_FORMAT)
 
 console_log = logging.StreamHandler()
 console_log.setFormatter(formatter)

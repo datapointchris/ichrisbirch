@@ -5,56 +5,56 @@
 ######################################################################
 
 #-------------------- COLORS --------------------#
-black() {
+color_black() {
     local color
     color=$(tput setaf 0)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-red() {
+color_red() {
     local color
     color=$(tput setaf 1)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-green() {
+color_green() {
     local color
     color=$(tput setaf 2)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-yellow() {
+color_yellow() {
     local color
     color=$(tput setaf 3)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-blue() {
+color_blue() {
     local color
     color=$(tput setaf 4)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-magenta() {
+color_magenta() {
     local color
     color=$(tput setaf 5)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-cyan() {
+color_cyan() {
     local color
     color=$(tput setaf 6)
     local msg="${color}$1${normal}"
     echo "$msg"
 }
 
-white() {
+color_white() {
     local color
     color=$(tput setaf 7)
     local msg="${color}$1${normal}"
@@ -80,7 +80,7 @@ print_title() {
         cat <<-TITLE
 
 		$(terminal_width_separator "=")
-		$(center_text "$(green "$1")")
+		$(center_text "$(color_green "$1")")
 		$(terminal_width_separator "-")
 	TITLE
     )

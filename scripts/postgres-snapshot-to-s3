@@ -6,7 +6,6 @@ set -e # fail script on command fail
 ######################################################################
 # TODO: [2023/01/02] - Run this thing with airflow
 # TODO: [2023/01/02] - Move the loading of the Environment to an environment helper script
-# TODO: [2023/01/02] - LOADING PROGRESS :) :) :)
 
 # -------------------- Instructions -------------------- #
 # TODO: [2023/01/02] - These instructions are outdated!!
@@ -19,25 +18,50 @@ set -e # fail script on command fail
 # 5) Set up a daily backup at midnight via `crontab -e`:
 #    0 0 * * * /home/ubuntu/backup.sh > /home/ubuntu/backup.log
 
-# ----- Helpers ----- #
-source scripts/bash-helpers
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 
-SCRIPT_NAME=$(basename "$0")
+# ---------- Imports ---------- #
+source "$SCRIPT_DIR/environment"
+
+
+source "$SCRIPT_DIR/bash-helpers"
+# bash-helpers.filename_to_title
+# bash-helpers.print_title
+# bash-helpers.print_section
+# bash-helpers.color_blue
+# bash-helpers.color_green
+# bash-helpers.color_yellow
+# bash-helpers.color_red
+
+source "$SCRIPT_DIR/logging"
+# logging.SCRIPTS_LOG_FILE
+# logging.set_logger
+
 SCRIPT_TITLE="$(filename_to_title "$SCRIPT_NAME")"
+
+logger() {
+    local log_level="$1"
+    local log_msg="$2"
+    # shellcheck disable=SC2046
+    read -r line_no this_file <<<$(caller)
+    set_logger "$log_level" "$line_no" "$(basename "$this_file")" "$log_msg"
+}
+
 
 usage() {
     local message
     message=$(
         cat <<-EOF
 
-$(green "$(print_section "Usage:")")
-$(blue "Script runs without arguments:")
+$(color_green "$(print_section "Usage:")")
+$(color_blue "Script runs without arguments:")
 ./$SCRIPT_NAME
 
-$(blue "Help:")
+$(color_blue "Help:")
 ./$SCRIPT_NAME --help
 
-$(blue "Dry Run:")
+$(color_blue "Dry Run:")
 ./$SCRIPT_NAME --dry-run
 EOF
     )
@@ -51,19 +75,19 @@ help() {
 
 $(print_title "$SCRIPT_TITLE")
 
-$(green "$(print_section "Description")")
+$(color_green "$(print_section "Description")")
 This script creates a snapshot of an RDS Postgres instance
 and exports it to an S3 bucket, then deletes the snapshot from RDS.
 
 $(usage)
 
-$(green "$(print_section "Requirements:")")
-1. \`awscli\` installed
+$(color_green "$(print_section "Requirements:")")
+1. $(color_blue "awscli") installed
 2. Script executor to have the following permissions:
   1. RDS create-db-snapshot
   2. RDS start-export-task
   3. RDS delete-db-snapshot
-Locally: user or IAM credentials must have these permissions
+Locally: user or IAM ccolor_redentials must have these permissions
 EC2: the instance *should* have the necessary permissions through a security group
 Airflow... ¯\_(ツ)_/¯
 EOF
@@ -85,10 +109,10 @@ if [[ -n "$1" ]]; then
     "--dry-run")
         DRY_RUN=true
         echo
-        print_title "$(blue "Executing Dry Run of $SCRIPT_TITLE")"
+        print_title "$(color_blue "Executing Dry Run of $SCRIPT_TITLE")"
         ;;
     *)
-        red "Unrecognized argument: $1"
+        color_red "Unrecognized argument: $1"
 
         usage
         exit 1
@@ -96,58 +120,7 @@ if [[ -n "$1" ]]; then
     esac
 fi
 
-iso_date() { date -u +%Y-%m-%dT%TZ; }
-
-log() {
-    local msg
-    msg="${1^^} $(iso_date) $2"
-    echo "$msg"
-    # TODO: [2023/01/02] - This does not work at startup,
-    # chicken and egg to log or load the $LOG_PATH
-    # if [[ -n $DRY_RUN ]]; then
-    #     echo "$msg"
-    # else
-    #     echo "$msg" | tee -a "$LOG_PATH"
-    # fi
-}
-
 elapsed_time() { echo "$((SECONDS / 60)) minutes $((SECONDS % 60)) seconds"; }
-
-findup() {
-    # Look upwards in directories for file and return full path
-    dirpath=$(pwd)
-    while [[ "$dirpath" != "" && ! -e "$dirpath/$1" ]]; do
-        dirpath=${dirpath%/*}
-    done
-    echo "$dirpath/$1"
-}
-
-# ----- Handle Environment ----- #
-log info "ENVIRONMENT=$ENVIRONMENT"
-case "$ENVIRONMENT" in
-development)
-    env_file=".prod.env"
-    export AWS_PROFILE=ichrisbirch_chris-birch
-    log info "Set AWS_PROFILE=$AWS_PROFILE"
-    ;;
-testing)
-    env_file=".test.env"
-    export AWS_PROFILE=ichrisbirch_chris-birch
-    log info "Set AWS_PROFILE=$AWS_PROFILE"
-    ;;
-production)
-    env_file=".prod.env"
-    ;;
-*)
-    log error "No ENVIRONMENT set, exiting"
-    exit 1
-    ;;
-esac
-
-ENV_PATH=$(findup $env_file)
-
-# shellcheck disable=SC1090
-source "$ENV_PATH"
 
 # ----- Constants ----- #
 SECONDS=0
@@ -155,13 +128,13 @@ BUCKET_PREFIX="postgres"
 TIMESTAMP="$(date -u +%Y-%m-%dT%HH%MM)"
 SNAPSHOT_NAME="$POSTGRES_DBNAME-$TIMESTAMP-snapshot"
 FULL_BUCKET_PATH="s3://$S3_BACKUPS_BUCKET/$BUCKET_PREFIX/$SNAPSHOT_NAME"
-LOG_PATH="$OS_PREFIX$LOG_PATH/$SCRIPT_NAME.log"
+LOG_FILE=$SCRIPTS_LOG_FILE
 
-log debug "Env File Loaded: $ENV_PATH"
-log debug "OS Prefix: $OS_PREFIX"
-log debug "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
-log debug "Bucket: $FULL_BUCKET_PATH"
-log debug "Log Location: $LOG_PATH"
+logger debug "Env File Loaded: $ENV_PATH"
+logger debug "OS Prefix: $OS_PREFIX"
+logger debug "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
+logger debug "Bucket: $FULL_BUCKET_PATH"
+logger debug "Log Location: $LOG_FILE"
 
 # ----- Main Functions ----- #
 
@@ -169,12 +142,12 @@ create_rds_snapshot() {
     aws rds create-db-snapshot \
         --db-instance-identifier "$POSTGRES_DBNAME" \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
-        --output text >>"$LOG_PATH" 2>&1
+        --output text >>"$LOG_FILE" 2>&1
 
     aws rds wait db-snapshot-completed \
         --db-instance-identifier "$POSTGRES_DBNAME" \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
-        --output text >>"$LOG_PATH" 2>&1
+        --output text >>"$LOG_FILE" 2>&1
 }
 
 export_rds_snapshot_to_s3() {
@@ -185,7 +158,7 @@ export_rds_snapshot_to_s3() {
         --s3-prefix "$BUCKET_PREFIX" \
         --iam-role-arn arn:aws:iam::215933706506:role/S3DatabaseBackups \
         --kms-key-id arn:aws:kms:us-east-1:215933706506:key/65e31888-e584-48df-84d1-5f0cc2f1f28b \
-        --output text >>"$LOG_PATH" 2>&1
+        --output text >>"$LOG_FILE" 2>&1
 
     export_status=""
     while [ "$export_status" != "COMPLETE" ]; do
@@ -200,27 +173,27 @@ export_rds_snapshot_to_s3() {
 delete_rds_snapshot() {
     aws rds delete-db-snapshot \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
-        --output text >>"$LOG_PATH" 2>&1
+        --output text >>"$LOG_FILE" 2>&1
 
     aws rds wait db-snapshot-deleted \
         --db-instance-identifier "$POSTGRES_DBNAME" \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
-        --output text >>"$LOG_PATH" 2>&1
+        --output text >>"$LOG_FILE" 2>&1
 }
 
 # ----- Main Script ----- #
-log info "$(green "Running:") $(blue "$SCRIPT_TITLE")"
+logger info "$(color_green "Running:") $(color_blue "$SCRIPT_TITLE")"
 
-log info "$(yellow "Creating $SNAPSHOT_NAME")"
+logger info "$(color_yellow "Creating $SNAPSHOT_NAME")"
 if [[ -z $DRY_RUN ]]; then create_rds_snapshot; fi
-log info "$(green "Created $SNAPSHOT_NAME")"
+logger info "$(color_green "Created $SNAPSHOT_NAME")"
 
-log info "$(yellow "Exporting $SNAPSHOT_NAME")"
+logger info "$(color_yellow "Exporting $SNAPSHOT_NAME")"
 if [[ -z $DRY_RUN ]]; then export_rds_snapshot_to_s3; fi
-log info "$(green "Exported $SNAPSHOT_NAME")"
+logger info "$(color_green "Exported $SNAPSHOT_NAME")"
 
-log info "$(yellow "Deleting $SNAPSHOT_NAME")"
+logger info "$(color_yellow "Deleting $SNAPSHOT_NAME")"
 if [[ -z $DRY_RUN ]]; then delete_rds_snapshot; fi
-log info "$(red "Deleted $SNAPSHOT_NAME")"
+logger info "$(color_red "Deleted $SNAPSHOT_NAME")"
 
-log info "$(green "Completed:") $(blue "$SCRIPT_TITLE-- $(elapsed_time)")"
+logger info "$(color_green "Completed:") $(color_blue "$SCRIPT_TITLE-- $(elapsed_time)")"

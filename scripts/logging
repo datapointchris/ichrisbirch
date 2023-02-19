@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+
+# ---------- Imports ---------- #
+source "$SCRIPT_DIR/environment"
+# environment.LOG_DATE_FORMAT
+
+export SCRIPTS_LOG_FILE=$OS_PREFIX$LOG_PATH/scripts.log
+
+set_logger() {
+    local log_level="$1"
+    local line_no="$2"
+    local script_name="$3"  # the script name has to be passed from the original script
+    local log_msg="$4"
+
+    utc_date() { date -u "+$LOG_DATE_FORMAT"; }
+
+    case $log_level in
+            info | Info | INFO)
+                log_level="INFO"
+                ;;
+            warn | Warn | WARN | warning| Warning | WARNING)
+                log_level="WARNING"
+                ;;
+            error | Error | ERROR)
+                log_level="ERROR"
+                ;;
+            debug | Debug | DEBUG)
+                log_level="DEBUG"
+                ;;
+            *)
+                echo "$(utc_date) | WARNING | $script_name:$line_no | Invalid log level: '$log_level', defaulting to INFO" | tee -a "$LOG_FILE" 2>&1
+                log_level="INFO"
+                ;;
+        esac
+    echo "$(utc_date) | $log_level | $script_name:$line_no | $log_msg" | tee -a "$LOG_FILE" 2>&1
+}

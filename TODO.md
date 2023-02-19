@@ -97,10 +97,16 @@ Pre-commit Possibilites:
 - [ ] Sitewide $PROJECT variable
   - [ ] This should most likely be an environment variable, if any at all
   - [ ] What was the purpose of this?
-- [ ] AWS lambda function to backup postgres to AWS
-  - [ ] use boto3 to connect, duh
-  - [ ] Set up S3 bucket to only keep 30 days of backups
-  - [ ] Send notification of failure to ichrisbirch
+- [ ] Make a new user for postgres?
+  - [ ] Should I make a special user that connects to postgres?
+  - [ ] Or should I use AWS IAM authentication with a password?
+  - [ ] But I need a user to do admin stuff, I guess postgres is okay for that
+  - [ ] But should definitely be a separate user for the app
+    - [ ] They don't need permission to:
+      - [ ] postgres database
+      - [ ] pgcron
+      - [ ] ONLY to `ichrisbirch` db
+  - [ ]
 
 ## CSS files
 

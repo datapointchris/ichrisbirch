@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from ichrisbirch import __version__
 
@@ -9,8 +9,8 @@ from ichrisbirch import __version__
 class FlaskSettings:
     """Config settings for Flask"""
 
-    SECRET_KEY: str | None = os.getenv('SECRET_KEY')
-    ENV: str | None = os.getenv('ENVIRONMENT')
+    SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')
+    ENV: Optional[str] = os.getenv('ENVIRONMENT')
 
 
 @dataclass
@@ -31,9 +31,9 @@ class FastAPISettings:
 class PostgresSettings:
     """Config settings for Postgres"""
 
-    POSTGRES_URI: str | None = os.getenv('POSTGRES_URI')
-    POSTGRES_USER: str | None = os.getenv('POSTGRES_USER')
-    POSTGRES_PASSWORD: str | None = os.getenv('POSTGRES_PASSWORD')
+    POSTGRES_URI: Optional[str] = os.getenv('POSTGRES_URI')
+    POSTGRES_USER: Optional[str] = os.getenv('POSTGRES_USER')
+    POSTGRES_PASSWORD: Optional[str] = os.getenv('POSTGRES_PASSWORD')
     POSTGRES_DATABASE_URI: str = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URI}:5432/ichrisbirch'
 
 
@@ -50,9 +50,9 @@ class SQLAlchemySettings:
 class MongoDBSettings:
     """Config settings for MongoDB"""
 
-    MONGODB_URI: str | None = os.getenv('MONGODB_URI')
-    MONGODB_USER: str | None = os.getenv('MONGODB_USER')
-    MONGODB_PASSWORD: str | None = os.getenv('MONGODB_PASSWORD')
+    MONGODB_URI: Optional[str] = os.getenv('MONGODB_URI')
+    MONGODB_USER: Optional[str] = os.getenv('MONGODB_USER')
+    MONGODB_PASSWORD: Optional[str] = os.getenv('MONGODB_PASSWORD')
     MONGODB_DATABASE_URI: str = (
         f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_URI}/ichrisbirch?retryWrites=true&w=majority'
     )
@@ -62,25 +62,26 @@ class MongoDBSettings:
 class DynamoDBSettings:
     """Config settings for DynamoDB"""
 
-    DYNAMODB_URL: str | None = os.getenv('DYNAMODB_URL')
-    DYNAMODB_USER: str | None = os.getenv('DYNAMODB_USER')
-    DYNAMODB_PASSWORD: str | None = os.getenv('DYNAMODB_PASSWORD')
-    DYNAMODB_DATABASE_URI: str | None = os.getenv('DYNAMODB_DATABASE_URI')
+    DYNAMODB_URL: Optional[str] = os.getenv('DYNAMODB_URL')
+    DYNAMODB_USER: Optional[str] = os.getenv('DYNAMODB_USER')
+    DYNAMODB_PASSWORD: Optional[str] = os.getenv('DYNAMODB_PASSWORD')
+    DYNAMODB_DATABASE_URI: Optional[str] = os.getenv('DYNAMODB_DATABASE_URI')
 
 
 @dataclass
 class SQLiteSettings:
     """Config settings for SQLite"""
 
-    SQLITE_DATABASE_URI: str | None = os.getenv('SQLITE_DATABASE_URI')
+    SQLITE_DATABASE_URI: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
 
 
 @dataclass
 class LoggingSettings:
     """Config settings for Logging"""
 
-    LOG_PATH: str | None = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
-    LOG_FORMAT: str | None = "%(asctime)s | %(name)s:%(lineno)d | %(levelname)s: %(message)s"
+    LOG_PATH: Optional[str] = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
+    LOG_FORMAT: Optional[str] = os.getenv('LOG_FORMAT')
+    LOG_DATE_FORMAT: Optional[str] = os.getenv('LOG_DATE_FORMAT')
     LOG_LEVEL: Union[int, str] = os.getenv('LOG_LEVEL', 'DEBUG')
 
 
@@ -91,9 +92,9 @@ class Settings:
     NAME: str = 'ichrisbirch.com'
     VERSION: str = __version__
     DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
-    API_URL: str | None = os.getenv('API_URL')
-    ENVIRONMENT: str | None = os.getenv('ENVIRONMENT')
-    OS_PREFIX: str | None = os.getenv('OS_PREFIX')
+    API_URL: Optional[str] = os.getenv('API_URL')
+    ENVIRONMENT: Optional[str] = os.getenv('ENVIRONMENT')
+    OS_PREFIX: Optional[str] = os.getenv('OS_PREFIX')
 
     flask = FlaskSettings()
     fastapi = FastAPISettings()

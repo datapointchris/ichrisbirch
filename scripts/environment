@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+findup() {
+    # Look upwards in directories for file and return full path
+    dirpath=$(pwd)
+    while [[ "$dirpath" != "" && ! -e "$dirpath/$1" ]]; do
+        dirpath=${dirpath%/*}
+    done
+    echo "$dirpath/$1"
+}
+
+# ----- Handle Environment ----- #
+# echo "ENVIRONMENT=$ENVIRONMENT"
+case "$ENVIRONMENT" in
+development)
+    env_file=".dev.env"
+    ;;
+testing)
+    env_file=".test.env"
+    ;;
+production)
+    env_file=".prod.env"
+    ;;
+*)
+    echo "No ENVIRONMENT set, exiting"
+    exit 1
+    ;;
+esac
+
+ENV_PATH=$(findup $env_file)
+# echo "Found env: $ENV_PATH"
+
+# shellcheck disable=SC1090
+source "$ENV_PATH"
