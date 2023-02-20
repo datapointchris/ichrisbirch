@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateSchema
 
-from ichrisbirch import settings
+from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy.base import Base
 from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
 

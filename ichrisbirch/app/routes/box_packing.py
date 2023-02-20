@@ -1,7 +1,7 @@
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from ichrisbirch import settings
+from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.box_packing import Box, Item
 

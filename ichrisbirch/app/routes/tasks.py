@@ -11,8 +11,9 @@ from faker import Faker
 from flask import Blueprint, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
 
-from ichrisbirch import models, schemas, settings
+from ichrisbirch import models, schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
+from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.tasks import TaskCategory
 

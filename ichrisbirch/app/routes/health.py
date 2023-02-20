@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 from flask import Blueprint, render_template
 
-from ichrisbirch import __version__, settings
+from ichrisbirch.config import settings
 
 blueprint = Blueprint(
     'health',
@@ -19,7 +19,7 @@ def health():
     return render_template(
         'health/index.html',
         settings=settings,
-        version=__version__,
+        version=settings.VERSION,
         server_time=datetime.now().isoformat(),
         local_time=datetime.now(tz=ZoneInfo('America/Chicago')).isoformat(),
     )

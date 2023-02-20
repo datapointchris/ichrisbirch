@@ -1,7 +1,7 @@
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from ichrisbirch import settings
+from ichrisbirch.config import settings
 from ichrisbirch.models.journal import JournalEntry
 
 blueprint = Blueprint('journal', __name__, template_folder='templates/journal', static_folder='static')

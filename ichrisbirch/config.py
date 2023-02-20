@@ -1,8 +1,24 @@
+import importlib.metadata
 import os
 from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 
-from ichrisbirch import __version__
+import dotenv
+
+ENV: Optional[str] = os.getenv('ENVIRONMENT')
+
+match ENV:
+    case 'development':
+        env_file = dotenv.find_dotenv('.dev.env')
+    case 'testing':
+        env_file = dotenv.find_dotenv('.test.env')
+    case 'production':
+        env_file = dotenv.find_dotenv('.prod.env')
+    case _:
+        raise ValueError(
+            f'Unrecognized Environment Variable: {ENV}\n' 'Did you set ENVIRONMENT before starting the program?'
+        )
+dotenv.load_dotenv(env_file)
 
 
 @dataclass
@@ -89,8 +105,8 @@ class LoggingSettings:
 class Settings:
     """Base settings class that contains all other settings."""
 
-    NAME: str = 'ichrisbirch.com'
-    VERSION: str = __version__
+    NAME: str = 'ichrisbirch'
+    VERSION: str = importlib.metadata.version(NAME)
     DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
     API_URL: Optional[str] = os.getenv('API_URL')
     ENVIRONMENT: Optional[str] = os.getenv('ENVIRONMENT')
@@ -105,3 +121,6 @@ class Settings:
     sqlalchemy = SQLAlchemySettings()
     logging = LoggingSettings()
     sqlalchemy.SQLALCHEMY_DATABASE_URI = postgres.POSTGRES_DATABASE_URI
+
+
+settings = Settings()

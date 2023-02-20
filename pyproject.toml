@@ -16,6 +16,10 @@ python-dotenv = "^0.19.2"
 psycopg2-binary = "^2.9.3"
 psycopg2 = "^2.9.3"
 
+[tool.poetry.scripts]
+check_project_version_is_in_sync = 'ichrisbirch.scripts.utilities:check_project_version_is_in_sync'
+
+
 [tool.poetry.group.dev.dependencies]
 pandas = "^1.4.0"
 alembic = "^1.8.1"

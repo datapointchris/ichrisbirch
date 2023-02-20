@@ -4,8 +4,8 @@ from datetime import date
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from ichrisbirch import settings
 from ichrisbirch.app.easy_dates import EasyDate
+from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.habits import Category, CompletedHabit, Habit
 

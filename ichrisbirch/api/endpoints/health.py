@@ -4,7 +4,8 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter
 
-from ichrisbirch import __version__, schemas
+from ichrisbirch import schemas
+from ichrisbirch.config import settings
 
 router = APIRouter(prefix='/health', tags=['health'])
 
@@ -18,7 +19,7 @@ def health() -> dict:
     """
     return {
         'name': 'iChrisBirch API',
-        'version': __version__,
+        'version': settings.VERSION,
         'environment': os.getenv('ENVIRONMENT', 'NOT SET'),
         'api_url': os.getenv('API_URL', 'NOT SET'),
         'log_level': os.getenv('LOG_LEVEL', 'NOT SET'),

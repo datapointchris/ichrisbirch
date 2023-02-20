@@ -2,13 +2,12 @@ import logging
 
 from flask import Flask
 
-from ichrisbirch import settings
 from ichrisbirch.app.routes import box_packing, countdowns, events, habits, health, journal, main, portfolio, tasks
 
 logger = logging.getLogger(__name__)
 
 
-def create_app() -> Flask:
+def create_app(settings) -> Flask:
     """Flask app factory
 
     Returns:

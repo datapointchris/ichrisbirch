@@ -2,7 +2,6 @@ import logging
 
 from fastapi import FastAPI
 
-from ichrisbirch import settings
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
 
@@ -12,7 +11,7 @@ from ichrisbirch.api.middleware import ResponseLoggerMiddleware
 logger = logging.getLogger(__name__)
 
 
-def create_api() -> FastAPI:
+def create_api(settings) -> FastAPI:
     """FastAPI app factory
 
     Returns:
