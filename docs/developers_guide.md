@@ -1,42 +1,41 @@
 # Developer's Guide
 
-- [Developer's Guide](#developers-guide)
-  - [Creating a Release](#creating-a-release)
-  - [ERRORS](#errors)
-  - [Flask](#flask)
-  - [Linux](#linux)
-  - [Supervisor](#supervisor)
-  - [NGINX](#nginx)
-  - [API Postgres](#api-postgres)
-  - [New Server](#new-server)
-    - [Change default shell to zsh and install all of the goodies](#change-default-shell-to-zsh-and-install-all-of-the-goodies)
-  - [First time](#first-time)
-    - [DB](#db)
-      - [Schemas](#schemas)
-      - [Alembic](#alembic)
-    - [Requirements](#requirements)
-    - [Dev Requirements](#dev-requirements)
-  - [Notes](#notes)
-  - [Alembic Revision](#alembic-revision)
-  - [FastAPI Crud Endpoints](#fastapi-crud-endpoints)
-  - [Testing](#testing)
+- [1. Creating a Release](#1-creating-a-release)
+- [2. ERRORS](#2-errors)
+- [3. Flask](#3-flask)
+- [4. Linux](#4-linux)
+- [5. Supervisor](#5-supervisor)
+- [6. NGINX](#6-nginx)
+- [7. API Postgres](#7-api-postgres)
+- [8. New Server](#8-new-server)
+  - [8.1. Change default shell to zsh and install all of the goodies](#81-change-default-shell-to-zsh-and-install-all-of-the-goodies)
+- [9. First time](#9-first-time)
+  - [9.1. DB](#91-db)
+    - [9.1.1. Schemas](#911-schemas)
+    - [9.1.2. Alembic](#912-alembic)
+  - [9.2. Requirements](#92-requirements)
+  - [9.3. Dev Requirements](#93-dev-requirements)
+- [10. Notes](#10-notes)
+- [11. Alembic Revision](#11-alembic-revision)
+- [12. FastAPI Crud Endpoints](#12-fastapi-crud-endpoints)
+- [13. Testing](#13-testing)
 
-## Creating a Release
+## 1. Creating a Release
 
 1. Change(s) should be committed/merged to `master`
 2. run `/scripts/create-release X.X.X 'Release Description'
 
-## ERRORS
+## 2. ERRORS
 
 ==============================
 
-## Flask
+## 3. Flask
 
 blank pages but no errors, try a different port.
 
 - Sometimes the port is busy or used, but does not give a 'port in use' error
 
-## Linux
+## 4. Linux
 
 > **Error**  
 
@@ -48,7 +47,7 @@ ModuleNotFoundError: No module named 'cachecontrol' when running poetry:
 
 ------------------------------
 
-## Supervisor
+## 5. Supervisor
 
 > **Error**  
 
@@ -77,7 +76,7 @@ error: <class 'FileNotFoundError'>, [Errno 2] No such file or directory: file: /
 
 Start and run supervisor with homebrew: `brew services start supervisor`
 
-## NGINX
+## 6. NGINX
 
 > **Error**  
 
@@ -96,7 +95,7 @@ bind() to 127.0.0.1:80 failed (13: Permission denied)
 NGINX is not running as root.  It does not run reliably with homebrew.
 Use `sudo nginx -s reload` instead of homebrew.
 
-## API Postgres
+## 7. API Postgres
 
 > **Error**  
 
@@ -128,11 +127,11 @@ ERROR api.ichrisbirch.com/tasks/completed
 
 The issue was resolved by modifying the security group of the postgres instance to allow the ec2 instance to connect by allowing it's security group.
 
-## New Server
+## 8. New Server
 
 ==============================
 
-### Change default shell to zsh and install all of the goodies
+### 8.1. Change default shell to zsh and install all of the goodies
 
 ```bash
 # Install ZSH
@@ -153,18 +152,18 @@ source ~/.dotfiles/symlinks-ec2
 sudo apt install bpytop -y
 ```
 
-## First time
+## 9. First time
 
 ==============================
 
-### DB
+### 9.1. DB
 
-#### Schemas
+#### 9.1.1. Schemas
 
 SQLAlchemy cannot create the schemas, neither can alembic, have to create them manually first time
 `create-schemas.py` to add the schemas
 
-#### Alembic
+#### 9.1.2. Alembic
 
 Run in `ichrisbirch`
 
@@ -174,21 +173,21 @@ Create the initial tables from the SQLAlchemy models (purpose of --autogenerate)
 Run the upgrade to actually create the tables
 `alembic upgrade head`
 
-### Requirements
+### 9.2. Requirements
 
 Poetry
 
-### Dev Requirements
+### 9.3. Dev Requirements
 
 Docker
 tokei
 tools
 
-## Notes
+## 10. Notes
 
 ==============================
 
-## Alembic Revision
+## 11. Alembic Revision
 
 Run in `ichrisbirch`
 
@@ -207,11 +206,11 @@ export ENVIRONMENT='development'
 alembic upgrade head
 ```
 
-## FastAPI Crud Endpoints
+## 12. FastAPI Crud Endpoints
 
 Order matters with endpoints, dynamic routes `route/endpoint/{id}` are last
 
-## Testing
+## 13. Testing
 
 ==============================
 In order to run pytest, you have to set `ENVIRONMENT=development` so that the config can pick it up and set the correct variables.
