@@ -1,6 +1,24 @@
 repos:
   - repo: local
     hooks:
+      - id: check-venv
+        name: Activate virtual environment
+        stages: [commit]
+        language: system
+        entry: venv
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
+      - id: set-dev-env
+        name: Set ENVIRONMENT variable to development
+        stages: [commit]
+        language: system
+        entry: export ENVIRONMENT=development
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
       - id: pytest
         name: pytest with coverage
         stages: [commit]
