@@ -1,14 +1,19 @@
 # TODO
 
 - [Continuous Integration / Github Actions](#continuous-integration--github-actions)
-- [Learn](#learn)
-- [Misc](#misc)
+- [Documentation](#documentation)
+  - [How To's](#how-tos)
+  - [General Ideas](#general-ideas)
+  - [Diagrams](#diagrams)
+  - [Bluebook](#bluebook)
+  - [Mkdocs](#mkdocs)
 - [CSS files](#css-files)
 - [Code Repo Structure](#code-repo-structure)
 - [Tokei Output Charts](#tokei-output-charts)
 - [All Tasks page improvments](#all-tasks-page-improvments)
-- [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
-- [Create tasks/priority endpoint in tasks](#create-taskspriority-endpoint-in-tasks)
+  - [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
+  - [Create tasks/priority endpoint in tasks](#create-taskspriority-endpoint-in-tasks)
+- [Upgrade to SQLAlchemy 2.0](#upgrade-to-sqlalchemy-20)
 - [Create /autochore endpoint](#create-autochore-endpoint)
 - [Add Events to API routes](#add-events-to-api-routes)
 - [Add Countdowns to API routes](#add-countdowns-to-api-routes)
@@ -18,10 +23,8 @@
 - [Testing](#testing)
 - [Logging](#logging)
 - [Security](#security)
-- [v0.10.0 Typing](#v0100-typing)
-- [v0.11.0 Documentation](#v0110-documentation)
-- [v0.12.0 Re-structure CSS and Navigation](#v0120-re-structure-css-and-navigation)
-- [v0.13.0# Build Portfolio Page](#v0130-build-portfolio-page)
+- [Re-structure CSS and Navigation](#re-structure-css-and-navigation)
+- [Build Portfolio Page](#build-portfolio-page)
 - [Basic Main page and Portfolio](#basic-main-page-and-portfolio)
 - [Employers](#employers)
 - [ML Models](#ml-models)
@@ -47,22 +50,22 @@
   - [Learning](#learning)
   - [Goals](#goals)
   - [Overview](#overview)
-  - [Budget](#budget)
-  - [Time Tracker](#time-tracker)
-  - [Deep Dream](#deep-dream)
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
-  - [Git Graph Maker](#git-graph-maker)
 
 ## Continuous Integration / Github Actions
 
-<https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s>
+[GitHub Actions Tutorial - Basic Concepts and CI/CD Pipeline with Docker - YouTube](https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s)
 
-<https://www.youtube.com/watch?v=TLB5MY9BBa4>
-<https://www.youtube.com/watch?v=9flcoQ1R0Y4>
-<https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration>
-<https://www.martinfowler.com/articles/branching-patterns.html>
-<https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/>
+[GitHub Actions Tutorial | From Zero to Hero in 90 minutes (Environments, Secrets, Runners, etc) - YouTube](https://www.youtube.com/watch?v=TLB5MY9BBa4)
+
+[How To Setup Github Actions For CI/CD - YouTube](https://www.youtube.com/watch?v=9flcoQ1R0Y4)
+
+[Continuous Integration](https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration)
+
+[Patterns for Managing Source Code Branches](https://www.martinfowler.com/articles/branching-patterns.html)
+
+[Python tox - Why You Should Use It and Tutorial](https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/)
 
 Pre-commit Possibilites:
 
@@ -71,8 +74,8 @@ Pre-commit Possibilites:
 - [X] isort
 - [X] bandit
 - [X] Interrogate
-- [N] pydoctest
-- [N] doctest
+- [ ] pydoctest
+- [ ] doctest
 - [X] shellcheck
 - [X] <https://github.com/dosisod/refurb>
 - [X] <https://github.com/asottile/pyupgrade>
@@ -84,29 +87,46 @@ Pre-commit Possibilites:
     - [ ] Deploy to ichrisbirch
     - [ ] Send an email about successful deployment
 
-## Learn
+## Documentation
 
-- [ ] <https://github.com/jlevy/the-art-of-command-line#basics>
-- [ ] <https://wiki.bash-hackers.org>
-- [ ] <https://mywiki.wooledge.org/BashGuide>
-- [ ] <https://www.learnenough.com/command-line-tutorial/basics>
-- [ ] <https://raimonster.com/scripting-field-guide/>
+### How To's
 
-## Misc
+[1. Software Documentation Template — Software Documentation 0.1 alpha documentation](https://software-documentation-template.readthedocs.io/en/latest/readme.html)
 
-- [ ] Sitewide $PROJECT variable
-  - [ ] This should most likely be an environment variable, if any at all
-  - [ ] What was the purpose of this?
-- [ ] Make a new user for postgres?
-  - [ ] Should I make a special user that connects to postgres?
-  - [ ] Or should I use AWS IAM authentication with a password?
-  - [ ] But I need a user to do admin stuff, I guess postgres is okay for that
-  - [ ] But should definitely be a separate user for the app
-    - [ ] They don't need permission to:
-      - [ ] postgres database
-      - [ ] pgcron
-      - [ ] ONLY to `ichrisbirch` db
-  - [ ]
+[A Guide to Writing Your First Software Documentation — SitePointSitePoint](https://www.sitepoint.com/writing-software-documentation/)
+
+[How to Write Documentation For Your Next Software Development Project](https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/)
+
+[Software Documentation Best Practices [With Examples] helpjuice-logo-0307896d1acd18c6a7f52c4256467fb6ca1007315c373af21357496e9ceb49e2](https://helpjuice.com/blog/software-documentation)
+
+[Software Documentation Types and Best Practices | by AltexSoft Inc | Prototypr](https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f)
+
+[Prepare the documentation for successful software project development](https://upplabs.com/blog/how-to-prepare-the-documentation-for-successful-software-project-development/)
+
+[How to Write Technical Documentation With Empathy | by Edward Huang | Jan, 2023 | Better Programming](https://betterprogramming.pub/how-to-write-technical-documentation-with-empathy-f321104746f3)
+
+### General Ideas
+
+Docs/notes for each page and function
+
+[Python's doctest: Document and Test Your Code at Once – Real Python](https://realpython.com/python-doctest/)
+[Vale.sh - A linter for prose](https://vale.sh)
+
+### Diagrams
+
+[Online FlowChart & Diagrams Editor - Mermaid Live Editor](https://mermaid.live/edit)
+[GitHub - mingrammer/diagrams: Diagram as Code for prototyping cloud system architectures](https://github.com/mingrammer/diagrams)
+
+### Bluebook
+
+This may actually be better for notes and personal information than for actual documentation inside of a project.
+
+[GitHub - lyz-code/blue-book: My personal knowledge repository](https://github.com/lyz-code/blue-book)
+[Write good documentation - The Blue Book](https://lyz-code.github.io/blue-book/documentation/)
+
+### Mkdocs
+
+[Build Your Python Project Documentation With MkDocs – Real Python](https://realpython.com/python-project-documentation-with-mkdocs/)
 
 ## CSS files
 
@@ -115,7 +135,7 @@ Pre-commit Possibilites:
 
 ## Code Repo Structure
 
-- [ ] <https://githubnext.com/projects/repo-visualization/>
+- [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
 
 ## Tokei Output Charts
 
@@ -145,7 +165,7 @@ TODO: [2023/01/25] - Optionally, lock in an image with the stuff necessary to ru
   - [ ] This is on purpose instead of being able to edit tasks to keep honest
 - [ ] Catch error when priority is not specified in add task, currently there is a server error
 
-## Add categories to tasks ENUM
+### Add categories to tasks ENUM
 
 - [ ] Compare this with the initial adding of the ENUM
   - [ ] Purchase
@@ -154,10 +174,17 @@ TODO: [2023/01/25] - Optionally, lock in an image with the stuff necessary to ru
   - [ ] Combine Learn = Research
     - [ ] Remove 'Research'
 
-## Create tasks/priority endpoint in tasks
+### Create tasks/priority endpoint in tasks
 
 - [ ] Call this endpoint in the app instead of doing the query
   - This makes it so that other things can easily get the data with just an API call instead of constructing the query again
+
+## Upgrade to SQLAlchemy 2.0
+
+- [ ] [What's New in SQLAlchemy 2.0? - miguelgrinberg.com](https://blog.miguelgrinberg.com/post/what-s-new-in-sqlalchemy-2-0)
+- [ ] Upgrade in poetry
+- [ ] Check for syntax
+- [ ]
 
 ## Create /autochore endpoint
 
@@ -187,109 +214,99 @@ FastAPI:
 
 ## Infrastructure Management
 
-- [ ] Open Stack
-  - <https://www.patreon.com/posts/how-to-manage-1-78070880>
+- [ ] [How to Manage OpenStack Private Clouds Episode 1](https://www.patreon.com/posts/how-to-manage-1-78070880)
 
 ## User Login
 
 - [ ] Create login for all apps as a main page.
-- [ ] <https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/>
-- [ ] <https://github.com/rexsimiloluwah/fastapi-github-actions-test/blob/master/src/routes/auth.py>
+- [ ] [Basic Usage - FastAPI JWT Auth](https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/)
+- [ ] [fastapi-github-actions-test/auth.py at master · rexsimiloluwah/fastapi-github-actions-test · GitHub](https://github.com/rexsimiloluwah/fastapi-github-actions-test/blob/master/src/routes/auth.py)
   - [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
-  - [ ] <https://flask-login.readthedocs.io/en/latest/>
-  - [ ] <https://github.com/maxcountryman/flask-login>
+  - [ ] [Flask-Login — Flask-Login 0.7.0 documentation](https://flask-login.readthedocs.io/en/latest/)
+  - [ ] [GitHub - maxcountryman/flask-login: Flask user session management.](https://github.com/maxcountryman/flask-login)
+  - [ ] [Cookies with the Flask web framework | Verdant Fox](https://verdantfox.com/blog/view/cookies-with-the-flask-web-framework)
 
 - SSL for nginx
-  - <https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-18-04>
+  - [How To Serve Flask Applications with Gunicorn and Nginx on Ubuntu 18.04  | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-18-04)
     - Step 6 - Securing the Application
 
 - Flask Admin -- NO
-- <https://github.com/flask-admin/flask-admin>
+- [GitHub - flask-admin/flask-admin: Simple and extensible administrative interface framework for Flask](https://github.com/flask-admin/flask-admin)
 
-- JSON Web Tokens
-<https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d>
+- [Stop Using JSON Web Tokens For Authentication. Use Stateful Sessions Instead | by Francisco Sainz | Better Programming](https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d)
 
 - FastAPI Signup
-- <https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py>
+- [python-api-examples/api.py at main · ChristopherGS/python-api-examples · GitHub](https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py)
 
 ## WTForms
 
 Is this something I want to do?
 
-- <https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html>
-- <https://flask-wtf.readthedocs.io/en/latest/quickstart/>
+- [Introduction — WTForms-Alchemy 0.16.8 documentation](https://wtforms-alchemy.readthedocs.io/en/latest/introduction.html)
+- [Quickstart — Flask-WTF Documentation (1.1.x)](https://flask-wtf.readthedocs.io/en/latest/quickstart/)
 
 ## Testing
 
-<https://www.martinfowler.com/articles/branching-patterns.html>
-<https://martinfowler.com/articles/practical-test-pyramid.html>
+[Patterns for Managing Source Code Branches](https://www.martinfowler.com/articles/branching-patterns.html)
+[The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
+[9 pytest tips and tricks to take your tests to the next level | Verdant Fox](https://verdantfox.com/blog/view/9-pytest-tips-and-tricks-to-take-your-tests-to-the-next-level)
 
 - Udemy Class
 - I have pytest book somewhere
 - Realpython
-<https://flask.palletsprojects.com/en/2.2.x/testing/>
+[Testing Flask Applications — Flask Documentation (2.2.x)](https://flask.palletsprojects.com/en/2.2.x/testing/)
 
 - Books on datapointchris.com
 - pytest
 - test driven dev in python
-- <https://towardsdatascience.com/pytest-with-marking-mocking-and-fixtures-in-10-minutes-678d7ccd2f70>
-- <https://www.cosmicpython.com/blog/2020-01-25-testing_external_api_calls.html>
-- <https://lyz-code.github.io/blue-book/coding/python/pytest/>
-- <https://www.youtube.com/watch?v=B1j6k2j2eJg>
-- <https://www.youtube.com/watch?v=ULxMQ57engo>
-- <https://www.youtube.com/watch?v=NI5IGAim8XU>
-- <https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/>
-- <https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514>
+- [Pytest with Marking, Mocking, and Fixtures in 10 Minutes | by Kay Jan Wong | Towards Data Science](https://towardsdatascience.com/pytest-with-marking-mocking-and-fixtures-in-10-minutes-678d7ccd2f70)
+- [Writing tests for external API calls](https://www.cosmicpython.com/blog/2020-01-25-testing_external_api_calls.html)
+- [Python pytest - The Blue Book](https://lyz-code.github.io/blue-book/coding/python/pytest/)
+- [Test-Driven Development In Python // The power of red-green-refactor - YouTube](https://www.youtube.com/watch?v=B1j6k2j2eJg)
+- [How To Write Unit Tests For Existing Python Code // Part 1 of 2 - YouTube](https://www.youtube.com/watch?v=ULxMQ57engo)
+- [How To Write Unit Tests For Existing Python Code // Part 2 of 2 - YouTube](https://www.youtube.com/watch?v=NI5IGAim8XU)
+- [End-To-End Tutorial For Pytest Fixtures With Examples](https://www.lambdatest.com/blog/end-to-end-tutorial-for-pytest-fixtures-with-examples/)
+- [How To Use PyTest including Real Examples And Best Practices | by Eric Sales De Andrade | ITNEXT](https://itnext.io/how-to-use-pytest-including-real-examples-and-best-practices-11073e4fd514)
 - DynamoDB
-  - <https://pypi.org/project/pytest-dynamodb/>
-  - <https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/>
+  - [pytest-dynamodb · PyPI](https://pypi.org/project/pytest-dynamodb/)
+  - [Testing Boto3 with pytest Fixtures - Adam Johnson](https://adamj.eu/tech/2019/04/22/testing-boto3-with-pytest-fixtures/)
 - MongoDB
-  - <https://pypi.org/project/pytest-mongo/>
-  - <https://pypi.org/project/pytest-mongodb/>
-- <https://testdriven.io/blog/pytest-for-beginners/>
-- <https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/>
-- <https://pythontest.com/lean-tdd/>
+  - [pytest-mongo · PyPI](https://pypi.org/project/pytest-mongo/)
+  - [pytest-mongodb · PyPI](https://pypi.org/project/pytest-mongodb/)
+- [Pytest for Beginners | TestDriven.io](https://testdriven.io/blog/pytest-for-beginners/)
+- [Web Automation: Don't Use Selenium, Use Playwright](https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/)
+- [Lean TDD | pythontest](https://pythontest.com/lean-tdd/)
 
 ## Logging
 
-<https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700>
-<https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial>
-<https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44>
-<https://realpython.com/python-logging-source-code/>
-<https://www.youtube.com/watch?v=pxuXaaT1u3k>
-<https://sobolevn.me/2020/03/do-not-log>
+[python - Using logging in multiple modules - Stack Overflow](https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700)
+
+[Logging HOWTO — Python 3.11.2 documentation](https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial)
+
+[Logging — The Underappreciated Art Form | by Tom Dickinson, PhD | Medium](https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44)
+
+[Python Logging: A Stroll Through the Source Code – Real Python](https://realpython.com/python-logging-source-code/)
+
+[Python Logging: How to Write Logs Like a Pro! - YouTube](https://www.youtube.com/watch?v=pxuXaaT1u3k)
+
+[Do not log](https://sobolevn.me/2020/03/do-not-log)
 
 ## Security
 
-<https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be>
-<https://dev.to/vaultree/designing-a-secure-api-4059>
+[API & Web Architecture - Security Best Practices | by Abdul Wahab | Medium](https://abdulrwahab.medium.com/api-web-architecture-security-best-practices-61522aff37be)
+[Designing a secure API - DEV Community](https://dev.to/vaultree/designing-a-secure-api-4059)
 
-## v0.10.0 Typing
+- [ ] Make a new user for postgres?
+  - [ ] Should I make a special user that connects to postgres?
+  - [ ] Or should I use AWS IAM authentication with a password?
+  - [ ] But I need a user to do admin stuff, I guess postgres is okay for that
+  - [ ] But should definitely be a separate user for the app
+    - [ ] They don't need permission to:
+      - [ ] postgres database
+      - [ ] pgcron
+      - [ ] ONLY to `ichrisbirch` db
 
-[Using mypy with an existing codebase — Mypy 0.942 documentation](https://mypy.readthedocs.io/en/stable/existing_code.html)
-
-- [ ] Pydantic Models
-
-## v0.11.0 Documentation
-
-- Docs/notes for each page and function
-- Hopefully a lot of this is done as I'm testing and doing type hinting
-- <https://realpython.com/python-doctest/>
-- <https://github.com/lyz-code/blue-book>
-- <https://lyz-code.github.io/blue-book/documentation/>
-<https://realpython.com/python-project-documentation-with-mkdocs/>
-- Code and architecture Diagramming
-- <https://github.com/mingrammer/diagrams>
-<https://vale.sh>
-- <https://software-documentation-template.readthedocs.io/en/latest/readme.html>
-- <https://www.sitepoint.com/writing-software-documentation/>
-- <https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/>
-- <https://helpjuice.com/blog/software-documentation>
-- <https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f>
-- <https://upplabs.com/blog/how-to-prepare-the-documentation-for-successful-software-project-development/>
-- <https://betterprogramming.pub/how-to-write-technical-documentation-with-empathy-f321104746f3>
-
-## v0.12.0 Re-structure CSS and Navigation
+## Re-structure CSS and Navigation
 
 - [ ] CSS to inheret from main
   - [ ] Both the classes and site-wide variables
@@ -303,7 +320,7 @@ Is this something I want to do?
 def favicon():
     return send_file('static/favicon.ico')
 
-## v0.13.0# Build Portfolio Page
+## Build Portfolio Page
 
 - [ ] code this entirely by hand, using small code packages
   - [ ] Dataset
@@ -336,14 +353,9 @@ def favicon():
 ## Front-end Framework
 
 Test this out on the portfolio page
-
-- resume page
-
-==================
+resume page
 
 ## Project Specific
-
-==================
 
 ### ichrisbirch
 
@@ -435,11 +447,7 @@ Ranking
   - [ ] Possibly even a color theme for effect
   - [ ] Music theme for repetition
 
-=================
-
 ## Future Projects
-
-=================
 
 ### Books
 
@@ -495,32 +503,14 @@ Measuring their average or std or whatever over time and plotting it should give
 
 ### Overview
 
-### Budget
-
-### Time Tracker
-
-Fields:
-
-- Description
-- Category
-- Duration
-- Timestamp (inserted automatically, for future use)
-
-On the main summary/overview page, should display top 3/5 activities that take time over previous selectable timespan.  Selectable to particular categories and/or subcategories.  Also able to exclude categories and/or subcategories.
-Kind of like budgeting, but only for time.
-
-### Deep Dream
-
-<https://www.tensorflow.org/tutorials/generative/deepdream>
-
 ### Ummmm and Like counter
 
-<https://github.com/sozykin/ml_fastapi_tests>
+[GitHub - sozykin/ml_fastapi_tests](https://github.com/sozykin/ml_fastapi_tests)
 
-- submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
-- You can select which common phrases you want to find in the audio
+Submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
+You can select which common phrases you want to find in the audio
 
--
+<https://platform.openai.com/docs/guides/speech-to-text>
 
 ### User Customization
 
@@ -528,13 +518,3 @@ Kind of like budgeting, but only for time.
 - timezone
 - session / cookies
   - I don't know anything about this
-
-### Git Graph Maker
-
-- functions that make commits and try with different methods
-  - merge
-  - merge with squash
-  - rebase
-  - rebase with squash
-  - create release
-  - tag release
