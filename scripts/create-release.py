@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-p = Path('.').resolve()
+p = Path().resolve()
 
 # https://github.com/tj/git-extras/blob/master/bin/git-release
 
@@ -12,26 +12,28 @@ p = Path('.').resolve()
 @click.option('--version-description', required=True)
 @click.option('--dry-run', is_flag=True)
 def create_release(version, version_description, dry_run):
+    """Create a release for the project"""
+
     def print_header():
-        pass
+        """Print Header"""
 
     def create_directories():
-        pass
+        """Create Directories"""
 
     def start_docker():
-        pass
+        """Start Docker"""
 
     def create_coverage_report():
-        pass
+        """Create Coverage Report"""
 
     def create_lines_of_code_report():
-        pass
+        """Create Lines of Code Report"""
 
     def create_code_complexity_report():
-        pass
+        """Create Code Complexity Report"""
 
     def update_poetry_version():
-        pass
+        """Update Poetry Version"""
 
     commands = """
         git add
@@ -44,7 +46,8 @@ def create_release(version, version_description, dry_run):
     """
 
     def print_footer():
-        pass
+        """Print Footer"""
+        print(commands)
 
 
 if __name__ == '__main__':
