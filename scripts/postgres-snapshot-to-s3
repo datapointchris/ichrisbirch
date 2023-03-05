@@ -24,7 +24,6 @@ SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 # ---------- Imports ---------- #
 source "$SCRIPT_DIR/environment"
 
-
 source "$SCRIPT_DIR/bash-helpers"
 # bash-helpers.filename_to_title
 # bash-helpers.print_title
@@ -34,19 +33,8 @@ source "$SCRIPT_DIR/bash-helpers"
 # bash-helpers.color_yellow
 # bash-helpers.color_red
 
-source "$SCRIPT_DIR/logging"
-# logging.SCRIPTS_LOG_FILE
-# logging.set_logger
 
 SCRIPT_TITLE="$(filename_to_title "$SCRIPT_NAME")"
-
-logger() {
-    local log_level="$1"
-    local log_msg="$2"
-    # shellcheck disable=SC2046
-    read -r line_no this_file <<<$(caller)
-    set_logger "$log_level" "$line_no" "$(basename "$this_file")" "$log_msg"
-}
 
 
 usage() {
@@ -128,7 +116,7 @@ BUCKET_PREFIX="postgres"
 TIMESTAMP="$(date -u +%Y-%m-%dT%HH%MM)"
 SNAPSHOT_NAME="$POSTGRES_DBNAME-$TIMESTAMP-snapshot"
 FULL_BUCKET_PATH="s3://$S3_BACKUPS_BUCKET/$BUCKET_PREFIX/$SNAPSHOT_NAME"
-LOG_FILE=$SCRIPTS_LOG_FILE
+LOG_FILE="$SCRIPT_NAME.log"
 
 logger debug "Env File Loaded: $ENV_PATH"
 logger debug "OS Prefix: $OS_PREFIX"
