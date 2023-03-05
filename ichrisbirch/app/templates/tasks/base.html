@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
 
+{% block meta %}
+<!-- Refresh pages every 60 minutes so tasks are added and completed with correct timestamp -->
+<meta http-equiv="refresh" content="3600">
+{% endblock %}
+
 {% block stylesheet %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
 {% endblock %}
