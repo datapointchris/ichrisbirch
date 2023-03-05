@@ -110,6 +110,12 @@ fi
 
 elapsed_time() { echo "$((SECONDS / 60)) minutes $((SECONDS % 60)) seconds"; }
 
+logger () {
+    local level="$1"
+    local message="$2"
+    echo "[${level^^}] $message"
+}
+
 # ----- Constants ----- #
 SECONDS=0
 BUCKET_PREFIX="postgres"
@@ -118,11 +124,13 @@ SNAPSHOT_NAME="$POSTGRES_DBNAME-$TIMESTAMP-snapshot"
 FULL_BUCKET_PATH="s3://$S3_BACKUPS_BUCKET/$BUCKET_PREFIX/$SNAPSHOT_NAME"
 LOG_FILE="$SCRIPT_NAME.log"
 
-logger debug "Env File Loaded: $ENV_PATH"
-logger debug "OS Prefix: $OS_PREFIX"
-logger debug "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
-logger debug "Bucket: $FULL_BUCKET_PATH"
-logger debug "Log Location: $LOG_FILE"
+if [[ -n $DEBUG ]]; then
+    logger debug "Env File Loaded: $ENV_PATH"
+    logger debug "OS Prefix: $OS_PREFIX"
+    logger debug "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
+    logger debug "Bucket: $FULL_BUCKET_PATH"
+    logger debug "Log Location: $LOG_FILE"
+fi
 
 # ----- Main Functions ----- #
 
