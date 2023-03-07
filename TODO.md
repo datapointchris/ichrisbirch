@@ -82,14 +82,36 @@ Pre-commit Possibilites:
 - [X] <https://github.com/python/mypy>
 
 - [ ] Deploy action upon push of tags
+- [ ] [A Complete Guide To Deploy GitHub Project on Amazon EC2 Using GitHub Actions and AWS CodeDeploy](https://dev.to/ankushbehera/a-complete-guide-to-deploy-github-project-on-amazon-ec2-using-github-actions-and-aws-codedeploy-3f0b)
+- [ ] [Deploying with GitHub Actions - GitHub Docs](https://docs.github.com/en/actions/deployment/about-deployments/deploying-with-github-actions)
   - [ ] Actions
     - [ ] Create GitHub release
     - [ ] Deploy to ichrisbirch
-    - [ ] Send an email about successful deployment
+
+[GitHub - appleboy/ssh-action: GitHub Actions for executing remote ssh commands.](https://github.com/appleboy/ssh-action)
+
+[ssh deploy · Actions · GitHub Marketplace · GitHubtrucktruck](https://github.com/marketplace/actions/ssh-deploy)
+
+[GitHub Actions: How to run SSH commands (without third-party actions) | Good Code Smell](https://blog.benoitblanchon.fr/github-action-run-ssh-commands/)
+
+[Run server as systemd process & automate deployment with github actions - DEV](https://dev.to/lakhansamani/automate-server-deployment-with-systemd-github-actions-18od)
+
+[Continuous Deployment using Github Actions | by Akshar Raaj | Medium](https://medium.com/@raaj.akshar/continuous-deployment-using-github-actions-37a7f5d7cb26)
+
+[python - Github ssh-action configuration to deploy changes in django application - Stack Overflow](https://stackoverflow.com/questions/64295530/github-ssh-action-configuration-to-deploy-changes-in-django-application)
+
+[Anyone using Github actions for your deployments? - Questions / Help - Elixir Programming Language Forum](https://elixirforum.com/t/anyone-using-github-actions-for-your-deployments/31210)
+
+[Automatic Deployments With Nginx And GitHub Actions: A Detailed Guide | by Yash Prakash | Mar, 2023 | Level Up Coding](https://levelup.gitconnected.com/automatic-deployments-with-nginx-and-github-actions-a-detailed-guide-5505c074cc9f)
+
+[Deploying to a server with GitHub Actions - Up and Running - Elixir Phoenix - YouTube](https://www.youtube.com/watch?v=gW1TDirJ5E4&list=PLZZkJeUxu6QmO83Z1esRhp3lOeaNKZuXY&index=8)
 
 ## Documentation
 
 ### How To's
+
+Awesome documentation example for small project:
+[Documentation — pypdf 3.5.1 documentation](https://pypdf.readthedocs.io/en/stable/dev/documentation.html)
 
 [1. Software Documentation Template — Software Documentation 0.1 alpha documentation](https://software-documentation-template.readthedocs.io/en/latest/readme.html)
 
@@ -161,9 +183,10 @@ TODO: [2023/01/25] - Optionally, lock in an image with the stuff necessary to ru
   - [ ] Sort options as well?
 - [ ] Add SEARCH capability!
 - [ ] Delete for all tasks.  
-  - [ ] Sometimes a task is added in error and needs to be deletedq
+  - [ ] Sometimes a task is added in error and needs to be deleted
   - [ ] This is on purpose instead of being able to edit tasks to keep honest
 - [ ] Catch error when priority is not specified in add task, currently there is a server error
+- [ ] Have add task redirect to the page that it was called from, instead of the priorities page.
 
 ### Add categories to tasks ENUM
 
@@ -247,6 +270,7 @@ Is this something I want to do?
 
 ## Testing
 
+[TDD Tutorial](https://courses.cd.training/courses/tdd-tutorial)
 [Patterns for Managing Source Code Branches](https://www.martinfowler.com/articles/branching-patterns.html)
 [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
 [9 pytest tips and tricks to take your tests to the next level | Verdant Fox](https://verdantfox.com/blog/view/9-pytest-tips-and-tricks-to-take-your-tests-to-the-next-level)
