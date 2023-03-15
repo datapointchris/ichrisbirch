@@ -1,5 +1,6 @@
 # TODO
 
+- [Random](#random)
 - [Continuous Integration / Github Actions](#continuous-integration--github-actions)
 - [Documentation](#documentation)
   - [How To's](#how-tos)
@@ -52,6 +53,10 @@
   - [Overview](#overview)
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
+
+## Random
+- [ ] Separate pytest and coverage in pre-commit and github-actions
+- [ ] 
 
 ## Continuous Integration / Github Actions
 
