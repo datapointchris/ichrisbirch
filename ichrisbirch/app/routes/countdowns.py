@@ -21,9 +21,9 @@ def index():
         match method:
             case ['add']:
                 countdown = Countdown(**data)
-                requests.post(f'{api_url}/countdowns', data=countdown)
+                requests.post(f'{api_url}/countdowns', data=countdown, timeout=settings.REQUEST_TIMEOUT)
             case ['delete']:
                 countdown_id = data.get('id')
-                requests.delete(f'{api_url}/countdowns/{countdown_id}')
+                requests.delete(f'{api_url}/countdowns/{countdown_id}', timeout=settings.REQUEST_TIMEOUT)
 
     return render_template('countdowns/index.html', countdowns=countdowns)

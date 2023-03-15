@@ -73,9 +73,9 @@ def crud():
     method = data.pop('method')
     apt = Apartment(**data)
     if method == 'add':
-        requests.post(f'{api_url}/tasks', data=apt)
+        requests.post(f'{api_url}/tasks', data=apt, timeout=settings.REQUEST_TIMEOUT)
     elif method == 'update':
-        requests.put(f'{api_url}//tasks', data=apt)
+        requests.put(f'{api_url}//tasks', data=apt, timeout=settings.REQUEST_TIMEOUT)
     elif method == 'delete':
-        requests.delete(f'{api_url}//tasks', data=apt)
+        requests.delete(f'{api_url}//tasks', data=apt, timeout=settings.REQUEST_TIMEOUT)
     return redirect(url_for('apartments.apartment', name=data.get('name')))

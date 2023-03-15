@@ -21,9 +21,9 @@ def index():
         match method:
             case ['add']:
                 event = Event(**data)
-                requests.post(f'{api_url}/events', data=event)
+                requests.post(f'{api_url}/events', data=event, timeout=settings.REQUEST_TIMEOUT)
             case ['delete']:
                 event_id = data.get('id')
-                requests.delete(f'{api_url}/events/{event_id}')
+                requests.delete(f'{api_url}/events/{event_id}', timeout=settings.REQUEST_TIMEOUT)
 
     return render_template('events/index.html', events=events)

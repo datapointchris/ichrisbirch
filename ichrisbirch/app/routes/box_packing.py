@@ -68,15 +68,15 @@ def form():
     match method:
         case ['add_box']:
             box = Box(**data)
-            requests.post(f'{api_url}/boxes', data=box)
+            requests.post(f'{api_url}/boxes', data=box, timeout=settings.REQUEST_TIMEOUT)
         case ['delete_box']:
             box = Box(**data)
-            requests.delete(f'{api_url}/boxes/{box.id}')
+            requests.delete(f'{api_url}/boxes/{box.id}', timeout=settings.REQUEST_TIMEOUT)
         case ['add_item']:
             item = Item(**data)
-            requests.post(f'{api_url}/boxes/items', data=box)
+            requests.post(f'{api_url}/boxes/items', data=box, timeout=settings.REQUEST_TIMEOUT)
         case ['delete_item']:
             item = Item(**data)
-            requests.delete(f'{api_url}/boxes/items/{item.id}')
+            requests.delete(f'{api_url}/boxes/items/{item.id}', timeout=settings.REQUEST_TIMEOUT)
 
     return redirect(url_for('box_packing.index'))

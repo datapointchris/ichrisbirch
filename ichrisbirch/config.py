@@ -111,6 +111,7 @@ class Settings:
     API_URL: Optional[str] = os.getenv('API_URL')
     ENVIRONMENT: Optional[str] = os.getenv('ENVIRONMENT')
     OS_PREFIX: Optional[str] = os.getenv('OS_PREFIX')
+    REQUEST_TIMEOUT: int = 3
 
     flask = FlaskSettings()
     fastapi = FastAPISettings()

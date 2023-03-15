@@ -52,10 +52,12 @@ def index():
     ed = EasyDateTime()
     today_filter = {'start_date': ed.today, 'end_date': ed.tomorrow}
 
-    top_tasks_json = requests.get(TASKS_URL, params={'limit': 5}).json()
+    top_tasks_json = requests.get(TASKS_URL, params={'limit': 5}, timeout=settings.REQUEST_TIMEOUT).json()
     top_tasks = validate_json_tasks(top_tasks_json)
 
-    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=today_filter).json()
+    completed_tasks_json = requests.get(
+        f'{TASKS_URL}/completed/', params=today_filter, timeout=settings.REQUEST_TIMEOUT
+    ).json()
     completed_today = validate_json_tasks(completed_tasks_json)
 
     return render_template(
@@ -69,7 +71,7 @@ def index():
 @blueprint.route('/all')
 def all():
     """All tasks endpoint"""
-    all_tasks_json = requests.get(f'{settings.API_URL}/tasks/').json()
+    all_tasks_json = requests.get(f'{settings.API_URL}/tasks/', timeout=settings.REQUEST_TIMEOUT).json()
     all_tasks = validate_json_tasks(all_tasks_json)
     return render_template('tasks/all.html', tasks=all_tasks, task_categories=TASK_CATEGORIES)
 
@@ -90,8 +92,8 @@ def completed():
     }
     date_filter = request.form.get('filter') if request.method == 'POST' else 'this_week'
     if date_filter == 'all':  # have to query db to get first and last
-        first = requests.get(f'{TASKS_URL}/completed/', params={'first': True}).json()
-        last = requests.get(f'{TASKS_URL}/completed/', params={'last': True}).json()
+        first = requests.get(f'{TASKS_URL}/completed/', params={'first': True}, timeout=settings.REQUEST_TIMEOUT).json()
+        last = requests.get(f'{TASKS_URL}/completed/', params={'last': True}, timeout=settings.REQUEST_TIMEOUT).json()
         start_date = schemas.Task(**first).complete_date
         end_date = schemas.Task(**last).complete_date + timedelta(seconds=1)
     else:
@@ -99,7 +101,11 @@ def completed():
     logger.debug(f'Date filter: {date_filter} = {start_date} - {end_date}')
 
     tasks_filter = {'start_date': start_date, 'end_date': end_date}
-    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=tasks_filter).json()
+    completed_tasks_json = requests.get(
+        f'{TASKS_URL}/completed/',
+        params=tasks_filter,
+        timeout=settings.REQUEST_TIMEOUT,
+    ).json()
     completed_tasks = validate_json_tasks(completed_tasks_json)
     average_completion = calculate_average_completion(completed_tasks)
 
@@ -149,17 +155,17 @@ def form():
     match method:
         case 'add':
             task = schemas.TaskCreate(**data).json()
-            response = requests.post(TASKS_URL, data=task)
+            response = requests.post(TASKS_URL, data=task, timeout=settings.REQUEST_TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))  # TODO: Redirect back to referring page
         case 'complete':
             task_id = data.get('id')
-            response = requests.post(f'{TASKS_URL}/complete/{task_id}')
+            response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=settings.REQUEST_TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))
         case 'delete':
             task_id = data.get('id')
-            response = requests.delete(f'{TASKS_URL}/{task_id}')
+            response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=settings.REQUEST_TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.all'))
 

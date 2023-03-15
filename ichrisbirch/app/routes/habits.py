@@ -101,18 +101,18 @@ def form():
     match method:
         case ['add_habit']:
             habit = Habit(**data)
-            requests.post(f'{api_url}/habits', data=habit)
+            requests.post(f'{api_url}/habits', data=habit, timeout=settings.REQUEST_TIMEOUT)
         case ['delete_habit']:
             habit = Habit(**data)
-            requests.delete(f'{api_url}/habits/{habit.id}')
+            requests.delete(f'{api_url}/habits/{habit.id}', timeout=settings.REQUEST_TIMEOUT)
         case ['complete_habit']:
             habit = Habit(**data)
-            requests.post(f'{api_url}/habits/completed', data=habit)
+            requests.post(f'{api_url}/habits/completed', data=habit, timeout=settings.REQUEST_TIMEOUT)
         case ['add_category']:
             category = Category(**data)
-            requests.post(f'{api_url}/habits/categories', data=category)
+            requests.post(f'{api_url}/habits/categories', data=category, timeout=settings.REQUEST_TIMEOUT)
         case ['delete_category']:
             category = Category(**data)
-            requests.delete(f'{api_url}/habits/categories/{category.id}')
+            requests.delete(f'{api_url}/habits/categories/{category.id}', timeout=settings.REQUEST_TIMEOUT)
 
     return redirect(url_for('habits.index'))
