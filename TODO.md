@@ -529,7 +529,11 @@ Measuring their average or std or whatever over time and plotting it should give
 
 ### Ummmm and Like counter
 
+[Building a ChatGPT-based AI Assistant with Python using OpenAI APIs](https://faizanbashir.me/building-a-chatgpt-based-ai-assistant-with-python-speech-to-text-and-text-to-speech-using-openai-apis)
+
 [GitHub - sozykin/ml_fastapi_tests](https://github.com/sozykin/ml_fastapi_tests)
+
+[GitHub - faizanbashir/speaking-chatgpt](https://github.com/faizanbashir/speaking-chatgpt)
 
 Submit an audio recording and it will return the count of 'ummm' and 'like', 'ya know'
 You can select which common phrases you want to find in the audio
