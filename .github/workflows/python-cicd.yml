@@ -94,12 +94,12 @@ jobs:
         uses: actions/checkout@v2
       - name: Set up SSH key
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.ICHRISBIRCH_KEY }}" > ~/.ssh/ichrisbirch.pem
-          chmod 600 ~/.ssh/ichrisbirch.pem
-      - name: Pull Code from Github and Reinstall Project
-        run: |
-          ssh -i ~/.ssh/ichrisbirch.pem ubuntu@23.22.30.103 "cd /var/www/ichrisbirch && git pull && poetry install"
+          echo "${{ secrets.ICHRISBIRCH_KEY }}" > ichrisbirch_key && chmod 600 ichrisbirch_key
+          ssh -o StrictHostKeyChecking=no -i ichrisbirch_key ubuntu@23.22.30.103 '
+            cd /var/www/ichrisbirch &&
+            git pull &&
+            poetry install
+          '
       - name: Restart Supervisor
         run: |
-          ssh -i ~/.ssh/ichrisbirch.pem ubuntu@23.22.30.103 "sudo supervisorctl reload"
+          ssh -i ~/.ssh/ichrisbirch.pem ubuntu@23.22.30.103 'sudo supervisorctl reload'
