@@ -11,7 +11,6 @@ env:
   ENVIRONMENT: "testing"
 
 jobs:
-
   validate:
     name: Validate project
     runs-on: ${{matrix.os}}
@@ -83,3 +82,22 @@ jobs:
       - name: Run pytest coverage
         run: |
           poetry run pytest --cov=ichrisbirch
+
+  deploy:
+    needs: [validate]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ICHRISBIRCH_KEY }}" > ~/.ssh/ichrisbirch.pem
+          chmod 600 ~/.ssh/ichrisbirch.pem
+      - name: Pull Code from Github and Reinstall Project
+        run: |
+          ssh -i ~/.ssh/ichrisbirch.pem ubuntu@23.22.30.103 "cd /var/www/ichrisbirch && git pull && poetry install"
+      - name: Restart Supervisor
+        run: |
+          ssh -i ~/.ssh/ichrisbirch.pem ubuntu@23.22.30.103 "sudo supervisorctl reload"
