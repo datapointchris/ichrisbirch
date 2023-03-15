@@ -102,4 +102,4 @@ jobs:
           '
       - name: Restart Supervisor
         run: |
-          ssh -i ~/.ssh/ichrisbirch.pem ubuntu@23.22.30.103 'sudo supervisorctl reload'
+          ssh -o StrictHostKeyChecking=no -i ichrisbirch_key ubuntu@23.22.30.103 'sudo supervisorctl reload'
