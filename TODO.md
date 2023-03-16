@@ -8,9 +8,6 @@
   - [Bluebook](#bluebook)
   - [Mkdocs](#mkdocs)
   - [Miscellaneous Documentation](#miscellaneous-documentation)
-- [CSS files](#css-files)
-- [Code Repo Structure](#code-repo-structure)
-- [Tokei Output Charts](#tokei-output-charts)
 - [All Tasks page improvments](#all-tasks-page-improvments)
   - [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
   - [Create tasks/priority endpoint in tasks](#create-taskspriority-endpoint-in-tasks)
@@ -57,7 +54,16 @@
 ## Random
 
 - [ ] Separate pytest and coverage in pre-commit and github-actions
-- [ ]
+- [ ] ## CSS files
+
+- [ ] Need to have reset
+- [ ] Body in Apartments
+
+- [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
+
+- [ ] `etc/environment` in prod server for ENVIRONMENT variable
+- [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
+  - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
 
 ## Documentation
 
@@ -107,29 +113,6 @@ This may actually be better for notes and personal information than for actual d
 
 - [ ] pydoctest
 - [ ] doctest
-
-## CSS files
-
-- [ ] Need to have reset
-- [ ] Body in Apartments
-
-## Code Repo Structure
-
-- [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
-
-## Tokei Output Charts
-
-- [ ] <https://github.com/laixintao/tokei-pie/blob/main/tokei_pie/main.py>
-- [ ] Should I contribute or make my own?
-- [ ] Make it easy to add another chart
-- [ ] Model the structure of the output data so that it makes sense and is easy
-  - [ ] Use Pydantic dataclasses to create the structure and for dot notation access
-  - [ ] Good docs about the structure the objects are coming out as
-  - [ ] Use streamlit for interactive charts?
-
-TODO: [2022/11/05] - `etc/environment` in prod server for ENVIRONMENT variable
-TODO: [2023/01/25] - Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
-TODO: [2023/01/25] - Optionally, lock in an image with the stuff necessary to run server and use that image
 
 ## All Tasks page improvments
 
