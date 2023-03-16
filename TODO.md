@@ -116,6 +116,7 @@ This may actually be better for notes and personal information than for actual d
 
 ## All Tasks page improvments
 
+- [ ] Change the priority subtraction to daily
 - [ ] Add `Complete` button for all tasks
   - [ ] Should be for all of the tasks after the first 5
     - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
