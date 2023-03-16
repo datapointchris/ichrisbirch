@@ -133,3 +133,23 @@ FastAPI:
 - [x] DynamoDB
 - [X] Code
   - [X] Github
+
+## Continuous Integration / Github Actions
+
+Pre-commit Possibilites:
+
+- [X] Black
+- [X] Flake8
+- [X] isort
+- [X] bandit
+- [X] Interrogate
+
+- [X] shellcheck
+- [X] <https://github.com/dosisod/refurb>
+- [X] <https://github.com/asottile/pyupgrade>
+- [X] <https://github.com/python/mypy>
+
+- [N] Deploy action upon push of tags
+  - [X] Actions
+    - [N] Create GitHub release
+    - [X] Deploy to ichrisbirch

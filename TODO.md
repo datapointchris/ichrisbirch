@@ -1,13 +1,13 @@
 # TODO
 
 - [Random](#random)
-- [Continuous Integration / Github Actions](#continuous-integration--github-actions)
 - [Documentation](#documentation)
   - [How To's](#how-tos)
   - [General Ideas](#general-ideas)
   - [Diagrams](#diagrams)
   - [Bluebook](#bluebook)
   - [Mkdocs](#mkdocs)
+  - [Miscellaneous Documentation](#miscellaneous-documentation)
 - [CSS files](#css-files)
 - [Code Repo Structure](#code-repo-structure)
 - [Tokei Output Charts](#tokei-output-charts)
@@ -55,61 +55,9 @@
   - [User Customization](#user-customization)
 
 ## Random
+
 - [ ] Separate pytest and coverage in pre-commit and github-actions
-- [ ] 
-
-## Continuous Integration / Github Actions
-
-[GitHub Actions Tutorial - Basic Concepts and CI/CD Pipeline with Docker - YouTube](https://www.youtube.com/watch?v=R8_veQiYBjI&list=WL&index=15&t=3s)
-
-[GitHub Actions Tutorial | From Zero to Hero in 90 minutes (Environments, Secrets, Runners, etc) - YouTube](https://www.youtube.com/watch?v=TLB5MY9BBa4)
-
-[How To Setup Github Actions For CI/CD - YouTube](https://www.youtube.com/watch?v=9flcoQ1R0Y4)
-
-[Continuous Integration](https://www.martinfowler.com/articles/continuousIntegration.html#IntroducingContinuousIntegration)
-
-[Patterns for Managing Source Code Branches](https://www.martinfowler.com/articles/branching-patterns.html)
-
-[Python tox - Why You Should Use It and Tutorial](https://christophergs.com/python/2020/04/12/python-tox-why-use-it-and-tutorial/)
-
-Pre-commit Possibilites:
-
-- [X] Black
-- [X] Flake8
-- [X] isort
-- [X] bandit
-- [X] Interrogate
-- [ ] pydoctest
-- [ ] doctest
-- [X] shellcheck
-- [X] <https://github.com/dosisod/refurb>
-- [X] <https://github.com/asottile/pyupgrade>
-- [X] <https://github.com/python/mypy>
-
-- [ ] Deploy action upon push of tags
-- [ ] [A Complete Guide To Deploy GitHub Project on Amazon EC2 Using GitHub Actions and AWS CodeDeploy](https://dev.to/ankushbehera/a-complete-guide-to-deploy-github-project-on-amazon-ec2-using-github-actions-and-aws-codedeploy-3f0b)
-- [ ] [Deploying with GitHub Actions - GitHub Docs](https://docs.github.com/en/actions/deployment/about-deployments/deploying-with-github-actions)
-  - [ ] Actions
-    - [ ] Create GitHub release
-    - [ ] Deploy to ichrisbirch
-
-[GitHub - appleboy/ssh-action: GitHub Actions for executing remote ssh commands.](https://github.com/appleboy/ssh-action)
-
-[ssh deploy · Actions · GitHub Marketplace · GitHubtrucktruck](https://github.com/marketplace/actions/ssh-deploy)
-
-[GitHub Actions: How to run SSH commands (without third-party actions) | Good Code Smell](https://blog.benoitblanchon.fr/github-action-run-ssh-commands/)
-
-[Run server as systemd process & automate deployment with github actions - DEV](https://dev.to/lakhansamani/automate-server-deployment-with-systemd-github-actions-18od)
-
-[Continuous Deployment using Github Actions | by Akshar Raaj | Medium](https://medium.com/@raaj.akshar/continuous-deployment-using-github-actions-37a7f5d7cb26)
-
-[python - Github ssh-action configuration to deploy changes in django application - Stack Overflow](https://stackoverflow.com/questions/64295530/github-ssh-action-configuration-to-deploy-changes-in-django-application)
-
-[Anyone using Github actions for your deployments? - Questions / Help - Elixir Programming Language Forum](https://elixirforum.com/t/anyone-using-github-actions-for-your-deployments/31210)
-
-[Automatic Deployments With Nginx And GitHub Actions: A Detailed Guide | by Yash Prakash | Mar, 2023 | Level Up Coding](https://levelup.gitconnected.com/automatic-deployments-with-nginx-and-github-actions-a-detailed-guide-5505c074cc9f)
-
-[Deploying to a server with GitHub Actions - Up and Running - Elixir Phoenix - YouTube](https://www.youtube.com/watch?v=gW1TDirJ5E4&list=PLZZkJeUxu6QmO83Z1esRhp3lOeaNKZuXY&index=8)
+- [ ]
 
 ## Documentation
 
@@ -154,6 +102,11 @@ This may actually be better for notes and personal information than for actual d
 ### Mkdocs
 
 [Build Your Python Project Documentation With MkDocs – Real Python](https://realpython.com/python-project-documentation-with-mkdocs/)
+
+### Miscellaneous Documentation
+
+- [ ] pydoctest
+- [ ] doctest
 
 ## CSS files
 
