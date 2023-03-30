@@ -54,10 +54,10 @@
 ## Random
 
 - [ ] Separate pytest and coverage in pre-commit and github-actions
-- [ ] ## CSS files
 
-- [ ] Need to have reset
-- [ ] Body in Apartments
+- [ ] ## CSS files
+  - [ ] Need to have reset
+  - [ ] Body in Apartments
 
 - [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
 

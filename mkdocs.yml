@@ -1,0 +1,36 @@
+site_name: iChrisBirch
+repo_name: datapointchris/ichrisbirch
+repo_url: https://github.com/datapointchris/ichrisbirch
+extra_css:
+  - stylesheets/extra.css
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: indigo
+    accent: lime
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - nl2br
+  - def_list
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.highlight:
+      anchor_linenums: true
+      use_pygments: true
+      pygments_lang_class: true
+      line_spans: __span
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
