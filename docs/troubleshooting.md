@@ -40,6 +40,15 @@
     !!! success "Solution"
         Start and run supervisor with homebrew: `brew services start supervisor`
 
+!!! failure "Error"
+    ```log
+    FileNotFoundError: [Errno 2] No such file or directory: '/var/www/ichrisbirch/ichrisbirch/NoneNone/pylogger.log'
+    ```
+
+    !!! success "Solution"
+    The environment file has not been loaded. **Most likely** you need to run `git secret reveal`
+    This happens when the project has been cloned for the first time or directory has been deleted or the env files might have changed.
+
 ## NGINX
 
 !!! failure "Error"  
