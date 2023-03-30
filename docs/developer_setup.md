@@ -24,15 +24,19 @@ git clone https://github.com/datapointchris/ichrisbirch.git
 
 cd ichrisbirch/
 
+git secret reveal
+
 poetry install
+
+source .venv/bin/activate
 
 export ENVIRONMENT=development
 
-git secret reveal
+pre-commit install
 
 # Make sure Docker is running
 
-poetry run pytest
+pytest
 ```
 
 ## 4. Run the project
