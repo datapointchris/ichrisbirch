@@ -1,20 +1,19 @@
 site_name: iChrisBirch
 repo_name: datapointchris/ichrisbirch
 repo_url: https://github.com/datapointchris/ichrisbirch
-extra_css:
-  - stylesheets/extra.css
 theme:
   name: material
   palette:
     scheme: slate
-    primary: indigo
-    accent: lime
+    accent: amber
   features:
     - navigation.instant
     - navigation.tracking
     - navigation.sections
     - navigation.expand
     - content.code.copy
+extra_css:
+  - stylesheets/extra.css
 markdown_extensions:
   - admonition
   - nl2br
