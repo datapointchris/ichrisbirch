@@ -98,7 +98,7 @@ jobs:
           ssh -t -o StrictHostKeyChecking=no -i ichrisbirch_key ubuntu@23.22.30.103 '
             cd /var/www/ichrisbirch &&
             git pull &&
-            git secret reveal &&
+            git secret reveal -f &&
             poetry install
           '
       - name: Restart Supervisor

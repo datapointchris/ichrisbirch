@@ -31,8 +31,8 @@ There are 3 records in this hosted zone:
 
 There are 3 records in this hosted zone:
 
-| Record Name         | Type  | Description                                | Value                 |
-| ------------------- | ----- | ------------------------------------------ | --------------------- |
+| Record Name          | Type  | Description                                | Value                 |
+| -------------------- | ----- | ------------------------------------------ | --------------------- |
 | docs.ichrisbirch.com | `A`   | Points to the EC2 IP of the webserver      | EC2 IP (23.22.30.103) |
 | docs.ichrisbirch.com | `NS`  | Created automatically with the hosted zone | AWS Nameservers       |
 | docs.ichrisbirch.com | `SOA` | Created automtaically with the hosted zone | AWS DNS               |
