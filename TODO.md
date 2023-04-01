@@ -72,8 +72,6 @@
 Awesome documentation example for small project:
 [Documentation — pypdf 3.5.1 documentation](https://pypdf.readthedocs.io/en/stable/dev/documentation.html)
 
-[1. Software Documentation Template — Software Documentation 0.1 alpha documentation](https://software-documentation-template.readthedocs.io/en/latest/readme.html)
-
 [A Guide to Writing Your First Software Documentation — SitePointSitePoint](https://www.sitepoint.com/writing-software-documentation/)
 
 [How to Write Documentation For Your Next Software Development Project](https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/)
