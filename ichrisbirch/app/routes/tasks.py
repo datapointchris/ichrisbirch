@@ -1,15 +1,12 @@
-import base64
 import logging
 from collections import Counter
 from datetime import datetime, timedelta
-from io import BytesIO
 from typing import Any
 
 import requests
 from flask import Blueprint, abort, redirect, render_template, request, url_for
-from matplotlib.figure import Figure
 
-from ichrisbirch import models, schemas
+from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.config import settings
 from ichrisbirch.models.tasks import TaskCategory
@@ -25,20 +22,30 @@ logger = logging.getLogger(__name__)
 
 TASKS_URL = f'{settings.API_URL}/tasks'
 TASK_CATEGORIES = [t.value for t in TaskCategory]
+TIMEOUT = settings.REQUEST_TIMEOUT
 
 
-def validate_json_tasks(tasks: list[dict] | dict) -> list[models.Task]:
-    """Validates returned JSON with Pydantic schema and SQLAlchemy Model"""
-    validated = [schemas.Task(**task) for task in tasks]
-    return [models.Task(**(task.dict())) for task in validated]
+def get_first_and_last_task():
+    first = requests.get(f'{TASKS_URL}/completed/', params={'first': True}, timeout=TIMEOUT).json()
+    last = requests.get(f'{TASKS_URL}/completed/', params={'last': True}, timeout=TIMEOUT).json()
+    first_task = schemas.TaskCompleted(**first)
+    last_task = schemas.TaskCompleted(**last)
+    return first_task, last_task
 
 
-def calculate_average_completion(tasks: list[models.Task]) -> str:
+def days_to_complete(task: schemas.Task) -> int | None:
+    """Calculate days it took to complete task"""
+    if task.complete_date:
+        return max((task.complete_date - task.add_date).days, 1)
+    return None
+
+
+def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str:
     """ "Calculate the average completion time of the supplied completed tasks"""
     if not tasks:
         return 'No tasks completed for this time period'
-    total_days = sum(task.days_to_complete for task in tasks)
-    average_days = total_days / len(tasks)
+    total_days_to_complete = sum([max((task.complete_date - task.add_date).days, 1) for task in tasks])
+    average_days = total_days_to_complete / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
 
@@ -47,15 +54,12 @@ def calculate_average_completion(tasks: list[models.Task]) -> str:
 def index():
     """Tasks home endpoint"""
     ed = EasyDateTime()
-    today_filter = {'start_date': ed.today, 'end_date': ed.tomorrow}
+    top_tasks_json = requests.get(TASKS_URL, params={'limit': 5}, timeout=TIMEOUT).json()
+    top_tasks = [schemas.Task(**task) for task in top_tasks_json]
 
-    top_tasks_json = requests.get(TASKS_URL, params={'limit': 5}, timeout=settings.REQUEST_TIMEOUT).json()
-    top_tasks = validate_json_tasks(top_tasks_json)
-
-    completed_tasks_json = requests.get(
-        f'{TASKS_URL}/completed/', params=today_filter, timeout=settings.REQUEST_TIMEOUT
-    ).json()
-    completed_today = validate_json_tasks(completed_tasks_json)
+    today_filter = {'start_date': str(ed.today), 'end_date': str(ed.tomorrow)}
+    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=today_filter, timeout=TIMEOUT).json()
+    completed_today = [schemas.TaskCompleted(**task) for task in completed_tasks_json]
 
     return render_template(
         'tasks/index.html',
@@ -68,15 +72,17 @@ def index():
 @blueprint.route('/all')
 def all():
     """All tasks endpoint"""
-    all_tasks_json = requests.get(f'{settings.API_URL}/tasks/', timeout=settings.REQUEST_TIMEOUT).json()
-    all_tasks = validate_json_tasks(all_tasks_json)
+    all_tasks_json = requests.get(f'{settings.API_URL}/tasks/', timeout=TIMEOUT).json()
+    all_tasks = [schemas.Task(**task) for task in all_tasks_json]
     return render_template('tasks/all.html', tasks=all_tasks, task_categories=TASK_CATEGORIES)
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
     """Completed tasks endpoint.  Filtered by date selection."""
+    DEFAULT_DATE_FILTER = 'this_week'
     ed = EasyDateTime()
+
     date_filters = {
         'today': (ed.today, ed.tomorrow),
         'yesterday': (ed.yesterday, ed.today),
@@ -87,48 +93,44 @@ def completed():
         'this_year': (ed.this_year, ed.next_year),
         'all': (None, None),
     }
-    date_filter = request.form.get('filter') if request.method == 'POST' else 'this_week'
-    if date_filter == 'all':  # have to query db to get first and last
-        first = requests.get(f'{TASKS_URL}/completed/', params={'first': True}, timeout=settings.REQUEST_TIMEOUT).json()
-        last = requests.get(f'{TASKS_URL}/completed/', params={'last': True}, timeout=settings.REQUEST_TIMEOUT).json()
-        start_date = schemas.Task(**first).complete_date
-        end_date = schemas.Task(**last).complete_date + timedelta(seconds=1)
+
+    if request.method == 'POST':
+        date_filter = request.form.get('filter')
+        if not date_filter:
+            logger.warning('"filter" parameter expected for POST')
+            date_filter = DEFAULT_DATE_FILTER
     else:
-        start_date, end_date = date_filters.get(date_filter)
+        date_filter = DEFAULT_DATE_FILTER
+
+    start_date, end_date = date_filters.get(date_filter, (None, None))
     logger.debug(f'Date filter: {date_filter} = {start_date} - {end_date}')
 
     tasks_filter = {'start_date': start_date, 'end_date': end_date}
-    completed_tasks_json = requests.get(
-        f'{TASKS_URL}/completed/',
-        params=tasks_filter,
-        timeout=settings.REQUEST_TIMEOUT,
-    ).json()
-    completed_tasks = validate_json_tasks(completed_tasks_json)
-    average_completion = calculate_average_completion(completed_tasks)
 
-    # Graph
-    # TODO: Update this to something better for graphing
-    # This is quick and dirty for now
-    timestamps_for_filter = {
-        dt: 0 for dt in [start_date + timedelta(days=x) for x in range((end_date - start_date).days)]
-    }
-    completed_task_timestamps = Counter(
-        [
-            datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day)
-            for task in completed_tasks
+    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=tasks_filter, timeout=TIMEOUT).json()
+    completed_tasks = [schemas.TaskCompleted(**task) for task in completed_tasks_json]
+    if completed_tasks:
+        first = completed_tasks[0]
+        last = completed_tasks[-1]
+        average_completion = calculate_average_completion_time(completed_tasks)
+
+        filter_timestamps = [
+            first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
         ]
-    )
-    all_dates_with_counts = {**timestamps_for_filter, **completed_task_timestamps}
-    x = all_dates_with_counts.keys()
-    y = all_dates_with_counts.values()
-    x_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
-    fig = Figure(figsize=(16, 6))
-    ax = fig.subplots()
-    ax.bar(x, y)
-    ax.set_xticklabels(labels=x_labels)
-    buffer = BytesIO()
-    fig.savefig(buffer, format="png")
-    image_data = base64.b64encode(buffer.getbuffer()).decode("ascii")
+        timestamps_for_filter = {timestamp: 0 for timestamp in filter_timestamps}
+        completed_task_timestamps = Counter(
+            [
+                datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day)
+                for task in completed_tasks
+            ]
+        )
+        all_dates_with_counts = {**timestamps_for_filter, **completed_task_timestamps}
+        chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
+        chart_values = all_dates_with_counts.values()
+    else:
+        average_completion = f"No completed tasks for this time period '{date_filter}'"
+        chart_labels = None
+        chart_values = None
 
     return render_template(
         'tasks/completed.html',
@@ -136,8 +138,10 @@ def completed():
         average_completion=average_completion,
         filters=date_filters,
         date_filter=date_filter,
-        image_data=image_data,
+        chart_labels=chart_labels,
+        chart_values=chart_values,
         task_categories=TASK_CATEGORIES,
+        zip=zip,
     )
 
 
@@ -151,17 +155,17 @@ def crud():
     match method:
         case 'add':
             task = schemas.TaskCreate(**data).json()
-            response = requests.post(TASKS_URL, data=task, timeout=settings.REQUEST_TIMEOUT)
+            response = requests.post(TASKS_URL, data=task, timeout=TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))  # TODO: Redirect back to referring page
         case 'complete':
             task_id = data.get('id')
-            response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=settings.REQUEST_TIMEOUT)
+            response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.index'))
         case 'delete':
             task_id = data.get('id')
-            response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=settings.REQUEST_TIMEOUT)
+            response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.all'))
     return abort(405, description=f"Method {method} not accepted")

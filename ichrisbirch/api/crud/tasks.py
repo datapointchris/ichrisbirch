@@ -68,7 +68,7 @@ class CRUDTask(CRUDBase[models.Task, schemas.TaskCreate, schemas.TaskUpdate]):
             return completed.order_by(models.Task.complete_date.desc()).all()
 
         return (  # filtered by start and end date
-            query.filter(models.Task.complete_date >= start_date, models.Task.complete_date < end_date)
+            query.filter(models.Task.complete_date >= start_date, models.Task.complete_date <= end_date)
             .order_by(models.Task.complete_date.desc())
             .all()
         )

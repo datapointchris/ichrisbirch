@@ -2,6 +2,10 @@
 
 {% block title %}Completed Tasks{% endblock %}
 
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div id="content-layout-grid">
     <div id="left-column" class="task-list">
@@ -29,11 +33,13 @@
                     {% if filter == date_filter %}
                     <input type="radio" id="radio-{{ filter }}" class="filterbutton"
                         name="filter" value="{{ filter }}" checked>
-                    <label for="radio-{{ filter }}">{{ filter.title() }}</label>
+                    <label for="radio-{{ filter }}">{{ filter.title().replace('_',' ')
+                        }}</label>
                     {% else %}
                     <input type="radio" id="radio-{{ filter }}" class="filterbutton"
                         name="filter" value="{{ filter }}">
-                    <label for="radio-{{ filter }}">{{ filter.title() }}</label>
+                    <label for="radio-{{ filter }}">{{ filter.title().replace('_',' ')
+                        }}</label>
                     {% endif %}
                     {% endfor %}
                 </div>
@@ -41,11 +47,56 @@
                 <input type="submit" class="button box-3d" value="Filter Tasks">
             </form>
         </div>
+
         <div id="completed-averages">
             <h2> Average Completion Time: {{ average_completion }}</h2>
         </div>
+
         <div id="graph">
-            <img src='data:image/png;base64,{{ image_data }}' />
+            {% if chart_values %}
+            <div>
+                <canvas id="completedChart" width="600" height="400"></canvas>
+            </div>
+            <script>
+                var ctx = document.getElementById("completedChart").getContext("2d");
+                var barChart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: [{% for label in chart_labels %}"{{ label }}", {% endfor %}],
+                datasets: [
+                    {
+                        label: "Completed Tasks",
+                        data: [{% for value in chart_values %}"{{ value }}", {% endfor %}],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(255, 205, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(201, 203, 207, 0.2)'
+                    ],
+                        borderColor: [
+                            'rgb(255, 99, 132)',
+                            'rgb(255, 159, 64)',
+                            'rgb(255, 205, 86)',
+                            'rgb(75, 192, 192)',
+                            'rgb(54, 162, 235)',
+                            'rgb(153, 102, 255)',
+                            'rgb(201, 203, 207)'
+                        ],
+                            }
+                ],
+                borderWidth: 1
+                    }
+                });
+            </script>
+            <br />
+            {% for label, value in zip(chart_labels, chart_values) %}
+            {{ label }} {{ value }}
+            <br />
+            {% endfor %}
+            {% endif %}
         </div>
     </div>
 </div>

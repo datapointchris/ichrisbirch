@@ -34,3 +34,19 @@ class TaskUpdate(Task):
     """Pydantic model for updating a task"""
 
     ...
+
+
+class TaskCompleted(BaseModel):
+    """Pydantic model for a task"""
+
+    id: int
+    name: str
+    notes: str | None
+    category: TaskCategory
+    priority: int
+    add_date: datetime
+    complete_date: datetime
+
+    class Config:
+        orm_mode = True  # must be set for mapping to SQLAlchemy
+        use_enum_values = True
