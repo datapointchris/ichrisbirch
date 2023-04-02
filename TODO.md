@@ -60,9 +60,10 @@
 
 ## Tasks
 
+- [X] CHANGE: form to crud
 - [ ] CHANGE: the priority subtraction to daily
-- [ ] REMOVE: the Fake Tasks and Delete Tasks
-  - [ ] Make sure data generator for tests captures the logic
+- [X] REMOVE: the Fake Tasks and Delete Tasks
+  - [X] Make sure data generator for tests captures the logic
 - [ ] Chart.js
 - [ ] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
 - [ ] Alexa skill, use the to-do API to add a task
@@ -71,14 +72,14 @@
 
 ### `tasks.py /all`
 
-- [ ] ADD: `Complete` button for all tasks
+- [X] ADD: `Complete` button for all tasks
   - Should be for all of the tasks after the first 5
   - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
   - Similar to the delete button
 - [ ] ADD: filtering of `All | Completed | Not Completed` tasks.
   - Sort options as well?
 - [ ] ADD: SEARCH capability!
-- [ ] ADD: Delete button for all tasks.  
+- [X] ADD: Delete button for all tasks.  
   - Sometimes a task is added in error and needs to be deleted
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
 - [ ] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.

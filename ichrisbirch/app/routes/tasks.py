@@ -1,20 +1,17 @@
 import base64
 import logging
-import random
 from collections import Counter
 from datetime import datetime, timedelta
 from io import BytesIO
-from zoneinfo import ZoneInfo
+from typing import Any
 
 import requests
-from faker import Faker
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 from matplotlib.figure import Figure
 
 from ichrisbirch import models, schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.config import settings
-from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.tasks import TaskCategory
 
 blueprint = Blueprint(
@@ -144,11 +141,10 @@ def completed():
     )
 
 
-# TODO: [2023/02/10] - change form to crud
-@blueprint.route('/form/', methods=['POST'])
-def form():
+@blueprint.route('/crud/', methods=['POST'])
+def crud():
     """CRUD endpoint for tasks"""
-    data = request.form.to_dict()
+    data: dict[str, Any] = request.form.to_dict()
     method = data.pop('method')
     logger.debug(f'{method=}')
     logger.debug(data)
@@ -168,40 +164,4 @@ def form():
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=settings.REQUEST_TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.all'))
-
-
-@blueprint.route('/fake/', methods=['GET'])
-def fake_tasks():
-    """Endpoint to create fake tasks for testing.
-    NOTE: Not currently being used.
-    """
-    fake = Faker()
-    with session:
-        for _ in range(1000):
-            tstamp = datetime.now(tz=ZoneInfo("America/Chicago")) - timedelta(days=random.randint(0, 100))
-            task = {
-                'name': fake.catch_phrase(),
-                'category': random.choice(['financial', 'coding', 'chore', 'car', 'misc']),
-                'priority': random.randint(1, 100),
-                'add_date': tstamp.isoformat(),
-                'complete_date': random.choices(
-                    [(tstamp + timedelta(days=random.randint(0, 100))).isoformat(), None],
-                    k=1,
-                    weights=[1, 3],
-                )[0],
-            }
-            session.add(models.Task(**task))
-        session.commit()
-    return redirect(url_for('tasks.index'))
-
-
-@blueprint.route('/drop/', methods=['GET'])
-def drop_tasks():
-    """Endpoint for dropping all tasks from table.
-    NOTE: Not currently being used, as it is scary.
-    """
-    with session:
-        # session.execute(delete(Task))
-        session.delete(models.Task)
-        session.commit()
-    return redirect(url_for('tasks.index'))
+    return abort(405)

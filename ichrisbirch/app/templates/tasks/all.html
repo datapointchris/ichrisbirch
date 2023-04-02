@@ -13,13 +13,17 @@
         Priority: {{ task.priority }}<br />
         Category: {{ task.category }}<br />
         Add Date: {{ task.add_date }}<br />
-        {% if loop.index > 5 %}
-        <form method="POST" action="{{ url_for('tasks.form') }}">
+        <form method="POST" action="{{ url_for('tasks.crud') }}">
             <input type="hidden" name="id" id="id" value="{{ task.id }}">
             <input type="hidden" name="method" id="method" value="delete">
             <input type="submit" value="Delete Task">
         </form>
-        {% endif %}
+        <br />
+        <form method="POST" action="{{ url_for('tasks.crud') }}">
+            <input type="hidden" name="id" id="id" value="{{ task.id }}">
+            <input type="hidden" name="method" id="method" value="complete">
+            <input type="submit" value="Complete Task">
+        </form>
     </div>
     {% else %}
     <div class="task">
