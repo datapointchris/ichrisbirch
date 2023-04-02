@@ -164,4 +164,4 @@ def crud():
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=settings.REQUEST_TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('tasks.all'))
-    return abort(405)
+    return abort(405, description=f"Method {method} not accepted")
