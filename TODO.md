@@ -1,14 +1,8 @@
 # TODO
 
 - [Random](#random)
-- [Documentation](#documentation)
-  - [How To's](#how-tos)
-  - [General Ideas](#general-ideas)
-  - [Diagrams](#diagrams)
-  - [Bluebook](#bluebook)
-  - [Mkdocs](#mkdocs)
-  - [Miscellaneous Documentation](#miscellaneous-documentation)
-- [All Tasks page improvments](#all-tasks-page-improvments)
+- [Tasks](#tasks)
+  - [`tasks.py /all`](#taskspy-all)
   - [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
   - [Create tasks/priority endpoint in tasks](#create-taskspriority-endpoint-in-tasks)
 - [Upgrade to SQLAlchemy 2.0](#upgrade-to-sqlalchemy-20)
@@ -31,7 +25,6 @@
   - [ichrisbirch](#ichrisbirch)
   - [Apartments](#apartments)
   - [Habits](#habits)
-  - [Tasks](#tasks)
   - [Tracks](#tracks)
   - [Events](#events)
   - [Countdowns](#countdowns)
@@ -65,68 +58,31 @@
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
   - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
 
-## Documentation
+## Tasks
 
-### How To's
+- [ ] CHANGE: the priority subtraction to daily
+- [ ] REMOVE: the Fake Tasks and Delete Tasks
+  - [ ] Make sure data generator for tests captures the logic
+- [ ] Chart.js
+- [ ] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
+- [ ] Alexa skill, use the to-do API to add a task
+- [ ] Make an Alfred shortcut for todo
+  - [ ] Using API most likely
 
-Awesome documentation example for small project:
-[Documentation — pypdf 3.5.1 documentation](https://pypdf.readthedocs.io/en/stable/dev/documentation.html)
+### `tasks.py /all`
 
-[A Guide to Writing Your First Software Documentation — SitePointSitePoint](https://www.sitepoint.com/writing-software-documentation/)
-
-[How to Write Documentation For Your Next Software Development Project](https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/)
-
-[Software Documentation Best Practices [With Examples] helpjuice-logo-0307896d1acd18c6a7f52c4256467fb6ca1007315c373af21357496e9ceb49e2](https://helpjuice.com/blog/software-documentation)
-
-[Software Documentation Types and Best Practices | by AltexSoft Inc | Prototypr](https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f)
-
-[Prepare the documentation for successful software project development](https://upplabs.com/blog/how-to-prepare-the-documentation-for-successful-software-project-development/)
-
-[How to Write Technical Documentation With Empathy | by Edward Huang | Jan, 2023 | Better Programming](https://betterprogramming.pub/how-to-write-technical-documentation-with-empathy-f321104746f3)
-
-### General Ideas
-
-Docs/notes for each page and function
-
-[Python's doctest: Document and Test Your Code at Once – Real Python](https://realpython.com/python-doctest/)
-[Vale.sh - A linter for prose](https://vale.sh)
-
-### Diagrams
-
-[Online FlowChart & Diagrams Editor - Mermaid Live Editor](https://mermaid.live/edit)
-[GitHub - mingrammer/diagrams: Diagram as Code for prototyping cloud system architectures](https://github.com/mingrammer/diagrams)
-
-### Bluebook
-
-This may actually be better for notes and personal information than for actual documentation inside of a project.
-
-[GitHub - lyz-code/blue-book: My personal knowledge repository](https://github.com/lyz-code/blue-book)
-[Write good documentation - The Blue Book](https://lyz-code.github.io/blue-book/documentation/)
-
-### Mkdocs
-
-[Build Your Python Project Documentation With MkDocs – Real Python](https://realpython.com/python-project-documentation-with-mkdocs/)
-
-### Miscellaneous Documentation
-
-- [ ] pydoctest
-- [ ] doctest
-
-## All Tasks page improvments
-
-- [ ] Change the priority subtraction to daily
-- [ ] Add `Complete` button for all tasks
-  - [ ] Should be for all of the tasks after the first 5
-    - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
-  - [ ] Similar to the delete button
-- [ ] Add filtering of `All | Completed | Not Completed` tasks.
-  - [ ] Sort options as well?
-- [ ] Add SEARCH capability!
-- [ ] Delete for all tasks.  
-  - [ ] Sometimes a task is added in error and needs to be deleted
-  - [ ] This is on purpose instead of being able to edit tasks to keep honest
-- [ ] Catch error when priority is not specified in add task, currently there is a server error
-- [ ] Have add task redirect to the page that it was called from, instead of the priorities page.
+- [ ] ADD: `Complete` button for all tasks
+  - Should be for all of the tasks after the first 5
+  - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
+  - Similar to the delete button
+- [ ] ADD: filtering of `All | Completed | Not Completed` tasks.
+  - Sort options as well?
+- [ ] ADD: SEARCH capability!
+- [ ] ADD: Delete button for all tasks.  
+  - Sometimes a task is added in error and needs to be deleted
+- [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
+- [ ] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.
+  - Example in apartments endpoint
 
 ### Add categories to tasks ENUM
 
@@ -348,25 +304,6 @@ resume page
 
 Ranking
  [Slider with value and ruler](https://codepen.io/thebabydino/pen/RwjWrKz)
-
-### Tasks
-
-- [ ] Remove the Fake Tasks and Delete Tasks
-- [ ] Chart.js
-- [ ] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
-- [ ] Each task has a button that says `Tomorrow` so it can be moved to the next day if there are blockers.
-- [ ] API with FastAPI
-- [ ] FastAPI and Flask together?  Maybe not possible
-  - [ ] <https://fastapi.tiangolo.com/tutorial/>
-- [ ] tasks.ichrisbirch.com
-- [ ] Make a "Completed This Month" List
-  - [ ] Add things like courses done, big parts of projects, nagging chores
-  - [ ] Anything that is good to know you got done, so you can add to the list
-  - [ ] Okay, automate this thing so it saves the list every month
-  - [ ] Probably a mongodb collection, one collection for each month and just a list of items, simple
-- [ ] Alexa skill, use the to-do API to add a task
-- [ ] Make an Alfred shortcut for todo
-  - [ ] Using API most likely
 
 ### Tracks
 
