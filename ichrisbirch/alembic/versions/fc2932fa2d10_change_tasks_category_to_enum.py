@@ -19,7 +19,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    category_enum = postgresql.ENUM(TaskCategory)
+    category_enum = postgresql.ENUM(TaskCategory, name='TaskCategory')
     category_enum.create(op.get_bind(), checkfirst=True)
     op.alter_column(
         'tasks',
@@ -36,5 +36,5 @@ def downgrade() -> None:
         type_=sa.String(length=64),
         postgresql_using='category::varchar',
     )
-    category_enum = postgresql.ENUM(TaskCategory)
+    category_enum = postgresql.ENUM(TaskCategory, name='TaskCategory')
     category_enum.drop(op.get_bind(), checkfirst=True)

@@ -28,6 +28,7 @@ jupyterthemes = "^0.20.0"
 wily = "^1.23.0"
 pre-commit = "^3.0.4"
 mkdocs-material = "^9.1.4"
+types-requests = "^2.28.11.17"
 
 [tool.poetry.group.cicd.dependencies]
 Faker = "^14.1.0"

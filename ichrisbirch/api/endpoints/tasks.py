@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -17,26 +17,23 @@ async def read_many(db: Session = Depends(sqlalchemy_session), skip: int = 0, li
     return crud.tasks.read_many(db, skip=skip, limit=limit)
 
 
-@router.get("/completed/", response_model=Optional[list[schemas.Task]])  # type: ignore
+@router.get("/completed/", response_model=list[schemas.TaskCompleted])
 async def completed(
     db: Session = Depends(sqlalchemy_session),
     start_date: Union[str, None] = None,
     end_date: Union[str, None] = None,
     first: Union[bool, None] = None,
     last: Union[bool, None] = None,
-) -> Union[list[schemas.Task], list]:
+) -> list[schemas.TaskCompleted]:
     """API method to get completed tasks.  Passes request to crud.tasks module"""
-    if not (
-        completed := crud.tasks.completed(
-            db,
-            start_date=start_date,
-            end_date=end_date,
-            first=first,
-            last=last,
-        )
-    ):
-        return []
-    return completed
+    completed_tasks = crud.tasks.completed(
+        db,
+        start_date=start_date,
+        end_date=end_date,
+        first=first,
+        last=last,
+    )
+    return [schemas.TaskCompleted.from_orm(task) for task in completed_tasks]
 
 
 @router.post("/", response_model=schemas.Task)

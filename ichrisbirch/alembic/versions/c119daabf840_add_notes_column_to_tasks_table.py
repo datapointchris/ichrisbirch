@@ -20,4 +20,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column('tasks', sa.Column('notes', sa.String(), nullable=True))
+    op.drop_column('tasks', 'notes')

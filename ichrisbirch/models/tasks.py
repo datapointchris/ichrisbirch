@@ -1,6 +1,9 @@
 import enum
+from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Column, DateTime, Enum, Integer, String, Text
+from sqlalchemy import DateTime, Enum, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ichrisbirch.db.sqlalchemy.base import Base
@@ -21,13 +24,13 @@ class Task(Base):
     """SQLAlchemy model for tasks table"""
 
     __tablename__ = 'tasks'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(64), nullable=False)
-    notes = Column(Text())
-    category = Column(Enum(TaskCategory))
-    priority = Column(Integer, nullable=False)
-    add_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    complete_date = Column(DateTime(timezone=True), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(64))
+    notes: Mapped[str] = mapped_column(Text())
+    category: Mapped[Enum] = mapped_column(Enum(TaskCategory))
+    priority: Mapped[int] = mapped_column(Integer)
+    add_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    complete_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self):
         return f''''Task(name = {self.name}, priority = {self.priority}, category = {self.category},

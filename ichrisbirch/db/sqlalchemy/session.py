@@ -1,5 +1,7 @@
+from typing import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from ichrisbirch.config import settings
 
@@ -8,7 +10,7 @@ engine = create_engine(settings.sqlalchemy.SQLALCHEMY_DATABASE_URI, echo=True, f
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 
 
-def sqlalchemy_session() -> Session:
+def sqlalchemy_session() -> Generator:
     """Yields sqlalchemy Session"""
     session = SessionLocal()
     try:
