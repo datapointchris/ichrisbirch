@@ -65,8 +65,8 @@
 - [ ] CHANGE: the priority subtraction to daily
 - [X] REMOVE: the Fake Tasks and Delete Tasks
   - [X] Make sure data generator for tests captures the logic
-- [ ] Chart.js
-- [ ] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
+- [X] Chart.js
+- [X] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
 - [ ] Alexa skill, use the to-do API to add a task
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely

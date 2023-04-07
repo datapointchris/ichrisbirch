@@ -95,3 +95,14 @@
 
     !!! success "Solution"
         The issue was resolved by modifying the security group of the postgres instance to allow the ec2 instance to connect by allowing it's security group.
+
+## Pytest
+
+!!! failure "Error"
+    E       assert 307 == 200
+    E        +  where 307 = \<Response [307]\>.status_code
+
+    !!! success "Solution"
+        The trailing `/` is missing from the endpoint being called in the test, resulting in a 307 Temporary Redirect
+        To fix:
+        `/endpoint` --> `/endpoint/`

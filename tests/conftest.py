@@ -1,5 +1,4 @@
 import time
-from dataclasses import dataclass
 from typing import Any, Generator
 
 import docker
@@ -8,7 +7,7 @@ from docker.errors import DockerException
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch.config import settings
@@ -19,23 +18,58 @@ engine = create_engine('postgresql://postgres:postgres@localhost:5434', echo=Tru
 SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 
 
-@dataclass
-class TestConfig:
-    """Global testing configuration"""
+def create_postgres_docker_container():
+    """Create a postgres instance in a docker container
 
-    SEED: int = 777
-    NUM_FAKE: int = 100
-    NUM_TEST: int = 10
+    Port number needs to be something different from the default in case
+    postgres is running locally also
+
+    `auto_remove` will destroy the container once it is stopped.
+
+    Returns:
+        Model (Container) : docker container
+    """
+    try:
+        docker_client = docker.DockerClient()
+        container = docker_client.containers.run(
+            image='postgres:14',
+            detach=True,
+            environment={
+                'ENVIRONMENT': 'development',
+                'POSTGRES_USER': 'postgres',
+                'POSTGRES_PASSWORD': 'postgres',
+            },
+            name='testdb',
+            ports={5432: 5434},
+            mem_limit='2g',
+            auto_remove=True,
+        )
+    except DockerException as e:
+        pytest.exit(f'Failed to RUN Docker client: {e}')
+
+    time.sleep(2)  # Must sleep to allow creation of detached Docker container
+    return container
 
 
-test_config = TestConfig()
-
-
-def get_testing_session() -> Session:
+def get_testing_session() -> Generator:
     """Get SQLAlchemy Session for testing"""
     session = SessionTesting()
     try:
         yield session
+    finally:
+        session.close()
+
+
+def create_schemas(schemas: list[str]):
+    """Create schemas in the db
+
+    SQLAlchemy will not create the schemas automatically
+    """
+    session = next(get_testing_session())
+    try:
+        for schema_name in schemas:
+            session.execute(CreateSchema(schema_name))
+        session.commit()
     finally:
         session.close()
 
@@ -48,60 +82,25 @@ def postgres_testdb_in_docker():
     `@pytest.fixture(autouse=True)`
     `def test_data() -> list[dict]:
 
-    Port number needs to be something different from the default in case
-    postgres is running locally also
-
-    `auto_remove` will destroy the container once it is stopped.
     Use `testdb.stop()` to stop the container after testing
     """
-    try:
-        docker_client = docker.DockerClient()
-    except DockerException as e:
-        pytest.exit('Failed to start Docker client: ', e)
+
+    container = create_postgres_docker_container()
+
+    create_schemas(settings.DB_SCHEMAS)
 
     try:
-        testdb = docker_client.containers.run(
-            'postgres:14',
-            detach=True,
-            environment={
-                'ENVIRONMENT': 'development',
-                'POSTGRES_USER': 'postgres',
-                'POSTGRES_PASSWORD': 'postgres',
-            },
-            name='testdb',
-            ports={5432: 5434},
-            mem_limit='2g',
-            auto_remove=True,
-        )
-        time.sleep(2)  # Must sleep to allow creation of detached Docker container
-
-        def create_schemas(schemas, db_session):
-            """Create schemas in the db
-
-            SQLAlchemy will not create the schemas automatically
-            """
-            session = next(db_session())
-            for schema_name in schemas:
-                session.execute(CreateSchema(schema_name))
-            session.commit()
-            session.close()
-
-        create_schemas(settings.DB_SCHEMAS, get_testing_session)
-
-        yield testdb
-    except DockerException as e:
-        print(e)
-        pytest.exit('Failed to Initialize Postgres in Docker: ', e)
+        yield container
     finally:
-        testdb.stop()
+        container.stop()  # type: ignore
 
 
 @pytest.fixture(scope='function')
-def insert_test_data(test_data: list[dict], data_model):
+def insert_test_data(base_test_data: list[dict], data_model):
     """Insert test data into db using the supplied SQLAlchemy model (data_model)"""
     session = next(get_testing_session())
     Base.metadata.create_all(engine)
-    for data in test_data:
+    for data in base_test_data:
         session.add(data_model(**data))
     session.commit()
     yield

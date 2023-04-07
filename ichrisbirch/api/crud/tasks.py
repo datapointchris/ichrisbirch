@@ -1,15 +1,14 @@
 import logging
 from datetime import datetime
-from typing import Optional, TypeVar
+from typing import Optional
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models, schemas
 
 logger = logging.getLogger(__name__)
-
-TaskModel = TypeVar('TaskModel', bound=models.Task)
 
 
 class CRUDTask:
@@ -18,7 +17,7 @@ class CRUDTask:
     # def __init__(self, model: models.Task):
     #     self.model = model
 
-    def read_one(self, id: int, db: Session) -> Optional[models.Task]:
+    def read_one(self, id: int, session: Session) -> Optional[models.Task]:
         """Default method for reading one row from db
 
         Args:
@@ -28,9 +27,12 @@ class CRUDTask:
         Returns:
             Optional[ModelType]: row of db as a SQLAlchemy model
         """
-        return db.query(models.Task).filter(models.Task.id == id).first()
+        if task := session.get(models.Task, id):
+            return task
+        logger.warn(f'Task {id} not found')
+        return None
 
-    def read_many(self, db: Session, *, skip: int = 0, limit: int = 5000) -> list[models.Task]:
+    def read_many(self, session: Session, *, skip: int = 0, limit: Optional[int] = None) -> list[models.Task]:
         """Read multiple rows of db
 
         Args:
@@ -41,16 +43,16 @@ class CRUDTask:
         Returns:
             list[Task]: List of Task objects
         """
-        return (
-            db.query(models.Task)
+        statement = (
+            select(models.Task)
             .filter(models.Task.complete_date.is_(None))
             .order_by(models.Task.priority.asc(), models.Task.add_date.asc())
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        return list(session.scalars(statement).all())
 
-    def create(self, task: schemas.TaskCreate, db: Session) -> models.Task:
+    def create(self, task: schemas.TaskCreate, session: Session) -> models.Task:
         """Insert row in db from SQLAlchemy model
 
         Args:
@@ -60,11 +62,10 @@ class CRUDTask:
         Returns:
             ModelType: SQLAlchemy model of the inserted row
         """
-        # task_data = jsonable_encoder(task)
         db_task = models.Task(**task.dict())
-        db.add(db_task)
-        db.commit()
-        db.refresh(db_task)
+        session.add(db_task)
+        session.commit()
+        session.refresh(db_task)
         return db_task
 
     # TODO: https://github.com/tiangolo/full-stack-fastapi-postgresql
@@ -91,26 +92,26 @@ class CRUDTask:
     #     db.refresh(db_obj)
     #     return db_obj
 
-    def delete(self, id: int, db: Session) -> models.Task | None:
+    def delete(self, id: int, session: Session) -> models.Task | None:
         """Delete row from db
 
         Args:
-            db (SQLAlchemy Session): Session to use for transaction
+            session (SQLAlchemy Session): Session to use for transaction
             id (int): id of row to delete
 
         Returns:
-            ModelType: SQLAlchemy model of the deleted row
-            None: If the row does not exsit
+            Union[ModelType, None]: SQLAlchemy model of the deleted row or None if the row does not exist
         """
-        if task := db.query(models.Task).filter(models.Task.id == id).first():
-            db.delete(task)
-            db.commit()
+        if task := session.get(models.Task, id):
+            session.delete(task)
+            session.commit()
             return task
+        logger.warn(f'Task {id} not found')
         return None
 
     def completed(
         self,
-        db: Session,
+        session: Session,
         *,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -129,25 +130,26 @@ class CRUDTask:
         Returns:
             list[Task] | Task: SQLAlchemy Task model(s)
         """
-        query = db.query(models.Task)
-        completed = query.filter(models.Task.complete_date.is_not(None))
+        statement = select(models.Task)
+        statement = statement.filter(models.Task.complete_date.is_not(None))
 
         if first:  # first completed task
-            return completed.order_by(models.Task.complete_date.asc()).limit(1).all()
+            statement = statement.order_by(models.Task.complete_date.asc()).limit(1)
 
-        if last:  # most recent (last) completed task
-            return completed.order_by(models.Task.complete_date.desc()).limit(1).all()
+        elif last:  # most recent (last) completed task
+            statement = statement.order_by(models.Task.complete_date.desc()).limit(1)
 
-        if start_date is None or end_date is None:  # return all if no start or end date
-            return completed.order_by(models.Task.complete_date.desc()).all()
+        elif start_date is None or end_date is None:  # return all if no start or end date
+            statement = statement.order_by(models.Task.complete_date.desc())
 
-        return (  # filtered by start and end date
-            query.filter(models.Task.complete_date >= start_date, models.Task.complete_date <= end_date)
-            .order_by(models.Task.complete_date.desc())
-            .all()
-        )
+        else:  # filtered by start and end date
+            statement = statement.filter(
+                models.Task.complete_date >= start_date, models.Task.complete_date <= end_date
+            ).order_by(models.Task.complete_date.desc())
 
-    def complete_task(self, db: Session, id: Optional[int]) -> models.Task | None:
+        return list(session.scalars(statement))
+
+    def complete_task(self, id: int, session: Session) -> models.Task | None:
         """Complete task with specified id
 
         Args:
@@ -157,12 +159,13 @@ class CRUDTask:
         Returns:
             Task | None: SQLAlchemy Task model or None if task is not found
         """
-        if task := db.query(models.Task).filter(models.Task.id == id).first():
+        if task := session.get(models.Task, id):
             task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
-            db.add(task)
-            db.commit()
-            db.refresh(task)
+            session.add(task)
+            session.commit()
+            session.refresh(task)
             return task
+        logger.warn(f'Task {id} not found')
         return None
 
 

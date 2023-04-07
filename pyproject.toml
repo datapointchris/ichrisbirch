@@ -108,6 +108,8 @@ color = true
 addopts = ""
 minversion = "6.0"
 testpaths = ["ichrisbirch/tests"]
+env = ["SQLALCHEMY_WARN_20=1"]
+
 
 [tool.coverage.run]
 parallel = true

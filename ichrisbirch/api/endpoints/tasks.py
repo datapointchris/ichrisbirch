@@ -67,6 +67,6 @@ async def delete(task_id: int, db: Session = Depends(sqlalchemy_session)):
 @router.post("/complete/{task_id}/", response_model=schemas.Task)
 async def complete(task_id: int, db: Session = Depends(sqlalchemy_session)):
     """API method to complete a task.  Passes request to crud.tasks module"""
-    if not (task := crud.tasks.complete_task(db, id=task_id)):
+    if not (task := crud.tasks.complete_task(task_id, db)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
     return task

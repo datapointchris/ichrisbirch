@@ -5,9 +5,9 @@ from sqlalchemy.orm import sessionmaker
 
 from ichrisbirch.config import settings
 
-engine = create_engine(settings.sqlalchemy.SQLALCHEMY_DATABASE_URI, echo=True, future=True)
+engine = create_engine(settings.sqlalchemy.SQLALCHEMY_DATABASE_URI, echo=True)
 # connect_args={'check_same_thread': False}
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False)
 
 
 def sqlalchemy_session() -> Generator:
