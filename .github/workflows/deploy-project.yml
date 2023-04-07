@@ -18,13 +18,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Set up SSH key
+      - name: Pull and Re-install Project
         run: |
           echo "${{ secrets.ICHRISBIRCH_KEY }}" > ichrisbirch_key && chmod 600 ichrisbirch_key
           ssh -t -o StrictHostKeyChecking=no -i ichrisbirch_key ubuntu@23.22.30.103 '
             cd /var/www/ichrisbirch &&
             git pull &&
             git secret reveal -f &&
+            source .venv/bin/activate &&
             poetry install
           '
       - name: Restart Supervisor
