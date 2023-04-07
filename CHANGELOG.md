@@ -153,3 +153,9 @@ Pre-commit Possibilites:
   - [X] Actions
     - [N] Create GitHub release
     - [X] Deploy to ichrisbirch
+
+## Upgrade to SQLAlchemy 2.0
+
+- [X] [What's New in SQLAlchemy 2.0? - miguelgrinberg.com](https://blog.miguelgrinberg.com/post/what-s-new-in-sqlalchemy-2-0)
+- [X] Upgrade in poetry
+- [X] Check for syntax

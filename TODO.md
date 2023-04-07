@@ -5,7 +5,6 @@
   - [`tasks.py /all`](#taskspy-all)
   - [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
   - [Create tasks/priority endpoint in tasks](#create-taskspriority-endpoint-in-tasks)
-- [Upgrade to SQLAlchemy 2.0](#upgrade-to-sqlalchemy-20)
 - [Create /autochore endpoint](#create-autochore-endpoint)
 - [Add Events to API routes](#add-events-to-api-routes)
 - [Add Countdowns to API routes](#add-countdowns-to-api-routes)
@@ -99,13 +98,6 @@
 
 - [ ] Call this endpoint in the app instead of doing the query
   - This makes it so that other things can easily get the data with just an API call instead of constructing the query again
-
-## Upgrade to SQLAlchemy 2.0
-
-- [ ] [What's New in SQLAlchemy 2.0? - miguelgrinberg.com](https://blog.miguelgrinberg.com/post/what-s-new-in-sqlalchemy-2-0)
-- [ ] Upgrade in poetry
-- [ ] Check for syntax
-- [ ]
 
 ## Create /autochore endpoint
 
