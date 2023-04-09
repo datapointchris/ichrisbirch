@@ -69,7 +69,7 @@ def index():
     )
 
 
-@blueprint.route('/all')
+@blueprint.route('/all/')
 def all():
     """All tasks endpoint"""
     all_tasks_json = requests.get(f'{settings.API_URL}/tasks/', timeout=TIMEOUT).json()
