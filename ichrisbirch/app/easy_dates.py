@@ -45,13 +45,14 @@ class EasyDateTime:
     year_minus_20: datetime = datetime(today.year - 20, 1, 1)
     year_plus_20: datetime = datetime(today.year + 20, 1, 1)
 
-    filters: dict[str, tuple[datetime | None, datetime | None]] = {
-        'today': (today, tomorrow),
-        'yesterday': (yesterday, today),
-        'this_week': (week_start, week_end),
-        'last_7': (previous_7, tomorrow),
-        'this_month': (this_month, next_month),
-        'last_30': (previous_30, tomorrow),
-        'this_year': (this_year, next_year),
-        'all': (None, None),
-    }
+    def __post_init__(self):
+        self.filters: dict[str, tuple[datetime | None, datetime | None]] = {
+            'today': (self.today, self.tomorrow),
+            'yesterday': (self.yesterday, self.today),
+            'this_week': (self.week_start, self.week_end),
+            'last_7': (self.previous_7, self.tomorrow),
+            'this_month': (self.this_month, self.next_month),
+            'last_30': (self.previous_30, self.tomorrow),
+            'this_year': (self.this_year, self.next_year),
+            'all': (None, None),
+        }
