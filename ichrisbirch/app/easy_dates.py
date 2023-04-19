@@ -44,3 +44,14 @@ class EasyDateTime:
     next_year: datetime = datetime(today.year + 1, 1, 1)
     year_minus_20: datetime = datetime(today.year - 20, 1, 1)
     year_plus_20: datetime = datetime(today.year + 20, 1, 1)
+
+    filters: dict[str, tuple[datetime | None, datetime | None]] = {
+        'today': (today, tomorrow),
+        'yesterday': (yesterday, today),
+        'this_week': (week_start, week_end),
+        'last_7': (previous_7, tomorrow),
+        'this_month': (this_month, next_month),
+        'last_30': (previous_30, tomorrow),
+        'this_year': (this_year, next_year),
+        'all': (None, None),
+    }

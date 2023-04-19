@@ -29,7 +29,7 @@ class CRUDTask:
         """
         if task := session.get(models.Task, id):
             return task
-        logger.warn(f'Task {id} not found')
+        logger.warning(f'Task {id} not found')
         return None
 
     def read_many(self, session: Session, *, skip: int = 0, limit: Optional[int] = None) -> list[models.Task]:

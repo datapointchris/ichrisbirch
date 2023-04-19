@@ -40,14 +40,32 @@ def days_to_complete(task: schemas.Task) -> int | None:
     return None
 
 
-def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str:
+def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
     """ "Calculate the average completion time of the supplied completed tasks"""
     if not tasks:
-        return 'No tasks completed for this time period'
+        return None
     total_days_to_complete = sum([max((task.complete_date - task.add_date).days, 1) for task in tasks])
     average_days = total_days_to_complete / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
+
+
+def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tuple[list[str], list[int]]:
+    """Create chart labels and values from completed tasks"""
+    first = tasks[0]
+    last = tasks[-1]
+
+    filter_timestamps = [
+        first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
+    ]
+    timestamps_for_filter = {timestamp: 0 for timestamp in filter_timestamps}
+    completed_task_timestamps = Counter(
+        [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in tasks]
+    )
+    all_dates_with_counts = {**timestamps_for_filter, **completed_task_timestamps}
+    chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
+    chart_values = list(all_dates_with_counts.values())
+    return chart_labels, chart_values
 
 
 @blueprint.route('/', methods=['GET'])
@@ -81,63 +99,34 @@ def all():
 def completed():
     """Completed tasks endpoint.  Filtered by date selection."""
     DEFAULT_DATE_FILTER = 'this_week'
-    ed = EasyDateTime()
+    edt = EasyDateTime()
+    date_filters = edt.filters
 
-    date_filters = {
-        'today': (ed.today, ed.tomorrow),
-        'yesterday': (ed.yesterday, ed.today),
-        'this_week': (ed.week_start, ed.week_end),
-        'last_7': (ed.previous_7, ed.tomorrow),
-        'this_month': (ed.this_month, ed.next_month),
-        'last_30': (ed.previous_30, ed.tomorrow),
-        'this_year': (ed.this_year, ed.next_year),
-        'all': (None, None),
-    }
+    selected_filter = (
+        request.form.get('filter', DEFAULT_DATE_FILTER) if request.method == 'POST' else DEFAULT_DATE_FILTER
+    )
 
-    if request.method == 'POST':
-        date_filter = request.form.get('filter')
-        if not date_filter:
-            logger.warning('"filter" parameter expected for POST')
-            date_filter = DEFAULT_DATE_FILTER
-    else:
-        date_filter = DEFAULT_DATE_FILTER
-
-    start_date, end_date = date_filters.get(date_filter, (None, None))
-    logger.debug(f'Date filter: {date_filter} = {start_date} - {end_date}')
+    start_date, end_date = date_filters.get(selected_filter, (None, None))
+    logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
 
     tasks_filter = {'start_date': start_date, 'end_date': end_date}
 
     completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=tasks_filter, timeout=TIMEOUT).json()
     completed_tasks = [schemas.TaskCompleted(**task) for task in completed_tasks_json]
-    if completed_tasks:
-        first = completed_tasks[0]
-        last = completed_tasks[-1]
-        average_completion = calculate_average_completion_time(completed_tasks)
 
-        filter_timestamps = [
-            first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
-        ]
-        timestamps_for_filter = {timestamp: 0 for timestamp in filter_timestamps}
-        completed_task_timestamps = Counter(
-            [
-                datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day)
-                for task in completed_tasks
-            ]
-        )
-        all_dates_with_counts = {**timestamps_for_filter, **completed_task_timestamps}
-        chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
-        chart_values = all_dates_with_counts.values()
+    if completed_tasks:
+        average_completion = calculate_average_completion_time(completed_tasks)
+        chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
-        average_completion = f"No completed tasks for this time period '{date_filter}'"
-        chart_labels = None
-        chart_values = None
+        average_completion = f"No completed tasks for this time period '{selected_filter}'"
+        chart_labels, chart_values = None, None
 
     return render_template(
         'tasks/completed.html',
         completed_tasks=completed_tasks,
         average_completion=average_completion,
         filters=date_filters,
-        date_filter=date_filter,
+        date_filter=selected_filter,
         chart_labels=chart_labels,
         chart_values=chart_values,
         task_categories=TASK_CATEGORIES,
