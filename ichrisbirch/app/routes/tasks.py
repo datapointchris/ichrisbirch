@@ -72,7 +72,8 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 def index():
     """Tasks home endpoint"""
     ed = EasyDateTime()
-    top_tasks_json = requests.get(TASKS_URL, params={'limit': 5}, timeout=TIMEOUT).json()
+    params = {'completed_filter': 'not_completed', 'limit': 5}
+    top_tasks_json = requests.get(TASKS_URL, params=params, timeout=TIMEOUT).json()
     top_tasks = [schemas.Task(**task) for task in top_tasks_json]
 
     today_filter = {'start_date': str(ed.today), 'end_date': str(ed.tomorrow)}
