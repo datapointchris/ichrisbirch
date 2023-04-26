@@ -32,25 +32,31 @@ class CRUDTask:
         logger.warning(f'Task {id} not found')
         return None
 
-    def read_many(self, session: Session, *, skip: int = 0, limit: Optional[int] = None) -> list[models.Task]:
+    def read_many(
+        self, session: Session, completed_filter: Optional[str] = None, limit: Optional[int] = None
+    ) -> list[models.Task]:
         """Read multiple rows of db
 
         Args:
             db (Session): SQLAlchemy Session to use for transaction
-            skip (int, optional): Number of rows to skip. Defaults to 0.
             limit (int, optional): Limit for number of rows returned. Defaults to 5000.
 
         Returns:
             list[Task]: List of Task objects
         """
-        statement = (
-            select(models.Task)
-            .filter(models.Task.complete_date.is_(None))
-            .order_by(models.Task.priority.asc(), models.Task.add_date.asc())
-            .offset(skip)
-            .limit(limit)
-        )
-        return list(session.scalars(statement).all())
+        print(f'{completed_filter=}')
+        query = select(models.Task)
+
+        if completed_filter == 'completed':
+            query = query.filter(models.Task.complete_date.is_not(None))
+
+        if completed_filter == 'not_completed':
+            query = query.filter(models.Task.complete_date.is_(None))
+
+        query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
+        if limit:
+            query = query.limit(limit)
+        return list(session.scalars(query).all())
 
     def create(self, task: schemas.TaskCreate, session: Session) -> models.Task:
         """Insert row in db from SQLAlchemy model
@@ -130,8 +136,7 @@ class CRUDTask:
         Returns:
             list[Task] | Task: SQLAlchemy Task model(s)
         """
-        statement = select(models.Task)
-        statement = statement.filter(models.Task.complete_date.is_not(None))
+        statement = select(models.Task).filter(models.Task.complete_date.is_not(None))
 
         if first:  # first completed task
             statement = statement.order_by(models.Task.complete_date.asc()).limit(1)
@@ -147,7 +152,7 @@ class CRUDTask:
                 models.Task.complete_date >= start_date, models.Task.complete_date <= end_date
             ).order_by(models.Task.complete_date.desc())
 
-        return list(session.scalars(statement))
+        return list(session.scalars(statement).all())
 
     def complete_task(self, id: int, session: Session) -> models.Task | None:
         """Complete task with specified id

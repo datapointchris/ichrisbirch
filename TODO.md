@@ -75,7 +75,7 @@
   - Should be for all of the tasks after the first 5
   - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
   - Similar to the delete button
-- [ ] ADD: filtering of `All | Completed | Not Completed` tasks.
+- [X] ADD: filtering of `All | Completed | Not Completed` tasks.
   - Sort options as well?
 - [ ] ADD: SEARCH capability!
 - [X] ADD: Delete button for all tasks.  

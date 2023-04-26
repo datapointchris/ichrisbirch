@@ -10,9 +10,25 @@ from ichrisbirch.api.endpoints import tasks
 def base_test_data():
     """Basic test data"""
     return [
-        {'name': 'Task 1 Chore with notes priority 5', 'notes': 'Notes for task 1', 'category': 'Chore', 'priority': 5},
-        {'name': 'Task 2 Home without notes priority 10', 'notes': None, 'category': 'Chore', 'priority': 10},
-        {'name': 'Task 3 Home with notes priority 15', 'notes': 'Notes for task 3', 'category': 'Home', 'priority': 15},
+        {
+            'name': 'Task 1 Chore with notes priority 5 not completed',
+            'notes': 'Notes for task 1',
+            'category': 'Chore',
+            'priority': 5,
+        },
+        {
+            'name': 'Task 2 Home without notes priority 10 not completed',
+            'notes': None,
+            'category': 'Chore',
+            'priority': 10,
+        },
+        {
+            'name': 'Task 3 Home with notes priority 15 completed',
+            'notes': 'Notes for task 3',
+            'category': 'Home',
+            'priority': 15,
+            'complete_date': '2020-04-20 03:03:39.050648+00:00',
+        },
     ]
 
 
@@ -36,21 +52,35 @@ def router():
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_read_one_task(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
-    """Test if able to read one task using the endpoint"""
+    """Test if able to read one task"""
     response = test_app.get(f'/tasks/{task_id}/')
     assert response.status_code == 200
 
 
 def test_read_many_tasks(postgres_testdb_in_docker, insert_test_data, test_app):
-    """Test if able to read many tasks using the endpoint"""
+    """Test if able to read many tasks"""
     response = test_app.get('/tasks/')
     assert response.status_code == 200
     assert len(response.json()) == 3
 
 
+def test_read_many_tasks_completed(postgres_testdb_in_docker, insert_test_data, test_app):
+    """Test if able to read many tasks"""
+    response = test_app.get('/tasks/?completed_filter=completed')
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+def test_read_many_tasks_not_completed(postgres_testdb_in_docker, insert_test_data, test_app):
+    """Test if able to read many tasks"""
+    response = test_app.get('/tasks/?completed_filter=not_completed')
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+
 @pytest.mark.parametrize('test_task', test_data_for_create)
 def test_create_task(postgres_testdb_in_docker, insert_test_data, test_app, test_task):
-    """Test if able to create a task using the endpoint"""
+    """Test if able to create a task"""
     response = test_app.post('/tasks/', data=json.dumps(test_task))
     assert response.status_code == 200
     assert dict(response.json())['name'] == test_task['name']
@@ -63,7 +93,7 @@ def test_create_task(postgres_testdb_in_docker, insert_test_data, test_app, test
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_delete_task(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
-    """Test if able to delete a task using the endpoint"""
+    """Test if able to delete a task"""
     endpoint = f'/tasks/{task_id}/'
     task = test_app.get(endpoint)
     response = test_app.delete(endpoint)
@@ -75,17 +105,13 @@ def test_delete_task(postgres_testdb_in_docker, insert_test_data, test_app, task
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_complete_task(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
-    """Test if able to complete a task using the endpoint"""
+    """Test if able to complete a task"""
     response = test_app.post(f'/tasks/complete/{task_id}/')
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_read_completed_tasks(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
-    """Test if able to read completed tasks using the endpoint"""
-    response = test_app.post(f'/tasks/complete/{task_id}/')
-    assert response.status_code == 200
-
+def test_read_completed_tasks(postgres_testdb_in_docker, insert_test_data, test_app):
+    """Test if able to read completed tasks"""
     completed = test_app.get('/tasks/completed/')
     assert completed.status_code == 200
     assert len(completed.json()) == 1

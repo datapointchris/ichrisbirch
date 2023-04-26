@@ -87,12 +87,21 @@ def index():
     )
 
 
-@blueprint.route('/all/')
+@blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
     """All tasks endpoint"""
-    all_tasks_json = requests.get(f'{settings.API_URL}/tasks/', timeout=TIMEOUT).json()
-    all_tasks = [schemas.Task(**task) for task in all_tasks_json]
-    return render_template('tasks/all.html', tasks=all_tasks, task_categories=TASK_CATEGORIES)
+
+    completed_filter = request.form.get('completed_filter') if request.method == 'POST' else None
+    params = {'completed_filter': completed_filter}
+    print(f'{completed_filter=}')
+    logger.debug(f'{completed_filter=}')
+
+    tasks_json = requests.get(TASKS_URL, params=params, timeout=TIMEOUT).json()
+    print(f'{tasks_json=}')
+    tasks = [schemas.Task(**task) for task in tasks_json]
+    return render_template(
+        'tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES, completed_filter=completed_filter
+    )
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
@@ -109,9 +118,9 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
 
-    tasks_filter = {'start_date': start_date, 'end_date': end_date}
+    params = {'start_date': start_date, 'end_date': end_date}
 
-    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=tasks_filter, timeout=TIMEOUT).json()
+    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=params, timeout=TIMEOUT).json()
     completed_tasks = [schemas.TaskCompleted(**task) for task in completed_tasks_json]
 
     if completed_tasks:
