@@ -2,17 +2,17 @@
 
 ## Misc
 
-1. [X] Take code out of `__init__.py` files
-   1. [X] Put them in `main.py` for the module or name of module
-   2. [X] Import the names in the `__init__.py` file for better top level imports
-2. [X] Main Site Navigation
-   1. [X] Put this on base page that all pages inherit from
-   2. [X] Inherit CSS as well
-3. [ ] Restructure site so that all apps are top level
-      1. [X] events
-      2. [X] countdowns
-      3. [X] journal
-      4. [X] habits
+- [X] Take code out of `__init__.py` files
+  - [X] Put them in `main.py` for the module or name of module
+  - [X] Import the names in the `__init__.py` file for better top level imports
+- [X] Main Site Navigation
+  - [X] Put this on base page that all pages inherit from
+  - [X] Inherit CSS as well
+- [X] Restructure site so that all apps are top level
+      - [X] events
+      - [X] countdowns
+      - [X] journal
+      - [X] habits
 
 ## v0.2.0 --> Move databases (Postgres, MongoDB, DynamoDB) to their own Servers
 
@@ -159,3 +159,25 @@ Pre-commit Possibilites:
 - [X] [What's New in SQLAlchemy 2.0? - miguelgrinberg.com](https://blog.miguelgrinberg.com/post/what-s-new-in-sqlalchemy-2-0)
 - [X] Upgrade in poetry
 - [X] Check for syntax
+
+## Tasks Upgrades
+
+- [X] CHANGE: form to crud
+- [X] REMOVE: the Fake Tasks and Delete Tasks
+  - [X] Make sure data generator for tests captures the logic
+- [X] Chart.js
+- [X] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
+
+### `tasks.py /all`
+
+- [X] ADD: SEARCH capability!
+- [X] ADD: `Complete` button for all tasks
+  - Should be for all of the tasks after the first 5
+  - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
+  - Similar to the delete button
+- [X] ADD: filtering of `All | Completed | Not Completed` tasks.
+  - Sort options as well?
+- [X] ADD: Delete button for all tasks.  
+  - Sometimes a task is added in error and needs to be deleted
+- [X] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.
+  - Example in apartments endpoint

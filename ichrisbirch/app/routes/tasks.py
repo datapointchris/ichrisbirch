@@ -168,4 +168,11 @@ def crud():
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=TIMEOUT)
             logger.debug(response.text)
             return redirect(request.referrer or url_for('tasks.all'))
+        case 'search':
+            search_terms = data.get('terms')
+            logger.debug(f'{search_terms=}')
+            tasks_json = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT).json()
+            logger.debug(tasks_json)
+            tasks = [schemas.Task(**task) for task in tasks_json]
+            return render_template('tasks/search.html', tasks=tasks)
     return abort(405, description=f"Method {method} not accepted")

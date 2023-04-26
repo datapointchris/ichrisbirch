@@ -72,3 +72,9 @@ async def complete(task_id: int, db: Session = Depends(sqlalchemy_session)):
     if not (task := crud.tasks.complete_task(task_id, db)):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
     return task
+
+
+@router.get("/search/{search_terms}/", response_model=list[schemas.Task])
+async def search(search_terms: str, db: Session = Depends(sqlalchemy_session)):
+    """API method to search for tasks"""
+    return crud.tasks.search(search_terms, db)

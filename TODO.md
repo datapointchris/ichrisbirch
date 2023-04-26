@@ -2,7 +2,6 @@
 
 - [Random](#random)
 - [Tasks](#tasks)
-  - [`tasks.py /all`](#taskspy-all)
   - [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
 - [Create /autochore endpoint](#create-autochore-endpoint)
 - [Add Events to API routes](#add-events-to-api-routes)
@@ -59,30 +58,13 @@
 
 ## Tasks
 
-- [X] CHANGE: form to crud
 - [ ] CHANGE: the priority subtraction to daily
-- [X] REMOVE: the Fake Tasks and Delete Tasks
-  - [X] Make sure data generator for tests captures the logic
-- [X] Chart.js
-- [X] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
 - [ ] Alexa skill, use the to-do API to add a task
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely
-
-### `tasks.py /all`
-
-- [X] ADD: `Complete` button for all tasks
-  - Should be for all of the tasks after the first 5
-  - Sometimes tasks get completed early and they need to be marked as complete before in the top 5
-  - Similar to the delete button
-- [X] ADD: filtering of `All | Completed | Not Completed` tasks.
-  - Sort options as well?
-- [ ] ADD: SEARCH capability!
-- [X] ADD: Delete button for all tasks.  
-  - Sometimes a task is added in error and needs to be deleted
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
-- [X] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.
-  - Example in apartments endpoint
+  - [ ] This needs to be done in the form itself, before it gets sent
+  - [ ] Either wtforms or some frontend framework with validation
 
 ### Add categories to tasks ENUM
 

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models, schemas
@@ -172,6 +172,28 @@ class CRUDTask:
             return task
         logger.warn(f'Task {id} not found')
         return None
+
+    def search(self, search_terms: str, session: Session) -> list[models.Task]:
+        """Read multiple rows of db
+
+        Args:
+            db (Session): SQLAlchemy Session to use for transaction
+            search_terms (string): Search terms for finding tasks
+
+        Returns:
+            list[Task]: List of Task objects
+        """
+        query = (
+            select(models.Task)
+            .filter(
+                or_(
+                    models.Task.name.match(search_terms),
+                    models.Task.notes.match(search_terms),
+                )
+            )
+            .order_by(models.Task.complete_date.desc(), models.Task.add_date.asc())
+        )
+        return list(session.scalars(query).all())
 
 
 tasks = CRUDTask()

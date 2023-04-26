@@ -19,6 +19,13 @@
         <a href="{{ url_for('tasks.all') }}">All Tasks</a></span>
     <span class="navigation-tab">
         <a href="{{ url_for('tasks.completed') }}">Completed Tasks</a></span>
+    <span class="navigation-tab">
+        <form method="POST" action="{{ url_for('tasks.crud') }}">
+            <input type="text" size="20" class="textbox box-3d" name="terms" id="terms">
+            <input type="hidden" id="method" name="method" value="search">
+            <input type="submit" class="button box-3d" value="Search">
+        </form>
+    </span>
 </div>
 {% endblock %}
 

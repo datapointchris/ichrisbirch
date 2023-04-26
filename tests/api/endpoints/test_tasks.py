@@ -19,7 +19,7 @@ def base_test_data():
         {
             'name': 'Task 2 Home without notes priority 10 not completed',
             'notes': None,
-            'category': 'Chore',
+            'category': 'Home',
             'priority': 10,
         },
         {
@@ -115,6 +115,17 @@ def test_read_completed_tasks(postgres_testdb_in_docker, insert_test_data, test_
     completed = test_app.get('/tasks/completed/')
     assert completed.status_code == 200
     assert len(completed.json()) == 1
+
+
+def test_search_task(postgres_testdb_in_docker, insert_test_data, test_app):
+    """Test search capability"""
+    search_term = 'chore'
+    search_results = test_app.get(f'/tasks/search/{search_term}')
+    assert len(search_results.json()) == 1
+
+    search_term = 'home'
+    search_results = test_app.get(f'/tasks/search/{search_term}')
+    assert len(search_results.json()) == 2
 
 
 @pytest.mark.parametrize('test_task', test_data_for_create)
