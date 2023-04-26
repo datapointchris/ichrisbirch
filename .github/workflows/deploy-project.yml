@@ -25,7 +25,7 @@ jobs:
             cd /var/www/ichrisbirch &&
             git pull &&
             git secret reveal -f &&
-            sudo rm -rf .venv &&
+            sudo rm -rfv .venv &&
             poetry install
           '
       - name: Restart Supervisor
