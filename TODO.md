@@ -81,7 +81,7 @@
 - [X] ADD: Delete button for all tasks.  
   - Sometimes a task is added in error and needs to be deleted
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
-- [ ] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.
+- [X] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.
   - Example in apartments endpoint
 
 ### Add categories to tasks ENUM

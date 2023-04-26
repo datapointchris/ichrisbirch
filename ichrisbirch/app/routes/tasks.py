@@ -148,6 +148,8 @@ def crud():
     """CRUD endpoint for tasks"""
     data: dict[str, Any] = request.form.to_dict()
     method = data.pop('method')
+    print(f'{request.referrer=}')
+    logger.debug(f'{request.referrer=}')
     logger.debug(f'{method=}')
     logger.debug(data)
     match method:
@@ -155,15 +157,15 @@ def crud():
             task = schemas.TaskCreate(**data).json()
             response = requests.post(TASKS_URL, data=task, timeout=TIMEOUT)
             logger.debug(response.text)
-            return redirect(url_for('tasks.index'))  # TODO: Redirect back to referring page
+            return redirect(request.referrer or url_for('tasks.index'))
         case 'complete':
             task_id = data.get('id')
             response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=TIMEOUT)
             logger.debug(response.text)
-            return redirect(url_for('tasks.index'))
+            return redirect(request.referrer or url_for('tasks.index'))
         case 'delete':
             task_id = data.get('id')
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=TIMEOUT)
             logger.debug(response.text)
-            return redirect(url_for('tasks.all'))
+            return redirect(request.referrer or url_for('tasks.all'))
     return abort(405, description=f"Method {method} not accepted")
