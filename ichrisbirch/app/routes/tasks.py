@@ -149,10 +149,9 @@ def crud():
     """CRUD endpoint for tasks"""
     data: dict[str, Any] = request.form.to_dict()
     method = data.pop('method')
-    print(f'{request.referrer=}')
     logger.debug(f'{request.referrer=}')
     logger.debug(f'{method=}')
-    logger.debug(data)
+    logger.debug(f'{data}')
     match method:
         case 'add':
             task = schemas.TaskCreate(**data).json()

@@ -48,7 +48,6 @@
 - [ ] ## CSS files
   - [ ] Need to have reset
   - [ ] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)
-  - [ ] Body in Apartments
 
 - [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
 
@@ -58,7 +57,7 @@
 
 ## Tasks
 
-- [ ] CHANGE: the priority subtraction to daily
+- [X] CHANGE: the priority subtraction to daily
 - [ ] Alexa skill, use the to-do API to add a task
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely
