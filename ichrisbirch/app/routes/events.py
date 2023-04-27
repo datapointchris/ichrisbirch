@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request
 
 from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy import session
-from ichrisbirch.models.events import Event
+from ichrisbirch.models.event import Event
 
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
 

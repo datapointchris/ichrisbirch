@@ -9,7 +9,7 @@ from flask import Blueprint, abort, redirect, render_template, request, url_for
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.config import settings
-from ichrisbirch.models.tasks import TaskCategory
+from ichrisbirch.models.task import TaskCategory
 
 blueprint = Blueprint(
     'tasks',

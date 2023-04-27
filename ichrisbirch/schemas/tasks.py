@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from ichrisbirch.models.tasks import TaskCategory
+from ichrisbirch.models.task import TaskCategory
 
 
 class TaskConfig(BaseModel):

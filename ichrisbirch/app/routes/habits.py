@@ -7,7 +7,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from ichrisbirch.app.easy_dates import EasyDate
 from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy import session
-from ichrisbirch.models.habits import Category, CompletedHabit, Habit
+from ichrisbirch.models.habit import Category, CompletedHabit, Habit
 
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 

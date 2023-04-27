@@ -3,7 +3,7 @@ from typing import Optional
 
 from faker import Faker
 
-from ichrisbirch.models.tasks import TaskCategory
+from ichrisbirch.models.task import TaskCategory
 
 from .base import FakeDataGenerator
 

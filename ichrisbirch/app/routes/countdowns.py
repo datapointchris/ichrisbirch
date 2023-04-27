@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request
 
 from ichrisbirch.config import settings
 from ichrisbirch.db.sqlalchemy import session
-from ichrisbirch.models.countdowns import Countdown
+from ichrisbirch.models.countdown import Countdown
 
 blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
 

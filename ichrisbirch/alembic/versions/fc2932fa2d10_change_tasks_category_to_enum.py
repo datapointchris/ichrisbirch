@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-from ichrisbirch.models.tasks import TaskCategory
+from ichrisbirch.models.task import TaskCategory
 
 # revision identifiers, used by Alembic.
 revision = 'fc2932fa2d10'

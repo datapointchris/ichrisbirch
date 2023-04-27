@@ -70,7 +70,6 @@
     - Same as [tasks] columns
     - Additionally:
       - Add date for autochore
-      - Priority to give it each time
       - How often to add it (days)
 
 ## Add Events to API routes

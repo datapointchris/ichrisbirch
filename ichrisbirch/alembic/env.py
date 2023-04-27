@@ -10,14 +10,14 @@ from ichrisbirch.db.sqlalchemy.base import Base
 from ichrisbirch.db.sqlalchemy.session import engine
 
 # Need the models imported for Base to find the tables
-from ichrisbirch.models.apartments import Apartment  # noqa
+from ichrisbirch.models.apartment import Apartment  # noqa
 from ichrisbirch.models.box_packing import Box, Item  # noqa
-from ichrisbirch.models.countdowns import Countdown  # noqa
-from ichrisbirch.models.events import Event  # noqa
-from ichrisbirch.models.habits import Habit  # noqa
+from ichrisbirch.models.countdown import Countdown  # noqa
+from ichrisbirch.models.event import Event  # noqa
+from ichrisbirch.models.habit import Habit  # noqa
 from ichrisbirch.models.journal import JournalEntry  # noqa
 from ichrisbirch.models.portfolio import PortfolioProject  # noqa
-from ichrisbirch.models.tasks import Task  # noqa
+from ichrisbirch.models.task import Task  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

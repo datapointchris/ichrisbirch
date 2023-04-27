@@ -1,1 +1,1 @@
-from ichrisbirch.models.tasks import Task  # noqa
+from ichrisbirch.models.task import Task  # noqa
