@@ -167,6 +167,7 @@ Pre-commit Possibilites:
   - [X] Make sure data generator for tests captures the logic
 - [X] Chart.js
 - [X] <https://blog.ruanbekker.com/blog/2017/12/14/graphing-pretty-charts-with-python-flask-and-chartjs/>
+- [X] CHANGE: the priority subtraction to daily
 
 ### `tasks.py /all`
 
@@ -181,3 +182,10 @@ Pre-commit Possibilites:
   - Sometimes a task is added in error and needs to be deleted
 - [X] CHANGE: Have `add task` redirect to the page that it was called from, instead of the priorities page.
   - Example in apartments endpoint
+
+### Add categories to tasks ENUM
+
+- [X] Compare this with the initial adding of the ENUM
+  - [X] Purchase
+  - [X] Work
+  - [X] Kitchen

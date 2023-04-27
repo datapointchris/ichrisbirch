@@ -1,8 +1,8 @@
 # TODO
 
 - [Random](#random)
+- [CSS files](#css-files)
 - [Tasks](#tasks)
-  - [Add categories to tasks ENUM](#add-categories-to-tasks-enum)
 - [Create /autochore endpoint](#create-autochore-endpoint)
 - [Add Events to API routes](#add-events-to-api-routes)
 - [Add Countdowns to API routes](#add-countdowns-to-api-routes)
@@ -44,35 +44,24 @@
 ## Random
 
 - [ ] Separate pytest and coverage in pre-commit and github-actions
-
-- [ ] ## CSS files
-  - [ ] Need to have reset
-  - [ ] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)
-
 - [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
-
 - [ ] `etc/environment` in prod server for ENVIRONMENT variable
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
   - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
 
+## CSS files
+
+- [ ] Need to have reset
+- [ ] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)
+
 ## Tasks
 
-- [X] CHANGE: the priority subtraction to daily
 - [ ] Alexa skill, use the to-do API to add a task
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
-
-### Add categories to tasks ENUM
-
-- [ ] Compare this with the initial adding of the ENUM
-  - [ ] Purchase
-  - [ ] Work
-  - [ ] Kitchen
-  - [ ] Combine Learn = Research
-    - [ ] Remove 'Research'
 
 ## Create /autochore endpoint
 
@@ -86,19 +75,7 @@
 
 ## Add Events to API routes
 
-FastAPI:
-
-- [ ] Events
-- [ ] Cut a release
-  - [ ] Notes
-
 ## Add Countdowns to API routes
-
-FastAPI:
-
-- [ ] Countdowns
-- [ ] Cut a release
-  - [ ] Notes
 
 ## Infrastructure Management
 

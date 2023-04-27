@@ -12,12 +12,15 @@ from ichrisbirch.db.sqlalchemy.base import Base
 class TaskCategory(enum.Enum):
     Automotive = 'Automotive'
     Home = 'Home'
+    Work = 'Work'
     Chore = 'Chore'
+    Kitchen = 'Kitchen'
     Dingo = 'Dingo'
-    Research = 'Research'
     Learn = 'Learn'
+    Research = 'Research'
     Computer = 'Computer'
     Financial = 'Financial'
+    Purchase = 'Purchase'
 
 
 class Task(Base):
