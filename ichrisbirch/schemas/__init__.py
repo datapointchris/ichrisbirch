@@ -1,2 +1,2 @@
 from .health import Health
-from .tasks import Task, TaskCategory, TaskCompleted, TaskCreate, TaskUpdate
+from .task import Task, TaskCategory, TaskCompleted, TaskCreate, TaskUpdate
