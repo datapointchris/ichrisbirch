@@ -71,6 +71,13 @@
     - Additionally:
       - Add date for autochore
       - How often to add it (days)
+- [ ] routes/autotask.py
+- [ ] endpoints/autotask.py
+- [ ] crud/autotask.py
+- [ ] static/css/autotask.scss
+- [ ] templates/autotasks/*
+- [ ] Add to base.html navigation
+- [ ] tests/endpoints/test_autotasks.py
 
 ## Add Events to API routes
 
