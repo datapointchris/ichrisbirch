@@ -47,7 +47,12 @@
 - [ ] Make a startup script
   - [ ] So this can be started in Docker each time for testing
   - [ ] So it can be started on a fresh Postgres instance
-- [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
+- [ ] STATS
+  - [ ] Move stats out of ichrisbirch
+    - 1. Move them to ichrisbirch S3 bucket
+    - 2. Create script to run them, similar to postgres backup script
+    - 3. Run that script automatically with the backup on schedule
+    -
 - [ ] `etc/environment` in prod server for ENVIRONMENT variable
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
   - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image

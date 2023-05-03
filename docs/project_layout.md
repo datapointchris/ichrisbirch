@@ -1,15 +1,11 @@
-# Developer Guide
-
-## FastAPI Crud Endpoints
-
-Order matters with endpoints, dynamic routes `route/endpoint/{id}` are last
+# Project Layout
 
 ## Environment Files
 
 Location: `/`
 `.dev.env`
 `.test.env`
-`.prod.env
+`.prod.env`
 
 ## Project Configuration
 
