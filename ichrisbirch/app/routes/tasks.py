@@ -74,6 +74,7 @@ def index():
     ed = EasyDateTime()
     params = {'completed_filter': 'not_completed', 'limit': 5}
     top_tasks_json = requests.get(TASKS_URL, params=params, timeout=TIMEOUT).json()
+    print(f'{top_tasks_json=}')
     top_tasks = [schemas.Task(**task) for task in top_tasks_json]
 
     today_filter = {'start_date': str(ed.today), 'end_date': str(ed.tomorrow)}

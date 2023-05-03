@@ -7,6 +7,7 @@ router = SQLAlchemyCRUDRouter(
     schema=schemas.AutoTask,
     create_schema=schemas.AutoTaskCreate,
     update_route=False,
+    delete_all_route=False,
     db_model=models.AutoTask,
     db=sqlalchemy_session,
     prefix='/autotasks',

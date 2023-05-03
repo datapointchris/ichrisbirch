@@ -69,6 +69,12 @@
 ## API Postgres
 
 !!! failure "Error"  
+    [error] 94580#0: *18 kevent() reported that connect() failed (61: Connection refused) while connecting to upstream, client: 127.0.0.1, server: api.localhost, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:4200/", host: "api.macmini.local
+
+!!! success "Solution"
+    DB cannot connect.  Postgres string was built wrong, corrected by adding a test to check config is loaded properly.
+
+!!! failure "Error"  
     Local changes were working but nothing that connected to prod postgres.
 
     `api.ichrisbirch.com/tasks/` - 502 Bad Gateway

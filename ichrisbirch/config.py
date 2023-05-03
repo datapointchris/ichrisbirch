@@ -57,12 +57,12 @@ class PostgresSettings(BaseSettings):
     def db_uri(self) -> str:
         return str(
             PostgresDsn.build(
-                scheme='postgresql://',
-                host=self.host,
+                scheme='postgresql',
                 user=self.user,
                 password=self.password,
+                host=self.host,
                 port=self.port,
-                database=self.database,
+                path=f'/{self.database}',
             )
         )
 
