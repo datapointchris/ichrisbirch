@@ -1,23 +1,6 @@
 #!/usr/bin/env bash
 set -e # fail script on command fail
 
-######################################################################
-# Postgres Snapshot Backup to S3
-######################################################################
-# TODO: [2023/01/02] - Run this thing with airflow
-# TODO: [2023/01/02] - Move the loading of the Environment to an environment helper script
-
-# -------------------- Instructions -------------------- #
-# TODO: [2023/01/02] - These instructions are outdated!!
-# Make sure to:
-# 1) Name this file `backup.sh` and place it in /home/ubuntu
-# 2) Run sudo apt install awscli to install the AWSCLI
-# -> aws-cli should get permissions from EC2 instance
-# 3) Create S3 bucket for the backups and fill it in below (set a lifecycle rule to expire files older than X days in the bucket)
-# 4) Run chmod +x backup.sh
-# 5) Set up a daily backup at midnight via `crontab -e`:
-#    0 0 * * * /home/ubuntu/backup.sh > /home/ubuntu/backup.log
-
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 
@@ -32,10 +15,6 @@ source "$SCRIPT_DIR/bash-helpers"
 # bash-helpers.color_green
 # bash-helpers.color_yellow
 # bash-helpers.color_red
-
-
-SCRIPT_TITLE="$(filename_to_title "$SCRIPT_NAME")"
-
 
 usage() {
     local message
@@ -61,7 +40,7 @@ help() {
     message=$(
         cat <<-EOF
 
-$(print_title "$SCRIPT_TITLE")
+$(print_title "$SCRIPT_NAME")
 
 $(color_green "$(print_section "Description")")
 This script creates a snapshot of an RDS Postgres instance
@@ -97,11 +76,10 @@ if [[ -n "$1" ]]; then
     "--dry-run")
         DRY_RUN=true
         echo
-        print_title "$(color_blue "Executing Dry Run of $SCRIPT_TITLE")"
+        print_title "$(color_blue "Executing Dry Run of $SCRIPT_NAME")"
         ;;
     *)
         color_red "Unrecognized argument: $1"
-
         usage
         exit 1
         ;;
@@ -110,12 +88,6 @@ fi
 
 elapsed_time() { echo "$((SECONDS / 60)) minutes $((SECONDS % 60)) seconds"; }
 
-logger () {
-    local level="$1"
-    local message="$2"
-    echo "[${level^^}] $message"
-}
-
 # ----- Constants ----- #
 SECONDS=0
 BUCKET_PREFIX="postgres"
@@ -123,14 +95,6 @@ TIMESTAMP="$(date -u +%Y-%m-%dT%HH%MM)"
 SNAPSHOT_NAME="$POSTGRES_DBNAME-$TIMESTAMP-snapshot"
 FULL_BUCKET_PATH="s3://$S3_BACKUPS_BUCKET/$BUCKET_PREFIX/$SNAPSHOT_NAME"
 LOG_FILE="$SCRIPT_NAME.log"
-
-if [[ -n $DEBUG ]]; then
-    logger debug "Env File Loaded: $ENV_PATH"
-    logger debug "OS Prefix: $OS_PREFIX"
-    logger debug "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
-    logger debug "Bucket: $FULL_BUCKET_PATH"
-    logger debug "Log Location: $LOG_FILE"
-fi
 
 # ----- Main Functions ----- #
 
@@ -178,18 +142,24 @@ delete_rds_snapshot() {
 }
 
 # ----- Main Script ----- #
-logger info "$(color_green "Running:") $(color_blue "$SCRIPT_TITLE")"
+echo "START: $SCRIPT_NAME"
 
-logger info "$(color_yellow "Creating $SNAPSHOT_NAME")"
+echo "Env File Loaded: $ENV_PATH"
+echo "OS Prefix: $OS_PREFIX"
+echo "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
+echo "Bucket: $FULL_BUCKET_PATH"
+echo "Log Location: $LOG_FILE"
+
+echo "Creating RDS DB Snapshot: $SNAPSHOT_NAME"
 if [[ -z $DRY_RUN ]]; then create_rds_snapshot; fi
-logger info "$(color_green "Created $SNAPSHOT_NAME")"
+echo "Created"
 
-logger info "$(color_yellow "Exporting $SNAPSHOT_NAME")"
+echo "Exporting Snapshot to S3"
 if [[ -z $DRY_RUN ]]; then export_rds_snapshot_to_s3; fi
-logger info "$(color_green "Exported $SNAPSHOT_NAME")"
+echo "Exported"
 
-logger info "$(color_yellow "Deleting $SNAPSHOT_NAME")"
+echo "Deleting Snapshot from RDS"
 if [[ -z $DRY_RUN ]]; then delete_rds_snapshot; fi
-logger info "$(color_red "Deleted $SNAPSHOT_NAME")"
+echo "Deleted"
 
-logger info "$(color_green "Completed:") $(color_blue "$SCRIPT_TITLE-- $(elapsed_time)")"
+echo "FINISH - Runtime: $(elapsed_time)"
