@@ -1,5 +1,6 @@
 # TODO
 
+- [PRIORITY PROJECTS](#priority-projects)
 - [Random](#random)
 - [CSS files](#css-files)
 - [Tasks](#tasks)
@@ -40,6 +41,15 @@
   - [Overview](#overview)
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
+
+## PRIORITY PROJECTS
+
+- [ ] Create tests for config file
+- [ ] Create tests for logger init
+- [ ] Make sure logger is working
+- [ ] Update tmuxinator stuff
+- [ ] Login to hide my shit
+- [ ] Autotasks
 
 ## Random
 

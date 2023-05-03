@@ -6,7 +6,7 @@ from ichrisbirch.config import Settings
 def init(settings: Settings):
     """Initialize the base logger"""
     logger = logging.getLogger(__name__)
-    log_file = f'{settings.logging.log_path}/pylogger.log'
+    log_file = f'{settings.logging.log_dir}/pylogger.log'
 
     formatter = logging.Formatter(settings.logging.log_format, settings.logging.log_date_format)
 

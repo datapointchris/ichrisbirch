@@ -122,7 +122,7 @@ class SQLiteSettings(BaseSettings):
 class LoggingSettings(BaseSettings):
     """Config settings for Logging"""
 
-    log_path: str = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
+    log_dir: str = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
     log_format: str
     log_date_format: str
     log_level: Union[int, str] = Field('DEBUG', env='LOG_LEVEL')
@@ -147,6 +147,7 @@ class Settings(BaseSettings):
     environment: str
     os_prefix: str
     request_timeout: int = 3
+    env_file: str = env_file
 
     flask = FlaskSettings()
     fastapi = FastAPISettings()
