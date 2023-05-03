@@ -6,9 +6,9 @@ from ichrisbirch.config import Settings
 def init(settings: Settings):
     """Initialize the base logger"""
     logger = logging.getLogger(__name__)
-    log_file = f'{settings.logging.LOG_PATH}/pylogger.log'
+    log_file = f'{settings.logging.log_path}/pylogger.log'
 
-    formatter = logging.Formatter(settings.logging.LOG_FORMAT, settings.logging.LOG_DATE_FORMAT)
+    formatter = logging.Formatter(settings.logging.log_format, settings.logging.log_date_format)
 
     console_log = logging.StreamHandler()
     console_log.setFormatter(formatter)
@@ -19,9 +19,9 @@ def init(settings: Settings):
     logger.addHandler(console_log)
     logger.addHandler(file_log)
 
-    logger.setLevel(settings.logging.LOG_LEVEL)
+    logger.setLevel(settings.logging.log_level)
     logger.debug(f'Log Location: {log_file}')
 
     # quiet matplotlib noisy output when in debug mode
-    if settings.logging.LOG_LEVEL == logging.DEBUG:
+    if settings.logging.log_level == logging.DEBUG:
         logging.getLogger('matplotlib').setLevel(logging.INFO)

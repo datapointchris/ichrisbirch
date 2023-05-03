@@ -47,9 +47,9 @@ class FastAPISettings(BaseSettings):
 class PostgresSettings(BaseSettings):
     """Config settings for Postgres"""
 
-    host: str = Field(None, env='POSTGRES_HOST')
-    user: str = Field(None, env='POSTGRES_USER')
-    password: str = Field(None, env='POSTGRES_PASSWORD', secret=True)
+    host: str = Field(env='POSTGRES_HOST')
+    user: str = Field(env='POSTGRES_USER')
+    password: str = Field(env='POSTGRES_PASSWORD', secret=True)
     port: str = '5432'
     database: str = 'ichrisbirch'
 
@@ -97,9 +97,9 @@ class SQLAlchemySettings(BaseSettings):
 class MongoDBSettings(BaseSettings):
     """Config settings for MongoDB"""
 
-    host: str = Field(None, env='MONGO_HOST')
-    user: str = Field(None, env='MONGO_USER')
-    password: str = Field(None, env='MONGO_PASSWORD', secret=True)
+    host: str = Field(env='MONGO_HOST')
+    user: str = Field(env='MONGO_USER')
+    password: str = Field(env='MONGO_PASSWORD', secret=True)
 
     @property
     def db_uri(self) -> str:
@@ -116,7 +116,7 @@ class MongoDBSettings(BaseSettings):
 class SQLiteSettings(BaseSettings):
     """Config settings for SQLite"""
 
-    db_uri: str = Field(None, env='SQLITE_DATABASE_URI')
+    db_uri: str = Field(env='SQLITE_DATABASE_URI')
 
 
 class LoggingSettings(BaseSettings):

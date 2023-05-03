@@ -68,7 +68,7 @@ repos:
         args: ["-c", "pyproject.toml"]
         additional_dependencies: ["bandit[toml]"]
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.33.0
+    rev: v0.34.0
     hooks:
       - id: markdownlint
         args: [--fix]
@@ -83,18 +83,20 @@ repos:
       - id: interrogate
         args: [--config=pyproject.toml]
   - repo: https://github.com/dosisod/refurb
-    rev: v1.15.0
+    rev: v1.16.0
     hooks:
       - id: refurb
+        additional_dependencies: ["pydantic"]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.3.2
     hooks:
       - id: pyupgrade
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.1.1
+    rev: v1.2.0
     hooks:
       - id: mypy
         args: ["--install-types", "--non-interactive"]
+        additional_dependencies: ["pydantic"]
   - repo: local
     hooks:
       - id: pytest

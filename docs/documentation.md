@@ -55,7 +55,7 @@ Awesome documentation example for small project:
 
 [How to Write Documentation For Your Next Software Development Project](https://www.freecodecamp.org/news/how-to-write-documentation-for-your-next-software-development-project/)
 
-[Software Documentation Best Practices [With Examples] helpjuice-logo-0307896d1acd18c6a7f52c4256467fb6ca1007315c373af21357496e9ceb49e2](https://helpjuice.com/blog/software-documentation)
+[Software Documentation Best Practices [With Examples] helpjuice-logo-0307896d1acd18c6a7f52c4256467fb6ca1007315c373af21357496e9ceb49e2](<https://helpjuice.com/blog/software-documentation>)
 
 [Software Documentation Types and Best Practices | by AltexSoft Inc | Prototypr](https://blog.prototypr.io/software-documentation-types-and-best-practices-1726ca595c7f)
 

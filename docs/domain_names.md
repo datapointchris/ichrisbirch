@@ -15,7 +15,7 @@ There are 5 records in this hosted zone:
 | ichrisbirch.com      | `SOA`   | Created automtaically with the hosted zone    | AWS DNS                  |
 | api.ichrisbirch.com  | `NS`    | Nameservers from hosted zone `NS` record      | AWS Nameservers          |
 | docs.ichrisbirch.com | `CNAME` | Re-direct from Github Pages to docs subdomain | datapointchris.github.io |
-| www.ichrisbirch.com  | `A`     | Points to the EC2 IP of the webserver         | EC2 IP (23.22.30.103)    |
+| <www.ichrisbirch.com>  | `A`     | Points to the EC2 IP of the webserver         | EC2 IP (23.22.30.103)    |
 
 ## api.ichrisbirch.com Hosted Zone
 
