@@ -110,8 +110,6 @@ color = true
 addopts = ""
 minversion = "6.0"
 testpaths = ["ichrisbirch/tests"]
-env = ["SQLALCHEMY_WARN_20=1"]
-
 
 [tool.coverage.run]
 parallel = true
@@ -143,9 +141,7 @@ enable_all = true
 
 [tool.mypy]
 ignore_missing_imports = true
-plugins = [
-  "pydantic.mypy"
-]
+plugins = ["pydantic.mypy"]
 
 warn_return_any = false
 
