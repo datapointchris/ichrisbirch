@@ -5,9 +5,11 @@ from sqlalchemy.orm import sessionmaker
 
 from ichrisbirch.config import settings
 
-engine = create_engine(settings.sqlalchemy.SQLALCHEMY_DATABASE_URI, echo=True)
-# connect_args={'check_same_thread': False}
-Session = sessionmaker(bind=engine, autoflush=False)
+DB_URI = settings.sqlalchemy.SQLALCHEMY_DATABASE_URI
+
+engine = create_engine(DB_URI, echo=True)
+connect_args = {'check_same_thread': False} if DB_URI.startswith('sqlite') else {}
+Session = sessionmaker(bind=engine, autoflush=False, connect_args=connect_args)
 
 
 def sqlalchemy_session() -> Generator:
