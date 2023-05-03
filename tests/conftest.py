@@ -85,7 +85,7 @@ def postgres_testdb_in_docker():
     Use `testdb.stop()` to stop the container after testing
     """
     container = create_postgres_docker_container()
-    create_schemas(settings.DB_SCHEMAS)
+    create_schemas(settings.db_schemas)
     try:
         yield container
     finally:

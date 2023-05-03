@@ -19,7 +19,7 @@ def health():
     return render_template(
         'health/index.html',
         settings=settings,
-        version=settings.VERSION,
+        version=settings.version,
         server_time=datetime.now().isoformat(),
         local_time=datetime.now(tz=ZoneInfo('America/Chicago')).isoformat(),
     )

@@ -17,9 +17,9 @@ blueprint = Blueprint(
 
 logger = logging.getLogger(__name__)
 
-AUTOTASKS_URL = f'{settings.API_URL}/autotasks'
+AUTOTASKS_URL = f'{settings.api_url}/autotasks'
 TASK_FREQUENCIES = [t.value for t in TaskFrequency]
-TIMEOUT = settings.REQUEST_TIMEOUT
+TIMEOUT = settings.request_timeout
 
 
 @blueprint.route('/', methods=['GET'])
@@ -46,7 +46,7 @@ def crud():
     logger.debug(f'{data}')
     match method:
         case 'add':
-            autotask = schemas.TaskCreate(**data).json()
+            autotask = schemas.AutoTaskCreate(**data).json()
             response = requests.post(AUTOTASKS_URL, data=autotask, timeout=TIMEOUT)
             logger.debug(response.text)
             return redirect(url_for('autotasks.index'))

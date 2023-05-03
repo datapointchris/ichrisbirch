@@ -19,7 +19,7 @@ def health() -> dict:
     """
     return {
         'name': 'iChrisBirch API',
-        'version': settings.VERSION,
+        'version': settings.version,
         'environment': os.getenv('ENVIRONMENT', 'NOT SET'),
         'api_url': os.getenv('API_URL', 'NOT SET'),
         'log_level': os.getenv('LOG_LEVEL', 'NOT SET'),

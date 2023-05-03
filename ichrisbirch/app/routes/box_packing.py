@@ -62,21 +62,21 @@ def search():
 @blueprint.route('/form/', methods=['POST'])
 def form():
     """CRUD operations for boxes"""
-    api_url = settings.API_URL
+    api_url = settings.api_url
     data = request.form.to_dict()
     method = data.pop('method')
     match method:
         case ['add_box']:
             box = Box(**data)
-            requests.post(f'{api_url}/boxes', data=box, timeout=settings.REQUEST_TIMEOUT)
+            requests.post(f'{api_url}/boxes', data=box, timeout=settings.request_timeout)
         case ['delete_box']:
             box = Box(**data)
-            requests.delete(f'{api_url}/boxes/{box.id}', timeout=settings.REQUEST_TIMEOUT)
+            requests.delete(f'{api_url}/boxes/{box.id}', timeout=settings.request_timeout)
         case ['add_item']:
             item = Item(**data)
-            requests.post(f'{api_url}/boxes/items', data=box, timeout=settings.REQUEST_TIMEOUT)
+            requests.post(f'{api_url}/boxes/items', data=box, timeout=settings.request_timeout)
         case ['delete_item']:
             item = Item(**data)
-            requests.delete(f'{api_url}/boxes/items/{item.id}', timeout=settings.REQUEST_TIMEOUT)
+            requests.delete(f'{api_url}/boxes/items/{item.id}', timeout=settings.request_timeout)
 
     return redirect(url_for('box_packing.index'))

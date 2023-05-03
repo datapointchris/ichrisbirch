@@ -146,7 +146,7 @@ echo "START: $SCRIPT_NAME"
 
 echo "Env File Loaded: $ENV_PATH"
 echo "OS Prefix: $OS_PREFIX"
-echo "Database: postgresql://$POSTGRES_URI/$POSTGRES_DBNAME"
+echo "Database: postgresql://$POSTGRES_HOST/$POSTGRES_DBNAME"
 echo "Bucket: $FULL_BUCKET_PATH"
 echo "Log Location: $LOG_FILE"
 

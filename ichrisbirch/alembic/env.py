@@ -49,7 +49,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = ichrisbirch.config.settings.sqlalchemy.SQLALCHEMY_DATABASE_URI
+    url = ichrisbirch.config.settings.sqlalchemy.db_uri
     context.configure(
         url=url,
         target_metadata=target_metadata,

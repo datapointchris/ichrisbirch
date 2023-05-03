@@ -17,7 +17,7 @@ def create_api(settings) -> FastAPI:
     Returns:
         FastAPI: FastAPI app
     """
-    api = FastAPI(title=settings.fastapi.TITLE, description=settings.fastapi.DESCRIPTION, version=settings.VERSION)
+    api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description, version=settings.version)
     logger.debug(f'{api.title} {api.version} Started')
 
     api.add_middleware(ResponseLoggerMiddleware)
@@ -29,10 +29,10 @@ def create_api(settings) -> FastAPI:
     # Add dependencies later
     # dependencies=[Depends(auth)],
 
-    api.include_router(endpoints.main.router, responses=settings.fastapi.RESPONSES)
-    api.include_router(endpoints.autotasks.router, responses=settings.fastapi.RESPONSES)
-    api.include_router(endpoints.health.router, responses=settings.fastapi.RESPONSES)
-    api.include_router(endpoints.tasks.router, responses=settings.fastapi.RESPONSES)
+    api.include_router(endpoints.main.router, responses=settings.fastapi.responses)
+    api.include_router(endpoints.autotasks.router, responses=settings.fastapi.responses)
+    api.include_router(endpoints.health.router, responses=settings.fastapi.responses)
+    api.include_router(endpoints.tasks.router, responses=settings.fastapi.responses)
 
     logger.debug('Registered API Routers')
     return api

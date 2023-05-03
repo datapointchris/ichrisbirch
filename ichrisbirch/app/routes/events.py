@@ -15,15 +15,15 @@ def index():
         events = session.query(Event).order_by(Event.date).all()
 
     if request.method == 'POST':
-        api_url = settings.API_URL
+        api_url = settings.api_url
         data = request.form.to_dict()
         method = data.pop('method')
         match method:
             case ['add']:
                 event = Event(**data)
-                requests.post(f'{api_url}/events', data=event, timeout=settings.REQUEST_TIMEOUT)
+                requests.post(f'{api_url}/events', data=event, timeout=settings.request_timeout)
             case ['delete']:
                 event_id = data.get('id')
-                requests.delete(f'{api_url}/events/{event_id}', timeout=settings.REQUEST_TIMEOUT)
+                requests.delete(f'{api_url}/events/{event_id}', timeout=settings.request_timeout)
 
     return render_template('events/index.html', events=events)

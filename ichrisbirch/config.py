@@ -1,9 +1,10 @@
 import importlib.metadata
 import os
-from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Optional, Union
 
 import dotenv
+from pydantic import BaseSettings, Field, MongoDsn, PostgresDsn, SecretStr, validator
 
 ENV: Optional[str] = os.getenv('ENVIRONMENT')
 
@@ -18,24 +19,24 @@ match ENV:
         raise ValueError(
             f'Unrecognized Environment Variable: {ENV}\n' 'Did you set ENVIRONMENT before starting the program?'
         )
+# Must load the .env file first since settings is instantiated last
 dotenv.load_dotenv(env_file)
 
 
-@dataclass
-class FlaskSettings:
+class FlaskSettings(BaseSettings):
     """Config settings for Flask"""
 
-    SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')
-    ENV: Optional[str] = os.getenv('ENVIRONMENT')
+    # https://flask.palletsprojects.com/en/latest/api/#sessions
+    secret_key: SecretStr
+    env: Optional[str] = ENV
 
 
-@dataclass
-class FastAPISettings:
+class FastAPISettings(BaseSettings):
     """Config settings for FastAPI"""
 
-    TITLE: str = 'iChrisBirch API'
-    DESCRIPTION: str = """## With all the fixins"""
-    RESPONSES: dict[Union[int, str], dict[str, Any]] = field(
+    title: str = 'iChrisBirch API'
+    description: str = """## With all the fixins"""
+    responses: dict[Union[int, str], dict[str, Any]] = Field(
         default_factory=lambda: {
             404: {'description': 'Not found'},
             403: {"description": "Operation forbidden"},
@@ -43,85 +44,126 @@ class FastAPISettings:
     )
 
 
-@dataclass
-class PostgresSettings:
+class PostgresSettings(BaseSettings):
     """Config settings for Postgres"""
 
-    POSTGRES_URI: Optional[str] = os.getenv('POSTGRES_URI')
-    POSTGRES_USER: Optional[str] = os.getenv('POSTGRES_USER')
-    POSTGRES_PASSWORD: Optional[str] = os.getenv('POSTGRES_PASSWORD')
-    POSTGRES_DATABASE_URI: str = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_URI}:5432/ichrisbirch'
+    host: str = Field(None, env='POSTGRES_HOST')
+    user: str = Field(None, env='POSTGRES_USER')
+    password: str = Field(None, env='POSTGRES_PASSWORD', secret=True)
+    port: str = '5432'
+    database: str = 'ichrisbirch'
+
+    @property
+    def db_uri(self) -> str:
+        return str(
+            PostgresDsn.build(
+                scheme='postgresql://',
+                host=self.host,
+                user=self.user,
+                password=self.password,
+                port=self.port,
+                database=self.database,
+            )
+        )
 
 
-@dataclass
-class SQLAlchemySettings:
+class SQLAlchemySettings(BaseSettings):
     """Config settings for SQLAlchemy"""
 
-    SQLALCHEMY_ECHO: bool = True
-    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-    SQLALCHEMY_DATABASE_URI: str = ""
+    echo: bool = False
+    track_modifications: bool = False
+    db_uri: str = ""
+
+    @validator('db_uri')
+    def db_uri_validator(cls, value: str) -> str:
+        """
+        The check `if '?' not in value` ensures that the query parameter is only added to the URI
+        if it doesn't already contain a query string.
+        If the URI already has a query string,
+        adding another query parameter with a `?` would create a syntax error in the URI.
+
+        In the case of SQLite, the `check_same_thread` parameter is only relevant for connections
+        that are used within the same thread that they were created.
+        If the URI already contains a query string it is assumed that the application code
+        has already included any necessary query parameters
+        and the validator doesn't add the `check_same_thread` parameter again.
+        """
+
+        if 'sqlite' in value and '?' not in value:
+            value += '?check_same_thread=False'
+        return value
 
 
-@dataclass
-class MongoDBSettings:
+class MongoDBSettings(BaseSettings):
     """Config settings for MongoDB"""
 
-    MONGODB_URI: Optional[str] = os.getenv('MONGODB_URI')
-    MONGODB_USER: Optional[str] = os.getenv('MONGODB_USER')
-    MONGODB_PASSWORD: Optional[str] = os.getenv('MONGODB_PASSWORD')
-    MONGODB_DATABASE_URI: str = (
-        f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_URI}/ichrisbirch?retryWrites=true&w=majority'
-    )
+    host: str = Field(None, env='MONGO_HOST')
+    user: str = Field(None, env='MONGO_USER')
+    password: str = Field(None, env='MONGO_PASSWORD', secret=True)
+
+    @property
+    def db_uri(self) -> str:
+        return str(
+            MongoDsn.build(
+                scheme='mongodb',
+                host=self.host,
+                user=self.user,
+                password=self.password,
+            )
+        )
 
 
-@dataclass
-class DynamoDBSettings:
-    """Config settings for DynamoDB"""
-
-    DYNAMODB_URL: Optional[str] = os.getenv('DYNAMODB_URL')
-    DYNAMODB_USER: Optional[str] = os.getenv('DYNAMODB_USER')
-    DYNAMODB_PASSWORD: Optional[str] = os.getenv('DYNAMODB_PASSWORD')
-    DYNAMODB_DATABASE_URI: Optional[str] = os.getenv('DYNAMODB_DATABASE_URI')
-
-
-@dataclass
-class SQLiteSettings:
+class SQLiteSettings(BaseSettings):
     """Config settings for SQLite"""
 
-    SQLITE_DATABASE_URI: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
+    db_uri: str = Field(None, env='SQLITE_DATABASE_URI')
 
 
-@dataclass
-class LoggingSettings:
+class LoggingSettings(BaseSettings):
     """Config settings for Logging"""
 
-    LOG_PATH: Optional[str] = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
-    LOG_FORMAT: Optional[str] = os.getenv('LOG_FORMAT')
-    LOG_DATE_FORMAT: Optional[str] = os.getenv('LOG_DATE_FORMAT')
-    LOG_LEVEL: Union[int, str] = os.getenv('LOG_LEVEL', 'DEBUG')
+    log_path: str = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
+    log_format: str
+    log_date_format: str
+    log_level: Union[int, str] = Field('DEBUG', env='LOG_LEVEL')
 
 
-@dataclass
-class Settings:
-    """Base settings class that contains all other settings."""
+class Settings(BaseSettings):
+    """Base settings class that contains all other settings.
 
-    NAME: str = 'ichrisbirch'
-    VERSION: str = importlib.metadata.version(NAME)
-    DB_SCHEMAS: list[str] = field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
-    API_URL: Optional[str] = os.getenv('API_URL')
-    ENVIRONMENT: Optional[str] = os.getenv('ENVIRONMENT')
-    OS_PREFIX: Optional[str] = os.getenv('OS_PREFIX')
-    REQUEST_TIMEOUT: int = 3
+    In the Config class, we're setting the env_file based on the ENVIRONMENT variable.
+    If ENVIRONMENT is not recognized, env_file will be None.
+    When env_file is set, pydantic will automatically try to load the variables from the specified file.
+
+    Also note that since pydantic automatically converts environment variables to their corresponding data types,
+    we don't need to use Optional or Union in our Field definitions anymore.
+
+    """
+
+    name: str = 'ichrisbirch'
+    version: str = Field(importlib.metadata.version(name))
+    db_schemas: list[str] = Field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
+    api_url: str
+    environment: str
+    os_prefix: str
+    request_timeout: int = 3
 
     flask = FlaskSettings()
     fastapi = FastAPISettings()
     sqlite = SQLiteSettings()
     mongodb = MongoDBSettings()
-    dynamodb = DynamoDBSettings()
     postgres = PostgresSettings()
     sqlalchemy = SQLAlchemySettings()
     logging = LoggingSettings()
-    sqlalchemy.SQLALCHEMY_DATABASE_URI = postgres.POSTGRES_DATABASE_URI
+    sqlalchemy.db_uri = postgres.db_uri
+
+    class Config:
+        env_file = env_file
+
+
+@lru_cache()
+def get_settings():
+    return Settings()
 
 
 settings = Settings()

@@ -20,9 +20,9 @@ blueprint = Blueprint(
 
 logger = logging.getLogger(__name__)
 
-TASKS_URL = f'{settings.API_URL}/tasks'
+TASKS_URL = f'{settings.api_url}/tasks'
 TASK_CATEGORIES = [t.value for t in TaskCategory]
-TIMEOUT = settings.REQUEST_TIMEOUT
+TIMEOUT = settings.request_timeout
 
 
 def get_first_and_last_task():

@@ -12,7 +12,7 @@ inspector = sqlalchemy.inspect(engine)
 # TODO: [2023/05/02] - Write this
 # Help me write a startup script for this entire project
 
-for schema_name in settings.DB_SCHEMAS:
+for schema_name in settings.db_schemas:
     if schema_name not in inspector.get_schema_names():
         sqlalchemy_session.execute(CreateSchema(schema_name))
         logger.info(f'Created schema: {schema_name}')

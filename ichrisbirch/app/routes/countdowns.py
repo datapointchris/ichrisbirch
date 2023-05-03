@@ -15,15 +15,15 @@ def index():
         countdowns = session.query(Countdown).order_by(Countdown.date).all()
 
     if request.method == 'POST':
-        api_url = settings.API_URL
+        api_url = settings.api_url
         data = request.form.to_dict()
         method = data.pop('method')
         match method:
             case ['add']:
                 countdown = Countdown(**data)
-                requests.post(f'{api_url}/countdowns', data=countdown, timeout=settings.REQUEST_TIMEOUT)
+                requests.post(f'{api_url}/countdowns', data=countdown, timeout=settings.request_timeout)
             case ['delete']:
                 countdown_id = data.get('id')
-                requests.delete(f'{api_url}/countdowns/{countdown_id}', timeout=settings.REQUEST_TIMEOUT)
+                requests.delete(f'{api_url}/countdowns/{countdown_id}', timeout=settings.request_timeout)
 
     return render_template('countdowns/index.html', countdowns=countdowns)

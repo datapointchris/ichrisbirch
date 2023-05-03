@@ -68,14 +68,14 @@ def edit(name):
 @blueprint.route('/form/', methods=['POST'])
 def crud():
     """CRUD operations for apartments"""
-    api_url = settings.API_URL
+    api_url = settings.api_url
     data = request.form.to_dict()
     method = data.pop('method')
     apt = Apartment(**data)
     if method == 'add':
-        requests.post(f'{api_url}/tasks', data=apt, timeout=settings.REQUEST_TIMEOUT)
+        requests.post(f'{api_url}/tasks', data=apt, timeout=settings.request_timeout)
     elif method == 'update':
-        requests.put(f'{api_url}//tasks', data=apt, timeout=settings.REQUEST_TIMEOUT)
+        requests.put(f'{api_url}//tasks', data=apt, timeout=settings.request_timeout)
     elif method == 'delete':
-        requests.delete(f'{api_url}//tasks', data=apt, timeout=settings.REQUEST_TIMEOUT)
+        requests.delete(f'{api_url}//tasks', data=apt, timeout=settings.request_timeout)
     return redirect(url_for('apartments.apartment', name=data.get('name')))

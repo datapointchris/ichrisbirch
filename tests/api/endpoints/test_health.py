@@ -14,4 +14,4 @@ def test_health_check_version(test_app):
     """Test if the version provided by health check matches project version"""
     response = test_app.get('/health/')
     assert response.status_code == 200
-    assert response.json()['version'] == settings.VERSION
+    assert response.json()['version'] == settings.version

@@ -13,7 +13,7 @@ blueprint = Blueprint('habits', __name__, template_folder='templates/habits', st
 
 logger = logging.getLogger(__name__)
 
-HABITS_URL = f'{settings.API_URL}/habits'
+HABITS_URL = f'{settings.api_url}/habits'
 
 
 @blueprint.route('/', methods=['GET', 'POST'])
@@ -95,24 +95,24 @@ def manage():
 @blueprint.route('/form/', methods=['POST'])
 def form():
     """CRUD operations for habits"""
-    api_url = settings.API_URL
+    api_url = settings.api_url
     data = request.form.to_dict()
     method = data.pop('method')
     match method:
         case ['add_habit']:
             habit = Habit(**data)
-            requests.post(f'{api_url}/habits', data=habit, timeout=settings.REQUEST_TIMEOUT)
+            requests.post(f'{api_url}/habits', data=habit, timeout=settings.request_timeout)
         case ['delete_habit']:
             habit = Habit(**data)
-            requests.delete(f'{api_url}/habits/{habit.id}', timeout=settings.REQUEST_TIMEOUT)
+            requests.delete(f'{api_url}/habits/{habit.id}', timeout=settings.request_timeout)
         case ['complete_habit']:
             habit = Habit(**data)
-            requests.post(f'{api_url}/habits/completed', data=habit, timeout=settings.REQUEST_TIMEOUT)
+            requests.post(f'{api_url}/habits/completed', data=habit, timeout=settings.request_timeout)
         case ['add_category']:
             category = Category(**data)
-            requests.post(f'{api_url}/habits/categories', data=category, timeout=settings.REQUEST_TIMEOUT)
+            requests.post(f'{api_url}/habits/categories', data=category, timeout=settings.request_timeout)
         case ['delete_category']:
             category = Category(**data)
-            requests.delete(f'{api_url}/habits/categories/{category.id}', timeout=settings.REQUEST_TIMEOUT)
+            requests.delete(f'{api_url}/habits/categories/{category.id}', timeout=settings.request_timeout)
 
     return redirect(url_for('habits.index'))
