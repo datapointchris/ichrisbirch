@@ -44,6 +44,9 @@
 ## Random
 
 - [ ] Separate pytest and coverage in pre-commit and github-actions
+- [ ] Make a startup script
+  - [ ] So this can be started in Docker each time for testing
+  - [ ] So it can be started on a fresh Postgres instance
 - [ ] [GitHub Next | Visualizing a Codebase](https://githubnext.com/projects/repo-visualization/)
 - [ ] `etc/environment` in prod server for ENVIRONMENT variable
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation

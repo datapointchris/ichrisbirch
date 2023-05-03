@@ -1,7 +1,7 @@
 import logging
 
 import sqlalchemy
-from db.sqlalchemy.session import sqlalchemy_session, engine
+from db.sqlalchemy.session import engine, sqlalchemy_session
 from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch.config import settings
