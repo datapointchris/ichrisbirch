@@ -23,4 +23,5 @@ def init(settings: Settings):
     logger.debug(f'Log Location: {log_file}')
 
     # quiet matplotlib noisy output when in debug mode
-    logging.getLogger('matplotlib').setLevel(logging.INFO)
+    if settings.logging.LOG_LEVEL == logging.DEBUG:
+        logging.getLogger('matplotlib').setLevel(logging.INFO)
