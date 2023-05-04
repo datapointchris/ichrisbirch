@@ -44,4 +44,50 @@ body {
 .navigation.secondary {
   width: 80%;
   z-index: -50;
+}
+
+/* Flashed Messages */
+.flash-messages {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 10px;
+  width: 60%;
+  z-index: 9999;
+  text-align: center;
+}
+
+.flash-message {
+  margin: 10px;
+  padding: 10px 25px;
+  border-radius: 15px;
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #808080, inset -5px -5px 4px -2px #808080;
+  font-size: 1.2rem;
+  line-height: 2rem;
+}
+
+.success {
+  background-color: rgba(31, 134, 34, 0.8);
+  color: white;
+}
+
+.error {
+  background-color: rgba(92, 6, 0, 0.8);
+  color: white;
+}
+
+.close-button {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  background-color: transparent;
+  font-size: 1rem;
+  color: #dddddd;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease-in-out;
+}
+
+.close-button:hover {
+  transform: scale(1.2) translate(-50%, -50%);
 }/*# sourceMappingURL=global.css.map */
