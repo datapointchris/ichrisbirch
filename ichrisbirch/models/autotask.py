@@ -25,13 +25,13 @@ class AutoTask(Base):
 
     __tablename__ = 'autotasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(64))
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
     notes: Mapped[str] = mapped_column(Text(), nullable=True)
-    category: Mapped[Enum] = mapped_column(Enum(TaskCategory))
-    priority: Mapped[int] = mapped_column(Integer)
+    category: Mapped[Enum] = mapped_column(Enum(TaskCategory), nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    frequency: Mapped[Optional[datetime]] = mapped_column(Enum(TaskFrequency))
+    frequency: Mapped[Optional[datetime]] = mapped_column(Enum(TaskFrequency), nullable=False)
 
     def __repr__(self):
         return f''''AutoTask(name = {self.name}, priority = {self.priority}, category = {self.category},

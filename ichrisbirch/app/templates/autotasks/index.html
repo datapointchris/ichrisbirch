@@ -14,7 +14,7 @@
         Category: {{ autotask.category }}<br />
         Start Date: {{ autotask.start_date }}<br />
         Frequency: {{ autotask.frequency }}<br />
-        Last Run Date: {{ task.last_run_date }}<br />
+        Last Run Date: {{ autotask.last_run_date }}<br />
         <form method="POST" action="{{ url_for('autotasks.crud') }}">
             <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
             <input type="hidden" name="method" id="method" value="delete">
