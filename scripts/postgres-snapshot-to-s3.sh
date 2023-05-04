@@ -92,7 +92,7 @@ elapsed_time() { echo "$((SECONDS / 60)) minutes $((SECONDS % 60)) seconds"; }
 SECONDS=0
 BUCKET_PREFIX="postgres"
 TIMESTAMP="$(date -u +%Y-%m-%dT%HH%MM)"
-SNAPSHOT_NAME="$POSTGRES_DBNAME-$TIMESTAMP-snapshot"
+SNAPSHOT_NAME="$POSTGRES_DB-$TIMESTAMP-snapshot"
 FULL_BUCKET_PATH="s3://$S3_BACKUPS_BUCKET/$BUCKET_PREFIX/$SNAPSHOT_NAME"
 LOG_FILE="$SCRIPT_NAME.log"
 
@@ -100,12 +100,12 @@ LOG_FILE="$SCRIPT_NAME.log"
 
 create_rds_snapshot() {
     aws rds create-db-snapshot \
-        --db-instance-identifier "$POSTGRES_DBNAME" \
+        --db-instance-identifier "$POSTGRES_DB" \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
         --output text >>"$LOG_FILE" 2>&1
 
     aws rds wait db-snapshot-completed \
-        --db-instance-identifier "$POSTGRES_DBNAME" \
+        --db-instance-identifier "$POSTGRES_DB" \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
         --output text >>"$LOG_FILE" 2>&1
 }
@@ -136,7 +136,7 @@ delete_rds_snapshot() {
         --output text >>"$LOG_FILE" 2>&1
 
     aws rds wait db-snapshot-deleted \
-        --db-instance-identifier "$POSTGRES_DBNAME" \
+        --db-instance-identifier "$POSTGRES_DB" \
         --db-snapshot-identifier "$SNAPSHOT_NAME" \
         --output text >>"$LOG_FILE" 2>&1
 }
@@ -146,7 +146,7 @@ echo "START: $SCRIPT_NAME"
 
 echo "Env File Loaded: $ENV_PATH"
 echo "OS Prefix: $OS_PREFIX"
-echo "Database: postgresql://$POSTGRES_HOST/$POSTGRES_DBNAME"
+echo "Database: postgresql://$POSTGRES_HOST/$POSTGRES_DB"
 echo "Bucket: $FULL_BUCKET_PATH"
 echo "Log Location: $LOG_FILE"
 
