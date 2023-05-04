@@ -27,8 +27,8 @@ class FlaskSettings(BaseSettings):
     """Config settings for Flask"""
 
     # https://flask.palletsprojects.com/en/latest/api/#sessions
-    secret_key: SecretStr
-    env: Optional[str] = ENV
+    SECRET_KEY: str
+    ENV: str = ENV
 
 
 class FastAPISettings(BaseSettings):

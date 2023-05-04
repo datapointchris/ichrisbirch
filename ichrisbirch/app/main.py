@@ -2,12 +2,24 @@ import logging
 
 from flask import Flask
 
-from ichrisbirch.app.routes import box_packing, countdowns, events, habits, health, journal, main, portfolio, tasks
+from ichrisbirch.app.routes import (
+    autotasks,
+    box_packing,
+    countdowns,
+    events,
+    habits,
+    health,
+    journal,
+    main,
+    portfolio,
+    tasks,
+)
+from ichrisbirch.config import Settings
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings) -> Flask:
+def create_app(settings: Settings) -> Flask:
     """Flask app factory
 
     Returns:
@@ -21,6 +33,7 @@ def create_app(settings) -> Flask:
         logger.debug('Configured App')
 
         app.register_blueprint(main.blueprint)
+        app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')
         app.register_blueprint(countdowns.blueprint, url_prefix='/countdowns')
         app.register_blueprint(events.blueprint, url_prefix='/events')
