@@ -1,14 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}MAIN INDEX{% endblock %}
+{% block title %}iChrisBirch{% endblock %}
 
 {% block stylesheet %}
-<link rel="stylesheet"
-href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 {% endblock %}
 
 {% block content %}
 <div id="main-index-content">
-    <h2>MAIN INDEX PLACEHOLDER</h2>
+    <h1>iChris Birch</h1>
+    <h2>Data Engineer</h2>
+    <h2>Playground for my stuff</h2>
+    <a href="https://github.com/datapointchris/ichrisbirch" target="_blank">Code
+        Here</a>
+    <a href="http://api.ichrisbirch.com" target="_blank">API Here</a>
+    <a href="http://docs.ichrisbirch.com" target="_blank">Docs Here</a>
+    <br />
+    <img src="https://github.com/datapointchris/ichrisbirch/blob/master/diagram.svg">
+
 </div>
 {% endblock %}

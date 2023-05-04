@@ -1,0 +1,12 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div id="flash-messages" class="flash-messages">
+    {% for category, message in messages %}
+    <div class="flash-message {{ category }}">
+        {{ message }}
+        <button class="close-button" onclick="closeFlashMessage(this)">X</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
