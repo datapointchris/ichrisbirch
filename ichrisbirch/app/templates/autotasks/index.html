@@ -7,57 +7,80 @@
     {% for autotask in autotasks %}
     <div class="autotask">
         <h2>{{ autotask.name }}</h2>
-        {% if autotask.notes %}
-        <strong>Notes: </strong>{{ autotask.notes }}<br />
-        {% endif %}
-        Priority: {{ autotask.priority }}<br />
-        Category: {{ autotask.category }}<br />
-        Start Date: {{ autotask.start_date }}<br />
-        Frequency: {{ autotask.frequency }}<br />
-        Last Run Date: {{ autotask.last_run_date }}<br />
-        <form method="POST" action="{{ url_for('autotasks.crud') }}">
-            <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
-            <input type="hidden" name="method" id="method" value="delete">
-            <input type="submit" value="Delete AutoTask">
-        </form>
+        <div class="autotask-box">
+            <div class="autotask-box-container">
+                <div class="autotask-box-left">
+                    <strong>Category: </strong><br />
+                    <strong>Priority: </strong><br />
+                    <strong>Notes: </strong><br />
+                    <strong>Frequency: </strong><br />
+                    <strong>First Run Date: </strong><br />
+                    <strong>Last Run Date: </strong><br />
+                    <strong>Run Count: </strong><br /><br />
+                    <form method="POST" action="{{ url_for('autotasks.crud') }}">
+                        <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
+                        <input type="hidden" name="method" id="method" value="run">
+                        <input type="submit" class="button box-3d"  value="Add Task Now">
+                    </form>
+                </div>
+                <div class="autotask-box-right">
+                    {{ autotask.category }}<br />
+                    {{ autotask.priority }}<br />
+                    {{ autotask.notes }}<br />
+                    {{ autotask.frequency }}<br />
+                    {{ autotask.first_run_date }}<br />
+                    {{ autotask.last_run_date }}<br />
+                    {{ autotask.run_count }}<br /><br />
+                    <form method="POST" action="{{ url_for('autotasks.crud') }}">
+                        <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
+                        <input type="hidden" name="method" id="method" value="delete">
+                        <input type="submit" class="button box-3d"  value="Delete AutoTask">
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
     {% else %}
-    <div class="autotask">
+    <div class="add-autotask">
         <h2>No AutoTasks</h2>
     </div>
     {% endfor %}
 </div>
 <div id="add-autotask">
     <h2>Add New AutoTask:</h2>
-    <br />
-    <form method="POST" action="{{ url_for('autotasks.crud') }}">
-        <label for="name">Name:</label>
-        <input type="text" size="20" class="textbox box-3d" name="name" id="name"><br /><br />
+    <div id="add-form">
+        <form method="POST" action="{{ url_for('autotasks.crud') }}">
+            <label for="name">Name:</label>
+            <input type="text" size="20" class="textbox box-3d" name="name"
+                id="name"><br /><br />
 
-        <label for="category">Category:</label>
-        <select class="textbox box-3d" name="category" id="category">
-            {% for category in task_categories %}
-            <option value="{{ category }}">{{ category }}
-            </option>
-            {% endfor %}
-        </select><br /><br />
+            <label for="category">Category:</label>
+            <select class="textbox box-3d" name="category" id="category">
+                {% for category in task_categories %}
+                <option value="{{ category }}">{{ category }}
+                </option>
+                {% endfor %}
+            </select><br /><br />
 
-        <label for="priority">Priority:</label>
-        <input type="number" min="1" class="textbox box-3d" name="priority" id="priority"><br /><br />
+            <label for="priority">Priority:</label>
+            <input type="number" min="1" class="textbox box-3d" name="priority"
+                id="priority"><br /><br />
 
-        <label for="notes">Notes:</label>
-        <input type="text" size="60" class="textbox box-3d" name="notes" id="notes"><br /><br />
+            <label for="notes">Notes:</label>
+            <input type="text" size="40" class="textbox box-3d" name="notes"
+                id="notes"><br /><br />
 
-        <label for="frequency">Task Frequency:</label>
-        <select class="textbox box-3d" name="frequency" id="frequency">
-            {% for frequency in task_frequencies %}
-            <option value="{{ frequency }}">{{ frequency }}
-            </option>
-            {% endfor %}
-        </select><br /><br />
+            <label for="frequency">Task Frequency:</label>
+            <select class="textbox box-3d" name="frequency" id="frequency">
+                {% for frequency in task_frequencies %}
+                <option value="{{ frequency }}">{{ frequency }}
+                </option>
+                {% endfor %}
+            </select><br /><br />
 
-        <input type="hidden" id="method" name="method" value="add">
-        <input type="submit" class="button box-3d" value="Add New Task">
-    </form>
+            <input type="hidden" id="method" name="method" value="add">
+            <input type="submit" class="button box-3d" value="Add New Task">
+        </form>
+    </div>
 </div>
 {% endblock %}

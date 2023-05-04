@@ -44,6 +44,15 @@
 
 ## PRIORITY PROJECTS
 
+- [X] Fix autotask boxes (quickly)
+- [ ] AutoTask - Add columns
+  - [ ] `first_run_date`
+  - [ ] `run_count`
+- [ ] Alembic upgrade prod
+- [ ] Always run the new autotask right now
+- [ ] Make tests for autotasks
+- [ ] Test to see if the autotask thing actually works
+
 - [ ] Create tests for logger init
 - [ ] Make sure logger is working
 - [ ] Update tmuxinator stuff

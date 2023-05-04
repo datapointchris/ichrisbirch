@@ -1,25 +1,63 @@
 #autotasks {
   width: 70%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  grid-gap: 30px;
   margin: auto;
-  padding: 50px;
-  text-align: center;
 }
 
 .autotask {
+  margin: 30px;
+  padding: 25px;
+  border: 2px solid rgb(117, 109, 96);
+  border-radius: 15px;
+  line-height: 1.7em;
+  font-size: larger;
+  box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+}
+.autotask:last-child:nth-child(odd) {
+  grid-column: 1/span 2;
+  justify-self: center;
+  width: 45%;
+}
+.autotask h2 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.autotask-box-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.autotask-box-left {
+  grid-column: 1/2;
+  margin: auto;
+}
+
+.autotask-box-right {
+  grid-column: 2/3;
+  margin: auto;
+}
+
+#add-autotask {
+  width: 50%;
+  margin: auto;
+  padding: 40px 80px;
+  line-height: 1.5em;
+  background-color: rgba(16, 16, 16, 0.4);
   border: 2px solid rgb(117, 109, 96);
   border-radius: 15px;
   box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
 }
+#add-autotask h2 {
+  text-align: center;
+  margin-bottom: 40px;
+}
 
-#add-autotask {
-  width: 33%;
+.add-autotask-box {
+  width: 50%;
   margin: auto;
-  padding: 40px;
-  line-height: 1.5em;
-  background-color: #444;
-  border: 2px solid rgb(117, 109, 96);
-  border-radius: 15px;
-  box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
 }
 
 .button {
