@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Any, Optional, Union
 
 import dotenv
-from pydantic import BaseSettings, Field, MongoDsn, PostgresDsn, SecretStr, validator
+from pydantic import BaseSettings, Field, MongoDsn, PostgresDsn, validator
 
 ENV: Optional[str] = os.getenv('ENVIRONMENT')
 
@@ -28,7 +28,7 @@ class FlaskSettings(BaseSettings):
 
     # https://flask.palletsprojects.com/en/latest/api/#sessions
     SECRET_KEY: str
-    ENV: str = ENV
+    ENV: Optional[str] = ENV
 
 
 class FastAPISettings(BaseSettings):

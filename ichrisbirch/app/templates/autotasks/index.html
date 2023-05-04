@@ -1,0 +1,63 @@
+{% extends 'autotasks/base.html' %}
+
+{% block title %}AutoTasks{% endblock %}
+
+{% block content %}
+<div id="autotasks">
+    {% for autotask in autotasks %}
+    <div class="autotask">
+        <h2>{{ autotask.name }}</h2>
+        {% if autotask.notes %}
+        <strong>Notes: </strong>{{ autotask.notes }}<br />
+        {% endif %}
+        Priority: {{ autotask.priority }}<br />
+        Category: {{ autotask.category }}<br />
+        Start Date: {{ autotask.start_date }}<br />
+        Frequency: {{ autotask.frequency }}<br />
+        Last Run Date: {{ task.last_run_date }}<br />
+        <form method="POST" action="{{ url_for('autotasks.crud') }}">
+            <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
+            <input type="hidden" name="method" id="method" value="delete">
+            <input type="submit" value="Delete AutoTask">
+        </form>
+    </div>
+    {% else %}
+    <div class="autotask">
+        <h2>No AutoTasks</h2>
+    </div>
+    {% endfor %}
+</div>
+<div id="add-autotask">
+    <h2>Add New AutoTask:</h2>
+    <br />
+    <form method="POST" action="{{ url_for('autotasks.crud') }}">
+        <label for="name">Name:</label>
+        <input type="text" size="20" class="textbox box-3d" name="name" id="name"><br /><br />
+
+        <label for="category">Category:</label>
+        <select class="textbox box-3d" name="category" id="category">
+            {% for category in task_categories %}
+            <option value="{{ category }}">{{ category }}
+            </option>
+            {% endfor %}
+        </select><br /><br />
+
+        <label for="priority">Priority:</label>
+        <input type="number" min="1" class="textbox box-3d" name="priority" id="priority"><br /><br />
+
+        <label for="notes">Notes:</label>
+        <input type="text" size="60" class="textbox box-3d" name="notes" id="notes"><br /><br />
+
+        <label for="frequency">Task Frequency:</label>
+        <select class="textbox box-3d" name="frequency" id="frequency">
+            {% for frequency in task_frequencies %}
+            <option value="{{ frequency }}">{{ frequency }}
+            </option>
+            {% endfor %}
+        </select><br /><br />
+
+        <input type="hidden" id="method" name="method" value="add">
+        <input type="submit" class="button box-3d" value="Add New Task">
+    </form>
+</div>
+{% endblock %}

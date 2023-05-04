@@ -44,7 +44,6 @@
 
 ## PRIORITY PROJECTS
 
-- [ ] Create tests for config file
 - [ ] Create tests for logger init
 - [ ] Make sure logger is working
 - [ ] Update tmuxinator stuff

@@ -1,0 +1,48 @@
+@import "./variables";
+
+#autotasks {
+    width: 70%;
+    margin: auto;
+    padding: 50px;
+    text-align: center;
+}
+
+.autotask {
+    border: 2px solid rgb(117, 109, 96);
+    border-radius: 15px;
+    box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+}
+
+#add-autotask {
+    width: 33%;
+    margin: auto;
+    padding: 40px;
+    line-height: 1.5em;
+    background-color: $dark-gray;
+    border: 2px solid rgb(117, 109, 96);
+    border-radius: 15px;
+    box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+}
+
+///// Submit, Delete, Add Buttons /////
+
+.button {
+    border-radius: $button-box-border-radius;
+    font-size: large;
+    padding: 10px 25px;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.box-3d {
+    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $light-shadow, inset -5px -5px 4px -2px $light-shadow;
+}
+
+.textbox {
+    border-radius: $button-box-border-radius;
+    font-size: large;
+    padding: 10px 25px;
+    background-color: $all-text-color;
+}
