@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template
 
-from ichrisbirch import config
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
 
 blueprint = Blueprint(
     'main',
@@ -13,4 +15,4 @@ blueprint = Blueprint(
 @blueprint.route('/')
 def index():
     """Website main homepage"""
-    return render_template('index.html', settings=config)
+    return render_template('index.html', settings=settings)

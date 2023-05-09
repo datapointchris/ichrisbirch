@@ -1,0 +1,25 @@
+ENVIRONMENT="development"
+
+FLASK_DEBUG="development"
+SECRET_KEY="1d1dc629161f75625400de48305acd4669b97020d4e8c632245b2b66e6ed97c6"
+OS_PREFIX="/usr/local"
+
+POSTGRES_HOST="localhost"
+POSTGRES_USER="postgres"
+POSTGRES_PASSWORD="postgres"
+
+MONGO_HOST="mongodb://127.0.0.1:27017"
+MONGO_USER=""
+MONGO_PASSWORD=""
+
+S3_BACKUPS_BUCKET=""
+
+SQLITE_DATABASE_URI="development.db"
+
+FASTAPI_ENV="development"
+API_URL="http://api.macmini.local"
+
+LOG_PATH="/var/log/ichrisbirch"
+LOG_LEVEL="DEBUG"
+LOG_FORMAT="%(asctime)s | %(levelname)s | %(name)s:%(lineno)d | %(message)s"
+LOG_DATE_FORMAT="%Y-%m-%dT%H:%M:%SZ"  # ISO 8601

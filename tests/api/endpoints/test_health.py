@@ -1,7 +1,9 @@
 import pytest
 
 from ichrisbirch.api.endpoints import health
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
 
 
 @pytest.fixture(scope='module')

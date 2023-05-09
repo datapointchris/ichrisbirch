@@ -1,10 +1,11 @@
 import requests
 from flask import Blueprint, render_template, request
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.countdown import Countdown
 
+settings = get_settings()
 blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
 
 

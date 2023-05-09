@@ -1,9 +1,6 @@
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 
-
-def test_env_file():
-    """Test if env file is set correctly"""
-    assert settings.env_file.split('/')[-1] == '.dev.env'
+settings = get_settings('test_env_file')
 
 
 def test_postgres_db_uri():

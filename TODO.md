@@ -45,9 +45,9 @@
 ## PRIORITY PROJECTS
 
 - [X] Fix autotask boxes (quickly)
-- [ ] AutoTask - Add columns
-  - [ ] `first_run_date`
-  - [ ] `run_count`
+- [X] AutoTask - Add columns
+  - [X] `first_run_date`
+  - [X] `run_count`
 - [ ] Alembic upgrade prod
 - [ ] Always run the new autotask right now
 - [ ] Make tests for autotasks
@@ -58,6 +58,11 @@
 - [ ] Update tmuxinator stuff
 - [ ] Login to hide my shit
 - [ ] Autotasks
+- [ ] `euphoria_ddl.sql`
+- [ ] `.flake8` does this not work with pyproject?
+  - [ ] Docs if it does not
+- [ ] mypy - `--check-untyped-defs`
+  - [ ] Add this option when ready to deal with other routes
 
 ## Random
 

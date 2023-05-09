@@ -8,9 +8,10 @@ from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
+settings = get_settings()
 blueprint = Blueprint(
     'tasks',
     __name__,
@@ -72,7 +73,7 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 def index():
     """Tasks home endpoint"""
     ed = EasyDateTime()
-    params = {'completed_filter': 'not_completed', 'limit': 5}
+    params: dict[str, str | int] = {'completed_filter': 'not_completed', 'limit': 5}
     top_tasks_json = requests.get(TASKS_URL, params=params, timeout=TIMEOUT).json()
     print(f'{top_tasks_json=}')
     top_tasks = [schemas.Task(**task) for task in top_tasks_json]
@@ -120,7 +121,7 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
 
-    params = {'start_date': start_date, 'end_date': end_date}
+    params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
     completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=params, timeout=TIMEOUT).json()
     completed_tasks = [schemas.TaskCompleted(**task) for task in completed_tasks_json]

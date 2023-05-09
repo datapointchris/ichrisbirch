@@ -10,10 +10,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.db.sqlalchemy.base import Base
 from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
 
+settings = get_settings()
 engine = create_engine('postgresql://postgres:postgres@localhost:5434', echo=True, future=True)
 SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 

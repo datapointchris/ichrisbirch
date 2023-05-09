@@ -5,13 +5,14 @@ import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.app.easy_dates import EasyDate
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.db.sqlalchemy import session
 from ichrisbirch.models.habit import Category, CompletedHabit, Habit
 
+settings = get_settings()
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 
-logger = logging.getLogger(__name__)
 
 HABITS_URL = f'{settings.api_url}/habits'
 

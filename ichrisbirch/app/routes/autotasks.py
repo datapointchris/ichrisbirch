@@ -5,10 +5,11 @@ import requests
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
+settings = get_settings()
 blueprint = Blueprint(
     'autotasks',
     __name__,
@@ -31,7 +32,7 @@ def index():
         response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT)
         autotasks_json = response.json()
     except Exception as e:
-        error_message = f'Error retrieving autotasks: {e}'
+        error_message = f'{__file__}: Error retrieving autotasks from API: {e}'
         logger.error(error_message)
         flash(error_message, 'error')
         autotasks_json = None

@@ -1,8 +1,9 @@
 from ichrisbirch import base_logger
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 
+settings = get_settings()
 base_logger.init(settings)
 
 app = create_app(settings)

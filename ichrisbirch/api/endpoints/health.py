@@ -5,8 +5,9 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter
 
 from ichrisbirch import schemas
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 
+settings = get_settings()
 router = APIRouter(prefix='/health', tags=['health'])
 
 

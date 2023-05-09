@@ -1,8 +1,10 @@
 import requests
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.models.apartment import Apartment, Feature
+
+settings = get_settings()
 
 blueprint = Blueprint(
     'apartments',

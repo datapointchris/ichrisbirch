@@ -4,8 +4,9 @@ import sqlalchemy
 from db.sqlalchemy.session import engine, sqlalchemy_session
 from sqlalchemy.schema import CreateSchema
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 
+settings = get_settings()
 logger = logging.getLogger(__name__)
 inspector = sqlalchemy.inspect(engine)
 

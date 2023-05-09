@@ -5,7 +5,7 @@ from alembic import context
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-import ichrisbirch  # this is to load the environment and logger in __init__.py
+from ichrisbirch.config import get_settings
 from ichrisbirch.db.sqlalchemy.base import Base
 from ichrisbirch.db.sqlalchemy.session import engine
 
@@ -18,6 +18,9 @@ from ichrisbirch.models.habit import Habit  # noqa
 from ichrisbirch.models.journal import JournalEntry  # noqa
 from ichrisbirch.models.portfolio import PortfolioProject  # noqa
 from ichrisbirch.models.task import Task  # noqa
+
+# settings from ichrisbirch/config.py
+settings = get_settings()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -49,7 +52,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = ichrisbirch.config.settings.sqlalchemy.db_uri
+    url = settings.sqlalchemy.db_uri
     context.configure(
         url=url,
         target_metadata=target_metadata,

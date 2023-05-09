@@ -4,23 +4,7 @@ from functools import lru_cache
 from typing import Any, Optional, Union
 
 import dotenv
-from pydantic import BaseSettings, Field, MongoDsn, PostgresDsn, validator
-
-ENV: Optional[str] = os.getenv('ENVIRONMENT')
-
-match ENV:
-    case 'development':
-        env_file = dotenv.find_dotenv('.dev.env')
-    case 'testing':
-        env_file = dotenv.find_dotenv('.test.env')
-    case 'production':
-        env_file = dotenv.find_dotenv('.prod.env')
-    case _:
-        raise ValueError(
-            f'Unrecognized Environment Variable: {ENV}\n' 'Did you set ENVIRONMENT before starting the program?'
-        )
-# Must load the .env file first since settings is instantiated last
-dotenv.load_dotenv(env_file)
+from pydantic import BaseSettings, Field, MongoDsn, PostgresDsn
 
 
 class FlaskSettings(BaseSettings):
@@ -28,7 +12,6 @@ class FlaskSettings(BaseSettings):
 
     # https://flask.palletsprojects.com/en/latest/api/#sessions
     SECRET_KEY: str
-    ENV: Optional[str] = ENV
 
 
 class FastAPISettings(BaseSettings):
@@ -70,28 +53,28 @@ class PostgresSettings(BaseSettings):
 class SQLAlchemySettings(BaseSettings):
     """Config settings for SQLAlchemy"""
 
+    # TODO: [2023/05/07] - This class is currently hardcoded to Postgres.
     echo: bool = False
     track_modifications: bool = False
-    db_uri: str = ""
 
-    @validator('db_uri')
-    def db_uri_validator(cls, value: str) -> str:
-        """
-        The check `if '?' not in value` ensures that the query parameter is only added to the URI
-        if it doesn't already contain a query string.
-        If the URI already has a query string,
-        adding another query parameter with a `?` would create a syntax error in the URI.
+    host: str = Field(env='POSTGRES_HOST')
+    user: str = Field(env='POSTGRES_USER')
+    password: str = Field(env='POSTGRES_PASSWORD', secret=True)
+    port: str = '5432'
+    database: str = 'ichrisbirch'
 
-        In the case of SQLite, the `check_same_thread` parameter is only relevant for connections
-        that are used within the same thread that they were created.
-        If the URI already contains a query string it is assumed that the application code
-        has already included any necessary query parameters
-        and the validator doesn't add the `check_same_thread` parameter again.
-        """
-
-        if 'sqlite' in value and '?' not in value:
-            value += '?check_same_thread=False'
-        return value
+    @property
+    def db_uri(self) -> str:
+        return str(
+            PostgresDsn.build(
+                scheme='postgresql',
+                user=self.user,
+                password=self.password,
+                host=self.host,
+                port=self.port,
+                path=f'/{self.database}',
+            )
+        )
 
 
 class MongoDBSettings(BaseSettings):
@@ -122,20 +105,37 @@ class SQLiteSettings(BaseSettings):
 class LoggingSettings(BaseSettings):
     """Config settings for Logging"""
 
-    log_dir: str = f"{os.getenv('OS_PREFIX')}{os.getenv('LOG_PATH')}"
+    os_prefix: str
+    log_path: str
     log_format: str
     log_date_format: str
     log_level: Union[int, str] = Field('DEBUG', env='LOG_LEVEL')
+
+    @property
+    def log_dir(self) -> str:
+        return self.os_prefix + self.log_path
 
 
 class Settings(BaseSettings):
     """Base settings class that contains all other settings.
 
-    In the Config class, we're setting the env_file based on the ENVIRONMENT variable.
-    If ENVIRONMENT is not recognized, env_file will be None.
-    When env_file is set, pydantic will automatically try to load the variables from the specified file.
+    Order of Operations:
+    1. import `get_settings` into a module
+        1a. This runs the code in this file
+        1b. __post_init__ is used to only set values after class is instantiated, instead of when code is run
+    2. call `get_settings` to get the settings object
+        2a. Load the environment variables from:
+            - env_file passed in
+            - .env file based on `ENVIRONMENT` variable
+        2b. run __post_init__ to instantiate the classes that depend on environment variables
 
-    Also note that since pydantic automatically converts environment variables to their corresponding data types,
+    *** Thoughts ***
+    I'm not sure this is better than having a DevelopmentSettings, TestingSettings, and ProductionSettings classes
+    with a factory function that returns the correct class based on the `ENVIRONMENT` variable.
+
+
+    *** Notes ***
+    Since pydantic automatically converts environment variables to their corresponding data types,
     we don't need to use Optional or Union in our Field definitions anymore.
 
     """
@@ -147,24 +147,40 @@ class Settings(BaseSettings):
     environment: str
     os_prefix: str
     request_timeout: int = 3
-    env_file: str = env_file
 
-    flask = FlaskSettings()
-    fastapi = FastAPISettings()
-    sqlite = SQLiteSettings()
-    mongodb = MongoDBSettings()
-    postgres = PostgresSettings()
-    sqlalchemy = SQLAlchemySettings()
-    logging = LoggingSettings()
-    sqlalchemy.db_uri = postgres.db_uri
-
-    class Config:
-        env_file = env_file
+    flask: FlaskSettings
+    fastapi: FastAPISettings
+    sqlite: SQLiteSettings
+    mongodb: MongoDBSettings
+    postgres: PostgresSettings
+    sqlalchemy: SQLAlchemySettings
+    logging: LoggingSettings
 
 
 @lru_cache()
-def get_settings():
-    return Settings()
-
-
-settings = Settings()
+def get_settings(env_file: Optional[str] = None) -> Settings:
+    if not env_file:
+        match ENV := os.getenv('ENVIRONMENT'):
+            case 'development':
+                env_file = dotenv.find_dotenv('.dev.env')
+            case 'testing':
+                env_file = dotenv.find_dotenv('.test.env')
+            case 'production':
+                env_file = dotenv.find_dotenv('.prod.env')
+            case _:
+                raise ValueError(
+                    f'Unrecognized Environment Variable: {ENV}\n' 'Did you set ENVIRONMENT before starting the program?'
+                )
+    dotenv.load_dotenv(env_file)
+    # TODO: [2023/05/08] - Workaround for instatiation errors:
+    # E pydantic.error_wrappers.ValidationError: 7 validation errors for Settings
+    # E flask field required (type=value_error.missing)
+    return Settings(
+        flask=FlaskSettings(),
+        fastapi=FastAPISettings(),
+        sqlite=SQLiteSettings(),
+        mongodb=MongoDBSettings(),
+        postgres=PostgresSettings(),
+        sqlalchemy=SQLAlchemySettings(),
+        logging=LoggingSettings(),
+    )  # type: ignore
