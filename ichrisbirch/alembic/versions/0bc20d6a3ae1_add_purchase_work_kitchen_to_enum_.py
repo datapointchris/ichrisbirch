@@ -16,8 +16,6 @@ depends_on = None
 
 def upgrade() -> None:
     op.execute("ALTER TYPE taskcategory ADD value 'Work' AFTER 'Home';")
-    op.execute("ALTER TYPE taskcategory ADD value 'Work' AFTER 'Home';")
-    op.execute("ALTER TYPE taskcategory ADD value 'Work' AFTER 'Home';")
 
 
 def downgrade() -> None:
