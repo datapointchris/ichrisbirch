@@ -1,186 +1,172 @@
 import importlib.metadata
+import logging
 import os
+import pathlib
 from functools import lru_cache
 from typing import Any, Optional, Union
 
 import dotenv
-from pydantic import BaseSettings, Field, MongoDsn, PostgresDsn
+
+logger = logging.getLogger(__name__)
 
 
-class FlaskSettings(BaseSettings):
+class FlaskSettings:
     """Config settings for Flask"""
 
-    # https://flask.palletsprojects.com/en/latest/api/#sessions
-    SECRET_KEY: str
+    def __init__(self):
+        # https://flask.palletsprojects.com/en/latest/api/#sessions
+        self.SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')  # MUST be capitalized
 
 
-class FastAPISettings(BaseSettings):
+class FastAPISettings:
     """Config settings for FastAPI"""
 
-    title: str = 'iChrisBirch API'
-    description: str = """## With all the fixins"""
-    responses: dict[Union[int, str], dict[str, Any]] = Field(
-        default_factory=lambda: {
+    def __init__(self):
+        self.title: str = 'iChrisBirch API'
+        self.description: str = """## Backend API for iChrisBirch.com"""
+        self.responses: dict[Union[int, str], dict[str, Any]] = {
             404: {'description': 'Not found'},
             403: {"description": "Operation forbidden"},
         }
-    )
 
 
-class PostgresSettings(BaseSettings):
+class PostgresSettings:
     """Config settings for Postgres"""
 
-    host: str = Field(env='POSTGRES_HOST')
-    user: str = Field(env='POSTGRES_USER')
-    password: str = Field(env='POSTGRES_PASSWORD', secret=True)
-    port: str = '5432'
-    database: str = 'ichrisbirch'
+    def __init__(self):
+        self.host: Optional[str] = os.getenv('POSTGRES_HOST')
+        self.user: Optional[str] = os.getenv('POSTGRES_USER')
+        self.password: Optional[str] = os.getenv('POSTGRES_PASSWORD')
+        self.port: str = '5432'
+        self.database: str = 'ichrisbirch'
 
     @property
     def db_uri(self) -> str:
-        return str(
-            PostgresDsn.build(
-                scheme='postgresql',
-                user=self.user,
-                password=self.password,
-                host=self.host,
-                port=self.port,
-                path=f'/{self.database}',
-            )
-        )
+        return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
-class SQLAlchemySettings(BaseSettings):
+class SQLAlchemySettings:
     """Config settings for SQLAlchemy"""
 
     # TODO: [2023/05/07] - This class is currently hardcoded to Postgres.
-    echo: bool = False
-    track_modifications: bool = False
 
-    host: str = Field(env='POSTGRES_HOST')
-    user: str = Field(env='POSTGRES_USER')
-    password: str = Field(env='POSTGRES_PASSWORD', secret=True)
-    port: str = '5432'
-    database: str = 'ichrisbirch'
+    def __init__(self):
+        self.echo: bool = False
+        self.track_modifications: bool = False
+        self.host: Optional[str] = os.getenv('POSTGRES_HOST')
+        self.user: Optional[str] = os.getenv('POSTGRES_USER')
+        self.password: Optional[str] = os.getenv('POSTGRES_PASSWORD')
+        self.port: str = '5432'
+        self.database: str = 'ichrisbirch'
 
     @property
     def db_uri(self) -> str:
-        return str(
-            PostgresDsn.build(
-                scheme='postgresql',
-                user=self.user,
-                password=self.password,
-                host=self.host,
-                port=self.port,
-                path=f'/{self.database}',
-            )
-        )
+        return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
-class MongoDBSettings(BaseSettings):
+class MongoDBSettings:
     """Config settings for MongoDB"""
 
-    host: str = Field(env='MONGO_HOST')
-    user: str = Field(env='MONGO_USER')
-    password: str = Field(env='MONGO_PASSWORD', secret=True)
+    def __init__(self):
+        self.host: Optional[str] = os.getenv('MONGO_HOST')
+        self.user: Optional[str] = os.getenv('MONGO_USER')
+        self.password: Optional[str] = os.getenv('MONGO_PASSWORD')
 
     @property
     def db_uri(self) -> str:
-        return str(
-            MongoDsn.build(
-                scheme='mongodb',
-                host=self.host,
-                user=self.user,
-                password=self.password,
-            )
-        )
+        return f'mongodb://{self.user}:{self.password}@{self.host}'
 
 
-class SQLiteSettings(BaseSettings):
+class SQLiteSettings:
     """Config settings for SQLite"""
 
-    db_uri: str = Field(env='SQLITE_DATABASE_URI')
+    def __init__(self):
+        self.db_uri: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
 
 
-class LoggingSettings(BaseSettings):
+class LoggingSettings:
     """Config settings for Logging"""
 
-    os_prefix: str
-    log_path: str
-    log_format: str
-    log_date_format: str
-    log_level: Union[int, str] = Field('DEBUG', env='LOG_LEVEL')
+    def __init__(self):
+        self.os_prefix: Optional[str] = os.getenv('OS_PREFIX')
+        self.log_path: Optional[str] = os.getenv('LOG_PATH')
+        self.log_format: Optional[str] = os.getenv('LOG_FORMAT')
+        self.log_date_format: Optional[str] = os.getenv('LOG_DATE_FORMAT')
+        self.log_level: Union[int, str] = os.getenv('LOG_LEVEL', logging.DEBUG)
 
     @property
     def log_dir(self) -> str:
-        return self.os_prefix + self.log_path
+        return str(self.os_prefix) + str(self.log_path)
 
 
-class Settings(BaseSettings):
-    """Base settings class that contains all other settings.
+class Settings:
+    """Base settings class that contains all other settings."""
 
-    Order of Operations:
-    1. import `get_settings` into a module
-        1a. This runs the code in this file
-        1b. __post_init__ is used to only set values after class is instantiated, instead of when code is run
-    2. call `get_settings` to get the settings object
-        2a. Load the environment variables from:
-            - env_file passed in
-            - .env file based on `ENVIRONMENT` variable
-        2b. run __post_init__ to instantiate the classes that depend on environment variables
+    def __init__(self, env_file: pathlib.Path = pathlib.Path()):
+        self.name: str = 'ichrisbirch'
+        self.version: str = importlib.metadata.version(self.name)
+        self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
+        self.api_url: Optional[str] = os.environ.get('API_URL')
+        self.environment: Optional[str] = os.environ.get('ENVIRONMENT')
+        self.os_prefix: Optional[str] = os.environ.get('OS_PREFIX')
+        self.env_file: pathlib.Path = env_file
+        self.request_timeout: int = 3
 
-    *** Thoughts ***
-    I'm not sure this is better than having a DevelopmentSettings, TestingSettings, and ProductionSettings classes
-    with a factory function that returns the correct class based on the `ENVIRONMENT` variable.
-
-
-    *** Notes ***
-    Since pydantic automatically converts environment variables to their corresponding data types,
-    we don't need to use Optional or Union in our Field definitions anymore.
-
-    """
-
-    name: str = 'ichrisbirch'
-    version: str = Field(importlib.metadata.version(name))
-    db_schemas: list[str] = Field(default_factory=lambda: ['apartments', 'box_packing', 'habits'])
-    api_url: str
-    environment: str
-    os_prefix: str
-    request_timeout: int = 3
-
-    flask: FlaskSettings
-    fastapi: FastAPISettings
-    sqlite: SQLiteSettings
-    mongodb: MongoDBSettings
-    postgres: PostgresSettings
-    sqlalchemy: SQLAlchemySettings
-    logging: LoggingSettings
+        self.flask = FlaskSettings()
+        self.fastapi = FastAPISettings()
+        self.postgres = PostgresSettings()
+        self.sqlalchemy = SQLAlchemySettings()
+        self.mongodb = MongoDBSettings()
+        self.sqlite = SQLiteSettings()
+        self.logging = LoggingSettings()
 
 
-@lru_cache()
-def get_settings(env_file: Optional[str] = None) -> Settings:
-    if not env_file:
+def load_environment(env_file: Optional[pathlib.Path | str] = None):
+    if isinstance(env_file, pathlib.Path):
+        print('Pathlib Path')
+        if not env_file.exists():
+            raise FileNotFoundError(f'Environment file not found: {env_file}')
+
+    elif isinstance(env_file, str):
+        print('String')
+        if not pathlib.Path(env_file).exists():
+            print('Not a Pathlib Path')
+            match env_file:
+                case 'development':
+                    filename = '.dev.env'
+                case 'testing':
+                    filename = '.test.env'
+                case 'production':
+                    filename = '.prod.env'
+                case _:
+                    raise ValueError(f'Unrecognized Environment Selection: {env_file}')
+            print(f'Filename: {filename}')
+            env_file = pathlib.Path(dotenv.find_dotenv(filename))
+        else:
+            print('String Path')
+            env_file = pathlib.Path(env_file)
+
+    else:
+        print('ENVIRONMENT Variable')
         match ENV := os.getenv('ENVIRONMENT'):
             case 'development':
-                env_file = dotenv.find_dotenv('.dev.env')
+                filename = '.dev.env'
             case 'testing':
-                env_file = dotenv.find_dotenv('.test.env')
+                filename = '.test.env'
             case 'production':
-                env_file = dotenv.find_dotenv('.prod.env')
+                filename = '.prod.env'
             case _:
-                raise ValueError(
-                    f'Unrecognized Environment Variable: {ENV}\n' 'Did you set ENVIRONMENT before starting the program?'
-                )
-    dotenv.load_dotenv(env_file)
-    # TODO: [2023/05/08] - Workaround for instatiation errors:
-    # E pydantic.error_wrappers.ValidationError: 7 validation errors for Settings
-    # E flask field required (type=value_error.missing)
-    return Settings(
-        flask=FlaskSettings(),
-        fastapi=FastAPISettings(),
-        sqlite=SQLiteSettings(),
-        mongodb=MongoDBSettings(),
-        postgres=PostgresSettings(),
-        sqlalchemy=SQLAlchemySettings(),
-        logging=LoggingSettings(),
-    )  # type: ignore
+                raise ValueError(f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.')
+        env_file = pathlib.Path(dotenv.find_dotenv(filename))
+
+    logger.info(f'Loading environment variables from: {env_file}')
+    # print(f'Environment variables: {dotenv.dotenv_values(env_file)}')
+    dotenv.load_dotenv(env_file, override=True)
+    return env_file
+
+
+@lru_cache(maxsize=1)
+def get_settings(env_file: Optional[pathlib.Path | str] = None) -> Settings:
+    """Return settings based on Path, str, or ENVIRONMENT variable."""
+    resolved_env_file = load_environment(env_file)
+    return Settings(env_file=resolved_env_file)

@@ -63,6 +63,7 @@
   - [ ] Docs if it does not
 - [ ] mypy - `--check-untyped-defs`
   - [ ] Add this option when ready to deal with other routes
+- [ ] Docs: Create video documentation, store on S3, create a link to the video in the docs.
 
 ## Random
 

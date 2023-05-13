@@ -148,7 +148,7 @@ test = ["astroid", "pytest"]
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -4282,4 +4282,4 @@ test = ["pytest (>=7.1.2,<7.2.0)", "pytest-cov (>=3.0.0,<3.1.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.1"
-content-hash = "a67edba96fae474a4f9e0be25a20393acbc03f565ae46a1eed0348b62fc2f299"
+content-hash = "28dbdd59b6b4556d25ea3cc665c2ad959334f0c1e689f670ea7a36ba3b0335d5"

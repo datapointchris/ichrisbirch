@@ -4,6 +4,9 @@ alembic==1.10.4 ; python_full_version >= "3.10.1" and python_full_version < "4.0
 anyio==3.6.2 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
     --hash=sha256:25ea0d673ae30af41a0c442f81cf3b38c7e79fdc7b60335a4c14e05eb0947421 \
     --hash=sha256:fbbe32bd270d2a2ef3ed1c5d45041250284e31fc0a4df4a5a6071842051a51e3
+attrs==23.1.0 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
+    --hash=sha256:1f28b4522cdc2fb4256ac1a020c78acf9cba2c6b461ccd2c126f3aa8e8335d04 \
+    --hash=sha256:6279836d581513a26f1bf235f9acd333bc9115683f14f7e8fae46c98fc50e015
 blinker==1.6.2 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
     --hash=sha256:4afd3de66ef3a9f8067559fb7a1cbe555c17dcbe15971b05d1b625c3e7abe213 \
     --hash=sha256:c3d739772abb7bc2860abf5f2ec284223d9ad5c76da018234f6f50d6f31ab1f0

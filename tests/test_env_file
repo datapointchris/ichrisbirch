@@ -1,11 +1,11 @@
-ENVIRONMENT="development"
+ENVIRONMENT="testing"
 
-FLASK_DEBUG="development"
+FLASK_DEBUG="testing"
 SECRET_KEY="1d1dc629161f75625400de48305acd4669b97020d4e8c632245b2b66e6ed97c6"
 OS_PREFIX="/usr/local"
 
 POSTGRES_HOST="localhost"
-POSTGRES_USER="postgres"
+POSTGRES_USER="postgres-test"
 POSTGRES_PASSWORD="postgres"
 
 MONGO_HOST="mongodb://127.0.0.1:27017"
