@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 # from ..dependencies import auth
 from ichrisbirch import schemas
 from ichrisbirch.api import crud
+from ichrisbirch.config import get_settings
 from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
 
-router = APIRouter(prefix='/tasks', tags=['tasks'])
+settings = get_settings()
+router = APIRouter(prefix='/tasks', tags=['tasks'], responses=settings.fastapi.responses)
 
 
 @router.get("/", response_model=list[schemas.Task])

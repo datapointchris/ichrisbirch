@@ -1,12 +1,12 @@
 import pytest
 
-from ichrisbirch.api.endpoints import main
+from ichrisbirch.api.endpoints import home
 
 
 @pytest.fixture(scope='module')
 def router():
     """Returns the API router to use for this test module"""
-    return main.router
+    return home.router
 
 
 def test_read_main(test_app):

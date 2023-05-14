@@ -14,12 +14,13 @@ from ichrisbirch.app.routes import (
     portfolio,
     tasks,
 )
-from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 
+settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Settings) -> Flask:
+def create_app(settings=settings) -> Flask:
     """Flask app factory
 
     Returns:

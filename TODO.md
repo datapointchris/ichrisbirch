@@ -55,6 +55,7 @@
 - [ ] Check on the daily subtraction
   - [ ] This should be in the logs
   - [ ] Move to airflow eventually
+- [ ] `main.py` files should be `home.py` files in app and api
 
 - [ ] Create tests for logger init
 - [ ] Make sure logger is working

@@ -27,7 +27,7 @@ class FastAPISettings:
         self.description: str = """## Backend API for iChrisBirch.com"""
         self.responses: dict[Union[int, str], dict[str, Any]] = {
             404: {'description': 'Not found'},
-            403: {"description": "Operation forbidden"},
+            403: {'description': 'Operation forbidden'},
         }
 
 

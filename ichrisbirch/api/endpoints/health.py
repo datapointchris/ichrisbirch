@@ -8,7 +8,7 @@ from ichrisbirch import schemas
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
-router = APIRouter(prefix='/health', tags=['health'])
+router = APIRouter(prefix='/health', tags=['health'], responses=settings.fastapi.responses)
 
 
 # TODO: It would be cool to have a test that ran after upgrading an api
