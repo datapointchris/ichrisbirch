@@ -29,21 +29,14 @@ TIMEOUT = settings.request_timeout
 def index():
     """Autotasks home endpoint"""
     try:
-        response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT)
-        autotasks_json = response.json()
+        response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT).json()
     except Exception as e:
         error_message = f'{__file__}: Error retrieving autotasks from API: {e}'
         logger.error(error_message)
         flash(error_message, 'error')
-        autotasks_json = None
-    if not autotasks_json:
-        autotasks = []
-    else:
-        autotasks = sorted(
-            [schemas.AutoTask(**task) for task in autotasks_json],
-            key=lambda x: x.last_run_date,
-            reverse=True,
-        )
+        response = None
+    autotasks = [schemas.AutoTask(**task) for task in response] if response else []
+
     return render_template(
         'autotasks/index.html', autotasks=autotasks, task_categories=TASK_CATEGORIES, task_frequencies=TASK_FREQUENCIES
     )
@@ -62,20 +55,20 @@ def crud():
             try:
                 autotask = schemas.AutoTaskCreate(**data).json()
                 requests.post(AUTOTASKS_URL, data=autotask, timeout=TIMEOUT)
+                flash('Autotask created', 'success')
             except Exception as e:
                 error_message = f'Error creating autotask: {e}'
                 logger.error(error_message)
                 flash(error_message, 'error')
-            flash('Autotask created', 'success')
             return redirect(url_for('autotasks.index'))
         case 'delete':
             try:
                 autotask_id = data.get('id')
                 requests.delete(f'{AUTOTASKS_URL}/{autotask_id}', timeout=TIMEOUT)
+                flash('Autotask deleted', 'success')
             except Exception as e:
                 error_message = f'Error deleting autotask: {e}'
                 logger.error(error_message)
                 flash(error_message, 'error')
-            flash('Autotask deleted', 'success')
             return redirect(url_for('autotasks.index'))
     return abort(405, description=f"Method {method} not accepted")
