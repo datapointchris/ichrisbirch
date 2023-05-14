@@ -2,5 +2,11 @@
     "github-actions.workflows.pinned.workflows": [
         ".github/workflows/validate-python.yml",
         ".github/workflows/deploy-project.yml"
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.envFile": "${workspaceFolder}/.dev.env"
 }

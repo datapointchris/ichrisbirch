@@ -112,3 +112,14 @@
         The trailing `/` is missing from the endpoint being called in the test, resulting in a 307 Temporary Redirect
         To fix:
         `/endpoint` --> `/endpoint/`
+
+## Alembic
+
+!!! failure "Error"
+    Alembic is not able to upgrade to the latest because the revisions got out of sync.
+
+    !!! success "Solution"
+        Find the last revision that was successfully run (manually by inspecting the database) and then run:
+        `alembic stamp <revision>` to set the current revision to the last successful one.
+        Then run the upgrade again:
+        `alembic upgrade head`
