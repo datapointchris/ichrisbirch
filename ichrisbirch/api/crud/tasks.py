@@ -136,23 +136,23 @@ class CRUDTask:
         Returns:
             list[Task] | Task: SQLAlchemy Task model(s)
         """
-        statement = select(models.Task).filter(models.Task.complete_date.is_not(None))
+        query = select(models.Task).filter(models.Task.complete_date.is_not(None))
 
         if first:  # first completed task
-            statement = statement.order_by(models.Task.complete_date.asc()).limit(1)
+            query = query.order_by(models.Task.complete_date.asc()).limit(1)
 
         elif last:  # most recent (last) completed task
-            statement = statement.order_by(models.Task.complete_date.desc()).limit(1)
+            query = query.order_by(models.Task.complete_date.desc()).limit(1)
 
         elif start_date is None or end_date is None:  # return all if no start or end date
-            statement = statement.order_by(models.Task.complete_date.desc())
+            query = query.order_by(models.Task.complete_date.desc())
 
         else:  # filtered by start and end date
-            statement = statement.filter(
+            query = query.filter(
                 models.Task.complete_date >= start_date, models.Task.complete_date <= end_date
             ).order_by(models.Task.complete_date.desc())
 
-        return list(session.scalars(statement).all())
+        return list(session.scalars(query).all())
 
     def complete_task(self, id: int, session: Session) -> models.Task | None:
         """Complete task with specified id
