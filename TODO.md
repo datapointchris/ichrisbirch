@@ -48,15 +48,18 @@
 - [X] AutoTask - Add columns
   - [X] `first_run_date`
   - [X] `run_count`
-- [ ] Alembic upgrade prod
+- [X] Alembic upgrade prod
 - [ ] Always run the new autotask right now
 - [ ] Make tests for autotasks
 - [ ] Test to see if the autotask thing actually works
+- [ ] Check on the daily subtraction
+  - [ ] This should be in the logs
+  - [ ] Move to airflow eventually
 
 - [ ] Create tests for logger init
 - [ ] Make sure logger is working
 - [ ] Update tmuxinator stuff
-- [ ] Login to hide my shit
+- [ ] Website Login to hide my shit
 - [ ] Autotasks
 - [ ] `euphoria_ddl.sql`
 - [ ] `.flake8` does this not work with pyproject?

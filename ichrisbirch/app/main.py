@@ -30,7 +30,8 @@ def create_app(settings: Settings) -> Flask:
 
     with app.app_context():
         app.config.from_object(settings.flask)
-        logger.debug('Configured App')
+        logger.debug('Configured Flask App')
+        logger.debug(f'Flask App Config: {app.config.keys()}')
 
         app.register_blueprint(main.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
