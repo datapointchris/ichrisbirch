@@ -29,10 +29,37 @@ def create_api(settings) -> FastAPI:
     # Add dependencies later
     # dependencies=[Depends(auth)],
 
-    api.include_router(endpoints.main.router, responses=settings.fastapi.responses)
-    api.include_router(endpoints.autotasks.router, responses=settings.fastapi.responses)
-    api.include_router(endpoints.health.router, responses=settings.fastapi.responses)
-    api.include_router(endpoints.tasks.router, responses=settings.fastapi.responses)
+    api.include_router(
+        endpoints.home.router,
+        prefix='',
+        tags=['home'],
+        include_in_schema=False,
+        responses=settings.fastapi.responses,
+    )
+    api.include_router(
+        endpoints.autotasks.router,
+        prefix='/autotasks',
+        tags=['autotasks'],
+        responses=settings.fastapi.responses,
+    )
+    api.include_router(
+        endpoints.countdowns.router,
+        prefix='/countdowns',
+        tags=['countdowns'],
+        responses=settings.fastapi.responses,
+    )
+    api.include_router(
+        endpoints.health.router,
+        prefix='/health',
+        tags=['health'],
+        responses=settings.fastapi.responses,
+    )
+    api.include_router(
+        endpoints.tasks.router,
+        prefix='/tasks',
+        tags=['tasks'],
+        responses=settings.fastapi.responses,
+    )
 
     logger.debug('Registered API Routers')
     return api
