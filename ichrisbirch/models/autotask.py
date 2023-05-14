@@ -1,6 +1,5 @@
 import enum
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import DateTime, Enum, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -29,7 +28,7 @@ class AutoTask(Base):
     category: Mapped[Enum] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
     notes: Mapped[str] = mapped_column(Text(), nullable=True)
-    frequency: Mapped[Optional[datetime]] = mapped_column(Enum(TaskFrequency), nullable=False)
+    frequency: Mapped[datetime] = mapped_column(Enum(TaskFrequency), nullable=False)
     first_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     run_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default='0')
