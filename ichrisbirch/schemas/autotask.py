@@ -29,21 +29,20 @@ class AutoTask(AutoTaskConfig):
 
     id: int
     name: str
-    notes: str | None
     category: TaskCategory
     priority: int
-    start_date: datetime
-    last_run_date: datetime
+    notes: str | None
     frequency: TaskFrequency
+    first_run_date: datetime
+    last_run_date: datetime
+    run_count: int
 
 
 class AutoTaskUpdate(AutoTaskConfig):
     """Pydantic model for updating a task"""
 
     name: str | None
-    notes: str | None
     category: TaskCategory | None
     priority: int | None
-    start_date: datetime | None
-    last_run_date: datetime | None
+    notes: str | None
     frequency: TaskFrequency | None
