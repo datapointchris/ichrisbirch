@@ -1,29 +1,67 @@
 @import "./variables";
 
 #countdowns {
-    width: 80%;
-    margin: 50px, auto;
+    width: 50%;
+    margin: auto;
     padding: 50px;
     text-align: center;
 }
 
 .countdown-box {
+    margin: 15px;
+    padding: 15px;
     border: 2px solid rgb(117, 109, 96);
-    border-radius: 15px;
-    box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+    border-radius: $button-box-border-radius;
+    font-size: larger;
 }
 
 .daysleft {
-    line-height: 0.25em;
+    line-height: 2em;
+}
+
+.two-weeks-left {
+    background-color: $error-color;
+}
+
+.month-left {
+    background-color: $warning-color;
 }
 
 #add-countdown {
-    width: 25%;
-    margin: 100px auto;
-    padding: 40px;
-    background-color: $dark-gray;
-    text-align: center;
+    width: 50%;
+    margin: auto;
+    // set padding to 80 for left and right and 40 for top and bottom
+    padding: 40px 80px;
+    line-height: 1.5em;
+    background-color: $dark-background;
     border: 2px solid rgb(117, 109, 96);
-    border-radius: 15px;
-    box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+    border-radius: $button-box-border-radius;
+
+    h2 {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+}
+
+///// Submit, Delete, Add Buttons /////
+
+.button {
+    border-radius: $button-box-border-radius;
+    font-size: large;
+    padding: 10px 25px;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.box-3d {
+    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $light-shadow, inset -5px -5px 4px -2px $light-shadow;
+}
+
+.textbox {
+    border-radius: $button-box-border-radius;
+    font-size: large;
+    padding: 10px 25px;
+    background-color: $all-text-color;
 }

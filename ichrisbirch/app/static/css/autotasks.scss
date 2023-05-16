@@ -15,7 +15,6 @@
     border-radius: 15px;
     line-height: 1.7em;
     font-size: larger;
-    box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
 
     &:last-child:nth-child(odd) {
         grid-column: 1 / span 2;
@@ -36,7 +35,6 @@
 
 .autotask-box-left {
     grid-column: 1 / 2;
-    // width: 50%;
     margin: auto;
 }
 
@@ -54,8 +52,7 @@
     line-height: 1.5em;
     background-color: $dark-background;
     border: 2px solid rgb(117, 109, 96);
-    border-radius: 15px;
-    box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+    border-radius: $button-box-border-radius;
 
     h2 {
         text-align: center;

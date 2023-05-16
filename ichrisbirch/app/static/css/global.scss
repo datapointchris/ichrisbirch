@@ -83,12 +83,12 @@ body {
 }
 
 .success {
-    background-color: rgb(31, 134, 34, 0.8);
+    background-color: $success-color;
     color: white;
 }
 
 .error {
-    background-color: rgb(92, 6, 0, 0.8);
+    background-color: $error-color;
     color: white;
 }
 

@@ -1,27 +1,60 @@
 #countdowns {
-  width: 80%;
-  margin: 50px, auto;
+  width: 50%;
+  margin: auto;
   padding: 50px;
   text-align: center;
 }
 
 .countdown-box {
+  margin: 15px;
+  padding: 15px;
   border: 2px solid rgb(117, 109, 96);
   border-radius: 15px;
-  box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+  font-size: larger;
 }
 
 .daysleft {
-  line-height: 0.25em;
+  line-height: 2em;
+}
+
+.two-weeks-left {
+  background-color: rgba(92, 6, 0, 0.8);
+}
+
+.month-left {
+  background-color: rgba(92, 92, 0, 0.8);
 }
 
 #add-countdown {
-  width: 25%;
-  margin: 100px auto;
-  padding: 40px;
-  background-color: #444;
-  text-align: center;
+  width: 50%;
+  margin: auto;
+  padding: 40px 80px;
+  line-height: 1.5em;
+  background-color: rgba(16, 16, 16, 0.4);
   border: 2px solid rgb(117, 109, 96);
   border-radius: 15px;
-  box-shadow: 6px 4px 2px 0px rgb(60, 60, 80), inset -5px -5px 4px -2px rgb(60, 60, 80);
+}
+#add-countdown h2 {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.button {
+  border-radius: 15px;
+  font-size: large;
+  padding: 10px 25px;
+}
+.button:hover {
+  text-decoration: underline;
+}
+
+.box-3d {
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #808080, inset -5px -5px 4px -2px #808080;
+}
+
+.textbox {
+  border-radius: 15px;
+  font-size: large;
+  padding: 10px 25px;
+  background-color: #dddddd;
 }/*# sourceMappingURL=countdowns.css.map */
