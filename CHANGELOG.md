@@ -189,3 +189,32 @@ Pre-commit Possibilites:
   - [X] Purchase
   - [X] Work
   - [X] Kitchen
+
+## Create /autotask endpoint
+
+- [X] Simple storage of chores that need to be added to the priority list
+  - [X] Columns
+    - Same as [tasks] columns
+    - Additionally:
+      - Add date for autochore
+      - How often to add it (days)
+- [X] routes/autotask.py
+- [X] endpoints/autotask.py
+- [X] crud/autotask.py
+- [X] static/css/autotask.scss
+- [X] templates/autotasks/*
+- [X] Add to base.html navigation
+- [X] tests/endpoints/test_autotasks.py
+
+### Miscellaneous Upgrades and Features
+
+- [X] Fix CSS autotask boxes (quickly)
+- [X] AutoTask - Add columns
+  - [X] `first_run_date`
+  - [X] `run_count`
+- [X] Alembic upgrade prod
+- [X] `main.py` files should be `home.py` files in app and api
+
+## Add Countdowns to API routes
+
+- [X] Add ALLLL

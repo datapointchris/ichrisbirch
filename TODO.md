@@ -4,9 +4,7 @@
 - [Random](#random)
 - [CSS files](#css-files)
 - [Tasks](#tasks)
-- [Create /autochore endpoint](#create-autochore-endpoint)
 - [Add Events to API routes](#add-events-to-api-routes)
-- [Add Countdowns to API routes](#add-countdowns-to-api-routes)
 - [Infrastructure Management](#infrastructure-management)
 - [User Login](#user-login)
 - [WTForms](#wtforms)
@@ -44,18 +42,11 @@
 
 ## PRIORITY PROJECTS
 
-- [X] Fix autotask boxes (quickly)
-- [X] AutoTask - Add columns
-  - [X] `first_run_date`
-  - [X] `run_count`
-- [X] Alembic upgrade prod
 - [ ] Always run the new autotask right now
-- [X] Make tests for autotasks
 - [ ] Test to see if the autotask creator actually works
 - [ ] Check on the daily subtraction
   - [ ] This should be in the logs
   - [ ] Move to airflow eventually
-- [ ] `main.py` files should be `home.py` files in app and api
 
 - [ ] Create tests for logger init
 - [ ] Make sure logger is working
@@ -99,25 +90,7 @@
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
 
-## Create /autochore endpoint
-
-- [ ] Simple storage of chores that need to be added to the priority list
-  - [ ] Columns
-    - Same as [tasks] columns
-    - Additionally:
-      - Add date for autochore
-      - How often to add it (days)
-- [ ] routes/autotask.py
-- [ ] endpoints/autotask.py
-- [ ] crud/autotask.py
-- [ ] static/css/autotask.scss
-- [ ] templates/autotasks/*
-- [ ] Add to base.html navigation
-- [ ] tests/endpoints/test_autotasks.py
-
 ## Add Events to API routes
-
-## Add Countdowns to API routes
 
 ## Infrastructure Management
 
