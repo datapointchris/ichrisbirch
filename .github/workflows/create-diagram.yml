@@ -1,9 +1,7 @@
 name: Create diagram
 on:
   workflow_dispatch: {}
-  push:
-    branches:
-      - master
+
 jobs:
   get_data:
     runs-on: ubuntu-latest
@@ -13,4 +11,4 @@ jobs:
       - name: Update diagram
         uses: githubocto/repo-visualizer@main
         with:
-          excluded_paths: "stats,.gitsecret"
+          excluded_paths: "stats,.gitsecret,.git"
