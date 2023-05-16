@@ -2,36 +2,54 @@
 
 {% block title %}Countdowns{% endblock %}
 
+{% block scripts %}
+<script type="text/javascript"
+    src="{{ url_for('static', filename='js/countdowns.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div id="countdowns">
     {% for countdown in countdowns %}
-    <div class="countdown-box">
+    <div class="countdown-box box-3d">
         <h1>{{ countdown.name }}</h1>
         <h1 class="daysleft" id="{{ countdown.id }}"></h1>
-        <script>calculateDays('{{ countdown.date.strftime("%B %d %Y %X") }}', '{{ countdown.id }}');
-        </script>
-        {{ countdown.date.strftime("%B %d %Y") }}
+        <script>updateDaysLeft('{{ countdown.due_date }}', '{{ countdown.id }}');</script>
+        {{ countdown.due_date.strftime("%B %d %Y") }}
+        <br />
+        {{ countdown.notes }}
         <br /><br />
-        <form method="POST" action="{{ url_for('countdowns.index') }}">
-            <input type="hidden" name="name" value="{{ countdown.id }}">
+        <form method="POST" action="{{ url_for('countdowns.crud') }}">
+            <input type="hidden" name="id" id="id" value="{{ countdown.id }}">
             <input type="hidden" name="method" value="delete">
             <input type="submit" class="button box-3d" value="Delete">
         </form>
     </div>
+
+    {% else %}
+    <div class="countdown-box box-3d">
+        <h2>No Countdowns</h2>
+    </div>
     {% endfor %}
 </div>
-<div id="add-countdown">
+<div id="add-countdown" class="box-3d">
     <h3>Add New Countdown:</h3>
-    <br />
-    <form method="POST" action="{{ url_for('countdowns.index') }}">
-        <label for="name">Name:</label><br />
-        <input type="text" size="30" class="textbox box-3d" name="name" id="name">
-        <br /><br /><br />
-        <label for="date">Date:</label><br />
-        <input type="date" id="date" name="date" class="textbox box-3d">
-        <input type="hidden" name="method" value="add">
-        <br /><br /><br />
-        <input type="submit" class="button box-3d" value="Add New Countdown">
-    </form>
+    <div id="add-form">
+        <form method="POST" action="{{ url_for('countdowns.crud') }}">
+            <label for="name">Name:</label>
+            <input type="text" size="30" class="textbox box-3d" name="name" id="name">
+            <br /><br />
+
+            <label for="notes">Notes:</label>
+            <input type="text" size="40" class="textbox box-3d" name="notes" id="notes">
+            <br /><br />
+
+            <label for="due_date">Due Date:</label>
+            <input type="date" id="due_date" name="due_date" class="textbox box-3d">
+            <br /><br />
+
+            <input type="hidden" name="method" value="add">
+            <input type="submit" class="button box-3d" value="Add New Countdown">
+        </form>
+    </div>
 </div>
 {% endblock %}

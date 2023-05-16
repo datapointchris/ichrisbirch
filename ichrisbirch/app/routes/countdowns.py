@@ -19,14 +19,14 @@ TIMEOUT = settings.request_timeout
 @blueprint.route('/', methods=['GET'])
 def index():
     """Countdowns home endpoint"""
-    try:
-        response = requests.get(COUNTDOWNS_URL, timeout=TIMEOUT).json()
-    except Exception as e:
-        error_message = f'{__file__}: Error retrieving countdowns from API: {e}'
+    response = requests.get(COUNTDOWNS_URL, timeout=TIMEOUT)
+    if response.status_code != 200:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)
         flash(error_message, 'error')
-        response = None
-    countdowns = [schemas.Countdown(**countdown) for countdown in response] if response else []
+        countdowns = []
+    else:
+        countdowns = [schemas.Countdown(**countdown) for countdown in response.json()]
 
     return render_template('countdowns/index.html', countdowns=countdowns)
 
@@ -39,25 +39,28 @@ def crud():
     logger.debug(f'{request.referrer=}')
     logger.debug(f'{method=}')
     logger.debug(f'{data}')
+    print(f'{request.referrer=}')
+    print(f'{method=}')
+    print(f'{data=}')
     match method:
         case 'add':
-            try:
-                countdown = schemas.CountdownCreate(**data).json()
-                requests.post(COUNTDOWNS_URL, data=countdown, timeout=TIMEOUT)
-                flash('Countdown created', 'success')
-            except Exception as e:
-                error_message = f'Error creating countdown: {e}'
+            countdown = schemas.CountdownCreate(**data).json()
+            response = requests.post(COUNTDOWNS_URL, data=countdown, timeout=TIMEOUT)
+            if response.status_code != 201:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
                 flash(error_message, 'error')
+            else:
+                flash('Countdown created', 'success')
             return redirect(url_for('countdowns.index'))
         case 'delete':
-            try:
-                countdown_id = data.get('id')
-                requests.delete(f'{COUNTDOWNS_URL}/{countdown_id}', timeout=TIMEOUT)
-                flash('Countdown deleted', 'success')
-            except Exception as e:
-                error_message = f'Error deleting countdown: {e}'
+            id = data.get('id')
+            response = requests.delete(f'{COUNTDOWNS_URL}/{id}', timeout=TIMEOUT)
+            if response.status_code != 200:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
                 flash(error_message, 'error')
+            else:
+                flash('Autotask deleted', 'success')
             return redirect(url_for('countdowns.index'))
     return abort(405, description=f"Method {method} not accepted")
