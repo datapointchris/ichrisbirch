@@ -3,7 +3,7 @@ import json
 import pytest
 
 from ichrisbirch import models
-from ichrisbirch.api.endpoints import tasks
+from ichrisbirch.api import endpoints
 
 
 @pytest.fixture(scope='module')
@@ -47,112 +47,112 @@ def data_model():
 @pytest.fixture(scope='module')
 def router():
     """Returns the API router to use for this test module"""
-    return tasks.router
+    return endpoints.tasks.router
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_read_one_task(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
+def test_read_one_task(postgres_testdb_in_docker, insert_test_data, test_api, task_id):
     """Test if able to read one task"""
-    response = test_app.get(f'/tasks/{task_id}/')
+    response = test_api.get(f'/tasks/{task_id}/')
     assert response.status_code == 200
 
 
-def test_read_many_tasks(postgres_testdb_in_docker, insert_test_data, test_app):
+def test_read_many_tasks(postgres_testdb_in_docker, insert_test_data, test_api):
     """Test if able to read many tasks"""
-    response = test_app.get('/tasks/')
+    response = test_api.get('/tasks/')
     assert response.status_code == 200
     assert len(response.json()) == 3
 
 
-def test_read_many_tasks_completed(postgres_testdb_in_docker, insert_test_data, test_app):
+def test_read_many_tasks_completed(postgres_testdb_in_docker, insert_test_data, test_api):
     """Test if able to read many tasks"""
-    response = test_app.get('/tasks/?completed_filter=completed')
+    response = test_api.get('/tasks/?completed_filter=completed')
     assert response.status_code == 200
     assert len(response.json()) == 1
 
 
-def test_read_many_tasks_not_completed(postgres_testdb_in_docker, insert_test_data, test_app):
+def test_read_many_tasks_not_completed(postgres_testdb_in_docker, insert_test_data, test_api):
     """Test if able to read many tasks"""
-    response = test_app.get('/tasks/?completed_filter=not_completed')
+    response = test_api.get('/tasks/?completed_filter=not_completed')
     assert response.status_code == 200
     assert len(response.json()) == 2
 
 
 @pytest.mark.parametrize('test_task', test_data_for_create)
-def test_create_task(postgres_testdb_in_docker, insert_test_data, test_app, test_task):
+def test_create_task(postgres_testdb_in_docker, insert_test_data, test_api, test_task):
     """Test if able to create a task"""
-    response = test_app.post('/tasks/', data=json.dumps(test_task))
-    assert response.status_code == 200
+    response = test_api.post('/tasks/', data=json.dumps(test_task))
+    assert response.status_code == 201
     assert dict(response.json())['name'] == test_task['name']
 
     # Test task was created
-    response = test_app.get('/tasks/')
+    response = test_api.get('/tasks/')
     assert response.status_code == 200
     assert len(response.json()) == 4
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_delete_task(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
+def test_delete_task(postgres_testdb_in_docker, insert_test_data, test_api, task_id):
     """Test if able to delete a task"""
     endpoint = f'/tasks/{task_id}/'
-    task = test_app.get(endpoint)
-    response = test_app.delete(endpoint)
-    deleted = test_app.get(endpoint)
+    task = test_api.get(endpoint)
+    response = test_api.delete(endpoint)
+    deleted = test_api.get(endpoint)
     assert response.status_code == 200
     assert response.json() == task.json()
     assert deleted.status_code == 404
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_complete_task(postgres_testdb_in_docker, insert_test_data, test_app, task_id):
+def test_complete_task(postgres_testdb_in_docker, insert_test_data, test_api, task_id):
     """Test if able to complete a task"""
-    response = test_app.post(f'/tasks/complete/{task_id}/')
+    response = test_api.post(f'/tasks/complete/{task_id}/')
     assert response.status_code == 200
 
 
-def test_read_completed_tasks(postgres_testdb_in_docker, insert_test_data, test_app):
+def test_read_completed_tasks(postgres_testdb_in_docker, insert_test_data, test_api):
     """Test if able to read completed tasks"""
-    completed = test_app.get('/tasks/completed/')
+    completed = test_api.get('/tasks/completed/')
     assert completed.status_code == 200
     assert len(completed.json()) == 1
 
 
-def test_search_task(postgres_testdb_in_docker, insert_test_data, test_app):
+def test_search_task(postgres_testdb_in_docker, insert_test_data, test_api):
     """Test search capability"""
     search_term = 'chore'
-    search_results = test_app.get(f'/tasks/search/{search_term}')
+    search_results = test_api.get(f'/tasks/search/{search_term}')
     assert len(search_results.json()) == 1
 
     search_term = 'home'
-    search_results = test_app.get(f'/tasks/search/{search_term}')
+    search_results = test_api.get(f'/tasks/search/{search_term}')
     assert len(search_results.json()) == 2
 
 
 @pytest.mark.parametrize('test_task', test_data_for_create)
-def test_task_lifecycle(postgres_testdb_in_docker, insert_test_data, test_app, test_task):
+def test_task_lifecycle(postgres_testdb_in_docker, insert_test_data, test_api, test_task):
     """Integration test for CRUD lifecylce of a task"""
 
     # Create new task
-    created_task = test_app.post('/tasks/', data=json.dumps(test_task))
-    assert created_task.status_code == 200
+    created_task = test_api.post('/tasks/', data=json.dumps(test_task))
+    assert created_task.status_code == 201
     assert created_task.json()['name'] == test_task['name']
 
     # Read all tasks
-    all_tasks = test_app.get('/tasks/')
+    all_tasks = test_api.get('/tasks/')
     assert all_tasks.status_code == 200
     assert len(all_tasks.json()) == 4
 
     # Get created task
     task_id = created_task.json().get('id')
     endpoint = f'/tasks/{task_id}/'
-    response_task = test_app.get(endpoint)
+    response_task = test_api.get(endpoint)
     assert response_task.status_code == 200
     assert response_task.json()['name'] == test_task['name']
 
     # Delete Task
-    deleted_task = test_app.delete(f'/tasks/{task_id}/').json()
+    deleted_task = test_api.delete(f'/tasks/{task_id}/').json()
     assert deleted_task['name'] == test_task['name']
 
     # Make sure it's missing
-    missing_task = test_app.get(f'/tasks/{task_id}')
+    missing_task = test_api.get(f'/tasks/{task_id}')
     assert missing_task.status_code == 404

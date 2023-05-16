@@ -75,7 +75,7 @@ def create_schemas(schemas: list[str]):
         session.close()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def postgres_testdb_in_docker():
     """Create a postgres test database in docker for unit tests
 
@@ -107,10 +107,10 @@ def insert_test_data(base_test_data: list[dict], data_model):
 
 
 @pytest.fixture(scope='function')
-def test_app(router: APIRouter) -> Generator[TestClient, Any, None]:
+def test_api(router: APIRouter) -> Generator[TestClient, Any, None]:
     """Create a FastAPI app for testing"""
-    app = FastAPI()
-    app.include_router(router)
-    app.dependency_overrides[sqlalchemy_session] = get_testing_session
-    with TestClient(app) as client:
+    api = FastAPI()
+    api.include_router(router)
+    api.dependency_overrides[sqlalchemy_session] = get_testing_session
+    with TestClient(api) as client:
         yield client
