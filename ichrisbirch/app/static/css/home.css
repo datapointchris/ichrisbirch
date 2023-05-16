@@ -1,0 +1,24 @@
+#main-index-content {
+  width: 60%;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #666;
+  border: 5px greenyellow dashed;
+  border-radius: 200px;
+  text-align: center;
+}
+#main-index-content > img {
+  height: 60%;
+  width: 60%;
+}
+
+#home-links {
+  display: inline-flex;
+  width: 40%;
+}
+
+.link {
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+}/*# sourceMappingURL=home.css.map */

@@ -5,7 +5,7 @@ from ichrisbirch.config import get_settings
 settings = get_settings()
 
 blueprint = Blueprint(
-    'main',
+    'home',
     __name__,
     template_folder='templates',
     static_folder='static',
@@ -14,5 +14,5 @@ blueprint = Blueprint(
 
 @blueprint.route('/')
 def index():
-    """Website main homepage"""
+    """Website homepage"""
     return render_template('index.html', settings=settings)

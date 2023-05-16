@@ -50,8 +50,8 @@
   - [X] `run_count`
 - [X] Alembic upgrade prod
 - [ ] Always run the new autotask right now
-- [ ] Make tests for autotasks
-- [ ] Test to see if the autotask thing actually works
+- [X] Make tests for autotasks
+- [ ] Test to see if the autotask creator actually works
 - [ ] Check on the daily subtraction
   - [ ] This should be in the logs
   - [ ] Move to airflow eventually

@@ -9,8 +9,8 @@ from ichrisbirch.app.routes import (
     events,
     habits,
     health,
+    home,
     journal,
-    main,
     portfolio,
     tasks,
 )
@@ -34,7 +34,7 @@ def create_app(settings=settings) -> Flask:
         logger.debug('Configured Flask App')
         logger.debug(f'Flask App Config: {app.config.keys()}')
 
-        app.register_blueprint(main.blueprint)
+        app.register_blueprint(home.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')
         app.register_blueprint(countdowns.blueprint, url_prefix='/countdowns')

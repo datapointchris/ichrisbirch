@@ -3,20 +3,28 @@
 {% block title %}iChrisBirch{% endblock %}
 
 {% block stylesheet %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 {% endblock %}
 
 {% block content %}
 <div id="main-index-content">
     <h1>iChris Birch</h1>
     <h2>Data Engineer</h2>
-    <h2>Playground for my stuff</h2>
-    <a href="https://github.com/datapointchris/ichrisbirch" target="_blank">Code
-        Here</a>
-    <a href="http://api.ichrisbirch.com" target="_blank">API Here</a>
-    <a href="http://docs.ichrisbirch.com" target="_blank">Docs Here</a>
-    <br />
-    <img src="https://github.com/datapointchris/ichrisbirch/blob/master/diagram.svg">
+    <h3>Playground for my stuff</h2>
+    <div id="home-links">
+        <span class="link">
+            <a href="https://github.com/datapointchris/ichrisbirch" target="_blank">Code
+                Here</a></span>
+        <span class="link">
+            <a href="http://api.ichrisbirch.com" target="_blank">API Here</a>
+        </span>
+        <span class="link">
+            <a href="http://docs.ichrisbirch.com" target="_blank">Docs Here</a>
+        </span>
+    </div>
+    <br /><br />
+    <img src="{{ url_for('static', filename='img/diagram.svg') }}", >
+    <br /><br />
 
 </div>
 {% endblock %}
