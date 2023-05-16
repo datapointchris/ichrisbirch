@@ -1,11 +1,9 @@
 import logging
 
-from ichrisbirch.config import get_settings
-
-settings = get_settings()
+from ichrisbirch.config import Settings
 
 
-def init():
+def init(settings: Settings):
     """Initialize the base logger"""
     logger = logging.getLogger(__name__)
     log_file = f'{settings.logging.log_dir}/pylogger.log'

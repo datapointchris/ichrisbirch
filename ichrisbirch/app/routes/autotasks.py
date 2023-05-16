@@ -10,12 +10,7 @@ from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 settings = get_settings()
-blueprint = Blueprint(
-    'autotasks',
-    __name__,
-    template_folder='templates/autotasks',
-    static_folder='static',
-)
+blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotasks', static_folder='static')
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +23,14 @@ TIMEOUT = settings.request_timeout
 @blueprint.route('/', methods=['GET'])
 def index():
     """Autotasks home endpoint"""
-    try:
-        response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT).json()
-    except Exception as e:
-        error_message = f'{__file__}: Error retrieving autotasks from API: {e}'
+    response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT)
+    if response.status_code != 200:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)
         flash(error_message, 'error')
-        response = None
-    autotasks = [schemas.AutoTask(**task) for task in response] if response else []
+        autotasks = []
+    else:
+        autotasks = [schemas.AutoTask(**task) for task in response.json()]
 
     return render_template(
         'autotasks/index.html', autotasks=autotasks, task_categories=TASK_CATEGORIES, task_frequencies=TASK_FREQUENCIES
@@ -52,23 +47,23 @@ def crud():
     logger.debug(f'{data}')
     match method:
         case 'add':
-            try:
-                autotask = schemas.AutoTaskCreate(**data).json()
-                requests.post(AUTOTASKS_URL, data=autotask, timeout=TIMEOUT)
-                flash('Autotask created', 'success')
-            except Exception as e:
-                error_message = f'Error creating autotask: {e}'
+            autotask = schemas.AutoTaskCreate(**data).json()
+            response = requests.post(AUTOTASKS_URL, data=autotask, timeout=TIMEOUT)
+            if response.status_code != 201:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
                 flash(error_message, 'error')
+            else:
+                flash('Autotask created', 'success')
             return redirect(url_for('autotasks.index'))
         case 'delete':
-            try:
-                autotask_id = data.get('id')
-                requests.delete(f'{AUTOTASKS_URL}/{autotask_id}', timeout=TIMEOUT)
-                flash('Autotask deleted', 'success')
-            except Exception as e:
-                error_message = f'Error deleting autotask: {e}'
+            autotask_id = data.get('id')
+            response = requests.delete(f'{AUTOTASKS_URL}/{autotask_id}', timeout=TIMEOUT)
+            if response.status_code != 200:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
                 flash(error_message, 'error')
+            else:
+                flash('Autotask deleted', 'success')
             return redirect(url_for('autotasks.index'))
     return abort(405, description=f"Method {method} not accepted")

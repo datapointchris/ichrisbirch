@@ -5,7 +5,7 @@
 {% block content %}
 <div id="autotasks">
     {% for autotask in autotasks %}
-    <div class="autotask">
+    <div class="autotask box-3d">
         <h2>{{ autotask.name }}</h2>
         <div class="autotask-box">
             <div class="autotask-box-container">
@@ -41,12 +41,12 @@
         </div>
     </div>
     {% else %}
-    <div class="add-autotask">
+    <div class="add-autotask box-3d">
         <h2>No AutoTasks</h2>
     </div>
     {% endfor %}
 </div>
-<div id="add-autotask">
+<div id="add-autotask" class="box-3d">
     <h2>Add New AutoTask:</h2>
     <div id="add-form">
         <form method="POST" action="{{ url_for('autotasks.crud') }}">
