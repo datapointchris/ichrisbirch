@@ -1,51 +1,50 @@
 import calendar
-from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
+from typing import Optional
 
 
-@dataclass
 class EasyDate:
     """Create easy to use python date filters"""
 
-    today: date = date.today()
-    tomorrow: date = today + timedelta(days=1)
-    yesterday: date = today - timedelta(days=1)
-    previous_7: date = today - timedelta(days=7)
-    previous_30: date = today - timedelta(days=30)
-    _month_days: int = calendar.monthrange(today.year, today.month)[1]
-    _week_number: int = today.isocalendar().week
-    week_start: date = date.fromisocalendar(today.year, _week_number, 1)
-    week_end: date = week_start + timedelta(days=7)
-    this_month: date = date(today.year, today.month, 1)
-    next_month: date = this_month + timedelta(days=_month_days)
-    this_year: date = date(today.year, 1, 1)
-    next_year: date = date(today.year + 1, 1, 1)
-    year_1900: datetime = datetime(1900, 1, 1)
-    year_2100: datetime = datetime(2100, 1, 1)
+    def __init__(self, today: Optional[date] = None):
+        self.today: date = today or date.today()
+        self.tomorrow: date = self.today + timedelta(days=1)
+        self.yesterday: date = self.today - timedelta(days=1)
+        self.previous_7: date = self.today - timedelta(days=7)
+        self.previous_30: date = self.today - timedelta(days=30)
+        self._month_days: int = calendar.monthrange(self.today.year, self.today.month)[1]
+        self._week_number: int = self.today.isocalendar().week
+        self.week_start: date = date.fromisocalendar(self.today.year, self._week_number, 1)
+        self.week_end: date = self.week_start + timedelta(days=7)
+        self.this_month: date = date(self.today.year, self.today.month, 1)
+        self.next_month: date = self.this_month + timedelta(days=self._month_days)
+        self.this_year: date = date(self.today.year, 1, 1)
+        self.next_year: date = date(self.today.year + 1, 1, 1)
 
 
-@dataclass
 class EasyDateTime:
     """Create easy to use python datetime filters"""
 
-    today: datetime = datetime.combine(date.today(), time(), tzinfo=ZoneInfo("America/Chicago"))
-    tomorrow: datetime = today + timedelta(days=1)
-    yesterday: datetime = today - timedelta(days=1)
-    previous_7: datetime = today - timedelta(days=7)
-    previous_30: datetime = today - timedelta(days=30)
-    _month_days: int = calendar.monthrange(today.year, today.month)[1]
-    _week_number: int = today.isocalendar().week
-    week_start: datetime = datetime.combine(date.fromisocalendar(today.year, _week_number, 1), time())
-    week_end: datetime = week_start + timedelta(days=7)
-    this_month: datetime = datetime(today.year, today.month, 1)
-    next_month: datetime = this_month + timedelta(days=_month_days)
-    this_year: datetime = datetime(today.year, 1, 1)
-    next_year: datetime = datetime(today.year + 1, 1, 1)
-    year_minus_20: datetime = datetime(today.year - 20, 1, 1)
-    year_plus_20: datetime = datetime(today.year + 20, 1, 1)
+    def __init__(self, today: Optional[datetime] = None):
+        self.today: datetime = today or datetime.combine(date.today(), time(), tzinfo=ZoneInfo("America/Chicago"))
+        self.tomorrow: datetime = self.today + timedelta(days=1)
+        self.yesterday: datetime = self.today - timedelta(days=1)
+        self.previous_7: datetime = self.today - timedelta(days=7)
+        self.previous_30: datetime = self.today - timedelta(days=30)
+        self._month_days: int = calendar.monthrange(self.today.year, self.today.month)[1]
+        self._week_number: int = self.today.isocalendar().week
+        self.week_start: datetime = datetime.combine(
+            date.fromisocalendar(self.today.year, self._week_number, 1), time()
+        )
+        self.week_end: datetime = self.week_start + timedelta(days=7)
+        self.this_month: datetime = datetime(self.today.year, self.today.month, 1)
+        self.next_month: datetime = self.this_month + timedelta(days=self._month_days)
+        self.last_month: datetime = self.this_month - timedelta(days=self._month_days)
+        self.this_year: datetime = datetime(self.today.year, 1, 1)
+        self.next_year: datetime = datetime(self.this_year.year + 1, 1, 1)
+        self.last_year: datetime = datetime(self.this_year.year - 1, 1, 1)
 
-    def __post_init__(self):
         self.filters: dict[str, tuple[datetime | None, datetime | None]] = {
             'today': (self.today, self.tomorrow),
             'yesterday': (self.yesterday, self.today),

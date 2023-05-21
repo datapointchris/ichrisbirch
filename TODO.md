@@ -62,7 +62,8 @@
 
 ## Random
 
-- [ ] Separate pytest and coverage in pre-commit and github-actions
+- [X] Separate pytest and coverage in pre-commit and github-actions
+  - Don't need to
 - [ ] Make a startup script
   - [ ] So this can be started in Docker each time for testing
   - [ ] So it can be started on a fresh Postgres instance

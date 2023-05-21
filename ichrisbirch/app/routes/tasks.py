@@ -3,8 +3,10 @@ from collections import Counter
 from datetime import datetime, timedelta
 from typing import Any
 
+import pendulum
 import requests
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from ichrisbirch.app.routes.util import validate_response
+from flask import Blueprint, abort, redirect, render_template, request, url_for, flash
 
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
@@ -72,15 +74,22 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 @blueprint.route('/', methods=['GET'])
 def index():
     """Tasks home endpoint"""
-    ed = EasyDateTime()
-    params: dict[str, str | int] = {'completed_filter': 'not_completed', 'limit': 5}
-    top_tasks_json = requests.get(TASKS_URL, params=params, timeout=TIMEOUT).json()
-    print(f'{top_tasks_json=}')
-    top_tasks = [schemas.Task(**task) for task in top_tasks_json]
 
-    today_filter = {'start_date': str(ed.today), 'end_date': str(ed.tomorrow)}
-    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=today_filter, timeout=TIMEOUT).json()
-    completed_today = [schemas.TaskCompleted(**task) for task in completed_tasks_json]
+    tasks_res = requests.get(TASKS_URL, params={'completed_filter': 'not_completed', 'limit': 5}, timeout=TIMEOUT)
+    if validate_response(tasks_res):
+        top_tasks = [schemas.Task(**task) for task in tasks_res.json()]
+    else:
+        top_tasks = []
+
+    completed_res = requests.get(
+        f'{TASKS_URL}/completed/',
+        params={'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())},
+        timeout=TIMEOUT,
+    )
+    if validate_response(completed_res):
+        completed_today = [schemas.TaskCompleted(**task) for task in completed_res.json()]
+    else:
+        completed_today = []
 
     return render_template(
         'tasks/index.html',
@@ -95,13 +104,14 @@ def all():
     """All tasks endpoint"""
 
     completed_filter = request.form.get('completed_filter') if request.method == 'POST' else None
-    params = {'completed_filter': completed_filter}
-    print(f'{completed_filter=}')
     logger.debug(f'{completed_filter=}')
 
-    tasks_json = requests.get(TASKS_URL, params=params, timeout=TIMEOUT).json()
-    print(f'{tasks_json=}')
-    tasks = [schemas.Task(**task) for task in tasks_json]
+    tasks_res = requests.get(TASKS_URL, params={'completed_filter': completed_filter}, timeout=TIMEOUT)
+    if validate_response(tasks_res):
+        tasks = [schemas.Task(**task) for task in tasks_res.json()]
+    else:
+        tasks = []
+
     return render_template(
         'tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES, completed_filter=completed_filter
     )
@@ -121,10 +131,15 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
 
-    params = {'start_date': str(start_date), 'end_date': str(end_date)}
-
-    completed_tasks_json = requests.get(f'{TASKS_URL}/completed/', params=params, timeout=TIMEOUT).json()
-    completed_tasks = [schemas.TaskCompleted(**task) for task in completed_tasks_json]
+    completed_res = requests.get(
+        f'{TASKS_URL}/completed/',
+        params={'start_date': str(start_date), 'end_date': str(end_date)},
+        timeout=TIMEOUT,
+    )
+    if validate_response(completed_res):
+        completed_tasks = [schemas.TaskCompleted(**task) for task in completed_res.json()]
+    else:
+        completed_tasks = []
 
     if completed_tasks:
         average_completion = calculate_average_completion_time(completed_tasks)
@@ -155,26 +170,39 @@ def crud():
     logger.debug(f'{method=}')
     logger.debug(f'{data}')
     match method:
+
         case 'add':
             task = schemas.TaskCreate(**data).json()
             response = requests.post(TASKS_URL, data=task, timeout=TIMEOUT)
+            if validate_response(response):
+                flash(f'Task added: {data.get("name")}', 'success')
             logger.debug(response.text)
             return redirect(request.referrer or url_for('tasks.index'))
+
         case 'complete':
             task_id = data.get('id')
             response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=TIMEOUT)
+            if validate_response(response):
+                flash(f'Task completed: {data.get("name")}', 'success')
             logger.debug(response.text)
             return redirect(request.referrer or url_for('tasks.index'))
+
         case 'delete':
             task_id = data.get('id')
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=TIMEOUT)
+            if validate_response(response):
+                flash(f'Task deleted: {data.get("name")}', 'success')
             logger.debug(response.text)
             return redirect(request.referrer or url_for('tasks.all'))
+
         case 'search':
             search_terms = data.get('terms')
             logger.debug(f'{search_terms=}')
-            tasks_json = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT).json()
-            logger.debug(tasks_json)
-            tasks = [schemas.Task(**task) for task in tasks_json]
+            response = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT)
+            if validate_response(response):
+                tasks = [schemas.Task(**task) for task in response.json()]
+            else:
+                tasks = []
+            logger.debug(response.text)
             return render_template('tasks/search.html', tasks=tasks)
     return abort(405, description=f"Method {method} not accepted")
