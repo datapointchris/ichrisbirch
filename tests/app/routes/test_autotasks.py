@@ -1,15 +1,16 @@
-from ichrisbirch.app.routes.autotasks import AUTOTASKS_URL
 from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 
-def test_index(postgres_testdb_in_docker, test_app):
-    response = test_app.get(AUTOTASKS_URL + '/')
+def test_index(test_app):
+    """Test the index page"""
+    response = test_app.get('/autotasks/')
     assert response.status_code == 200
     assert b'<title>AutoTasks</title>' in response.data
 
 
-def test_crud_add(postgres_testdb_in_docker, test_app):
+def test_crud_add(test_app):
+    """Test add a new task"""
     data = {
         'name': 'AutoTask 1',
         'category': TaskCategory.Chore.value,
@@ -18,19 +19,20 @@ def test_crud_add(postgres_testdb_in_docker, test_app):
         'frequency': TaskFrequency.Weekly.value,
         'method': 'add',
     }
-    response = test_app.post(AUTOTASKS_URL + '/crud/', data=data, follow_redirects=True)
+    response = test_app.post('/autotasks/crud/', data=data, follow_redirects=True)
     assert response.status_code == 200
     assert len(response.history) == 1
     assert response.request.path == '/autotasks/'
     assert b'<title>AutoTasks</title>' in response.data
 
 
-def test_crud_delete(postgres_testdb_in_docker, test_app):
+def test_crud_delete(test_app):
+    """Test delete a task"""
     data = {
         'id': 1,
         'method': 'delete',
     }
-    response = test_app.post(AUTOTASKS_URL + '/crud/', data=data, follow_redirects=True)
+    response = test_app.post('/autotasks/crud/', data=data, follow_redirects=True)
     assert response.status_code == 200
     assert len(response.history) == 1
     assert response.request.path == '/autotasks/'
