@@ -5,11 +5,11 @@ from typing import Any
 
 import pendulum
 import requests
-from ichrisbirch.app.routes.util import validate_response
-from flask import Blueprint, abort, redirect, render_template, request, url_for, flash
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
+from ichrisbirch.app.routes.util import validate_response
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
@@ -170,7 +170,6 @@ def crud():
     logger.debug(f'{method=}')
     logger.debug(f'{data}')
     match method:
-
         case 'add':
             task = schemas.TaskCreate(**data).json()
             response = requests.post(TASKS_URL, data=task, timeout=TIMEOUT)

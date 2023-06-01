@@ -49,11 +49,13 @@ def crud():
             response = requests.post(AUTOTASKS_URL, data=autotask, timeout=TIMEOUT)
             if validate_response(response):
                 flash(f'Autotask added: {data.get("name")}', 'success')
+            logger.debug(response.text)
             return redirect(request.referrer or url_for('autotasks.index'))
         case 'delete':
             autotask_id = data.get('id')
             response = requests.delete(f'{AUTOTASKS_URL}/{autotask_id}', timeout=TIMEOUT)
             if validate_response(response):
                 flash(f'Autotask deleted: {data.get("name")}', 'success')
+            logger.debug(response.text)
             return redirect(request.referrer or url_for('autotasks.index'))
     return abort(405, description=f"Method {method} not accepted")

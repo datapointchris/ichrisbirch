@@ -1,7 +1,7 @@
 import calendar
 from datetime import date, datetime, time, timedelta
-from zoneinfo import ZoneInfo
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 
 class EasyDate:
