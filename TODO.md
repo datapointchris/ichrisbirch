@@ -234,6 +234,8 @@ def favicon():
 
 ## Front-end Framework
 
+[GitHub - Blazity/next-enterprise: 💼 An enterprise-grade Next.js boilerplate for high-performance, maintainable apps. Packed with features like Tailwind CSS, TypeScript, ESLint, Prettier, testing tools, and more to accelerate your development.](https://github.com/Blazity/next-enterprise)
+
 Test this out on the portfolio page
 resume page
 
