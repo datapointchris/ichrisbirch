@@ -39,7 +39,7 @@ class PostgresSettings:
         self.host: Optional[str] = os.getenv('POSTGRES_HOST')
         self.user: Optional[str] = os.getenv('POSTGRES_USER')
         self.password: Optional[str] = os.getenv('POSTGRES_PASSWORD')
-        self.port: str = '5432'
+        self.port: Optional[str] = os.getenv('POSTGRES_PORT')
         self.database: str = 'ichrisbirch'
 
     @property
@@ -58,7 +58,7 @@ class SQLAlchemySettings:
         self.host: Optional[str] = os.getenv('POSTGRES_HOST')
         self.user: Optional[str] = os.getenv('POSTGRES_USER')
         self.password: Optional[str] = os.getenv('POSTGRES_PASSWORD')
-        self.port: str = '5432'
+        self.port: Optional[str] = os.getenv('POSTGRES_PORT')
         self.database: str = 'ichrisbirch'
 
     @property

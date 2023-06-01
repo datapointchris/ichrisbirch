@@ -1,15 +1,16 @@
+from ichrisbirch.app.routes.autotasks import AUTOTASKS_URL
 from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 
-def test_index(test_app):
+def test_index(postgres_testdb_in_docker, test_api, test_app):
     """Test the index page"""
-    response = test_app.get('/autotasks/')
+    response = test_app.get(AUTOTASKS_URL + '/')
     assert response.status_code == 200
     assert b'<title>AutoTasks</title>' in response.data
 
 
-def test_crud_add(test_app):
+def test_crud_add(postgres_testdb_in_docker, test_api, test_app):
     """Test add a new task"""
     data = {
         'name': 'AutoTask 1',
@@ -26,7 +27,7 @@ def test_crud_add(test_app):
     assert b'<title>AutoTasks</title>' in response.data
 
 
-def test_crud_delete(test_app):
+def test_crud_delete(postgres_testdb_in_docker, test_api, test_app):
     """Test delete a task"""
     data = {
         'id': 1,

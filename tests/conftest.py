@@ -122,5 +122,7 @@ def test_api() -> Generator[TestClient, Any, None]:
 def test_app():
     """Create a Flask app for testing"""
     app = create_app(settings=settings)
+    app.testing = True
     app.config.update({'TESTING': True})
-    yield app.test_client()
+    with app.test_client() as client:
+        yield client
