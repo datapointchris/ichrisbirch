@@ -3,156 +3,149 @@ import json
 import pytest
 
 from ichrisbirch import models
-from ichrisbirch.api import endpoints
+from tests.helpers import show_status_and_response
 
-
-@pytest.fixture(scope='module')
-def base_test_data():
-    """Basic test data"""
-    return [
-        {
-            'name': 'Task 1 Chore with notes priority 5 not completed',
-            'notes': 'Notes for task 1',
-            'category': 'Chore',
-            'priority': 5,
-        },
-        {
-            'name': 'Task 2 Home without notes priority 10 not completed',
-            'notes': None,
-            'category': 'Home',
-            'priority': 10,
-        },
-        {
-            'name': 'Task 3 Home with notes priority 15 completed',
-            'notes': 'Notes for task 3',
-            'category': 'Home',
-            'priority': 15,
-            'complete_date': '2020-04-20 03:03:39.050648+00:00',
-        },
-    ]
-
-
-test_data_for_create = [
-    {'name': 'Task 4 Computer with notes priority 3', 'notes': 'Notes task 4', 'category': 'Computer', 'priority': 3},
-    {'name': 'Task 5 Chore without notes priority 20', 'notes': None, 'category': 'Chore', 'priority': 20},
+BASE_DATA = [
+    {
+        'name': 'Task 1 Chore with notes priority 5 not completed',
+        'notes': 'Notes for task 1',
+        'category': 'Chore',
+        'priority': 5,
+    },
+    {
+        'name': 'Task 2 Home without notes priority 10 not completed',
+        'notes': None,
+        'category': 'Home',
+        'priority': 10,
+    },
+    {
+        'name': 'Task 3 Home with notes priority 15 completed',
+        'notes': 'Notes for task 3',
+        'category': 'Home',
+        'priority': 15,
+        'complete_date': '2020-04-20 03:03:39.050648+00:00',
+    },
 ]
 
+CREATE_DATA = {
+    'name': 'Task 4 Computer with notes priority 3',
+    'notes': 'Notes task 4',
+    'category': 'Computer',
+    'priority': 3,
+}
 
-@pytest.fixture(scope='module')
-def data_model():
-    """Returns the SQLAlchemy model to use for the data"""
-    return models.Task
 
-
-@pytest.fixture(scope='module')
-def router():
-    """Returns the API router to use for this test module"""
-    return endpoints.tasks.router
+@pytest.fixture(scope='function')
+def test_data():
+    """Basic test data"""
+    return [models.Task(**record) for record in BASE_DATA]
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_read_one_task(postgres_testdb_in_docker, insert_test_data, test_api, task_id):
+def test_read_one_task(insert_test_data, test_api, task_id):
     """Test if able to read one task"""
     response = test_api.get(f'/tasks/{task_id}/')
-    assert response.status_code == 200
+    assert response.status_code == 200, show_status_and_response(response)
 
 
-def test_read_many_tasks(postgres_testdb_in_docker, insert_test_data, test_api):
+def test_read_many_tasks(insert_test_data, test_api):
     """Test if able to read many tasks"""
     response = test_api.get('/tasks/')
-    assert response.status_code == 200
+    assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 3
 
 
-def test_read_many_tasks_completed(postgres_testdb_in_docker, insert_test_data, test_api):
+def test_read_many_tasks_completed(insert_test_data, test_api):
     """Test if able to read many tasks"""
     response = test_api.get('/tasks/?completed_filter=completed')
-    assert response.status_code == 200
+    assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 1
 
 
-def test_read_many_tasks_not_completed(postgres_testdb_in_docker, insert_test_data, test_api):
+def test_read_many_tasks_not_completed(insert_test_data, test_api):
     """Test if able to read many tasks"""
     response = test_api.get('/tasks/?completed_filter=not_completed')
-    assert response.status_code == 200
+    assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 2
 
 
-@pytest.mark.parametrize('test_task', test_data_for_create)
-def test_create_task(postgres_testdb_in_docker, insert_test_data, test_api, test_task):
+def test_create_task(insert_test_data, test_api):
     """Test if able to create a task"""
-    response = test_api.post('/tasks/', data=json.dumps(test_task))
-    assert response.status_code == 201
-    assert dict(response.json())['name'] == test_task['name']
+    response = test_api.post('/tasks/', data=json.dumps(CREATE_DATA))
+    assert response.status_code == 201, show_status_and_response(response)
+    assert dict(response.json())['name'] == CREATE_DATA['name']
 
     # Test task was created
-    response = test_api.get('/tasks/')
-    assert response.status_code == 200
-    assert len(response.json()) == 4
+    created = test_api.get('/tasks/')
+    assert created.status_code == 200, show_status_and_response(created)
+    assert len(created.json()) == 4
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_delete_task(postgres_testdb_in_docker, insert_test_data, test_api, task_id):
+def test_delete_task(insert_test_data, test_api, task_id):
     """Test if able to delete a task"""
     endpoint = f'/tasks/{task_id}/'
     task = test_api.get(endpoint)
+    assert task.status_code == 200, show_status_and_response(task)
+
     response = test_api.delete(endpoint)
+    assert response.status_code == 204, show_status_and_response(response)
+
     deleted = test_api.get(endpoint)
-    assert response.status_code == 200
-    assert response.json() == task.json()
-    assert deleted.status_code == 404
+    assert deleted.status_code == 404, show_status_and_response(deleted)
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_complete_task(postgres_testdb_in_docker, insert_test_data, test_api, task_id):
+def test_complete_task(insert_test_data, test_api, task_id):
     """Test if able to complete a task"""
     response = test_api.post(f'/tasks/complete/{task_id}/')
-    assert response.status_code == 200
+    assert response.status_code == 200, show_status_and_response(response)
 
 
-def test_read_completed_tasks(postgres_testdb_in_docker, insert_test_data, test_api):
+def test_read_completed_tasks(insert_test_data, test_api):
     """Test if able to read completed tasks"""
     completed = test_api.get('/tasks/completed/')
-    assert completed.status_code == 200
+    assert completed.status_code == 200, show_status_and_response(completed)
     assert len(completed.json()) == 1
 
 
-def test_search_task(postgres_testdb_in_docker, insert_test_data, test_api):
+def test_search_task(insert_test_data, test_api):
     """Test search capability"""
     search_term = 'chore'
     search_results = test_api.get(f'/tasks/search/{search_term}')
+    assert search_results.status_code == 200, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     search_term = 'home'
     search_results = test_api.get(f'/tasks/search/{search_term}')
+    assert search_results.status_code == 200, show_status_and_response(search_results)
     assert len(search_results.json()) == 2
 
 
-@pytest.mark.parametrize('test_task', test_data_for_create)
-def test_task_lifecycle(postgres_testdb_in_docker, insert_test_data, test_api, test_task):
+def test_task_lifecycle(insert_test_data, test_api):
     """Integration test for CRUD lifecylce of a task"""
 
     # Create new task
-    created_task = test_api.post('/tasks/', data=json.dumps(test_task))
-    assert created_task.status_code == 201
-    assert created_task.json()['name'] == test_task['name']
+    created_task = test_api.post('/tasks/', data=json.dumps(CREATE_DATA))
+    assert created_task.status_code == 201, show_status_and_response(created_task)
+    assert created_task.json()['name'] == CREATE_DATA['name']
 
     # Read all tasks
     all_tasks = test_api.get('/tasks/')
-    assert all_tasks.status_code == 200
+    assert all_tasks.status_code == 200, show_status_and_response(all_tasks)
     assert len(all_tasks.json()) == 4
 
     # Get created task
     task_id = created_task.json().get('id')
     endpoint = f'/tasks/{task_id}/'
     response_task = test_api.get(endpoint)
-    assert response_task.status_code == 200
-    assert response_task.json()['name'] == test_task['name']
+    assert response_task.status_code == 200, show_status_and_response(response_task)
+    assert response_task.json()['name'] == CREATE_DATA['name']
 
     # Delete Task
-    deleted_task = test_api.delete(f'/tasks/{task_id}/').json()
-    assert deleted_task['name'] == test_task['name']
+    deleted_task = test_api.delete(f'/tasks/{task_id}/')
+    assert deleted_task.status_code == 204, show_status_and_response(deleted_task)
 
     # Make sure it's missing
     missing_task = test_api.get(f'/tasks/{task_id}')
-    assert missing_task.status_code == 404
+    assert missing_task.status_code == 404, show_status_and_response(missing_task)
