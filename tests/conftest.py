@@ -1,21 +1,24 @@
+import logging
 import time
 from typing import Any, Generator
 
 import docker
 import pytest
 from docker.errors import DockerException
-from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
+from ichrisbirch.api.main import create_api
+from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.db.sqlalchemy.base import Base
 from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
 
 settings = get_settings()
-engine = create_engine('postgresql://postgres:postgres@localhost:5434', echo=True, future=True)
+logger = logging.getLogger(__name__)
+engine = create_engine('postgresql://postgres:postgres@localhost:5434', echo=False, future=True)
 SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 
 
@@ -94,23 +97,30 @@ def postgres_testdb_in_docker():
 
 
 @pytest.fixture(scope='function')
-def insert_test_data(base_test_data: list[dict], data_model):
-    """Insert test data into db using the supplied SQLAlchemy model (data_model)"""
+def insert_test_data(postgres_testdb_in_docker, test_data):
+    """Insert test data into db"""
     session = next(get_testing_session())
     Base.metadata.create_all(engine)
-    for data in base_test_data:
-        session.add(data_model(**data))
+    for record in test_data:
+        session.add(record)
     session.commit()
     yield
     Base.metadata.drop_all(engine)
     session.close()
 
 
-@pytest.fixture(scope='function')
-def test_api(router: APIRouter) -> Generator[TestClient, Any, None]:
+@pytest.fixture(scope='module')
+def test_api() -> Generator[TestClient, Any, None]:
     """Create a FastAPI app for testing"""
-    api = FastAPI()
-    api.include_router(router)
+    api = create_api(settings=settings)
     api.dependency_overrides[sqlalchemy_session] = get_testing_session
     with TestClient(api) as client:
         yield client
+
+
+@pytest.fixture(scope='module')
+def test_app():
+    """Create a Flask app for testing"""
+    app = create_app(settings=settings)
+    app.config.update({'TESTING': True})
+    yield app.test_client()
