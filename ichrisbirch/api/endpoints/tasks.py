@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,7 @@ settings = get_settings()
 router = APIRouter(prefix='/tasks', tags=['tasks'], responses=settings.fastapi.responses)
 
 
-@router.get("/", response_model=list[schemas.Task])
+@router.get("/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def read_many(
     session: Session = Depends(sqlalchemy_session), completed_filter: Optional[str] = None, limit: Optional[int] = None
 ):
@@ -37,7 +37,7 @@ async def read_many(
     return list(session.scalars(query).all())
 
 
-@router.get("/completed/", response_model=list[schemas.TaskCompleted])
+@router.get("/completed/", response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
 async def completed(
     session: Session = Depends(sqlalchemy_session),
     start_date: Union[str, None] = None,
@@ -65,7 +65,7 @@ async def completed(
     return list(session.scalars(query).all())
 
 
-@router.post('/', response_model=schemas.Task, status_code=201)
+@router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy_session)):
     """API method to create a new task.  Passes request to crud.tasks module"""
     db_obj = models.Task(**task.dict())
@@ -75,7 +75,7 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy
     return db_obj
 
 
-@router.get('/{task_id}/', response_model=schemas.Task)
+@router.get('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to read one task.  Passes request to crud.tasks module"""
     if task := session.get(models.Task, task_id):
@@ -83,23 +83,23 @@ async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session))
     else:
         message = f'Task {task_id} not found'
         logger.warning(message)
-        raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.delete('/{task_id}/', status_code=200)
+@router.delete('/{task_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to delete a task.  Passes request to crud.tasks module"""
     if task := session.get(models.Task, task_id):
         session.delete(task)
         session.commit()
-        return task
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'Task {task_id} not found'
         logger.warning(message)
-        raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.post('/complete/{task_id}/', response_model=schemas.Task)
+@router.post('/complete/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to complete a task.  Passes request to crud.tasks module"""
     if task := session.get(models.Task, task_id):
@@ -111,10 +111,10 @@ async def complete(task_id: int, session: Session = Depends(sqlalchemy_session))
     else:
         message = f'Task {task_id} not found'
         logger.warning(message)
-        raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.get('/search/{search_terms}/', response_model=list[schemas.Task])
+@router.get('/search/{search_terms}/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def search(search_terms: str, session: Session = Depends(sqlalchemy_session)):
     """API method to search for tasks"""
     query = (

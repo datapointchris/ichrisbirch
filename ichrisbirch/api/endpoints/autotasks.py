@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix='/autotasks', tags=['autotasks'], responses=settings.f
 logger = logging.getLogger(__name__)
 
 
-@router.get('/', response_model=list[schemas.AutoTask])
+@router.get('/', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)
 async def read_many(session: Session = Depends(sqlalchemy_session)):
     """API method to read many autotasks."""
     query = select(models.AutoTask).order_by(models.AutoTask.last_run_date.desc())
@@ -30,7 +30,7 @@ async def create(task: schemas.AutoTaskCreate, session: Session = Depends(sqlalc
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.AutoTask)
+@router.get('/{id}/', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to read one task.  Passes request to crud.tasks module"""
     if task := session.get(models.AutoTask, id):
@@ -41,13 +41,13 @@ async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.delete('/{id}/', status_code=200)
+@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to delete a task.  Passes request to crud.tasks module"""
     if task := session.get(models.AutoTask, id):
         session.delete(task)
         session.commit()
-        return task
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'AutoTask {id} not found'
         logger.warning(message)

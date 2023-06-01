@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix='/countdowns', tags=['countdowns'], responses=settings
 logger = logging.getLogger(__name__)
 
 
-@router.get('/', response_model=list[schemas.Countdown])
+@router.get('/', response_model=list[schemas.Countdown], status_code=status.HTTP_200_OK)
 async def read_many(session: Session = Depends(sqlalchemy_session)):
     """API method to read many countdowns."""
     query = select(models.Countdown).order_by(models.Countdown.due_date.asc())
@@ -30,7 +30,7 @@ async def create(countdown: schemas.CountdownCreate, session: Session = Depends(
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.Countdown)
+@router.get('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to read one countdown."""
     if countdown := session.get(models.Countdown, id):
@@ -41,13 +41,13 @@ async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.delete('/{id}/', status_code=200)
+@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to delete a countdown."""
     if countdown := session.get(models.Countdown, id):
         session.delete(countdown)
         session.commit()
-        return countdown
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'Countdown {id} not found'
         logger.warning(message)

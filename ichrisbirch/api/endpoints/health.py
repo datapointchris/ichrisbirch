@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from ichrisbirch import schemas
 from ichrisbirch.config import get_settings
@@ -11,13 +11,9 @@ settings = get_settings()
 router = APIRouter(prefix='/health', tags=['health'], responses=settings.fastapi.responses)
 
 
-# TODO: It would be cool to have a test that ran after upgrading an api
-# that hit this endpoint to make sure that the versions match so it got updated.
-@router.get("/", response_model=schemas.Health, status_code=200)
+@router.get("/", response_model=schemas.Health, status_code=status.HTTP_200_OK)
 def health() -> dict:
-    """
-    Root Get
-    """
+    """Endpoint for API Health Status"""
     return {
         'name': settings.fastapi.title,
         'version': settings.version,
