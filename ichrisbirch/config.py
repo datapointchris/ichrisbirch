@@ -17,6 +17,7 @@ class FlaskSettings:
         # https://flask.palletsprojects.com/en/latest/api/#sessions
         self.SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')  # MUST be capitalized
         self.TESTING: Optional[bool] = bool(os.getenv('FLASK_TESTING'))
+        self.DEBUG: Optional[bool] = bool(os.getenv('FLASK_DEBUG'))
 
 
 class FastAPISettings:
