@@ -1,5 +1,5 @@
 from fastapi import status
-from requests import Response, JSONDecodeError
+from requests import JSONDecodeError, Response
 
 
 def show_status_and_response(response: Response) -> dict:

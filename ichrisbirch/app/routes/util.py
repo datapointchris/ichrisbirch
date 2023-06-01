@@ -1,6 +1,7 @@
+import logging
+
 from flask import flash
 from requests import Response
-import logging
 
 logger = logging.getLogger(__name__)
 
