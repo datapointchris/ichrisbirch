@@ -20,6 +20,7 @@
         <br /><br />
         <form method="POST" action="{{ url_for('countdowns.crud') }}">
             <input type="hidden" name="id" id="id" value="{{ countdown.id }}">
+            <input type="hidden" name="name" id="name" value="{{ countdown.name }}">
             <input type="hidden" name="method" value="delete">
             <input type="submit" class="button box-3d" value="Delete">
         </form>
