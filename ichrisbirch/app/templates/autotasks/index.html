@@ -19,8 +19,9 @@
                     <strong>Run Count: </strong><br /><br />
                     <form method="POST" action="{{ url_for('autotasks.crud') }}">
                         <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
+                        <input type="hidden" name="name" id="name" value="{{ autotask.name }}">
                         <input type="hidden" name="method" id="method" value="run">
-                        <input type="submit" class="button box-3d"  value="Add Task Now">
+                        <input type="submit" class="button box-3d" value="Add Task Now">
                     </form>
                 </div>
                 <div class="autotask-box-right">
@@ -33,8 +34,10 @@
                     {{ autotask.run_count }}<br /><br />
                     <form method="POST" action="{{ url_for('autotasks.crud') }}">
                         <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
+                        <input type="hidden" name="name" id="name" value="{{ autotask.name }}">
                         <input type="hidden" name="method" id="method" value="delete">
-                        <input type="submit" class="button box-3d"  value="Delete AutoTask">
+                        <input type="submit" class="button box-3d"
+                            value="Delete AutoTask">
                     </form>
                 </div>
             </div>
