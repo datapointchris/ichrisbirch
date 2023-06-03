@@ -5,7 +5,6 @@ import requests
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
-from ichrisbirch.app.routes.util import validate_response
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
@@ -25,9 +24,12 @@ TIMEOUT = settings.request_timeout
 def index():
     """Autotasks home endpoint"""
     response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT)
-    if validate_response(response):
+    if response.status_code == 200:
         autotasks = [schemas.AutoTask(**task) for task in response.json()]
     else:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
         autotasks = []
 
     return render_template(
@@ -47,15 +49,25 @@ def crud():
         case 'add':
             autotask = schemas.AutoTaskCreate(**data).json()
             response = requests.post(AUTOTASKS_URL, data=autotask, timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Autotask added: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 201:
+                flash(f'Autotask added: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(request.referrer or url_for('autotasks.index'))
+
         case 'delete':
             autotask_id = data.get('id')
             response = requests.delete(f'{AUTOTASKS_URL}/{autotask_id}', timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Autotask deleted: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 204:
+                flash(f'Autotask deleted: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(request.referrer or url_for('autotasks.index'))
+
     return abort(405, description=f"Method {method} not accepted")

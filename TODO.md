@@ -11,6 +11,7 @@
 - [Testing](#testing)
 - [Logging](#logging)
 - [Security](#security)
+- [Performance Testing](#performance-testing)
 - [Re-structure CSS and Navigation](#re-structure-css-and-navigation)
 - [Build Portfolio Page](#build-portfolio-page)
 - [Basic Main page and Portfolio](#basic-main-page-and-portfolio)
@@ -59,6 +60,8 @@
 - [ ] mypy - `--check-untyped-defs`
   - [ ] Add this option when ready to deal with other routes
 - [ ] Docs: Create video documentation, store on S3, create a link to the video in the docs.
+- [ ] Use `pendulum` for EasyDateTime:
+  - [ ] [Documentation | Pendulum - Python datetimes made easy](https://pendulum.eustace.io/docs/)
 
 ## Random
 
@@ -81,10 +84,12 @@
 
 - [ ] Need to have reset
 - [ ] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)
+- [ ] [GitHub - krshoss/gardevoir: The Modern CSS Reset 🚀 (Formerly Reseter.css)](https://github.com/krshoss/gardevoir)
 
 ## Tasks
 
 - [ ] Alexa skill, use the to-do API to add a task
+  - [ ] <https://github.com/johnwheeler/flask-ask>
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
@@ -98,6 +103,9 @@
 - [ ] [How to Manage OpenStack Private Clouds Episode 1](https://www.patreon.com/posts/how-to-manage-1-78070880)
 
 ## User Login
+
+- [GitHub - MushroomMaula/fastapi_login: FastAPI-Login tries to provide similar functionality as Flask-Login does.](https://github.com/MushroomMaula/fastapi_login)
+- [GitHub - fastapi-users/fastapi-users: Ready-to-use and customizable users management for FastAPI](https://github.com/fastapi-users/fastapi-users)
 
 - [ ] Create login for all apps as a main page.
 - [ ] [Basic Usage - FastAPI JWT Auth](https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/)
@@ -132,6 +140,8 @@ Is this something I want to do?
 [Patterns for Managing Source Code Branches](https://www.martinfowler.com/articles/branching-patterns.html)
 [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
 [9 pytest tips and tricks to take your tests to the next level | Verdant Fox](https://verdantfox.com/blog/view/9-pytest-tips-and-tricks-to-take-your-tests-to-the-next-level)
+
+[Unit Testing in Python -The Basics | The Startup](https://medium.com/swlh/unit-testing-in-python-basics-21a9a57418a0)
 
 - Udemy Class
 - I have pytest book somewhere
@@ -188,6 +198,10 @@ Is this something I want to do?
       - [ ] pgcron
       - [ ] ONLY to `ichrisbirch` db
 
+## Performance Testing
+
+[Your first test — Locust 2.15.1 documentation](https://docs.locust.io/en/stable/quickstart.html)
+
 ## Re-structure CSS and Navigation
 
 - [ ] CSS to inheret from main
@@ -233,6 +247,8 @@ def favicon():
 <https://testdriven.io/blog/fastapi-machine-learning/>
 
 ## Front-end Framework
+
+[GitHub - Buuntu/fastapi-react: 🚀   Cookiecutter Template for FastAPI + React Projects.  Using PostgreSQL, SQLAlchemy, and Docker](https://github.com/Buuntu/fastapi-react)
 
 [GitHub - Blazity/next-enterprise: 💼 An enterprise-grade Next.js boilerplate for high-performance, maintainable apps. Packed with features like Tailwind CSS, TypeScript, ESLint, Prettier, testing tools, and more to accelerate your development.](https://github.com/Blazity/next-enterprise)
 

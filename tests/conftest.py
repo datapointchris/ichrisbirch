@@ -125,4 +125,5 @@ def test_app():
     app.testing = True
     app.config.update({'TESTING': True})
     with app.test_client() as client:
-        yield client
+        with app.app_context():
+            yield client

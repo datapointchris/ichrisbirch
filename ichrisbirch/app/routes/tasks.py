@@ -9,7 +9,6 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.routes.util import validate_response
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
@@ -75,20 +74,26 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 def index():
     """Tasks home endpoint"""
 
-    tasks_res = requests.get(TASKS_URL, params={'completed_filter': 'not_completed', 'limit': 5}, timeout=TIMEOUT)
-    if validate_response(tasks_res):
-        top_tasks = [schemas.Task(**task) for task in tasks_res.json()]
+    tasks_response = requests.get(TASKS_URL, params={'completed_filter': 'not_completed', 'limit': 5}, timeout=TIMEOUT)
+    if tasks_response.status_code == 200:
+        top_tasks = [schemas.Task(**task) for task in tasks_response.json()]
     else:
+        error_message = f'{tasks_response.url} : {tasks_response.status_code} {tasks_response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
         top_tasks = []
 
-    completed_res = requests.get(
+    completed_response = requests.get(
         f'{TASKS_URL}/completed/',
         params={'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())},
         timeout=TIMEOUT,
     )
-    if validate_response(completed_res):
-        completed_today = [schemas.TaskCompleted(**task) for task in completed_res.json()]
+    if completed_response.status_code == 200:
+        completed_today = [schemas.TaskCompleted(**task) for task in completed_response.json()]
     else:
+        error_message = f'{completed_response.url} : {completed_response.status_code} {completed_response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
         completed_today = []
 
     return render_template(
@@ -106,10 +111,13 @@ def all():
     completed_filter = request.form.get('completed_filter') if request.method == 'POST' else None
     logger.debug(f'{completed_filter=}')
 
-    tasks_res = requests.get(TASKS_URL, params={'completed_filter': completed_filter}, timeout=TIMEOUT)
-    if validate_response(tasks_res):
-        tasks = [schemas.Task(**task) for task in tasks_res.json()]
+    response = requests.get(TASKS_URL, params={'completed_filter': completed_filter}, timeout=TIMEOUT)
+    if response.status_code == 200:
+        tasks = [schemas.Task(**task) for task in response.json()]
     else:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
         tasks = []
 
     return render_template(
@@ -131,14 +139,17 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
 
-    completed_res = requests.get(
+    response = requests.get(
         f'{TASKS_URL}/completed/',
         params={'start_date': str(start_date), 'end_date': str(end_date)},
         timeout=TIMEOUT,
     )
-    if validate_response(completed_res):
-        completed_tasks = [schemas.TaskCompleted(**task) for task in completed_res.json()]
+    if response.status_code == 200:
+        completed_tasks = [schemas.TaskCompleted(**task) for task in response.json()]
     else:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
         completed_tasks = []
 
     if completed_tasks:
@@ -173,35 +184,51 @@ def crud():
         case 'add':
             task = schemas.TaskCreate(**data).json()
             response = requests.post(TASKS_URL, data=task, timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Task added: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 201:
+                flash(f'Task added: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(request.referrer or url_for('tasks.index'))
 
         case 'complete':
             task_id = data.get('id')
             response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Task completed: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 200:
+                flash(f'Task completed: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(request.referrer or url_for('tasks.index'))
 
         case 'delete':
             task_id = data.get('id')
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Task deleted: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 204:
+                flash(f'Task deleted: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(request.referrer or url_for('tasks.all'))
 
         case 'search':
             search_terms = data.get('terms')
             logger.debug(f'{search_terms=}')
             response = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT)
-            if validate_response(response):
+            logger.debug(response.text)
+            if response.status_code == 200:
                 tasks = [schemas.Task(**task) for task in response.json()]
             else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
                 tasks = []
-            logger.debug(response.text)
             return render_template('tasks/search.html', tasks=tasks)
+
     return abort(405, description=f"Method {method} not accepted")

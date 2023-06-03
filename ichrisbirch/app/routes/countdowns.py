@@ -5,7 +5,6 @@ import requests
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
-from ichrisbirch.app.routes.util import validate_response
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
@@ -21,9 +20,12 @@ TIMEOUT = settings.request_timeout
 def index():
     """Countdowns home endpoint"""
     response = requests.get(COUNTDOWNS_URL, timeout=TIMEOUT)
-    if validate_response(response):
+    if response.status_code == 200:
         countdowns = [schemas.Countdown(**countdown) for countdown in response.json()]
     else:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
         countdowns = []
 
     return render_template('countdowns/index.html', countdowns=countdowns)
@@ -41,15 +43,25 @@ def crud():
         case 'add':
             countdown = schemas.CountdownCreate(**data).json()
             response = requests.post(COUNTDOWNS_URL, data=countdown, timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Countdown added: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 201:
+                flash(f'Countdown added: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(url_for('countdowns.index'))
+
         case 'delete':
             id = data.get('id')
             response = requests.delete(f'{COUNTDOWNS_URL}/{id}', timeout=TIMEOUT)
-            if validate_response(response):
-                flash(f'Countdown deleted: {data.get("name")}', 'success')
             logger.debug(response.text)
+            if response.status_code == 204:
+                flash(f'Countdown deleted: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
             return redirect(url_for('countdowns.index'))
+
     return abort(405, description=f"Method {method} not accepted")
