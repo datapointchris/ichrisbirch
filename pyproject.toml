@@ -29,6 +29,7 @@ sqlalchemy = "^2.0.8"
 uvicorn = "^0.18.2"
 attrs = "^23.1.0"
 pendulum = "^2.1.2"
+apscheduler = "^3.10.1"
 
 [tool.poetry.group.dev.dependencies]
 deptry = "^0.10.0"

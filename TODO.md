@@ -364,7 +364,8 @@ Because why not?
 
 ### Desktop App
 
-<https://github.com/TomSchimansky/CustomTkinter>
+[GitHub - kivy/kivy: Open source UI framework written in Python, running on Windows, Linux, macOS, Android and iOS](https://github.com/kivy/kivy)
+[GitHub - TomSchimansky/CustomTkinter: A modern and customizable python UI-library based on Tkinter](https://github.com/TomSchimansky/CustomTkinter)
 
 ### Webstore Project
 
