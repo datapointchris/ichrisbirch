@@ -17,6 +17,15 @@ settings = get_settings()
 router = APIRouter(prefix='/tasks', tags=['tasks'], responses=settings.fastapi.responses)
 
 
+def daily_decrease_task_priority(session: Session = Depends(sqlalchemy_session)):
+    """Decrease priority of all tasks by 1 each day"""
+    query = select(models.Task).filter(models.Task.priority > 1, models.Task.complete_date.is_(None))
+    for task in session.scalars(query).all():
+        task.priority -= 1
+    session.commit()
+    logger.info('Daily task priority decrease complete')
+
+
 @router.get("/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def read_many(
     session: Session = Depends(sqlalchemy_session), completed_filter: Optional[str] = None, limit: Optional[int] = None
@@ -99,6 +108,7 @@ async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
+# TODO: [2023/06/07] - Change this to /tasks/{task_id}/complete/
 @router.post('/complete/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to complete a task.  Passes request to crud.tasks module"""
