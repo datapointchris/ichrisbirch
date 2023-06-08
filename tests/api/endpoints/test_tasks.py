@@ -4,6 +4,8 @@ import pytest
 
 from ichrisbirch import models
 from tests.helpers import show_status_and_response
+from ichrisbirch.api.endpoints import tasks
+from tests.conftest import get_testing_session
 
 BASE_DATA = [
     {
@@ -120,6 +122,18 @@ def test_search_task(insert_test_data, test_api):
     search_results = test_api.get(f'/tasks/search/{search_term}')
     assert search_results.status_code == 200, show_status_and_response(search_results)
     assert len(search_results.json()) == 2
+
+
+def test_daily_decrease_task_priority(insert_test_data, test_api):
+    """Test if able to decrease priority of all tasks"""
+    before = test_api.get('/tasks/')
+    assert before.status_code == 200, show_status_and_response(before)
+    assert sum([task['priority'] for task in before.json()]) == 5 + 10 + 15
+    tasks.daily_decrease_task_priority(session=get_testing_session)
+    after = test_api.get('/tasks/')
+    assert after.status_code == 200, show_status_and_response(after)
+    assert sum([task['priority'] for task in after.json()]) == 4 + 9 + 15
+    assert len(before.json()) == len(after.json())
 
 
 def test_task_lifecycle(insert_test_data, test_api):

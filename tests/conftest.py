@@ -39,7 +39,7 @@ def create_postgres_docker_container():
             image='postgres:14',
             detach=True,
             environment={
-                'ENVIRONMENT': 'development',
+                'ENVIRONMENT': 'testing',
                 'POSTGRES_USER': 'postgres',
                 'POSTGRES_PASSWORD': 'postgres',
             },

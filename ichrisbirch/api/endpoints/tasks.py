@@ -4,7 +4,7 @@ from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, and_
 from sqlalchemy.orm import Session
 
 # from ..dependencies import auth
@@ -17,11 +17,14 @@ settings = get_settings()
 router = APIRouter(prefix='/tasks', tags=['tasks'], responses=settings.fastapi.responses)
 
 
-def daily_decrease_task_priority(session: Session = Depends(sqlalchemy_session)):
+def daily_decrease_task_priority(session=sqlalchemy_session):
+    session = next(session())
     """Decrease priority of all tasks by 1 each day"""
-    query = select(models.Task).filter(models.Task.priority > 1, models.Task.complete_date.is_(None))
+    query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
     for task in session.scalars(query).all():
+        print(task.name, task.priority)
         task.priority -= 1
+        print(task.name, task.priority)
     session.commit()
     logger.info('Daily task priority decrease complete')
 
