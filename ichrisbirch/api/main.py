@@ -1,10 +1,10 @@
 import logging
 
 from fastapi import FastAPI
-from ichrisbirch.config import Settings
 
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
+from ichrisbirch.config import Settings
 
 # TODO: for authentication
 # from ichrisbirch.api.dependencies import get_query_token, get_token_header
