@@ -1,4 +1,5 @@
 import logging
+import subprocess
 import time
 from typing import Any, Generator
 
@@ -78,7 +79,15 @@ def create_schemas(schemas: list[str]):
         session.close()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
+def start_uvicorn():
+    """Starts uvicorn in a new process for app tests"""
+    subprocess.Popen(
+        ['uvicorn', 'ichrisbirch.wsgi:api', '--host', 'localhost', '--port', '5555', '--reload', '--log-level', 'debug']
+    )
+
+
+@pytest.fixture(scope='session', autouse=True)
 def postgres_testdb_in_docker():
     """Create a postgres test database in docker for unit tests
 

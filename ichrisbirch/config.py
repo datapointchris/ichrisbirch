@@ -24,6 +24,8 @@ class FastAPISettings:
     """Config settings for FastAPI"""
 
     def __init__(self):
+        self.host: Optional[str] = os.getenv('FASTAPI_HOST')
+        self.port: Optional[str] = os.getenv('FASTAPI_PORT')
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
         self.responses: dict[Union[int, str], dict[str, Any]] = {
