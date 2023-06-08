@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from ichrisbirch import models, schemas
 from ichrisbirch.config import get_settings
@@ -48,6 +49,26 @@ async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
         session.delete(task)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    else:
+        message = f'AutoTask {id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+@router.get('/{id}/run/', status_code=status.HTTP_200_OK)
+async def run(id: int, session: Session = Depends(sqlalchemy_session)):
+    """API method to run a task.  Passes request to crud.tasks module"""
+    if autotask := session.get(models.AutoTask, id):
+        task = models.Task(
+            name=autotask.name, notes=autotask.notes, priority=autotask.priority, category=autotask.category
+        )
+        session.add(task)
+        autotask.last_run_date = datetime.now()
+        autotask.run_count += 1
+        session.commit()
+        session.refresh(task)
+        logger.debug(f'Ran autotask {id}, created task {task.id}')
+        return task
     else:
         message = f'AutoTask {id} not found'
         logger.warning(message)
