@@ -1,9 +1,11 @@
 import logging
 
-from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
 
 
-def init(settings: Settings):
+def create_base_logger():
     """Initialize the base logger"""
     logger = logging.getLogger(__name__)
     log_file = f'{settings.logging.log_dir}/pylogger.log'
@@ -25,3 +27,5 @@ def init(settings: Settings):
     # quiet matplotlib noisy output when in debug mode
     if settings.logging.log_level == logging.DEBUG:
         logging.getLogger('matplotlib').setLevel(logging.INFO)
+
+    return logger
