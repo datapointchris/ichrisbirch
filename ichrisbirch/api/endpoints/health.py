@@ -13,10 +13,8 @@ router = APIRouter(prefix='/health', tags=['health'], responses=settings.fastapi
 
 @router.get("/", response_model=schemas.Health, status_code=status.HTTP_200_OK)
 def health() -> dict:
-    """Endpoint for API Health Status"""
     return {
         'name': settings.fastapi.title,
-        'version': settings.version,
         'environment': os.getenv('ENVIRONMENT', 'NOT SET'),
         'api_url': os.getenv('API_URL', 'NOT SET'),
         'log_level': os.getenv('LOG_LEVEL', 'NOT SET'),

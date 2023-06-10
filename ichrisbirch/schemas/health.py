@@ -5,7 +5,6 @@ class Health(BaseModel):
     """Pydantic Model for Health endpoint"""
 
     name: str
-    version: str
     environment: str
     api_url: str
     log_level: str
