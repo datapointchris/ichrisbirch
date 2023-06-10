@@ -6,7 +6,7 @@ from sqlalchemy import DateTime, Enum, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from ichrisbirch.db.sqlalchemy.base import Base
+from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class TaskCategory(enum.Enum):
@@ -30,7 +30,7 @@ class Task(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64))
     notes: Mapped[str] = mapped_column(Text(), nullable=True)
-    category: Mapped[Enum] = mapped_column(Enum(TaskCategory))
+    category: Mapped[TaskCategory] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer)
     add_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     complete_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

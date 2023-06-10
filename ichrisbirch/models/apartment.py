@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from ichrisbirch.db.sqlalchemy.base import Base
+from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Apartment(Base):

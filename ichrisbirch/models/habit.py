@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Date, Integer, String
 
-from ichrisbirch.db.sqlalchemy.base import Base
+from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Habit(Base):

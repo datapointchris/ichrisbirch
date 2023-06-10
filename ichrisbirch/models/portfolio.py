@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
-from ichrisbirch.db.sqlalchemy.base import Base
+from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class PortfolioProject(Base):

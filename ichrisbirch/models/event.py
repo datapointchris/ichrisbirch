@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
 
-from ichrisbirch.db.sqlalchemy.base import Base
+from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Event(Base):

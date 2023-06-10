@@ -3,7 +3,7 @@ from datetime import date
 from sqlalchemy import Date, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ichrisbirch.db.sqlalchemy.base import Base
+from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Countdown(Base):

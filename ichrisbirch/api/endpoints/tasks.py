@@ -4,29 +4,17 @@ from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy import or_, select, and_
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 # from ..dependencies import auth
 from ichrisbirch import models, schemas
 from ichrisbirch.config import get_settings
-from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
+from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 router = APIRouter(prefix='/tasks', tags=['tasks'], responses=settings.fastapi.responses)
-
-
-def daily_decrease_task_priority(session=sqlalchemy_session):
-    session = next(session())
-    """Decrease priority of all tasks by 1 each day"""
-    query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
-    for task in session.scalars(query).all():
-        print(task.name, task.priority)
-        task.priority -= 1
-        print(task.name, task.priority)
-    session.commit()
-    logger.info('Daily task priority decrease complete')
 
 
 @router.get("/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
