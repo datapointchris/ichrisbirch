@@ -6,7 +6,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.app.easy_dates import EasyDate
 from ichrisbirch.config import get_settings
-from ichrisbirch.db.sqlalchemy import session
+from ichrisbirch.database.sqlalchemy import session
 from ichrisbirch.models.habit import Category, CompletedHabit, Habit
 
 settings = get_settings()

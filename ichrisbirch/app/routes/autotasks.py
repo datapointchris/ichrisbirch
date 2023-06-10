@@ -70,4 +70,16 @@ def crud():
                 flash(error_message, 'error')
             return redirect(request.referrer or url_for('autotasks.index'))
 
+        case 'run':
+            autotask_id = data.get('id')
+            response = requests.post(f'{AUTOTASKS_URL}/{autotask_id}/run', timeout=TIMEOUT)
+            logger.debug(response.text)
+            if response.status_code == 200:
+                flash(f'Autotask running: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
+            return redirect(request.referrer or url_for('autotasks.index'))
+
     return abort(405, description=f"Method {method} not accepted")

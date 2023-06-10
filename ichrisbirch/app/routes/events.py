@@ -2,7 +2,7 @@ import requests
 from flask import Blueprint, render_template, request
 
 from ichrisbirch.config import get_settings
-from ichrisbirch.db.sqlalchemy import session
+from ichrisbirch.database.sqlalchemy import session
 from ichrisbirch.models.event import Event
 
 settings = get_settings()
