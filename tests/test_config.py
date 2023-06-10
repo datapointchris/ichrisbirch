@@ -1,24 +1,7 @@
 import os
-import pathlib
 
 from ichrisbirch.config import get_settings
-
-print('#################   Testing ichrisbirch.config.get_settings() #################')
-
-
-def find_project_root(
-    directory: pathlib.Path = pathlib.Path.cwd(),
-    target_file: str = 'pyproject.toml',
-) -> pathlib.Path:
-    """Find the project root directory"""
-    for file in directory.iterdir():
-        if file.name == target_file:
-            return directory.absolute()
-    parent_directory = directory.parent
-    if parent_directory == directory:
-        raise FileNotFoundError(f'Could not find project root directory searching for {target_file}')
-    return find_project_root(parent_directory)
-
+from tests.helpers import find_project_root
 
 string_path = find_project_root() / '.dev.env'
 test_env_file = find_project_root() / 'tests' / 'test_env_file'
