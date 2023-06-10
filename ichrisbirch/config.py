@@ -1,4 +1,3 @@
-import importlib.metadata
 import logging
 import os
 import pathlib
@@ -11,18 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 class FlaskSettings:
-    """Config settings for Flask"""
-
     def __init__(self):
-        # https://flask.palletsprojects.com/en/latest/api/#sessions
         self.SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')  # MUST be capitalized
         self.TESTING: Optional[bool] = bool(os.getenv('FLASK_TESTING'))
         self.DEBUG: Optional[bool] = bool(os.getenv('FLASK_DEBUG'))
 
 
 class FastAPISettings:
-    """Config settings for FastAPI"""
-
     def __init__(self):
         self.host: Optional[str] = os.getenv('FASTAPI_HOST')
         self.port: Optional[str] = os.getenv('FASTAPI_PORT')
@@ -35,8 +29,6 @@ class FastAPISettings:
 
 
 class PostgresSettings:
-    """Config settings for Postgres"""
-
     def __init__(self):
         self.host: Optional[str] = os.getenv('POSTGRES_HOST')
         self.user: Optional[str] = os.getenv('POSTGRES_USER')
@@ -49,11 +41,7 @@ class PostgresSettings:
         return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
-class SQLAlchemySettings:
-    """Config settings for SQLAlchemy"""
-
-    # TODO: [2023/05/07] - This class is currently hardcoded to Postgres.
-
+class SQLAlchemySettings:  # TODO: [2023/05/07] - This class is currently hardcoded to Postgres.
     def __init__(self):
         self.echo: bool = False
         self.track_modifications: bool = False
@@ -69,8 +57,6 @@ class SQLAlchemySettings:
 
 
 class MongoDBSettings:
-    """Config settings for MongoDB"""
-
     def __init__(self):
         self.host: Optional[str] = os.getenv('MONGO_HOST')
         self.user: Optional[str] = os.getenv('MONGO_USER')
@@ -82,15 +68,11 @@ class MongoDBSettings:
 
 
 class SQLiteSettings:
-    """Config settings for SQLite"""
-
     def __init__(self):
         self.db_uri: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
 
 
 class LoggingSettings:
-    """Config settings for Logging"""
-
     def __init__(self):
         self.os_prefix: Optional[str] = os.getenv('OS_PREFIX')
         self.log_path: Optional[str] = os.getenv('LOG_PATH')
@@ -104,11 +86,8 @@ class LoggingSettings:
 
 
 class Settings:
-    """Base settings class that contains all other settings."""
-
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
         self.name: str = 'ichrisbirch'
-        self.version: str = importlib.metadata.version(self.name)
         self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
         self.api_url: Optional[str] = os.environ.get('API_URL')
         self.environment: Optional[str] = os.environ.get('ENVIRONMENT')
@@ -127,14 +106,14 @@ class Settings:
 
 def load_environment(env_file: Optional[pathlib.Path | str] = None):
     if isinstance(env_file, pathlib.Path):
-        print('Pathlib Path')
+        logger.info(f'Loading Environment from pathlib.Path: {env_file}')
         if not env_file.exists():
             raise FileNotFoundError(f'Environment file not found: {env_file}')
 
     elif isinstance(env_file, str):
-        print('String')
+        logger.info(f'Loading Environment from string: {env_file}')
         if not pathlib.Path(env_file).exists():
-            print('Not a Pathlib Path')
+            logger.warning(f'Environment file not found: {env_file}')
             match env_file:
                 case 'development':
                     filename = '.dev.env'
@@ -143,15 +122,16 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                 case 'production':
                     filename = '.prod.env'
                 case _:
+                    logger.error(f'Unrecognized Environment Selection: {env_file}')
                     raise ValueError(f'Unrecognized Environment Selection: {env_file}')
-            print(f'Filename: {filename}')
+            logger.info(f'Loading environment variables from: {filename}')
             env_file = pathlib.Path(dotenv.find_dotenv(filename))
         else:
-            print('String Path')
+            logger.info(f'Loading environment variables from: {env_file}')
             env_file = pathlib.Path(env_file)
 
     else:
-        print('ENVIRONMENT Variable')
+        logger.info(f'Loading Environment from ENVIRONMENT variable {env_file}')
         match ENV := os.getenv('ENVIRONMENT'):
             case 'development':
                 filename = '.dev.env'
@@ -160,11 +140,11 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
             case 'production':
                 filename = '.prod.env'
             case _:
+                logger.error(f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.')
                 raise ValueError(f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.')
         env_file = pathlib.Path(dotenv.find_dotenv(filename))
 
     logger.info(f'Loading environment variables from: {env_file}')
-    # print(f'Environment variables: {dotenv.dotenv_values(env_file)}')
     dotenv.load_dotenv(env_file, override=True)
     return env_file
 
