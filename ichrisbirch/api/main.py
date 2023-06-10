@@ -4,21 +4,16 @@ from fastapi import FastAPI
 
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
-from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 
 # TODO: for authentication
 # from ichrisbirch.api.dependencies import get_query_token, get_token_header
-
+settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-def create_api(settings: Settings) -> FastAPI:
-    """FastAPI app factory
-
-    Returns:
-        FastAPI: FastAPI app
-    """
-    api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description, version=settings.version)
+def create_api() -> FastAPI:
+    api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
     logger.debug(f'{api.title} {api.version} Started')
 
     api.add_middleware(ResponseLoggerMiddleware)
