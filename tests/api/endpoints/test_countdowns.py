@@ -1,44 +1,20 @@
-import json
-
 import pytest
 
 from ichrisbirch import models
 from tests.helpers import show_status_and_response
-
-BASE_DATA = [
-    {
-        'name': 'Task 1 Chore with notes priority 5 not completed',
-        'notes': 'Notes for task 1',
-        'due_date': '2020-04-24',
-    },
-    {
-        'name': 'Task 2 Home without notes priority 10 not completed',
-        'notes': None,
-        'due_date': '2050-03-20',
-    },
-    {
-        'name': 'Task 3 Home with notes priority 15 completed',
-        'notes': 'Notes for task 3',
-        'due_date': '2050-01-20',
-    },
-]
-
-CREATE_DATA = {
-    'name': 'Task 4 Computer with notes priority 3',
-    'notes': 'Notes task 4',
-    'due_date': '2040-01-20',
-}
+from tests.testing_data.countdowns import COUNTDOWN_TEST_CREATE_DATA, COUNTDOWN_TEST_DATA
 
 
 @pytest.fixture(scope='function')
 def test_data():
     """Basic test data"""
-    return [models.Countdown(**record) for record in BASE_DATA]
+    return [models.Countdown(**record) for record in COUNTDOWN_TEST_DATA]
 
 
-def test_read_one_countdown(insert_test_data, test_api):
+@pytest.mark.parametrize('countdown_id', [1, 2, 3])
+def test_read_one_countdown(insert_test_data, test_api, countdown_id):
     """Test if able to read one countdown"""
-    response = test_api.get('/countdowns/1/')
+    response = test_api.get(f'/countdowns/{countdown_id}/')
     assert response.status_code == 200, show_status_and_response(response)
 
 
@@ -51,9 +27,9 @@ def test_read_many_countdowns(insert_test_data, test_api):
 
 def test_create_countdown(insert_test_data, test_api):
     """Test if able to create a countdown"""
-    response = test_api.post('/countdowns/', data=json.dumps(CREATE_DATA))
+    response = test_api.post('/countdowns/', json=COUNTDOWN_TEST_CREATE_DATA)
     assert response.status_code == 201, show_status_and_response(response)
-    assert dict(response.json())['name'] == CREATE_DATA['name']
+    assert dict(response.json())['name'] == COUNTDOWN_TEST_CREATE_DATA['name']
 
     # Test countdown was created
     response = test_api.get('/countdowns/')
@@ -84,16 +60,16 @@ def test_countdown_lifecycle(insert_test_data, test_api):
     assert len(all_countdowns.json()) == 3
 
     # Create new countdown
-    created_countdown = test_api.post('/countdowns/', data=json.dumps(CREATE_DATA))
+    created_countdown = test_api.post('/countdowns/', json=COUNTDOWN_TEST_CREATE_DATA)
     assert created_countdown.status_code == 201, show_status_and_response(created_countdown)
-    assert created_countdown.json()['name'] == CREATE_DATA['name']
+    assert created_countdown.json()['name'] == COUNTDOWN_TEST_CREATE_DATA['name']
 
     # Get created countdown
     countdown_id = created_countdown.json().get('id')
     endpoint = f'/countdowns/{countdown_id}/'
     response_countdown = test_api.get(endpoint)
     assert response_countdown.status_code == 200, show_status_and_response(response_countdown)
-    assert response_countdown.json()['name'] == CREATE_DATA['name']
+    assert response_countdown.json()['name'] == COUNTDOWN_TEST_CREATE_DATA['name']
 
     # Read all countdowns with new countdown
     all_countdowns = test_api.get('/countdowns/')

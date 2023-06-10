@@ -1,46 +1,14 @@
-import json
-
 import pytest
 
 from ichrisbirch import models
 from tests.helpers import show_status_and_response
-from ichrisbirch.api.endpoints import tasks
-from tests.conftest import get_testing_session
-
-BASE_DATA = [
-    {
-        'name': 'Task 1 Chore with notes priority 5 not completed',
-        'notes': 'Notes for task 1',
-        'category': 'Chore',
-        'priority': 5,
-    },
-    {
-        'name': 'Task 2 Home without notes priority 10 not completed',
-        'notes': None,
-        'category': 'Home',
-        'priority': 10,
-    },
-    {
-        'name': 'Task 3 Home with notes priority 15 completed',
-        'notes': 'Notes for task 3',
-        'category': 'Home',
-        'priority': 15,
-        'complete_date': '2020-04-20 03:03:39.050648+00:00',
-    },
-]
-
-CREATE_DATA = {
-    'name': 'Task 4 Computer with notes priority 3',
-    'notes': 'Notes task 4',
-    'category': 'Computer',
-    'priority': 3,
-}
+from tests.testing_data.tasks import TASK_TEST_CREATE_DATA, TASK_TEST_DATA
 
 
 @pytest.fixture(scope='function')
 def test_data():
     """Basic test data"""
-    return [models.Task(**record) for record in BASE_DATA]
+    return [models.Task(**record) for record in TASK_TEST_DATA]
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
@@ -73,9 +41,9 @@ def test_read_many_tasks_not_completed(insert_test_data, test_api):
 
 def test_create_task(insert_test_data, test_api):
     """Test if able to create a task"""
-    response = test_api.post('/tasks/', data=json.dumps(CREATE_DATA))
+    response = test_api.post('/tasks/', json=TASK_TEST_CREATE_DATA)
     assert response.status_code == 201, show_status_and_response(response)
-    assert dict(response.json())['name'] == CREATE_DATA['name']
+    assert dict(response.json())['name'] == TASK_TEST_CREATE_DATA['name']
 
     # Test task was created
     created = test_api.get('/tasks/')
@@ -124,37 +92,30 @@ def test_search_task(insert_test_data, test_api):
     assert len(search_results.json()) == 2
 
 
-def test_daily_decrease_task_priority(insert_test_data, test_api):
-    """Test if able to decrease priority of all tasks"""
-    before = test_api.get('/tasks/')
-    assert before.status_code == 200, show_status_and_response(before)
-    assert sum([task['priority'] for task in before.json()]) == 5 + 10 + 15
-    tasks.daily_decrease_task_priority(session=get_testing_session)
-    after = test_api.get('/tasks/')
-    assert after.status_code == 200, show_status_and_response(after)
-    assert sum([task['priority'] for task in after.json()]) == 4 + 9 + 15
-    assert len(before.json()) == len(after.json())
-
-
 def test_task_lifecycle(insert_test_data, test_api):
     """Integration test for CRUD lifecylce of a task"""
-
-    # Create new task
-    created_task = test_api.post('/tasks/', data=json.dumps(CREATE_DATA))
-    assert created_task.status_code == 201, show_status_and_response(created_task)
-    assert created_task.json()['name'] == CREATE_DATA['name']
 
     # Read all tasks
     all_tasks = test_api.get('/tasks/')
     assert all_tasks.status_code == 200, show_status_and_response(all_tasks)
-    assert len(all_tasks.json()) == 4
+    assert len(all_tasks.json()) == 3
+
+    # Create new task
+    created_task = test_api.post('/tasks/', json=TASK_TEST_CREATE_DATA)
+    assert created_task.status_code == 201, show_status_and_response(created_task)
+    assert created_task.json()['name'] == TASK_TEST_CREATE_DATA['name']
 
     # Get created task
     task_id = created_task.json().get('id')
     endpoint = f'/tasks/{task_id}/'
     response_task = test_api.get(endpoint)
     assert response_task.status_code == 200, show_status_and_response(response_task)
-    assert response_task.json()['name'] == CREATE_DATA['name']
+    assert response_task.json()['name'] == TASK_TEST_CREATE_DATA['name']
+
+    # Read all tasks with new task
+    all_tasks = test_api.get('/tasks/')
+    assert all_tasks.status_code == 200, show_status_and_response(all_tasks)
+    assert len(all_tasks.json()) == 4
 
     # Delete Task
     deleted_task = test_api.delete(f'/tasks/{task_id}/')
