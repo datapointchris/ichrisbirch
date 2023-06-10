@@ -12,14 +12,18 @@ ENVIRONMENTS = {
         'protocols': ['http://'],
         'host_names': [
             '127.0.0.1',
-            # '0.0.0.0',
+            '0.0.0.0',
             'localhost',
-            'macmini.local',
-            'api.macmini.local',
+            # 'macmini.local',
+            # 'api.macmini.local',
             # 'random.address',
         ],
-        'endpoints': ['', '/tasks', '/health'],
-        'ports': ['', ':80', ':4000', ':4200', ':6000', ':6200'],
+        'endpoints': [
+            '',
+            # '/tasks',
+            # '/health',
+        ],
+        'ports': ['', ':80', ':4000', ':4200', ':6000', ':6200', ':5434', ':5555'],
     },
     'test': {
         'protocols': ['http://'],

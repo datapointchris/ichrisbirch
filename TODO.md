@@ -79,6 +79,7 @@
 - [ ] `etc/environment` in prod server for ENVIRONMENT variable
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
   - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
+- [ ] [GitHub - mkdocstrings/mkdocstrings: Automatic documentation from sources, for MkDocs.](https://github.com/mkdocstrings/mkdocstrings)
 
 ## CSS files
 
@@ -254,6 +255,8 @@ def favicon():
 
 Test this out on the portfolio page
 resume page
+
+Speed Dial component for frontend that has the error report and other useful shit
 
 ## Project Specific
 
