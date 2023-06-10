@@ -1,7 +1,6 @@
-from ichrisbirch import base_logger
-from ichrisbirch.config import get_settings
+from ichrisbirch.logger import create_base_logger
 from ichrisbirch.wsgi import app
 
 if __name__ == '__main__':
-    base_logger.init(get_settings())
+    logger = create_base_logger()
     app.run(host='127.0.0.1', port=6400, debug=True)

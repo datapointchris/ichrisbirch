@@ -1,8 +1,7 @@
 import uvicorn
 
-from ichrisbirch import base_logger
-from ichrisbirch.config import get_settings
+from ichrisbirch.logger import create_base_logger
 
 if __name__ == "__main__":
-    base_logger.init(get_settings())
+    logger = create_base_logger()
     uvicorn.run('ichrisbirch.wsgi:api', port=6200, reload=True, log_level="debug")
