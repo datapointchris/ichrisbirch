@@ -1,13 +1,13 @@
 import logging
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from ichrisbirch import models, schemas
 from ichrisbirch.config import get_settings
-from ichrisbirch.db.sqlalchemy.session import sqlalchemy_session
+from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
 settings = get_settings()
 router = APIRouter(prefix='/autotasks', tags=['autotasks'], responses=settings.fastapi.responses)
@@ -34,8 +34,8 @@ async def create(task: schemas.AutoTaskCreate, session: Session = Depends(sqlalc
 @router.get('/{id}/', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to read one task.  Passes request to crud.tasks module"""
-    if task := session.get(models.AutoTask, id):
-        return task
+    if autotask := session.get(models.AutoTask, id):
+        return autotask
     else:
         message = f'AutoTask {id} not found'
         logger.warning(message)
@@ -45,8 +45,8 @@ async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to delete a task.  Passes request to crud.tasks module"""
-    if task := session.get(models.AutoTask, id):
-        session.delete(task)
+    if autotask := session.get(models.AutoTask, id):
+        session.delete(autotask)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
