@@ -72,7 +72,7 @@ def crud():
 
         case 'run':
             autotask_id = data.get('id')
-            response = requests.post(f'{AUTOTASKS_URL}/{autotask_id}/run', timeout=TIMEOUT)
+            response = requests.get(f'{AUTOTASKS_URL}/{autotask_id}/run', timeout=TIMEOUT)
             logger.debug(response.text)
             if response.status_code == 200:
                 flash(f'Autotask running: {data.get("name")}', 'success')
