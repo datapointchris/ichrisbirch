@@ -28,7 +28,7 @@ SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, fu
 
 docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
 postgres_container_config = dict(
-    image='postgres:14',
+    image='postgres:14.8',
     name='postgres_testing',
     environment={'ENVIRONMENT': 'testing', 'POSTGRES_USER': 'postgres', 'POSTGRES_PASSWORD': 'postgres'},
     ports=[5432],
