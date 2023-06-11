@@ -8,7 +8,7 @@ class FakeDataGenerator(Protocol):
 
     To Implement:
         The `generate` function simply needs to return
-        Set the seed to get reproducable output
+        Set the seed to get reproducible output
     """
 
     total_records: int

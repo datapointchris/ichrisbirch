@@ -205,7 +205,7 @@ Is this something I want to do?
 
 ## Re-structure CSS and Navigation
 
-- [ ] CSS to inheret from main
+- [ ] CSS to inherit from main
   - [ ] Both the classes and site-wide variables
 - [ ] There is a style of CSS naming convention, find that again.
 - [ ] <https://github.com/bem/bem-sdk#naming>

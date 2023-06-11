@@ -136,7 +136,7 @@ FastAPI:
 
 ## Continuous Integration / Github Actions
 
-Pre-commit Possibilites:
+Pre-commit Possibilities:
 
 - [X] Black
 - [X] Flake8
