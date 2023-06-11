@@ -23,7 +23,7 @@ blueprint = Blueprint(
 logger = logging.getLogger(__name__)
 
 TASKS_URL = f'{settings.api_url}/tasks'
-TASK_CATEGORIES = [t for t in TaskCategory]
+TASK_CATEGORIES = [t.value for t in TaskCategory]
 TIMEOUT = settings.request_timeout
 
 
@@ -145,6 +145,7 @@ def completed():
         timeout=TIMEOUT,
     )
     if response.status_code == 200:
+        # TODO: Change this to only schemas when Pydantic 2 released so TaskCompleted schema can have properties
         completed_tasks = [models.Task(**schemas.TaskCompleted(**task).dict()) for task in response.json()]
     else:
         error_message = f'{response.url} : {response.status_code} {response.reason}'
