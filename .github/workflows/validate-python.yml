@@ -79,8 +79,8 @@ jobs:
       - name: Run bandit
         run: poetry run bandit -c pyproject.toml -r .
 
-      - name: Start API server for App tests
-        run: poetry run python ichrisbirch/runapidev.py &
+      # - name: Start API server for App tests
+      #   run: poetry run python ichrisbirch/runapidev.py &
 
       - name: Run pytest coverage
         run: poetry run pytest --cov=ichrisbirch
