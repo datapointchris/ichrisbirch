@@ -28,7 +28,7 @@ SessionTesting = sessionmaker(bind=engine, autocommit=False, autoflush=False, fu
 
 docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
 postgres_container_config = dict(
-    image='postgres:14.8',
+    image='postgres:14',
     name='postgres_testing',
     environment={'ENVIRONMENT': 'testing', 'POSTGRES_USER': 'postgres', 'POSTGRES_PASSWORD': 'postgres'},
     ports=[5432],
@@ -41,6 +41,7 @@ postgres_container_config = dict(
 def create_docker_container(config: dict[str, Any]) -> Container:
     try:
         image = config.pop('image')
+        docker_client.pull(image)
         container = docker_client.create_container(image, **config)
     except DockerException as e:
         message = f'Failed to RUN Docker client: {e}'
