@@ -1,14 +1,15 @@
-from ichrisbirch import models
-from sqlalchemy import select, and_
 import logging
-from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 from datetime import datetime
 
+from sqlalchemy import and_, select
+
+from ichrisbirch import models
+from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 
 
-def decrease_task_priority(session=sqlalchemy_session):
+def decrease_task_priority(session=sqlalchemy_session) -> None:
     """Decrease priority of all tasks by 1 each day"""
     session = next(session())
     query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
@@ -19,7 +20,7 @@ def decrease_task_priority(session=sqlalchemy_session):
     logger.info('Daily task priority decrease complete')
 
 
-def check_and_run_autotasks(session=sqlalchemy_session):
+def check_and_run_autotasks(session=sqlalchemy_session) -> None:
     """Check if any autotasks should run today and create tasks if so"""
     session = next(session())
     for autotask in session.scalars(select(models.AutoTask)).all():

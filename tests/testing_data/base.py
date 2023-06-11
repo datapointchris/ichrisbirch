@@ -1,6 +1,6 @@
 import random
 from functools import cached_property
-from typing import Optional, Protocol
+from typing import Any, Optional, Protocol
 
 
 class FakeDataGenerator(Protocol):
@@ -20,7 +20,7 @@ class FakeDataGenerator(Protocol):
         """Generated fake data"""
         return self.generate()
 
-    def generate(self) -> list[dict]:
+    def generate(self) -> list[dict[str, Any]]:
         ...
 
     @property
@@ -29,6 +29,6 @@ class FakeDataGenerator(Protocol):
         return random.choices(range(0, len(self.generated_data) - 1), k=self.num_test_records)
 
     @property
-    def random_records(self) -> list[dict]:
+    def random_records(self) -> list[dict[str, Any]]:
         """Returns a list of random records from generated data"""
         return random.choices(self.generated_data, k=self.num_test_records)

@@ -11,6 +11,6 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False)
 
 
 def sqlalchemy_session() -> Generator[Session, None, None]:
-    """Yields sqlalchemy Session"""
+    """Yields sqlalchemy Session Generator that must have `next()` called on it to get the Session object"""
     with SessionLocal() as session:
         yield session

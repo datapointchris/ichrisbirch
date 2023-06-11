@@ -7,9 +7,10 @@ from typing import Any, Generator
 import docker
 import pytest
 from docker.errors import DockerException
+from docker.models.containers import Container
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch.api.main import create_api
@@ -37,7 +38,7 @@ postgres_container_config = dict(
 )
 
 
-def create_docker_container(config: dict):
+def create_docker_container(config: dict[str, Any]) -> Container:
     try:
         image = config.pop('image')
         container = docker_client.create_container(image, **config)
@@ -52,7 +53,7 @@ def create_docker_container(config: dict):
     return container
 
 
-def get_testing_session() -> Generator:
+def get_testing_session() -> Generator[Session, None, None]:
     session = SessionTesting()
     try:
         yield session
@@ -60,7 +61,7 @@ def get_testing_session() -> Generator:
         session.close()
 
 
-def create_db_schemas(schemas: list[str]):
+def create_db_schemas(schemas: list[str]) -> None:
     # SQLAlchemy will not create the schemas automatically
     session = next(get_testing_session())
     try:

@@ -1,6 +1,7 @@
 from datetime import date
+from typing import Any
 
-COUNTDOWN_TEST_DATA = [
+COUNTDOWN_TEST_DATA: list[dict[str, Any]] = [
     {
         'name': 'Task 1 Chore with notes priority 5 not completed',
         'notes': 'Notes for task 1',

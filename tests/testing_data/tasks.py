@@ -1,7 +1,9 @@
 from datetime import datetime
+from typing import Any
+
 from ichrisbirch.models.task import TaskCategory
 
-TASK_TEST_DATA = [
+TASK_TEST_DATA: list[dict[str, Any]] = [
     {
         'name': 'Task 1 Chore with notes priority 5 not completed',
         'notes': 'Notes for task 1',

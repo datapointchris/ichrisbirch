@@ -123,6 +123,9 @@ extend_skip = [".md", ".json"]
 
 [tool.mypy]
 ignore_missing_imports = true
+# strict = true
+allow_untyped_defs = true
+check_untyped_defs = false  # Can enable this when all the routes are upated
 plugins = ["pydantic.mypy"]
 warn_return_any = false
 

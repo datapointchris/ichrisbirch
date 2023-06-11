@@ -7,7 +7,7 @@ import pendulum
 import requests
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from ichrisbirch import schemas
+from ichrisbirch import models, schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
@@ -42,11 +42,11 @@ def days_to_complete(task: schemas.Task) -> int | None:
     return None
 
 
-def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
+def calculate_average_completion_time(tasks: list[models.Task]) -> str | None:
     """ "Calculate the average completion time of the supplied completed tasks"""
     if not tasks:
         return None
-    total_days_to_complete = sum([max((task.complete_date - task.add_date).days, 1) for task in tasks])
+    total_days_to_complete = sum(task.days_to_complete for task in tasks)
     average_days = total_days_to_complete / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
@@ -145,7 +145,7 @@ def completed():
         timeout=TIMEOUT,
     )
     if response.status_code == 200:
-        completed_tasks = [schemas.TaskCompleted(**task) for task in response.json()]
+        completed_tasks = [models.Task(**schemas.TaskCompleted(**task).dict()) for task in response.json()]
     else:
         error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)

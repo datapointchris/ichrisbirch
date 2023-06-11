@@ -1,7 +1,10 @@
 from datetime import datetime
-from ichrisbirch.models.autotask import TaskCategory, TaskFrequency
+from typing import Any
 
-AUTOTASK_TEST_DATA = [
+from ichrisbirch.models.autotask import TaskFrequency
+from ichrisbirch.models.task import TaskCategory
+
+AUTOTASK_TEST_DATA: list[dict[str, Any]] = [
     {
         'name': 'Task 1 Chore with notes priority 5 not completed',
         'notes': 'Notes for task 1',

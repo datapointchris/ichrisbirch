@@ -9,17 +9,17 @@ from sqlalchemy.sql import func
 from ichrisbirch.database.sqlalchemy.base import Base
 
 
-class TaskCategory(enum.Enum):
-    Automotive = 'Automotive'
-    Home = 'Home'
-    Work = 'Work'
-    Chore = 'Chore'
-    Kitchen = 'Kitchen'
-    Dingo = 'Dingo'
-    Learn = 'Learn'
-    Research = 'Research'
-    Computer = 'Computer'
-    Financial = 'Financial'
+class TaskCategory(enum.StrEnum):
+    Automotive = ('Automotive',)
+    Home = ('Home',)
+    Work = ('Work',)
+    Chore = ('Chore',)
+    Kitchen = ('Kitchen',)
+    Dingo = ('Dingo',)
+    Learn = ('Learn',)
+    Research = ('Research',)
+    Computer = ('Computer',)
+    Financial = ('Financial',)
     Purchase = 'Purchase'
 
 
@@ -38,3 +38,11 @@ class Task(Base):
     def __repr__(self):
         return f''''Task(name = {self.name}, priority = {self.priority}, category = {self.category},
             add_date = {self.add_date}, complete_date = {self.complete_date})'''
+
+    # TODO: Move this property to pydantic schemas when v2 is released and property is supported
+    # This is currently only called by completed tasks. This should NEVER return 0, stupid type hinting!!!
+    @property
+    def days_to_complete(self) -> int:
+        if self.complete_date:
+            return max((self.complete_date - self.add_date).days, 1)
+        return 0

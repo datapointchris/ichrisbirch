@@ -4,7 +4,7 @@ from fastapi import status
 from requests import JSONDecodeError, Response
 
 
-def show_status_and_response(response: Response) -> dict:
+def show_status_and_response(response: Response) -> dict[str, str]:
     """Convert status code to description and return response if any"""
     d = {}
     for attr in dir(status):

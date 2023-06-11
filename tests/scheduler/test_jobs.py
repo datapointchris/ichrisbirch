@@ -1,10 +1,11 @@
-from tests.conftest import get_testing_session
-from tests.helpers import show_status_and_response
-from ichrisbirch.scheduler import jobs
-import pytest
-from ichrisbirch import models
 import itertools
 
+import pytest
+
+from ichrisbirch import models
+from ichrisbirch.scheduler import jobs
+from tests.conftest import get_testing_session
+from tests.helpers import show_status_and_response
 from tests.testing_data.autotasks import AUTOTASK_TEST_DATA
 from tests.testing_data.tasks import TASK_TEST_DATA
 

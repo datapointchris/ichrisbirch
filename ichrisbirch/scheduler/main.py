@@ -1,9 +1,10 @@
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.scheduler import jobs
-from ichrisbirch.config import get_settings
 
 settings = get_settings()
 
