@@ -11,13 +11,14 @@ from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.models.task import TaskCategory
 
 
-class TaskFrequency(enum.StrEnum):
-    Daily = ('Daily',)
-    Weekly = ('Weekly',)
-    Biweekly = ('Biweekly',)
-    Monthly = ('Monthly',)
-    Quarterly = ('Quarterly',)
-    Semiannual = ('Semiannual',)
+class TaskFrequency(enum.Enum):
+    # Change to enum.StrEnum when no longer < 3.11
+    Daily = 'Daily'
+    Weekly = 'Weekly'
+    Biweekly = 'Biweekly'
+    Monthly = 'Monthly'
+    Quarterly = 'Quarterly'
+    Semiannual = 'Semiannual'
     Yearly = 'Yearly'
 
 

@@ -432,6 +432,9 @@ sqlalchemy==2.0.16 ; python_full_version >= "3.10.1" and python_full_version < "
 starlette==0.19.1 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
     --hash=sha256:5a60c5c2d051f3a8eb546136aa0c9399773a689595e099e0877704d5888279bf \
     --hash=sha256:c6d21096774ecb9639acad41b86b7706e52ba3bf1dc13ea4ed9ad593d47e24c7
+strenum==0.4.10 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
+    --hash=sha256:898cc0ebb5054ee07400341ac1d75fdfee489d76d6df3fbc1c2eaf95971e3916 \
+    --hash=sha256:aebf04bba8e5af435937c452d69a86798b6f8d5ca5f20ba18561dbfad571ccdd
 typing-extensions==4.6.3 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
     --hash=sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26 \
     --hash=sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5

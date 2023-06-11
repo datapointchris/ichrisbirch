@@ -23,7 +23,7 @@ blueprint = Blueprint(
 logger = logging.getLogger(__name__)
 
 TASKS_URL = f'{settings.api_url}/tasks'
-TASK_CATEGORIES = [t.value for t in TaskCategory]
+TASK_CATEGORIES = [t for t in TaskCategory]
 TIMEOUT = settings.request_timeout
 
 

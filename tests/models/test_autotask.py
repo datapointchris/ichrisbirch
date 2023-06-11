@@ -12,23 +12,23 @@ for i, record in enumerate(deepcopy(AUTOTASK_TEST_DATA), start=1):
 
 
 def test_frequency_to_duration_enums():
-    assert frequency_to_duration(TaskFrequency.Daily).days == 1
-    assert frequency_to_duration(TaskFrequency.Weekly).days == 7
-    assert frequency_to_duration(TaskFrequency.Biweekly).days == 14
-    assert frequency_to_duration(TaskFrequency.Monthly).days == 30
-    assert frequency_to_duration(TaskFrequency.Quarterly).days == 90
-    assert frequency_to_duration(TaskFrequency.Semiannual).days == 180
-    assert frequency_to_duration(TaskFrequency.Yearly).days == 365
+    assert frequency_to_duration(TaskFrequency.Daily.value).days == 1
+    assert frequency_to_duration(TaskFrequency.Weekly.value).days == 7
+    assert frequency_to_duration(TaskFrequency.Biweekly.value).days == 14
+    assert frequency_to_duration(TaskFrequency.Monthly.value).days == 30
+    assert frequency_to_duration(TaskFrequency.Quarterly.value).days == 90
+    assert frequency_to_duration(TaskFrequency.Semiannual.value).days == 180
+    assert frequency_to_duration(TaskFrequency.Yearly.value).days == 365
 
 
 def test_frequency_to_duration_values():
-    assert frequency_to_duration(TaskFrequency.Daily).days == 1
-    assert frequency_to_duration(TaskFrequency.Weekly).days == 7
-    assert frequency_to_duration(TaskFrequency.Biweekly).days == 14
-    assert frequency_to_duration(TaskFrequency.Monthly).days == 30
-    assert frequency_to_duration(TaskFrequency.Quarterly).days == 90
-    assert frequency_to_duration(TaskFrequency.Semiannual).days == 180
-    assert frequency_to_duration(TaskFrequency.Yearly).days == 365
+    assert frequency_to_duration(TaskFrequency.Daily.value).days == 1
+    assert frequency_to_duration(TaskFrequency.Weekly.value).days == 7
+    assert frequency_to_duration(TaskFrequency.Biweekly.value).days == 14
+    assert frequency_to_duration(TaskFrequency.Monthly.value).days == 30
+    assert frequency_to_duration(TaskFrequency.Quarterly.value).days == 90
+    assert frequency_to_duration(TaskFrequency.Semiannual.value).days == 180
+    assert frequency_to_duration(TaskFrequency.Yearly.value).days == 365
 
 
 def test_frequency_to_duration_strings():
@@ -43,11 +43,11 @@ def test_frequency_to_duration_strings():
 
 def test_autotask_frequency_is_correct():
     autotask = autotasks_with_ids[0]
-    assert autotask.frequency == TaskFrequency.Daily
+    assert autotask.frequency == TaskFrequency.Daily.value
     autotask = autotasks_with_ids[1]
-    assert autotask.frequency == TaskFrequency.Weekly
+    assert autotask.frequency == TaskFrequency.Weekly.value
     autotask = autotasks_with_ids[2]
-    assert autotask.frequency == TaskFrequency.Quarterly
+    assert autotask.frequency == TaskFrequency.Quarterly.value
 
 
 def test_autotask_frequency_is_correct_timedelta():

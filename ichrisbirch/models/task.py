@@ -9,17 +9,18 @@ from sqlalchemy.sql import func
 from ichrisbirch.database.sqlalchemy.base import Base
 
 
-class TaskCategory(enum.StrEnum):
-    Automotive = ('Automotive',)
-    Home = ('Home',)
-    Work = ('Work',)
-    Chore = ('Chore',)
-    Kitchen = ('Kitchen',)
-    Dingo = ('Dingo',)
-    Learn = ('Learn',)
-    Research = ('Research',)
-    Computer = ('Computer',)
-    Financial = ('Financial',)
+class TaskCategory(enum.Enum):
+    # Change to enum.StrEnum when no longer < 3.11
+    Automotive = 'Automotive'
+    Home = 'Home'
+    Work = 'Work'
+    Chore = 'Chore'
+    Kitchen = 'Kitchen'
+    Dingo = 'Dingo'
+    Learn = 'Learn'
+    Research = 'Research'
+    Computer = 'Computer'
+    Financial = 'Financial'
     Purchase = 'Purchase'
 
 
