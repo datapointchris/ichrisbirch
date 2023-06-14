@@ -13,3 +13,6 @@ Location: `/scripts/sql/pg_cron_setup.sql`
 2. Schedule it with a name
 3. Set the database name for the job to the correct db
 4. Check that the job details show it has run successfully
+
+!!! note "Note"
+    `pg_cron` is not being used anymore, in favor of `APScheduler` in the `ichrisbirch/scheduler` directory.
