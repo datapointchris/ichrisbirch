@@ -44,19 +44,19 @@
 ## PRIORITY PROJECTS
 
 - [ ] Always run the new autotask right now
-- [ ] Test to see if the autotask creator actually works
+- [X] Test to see if the autotask creator actually works
 - [ ] Check on the daily subtraction
-  - [ ] This should be in the logs
-  - [ ] Move to airflow eventually
+  - [ ] This should become an endpoint
+  - [X] This should be in the logs
+  - [X] Move to airflow eventually
+    - [X] Decided to go with APScheduler instead, so it is self contained
 
 - [ ] Create tests for logger init
 - [ ] Make sure logger is working
 - [ ] Update tmuxinator stuff
 - [ ] Website Login to hide my shit
 - [ ] Autotasks
-- [ ] `euphoria_ddl.sql`
-- [ ] `.flake8` does this not work with pyproject?
-  - [ ] Docs if it does not
+
 - [ ] mypy - `--check-untyped-defs`
   - [ ] Add this option when ready to deal with other routes
 - [ ] Docs: Create video documentation, store on S3, create a link to the video in the docs.

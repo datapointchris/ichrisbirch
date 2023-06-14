@@ -5,7 +5,6 @@ import click
 
 @click.command()
 @click.option('--process', help='Process to check')
-# @click.option('--name', prompt='Your name', help='The person to greet.')
 def start_process(process):
     if subprocess.run(['pgrep', '-x', process, '>/dev/null']).returncode == 0:
         print(f'{process} is running')

@@ -214,7 +214,11 @@ Pre-commit Possibilities:
   - [X] `run_count`
 - [X] Alembic upgrade prod
 - [X] `main.py` files should be `home.py` files in app and api
+- [X] `euphoria_ddl.sql`
+- [X] `.flake8` does this not work with pyproject?
+  - [X] Docs if it does not
 
 ## Add Countdowns to API routes
 
 - [X] Add ALLLL
+

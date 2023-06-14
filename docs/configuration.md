@@ -9,4 +9,3 @@ Also note that since pydantic automatically converts environment variables to th
 ### Flake 8
 
 `.flake8` cannot be loaded from `pyproject.toml`
-
