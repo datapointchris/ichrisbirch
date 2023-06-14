@@ -88,11 +88,7 @@ def setup_test_environment():
         session.commit()
         print('Schemas created')
 
-    # Create tables
-    # Base.metadata.create_all(ENGINE)
-    print('Tables created')
-
-    # Start Uvicorn FastAPI subprocess (for testing APP, that needs an API response)
+    # Start Uvicorn FastAPI subprocess in its own thread (for testing APP, that needs an API response)
     # This is easier than mocking everything
     uvicorn_command = 'uvicorn ichrisbirch.api.main:create_api --factory --host localhost --port 5555 --log-level debug'
     uvicorn_process = subprocess.Popen(uvicorn_command.split())
@@ -114,33 +110,23 @@ def setup_test_environment():
 
 @pytest.fixture(scope='function', autouse=True)
 def insert_test_data():
-    print('NEW TEST')
-    # Have to deep copy or else the instances are the same and persist through sessions.
+    """All tables are created and dropped for each test function.
+    This is the easiest way to ensure a clean db each time a new test is run.
+    Have to deep copy or else the instances are the same and persist through sessions.
+    TODO: [2023/06/14] - Find a better way to get this data than import of global variables and deepcopy.
+    """
     all_test_data = deepcopy(AUTOTASK_BASE_DATA) + deepcopy(TASK_BASE_DATA) + deepcopy(COUNTDOWN_BASE_DATA)
     Base.metadata.create_all(ENGINE)
-
     session = next(get_testing_session())
-    print('Session created')
-    # for data in all_test_data:
-    #     print(f'Adding {data.name}')
     session.add_all(all_test_data)
-    print('Test data added')
     session.commit()
-    print('Test data committed')
-
-    print('Yielding')
     yield
-    print('BACK from Yield')
-    session.rollback()
-    print('Session rolled back')
     session.close()
-    print('Session closed')
     Base.metadata.drop_all(ENGINE)
 
 
 @pytest.fixture(scope='module')
 def test_api() -> Generator[TestClient, Any, None]:
-    """Create a FastAPI app for testing"""
     api = create_api()
     api.dependency_overrides[sqlalchemy_session] = get_testing_session
     with TestClient(api) as client:
@@ -148,8 +134,7 @@ def test_api() -> Generator[TestClient, Any, None]:
 
 
 @pytest.fixture(scope='module')
-def test_app() -> FlaskClient:
-    """Create a Flask app for testing"""
+def test_app() -> Generator[FlaskClient, Any, None]:
     app = create_app()
     app.testing = True
     app.config.update({'TESTING': True})
