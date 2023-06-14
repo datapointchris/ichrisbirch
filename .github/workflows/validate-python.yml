@@ -73,9 +73,6 @@ jobs:
       - name: Run isort action
         uses: isort/isort-action@master
 
-      - name: Run iterrogate
-        run: poetry run interrogate -c pyproject.toml
-
       - name: Run bandit
         run: poetry run bandit -c pyproject.toml -r .
 

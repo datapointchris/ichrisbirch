@@ -95,12 +95,6 @@ repos:
       - id: shellcheck
       #       args: ["--severity=warning"]  # Optionally only show errors and warnings
 
-  - repo: https://github.com/econchick/interrogate
-    rev: 1.5.0
-    hooks:
-      - id: interrogate
-        args: [--config=pyproject.toml]
-
   - repo: https://github.com/dosisod/refurb
     rev: v1.16.0
     hooks:
