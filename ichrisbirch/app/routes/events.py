@@ -1,30 +1,65 @@
-import requests
-from flask import Blueprint, render_template, request
+import logging
+from typing import Any
 
+import requests
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+
+from ichrisbirch import schemas
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.sqlalchemy import session
-from ichrisbirch.models.event import Event
 
 settings = get_settings()
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
 
+logger = logging.getLogger(__name__)
 
-@blueprint.route('/', methods=['GET', 'POST'])
+EVENTS_URL = f'{settings.api_url}/events'
+TIMEOUT = settings.request_timeout
+
+
+@blueprint.route('/', methods=['GET'])
 def index():
-    """Events home"""
-    with session:
-        events = session.query(Event).order_by(Event.date).all()
-
-    if request.method == 'POST':
-        api_url = settings.api_url
-        data = request.form.to_dict()
-        method = data.pop('method')
-        match method:
-            case ['add']:
-                event = Event(**data)
-                requests.post(f'{api_url}/events', data=event, timeout=settings.request_timeout)
-            case ['delete']:
-                event_id = data.get('id')
-                requests.delete(f'{api_url}/events/{event_id}', timeout=settings.request_timeout)
+    response = requests.get(EVENTS_URL, timeout=TIMEOUT)
+    if response.status_code == 200:
+        events = [schemas.Event(**event) for event in response.json()]
+    else:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
+        logger.error(error_message)
+        flash(error_message, 'error')
+        events = []
 
     return render_template('events/index.html', events=events)
+
+
+@blueprint.route('/crud/', methods=['POST'])
+def crud():
+    data: dict[str, Any] = request.form.to_dict()
+    method = data.pop('method')
+    logger.debug(f'{request.referrer=}')
+    logger.debug(f'{method=}')
+    logger.debug(f'{data}')
+    match method:
+        case 'add':
+            event = schemas.EventCreate(**data).json()
+            response = requests.post(EVENTS_URL, data=event, timeout=TIMEOUT)
+            logger.debug(response.text)
+            if response.status_code == 201:
+                flash(f'Event added: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
+            return redirect(url_for('events.index'))
+
+        case 'delete':
+            id = data.get('id')
+            response = requests.delete(f'{EVENTS_URL}/{id}', timeout=TIMEOUT)
+            logger.debug(response.text)
+            if response.status_code == 204:
+                flash(f'Event deleted: {data.get("name")}', 'success')
+            else:
+                error_message = f'{response.url} : {response.status_code} {response.reason}'
+                logger.error(error_message)
+                flash(error_message, 'error')
+            return redirect(url_for('events.index'))
+
+    return abort(405, description=f"Method {method} not accepted")
