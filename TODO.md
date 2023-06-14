@@ -43,7 +43,7 @@
 
 ## PRIORITY PROJECTS
 
-- [ ] Always run the new autotask right now
+- [ X Always run the new autotask right now
 - [X] Test to see if the autotask creator actually works
 - [ ] Check on the daily subtraction
   - [ ] This should become an endpoint

@@ -1,14 +1,19 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
 
-from ichrisbirch import models, schemas
 from ichrisbirch.models.autotask import TaskFrequency, frequency_to_duration
-from tests.testing_data.autotasks import AUTOTASK_TEST_DATA
+from tests.testing_data.autotasks import BASE_DATA
 
+# TODO: [2023/06/14] - This is a hack for the sqlalchemy model that for some reason is
+# returning a string for the date that needs to be parsed for the properties to work.
+isoformat = '%Y-%m-%dT%H:%M:%S.%f'
 autotasks_with_ids = []
-for i, record in enumerate(deepcopy(AUTOTASK_TEST_DATA), start=1):
-    record['id'] = i
-    autotasks_with_ids.append(models.AutoTask(**(schemas.AutoTask(**record).dict())))
+for i, record in enumerate(deepcopy(BASE_DATA), start=1):
+    record.id = i
+    record.first_run_date = datetime.strptime(record.first_run_date, isoformat)
+    record.last_run_date = datetime.strptime(record.last_run_date, isoformat)
+    autotasks_with_ids.append(record)
+    print(record)
 
 
 def test_frequency_to_duration_enums():

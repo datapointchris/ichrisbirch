@@ -1,49 +1,37 @@
 import pytest
 
-from ichrisbirch import models
 from tests.helpers import show_status_and_response
-from tests.testing_data.tasks import TASK_TEST_CREATE_DATA, TASK_TEST_DATA
-
-
-@pytest.fixture(scope='function')
-def test_data():
-    """Basic test data"""
-    return [models.Task(**record) for record in TASK_TEST_DATA]
+from tests.testing_data.tasks import CREATE_DATA
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_read_one_task(insert_test_data, test_api, task_id):
-    """Test if able to read one task"""
     response = test_api.get(f'/tasks/{task_id}/')
     assert response.status_code == 200, show_status_and_response(response)
 
 
 def test_read_many_tasks(insert_test_data, test_api):
-    """Test if able to read many tasks"""
     response = test_api.get('/tasks/')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 3
 
 
 def test_read_many_tasks_completed(insert_test_data, test_api):
-    """Test if able to read many tasks"""
     response = test_api.get('/tasks/?completed_filter=completed')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 1
 
 
 def test_read_many_tasks_not_completed(insert_test_data, test_api):
-    """Test if able to read many tasks"""
     response = test_api.get('/tasks/?completed_filter=not_completed')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 2
 
 
 def test_create_task(insert_test_data, test_api):
-    """Test if able to create a task"""
-    response = test_api.post('/tasks/', json=TASK_TEST_CREATE_DATA)
+    response = test_api.post('/tasks/', json=CREATE_DATA)
     assert response.status_code == 201, show_status_and_response(response)
-    assert dict(response.json())['name'] == TASK_TEST_CREATE_DATA['name']
+    assert dict(response.json())['name'] == CREATE_DATA['name']
 
     # Test task was created
     created = test_api.get('/tasks/')
@@ -53,7 +41,6 @@ def test_create_task(insert_test_data, test_api):
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_delete_task(insert_test_data, test_api, task_id):
-    """Test if able to delete a task"""
     endpoint = f'/tasks/{task_id}/'
     task = test_api.get(endpoint)
     assert task.status_code == 200, show_status_and_response(task)
@@ -67,20 +54,17 @@ def test_delete_task(insert_test_data, test_api, task_id):
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_complete_task(insert_test_data, test_api, task_id):
-    """Test if able to complete a task"""
     response = test_api.post(f'/tasks/complete/{task_id}/')
     assert response.status_code == 200, show_status_and_response(response)
 
 
 def test_read_completed_tasks(insert_test_data, test_api):
-    """Test if able to read completed tasks"""
     completed = test_api.get('/tasks/completed/')
     assert completed.status_code == 200, show_status_and_response(completed)
     assert len(completed.json()) == 1
 
 
 def test_search_task(insert_test_data, test_api):
-    """Test search capability"""
     search_term = 'chore'
     search_results = test_api.get(f'/tasks/search/{search_term}')
     assert search_results.status_code == 200, show_status_and_response(search_results)
@@ -101,16 +85,16 @@ def test_task_lifecycle(insert_test_data, test_api):
     assert len(all_tasks.json()) == 3
 
     # Create new task
-    created_task = test_api.post('/tasks/', json=TASK_TEST_CREATE_DATA)
+    created_task = test_api.post('/tasks/', json=CREATE_DATA)
     assert created_task.status_code == 201, show_status_and_response(created_task)
-    assert created_task.json()['name'] == TASK_TEST_CREATE_DATA['name']
+    assert created_task.json()['name'] == CREATE_DATA['name']
 
     # Get created task
     task_id = created_task.json().get('id')
     endpoint = f'/tasks/{task_id}/'
     response_task = test_api.get(endpoint)
     assert response_task.status_code == 200, show_status_and_response(response_task)
-    assert response_task.json()['name'] == TASK_TEST_CREATE_DATA['name']
+    assert response_task.json()['name'] == CREATE_DATA['name']
 
     # Read all tasks with new task
     all_tasks = test_api.get('/tasks/')
