@@ -1,20 +1,21 @@
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Event(Base):
-    """SQLAlchemy model for events table"""
-
     __tablename__ = 'events'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(256), nullable=False)
-    date = Column(DateTime, nullable=False)
-    venue = Column(String(256), nullable=False)
-    url = Column(Text, nullable=True)
-    cost = Column(Float, nullable=False)
-    attending = Column(Boolean, nullable=False)
-    notes = Column(Text, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(256), nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    venue: Mapped[str] = mapped_column(String(256), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=True)
+    cost: Mapped[float] = mapped_column(Float, nullable=False)
+    attending: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     def __repr__(self):
         return f'''Event(name={self.name}, date={self.date}, url={self.url}, venue={self.venue},
