@@ -5,18 +5,18 @@ from tests.testing_data.countdowns import CREATE_DATA
 
 
 @pytest.mark.parametrize('countdown_id', [1, 2, 3])
-def test_read_one_countdown(insert_test_data, test_api, countdown_id):
+def test_read_one_countdown(test_api, countdown_id):
     response = test_api.get(f'/countdowns/{countdown_id}/')
     assert response.status_code == 200, show_status_and_response(response)
 
 
-def test_read_many_countdowns(insert_test_data, test_api):
+def test_read_many_countdowns(test_api):
     response = test_api.get('/countdowns/')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 3
 
 
-def test_create_countdown(insert_test_data, test_api):
+def test_create_countdown(test_api):
     response = test_api.post('/countdowns/', json=CREATE_DATA)
     assert response.status_code == 201, show_status_and_response(response)
     assert dict(response.json())['name'] == CREATE_DATA['name']
@@ -28,7 +28,7 @@ def test_create_countdown(insert_test_data, test_api):
 
 
 @pytest.mark.parametrize('countdown_id', [1, 2, 3])
-def test_delete_countdown(insert_test_data, test_api, countdown_id):
+def test_delete_countdown(test_api, countdown_id):
     endpoint = f'/countdowns/{countdown_id}/'
     task = test_api.get(endpoint)
     assert task.status_code == 200, show_status_and_response(task)
@@ -40,7 +40,7 @@ def test_delete_countdown(insert_test_data, test_api, countdown_id):
     assert deleted.status_code == 404, show_status_and_response(deleted)
 
 
-def test_countdown_lifecycle(insert_test_data, test_api):
+def test_countdown_lifecycle(test_api):
     """Integration test for CRUD lifecylce of a countdown"""
 
     # Read all countdowns

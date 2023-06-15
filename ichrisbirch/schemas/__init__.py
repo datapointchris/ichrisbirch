@@ -13,8 +13,7 @@ __all__ = [
     'CountdownUpdate',
     'Event',
     'EventCreate',
-    'EventUpdate'
-    'Health',
+    'EventUpdate' 'Health',
     'Task',
     'TaskCategory',
     'TaskCompleted',

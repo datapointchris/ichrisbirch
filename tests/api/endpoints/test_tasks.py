@@ -5,30 +5,30 @@ from tests.testing_data.tasks import CREATE_DATA
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_read_one_task(insert_test_data, test_api, task_id):
+def test_read_one_task(test_api, task_id):
     response = test_api.get(f'/tasks/{task_id}/')
     assert response.status_code == 200, show_status_and_response(response)
 
 
-def test_read_many_tasks(insert_test_data, test_api):
+def test_read_many_tasks(test_api):
     response = test_api.get('/tasks/')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 3
 
 
-def test_read_many_tasks_completed(insert_test_data, test_api):
+def test_read_many_tasks_completed(test_api):
     response = test_api.get('/tasks/?completed_filter=completed')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 1
 
 
-def test_read_many_tasks_not_completed(insert_test_data, test_api):
+def test_read_many_tasks_not_completed(test_api):
     response = test_api.get('/tasks/?completed_filter=not_completed')
     assert response.status_code == 200, show_status_and_response(response)
     assert len(response.json()) == 2
 
 
-def test_create_task(insert_test_data, test_api):
+def test_create_task(test_api):
     response = test_api.post('/tasks/', json=CREATE_DATA)
     assert response.status_code == 201, show_status_and_response(response)
     assert dict(response.json())['name'] == CREATE_DATA['name']
@@ -40,7 +40,7 @@ def test_create_task(insert_test_data, test_api):
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_delete_task(insert_test_data, test_api, task_id):
+def test_delete_task(test_api, task_id):
     endpoint = f'/tasks/{task_id}/'
     task = test_api.get(endpoint)
     assert task.status_code == 200, show_status_and_response(task)
@@ -53,18 +53,18 @@ def test_delete_task(insert_test_data, test_api, task_id):
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
-def test_complete_task(insert_test_data, test_api, task_id):
+def test_complete_task(test_api, task_id):
     response = test_api.post(f'/tasks/complete/{task_id}/')
     assert response.status_code == 200, show_status_and_response(response)
 
 
-def test_read_completed_tasks(insert_test_data, test_api):
+def test_read_completed_tasks(test_api):
     completed = test_api.get('/tasks/completed/')
     assert completed.status_code == 200, show_status_and_response(completed)
     assert len(completed.json()) == 1
 
 
-def test_search_task(insert_test_data, test_api):
+def test_search_task(test_api):
     search_term = 'chore'
     search_results = test_api.get(f'/tasks/search/{search_term}')
     assert search_results.status_code == 200, show_status_and_response(search_results)
@@ -76,7 +76,7 @@ def test_search_task(insert_test_data, test_api):
     assert len(search_results.json()) == 2
 
 
-def test_task_lifecycle(insert_test_data, test_api):
+def test_task_lifecycle(test_api):
     """Integration test for CRUD lifecylce of a task"""
 
     # Read all tasks

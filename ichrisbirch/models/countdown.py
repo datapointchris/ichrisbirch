@@ -7,10 +7,7 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Countdown(Base):
-    """SQLAlchemy model for countdowns table"""
-
     __tablename__ = 'countdowns'
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     notes: Mapped[str] = mapped_column(Text(), nullable=True)

@@ -1,3 +1,4 @@
+import itertools
 import logging
 import subprocess
 import threading
@@ -22,6 +23,7 @@ from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 from tests.testing_data.autotasks import BASE_DATA as AUTOTASK_BASE_DATA
 from tests.testing_data.countdowns import BASE_DATA as COUNTDOWN_BASE_DATA
+from tests.testing_data.events import BASE_DATA as EVENT_BASE_DATA
 from tests.testing_data.tasks import BASE_DATA as TASK_BASE_DATA
 
 settings = get_settings()
@@ -115,7 +117,10 @@ def insert_test_data():
     Have to deep copy or else the instances are the same and persist through sessions.
     TODO: [2023/06/14] - Find a better way to get this data than import of global variables and deepcopy.
     """
-    all_test_data = deepcopy(AUTOTASK_BASE_DATA) + deepcopy(TASK_BASE_DATA) + deepcopy(COUNTDOWN_BASE_DATA)
+    all_test_data = list(
+        itertools.chain(*map(deepcopy, [AUTOTASK_BASE_DATA, TASK_BASE_DATA, COUNTDOWN_BASE_DATA, EVENT_BASE_DATA]))
+    )
+
     Base.metadata.create_all(ENGINE)
     session = next(get_testing_session())
     session.add_all(all_test_data)

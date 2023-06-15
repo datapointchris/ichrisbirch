@@ -1,6 +1,6 @@
 from datetime import date
 
-from ichrisbirch.models.countdown import Countdown
+from ichrisbirch.models import Countdown
 
 BASE_DATA: list[Countdown] = [
     Countdown(
