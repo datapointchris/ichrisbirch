@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class EventConfig(BaseModel):
@@ -16,6 +16,15 @@ class EventCreate(EventConfig):
     cost: float
     attending: bool
     notes: str | None
+
+    @validator('date', pre=True)
+    def convert_string_date_to_datetime(cls, v):
+        print('IN THE VALIDATOR')
+        if isinstance(v, datetime):
+            return v
+        if isinstance(v, str):
+            return datetime.strptime(v, '%Y-%m-%d')
+        raise ValueError("datetime or string in proper format required")
 
 
 class Event(EventConfig):

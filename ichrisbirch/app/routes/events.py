@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+from pydantic.error_wrappers import ValidationError
 
 import requests
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
