@@ -51,8 +51,8 @@ def create_docker_container(client: docker.APIClient, config: dict[str, Any]) ->
 
 
 def get_testing_session() -> Generator[Session, None, None]:
+    session = SESSION_TESTING()
     try:
-        session = SESSION_TESTING()
         yield session
     finally:
         session.close()
@@ -68,7 +68,12 @@ def setup_test_environment():
         dict(
             image='postgres:14',
             name='postgres_testing',
-            environment={'ENVIRONMENT': 'testing', 'POSTGRES_USER': 'postgres', 'POSTGRES_PASSWORD': 'postgres'},
+            environment={
+                'ENVIRONMENT': 'testing',
+                'POSTGRES_USER': settings.postgres.user,
+                'POSTGRES_PASSWORD': settings.postgres.password,
+                'POSTGRES_DB': settings.postgres.database,
+            },
             ports=[5432],
             host_config=docker_client.create_host_config(port_bindings={5432: 5434}, auto_remove=True),
             detach=True,
@@ -92,11 +97,32 @@ def setup_test_environment():
 
     # Start Uvicorn FastAPI subprocess in its own thread (for testing APP, that needs an API response)
     # This is easier than mocking everything
-    uvicorn_command = 'uvicorn ichrisbirch.api.main:create_api --factory --host localhost --port 5555 --log-level debug'
+    uvicorn_command = ' '.join(
+        [
+            'poetry run uvicorn ichrisbirch.api.main:create_api --factory',
+            f'--host {settings.fastapi.host}',
+            f'--port {settings.fastapi.port}',
+            '--log-level debug',
+        ]
+    )
     uvicorn_process = subprocess.Popen(uvicorn_command.split())
     uvicorn_thread = threading.Thread(target=uvicorn_process.wait)
     uvicorn_thread.start()
     time.sleep(1)  # Allow Uvicorn FastAPI to start
+
+    # Start Flask subprocess in its own thread (for testing the frontend)
+    flask_command = ' '.join(
+        [
+            'poetry run gunicorn ichrisbirch.app.main:create_app()',
+            f'--bind {settings.flask.host}:{settings.flask.port}',
+            '--log-level DEBUG',
+            '--env ENVIRONMENT=testing',
+        ]
+    )
+    flask_process = subprocess.Popen(flask_command.split())
+    flask_thread = threading.Thread(target=flask_process.wait)
+    flask_thread.start()
+    time.sleep(1)  # Allow Flask to start
 
     try:
         yield  # hold on while all tests in session run
@@ -108,6 +134,9 @@ def setup_test_environment():
         # Kill uvicorn process and join thread to main thread
         uvicorn_process.kill()
         uvicorn_thread.join()
+        # Kill flask process and join thread to main thread
+        flask_process.kill()
+        flask_thread.join()
 
 
 @pytest.fixture(scope='function', autouse=True)

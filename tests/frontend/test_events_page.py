@@ -1,13 +1,17 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
+
 
 @pytest.fixture
 def homepage(page: Page):
     timeout = 2_000
     page.set_default_navigation_timeout(timeout)
     page.set_default_timeout(timeout)
-    page.goto('http://localhost:6200/events/')
+    page.goto(f'{settings.flask.host}:{settings.flask.port}/events/')
     yield
 
 

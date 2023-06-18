@@ -45,8 +45,7 @@
 
 - [X] Always run the new autotask right now
 - [X] Test to see if the autotask creator actually works
-- [ ] Check on the daily subtraction
-  - [ ] This should become an endpoint
+- [X] Check on the daily subtraction
   - [X] This should be in the logs
   - [X] Move to airflow eventually
     - [X] Decided to go with APScheduler instead, so it is self contained
@@ -55,7 +54,6 @@
 - [ ] Make sure logger is working
 - [ ] Update tmuxinator stuff
 - [ ] Website Login to hide my shit
-- [ ] Autotasks
 
 - [ ] mypy - `--check-untyped-defs`
   - [ ] Add this option when ready to deal with other routes

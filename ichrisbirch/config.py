@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 class FlaskSettings:
     def __init__(self):
+        self.host: Optional[str] = os.getenv('FLASK_HOST')
+        self.port: Optional[str] = os.getenv('FLASK_PORT')
         self.SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')  # MUST be capitalized
         self.TESTING: Optional[bool] = bool(os.getenv('FLASK_TESTING'))
         self.DEBUG: Optional[bool] = bool(os.getenv('FLASK_DEBUG'))
@@ -89,7 +91,7 @@ class Settings:
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
         self.name: str = 'ichrisbirch'
         self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
-        self.api_url: Optional[str] = os.environ.get('API_URL')
+        # self.api_url: Optional[str] = os.environ.get('API_URL')
         self.environment: Optional[str] = os.environ.get('ENVIRONMENT')
         self.os_prefix: Optional[str] = os.environ.get('OS_PREFIX')
         self.env_file: pathlib.Path = env_file
@@ -102,6 +104,10 @@ class Settings:
         self.mongodb = MongoDBSettings()
         self.sqlite = SQLiteSettings()
         self.logging = LoggingSettings()
+
+    @property
+    def api_url(self) -> str:
+        return f'http://{self.fastapi.host}:{self.fastapi.port}'
 
 
 def load_environment(env_file: Optional[pathlib.Path | str] = None):
