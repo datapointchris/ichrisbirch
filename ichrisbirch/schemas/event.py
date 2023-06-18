@@ -19,11 +19,10 @@ class EventCreate(EventConfig):
 
     @validator('date', pre=True)
     def convert_string_date_to_datetime(cls, v):
-        print('IN THE VALIDATOR')
         if isinstance(v, datetime):
             return v
         if isinstance(v, str):
-            return datetime.strptime(v, '%Y-%m-%d')
+            return datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
         raise ValueError("datetime or string in proper format required")
 
 

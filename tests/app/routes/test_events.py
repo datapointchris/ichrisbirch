@@ -1,6 +1,6 @@
 from ichrisbirch.app.routes.events import EVENTS_URL
-from tests.testing_data.events import CREATE_DATA
 from tests.helpers import show_status_and_response
+from tests.testing_data.events import CREATE_DATA
 
 
 def test_index(test_app):
