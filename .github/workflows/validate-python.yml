@@ -77,7 +77,7 @@ jobs:
         run: poetry run bandit -c pyproject.toml -r .
 
       - name: Install browsers for playwright for frontend tests
-        run: playwright install
+        run: poetry run playwright install
 
       - name: Run pytest coverage
         run: poetry run pytest --cov=ichrisbirch
