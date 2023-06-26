@@ -1,7 +1,8 @@
 import logging
 import logging.config
+import os
 
-config = {
+logging_config = {
     'version': 1,
     'formatters': {
         'standard': {
@@ -50,7 +51,13 @@ config = {
 
 
 def initialize_logging():
-    logging.config.dictConfig(config)
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        # Don't log to file in GitHub Actions
+        del logging_config['handlers']['file']
+        del logging_config['handlers']['json']
+        logging_config['loggers']['']['handlers'] = ['stdout', 'stderr']
+
+    logging.config.dictConfig(logging_config)
     logger = logging.getLogger()
     logger.info('Initialized logging')
     return logger
