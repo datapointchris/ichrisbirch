@@ -1,31 +1,56 @@
 import logging
+import logging.config
 
-from ichrisbirch.config import get_settings
+config = {
+    'version': 1,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s',
+            'datefmt': '%Y-%m-%dT%H:%M:%SZ',
+        },
+        'json': {
+            'format': '%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s',
+            'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+        },
+    },
+    'handlers': {
+        'stdout': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stdout',
+        },
+        'stderr': {
+            'class': 'logging.StreamHandler',
+            'level': 'ERROR',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stderr',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'level': 'DEBUG',
+            'formatter': 'standard',
+            'filename': '/var/log/ichrisbirch/pylogger.log',
+            'mode': 'a',
+        },
+        'json': {
+            'class': 'logging.FileHandler',
+            'level': 'DEBUG',
+            'formatter': 'json',
+            'filename': '/var/log/ichrisbirch/pylogger.json',
+            'mode': 'a',
+        },
+    },
+    'loggers': {
+        '': {'level': 'DEBUG', 'handlers': ['stdout', 'stderr', 'file', 'json']},
+        'matplotlib': {'level': 'INFO'},
+        'urllib3': {'level': 'INFO'},
+    },
+}
 
-settings = get_settings()
 
-
-def create_base_logger():
-    """Initialize the base logger"""
-    logger = logging.getLogger(__name__)
-    log_file = f'{settings.logging.log_dir}/pylogger.log'
-
-    formatter = logging.Formatter(settings.logging.log_format, settings.logging.log_date_format)
-
-    console_log = logging.StreamHandler()
-    console_log.setFormatter(formatter)
-
-    file_log = logging.FileHandler(filename=log_file)
-    file_log.setFormatter(formatter)
-
-    logger.addHandler(console_log)
-    logger.addHandler(file_log)
-
-    logger.setLevel(settings.logging.log_level)
-    logger.debug(f'Log Location: {log_file}')
-
-    # quiet matplotlib noisy output when in debug mode
-    if settings.logging.log_level == logging.DEBUG:
-        logging.getLogger('matplotlib').setLevel(logging.INFO)
-
+def initialize_logging():
+    logging.config.dictConfig(config)
+    logger = logging.getLogger()
+    logger.info('Initialized logging')
     return logger
