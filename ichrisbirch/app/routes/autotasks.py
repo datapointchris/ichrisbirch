@@ -58,7 +58,7 @@ def crud():
                 flash(f'Autotask Added: {data.get("name")}', 'success')
                 # Run the new autotask
                 task_response = requests.get(f'{AUTOTASKS_URL}/{response.json().get("id")}/run/', timeout=TIMEOUT)
-                if task_response.status_code == 201:
+                if task_response.status_code == 200:
                     flash(f'Autotask Successfully Run: Task "{data.get("name")}" created.', 'success')
                 else:
                     error_message = f'{task_response.url} : {task_response.status_code} {task_response.reason}'
