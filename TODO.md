@@ -146,7 +146,7 @@ Is this something I want to do?
 - I have pytest book somewhere
 - Realpython
 [Testing Flask Applications — Flask Documentation (2.2.x)](https://flask.palletsprojects.com/en/2.2.x/testing/)
-
+- [GitHub - getsentry/responses: A utility for mocking out the Python Requests library.](https://github.com/getsentry/responses)
 - Books on datapointchris.com
 - pytest
 - test driven dev in python
