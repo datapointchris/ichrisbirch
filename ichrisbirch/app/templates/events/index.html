@@ -16,9 +16,8 @@
     </ul>
     <form method="POST" action="{{ url_for('events.crud') }}">
         <input type="hidden" name="id" value="{{ event.id }}">
-        <input type="hidden" name="method" value="delete">
-        <input type="submit" name="delete" id="delete" class="button box-3d"
-            value="Delete">
+        <button name="delete" id="delete" class="button box-3d"
+            value="{{ event.name }} delete">Delete Event</button>
     </form>
     {% endfor %}
     <br /><br /><br />
@@ -49,9 +48,8 @@
         <input type="textarea" rows="20" cols="150" id="notes" name="notes"
             class="textbox box-3d"></textarea>
         <br /><br />
-        <label for="method">|</label>
-        <input type="text" size="1" id="method" name="method" value="add">
-        <input type="submit" class="button box-3d" value="Add New Event">
+        <button id="add" name="add" class="button box-3d" value="add">Add New
+            Event</button>
     </form>
 </div>
 {% endblock %}

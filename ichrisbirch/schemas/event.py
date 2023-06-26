@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pendulum
 from pydantic import BaseModel, validator
 
 
@@ -22,8 +23,8 @@ class EventCreate(EventConfig):
         if isinstance(v, datetime):
             return v
         if isinstance(v, str):
-            return datetime.strptime(v, '%Y-%m-%dT%H:%M:%S')
-        raise ValueError("datetime or string in proper format required")
+            return pendulum.parser.parse(v)
+        raise ValueError("Event creation date must be a datetime or string")
 
 
 class Event(EventConfig):

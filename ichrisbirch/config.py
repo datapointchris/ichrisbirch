@@ -6,14 +6,12 @@ from typing import Any, Optional, Union
 
 import dotenv
 
-logger = logging.getLogger(__name__)
-
 
 class FlaskSettings:
     def __init__(self):
         self.host: Optional[str] = os.getenv('FLASK_HOST')
         self.port: Optional[str] = os.getenv('FLASK_PORT')
-        self.SECRET_KEY: Optional[str] = os.getenv('SECRET_KEY')  # MUST be capitalized
+        self.SECRET_KEY: Optional[str] = os.getenv('FLASK_SECRET_KEY')  # MUST be capitalized
         self.TESTING: Optional[bool] = bool(os.getenv('FLASK_TESTING'))
         self.DEBUG: Optional[bool] = bool(os.getenv('FLASK_DEBUG'))
 
@@ -111,15 +109,16 @@ class Settings:
 
 
 def load_environment(env_file: Optional[pathlib.Path | str] = None):
+    logger = logging.getLogger(__name__)
+
     if isinstance(env_file, pathlib.Path):
         logger.info(f'Loading Environment from pathlib.Path: {env_file}')
         if not env_file.exists():
-            raise FileNotFoundError(f'Environment file not found: {env_file}')
+            raise FileNotFoundError(f'Environment pathlib.Path not found: {env_file}')
 
     elif isinstance(env_file, str):
         logger.info(f'Loading Environment from string: {env_file}')
         if not pathlib.Path(env_file).exists():
-            logger.warning(f'Environment file not found: {env_file}')
             match env_file:
                 case 'development':
                     filename = '.dev.env'
@@ -128,8 +127,9 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                 case 'production':
                     filename = '.prod.env'
                 case _:
-                    logger.error(f'Unrecognized Environment Selection: {env_file}')
-                    raise ValueError(f'Unrecognized Environment Selection: {env_file}')
+                    error_msg = f'Unrecognized Environment Selection: {env_file}'
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
             logger.info(f'Loading environment variables from: {filename}')
             env_file = pathlib.Path(dotenv.find_dotenv(filename))
         else:
@@ -146,8 +146,9 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
             case 'production':
                 filename = '.prod.env'
             case _:
-                logger.error(f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.')
-                raise ValueError(f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.')
+                error_msg = f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.'
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         env_file = pathlib.Path(dotenv.find_dotenv(filename))
 
     logger.info(f'Loading environment variables from: {env_file}')

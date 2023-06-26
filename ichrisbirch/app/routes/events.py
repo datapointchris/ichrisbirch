@@ -47,7 +47,9 @@ def crud():
             else:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(url_for('events.index'))
 
         case 'delete':

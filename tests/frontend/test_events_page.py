@@ -27,5 +27,8 @@ def test_create_event(homepage, page: Page):
     page.get_by_label('cost').fill('20')
     page.get_by_label('attending').check()
     page.get_by_label('notes').fill('Test Notes')
-    # page.get_by_label('method').fill('add')
-    # page.get_by_role('submit', name='Add New Event').click()
+    page.get_by_role('button', name='add').click()
+
+
+def test_delete_event(homepage, page: Page):
+    page.get_by_text('Event 1 delete').click()
