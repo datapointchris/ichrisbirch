@@ -1,5 +1,6 @@
 import itertools
 import logging
+import os
 import subprocess
 import threading
 import time
@@ -26,8 +27,10 @@ from tests.testing_data.countdowns import BASE_DATA as COUNTDOWN_BASE_DATA
 from tests.testing_data.events import BASE_DATA as EVENT_BASE_DATA
 from tests.testing_data.tasks import BASE_DATA as TASK_BASE_DATA
 
-settings = get_settings()
 logger = logging.getLogger(__name__)
+os.environ['ENVIRONMENT'] = 'testing'
+logger.info(f'Setting `ENVIRONMENT`: {os.environ["ENVIRONMENT"]}')
+settings = get_settings()
 
 ENGINE = create_engine(settings.sqlalchemy.db_uri, echo=settings.sqlalchemy.echo, future=True)
 SESSION_TESTING = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, future=True, expire_on_commit=False)
@@ -99,7 +102,7 @@ def setup_test_environment():
     # This is easier than mocking everything
     uvicorn_command = ' '.join(
         [
-            'poetry run uvicorn ichrisbirch.api.main:create_api --factory',
+            'poetry run uvicorn ichrisbirch.wsgi:api',
             f'--host {settings.fastapi.host}',
             f'--port {settings.fastapi.port}',
             '--log-level debug',
@@ -113,7 +116,7 @@ def setup_test_environment():
     # Start Flask subprocess in its own thread (for testing the frontend)
     flask_command = ' '.join(
         [
-            'poetry run gunicorn ichrisbirch.app.main:create_app()',
+            'poetry run gunicorn ichrisbirch.wsgi:app',
             f'--bind {settings.flask.host}:{settings.flask.port}',
             '--log-level DEBUG',
             '--env ENVIRONMENT=testing',
@@ -161,7 +164,7 @@ def insert_test_data():
 
 @pytest.fixture(scope='module')
 def test_api() -> Generator[TestClient, Any, None]:
-    api = create_api()
+    api = create_api(settings=settings)
     api.dependency_overrides[sqlalchemy_session] = get_testing_session
     with TestClient(api) as client:
         yield client
@@ -169,7 +172,7 @@ def test_api() -> Generator[TestClient, Any, None]:
 
 @pytest.fixture(scope='module')
 def test_app() -> Generator[FlaskClient, Any, None]:
-    app = create_app()
+    app = create_app(settings=settings)
     app.testing = True
     app.config.update({'TESTING': True})
     with app.test_client() as client:

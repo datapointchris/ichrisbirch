@@ -14,25 +14,19 @@ from ichrisbirch.app.routes import (
     portfolio,
     tasks,
 )
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import Settings
 
-settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-def create_app() -> Flask:
-    """Flask app factory
-
-    Returns:
-        Flask: Flask app
-    """
+def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
     logger.debug(f'{app.import_name} App Started')
 
     with app.app_context():
         app.config.from_object(settings.flask)
         logger.debug('Configured Flask App')
-        logger.debug(f'Flask App Config: {app.config.keys()}')
+        logger.debug(f'Flask App Config: {", ".join([f"{k}={v}" for k, v in app.config.items() if k != "SECRET_KEY"])}')
 
         app.register_blueprint(home.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')

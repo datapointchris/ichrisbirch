@@ -1,11 +1,20 @@
+import logging
+
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
-from ichrisbirch.logger import create_base_logger
 from ichrisbirch.scheduler.main import create_scheduler
 
+logger = logging.getLogger(__name__)
+
 settings = get_settings()
-logger = create_base_logger()
-app = create_app()
-api = create_api()
+logger.info('Loaded Settings')
+
+app = create_app(settings=settings)
+logger.info('Created App')
+
+api = create_api(settings=settings)
+logger.info('Created API')
+
 scheduler = create_scheduler()
+logger.info('Created Scheduler')
