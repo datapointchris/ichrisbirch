@@ -2,6 +2,8 @@
 
 ![Visualization of the codebase](./diagram.svg)
 
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 ## Project Goals
 
 1. Fully tested, practice a version of TDD

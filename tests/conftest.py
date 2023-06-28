@@ -28,11 +28,18 @@ from tests.testing_data.events import BASE_DATA as EVENT_BASE_DATA
 from tests.testing_data.tasks import BASE_DATA as TASK_BASE_DATA
 
 logger = logging.getLogger(__name__)
-os.environ['ENVIRONMENT'] = 'testing'
-logger.info(f'Setting `ENVIRONMENT`: {os.environ["ENVIRONMENT"]}')
-settings = get_settings()
 
-ENGINE = create_engine(settings.sqlalchemy.db_uri, echo=settings.sqlalchemy.echo, future=True)
+# Check that ENVIRONMENT is set to 'testing'
+if os.environ.get('ENVIRONMENT') != 'testing':
+    error_msg = f"ENVIRONMENT={os.environ.get('ENVIRONMENT')}. ENVIRONMENT must be set to 'testing'"
+    logger.error(error_msg)
+    pytest.exit(error_msg)
+
+settings = get_settings()
+logger.info(f'Loaded settings from environment: {settings.environment}')
+
+POSTGRES_URI = 'postgresql://postgres:postgres@127.0.0.1:5434/ichrisbirch'
+ENGINE = create_engine(POSTGRES_URI, echo=False, future=True)
 SESSION_TESTING = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, future=True, expire_on_commit=False)
 
 
@@ -73,11 +80,12 @@ def setup_test_environment():
             name='postgres_testing',
             environment={
                 'ENVIRONMENT': 'testing',
-                'POSTGRES_USER': settings.postgres.user,
-                'POSTGRES_PASSWORD': settings.postgres.password,
-                'POSTGRES_DB': settings.postgres.database,
+                'POSTGRES_USER': 'postgres',
+                'POSTGRES_PASSWORD': 'postgres',
+                'POSTGRES_DB': 'ichrisbirch',
             },
             ports=[5432],
+            # Bind to port 5434 on host machine, so that it doesn't conflict with local Postgres
             host_config=docker_client.create_host_config(port_bindings={5432: 5434}, auto_remove=True),
             detach=True,
             labels=['testing'],
@@ -89,12 +97,29 @@ def setup_test_environment():
         kwargs={'container': postgres_docker_container.get('Id')},
     )
     postgres_thread.start()
-    time.sleep(3)  # Allow Postgres to start
+    # Allow Postgres time to start
+    time.sleep(3)
 
     # Create Schemas
     with next(get_testing_session()) as session:
         for schema_name in settings.db_schemas:
-            session.execute(CreateSchema(schema_name))
+            try:
+                session.execute(CreateSchema(schema_name))
+            except Exception as e:
+                debug_message = f"""Failed to create schema: {e}
+
+                postgres_connection_string = {POSTGRES_URI}
+
+                Connection Parameters:
+                database_name = {session.bind.url.database}
+                database_user = {session.bind.url.username}
+                database_password = {session.bind.url.password}
+                database_host = {session.bind.url.host}
+                database_port = {session.bind.url.port}
+                """
+
+                logger.error(f'Failed to create schema: {e}')
+                pytest.exit(debug_message)
         session.commit()
         print('Schemas created')
 
@@ -103,8 +128,8 @@ def setup_test_environment():
     uvicorn_command = ' '.join(
         [
             'poetry run uvicorn ichrisbirch.wsgi:api',
-            f'--host {settings.fastapi.host}',
-            f'--port {settings.fastapi.port}',
+            '--host 127.0.0.1',
+            '--port 5555',
             '--log-level debug',
         ]
     )
@@ -117,7 +142,7 @@ def setup_test_environment():
     flask_command = ' '.join(
         [
             'poetry run gunicorn ichrisbirch.wsgi:app',
-            f'--bind {settings.flask.host}:{settings.flask.port}',
+            '--bind 127.0.0.1:5500',
             '--log-level DEBUG',
             '--env ENVIRONMENT=testing',
         ]

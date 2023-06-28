@@ -2,14 +2,12 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import Settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.scheduler import jobs
 
-settings = get_settings()
 
-
-def create_scheduler() -> BackgroundScheduler:
+def create_scheduler(settings: Settings) -> BackgroundScheduler:
     """Create the scheduler
 
     Start after the app and api are created to avoid any conflicts

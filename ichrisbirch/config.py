@@ -137,7 +137,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
             env_file = pathlib.Path(env_file)
 
     else:
-        logger.info(f'Loading Environment from ENVIRONMENT variable {env_file}')
+        logger.info(f'Loading from ENVIRONMENT variable {os.getenv("ENVIRONMENT")}')
         match ENV := os.getenv('ENVIRONMENT'):
             case 'development':
                 filename = '.dev.env'
@@ -151,7 +151,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                 raise ValueError(error_msg)
         env_file = pathlib.Path(dotenv.find_dotenv(filename))
 
-    logger.info(f'Loading environment variables from: {env_file}')
+    logger.info(f'Env file: {env_file}')
     dotenv.load_dotenv(env_file, override=True)
     return env_file
 
