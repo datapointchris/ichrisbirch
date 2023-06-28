@@ -30,7 +30,7 @@ class Task(Base):
     __tablename__ = 'tasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64))
-    notes: Mapped[str] = mapped_column(Text(), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[TaskCategory] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer)
     add_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -119,7 +119,7 @@ repos:
         name: pytest with coverage
         stages: [commit]
         language: system
-        entry: pytest --cov=ichrisbirch
+        entry: bash -c 'export ENVIRONMENT=testing && pytest --cov=ichrisbirch'
         types: [python]
         pass_filenames: false
         always_run: true

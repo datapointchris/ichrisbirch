@@ -10,7 +10,7 @@ class Countdown(Base):
     __tablename__ = 'countdowns'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
-    notes: Mapped[str] = mapped_column(Text(), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     def __repr__(self):

@@ -23,7 +23,7 @@ class TaskFrequency(enum.Enum):
 
 
 def frequency_to_duration(frequency: TaskFrequency | str) -> Duration:
-    """Converts a frequency string to a pendulum.Duration object"""
+    """Converts a frequency string or TaskFrequency to a pendulum.Duration object"""
 
     if isinstance(frequency, str):
         frequency = TaskFrequency(frequency.capitalize())
@@ -48,7 +48,7 @@ class AutoTask(Base):
     __tablename__ = 'autotasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
-    notes: Mapped[str] = mapped_column(Text(), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[TaskCategory] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
     frequency: Mapped[TaskFrequency] = mapped_column(Enum(TaskFrequency), nullable=False)
