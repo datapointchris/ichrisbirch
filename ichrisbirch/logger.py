@@ -6,11 +6,11 @@ logging_config = {
     'version': 1,
     'formatters': {
         'standard': {
-            'format': '%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s',
+            'format': '%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d | %(message)s',
             'datefmt': '%Y-%m-%dT%H:%M:%SZ',
         },
         'json': {
-            'format': '%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s',
+            'format': '%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d | %(message)s',
             'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
         },
     },
