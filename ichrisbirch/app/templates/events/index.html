@@ -16,8 +16,8 @@
     </ul>
     <form method="POST" action="{{ url_for('events.crud') }}">
         <input type="hidden" name="id" value="{{ event.id }}">
-        <button name="delete" id="delete" class="button box-3d"
-            value="{{ event.name }} delete">Delete Event</button>
+        <input type="hidden" name="method" value="delete">
+        <button name="delete" id="delete" class="button box-3d" value="{{ event.name }} delete">Delete Event</button>
     </form>
     {% endfor %}
     <br /><br /><br />
@@ -41,15 +41,13 @@
         <input type="number" id="cost" name="cost" class="textbox box-3d">
         <br /><br />
         <label for="attending">Attending:</label>
-        <input type="checkbox" id="attending" name="attending" class="textbox box-3d"
-            value="false">
+        <input type="checkbox" id="attending" name="attending" class="textbox box-3d" value="false">
         <br /><br />
         <label for="notes">Notes:</label>
-        <input type="textarea" rows="20" cols="150" id="notes" name="notes"
-            class="textbox box-3d"></textarea>
+        <input type="textarea" rows="20" cols="150" id="notes" name="notes" class="textbox box-3d"></textarea>
         <br /><br />
-        <button id="add" name="add" class="button box-3d" value="add">Add New
-            Event</button>
+        <input type="hidden" id="method" name="method" value="add">
+        <button name="add" id="add" class="button box-3d" value="Add Event">Add Event</button>
     </form>
 </div>
 {% endblock %}

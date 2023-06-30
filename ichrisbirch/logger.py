@@ -46,6 +46,7 @@ logging_config = {
         '': {'level': 'DEBUG', 'handlers': ['stdout', 'stderr', 'file', 'json']},
         'matplotlib': {'level': 'INFO'},
         'urllib3': {'level': 'INFO'},
+        'apscheduler': {'level': 'WARNING'},
     },
 }
 

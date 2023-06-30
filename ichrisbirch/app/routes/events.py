@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 import requests
+from fastapi import status
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
@@ -19,14 +20,15 @@ TIMEOUT = settings.request_timeout
 @blueprint.route('/', methods=['GET'])
 def index():
     response = requests.get(EVENTS_URL, timeout=TIMEOUT)
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         events = [schemas.Event(**event) for event in response.json()]
     else:
         error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)
+        logger.error(response.text)
         flash(error_message, 'error')
+        flash(response.text, 'error')
         events = []
-
     return render_template('events/index.html', events=events)
 
 
@@ -41,10 +43,7 @@ def crud():
         case 'add':
             event = schemas.EventCreate(**data).json()
             response = requests.post(EVENTS_URL, data=event, timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 201:
-                flash(f'Event added: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_201_CREATED:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
                 logger.error(response.text)
@@ -55,13 +54,12 @@ def crud():
         case 'delete':
             id = data.get('id')
             response = requests.delete(f'{EVENTS_URL}/{id}', timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 204:
-                flash(f'Event deleted: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_204_NO_CONTENT:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(url_for('events.index'))
 
-    return abort(405, description=f"Method {method} not accepted")
+    return abort(status.HTTP_405_METHOD_NOT_ALLOWED, description=f"Method {method} not accepted")

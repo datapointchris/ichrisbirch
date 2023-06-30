@@ -10,7 +10,6 @@ def show_status_and_response(response: Response) -> dict[str, str]:
     for attr in dir(status):
         code = attr.split('_')[1]
         d[int(code)] = attr
-
     try:
         content = response.json()
     except JSONDecodeError:

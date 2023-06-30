@@ -15,14 +15,12 @@ logger = logging.getLogger(__name__)
 
 @router.get('/', response_model=list[schemas.Countdown], status_code=status.HTTP_200_OK)
 async def read_many(session: Session = Depends(sqlalchemy_session)):
-    """API method to read many countdowns."""
     query = select(models.Countdown).order_by(models.Countdown.due_date.asc())
     return list(session.scalars(query).all())
 
 
 @router.post('/', response_model=schemas.Countdown, status_code=status.HTTP_201_CREATED)
 async def create(countdown: schemas.CountdownCreate, session: Session = Depends(sqlalchemy_session)):
-    """API method to create a new countdown."""
     db_obj = models.Countdown(**countdown.dict())
     session.add(db_obj)
     session.commit()
@@ -32,7 +30,6 @@ async def create(countdown: schemas.CountdownCreate, session: Session = Depends(
 
 @router.get('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
-    """API method to read one countdown."""
     if countdown := session.get(models.Countdown, id):
         return countdown
     else:
@@ -43,7 +40,6 @@ async def read_one(id: int, session: Session = Depends(sqlalchemy_session)):
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
-    """API method to delete a countdown."""
     if countdown := session.get(models.Countdown, id):
         session.delete(countdown)
         session.commit()

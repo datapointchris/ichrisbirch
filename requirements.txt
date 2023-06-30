@@ -445,9 +445,9 @@ sqlalchemy==2.0.17 ; python_full_version >= "3.10.1" and python_full_version < "
 starlette==0.19.1 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
     --hash=sha256:5a60c5c2d051f3a8eb546136aa0c9399773a689595e099e0877704d5888279bf \
     --hash=sha256:c6d21096774ecb9639acad41b86b7706e52ba3bf1dc13ea4ed9ad593d47e24c7
-strenum==0.4.12 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
-    --hash=sha256:75e234fea070aabae9b03b63385880e286defdcdf6fb2933cde4f964f7763544 \
-    --hash=sha256:d75cdebe07e2537989a925089a248673a34e8a6e9d8fe6846fd04b1aa2e1f44f
+strenum==0.4.15 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
+    --hash=sha256:878fb5ab705442070e4dd1929bb5e2249511c0bcf2b0eeacf3bcd80875c82eff \
+    --hash=sha256:a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659
 typing-extensions==4.7.0 ; python_full_version >= "3.10.1" and python_full_version < "4.0.0" \
     --hash=sha256:5d8c9dac95c27d20df12fb1d97b9793ab8b2af8a3a525e68c80e21060c161771 \
     --hash=sha256:935ccf31549830cda708b42289d44b6f74084d616a00be651601a4f968e77c82

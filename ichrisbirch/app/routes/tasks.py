@@ -5,6 +5,7 @@ from typing import Any
 
 import pendulum
 import requests
+from fastapi import status
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import models, schemas
@@ -44,25 +45,26 @@ def days_to_complete(task: schemas.Task) -> int | None:
 
 def calculate_average_completion_time(tasks: list[models.Task]) -> str | None:
     """ "Calculate the average completion time of the supplied completed tasks"""
-    if not tasks:
-        return None
     total_days_to_complete = sum(task.days_to_complete for task in tasks)
     average_days = total_days_to_complete / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
 
 
-def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tuple[list[str], list[int]]:
+def create_completed_task_chart_data(tasks: list[models.Task]) -> tuple[list[str], list[int]]:
     """Create chart labels and values from completed tasks"""
-    first = tasks[0]
-    last = tasks[-1]
+    # TODO: Remove this conversion and convert back to schemas.TaskCompleted after pydantic 2.0 release
+    # So that we can use the pydantic model's properties
+    schema_tasks = [schemas.TaskCompleted.from_orm(task) for task in tasks]
+    first = schema_tasks[0]
+    last = schema_tasks[-1]
 
     filter_timestamps = [
         first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
     ]
     timestamps_for_filter = {timestamp: 0 for timestamp in filter_timestamps}
     completed_task_timestamps = Counter(
-        [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in tasks]
+        [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in schema_tasks]
     )
     all_dates_with_counts = {**timestamps_for_filter, **completed_task_timestamps}
     chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
@@ -72,52 +74,47 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    """Tasks home endpoint"""
-
     tasks_response = requests.get(TASKS_URL, params={'completed_filter': 'not_completed', 'limit': 5}, timeout=TIMEOUT)
     if tasks_response.status_code == 200:
         top_tasks = [schemas.Task(**task) for task in tasks_response.json()]
     else:
         error_message = f'{tasks_response.url} : {tasks_response.status_code} {tasks_response.reason}'
         logger.error(error_message)
+        logger.error(tasks_response.text)
         flash(error_message, 'error')
+        flash(tasks_response.text, 'error')
         top_tasks = []
 
-    completed_response = requests.get(
-        f'{TASKS_URL}/completed/',
-        params={'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())},
-        timeout=TIMEOUT,
-    )
+    today_filter = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
+    completed_response = requests.get(f'{TASKS_URL}/completed/', params=today_filter, timeout=TIMEOUT)
     if completed_response.status_code == 200:
         completed_today = [schemas.TaskCompleted(**task) for task in completed_response.json()]
     else:
         error_message = f'{completed_response.url} : {completed_response.status_code} {completed_response.reason}'
         logger.error(error_message)
+        logger.error(completed_response.text)
         flash(error_message, 'error')
+        flash(completed_response.text, 'error')
         completed_today = []
-
     return render_template(
-        'tasks/index.html',
-        top_tasks=top_tasks,
-        completed_today=completed_today,
-        task_categories=TASK_CATEGORIES,
+        'tasks/index.html', top_tasks=top_tasks, completed_today=completed_today, task_categories=TASK_CATEGORIES
     )
 
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    """All tasks endpoint"""
-
     completed_filter = request.form.get('completed_filter') if request.method == 'POST' else None
     logger.debug(f'{completed_filter=}')
 
     response = requests.get(TASKS_URL, params={'completed_filter': completed_filter}, timeout=TIMEOUT)
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         tasks = [schemas.Task(**task) for task in response.json()]
     else:
         error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)
+        logger.error(response.text)
         flash(error_message, 'error')
+        flash(response.text, 'error')
         tasks = []
 
     return render_template(
@@ -131,11 +128,7 @@ def completed():
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime()
     date_filters = edt.filters
-
-    selected_filter = (
-        request.form.get('filter', DEFAULT_DATE_FILTER) if request.method == 'POST' else DEFAULT_DATE_FILTER
-    )
-
+    selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
 
@@ -144,13 +137,15 @@ def completed():
         params={'start_date': str(start_date), 'end_date': str(end_date)},
         timeout=TIMEOUT,
     )
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         # TODO: Change this to only schemas when Pydantic 2 released so TaskCompleted schema can have properties
         completed_tasks = [models.Task(**schemas.TaskCompleted(**task).dict()) for task in response.json()]
     else:
         error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)
+        logger.error(response.text)
         flash(error_message, 'error')
+        flash(response.text, 'error')
         completed_tasks = []
 
     if completed_tasks:
@@ -185,51 +180,49 @@ def crud():
         case 'add':
             task = schemas.TaskCreate(**data).json()
             response = requests.post(TASKS_URL, data=task, timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 201:
-                flash(f'Task added: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_201_CREATED:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(request.referrer or url_for('tasks.index'))
 
         case 'complete':
             task_id = data.get('id')
             response = requests.post(f'{TASKS_URL}/complete/{task_id}', timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 200:
-                flash(f'Task completed: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_200_OK:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(request.referrer or url_for('tasks.index'))
 
         case 'delete':
             task_id = data.get('id')
             response = requests.delete(f'{TASKS_URL}/{task_id}', timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 204:
-                flash(f'Task deleted: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_204_NO_CONTENT:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(request.referrer or url_for('tasks.all'))
 
         case 'search':
             search_terms = data.get('terms')
             logger.debug(f'{search_terms=}')
             response = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT)
-            logger.debug(response.text)
             if response.status_code == 200:
                 tasks = [schemas.Task(**task) for task in response.json()]
             else:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
                 tasks = []
             return render_template('tasks/search.html', tasks=tasks)
 
-    return abort(405, description=f"Method {method} not accepted")
+    return abort(status.HTTP_405_METHOD_NOT_ALLOWED, description=f"Method {method} not accepted")

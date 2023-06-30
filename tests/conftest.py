@@ -1,6 +1,4 @@
-import itertools
 import logging
-import os
 import subprocess
 import threading
 import time
@@ -29,12 +27,6 @@ from tests.testing_data.tasks import BASE_DATA as TASK_BASE_DATA
 
 logger = logging.getLogger(__name__)
 
-# Check that ENVIRONMENT is set to 'testing'
-if os.environ.get('ENVIRONMENT') != 'testing':
-    error_msg = f"ENVIRONMENT={os.environ.get('ENVIRONMENT')}. ENVIRONMENT must be set to 'testing'"
-    logger.error(error_msg)
-    pytest.exit(error_msg)
-
 settings = get_settings()
 logger.info(f'Loaded settings from environment: {settings.environment}')
 
@@ -44,19 +36,24 @@ SESSION_TESTING = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, fu
 
 
 def create_docker_container(client: docker.APIClient, config: dict[str, Any]) -> Container:
+    image = config.pop('image')
     try:
-        image = config.pop('image')
         client.pull(image)
         container = client.create_container(image, **config)
     except DockerException as e:
-        message = f'Failed to RUN Docker client: {e}'
+        message = f'Failed to CREATE Docker client: {e}'
         logger.error(message)
-        pytest.exit(message)
+        try:
+            client.remove_container(container=config.get('name'), force=True)
+            container = client.create_container(image, **config)
+        except DockerException as e:
+            message = f'Failed to REMOVE and RECREATE Docker container: {e}'
+            logger.error(message)
+            pytest.exit(message)
     time.sleep(3)  # Must sleep to allow creation of detached Docker container
     # TODO: I don't think this works, need to see when logging is fixed
     for log in client.logs(container=container.get('Id'), stream=True):
-        print(log.strip())
-        logging.info(log.strip())
+        logger.info(log.strip())
     return container
 
 
@@ -174,9 +171,9 @@ def insert_test_data():
     Have to deep copy or else the instances are the same and persist through sessions.
     TODO: [2023/06/14] - Find a better way to get this data than import of global variables and deepcopy.
     """
-    all_test_data = list(
-        itertools.chain(*map(deepcopy, [AUTOTASK_BASE_DATA, TASK_BASE_DATA, COUNTDOWN_BASE_DATA, EVENT_BASE_DATA]))
-    )
+    all_test_data = []
+    for data in (AUTOTASK_BASE_DATA, TASK_BASE_DATA, COUNTDOWN_BASE_DATA, EVENT_BASE_DATA):
+        all_test_data.extend(deepcopy(data))
 
     Base.metadata.create_all(ENGINE)
     session = next(get_testing_session())

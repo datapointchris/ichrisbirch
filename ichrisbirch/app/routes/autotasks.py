@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 import requests
+from fastapi import status
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
@@ -24,14 +25,15 @@ TIMEOUT = settings.request_timeout
 def index():
     """Autotasks home endpoint"""
     response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT)
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         autotasks = [schemas.AutoTask(**task) for task in response.json()]
     else:
         error_message = f'{response.url} : {response.status_code} {response.reason}'
         logger.error(error_message)
+        logger.error(response.text)
         flash(error_message, 'error')
+        flash(response.text, 'error')
         autotasks = []
-
     return render_template(
         'autotasks/index.html', autotasks=autotasks, task_categories=TASK_CATEGORIES, task_frequencies=TASK_FREQUENCIES
     )
@@ -49,45 +51,42 @@ def crud():
         case 'add':
             autotask = schemas.AutoTaskCreate(**data)
             response = requests.post(AUTOTASKS_URL, data=autotask.json(), timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code != 201:
+            if response.status_code != status.HTTP_201_CREATED:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
-            else:
-                flash(f'Autotask Added: {data.get("name")}', 'success')
-                # Run the new autotask
+                flash(response.text, 'error')
+            else:  # Run the new autotask
                 task_response = requests.get(f'{AUTOTASKS_URL}/{response.json().get("id")}/run/', timeout=TIMEOUT)
-                if task_response.status_code == 200:
-                    flash(f'Autotask Successfully Run: Task "{data.get("name")}" created.', 'success')
-                else:
-                    error_message = f'{task_response.url} : {task_response.status_code} {task_response.reason}'
+                if task_response.status_code != status.HTTP_200_OK:
+                    error_message = f'{response.url} : {response.status_code} {response.reason}'
                     logger.error(error_message)
+                    logger.error(response.text)
                     flash(error_message, 'error')
+                    flash(response.text, 'error')
             return redirect(request.referrer or url_for('autotasks.index'))
 
         case 'delete':
             autotask_id = data.get('id')
             response = requests.delete(f'{AUTOTASKS_URL}/{autotask_id}/', timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 204:
-                flash(f'Autotask deleted: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_204_NO_CONTENT:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(request.referrer or url_for('autotasks.index'))
 
         case 'run':
             autotask_id = data.get('id')
             response = requests.get(f'{AUTOTASKS_URL}/{autotask_id}/run/', timeout=TIMEOUT)
-            logger.debug(response.text)
-            if response.status_code == 200:
-                flash(f'Autotask running: {data.get("name")}', 'success')
-            else:
+            if response.status_code != status.HTTP_200_OK:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
+                logger.error(response.text)
                 flash(error_message, 'error')
+                flash(response.text, 'error')
             return redirect(request.referrer or url_for('autotasks.index'))
 
-    return abort(405, description=f"Method {method} not accepted")
+    return abort(status.HTTP_405_METHOD_NOT_ALLOWED, description=f"Method {method} not accepted")
