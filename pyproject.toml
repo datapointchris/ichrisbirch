@@ -76,8 +76,16 @@ skips = ["B311"]
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-exclude = ["alembic", ".git", ".mypy_cache", ".venv", "build", "dist"]
-
+exclude = '''
+(
+/alembic
+| .git
+| .mypy_cache
+| .venv
+| build
+| dist
+)
+'''
 
 [tool.codespell]
 skip = '*.css.map'
