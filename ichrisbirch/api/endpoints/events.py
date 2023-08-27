@@ -21,6 +21,7 @@ async def read_many(session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
 async def create(event: schemas.EventCreate, session: Session = Depends(sqlalchemy_session)):
+    logger.debug(f'Create Event: {event}')
     db_obj = models.Event(**event.dict())
     session.add(db_obj)
     session.commit()

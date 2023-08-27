@@ -1,7 +1,10 @@
+import logging
 from datetime import datetime
 
 import pendulum
 from pydantic import BaseModel, validator
+
+logger = logging.getLogger(__name__)
 
 
 class EventConfig(BaseModel):
@@ -20,11 +23,15 @@ class EventCreate(EventConfig):
 
     @validator('date', pre=True)
     def convert_string_date_to_datetime(cls, v):
+        logger.debug(f'date validator input: {v}, {type(v)}')
         if isinstance(v, datetime):
             return v
         if isinstance(v, str):
-            return pendulum.parser.parse(v)
-        raise ValueError("Event creation date must be a datetime or string")
+            # This is the correct way to do it
+            dt = pendulum.parser.parse(v)
+            logger.debug(f'date validator returning: {dt}, {type(dt)}')
+            return dt
+        raise ValueError('Event creation date must be a datetime or string')
 
 
 class Event(EventConfig):
