@@ -168,6 +168,29 @@ def completed():
     )
 
 
+@blueprint.route('/search/', methods=['GET', 'POST'])
+def search():
+    if request.method == 'POST':
+        data: dict[str, Any] = request.form.to_dict()
+        search_terms = data.get('terms')
+        logger.debug(f'{request.referrer=}')
+        logger.debug(f'{search_terms=}')
+
+        response = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT)
+        if response.status_code == 200:
+            tasks = [schemas.Task(**task) for task in response.json()]
+        else:
+            error_message = f'{response.url} : {response.status_code} {response.reason}'
+            logger.error(error_message)
+            logger.error(response.text)
+            flash(error_message, 'error')
+            flash(response.text, 'error')
+            tasks = []
+    else:
+        tasks = []
+    return render_template('tasks/search.html', tasks=tasks)
+
+
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
     """CRUD endpoint for tasks"""
@@ -209,20 +232,5 @@ def crud():
                 flash(error_message, 'error')
                 flash(response.text, 'error')
             return redirect(request.referrer or url_for('tasks.all'))
-
-        case 'search':
-            search_terms = data.get('terms')
-            logger.debug(f'{search_terms=}')
-            response = requests.get(f'{TASKS_URL}/search/{search_terms}', timeout=TIMEOUT)
-            if response.status_code == 200:
-                tasks = [schemas.Task(**task) for task in response.json()]
-            else:
-                error_message = f'{response.url} : {response.status_code} {response.reason}'
-                logger.error(error_message)
-                logger.error(response.text)
-                flash(error_message, 'error')
-                flash(response.text, 'error')
-                tasks = []
-            return render_template('tasks/search.html', tasks=tasks)
 
     return abort(status.HTTP_405_METHOD_NOT_ALLOWED, description=f"Method {method} not accepted")

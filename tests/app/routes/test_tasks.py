@@ -46,6 +46,6 @@ def test_crud_delete(test_app):
 
 
 def test_crud_search(test_app):
-    response = test_app.post('/tasks/crud/', data={'terms': 'test', 'method': 'search'}, follow_redirects=True)
+    response = test_app.post('/tasks/search/', data={'terms': 'test'}, follow_redirects=True)
     assert response.status_code == 200, show_status_and_response(response)
     assert b'<title>Tasks Search</title>' in response.data

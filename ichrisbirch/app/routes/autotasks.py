@@ -15,7 +15,7 @@ blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotask
 
 logger = logging.getLogger(__name__)
 
-AUTOTASKS_URL = f'{settings.api_url}/autotasks'
+AUTOTASKS_API_URL = f'{settings.api_url}/autotasks'
 TASK_FREQUENCIES = [t.value for t in TaskFrequency]
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 TIMEOUT = settings.request_timeout
@@ -23,8 +23,7 @@ TIMEOUT = settings.request_timeout
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    """Autotasks home endpoint"""
-    response = requests.get(AUTOTASKS_URL, timeout=TIMEOUT)
+    response = requests.get(AUTOTASKS_API_URL, timeout=TIMEOUT)
     if response.status_code == status.HTTP_200_OK:
         autotasks = [schemas.AutoTask(**task) for task in response.json()]
     else:
@@ -39,9 +38,21 @@ def index():
     )
 
 
+@blueprint.route('/run/', methods=['POST'])
+def run():
+    id = request.form.get('id')
+    response = requests.get(f'{AUTOTASKS_API_URL}/{id}/run/', timeout=TIMEOUT)
+    if response.status_code != status.HTTP_200_OK:
+        error_message = f'{response.url} : {response.status_code} {response.reason}'
+        logger.error(error_message)
+        logger.error(response.text)
+        flash(error_message, 'error')
+        flash(response.text, 'error')
+    return redirect(request.referrer or url_for('autotasks.index'))
+
+
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    """CRUD endpoint for autotasks"""
     data: dict[str, Any] = request.form.to_dict()
     method = data.pop('method')
     logger.debug(f'{request.referrer=}')
@@ -50,7 +61,7 @@ def crud():
     match method:
         case 'add':
             autotask = schemas.AutoTaskCreate(**data)
-            response = requests.post(AUTOTASKS_URL, data=autotask.json(), timeout=TIMEOUT)
+            response = requests.post(AUTOTASKS_API_URL, data=autotask.json(), timeout=TIMEOUT)
             if response.status_code != status.HTTP_201_CREATED:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
@@ -58,7 +69,7 @@ def crud():
                 flash(error_message, 'error')
                 flash(response.text, 'error')
             else:  # Run the new autotask
-                task_response = requests.get(f'{AUTOTASKS_URL}/{response.json().get("id")}/run/', timeout=TIMEOUT)
+                task_response = requests.get(f'{AUTOTASKS_API_URL}/{response.json().get("id")}/run/', timeout=TIMEOUT)
                 if task_response.status_code != status.HTTP_200_OK:
                     error_message = f'{response.url} : {response.status_code} {response.reason}'
                     logger.error(error_message)
@@ -69,19 +80,8 @@ def crud():
 
         case 'delete':
             autotask_id = data.get('id')
-            response = requests.delete(f'{AUTOTASKS_URL}/{autotask_id}/', timeout=TIMEOUT)
+            response = requests.delete(f'{AUTOTASKS_API_URL}/{autotask_id}/', timeout=TIMEOUT)
             if response.status_code != status.HTTP_204_NO_CONTENT:
-                error_message = f'{response.url} : {response.status_code} {response.reason}'
-                logger.error(error_message)
-                logger.error(response.text)
-                flash(error_message, 'error')
-                flash(response.text, 'error')
-            return redirect(request.referrer or url_for('autotasks.index'))
-
-        case 'run':
-            autotask_id = data.get('id')
-            response = requests.get(f'{AUTOTASKS_URL}/{autotask_id}/run/', timeout=TIMEOUT)
-            if response.status_code != status.HTTP_200_OK:
                 error_message = f'{response.url} : {response.status_code} {response.reason}'
                 logger.error(error_message)
                 logger.error(response.text)

@@ -17,7 +17,7 @@
                     <strong>First Run Date: </strong><br />
                     <strong>Last Run Date: </strong><br />
                     <strong>Run Count: </strong><br /><br />
-                    <form method="POST" action="{{ url_for('autotasks.crud') }}">
+                    <form method="POST" action="{{ url_for('autotasks.run') }}">
                         <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
                         <input type="hidden" name="name" id="name" value="{{ autotask.name }}">
                         <input type="hidden" name="method" id="method" value="run">
