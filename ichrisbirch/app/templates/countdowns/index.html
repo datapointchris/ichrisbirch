@@ -17,14 +17,13 @@
         <br />
         {{ countdown.notes }}
         <br /><br />
-        <form method="POST" action="{{ url_for('countdowns.crud') }}">
+        <form method="POST">
             <input type="hidden" name="id" id="id" value="{{ countdown.id }}">
-            <input type="hidden" name="name" id="name" value="{{ countdown.name }}">
             <input type="hidden" name="method" value="delete">
-            <input type="submit" class="button box-3d" value="Delete">
+            <button name="delete" id="delete" class="button box-3d" value="{{ countdown.name }} delete">Delete
+                Countdown</button>
         </form>
     </div>
-
     {% else %}
     <div class="countdown-box box-3d">
         <h2>No Countdowns</h2>
@@ -34,21 +33,18 @@
 <div id="add-countdown" class="box-3d">
     <h3>Add New Countdown:</h3>
     <div id="add-form">
-        <form method="POST" action="{{ url_for('countdowns.crud') }}">
+        <form method="POST">
             <label for="name">Name:</label>
             <input type="text" size="30" class="textbox box-3d" name="name" id="name">
             <br /><br />
-
             <label for="notes">Notes:</label>
             <input type="text" size="40" class="textbox box-3d" name="notes" id="notes">
             <br /><br />
-
             <label for="due_date">Due Date:</label>
-            <input type="date" id="due_date" name="due_date" class="textbox box-3d">
+            <input type="date" class="textbox box-3d" name="due_date" id="due_date">
             <br /><br />
-
-            <input type="hidden" name="method" value="add">
-            <input type="submit" class="button box-3d" value="Add New Countdown">
+            <input type="hidden" id="method" name="method" value="add">
+            <button name="add" id="add" class="button box-3d" value="Add Countdown">Add Countdown</button>
         </form>
     </div>
 </div>

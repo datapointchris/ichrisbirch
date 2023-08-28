@@ -1,39 +1,86 @@
-import copy
+from datetime import datetime
 
-from ichrisbirch.app.routes.events import EVENTS_API_URL
+from fastapi import status
+
 from tests.helpers import show_status_and_response
-from tests.testing_data.events import CREATE_DATA
 
 
 def test_index(test_app):
-    response = test_app.get(EVENTS_API_URL + '/')
-    assert response.status_code == 200, show_status_and_response(response)
+    response = test_app.get('/events/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
 
 
-def test_crud_add(test_app):
-    response = test_app.post(EVENTS_API_URL + '/crud/', data=CREATE_DATA | {'method': 'add'}, follow_redirects=True)
-    assert response.status_code == 200, show_status_and_response(response)
-    assert len(response.history) == 1
-    assert response.request.path == '/events/'
-    assert b'<title>Events</title>' in response.data
-
-
-def test_crud_add_string_date(test_app):
+def test_add_event(test_app):
     response = test_app.post(
-        EVENTS_API_URL + '/crud/',
-        data=copy.deepcopy(CREATE_DATA) | {'date': '2026-10-05', 'method': 'add'},
-        follow_redirects=True,
+        '/events/',
+        data=dict(
+            name='Event 4',
+            date=datetime(2022, 10, 4, 20, 0).isoformat(),
+            venue='Venue 4',
+            url='https://example.com/event4',
+            cost=40.0,
+            attending=False,
+            notes='Notes for Event 4',
+            method='add',
+        ),
     )
-    assert response.status_code == 200, show_status_and_response(response)
-    assert len(response.history) == 1
-    assert response.request.path == '/events/'
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
 
 
-def test_crud_delete(test_app):
-    response = test_app.post(EVENTS_API_URL + '/crud/', data={'id': 1, 'method': 'delete'}, follow_redirects=True)
-    assert response.status_code == 200, show_status_and_response(response)
-    assert len(response.history) == 1
-    assert response.request.path == '/events/'
+def test_add_event_string_date(test_app):
+    response = test_app.post(
+        '/events/',
+        data=dict(
+            name='Event 4',
+            date='2026-10-05',
+            venue='Venue 4',
+            url='https://example.com/event4',
+            cost=40.0,
+            attending=False,
+            notes='Notes for Event 4',
+            method='add',
+        ),
+    )
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
+
+
+def test_add_event_missing_attending_field(test_app):
+    response = test_app.post(
+        '/events/',
+        data=dict(
+            name='Event 4',
+            date=datetime(2022, 10, 4, 20, 0).isoformat(),
+            venue='Venue 4',
+            url='https://example.com/event4',
+            cost=40.0,
+            notes='Notes for Event 4',
+            method='add',
+        ),
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_delete_event(test_app):
+    response = test_app.post('/events/', data={'id': 1, 'method': 'delete'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert b'<title>Events</title>' in response.data
+
+
+def test_send_bad_method(test_app):
+    response = test_app.post(
+        '/events/',
+        data=dict(
+            name='Event 4',
+            date=datetime(2022, 10, 4, 20, 0).isoformat(),
+            venue='Venue 4',
+            url='https://example.com/event4',
+            cost=40.0,
+            attending=False,
+            notes='Notes for Event 4',
+            method='bad',
+        ),
+    )
+    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED

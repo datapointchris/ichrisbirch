@@ -131,7 +131,7 @@ warn_return_any = false
 [tool.pytest.ini_options]
 addopts = ""
 minversion = "6.0"
-testpaths = ["ichrisbirch/tests"]
+testpaths = ["tests"]
 
 
 [tool.refurb]

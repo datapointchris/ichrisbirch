@@ -31,13 +31,3 @@ BASE_DATA: list[Event] = [
         notes='Notes for Event 3',
     ),
 ]
-# dict so it can be JSON serialized easily
-CREATE_DATA = dict(
-    name='Event 4',
-    date=datetime(2022, 10, 4, 20, 0).isoformat(),
-    venue='Venue 4',
-    url='https://example.com/event4',
-    cost=40.0,
-    attending=False,
-    notes='Notes for Event 4',
-)

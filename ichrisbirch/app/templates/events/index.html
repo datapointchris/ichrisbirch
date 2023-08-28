@@ -15,7 +15,7 @@
             <li><a href="{{ event.url }}" target="_blank">Event URL</a></li>
             <li>Notes: {{ event.notes }}</li>
         </ul>
-        <form method="POST" action="{{ url_for('events.crud') }}">
+        <form method="POST">
             <input type="hidden" name="id" value="{{ event.id }}">
             <input type="hidden" name="method" value="delete">
             <button name="delete" id="delete" class="button box-3d" value="{{ event.name }} delete">Delete
@@ -31,7 +31,7 @@
 <div id="add-event">
     <h4>Add New Event:</h4>
     <div id="add-form">
-        <form method="POST" action="{{ url_for('events.crud') }}">
+        <form method="POST">
             <label for="name">Name:</label>
             <input type="text" size="30" class="textbox box-3d" name="name" id="name">
             <br /><br />

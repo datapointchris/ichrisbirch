@@ -35,11 +35,3 @@ BASE_DATA: list[AutoTask] = [
         run_count=2,
     ),
 ]
-# dict so it can be JSON serialized easily
-CREATE_DATA = dict(
-    name='AutoTask 4 Computer with notes priority 3',
-    notes='Notes task 4',
-    category=TaskCategory.Computer.value,
-    priority=3,
-    frequency=TaskFrequency.Biweekly.value,
-)

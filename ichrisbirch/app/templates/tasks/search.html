@@ -18,14 +18,14 @@
                 {% if task.complete_date %}
                 Complete Date: {{ task.complete_date }}<br />
                 {% endif %}
-                <form method="POST" action="{{ url_for('tasks.crud') }}">
+                <form method="POST" action="{{ url_for('tasks.search') }}">
                     <input type="hidden" name="id" id="id" value="{{ task.id }}">
                     <input type="hidden" name="name" id="name" value="{{ task.name }}">
                     <input type="hidden" name="method" id="method" value="delete">
                     <input type="submit" class="button box-3d" value="Delete Task">
                 </form>
                 {% if not task.complete_date %}
-                <form method="POST" action="{{ url_for('tasks.crud') }}">
+                <form method="POST" action="{{ url_for('tasks.search') }}">
                     <input type="hidden" name="id" id="id" value="{{ task.id }}">
                     <input type="hidden" name="name" id="name" value="{{ task.name }}">
                     <input type="hidden" name="method" id="method" value="complete">

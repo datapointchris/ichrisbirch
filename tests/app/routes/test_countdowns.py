@@ -1,25 +1,28 @@
-from ichrisbirch.app.routes.countdowns import COUNTDOWNS_URL
+from datetime import date
+
+from fastapi import status
+
 from tests.helpers import show_status_and_response
-from tests.testing_data.countdowns import CREATE_DATA
 
 
 def test_index(test_app):
-    response = test_app.get(COUNTDOWNS_URL + '/')
-    assert response.status_code == 200, show_status_and_response(response)
+    response = test_app.get('/countdowns/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Countdowns</title>' in response.data
 
 
-def test_crud_add(test_app):
-    response = test_app.post(COUNTDOWNS_URL + '/crud/', data=CREATE_DATA | {'method': 'add'}, follow_redirects=True)
-    assert response.status_code == 200, show_status_and_response(response)
-    assert len(response.history) == 1
-    assert response.request.path == '/countdowns/'
+def test_add_countdown(test_app):
+    data = dict(
+        name='Countdown 4 Computer with notes priority 3',
+        notes='Notes Countdown 4',
+        due_date=date(2040, 1, 20).isoformat(),
+    )
+    response = test_app.post('/countdowns/', data=data | {'method': 'add'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Countdowns</title>' in response.data
 
 
-def test_crud_delete(test_app):
-    response = test_app.post(COUNTDOWNS_URL + '/crud/', data={'id': 1, 'method': 'delete'}, follow_redirects=True)
-    assert response.status_code == 200, show_status_and_response(response)
-    assert len(response.history) == 1
-    assert response.request.path == '/countdowns/'
+def test_delete_countdown(test_app):
+    response = test_app.post('/countdowns/', data={'id': 1, 'method': 'delete'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Countdowns</title>' in response.data

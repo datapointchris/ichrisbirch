@@ -12,7 +12,7 @@ def show_status_and_response(response: Response) -> dict[str, str]:
         d[int(code)] = attr
     try:
         content = response.json()
-    except JSONDecodeError:
+    except (JSONDecodeError, TypeError):
         content = '<no response content>'
 
     return {d.get(response.status_code, 'UNKNOWN'): content}

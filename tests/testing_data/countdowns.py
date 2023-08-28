@@ -19,9 +19,3 @@ BASE_DATA: list[Countdown] = [
         due_date=date(2050, 1, 20).isoformat(),
     ),
 ]
-# dict so it can be JSON serialized easily
-CREATE_DATA = dict(
-    name='Countdown 4 Computer with notes priority 3',
-    notes='Notes Countdown 4',
-    due_date=date(2040, 1, 20).isoformat(),
-)
