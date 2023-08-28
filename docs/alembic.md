@@ -2,6 +2,16 @@
 
 Run in `ichrisbirch/ichrisbirch` (where `alembic.ini` is located)
 
+## First Run
+
+```bash
+export ENVIRONMENT='development' # or 'production'
+alembic revision --autogenerate -m 'Create initial tables'
+alembic upgrade head
+```
+
+## Subsequent Runs
+
 1. Make the changes to the models and schemas
 
 2. Run a revision to pickup changes in code

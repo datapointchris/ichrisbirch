@@ -174,6 +174,12 @@ Is this something I want to do?
 
 [Logging HOWTO — Python 3.11.2 documentation](https://docs.python.org/3/howto/logging.html#advanced-logging-tutorial)
 
+[Good logging practice in Python – Fang-Pen's coding note](https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/)
+
+[8 Advanced Python Logging Features that You Shouldn’t Miss | by Xiaoxu Gao | Towards Data Science](https://towardsdatascience.com/8-advanced-python-logging-features-that-you-shouldnt-miss-a68a5ef1b62d)
+
+[Advanced Python Logging. Since you are here I am expecting that… | by Shanmukh | Analytics Vidhya | Medium](https://medium.com/analytics-vidhya/advance-python-logging-571912d3275f)
+
 [Logging — The Underappreciated Art Form | by Tom Dickinson, PhD | Medium](https://www.tomkdickinson.co.uk/logging-the-underappreciated-art-form-40b8ec7add44)
 
 [Python Logging: A Stroll Through the Source Code – Real Python](https://realpython.com/python-logging-source-code/)
@@ -181,6 +187,9 @@ Is this something I want to do?
 [Python Logging: How to Write Logs Like a Pro! - YouTube](https://www.youtube.com/watch?v=pxuXaaT1u3k)
 
 [Do not log](https://sobolevn.me/2020/03/do-not-log)
+
+[GitHub - deviantony/docker-elk: The Elastic stack (ELK) powered by Docker and Compose.](https://github.com/deviantony/docker-elk)
+[Open-Source Search Engine – Amazon OpenSearch Service Pricing – Amazon Web Services](https://aws.amazon.com/opensearch-service/pricing/)
 
 ## Security
 
@@ -297,12 +306,14 @@ Ranking
 
 - [ ] Add the Day of week to event date
 - [ ] Delete Past events
+  - [ ] Move them to history
+  - [ ] Or mark them as past events
 - [ ] Add time remaining for events
 - [ ] Turn long URLs into `Event Link`
+  - [ ] Only show URL if provided
+  - [ ] Only show notes if provided
 
 ### Countdowns
-
-- [ ] Automatically put a countdown for any Event that I am attending
 
 ### Box Moving
 
