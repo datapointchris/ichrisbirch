@@ -63,7 +63,7 @@ def index():
                 return Response(f'Method {method} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     response = requests.get(AUTOTASKS_API_URL, timeout=TIMEOUT)
-    if response.status_code == status.HTTP_200_OK:
+    if response.status_code != status.HTTP_200_OK:
         log_flash_raise_error(response, logger)
     autotasks = [schemas.AutoTask(**task) for task in response.json()]
     return render_template(
