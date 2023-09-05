@@ -22,16 +22,19 @@ class EventCreate(EventConfig):
     notes: str | None
 
     @validator('date', pre=True)
-    def convert_string_date_to_datetime(cls, v):
-        logger.debug(f'date validator input: {v}, {type(v)}')
+    def convert_string_date_to_utc_datetime(cls, v):
+        """Require string or datetime
+        Datetime from form comes in a string without timezone
+        Pendulum will parse a string without a timezone, but will assign UTC
+        Pendulum default includes timezone, datetime does not
+        """
+        logger.debug(f'date validator in: {v}, {type(v)}')
         if isinstance(v, datetime):
-            return v
-        if isinstance(v, str):
-            # This is the correct way to do it
+            dt = pendulum.instance(v)
+        else:  # assume string, try to parse anything
             dt = pendulum.parser.parse(v)
-            logger.debug(f'date validator returning: {dt}, {type(dt)}')
-            return dt
-        raise ValueError('Event creation date must be a datetime or string')
+        logger.debug(f'date validator out: {dt}, {type(dt)}')
+        return dt
 
 
 class Event(EventConfig):

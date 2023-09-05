@@ -1,10 +1,11 @@
 import logging
+from datetime import datetime
 from typing import Any
 
-import pydantic
 import requests
 from fastapi import status
-from flask import Blueprint, Response, flash, render_template, request
+from fastapi.encoders import jsonable_encoder
+from flask import Blueprint, Response, render_template, request
 
 from ichrisbirch import schemas
 from ichrisbirch.app.helpers import log_flash_raise_error
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 EVENTS_API_URL = f'{settings.api_url}/events'
 TIMEOUT = settings.request_timeout
+LOCAL_TZ = datetime.now().astimezone().tzinfo
 
 
 @blueprint.route('/', methods=['GET', 'POST'])
@@ -27,24 +29,22 @@ def index():
         logger.debug(f'{request.referrer=} | {method=} | {data=}')
         match method:
             case 'add':
-                try:
-                    event = schemas.EventCreate(**data).json()
-                except pydantic.ValidationError as e:
-                    logger.exception(e)
-                    flash(str(e), 'error')
-                    return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-                response = requests.post(EVENTS_API_URL, data=event, timeout=TIMEOUT)
+                # add local timezone if one isn't provided
+                if not datetime.fromisoformat(data['date']).tzname:
+                    data['date'] = datetime.fromisoformat(data['date']).replace(tzinfo=LOCAL_TZ)
+                response = requests.post(EVENTS_API_URL, json=jsonable_encoder(data), timeout=TIMEOUT)
                 if response.status_code != status.HTTP_201_CREATED:
                     log_flash_raise_error(response, logger)
-
             case 'delete':
                 id = data.get('id')
-                logger.debug(f'{id=}')
                 response = requests.delete(f'{EVENTS_API_URL}/{id}', timeout=TIMEOUT)
-                logger.debug(f'{response=}')
                 if response.status_code != status.HTTP_204_NO_CONTENT:
                     log_flash_raise_error(response, logger)
-
+            case 'attend':
+                id = data.get('id')
+                response = requests.post(f'{EVENTS_API_URL}/{id}/attend', timeout=TIMEOUT)
+                if response.status_code != status.HTTP_200_OK:
+                    log_flash_raise_error(response, logger)
             case _:
                 return Response(f'Method {method} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 

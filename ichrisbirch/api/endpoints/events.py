@@ -21,11 +21,12 @@ async def read_many(session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
 async def create(event: schemas.EventCreate, session: Session = Depends(sqlalchemy_session)):
-    logger.debug(f'Create Event: {event}')
+    logger.debug(f'Event from app: {event}')
     db_obj = models.Event(**event.dict())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
+    logger.debug(f'Event from db: {db_obj}')
     return db_obj
 
 
@@ -45,6 +46,20 @@ async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
         session.delete(event)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    else:
+        message = f'Event {id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+@router.post('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
+async def complete(id: int, session: Session = Depends(sqlalchemy_session)):
+    if event := session.get(models.Event, id):
+        event.attending = True
+        session.add(event)
+        session.commit()
+        session.refresh(event)
+        return event
     else:
         message = f'Event {id} not found'
         logger.warning(message)
