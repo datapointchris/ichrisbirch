@@ -5,19 +5,32 @@
   text-align: center;
   width: 90%;
 
-  > ul {
+  ul {
     margin: 50px 10px;
     padding: 10px;
-    border: 1px solid orange;
+    border: 2px solid orange;
+    border-radius: $button-box-border-radius;
+    font-size: larger;
 
     &.attending {
-      border: 1px solid green;
+      border: 3px solid green;
     }
 
     > li {
       list-style: none;
+      line-height: 2em;
+      margin: 10px 0;
+
+      form {
+        display: inline-block;
+      }
+
+      button {
+        display: inline-block;
+      }
 
       &.title {
+        font-size: 1.5em;
         font-weight: bold;
       }
     }
@@ -27,7 +40,37 @@
 #add-event {
   width: 50%;
   margin: 50px auto;
-  padding: 10px;
+  // set padding to 80 for left and right and 40 for top and bottom
+  padding: 40px 80px;
+  line-height: 1.5em;
+  background-color: $dark-background;
   text-align: center;
-  border: 1px dashed orange;
+  border: 3px dashed orange;
+  border-radius: $button-box-border-radius;
+}
+
+///// Submit, Delete, Add Buttons /////
+
+.button {
+  border-radius: $button-box-border-radius;
+  font-size: large;
+  padding: 10px 25px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.box-3d {
+  box-shadow:
+    5px 5px 5px 0px black,
+    inset 0px 0px 5px 0px $light-shadow,
+    inset -5px -5px 4px -2px $light-shadow;
+}
+
+.textbox {
+  border-radius: $button-box-border-radius;
+  font-size: large;
+  padding: 10px 25px;
+  background-color: $all-text-color;
 }
