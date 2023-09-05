@@ -21,7 +21,7 @@ def test_events_index(homepage, page: Page):
 
 def test_create_event(homepage, page: Page):
     page.get_by_label('name').fill('Test Event')
-    page.get_by_label('date').fill('2050-01-01')
+    page.get_by_label('date').fill('2050-01-01T00:00:00.123')
     page.get_by_label('url').fill('https://example.com')
     page.get_by_label('venue').fill('Test Venue')
     page.get_by_label('cost').fill('20')

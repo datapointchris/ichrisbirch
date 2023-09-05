@@ -1,7 +1,9 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 
 from tests.helpers import show_status_and_response
 
@@ -37,6 +39,35 @@ def test_create_event(test_api):
     response = test_api.get('/events/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 4
+
+
+@pytest.mark.parametrize(
+    ['event_date', 'output'],
+    [
+        (datetime(2021, 10, 4), '2021-10-04T00:00:00+00:00'),
+        (datetime(2021, 10, 4, 12, 0, 0), '2021-10-04T12:00:00+00:00'),
+        (datetime(2021, 10, 4, 12, 0, 0, tzinfo=ZoneInfo('America/Chicago')), '2021-10-04T17:00:00+00:00'),
+        ('2021-10-04', '2021-10-04T00:00:00+00:00'),
+        ('2021-10-04T12:00:00', '2021-10-04T12:00:00+00:00'),
+        ('2021-10-04T12:00:00-05:00', '2021-10-04T17:00:00+00:00'),
+    ],
+)
+def test_create_event_date_formats(test_api, event_date, output):
+    data = dict(
+        name='Event 4',
+        date=event_date,
+        venue='Venue 4',
+        url='https://example.com/event4',
+        cost=40.0,
+        attending=False,
+        notes='Notes for Event 4',
+        method='add',
+    )
+    response = test_api.post('/events/', json=jsonable_encoder(data))
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    event = test_api.get(f'/events/{response.json()["id"]}/')
+    assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert output == event.json()['date']
 
 
 @pytest.mark.parametrize('event_id', [1, 2, 3])
