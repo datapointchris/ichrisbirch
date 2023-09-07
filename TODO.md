@@ -103,8 +103,14 @@
 
 ## User Login
 
+- [Flask Authentication By Example](https://developer.auth0.com/resources/guides/web-app/flask/basic-authentication)
 - [GitHub - MushroomMaula/fastapi_login: FastAPI-Login tries to provide similar functionality as Flask-Login does.](https://github.com/MushroomMaula/fastapi_login)
+- [How to Authenticate Users in Flask with Flask-Login](https://www.freecodecamp.org/news/how-to-authenticate-users-in-flask/)
+- [Flask-Login — Flask-Login 0.7.0 documentation](https://flask-login.readthedocs.io/en/latest/)
 - [GitHub - fastapi-users/fastapi-users: Ready-to-use and customizable users management for FastAPI](https://github.com/fastapi-users/fastapi-users)
+- [Token-Based Authentication With Flask – Real Python](https://realpython.com/token-based-authentication-with-flask/)
+- [How To Add Authentication to Your App with Flask-Login  | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-your-app-with-flask-login)
+- [GitHub - auth0/auth0-python: Auth0 SDK for Python](https://github.com/auth0/auth0-python)
 
 - [ ] Create login for all apps as a main page.
 - [ ] [Basic Usage - FastAPI JWT Auth](https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/)
