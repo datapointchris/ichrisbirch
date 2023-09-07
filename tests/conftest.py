@@ -67,7 +67,16 @@ def get_testing_session() -> Generator[Session, None, None]:
 
 @pytest.fixture(scope='session', autouse=True)
 def setup_test_environment():
-    docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
+    try:
+        docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
+    except DockerException:
+        # Docker is not running
+        print('docker is not running, starting...')
+        subprocess.run(['open', '-ga', 'docker'])
+        subprocess.run(['sleep', '20'])
+        print('docker started')
+        # Try again, let failure surface second time, most likely a different issue
+        docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
 
     # Create Postgres Docker container
     postgres_docker_container = create_docker_container(
