@@ -19,6 +19,10 @@
     line-height: 2em;
 }
 
+.past {
+    background-color: $error-color;
+}
+
 .two-weeks-left {
     background-color: $error-color;
 }
@@ -56,7 +60,10 @@
 }
 
 .box-3d {
-    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $light-shadow, inset -5px -5px 4px -2px $light-shadow;
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px $light-shadow,
+        inset -5px -5px 4px -2px $light-shadow;
 }
 
 .textbox {

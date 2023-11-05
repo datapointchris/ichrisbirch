@@ -41,19 +41,20 @@ pytest
 
 ## 4. Run the project
 
+!!! todo "TODO"
+
+  This doesn't work!  I need to figure out another way to run it locally.
+  Right now it is relying on using local NGINX and Supervisor.
+
 ```bash
 # App and API are separate applications.
 # App is a flask app that runs the frontend
 # API is FastAPI running the API backend that the frontend connects to
 
 # Run these in separate shells for log separation
-poetry run python ichrisbirch/runapidev.py
-poetry run python ichrisbirch/runappdev.py
+# poetry run python ichrisbirch/runapidev.py
+# poetry run python ichrisbirch/runappdev.py
 
-# Note, can also run these from inside ichrisbirch
-cd ichrisbirch/
-poetry run python runapidev.py
-poetry run python runappdev.py
 ```
 
 ## 5. Connecting to the Running Project

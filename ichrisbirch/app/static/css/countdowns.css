@@ -17,6 +17,10 @@
   line-height: 2em;
 }
 
+.past {
+  background-color: rgba(92, 6, 0, 0.8);
+}
+
 .two-weeks-left {
   background-color: rgba(92, 6, 0, 0.8);
 }

@@ -1,24 +1,49 @@
 function updateDaysLeft(dateString, elementId) {
-  // Convert the date string to a JavaScript Date object
-  var date = new Date(dateString);
+  const date = new Date(dateString);
+  const today = new Date();
+  const differenceMs = date - today;
 
-  // Get today's date
-  var today = new Date();
+  if (differenceMs <= 0) {
+    const element = document.getElementById(elementId);
+    element.textContent = 'Past';
+    element.classList.add('past');
+    return;
+  }
 
-  // Calculate the difference in milliseconds
-  var differenceMs = date - today;
+  let differenceDays = Math.floor(differenceMs / 86400000);
+  const remainingTime = [];
 
-  // Convert the difference to days
-  var days = Math.floor(differenceMs / (1000 * 60 * 60 * 24));
+  if (differenceDays > 365) {
+    const years = Math.floor(differenceDays / 365);
+    remainingTime.push(years + (years > 1 ? ' years' : ' year'));
+    differenceDays %= 365;
+  }
 
-  // Update the element with the number of days left
-  var element = document.getElementById(elementId);
-  element.textContent = days + " Days Left";
+  if (differenceDays > 30) {
+    const months = Math.floor(differenceDays / 30);
+    remainingTime.push(months + (months > 1 ? ' months' : ' month'));
+    differenceDays %= 30;
+  }
 
-  // Add color classes based on the number of days remaining
-  if (days < 14) {
-    element.classList.add("two-weeks-left");
-  } else if (days < 30) {
-    element.classList.add("month-left");
+  if (differenceDays >= 7) {
+    const weeks = Math.floor(differenceDays / 7);
+    remainingTime.push(weeks + (weeks > 1 ? ' weeks' : ' week'));
+    differenceDays %= 7;
+  }
+
+  if (differenceDays > 0) {
+    remainingTime.push(differenceDays + (differenceDays > 1 ? ' days' : ' day'));
+  }
+
+  const message = remainingTime.join(', ');
+
+  const element = document.getElementById(elementId);
+  element.textContent = message;
+
+  const daysRemaining = Math.floor(differenceMs / 86400000);
+  if (daysRemaining < 14) {
+    element.classList.add('two-weeks-left');
+  } else if (daysRemaining < 30) {
+    element.classList.add('month-left');
   }
 }
