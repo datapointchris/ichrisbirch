@@ -4,7 +4,7 @@ from ichrisbirch.config import get_settings
 from tests.helpers import find_project_root
 
 string_path = find_project_root() / '.dev.env'
-test_env_file = find_project_root() / 'tests' / 'test_env_file'
+test_env_file = find_project_root() / 'tests' / 'testing_data' / 'test_env_file'
 
 
 def test_load_environment_by_ENVIRONMENT_variable():
@@ -59,17 +59,3 @@ def test_sqlalchemy_db_uri():
     get_settings.cache_clear()
     settings = get_settings(env_file=test_env_file)
     assert settings.sqlalchemy.db_uri == 'postgresql://postgres-test:postgres@localhost:5432/ichrisbirch'
-
-
-def test_os_prefix():
-    """Test if os prefix is set correctly"""
-    get_settings.cache_clear()
-    settings = get_settings(env_file=test_env_file)
-    assert settings.os_prefix == '/usr/local'
-
-
-def test_log_path():
-    """Test if log path is set correctly"""
-    get_settings.cache_clear()
-    settings = get_settings(env_file=test_env_file)
-    assert settings.logging.log_dir == '/usr/local/var/log/ichrisbirch'

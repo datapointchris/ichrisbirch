@@ -21,7 +21,7 @@ async def read_many(session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Countdown, status_code=status.HTTP_201_CREATED)
 async def create(countdown: schemas.CountdownCreate, session: Session = Depends(sqlalchemy_session)):
-    db_obj = models.Countdown(**countdown.dict())
+    db_obj = models.Countdown(**countdown.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)

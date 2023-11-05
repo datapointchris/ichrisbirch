@@ -1,20 +1,18 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 
 class AutoTaskConfig(BaseModel):
-    class Config:
-        orm_mode = True  # must be set for mapping to SQLAlchemy
-        use_enum_values = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 
 class AutoTaskCreate(AutoTaskConfig):
     name: str
-    notes: str | None
+    notes: str | None = None
     category: TaskCategory
     priority: int
     frequency: TaskFrequency
@@ -25,7 +23,7 @@ class AutoTask(AutoTaskConfig):
     name: str
     category: TaskCategory
     priority: int
-    notes: str | None
+    notes: str | None = None
     frequency: TaskFrequency
     first_run_date: datetime
     last_run_date: datetime
@@ -33,8 +31,8 @@ class AutoTask(AutoTaskConfig):
 
 
 class AutoTaskUpdate(AutoTaskConfig):
-    name: str | None
-    category: TaskCategory | None
-    priority: int | None
-    notes: str | None
-    frequency: TaskFrequency | None
+    name: str | None = None
+    category: TaskCategory | None = None
+    priority: int | None = None
+    notes: str | None = None
+    frequency: TaskFrequency | None = None

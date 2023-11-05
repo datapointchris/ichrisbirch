@@ -36,11 +36,11 @@ alembic upgrade head
 
 ## Troubleshooting
 
-!!! failure "Error"
-    Alembic is not able to upgrade to the latest because the revisions got out of sync.
+***Error***  
+Alembic is not able to upgrade to the latest because the revisions got out of sync.  
 
-    !!! success "Solution"
-        Find the last revision that was successfully run (manually by inspecting the database) and then run:
-        `alembic stamp <revision>` to set the current revision to the last successful one.
-        Then run the upgrade again:
-        `alembic upgrade head`
+***Solution***  
+Find the last revision that was successfully run (manually by inspecting the database) and then run:
+`alembic stamp <revision>` to set the current revision to the last successful one.
+Then run the upgrade again:
+`alembic upgrade head`

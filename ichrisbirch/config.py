@@ -72,26 +72,11 @@ class SQLiteSettings:
         self.db_uri: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
 
 
-class LoggingSettings:
-    def __init__(self):
-        self.os_prefix: Optional[str] = os.getenv('OS_PREFIX')
-        self.log_path: Optional[str] = os.getenv('LOG_PATH')
-        self.log_format: Optional[str] = os.getenv('LOG_FORMAT')
-        self.log_date_format: Optional[str] = os.getenv('LOG_DATE_FORMAT')
-        self.log_level: Union[int, str] = os.getenv('LOG_LEVEL', logging.DEBUG)
-
-    @property
-    def log_dir(self) -> str:
-        return str(self.os_prefix) + str(self.log_path)
-
-
 class Settings:
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
         self.name: str = 'ichrisbirch'
         self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
-        # self.api_url: Optional[str] = os.environ.get('API_URL')
         self.environment: Optional[str] = os.environ.get('ENVIRONMENT')
-        self.os_prefix: Optional[str] = os.environ.get('OS_PREFIX')
         self.env_file: pathlib.Path = env_file
         self.request_timeout: int = 3
 
@@ -101,7 +86,6 @@ class Settings:
         self.sqlalchemy = SQLAlchemySettings()
         self.mongodb = MongoDBSettings()
         self.sqlite = SQLiteSettings()
-        self.logging = LoggingSettings()
 
     @property
     def api_url(self) -> str:

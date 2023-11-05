@@ -68,7 +68,7 @@ def create_completed_task_chart_data(tasks: list[models.Task]) -> tuple[list[str
     completed_task_timestamps = Counter(
         [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in schema_tasks]
     )
-    all_dates_with_counts = {**timestamps_for_filter, **completed_task_timestamps}
+    all_dates_with_counts = timestamps_for_filter | completed_task_timestamps
     chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
     chart_values = list(all_dates_with_counts.values())
     return chart_labels, chart_values
@@ -125,7 +125,7 @@ def completed():
     if response.status_code != status.HTTP_200_OK:
         log_flash_raise_error(response, logger)
     # TODO: Change this to only schemas when Pydantic 2 released so TaskCompleted schema can have properties
-    completed_tasks = [models.Task(**schemas.TaskCompleted(**task).dict()) for task in response.json()]
+    completed_tasks = [models.Task(**schemas.TaskCompleted(**task).model_dump()) for task in response.json()]
     if completed_tasks:
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
@@ -169,7 +169,7 @@ def crud():
     match method:
         case 'add':
             try:
-                task = schemas.TaskCreate(**data).json()
+                task = schemas.TaskCreate(**data).model_dump_json()
             except pydantic.ValidationError as e:
                 logger.exception(e)
                 flash(str(e), 'error')

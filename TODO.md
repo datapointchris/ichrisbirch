@@ -78,6 +78,9 @@
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
   - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
 - [ ] [GitHub - mkdocstrings/mkdocstrings: Automatic documentation from sources, for MkDocs.](https://github.com/mkdocstrings/mkdocstrings)
+- [ ] [GitHub - zhanymkanov/fastapi-best-practices: FastAPI Best Practices and Conventions we used at our startup](https://github.com/zhanymkanov/fastapi-best-practices)
+- [ ] [GitHub - Aeternalis-Ingenium/FastAPI-Backend-Template: A backend project template with FastAPI, PostgreSQL with asynchronous SQLAlchemy 2.0, Alembic for asynchronous database migration, and Docker.](https://github.com/Aeternalis-Ingenium/FastAPI-Backend-Template)
+- [ ] [GitHub - igorbenav/FastAPI-boilerplate: An extendable async API using FastAPI, Pydantic V2, SQLAlchemy 2.0, PostgreSQL and Redis.](https://github.com/igorbenav/FastAPI-boilerplate)
 
 ## CSS files
 
@@ -141,12 +144,19 @@ Is this something I want to do?
 
 ## Testing
 
+[Mastering Integration Testing with FastAPI | Alex Jacobs](https://alex-jacobs.com/posts/fastapitests/)
+[fastApi-Integration-tests/app/auth.py at main · alexjacobs08/fastApi-Integration-tests · GitHub](https://github.com/alexjacobs08/fastApi-Integration-tests/blob/main/app/auth.py)
+[testcontainers 2.0.0 documentation](https://testcontainers-python.readthedocs.io/en/latest/postgres/README.html)
+[LocalStack - A fully functional local cloud stack](https://localstack.cloud)
+[How to test your FastAPI application - YouTube](https://www.youtube.com/watch?v=qC8AJzML3E4)
 [TDD Tutorial](https://courses.cd.training/courses/tdd-tutorial)
 [Patterns for Managing Source Code Branches](https://www.martinfowler.com/articles/branching-patterns.html)
 [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
 [9 pytest tips and tricks to take your tests to the next level | Verdant Fox](https://verdantfox.com/blog/view/9-pytest-tips-and-tricks-to-take-your-tests-to-the-next-level)
 
 [Unit Testing in Python -The Basics | The Startup](https://medium.com/swlh/unit-testing-in-python-basics-21a9a57418a0)
+
+[End-to-end Testing with Python and Playwright — Six Feet Up](https://sixfeetup.com/blog/end-to-end-testing-python-playwright)
 
 - Udemy Class
 - I have pytest book somewhere

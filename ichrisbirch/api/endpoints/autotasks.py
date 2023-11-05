@@ -23,7 +23,7 @@ async def read_many(session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.AutoTaskCreate, session: Session = Depends(sqlalchemy_session)):
-    db_obj = models.AutoTask(**task.dict())
+    db_obj = models.AutoTask(**task.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)

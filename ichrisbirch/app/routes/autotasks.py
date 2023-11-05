@@ -37,7 +37,7 @@ def index():
                     logger.exception(e)
                     flash(str(e), 'error')
                     return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-                response = requests.post(AUTOTASKS_API_URL, data=autotask.json(), timeout=TIMEOUT)
+                response = requests.post(AUTOTASKS_API_URL, data=autotask.model_dump_json(), timeout=TIMEOUT)
                 if response.status_code != status.HTTP_201_CREATED:
                     log_flash_raise_error(response, logger)
                 else:  # Run the new autotask

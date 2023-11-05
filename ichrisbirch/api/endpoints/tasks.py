@@ -68,7 +68,7 @@ async def completed(
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy_session)):
     """API method to create a new task.  Passes request to crud.tasks module"""
-    db_obj = models.Task(**task.dict())
+    db_obj = models.Task(**task.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)

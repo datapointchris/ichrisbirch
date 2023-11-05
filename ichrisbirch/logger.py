@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import os
+import platform
 
 logging_config = {
     'version': 1,
@@ -11,6 +12,7 @@ logging_config = {
         },
         'json': {
             'format': '%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d | %(message)s',
+            'datefmt': '%Y-%m-%dT%H:%M:%SZ',
             'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
         },
     },
@@ -52,11 +54,16 @@ logging_config = {
 
 
 def initialize_logging():
+    # Don't log to file in GitHub Actions
     if os.environ.get('GITHUB_ACTIONS') == 'true':
-        # Don't log to file in GitHub Actions
         del logging_config['handlers']['file']
         del logging_config['handlers']['json']
         logging_config['loggers']['']['handlers'] = ['stdout', 'stderr']
+
+    # Change log location on MacOS
+    if platform.system() == 'Darwin':
+        logging_config['handlers']['file']['filename'] = '/usr/local/var/log/pylogger.log'
+        logging_config['handlers']['json']['filename'] = '/usr/local/var/log/pylogger.json'
 
     logging.config.dictConfig(logging_config)
     logger = logging.getLogger()

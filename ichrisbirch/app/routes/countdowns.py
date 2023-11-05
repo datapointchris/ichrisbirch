@@ -28,7 +28,7 @@ def index():
         match method:
             case 'add':
                 try:
-                    countdown = schemas.CountdownCreate(**data).json()
+                    countdown = schemas.CountdownCreate(**data).model_dump_json()
                 except pydantic.ValidationError as e:
                     logger.exception(e)
                     flash(str(e), 'error')

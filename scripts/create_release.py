@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-p = Path().resolve()
+p = Path.cwd()
 
 # https://github.com/tj/git-extras/blob/master/bin/git-release
 

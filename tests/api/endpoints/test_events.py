@@ -44,12 +44,12 @@ def test_create_event(test_api):
 @pytest.mark.parametrize(
     ['event_date', 'output'],
     [
-        (datetime(2021, 10, 4), '2021-10-04T00:00:00+00:00'),
-        (datetime(2021, 10, 4, 12, 0, 0), '2021-10-04T12:00:00+00:00'),
-        (datetime(2021, 10, 4, 12, 0, 0, tzinfo=ZoneInfo('America/Chicago')), '2021-10-04T17:00:00+00:00'),
-        ('2021-10-04', '2021-10-04T00:00:00+00:00'),
-        ('2021-10-04T12:00:00', '2021-10-04T12:00:00+00:00'),
-        ('2021-10-04T12:00:00-05:00', '2021-10-04T17:00:00+00:00'),
+        (datetime(2021, 10, 4), '2021-10-04T00:00:00Z'),
+        (datetime(2021, 10, 4, 12, 0, 0), '2021-10-04T12:00:00Z'),
+        (datetime(2021, 10, 4, 12, 0, 0, tzinfo=ZoneInfo('America/Chicago')), '2021-10-04T17:00:00Z'),
+        ('2021-10-04', '2021-10-04T00:00:00Z'),
+        ('2021-10-04T12:00:00', '2021-10-04T12:00:00Z'),
+        ('2021-10-04T12:00:00-05:00', '2021-10-04T17:00:00Z'),
     ],
 )
 def test_create_event_date_formats(test_api, event_date, output):
@@ -67,7 +67,7 @@ def test_create_event_date_formats(test_api, event_date, output):
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
     event = test_api.get(f'/events/{response.json()["id"]}/')
     assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert output == event.json()['date']
+    assert event.json()['date'] == output
 
 
 @pytest.mark.parametrize('event_id', [1, 2, 3])
