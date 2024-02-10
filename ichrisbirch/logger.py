@@ -62,8 +62,8 @@ def initialize_logging():
 
     # Change log location on MacOS
     if platform.system() == 'Darwin':
-        logging_config['handlers']['file']['filename'] = '/usr/local/var/log/pylogger.log'
-        logging_config['handlers']['json']['filename'] = '/usr/local/var/log/pylogger.json'
+        logging_config['handlers']['file']['filename'] = '/usr/local/var/log/ichrisbirch/pylogger.log'
+        logging_config['handlers']['json']['filename'] = '/usr/local/var/log/ichrisbirch/pylogger.json'
 
     logging.config.dictConfig(logging_config)
     logger = logging.getLogger()
