@@ -1,10 +1,12 @@
+import functools
 import logging
 import os
 import pathlib
-from functools import lru_cache
 from typing import Any, Optional, Union
 
 import dotenv
+
+logger = logging.getLogger(__name__)
 
 
 class FlaskSettings:
@@ -93,8 +95,6 @@ class Settings:
 
 
 def load_environment(env_file: Optional[pathlib.Path | str] = None):
-    logger = logging.getLogger(__name__)
-
     if isinstance(env_file, pathlib.Path):
         logger.info(f'Loading Environment from pathlib.Path: {env_file}')
         if not env_file.exists():
@@ -121,7 +121,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
             env_file = pathlib.Path(env_file)
 
     else:
-        logger.info(f'Loading from ENVIRONMENT variable {os.getenv("ENVIRONMENT")}')
+        logger.info(f'Loading environment: {os.getenv("ENVIRONMENT")}')
         match ENV := os.getenv('ENVIRONMENT'):
             case 'development':
                 filename = '.dev.env'
@@ -140,7 +140,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
     return env_file
 
 
-@lru_cache(maxsize=1)
+@functools.lru_cache(maxsize=1)
 def get_settings(env_file: Optional[pathlib.Path | str] = None) -> Settings:
     """Return settings based on Path, str, or ENVIRONMENT variable."""
     resolved_env_file = load_environment(env_file)
