@@ -6,17 +6,15 @@ from tests.helpers import show_status_and_response
 
 
 def test_index(test_app):
-    """Test the index page"""
     response = test_app.get('/autotasks/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 
 
 def test_add_autotask(test_app, test_api):
-    """Test add a new task
-    I'm not really sure I should be getting this directly with test_api
-    But how do I get the number of autotasks from the app endpoint?
-    Expected: Both create an autotask AND run it
+    """Test add a new autotask
+
+    Expected: Both create an autotask AND run it, which will create a new task
     """
     data = dict(
         name='AutoTask 4 Computer with notes priority 3',
