@@ -1,6 +1,6 @@
 import logging
 
-from flask import Flask
+from flask import Flask, render_template
 
 from ichrisbirch.app.routes import (
     autotasks,
@@ -19,14 +19,34 @@ from ichrisbirch.config import Settings
 logger = logging.getLogger(__name__)
 
 
+def handle_404_error(e):
+    a_msg = e.description.get('abort_message')
+    e_msg = e.description.get('error_message')
+    template = render_template('404.html', abort_message=a_msg, error_message=e_msg)
+    return (template, 404)
+
+
+def handle_500_error(e):
+    a_msg = e.description.get('abort_message')
+    e_msg = e.description.get('error_message')
+    template = render_template('500.html', abort_message=a_msg, error_message=e_msg)
+    return (template, 500)
+
+
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
-    logger.debug(f'{app.import_name} App Started')
+    logger.info('Flask App Created')
 
     with app.app_context():
         app.config.from_object(settings.flask)
-        logger.debug('Configured Flask App')
-        logger.debug(f'Flask App Config: {", ".join([f"{k}={v}" for k, v in app.config.items() if k != "SECRET_KEY"])}')
+        logger.info('Flask App Configured')
+        logger.debug(
+            f'DEBUG={app.config.get("DEBUG")}, TESTING={app.config.get("TESTING")}, ENV={app.config.get("ENV")}'
+        )
+
+        app.register_error_handler(404, handle_404_error)
+        app.register_error_handler(500, handle_500_error)
+        logger.info('Flask App Error Handlers Registered')
 
         app.register_blueprint(home.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
@@ -38,5 +58,5 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(journal.blueprint, url_prefix='/journal')
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(tasks.blueprint, url_prefix='/tasks')
-        logger.debug('Registered App Blueprints')
+        logger.info('Flask App Blueprints Registered')
     return app
