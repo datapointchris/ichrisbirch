@@ -15,54 +15,62 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateSchema
 
+import tests.testing_data as testing_data
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
-from tests.testing_data.autotasks import BASE_DATA as AUTOTASK_BASE_DATA
-from tests.testing_data.countdowns import BASE_DATA as COUNTDOWN_BASE_DATA
-from tests.testing_data.events import BASE_DATA as EVENT_BASE_DATA
-from tests.testing_data.tasks import BASE_DATA as TASK_BASE_DATA
 
 logger = logging.getLogger(__name__)
 
-settings = get_settings()
-logger.info(f'Loaded settings from environment: {settings.environment}')
+settings = get_settings('testing')
+logger.info(f"load settings from environment: {settings.environment}")
 
-POSTGRES_URI = 'postgresql://postgres:postgres@127.0.0.1:5434/ichrisbirch'
-ENGINE = create_engine(POSTGRES_URI, echo=False, future=True)
-SESSION_TESTING = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, future=True, expire_on_commit=False)
+ENGINE = create_engine(settings.sqlalchemy.db_uri, echo=False, future=True)
+TESTING_SESSION = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, future=True, expire_on_commit=False)
 
 
 def create_docker_container(client: docker.APIClient, config: dict[str, Any]) -> Container:
-    image = config.pop('image')
+    image = config.pop("image")
     try:
         client.pull(image)
         container = client.create_container(image, **config)
     except DockerException as e:
-        message = f'Failed to CREATE Docker client: {e}'
+        message = f"Failed to CREATE Docker client: {e}"
         logger.error(message)
         try:
-            client.remove_container(container=config.get('name'), force=True)
+            client.remove_container(container=config.get("name"), force=True)
             container = client.create_container(image, **config)
         except DockerException as e:
-            message = f'Failed to REMOVE and RECREATE Docker container: {e}'
+            message = f"Failed to REMOVE and RECREATE Docker container: {e}"
             logger.error(message)
             pytest.exit(message)
     time.sleep(3)  # Must sleep to allow creation of detached Docker container
     # TODO: I don't think this works, need to see when logging is fixed
-    for log in client.logs(container=container.get('Id'), stream=True):
+    for log in client.logs(container=container.get("Id"), stream=True):
         logger.info(log.strip())
     return container
 
 
 def get_testing_session() -> Generator[Session, None, None]:
-    session = SESSION_TESTING()
+    session = TESTING_SESSION()
     try:
         yield session
     finally:
         session.close()
+
+
+def get_test_data() -> list:
+    all_test_data = []
+    for data in (
+        testing_data.autotasks.BASE_DATA,
+        testing_data.countdowns.BASE_DATA,
+        testing_data.events.BASE_DATA,
+        testing_data.tasks.BASE_DATA,
+    ):
+        all_test_data.extend(deepcopy(data))
+    return all_test_data
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -75,7 +83,7 @@ def setup_test_environment():
         subprocess.run(['open', '-ga', 'docker'])
         subprocess.run(['sleep', '20'])
         print('docker started')
-        # Try again, let failure surface second time, most likely a different issue
+        # Try again, let failure surface in the next command if this was not the issue
         docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
 
     # Create Postgres Docker container
@@ -85,10 +93,10 @@ def setup_test_environment():
             image='postgres:14',
             name='postgres_testing',
             environment={
-                'ENVIRONMENT': 'testing',
-                'POSTGRES_USER': 'postgres',
-                'POSTGRES_PASSWORD': 'postgres',
-                'POSTGRES_DB': 'ichrisbirch',
+                'ENVIRONMENT': settings.environment,
+                'POSTGRES_USER': settings.postgres.user,
+                'POSTGRES_PASSWORD': settings.postgres.password,
+                'POSTGRES_DB': settings.postgres.database,
             },
             ports=[5432],
             # Bind to port 5434 on host machine, so that it doesn't conflict with local Postgres
@@ -112,10 +120,9 @@ def setup_test_environment():
             try:
                 session.execute(CreateSchema(schema_name))
             except Exception as e:
+                logger.error(f"Failed to create schema: {e}")
                 debug_message = f"""Failed to create schema: {e}
-
-                postgres_connection_string = {POSTGRES_URI}
-
+                postgres_connection_string = {settings.sqlalchemy.db_uri}
                 Connection Parameters:
                 database_name = {session.bind.url.database}
                 database_user = {session.bind.url.username}
@@ -123,39 +130,35 @@ def setup_test_environment():
                 database_host = {session.bind.url.host}
                 database_port = {session.bind.url.port}
                 """
-
-                logger.error(f'Failed to create schema: {e}')
                 pytest.exit(debug_message)
         session.commit()
-        print('Schemas created')
 
-    # Start Uvicorn FastAPI subprocess in its own thread (for testing APP, that needs an API response)
+    # Start Uvicorn API (FastAPI) subprocess in its own thread (for testing APP, that needs an API response)
     # This is easier than mocking everything
-    uvicorn_command = ' '.join(
+    uvicorn_api_command = ' '.join(
         [
             'poetry run uvicorn ichrisbirch.wsgi:api',
-            '--host 127.0.0.1',
-            '--port 5555',
+            f'--host {settings.fastapi.host}',
+            f'--port {settings.fastapi.port}',
             '--log-level debug',
         ]
     )
-    uvicorn_process = subprocess.Popen(uvicorn_command.split())
-    uvicorn_thread = threading.Thread(target=uvicorn_process.wait)
-    uvicorn_thread.start()
+    uvicorn_api_process = subprocess.Popen(uvicorn_api_command.split())
+    uvicorn_api_thread = threading.Thread(target=uvicorn_api_process.wait)
+    uvicorn_api_thread.start()
     time.sleep(1)  # Allow Uvicorn FastAPI to start
 
-    # Start Flask subprocess in its own thread (for testing the frontend)
-    flask_command = ' '.join(
+    # Start Gunicorn App (Flask) subprocess in its own thread (for testing the frontend)
+    gunicorn_app_command = ' '.join(
         [
             'poetry run gunicorn ichrisbirch.wsgi:app',
-            '--bind 127.0.0.1:5500',
+            f'--bind {settings.flask.host}:{settings.flask.port}',
             '--log-level DEBUG',
-            '--env ENVIRONMENT=testing',
         ]
     )
-    flask_process = subprocess.Popen(flask_command.split())
-    flask_thread = threading.Thread(target=flask_process.wait)
-    flask_thread.start()
+    gunicorn_app_process = subprocess.Popen(gunicorn_app_command.split())
+    gunicorn_app_thread = threading.Thread(target=gunicorn_app_process.wait)
+    gunicorn_app_thread.start()
     time.sleep(1)  # Allow Flask to start
 
     try:
@@ -166,11 +169,11 @@ def setup_test_environment():
         docker_client.stop(container=postgres_docker_container.get('Id'))
         postgres_thread.join()
         # Kill uvicorn process and join thread to main thread
-        uvicorn_process.kill()
-        uvicorn_thread.join()
+        uvicorn_api_process.kill()
+        uvicorn_api_thread.join()
         # Kill flask process and join thread to main thread
-        flask_process.kill()
-        flask_thread.join()
+        gunicorn_app_process.kill()
+        gunicorn_app_thread.join()
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -178,15 +181,11 @@ def insert_test_data():
     """All tables are created and dropped for each test function.
     This is the easiest way to ensure a clean db each time a new test is run.
     Have to deep copy or else the instances are the same and persist through sessions.
-    TODO: [2023/06/14] - Find a better way to get this data than import of global variables and deepcopy.
     """
-    all_test_data = []
-    for data in (AUTOTASK_BASE_DATA, TASK_BASE_DATA, COUNTDOWN_BASE_DATA, EVENT_BASE_DATA):
-        all_test_data.extend(deepcopy(data))
 
     Base.metadata.create_all(ENGINE)
     session = next(get_testing_session())
-    session.add_all(all_test_data)
+    session.add_all(get_test_data())
     session.commit()
     yield
     session.close()
