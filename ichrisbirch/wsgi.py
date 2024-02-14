@@ -8,13 +8,13 @@ from ichrisbirch.scheduler.main import create_scheduler
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
-logger.info(f'Loaded Settings for {settings.environment} environment')
+logger.info(f'loaded settings for environment: {settings.environment}')
 
 app = create_app(settings=settings)
-logger.info(f'Created ichrisbirch App in {settings.environment} environment')
+logger.info('created ichrisbirch app')
 
 api = create_api(settings=settings)
-logger.info(f'Created ichrisbirch API in {settings.environment} environment')
+logger.info('created ichrisbirch api')
 
 scheduler = create_scheduler(settings=settings)
-logger.info(f'Created Scheduler in {settings.environment} environment')
+logger.info('created scheduler')

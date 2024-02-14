@@ -11,7 +11,7 @@ from flask import Blueprint, Response, flash, redirect, render_template, request
 
 from ichrisbirch import models, schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.helpers import log_flash_raise_error
+from ichrisbirch.app.helpers import handle_if_not_response_code
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
@@ -46,7 +46,7 @@ def days_to_complete(task: schemas.Task) -> int | None:
 
 
 def calculate_average_completion_time(tasks: list[models.Task]) -> str | None:
-    """ "Calculate the average completion time of the supplied completed tasks"""
+    """Calculate the average completion time of the supplied completed tasks"""
     total_days_to_complete = sum(task.days_to_complete for task in tasks)
     average_days = total_days_to_complete / len(tasks)
     weeks, days = divmod(average_days, 7)
@@ -76,17 +76,14 @@ def create_completed_task_chart_data(tasks: list[models.Task]) -> tuple[list[str
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    tasks_response = requests.get(
-        TASKS_API_URL, params={'completed_filter': 'not_completed', 'limit': 5}, timeout=TIMEOUT
-    )
-    if tasks_response.status_code != status.HTTP_200_OK:
-        log_flash_raise_error(tasks_response, logger)
-    top_tasks = [schemas.Task(**task) for task in tasks_response.json()]
-    today_filter = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
+    top_tasks_params = {'completed_filter': 'not_completed', 'limit': 5}
+    top_tasks_response = requests.get(TASKS_API_URL, params=top_tasks_params, timeout=TIMEOUT)
+    handle_if_not_response_code(200, top_tasks_response, logger)
+    top_tasks = [schemas.Task(**task) for task in top_tasks_response.json()]
 
+    today_filter = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
     completed_response = requests.get(f'{TASKS_API_URL}/completed/', params=today_filter, timeout=TIMEOUT)
-    if completed_response.status_code != 200:
-        log_flash_raise_error(completed_response, logger)
+    handle_if_not_response_code(200, completed_response, logger)
     completed_today = [schemas.TaskCompleted(**task) for task in completed_response.json()]
     return render_template(
         'tasks/index.html', top_tasks=top_tasks, completed_today=completed_today, task_categories=TASK_CATEGORIES
@@ -99,8 +96,7 @@ def all():
     logger.debug(f'{completed_filter=}')
 
     response = requests.get(TASKS_API_URL, params={'completed_filter': completed_filter}, timeout=TIMEOUT)
-    if response.status_code != status.HTTP_200_OK:
-        log_flash_raise_error(response, logger)
+    handle_if_not_response_code(200, response, logger)
     tasks = [schemas.Task(**task) for task in response.json()]
     return render_template(
         'tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES, completed_filter=completed_filter
@@ -115,16 +111,14 @@ def completed():
     date_filters = edt.filters
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
     start_date, end_date = date_filters.get(selected_filter, (None, None))
-    logger.debug(f'Date filter: {selected_filter} = {start_date} - {end_date}')
+    logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
     response = requests.get(
         f'{TASKS_API_URL}/completed/',
         params={'start_date': str(start_date), 'end_date': str(end_date)},
         timeout=TIMEOUT,
     )
-    if response.status_code != status.HTTP_200_OK:
-        log_flash_raise_error(response, logger)
-    # TODO: Change this to only schemas when Pydantic 2 released so TaskCompleted schema can have properties
+    handle_if_not_response_code(200, response, logger)
     completed_tasks = [models.Task(**schemas.TaskCompleted(**task).model_dump()) for task in response.json()]
     if completed_tasks:
         average_completion = calculate_average_completion_time(completed_tasks)
@@ -153,8 +147,7 @@ def search():
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
         response = requests.get(f'{TASKS_API_URL}/search/{search_terms}', timeout=TIMEOUT)
-        if response.status_code != 200:
-            log_flash_raise_error(response, logger)
+        handle_if_not_response_code(200, response, logger)
         tasks = [schemas.Task(**task) for task in response.json()]
     else:
         tasks = []
@@ -165,32 +158,30 @@ def search():
 def crud():
     data: dict[str, Any] = request.form.to_dict()
     method = data.pop('method')
-    logger.debug(f'{request.referrer=} | {method=} | {data=}')
-    match method:
-        case 'add':
-            try:
-                task = schemas.TaskCreate(**data).model_dump_json()
-            except pydantic.ValidationError as e:
-                logger.exception(e)
-                flash(str(e), 'error')
-                return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-            response = requests.post(TASKS_API_URL, data=task, timeout=TIMEOUT)
-            if response.status_code != status.HTTP_201_CREATED:
-                log_flash_raise_error(response, logger)
-            return redirect(request.referrer or url_for('tasks.index'))
+    logger.debug(f'{request.referrer=} {method=} {data=}')
+    logger.debug(f'{data=}')
 
-        case 'complete':
-            task_id = data.get('id')
-            response = requests.post(f'{TASKS_API_URL}/complete/{task_id}', timeout=TIMEOUT)
-            if response.status_code != status.HTTP_200_OK:
-                log_flash_raise_error(response, logger)
-            return redirect(request.referrer or url_for('tasks.index'))
+    if method == 'add':
+        try:
+            task = schemas.TaskCreate(**data).model_dump_json()
+        except pydantic.ValidationError as e:
+            logger.exception(e)
+            flash(str(e), 'error')
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        response = requests.post(TASKS_API_URL, data=task, timeout=TIMEOUT)
+        handle_if_not_response_code(201, response, logger)
+        return redirect(request.referrer or url_for('tasks.index'))
 
-        case 'delete':
-            task_id = data.get('id')
-            response = requests.delete(f'{TASKS_API_URL}/{task_id}', timeout=TIMEOUT)
-            if response.status_code != status.HTTP_204_NO_CONTENT:
-                log_flash_raise_error(response, logger)
-            return redirect(request.referrer or url_for('tasks.all'))
+    elif method == 'complete':
+        task_id = data.get('id')
+        response = requests.post(f'{TASKS_API_URL}/complete/{task_id}', timeout=TIMEOUT)
+        handle_if_not_response_code(200, response, logger)
+        return redirect(request.referrer or url_for('tasks.index'))
+
+    elif method == 'delete':
+        task_id = data.get('id')
+        response = requests.delete(f'{TASKS_API_URL}/{task_id}', timeout=TIMEOUT)
+        handle_if_not_response_code(204, response, logger)
+        return redirect(request.referrer or url_for('tasks.all'))
 
     return Response(f'Method {method} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

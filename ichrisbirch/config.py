@@ -2,7 +2,7 @@ import functools
 import logging
 import os
 import pathlib
-from typing import Any, Optional, Union
+from typing import Optional
 
 import dotenv
 
@@ -24,10 +24,6 @@ class FastAPISettings:
         self.port: Optional[str] = os.getenv('FASTAPI_PORT')
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
-        self.responses: dict[Union[int, str], dict[str, Any]] = {
-            404: {'description': 'Not found'},
-            403: {'description': 'Operation forbidden'},
-        }
 
 
 class PostgresSettings:
