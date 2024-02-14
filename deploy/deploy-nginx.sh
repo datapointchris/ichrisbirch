@@ -7,9 +7,6 @@
 # Fail script on command fail
 set -e
 
-# Include the bash helpers for color and formatting
-source scripts/bash-helpers
-
 
 SCRIPT_NAME="$0"
 
