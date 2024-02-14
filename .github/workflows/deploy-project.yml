@@ -23,7 +23,7 @@ jobs:
             git pull &&
             git secret reveal -f &&
             sudo rm -rf .venv &&
-            poetry env use 3.12 &&
+            poetry env use $(pyenv which python) &&
             poetry install
           '
       - name: Restart Supervisor
