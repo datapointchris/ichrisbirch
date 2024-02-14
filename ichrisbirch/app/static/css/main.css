@@ -1,3 +1,86 @@
+html {
+  box-sizing: border-box;
+  -webkit-text-size-adjust: none;
+     -moz-text-size-adjust: none;
+          text-size-adjust: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+@media (prefers-reduced-motion) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+a,
+button,
+label,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+hr {
+  box-sizing: content-box;
+  display: block;
+  height: px2rem(1px);
+  padding: 0;
+  overflow: visible;
+  border: 0;
+}
+
+small {
+  font-size: 80%;
+}
+
+sub,
+sup {
+  line-height: 1em;
+}
+
+img {
+  border-style: none;
+}
+
+table {
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+td,
+th {
+  font-weight: 400;
+  vertical-align: top;
+}
+
+button {
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent;
+  border: 0;
+}
+
+input {
+  border: 0;
+  outline: none;
+}
+
 @font-face {
   font-family: Menlo;
   src: url("../Menlo.ttc");
@@ -90,4 +173,4 @@ body {
 
 .close-button:hover {
   transform: scale(1.2) translate(-50%, -50%);
-}/*# sourceMappingURL=global.css.map */
+}/*# sourceMappingURL=main.css.map */

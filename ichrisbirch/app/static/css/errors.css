@@ -1,0 +1,13 @@
+@charset "UTF-8";
+ul {
+  background-color: #666;
+  padding: 25px;
+  border: 5px greenyellow dashed;
+  border-radius: 25px;
+  list-style-type: "→  ";
+  font-size: x-large;
+}
+
+li {
+  margin: 50px;
+}/*# sourceMappingURL=errors.css.map */

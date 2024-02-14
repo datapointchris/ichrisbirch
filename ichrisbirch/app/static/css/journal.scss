@@ -50,7 +50,7 @@
   padding: 15px 20px;
   font-size: 0.7em;
   border-radius: $button-box-border-radius;
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $med-shadow, inset -5px -5px 4px -2px $dark-shadow;
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $medium-shadow, inset -5px -5px 4px -2px $dark-shadow;
 }
 
 .feeling-buttons input[type="radio"]:checked + label {

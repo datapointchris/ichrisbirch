@@ -1,8 +1,9 @@
-@import "./variables";
+@import 'resets';
+@import 'variables';
 
 @font-face {
     font-family: Menlo;
-    src: url("../Menlo.ttc");
+    src: url('../Menlo.ttc');
 }
 
 body {

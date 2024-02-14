@@ -218,10 +218,15 @@ pip-selfcheck.json
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,flask,jupyternotebooks,venv
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
+
+# local database files
 *.db
+
+# git-secret
 .gitsecret/keys/random_seed
 !*.secret
 
+# environment files
 .env.dev
 .env.prod
 .env.test
@@ -229,5 +234,9 @@ pip-selfcheck.json
 .test.env
 .prod.env
 
+# local files
 TESTING.*
 *pylogger*
+
+# css map files
+*.css.map
