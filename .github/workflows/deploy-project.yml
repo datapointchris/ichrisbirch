@@ -6,9 +6,6 @@ on:
     types: [completed]
   workflow_dispatch:
 
-env:
-  ENVIRONMENT: "testing"
-
 jobs:
   deploy-project:
     name: Deploy project to EC2
