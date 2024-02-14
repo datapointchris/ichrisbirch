@@ -4,7 +4,6 @@
 - [Random](#random)
 - [CSS files](#css-files)
 - [Tasks](#tasks)
-- [Add Events to API routes](#add-events-to-api-routes)
 - [Infrastructure Management](#infrastructure-management)
 - [User Login](#user-login)
 - [WTForms](#wtforms)
@@ -40,31 +39,16 @@
   - [Overview](#overview)
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
+  - [Whylogs](#whylogs)
 
 ## PRIORITY PROJECTS
 
-- [X] Always run the new autotask right now
-- [X] Test to see if the autotask creator actually works
-- [X] Check on the daily subtraction
-  - [X] This should be in the logs
-  - [X] Move to airflow eventually
-    - [X] Decided to go with APScheduler instead, so it is self contained
-
-- [ ] Create tests for logger init
-- [ ] Make sure logger is working
-- [ ] Update tmuxinator stuff
-- [ ] Website Login to hide my shit
-
-- [ ] mypy - `--check-untyped-defs`
-  - [ ] Add this option when ready to deal with other routes
-- [ ] Docs: Create video documentation, store on S3, create a link to the video in the docs.
-- [ ] Use `pendulum` for EasyDateTime:
-  - [ ] [Documentation | Pendulum - Python datetimes made easy](https://pendulum.eustace.io/docs/)
+- [ ] Replace requests with httpx
 
 ## Random
 
-- [X] Separate pytest and coverage in pre-commit and github-actions
-  - Don't need to
+- [ ] mypy - `--check-untyped-defs`
+  - [ ] Add this option when ready to deal with other routes
 - [ ] Make a startup script
   - [ ] So this can be started in Docker each time for testing
   - [ ] So it can be started on a fresh Postgres instance
@@ -73,7 +57,7 @@
     - 1. Move them to ichrisbirch S3 bucket
     - 2. Create script to run them, similar to postgres backup script
     - 3. Run that script automatically with the backup on schedule
-    -
+- [ ] Make sure fastapi is raising exceptions and not returning exceptions
 - [ ] `etc/environment` in prod server for ENVIRONMENT variable
 - [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
   - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
@@ -97,8 +81,6 @@
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
-
-## Add Events to API routes
 
 ## Infrastructure Management
 
@@ -183,6 +165,8 @@ Is this something I want to do?
 - [Pytest for Beginners | TestDriven.io](https://testdriven.io/blog/pytest-for-beginners/)
 - [Web Automation: Don't Use Selenium, Use Playwright](https://new.pythonforengineers.com/blog/web-automation-dont-use-selenium-use-playwright/)
 - [Lean TDD | pythontest](https://pythontest.com/lean-tdd/)
+- [Don't mock Python's HTTPX](https://www.b-list.org/weblog/2023/dec/08/mock-python-httpx/)
+- [“Don’t Mock What You Don’t Own” in 5 Minutes](https://hynek.me/articles/what-to-mock-in-5-mins/)
 
 ## Logging
 
@@ -432,3 +416,7 @@ You can select which common phrases you want to find in the audio
 - timezone
 - session / cookies
   - I don't know anything about this
+
+### Whylogs
+
+[GitHub - whylabs/whylogs: An open-source data logging library for machine learning models and data pipelines. 📚 Provides visibility into data quality & model performance over time. 🛡️ Supports privacy-preserving data collection, ensuring safety & robustness. 📈](https://github.com/whylabs/whylogs)

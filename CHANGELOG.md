@@ -221,3 +221,15 @@ Pre-commit Possibilities:
 ## Add Countdowns to API routes
 
 - [X] Add ALLLL
+
+## Autotasks
+
+- [X] Always run the new autotask right now
+- [X] Test to see if the autotask creator actually works
+- [X] Check on the daily subtraction
+  - [X] This should be in the logs
+  - [X] Move to airflow eventually
+    - [X] Decided to go with APScheduler instead, so it is self contained
+
+- [X] `from http import HTTPStatus`
+  - [X] fastapi `status` is much better, more descriptive and returns a constant that the IDE can see.
