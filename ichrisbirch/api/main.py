@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def create_api(settings: Settings) -> FastAPI:
     api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
-    logger.debug(f'{api.title} {api.version} Started')
+    logger.info('FastAPI Started')
 
     # api.add_middleware(ResponseLoggerMiddleware)
     # logger.debug(f'Added middleware to FastAPI: {ResponseLoggerMiddleware.__name__}')
@@ -32,5 +32,5 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.health.router)
     api.include_router(endpoints.tasks.router)
 
-    logger.debug('Registered API Routers')
+    logger.info('FastAPI Routers Registered')
     return api

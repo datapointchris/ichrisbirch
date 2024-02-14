@@ -5,12 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models, schemas
-from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
-settings = get_settings()
-router = APIRouter(prefix='/events', tags=['events'], responses=settings.fastapi.responses)
 logger = logging.getLogger(__name__)
+router = APIRouter(prefix='/events', tags=['events'])
 
 
 @router.get('/', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
@@ -21,12 +19,12 @@ async def read_many(session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
 async def create(event: schemas.EventCreate, session: Session = Depends(sqlalchemy_session)):
-    logger.debug(f'Event from app: {event}')
+    logger.debug(f'event date from app: {event.date}')
     db_obj = models.Event(**event.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
-    logger.debug(f'Event from db: {db_obj}')
+    logger.debug(f'event date from db: {db_obj.date}')
     return db_obj
 
 

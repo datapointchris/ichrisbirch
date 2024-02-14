@@ -9,12 +9,10 @@ from sqlalchemy.orm import Session
 
 # from ..dependencies import auth
 from ichrisbirch import models, schemas
-from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
-router = APIRouter(prefix='/tasks', tags=['tasks'], responses=settings.fastapi.responses)
+router = APIRouter(prefix='/tasks', tags=['tasks'])
 
 
 @router.get("/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
@@ -99,7 +97,6 @@ async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-# TODO: [2023/06/07] - Change this to /tasks/{task_id}/complete/
 @router.post('/complete/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
     """API method to complete a task.  Passes request to crud.tasks module"""

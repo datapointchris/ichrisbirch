@@ -6,13 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models, schemas
-from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
-settings = get_settings()
 logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix='/autotasks', tags=['autotasks'], responses=settings.fastapi.responses)
+router = APIRouter(prefix='/autotasks', tags=['autotasks'])
 
 
 @router.get('/', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)
