@@ -1,13 +1,13 @@
 import logging
 from typing import Any
 
+import httpx
 import pydantic
-import requests
 from fastapi import status
 from flask import Blueprint, Response, flash, render_template, request
 
 from ichrisbirch import schemas
-from ichrisbirch.app.helpers import handle_if_not_response_code
+from ichrisbirch.app.helpers import handle_if_not_response_code, url_builder
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
@@ -17,7 +17,7 @@ blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotask
 
 logger = logging.getLogger(__name__)
 
-AUTOTASKS_API_URL = f'{settings.api_url}/autotasks'
+AUTOTASKS_API_URL = f'{settings.api_url}/autotasks/'
 TASK_FREQUENCIES = [t.value for t in TaskFrequency]
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 TIMEOUT = settings.request_timeout
@@ -37,27 +37,27 @@ def index():
                 logger.exception(e)
                 flash(str(e), 'error')
                 return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-            response = requests.post(AUTOTASKS_API_URL, data=autotask.model_dump_json(), timeout=TIMEOUT)
+            response = httpx.post(AUTOTASKS_API_URL, content=autotask.model_dump_json())
             handle_if_not_response_code(201, response, logger)
             # Run the new autotask
-            new_autotask_run_url = f'{AUTOTASKS_API_URL}/{response.json().get("id")}/run/'
-            task_response = requests.get(new_autotask_run_url, timeout=TIMEOUT)
+            new_autotask_run_url = url_builder(AUTOTASKS_API_URL, response.json().get('id'), 'run')
+            task_response = httpx.get(new_autotask_run_url)
             handle_if_not_response_code(200, task_response, logger)
 
         elif method == 'run':
-            id = request.form.get('id')
-            response = requests.get(f'{AUTOTASKS_API_URL}/{id}/run/', timeout=TIMEOUT)
+            url = url_builder(AUTOTASKS_API_URL, request.form.get('id'), 'run')
+            response = httpx.get(url)
             handle_if_not_response_code(200, response, logger)
 
         elif method == 'delete':
-            autotask_id = data.get('id')
-            response = requests.delete(f'{AUTOTASKS_API_URL}/{autotask_id}/', timeout=TIMEOUT)
+            url = url_builder(AUTOTASKS_API_URL, data.get('id'))
+            response = httpx.delete(url)
             handle_if_not_response_code(204, response, logger)
 
         else:
             return Response(f'Method {method} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    response = requests.get(AUTOTASKS_API_URL, timeout=TIMEOUT)
+    response = httpx.get(AUTOTASKS_API_URL, follow_redirects=True)
     handle_if_not_response_code(200, response, logger)
     autotasks = [schemas.AutoTask(**task) for task in response.json()]
     return render_template(

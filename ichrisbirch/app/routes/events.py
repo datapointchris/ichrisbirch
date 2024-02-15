@@ -2,13 +2,13 @@ import logging
 from datetime import datetime
 from typing import Any
 
+import httpx
 import pydantic
-import requests
 from fastapi import status
 from flask import Blueprint, Response, flash, render_template, request
 
 from ichrisbirch import schemas
-from ichrisbirch.app.helpers import handle_if_not_response_code
+from ichrisbirch.app.helpers import handle_if_not_response_code, url_builder
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
@@ -16,7 +16,7 @@ blueprint = Blueprint('events', __name__, template_folder='templates/events', st
 
 logger = logging.getLogger(__name__)
 
-EVENTS_API_URL = f'{settings.api_url}/events'
+EVENTS_API_URL = f'{settings.api_url}/events/'
 TIMEOUT = settings.request_timeout
 LOCAL_TZ = datetime.now().astimezone().tzinfo
 
@@ -39,23 +39,23 @@ def index():
                 logger.exception(e)
                 flash(str(e), 'error')
                 return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-            response = requests.post(EVENTS_API_URL, data=event, timeout=TIMEOUT)
+            response = httpx.post(EVENTS_API_URL, content=event)
             handle_if_not_response_code(201, response, logger)
 
         elif method == 'delete':
-            id = data.get('id')
-            response = requests.delete(f'{EVENTS_API_URL}/{id}', timeout=TIMEOUT)
+            url = url_builder(EVENTS_API_URL, str(data.get('id')))
+            response = httpx.delete(url)
             handle_if_not_response_code(204, response, logger)
 
         elif method == 'attend':
-            id = data.get('id')
-            response = requests.post(f'{EVENTS_API_URL}/{id}/attend', timeout=TIMEOUT)
+            url = url_builder(EVENTS_API_URL, str(data.get('id')), 'attend')
+            response = httpx.post(url)
             handle_if_not_response_code(200, response, logger)
 
         else:
             return Response(f'Method {method} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    response = requests.get(EVENTS_API_URL, timeout=TIMEOUT)
+    response = httpx.get(EVENTS_API_URL)
     handle_if_not_response_code(200, response, logger)
     events = [schemas.Event(**event) for event in response.json()]
     return render_template('events/index.html', events=events)

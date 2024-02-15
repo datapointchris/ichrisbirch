@@ -1,4 +1,4 @@
-import requests
+import httpx
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.config import get_settings
@@ -75,9 +75,9 @@ def crud():
     method = data.pop('method')
     apt = Apartment(**data)
     if method == 'add':
-        requests.post(f'{api_url}/tasks', data=apt, timeout=settings.request_timeout)
+        httpx.post(f'{api_url}/tasks', data=apt)
     elif method == 'update':
-        requests.put(f'{api_url}//tasks', data=apt, timeout=settings.request_timeout)
+        httpx.put(f'{api_url}//tasks', data=apt)
     elif method == 'delete':
-        requests.delete(f'{api_url}//tasks', data=apt, timeout=settings.request_timeout)
+        httpx.delete(f'{api_url}//tasks', data=apt)
     return redirect(url_for('apartments.apartment', name=data.get('name')))

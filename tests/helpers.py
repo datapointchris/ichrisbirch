@@ -1,10 +1,10 @@
 import pathlib
 
+import httpx
 from fastapi import status
-from requests import JSONDecodeError, Response
 
 
-def show_status_and_response(response: Response) -> dict[str, str]:
+def show_status_and_response(response: httpx.Response) -> dict[str, str]:
     """Convert status code to description and return response if any"""
     d = {}
     for attr in dir(status):
@@ -12,7 +12,7 @@ def show_status_and_response(response: Response) -> dict[str, str]:
         d[int(code)] = attr
     try:
         content = response.json()
-    except (JSONDecodeError, TypeError):
+    except (httpx.DecodingError, TypeError):
         content = '<no response content>'
 
     return {d.get(response.status_code, 'UNKNOWN'): content}

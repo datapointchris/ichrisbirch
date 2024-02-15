@@ -3,15 +3,15 @@ from collections import Counter
 from datetime import datetime, timedelta
 from typing import Any
 
+import httpx
 import pendulum
 import pydantic
-import requests
 from fastapi import status
 from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import models, schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.helpers import handle_if_not_response_code
+from ichrisbirch.app.helpers import handle_if_not_response_code, url_builder
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
@@ -25,14 +25,15 @@ blueprint = Blueprint(
 
 logger = logging.getLogger(__name__)
 
-TASKS_API_URL = f'{settings.api_url}/tasks'
+TASKS_API_URL = f'{settings.api_url}/tasks/'
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 TIMEOUT = settings.request_timeout
 
 
 def get_first_and_last_task():
-    first = requests.get(f'{TASKS_API_URL}/completed/', params={'first': True}, timeout=TIMEOUT).json()
-    last = requests.get(f'{TASKS_API_URL}/completed/', params={'last': True}, timeout=TIMEOUT).json()
+    url = url_builder(TASKS_API_URL, 'completed')
+    first = httpx.get(url, params={'first': True}).json()
+    last = httpx.get(url, params={'last': True}).json()
     first_task = schemas.TaskCompleted(**first)
     last_task = schemas.TaskCompleted(**last)
     return first_task, last_task
@@ -55,9 +56,7 @@ def calculate_average_completion_time(tasks: list[models.Task]) -> str | None:
 
 def create_completed_task_chart_data(tasks: list[models.Task]) -> tuple[list[str], list[int]]:
     """Create chart labels and values from completed tasks"""
-    # TODO: Remove this conversion and convert back to schemas.TaskCompleted after pydantic 2.0 release
-    # So that we can use the pydantic model's properties
-    schema_tasks = [schemas.TaskCompleted.from_orm(task) for task in tasks]
+    schema_tasks = [schemas.TaskCompleted.model_validate(task) for task in tasks]
     first = schema_tasks[0]
     last = schema_tasks[-1]
 
@@ -77,12 +76,12 @@ def create_completed_task_chart_data(tasks: list[models.Task]) -> tuple[list[str
 @blueprint.route('/', methods=['GET'])
 def index():
     top_tasks_params = {'completed_filter': 'not_completed', 'limit': 5}
-    top_tasks_response = requests.get(TASKS_API_URL, params=top_tasks_params, timeout=TIMEOUT)
+    top_tasks_response = httpx.get(TASKS_API_URL, params=top_tasks_params)
     handle_if_not_response_code(200, top_tasks_response, logger)
     top_tasks = [schemas.Task(**task) for task in top_tasks_response.json()]
 
     today_filter = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
-    completed_response = requests.get(f'{TASKS_API_URL}/completed/', params=today_filter, timeout=TIMEOUT)
+    completed_response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=today_filter)
     handle_if_not_response_code(200, completed_response, logger)
     completed_today = [schemas.TaskCompleted(**task) for task in completed_response.json()]
     return render_template(
@@ -95,7 +94,7 @@ def all():
     completed_filter = request.form.get('completed_filter') if request.method == 'POST' else None
     logger.debug(f'{completed_filter=}')
 
-    response = requests.get(TASKS_API_URL, params={'completed_filter': completed_filter}, timeout=TIMEOUT)
+    response = httpx.get(TASKS_API_URL, params={'completed_filter': completed_filter})
     handle_if_not_response_code(200, response, logger)
     tasks = [schemas.Task(**task) for task in response.json()]
     return render_template(
@@ -113,8 +112,8 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
-    response = requests.get(
-        f'{TASKS_API_URL}/completed/',
+    response = httpx.get(
+        url_builder(TASKS_API_URL, 'completed'),
         params={'start_date': str(start_date), 'end_date': str(end_date)},
         timeout=TIMEOUT,
     )
@@ -146,7 +145,8 @@ def search():
         data: dict[str, Any] = request.form.to_dict()
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
-        response = requests.get(f'{TASKS_API_URL}/search/{search_terms}', timeout=TIMEOUT)
+        search_url = url_builder(TASKS_API_URL, 'search', search_terms)
+        response = httpx.get(search_url)
         handle_if_not_response_code(200, response, logger)
         tasks = [schemas.Task(**task) for task in response.json()]
     else:
@@ -168,19 +168,20 @@ def crud():
             logger.exception(e)
             flash(str(e), 'error')
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-        response = requests.post(TASKS_API_URL, data=task, timeout=TIMEOUT)
+        response = httpx.post(TASKS_API_URL, content=task)
         handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
 
     elif method == 'complete':
         task_id = data.get('id')
-        response = requests.post(f'{TASKS_API_URL}/complete/{task_id}', timeout=TIMEOUT)
+        url = url_builder(TASKS_API_URL, 'complete', task_id)
+        response = httpx.post(url)
         handle_if_not_response_code(200, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
 
     elif method == 'delete':
-        task_id = data.get('id')
-        response = requests.delete(f'{TASKS_API_URL}/{task_id}', timeout=TIMEOUT)
+        url = url_builder(TASKS_API_URL, data.get('id'))
+        response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
         return redirect(request.referrer or url_for('tasks.all'))
 

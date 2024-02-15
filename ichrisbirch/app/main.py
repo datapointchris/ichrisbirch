@@ -20,16 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 def handle_404_error(e):
-    a_msg = e.description.get('abort_message')
-    e_msg = e.description.get('error_message')
-    template = render_template('404.html', abort_message=a_msg, error_message=e_msg)
+    template = render_template('404.html', error_message=e.description)
     return (template, 404)
 
 
 def handle_500_error(e):
-    a_msg = e.description.get('abort_message')
-    e_msg = e.description.get('error_message')
-    template = render_template('500.html', abort_message=a_msg, error_message=e_msg)
+    template = render_template('500.html', error_message=e.description)
     return (template, 500)
 
 

@@ -1,4 +1,4 @@
-import requests
+import httpx
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.config import get_settings
@@ -69,15 +69,15 @@ def form():
     match method:
         case ['add_box']:
             box = Box(**data)
-            requests.post(f'{api_url}/boxes', data=box, timeout=settings.request_timeout)
+            httpx.post(f'{api_url}/boxes', data=box)
         case ['delete_box']:
             box = Box(**data)
-            requests.delete(f'{api_url}/boxes/{box.id}', timeout=settings.request_timeout)
+            httpx.delete(f'{api_url}/boxes/{box.id}')
         case ['add_item']:
             item = Item(**data)
-            requests.post(f'{api_url}/boxes/items', data=box, timeout=settings.request_timeout)
+            httpx.post(f'{api_url}/boxes/items', data=box)
         case ['delete_item']:
             item = Item(**data)
-            requests.delete(f'{api_url}/boxes/items/{item.id}', timeout=settings.request_timeout)
+            httpx.delete(f'{api_url}/boxes/items/{item.id}')
 
     return redirect(url_for('box_packing.index'))

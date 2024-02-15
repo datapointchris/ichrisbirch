@@ -4,7 +4,7 @@
 import argparse
 import itertools
 
-import requests
+import httpx
 from colorama import Fore
 
 ENVIRONMENTS = {
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         ):
             address = f'{protocol}{host}{endpoint}{port}'
             try:
-                res = requests.get(address, allow_redirects=True)
+                res = httpx.get(address, allow_redirects=True)
                 pings.append((address, str(res.status_code), ''))
             except Exception as e:
                 pings.append((address, 'EXCEPTION', str(e)))

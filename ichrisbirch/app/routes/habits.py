@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 
-import requests
+import httpx
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.app.easy_dates import EasyDate
@@ -102,18 +102,18 @@ def form():
     match method:
         case ['add_habit']:
             habit = Habit(**data)
-            requests.post(f'{api_url}/habits', data=habit, timeout=settings.request_timeout)
+            httpx.post(f'{api_url}/habits', data=habit)
         case ['delete_habit']:
             habit = Habit(**data)
-            requests.delete(f'{api_url}/habits/{habit.id}', timeout=settings.request_timeout)
+            httpx.delete(f'{api_url}/habits/{habit.id}')
         case ['complete_habit']:
             habit = Habit(**data)
-            requests.post(f'{api_url}/habits/completed', data=habit, timeout=settings.request_timeout)
+            httpx.post(f'{api_url}/habits/completed', data=habit)
         case ['add_category']:
             category = Category(**data)
-            requests.post(f'{api_url}/habits/categories', data=category, timeout=settings.request_timeout)
+            httpx.post(f'{api_url}/habits/categories', data=category)
         case ['delete_category']:
             category = Category(**data)
-            requests.delete(f'{api_url}/habits/categories/{category.id}', timeout=settings.request_timeout)
+            httpx.delete(f'{api_url}/habits/categories/{category.id}')
 
     return redirect(url_for('habits.index'))

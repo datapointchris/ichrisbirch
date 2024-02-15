@@ -1,4 +1,4 @@
-import requests
+import httpx
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.config import get_settings
@@ -14,10 +14,10 @@ blueprint = Blueprint('journal', __name__, template_folder='templates/journal', 
 def index(id=None):
     """Journal home endpoint"""
     if id:
-        entry = requests.get(f'{settings.api_url}/journal/{id}/', timeout=settings.request_timeout)
+        entry = httpx.get(f'{settings.api_url}/journal/{id}/')
         return render_template('journal/index.html', entry=entry, entries=None)
     else:
-        entries = requests.get(f'{settings.api_url}/journal', timeout=settings.request_timeout)
+        entries = httpx.get(f'{settings.api_url}/journal')
         return render_template('journal/index.html', entry=None, entries=entries)
 
 
@@ -26,7 +26,7 @@ def entry():
     """Journal entry endpoint"""
     if request.method == 'POST':
         entry = JournalEntry(**request.form)
-        requests.post(f'{settings.api_url}/journal', data=entry, timeout=settings.request_timeout)
+        httpx.post(f'{settings.api_url}/journal', data=entry)
         return redirect(url_for('journal.index'))
 
     return render_template('journal/entry.html')
@@ -36,7 +36,7 @@ def entry():
 def search():
     """Endpoint to search for a journal entry"""
     search_text = request.form.get('search_text')
-    results = requests.get(f'{settings.api_url}/journal/search', data=search_text, timeout=settings.request_timeout)
+    results = httpx.get(f'{settings.api_url}/journal/search', data=search_text)
     return render_template(
         'journal/search.html',
         results=results,
