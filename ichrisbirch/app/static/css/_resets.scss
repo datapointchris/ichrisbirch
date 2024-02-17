@@ -105,14 +105,21 @@ th {
 button {
     padding: 0;
     margin: 0;
-    font-family: inherit;
-    font-size: inherit;
     background: transparent;
     border: 0;
+    font: inherit;
 }
 
 // Reset input styles
 input {
     border: 0;
     outline: none;
+    font: inherit;
+}
+
+// Inherit font for form elements
+
+textarea,
+select {
+    font: inherit;
 }
