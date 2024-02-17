@@ -11,6 +11,7 @@
 - [Security](#security)
 - [Performance Testing](#performance-testing)
 - [Re-structure CSS and Navigation](#re-structure-css-and-navigation)
+  - [Watch these videos](#watch-these-videos)
 - [Build Portfolio Page](#build-portfolio-page)
 - [Basic Main page and Portfolio](#basic-main-page-and-portfolio)
 - [Employers](#employers)
@@ -202,6 +203,11 @@ Is this something I want to do?
 [Your first test — Locust 2.15.1 documentation](https://docs.locust.io/en/stable/quickstart.html)
 
 ## Re-structure CSS and Navigation
+
+### Watch these videos
+
+- [The secret to mastering CSS layouts - YouTube](https://www.youtube.com/watch?v=vHuSz4fRM88)
+-
 
 - [ ] CSS to inherit from main
   - [ ] Both the classes and site-wide variables
