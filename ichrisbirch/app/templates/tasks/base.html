@@ -12,27 +12,25 @@
 {% endblock %}
 
 {% block app_navigation %}
-<div id="tasks-navigation" class="navigation secondary">
-    <span class="navigation-tab">
-        <a href="{{ url_for('tasks.index') }}">Priority Tasks</a></span>
-    <span class="navigation-tab">
-        <a href="{{ url_for('tasks.all') }}">All Tasks</a></span>
-    <span class="navigation-tab">
-        <a href="{{ url_for('tasks.completed') }}">Completed Tasks</a></span>
-    <span class="navigation-tab">
-        <form method="POST" action="{{ url_for('tasks.search') }}">
-            <input type="text" size="20" class="textbox box-3d" name="terms" id="terms">
-            <input type="hidden" id="method" name="method" value="search">
-            <input type="submit" class="button box-3d" value="Search">
-        </form>
-    </span>
-</div>
+<nav>
+  <ul class="navigation secondary">
+    <li class="navigation-tab"><a href="{{ url_for('tasks.index') }}">Priority Tasks</a></li>
+    <li class="navigation-tab"><a href="{{ url_for('tasks.all') }}">All Tasks</a></li>
+    <li class="navigation-tab"><a href="{{ url_for('tasks.completed') }}">Completed Tasks</a></li>
+    <li class="navigation-tab">
+      <form method="POST" action="{{ url_for('tasks.search') }}">
+        <input type="text" size="20" class="textbox box-3d" name="terms" id="terms">
+        <input type="hidden" id="method" name="method" value="search">
+        <input type="submit" class="button box-3d" value="Search">
+      </form>
+    </li>
+</nav>
 {% endblock %}
 
 {% block content %}{% endblock %}
 
 {% block footer %}
 <div id="footer">
-    {% include 'tasks/addtask.jinja.html' %}
+  {% include 'tasks/addtask.jinja.html' %}
 </div>
 {% endblock %}

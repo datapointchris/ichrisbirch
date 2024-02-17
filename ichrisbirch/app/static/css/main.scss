@@ -1,9 +1,9 @@
-@import 'resets';
-@import 'variables';
+@import "resets";
+@import "variables";
 
 @font-face {
     font-family: Menlo;
-    src: url('../Menlo.ttc');
+    src: url("../Menlo.ttc");
 }
 
 body {
@@ -11,14 +11,6 @@ body {
     font-family: Menlo;
     color: $all-text-color;
 }
-
-// #nav {
-//     position: relative;
-// }
-
-// #content {
-//     position: relative;
-// }
 
 .navigation {
     display: inline-flex;
@@ -39,8 +31,12 @@ body {
     font-weight: bold;
     text-decoration: none;
     color: $all-text-color;
-    box-shadow: 0 5px 10px #646464, 0 -2px 2px #666, rgba(0, 0, 0, 0.07) 0px 4px 4px,
-        inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
+    box-shadow:
+        0 5px 10px #646464,
+        0 -2px 2px #666,
+        rgba(0, 0, 0, 0.07) 0px 4px 4px,
+        inset 0 -10px 10px rgba(0, 0, 0, 0.5),
+        rgba(0, 0, 0, 0.07) 0px 16px 16px;
 
     .navigation-tab {
         display: inline-block;
@@ -78,7 +74,10 @@ body {
     margin: 10px;
     padding: 10px 25px;
     border-radius: $button-box-border-radius;
-    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $light-shadow, inset -5px -5px 4px -2px $light-shadow;
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px $light-shadow,
+        inset -5px -5px 4px -2px $light-shadow;
     font-size: 1.2rem;
     line-height: 2rem;
 }

@@ -4,43 +4,43 @@
 
 {% block content %}
 <div id="content-layout-grid">
-    <div id="left-column" class="task-list">
-        <div id="tasks">
-            {% for task in tasks %}
-            <div class="task">
-                <h2>{{ task.name }}</h2>
-                {% if task.notes %}
-                <strong>Notes: </strong>{{ task.notes }}<br>
-                {% endif %}
-                Priority: {{ task.priority }}<br>
-                Category: {{ task.category }}<br>
-                Add Date: {{ task.add_date }}<br>
-                {% if task.complete_date %}
-                Complete Date: {{ task.complete_date }}<br>
-                {% endif %}
-                <form method="POST" action="{{ url_for('tasks.search') }}">
-                    <input type="hidden" name="id" id="id" value="{{ task.id }}">
-                    <input type="hidden" name="name" id="name" value="{{ task.name }}">
-                    <input type="hidden" name="method" id="method" value="delete">
-                    <input type="submit" class="button box-3d" value="Delete Task">
-                </form>
-                {% if not task.complete_date %}
-                <form method="POST" action="{{ url_for('tasks.search') }}">
-                    <input type="hidden" name="id" id="id" value="{{ task.id }}">
-                    <input type="hidden" name="name" id="name" value="{{ task.name }}">
-                    <input type="hidden" name="method" id="method" value="complete">
-                    <input type="submit" class="button box-3d" value="Complete Task">
-                </form>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="task">
-                <h2>No Tasks</h2>
-            </div>
-            {% endfor %}
-        </div>
+  <div id="left-column" class="task-list">
+    <div id="tasks">
+      {% for task in tasks %}
+      <div class="task">
+        <h2>{{ task.name }}</h2>
+        {% if task.notes %}
+        <strong>Notes: </strong>{{ task.notes }}<br>
+        {% endif %}
+        Priority: {{ task.priority }}<br>
+        Category: {{ task.category }}<br>
+        Add Date: {{ task.add_date }}<br>
+        {% if task.complete_date %}
+        Complete Date: {{ task.complete_date }}<br>
+        {% endif %}
+        <form method="POST" action="{{ url_for('tasks.search') }}">
+          <input type="hidden" name="id" id="id" value="{{ task.id }}">
+          <input type="hidden" name="name" id="name" value="{{ task.name }}">
+          <input type="hidden" name="method" id="method" value="delete">
+          <input type="submit" class="button box-3d" value="Delete Task">
+        </form>
+        {% if not task.complete_date %}
+        <form method="POST" action="{{ url_for('tasks.search') }}">
+          <input type="hidden" name="id" id="id" value="{{ task.id }}">
+          <input type="hidden" name="name" id="name" value="{{ task.name }}">
+          <input type="hidden" name="method" id="method" value="complete">
+          <input type="submit" class="button box-3d" value="Complete Task">
+        </form>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="task">
+        <h2>No Tasks</h2>
+      </div>
+      {% endfor %}
     </div>
-    <div id="right-column" class="task-list">
-    </div>
+  </div>
+  <div id="right-column" class="task-list">
+  </div>
 </div>
 {% endblock %}

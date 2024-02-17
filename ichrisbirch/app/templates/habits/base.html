@@ -5,14 +5,13 @@
 {% endblock %}
 
 {% block app_navigation %}
-<div id="habits-navigation" class="navigation secondary">
-    <span class="navigation-tab">
-        <a href="{{ url_for('habits.index') }}">Daily Habits</a></span>
-    <span class="navigation-tab">
-        <a href="{{ url_for('habits.completed') }}">Completed Habits</a></span>
-    <span class="navigation-tab">
-        <a href="{{ url_for('habits.manage') }}">Manage Habits</a></span>
-</div>
+<nav>
+  <ul class="navigation secondary">
+    <li class="navigation-tab"><a href="{{ url_for('habits.index') }}">Daily Habits</a></li>
+    <li class="navigation-tab"><a href="{{ url_for('habits.completed') }}">Completed Habits</a></li>
+    <li class="navigation-tab"><a href="{{ url_for('habits.manage') }}">Manage Habits</a></li>
+  </ul>
+</nav>
 {% endblock %}
 
 {% block content %}{% endblock %}

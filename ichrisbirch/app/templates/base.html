@@ -2,58 +2,48 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% block meta %}{% endblock %}
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% block meta %}{% endblock %}
 
-    <title>{% block title %}{% endblock %}</title>
+  <title>{% block title %}{% endblock %}</title>
 
-    <script type="text/javascript"
-        src="{{ url_for('static', filename='js/messages.js') }}"></script>
-    {% block scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
+  {% block scripts %}{% endblock %}
 
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    {% block stylesheet %}{% endblock %}
-
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block stylesheet %}{% endblock %}
 </head>
 
 <body>
-    <section id="nav">
-        <div id="global-navigation" class="navigation">
-            <span class="navigation-tab">
-                <a href="{{ url_for('home.index') }}">Home</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('countdowns.index') }}">Countdowns</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('events.index') }}">Events</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('tasks.index') }}">Tasks</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('autotasks.index') }}">AutoTasks</a></span>
-            <!-- <span class="navigation-tab">
-                <a href="{{ url_for('portfolio.index') }}">Portfolio</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('box_packing.index') }}">Box Packing</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('journal.index') }}">Journal</a></span>
-            <span class="navigation-tab">
-                <a href="{{ url_for('habits.index') }}">Habits</a></span> -->
-        </div>
-        {% block app_navigation %}{% endblock %}
-    </section>
-    <section id="content">
-        <header>
-            {% block header %}{% endblock %}
-        </header>
+  <nav>
+    <ul class="navigation">
+      <li class="navigation-tab"><a href="{{ url_for('home.index') }}">Home</a></li>
+      <li class="navigation-tab"><a href="{{ url_for('countdowns.index') }}">Countdowns</a></li>
+      <li class="navigation-tab"><a href="{{ url_for('events.index') }}">Events</a></li>
+      <li class="navigation-tab"><a href="{{ url_for('tasks.index') }}">Tasks</a></li>
+      <li class="navigation-tab"><a href="{{ url_for('autotasks.index') }}">AutoTasks</a></li>
+      <!-- <li class="navigation-tab"><a href="{{ url_for('portfolio.index') }}">Portfolio</a></li>
+           <li class="navigation-tab"><a href="{{ url_for('box_packing.index') }}">Box Packing</a></li>
+           <li class="navigation-tab"><a href="{{ url_for('journal.index') }}">Journal</a></li>
+           <li class="navigation-tab"><a href="{{ url_for('habits.index') }}">Habits</a></li> -->
+    </ul>
+    {% block app_navigation %}{% endblock %}
+  </nav>
 
-        {% include 'messages.jinja.html' %}
+  <section id="content">
+    <header>
+      {% block header %}{% endblock %}
+    </header>
 
-        {% block content %}{% endblock %}
+    {% include 'messages.jinja.html' %}
 
-        {% block footer %}{% endblock %}
-    </section>
+    {% block content %}{% endblock %}
+
+    {% block footer %}{% endblock %}
+  </section>
 </body>
 
 </html>

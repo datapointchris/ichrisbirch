@@ -5,17 +5,13 @@
 {% endblock %}
 
 {% block app_navigation %}
-<div id="box-packing-navigation" class="navigation secondary">
-        <span class="navigation-tab">
-                <a href="{{ url_for('box_packing.index') }}">Pack Boxes</a>
-        </span>
-        <span class="navigation-tab">
-                <a href="{{ url_for('box_packing.search') }}">Search for Items</a>
-        </span>
-        <span class="navigation-tab">
-                <a href="{{ url_for('box_packing.all') }}">All Boxes</a>
-        </span>
-</div>
+<nav>
+  <ul class="navigation secondary">
+    <li class="navigation-tab"><a href="{{ url_for('box_packing.index') }}">Pack Boxes</a></li>
+    <li class="navigation-tab"><a href="{{ url_for('box_packing.search') }}">Search for Items</a></li>
+    <li class="navigation-tab"><a href="{{ url_for('box_packing.all') }}">All Boxes</a></li>
+  </ul>
+</nav>
 {% endblock %}
 
 {% block content %}{% endblock %}

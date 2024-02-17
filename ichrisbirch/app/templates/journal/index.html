@@ -5,19 +5,19 @@
 {% block content %}
 {% if entry %}
 <div class="entry">
-    {{ entry.title }}
-    {{ entry.date }}
-    {{ entry.feeling }}
-    {{ entry.content }}
+  {{ entry.title }}
+  {{ entry.date }}
+  {{ entry.feeling }}
+  {{ entry.content }}
 </div>
 {% else %}
 {% for entry in entries %}
 <div class="entry-short">
-    {{ entry.title }}
-    {{ entry.date }}
-    {{ entry.feeling }}
-    Truncate the content here:
-    {{ entry.content }}
+  {{ entry.title }}
+  {{ entry.date }}
+  {{ entry.feeling }}
+  Truncate the content here:
+  {{ entry.content }}
 </div>
 {% endif %}
 {% endblock %}
