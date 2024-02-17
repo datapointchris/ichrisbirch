@@ -17,7 +17,7 @@ blueprint = Blueprint('events', __name__, template_folder='templates/events', st
 logger = logging.getLogger(__name__)
 
 EVENTS_API_URL = f'{settings.api_url}/events/'
-TIMEOUT = settings.request_timeout
+
 LOCAL_TZ = datetime.now().astimezone().tzinfo
 
 

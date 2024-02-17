@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 AUTOTASKS_API_URL = f'{settings.api_url}/autotasks/'
 TASK_FREQUENCIES = [t.value for t in TaskFrequency]
 TASK_CATEGORIES = [t.value for t in TaskCategory]
-TIMEOUT = settings.request_timeout
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

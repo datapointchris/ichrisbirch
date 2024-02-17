@@ -16,7 +16,6 @@ blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdo
 logger = logging.getLogger(__name__)
 
 COUNTDOWNS_API_URL = f'{settings.api_url}/countdowns/'
-TIMEOUT = settings.request_timeout
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

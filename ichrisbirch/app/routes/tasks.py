@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 TASKS_API_URL = f'{settings.api_url}/tasks/'
 TASK_CATEGORIES = [t.value for t in TaskCategory]
-TIMEOUT = settings.request_timeout
 
 
 def get_first_and_last_task():
@@ -113,9 +112,7 @@ def completed():
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
     response = httpx.get(
-        url_builder(TASKS_API_URL, 'completed'),
-        params={'start_date': str(start_date), 'end_date': str(end_date)},
-        timeout=TIMEOUT,
+        url_builder(TASKS_API_URL, 'completed'), params={'start_date': str(start_date), 'end_date': str(end_date)}
     )
     handle_if_not_response_code(200, response, logger)
     completed_tasks = [models.Task(**schemas.TaskCompleted(**task).model_dump()) for task in response.json()]
