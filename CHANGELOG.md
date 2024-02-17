@@ -233,3 +233,10 @@ Pre-commit Possibilities:
 
 - [X] `from http import HTTPStatus`
   - [X] fastapi `status` is much better, more descriptive and returns a constant that the IDE can see.
+
+- [X] Replace requests with httpx
+
+## CSS files
+
+- [X] Need to have reset
+- [X] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)

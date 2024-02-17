@@ -29,13 +29,13 @@
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
         <input type="hidden" name="method" value="attend">
-        <button name="attend" id="attend" class="button box-3d" value="{{ event.name }} attend">Attend Event</button>
+        <button name="attend" class="button box-3d" value="{{ event.id }}">Attend Event</button>
       </form>
       {% endif %}
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
         <input type="hidden" name="method" value="delete">
-        <button name="delete" id="delete" class="button box-3d" value="{{ event.name }} delete">Delete Event</button>
+        <button name="delete" class="button box-3d" value="{{ event.id }}">Delete Event</button>
       </form>
     </li>
   </ul>
@@ -63,13 +63,13 @@
       <input type="number" id="cost" name="cost" class="textbox box-3d">
       <br><br>
       <label for="attending">Attending:</label>
-      <input type="checkbox" id="attending" name="attending" class="textbox box-3d" value="1">
-      <input type="hidden" id="attending" name="attending" value="0">
+      <input type="checkbox" name="attending" id="attending" class="textbox box-3d" value="1">
+      <input type="hidden" name="attending" value="0">
       <br><br>
       <label for="notes">Notes:</label><br>
       <textarea rows="10" cols="80" id="notes" name="notes" class="textbox box-3d"></textarea>
       <br><br>
-      <input type="hidden" id="method" name="method" value="add">
+      <input type="hidden" name="method" value="add">
       <button name="add" id="add" class="button box-3d" value="Add Event">Add Event</button>
     </form>
   </div>

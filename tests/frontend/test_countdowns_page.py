@@ -21,9 +21,7 @@ def test_countdowns_index(homepage, page: Page):
 
 def test_create_countdown(homepage, page: Page):
     page.get_by_label('name').fill('Test Countdown')
-    print('Filling date')
     page.get_by_label('due date').fill('2050-01-01')
-    print('After date')
     page.get_by_label('notes').fill('Test Notes')
     page.get_by_role('button', name='add').click()
 

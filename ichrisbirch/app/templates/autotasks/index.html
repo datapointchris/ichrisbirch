@@ -18,9 +18,9 @@
           <strong>Last Run Date: </strong><br>
           <strong>Run Count: </strong><br><br>
           <form method="POST">
-            <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
-            <input type="hidden" name="name" id="name" value="{{ autotask.name }}">
-            <input type="hidden" name="method" id="method" value="run">
+            <input type="hidden" name="id" value="{{ autotask.id }}">
+            <input type="hidden" name="name" value="{{ autotask.name }}">
+            <input type="hidden" name="method" value="run">
             <input type="submit" class="button box-3d" value="Add Task Now">
           </form>
         </div>
@@ -33,9 +33,9 @@
           {{ autotask.last_run_date }}<br>
           {{ autotask.run_count }}<br><br>
           <form method="POST">
-            <input type="hidden" name="id" id="id" value="{{ autotask.id }}">
-            <input type="hidden" name="name" id="name" value="{{ autotask.name }}">
-            <input type="hidden" name="method" id="method" value="delete">
+            <input type="hidden" name="id" value="{{ autotask.id }}">
+            <input type="hidden" name="name" value="{{ autotask.name }}">
+            <input type="hidden" name="method" value="delete">
             <input type="submit" class="button box-3d" value="Delete AutoTask">
           </form>
         </div>
@@ -77,7 +77,7 @@
         {% endfor %}
       </select><br><br>
 
-      <input type="hidden" id="method" name="method" value="add">
+      <input type="hidden" name="method" value="add">
       <input type="submit" class="button box-3d" value="Add New Task">
     </form>
   </div>

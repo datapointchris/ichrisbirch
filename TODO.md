@@ -1,11 +1,10 @@
 # TODO
 
 - [PRIORITY PROJECTS](#priority-projects)
+- [User Login](#user-login)
 - [Random](#random)
-- [CSS files](#css-files)
 - [Tasks](#tasks)
 - [Infrastructure Management](#infrastructure-management)
-- [User Login](#user-login)
 - [WTForms](#wtforms)
 - [Testing](#testing)
 - [Logging](#logging)
@@ -43,49 +42,6 @@
 
 ## PRIORITY PROJECTS
 
-- [ ] Replace requests with httpx
-
-## Random
-
-- [ ] mypy - `--check-untyped-defs`
-  - [ ] Add this option when ready to deal with other routes
-- [ ] Make a startup script
-  - [ ] So this can be started in Docker each time for testing
-  - [ ] So it can be started on a fresh Postgres instance
-- [ ] STATS
-  - [ ] Move stats out of ichrisbirch
-    - 1. Move them to ichrisbirch S3 bucket
-    - 2. Create script to run them, similar to postgres backup script
-    - 3. Run that script automatically with the backup on schedule
-- [ ] Make sure fastapi is raising exceptions and not returning exceptions
-- [ ] `etc/environment` in prod server for ENVIRONMENT variable
-- [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
-  - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
-- [ ] [GitHub - mkdocstrings/mkdocstrings: Automatic documentation from sources, for MkDocs.](https://github.com/mkdocstrings/mkdocstrings)
-- [ ] [GitHub - zhanymkanov/fastapi-best-practices: FastAPI Best Practices and Conventions we used at our startup](https://github.com/zhanymkanov/fastapi-best-practices)
-- [ ] [GitHub - Aeternalis-Ingenium/FastAPI-Backend-Template: A backend project template with FastAPI, PostgreSQL with asynchronous SQLAlchemy 2.0, Alembic for asynchronous database migration, and Docker.](https://github.com/Aeternalis-Ingenium/FastAPI-Backend-Template)
-- [ ] [GitHub - igorbenav/FastAPI-boilerplate: An extendable async API using FastAPI, Pydantic V2, SQLAlchemy 2.0, PostgreSQL and Redis.](https://github.com/igorbenav/FastAPI-boilerplate)
-
-## CSS files
-
-- [ ] Need to have reset
-- [ ] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)
-- [ ] [GitHub - krshoss/gardevoir: The Modern CSS Reset 🚀 (Formerly Reseter.css)](https://github.com/krshoss/gardevoir)
-
-## Tasks
-
-- [ ] Alexa skill, use the to-do API to add a task
-  - [ ] <https://github.com/johnwheeler/flask-ask>
-- [ ] Make an Alfred shortcut for todo
-  - [ ] Using API most likely
-- [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
-  - [ ] This needs to be done in the form itself, before it gets sent
-  - [ ] Either wtforms or some frontend framework with validation
-
-## Infrastructure Management
-
-- [ ] [How to Manage OpenStack Private Clouds Episode 1](https://www.patreon.com/posts/how-to-manage-1-78070880)
-
 ## User Login
 
 - [Flask Authentication By Example](https://developer.auth0.com/resources/guides/web-app/flask/basic-authentication)
@@ -116,6 +72,41 @@
 
 - FastAPI Signup
 - [python-api-examples/api.py at main · ChristopherGS/python-api-examples · GitHub](https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py)
+
+## Random
+
+- [ ] mypy - `--check-untyped-defs`
+  - [ ] Add this option when ready to deal with other routes
+- [ ] Make a startup script
+  - [ ] So this can be started in Docker each time for testing
+  - [ ] So it can be started on a fresh Postgres instance
+- [ ] STATS
+  - [ ] Move stats out of ichrisbirch
+    - 1. Move them to ichrisbirch S3 bucket
+    - 2. Create script to run them, similar to postgres backup script
+    - 3. Run that script automatically with the backup on schedule
+- [ ] Make sure fastapi is raising exceptions and not returning exceptions
+- [ ] `etc/environment` in prod server for ENVIRONMENT variable
+- [ ] Create `new-server` script that installs all the good stuff on new ec2 that can be run upon creation
+  - [ ] Optionally, lock in an image with the stuff necessary to run server and use that image
+- [ ] [GitHub - mkdocstrings/mkdocstrings: Automatic documentation from sources, for MkDocs.](https://github.com/mkdocstrings/mkdocstrings)
+- [ ] [GitHub - zhanymkanov/fastapi-best-practices: FastAPI Best Practices and Conventions we used at our startup](https://github.com/zhanymkanov/fastapi-best-practices)
+- [ ] [GitHub - Aeternalis-Ingenium/FastAPI-Backend-Template: A backend project template with FastAPI, PostgreSQL with asynchronous SQLAlchemy 2.0, Alembic for asynchronous database migration, and Docker.](https://github.com/Aeternalis-Ingenium/FastAPI-Backend-Template)
+- [ ] [GitHub - igorbenav/FastAPI-boilerplate: An extendable async API using FastAPI, Pydantic V2, SQLAlchemy 2.0, PostgreSQL and Redis.](https://github.com/igorbenav/FastAPI-boilerplate)
+
+## Tasks
+
+- [ ] Alexa skill, use the to-do API to add a task
+  - [ ] <https://github.com/johnwheeler/flask-ask>
+- [ ] Make an Alfred shortcut for todo
+  - [ ] Using API most likely
+- [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
+  - [ ] This needs to be done in the form itself, before it gets sent
+  - [ ] Either wtforms or some frontend framework with validation
+
+## Infrastructure Management
+
+- [ ] [How to Manage OpenStack Private Clouds Episode 1](https://www.patreon.com/posts/how-to-manage-1-78070880)
 
 ## WTForms
 

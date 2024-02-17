@@ -16,9 +16,9 @@
       Category: {{ task.category }}<br>
       Add Date: {{ task.add_date }}
       <form method="POST" action="{{ url_for('tasks.crud') }}">
-        <input type="hidden" name="id" id="id" value="{{ task.id }}">
-        <input type="hidden" name="name" id="name" value="{{ task.name }}">
-        <input type="hidden" name="method" id="method" value="complete">
+        <input type="hidden" name="id" value="{{ task.id }}">
+        <input type="hidden" name="name" value="{{ task.name }}">
+        <input type="hidden" name="method" value="complete">
         <input type="submit" class="button box-3d" value="Complete Task">
       </form>
     </div>
