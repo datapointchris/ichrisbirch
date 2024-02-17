@@ -18,10 +18,9 @@
     {{ countdown.notes }}
     <br><br>
     <form method="POST">
-      <input type="hidden" name="id" id="id" value="{{ countdown.id }}">
+      <input type="hidden" name="id" value="{{ countdown.id }}">
       <input type="hidden" name="method" value="delete">
-      <button name="delete" id="delete" class="button box-3d" value="{{ countdown.id }} delete">Delete
-        Countdown</button>
+      <button name="delete" class="button box-3d" value="{{ countdown.id }}">Delete Countdown</button>
     </form>
   </div>
   {% else %}
