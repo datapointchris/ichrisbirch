@@ -16,7 +16,7 @@
                         <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}
                         </option>
                         {% endfor %}
-                    </select><br /><br />
+                    </select><br><br>
                 </form>
                 {% if selected_box %}
                 <div id="selected-box">
@@ -74,16 +74,16 @@
                             selected_box.id }}>
                         <label for="name">Name:</label>
                         <input class=big-button type="text" name="name" id="name">
-                        <br /><br />
+                        <br><br>
                         <input type="checkbox" name="essential" id="essential" value=1>
                         <label for="essential">Essential</label>
-                        <br /><br />
+                        <br><br>
                         <input type="checkbox" name="warm" id="warm" value=1>
                         <label for="warm">Warm</label>
-                        <br /><br />
+                        <br><br>
                         <input type="checkbox" name="liquid" id="liquid" value=1>
                         <label for="liquid">Liquid</label>
-                        <br /><br />
+                        <br><br>
                         <input type="hidden" name="method" id="method" value="add_item">
                         <input class="big-button" type="submit" value="Add Item">
                     </form>
@@ -103,7 +103,7 @@
                             {% for item in box_items %}
                             <option value={{ item.id }}>{{ item.name }}</option>
                             {% endfor %}
-                        </select><br /><br />
+                        </select><br><br>
                         <input type="hidden" name="method" id="method"
                             value="delete_item">
                         <input class="big-button" type="submit" value="Delete Item">
@@ -115,7 +115,7 @@
                         <h3>Add a New Box</h3>
                         <label for="name">Name:</label>
                         <input class=big-button type="text" name="name" id="name">
-                        <br /><br />
+                        <br><br>
                         <label for="size">Size</label>
                         <select class='big-button' name="size" id="size">
                             <option value='xsmall'>xsmall</option>
@@ -126,16 +126,16 @@
                             <option value='bag'>bag</option>
                             <option value='other'>other</option>
                         </select>
-                        <br /><br />
+                        <br><br>
                         <input type="checkbox" name="essential" id="essential" value=1>
                         <label for="essential">Essential</label>
-                        <br /><br />
+                        <br><br>
                         <input type="checkbox" name="warm" id="warm" value=1>
                         <label for="warm">Warm</label>
-                        <br /><br />
+                        <br><br>
                         <input type="checkbox" name="liquid" id="liquid" value=1>
                         <label for="liquid">Liquid</label>
-                        <br /><br />
+                        <br><br>
                         <input type="hidden" name="method" id="method" value="add_box">
                         <input class="big-button" type="submit" value="Add Box">
                     </form>

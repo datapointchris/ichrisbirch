@@ -19,7 +19,7 @@
                     value="{{ address }}">
                 <input type="text" class="manage-box" size="90" name="url"
                     value="{{ url }}">
-                <br /><br /><br />
+                <br><br><br>
                 <div id="apt-features">
                     {% for feature in features %}
                     <div class="feature-box">
@@ -49,7 +49,7 @@
                 <input class="manage-box" type="submit" value="Update Apartment">
             </form>
         </div>
-        <br /><br /><br /><br /><br /><br />
+        <br><br><br><br><br><br>
         <div class="feature-list">
             <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
                 <input type="hidden" id="id" name="id" value="{{ aptid }}">

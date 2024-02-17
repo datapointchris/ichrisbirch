@@ -9,8 +9,8 @@
             {% for habit in completed %}
             <div class="habit completed">
                 <h1>{{ habit.name }}</h1>
-                Category {{ habit.category }}<br />
-                Complete Date: {{ habit.completed_date }}<br />
+                Category {{ habit.category }}<br>
+                Complete Date: {{ habit.completed_date }}<br>
             </div>
             {% endfor %}
         </div>
@@ -36,7 +36,7 @@
                         <label for="radio-{{ filter }}">{{ filter.title() }}</label>
                         {% endfor %}
                     </div>
-                    </br /><br />
+                    </br /><br>
                     <input type="submit" class="button box-3d" value="Filter habits">
             </form>
         </div>
