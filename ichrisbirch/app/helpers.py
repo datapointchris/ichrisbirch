@@ -14,7 +14,6 @@ def url_builder(base_url: str, *parts) -> str:
             stripped_parts.append(part.strip('/'))
         elif isinstance(part, int):
             stripped_parts.append(str(part))
-        print(f'part: {part}, stripped_parts: {stripped_parts}')
     return '/'.join([base_url.rstrip('/')] + stripped_parts) + '/'
 
 
