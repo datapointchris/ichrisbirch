@@ -101,7 +101,7 @@ repos:
         entry: python tests/validate_html.py
         types: [html]
         pass_filenames: false
-        always_run: true
+        always_run: false
 
   - repo: local
     hooks:
@@ -112,4 +112,4 @@ repos:
         entry: zsh -c 'export ENVIRONMENT=testing && pytest --cov=ichrisbirch'
         types: [python]
         pass_filenames: false
-        always_run: true
+        always_run: false
