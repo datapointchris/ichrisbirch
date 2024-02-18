@@ -27,7 +27,8 @@ def index():
     if request.method == 'POST':
         data: dict[str, Any] = request.form.to_dict()
         method = data.pop('method')
-        logger.debug(f'{request.referrer=} | {method=} | {data=}')
+        logger.debug(f'{request.referrer=} {method=}')
+        logger.debug(f'{data=}')
 
         if method == 'add':
             try:
