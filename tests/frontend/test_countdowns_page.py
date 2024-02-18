@@ -2,17 +2,20 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from ichrisbirch.config import get_settings
+from tests.testing_data.countdowns import BASE_DATA
 
 settings = get_settings()
 
 
 @pytest.fixture
 def homepage(page: Page):
-    timeout = 2_000
-    page.set_default_navigation_timeout(timeout)
-    page.set_default_timeout(timeout)
+    page.set_default_navigation_timeout(settings.playwright.timeout)
+    page.set_default_timeout(settings.playwright.timeout)
     page.goto(f'{settings.flask.host}:{settings.flask.port}/countdowns/')
     yield
+
+
+fake = {'name': 'Test Countdown', 'due date': '2050-01-01', 'notes': 'Test Notes'}
 
 
 def test_countdowns_index(homepage, page: Page):
@@ -20,11 +23,11 @@ def test_countdowns_index(homepage, page: Page):
 
 
 def test_create_countdown(homepage, page: Page):
-    page.get_by_label('name').fill('Test Countdown')
-    page.get_by_label('due date').fill('2050-01-01')
-    page.get_by_label('notes').fill('Test Notes')
-    page.get_by_role('button', name='add').click()
+    page.get_by_label('name').fill(fake['name'])
+    page.get_by_label('due date').fill(fake['due date'])
+    page.get_by_label('notes').fill(fake['notes'])
+    page.query_selector('css=button[value="Add Countdown"]').click()
 
 
 def test_delete_countdown(homepage, page: Page):
-    page.get_by_text('Countdown 1 delete').click()
+    page.query_selector(f'css=button[value="{BASE_DATA[0].name} delete"]').click()
