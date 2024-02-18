@@ -1,24 +1,5 @@
 fail_fast: false
 repos:
-  # - repo: local
-  #   hooks:
-  #     - id: check-venv
-  #       name: Activate virtual environment
-  #       stages: [commit]
-  #       language: system
-  #       entry: zsh -c 'source "$(git rev-parse --show-toplevel)/.venv/bin/activate"'
-  #       pass_filenames: false
-  #       always_run: true
-  #
-  # - repo: local
-  #   hooks:
-  #     - id: set-dev-env
-  #       name: Set ENVIRONMENT variable to development
-  #       stages: [commit]
-  #       language: system
-  #       entry: zsh -c 'export ENVIRONMENT=development'
-  #       pass_filenames: false
-  #       always_run: true
 
   - repo: local
     hooks:
@@ -110,6 +91,17 @@ repos:
       - id: mypy
         args: ["--config-file", "pyproject.toml", --install-types, --non-interactive]
         additional_dependencies: ["pydantic"]
+
+  - repo: local
+    hooks:
+      - id: validate-html
+        name: validate html against w3c standards
+        stages: [commit]
+        language: system
+        entry: python tests/validate_html.py
+        types: [html]
+        pass_filenames: false
+        always_run: true
 
   - repo: local
     hooks:
