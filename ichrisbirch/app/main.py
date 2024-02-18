@@ -29,6 +29,11 @@ def handle_500_error(e):
     return (template, 500)
 
 
+def handle_502_error(e):
+    template = render_template('502.html', error_message=e.description)
+    return (template, 502)
+
+
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
     logger.info('Flask App Created')
@@ -42,6 +47,7 @@ def create_app(settings: Settings) -> Flask:
 
         app.register_error_handler(404, handle_404_error)
         app.register_error_handler(500, handle_500_error)
+        app.register_error_handler(502, handle_502_error)
         logger.info('Flask App Error Handlers Registered')
 
         app.register_blueprint(home.blueprint)

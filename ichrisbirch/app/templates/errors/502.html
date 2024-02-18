@@ -1,0 +1,12 @@
+{% extends 'errors/base.html' %}
+
+{% block title %}502 Bad Gateway{% endblock %}
+
+{% block content %}
+<h1>502 Bad Gateway</h1>
+
+{% if error_message %}
+<p>{{ error_message }}</p>
+{% endif %}
+
+{% endblock %}
