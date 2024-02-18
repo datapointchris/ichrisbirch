@@ -63,5 +63,33 @@ def test_url_builder_list_of_mixed_types():
     assert url_builder(BASE, ['four/', 5, '//six/']) == 'http://url.com/autotasks/four/5/six/'
 
 
+def test_url_builder_list_of_mixed_types_empty_string():
+    assert url_builder(BASE, ['four/', 5, '//six/', '']) == 'http://url.com/autotasks/four/5/six/'
+
+
+def test_url_builder_list_of_mixed_types_empty_string_slashes():
+    assert url_builder(BASE, ['four/', 5, '//six/', '', '/']) == 'http://url.com/autotasks/four/5/six/'
+
+
 def test_url_builder_mixed_types_with_slashes():
     assert url_builder(BASE, 4, '//five//', 6, '/seven') == 'http://url.com/autotasks/4/five/6/seven/'
+
+
+def test_url_builder_empty_string():
+    assert url_builder(BASE, '') == 'http://url.com/autotasks/'
+
+
+def test_url_builder_only_slash():
+    assert url_builder(BASE, '/') == 'http://url.com/autotasks/'
+
+
+def test_url_builder_slashes_empty_string():
+    assert url_builder(BASE, '/abc/', '') == 'http://url.com/autotasks/abc/'
+
+
+def test_url_builder_slashes_empty_string_in_middle():
+    assert url_builder(BASE, '/abc/', '', '/def/') == 'http://url.com/autotasks/abc/def/'
+
+
+def test_url_builder_slashes_empty_string_in_middle_many_slashes():
+    assert url_builder(BASE, '/abc//', '', '//def/') == 'http://url.com/autotasks/abc/def/'

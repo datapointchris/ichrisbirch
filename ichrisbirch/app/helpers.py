@@ -9,11 +9,12 @@ def url_builder(base_url: str, *parts) -> str:
     stripped_parts = []
     for part in parts:
         if isinstance(part, (list, tuple, set)):
-            stripped_parts.extend([str(p).strip('/') for p in part])
-        elif isinstance(part, str):
+            stripped_parts.extend([str(p).strip('/') for p in part if str(p).strip('/')])
+        elif isinstance(part, str) and part.strip('/'):
             stripped_parts.append(part.strip('/'))
         elif isinstance(part, int):
             stripped_parts.append(str(part))
+        print(f'part: {part}, stripped_parts: {stripped_parts}')
     return '/'.join([base_url.rstrip('/')] + stripped_parts) + '/'
 
 
