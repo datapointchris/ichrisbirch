@@ -39,7 +39,7 @@ class PostgresSettings:
         return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
-class SQLAlchemySettings:  # TODO: [2023/05/07] - This class is currently hardcoded to Postgres.
+class SQLAlchemySettings:
     def __init__(self):
         self.echo: bool = False
         self.track_modifications: bool = False
@@ -70,6 +70,10 @@ class SQLiteSettings:
         self.db_uri: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
 
 
+class PlaywrightSettings:
+    timeout = 2_000
+
+
 class Settings:
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
         self.name: str = 'ichrisbirch'
@@ -84,6 +88,7 @@ class Settings:
         self.sqlalchemy = SQLAlchemySettings()
         self.mongodb = MongoDBSettings()
         self.sqlite = SQLiteSettings()
+        self.playwright = PlaywrightSettings()
 
     @property
     def api_url(self) -> str:
