@@ -10,10 +10,10 @@
 <div id="countdowns">
   {% for countdown in countdowns %}
   <div class="countdown-box box-3d">
-    <h1>{{ countdown.name }}</h1>
-    <h1 class="daysleft" id="{{ countdown.id }}">
+    <h2>{{ countdown.name }}</h2>
+    <h2 class="daysleft" id="{{ countdown.id }}">
       <script>updateDaysLeft('{{ countdown.due_date }}', '{{ countdown.id }}');</script>
-    </h1>
+    </h2>
     {{ countdown.due_date.strftime("%B %d %Y") }}
     <br>
     {{ countdown.notes }}
