@@ -49,6 +49,8 @@ logging_config = {
         'matplotlib': {'level': 'INFO'},
         'urllib3': {'level': 'INFO'},
         'apscheduler': {'level': 'WARNING'},
+        'httpcore': {'level': 'INFO'},
+        'httpx': {'level': 'INFO'},
     },
 }
 
