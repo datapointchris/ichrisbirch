@@ -18,7 +18,7 @@
     <li class="navigation-tab"><a href="{{ url_for('tasks.all') }}">All Tasks</a></li>
     <li class="navigation-tab"><a href="{{ url_for('tasks.completed') }}">Completed Tasks</a></li>
     <li class="navigation-tab">
-      <form method="POST" action="{{ url_for('tasks.search') }}">
+      <form class="search-form" method="POST" action="{{ url_for('tasks.search') }}">
         <input type="text" size="20" class="textbox box-3d" name="terms" id="terms">
         <input type="hidden" name="method" value="search">
         <input type="submit" class="button box-3d" value="Search">
