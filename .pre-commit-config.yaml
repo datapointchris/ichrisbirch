@@ -98,7 +98,7 @@ repos:
         name: validate html against w3c standards
         stages: [commit]
         language: system
-        entry: python tests/validate_html.py
+        entry: python scripts/validate_html.py
         types: [html]
         pass_filenames: false
         always_run: false
