@@ -71,7 +71,8 @@ class SQLiteSettings:
 
 
 class PlaywrightSettings:
-    timeout = 2_000
+    def __init__(self):
+        self.timeout = 2_000
 
 
 class Settings:
