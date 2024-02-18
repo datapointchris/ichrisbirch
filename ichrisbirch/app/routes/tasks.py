@@ -142,6 +142,9 @@ def search():
         data: dict[str, Any] = request.form.to_dict()
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
+        if not search_terms:
+            flash('No search terms provided', 'error')
+            return render_template('tasks/search.html', tasks=[])
         search_url = url_builder(TASKS_API_URL, 'search', search_terms)
         response = httpx.get(search_url)
         handle_if_not_response_code(200, response, logger)
