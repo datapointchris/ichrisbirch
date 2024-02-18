@@ -43,3 +43,8 @@ def test_create_event(homepage, page: Page):
 
 def test_delete_event(homepage, page: Page):
     page.query_selector(f'css=button[value="{BASE_DATA[0].name} delete"]').click()
+
+
+def test_attend_event(homepage, page: Page):
+    # Event 2, BASE_DATA[1], attending=False
+    page.query_selector(f'css=button[value="{BASE_DATA[1].name} attend"]').click()
