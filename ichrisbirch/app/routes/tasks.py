@@ -9,19 +9,14 @@ import pydantic
 from fastapi import status
 from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
-from ichrisbirch import models, schemas
+from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.helpers import handle_if_not_response_code, url_builder
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
 settings = get_settings()
-blueprint = Blueprint(
-    'tasks',
-    __name__,
-    template_folder='templates/tasks',
-    static_folder='static',
-)
+blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
 
 logger = logging.getLogger(__name__)
 
@@ -38,33 +33,24 @@ def get_first_and_last_task():
     return first_task, last_task
 
 
-def days_to_complete(task: schemas.Task) -> int | None:
-    """Calculate days it took to complete task"""
-    if task.complete_date:
-        return max((task.complete_date - task.add_date).days, 1)
-    return None
-
-
-def calculate_average_completion_time(tasks: list[models.Task]) -> str | None:
+def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
     """Calculate the average completion time of the supplied completed tasks"""
-    total_days_to_complete = sum(task.days_to_complete for task in tasks)
-    average_days = total_days_to_complete / len(tasks)
+    average_days = sum(task.days_to_complete for task in tasks) / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
 
 
-def create_completed_task_chart_data(tasks: list[models.Task]) -> tuple[list[str], list[int]]:
+def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tuple[list[str], list[int]]:
     """Create chart labels and values from completed tasks"""
-    schema_tasks = [schemas.TaskCompleted.model_validate(task) for task in tasks]
-    first = schema_tasks[0]
-    last = schema_tasks[-1]
+    first = tasks[0]
+    last = tasks[-1]
 
     filter_timestamps = [
         first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
     ]
     timestamps_for_filter = {timestamp: 0 for timestamp in filter_timestamps}
     completed_task_timestamps = Counter(
-        [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in schema_tasks]
+        [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in tasks]
     )
     all_dates_with_counts = timestamps_for_filter | completed_task_timestamps
     chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
@@ -111,12 +97,11 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
-    response = httpx.get(
-        url_builder(TASKS_API_URL, 'completed'), params={'start_date': str(start_date), 'end_date': str(end_date)}
-    )
+    params = {'start_date': str(start_date), 'end_date': str(end_date)}
+    response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=params)
     handle_if_not_response_code(200, response, logger)
-    completed_tasks = [models.Task(**schemas.TaskCompleted(**task).model_dump()) for task in response.json()]
-    if completed_tasks:
+
+    if completed_tasks := [schemas.TaskCompleted(**task) for task in response.json()]:
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
@@ -163,12 +148,12 @@ def crud():
 
     if method == 'add':
         try:
-            task = schemas.TaskCreate(**data).model_dump_json()
+            task = schemas.TaskCreate(**data)
         except pydantic.ValidationError as e:
             logger.exception(e)
             flash(str(e), 'error')
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-        response = httpx.post(TASKS_API_URL, content=task)
+        response = httpx.post(TASKS_API_URL, content=task.model_dump_json())
         handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
 

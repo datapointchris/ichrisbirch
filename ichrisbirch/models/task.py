@@ -39,16 +39,3 @@ class Task(Base):
     def __repr__(self):
         return f''''Task(name = {self.name}, priority = {self.priority}, category = {self.category},
             add_date = {self.add_date}, complete_date = {self.complete_date})'''
-
-    # TODO: Move these properties to pydantic schemas when v2 is released and property is supported
-    # This is currently only called by completed tasks. This should NEVER return 0, stupid type hinting!!!
-    @property
-    def days_to_complete(self) -> int:
-        if self.complete_date:
-            return max((self.complete_date - self.add_date).days, 1)
-        return 0
-
-    @property
-    def time_to_complete(self) -> str:
-        weeks, days = divmod(self.days_to_complete, 7)
-        return f'{weeks} weeks, {days} days'

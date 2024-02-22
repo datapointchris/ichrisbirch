@@ -44,7 +44,7 @@ class TaskUpdate(TaskConfig):
 
 
 class TaskCompleted(TaskConfig):
-    """Pydantic model for a task"""
+    """Pydantic model for a completed task"""
 
     id: int
     name: str
@@ -53,3 +53,12 @@ class TaskCompleted(TaskConfig):
     priority: int
     add_date: datetime
     complete_date: datetime
+
+    @property
+    def days_to_complete(self) -> int:
+        return max((self.complete_date - self.add_date).days, 1)
+
+    @property
+    def time_to_complete(self) -> str:
+        weeks, days = divmod(self.days_to_complete, 7)
+        return f'{weeks} weeks, {days} days'
