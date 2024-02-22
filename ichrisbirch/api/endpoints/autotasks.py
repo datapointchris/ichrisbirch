@@ -9,7 +9,7 @@ from ichrisbirch import models, schemas
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix='/autotasks', tags=['autotasks'])
+router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)

@@ -25,12 +25,12 @@ def create_api(settings: Settings) -> FastAPI:
     # Add dependencies later
     # dependencies=[Depends(auth)],
 
-    api.include_router(endpoints.home.router)
-    api.include_router(endpoints.autotasks.router)
-    api.include_router(endpoints.countdowns.router)
-    api.include_router(endpoints.events.router)
-    api.include_router(endpoints.health.router)
-    api.include_router(endpoints.tasks.router)
+    api.include_router(endpoints.home.router, prefix='', tags=['home'], include_in_schema=False)
+    api.include_router(endpoints.autotasks.router, prefix='/autotasks', tags=['autotasks'])
+    api.include_router(endpoints.countdowns.router, prefix='/countdowns', tags=['countdowns'])
+    api.include_router(endpoints.events.router, prefix='/events', tags=['events'])
+    api.include_router(endpoints.health.router, prefix='/health', tags=['health'])
+    api.include_router(endpoints.tasks.router, prefix='/tasks', tags=['tasks'])
 
     logger.info('FastAPI Routers Registered')
     return api
