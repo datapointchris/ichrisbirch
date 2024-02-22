@@ -70,15 +70,20 @@ th {
 button {
   padding: 0;
   margin: 0;
-  font-family: inherit;
-  font-size: inherit;
   background: transparent;
   border: 0;
+  font: inherit;
 }
 
 input {
   border: 0;
   outline: none;
+  font: inherit;
+}
+
+textarea,
+select {
+  font: inherit;
 }
 
 @font-face {
@@ -151,6 +156,11 @@ body {
 
 .success {
   background-color: rgba(0, 92, 0, 0.8);
+  color: white;
+}
+
+.warning {
+  background-color: rgba(92, 92, 0, 0.8);
   color: white;
 }
 

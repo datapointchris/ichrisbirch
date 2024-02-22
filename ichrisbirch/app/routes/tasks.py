@@ -128,7 +128,7 @@ def search():
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
         if not search_terms:
-            flash('No search terms provided', 'error')
+            flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
         search_url = url_builder(TASKS_API_URL, 'search', search_terms)
         response = httpx.get(search_url)

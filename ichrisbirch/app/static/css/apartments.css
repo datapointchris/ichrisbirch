@@ -19,21 +19,7 @@ h2 a {
   z-index: 100;
   margin: 80px 40px;
   width: 95%;
-  box-shadow:
-    1px 3px 1px rgba(16, 16, 16, 0.4),
-    1px 3px 1px rgba(16, 16, 16, 0.4),
-    1px 4px 1px rgba(16, 16, 16, 0.4),
-    1px 4px 1px rgba(16, 16, 16, 0.4),
-    1px 4px 1px rgba(16, 16, 16, 0.4),
-    1px 4px 1px rgba(16, 16, 16, 0.4),
-    1px 4px 3px rgba(16, 16, 16, 0.4),
-    1px 5px 3px rgba(16, 16, 16, 0.4),
-    1px 7px 15px rgba(16, 16, 16, 0.2),
-    11px 8px 15px rgba(16, 16, 16, 0.2),
-    8px 8px 10px rgba(16, 16, 16, 0.2),
-    3px 18px 16px rgba(16, 16, 16, 0.4),
-    5px 20px 22px rgba(16, 16, 16, 0.2),
-    6px 8px 20px #808080;
+  box-shadow: 1px 3px 1px rgba(16, 16, 16, 0.4), 1px 3px 1px rgba(16, 16, 16, 0.4), 1px 4px 1px rgba(16, 16, 16, 0.4), 1px 4px 1px rgba(16, 16, 16, 0.4), 1px 4px 1px rgba(16, 16, 16, 0.4), 1px 4px 1px rgba(16, 16, 16, 0.4), 1px 4px 3px rgba(16, 16, 16, 0.4), 1px 5px 3px rgba(16, 16, 16, 0.4), 1px 7px 15px rgba(16, 16, 16, 0.2), 11px 8px 15px rgba(16, 16, 16, 0.2), 8px 8px 10px rgba(16, 16, 16, 0.2), 3px 18px 16px rgba(16, 16, 16, 0.4), 5px 20px 22px rgba(16, 16, 16, 0.2), 6px 8px 20px #808080;
 }
 #apartment-list > ul {
   list-style-type: none;
@@ -86,28 +72,14 @@ h2 a {
   padding: 25px;
   padding-bottom: 50px;
   text-align: center;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
   vertical-align: top;
   line-height: 4em;
   background-color: rgb(0, 68, 88);
 }
 
-#content {
-  grid-row: 2 / span 3;
+#content-layout {
+  grid-row: 2/span 3;
   grid-column: 2;
   width: 92%;
   padding: 10px;
@@ -115,21 +87,7 @@ h2 a {
   margin-left: 50px;
   margin-bottom: 100px;
   background-color: rgb(0, 68, 88);
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
 }
 
 #apt-features {
@@ -153,41 +111,13 @@ h2 a {
   font-size: 5em;
   font-weight: 700;
   color: #f0f0f0;
-  text-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  text-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
 }
 
 .feature-box {
   padding: 25px;
   text-align: center;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
   vertical-align: top;
   line-height: 4em;
 }
@@ -202,41 +132,13 @@ h2 a {
   background-color: #444;
   border: 0;
   color: #f0f0f0;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
 }
 
 textarea.bigbox {
   text-align: left;
   font-size: large;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
   background-color: #222;
 }
 
@@ -249,31 +151,17 @@ textarea.bigbox {
   text-align: center;
   color: #f0f0f0;
   border: 0;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
   background-color: #444;
   background-color: #222;
 }
 
-input[type="submit"].manage-box {
+input[type=submit].manage-box {
   padding-left: 50px;
   padding-right: 50px;
   border-radius: 10px;
 }
-input[type="submit"].manage-box:hover {
+input[type=submit].manage-box:hover {
   text-decoration: underline;
   transform: scale(120%);
 }
@@ -283,12 +171,7 @@ input[type="submit"].manage-box:hover {
   font-weight: bold;
   font-size: 2.5em;
   letter-spacing: 4px;
-  text-shadow:
-    1px 1px 3px rgba(16, 16, 16, 0.4),
-    2px 2px 5px rgba(16, 16, 16, 0.4),
-    3px 3px 4px rgba(16, 16, 16, 0.2),
-    2px 2px 3px #808080,
-    2px 2px 3px #808080;
+  text-shadow: 1px 1px 3px rgba(16, 16, 16, 0.4), 2px 2px 5px rgba(16, 16, 16, 0.4), 3px 3px 4px rgba(16, 16, 16, 0.2), 2px 2px 3px #808080, 2px 2px 3px #808080;
 }
 
 /* Customize the label (the checkboxes) */
@@ -322,21 +205,7 @@ input[type="submit"].manage-box:hover {
   width: 55px;
   background-color: rgb(0, 68, 88);
   border: 5px solid #444;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
 }
 
 /* On mouse-over, add a grey background color */
@@ -372,47 +241,19 @@ input[type="submit"].manage-box:hover {
   border: solid #f0f0f0;
   border-width: 0 10px 10px 0;
   transform: rotate(55deg);
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
 }
 
 #header {
   grid-row: 1;
-  grid-column: 1 / span 2;
+  grid-column: 1/span 2;
   width: 96%;
   margin: auto;
   margin-top: 20px;
   background: #444;
   font-size: x-large;
   color: #f0f0f0;
-  box-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    1px 4px 1px #808080,
-    1px 5px 1px #808080,
-    1px 6px 1px #808080,
-    1px 7px 1px #808080,
-    1px 8px 1px #808080,
-    1px 9px 1px #808080,
-    1px 10px 1px #808080,
-    1px 18px 4px rgba(16, 16, 16, 0.4),
-    1px 22px 8px rgba(16, 16, 16, 0.2),
-    1px 25px 15px rgba(16, 16, 16, 0.2),
-    1px 30px 20px rgba(16, 16, 16, 0.4);
+  box-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 1px 4px 1px #808080, 1px 5px 1px #808080, 1px 6px 1px #808080, 1px 7px 1px #808080, 1px 8px 1px #808080, 1px 9px 1px #808080, 1px 10px 1px #808080, 1px 18px 4px rgba(16, 16, 16, 0.4), 1px 22px 8px rgba(16, 16, 16, 0.2), 1px 25px 15px rgba(16, 16, 16, 0.2), 1px 30px 20px rgba(16, 16, 16, 0.4);
   z-index: 50;
   line-height: 90px;
   border-left: 1px solid #999999;
@@ -430,15 +271,7 @@ input[type="submit"].manage-box:hover {
   padding: 10px;
   color: #f0f0f0;
   text-decoration: none;
-  text-shadow:
-    1px 1px 1px #808080,
-    1px 2px 1px #808080,
-    1px 3px 1px #808080,
-    2px 3px 1px #808080,
-    1px 9px 4px rgba(16, 16, 16, 0.4),
-    1px 11px 4px rgba(16, 16, 16, 0.2),
-    1px 13px 8px rgba(16, 16, 16, 0.2),
-    1px 15px 10px rgba(16, 16, 16, 0.4);
+  text-shadow: 1px 1px 1px #808080, 1px 2px 1px #808080, 1px 3px 1px #808080, 2px 3px 1px #808080, 1px 9px 4px rgba(16, 16, 16, 0.4), 1px 11px 4px rgba(16, 16, 16, 0.2), 1px 13px 8px rgba(16, 16, 16, 0.2), 1px 15px 10px rgba(16, 16, 16, 0.4);
   border-top: 2px solid #f0f0f0;
   border-left: 2px solid #808080;
   border-right: 4px solid rgba(16, 16, 16, 0.2);
@@ -462,4 +295,4 @@ input[type="submit"].manage-box:hover {
   border-right: 2px solid rgba(16, 16, 16, 0.2);
   border-bottom: 2px solid #808080;
   border-style: inset;
-} /*# sourceMappingURL=apartments.css.map */
+}/*# sourceMappingURL=apartments.css.map */
