@@ -1,8 +1,8 @@
 import pytest
 from fastapi import status
-from ichrisbirch.models.box import BoxSize
-from ichrisbirch import schemas
 
+from ichrisbirch import schemas
+from ichrisbirch.models.box import BoxSize
 from tests.helpers import show_status_and_response
 
 NEW_BOX = schemas.BoxCreate(
@@ -12,6 +12,7 @@ NEW_BOX = schemas.BoxCreate(
     warm=False,
     liquid=False,
 )
+
 
 @pytest.mark.parametrize('box_id', [1, 2, 3])
 def test_read_one_box(test_api, box_id):
@@ -23,6 +24,7 @@ def test_read_many_boxes(test_api):
     response = test_api.get('/box_packing/boxes/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 3
+
 
 def test_create_box(test_api):
     response = test_api.post('/box_packing/boxes/', json=NEW_BOX.model_dump())
