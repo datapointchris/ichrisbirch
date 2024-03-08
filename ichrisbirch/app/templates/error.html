@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ error_title }}{% endblock %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/errors.css') }}">
+{% endblock %}
+
+
+{% block app_navigation %}
+<!-- No navigation needed for single page -->
+{% endblock %}
+
+{% block content %}
+<div id="error-container">
+  <h1>{{ error_title }}</h1>
+
+  {% if error_message %}
+  <p>{{ error_message }}</p>
+  {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/errors.js') }}"></script>
+{% endblock %}
