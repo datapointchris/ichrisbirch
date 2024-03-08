@@ -39,13 +39,12 @@ def index():
                 return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
             response = httpx.post(AUTOTASKS_API_URL, content=autotask.model_dump_json())
             handle_if_not_response_code(201, response, logger)
-            # Run the new autotask
             new_autotask_run_url = url_builder(AUTOTASKS_API_URL, response.json().get('id'), 'run')
             task_response = httpx.get(new_autotask_run_url)
             handle_if_not_response_code(200, task_response, logger)
 
         elif method == 'run':
-            url = url_builder(AUTOTASKS_API_URL, request.form.get('id'), 'run')
+            url = url_builder(AUTOTASKS_API_URL, data.get('id'), 'run')
             response = httpx.get(url)
             handle_if_not_response_code(200, response, logger)
 
