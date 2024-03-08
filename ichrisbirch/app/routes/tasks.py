@@ -130,8 +130,8 @@ def search():
         if not search_terms:
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
-        search_url = url_builder(TASKS_API_URL, 'search', search_terms)
-        response = httpx.get(search_url)
+        search_url = url_builder(TASKS_API_URL, 'search')
+        response = httpx.get(search_url, params={'q': search_terms})
         handle_if_not_response_code(200, response, logger)
         tasks = [schemas.Task(**task) for task in response.json()]
     else:
@@ -143,7 +143,7 @@ def search():
 def crud():
     data: dict[str, Any] = request.form.to_dict()
     method = data.pop('method')
-    logger.debug(f'{request.referrer=} {method=} {data=}')
+    logger.debug(f'{request.referrer=} {method=}')
     logger.debug(f'{data=}')
 
     if method == 'add':
