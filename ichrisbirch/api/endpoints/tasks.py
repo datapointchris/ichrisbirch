@@ -4,7 +4,7 @@ from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 # from ..dependencies import auth
@@ -63,6 +63,20 @@ async def completed(
     return list(session.scalars(query).all())
 
 
+@router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
+async def search(q: str, session: Session = Depends(sqlalchemy_session)):
+    """API method to search for tasks"""
+    logger.debug(f'searching for {q=}')
+    tasks = (
+        select(models.Task)
+        .filter(models.Task.name.ilike('%' + q + '%') | models.Task.notes.ilike('%' + q + '%'))
+        .order_by(models.Task.complete_date.desc(), models.Task.add_date.asc())
+    )
+    results = session.scalars(tasks).all()
+    logger.debug(f'search found {len(results)} results')
+    return results
+
+
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy_session)):
     """API method to create a new task"""
@@ -110,19 +124,3 @@ async def complete(task_id: int, session: Session = Depends(sqlalchemy_session))
         message = f'Task {task_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-
-@router.get('/search/{search_terms}/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def search(search_terms: str, session: Session = Depends(sqlalchemy_session)):
-    """API method to search for tasks"""
-    query = (
-        select(models.Task)
-        .filter(
-            or_(
-                models.Task.name.match(search_terms),
-                models.Task.notes.match(search_terms),
-            )
-        )
-        .order_by(models.Task.complete_date.desc(), models.Task.add_date.asc())
-    )
-    return list(session.scalars(query).all())
