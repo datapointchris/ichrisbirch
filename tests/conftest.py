@@ -15,12 +15,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateSchema
 
-import tests.testing_data as testing_data
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
+from tests import testing_data
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +65,8 @@ def get_test_data() -> list:
     all_test_data = []
     for data in (
         testing_data.autotasks.BASE_DATA,
+        testing_data.boxes.BASE_DATA,
+        testing_data.boxitems.BASE_DATA,
         testing_data.countdowns.BASE_DATA,
         testing_data.events.BASE_DATA,
         testing_data.tasks.BASE_DATA,
@@ -137,7 +139,7 @@ def setup_test_environment():
     # This is easier than mocking everything
     uvicorn_api_command = ' '.join(
         [
-            'poetry run uvicorn ichrisbirch.wsgi:api',
+            'poetry run uvicorn ichrisbirch.wsgi_api:api',
             f'--host {settings.fastapi.host}',
             f'--port {settings.fastapi.port}',
             '--log-level debug',
@@ -151,7 +153,7 @@ def setup_test_environment():
     # Start Gunicorn App (Flask) subprocess in its own thread (for testing the frontend)
     gunicorn_app_command = ' '.join(
         [
-            'poetry run gunicorn ichrisbirch.wsgi:app',
+            'poetry run gunicorn ichrisbirch.wsgi_app:app',
             f'--bind {settings.flask.host}:{settings.flask.port}',
             '--log-level DEBUG',
         ]
