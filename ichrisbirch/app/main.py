@@ -1,4 +1,6 @@
+import http
 import logging
+from functools import partial
 
 from flask import Flask, render_template
 
@@ -19,19 +21,9 @@ from ichrisbirch.config import Settings
 logger = logging.getLogger(__name__)
 
 
-def handle_404_error(e):
-    template = render_template('404.html', error_message=e.description)
-    return (template, 404)
-
-
-def handle_500_error(e):
-    template = render_template('500.html', error_message=e.description)
-    return (template, 500)
-
-
-def handle_502_error(e):
-    template = render_template('502.html', error_message=e.description)
-    return (template, 502)
+def handle_errors(e, error_code):
+    error_title = f'{error_code} {http.HTTPStatus(error_code).phrase}'
+    return render_template('error.html', error_title=error_title, error_message=e.description), error_code
 
 
 def create_app(settings: Settings) -> Flask:
@@ -45,9 +37,11 @@ def create_app(settings: Settings) -> Flask:
             f'DEBUG={app.config.get("DEBUG")}, TESTING={app.config.get("TESTING")}, ENV={app.config.get("ENV")}'
         )
 
-        app.register_error_handler(404, handle_404_error)
-        app.register_error_handler(500, handle_500_error)
-        app.register_error_handler(502, handle_502_error)
+        app.register_error_handler(400, partial(handle_errors, error_code=400))
+        app.register_error_handler(404, partial(handle_errors, error_code=404))
+        app.register_error_handler(405, partial(handle_errors, error_code=405))
+        app.register_error_handler(500, partial(handle_errors, error_code=500))
+        app.register_error_handler(502, partial(handle_errors, error_code=502))
         logger.info('Flask App Error Handlers Registered')
 
         app.register_blueprint(home.blueprint)
