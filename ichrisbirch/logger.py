@@ -3,8 +3,19 @@ import logging.config
 import os
 import platform
 
+
+class No304StatusFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord):
+        return '304 -' not in record.getMessage()
+
+
 logging_config = {
     'version': 1,
+    'filters': {
+        'no_304_status': {
+            '()': No304StatusFilter,
+        },
+    },
     'formatters': {
         'standard': {
             'format': '%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d | %(message)s',
@@ -22,12 +33,14 @@ logging_config = {
             'level': 'DEBUG',
             'formatter': 'standard',
             'stream': 'ext://sys.stdout',
+            'filters': ['no_304_status'],
         },
         'stderr': {
             'class': 'logging.StreamHandler',
             'level': 'ERROR',
             'formatter': 'standard',
             'stream': 'ext://sys.stderr',
+            'filters': ['no_304_status'],
         },
         'file': {
             'class': 'logging.FileHandler',
@@ -35,6 +48,7 @@ logging_config = {
             'formatter': 'standard',
             'filename': '/var/log/ichrisbirch/pylogger.log',
             'mode': 'a',
+            'filters': ['no_304_status'],
         },
         'json': {
             'class': 'logging.FileHandler',
@@ -42,6 +56,7 @@ logging_config = {
             'formatter': 'json',
             'filename': '/var/log/ichrisbirch/pylogger.json',
             'mode': 'a',
+            'filters': ['no_304_status'],
         },
     },
     'loggers': {
@@ -51,6 +66,7 @@ logging_config = {
         'apscheduler': {'level': 'WARNING'},
         'httpcore': {'level': 'INFO'},
         'httpx': {'level': 'INFO'},
+        'fsevents': {'level': 'INFO'},
     },
 }
 
