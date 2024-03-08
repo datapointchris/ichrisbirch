@@ -1,7 +1,16 @@
 import pytest
 from fastapi import status
 
+from ichrisbirch import schemas
+from ichrisbirch.models.task import TaskCategory
 from tests.helpers import show_status_and_response
+
+NEW_TASK = schemas.TaskCreate(
+    name='Task 4 Computer with notes priority 3',
+    notes='Notes task 4',
+    category=TaskCategory.Computer,
+    priority=3,
+)
 
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
@@ -29,15 +38,9 @@ def test_read_many_tasks_not_completed(test_api):
 
 
 def test_create_task(test_api):
-    data = dict(
-        name='Task 4 Computer with notes priority 3',
-        notes='Notes task 4',
-        category='Computer',
-        priority=3,
-    )
-    response = test_api.post('/tasks/', json=data)
+    response = test_api.post('/tasks/', json=NEW_TASK.model_dump())
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    assert dict(response.json())['name'] == data['name']
+    assert dict(response.json())['name'] == NEW_TASK.name
 
     # Test task was created
     created = test_api.get('/tasks/')
@@ -72,12 +75,12 @@ def test_read_completed_tasks(test_api):
 
 def test_search_task(test_api):
     search_term = 'chore'
-    search_results = test_api.get(f'/tasks/search/{search_term}')
+    search_results = test_api.get('/tasks/search/', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     search_term = 'home'
-    search_results = test_api.get(f'/tasks/search/{search_term}')
+    search_results = test_api.get('/tasks/search/', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 2
 
@@ -90,23 +93,16 @@ def test_task_lifecycle(test_api):
     assert all_tasks.status_code == status.HTTP_200_OK, show_status_and_response(all_tasks)
     assert len(all_tasks.json()) == 3
 
-    # Create new task
-    data = dict(
-        name='Task 4 Computer with notes priority 3',
-        notes='Notes task 4',
-        category='Computer',
-        priority=3,
-    )
-    created_task = test_api.post('/tasks/', json=data)
+    created_task = test_api.post('/tasks/', json=NEW_TASK.model_dump())
     assert created_task.status_code == status.HTTP_201_CREATED, show_status_and_response(created_task)
-    assert created_task.json()['name'] == data['name']
+    assert created_task.json()['name'] == NEW_TASK.name
 
     # Get created task
     task_id = created_task.json().get('id')
     endpoint = f'/tasks/{task_id}/'
     response_task = test_api.get(endpoint)
     assert response_task.status_code == status.HTTP_200_OK, show_status_and_response(response_task)
-    assert response_task.json()['name'] == data['name']
+    assert response_task.json()['name'] == NEW_TASK.name
 
     # Read all tasks with new task
     all_tasks = test_api.get('/tasks/')

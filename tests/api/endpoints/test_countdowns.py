@@ -3,7 +3,14 @@ from datetime import date
 import pytest
 from fastapi import status
 
+from ichrisbirch import schemas
 from tests.helpers import show_status_and_response
+
+NEW_COUNTDOWN = schemas.CountdownCreate(
+    name='Countdown 4 Computer with notes priority 3',
+    notes='Notes Countdown 4',
+    due_date=date(2040, 1, 20),
+)
 
 
 @pytest.mark.parametrize('countdown_id', [1, 2, 3])
@@ -19,14 +26,9 @@ def test_read_many_countdowns(test_api):
 
 
 def test_create_countdown(test_api):
-    data = dict(
-        name='Countdown 4 Computer with notes priority 3',
-        notes='Notes Countdown 4',
-        due_date=date(2040, 1, 20).isoformat(),
-    )
-    response = test_api.post('/countdowns/', json=data)
+    response = test_api.post('/countdowns/', json=NEW_COUNTDOWN.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    assert dict(response.json())['name'] == data['name']
+    assert dict(response.json())['name'] == NEW_COUNTDOWN.name
 
     # Test countdown was created
     response = test_api.get('/countdowns/')
@@ -56,21 +58,16 @@ def test_countdown_lifecycle(test_api):
     assert len(all_countdowns.json()) == 3
 
     # Create new countdown
-    data = dict(
-        name='Countdown 4 Computer with notes priority 3',
-        notes='Notes Countdown 4',
-        due_date=date(2040, 1, 20).isoformat(),
-    )
-    created_countdown = test_api.post('/countdowns/', json=data)
+    created_countdown = test_api.post('/countdowns/', json=NEW_COUNTDOWN.model_dump(mode='json'))
     assert created_countdown.status_code == status.HTTP_201_CREATED, show_status_and_response(created_countdown)
-    assert created_countdown.json()['name'] == data['name']
+    assert created_countdown.json()['name'] == NEW_COUNTDOWN.name
 
     # Get created countdown
     countdown_id = created_countdown.json().get('id')
     endpoint = f'/countdowns/{countdown_id}/'
     response_countdown = test_api.get(endpoint)
     assert response_countdown.status_code == status.HTTP_200_OK, show_status_and_response(response_countdown)
-    assert response_countdown.json()['name'] == data['name']
+    assert response_countdown.json()['name'] == NEW_COUNTDOWN.name
 
     # Read all countdowns with new countdown
     all_countdowns = test_api.get('/countdowns/')
