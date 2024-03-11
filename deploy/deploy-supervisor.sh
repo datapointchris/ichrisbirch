@@ -28,9 +28,9 @@ SUPERVISOR_LOG_TARGET="$OS_PREFIX/var/log/supervisor"
 
 dry_run() {
     if [[ $MACOS ]]; then
-        echo "MacOS detected: /usr/local prefix will be used"
+        echo "macos detected: /usr/local prefix will be used"
     fi
-    echo Script Actions:
+    echo script actions:
     {
     echo "copy: ./$SUPERVISOR_SOURCE/supervisord.conf => $ETC_DIR/supervisord.conf"
     echo "copy: ./$SUPERVISOR_SOURCE/api.conf => $SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-api.conf"
@@ -51,7 +51,7 @@ if [[ "$1" = "--dry-run" ]]; then
     exit 0;
 fi
 
-echo "Deploying Supervisor Config Files to $ENVIRONMENT"
+echo "deploying supervisor config files to $ENVIRONMENT"
 # Note: Make sure log direcitories match entries in `supervisord.conf`
 
 sudo mkdir -vp $SUPERVISOR_HOME
@@ -87,7 +87,7 @@ echo
 
 # Set owner on MacOS in dev
 if [[ $MACOS ]]; then
-    echo "Updating MacOS owner permissions to: $USER"
+    echo "updating macos owner permissions to: $USER"
     sudo chown -vR "$USER" $SUPERVISOR_HOME
     sudo chown -vR "$USER" $SUPERVISOR_LOG_TARGET
     echo
@@ -102,5 +102,5 @@ else
     sudo supervisorctl update
 fi
 
-echo Supervisor Status:
+echo supervisor status:
 sudo supervisorctl status
