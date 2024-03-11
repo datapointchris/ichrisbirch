@@ -17,7 +17,7 @@ def create_api(settings: Settings) -> FastAPI:
     logger.info('FastAPI Started')
 
     # api.add_middleware(ResponseLoggerMiddleware)
-    # logger.debug(f'Added middleware to FastAPI: {ResponseLoggerMiddleware.__name__}')
+    # logger.debug(f'FastAPI middleware added: {ResponseLoggerMiddleware.__name__}')
 
     # TODO: for auth
     # app = FastAPI(dependencies=[Depends(get_query_token)])

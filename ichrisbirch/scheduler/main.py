@@ -1,5 +1,5 @@
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from ichrisbirch.config import Settings
@@ -7,15 +7,12 @@ from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.scheduler import jobs
 
 
-def create_scheduler(settings: Settings) -> BackgroundScheduler:
-    """Create the scheduler
-
-    Start after the app and api are created to avoid any conflicts
-    """
+def create_scheduler(settings: Settings) -> BlockingScheduler:
+    """Create the scheduler"""
     jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri, metadata=Base.metadata)
     daily_1am_trigger = CronTrigger(day='*', hour=1)
 
-    scheduler = BackgroundScheduler(daemon=True)
+    scheduler = BlockingScheduler()
     scheduler.add_jobstore(jobstore, alias='ichrisbirch', extend_existing=True)
 
     scheduler.add_job(
@@ -32,5 +29,4 @@ def create_scheduler(settings: Settings) -> BackgroundScheduler:
         jobstore='ichrisbirch',
         replace_existing=True,
     )
-    scheduler.start()
     return scheduler
