@@ -16,7 +16,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE boxsize as ENUM('BOOK', 'SMALL', 'MEDIUM', 'LARGE', 'BAG', 'MONITOR', 'MISC')")
+    op.execute("CREATE TYPE boxsize as ENUM('Book', 'Small', 'Medium', 'Large', 'Bag', 'Monitor', 'Misc')")
     op.execute("ALTER TABLE box_packing.boxes ALTER COLUMN SIZE TYPE boxsize USING SIZE::boxsize")
 
 

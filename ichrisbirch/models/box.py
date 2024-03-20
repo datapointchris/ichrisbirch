@@ -7,20 +7,16 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class BoxSize(enum.Enum):
-    """Enum for box sizes"""
-
-    BOOK = 'BOOK'
-    SMALL = 'SMALL'
-    MEDIUM = 'MEDIUM'
-    LARGE = 'LARGE'
-    BAG = 'BAG'
-    MONITOR = 'MONITOR'
-    MISC = 'MISC'
+    Book = 'Book'
+    Small = 'Small'
+    Medium = 'Medium'
+    Large = 'Large'
+    Bag = 'Bag'
+    Monitor = 'Monitor'
+    Misc = 'Misc'
 
 
 class Box(Base):
-    """SQLAlchemy model for box_packing.boxes table"""
-
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'boxes'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

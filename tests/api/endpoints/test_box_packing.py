@@ -7,7 +7,7 @@ from tests.helpers import show_status_and_response
 
 NEW_BOX = schemas.BoxCreate(
     name='Box 4 - Bag of clothes',
-    size=BoxSize.BAG,
+    size=BoxSize.Bag,
     essential=True,
     warm=False,
     liquid=False,
