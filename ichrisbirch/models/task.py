@@ -10,7 +10,6 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class TaskCategory(enum.Enum):
-    # Change to enum.StrEnum when no longer < 3.11
     Automotive = 'Automotive'
     Home = 'Home'
     Work = 'Work'
@@ -25,8 +24,6 @@ class TaskCategory(enum.Enum):
 
 
 class Task(Base):
-    """SQLAlchemy model for tasks table"""
-
     __tablename__ = 'tasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64))

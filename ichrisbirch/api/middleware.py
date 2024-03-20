@@ -15,5 +15,5 @@ class ResponseLoggerMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
-        logger.debug(f'{request.url.path} completed in {process_time} status code {response.status_code}')
+        logger.debug(f'{request.url.path} completed in {process_time:.6f} status code {response.status_code}')
         return response
