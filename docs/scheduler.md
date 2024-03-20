@@ -2,7 +2,11 @@
 
 ## APScheduler
 
-The scheduler is run in the background when the app and api are started.
+The scheduler is run in it's own `wsgi` application managed by `supervisor`.
+The scheduler is using the standard blocking scheduler since it is in its own process.
+Workers need to be set to 1 for `gunicorn` in order to not start multiple instances of the scheduler.
+Technically the scheduler could be run as part of the API since the tasks are related to the API, but the API will be changing to async in the future which would require a different scheduler, and the jobs may not always be only related to the API.
+
 The jobs are located in the `jobs.py` file in the `/scheduler` directory.
 
 ## Current Jobs
