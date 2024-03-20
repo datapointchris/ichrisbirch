@@ -32,29 +32,6 @@
     }
 }
 
-///// Submit, Delete, Add Buttons /////
-
-.button {
-    border-radius: $button-box-border-radius;
-    font-size: large;
-    padding: 10px 25px;
-
-    &:hover {
-        text-decoration: underline;
-    }
-}
-
-.box-3d {
-    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $light-shadow, inset -5px -5px 4px -2px $light-shadow;
-}
-
-.textbox {
-    border-radius: $button-box-border-radius;
-    font-size: large;
-    padding: 10px 25px;
-    background-color: $all-text-color;
-}
-
 ///// COMPLETED TASK FILTERS /////
 
 #completed-filters {
@@ -73,6 +50,36 @@
     border: 0;
     box-sizing: border-box;
     font-size: 1.2em;
+}
+
+.filter-buttons input[type="radio"] {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+}
+
+.filter-buttons label {
+    display: inline-block;
+    padding: 15px 20px;
+    border-radius: $button-box-border-radius;
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px $light-shadow,
+        inset -5px -5px 4px -2px $light-shadow;
+}
+
+.filter-buttons input[type="radio"]:checked + label {
+    color: green;
+    font-weight: bold;
+    background-color: $dark-background;
+    box-shadow:
+        inset 5px 5px 5px 0px $dark-shadow,
+        inset -3px -3px 5px 0px $medium-shadow;
+}
+
+.filter-buttons label:hover {
+    font-style: italic;
+    font-weight: bold;
 }
 
 .filterbutton {
@@ -96,31 +103,6 @@
         margin: 3px;
         margin-left: 0px;
     }
-}
-
-.filter-buttons input[type="radio"] {
-    opacity: 0;
-    position: fixed;
-    width: 0;
-}
-
-.filter-buttons label {
-    display: inline-block;
-    padding: 15px 20px;
-    border-radius: $button-box-border-radius;
-    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $light-shadow, inset -5px -5px 4px -2px $light-shadow;
-}
-
-.filter-buttons input[type="radio"]:checked + label {
-    color: green;
-    font-weight: bold;
-    background-color: $dark-background;
-    box-shadow: inset 5px 5px 5px 0px $dark-shadow, inset -3px -3px 5px 0px $medium-shadow;
-}
-
-.filter-buttons label:hover {
-    font-style: italic;
-    font-weight: bold;
 }
 
 #completed-averages {

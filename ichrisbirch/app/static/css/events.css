@@ -38,24 +38,4 @@
   text-align: center;
   border: 3px dashed orange;
   border-radius: 15px;
-}
-
-.button {
-  border-radius: 15px;
-  font-size: large;
-  padding: 10px 25px;
-}
-.button:hover {
-  text-decoration: underline;
-}
-
-.box-3d {
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #808080, inset -5px -5px 4px -2px #808080;
-}
-
-.textbox {
-  border-radius: 15px;
-  font-size: large;
-  padding: 10px 25px;
-  background-color: #dddddd;
 }/*# sourceMappingURL=events.css.map */

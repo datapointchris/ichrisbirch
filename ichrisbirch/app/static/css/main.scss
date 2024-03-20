@@ -112,3 +112,29 @@ body {
 .close-button:hover {
     transform: scale(1.2) translate(-50%, -50%);
 }
+
+///// Submit, Delete, Add Buttons /////
+
+.button {
+    border-radius: $button-box-border-radius;
+    font-size: 1.33rem;
+    padding: 10px 25px;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.box-3d {
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px $light-shadow,
+        inset -5px -5px 4px -2px $light-shadow;
+}
+
+.textbox {
+    border-radius: $button-box-border-radius;
+    font-size: 1.33rem;
+    padding: 10px 25px;
+    background-color: $all-text-color;
+}
