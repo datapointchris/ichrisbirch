@@ -9,6 +9,9 @@ class No304StatusFilter(logging.Filter):
         return '304 -' not in record.getMessage()
 
 
+LOG_FORMAT = '[%(levelname)s] %(asctime)s %(name)s:%(funcName)s:%(lineno)d | %(message)s'
+DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
 logging_config = {
     'version': 1,
     'filters': {
@@ -18,12 +21,12 @@ logging_config = {
     },
     'formatters': {
         'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d | %(message)s',
-            'datefmt': '%Y-%m-%dT%H:%M:%SZ',
+            'format': LOG_FORMAT,
+            'datefmt': DATE_FORMAT,
         },
         'json': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s:%(funcName)s:%(lineno)d | %(message)s',
-            'datefmt': '%Y-%m-%dT%H:%M:%SZ',
+            'format': LOG_FORMAT,
+            'datefmt': DATE_FORMAT,
             'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
         },
     },
