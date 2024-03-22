@@ -15,7 +15,7 @@
 <div class="search-results">
   <ul class="search-header">
     <li>Box ID</li>
-    <li>Name</li>
+    <li>Item</li>
     <li>Essential</li>
     <li>Warm</li>
     <li>Liquid</li>
@@ -24,7 +24,7 @@
   {% for result in results %}
   <ul class="search-result">
     <li>{{ result.box_id }}</li>
-    <li>{{ result.name }}</li>
+    <li><a href="{{ url_for('box_packing.box', box_id=result.box_id) }}">{{ result.name }}</a></li>
     <li class="essential-color">{% if result.essential == 1 %}Essential{% endif %}</li>
     <li class="warm-color">{% if result.warm == 1 %}Warm{% endif %}</li>
     <li class="liquid-color">{% if result.liquid == 1 %}Liquid{% endif %}</li>
