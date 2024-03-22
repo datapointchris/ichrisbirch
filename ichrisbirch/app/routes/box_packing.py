@@ -22,23 +22,30 @@ ITEMS_API_URL = url_builder(BOX_PACKING_API_URL, 'items')
 BOX_SIZES = [s.value for s in BoxSize]
 
 
-@blueprint.route('/', methods=['GET', 'POST'])
+@blueprint.route('/', methods=['GET'])
 def index():
-    """Box packing homepage"""
-    last_box_id = request.args.get('last_box_id')
-    box_id = last_box_id or request.form.get('selected_box_id')
+    response = httpx.get(url_builder(BOXES_API_URL))
+    handle_if_not_response_code(200, response, logger)
+    boxes = [schemas.Box(**box) for box in response.json()]
+    return render_template('box_packing/index.html', selected_box=None, boxes=boxes, box_sizes=BOX_SIZES)
+
+
+@blueprint.route('/<box_id>/', methods=['GET'])
+def box(box_id):
     response = httpx.get(url_builder(BOXES_API_URL))
     handle_if_not_response_code(200, response, logger)
     boxes = [schemas.Box(**box) for box in response.json()]
     logger.debug(f'{box_id=}')
     selected_box = next((box for box in boxes if str(box.id) == box_id), None)
+    if not selected_box:
+        flash(f'Box {box_id} not found', 'error')
+        return redirect(url_for('box_packing.index'))
     logger.debug(f'{selected_box=}')
     return render_template('box_packing/index.html', selected_box=selected_box, boxes=boxes, box_sizes=BOX_SIZES)
 
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    """All packed boxes"""
     sort_1 = request.form.get('sort_1')
     sort_2 = request.form.get('sort_2')
     logger.debug(f'{sort_1=} {sort_2=}')
@@ -95,12 +102,20 @@ def crud():
             return redirect(request.referrer or url_for('box_packing.index'))
         response = httpx.post(BOXES_API_URL, content=box.model_dump_json())
         handle_if_not_response_code(201, response, logger)
-        return redirect(request.referrer or url_for('box_packing.index'))
+        flash(f'Box {box.name} added', 'success')
+        try:
+            new_box = schemas.Box(**response.json())
+        except pydantic.ValidationError as e:
+            logger.exception(e)
+            flash(str(e), 'error')
+            return redirect(request.referrer or url_for('box_packing.index'))
+        return redirect(request.referrer or url_for('box_packing.box', box_id=new_box.id))
 
     if method == 'delete_box':
         url = url_builder(BOXES_API_URL, data.get('id'))
         response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
+        flash(f'Box {data.get("name")} deleted', 'success')
         return redirect(request.referrer or url_for('box_packing.index'))
 
     if method == 'add_item':
@@ -115,12 +130,16 @@ def crud():
             return redirect(request.referrer or url_for('box_packing.index'))
         response = httpx.post(ITEMS_API_URL, content=item.model_dump_json())
         handle_if_not_response_code(201, response, logger)
-        return redirect(request.referrer or url_for('box_packing.index'))
+        flash(f'Item {item.name} added to box {item.box_id}', 'success')
+        return redirect(url_for('box_packing.box', box_id=item.box_id))
 
     if method == 'delete_item':
-        url = url_builder(ITEMS_API_URL, data.get('id'))
+        item_id = data.get('id')
+        box_id = data.get('box_id')
+        url = url_builder(ITEMS_API_URL, item_id)
         response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
-        return redirect(request.referrer or url_for('box_packing.index'))
+        flash(f'Item {item_id} deleted from box {box_id}', 'success')
+        return redirect(request.referrer or url_for('box_packing.box', box_id=box_id))
 
     return Response(f'Method {method} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

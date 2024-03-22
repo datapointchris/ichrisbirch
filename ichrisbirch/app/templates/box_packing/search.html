@@ -7,42 +7,29 @@
   <form method="POST" action="{{ url_for('box_packing.search') }}">
     <h3>Search for Items</h3>
     <label for="search_text">Search Text:</label>
-    <input class=big-button type="text" name="search_text" id="search_text">
-    <input class="big-button" type="submit" value="Search">
+    <input class="button box-3d" type="text" name="search_text" id="search_text">
+    <input class="button box-3d" type="submit" value="Search">
   </form>
 </div>
 
-{% if results %}
-<div id="search-results">
-  <div class="search-header">
-    <div width="35%">Box ID</div>
-    <div width="35%">Name</div>
-    <div width="10%">Essential</div>
-    <div width="10%">Warm</div>
-    <div width="10%">Liquid</div>
-  </div>
+<div class="search-results">
+  <ul class="search-header">
+    <li>Box ID</li>
+    <li>Name</li>
+    <li>Essential</li>
+    <li>Warm</li>
+    <li>Liquid</li>
+  </ul>
+  {% if results %}
   {% for result in results %}
-  <div class="box-item-search-list">
-    <div width="30%">{{ result.box_id }}</div>
-    <div width="30%">{{ result.name }}</div>
-    <div class="essential" width="10%">
-      {% if result.essential == 1 %}
-      Essential
-      {% endif %}
-    </div>
-    <div class="warm" width="10%">
-      {% if result.warm == 1 %}
-      Warm
-      {% endif %}
-    </div>
-    <div class="liquid" width="10%">
-      {% if result.liquid == 1 %}
-      Liquid
-      {% endif %}
-    </div>
-  </div>
-  <br>
+  <ul class="search-result">
+    <li>{{ result.box_id }}</li>
+    <li>{{ result.name }}</li>
+    <li class="essential-color">{% if result.essential == 1 %}Essential{% endif %}</li>
+    <li class="warm-color">{% if result.warm == 1 %}Warm{% endif %}</li>
+    <li class="liquid-color">{% if result.liquid == 1 %}Liquid{% endif %}</li>
+  </ul>
   {% endfor %}
+  {% endif %}
 </div>
-{% endif %}
 {% endblock %}

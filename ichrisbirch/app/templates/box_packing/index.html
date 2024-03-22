@@ -5,8 +5,8 @@
 {% block content %}
 <div class="container">
   <div class="column centered">
-    <form method="POST" action="{{ url_for('box_packing.index') }}">
-      <select class="button box-3d" name="selected_box_id" id="selected_box_id" onchange="this.form.submit()">
+    <form method="GET" id="select_box_form" action="/box-packing/">
+      <select class="button box-3d" id="selected_box_id" onchange="updateAction(); this.form.submit();">
         <option value="none" selected disabled hidden>Select a Box</option>
         {% for box in boxes %}
         <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
@@ -139,6 +139,10 @@
 </div>
 
 <script>
+  function updateAction() {
+    var selectedBoxId = document.getElementById('selected_box_id').value;
+    document.getElementById('select_box_form').action = "/box-packing/" + (selectedBoxId ? selectedBoxId : '');
+  }
   // when page is ready
   $(document).ready(function () {
     // on form submit
