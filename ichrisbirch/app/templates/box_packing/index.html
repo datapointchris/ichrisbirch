@@ -3,146 +3,141 @@
 {% block title %}Box Packing{% endblock %}
 
 {% block content %}
-<div id="container">
-  <table width='100%'>
-    <tr>
-      <td id="middle-column">
-        <form method="POST" action="{{ url_for('box_packing.index') }}">
-          <select class="big-button" name="selected_box_id" id="selected_box_id" onchange="this.form.submit()">
-            <option value="none" selected disabled hidden>Select a Box</option>
-            {% for box in boxes %}
-            <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
-            {% endfor %}
-          </select><br><br>
-        </form>
-        {% if selected_box %}
-        <div id="selected-box">
-          <h1 class="selected this-box">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
-          <ul>
-            <li>Size: {{ selected_box.size }}</li>
-            {% if selected_box.essential == 1 %}
-            <li class="essential">Essential</li>
-            {% endif %}
-            {% if selected_box.warm == 1 %}
-            <li class="warm">Warm</li>
-            {% endif %}
-            {% if selected_box.liquid == 1 %}
-            <li class="liquid">Liquid</li>
-            {% endif %}
-          </ul>
-          <h2><u>Items in Box</u></h2>
-          <table width=100%>
-            {% for item in selected_box.items %}
-            <tr>
-              <td colspan="3">
-                <h3>{{ item.name }}</h3>
-              </td>
-            </tr>
-            <tr class="box-item-table-list">
-              <td class="essential">
-                {% if item.essential == 1 %}
-                Essential
-                {% endif %}
-              </td>
-              <td class="warm">
-                {% if item.warm == 1 %}
-                Warm
-                {% endif %}
-              </td>
-              <td class="liquid">
-                {% if item.liquid == 1 %}
-                Liquid
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
+<div class="container">
+  <div class="column centered">
+    <form method="POST" action="{{ url_for('box_packing.index') }}">
+      <select class="button box-3d" name="selected_box_id" id="selected_box_id" onchange="this.form.submit()">
+        <option value="none" selected disabled hidden>Select a Box</option>
+        {% for box in boxes %}
+        <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
+        {% endfor %}
+      </select><br><br>
+    </form>
+    {% if selected_box %}
+    <div id="selected-box">
+      <h1 class="selected this-box">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
+      <ul>
+        <li>Size: {{ selected_box.size }}</li>
+        {% if selected_box.essential == 1 %}
+        <li class="essential-color">Essential</li>
         {% endif %}
-      </td>
-      <td id="right-column">
-        {% if selected_box %}
-        <div id="add-item" class="box-function">
-          <form method="POST" action="{{ url_for('box_packing.crud') }}">
-            <h3>Add Item to <span class="selected">Box {{ selected_box.id
-                }}: {{ selected_box.name }}</span></h3>
-            <input type="hidden" name="id" id="id" value={{ selected_box.id }}>
-            <label for="name">Name:</label>
-            <input class=big-button type="text" name="name" id="name">
-            <br><br>
-
-            <input type="checkbox" name="essential" id="essential" value=1>
-            <label for="essential">Essential</label>
-            <br><br>
-            <input type="checkbox" name="warm" id="warm" value=1>
-            <label for="warm">Warm</label>
-            <br><br>
-            <input type="checkbox" name="liquid" id="liquid" value=1>
-            <label for="liquid">Liquid</label>
-            <br><br>
-            <input type="hidden" name="method" id="method" value="add_item">
-            <input class="big-button" type="submit" value="Add Item">
-          </form>
-        </div>
-
-        <div id="delete-item" class="box-function">
-          <form method="POST" action="{{ url_for('box_packing.crud') }}">
-            <h3>Delete Item from <span class="selected">Box {{
-                selected_box.id }}: {{ selected_box.name }}</span>
-            </h3>
-            <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-            <select class=big-button name="id" id="id">
-              <option value="none" selected disabled hidden>Select an Item</option>
-              {% for item in selected_box.items %}
-              <option value={{ item.id }}>{{ item.name }}</option>
-              {% endfor %}
-            </select><br><br>
-            <input type="hidden" name="method" id="method" value="delete_item">
-            <input class="big-button" type="submit" value="Delete Item">
-          </form>
-        </div>
-
-        <div id="add-box" class="box-function">
-          <form method="POST" action="{{ url_for('box_packing.crud') }}">
-            <h3>Add a New Box</h3>
-            <label for="name">Name:</label>
-            <input class=big-button type="text" name="name" id="name">
-            <br><br>
-            <label for="size">Size</label>
-            <select class='big-button' name="size" id="size">
-              {% for size in box_sizes %}
-              <option value={{ size }}>{{ size }}</option>
-              {% endfor %}
-            </select>
-            <br><br>
-            <input type="checkbox" name="essential" id="essential" value=1>
-            <label for="essential">Essential</label>
-            <br><br>
-            <input type="checkbox" name="warm" id="warm" value=1>
-            <label for="warm">Warm</label>
-            <br><br>
-            <input type="checkbox" name="liquid" id="liquid" value=1>
-            <label for="liquid">Liquid</label>
-            <br><br>
-            <input type="hidden" name="method" id="method" value="add_box">
-            <input class="big-button" type="submit" value="Add Box">
-          </form>
-        </div>
-
-        <div id="delete-box" class="box-function">
-          <form method="POST" action="{{ url_for('box_packing.crud') }}">
-            <h3>Delete <span class="selected">Box {{ selected_box.id }}:
-                {{ selected_box.name }}</span></h3>
-            <input type="hidden" name="id" id="id" value={{ selected_box.id }}>
-            <input type="hidden" name="method" id="method" value="delete_box">
-            <input class="big-button" type="submit" value="Delete Box">
-          </form>
-        </div>
+        {% if selected_box.warm == 1 %}
+        <li class="warm-color">Warm</li>
         {% endif %}
-      </td>
-    </tr>
-  </table>
+        {% if selected_box.liquid == 1 %}
+        <li class="liquid-color">Liquid</li>
+        {% endif %}
+      </ul>
+      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+        <input type="hidden" name="id" id="id" value={{ selected_box.id }}>
+        <input type="hidden" name="method" id="method" value="delete_box">
+        <input class="button box-3d" type="submit" value="Delete Box">
+      </form>
+
+
+      <div class="box-items">
+        <h2><u>Items in Box</u></h2>
+        {% for item in selected_box.items %}
+        <div class="box-item">
+          <h3>{{ item.name }}</h3>
+          {% if item.essential == 1 %}
+          <span class="essential-color">Essential</span>
+          {% endif %}
+          {% if item.warm == 1 %}
+          <span class="warm-color">Warm</span>
+          {% endif %}
+          {% if item.liquid == 1 %}
+          <span class="liquid-color">Liquid</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+    {% endif %}
+  </div>
+  <div class="column">
+    <div id="add-box" class="box-function">
+      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+        <h3>Add a New Box</h3>
+        <label for="name">Name:</label>
+        <input class="button box-3d" type="text" name="name" id="name">
+        <br><br>
+        <label for="size">Size</label>
+        <select class='big-button' name="size" id="size">
+          {% for size in box_sizes %}
+          <option value={{ size }}>{{ size }}</option>
+          {% endfor %}
+        </select>
+        <br><br>
+        <input type="checkbox" name="essential" id="essential" value=1>
+        <label for="essential">Essential</label>
+        <br><br>
+        <input type="checkbox" name="warm" id="warm" value=1>
+        <label for="warm">Warm</label>
+        <br><br>
+        <input type="checkbox" name="liquid" id="liquid" value=1>
+        <label for="liquid">Liquid</label>
+        <br><br>
+        <input type="hidden" name="method" id="method" value="add_box">
+        <input class="button box-3d" type="submit" value="Add Box">
+      </form>
+    </div>
+
+    {% if selected_box %}
+    <div id="add-item" class="box-function">
+      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+        <h3>Add Item to <span class="selected">Box {{ selected_box.id
+            }}: {{ selected_box.name }}</span></h3>
+        <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+        <label for="name">Name:</label>
+        <input class="button box-3d" type="text" name="name" id="name">
+        <br><br>
+        <input type="checkbox" name="essential" id="essential" value=1>
+        <label for="essential">Essential</label>
+        <br><br>
+        <input type="checkbox" name="warm" id="warm" value=1>
+        <label for="warm">Warm</label>
+        <br><br>
+        <input type="checkbox" name="liquid" id="liquid" value=1>
+        <label for="liquid">Liquid</label>
+        <br><br>
+        <input type="hidden" name="method" id="method" value="add_item">
+        <input class="button box-3d" type="submit" value="Add Item">
+      </form>
+    </div>
+
+    <div id="delete-item" class="box-function">
+      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+        <h3>Delete Item from <span class="selected">Box {{
+            selected_box.id }}: {{ selected_box.name }}</span>
+        </h3>
+        <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+        <select class="button box-3d" name="id" id="id">
+          <option value="none" selected disabled hidden>Select an Item</option>
+          {% for item in selected_box.items %}
+          <option value={{ item.id }}>{{ item.name }}</option>
+          {% endfor %}
+        </select><br><br>
+        <input type="hidden" name="method" id="method" value="delete_item">
+        <input class="button box-3d" type="submit" value="Delete Item">
+      </form>
+    </div>
+
+
+    <div id="delete-box" class="box-function">
+      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+        <h3>Delete <span class="selected">Box {{ selected_box.id }}:
+            {{ selected_box.name }}</span></h3>
+        <input type="hidden" name="id" id="id" value={{ selected_box.id }}>
+        <input type="hidden" name="method" id="method" value="delete_box">
+        <input class="button box-3d" type="submit" value="Delete Box">
+      </form>
+    </div>
+    {% endif %}
+  </div>
 </div>
+
 <script>
   // when page is ready
   $(document).ready(function () {
