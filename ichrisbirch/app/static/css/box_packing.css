@@ -1,47 +1,13 @@
-#content-layout-grid {
+.container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 40px;
+  grid-template-columns: 2fr 1fr;
+  gap: 2em;
   padding: 10px;
-  align-items: flex-start;
-  overflow: auto;
-  margin-bottom: 200px;
 }
 
-#left-column {
-  width: 30%;
-  padding-right: 50px;
-  vertical-align: top;
-}
-#left-column li {
+.column li {
   list-style: none;
   line-height: 2em;
-}
-
-#middle-column {
-  width: 40%;
-  vertical-align: text-top;
-  text-align: center;
-}
-#middle-column li {
-  list-style: none;
-  line-height: 2em;
-}
-
-#right-column {
-  width: 30%;
-  vertical-align: text-top;
-  padding-left: 50px;
-}
-
-.big-button {
-  border-radius: 10px;
-  font-size: x-large;
-  padding: 10px 25px;
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #888, inset -5px -5px 4px -2px #888;
-}
-.big-button[type=submit]:hover {
-  text-decoration: underline;
 }
 
 .box-list {
@@ -60,21 +26,20 @@
   color: green;
 }
 
-.warm {
+.warm-color {
   color: darkred;
 }
 
-.liquid {
+.liquid-color {
   color: rgb(60, 120, 170);
 }
 
-.essential {
+.essential-color {
   color: orange;
 }
 
 .centered {
   text-align: center;
-  margin: auto;
 }
 
 .this-box {
@@ -91,11 +56,9 @@
   box-shadow: 0 5px 10px #646464, 0 -2px 2px #666, rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
 }
 
-.box-item-table-list td {
-  margin: 0;
-  width: 33%;
+.box-item {
   padding-bottom: 35px;
-  border-bottom: 1px dotted orange;
+  border: 1px dotted orange;
 }
 
 .box-sort {
@@ -134,6 +97,5 @@
   margin: 0;
   padding-top: 35px;
   padding-bottom: 35px;
-  border-bottom: 1px dotted orange;
   border-bottom: 1px dotted orange;
 }/*# sourceMappingURL=box_packing.css.map */
