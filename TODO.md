@@ -94,6 +94,8 @@
 - [ ] [GitHub - zhanymkanov/fastapi-best-practices: FastAPI Best Practices and Conventions we used at our startup](https://github.com/zhanymkanov/fastapi-best-practices)
 - [ ] [GitHub - Aeternalis-Ingenium/FastAPI-Backend-Template: A backend project template with FastAPI, PostgreSQL with asynchronous SQLAlchemy 2.0, Alembic for asynchronous database migration, and Docker.](https://github.com/Aeternalis-Ingenium/FastAPI-Backend-Template)
 - [ ] [GitHub - igorbenav/FastAPI-boilerplate: An extendable async API using FastAPI, Pydantic V2, SQLAlchemy 2.0, PostgreSQL and Redis.](https://github.com/igorbenav/FastAPI-boilerplate)
+- [ ] Change datetimes over to `Arrow`
+- [ ] [Identity Federation for GitHub Actions on AWS | ScaleSec](https://scalesec.com/blog/identity-federation-for-github-actions-on-aws/)
 
 ## Tasks
 
