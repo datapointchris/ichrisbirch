@@ -13,37 +13,36 @@
 </div>
 
 {% if results %}
-<table id="search-results">
-  <tr class="search-header">
-    <td width="35%">Box ID</td>
-    <td width="35%">Name</td>
-    <td width="10%">Essential</td>
-    <td width="10%">Warm</td>
-    <td width="10%">Liquid</td>
-  </tr>
+<div id="search-results">
+  <div class="search-header">
+    <div width="35%">Box ID</div>
+    <div width="35%">Name</div>
+    <div width="10%">Essential</div>
+    <div width="10%">Warm</div>
+    <div width="10%">Liquid</div>
+  </div>
   {% for result in results %}
-  <tr class="box-item-search-list">
-    <td width="30%">{{ result.box_id }}</td>
-    <td width="30%">{{ result.name }}</td>
-    <td class="essential" width="10%">
+  <div class="box-item-search-list">
+    <div width="30%">{{ result.box_id }}</div>
+    <div width="30%">{{ result.name }}</div>
+    <div class="essential" width="10%">
       {% if result.essential == 1 %}
       Essential
       {% endif %}
-    </td>
-    <td class="warm" width="10%">
+    </div>
+    <div class="warm" width="10%">
       {% if result.warm == 1 %}
       Warm
       {% endif %}
-    </td>
-    <td class="liquid" width="10%">
+    </div>
+    <div class="liquid" width="10%">
       {% if result.liquid == 1 %}
       Liquid
       {% endif %}
-    </td>
-  </tr>
+    </div>
+  </div>
   <br>
   {% endfor %}
-  {% endif %}
-</table>
 </div>
+{% endif %}
 {% endblock %}
