@@ -12,7 +12,6 @@
   <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
   {% block scripts %}{% endblock %}
 
-
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   {% block stylesheet %}{% endblock %}
 </head>
@@ -35,14 +34,11 @@
       {% block app_nav %}{% endblock %}
     </nav>
   </header>
+  {% include 'messages.jinja.html' %}
 
-  <main>
-    {% include 'messages.jinja.html' %}
+  {% block content %}{% endblock %}
 
-    {% block content %}{% endblock %}
-
-    {% block footer %}{% endblock %}
-  </main>
+  {% block footer %}{% endblock %}
 </body>
 
 </html>
