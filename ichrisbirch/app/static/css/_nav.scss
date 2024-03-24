@@ -1,0 +1,45 @@
+.navigation {
+    display: inline-flex;
+    width: 90%;
+    height: 40px;
+    margin-bottom: 0;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    background-color: $medium-background;
+    border-bottom-right-radius: 5em;
+    border-bottom-left-radius: 5em;
+    font-size: 20px;
+    font-weight: bold;
+    text-decoration: none;
+    color: $all-text-color;
+    box-shadow:
+        0 5px 10px #646464,
+        0 -2px 2px #666,
+        rgba(0, 0, 0, 0.07) 0px 4px 4px,
+        inset 0 -10px 10px rgba(0, 0, 0, 0.5),
+        rgba(0, 0, 0, 0.07) 0px 16px 16px;
+
+    .navigation-tab {
+        display: inline-block;
+        text-align: center;
+        width: 100%;
+
+        a {
+            color: $all-text-color;
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+}
+
+.navigation.secondary {
+    width: 80%;
+    z-index: -50;
+}
