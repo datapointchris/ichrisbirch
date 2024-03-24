@@ -1,10 +1,10 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-<div id="flash-messages" class="flash-messages">
+<section class="flash-messages">
   {% for category, message in messages %}
-  <div class="flash-message {{ category }}">
+  <div class="flash-messages__message--{{ category }}">
     {{ message }}
-    <button class="close-button" onclick="closeFlashMessage(this)">X</button>
+    <button class="flash-messages__close-button" onclick="closeFlashMessage(this)">X</button>
   </div>
   {% endfor %}
 </div>
