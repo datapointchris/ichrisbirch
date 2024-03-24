@@ -1,8 +1,52 @@
+/*     INDEX PAGE     */
+.box-packing-index-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  padding: 0.8rem;
+}
+
+.box-details {
+  list-style: none;
+  line-height: 2rem;
+  text-align: center;
+  margin: 25px;
+  padding: 20px;
+  box-shadow: 0 5px 10px #646464, 0 -2px 2px #666, rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
+}
+
+.box-details__title {
+  color: green;
+  font-size: 3rem;
+  line-height: 1.3rem;
+  margin: 0 auto;
+  text-shadow: -0.01em 0.01em 0 #666, -0.02em 0.02em 0 #666, -0.03em 0.03em 0 #666, -0.04em 0.04em 0 #666, -0.05em 0.05em 0 #666, -0.06em 0.06em 0 #999, -0.07em 0.07em 0 #999, -0.08em 0.08em 0 #999, -0.09em 0.09em 0 #999, -0.1em 0.1em 0 #999, -0.11em 0.11em 0 #999;
+}
+
+.box-details--essential {
+  color: orange;
+}
+
+.box-details--warm {
+  color: darkred;
+}
+
+.box-details--liquid {
+  color: rgb(60, 120, 170);
+}
+
+.box-function {
+  border: 3px solid black;
+  padding: 25px;
+  margin: 15px;
+}
+
+/*     ALL PAGE     */
 .container {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 2em;
-  padding: 10px;
+  gap: 2rem;
+  padding: 0.8rem;
 }
 
 .column li {
@@ -97,4 +141,4 @@
   padding: 0.75rem 0;
   margin: 0.5rem 0;
   border-bottom: 1px dotted orange;
-}/*# sourceMappingURL=box_packing.css.map */
+}
