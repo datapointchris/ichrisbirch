@@ -6,10 +6,10 @@
 
 {% block app_navigation %}
 <nav>
-  <ul class="navigation secondary">
-    <li class="navigation-tab"><a href="{{ url_for('box_packing.index') }}">Pack Boxes</a></li>
-    <li class="navigation-tab"><a href="{{ url_for('box_packing.search') }}">Search for Items</a></li>
-    <li class="navigation-tab"><a href="{{ url_for('box_packing.all') }}">All Boxes</a></li>
+  <ul class="nav__list-secondary">
+    <li class="nav__list"><a class="nav__link" href="{{ url_for('box_packing.index') }}">Pack Boxes</a></li>
+    <li class="nav__list"><a class="nav__link" href="{{ url_for('box_packing.search') }}">Search for Items</a></li>
+    <li class="nav__list"><a class="nav__link" href="{{ url_for('box_packing.all') }}">All Boxes</a></li>
   </ul>
 </nav>
 {% endblock %}
