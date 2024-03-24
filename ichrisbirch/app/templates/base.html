@@ -18,6 +18,7 @@
 </head>
 
 <body>
+  <header>
   <nav>
     <ul class="navigation">
       <li class="navigation-tab"><a href="{{ url_for('home.index') }}">Home</a></li>
@@ -32,11 +33,9 @@
     </ul>
     {% block app_navigation %}{% endblock %}
   </nav>
+  </header>
 
   <main>
-    <header>
-      {% block header %}{% endblock %}
-    </header>
 
     {% include 'messages.jinja.html' %}
 
