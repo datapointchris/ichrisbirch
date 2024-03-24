@@ -1,3 +1,4 @@
+@charset "UTF-8";
 html {
   box-sizing: border-box;
   -webkit-text-size-adjust: none;
@@ -153,6 +154,19 @@ select {
 }
 #error-container > p {
   font-size: 1.5rem;
+}
+
+.server-stats {
+  background-color: #666;
+  padding: 25px;
+  border: 5px greenyellow dashed;
+  border-radius: 25px;
+  list-style-type: "→  ";
+  font-size: x-large;
+}
+
+.server-stats__item {
+  margin: 50px;
 }
 
 @font-face {

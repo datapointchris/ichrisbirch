@@ -1,0 +1,15 @@
+{% extends 'server_stats/base.html' %}
+
+{% block title %}Server Stats{% endblock %}
+
+{% block content %}
+<section>
+  <ul class="server-stats">
+    <li class="server-stats__item">Name: {{ settings.name }}</li>
+    <li class="server-stats__item">Environment: {{ settings.environment }}</li>
+    <li class="server-stats__item">API URL: {{ settings.api_url }}</li>
+    <li class="server-stats__item">Server time: {{ server_time }}</li>
+    <li class="server-stats__item">Local time: {{ local_time }}</li>
+  </ul>
+</section>
+{% endblock %}

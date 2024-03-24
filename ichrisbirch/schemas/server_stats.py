@@ -1,9 +1,7 @@
 from pydantic import BaseModel
 
 
-class Health(BaseModel):
-    """Pydantic Model for Health endpoint"""
-
+class ServerStats(BaseModel):
     name: str
     environment: str
     api_url: str

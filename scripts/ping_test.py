@@ -21,7 +21,7 @@ ENVIRONMENTS = {
         'endpoints': [
             '',
             # '/tasks',
-            # '/health',
+            # '/server_stats',
         ],
         'ports': ['', ':80', ':4000', ':4200', ':6000', ':6200', ':5434', ':5555'],
     },
@@ -35,7 +35,7 @@ ENVIRONMENTS = {
             'api.macmini.local',
             'random.address',
         ],
-        'endpoints': ['', '/tasks', '/health'],
+        'endpoints': ['', '/tasks', '/server_stats'],
         'ports': ['', ':80', ':4000', ':4200', ':6000', ':6200', ':8000', ':8200'],
     },
     'prod': {
@@ -45,7 +45,7 @@ ENVIRONMENTS = {
             'www.ichrisbirch.com',
             'api.ichrisbirch.com',
         ],
-        'endpoints': ['', '/tasks', '/health'],
+        'endpoints': ['', '/tasks', '/server_stats'],
         'ports': ['', ':80'],
     },
 }

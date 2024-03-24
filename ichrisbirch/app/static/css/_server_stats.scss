@@ -1,6 +1,4 @@
-@import "./variables";
-
-ul {
+.server-stats {
     background-color: #666;
     padding: 25px;
     border: 5px greenyellow dashed;
@@ -9,6 +7,6 @@ ul {
     font-size: x-large;
 }
 
-li {
+.server-stats__item {
     margin: 50px;
 }

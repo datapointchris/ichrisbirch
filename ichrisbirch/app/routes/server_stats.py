@@ -8,17 +8,17 @@ from ichrisbirch.config import get_settings
 settings = get_settings()
 
 blueprint = Blueprint(
-    'health',
+    'server_stats',
     __name__,
-    template_folder='templates/health',
+    template_folder='templates/server_stats',
     static_folder='static',
 )
 
 
 @blueprint.route('/')
-def health():
+def index():
     return render_template(
-        'health/index.html',
+        'server_stats/index.html',
         settings=settings,
         server_time=datetime.now().isoformat(),
         local_time=datetime.now(tz=ZoneInfo('America/Chicago')).isoformat(),
