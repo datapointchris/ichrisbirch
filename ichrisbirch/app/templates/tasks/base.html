@@ -12,20 +12,18 @@
 {% endblock %}
 
 {% block app_navigation %}
-<nav>
-  <ul class="nav__list-secondary">
-    <li class="nav__list"><a class="nav__link" href="{{ url_for('tasks.index') }}">Priority Tasks</a></li>
-    <li class="nav__list"><a class="nav__link" href="{{ url_for('tasks.all') }}">All Tasks</a></li>
-    <li class="nav__list"><a class="nav__link" href="{{ url_for('tasks.completed') }}">Completed Tasks</a></li>
-    <li class="navigation-tab">
-      <form class="search-form" method="POST" action="{{ url_for('tasks.search') }}">
-        <input type="text" size="20" class="textbox box-3d" name="terms" id="terms">
-        <input type="hidden" name="method" value="search">
-        <input type="submit" class="button box-3d" value="Search">
-      </form>
-    </li>
-  </ul>
-</nav>
+<ul class="nav__list--secondary">
+  <li class="nav__item"><a class="nav__link" href="{{ url_for('tasks.index') }}">Priority Tasks</a></li>
+  <li class="nav__item"><a class="nav__link" href="{{ url_for('tasks.all') }}">All Tasks</a></li>
+  <li class="nav__item"><a class="nav__link" href="{{ url_for('tasks.completed') }}">Completed Tasks</a></li>
+  <li class="nav__item">
+    <form class="search-form" method="POST" action="{{ url_for('tasks.search') }}">
+      <input type="text" size="20" class="textbox box-3d" name="terms" id="terms">
+      <input type="hidden" name="method" value="search">
+      <input type="submit" class="button box-3d" value="Search">
+    </form>
+  </li>
+</ul>
 {% endblock %}
 
 {% block content %}{% endblock %}
