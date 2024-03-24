@@ -129,30 +129,20 @@ select {
   z-index: -50;
 }
 
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-  }
-  25% {
-    opacity: 1;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-#error-container {
+.site-errors {
   width: 75%;
   background-color: #666;
   padding: 25px;
   border: 5px red dotted;
   border-radius: 25px;
-  font-size: 2em;
   text-align: center;
 }
-#error-container > p {
+
+.site-errors__title {
+  font-size: 2rem;
+}
+
+.site-errors__message {
   font-size: 1.5rem;
 }
 
