@@ -42,5 +42,6 @@
     width: 80%;
     margin-left: 5rem;
     position: relative;
-    z-index: -1;
+    // this makes the link not easy to click
+    // z-index: -1;
 }
