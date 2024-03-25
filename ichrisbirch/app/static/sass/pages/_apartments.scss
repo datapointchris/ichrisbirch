@@ -1,5 +1,3 @@
-@import "./variables";
-
 body {
   display: grid;
   grid-template-rows: $header-height min-content 1fr;
@@ -186,7 +184,11 @@ input[type="submit"].manage-box {
   font-weight: bold;
   font-size: 2.5em;
   letter-spacing: 4px;
-  text-shadow: 1px 1px 3px $dark-shadow, 2px 2px 5px $dark-shadow, 3px 3px 4px $medium-shadow, 2px 2px 3px $light-shadow,
+  text-shadow:
+    1px 1px 3px $dark-shadow,
+    2px 2px 5px $dark-shadow,
+    3px 3px 4px $medium-shadow,
+    2px 2px 3px $light-shadow,
     2px 2px 3px $light-shadow;
 }
 

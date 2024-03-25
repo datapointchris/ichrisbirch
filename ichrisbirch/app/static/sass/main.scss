@@ -1,0 +1,53 @@
+@import "abstracts/colors";
+@import "abstracts/variables";
+// @import 'abstracts/functions';
+// @import 'abstracts/mixins';
+// @import 'abstracts/placeholders';
+
+@import "base/reset";
+@import "base/base";
+@import "base/typography";
+
+@import "layout/navigation";
+// @import 'layout/grid';
+// @import 'layout/header';
+// @import 'layout/footer';
+// @import 'layout/sidebar';
+@import 'layout/forms';
+
+// @import 'components/carousel';
+@import "components/buttons";
+@import "components/flash_messages";
+@import "components/errors";
+// @import 'components/dropdown';
+
+// @import 'pages/apartments';
+@import "pages/autotasks";
+@import "pages/box_packing";
+@import "pages/countdowns";
+@import "pages/events";
+// @import 'pages/habits';
+@import "pages/home";
+// @import 'pages/journal';
+// @import 'pages/portfolio';
+@import "pages/server_stats";
+@import "pages/tasks";
+
+// @import 'themes/turquoise';
+
+body {
+    background-color: $cool-blue;
+    font-family: Droid Sans Mono;
+    color: $all-text-color;
+}
+
+///// Submit, Delete, Add Buttons /////
+
+
+
+.box-3d {
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px $light-shadow,
+        inset -5px -5px 4px -2px $light-shadow;
+}
