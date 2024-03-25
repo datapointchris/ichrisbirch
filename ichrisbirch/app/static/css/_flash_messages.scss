@@ -18,29 +18,30 @@
         inset -5px -5px 4px -2px $light-shadow;
     font-size: 1.2rem;
     line-height: 2rem;
+    color: $all-text-color;
 }
 
 .flash-messages__message--success {
+    @extend .flash-messages__message;
     background-color: $success-color;
-    color: white;
 }
 
 .flash-messages__message--warning {
+    @extend .flash-messages__message;
     background-color: $warning-color;
-    color: white;
 }
 
 .flash-messages__message--error {
+    @extend .flash-messages__message;
     background-color: $error-color;
-    color: white;
 }
 
 .flash-messages__close-button {
     position: absolute;
     top: 50%;
-    right: 15px;
+    right: 25px;
     background-color: transparent;
-    font-size: 1rem;
+    font-size: 1.4rem;
     color: $all-text-color;
     cursor: pointer;
     transform: translate(-50%, -50%);
@@ -48,5 +49,6 @@
 }
 
 .flash-messages__close-button:hover {
-    transform: scale(1.2) translate(-50%, -50%);
+    font-weight: bold;
+    transform: scale(1.5) translate(-35%, -35%);
 }

@@ -97,36 +97,34 @@ select {
   text-align: center;
 }
 
-.flash-messages__message {
+.flash-messages__message, .flash-messages__message--error, .flash-messages__message--warning, .flash-messages__message--success {
   margin: 10px;
   padding: 10px 25px;
   border-radius: 15px;
   box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px #808080, inset -5px -5px 4px -2px #808080;
   font-size: 1.2rem;
   line-height: 2rem;
+  color: #dddddd;
 }
 
 .flash-messages__message--success {
   background-color: rgba(0, 92, 0, 0.8);
-  color: white;
 }
 
 .flash-messages__message--warning {
   background-color: rgba(92, 92, 0, 0.8);
-  color: white;
 }
 
 .flash-messages__message--error {
   background-color: rgba(92, 6, 0, 0.8);
-  color: white;
 }
 
 .flash-messages__close-button {
   position: absolute;
   top: 50%;
-  right: 15px;
+  right: 25px;
   background-color: transparent;
-  font-size: 1rem;
+  font-size: 1.4rem;
   color: #dddddd;
   cursor: pointer;
   transform: translate(-50%, -50%);
@@ -134,7 +132,8 @@ select {
 }
 
 .flash-messages__close-button:hover {
-  transform: scale(1.2) translate(-50%, -50%);
+  font-weight: bold;
+  transform: scale(1.5) translate(-35%, -35%);
 }
 
 .site-errors {
@@ -192,7 +191,6 @@ select {
   width: 80%;
   margin-left: 5rem;
   position: relative;
-  z-index: -1;
 }
 
 .server-stats {
@@ -213,7 +211,7 @@ select {
   src: url("../Menlo.ttc");
 }
 body {
-  background-color: rgb(0, 54, 70);
+  background-color: rgb(0, 43, 56);
   font-family: Menlo;
   color: #dddddd;
 }
