@@ -3,33 +3,34 @@
 {% block title %}Box Packing - Search{% endblock %}
 
 {% block content %}
-<div id="searchbox">
-  <form method="POST" action="{{ url_for('box_packing.search') }}">
-    <h3>Search for Items</h3>
-    <label for="search_text">Search Text:</label>
-    <input class="button box-3d" type="text" name="search_text" id="search_text">
-    <input class="button box-3d" type="submit" value="Search">
-  </form>
-</div>
+<main>
+  <div class="searchbox">
+    <form method="POST" action="{{ url_for('box_packing.search') }}">
+      <label for="search_text"></label>
+      <input class="button box-3d" type="text" name="search_text" id="search_text">
+      <input class="button box-3d" type="submit" value="Search">
+    </form>
+  </div>
 
-<div class="search-results">
-  <ul class="search-header">
-    <li>Box ID</li>
-    <li>Item</li>
-    <li>Essential</li>
-    <li>Warm</li>
-    <li>Liquid</li>
-  </ul>
-  {% if results %}
-  {% for result in results %}
-  <ul class="search-result">
-    <li>{{ result.box_id }}</li>
-    <li><a href="{{ url_for('box_packing.box', box_id=result.box_id) }}">{{ result.name }}</a></li>
-    <li class="essential-color">{% if result.essential == 1 %}Essential{% endif %}</li>
-    <li class="warm-color">{% if result.warm == 1 %}Warm{% endif %}</li>
-    <li class="liquid-color">{% if result.liquid == 1 %}Liquid{% endif %}</li>
-  </ul>
-  {% endfor %}
-  {% endif %}
-</div>
+  <div class="search-results">
+    <ul class="search-results__header">
+      <li>Box ID</li>
+      <li>Item</li>
+      <li>Essential</li>
+      <li>Warm</li>
+      <li>Liquid</li>
+    </ul>
+    {% if results %}
+    {% for result in results %}
+    <ul class="search-results__item">
+      <li><a class="search-results__link" href="{{ url_for('box_packing.box', box_id=result.box_id) }}">{{ result.box_id }}</a></li>
+      <li>{{ result.name }}</li>
+      <li class="box-details--essential">{% if result.essential == 1 %}Essential{% endif %}</li>
+      <li class="box-details--warm">{% if result.warm == 1 %}Warm{% endif %}</li>
+      <li class="box-details--liquid">{% if result.liquid == 1 %}Liquid{% endif %}</li>
+    </ul>
+    {% endfor %}
+    {% endif %}
+  </div>
+</main>
 {% endblock %}

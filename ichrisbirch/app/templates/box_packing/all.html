@@ -3,39 +3,46 @@
 {% block title %}Box Packing{% endblock %}
 
 {% block content %}
-<div id="container">
+<header class="box-listing-sort">
   <form method="POST" action="{{ url_for('box_packing.all') }}">
-    <select class="big-button box-sort" name="sort_1" id="sort_1">
-      <option value="none" selected disabled hidden>Box Sort Order 1
-      </option>
-      <option value="id">ID (default)</option>
-      <option value="size">Size</option>
-      <option value="essential">Essential</option>
-      <option value="warm">Warm</option>
-      <option value="liquid">Liquid</option>
-    </select>
-    <select class="big-button box-sort" name="sort_2" id="sort_2">
-      <option value="none" selected disabled hidden>Box Sort Order 2
-      </option>
-      <option value="">None</option>
-      <option value="size">Size</option>
-      <option value="essential">Essential</option>
-      <option value="warm">Warm</option>
-      <option value="liquid">Liquid</option>
-    </select>
-    <input class="big-button box-sort" type="submit" value="Sort Boxes">
+    <span class="box-listing-sort__item">
+      <select class="button box-3d" name="sort_1" id="sort_1">
+        <option value="none" selected disabled hidden>Box Sort Order 1</option>
+        <option value="id">ID (default)</option>
+        <option value="size">Size</option>
+        <option value="essential">Essential</option>
+        <option value="warm">Warm</option>
+        <option value="liquid">Liquid</option>
+      </select>
+    </span>
+    <span class="box-listing-sort__item">
+      <select class="button box-3d" name="sort_2" id="sort_2">
+        <option value="none" selected disabled hidden>Box Sort Order 2</option>
+        <option value="">None</option>
+        <option value="size">Size</option>
+        <option value="essential">Essential</option>
+        <option value="warm">Warm</option>
+        <option value="liquid">Liquid</option>
+      </select>
+    </span>
+    <span class="box-listing-sort__item">
+      <input class="button box-3d" type="submit" value="Sort Boxes">
+    </span>
   </form>
-  <br><br>
+</header>
+<main class="box-packing-all-layout">
   {% for box in boxes %}
-  <div class="box-list">
-    <h3>Box {{ box.id }}: {{ box.name }}</h3>
-    <ul>
-      <li>Size: {{ box.size }}</li>
-      {% if box.essential == 1 %}<li class="essential">Essential</li>{% endif %}
-      {% if box.warm == 1 %}<li class="warm">Warm</li>{% endif %}
-      {% if box.liquid == 1 %}<li class="liquid">Liquid</li>{% endif %}
+  <div class="box-listing">
+    <h2 class="box-details__title">
+      <a class="box-details__link" href="{{ url_for('box_packing.box', box_id=box.id) }}">Box {{ box.id }}: {{ box.name }}</a>
+    </h2>
+    <ul class="box-details__list">
+      <li class="box-details--size">Size: {{ box.size }}</li>
+      {% if box.essential == 1 %}<li class="box-details--essential">Essential</li>{% endif %}
+      {% if box.warm == 1 %}<li class="box-details--warm">Warm</li>{% endif %}
+      {% if box.liquid == 1 %}<li class="box-details--liquid">Liquid</li>{% endif %}
     </ul>
   </div>
   {% endfor %}
-</div>
+</main>
 {% endblock %}
