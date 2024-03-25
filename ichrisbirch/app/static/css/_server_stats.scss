@@ -5,8 +5,8 @@
     border-radius: 25px;
     list-style-type: "→  ";
     font-size: x-large;
-}
 
-.server-stats__item {
-    margin: 50px;
+    &__item {
+        margin: 50px;
+    }
 }

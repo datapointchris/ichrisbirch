@@ -196,7 +196,6 @@ select {
   list-style-type: "→  ";
   font-size: x-large;
 }
-
 .server-stats__item {
   margin: 50px;
 }
