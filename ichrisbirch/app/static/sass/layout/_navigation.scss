@@ -9,14 +9,13 @@ nav {
         border-bottom-left-radius: 5em;
         font-size: 1.25rem;
         font-weight: bold;
-        text-decoration: none;
         background-color: $medium-background;
         box-shadow:
-            0 5px 10px #646464,
-            0 -2px 2px #666,
-            rgba(0, 0, 0, 0.07) 0px 4px 4px,
-            inset 0 -10px 10px rgba(0, 0, 0, 0.5),
-            rgba(0, 0, 0, 0.07) 0px 16px 16px;
+        0 5px 10px #646464,
+        0 -2px 2px #666,
+        rgba(0, 0, 0, 0.07) 0px 4px 4px,
+        inset 0 -10px 10px rgba(0, 0, 0, 0.5),
+        rgba(0, 0, 0, 0.07) 0px 16px 16px;
 
         &[data-secondary] {
             width: 80%;
@@ -35,6 +34,7 @@ nav {
 
     & a {
         color: $all-text-color;
+        text-decoration: none;
 
         &:hover {
             text-decoration: underline;
