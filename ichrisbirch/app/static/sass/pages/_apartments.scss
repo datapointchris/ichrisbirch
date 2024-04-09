@@ -1,3 +1,32 @@
+// From Apartments
+$header-height: 100px;
+$navigation-width: 20%;
+$nav-border: 5px solid #919191;
+$h2-font-size: 1.8em;
+
+// X-offset, Y-offset, blur, spread, color
+// Negative values places shadow to left
+// Negative values place shadow above
+// transition from light to dark and spread out more
+
+$shadow-3d:
+  1px 1px 1px var(--clr-gray-200),
+  1px 10px 1px var(--clr-gray-200),
+  1px 18px 4px var(--clr-gray-800),
+  1px 30px 20px var(--clr-gray-800);
+
+$shadow-3d-apt:
+  1px 3px 1px var(--clr-gray-800),
+  1px 4px 3px var(--clr-gray-800),
+  1px 7px 15px var(--clr-gray-600),
+  5px 20px 22px var(--clr-gray-600);
+
+$shadow-3d-nav:
+  1px 1px 1px var(--clr-gray-200),
+  2px 3px 1px var(--clr-gray-200),
+  1px 9px 4px var(--clr-gray-800),
+  1px 15px 10px var(--clr-gray-800);
+
 body {
   display: grid;
   grid-template-rows: $header-height min-content 1fr;
