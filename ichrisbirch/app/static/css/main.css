@@ -1,19 +1,26 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 :root {
-  --all-text-color: $all-text-color;
-  --cool-blue: $cool-blue;
-  --light-shadow: $light-shadow;
-  --medium-shadow: $medium-shadow;
-  --dark-shadow: $dark-shadow;
-  --light-background: $light-background;
-  --medium-background: $medium-background;
-  --dark-background: $dark-background;
-  --success-color: $success-color;
-  --warning-color: $warning-color;
-  --error-color: $error-color;
+  --clr-bg: hsl(194 100% 11%);
+  --clr-accent: hsl(31 90% 57%);
+  --clr-text: hsl(0 0% 87%);
+  --clr-gray-200: hsl(0 0% 50%);
+  --clr-gray-300: hsl(0 0% 38%);
+  --clr-gray-400: hsl(0 0% 27%);
+  --clr-gray-600: hsl(0 0% 6% / 0.2);
+  --clr-gray-700: hsl(0 0% 6% / 0.4);
+  --clr-gray-800: hsl(0 0% 6% / 0.8);
+  --clr-gray-900: hsla(0, 0%, 15%, 0.95);
+  --clr-success: hsl(120 100% 18% / 0.8);
+  --clr-warning: hsl(60 100% 18% / 0.8);
+  --clr-error: hsl(4 100% 18% / 0.8);
 }
 
+@media (prefers-color-scheme: light) {
+  :root {
+    --text: hsl(0 0% 87%);
+  }
+}
 html {
   box-sizing: border-box;
   -webkit-text-size-adjust: none;
@@ -102,6 +109,10 @@ select {
   font: inherit;
 }
 
+:root {
+  --ff-base: "Ubuntu Mono", monospace;
+}
+
 nav ul {
   width: 90%;
   display: inline-flex;
@@ -112,8 +123,7 @@ nav ul {
   border-bottom-left-radius: 5em;
   font-size: 1.25rem;
   font-weight: bold;
-  text-decoration: none;
-  background-color: hsl(0, 0%, 27%);
+  background-color: var(--clr-gray-400);
   box-shadow: 0 5px 10px #646464, 0 -2px 2px #666, rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
 }
 nav ul[data-secondary] {
@@ -127,26 +137,37 @@ nav li {
   padding-bottom: 1rem;
 }
 nav a {
-  color: hsl(0, 0%, 87%);
+  color: var(--clr-text);
+  text-decoration: none;
 }
 nav a:hover {
   text-decoration: underline;
 }
 
 .textbox {
-  border-radius: 15px;
+  border-radius: var(--btn-border-radius);
   font-size: 1.33rem;
   padding: 10px 25px;
-  background-color: hsl(0, 0%, 87%);
+  background-color: var(--clr-text);
+}
+
+:root {
+  --btn-border-radius: 12px;
 }
 
 .button {
-  border-radius: 15px;
+  background-color: var(--clr-gray-400);
+  border-radius: var(--btn-border-radius);
   font-size: 1.33rem;
   padding: 10px 25px;
+  margin: 7px;
+  color: var(--clr-text);
+  text-shadow: 2px 4px 1px var(--clr-gray-800);
 }
 .button:hover {
   text-decoration: underline;
+  text-shadow: none;
+  text-shadow: 0 0 7px hsla(0, 0%, 100%, 0.5), 0 0 15px var(--clr-accent);
 }
 
 .flash-messages {
@@ -161,20 +182,20 @@ nav a:hover {
 .flash-messages__message {
   margin: 10px;
   padding: 10px 25px;
-  border-radius: 15px;
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px hsl(0, 0%, 50%), inset -5px -5px 4px -2px hsl(0, 0%, 50%);
+  border-radius: var(--btn-border-radius);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
   font-size: 1.2rem;
   line-height: 2rem;
-  color: hsl(0, 0%, 87%);
+  color: var(--clr-text);
 }
 .flash-messages__message--success {
-  background-color: hsla(120, 100%, 18%, 0.8);
+  background-color: var(--clr-success);
 }
 .flash-messages__message--warning {
-  background-color: hsla(60, 100%, 18%, 0.8);
+  background-color: var(--clr-warning);
 }
 .flash-messages__message--error {
-  background-color: hsla(4, 100%, 18%, 0.8);
+  background-color: var(--clr-error);
 }
 .flash-messages__close-button {
   position: absolute;
@@ -182,7 +203,7 @@ nav a:hover {
   right: 25px;
   background-color: transparent;
   font-size: 1.4rem;
-  color: hsl(0, 0%, 87%);
+  color: var(--clr-text);
   cursor: pointer;
   transform: translate(-50%, -50%);
   transition: all 0.2s ease-in-out;
@@ -255,9 +276,9 @@ nav a:hover {
   margin: auto;
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: hsla(0, 0%, 6%, 0.4);
+  background-color: var(--clr-gray-800);
   border: 2px solid rgb(117, 109, 96);
-  border-radius: 15px;
+  border-radius: var(--btn-border-radius);
 }
 #add-autotask h2 {
   text-align: center;
@@ -282,12 +303,12 @@ nav a:hover {
   padding: 2rem;
   padding-bottom: 3rem;
   text-align: center;
-  box-shadow: 0 5px 10px #646464, 0 -2px 2px hsla(0, 0%, 6%, 0.2), rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
+  box-shadow: 0 5px 10px #646464, 0 -2px 2px var(--clr-gray-600), rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
 }
 .box-details__title {
   color: rgb(114, 255, 114);
   font-size: 3rem;
-  text-shadow: -0.01em 0.01em 0 hsla(0, 0%, 6%, 0.2), -0.02em 0.02em 0 hsla(0, 0%, 6%, 0.2), -0.03em 0.03em 0 hsla(0, 0%, 6%, 0.2), -0.04em 0.04em 0 hsla(0, 0%, 6%, 0.2), -0.05em 0.05em 0 hsla(0, 0%, 6%, 0.2), -0.06em 0.06em 0 hsl(0, 0%, 50%), -0.07em 0.07em 0 hsl(0, 0%, 50%), -0.08em 0.08em 0 hsl(0, 0%, 50%), -0.09em 0.09em 0 hsl(0, 0%, 50%), -0.1em 0.1em 0 hsl(0, 0%, 50%), -0.11em 0.11em 0 hsl(0, 0%, 50%);
+  text-shadow: -0.01em 0.01em 0 var(--clr-gray-600), -0.02em 0.02em 0 var(--clr-gray-600), -0.03em 0.03em 0 var(--clr-gray-600), -0.04em 0.04em 0 var(--clr-gray-600), -0.05em 0.05em 0 var(--clr-gray-600), -0.06em 0.06em 0 var(--clr-gray-200), -0.07em 0.07em 0 var(--clr-gray-200), -0.08em 0.08em 0 var(--clr-gray-200), -0.09em 0.09em 0 var(--clr-gray-200), -0.1em 0.1em 0 var(--clr-gray-200), -0.11em 0.11em 0 var(--clr-gray-200);
 }
 .box-details__link {
   text-decoration: none;
@@ -405,7 +426,7 @@ nav a:hover {
   margin: 15px;
   padding: 15px;
   border: 2px solid rgb(117, 109, 96);
-  border-radius: 15px;
+  border-radius: var(--btn-border-radius);
   font-size: larger;
 }
 
@@ -414,15 +435,15 @@ nav a:hover {
 }
 
 .past {
-  background-color: hsla(4, 100%, 18%, 0.8);
+  background-color: var(--clr-error);
 }
 
 .two-weeks-left {
-  background-color: hsla(4, 100%, 18%, 0.8);
+  background-color: var(--clr-error);
 }
 
 .month-left {
-  background-color: hsla(60, 100%, 18%, 0.8);
+  background-color: var(--clr-warning);
 }
 
 #add-countdown {
@@ -430,9 +451,9 @@ nav a:hover {
   margin: auto;
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: hsla(0, 0%, 6%, 0.4);
+  background-color: var(--clr-gray-800);
   border: 2px solid rgb(117, 109, 96);
-  border-radius: 15px;
+  border-radius: var(--btn-border-radius);
 }
 #add-countdown h2 {
   text-align: center;
@@ -448,7 +469,7 @@ nav a:hover {
   margin: 50px 10px;
   padding: 10px;
   border: 2px solid orange;
-  border-radius: 15px;
+  border-radius: var(--btn-border-radius);
   font-size: larger;
 }
 #events ul.attending {
@@ -475,10 +496,10 @@ nav a:hover {
   margin: 50px auto;
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: hsla(0, 0%, 6%, 0.4);
+  background-color: var(--clr-gray-800);
   text-align: center;
   border: 3px dashed orange;
-  border-radius: 15px;
+  border-radius: var(--btn-border-radius);
 }
 
 #main-index-content {
@@ -575,15 +596,15 @@ nav a:hover {
 .filter-buttons label {
   display: inline-block;
   padding: 15px 20px;
-  border-radius: 15px;
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px hsl(0, 0%, 50%), inset -5px -5px 4px -2px hsl(0, 0%, 50%);
+  border-radius: var(--btn-border-radius);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
 }
 
 .filter-buttons input[type=radio]:checked + label {
   color: green;
   font-weight: bold;
-  background-color: hsla(0, 0%, 6%, 0.4);
-  box-shadow: inset 5px 5px 5px 0px hsla(0, 0%, 6%, 0.4), inset -3px -3px 5px 0px hsla(0, 0%, 6%, 0.2);
+  background-color: var(--clr-gray-800);
+  box-shadow: inset 5px 5px 5px 0px var(--clr-gray-800), inset -3px -3px 5px 0px var(--clr-gray-600);
 }
 
 .filter-buttons label:hover {
@@ -634,8 +655,9 @@ nav a:hover {
   width: 95%;
   height: 100px;
   padding: 25px;
-  background-color: hsla(0, 0%, 6%, 0.4);
+  background-color: var(--clr-gray-900);
   border: 3px solid gray;
+  border-bottom: none;
   border-top-right-radius: 50px;
   border-top-left-radius: 50px;
 }
@@ -654,12 +676,12 @@ nav a:hover {
 }
 
 body {
-  background-color: rgb(0, 43, 56);
-  font-family: "Ubuntu Mono", monospace;
+  background-color: var(--clr-bg);
+  font-family: var(--ff-base);
   font-weight: 300;
-  color: hsl(0, 0%, 87%);
+  color: var(--clr-text);
 }
 
 .box-3d {
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px hsl(0, 0%, 50%), inset -5px -5px 4px -2px hsl(0, 0%, 50%);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
 }/*# sourceMappingURL=main.css.map */

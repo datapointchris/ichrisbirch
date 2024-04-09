@@ -36,10 +36,10 @@
 // @import 'themes/turquoise';
 
 body {
-    background-color: $cool-blue;
-    font-family: 'Ubuntu Mono', monospace;
+    background-color: var(--clr-bg);
+    font-family: var(--ff-base);
     font-weight: 300;
-    color: $all-text-color;
+    color: var(--clr-text);
 }
 
 ///// Submit, Delete, Add Buttons /////
@@ -49,6 +49,6 @@ body {
 .box-3d {
     box-shadow:
         5px 5px 5px 0px black,
-        inset 0px 0px 5px 0px $light-shadow,
-        inset -5px -5px 4px -2px $light-shadow;
+        inset 0px 0px 5px 0px var(--clr-gray-200),
+        inset -5px -5px 4px -2px var(--clr-gray-200);
 }

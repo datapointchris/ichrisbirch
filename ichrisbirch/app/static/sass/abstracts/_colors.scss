@@ -1,31 +1,24 @@
-$all-text-color: hsl(0 0% 87%);
-$cool-blue: hsl(194 100% 11%);
-
-$light-shadow: hsl(0 0% 50%);
-$medium-shadow: hsl(0 0% 6% / 0.2);
-$dark-shadow: hsl(0 0% 6% / 0.4);
-
-$light-background: hsl(0 0% 38%);
-$medium-background: hsl(0 0% 27%);
-$dark-background: hsl(0 0% 6% / 0.4);
-
-$success-color: hsl(120 100% 18% / 0.8);
-$warning-color: hsl(60 100% 18% / 0.8);
-$error-color: hsl(4 100% 18% / 0.8);
-
 :root {
-    --all-text-color: $all-text-color;
-    --cool-blue: $cool-blue;
+    --clr-bg: hsl(194 100% 11%);
+    --clr-accent: hsl(31 90% 57%);
+    --clr-text: hsl(0 0% 87%);
 
-    --light-shadow: $light-shadow;
-    --medium-shadow: $medium-shadow;
-    --dark-shadow: $dark-shadow;
+    --clr-gray-200: hsl(0 0% 50%);
+    --clr-gray-300: hsl(0 0% 38%);
+    --clr-gray-400: hsl(0 0% 27%);
+    --clr-gray-600: hsl(0 0% 6% / 0.2);
+    --clr-gray-700: hsl(0 0% 6% / 0.4);
+    --clr-gray-800: hsl(0 0% 6% / 0.8);
+    --clr-gray-900: hsla(0, 0%, 15%, 0.95);
 
-    --light-background: $light-background;
-    --medium-background: $medium-background;
-    --dark-background: $dark-background;
+    --clr-success: hsl(120 100% 18% / 0.8);
+    --clr-warning: hsl(60 100% 18% / 0.8);
+    --clr-error: hsl(4 100% 18% / 0.8);
+}
 
-    --success-color: $success-color;
-    --warning-color: $warning-color;
-    --error-color: $error-color;
+// TODO: Update this to be actual dark and the regular to be light
+@media (prefers-color-scheme: light) {
+    :root {
+        --text: hsl(0 0% 87%);
+    }
 }

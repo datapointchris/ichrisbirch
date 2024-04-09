@@ -47,9 +47,9 @@
     // set padding to 80 for left and right and 40 for top and bottom
     padding: 40px 80px;
     line-height: 1.5em;
-    background-color: $dark-background;
+    background-color: var(--clr-gray-800);
     border: 2px solid rgb(117, 109, 96);
-    border-radius: $button-box-border-radius;
+    border-radius: var(--btn-border-radius);
 
     h2 {
         text-align: center;

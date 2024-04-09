@@ -1,9 +1,21 @@
+:root {
+    --btn-border-radius: 12px;
+}
+
 .button {
-    border-radius: $button-box-border-radius;
+    background-color: var(--clr-gray-400);
+    border-radius: var(--btn-border-radius);
     font-size: 1.33rem;
     padding: 10px 25px;
+    margin: 7px;
+    color: var(--clr-text);
+    text-shadow: 2px 4px 1px var(--clr-gray-800);
 
     &:hover {
         text-decoration: underline;
+        text-shadow: none;
+        text-shadow:
+            0 0 7px hsl(0 0% 100% / 0.5),
+            0 0 15px var(--clr-accent);
     }
 }

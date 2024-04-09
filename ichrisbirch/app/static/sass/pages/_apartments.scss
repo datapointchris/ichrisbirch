@@ -5,12 +5,12 @@ body {
 }
 
 h2 {
-  color: $text-color;
+  color: var(--clr-text);
   text-shadow: rgb(36, 36, 36) 7px 10px 5px;
   font-size: $h2-font-size;
 
   a {
-    color: $text-color;
+    color: var(--clr-text);
   }
 }
 
@@ -63,13 +63,13 @@ h2 {
     }
 
     > li a.active {
-      background-color: $cool-blue;
-      color: $text-color;
+      background-color: var(--clr-bg);
+      color: var(--clr-text);
     }
 
     > li a:hover:not(.active) {
-      background-color: $dark-gray;
-      color: $text-color;
+      background-color: var(--clr-gray-400);
+      color: var(--clr-text);
     }
   }
 }
@@ -86,7 +86,7 @@ h2 {
   box-shadow: $shadow-3d;
   vertical-align: top;
   line-height: 4em;
-  background-color: $cool-blue;
+  background-color: var(--clr-bg);
 }
 
 #content-layout {
@@ -97,7 +97,7 @@ h2 {
   padding-bottom: 100px;
   margin-left: 50px;
   margin-bottom: 100px;
-  background-color: $cool-blue;
+  background-color: var(--clr-bg);
   box-shadow: $shadow-3d;
 }
 
@@ -121,7 +121,7 @@ h2 {
   font-family: verdana;
   font-size: 5em;
   font-weight: 700;
-  color: $text-color;
+  color: var(--clr-text);
   text-shadow: $shadow-3d;
 }
 
@@ -141,9 +141,9 @@ h2 {
   padding: 10px;
   font-size: x-large;
   text-align: center;
-  background-color: $dark-gray;
+  background-color: var(--clr-gray-400);
   border: 0;
-  color: $text-color;
+  color: var(--clr-text);
   box-shadow: $shadow-3d;
 }
 
@@ -161,10 +161,10 @@ textarea.bigbox {
   line-height: 4em;
   font-size: $h2-font-size;
   text-align: center;
-  color: $text-color;
+  color: var(--clr-text);
   border: 0;
   box-shadow: $shadow-3d;
-  background-color: $dark-gray;
+  background-color: var(--clr-gray-400);
   background-color: #222;
 }
 
@@ -180,16 +180,16 @@ input[type="submit"].manage-box {
 }
 
 .warning {
-  color: red;
+  color: var(--clr-warning);
   font-weight: bold;
   font-size: 2.5em;
   letter-spacing: 4px;
   text-shadow:
-    1px 1px 3px $dark-shadow,
-    2px 2px 5px $dark-shadow,
-    3px 3px 4px $medium-shadow,
-    2px 2px 3px $light-shadow,
-    2px 2px 3px $light-shadow;
+    1px 1px 3px var(--clr-gray-800),
+    2px 2px 5px var(--clr-gray-800),
+    3px 3px 4px var(--clr-gray-600),
+    2px 2px 3px var(--clr-gray-200),
+    2px 2px 3px var(--clr-gray-200);
 }
 
 /// ########## ///
@@ -227,21 +227,21 @@ input[type="submit"].manage-box {
   left: 43%;
   height: 55px;
   width: 55px;
-  background-color: $cool-blue;
-  border: 5px solid $dark-gray;
+  background-color: var(--clr-bg);
+  border: 5px solid var(--clr-gray-400);
   box-shadow: $shadow-3d;
 }
 
 /* On mouse-over, add a grey background color */
 .checkboxes:hover input ~ .checkmark {
-  background-color: #888;
-  border: 5px solid $dark-gray;
+  background-color: var(--clr-gray-200);
+  border: 5px solid var(--clr-gray-400);
 }
 
 /* When the checkbox is checked, add a blue background */
 .checkboxes input:checked ~ .checkmark {
-  background-color: $cool-blue;
-  border: 5px solid $dark-gray;
+  background-color: var(--clr-bg);
+  border: 5px solid var(--clr-gray-400);
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */
@@ -262,7 +262,7 @@ input[type="submit"].manage-box {
   top: -50px;
   width: 30px;
   height: 80px;
-  border: solid $text-color;
+  border: solid var(--clr-text);
   border-width: 0 10px 10px 0;
   transform: rotate(55deg);
   box-shadow: $shadow-3d;
@@ -274,9 +274,9 @@ input[type="submit"].manage-box {
   width: 96%;
   margin: auto;
   margin-top: 20px;
-  background: $dark-gray;
+  background: var(--clr-gray-400);
   font-size: x-large;
-  color: $text-color;
+  color: var(--clr-text);
   box-shadow: $shadow-3d;
   z-index: 50;
   line-height: 90px;
@@ -294,33 +294,33 @@ input[type="submit"].manage-box {
     list-style: none;
     font-size: 1.5em;
     padding: 10px;
-    color: $text-color;
+    color: var(--clr-text);
     text-decoration: none;
     text-shadow: $shadow-3d-nav;
-    border-top: 2px solid $text-color;
-    border-left: 2px solid $light-shadow;
-    border-right: 4px solid $medium-shadow;
-    border-bottom: 4px solid $dark-shadow;
+    border-top: 2px solid var(--clr-text);
+    border-left: 2px solid var(--clr-gray-200);
+    border-right: 4px solid var(--clr-gray-600);
+    border-bottom: 4px solid var(--clr-gray-800);
     border-radius: 8px;
 
     :visited {
-      color: $text-color;
+      color: var(--clr-text);
     }
 
     &:hover {
       color: white;
-      border-top: 4px solid $light-shadow;
-      border-left: 4px solid $medium-shadow;
-      border-right: 2px solid $medium-shadow;
-      border-bottom: 2px solid $light-shadow;
+      border-top: 4px solid var(--clr-gray-200);
+      border-left: 4px solid var(--clr-gray-600);
+      border-right: 2px solid var(--clr-gray-600);
+      border-bottom: 2px solid var(--clr-gray-200);
       border-style: inset;
     }
 
     &.selected {
-      border-top: 4px solid $light-shadow;
-      border-left: 4px solid $medium-shadow;
-      border-right: 2px solid $medium-shadow;
-      border-bottom: 2px solid $light-shadow;
+      border-top: 4px solid var(--clr-gray-200);
+      border-left: 4px solid var(--clr-gray-600);
+      border-right: 2px solid var(--clr-gray-600);
+      border-bottom: 2px solid var(--clr-gray-200);
       border-style: inset;
     }
   }

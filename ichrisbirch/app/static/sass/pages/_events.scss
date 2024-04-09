@@ -9,7 +9,7 @@
     margin: 50px 10px;
     padding: 10px;
     border: 2px solid orange;
-    border-radius: $button-box-border-radius;
+    border-radius: var(--btn-border-radius);
     font-size: larger;
 
     &.attending {
@@ -43,8 +43,8 @@
   // set padding to 80 for left and right and 40 for top and bottom
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: $dark-background;
+  background-color: var(--clr-gray-800);
   text-align: center;
   border: 3px dashed orange;
-  border-radius: $button-box-border-radius;
+  border-radius: var(--btn-border-radius);
 }

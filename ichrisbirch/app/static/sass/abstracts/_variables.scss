@@ -1,14 +1,8 @@
 // From Apartments
 $header-height: 100px;
 $navigation-width: 20%;
-$cool-blue: rgb(0 43 56);
-$text-color: #f0f0f0;
-$dark-gray: #444;
 $nav-border: 5px solid #919191;
 $h2-font-size: 1.8em;
-
-// Journal
-$button-box-border-radius: 15px;
 
 // X-offset, Y-offset, blur, spread, color
 // Negative values places shadow to left
@@ -16,43 +10,19 @@ $button-box-border-radius: 15px;
 // transition from light to dark and spread out more
 
 $shadow-3d:
-    1px 1px 1px $light-shadow,
-    1px 2px 1px $light-shadow,
-    1px 3px 1px $light-shadow,
-    1px 4px 1px $light-shadow,
-    1px 5px 1px $light-shadow,
-    1px 6px 1px $light-shadow,
-    1px 7px 1px $light-shadow,
-    1px 8px 1px $light-shadow,
-    1px 9px 1px $light-shadow,
-    1px 10px 1px $light-shadow,
-    1px 18px 4px $dark-shadow,
-    1px 22px 8px $medium-shadow,
-    1px 25px 15px $medium-shadow,
-    1px 30px 20px $dark-shadow;
+    1px 1px 1px var(--clr-gray-200),
+    1px 10px 1px var(--clr-gray-200),
+    1px 18px 4px var(--clr-gray-800),
+    1px 30px 20px var(--clr-gray-800);
 
 $shadow-3d-apt:
-    1px 3px 1px $dark-shadow,
-    1px 3px 1px $dark-shadow,
-    1px 4px 1px $dark-shadow,
-    1px 4px 1px $dark-shadow,
-    1px 4px 1px $dark-shadow,
-    1px 4px 1px $dark-shadow,
-    1px 4px 3px $dark-shadow,
-    1px 5px 3px $dark-shadow,
-    1px 7px 15px $medium-shadow,
-    11px 8px 15px $medium-shadow,
-    8px 8px 10px $medium-shadow,
-    3px 18px 16px $dark-shadow,
-    5px 20px 22px $medium-shadow,
-    6px 8px 20px $light-shadow;
+    1px 3px 1px var(--clr-gray-800),
+    1px 4px 3px var(--clr-gray-800),
+    1px 7px 15px var(--clr-gray-600),
+    5px 20px 22px var(--clr-gray-600);
 
 $shadow-3d-nav:
-    1px 1px 1px $light-shadow,
-    1px 2px 1px $light-shadow,
-    1px 3px 1px $light-shadow,
-    2px 3px 1px $light-shadow,
-    1px 9px 4px $dark-shadow,
-    1px 11px 4px $medium-shadow,
-    1px 13px 8px $medium-shadow,
-    1px 15px 10px $dark-shadow;
+    1px 1px 1px var(--clr-gray-200),
+    2px 3px 1px var(--clr-gray-200),
+    1px 9px 4px var(--clr-gray-800),
+    1px 15px 10px var(--clr-gray-800);

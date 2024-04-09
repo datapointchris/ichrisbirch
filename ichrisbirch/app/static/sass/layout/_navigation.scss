@@ -9,7 +9,7 @@ nav {
         border-bottom-left-radius: 5em;
         font-size: 1.25rem;
         font-weight: bold;
-        background-color: $medium-background;
+        background-color: var(--clr-gray-400);
         box-shadow:
         0 5px 10px #646464,
         0 -2px 2px #666,
@@ -33,7 +33,7 @@ nav {
     }
 
     & a {
-        color: $all-text-color;
+        color: var(--clr-text);
         text-decoration: none;
 
         &:hover {

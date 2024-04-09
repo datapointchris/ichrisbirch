@@ -49,15 +49,15 @@
   display: inline-block;
   padding: 15px 20px;
   font-size: 0.7em;
-  border-radius: $button-box-border-radius;
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px $medium-shadow, inset -5px -5px 4px -2px $dark-shadow;
+  border-radius: var(--btn-border-radius);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-600), inset -5px -5px 4px -2px var(--clr-gray-800);
 }
 
 .feeling-buttons input[type="radio"]:checked + label {
   color: green;
   font-weight: bold;
-  background-color: $dark-gray;
-  box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px $dark-shadow;
+  background-color: var(--clr-gray-400);
+  box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px var(--clr-gray-800);
 }
 
 .feeling-buttons label:hover {
