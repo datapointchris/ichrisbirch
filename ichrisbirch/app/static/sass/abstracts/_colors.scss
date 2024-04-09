@@ -1,13 +1,31 @@
-$all-text-color: #dddddd;
+$all-text-color: hsl(0 0% 87%);
+$cool-blue: hsl(194 100% 11%);
 
-$light-shadow: #808080;
-$medium-shadow: rgba(16, 16, 16, 0.2);
-$dark-shadow: rgba(16, 16, 16, 0.4);
+$light-shadow: hsl(0 0% 50%);
+$medium-shadow: hsl(0 0% 6% / 0.2);
+$dark-shadow: hsl(0 0% 6% / 0.4);
 
-$light-background: #606060;
-$medium-background: #444;
-$dark-background: rgba(16, 16, 16, 0.4);
+$light-background: hsl(0 0% 38%);
+$medium-background: hsl(0 0% 27%);
+$dark-background: hsl(0 0% 6% / 0.4);
 
-$success-color: rgb(0, 92, 0, 0.8);
-$warning-color: rgb(92, 92, 0, 0.8);
-$error-color: rgb(92, 6, 0, 0.8);
+$success-color: hsl(120 100% 18% / 0.8);
+$warning-color: hsl(60 100% 18% / 0.8);
+$error-color: hsl(4 100% 18% / 0.8);
+
+:root {
+    --all-text-color: $all-text-color;
+    --cool-blue: $cool-blue;
+
+    --light-shadow: $light-shadow;
+    --medium-shadow: $medium-shadow;
+    --dark-shadow: $dark-shadow;
+
+    --light-background: $light-background;
+    --medium-background: $medium-background;
+    --dark-background: $dark-background;
+
+    --success-color: $success-color;
+    --warning-color: $warning-color;
+    --error-color: $error-color;
+}
