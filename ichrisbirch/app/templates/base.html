@@ -18,18 +18,20 @@
 
 <body>
   <header>
-    <nav class="nav">
-      <ul class="nav__list">
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('home.index') }}">Home</a></li>
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('box_packing.index') }}">Box Packing</a></li>
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('countdowns.index') }}">Countdowns</a></li>
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('events.index') }}">Events</a></li>
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('tasks.index') }}">Tasks</a></li>
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('autotasks.index') }}">AutoTasks</a></li>
-        <!-- <li class="nav__item"><a class="nav__link" href="{{ url_for('portfolio.index') }}">Portfolio</a></li>
-           <li class="nav__item"><a class="nav__link" href="{{ url_for('journal.index') }}">Journal</a></li>
-           <li class="nav__item"><a class="nav__link" href="{{ url_for('habits.index') }}">Habits</a></li> -->
-        <li class="nav__item"><a class="nav__link" href="{{ url_for('server_stats.index') }}">Server Stats</a></li>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('home.index') }}">Home</a></li>
+        <li><a href="{{ url_for('box_packing.index') }}">Box Packing</a></li>
+        <li><a href="{{ url_for('countdowns.index') }}">Countdowns</a></li>
+        <li><a href="{{ url_for('events.index') }}">Events</a></li>
+        <li><a href="{{ url_for('tasks.index') }}">Tasks</a></li>
+        <li><a href="{{ url_for('autotasks.index') }}">AutoTasks</a></li>
+        <!--
+           <li><a href="{{ url_for('portfolio.index') }}">Portfolio</a></li>
+           <li><a href="{{ url_for('journal.index') }}">Journal</a></li>
+           <li><a href="{{ url_for('habits.index') }}">Habits</a></li>
+         -->
+        <li><a href="{{ url_for('server_stats.index') }}">Server Stats</a></li>
       </ul>
       {% block app_navigation %}{% endblock %}
     </nav>
