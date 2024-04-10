@@ -28,7 +28,7 @@
     line-height: 1.5em;
 
     &.completed {
-        border-color: green;
+        border-color: var(--clr-success);
     }
 }
 
@@ -69,7 +69,7 @@
 }
 
 .filter-buttons input[type="radio"]:checked + label {
-    color: green;
+    color: var(--clr-success);
     font-weight: bold;
     background-color: var(--clr-gray-800);
     box-shadow:

@@ -11,11 +11,11 @@ nav {
         font-weight: bold;
         background-color: var(--clr-gray-400);
         box-shadow:
-        0 5px 10px #646464,
-        0 -2px 2px #666,
-        rgba(0, 0, 0, 0.07) 0px 4px 4px,
-        inset 0 -10px 10px rgba(0, 0, 0, 0.5),
-        rgba(0, 0, 0, 0.07) 0px 16px 16px;
+            0 5px 10px var(--clr-gray-300),
+            0 -2px 2px var(--clr-gray-300),
+            var(--clr-gray-600) 0px 4px 4px,
+            inset 0 -10px 10px var(--clr-gray-700),
+            var(--clr-gray-600) 0px 16px 16px;
 
         &[data-secondary] {
             width: 80%;

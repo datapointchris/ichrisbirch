@@ -54,7 +54,7 @@
 }
 
 .feeling-buttons input[type="radio"]:checked + label {
-  color: green;
+  color: var(--clr-success);
   font-weight: bold;
   background-color: var(--clr-gray-400);
   box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px var(--clr-gray-800);
