@@ -41,8 +41,8 @@
         list-style: none;
         margin: 0;
         padding: 0;
-        line-height: 3rem;
         font-size: 1.5rem;
+        line-height: 2em;
     }
 
     &--size {
@@ -133,17 +133,17 @@
 
     &__header {
         @include search-results-grid;
+        font-size: 1.5rem;
         border-top: 5px dashed var(--clr-accent);
         border-bottom: 5px dashed var(--clr-accent);
-        font-size: 1.5rem;
     }
 
     &__item {
         @include search-results-grid;
-        line-height: 2rem;
+        font-size: 1.3rem;
+        line-height: 1.5em;
         border-top: 1px dotted var(--clr-accent);
         border-bottom: 1px dotted var(--clr-accent);
-        font-size: 1.3rem;
     }
 
     &__link {

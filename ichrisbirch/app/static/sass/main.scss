@@ -4,8 +4,8 @@
 // @import 'abstracts/placeholders';
 
 @import "base/reset";
-@import "base/base";
 @import "base/typography";
+@import "base/base";
 
 @import "layout/navigation";
 @import 'layout/grid';
@@ -33,19 +33,3 @@
 @import "pages/tasks";
 
 // @import 'themes/turquoise';
-
-body {
-    background-color: var(--clr-bg);
-    font-family: var(--ff-base);
-    font-weight: 300;
-    color: var(--clr-text);
-}
-
-///// Submit, Delete, Add Buttons /////
-
-.box-3d {
-    box-shadow:
-        5px 5px 5px 0px black,
-        inset 0px 0px 5px 0px var(--clr-gray-400),
-        inset -5px -5px 4px -2px var(--clr-gray-400);
-}
