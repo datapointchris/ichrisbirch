@@ -30,9 +30,9 @@
     </span>
   </form>
 </header>
-<main class="box-packing-all-layout">
+<main class="grid-wrapper two-columns">
   {% for box in boxes %}
-  <div class="box-listing">
+  <div class="grid-item centered">
     <h2 class="box-details__title">
       <a class="box-details__link" href="{{ url_for('box_packing.box', box_id=box.id) }}">Box {{ box.id }}: {{ box.name }}</a>
     </h2>

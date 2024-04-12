@@ -10,7 +10,7 @@
 .countdown-box {
     margin: 15px;
     padding: 15px;
-    border: 2px solid rgb(117, 109, 96);
+    border: 2px solid var(--clr-gray-600);
     border-radius: var(--btn-border-radius);
     font-size: larger;
 }
@@ -38,7 +38,7 @@
     padding: 40px 80px;
     line-height: 1.5em;
     background-color: var(--clr-black-trans-800);
-    border: 2px solid rgb(117, 109, 96);
+    border: 2px solid var(--clr-gray-600);
     border-radius: var(--btn-border-radius);
 
     h2 {

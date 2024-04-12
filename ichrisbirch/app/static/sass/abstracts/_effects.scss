@@ -1,0 +1,20 @@
+:root {
+    // prettier-ignore
+    --deep-3d-box-shadow:
+        1px 1px 0px #999,
+        2px 2px 0px #888,
+        3px 3px 0px #777,
+        4px 4px 0px #666,
+        5px 5px 0px #555,
+        6px 6px 0px #444,
+        7px 7px 0px #333,
+        8px 8px 0px #222,
+        9px 9px 0px #111,
+        28px 28px 30px rgba(0, 0, 0, 0.8),
+        20px 30px 35px rgba(0, 0, 0, 0.7),
+        30px 40px 40px rgba(0, 0, 0, 0.6);
+}
+
+@mixin deep-3d-box {
+    box-shadow: var(--deep-3d-box-shadow);
+}
