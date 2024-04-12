@@ -148,15 +148,13 @@ select {
   --fs-800: 1.75rem;
   --fs-900: 2rem;
   --deep-3d-text-shadow:
-      1px 1px 0px var(--clr-gray-900),
-      2px 2px 0px var(--clr-gray-800),
-      3px 3px 0px var(--clr-gray-700),
+      1px 1px 0px var(--clr-gray-400),
+      2px 2px 0px var(--clr-gray-400),
+      3px 3px 0px var(--clr-gray-500),
       4px 4px 0px var(--clr-gray-600),
-      5px 5px 0px var(--clr-gray-500),
-      6px 6px 0px var(--clr-gray-400),
-      7px 7px 0px var(--clr-gray-300),
-      8px 8px 0px var(--clr-gray-200),
-      9px 9px 0px var(--clr-gray-100);
+      5px 5px 0px var(--clr-gray-700),
+      6px 6px 0px var(--clr-gray-800),
+      7px 7px 0px var(--clr-gray-900);
 }
 
 .centered {
@@ -224,11 +222,6 @@ nav a:hover {
   padding: 2rem;
   border-radius: var(--btn-border-radius);
   box-shadow: 0px 3px 10px var(--clr-gray-trans-700), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-800), inset 5px 5px 10px var(--clr-black-trans-200), inset -10px -10px 10px var(--clr-black-trans-200), 16px 8px 16px var(--clr-black-trans-800), 0px 16px 16px var(--clr-black-trans-800);
-}
-.grid-wrapper.two-columns > .grid-item:last-child:nth-child(odd) {
-  grid-column: 1/span 2;
-  justify-self: center;
-  width: calc(50% - var(--grid-gap) * 4);
 }
 .grid-wrapper.three-columns {
   display: grid;

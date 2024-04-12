@@ -14,15 +14,13 @@
 
     // prettier-ignore
     --deep-3d-text-shadow:
-        1px 1px 0px var(--clr-gray-900),
-        2px 2px 0px var(--clr-gray-800),
-        3px 3px 0px var(--clr-gray-700),
+        1px 1px 0px var(--clr-gray-400),
+        2px 2px 0px var(--clr-gray-400),
+        3px 3px 0px var(--clr-gray-500),
         4px 4px 0px var(--clr-gray-600),
-        5px 5px 0px var(--clr-gray-500),
-        6px 6px 0px var(--clr-gray-400),
-        7px 7px 0px var(--clr-gray-300),
-        8px 8px 0px var(--clr-gray-200),
-        9px 9px 0px var(--clr-gray-100);
+        5px 5px 0px var(--clr-gray-700),
+        6px 6px 0px var(--clr-gray-800),
+        7px 7px 0px var(--clr-gray-900);
 }
 
 @mixin deep-3d-text {
