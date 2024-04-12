@@ -11,6 +11,12 @@
     color: var(--clr-text);
     text-shadow: 2px 4px 1px var(--clr-black-trans-800);
 
+    &-3d {
+        box-shadow:
+            5px 5px 5px 0px black,
+            inset 0px 0px 5px 0px var(--clr-gray-400),
+            inset -5px -5px 4px -2px var(--clr-gray-400);
+    }
     &:hover {
         text-decoration: underline;
         text-shadow:

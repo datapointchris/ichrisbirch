@@ -92,7 +92,6 @@
 /*     ALL PAGE     */
 /////////////////////
 
-
 .box-listing {
     text-align: center;
 }
@@ -119,24 +118,28 @@
     text-align: center;
 }
 
+@mixin search-results-grid {
+    display: grid;
+    grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
+    list-style: none;
+    text-align: center;
+    padding: 1.5rem 0;
+    margin: 1rem 0;
+}
+
 .search-results {
     margin: 0;
     padding: 0;
 
     &__header {
-        display: grid;
-        grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
-        list-style: none;
-        text-align: center;
-        padding: 1.5rem 0;
-        margin: 1rem 0;
+        @include search-results-grid;
         border-top: 5px dashed var(--clr-accent);
         border-bottom: 5px dashed var(--clr-accent);
         font-size: 1.5rem;
     }
 
     &__item {
-        @extend .search-results__header;
+        @include search-results-grid;
         line-height: 2rem;
         border-top: 1px dotted var(--clr-accent);
         border-bottom: 1px dotted var(--clr-accent);

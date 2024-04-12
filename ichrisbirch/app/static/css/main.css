@@ -149,6 +149,13 @@ select {
   text-align: center;
 }
 
+body {
+  background-color: var(--clr-bg);
+  font-family: var(--ff-base);
+  font-weight: 300;
+  color: var(--clr-text);
+}
+
 nav ul {
   width: 90%;
   display: inline-flex;
@@ -235,6 +242,9 @@ nav a:hover {
   margin: 7px;
   color: var(--clr-text);
   text-shadow: 2px 4px 1px var(--clr-black-trans-800);
+}
+.button-3d {
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 .button:hover {
   text-decoration: underline;
@@ -444,7 +454,7 @@ nav a:hover {
   margin: 0;
   padding: 0;
 }
-.search-results__header, .search-results__item {
+.search-results__header {
   display: grid;
   grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
   list-style: none;
@@ -456,6 +466,12 @@ nav a:hover {
   font-size: 1.5rem;
 }
 .search-results__item {
+  display: grid;
+  grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
+  list-style: none;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin: 1rem 0;
   line-height: 2rem;
   border-top: 1px dotted var(--clr-accent);
   border-bottom: 1px dotted var(--clr-accent);
@@ -765,15 +781,4 @@ nav a:hover {
 }
 #add-task .button {
   margin-left: 50px;
-}
-
-body {
-  background-color: var(--clr-bg);
-  font-family: var(--ff-base);
-  font-weight: 300;
-  color: var(--clr-text);
-}
-
-.box-3d {
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }/*# sourceMappingURL=main.css.map */

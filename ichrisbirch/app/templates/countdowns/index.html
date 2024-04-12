@@ -9,7 +9,7 @@
 {% block content %}
 <div id="countdowns">
   {% for countdown in countdowns %}
-  <div class="countdown-box box-3d">
+  <div class="countdown-box button-3d">
     <h2>{{ countdown.name }}</h2>
     <h2 class="daysleft" id="{{ countdown.id }}">
       <script>updateDaysLeft('{{ countdown.due_date }}', '{{ countdown.id }}');</script>
@@ -21,30 +21,30 @@
     <form method="POST">
       <input type="hidden" name="id" value="{{ countdown.id }}">
       <input type="hidden" name="method" value="delete">
-      <button name="delete" class="button box-3d" value="{{ countdown.name }} delete">Delete Countdown</button>
+      <button name="delete" class="button button-3d" value="{{ countdown.name }} delete">Delete Countdown</button>
     </form>
   </div>
   {% else %}
-  <div class="countdown-box box-3d">
+  <div class="countdown-box button-3d">
     <h2>No Countdowns</h2>
   </div>
   {% endfor %}
 </div>
-<div id="add-countdown" class="box-3d">
+<div id="add-countdown" class="button-3d">
   <h3>Add New Countdown:</h3>
   <div id="add-form">
     <form method="POST">
       <label for="name">Name:</label>
-      <input type="text" size="30" class="textbox box-3d" name="name" id="name">
+      <input type="text" size="30" class="textbox button-3d" name="name" id="name">
       <br><br>
       <label for="notes">Notes:</label>
-      <input type="text" size="40" class="textbox box-3d" name="notes" id="notes">
+      <input type="text" size="40" class="textbox button-3d" name="notes" id="notes">
       <br><br>
       <label for="due_date">Due Date:</label>
-      <input type="date" class="textbox box-3d" name="due_date" id="due_date">
+      <input type="date" class="textbox button-3d" name="due_date" id="due_date">
       <br><br>
       <input type="hidden" id="method" name="method" value="add">
-      <button name="add" id="add" class="button box-3d" value="Add Countdown">Add Countdown</button>
+      <button name="add" id="add" class="button button-3d" value="Add Countdown">Add Countdown</button>
     </form>
   </div>
 </div>

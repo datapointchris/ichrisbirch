@@ -6,7 +6,7 @@
 <header class="box-listing-sort">
   <form method="POST" action="{{ url_for('box_packing.all') }}">
     <span class="box-listing-sort__item">
-      <select class="button box-3d" name="sort_1" id="sort_1">
+      <select class="button button-3d" name="sort_1" id="sort_1">
         <option value="none" selected disabled hidden>Box Sort Order 1</option>
         <option value="id">ID (default)</option>
         <option value="size">Size</option>
@@ -16,7 +16,7 @@
       </select>
     </span>
     <span class="box-listing-sort__item">
-      <select class="button box-3d" name="sort_2" id="sort_2">
+      <select class="button button-3d" name="sort_2" id="sort_2">
         <option value="none" selected disabled hidden>Box Sort Order 2</option>
         <option value="">None</option>
         <option value="size">Size</option>
@@ -26,7 +26,7 @@
       </select>
     </span>
     <span class="box-listing-sort__item">
-      <input class="button box-3d" type="submit" value="Sort Boxes">
+      <input class="button button-3d" type="submit" value="Sort Boxes">
     </span>
   </form>
 </header>

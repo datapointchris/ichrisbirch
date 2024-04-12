@@ -38,7 +38,7 @@
         <form method="POST" action="{{ url_for('box_packing.crud') }}">
           <input type="hidden" name="id" value={{ selected_box.id }}>
           <input type="hidden" name="method" value="delete_box">
-          <input class="button box-3d" type="submit" value="Delete Box">
+          <input class="button button-3d" type="submit" value="Delete Box">
         </form>
       </div>
 
@@ -50,7 +50,7 @@
 
     <div id="select-box" class="box-function">
       <form method="GET" id="select_box_form" action="/box-packing/">
-        <select class="button box-3d" id="selected_box_id" onchange="updateAction(); this.form.submit();">
+        <select class="button button-3d" id="selected_box_id" onchange="updateAction(); this.form.submit();">
           <option value="none" selected disabled hidden>Select a Box</option>
           {% for box in boxes %}
           <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
@@ -63,10 +63,10 @@
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
         <h3>Add a New Box</h3>
         <label for="add-box-name">Name:</label>
-        <input class="button box-3d" type="text" name="name" id="add-box-name">
+        <input class="button button-3d" type="text" name="name" id="add-box-name">
         <br><br>
         <label for="add-box-size">Size</label>
-        <select class='button box-3d' name="size" id="add-box-size">
+        <select class='button button-3d' name="size" id="add-box-size">
           {% for size in box_sizes %}
           <option value={{ size }}>{{ size }}</option>
           {% endfor %}
@@ -82,7 +82,7 @@
         <label for="add-box-liquid">Liquid</label>
         <br><br>
         <input type="hidden" name="method" id="method" value="add_box">
-        <input class="button box-3d" type="submit" value="Add Box">
+        <input class="button button-3d" type="submit" value="Add Box">
       </form>
     </div>
 
@@ -92,7 +92,7 @@
         <h3>Add Item to <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span></h3>
         <input type="hidden" name="box_id" id="add-item-box_id" value={{ selected_box.id }}>
         <label for="add-item-name">Name:</label>
-        <input class="button box-3d" type="text" name="name" id="add-item-name">
+        <input class="button button-3d" type="text" name="name" id="add-item-name">
         <br><br>
         <input type="checkbox" name="essential" id="add-item-essential" value=1>
         <label for="add-item-essential">Essential</label>
@@ -104,7 +104,7 @@
         <label for="add-item-liquid">Liquid</label>
         <br><br>
         <input type="hidden" name="method" id="add-item-method" value="add_item">
-        <input class="button box-3d" type="submit" value="Add Item">
+        <input class="button button-3d" type="submit" value="Add Item">
       </form>
     </div>
 
@@ -113,14 +113,14 @@
         <h3>Delete Item from <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span>
         </h3>
         <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-        <select class="button box-3d" name="id" id="delete-item-id">
+        <select class="button button-3d" name="id" id="delete-item-id">
           <option value="none" selected disabled hidden>Select an Item</option>
           {% for item in selected_box.items %}
           <option value={{ item.id }}>{{ item.name }}</option>
           {% endfor %}
         </select><br><br>
         <input type="hidden" name="method" id="delete-item-method" value="delete_item">
-        <input class="button box-3d" type="submit" value="Delete Item">
+        <input class="button button-3d" type="submit" value="Delete Item">
       </form>
     </div>
 
@@ -129,7 +129,7 @@
         <h3>Delete <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span></h3>
         <input type="hidden" name="id" id="delete-box-id" value={{ selected_box.id }}>
         <input type="hidden" name="method" id="delete-box-method" value="delete_box">
-        <input class="button box-3d" type="submit" value="Delete Box">
+        <input class="button button-3d" type="submit" value="Delete Box">
       </form>
     </div>
     {% endif %}

@@ -2,10 +2,10 @@
   <h3>Add New Task:</h3>
   <form method="POST" action="{{ url_for('tasks.crud') }}">
     <label for="name">Name:</label>
-    <input type="text" size="20" class="textbox box-3d" name="name" id="name">
+    <input type="text" size="20" class="textbox button-3d" name="name" id="name">
 
     <label for="category">Category:</label>
-    <select class="textbox box-3d" name="category" id="category">
+    <select class="textbox button-3d" name="category" id="category">
       {% for category in task_categories %}
       <option value="{{ category }}">{{ category }}
       </option>
@@ -13,12 +13,12 @@
     </select>
 
     <label for="priority">Priority:</label>
-    <input type="number" min="1" class="textbox box-3d" name="priority" id="priority">
+    <input type="number" min="1" class="textbox button-3d" name="priority" id="priority">
 
     <label for="notes">Notes:</label>
-    <input type="text" size="60" class="textbox box-3d" name="notes" id="notes">
+    <input type="text" size="60" class="textbox button-3d" name="notes" id="notes">
 
     <input type="hidden" id="method" name="method" value="add">
-    <button type="submit" name="add" id="add" class="button box-3d" value="Add New Task">Add New Task</button>
+    <button type="submit" name="add" id="add" class="button button-3d" value="Add New Task">Add New Task</button>
   </form>
 </div>
