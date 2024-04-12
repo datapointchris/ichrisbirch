@@ -3,47 +3,45 @@
 {% block title %}AutoTasks{% endblock %}
 
 {% block content %}
-<div id="autotasks">
+<div class="grid-wrapper two-columns">
   {% for autotask in autotasks %}
-  <div class="autotask box-3d">
+  <div class="grid-item autotask box-3d">
     <h2>{{ autotask.name }}</h2>
-    <div class="autotask-box">
-      <div class="autotask-box-container">
-        <div class="autotask-box-left">
-          <strong>Category: </strong><br>
-          <strong>Priority: </strong><br>
-          <strong>Notes: </strong><br>
-          <strong>Frequency: </strong><br>
-          <strong>First Run Date: </strong><br>
-          <strong>Last Run Date: </strong><br>
-          <strong>Run Count: </strong><br><br>
-          <form method="POST">
-            <input type="hidden" name="id" value="{{ autotask.id }}">
-            <input type="hidden" name="name" value="{{ autotask.name }}">
-            <input type="hidden" name="method" value="run">
-            <button type="submit" class="button box-3d" value="Add Task Now">Add Task Now</button>
-          </form>
-        </div>
-        <div class="autotask-box-right">
-          {{ autotask.category }}<br>
-          {{ autotask.priority }}<br>
-          {{ autotask.notes }}<br>
-          {{ autotask.frequency }}<br>
-          {{ autotask.first_run_date }}<br>
-          {{ autotask.last_run_date }}<br>
-          {{ autotask.run_count }}<br><br>
-          <form method="POST">
-            <input type="hidden" name="id" value="{{ autotask.id }}">
-            <input type="hidden" name="name" value="{{ autotask.name }}">
-            <input type="hidden" name="method" value="delete">
-            <button type="submit" class="button box-3d" value="{{ autotask.name }} delete">Delete AutoTask</button>
-          </form>
-        </div>
+    <div class="autotask-details-grid">
+      <div class="autotask-details-grid--left">
+        <strong>Category: </strong><br>
+        <strong>Priority: </strong><br>
+        <strong>Notes: </strong><br>
+        <strong>Frequency: </strong><br>
+        <strong>First Run Date: </strong><br>
+        <strong>Last Run Date: </strong><br>
+        <strong>Run Count: </strong><br><br>
+        <form method="POST">
+          <input type="hidden" name="id" value="{{ autotask.id }}">
+          <input type="hidden" name="name" value="{{ autotask.name }}">
+          <input type="hidden" name="method" value="run">
+          <button type="submit" class="button box-3d" value="Add Task Now">Add Task Now</button>
+        </form>
+      </div>
+      <div class="autotask-details-grid--right">
+        {{ autotask.category }}<br>
+        {{ autotask.priority }}<br>
+        {{ autotask.notes }}<br>
+        {{ autotask.frequency }}<br>
+        {{ autotask.first_run_date }}<br>
+        {{ autotask.last_run_date }}<br>
+        {{ autotask.run_count }}<br><br>
+        <form method="POST">
+          <input type="hidden" name="id" value="{{ autotask.id }}">
+          <input type="hidden" name="name" value="{{ autotask.name }}">
+          <input type="hidden" name="method" value="delete">
+          <button type="submit" class="button box-3d" value="{{ autotask.name }} delete">Delete AutoTask</button>
+        </form>
       </div>
     </div>
   </div>
   {% else %}
-  <div class="add-autotask box-3d">
+  <div class="add-autotask-box box-3d">
     <h2>No AutoTasks</h2>
   </div>
   {% endfor %}

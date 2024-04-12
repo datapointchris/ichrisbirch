@@ -1,0 +1,33 @@
+:root {
+    --grid-gap: 1rem;
+}
+
+@mixin grid-template($columns) {
+    display: grid;
+    gap: var(--grid-gap);
+    grid-template-columns: repeat($columns, minmax(200px, 1fr));
+    width: 70%;
+    margin: auto;
+}
+
+.grid-wrapper {
+    &.one-column {
+        @include grid-template(1);
+    }
+
+    &.two-columns {
+        @include grid-template(2);
+
+        > .grid-item {
+            &:last-child:nth-child(odd) {
+                grid-column: 1 / span 2;
+                justify-self: center;
+                width: calc(50% - (var(--grid-gap) * 4));
+            }
+        }
+    }
+
+    &.three-columns {
+        @include grid-template(3);
+    }
+}
