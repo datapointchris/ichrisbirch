@@ -9,13 +9,13 @@
 
     &__message {
         margin: 10px;
-        padding: 10px 25px;
+        padding: 0.5em 1.75em;
         border-radius: var(--btn-border-radius);
         box-shadow:
             5px 5px 5px 0px black,
             inset 0px 0px 5px 0px var(--clr-gray-400),
             inset -5px -5px 4px -2px var(--clr-gray-400);
-        font-size: 1.2rem;
+        font-size: var(--fs-500);
         line-height: 2em;
         color: var(--clr-text);
 
@@ -36,7 +36,7 @@
         top: 50%;
         right: 25px;
         background-color: transparent;
-        font-size: 1.4rem;
+        font-size: var(--fs-600);
         color: var(--clr-text);
         cursor: pointer;
         transform: translate(-50%, -50%);

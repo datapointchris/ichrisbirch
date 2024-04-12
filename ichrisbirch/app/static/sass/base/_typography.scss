@@ -2,17 +2,27 @@
 
 :root {
     --ff-base: "Ubuntu Mono", monospace;
+
+    --fs-200: 0.5rem;
+    --fs-300: 0.75rem;
+    --fs-400: 1rem;
+    --fs-500: 1.25rem;
+    --fs-600: 1.33rem;
+    --fs-700: 1.5rem;
+    --fs-800: 1.75rem;
+    --fs-900: 2rem;
+
     // prettier-ignore
     --deep-3d-text-shadow:
-        1px 1px 0px #999,
-        2px 2px 0px #888,
-        3px 3px 0px #777,
-        4px 4px 0px #666,
-        5px 5px 0px #555,
-        6px 6px 0px #444,
-        7px 7px 0px #333,
-        8px 8px 0px #222,
-        9px 9px 0px #111;
+        1px 1px 0px var(--clr-gray-900),
+        2px 2px 0px var(--clr-gray-800),
+        3px 3px 0px var(--clr-gray-700),
+        4px 4px 0px var(--clr-gray-600),
+        5px 5px 0px var(--clr-gray-500),
+        6px 6px 0px var(--clr-gray-400),
+        7px 7px 0px var(--clr-gray-300),
+        8px 8px 0px var(--clr-gray-200),
+        9px 9px 0px var(--clr-gray-100);
 }
 
 @mixin deep-3d-text {

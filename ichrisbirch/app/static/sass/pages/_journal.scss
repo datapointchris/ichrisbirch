@@ -46,7 +46,7 @@
 .feeling-buttons label {
   display: inline-block;
   padding: 15px 20px;
-  font-size: 0.7em;
+  font-size: var(--fs-300);
   border-radius: var(--btn-border-radius);
   box-shadow:
     5px 5px 5px 0px black,
@@ -59,7 +59,7 @@
   font-weight: bold;
   background-color: var(--clr-gray-800);
   box-shadow:
-    inset 5px 5px 5px 0px black,
+    inset 5px 5px 5px 0px var(--clr-gray-1000),
     inset -3px -3px 5px 0px var(--clr-black-trans-800);
 }
 

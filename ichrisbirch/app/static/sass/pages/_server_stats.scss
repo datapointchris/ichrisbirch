@@ -15,7 +15,7 @@
 }
 
 .server-stats {
-    --font-size: 2rem;
+    --font-size: var(--fs-900);
     list-style: none;
     font-size: var(--font-size);
     line-height: 3em;

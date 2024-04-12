@@ -29,7 +29,7 @@
 
     &__title {
         color: var(--clr-box-title);
-        font-size: 3rem;
+        font-size: var(--fs-900);
         @include deep-3d-text;
     }
 
@@ -41,12 +41,12 @@
         list-style: none;
         margin: 0;
         padding: 0;
-        font-size: 1.5rem;
+        font-size: var(--fs-700);
         line-height: 2em;
     }
 
     &--size {
-        font-size: 2rem;
+        font-size: var(--fs-900);
     }
 
     &--essential {
@@ -70,8 +70,8 @@
     }
 
     &__item {
-        margin: 1rem;
-        padding: 1rem;
+        margin: 1em;
+        padding: 1em;
         border: 1px dotted var(--clr-accent);
     }
 
@@ -83,7 +83,7 @@
 }
 
 .box-function {
-    border: 3px solid black;
+    border: 3px solid var(--clr-gray-1000);
     padding: 25px;
     margin: 15px;
 }
@@ -133,14 +133,14 @@
 
     &__header {
         @include search-results-grid;
-        font-size: 1.5rem;
+        font-size: var(--fs-700);
         border-top: 5px dashed var(--clr-accent);
         border-bottom: 5px dashed var(--clr-accent);
     }
 
     &__item {
         @include search-results-grid;
-        font-size: 1.3rem;
+        font-size: var(--fs-600);
         line-height: 1.5em;
         border-top: 1px dotted var(--clr-accent);
         border-bottom: 1px dotted var(--clr-accent);

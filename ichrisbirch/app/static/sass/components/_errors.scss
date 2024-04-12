@@ -1,16 +1,16 @@
 .site-errors {
     width: 75%;
-    background-color: #666;
     padding: 25px;
+    background-color: var(--clr-gray-600);
     border: 5px red dotted;
     border-radius: 25px;
     text-align: center;
 }
 
 .site-errors__title {
-    font-size: 2rem;
+    font-size: var(--fs-900);
 }
 
 .site-errors__message {
-    font-size: 1.5rem;
+    font-size: var(--fs-700);
 }
