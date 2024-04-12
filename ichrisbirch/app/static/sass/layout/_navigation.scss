@@ -9,13 +9,13 @@ nav {
         border-bottom-left-radius: 5em;
         font-size: 1.25rem;
         font-weight: bold;
-        background-color: var(--clr-gray-400);
+        background-color: var(--clr-gray-800);
         box-shadow:
-            0 5px 10px var(--clr-gray-300),
-            0 -2px 2px var(--clr-gray-300),
-            var(--clr-gray-600) 0px 4px 4px,
-            inset 0 -10px 10px var(--clr-gray-700),
-            var(--clr-gray-600) 0px 16px 16px;
+            0 5px 10px var(--clr-gray-600),
+            0 -2px 2px var(--clr-gray-600),
+            var(--clr-black-trans-200) 0px 4px 4px,
+            inset 0 -10px 10px var(--clr-black-trans-400),
+            var(--clr-black-trans-200) 0px 16px 16px;
 
         &[data-secondary] {
             width: 80%;

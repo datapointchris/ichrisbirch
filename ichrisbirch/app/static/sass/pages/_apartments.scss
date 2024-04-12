@@ -10,22 +10,22 @@ $h2-font-size: 1.8em;
 // transition from light to dark and spread out more
 
 $shadow-3d:
-  1px 1px 1px var(--clr-gray-200),
-  1px 10px 1px var(--clr-gray-200),
-  1px 18px 4px var(--clr-gray-800),
-  1px 30px 20px var(--clr-gray-800);
+  1px 1px 1px var(--clr-gray-400),
+  1px 10px 1px var(--clr-gray-400),
+  1px 18px 4px var(--clr-black-trans-800),
+  1px 30px 20px var(--clr-black-trans-800);
 
 $shadow-3d-apt:
-  1px 3px 1px var(--clr-gray-800),
-  1px 4px 3px var(--clr-gray-800),
-  1px 7px 15px var(--clr-gray-600),
-  5px 20px 22px var(--clr-gray-600);
+  1px 3px 1px var(--clr-black-trans-800),
+  1px 4px 3px var(--clr-black-trans-800),
+  1px 7px 15px var(--clr-black-trans-200),
+  5px 20px 22px var(--clr-black-trans-200);
 
 $shadow-3d-nav:
-  1px 1px 1px var(--clr-gray-200),
-  2px 3px 1px var(--clr-gray-200),
-  1px 9px 4px var(--clr-gray-800),
-  1px 15px 10px var(--clr-gray-800);
+  1px 1px 1px var(--clr-gray-400),
+  2px 3px 1px var(--clr-gray-400),
+  1px 9px 4px var(--clr-black-trans-800),
+  1px 15px 10px var(--clr-black-trans-800);
 
 body {
   display: grid;
@@ -97,7 +97,7 @@ h2 {
     }
 
     > li a:hover:not(.active) {
-      background-color: var(--clr-gray-400);
+      background-color: var(--clr-gray-800);
       color: var(--clr-text);
     }
   }
@@ -170,7 +170,7 @@ h2 {
   padding: 10px;
   font-size: x-large;
   text-align: center;
-  background-color: var(--clr-gray-400);
+  background-color: var(--clr-gray-800);
   border: 0;
   color: var(--clr-text);
   box-shadow: $shadow-3d;
@@ -193,7 +193,7 @@ textarea.bigbox {
   color: var(--clr-text);
   border: 0;
   box-shadow: $shadow-3d;
-  background-color: var(--clr-gray-400);
+  background-color: var(--clr-gray-800);
   background-color: #222;
 }
 
@@ -214,11 +214,11 @@ input[type="submit"].manage-box {
   font-size: 2.5em;
   letter-spacing: 4px;
   text-shadow:
-    1px 1px 3px var(--clr-gray-800),
-    2px 2px 5px var(--clr-gray-800),
-    3px 3px 4px var(--clr-gray-600),
-    2px 2px 3px var(--clr-gray-200),
-    2px 2px 3px var(--clr-gray-200);
+    1px 1px 3px var(--clr-black-trans-800),
+    2px 2px 5px var(--clr-black-trans-800),
+    3px 3px 4px var(--clr-black-trans-200),
+    2px 2px 3px var(--clr-gray-400),
+    2px 2px 3px var(--clr-gray-400);
 }
 
 /// ########## ///
@@ -257,20 +257,20 @@ input[type="submit"].manage-box {
   height: 55px;
   width: 55px;
   background-color: var(--clr-bg);
-  border: 5px solid var(--clr-gray-400);
+  border: 5px solid var(--clr-gray-800);
   box-shadow: $shadow-3d;
 }
 
 /* On mouse-over, add a grey background color */
 .checkboxes:hover input ~ .checkmark {
-  background-color: var(--clr-gray-200);
-  border: 5px solid var(--clr-gray-400);
+  background-color: var(--clr-gray-400);
+  border: 5px solid var(--clr-gray-800);
 }
 
 /* When the checkbox is checked, add a blue background */
 .checkboxes input:checked ~ .checkmark {
   background-color: var(--clr-bg);
-  border: 5px solid var(--clr-gray-400);
+  border: 5px solid var(--clr-gray-800);
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */
@@ -303,7 +303,7 @@ input[type="submit"].manage-box {
   width: 96%;
   margin: auto;
   margin-top: 20px;
-  background: var(--clr-gray-400);
+  background: var(--clr-gray-800);
   font-size: x-large;
   color: var(--clr-text);
   box-shadow: $shadow-3d;
@@ -327,9 +327,9 @@ input[type="submit"].manage-box {
     text-decoration: none;
     text-shadow: $shadow-3d-nav;
     border-top: 2px solid var(--clr-text);
-    border-left: 2px solid var(--clr-gray-200);
-    border-right: 4px solid var(--clr-gray-600);
-    border-bottom: 4px solid var(--clr-gray-800);
+    border-left: 2px solid var(--clr-gray-400);
+    border-right: 4px solid var(--clr-black-trans-200);
+    border-bottom: 4px solid var(--clr-black-trans-800);
     border-radius: 8px;
 
     :visited {
@@ -338,18 +338,18 @@ input[type="submit"].manage-box {
 
     &:hover {
       color: white;
-      border-top: 4px solid var(--clr-gray-200);
-      border-left: 4px solid var(--clr-gray-600);
-      border-right: 2px solid var(--clr-gray-600);
-      border-bottom: 2px solid var(--clr-gray-200);
+      border-top: 4px solid var(--clr-gray-400);
+      border-left: 4px solid var(--clr-black-trans-200);
+      border-right: 2px solid var(--clr-black-trans-200);
+      border-bottom: 2px solid var(--clr-gray-400);
       border-style: inset;
     }
 
     &.selected {
-      border-top: 4px solid var(--clr-gray-200);
-      border-left: 4px solid var(--clr-gray-600);
-      border-right: 2px solid var(--clr-gray-600);
-      border-bottom: 2px solid var(--clr-gray-200);
+      border-top: 4px solid var(--clr-gray-400);
+      border-left: 4px solid var(--clr-black-trans-200);
+      border-right: 2px solid var(--clr-black-trans-200);
+      border-bottom: 2px solid var(--clr-gray-400);
       border-style: inset;
     }
   }

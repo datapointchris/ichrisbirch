@@ -14,7 +14,7 @@
 
 .server-stats-wrapper {
     width: 60%;
-    background-color: var(--clr-gray-400);
+    background-color: var(--clr-gray-800);
     padding: 25px;
     margin: 50px;
     border: 2px solid var(--clr-accent);
@@ -32,7 +32,7 @@
 
     &__item {
         margin: 40px;
-        border: 1px solid var(--clr-gray-400);
+        border: 1px solid var(--clr-gray-800);
         border-radius: 25px;
         box-shadow: var(--3d-effect);
     }

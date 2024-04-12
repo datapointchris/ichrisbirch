@@ -5,14 +5,20 @@
     --clr-accent-dark: hsl(34 100% 16%);
     --clr-text: hsl(0 0% 87%);
 
-    --clr-gray-200: hsl(0 0% 50%);
-    --clr-gray-300: hsl(0 0% 38%);
-    --clr-gray-400: hsl(0 0% 27%);
-    --clr-gray-500: hsl(0 0% 12%);
-    --clr-gray-600: hsl(0 0% 6% / 0.2);
-    --clr-gray-700: hsl(0 0% 6% / 0.4);
-    --clr-gray-800: hsl(0 0% 6% / 0.8);
-    --clr-gray-900: hsla(0, 0%, 15%, 0.95);
+    --clr-gray-400: hsl(0 0% 50%);
+    --clr-gray-600: hsl(0 0% 38%);
+    --clr-gray-800: hsl(0 0% 27%);
+    --clr-gray-900: hsl(0 0% 12%);
+
+    --clr-gray-trans-500: hsl(0 0% 100% / 0.5);
+    --clr-gray-trans-900: hsla(0 0% 15% / 0.95);
+
+    --clr-black-trans-050: hsl(0 0% 0% / 0.05);
+    --clr-black-trans-070: hsl(0 0% 0% / 0.07);
+    --clr-black-trans-200: hsl(0 0% 0% / 0.2);
+    --clr-black-trans-400: hsl(0 0% 0% / 0.4);
+    --clr-black-trans-600: hsl(0 0% 0% / 0.6);
+    --clr-black-trans-800: hsl(0 0% 0% / 0.8);
 
     --clr-success: hsl(120 100% 18% / 0.8);
     --clr-warning: hsl(60 100% 18% / 0.8);

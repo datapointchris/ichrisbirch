@@ -84,14 +84,14 @@
     display: inline-block;
     padding: 15px 20px;
     border-radius: var(--btn-border-radius);
-    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
+    box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
 .filter-buttons input[type="radio"]:checked + label {
     color: var(--clr-success);
     font-weight: bold;
-    background-color: var(--clr-gray-400);
-    box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px var(--clr-gray-800);
+    background-color: var(--clr-gray-800);
+    box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px var(--clr-black-trans-800);
 }
 
 .filter-buttons label:hover {

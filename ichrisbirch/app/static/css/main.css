@@ -6,14 +6,18 @@
   --clr-accent-light: hsl(34 100% 90%);
   --clr-accent-dark: hsl(34 100% 16%);
   --clr-text: hsl(0 0% 87%);
-  --clr-gray-200: hsl(0 0% 50%);
-  --clr-gray-300: hsl(0 0% 38%);
-  --clr-gray-400: hsl(0 0% 27%);
-  --clr-gray-500: hsl(0 0% 12%);
-  --clr-gray-600: hsl(0 0% 6% / 0.2);
-  --clr-gray-700: hsl(0 0% 6% / 0.4);
-  --clr-gray-800: hsl(0 0% 6% / 0.8);
-  --clr-gray-900: hsla(0, 0%, 15%, 0.95);
+  --clr-gray-400: hsl(0 0% 50%);
+  --clr-gray-600: hsl(0 0% 38%);
+  --clr-gray-800: hsl(0 0% 27%);
+  --clr-gray-900: hsl(0 0% 12%);
+  --clr-gray-trans-500: hsl(0 0% 100% / 0.5);
+  --clr-gray-trans-900: hsla(0 0% 15% / 0.95);
+  --clr-black-trans-050: hsl(0 0% 0% / 0.05);
+  --clr-black-trans-070: hsl(0 0% 0% / 0.07);
+  --clr-black-trans-200: hsl(0 0% 0% / 0.2);
+  --clr-black-trans-400: hsl(0 0% 0% / 0.4);
+  --clr-black-trans-600: hsl(0 0% 0% / 0.6);
+  --clr-black-trans-800: hsl(0 0% 0% / 0.8);
   --clr-success: hsl(120 100% 18% / 0.8);
   --clr-warning: hsl(60 100% 18% / 0.8);
   --clr-error: hsl(4 100% 18% / 0.8);
@@ -126,8 +130,8 @@ nav ul {
   border-bottom-left-radius: 5em;
   font-size: 1.25rem;
   font-weight: bold;
-  background-color: var(--clr-gray-400);
-  box-shadow: 0 5px 10px var(--clr-gray-300), 0 -2px 2px var(--clr-gray-300), var(--clr-gray-600) 0px 4px 4px, inset 0 -10px 10px var(--clr-gray-700), var(--clr-gray-600) 0px 16px 16px;
+  background-color: var(--clr-gray-800);
+  box-shadow: 0 5px 10px var(--clr-gray-600), 0 -2px 2px var(--clr-gray-600), var(--clr-black-trans-200) 0px 4px 4px, inset 0 -10px 10px var(--clr-black-trans-400), var(--clr-black-trans-200) 0px 16px 16px;
 }
 nav ul[data-secondary] {
   width: 80%;
@@ -190,17 +194,17 @@ nav a:hover {
 }
 
 .button {
-  background-color: var(--clr-gray-400);
+  background-color: var(--clr-gray-800);
   border-radius: var(--btn-border-radius);
   font-size: 1.33rem;
   padding: 10px 25px;
   margin: 7px;
   color: var(--clr-text);
-  text-shadow: 2px 4px 1px var(--clr-gray-800);
+  text-shadow: 2px 4px 1px var(--clr-black-trans-800);
 }
 .button:hover {
   text-decoration: underline;
-  text-shadow: 0 0 7px hsla(0, 0%, 100%, 0.5), 0 0 15px var(--clr-accent);
+  text-shadow: 0 0 7px var(--clr-gray-trans-500), 0 0 15px var(--clr-accent);
 }
 
 .flash-messages {
@@ -216,7 +220,7 @@ nav a:hover {
   margin: 10px;
   padding: 10px 25px;
   border-radius: var(--btn-border-radius);
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
   font-size: 1.2rem;
   line-height: 2rem;
   color: var(--clr-text);
@@ -266,7 +270,7 @@ nav a:hover {
 .autotask {
   margin: 30px;
   padding: 25px;
-  border: 2px solid var(--clr-gray-300);
+  border: 2px solid var(--clr-gray-600);
   border-radius: var(--btn-border-radius);
   line-height: 1.7em;
   font-size: larger;
@@ -296,8 +300,8 @@ nav a:hover {
   margin: auto;
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: var(--clr-gray-500);
-  border: 2px solid var(--clr-gray-300);
+  background-color: var(--clr-gray-900);
+  border: 2px solid var(--clr-gray-600);
   border-radius: var(--btn-border-radius);
 }
 #add-autotask h2 {
@@ -308,6 +312,13 @@ nav a:hover {
 .add-autotask-box {
   width: 50%;
   margin: auto;
+}
+
+:root {
+  --clr-box-title: hsl(120, 100%, 72%);
+  --clr-box-essential: hsl(31 90% 57%);
+  --clr-box-warm: hsl(0, 100%, 71%);
+  --clr-box-liquid: hsl(207, 48%, 45%);
 }
 
 /*     INDEX PAGE     */
@@ -323,12 +334,12 @@ nav a:hover {
   padding: 2rem;
   padding-bottom: 3rem;
   text-align: center;
-  box-shadow: 0 5px 10px #646464, 0 -2px 2px var(--clr-gray-600), rgba(0, 0, 0, 0.07) 0px 4px 4px, inset 0 -10px 10px rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.07) 0px 16px 16px;
+  box-shadow: 0 5px 10px var(--clr-gray-600), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-070), inset 0 -10px 10px var(--clr-black-trans-050), 0px 16px 16px var(--clr-black-trans-070);
 }
 .box-details__title {
-  color: rgb(114, 255, 114);
+  color: var(--clr-box-title);
   font-size: 3rem;
-  text-shadow: -0.01em 0.01em 0 var(--clr-gray-600), -0.02em 0.02em 0 var(--clr-gray-600), -0.03em 0.03em 0 var(--clr-gray-600), -0.04em 0.04em 0 var(--clr-gray-600), -0.05em 0.05em 0 var(--clr-gray-600), -0.06em 0.06em 0 var(--clr-gray-200), -0.07em 0.07em 0 var(--clr-gray-200), -0.08em 0.08em 0 var(--clr-gray-200), -0.09em 0.09em 0 var(--clr-gray-200), -0.1em 0.1em 0 var(--clr-gray-200), -0.11em 0.11em 0 var(--clr-gray-200);
+  text-shadow: -0.01em 0.01em 0 var(--clr-black-trans-200), -0.02em 0.02em 0 var(--clr-black-trans-200), -0.03em 0.03em 0 var(--clr-black-trans-200), -0.04em 0.04em 0 var(--clr-black-trans-200), -0.05em 0.05em 0 var(--clr-black-trans-200), -0.06em 0.06em 0 var(--clr-gray-400), -0.07em 0.07em 0 var(--clr-gray-400), -0.08em 0.08em 0 var(--clr-gray-400), -0.09em 0.09em 0 var(--clr-gray-400), -0.1em 0.1em 0 var(--clr-gray-400), -0.11em 0.11em 0 var(--clr-gray-400);
 }
 .box-details__link {
   text-decoration: none;
@@ -344,13 +355,13 @@ nav a:hover {
   font-size: 2rem;
 }
 .box-details--essential {
-  color: var(--clr-accent);
+  color: var(--clr-box-essential);
 }
 .box-details--warm {
-  color: rgb(255, 107, 107);
+  color: var(--clr-box-warm);
 }
 .box-details--liquid {
-  color: rgb(60, 120, 170);
+  color: var(--clr-box-liquid);
 }
 
 .box-items__list {
@@ -385,6 +396,10 @@ nav a:hover {
   margin: auto;
 }
 
+.box-listing {
+  border: 1px inset var(--clr-black-trans-400);
+  border-radius: var(--btn-border-radius);
+}
 .box-listing:last-child:nth-child(odd) {
   grid-column: 1/span 2;
   justify-self: center;
@@ -432,7 +447,7 @@ nav a:hover {
 }
 .search-results__link {
   text-decoration: underline;
-  color: rgb(114, 255, 114);
+  color: var(--clr-box-title);
 }
 
 #countdowns {
@@ -471,7 +486,7 @@ nav a:hover {
   margin: auto;
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: var(--clr-gray-800);
+  background-color: var(--clr-black-trans-800);
   border: 2px solid rgb(117, 109, 96);
   border-radius: var(--btn-border-radius);
 }
@@ -516,7 +531,7 @@ nav a:hover {
   margin: 50px auto;
   padding: 40px 80px;
   line-height: 1.5em;
-  background-color: var(--clr-gray-900);
+  background-color: var(--clr-gray-trans-900);
   text-align: center;
   border: 3px dashed var(--clr-accent);
   border-radius: var(--btn-border-radius);
@@ -562,7 +577,7 @@ nav a:hover {
 
 .server-stats-wrapper {
   width: 60%;
-  background-color: var(--clr-gray-400);
+  background-color: var(--clr-gray-800);
   padding: 25px;
   margin: 50px;
   border: 2px solid var(--clr-accent);
@@ -580,7 +595,7 @@ nav a:hover {
 }
 .server-stats__item {
   margin: 40px;
-  border: 1px solid var(--clr-gray-400);
+  border: 1px solid var(--clr-gray-800);
   border-radius: 25px;
   box-shadow: var(--3d-effect);
 }
@@ -666,14 +681,14 @@ nav a:hover {
   display: inline-block;
   padding: 15px 20px;
   border-radius: var(--btn-border-radius);
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
 .filter-buttons input[type=radio]:checked + label {
   color: var(--clr-success);
   font-weight: bold;
-  background-color: var(--clr-gray-800);
-  box-shadow: inset 5px 5px 5px 0px var(--clr-gray-800), inset -3px -3px 5px 0px var(--clr-gray-600);
+  background-color: var(--clr-black-trans-800);
+  box-shadow: inset 5px 5px 5px 0px var(--clr-black-trans-800), inset -3px -3px 5px 0px var(--clr-black-trans-200);
 }
 
 .filter-buttons label:hover {
@@ -724,7 +739,7 @@ nav a:hover {
   width: 95%;
   height: 100px;
   padding: 25px;
-  background-color: var(--clr-gray-900);
+  background-color: var(--clr-gray-trans-900);
   border: 3px solid gray;
   border-bottom: none;
   border-top-right-radius: 50px;
@@ -752,5 +767,5 @@ body {
 }
 
 .box-3d {
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-200), inset -5px -5px 4px -2px var(--clr-gray-200);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }/*# sourceMappingURL=main.css.map */
