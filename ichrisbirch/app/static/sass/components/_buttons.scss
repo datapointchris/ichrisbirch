@@ -4,7 +4,7 @@
 
 .button {
     margin: 7px;
-    padding: .5em 1.75em;
+    padding: 0.5em 1.75em;
     font-size: var(--fs-600);
     color: var(--clr-text);
     background-color: var(--clr-gray-800);
@@ -17,7 +17,20 @@
             inset 0px 0px 5px 0px var(--clr-gray-400),
             inset -5px -5px 4px -2px var(--clr-gray-400);
     }
-    &:hover {
+
+    &-3d--pressed {
+        // invert the regular button-3d box-shadow
+        transform: scale(1.05); /* a depressed button looks smaller */
+        color: var(--clr-accent-light);
+        box-shadow:
+            inset 5px 5px 5px 0px var(--clr-gray-1000),
+            inset -1px -1px 3px 0px var(--clr-gray-900),
+            -1px -1px 5px 0px var(--clr-gray-1000),
+            -1px -1px 35px 5px var(--clr-accent-dark),
+            inset 1px 1px 15px 0px var(--clr-accent-dark);
+    }
+
+    &:hover:not(.button-3d--pressed) {
         text-decoration: underline;
         text-shadow:
             0 0 7px var(--clr-gray-trans-500),

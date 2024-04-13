@@ -13,38 +13,44 @@
 {% endblock %}
 
 {% block content %}
-<div id="events">
+<div class="grid grid--one-column">
   {% for event in events %}
-  <ul id="{{ event.id }}" class="{{ 'attending' if event.attending }}">
-    <li class="title">{{ event.name }}</li>
-    <li>{{ event.date.strftime('%A %B %d, %Y | %I:%M %p') }} | {{ event.venue }}</li>
-    <li>
-      {% if event.url %}<a href="{{ event.url }}" target="_blank">Event URL</a> | {% endif %}{{
-      '$%.2f'|format(event.cost) }} | Attending: {{ 'YES' if event.attending else 'No' }}</li>
-    {% if event.notes %}
-    <li>Notes: {{ event.notes }}</li>
-    {% endif %}
-    <li>
+  <div class="grid__item {{ 'grid__item--highlighted' if event.attending }}">
+    <h2>{{ event.name }}</h2>
+    <ul class="event">
+      <li class="event__item">{{ event.date.strftime('%A %B %d, %Y | %I:%M %p') }} | {{ event.venue }}</li>
+      <li class="event__item">
+        {% if event.url %}<a href="{{ event.url }}" target="_blank">Event URL</a> | {% endif %}{{
+        '$%.2f'|format(event.cost) }} | Attending: {{ 'YES' if event.attending else 'No' }}</li>
+      {% if event.notes %}
+      <li class="event__item">Notes: {{ event.notes }}</li>
+      {% endif %}
+    </ul>
+    <div class="event__buttons">
       {% if not event.attending %}
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
         <input type="hidden" name="method" value="attend">
         <button name="attend" class="button button-3d" value="{{ event.name }} attend">Attend Event</button>
       </form>
+      {% else %}
+      <button name="attend" class="button button-3d--pressed" value="{{ event.name }} attend">Attending</button>
       {% endif %}
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
         <input type="hidden" name="method" value="delete">
         <button name="delete" class="button button-3d" value="{{ event.name }} delete">Delete Event</button>
       </form>
-    </li>
-  </ul>
+    </div>
+  </div>
   {% else %}
-  <h2>No Events</h2>
+  <div class="grid__item">
+    <h2>No Events</h2>
+  </div>
   {% endfor %}
 </div>
-<div id="add-event">
-  <h3>Add New Event:</h3>
+<div class="grid__item grid__item--add-new">
+  <h2>Add New Event:</h2>
   <div id="add-form">
     <form method="POST">
       <label for="name">Name:</label>

@@ -1,5 +1,16 @@
 :root {
     --grid-gap: 5rem;
+
+    // prettier-ignore
+    --box-shadow-base:
+        0 -2px 2px var(--clr-black-trans-200),
+        0px 4px 4px var(--clr-black-trans-800),
+        0px 16px 16px var(--clr-black-trans-800),
+        16px 8px 16px var(--clr-black-trans-800),
+        inset 5px 5px 10px var(--clr-black-trans-200),
+        inset -10px -10px 10px var(--clr-black-trans-200);
+
+    --box-shadow-highlighted: inset 0px 0px 55px 5px var(--clr-accent-dark);
 }
 
 @mixin grid-set-columns($columns) {
@@ -29,16 +40,11 @@
         padding: 2rem;
         text-align: center;
         font-size: var(--fs-500);
-        background-color: var(--clr-primary);
         border-radius: var(--btn-border-radius);
+        background-color: var(--clr-primary);
         box-shadow:
-            0px 3px 10px var(--clr-gray-trans-700),
-            0 -2px 2px var(--clr-black-trans-200),
-            0px 4px 4px var(--clr-black-trans-800),
-            inset 5px 5px 10px var(--clr-black-trans-200),
-            inset -10px -10px 10px var(--clr-black-trans-200),
-            16px 8px 16px var(--clr-black-trans-800),
-            0px 16px 16px var(--clr-black-trans-800);
+            var(--box-shadow-base),
+            2px 4px 10px var(--clr-gray-trans-700);
 
         &--add-new {
             width: 50%;
@@ -48,29 +54,33 @@
             line-height: 1.5em;
             background-color: var(--clr-black-trans-600);
             box-shadow:
+                var(--box-shadow-base),
                 -1px -2px 3px var(--clr-black-trans-200),
-                0 -2px 2px var(--clr-black-trans-200),
-                0px 4px 4px var(--clr-black-trans-800),
-                0px 16px 16px var(--clr-black-trans-800),
-                16px 8px 16px var(--clr-black-trans-800),
-                inset -10px -10px 10px var(--clr-black-trans-200),
-                inset 5px 5px 10px var(--clr-black-trans-200),
                 inset -5px -5px 12px var(--clr-gray-trans-900),
                 inset 3px 3px 12px var(--clr-gray-trans-800);
+        }
+
+        &--highlighted {
+            background-color: var(--clr-primary--lighter);
+            box-shadow:
+                var(--box-shadow-base),
+                var(--box-shadow-highlighted),
+                -1px -2px 3px var(--clr-black-trans-200),
+                inset -5px -5px 12px var(--clr-gray-trans-900),
+                inset 3px 3px 12px var(--clr-gray-trans-800);
+            transform: scale(1.1);
+            box-sizing: border-box;
         }
     }
 }
 
 .item-details {
     display: flex;
-    flex-direction: row;
     justify-content: center;
-    // border: 1px solid white;
 
     &__item {
         text-align: left;
         line-height: 2em;
         padding: 0 2rem;
-        // border: 1px solid orange;
     }
 }

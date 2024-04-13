@@ -35,7 +35,7 @@ html {
 *,
 *::before,
 *::after {
-    box-sizing: inherit;
+    box-sizing: border-box;
 
     // [reduced motion]: Disable all transitions
     @media (prefers-reduced-motion) {

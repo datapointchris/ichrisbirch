@@ -1,6 +1,7 @@
 :root {
-    --clr-primary: hsl(194 100% 11%);
     --clr-primary--darker: hsl(194, 100%, 10%);
+    --clr-primary: hsl(194 100% 11%);
+    --clr-primary--lighter: hsl(194, 100%, 13%);
 
     --clr-accent: hsl(31 90% 57%);
     --clr-accent-light: hsl(34 100% 90%);
@@ -12,6 +13,7 @@
     --clr-accent--orange: hsl(31 90% 57%);
     --clr-accent--red: hsl(0, 100%, 71%);
     --clr-accent--blue: hsl(207, 48%, 45%);
+    --clr-accent--green: hsl(120 100% 18%);
 
     --clr-success: hsl(120 100% 18% / 0.8);
     --clr-warning: hsl(60 100% 18% / 0.8);

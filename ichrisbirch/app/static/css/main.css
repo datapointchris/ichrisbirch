@@ -1,8 +1,9 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 :root {
-  --clr-primary: hsl(194 100% 11%);
   --clr-primary--darker: hsl(194, 100%, 10%);
+  --clr-primary: hsl(194 100% 11%);
+  --clr-primary--lighter: hsl(194, 100%, 13%);
   --clr-accent: hsl(31 90% 57%);
   --clr-accent-light: hsl(34 100% 90%);
   --clr-accent-dark: hsl(34 100% 16%);
@@ -10,6 +11,7 @@
   --clr-accent--orange: hsl(31 90% 57%);
   --clr-accent--red: hsl(0, 100%, 71%);
   --clr-accent--blue: hsl(207, 48%, 45%);
+  --clr-accent--green: hsl(120 100% 18%);
   --clr-success: hsl(120 100% 18% / 0.8);
   --clr-warning: hsl(60 100% 18% / 0.8);
   --clr-error: hsl(4 100% 18% / 0.8);
@@ -64,7 +66,7 @@ html {
 *,
 *::before,
 *::after {
-  box-sizing: inherit;
+  box-sizing: border-box;
 }
 @media (prefers-reduced-motion) {
   *,
@@ -207,6 +209,14 @@ nav a:hover {
 
 :root {
   --grid-gap: 5rem;
+  --box-shadow-base:
+      0 -2px 2px var(--clr-black-trans-200),
+      0px 4px 4px var(--clr-black-trans-800),
+      0px 16px 16px var(--clr-black-trans-800),
+      16px 8px 16px var(--clr-black-trans-800),
+      inset 5px 5px 10px var(--clr-black-trans-200),
+      inset -10px -10px 10px var(--clr-black-trans-200);
+  --box-shadow-highlighted: inset 0px 0px 55px 5px var(--clr-accent-dark);
 }
 
 .grid {
@@ -229,9 +239,9 @@ nav a:hover {
   padding: 2rem;
   text-align: center;
   font-size: var(--fs-500);
-  background-color: var(--clr-primary);
   border-radius: var(--btn-border-radius);
-  box-shadow: 0px 3px 10px var(--clr-gray-trans-700), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-800), inset 5px 5px 10px var(--clr-black-trans-200), inset -10px -10px 10px var(--clr-black-trans-200), 16px 8px 16px var(--clr-black-trans-800), 0px 16px 16px var(--clr-black-trans-800);
+  background-color: var(--clr-primary);
+  box-shadow: var(--box-shadow-base), 2px 4px 10px var(--clr-gray-trans-700);
 }
 .grid__item--add-new {
   width: 50%;
@@ -240,12 +250,17 @@ nav a:hover {
   padding: 2.5rem 5rem;
   line-height: 1.5em;
   background-color: var(--clr-black-trans-600);
-  box-shadow: -1px -2px 3px var(--clr-black-trans-200), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-800), 0px 16px 16px var(--clr-black-trans-800), 16px 8px 16px var(--clr-black-trans-800), inset -10px -10px 10px var(--clr-black-trans-200), inset 5px 5px 10px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
+  box-shadow: var(--box-shadow-base), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
+}
+.grid__item--highlighted {
+  background-color: var(--clr-primary--lighter);
+  box-shadow: var(--box-shadow-base), var(--box-shadow-highlighted), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
+  transform: scale(1.1);
+  box-sizing: border-box;
 }
 
 .item-details {
   display: flex;
-  flex-direction: row;
   justify-content: center;
 }
 .item-details__item {
@@ -278,7 +293,12 @@ nav a:hover {
 .button-3d {
   box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
-.button:hover {
+.button-3d--pressed {
+  transform: scale(1.05); /* a depressed button looks smaller */
+  color: var(--clr-accent-light);
+  box-shadow: inset 5px 5px 5px 0px var(--clr-gray-1000), inset -1px -1px 3px 0px var(--clr-gray-900), -1px -1px 5px 0px var(--clr-gray-1000), -1px -1px 35px 5px var(--clr-accent-dark), inset 1px 1px 15px 0px var(--clr-accent-dark);
+}
+.button:hover:not(.button-3d--pressed) {
   text-decoration: underline;
   text-shadow: 0 0 7px var(--clr-gray-trans-500), 0 0 15px var(--clr-accent);
 }
@@ -480,46 +500,17 @@ nav a:hover {
   background-color: var(--clr-warning);
 }
 
-#events {
-  margin: auto;
-  text-align: center;
-  width: 90%;
-}
-#events ul {
-  margin: 50px 10px;
-  padding: 10px;
-  border: 2px solid var(--clr-accent-dark);
-  border-radius: var(--btn-border-radius);
-  font-size: var(--fs-500);
-}
-#events ul.attending {
-  border: 3px solid var(--clr-success);
-}
-#events ul > li {
+.event {
   list-style: none;
+  margin: 1rem;
+}
+.event__item {
   line-height: 2em;
-  margin: 10px 0;
 }
-#events ul > li form {
-  display: inline-block;
-}
-#events ul > li button {
-  display: inline-block;
-}
-#events ul > li.title {
-  font-size: var(--fs-700);
-  font-weight: bold;
-}
-
-#add-event {
-  width: 50%;
-  margin: 50px auto;
-  padding: 40px 80px;
-  line-height: 1.5em;
-  background-color: var(--clr-gray-trans-900);
-  text-align: center;
-  border: 3px dashed var(--clr-accent);
-  border-radius: var(--btn-border-radius);
+.event__buttons {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 2rem;
 }
 
 #main-index-content {

@@ -32,20 +32,18 @@
 </div>
 <div class="grid__item grid__item--add-new">
   <h2>Add New Countdown:</h2>
-  <div id="add-form">
-    <form method="POST">
-      <label for="name">Name:</label>
-      <input type="text" size="30" class="textbox button-3d" name="name" id="name">
-      <br><br>
-      <label for="notes">Notes:</label>
-      <input type="text" size="40" class="textbox button-3d" name="notes" id="notes">
-      <br><br>
-      <label for="due_date">Due Date:</label>
-      <input type="date" class="textbox button-3d" name="due_date" id="due_date">
-      <br><br>
-      <input type="hidden" id="method" name="method" value="add">
-      <button name="add" id="add" class="button button-3d" value="Add Countdown">Add Countdown</button>
-    </form>
-  </div>
+  <form method="POST">
+    <label for="name">Name:</label>
+    <input type="text" size="30" class="textbox button-3d" name="name" id="name">
+    <br><br>
+    <label for="notes">Notes:</label>
+    <input type="text" size="40" class="textbox button-3d" name="notes" id="notes">
+    <br><br>
+    <label for="due_date">Due Date:</label>
+    <input type="date" class="textbox button-3d" name="due_date" id="due_date">
+    <br><br>
+    <input type="hidden" id="method" name="method" value="add">
+    <button name="add" id="add" class="button button-3d" value="Add Countdown">Add Countdown</button>
+  </form>
 </div>
 {% endblock %}
