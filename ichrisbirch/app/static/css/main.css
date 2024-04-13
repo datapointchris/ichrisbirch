@@ -1,9 +1,8 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 :root {
-  --clr-bg: #002b38;
-  --clr-bg: hsl(194 100% 11%);
   --clr-primary: hsl(194 100% 11%);
+  --clr-primary--darker: hsl(194, 100%, 10%);
   --clr-accent: hsl(31 90% 57%);
   --clr-accent-light: hsl(34 100% 90%);
   --clr-accent-dark: hsl(34 100% 16%);
@@ -165,7 +164,7 @@ select {
 }
 
 body {
-  background-color: var(--clr-bg);
+  background-color: var(--clr-primary--darker);
   color: var(--clr-text);
   font-family: var(--ff-base);
   font-weight: 300;
@@ -227,6 +226,7 @@ nav a:hover {
   padding: 2rem;
   text-align: center;
   font-size: var(--fs-500);
+  background-color: var(--clr-primary);
   border-radius: var(--btn-border-radius);
   box-shadow: 0px 3px 10px var(--clr-gray-trans-700), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-800), inset 5px 5px 10px var(--clr-black-trans-200), inset -10px -10px 10px var(--clr-black-trans-200), 16px 8px 16px var(--clr-black-trans-800), 0px 16px 16px var(--clr-black-trans-800);
 }

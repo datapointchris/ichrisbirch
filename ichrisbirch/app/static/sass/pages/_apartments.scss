@@ -91,7 +91,7 @@ h2 {
     }
 
     > li a.active {
-      background-color: var(--clr-bg);
+      background-color: var(--clr-primary);
       color: var(--clr-text);
     }
 
@@ -114,7 +114,7 @@ h2 {
   box-shadow: $shadow-3d;
   vertical-align: top;
   line-height: 4em;
-  background-color: var(--clr-bg);
+  background-color: var(--clr-primary);
 }
 
 #content-layout {
@@ -125,7 +125,7 @@ h2 {
   padding-bottom: 100px;
   margin-left: 50px;
   margin-bottom: 100px;
-  background-color: var(--clr-bg);
+  background-color: var(--clr-primary);
   box-shadow: $shadow-3d;
 }
 
@@ -254,7 +254,7 @@ input[type="submit"].manage-box {
   left: 43%;
   height: 55px;
   width: 55px;
-  background-color: var(--clr-bg);
+  background-color: var(--clr-primary);
   border: 5px solid var(--clr-gray-800);
   box-shadow: $shadow-3d;
 }
@@ -267,7 +267,7 @@ input[type="submit"].manage-box {
 
 /* When the checkbox is checked, add a blue background */
 .checkboxes input:checked ~ .checkmark {
-  background-color: var(--clr-bg);
+  background-color: var(--clr-primary);
   border: 5px solid var(--clr-gray-800);
 }
 
