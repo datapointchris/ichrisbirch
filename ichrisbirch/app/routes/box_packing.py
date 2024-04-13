@@ -61,7 +61,7 @@ def all():
             boxes = sorted(boxes, key=lambda box: (getattr(box, sort_1), getattr(box, sort_2)))
         else:
             boxes = sorted(boxes, key=lambda box: getattr(box, sort_1))
-    return render_template('box_packing/all.html', boxes=boxes, sort_1=sort_1, sort_2=sort_2)
+    return render_template('box_packing/all.html', boxes=boxes, sort_1=sort_1, sort_2=sort_2, box_sizes=BOX_SIZES)
 
 
 @blueprint.route('/search/', methods=['GET', 'POST'])

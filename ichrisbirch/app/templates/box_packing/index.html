@@ -59,32 +59,7 @@
       </form>
     </div>
 
-    <div id="add-box" class="box-function">
-      <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <h3>Add a New Box</h3>
-        <label for="add-box-name">Name:</label>
-        <input class="button button-3d" type="text" name="name" id="add-box-name">
-        <br><br>
-        <label for="add-box-size">Size</label>
-        <select class='button button-3d' name="size" id="add-box-size">
-          {% for size in box_sizes %}
-          <option value={{ size }}>{{ size }}</option>
-          {% endfor %}
-        </select>
-        <br><br>
-        <input type="checkbox" name="essential" id="add-box-essential" value=1>
-        <label for="add-box-essential">Essential</label>
-        <br><br>
-        <input type="checkbox" name="warm" id="add-box-warm" value=1>
-        <label for="add-box-warm">Warm</label>
-        <br><br>
-        <input type="checkbox" name="liquid" id="add-box-liquid" value=1>
-        <label for="add-box-liquid">Liquid</label>
-        <br><br>
-        <input type="hidden" name="method" id="method" value="add_box">
-        <input class="button button-3d" type="submit" value="Add Box">
-      </form>
-    </div>
+
 
     {% if selected_box %}
     <div id="add-item" class="box-function">

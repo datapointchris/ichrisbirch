@@ -1,7 +1,9 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 :root {
+  --clr-bg: #002b38;
   --clr-bg: hsl(194 100% 11%);
+  --clr-primary: hsl(194 100% 11%);
   --clr-accent: hsl(31 90% 57%);
   --clr-accent-light: hsl(34 100% 90%);
   --clr-accent-dark: hsl(34 100% 16%);
@@ -238,6 +240,17 @@ nav a:hover {
   box-shadow: -1px -2px 3px var(--clr-black-trans-200), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-800), 0px 16px 16px var(--clr-black-trans-800), 16px 8px 16px var(--clr-black-trans-800), inset -10px -10px 10px var(--clr-black-trans-200), inset 5px 5px 10px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
 }
 
+.item-details {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.item-details__item {
+  text-align: left;
+  line-height: 2em;
+  padding: 0 2rem;
+}
+
 .textbox {
   border-radius: var(--btn-border-radius);
   font-size: var(--fs-600);
@@ -325,23 +338,6 @@ nav a:hover {
 
 .site-errors__message {
   font-size: var(--fs-700);
-}
-
-.autotask-details-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  text-align: left;
-  line-height: 1.75em;
-}
-
-.autotask-details-grid--left {
-  grid-column: 1/2;
-  margin: auto;
-}
-
-.autotask-details-grid--right {
-  grid-column: 2/3;
-  margin: auto;
 }
 
 :root {
