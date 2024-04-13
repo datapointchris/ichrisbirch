@@ -7,6 +7,12 @@
   --clr-accent-light: hsl(34 100% 90%);
   --clr-accent-dark: hsl(34 100% 16%);
   --clr-text: hsl(0 0% 87%);
+  --clr-accent--orange: hsl(31 90% 57%);
+  --clr-accent--red: hsl(0, 100%, 71%);
+  --clr-accent--blue: hsl(207, 48%, 45%);
+  --clr-success: hsl(120 100% 18% / 0.8);
+  --clr-warning: hsl(60 100% 18% / 0.8);
+  --clr-error: hsl(4 100% 18% / 0.8);
   --clr-gray-100: hsl(0, 0%, 67%);
   --clr-gray-200: hsl(0, 0%, 60%);
   --clr-gray-300: hsl(0, 0%, 53%);
@@ -25,9 +31,6 @@
   --clr-black-trans-400: hsl(0 0% 5% / 0.4);
   --clr-black-trans-600: hsl(0 0% 5% / 0.6);
   --clr-black-trans-800: hsl(0 0% 5% / 0.8);
-  --clr-success: hsl(120 100% 18% / 0.8);
-  --clr-warning: hsl(60 100% 18% / 0.8);
-  --clr-error: hsl(4 100% 18% / 0.8);
 }
 
 @media (prefers-color-scheme: light) {
@@ -340,13 +343,6 @@ nav a:hover {
   font-size: var(--fs-700);
 }
 
-:root {
-  --clr-box-title: hsl(120, 100%, 72%);
-  --clr-box-essential: hsl(31 90% 57%);
-  --clr-box-warm: hsl(0, 100%, 71%);
-  --clr-box-liquid: hsl(207, 48%, 45%);
-}
-
 /*     INDEX PAGE     */
 .box-packing-index-layout {
   display: grid;
@@ -363,8 +359,8 @@ nav a:hover {
   box-shadow: 0 5px 10px var(--clr-gray-600), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-070), inset 0 -10px 10px var(--clr-black-trans-050), 0px 16px 16px var(--clr-black-trans-070);
 }
 .box-details__title {
-  color: var(--clr-box-title);
-  font-size: var(--fs-900);
+  color: var(--clr-accent-light);
+  font-size: calc(var(--fs-900) * 1.5);
   text-shadow: var(--deep-3d-text-shadow);
 }
 .box-details__link {
@@ -381,13 +377,13 @@ nav a:hover {
   font-size: var(--fs-900);
 }
 .box-details--essential {
-  color: var(--clr-box-essential);
+  color: var(--clr-accent--orange);
 }
 .box-details--warm {
-  color: var(--clr-box-warm);
+  color: var(--clr-accent--red);
 }
 .box-details--liquid {
-  color: var(--clr-box-liquid);
+  color: var(--clr-accent--blue);
 }
 
 .box-items__list {
@@ -465,7 +461,7 @@ nav a:hover {
 }
 .search-results__link {
   text-decoration: underline;
-  color: var(--clr-box-title);
+  color: var(--clr-accent-light);
 }
 
 .daysleft {

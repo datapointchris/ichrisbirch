@@ -1,10 +1,3 @@
-:root {
-    --clr-box-title: hsl(120, 100%, 72%);
-    --clr-box-essential: hsl(31 90% 57%);
-    --clr-box-warm: hsl(0, 100%, 71%);
-    --clr-box-liquid: hsl(207, 48%, 45%);
-}
-
 /////////////////////////
 /*     INDEX PAGE     */
 ///////////////////////
@@ -28,8 +21,8 @@
         0px 16px 16px var(--clr-black-trans-070);
 
     &__title {
-        color: var(--clr-box-title);
-        font-size: var(--fs-900);
+        color: var(--clr-accent-light);
+        font-size: calc(var(--fs-900) * 1.5);
         @include deep-3d-text;
     }
 
@@ -50,15 +43,15 @@
     }
 
     &--essential {
-        color: var(--clr-box-essential);
+        color: var(--clr-accent--orange);
     }
 
     &--warm {
-        color: var(--clr-box-warm);
+        color: var(--clr-accent--red);
     }
 
     &--liquid {
-        color: var(--clr-box-liquid);
+        color: var(--clr-accent--blue);
     }
 }
 .box-items {
@@ -148,6 +141,6 @@
 
     &__link {
         text-decoration: underline;
-        color: var(--clr-box-title);
+        color: var(--clr-accent-light);
     }
 }
