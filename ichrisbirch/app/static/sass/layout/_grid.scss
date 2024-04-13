@@ -2,37 +2,60 @@
     --grid-gap: 5rem;
 }
 
-@mixin grid-template($columns) {
-    display: grid;
-    gap: var(--grid-gap);
-    grid-template-columns: repeat($columns, minmax(200px, 1fr));
-    width: 80%;
-    margin: 4rem auto;
+@mixin grid-set-columns($columns) {
+    grid-template-columns: repeat($columns, minmax(200px, 0.5fr));
 }
 
-.grid-wrapper {
-    &.one-column {
-        @include grid-template(1);
+.grid {
+    display: grid;
+    gap: var(--grid-gap);
+    width: 80%;
+    margin: 4rem auto;
+    justify-content: center;
+
+    &--one-column {
+        @include grid-set-columns(1);
     }
 
-    &.two-columns {
-        @include grid-template(2);
+    &--two-columns {
+        @include grid-set-columns(2);
+    }
 
-        > .grid-item {
-            padding: 2rem;
-            border-radius: var(--btn-border-radius);
+    &--three-columns {
+        @include grid-set-columns(3);
+    }
+
+    &__item {
+        padding: 2rem;
+        text-align: center;
+        font-size: var(--fs-500);
+        border-radius: var(--btn-border-radius);
+        box-shadow:
+            0px 3px 10px var(--clr-gray-trans-700),
+            0 -2px 2px var(--clr-black-trans-200),
+            0px 4px 4px var(--clr-black-trans-800),
+            inset 5px 5px 10px var(--clr-black-trans-200),
+            inset -10px -10px 10px var(--clr-black-trans-200),
+            16px 8px 16px var(--clr-black-trans-800),
+            0px 16px 16px var(--clr-black-trans-800);
+
+        &--add-new {
+            width: 50%;
+            margin: auto;
+            margin-bottom: 5rem;
+            padding: 2.5rem 5rem;
+            line-height: 1.5em;
+            background-color: var(--clr-black-trans-600);
             box-shadow:
-                0px 3px 10px var(--clr-gray-trans-700),
+                -1px -2px 3px var(--clr-black-trans-200),
                 0 -2px 2px var(--clr-black-trans-200),
                 0px 4px 4px var(--clr-black-trans-800),
-                inset 5px 5px 10px var(--clr-black-trans-200),
-                inset -10px -10px 10px var(--clr-black-trans-200),
+                0px 16px 16px var(--clr-black-trans-800),
                 16px 8px 16px var(--clr-black-trans-800),
-                0px 16px 16px var(--clr-black-trans-800);
+                inset -10px -10px 10px var(--clr-black-trans-200),
+                inset 5px 5px 10px var(--clr-black-trans-200),
+                inset -5px -5px 12px var(--clr-gray-trans-900),
+                inset 3px 3px 12px var(--clr-gray-trans-800);
         }
-    }
-
-    &.three-columns {
-        @include grid-template(3);
     }
 }

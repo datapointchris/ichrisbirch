@@ -7,9 +7,9 @@
 {% endblock %}
 
 {% block content %}
-<div id="countdowns">
+<div class="grid grid--one-column">
   {% for countdown in countdowns %}
-  <div class="countdown-box button-3d">
+  <div class="grid__item">
     <h2>{{ countdown.name }}</h2>
     <h2 class="daysleft" id="{{ countdown.id }}">
       <script>updateDaysLeft('{{ countdown.due_date }}', '{{ countdown.id }}');</script>
@@ -25,13 +25,13 @@
     </form>
   </div>
   {% else %}
-  <div class="countdown-box button-3d">
+  <div class="grid__item">
     <h2>No Countdowns</h2>
   </div>
   {% endfor %}
 </div>
-<div id="add-countdown" class="button-3d">
-  <h3>Add New Countdown:</h3>
+<div class="grid__item grid__item--add-new">
+  <h2>Add New Countdown:</h2>
   <div id="add-form">
     <form method="POST">
       <label for="name">Name:</label>

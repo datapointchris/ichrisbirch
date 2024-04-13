@@ -3,9 +3,9 @@
 {% block title %}AutoTasks{% endblock %}
 
 {% block content %}
-<div class="grid-wrapper two-columns">
+<div class="grid grid--two-columns">
   {% for autotask in autotasks %}
-  <div class="grid-item autotask button-3d">
+  <div class="grid__item">
     <h2>{{ autotask.name }}</h2>
     <div class="autotask-details-grid">
       <div class="autotask-details-grid--left">
@@ -41,12 +41,12 @@
     </div>
   </div>
   {% else %}
-  <div class="add-autotask-box button-3d">
+  <div class="grid__item">
     <h2>No AutoTasks</h2>
   </div>
   {% endfor %}
 </div>
-<div id="add-autotask" class="button-3d">
+<div class="grid__item grid__item--add-new">
   <h2>Add New AutoTask:</h2>
   <div id="add-form">
     <form method="POST">
