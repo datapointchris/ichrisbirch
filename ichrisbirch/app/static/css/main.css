@@ -146,14 +146,15 @@ select {
 
 :root {
   --ff-base: "Ubuntu Mono", monospace;
-  --fs-200: 0.5rem;
-  --fs-300: 0.75rem;
-  --fs-400: 1rem;
-  --fs-500: 1.25rem;
-  --fs-600: 1.33rem;
-  --fs-700: 1.5rem;
-  --fs-800: 1.75rem;
-  --fs-900: 2rem;
+  --fs-300: clamp(0.9375rem, 0.9158rem + 0.1087vi, 1rem);
+  --fs-400: clamp(1.125rem, 1.0815rem + 0.2174vi, 1.25rem);
+  --fs-500: clamp(1.35rem, 1.2761rem + 0.3696vi, 1.5625rem);
+  --fs-600: clamp(1.62rem, 1.5041rem + 0.5793vi, 1.9531rem);
+  --fs-700: clamp(1.944rem, 1.771rem + 0.8651vi, 2.4414rem);
+  --fs-800: clamp(2.3328rem, 2.0827rem + 1.2504vi, 3.0518rem);
+  --fs-900: clamp(2.7994rem, 2.4462rem + 1.7658vi, 3.8147rem);
+  --fs-1000: clamp(3.3592rem, 2.8691rem + 2.4507vi, 4.7684rem);
+  --fs-1100: clamp(4.0311rem, 3.36rem + 3.3555vi, 5.9605rem);
   --deep-3d-text-shadow:
       1px 1px 0px var(--clr-gray-400),
       2px 2px 0px var(--clr-gray-400),
@@ -238,7 +239,7 @@ nav a:hover {
 .grid__item {
   padding: 2rem;
   text-align: center;
-  font-size: var(--fs-500);
+  font-size: var(--fs-400);
   border-radius: var(--btn-border-radius);
   background-color: var(--clr-primary);
   box-shadow: var(--box-shadow-base), 2px 4px 10px var(--clr-gray-trans-700);
@@ -271,7 +272,7 @@ nav a:hover {
 
 .textbox {
   border-radius: var(--btn-border-radius);
-  font-size: var(--fs-600);
+  font-size: var(--fs-400);
   padding: 0.5em 1.75em;
   color: var(--clr-text);
   background-color: var(--clr-gray-800);
@@ -284,7 +285,7 @@ nav a:hover {
 .button {
   margin: 7px;
   padding: 0.5em 1.75em;
-  font-size: var(--fs-600);
+  font-size: var(--fs-400);
   color: var(--clr-text);
   background-color: var(--clr-gray-800);
   border-radius: var(--btn-border-radius);
@@ -317,7 +318,7 @@ nav a:hover {
   padding: 0.5em 1.75em;
   border-radius: var(--btn-border-radius);
   box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
-  font-size: var(--fs-500);
+  font-size: var(--fs-400);
   line-height: 2em;
   color: var(--clr-text);
 }
@@ -335,7 +336,7 @@ nav a:hover {
   top: 50%;
   right: 25px;
   background-color: transparent;
-  font-size: var(--fs-600);
+  font-size: var(--fs-400);
   color: var(--clr-text);
   cursor: pointer;
   transform: translate(-50%, -50%);
@@ -356,11 +357,11 @@ nav a:hover {
 }
 
 .site-errors__title {
-  font-size: var(--fs-900);
+  font-size: var(--fs-700);
 }
 
 .site-errors__message {
-  font-size: var(--fs-700);
+  font-size: var(--fs-500);
 }
 
 /*     INDEX PAGE     */
@@ -380,7 +381,7 @@ nav a:hover {
 }
 .box-details__title {
   color: var(--clr-accent-light);
-  font-size: calc(var(--fs-900) * 1.5);
+  font-size: var(--fs-900);
   text-shadow: var(--deep-3d-text-shadow);
 }
 .box-details__link {
@@ -390,11 +391,11 @@ nav a:hover {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: var(--fs-700);
+  font-size: var(--fs-500);
   line-height: 2em;
 }
 .box-details--size {
-  font-size: var(--fs-900);
+  font-size: var(--fs-700);
 }
 .box-details--essential {
   color: var(--clr-accent--orange);
@@ -463,7 +464,7 @@ nav a:hover {
   text-align: center;
   padding: 1.5rem 0;
   margin: 1rem 0;
-  font-size: var(--fs-700);
+  font-size: var(--fs-500);
   border-top: 5px dashed var(--clr-accent);
   border-bottom: 5px dashed var(--clr-accent);
 }
@@ -474,7 +475,7 @@ nav a:hover {
   text-align: center;
   padding: 1.5rem 0;
   margin: 1rem 0;
-  font-size: var(--fs-600);
+  font-size: var(--fs-400);
   line-height: 1.5em;
   border-top: 1px dotted var(--clr-accent);
   border-bottom: 1px dotted var(--clr-accent);
@@ -555,7 +556,7 @@ nav a:hover {
 }
 
 .server-stats {
-  --font-size: var(--fs-900);
+  --font-size: var(--fs-600);
   list-style: none;
   font-size: var(--font-size);
   line-height: 3em;
@@ -636,7 +637,7 @@ nav a:hover {
   text-align: center;
   border: 0;
   box-sizing: border-box;
-  font-size: var(--fs-500);
+  font-size: var(--fs-400);
 }
 
 .filter-buttons input[type=radio] {

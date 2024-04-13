@@ -3,14 +3,15 @@
 :root {
     --ff-base: "Ubuntu Mono", monospace;
 
-    --fs-200: 0.5rem;
-    --fs-300: 0.75rem;
-    --fs-400: 1rem;
-    --fs-500: 1.25rem;
-    --fs-600: 1.33rem;
-    --fs-700: 1.5rem;
-    --fs-800: 1.75rem;
-    --fs-900: 2rem;
+    --fs-300: clamp(0.9375rem, 0.9158rem + 0.1087vi, 1rem);
+    --fs-400: clamp(1.125rem, 1.0815rem + 0.2174vi, 1.25rem);
+    --fs-500: clamp(1.35rem, 1.2761rem + 0.3696vi, 1.5625rem);
+    --fs-600: clamp(1.62rem, 1.5041rem + 0.5793vi, 1.9531rem);
+    --fs-700: clamp(1.944rem, 1.771rem + 0.8651vi, 2.4414rem);
+    --fs-800: clamp(2.3328rem, 2.0827rem + 1.2504vi, 3.0518rem);
+    --fs-900: clamp(2.7994rem, 2.4462rem + 1.7658vi, 3.8147rem);
+    --fs-1000: clamp(3.3592rem, 2.8691rem + 2.4507vi, 4.7684rem);
+    --fs-1100: clamp(4.0311rem, 3.36rem + 3.3555vi, 5.9605rem);
 
     // prettier-ignore
     --deep-3d-text-shadow:
