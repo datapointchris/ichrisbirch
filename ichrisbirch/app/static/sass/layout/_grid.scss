@@ -1,5 +1,5 @@
 :root {
-    --grid-gap: 5rem;
+    --grid-gap: var(--space-xl);
 
     // prettier-ignore
     --box-shadow-base:
@@ -21,7 +21,7 @@
     display: grid;
     gap: var(--grid-gap);
     width: 80%;
-    margin: 4rem auto;
+    margin: var(--space-2xl) auto;
     justify-content: center;
 
     &--one-column {
@@ -37,7 +37,7 @@
     }
 
     &__item {
-        padding: 2rem;
+        padding: var(--space-m);
         text-align: center;
         font-size: var(--fs-400);
         border-radius: var(--btn-border-radius);
@@ -49,8 +49,8 @@
         &--add-new {
             width: 50%;
             margin: auto;
-            margin-bottom: 5rem;
-            padding: 2.5rem 5rem;
+            margin-bottom: var(--space-2xl);
+            padding: var(--space-l) var(--space-2xl);
             line-height: 1.5em;
             background-color: var(--clr-black-trans-600);
             box-shadow:
@@ -81,6 +81,6 @@
     &__item {
         text-align: left;
         line-height: 2em;
-        padding: 0 2rem;
+        padding: 0 var(--space-m);
     }
 }

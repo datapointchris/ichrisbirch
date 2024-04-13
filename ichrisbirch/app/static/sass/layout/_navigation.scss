@@ -19,7 +19,7 @@ nav {
 
         &[data-secondary] {
             width: 80%;
-            margin-left: 5rem;
+            margin-left: var(--space-2xl);
             position: relative;
             // this makes the link not easy to click
             // z-index: -1;
@@ -28,8 +28,8 @@ nav {
 
     & li {
         list-style: none;
-        padding: 0.75rem;
-        padding-bottom: 1rem; // extra on bottom for centering with the inset shadow
+        padding: var(--space-2xs);
+        padding-bottom: var(--space-xs); // extra on bottom for centering with the inset shadow
     }
 
     & a {

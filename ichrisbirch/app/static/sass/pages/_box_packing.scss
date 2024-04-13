@@ -4,14 +4,14 @@
 .box-packing-index-layout {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 2rem;
-    padding: 0.8rem;
+    gap: var(--space-m);
+    padding: var(--space-2xs);
 }
 
 .box-details {
-    margin: 2rem;
-    padding: 2rem;
-    padding-bottom: 3rem;
+    margin: var(--space-m);
+    padding: var(--space-m);
+    padding-bottom: var(--space-xl);
     text-align: center;
     box-shadow:
         0 5px 10px var(--clr-gray-600),
@@ -93,12 +93,12 @@
     display: flex;
     justify-content: space-evenly;
     align-items: center;
-    margin: 2rem auto;
-    padding: 1rem 0;
+    margin: var(--space-m) auto;
+    padding: var(--space-xs) 0;
     text-align: center;
 
     &__item {
-        padding: 0 2rem;
+        padding: 0 var(--space-m);
     }
 }
 
@@ -107,7 +107,7 @@
 ////////////////////////
 
 .searchbox {
-    margin: 3rem auto;
+    margin: var(--space-xl) auto;
     text-align: center;
 }
 
@@ -116,8 +116,8 @@
     grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
     list-style: none;
     text-align: center;
-    padding: 1.5rem 0;
-    margin: 1rem 0;
+    padding: var(--space-s) 0;
+    margin: var(--space-xs) 0;
 }
 
 .search-results {

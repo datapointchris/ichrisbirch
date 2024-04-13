@@ -1,6 +1,6 @@
 .event {
   list-style: none;
-  margin: 1rem;
+  margin: var(--space-xs);
 
   &__item {
     line-height: 2em;
@@ -9,6 +9,6 @@
   &__buttons {
     display: flex;
     justify-content: space-evenly;
-    margin-top: 2rem;
+    margin-top: var(--space-m);
   }
 }

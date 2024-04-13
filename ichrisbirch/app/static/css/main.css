@@ -40,6 +40,30 @@
     --text: hsl(0 0% 87%);
   }
 }
+/* @link https://utopia.fyi/space/calculator?c=320,18,1.2,1240,20,1.25,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+:root {
+  --space-3xs: clamp(0.3125rem, 0.3125rem + 0vi, 0.3125rem);
+  --space-2xs: clamp(0.5625rem, 0.5408rem + 0.1087vi, 0.625rem);
+  --space-xs: clamp(0.875rem, 0.8533rem + 0.1087vi, 0.9375rem); /* 1 rem */
+  --space-s: clamp(1.125rem, 1.0815rem + 0.2174vi, 1.25rem); /* 1.5 rem */
+  --space-m: clamp(1.6875rem, 1.6223rem + 0.3261vi, 1.875rem); /* 2 rem */
+  --space-l: clamp(2.25rem, 2.163rem + 0.4348vi, 2.5rem); /* 2.5 rem */
+  --space-xl: clamp(3.375rem, 3.2446rem + 0.6522vi, 3.75rem); /* 3 rem */
+  --space-2xl: clamp(4.5rem, 4.3261rem + 0.8696vi, 5rem); /* 4-5 rem */
+  --space-3xl: clamp(6.75rem, 6.4891rem + 1.3043vi, 7.5rem);
+  /* One-up pairs */
+  --space-3xs-2xs: clamp(0.3125rem, 0.2038rem + 0.5435vi, 0.625rem);
+  --space-2xs-xs: clamp(0.5625rem, 0.4321rem + 0.6522vi, 0.9375rem);
+  --space-xs-s: clamp(0.875rem, 0.7446rem + 0.6522vi, 1.25rem);
+  --space-s-m: clamp(1.125rem, 0.8641rem + 1.3043vi, 1.875rem);
+  --space-m-l: clamp(1.6875rem, 1.4049rem + 1.413vi, 2.5rem);
+  --space-l-xl: clamp(2.25rem, 1.7283rem + 2.6087vi, 3.75rem);
+  --space-xl-2xl: clamp(3.375rem, 2.8098rem + 2.8261vi, 5rem);
+  --space-2xl-3xl: clamp(4.5rem, 3.4565rem + 5.2174vi, 7.5rem);
+  /* Custom pairs */
+  --space-s-l: clamp(1.125rem, 0.6467rem + 2.3913vi, 2.5rem);
+}
+
 :root {
   --deep-3d-box-shadow:
       1px 1px 0px #999,
@@ -192,13 +216,13 @@ nav ul {
 }
 nav ul[data-secondary] {
   width: 80%;
-  margin-left: 5rem;
+  margin-left: var(--space-2xl);
   position: relative;
 }
 nav li {
   list-style: none;
-  padding: 0.75rem;
-  padding-bottom: 1rem;
+  padding: var(--space-2xs);
+  padding-bottom: var(--space-xs);
 }
 nav a {
   color: var(--clr-text);
@@ -209,7 +233,7 @@ nav a:hover {
 }
 
 :root {
-  --grid-gap: 5rem;
+  --grid-gap: var(--space-xl);
   --box-shadow-base:
       0 -2px 2px var(--clr-black-trans-200),
       0px 4px 4px var(--clr-black-trans-800),
@@ -224,7 +248,7 @@ nav a:hover {
   display: grid;
   gap: var(--grid-gap);
   width: 80%;
-  margin: 4rem auto;
+  margin: var(--space-2xl) auto;
   justify-content: center;
 }
 .grid--one-column {
@@ -237,7 +261,7 @@ nav a:hover {
   grid-template-columns: repeat(3, minmax(200px, 0.5fr));
 }
 .grid__item {
-  padding: 2rem;
+  padding: var(--space-m);
   text-align: center;
   font-size: var(--fs-400);
   border-radius: var(--btn-border-radius);
@@ -247,8 +271,8 @@ nav a:hover {
 .grid__item--add-new {
   width: 50%;
   margin: auto;
-  margin-bottom: 5rem;
-  padding: 2.5rem 5rem;
+  margin-bottom: var(--space-2xl);
+  padding: var(--space-l) var(--space-2xl);
   line-height: 1.5em;
   background-color: var(--clr-black-trans-600);
   box-shadow: var(--box-shadow-base), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
@@ -267,7 +291,7 @@ nav a:hover {
 .item-details__item {
   text-align: left;
   line-height: 2em;
-  padding: 0 2rem;
+  padding: 0 var(--space-m);
 }
 
 .textbox {
@@ -368,14 +392,14 @@ nav a:hover {
 .box-packing-index-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 2rem;
-  padding: 0.8rem;
+  gap: var(--space-m);
+  padding: var(--space-2xs);
 }
 
 .box-details {
-  margin: 2rem;
-  padding: 2rem;
-  padding-bottom: 3rem;
+  margin: var(--space-m);
+  padding: var(--space-m);
+  padding-bottom: var(--space-xl);
   text-align: center;
   box-shadow: 0 5px 10px var(--clr-gray-600), 0 -2px 2px var(--clr-black-trans-200), 0px 4px 4px var(--clr-black-trans-070), inset 0 -10px 10px var(--clr-black-trans-050), 0px 16px 16px var(--clr-black-trans-070);
 }
@@ -439,17 +463,17 @@ nav a:hover {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
-  margin: 2rem auto;
-  padding: 1rem 0;
+  margin: var(--space-m) auto;
+  padding: var(--space-xs) 0;
   text-align: center;
 }
 .box-listing-sort__item {
-  padding: 0 2rem;
+  padding: 0 var(--space-m);
 }
 
 /*     SEARCH PAGE     */
 .searchbox {
-  margin: 3rem auto;
+  margin: var(--space-xl) auto;
   text-align: center;
 }
 
@@ -462,8 +486,8 @@ nav a:hover {
   grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
   list-style: none;
   text-align: center;
-  padding: 1.5rem 0;
-  margin: 1rem 0;
+  padding: var(--space-s) 0;
+  margin: var(--space-xs) 0;
   font-size: var(--fs-500);
   border-top: 5px dashed var(--clr-accent);
   border-bottom: 5px dashed var(--clr-accent);
@@ -473,8 +497,8 @@ nav a:hover {
   grid-template-columns: 1fr 4fr 1fr 1fr 1fr;
   list-style: none;
   text-align: center;
-  padding: 1.5rem 0;
-  margin: 1rem 0;
+  padding: var(--space-s) 0;
+  margin: var(--space-xs) 0;
   font-size: var(--fs-400);
   line-height: 1.5em;
   border-top: 1px dotted var(--clr-accent);
@@ -503,7 +527,7 @@ nav a:hover {
 
 .event {
   list-style: none;
-  margin: 1rem;
+  margin: var(--space-xs);
 }
 .event__item {
   line-height: 2em;
@@ -511,7 +535,7 @@ nav a:hover {
 .event__buttons {
   display: flex;
   justify-content: space-evenly;
-  margin-top: 2rem;
+  margin-top: var(--space-m);
 }
 
 #main-index-content {
