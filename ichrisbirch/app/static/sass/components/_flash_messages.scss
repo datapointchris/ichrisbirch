@@ -8,8 +8,8 @@
     text-align: center;
 
     &__message {
-        margin: 10px;
-        padding: 0.5em 1.75em;
+        margin: var(--space-2xs);
+        padding: var(--space-2xs) var(--space-s);
         border-radius: var(--btn-border-radius);
         box-shadow:
             5px 5px 5px 0px black,
@@ -36,7 +36,7 @@
         top: 50%;
         right: 25px;
         background-color: transparent;
-        font-size: var(--fs-400);
+        font-size: var(--fs-600);
         color: var(--clr-text);
         cursor: pointer;
         transform: translate(-50%, -50%);
@@ -45,6 +45,7 @@
         &:hover {
             font-weight: bold;
             transform: scale(1.5) translate(-35%, -35%);
+            color: var(--clr-accent--red);
         }
     }
 }

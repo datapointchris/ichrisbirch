@@ -1,7 +1,32 @@
 .textbox {
+    border: none;
     border-radius: var(--btn-border-radius);
     font-size: var(--fs-400);
     padding: .5em 1.75em;
     color: var(--clr-text);
     background-color: var(--clr-gray-800);
+}
+
+.add-item-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-l);
+    padding-inline: var(--space-xl);
+
+    &__item {
+        display: grid;
+        gap: var(--space-2xs);
+        text-align: left;
+
+
+        &--full-width {
+            grid-column: 1 / -1;
+        }
+
+        &--submit {
+            grid-column: span 2;
+            justify-self: center;
+        }
+
+    }
 }

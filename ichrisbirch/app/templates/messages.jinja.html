@@ -2,7 +2,7 @@
 {% if messages %}
 <section class="flash-messages">
   {% for category, message in messages %}
-  <div class="flash-messages__message--{{ category }}">
+  <div class="flash-messages__message flash-messages__message--{{ category }}">
     {{ message }}
     <button class="flash-messages__close-button" onclick="closeFlashMessage(this)">X</button>
   </div>

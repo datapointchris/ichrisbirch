@@ -6,42 +6,37 @@
 <div class="box-packing-index-layout">
   <main>
     {% if selected_box %}
-    <section class="box-details">
-      <h1 class="box-details__title">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
-
-      <ul class="box-details__list">
-        <li class="box-details--size">Size: {{ selected_box.size }}</li>
-        {% if selected_box.essential == 1 %}<li class="box-details--essential">Essential</li>{% endif %}
-        {% if selected_box.warm == 1 %}<li class="box-details--warm">Warm</li>{% endif %}
-        {% if selected_box.liquid == 1 %}
-        <li class="box-details--liquid">Liquid</li>
-        {% endif %}
-      </ul>
-
-      <ul class="box-items__list">
-        <li>
-          <h2><u>Items in Box</u></h2>
-        </li>
-        {% for item in selected_box.items %}
-        <li class="box-items__item">
-          <h3>{{ item.name }}</h3>
-          <div class="box-items__item--details">
-            {% if item.essential == 1 %}<span class="box-details--essential">Essential</span>{% endif %}
-            {% if item.warm == 1 %}<span class="box-details--warm">Warm</span>{% endif %}
-            {% if item.liquid == 1 %}<span class="box-details--liquid">Liquid</span>{% endif %}
+    <section class="grid grid--one-column-wide">
+      <div class="packed-box">
+        <h1 class="packed-box__title">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
+        <h2>Size: {{ selected_box.size }}</h2>
+        <div class="packed-box__details">
+          {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
+          {% if selected_box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
+          {% if selected_box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
+        </div>
+        <h2><u>Items in Box</u></h2>
+        <div class="grid grid--one-column-wide">
+          {% for item in selected_box.items %}
+          <div class="packed-box-item">
+            <h3>{{ item.name }}</h3>
+            <div class="packed-box-item__details">
+              {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif %}
+              {% if item.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
+              {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
+            </div>
           </div>
-        </li>
-        {% endfor %}
-      </ul>
+          {% endfor %}
+        </div>
 
-      <div>
-        <form method="POST" action="{{ url_for('box_packing.crud') }}">
-          <input type="hidden" name="id" value={{ selected_box.id }}>
-          <input type="hidden" name="method" value="delete_box">
-          <input class="button button-3d" type="submit" value="Delete Box">
-        </form>
+        <div>
+          <form method="POST" action="{{ url_for('box_packing.crud') }}">
+            <input type="hidden" name="id" value={{ selected_box.id }}>
+            <input type="hidden" name="method" value="delete_box">
+            <input class="button button-3d" type="submit" value="Delete Box">
+          </form>
+        </div>
       </div>
-
     </section>
     {% endif %}
   </main>

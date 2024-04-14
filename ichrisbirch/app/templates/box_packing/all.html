@@ -32,43 +32,55 @@
 </div>
 <div class="grid grid--two-columns">
   {% for box in boxes %}
-  <div class="grid__item">
-    <h2 class="box-details__title">
-      <a class="box-details__link" href="{{ url_for('box_packing.box', box_id=box.id) }}">Box {{ box.id }}: {{ box.name }}</a>
-    </h2>
-    <ul class="box-details__list">
-      <li class="box-details--size">Size: {{ box.size }}</li>
-      {% if box.essential == 1 %}<li class="box-details--essential">Essential</li>{% endif %}
-      {% if box.warm == 1 %}<li class="box-details--warm">Warm</li>{% endif %}
-      {% if box.liquid == 1 %}<li class="box-details--liquid">Liquid</li>{% endif %}
-    </ul>
+  <div class="packed-box">
+    <h1 class="packed-box__title">
+      <a class="packed-box__link" href="{{ url_for('box_packing.box', box_id=box.id) }}">Box {{ box.id }}: {{ box.name
+        }}</a>
+    </h1>
+    <h2>Size: {{ box.size }}</h2>
+    <div class="packed-box-item__details">
+      {% if box.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif %}
+      {% if box.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
+      {% if box.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
+    </div>
   </div>
   {% endfor %}
 </div>
 <div class="grid__item grid__item--add-new">
   <h2>Add a New Box</h2>
-  <form method="POST" action="{{ url_for('box_packing.crud') }}">
-    <label for="add-box-name">Name:</label>
-    <input class="button button-3d" type="text" name="name" id="add-box-name">
-    <br><br>
-    <label for="add-box-size">Size</label>
-    <select class='button button-3d' name="size" id="add-box-size">
-      {% for size in box_sizes %}
-      <option value={{ size }}>{{ size }}</option>
-      {% endfor %}
-    </select>
-    <br><br>
-    <input type="checkbox" name="essential" id="add-box-essential" value=1>
-    <label for="add-box-essential">Essential</label>
-    <br><br>
-    <input type="checkbox" name="warm" id="add-box-warm" value=1>
-    <label for="add-box-warm">Warm</label>
-    <br><br>
-    <input type="checkbox" name="liquid" id="add-box-liquid" value=1>
-    <label for="add-box-liquid">Liquid</label>
-    <br><br>
-    <input type="hidden" name="method" id="method" value="add_box">
-    <input class="button button-3d" type="submit" value="Add Box">
+  <form class="add-item-form" method="POST" action="{{ url_for('box_packing.crud') }}">
+    <div class="add-item-form__item">
+      <label for="add-box-name">Name:</label>
+      <input class="button button-3d" type="text" name="name" id="add-box-name">
+    </div>
+    <div class="add-item-form__item">
+      <label for="add-box-size">Size</label>
+      <select class='button button-3d' name="size" id="add-box-size">
+        {% for size in box_sizes %}
+        <option value={{ size }}>{{ size }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="add-item-form__item add-item-form__item--full-width">
+      <div class="packed-box-item__details">
+        <div>
+          <input type="checkbox" name="essential" id="add-box-essential" value=1>
+          <label for="add-box-essential" class="packed-box-item__details--essential">Essential</label>
+        </div>
+        <div>
+          <input type="checkbox" name="warm" id="add-box-warm" value=1>
+          <label for="add-box-warm" class="packed-box-item__details--warm">Warm</label>
+        </div>
+        <div>
+          <input type="checkbox" name="liquid" id="add-box-liquid" value=1>
+          <label for="add-box-liquid" class="packed-box-item__details--liquid">Liquid</label>
+        </div>
+      </div>
+    </div>
+    <div class="add-item-form__item add-item-form__item--submit">
+      <input type="hidden" name="method" id="method" value="add_box">
+      <input class="button button-3d" type="submit" value="Add Box">
+    </div>
   </form>
 </div>
 {% endblock %}

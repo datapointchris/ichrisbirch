@@ -1,5 +1,4 @@
 :root {
-    --grid-gap: var(--space-xl);
 
     // prettier-ignore
     --box-shadow-base:
@@ -19,13 +18,17 @@
 
 .grid {
     display: grid;
-    gap: var(--grid-gap);
+    gap: var(--space-xl);
     width: 80%;
     margin: var(--space-2xl) auto;
     justify-content: center;
 
     &--one-column {
         @include grid-set-columns(1);
+    }
+
+    &--one-column-wide {
+        grid-template-columns: 1fr;
     }
 
     &--two-columns {
@@ -47,7 +50,7 @@
             2px 4px 10px var(--clr-gray-trans-700);
 
         &--add-new {
-            width: 50%;
+            width: 45%;
             margin: auto;
             margin-bottom: var(--space-2xl);
             padding: var(--space-l) var(--space-2xl);
@@ -69,7 +72,6 @@
                 inset -5px -5px 12px var(--clr-gray-trans-900),
                 inset 3px 3px 12px var(--clr-gray-trans-800);
             transform: scale(1.1);
-            box-sizing: border-box;
         }
     }
 }
