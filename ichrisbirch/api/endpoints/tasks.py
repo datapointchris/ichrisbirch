@@ -19,7 +19,7 @@ router = APIRouter()
 async def read_many(
     session: Session = Depends(sqlalchemy_session), completed_filter: Optional[str] = None, limit: Optional[int] = None
 ):
-    """API method to read many tasks"""
+
     logger.debug(f'{completed_filter=}')
 
     query = select(models.Task)
@@ -43,7 +43,7 @@ async def completed(
     first: Union[bool, None] = None,
     last: Union[bool, None] = None,
 ):
-    """API method to get completed tasks"""
+
     query = select(models.Task).filter(models.Task.complete_date.is_not(None))
 
     if first:  # first completed task
@@ -65,7 +65,7 @@ async def completed(
 
 @router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def search(q: str, session: Session = Depends(sqlalchemy_session)):
-    """API method to search for tasks"""
+
     logger.debug(f'searching for {q=}')
     tasks = (
         select(models.Task)
@@ -79,7 +79,7 @@ async def search(q: str, session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy_session)):
-    """API method to create a new task"""
+
     db_obj = models.Task(**task.model_dump())
     session.add(db_obj)
     session.commit()
@@ -89,7 +89,7 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy
 
 @router.get('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session)):
-    """API method to read one task"""
+
     if task := session.get(models.Task, task_id):
         return task
     else:
@@ -100,7 +100,7 @@ async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session))
 
 @router.delete('/{task_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
-    """API method to delete a task"""
+
     if task := session.get(models.Task, task_id):
         session.delete(task)
         session.commit()
@@ -113,7 +113,7 @@ async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/complete/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
-    """API method to complete a task"""
+
     if task := session.get(models.Task, task_id):
         task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
         session.add(task)

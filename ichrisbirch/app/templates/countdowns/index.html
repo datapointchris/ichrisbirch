@@ -20,8 +20,9 @@
     <br><br>
     <form method="POST">
       <input type="hidden" name="id" value="{{ countdown.id }}">
-      <input type="hidden" name="method" value="delete">
-      <button name="delete" class="button button-3d" value="{{ countdown.name }} delete">Delete Countdown</button>
+      <button type="submit" name="action" class="button" value="delete">
+        <span class="button__text">Delete Countdown</span>
+      </button>
     </form>
   </div>
   {% else %}
@@ -42,8 +43,9 @@
     <label for="due_date">Due Date:</label>
     <input type="date" class="textbox button-3d" name="due_date" id="due_date">
     <br><br>
-    <input type="hidden" id="method" name="method" value="add">
-    <button name="add" id="add" class="button button-3d" value="Add Countdown">Add Countdown</button>
+              <button type="submit" name="action" class="button" value="add">
+                <span class="button__text">Add Countdown</span>
+              </button>
   </form>
 </div>
 {% endblock %}

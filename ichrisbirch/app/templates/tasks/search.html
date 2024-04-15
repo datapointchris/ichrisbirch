@@ -21,15 +21,17 @@
         <form method="POST" action="{{ url_for('tasks.search') }}">
           <input type="hidden" name="id" value="{{ task.id }}">
           <input type="hidden" name="name" value="{{ task.name }}">
-          <input type="hidden" name="method" value="delete">
-          <input type="submit" class="button button-3d" value="Delete Task">
+          <button type="submit" name="action" class="button" value="delete">
+            <span class="button__text">Delete Task</span>
+          </button>
         </form>
         {% if not task.complete_date %}
         <form method="POST" action="{{ url_for('tasks.search') }}">
           <input type="hidden" name="id" value="{{ task.id }}">
           <input type="hidden" name="name" value="{{ task.name }}">
-          <input type="hidden" name="method" value="complete">
-          <input type="submit" class="button button-3d" value="Complete Task">
+          <button type="submit" name="action" class="button" value="complete">
+            <span class="button__text">Complete Task</span>
+          </button>
         </form>
         {% endif %}
       </div>

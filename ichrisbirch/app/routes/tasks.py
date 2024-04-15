@@ -142,11 +142,11 @@ def search():
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
     data: dict[str, Any] = request.form.to_dict()
-    method = data.pop('method')
-    logger.debug(f'{request.referrer=} {method=}')
+    action = data.pop('action')
+    logger.debug(f'{request.referrer=} {action=}')
     logger.debug(f'{data=}')
 
-    if method == 'add':
+    if action == 'add':
         try:
             task = schemas.TaskCreate(**data)
         except pydantic.ValidationError as e:
@@ -157,17 +157,17 @@ def crud():
         handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
 
-    elif method == 'complete':
+    elif action == 'complete':
         task_id = data.get('id')
         url = url_builder(TASKS_API_URL, 'complete', task_id)
         response = httpx.post(url)
         handle_if_not_response_code(200, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
 
-    elif method == 'delete':
+    elif action == 'delete':
         url = url_builder(TASKS_API_URL, data.get('id'))
         response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
         return redirect(request.referrer or url_for('tasks.all'))
 
-    return Response(f'Method {method} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

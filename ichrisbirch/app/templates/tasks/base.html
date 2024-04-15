@@ -15,8 +15,9 @@
   <li>
     <form class="search-form" method="POST" action="{{ url_for('tasks.search') }}">
       <input type="text" size="20" class="textbox button-3d" name="terms" id="terms">
-      <input type="hidden" name="method" value="search">
-      <input type="submit" class="button button-3d" value="Search">
+                <button type="submit" name="action" class="button" value="search">
+                  <span class="button__text">Search</span>
+                </button>
     </form>
   </li>
 </ul>

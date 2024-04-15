@@ -10,15 +10,13 @@
     background-color: var(--clr-gray-800);
     border-radius: var(--btn-border-radius);
     text-shadow: 2px 4px 1px var(--clr-black-trans-800);
+    box-shadow:
+        5px 5px 5px 0px black,
+        inset 0px 0px 5px 0px var(--clr-gray-400),
+        inset -5px -5px 4px -2px var(--clr-gray-400);
+    transition: all 0.1s ease-in-out;
 
-    &-3d {
-        box-shadow:
-            5px 5px 5px 0px black,
-            inset 0px 0px 5px 0px var(--clr-gray-400),
-            inset -5px -5px 4px -2px var(--clr-gray-400);
-    }
-
-    &-3d--pressed {
+    &--pressed {
         // invert the regular button-3d box-shadow
         transform: scale(1.05); /* a depressed button looks smaller */
         color: var(--clr-accent-light);
@@ -30,10 +28,23 @@
             inset 1px 1px 15px 0px var(--clr-accent-dark);
     }
 
-    &:hover:not(.button-3d--pressed) {
-        text-decoration: underline;
+    &:hover:not(.button--pressed) {
         text-shadow:
             0 0 7px var(--clr-gray-trans-500),
             0 0 15px var(--clr-accent);
+    }
+
+    &__text {
+        display: inline-block;
+        padding-bottom: 2px; /*the space for the gradient*/
+        background: linear-gradient(var(--clr-text), var(--clr-text)) center bottom; /*OR bottom right OR bottom left*/
+        background-size: 0% 2px; /*width:0% height:2px*/
+        background-repeat: no-repeat; /* Don't repeat !!*/
+
+        transition: all 0.1s ease-in-out;
+
+        &:hover {
+            background-size: 100% 2px; /*width:100% height:2px*/
+        }
     }
 }

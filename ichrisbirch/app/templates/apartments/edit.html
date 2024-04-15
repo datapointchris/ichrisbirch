@@ -22,7 +22,7 @@
           <div class="feature-box">
             <h2>{{ feature.name.upper() }}</h2>
             {% if feature.type == 'integer' %}
-            <input class="bigbox" type="text" size="20" name="{{ feature.name }}" value="{{ feature.name }}">
+            <input type="text" class="bigbox" size="20" name="{{ feature.name }}" value="{{ feature.name }}">
             {% elif feature.type == 'text' %}
             <input type="text" class="bigbox" size="20" name="{{ feature.name }}" value="{{ feature.name }}">
             {% elif feature.type == 'boolean' %}
@@ -39,14 +39,20 @@
           </div>
           {% endfor %}
         </div>
-        <input class="manage-box" type="submit" value="Update Apartment">
+        <!-- <button type="submit" name="action" class="button" value="update">
+          <span class="button__text">Update Apartment</span>
+        </button> -->
+        <button type="submit" class="manage-box" value="Update Apartment">
       </form>
     </div>
     <br><br><br><br><br><br>
     <div class="feature-list">
       <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
         <input type="hidden" id="id" name="id" value="{{ aptid }}">
-        <input class="manage-box warning" type="submit" value="DELETE Apartment">
+        <!-- <button type="submit" name="action" class="button button--warning" value="delete">
+          <span class="button__text">Delete Apartment</span>
+        </button> -->
+        <button type="submit" class="manage-box warning" value="DELETE Apartment">
       </form>
     </div>
   </div>

@@ -85,9 +85,9 @@ def manage():
     """Manage habits page"""
     if request.method == 'POST':
         data = request.form.to_dict()
-        method = data.pop('method')
+        action = data.pop('action')
         habit = Habit(**data)
-        print(method, habit)
+        print(action, habit)
 
     return render_template('habits/manage.html')
 
@@ -98,8 +98,8 @@ def form():
     """CRUD operations for habits"""
     api_url = settings.api_url
     data = request.form.to_dict()
-    method = data.pop('method')
-    match method:
+    action = data.pop('action')
+    match action:
         case ['add_habit']:
             habit = Habit(**data)
             httpx.post(f'{api_url}/habits', data=habit)

@@ -2,7 +2,6 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from ichrisbirch.config import get_settings
-from tests.testing_data.countdowns import BASE_DATA
 
 settings = get_settings()
 
@@ -26,8 +25,8 @@ def test_create_countdown(homepage, page: Page):
     page.get_by_label('name').fill(fake['name'])
     page.get_by_label('due date').fill(fake['due date'])
     page.get_by_label('notes').fill(fake['notes'])
-    page.query_selector('css=button[value="Add Countdown"]').click()
+    page.query_selector('css=button[value="add"]').click()
 
 
 def test_delete_countdown(homepage, page: Page):
-    page.query_selector(f'css=button[value="{BASE_DATA[0].name} delete"]').click()
+    page.query_selector('css=button[value="delete"]').click()

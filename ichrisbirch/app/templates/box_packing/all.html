@@ -6,7 +6,7 @@
 <div class="box-listing-sort">
   <form method="POST" action="{{ url_for('box_packing.all') }}">
     <span class="box-listing-sort__item">
-      <select class="button button-3d" name="sort_1" id="sort_1">
+      <select class="button" name="sort_1" id="sort_1">
         <option value="none" selected disabled hidden>Box Sort Order 1</option>
         <option value="id">ID (default)</option>
         <option value="size">Size</option>
@@ -16,7 +16,7 @@
       </select>
     </span>
     <span class="box-listing-sort__item">
-      <select class="button button-3d" name="sort_2" id="sort_2">
+      <select class="button" name="sort_2" id="sort_2">
         <option value="none" selected disabled hidden>Box Sort Order 2</option>
         <option value="">None</option>
         <option value="size">Size</option>
@@ -26,7 +26,9 @@
       </select>
     </span>
     <span class="box-listing-sort__item">
-      <input class="button button-3d" type="submit" value="Sort Boxes">
+      <button type="submit" name="action" class="button" value="sort">
+        <span class="button__text">Sort Boxes</span>
+      </button>
     </span>
   </form>
 </div>
@@ -51,7 +53,7 @@
   <form class="add-item-form" method="POST" action="{{ url_for('box_packing.crud') }}">
     <div class="add-item-form__item">
       <label for="add-box-name">Name:</label>
-      <input class="button button-3d" type="text" name="name" id="add-box-name">
+      <input type="text" class="button" name="name" id="add-box-name">
     </div>
     <div class="add-item-form__item">
       <label for="add-box-size">Size</label>
@@ -78,8 +80,9 @@
       </div>
     </div>
     <div class="add-item-form__item add-item-form__item--submit">
-      <input type="hidden" name="method" id="method" value="add_box">
-      <input class="button button-3d" type="submit" value="Add Box">
+      <button type="submit" name="action" class="button" value="add_box">
+        <span class="button__text">Add Box</span>
+      </button>
     </div>
   </form>
 </div>

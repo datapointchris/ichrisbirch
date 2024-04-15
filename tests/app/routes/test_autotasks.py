@@ -23,7 +23,7 @@ def test_add_autotask(test_app, test_api):
         priority=3,
         frequency=TaskFrequency.Biweekly.value,
     )
-    response = test_app.post('/autotasks/', data=data | {'method': 'add'})
+    response = test_app.post('/autotasks/', data=data | {'action': 'add'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 
@@ -34,6 +34,6 @@ def test_add_autotask(test_app, test_api):
 
 
 def test_delete_autotask(test_app):
-    response = test_app.post('/autotasks/', data={'id': 1, 'method': 'delete'})
+    response = test_app.post('/autotasks/', data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data

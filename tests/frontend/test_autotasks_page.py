@@ -2,7 +2,6 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from ichrisbirch.config import get_settings
-from tests.testing_data.autotasks import BASE_DATA
 
 settings = get_settings()
 
@@ -34,8 +33,8 @@ def test_create_autotask(homepage, page: Page):
     page.get_by_label('priority').fill(fake['priority'])
     page.get_by_label('notes').fill(fake['notes'])
     page.get_by_label('frequency').select_option(fake['frequency'])
-    page.query_selector('css=button[value="Add New AutoTask"]').click()
+    page.query_selector('css=button[value="add"]').click()
 
 
 def test_delete_autotask(homepage, page: Page):
-    page.query_selector(f'css=button[value="{BASE_DATA[0].name} delete"]').click()
+    page.query_selector('css=button[value="delete"]').click()

@@ -72,12 +72,12 @@ def crud():
     """CRUD operations for apartments"""
     api_url = settings.api_url
     data = request.form.to_dict()
-    method = data.pop('method')
+    action = data.pop('action')
     apt = Apartment(**data)
-    if method == 'add':
+    if action == 'add':
         httpx.post(f'{api_url}/tasks', data=apt)
-    elif method == 'update':
+    elif action == 'update':
         httpx.put(f'{api_url}//tasks', data=apt)
-    elif method == 'delete':
+    elif action == 'delete':
         httpx.delete(f'{api_url}//tasks', data=apt)
     return redirect(url_for('apartments.apartment', name=data.get('name')))

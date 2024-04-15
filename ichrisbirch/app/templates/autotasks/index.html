@@ -19,8 +19,9 @@
         <form method="POST">
           <input type="hidden" name="id" value="{{ autotask.id }}">
           <input type="hidden" name="name" value="{{ autotask.name }}">
-          <input type="hidden" name="method" value="run">
-          <button type="submit" class="button button-3d" value="Add Task Now">Add Task Now</button>
+          <button type="submit" name="action" class="button" value="run">
+            <span class="button__text">Run Autotask Now</span>
+          </button>
         </form>
       </div>
       <div class="item-details__item">
@@ -34,8 +35,9 @@
         <form method="POST">
           <input type="hidden" name="id" value="{{ autotask.id }}">
           <input type="hidden" name="name" value="{{ autotask.name }}">
-          <input type="hidden" name="method" value="delete">
-          <button type="submit" class="button button-3d" value="{{ autotask.name }} delete">Delete AutoTask</button>
+          <button type="submit" name="action" class="button" value="delete">
+            <span class="button__text">Delete Autotask</span>
+          </button>
         </form>
       </div>
     </div>
@@ -81,8 +83,9 @@
     </div>
 
     <div class="add-item-form__item add-item-form__item--submit">
-      <input type="hidden" name="method" value="add">
-      <button type="submit" class="button button-3d" value="Add New AutoTask">Add New AutoTask</button>
+      <button type="submit" name="action" class="button" value="add">
+        <span class="button__text">Add New Autotask</span>
+      </button>
     </div>
   </form>
 </div>

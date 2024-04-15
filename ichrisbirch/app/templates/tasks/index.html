@@ -18,8 +18,9 @@
       <form method="POST" action="{{ url_for('tasks.crud') }}">
         <input type="hidden" name="id" value="{{ task.id }}">
         <input type="hidden" name="name" value="{{ task.name }}">
-        <input type="hidden" name="method" value="complete">
-        <button type="submit" class="button button-3d" value="{{ task.name }} complete">Complete Task</button>
+        <button type="submit" name="action" class="button" value="complete">
+          <span class="button__text">Complete Task</span>
+        </button>
       </form>
     </div>
     {% endfor %}

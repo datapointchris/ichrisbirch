@@ -12,7 +12,9 @@
       <input type="checkbox" id="{{ name }}" name="{{ name }}" value=1>
       <span class="checkmark button-3d"></span>
     </label>
-    <button type="submit" value="complete_habit" class="button button-3d">Complete</button>
+    <button type="submit" name="action" class="button" value="complete_habit">
+      <span class="button__text">Complete</span>
+    </button>
     {% endfor %}
     {% for habit in completed %}
     <h3>{{ habit.name.title() }}</h3>

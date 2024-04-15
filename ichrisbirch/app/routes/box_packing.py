@@ -86,11 +86,11 @@ def search():
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
     data: dict[str, Any] = request.form.to_dict()
-    method = data.pop('method')
-    logger.debug(f'{request.referrer=} {method=}')
+    action = data.pop('action')
+    logger.debug(f'{request.referrer=} {action=}')
     logger.debug(f'{data=}')
 
-    if method == 'add_box':
+    if action == 'add_box':
         try:
             essential = bool(data.pop('essential', 0))
             warm = bool(data.pop('warm', 0))
@@ -111,14 +111,14 @@ def crud():
             return redirect(request.referrer or url_for('box_packing.index'))
         return redirect(request.referrer or url_for('box_packing.box', box_id=new_box.id))
 
-    if method == 'delete_box':
+    if action == 'delete_box':
         url = url_builder(BOXES_API_URL, data.get('id'))
         response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
         flash(f'Box {data.get("name")} deleted', 'success')
         return redirect(request.referrer or url_for('box_packing.index'))
 
-    if method == 'add_item':
+    if action == 'add_item':
         try:
             essential = bool(data.pop('essential', 0))
             warm = bool(data.pop('warm', 0))
@@ -133,7 +133,7 @@ def crud():
         flash(f'Item {item.name} added to box {item.box_id}', 'success')
         return redirect(url_for('box_packing.box', box_id=item.box_id))
 
-    if method == 'delete_item':
+    if action == 'delete_item':
         item_id = data.get('id')
         box_id = data.get('box_id')
         url = url_builder(ITEMS_API_URL, item_id)
@@ -142,4 +142,4 @@ def crud():
         flash(f'Item {item_id} deleted from box {box_id}', 'success')
         return redirect(request.referrer or url_for('box_packing.box', box_id=box_id))
 
-    return Response(f'Method {method} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

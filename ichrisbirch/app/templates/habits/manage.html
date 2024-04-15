@@ -21,7 +21,9 @@
         <form method="POST" action="{{ url_for('tracks_bp.delete_habit') }}">
           <input type="hidden" name="habit_name" value="{{ habit }}">
           <input type="hidden" name="habit_category" value="{{ values.get('category') }}">
-          <input type="submit" class="button button-3d" value="Delete">
+          <button type="submit" name="action" class="button" value="delete">
+            <span class="button__text">Delete</span>
+          </button>
           {{ habit }}
         </form>
         {% endfor %}
@@ -53,7 +55,9 @@
           </td>
 
           <td>
-            <input type="submit" class="button button-3d" value="Add New Habit">
+            <button type="submit" name="action" class="button" value="add_habit">
+              <span class="button__text">Add New Habit</span>
+            </button>
           </td>
         </form>
       </tr>

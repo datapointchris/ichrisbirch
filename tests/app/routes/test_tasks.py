@@ -30,7 +30,7 @@ def test_crud_add(test_app):
             notes='Notes task 4',
             category=TaskCategory.Computer.value,
             priority=3,
-            method='add',
+            action='add',
         ),
         follow_redirects=True,
     )
@@ -41,7 +41,7 @@ def test_crud_add(test_app):
 
 
 def test_crud_complete(test_app):
-    response = test_app.post('/tasks/crud/', data={'id': 1, 'method': 'complete'}, follow_redirects=True)
+    response = test_app.post('/tasks/crud/', data={'id': 1, 'action': 'complete'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/'
@@ -49,7 +49,7 @@ def test_crud_complete(test_app):
 
 
 def test_crud_delete(test_app):
-    response = test_app.post('/tasks/crud/', data={'id': 1, 'method': 'delete'}, follow_redirects=True)
+    response = test_app.post('/tasks/crud/', data={'id': 1, 'action': 'delete'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/all/'

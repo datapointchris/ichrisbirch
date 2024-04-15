@@ -6,8 +6,10 @@
 <div class="searchbox">
   <form method="POST" action="{{ url_for('box_packing.search') }}">
     <label for="search_text"></label>
-    <input class="button button-3d" type="text" name="search_text" id="search_text">
-    <input class="button button-3d" type="submit" value="Search">
+    <input type="text" class="button" name="search_text" id="search_text">
+    <button type="submit" name="action" class="button" value="search">
+      <span class="button__text">Search</span>
+    </button>
   </form>
 </div>
 <ul class="search-results search-results__header">

@@ -7,8 +7,10 @@
   <form method="POST" action="{{ url_for('journal.search') }}">
     <h3>Search for Items</h3>
     <label for="search_text">Search Text:</label>
-    <input class=big-button type="text" name="search_text" id="search_text">
-    <input class="big-button" type="submit" value="Search">
+    <input type="text" class="big-button" name="search_text" id="search_text">
+    <button type="submit" name="action" class="button" value="search">
+      <span class="button__text">Search</span>
+    </button>
   </form>
 </div>
 

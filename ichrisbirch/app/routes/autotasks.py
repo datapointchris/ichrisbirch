@@ -26,11 +26,11 @@ TASK_CATEGORIES = [t.value for t in TaskCategory]
 def index():
     if request.method == 'POST':
         data: dict[str, Any] = request.form.to_dict()
-        method = data.pop('method')
-        logger.debug(f'{request.referrer=} {method=}')
+        action = data.pop('action')
+        logger.debug(f'{request.referrer=} {action=}')
         logger.debug(f'{data=}')
 
-        if method == 'add':
+        if action == 'add':
             try:
                 autotask = schemas.AutoTaskCreate(**data)
             except pydantic.ValidationError as e:
@@ -43,18 +43,18 @@ def index():
             task_response = httpx.get(new_autotask_run_url)
             handle_if_not_response_code(200, task_response, logger)
 
-        elif method == 'run':
+        elif action == 'run':
             url = url_builder(AUTOTASKS_API_URL, data.get('id'), 'run')
             response = httpx.get(url)
             handle_if_not_response_code(200, response, logger)
 
-        elif method == 'delete':
+        elif action == 'delete':
             url = url_builder(AUTOTASKS_API_URL, data.get('id'))
             response = httpx.delete(url)
             handle_if_not_response_code(204, response, logger)
 
         else:
-            return Response(f'Method {method} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     response = httpx.get(AUTOTASKS_API_URL, follow_redirects=True)
     handle_if_not_response_code(200, response, logger)

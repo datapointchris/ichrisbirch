@@ -30,16 +30,18 @@
       {% if not event.attending %}
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
-        <input type="hidden" name="method" value="attend">
-        <button name="attend" class="button button-3d" value="{{ event.name }} attend">Attend Event</button>
+        <button type="submit" name="action" class="button" value="attend">
+          <span class="button__text">Attend Event</span>
+        </button>
       </form>
       {% else %}
       <button name="attend" class="button button-3d--pressed" value="{{ event.name }} attend">Attending</button>
       {% endif %}
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
-        <input type="hidden" name="method" value="delete">
-        <button name="delete" class="button button-3d" value="{{ event.name }} delete">Delete Event</button>
+        <button type="submit" name="action" class="button" value="delete">
+          <span class="button__text">Delete Event</span>
+        </button>
       </form>
     </div>
   </div>
@@ -75,8 +77,9 @@
       <label for="notes">Notes:</label><br>
       <textarea rows="10" cols="80" id="notes" name="notes" class="textbox button-3d"></textarea>
       <br><br>
-      <input type="hidden" name="method" value="add">
-      <button name="add" id="add" class="button button-3d" value="Add Event">Add Event</button>
+      <button type="submit" name="action" class="button" value="add">
+        <span class="button__text">Add Event</span>
+      </button>
     </form>
   </div>
 </div>

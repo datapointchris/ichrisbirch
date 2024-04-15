@@ -25,11 +25,11 @@ LOCAL_TZ = datetime.now().astimezone().tzinfo
 def index():
     if request.method == 'POST':
         data: dict[str, Any] = request.form.to_dict()
-        method = data.pop('method')
-        logger.debug(f'{request.referrer=} {method=}')
+        action = data.pop('action')
+        logger.debug(f'{request.referrer=} {action=}')
         logger.debug(f'{data=}')
 
-        if method == 'add':
+        if action == 'add':
             # add local timezone if one isn't provided
             if not datetime.fromisoformat(data['date']).tzname:
                 data['date'] = datetime.fromisoformat(data['date']).replace(tzinfo=LOCAL_TZ)
@@ -42,18 +42,18 @@ def index():
             response = httpx.post(EVENTS_API_URL, content=event)
             handle_if_not_response_code(201, response, logger)
 
-        elif method == 'delete':
+        elif action == 'delete':
             url = url_builder(EVENTS_API_URL, str(data.get('id')))
             response = httpx.delete(url)
             handle_if_not_response_code(204, response, logger)
 
-        elif method == 'attend':
+        elif action == 'attend':
             url = url_builder(EVENTS_API_URL, str(data.get('id')), 'attend')
             response = httpx.post(url)
             handle_if_not_response_code(200, response, logger)
 
         else:
-            return Response(f'Method {method} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     response = httpx.get(EVENTS_API_URL)
     handle_if_not_response_code(200, response, logger)

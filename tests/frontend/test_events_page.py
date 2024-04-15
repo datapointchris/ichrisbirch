@@ -2,7 +2,6 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from ichrisbirch.config import get_settings
-from tests.testing_data.events import BASE_DATA
 
 settings = get_settings()
 
@@ -38,13 +37,13 @@ def test_create_event(homepage, page: Page):
     page.get_by_label('cost').fill(fake['cost'])
     page.get_by_label('attending').check()
     page.get_by_label('notes').fill(fake['notes'])
-    page.query_selector('css=button[value="Add Event"]').click()
+    page.query_selector('css=button[value="add"]').click()
 
 
 def test_delete_event(homepage, page: Page):
-    page.query_selector(f'css=button[value="{BASE_DATA[0].name} delete"]').click()
+    page.query_selector('css=button[value="delete"]').click()
 
 
 def test_attend_event(homepage, page: Page):
     # Event 2, BASE_DATA[1], attending=False
-    page.query_selector(f'css=button[value="{BASE_DATA[1].name} attend"]').click()
+    page.query_selector('css=button[value="attend"]').click()
