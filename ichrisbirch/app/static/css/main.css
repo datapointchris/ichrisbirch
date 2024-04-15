@@ -216,6 +216,8 @@ h3 {
 
 nav ul {
   width: 90%;
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   justify-content: space-evenly;
   align-items: center;
@@ -230,7 +232,7 @@ nav ul {
 nav ul[data-secondary] {
   width: 80%;
   margin-left: var(--space-2xl);
-  position: relative;
+  z-index: 0;
 }
 nav li {
   list-style: none;
@@ -800,7 +802,7 @@ nav a:hover {
 }
 .task--completed {
   background-color: var(--clr-gray-700);
-  border: 5px solid var(--clr-success);
+  border: 3px solid var(--clr-success);
 }
 .task--due {
   border: 3px solid var(--clr-error);
