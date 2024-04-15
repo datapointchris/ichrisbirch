@@ -33,8 +33,8 @@ def test_create_autotask(homepage, page: Page):
     page.get_by_label('priority').fill(fake['priority'])
     page.get_by_label('notes').fill(fake['notes'])
     page.get_by_label('frequency').select_option(fake['frequency'])
-    page.query_selector('css=button[value="add"]').click()
+    page.click('css=button[value="add"]')
 
 
 def test_delete_autotask(homepage, page: Page):
-    page.query_selector('css=button[value="delete"]').click()
+    page.click('css=button[value="delete"]')

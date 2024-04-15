@@ -10,8 +10,8 @@ isoformat = '%Y-%m-%dT%H:%M:%S.%f'
 autotasks_with_ids = []
 for i, record in enumerate(deepcopy(BASE_DATA), start=1):
     record.id = i
-    record.first_run_date = datetime.strptime(record.first_run_date, isoformat)
-    record.last_run_date = datetime.strptime(record.last_run_date, isoformat)
+    record.first_run_date = datetime.strptime(str(record.first_run_date), isoformat)
+    record.last_run_date = datetime.strptime(str(record.last_run_date), isoformat)
     autotasks_with_ids.append(record)
     print(record)
 

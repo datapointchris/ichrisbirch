@@ -25,8 +25,8 @@ def test_create_countdown(homepage, page: Page):
     page.get_by_label('name').fill(fake['name'])
     page.get_by_label('due date').fill(fake['due date'])
     page.get_by_label('notes').fill(fake['notes'])
-    page.query_selector('css=button[value="add"]').click()
+    page.click('css=button[value="add"]')
 
 
 def test_delete_countdown(homepage, page: Page):
-    page.query_selector('css=button[value="delete"]').click()
+    page.click('css=button[value="delete"]')

@@ -37,13 +37,13 @@ def test_create_event(homepage, page: Page):
     page.get_by_label('cost').fill(fake['cost'])
     page.get_by_label('attending').check()
     page.get_by_label('notes').fill(fake['notes'])
-    page.query_selector('css=button[value="add"]').click()
+    page.click('css=button[value="add"]')
 
 
 def test_delete_event(homepage, page: Page):
-    page.query_selector('css=button[value="delete"]').click()
+    page.click('css=button[value="delete"]')
 
 
 def test_attend_event(homepage, page: Page):
     # Event 2, BASE_DATA[1], attending=False
-    page.query_selector('css=button[value="attend"]').click()
+    page.click('css=button[value="attend"]')
