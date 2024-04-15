@@ -740,34 +740,31 @@ nav a:hover {
 }
 .task-layout {
   display: grid;
-  grid-template-columns: repeat(2, minmax(200px, 1fr));
-  width: 90%;
   gap: var(--space-s);
   margin-inline: auto;
   margin-top: var(--space-s);
   margin-bottom: var(--space-2xl);
   align-items: start;
   justify-content: center;
+  text-align: center;
+}
+.task-layout--one-column-narrow {
+  grid-template-columns: minmax(200px, 0.5fr);
+}
+.task-layout--one-column-wide {
+  grid-template-columns: minmax(200px, 1fr);
+}
+.task-layout--two-columns {
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
 }
 .task-layout__title {
   text-align: center;
   margin: var(--space-xs);
 }
 
-.tasks-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-s);
-  margin: var(--space-xs) auto;
-  justify-content: center;
-  text-align: center;
-}
-
 .task {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-areas: "title notes" "priority notes" "category button" "add-date button";
-  align-items: center;
   padding: var(--space-xs);
   padding-inline: var(--space-l);
   line-height: 1.5em;
@@ -783,8 +780,10 @@ nav a:hover {
   color: var(--clr-accent-light);
 }
 .task__notes {
+  margin-top: var(--space-xs);
   grid-area: notes;
-  text-align: right;
+  align-content: right;
+  text-align: left;
 }
 .task__priority {
   grid-area: priority;
@@ -798,17 +797,39 @@ nav a:hover {
   grid-area: add-date;
   margin-left: var(--space-m);
 }
-.task__button {
-  grid-area: button;
+.task__complete-date {
+  grid-area: complete-date;
+  margin-left: var(--space-m);
+}
+.task__time-to-complete {
+  grid-area: time-to-complete;
+  margin-left: var(--space-m);
+}
+.task__multiple-buttons {
+  grid-area: multiple-buttons;
+  text-align: center;
+}
+.task__complete-button {
+  grid-area: complete-button;
   text-align: right;
 }
+.task__delete-button {
+  grid-area: delete-button;
+  text-align: right;
+}
+.task--priority {
+  grid-template-areas: "title notes" "priority notes" "category complete-button" "add-date complete-button";
+}
+.task--todo {
+  grid-template-areas: "title notes" "priority notes" "category multiple-buttons" "add-date multiple-buttons" "...      multiple-buttons";
+}
 .task--completed {
-  background-color: var(--clr-gray-700);
+  grid-template-areas: "title notes" "category notes" "add-date delete-button" "complete-date delete-button" "time-to-complete delete-button";
   border: 3px solid var(--clr-success);
 }
 .task--due {
   border: 3px solid var(--clr-error);
-  animation: task-due 2s infinite;
+  animation: task-due 2s 5;
 }
 @keyframes task-due {
   50% {
@@ -817,7 +838,7 @@ nav a:hover {
 }
 .task--soon {
   border: 3px solid var(--clr-warning);
-  animation: task-soon 3s infinite;
+  animation: task-soon 3s 3;
 }
 @keyframes task-soon {
   50% {

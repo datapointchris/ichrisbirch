@@ -1,13 +1,25 @@
 .task-layout {
     display: grid;
-    grid-template-columns: repeat(2, minmax(200px, 1fr));
-    width: 90%;
+    // width: 90%;
     gap: var(--space-s);
     margin-inline: auto;
     margin-top: var(--space-s);
     margin-bottom: var(--space-2xl);
     align-items: start;
     justify-content: center;
+    text-align: center;
+
+    &--one-column-narrow {
+        grid-template-columns: minmax(200px, 0.5fr);
+    }
+
+    &--one-column-wide {
+        grid-template-columns: minmax(200px, 1fr);
+    }
+
+    &--two-columns {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+    }
 
     &__title {
         text-align: center;
@@ -15,24 +27,9 @@
     }
 }
 
-.tasks-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-s);
-    margin: var(--space-xs) auto;
-    justify-content: center;
-    text-align: center;
-}
-
 .task {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-        "title notes"
-        "priority notes"
-        "category button"
-        "add-date button";
-    align-items: center;
     padding: var(--space-xs);
     padding-inline: var(--space-l);
     line-height: 1.5em;
@@ -51,8 +48,10 @@
     }
 
     &__notes {
+        margin-top: var(--space-xs);
         grid-area: notes;
-        text-align: right;
+        align-content: right;
+        text-align: left;
     }
 
     &__priority {
@@ -70,19 +69,61 @@
         margin-left: var(--space-m);
     }
 
-    &__button {
-        grid-area: button;
+    &__complete-date {
+        grid-area: complete-date;
+        margin-left: var(--space-m);
+    }
+
+    &__time-to-complete {
+        grid-area: time-to-complete;
+        margin-left: var(--space-m);
+    }
+
+    &__multiple-buttons {
+        grid-area: multiple-buttons;
+        text-align: center;
+    }
+
+    &__complete-button {
+        grid-area: complete-button;
         text-align: right;
     }
 
+    &__delete-button {
+        grid-area: delete-button;
+        text-align: right;
+    }
+
+    &--priority {
+        grid-template-areas:
+            "title notes"
+            "priority notes"
+            "category complete-button"
+            "add-date complete-button";
+    }
+
+    &--todo {
+        grid-template-areas:
+            "title notes"
+            "priority notes"
+            "category multiple-buttons"
+            "add-date multiple-buttons"
+            "...      multiple-buttons";
+    }
+
     &--completed {
-        background-color: var(--clr-gray-700);
+        grid-template-areas:
+            "title notes"
+            "category notes"
+            "add-date delete-button"
+            "complete-date delete-button"
+            "time-to-complete delete-button";
         border: 3px solid var(--clr-success);
     }
 
     &--due {
         border: 3px solid var(--clr-error);
-        animation: task-due 2s infinite;
+        animation: task-due 2s 5;
 
         @keyframes task-due {
             50% {
@@ -93,7 +134,7 @@
 
     &--soon {
         border: 3px solid var(--clr-warning);
-        animation: task-soon 3s infinite;
+        animation: task-soon 3s 3;
 
         @keyframes task-soon {
             50% {

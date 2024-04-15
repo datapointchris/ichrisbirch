@@ -1,0 +1,19 @@
+<div class="task task--completed">
+  <h3 class="task__title">{{ task.name }}</h3>
+  {% if task.notes %}
+  <div class="task__notes"><strong>Notes: </strong>{{ task.notes }}</div>
+  {% endif %}
+  <div class="task__category">Category: {{ task.category }}</div>
+  <div class="task__add-date">Add Date: {{ task.add_date }}</div>
+  <div class="task__complete-date">Complete Date: {{ task.complete_date }}</div>
+  <div class="task__time-to-complete">Time to Complete: {{ task.weeks_to_complete }}</div>
+  <div class="task__delete-button">
+    <form method="POST" action="{{ url_for('tasks.crud') }}">
+      <input type="hidden" name="id" value="{{ task.id }}">
+      <input type="hidden" name="name" value="{{ task.name }}">
+      <button type="submit" name="action" class="button" value="delete">
+        <span class="button__text">Delete Task</span>
+      </button>
+    </form>
+  </div>
+</div>

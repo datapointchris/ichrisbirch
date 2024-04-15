@@ -76,15 +76,10 @@ def index():
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    completed_filter = request.form.get('completed_filter') if request.method == 'POST' else None
-    logger.debug(f'{completed_filter=}')
-
-    response = httpx.get(TASKS_API_URL, params={'completed_filter': completed_filter})
+    response = httpx.get(TASKS_API_URL, params={'completed_filter': 'not_completed'})
     handle_if_not_response_code(200, response, logger)
     tasks = [schemas.Task(**task) for task in response.json()]
-    return render_template(
-        'tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES, completed_filter=completed_filter
-    )
+    return render_template('tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES)
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
@@ -105,7 +100,9 @@ def completed():
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
-        average_completion = f"No completed tasks for this time period '{selected_filter}'"
+        average_completion = (
+            f"No completed tasks for time period: '{' '.join(selected_filter.split('_')).capitalize()}'"
+        )
         chart_labels, chart_values = None, None
 
     return render_template(

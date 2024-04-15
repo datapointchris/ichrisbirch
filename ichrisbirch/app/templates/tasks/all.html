@@ -3,59 +3,11 @@
 {% block title %}All Tasks{% endblock %}
 
 {% block content %}
-<div class="tasks-container">
-  <h2>Filter Tasks</h2>
-  <form method="POST" action="{{ url_for('tasks.all') }}">
-    <div class="filter-buttons">
-      <input type="radio" id="radio-completed" class="filterbutton" name="completed_filter" value="completed" {% if
-        completed_filter=='completed' %}checked{% endif %}>
-      <label for="radio-completed">Completed</label>
-      <input type="radio" id="radio-not_completed" class="filterbutton" name="completed_filter" value="not_completed" {%
-        if completed_filter=='not_completed' %}checked{% endif %}>
-      <label for="radio-not_completed">Not Completed</label>
-      <input type="radio" id="radio-all" class="filterbutton" name="completed_filter" value="all" {% if
-        completed_filter=='all' %}checked{% endif %}>
-      <label for="radio-all">All</label>
-    </div>
-    <br><br>
-    <button type="submit" name="action" class="button" value="filter">
-      <span class="button__text">Filter Tasks</span>
-    </button>
-  </form>
-</div>
-
-<div class="grid grid--two-columns">
+<div class="task-layout task-layout--one-column-narrow">
   {% for task in tasks %}
-  <div class="grid__item">
-    <h2>{{ task.name }}</h2>
-    {% if task.notes %}
-    <strong>Notes: </strong>{{ task.notes }}<br>
-    {% endif %}
-    Priority: {{ task.priority }}<br>
-    Category: {{ task.category }}<br>
-    Add Date: {{ task.add_date }}<br>
-    {% if task.complete_date %}
-    Complete Date: {{ task.complete_date }}<br>
-    {% endif %}
-    <form method="POST" action="{{ url_for('tasks.crud') }}">
-      <input type="hidden" name="id" value="{{ task.id }}">
-      <input type="hidden" name="name" value="{{ task.name }}">
-      <button type="submit" name="action" class="button" value="delete">
-        <span class="button__text">Delete Task</span>
-      </button>
-    </form>
-    {% if not task.complete_date %}
-    <form method="POST" action="{{ url_for('tasks.crud') }}">
-      <input type="hidden" name="id" value="{{ task.id }}">
-      <input type="hidden" name="name" value="{{ task.name }}">
-      <button type="submit" name="action" class="button" value="complete">
-        <span class="button__text">Complete Task</span>
-      </button>
-    </form>
-    {% endif %}
-  </div>
+  {% include 'tasks/templates/todo.jinja.html' %}
   {% else %}
-  <div class="grid__item">
+  <div class="task task--todo">
     <h2>No Tasks</h2>
   </div>
   {% endfor %}
