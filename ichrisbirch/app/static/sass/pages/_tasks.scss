@@ -21,6 +21,7 @@
     gap: var(--space-s);
     margin: var(--space-xs) auto;
     justify-content: center;
+    text-align: center;
 }
 
 .task {
@@ -35,6 +36,7 @@
     padding: var(--space-xs);
     padding-inline: var(--space-l);
     line-height: 1.5em;
+    text-align: left;
     border-radius: var(--btn-border-radius);
     background-color: var(--clr-gray-700);
     box-shadow:
@@ -102,13 +104,6 @@
 }
 
 ///// COMPLETED TASK FILTERS /////
-
-#completed-filters {
-    width: 100%;
-    margin: auto;
-    margin-bottom: 100px;
-    text-align: center;
-}
 
 .filter-buttons {
     display: inline-flex;

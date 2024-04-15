@@ -22,8 +22,6 @@ nav {
         &[data-secondary] {
             width: 80%;
             margin-left: var(--space-2xl);
-            // position: relative;
-            // this makes the link not easy to click
             z-index: 0;
         }
     }
