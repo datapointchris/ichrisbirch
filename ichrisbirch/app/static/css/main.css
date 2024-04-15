@@ -736,34 +736,71 @@ nav a:hover {
     border-left: 1px solid var(--clr-text);
   }
 }
-#content-layout-grid {
+.task-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 40px;
-  padding: 10px;
-  align-items: flex-start;
-  overflow: auto;
-  margin-bottom: 200px;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  width: 90%;
+  gap: var(--space-s);
+  margin-inline: auto;
+  margin-top: var(--space-s);
+  margin-bottom: var(--space-2xl);
+  align-items: start;
+  justify-content: center;
 }
-
-.task-list {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.task-header {
+.task-layout__title {
   text-align: center;
+  margin: var(--space-xs);
+}
+
+.tasks-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-s);
+  margin: var(--space-xs) auto;
+  justify-content: center;
 }
 
 .task {
-  margin: 20px;
-  padding: 20px;
-  border: 2px solid gray;
-  border-radius: 30px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "title notes" "priority notes" "category button" "add-date button";
+  align-items: center;
+  padding: var(--space-xs);
+  padding-inline: var(--space-l);
   line-height: 1.5em;
+  border-radius: var(--btn-border-radius);
+  background-color: var(--clr-gray-700);
+  box-shadow: var(--box-shadow-base), 2px 4px 10px var(--clr-gray-trans-700);
 }
-.task.completed {
-  border-color: var(--clr-success);
+.task__title {
+  grid-area: title;
+  margin: var(--space-xs);
+  margin-left: 0;
+  color: var(--clr-accent-light);
+}
+.task__notes {
+  grid-area: notes;
+  text-align: right;
+}
+.task__priority {
+  grid-area: priority;
+  margin-left: var(--space-m);
+}
+.task__category {
+  grid-area: category;
+  margin-left: var(--space-m);
+}
+.task__add-date {
+  grid-area: add-date;
+  margin-left: var(--space-m);
+}
+.task__button {
+  grid-area: button;
+  text-align: right;
+}
+.task--completed {
+  background-color: var(--clr-gray-700);
+  border: 5px solid var(--clr-success);
 }
 
 #completed-filters {
@@ -792,9 +829,9 @@ nav a:hover {
 
 .filter-buttons label {
   display: inline-block;
-  padding: 15px 20px;
+  padding: var(--space-s) var(--space-m);
   border-radius: var(--btn-border-radius);
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
+  box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
 .filter-buttons input[type=radio]:checked + label {
