@@ -1,6 +1,6 @@
 # TODO
 
-- [PRIORITY PROJECTS](#priority-projects)
+- [Small Tasks](#small-tasks)
 - [User Login](#user-login)
 - [Random](#random)
 - [Tasks](#tasks)
@@ -41,7 +41,26 @@
   - [User Customization](#user-customization)
   - [Whylogs](#whylogs)
 
-## PRIORITY PROJECTS
+## Small Tasks
+
+- [ ] Add button to submit github issue
+  - [ ] Style the button as the other buttons with class "button box3d"
+  - [ ] Clicking button should open pseudo-window
+  - [ ] Auto-populate lots of information
+    - [ ] time / date
+    - [ ] browser information
+    - [ ] page currently on
+    - [ ] Have a template set up
+    - [ ] Select from only a few types of issues
+- [ ] (ops) Make validate html only validate pages that have been modified
+  - [ ] pass files variable?
+- [ ] (css) `_server_stats.scss` combine 3d text and 3d effect
+- [ ] (research) what is the difference between input type=submit and button type=submit
+- [ ] (refactor) forms should use a button instead of input type=submit
+  - [ ] the name of the button should be the method
+  - [ ] the hidden method can be removed
+  - [ ] `<button type="submit" name="action" value="deleteItem">Delete Item</button>`
+- [ ] (tasks:all) filter tasks should be saved after form submit of delete or complete
 
 ## User Login
 
@@ -225,6 +244,7 @@ def favicon():
 
 ## Build Portfolio Page
 
+- [ ] [Reflection! Cool Effects with -webkit-box-reflect](https://dev.to/chokcoco/reflection-cool-effects-with-webkit-box-reflect-dpl)
 - [ ] code this entirely by hand, using small code packages
   - [ ] Dataset
   - [ ] Dataset-orm
