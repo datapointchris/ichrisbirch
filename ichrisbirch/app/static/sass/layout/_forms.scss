@@ -1,4 +1,7 @@
+@import 'components/buttons';
+
 .textbox {
+    @include button-textbox;
     border: none;
     border-radius: var(--btn-border-radius);
     font-size: var(--fs-400);

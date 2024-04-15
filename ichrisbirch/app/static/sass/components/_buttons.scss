@@ -2,18 +2,22 @@
     --btn-border-radius: 12px;
 }
 
-.button {
-    margin: 7px;
-    padding: 0.5em 1.75em;
+@mixin button-textbox {
+    margin: var(--space-2xs);
+    padding: var(--space-2xs) var(--space-m);
     font-size: var(--fs-400);
     color: var(--clr-text);
     background-color: var(--clr-gray-800);
     border-radius: var(--btn-border-radius);
-    text-shadow: 2px 4px 1px var(--clr-black-trans-800);
     box-shadow:
-        5px 5px 5px 0px black,
+        5px 5px 5px 0px var(--clr-black-trans-1000),
         inset 0px 0px 5px 0px var(--clr-gray-400),
         inset -5px -5px 4px -2px var(--clr-gray-400);
+}
+
+.button {
+    @include button-textbox;
+    text-shadow: 2px 4px 1px var(--clr-black-trans-800);
     transition: all 0.1s ease-in-out;
 
     &--pressed {
