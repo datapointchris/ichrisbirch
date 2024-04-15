@@ -35,7 +35,7 @@
         </button>
       </form>
       {% else %}
-      <button name="attend" class="button button-3d--pressed" value="{{ event.name }} attend">Attending</button>
+      <button type="button" name="attend" class="button button--pressed">Attending</button>
       {% endif %}
       <form method="POST">
         <input type="hidden" name="id" value="{{ event.id }}">
