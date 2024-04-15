@@ -802,6 +802,24 @@ nav a:hover {
   background-color: var(--clr-gray-700);
   border: 5px solid var(--clr-success);
 }
+.task--due {
+  border: 3px solid var(--clr-error);
+  animation: task-due 2s infinite;
+}
+@keyframes task-due {
+  50% {
+    border: 3px solid var(--clr-accent--red);
+  }
+}
+.task--soon {
+  border: 3px solid var(--clr-warning);
+  animation: task-soon 3s infinite;
+}
+@keyframes task-soon {
+  50% {
+    border: 3px solid var(--clr-accent--orange);
+  }
+}
 
 #completed-filters {
   width: 100%;

@@ -8,40 +8,45 @@
   <h2 class="task-layout__title">Completed Today</h2>
   <div class="tasks-container">
     {% for task in top_tasks %}
-    <div class="task">
-      <h3 class="task__title">{{ task.name }}</h3>
+    {% if task.priority == 1 %}
+    <div class="task task--due">
+      {% elif task.priority <= 3 %} <div class="task task--soon">
+        {% else %}
+        <div class="task">
+          {% endif %}
+          <h3 class="task__title">{{ task.name }}</h3>
 
-      {% if task.notes %}
-      <div class="task__notes"><strong>Notes: </strong>{{ task.notes }}</div>
-      {% endif %}
-      <div class="task__priority">Priority: {{ task.priority }}</div>
-      <div class="task__category">Category: {{ task.category }}</div>
-      <div class="task__add-date">Add Date: {{ task.add_date }}</div>
-      <div class="task__button">
-        <form method="POST" action="{{ url_for('tasks.crud') }}">
-          <input type="hidden" name="id" value="{{ task.id }}">
-          <input type="hidden" name="name" value="{{ task.name }}">
-          <button type="submit" name="action" class="button" value="complete">
-            <span class="button__text">Complete Task</span>
-          </button>
-        </form>
+          {% if task.notes %}
+          <div class="task__notes"><strong>Notes: </strong>{{ task.notes }}</div>
+          {% endif %}
+          <div class="task__priority">Priority: {{ task.priority }}</div>
+          <div class="task__category">Category: {{ task.category }}</div>
+          <div class="task__add-date">Add Date: {{ task.add_date }}</div>
+          <div class="task__button">
+            <form method="POST" action="{{ url_for('tasks.crud') }}">
+              <input type="hidden" name="id" value="{{ task.id }}">
+              <input type="hidden" name="name" value="{{ task.name }}">
+              <button type="submit" name="action" class="button" value="complete">
+                <span class="button__text">Complete Task</span>
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="tasks-container">
+      {% for task in completed_today %}
+      <div class="task task--completed">
+        <h3 class="task__title">{{ task.name }}</h3>
+        {% if task.notes %}
+        <div class="task__item task__item--full-width"><strong>Notes: </strong>{{ task.notes }}</div>
+        {% endif %}
+        <div class="task__item">Category: {{ task.category }}</div>
+        <div class="task__item">Add Date: {{ task.add_date }}</div>
+        <div class="task__item">Complete Date: {{ task.complete_date }}</div>
+        <div class="task__item--full-width">Time to Complete: {{ task.weeks_to_complete }}</div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
-  <div class="tasks-container">
-    {% for task in completed_today %}
-    <div class="task task--completed">
-      <h3 class="task__title">{{ task.name }}</h3>
-      {% if task.notes %}
-      <div class="task__item task__item--full-width"><strong>Notes: </strong>{{ task.notes }}</div>
-      {% endif %}
-      <div class="task__item">Category: {{ task.category }}</div>
-      <div class="task__item">Add Date: {{ task.add_date }}</div>
-      <div class="task__item">Complete Date: {{ task.complete_date }}</div>
-      <div class="task__item--full-width">Time to Complete: {{ task.weeks_to_complete }}</div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endblock %}
+  {% endblock %}
