@@ -15,9 +15,9 @@
   <li>
     <form class="search-form" method="POST" action="{{ url_for('tasks.search') }}">
       <input type="text" size="20" class="textbox button-3d" name="terms" id="terms">
-                <button type="submit" name="action" class="button" value="search">
-                  <span class="button__text">Search</span>
-                </button>
+      <button type="submit" name="action" class="button" value="search">
+        <span class="button__text">Search</span>
+      </button>
     </form>
   </li>
 </ul>
@@ -26,7 +26,5 @@
 {% block content %}{% endblock %}
 
 {% block footer %}
-<div id="footer">
-  {% include 'tasks/addtask.jinja.html' %}
-</div>
+{% include 'tasks/addtask.jinja.html' %}
 {% endblock %}

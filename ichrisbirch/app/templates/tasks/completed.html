@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="task-layout task-layout--one-column">
+<div class="task-layout task-layout--one-column-wide">
   <form method="POST" action="{{ url_for('tasks.completed') }}">
     <div class="filter-buttons">
       {% for filter in filters %}
