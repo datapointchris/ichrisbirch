@@ -131,9 +131,13 @@ def search():
         response = httpx.get(search_url, params={'q': search_terms})
         handle_if_not_response_code(200, response, logger)
         tasks = [schemas.Task(**task) for task in response.json()]
+        todo_tasks = [task for task in tasks if not task.complete_date]
+        completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
     else:
         tasks = []
-    return render_template('tasks/search.html', tasks=tasks)
+    return render_template(
+        'tasks/search.html', todo_tasks=todo_tasks, completed_tasks=completed_tasks, task_categories=TASK_CATEGORIES
+    )
 
 
 @blueprint.route('/crud/', methods=['POST'])

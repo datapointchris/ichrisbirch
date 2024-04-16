@@ -1,4 +1,4 @@
-<div class="task task--priority {% if task.priority == 1 %}task--due{% elif task.priority <= 3 %}task--soon{% endif %}">
+<div class="task {% if task.priority == 1 %}task--due{% elif task.priority <= 3 %}task--soon{% endif %}">
   <h3 class="task__title">{{ task.name }}</h3>
   {% if task.notes %}
   <div class="task__notes"><strong>Notes: </strong>{{ task.notes }}</div>

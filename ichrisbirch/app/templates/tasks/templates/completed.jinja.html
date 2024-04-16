@@ -6,7 +6,7 @@
   <div class="task__category">Category: {{ task.category }}</div>
   <div class="task__add-date">Add Date: {{ task.add_date }}</div>
   <div class="task__complete-date">Complete Date: {{ task.complete_date }}</div>
-  <div class="task__time-to-complete">Time to Complete: {{ task.weeks_to_complete }}</div>
+  <div class="task__time-to-complete">Time to Complete: {{ task.time_to_complete }}</div>
   <div class="task__delete-button">
     <form method="POST" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="id" value="{{ task.id }}">
