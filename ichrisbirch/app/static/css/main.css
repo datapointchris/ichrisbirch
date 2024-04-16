@@ -741,8 +741,7 @@ nav a:hover {
 .task-layout {
   display: grid;
   gap: var(--space-s);
-  margin-top: var(--space-s);
-  margin-bottom: var(--space-2xl);
+  margin: var(--space-m);
   align-items: start; /* so fewer tasks on one side don't stretch to fill space */
   text-align: center;
 }
@@ -763,10 +762,12 @@ nav a:hover {
 
 .task {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin-inline: var(--space-3xl);
+  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-rows: repeat(6, auto);
+  margin-inline: var(--space-2xl);
   padding: var(--space-xs);
   padding-inline: var(--space-l);
+  align-items: start;
   line-height: 1.5em;
   text-align: left;
   border-radius: var(--btn-border-radius);
@@ -774,57 +775,73 @@ nav a:hover {
   box-shadow: var(--box-shadow-base), 2px 4px 10px var(--clr-gray-trans-700);
 }
 .task__title {
-  grid-area: title;
+  grid-column-start: 1;
+  grid-column-end: 4;
+  grid-row-start: 1;
+  grid-row-end: 1;
   margin: var(--space-xs);
   margin-left: 0;
   color: var(--clr-accent-light);
 }
 .task__notes {
+  grid-column-start: 2;
+  grid-column-end: 3;
+  grid-row-start: 1;
+  grid-row-end: 7;
   margin-top: var(--space-xs);
-  grid-area: notes;
-  align-content: right;
-  text-align: left;
+  align-content: start;
+  text-align: justify;
 }
 .task__priority {
-  grid-area: priority;
+  grid-column-start: 1;
+  grid-column-end: 2;
+  grid-row-start: 2;
+  grid-row-end: 3;
   margin-left: var(--space-m);
 }
 .task__category {
-  grid-area: category;
+  grid-column-start: 1;
+  grid-column-end: 2;
+  grid-row-start: 3;
+  grid-row-end: 4;
   margin-left: var(--space-m);
 }
 .task__add-date {
-  grid-area: add-date;
+  grid-column-start: 1;
+  grid-column-end: 2;
+  grid-row-start: 4;
+  grid-row-end: 5;
   margin-left: var(--space-m);
 }
 .task__complete-date {
-  grid-area: complete-date;
+  grid-column-start: 1;
+  grid-column-end: 2;
+  grid-row-start: 5;
+  grid-row-end: 6;
   margin-left: var(--space-m);
 }
 .task__time-to-complete {
-  grid-area: time-to-complete;
+  grid-column-start: 1;
+  grid-column-end: 2;
+  grid-row-start: 6;
+  grid-row-end: 7;
   margin-left: var(--space-m);
 }
-.task__multiple-buttons {
-  grid-area: multiple-buttons;
-  text-align: center;
-}
 .task__complete-button {
-  grid-area: complete-button;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  grid-row-start: 1;
+  grid-row-end: 4;
   text-align: right;
 }
 .task__delete-button {
-  grid-area: delete-button;
+  grid-column-start: 3;
+  grid-column-end: 4;
+  grid-row-start: 4;
+  grid-row-end: 7;
   text-align: right;
 }
-.task--priority {
-  grid-template-areas: "title notes" "priority notes" "category complete-button" "add-date complete-button";
-}
-.task--todo {
-  grid-template-areas: "title notes" "priority notes" "category multiple-buttons" "add-date multiple-buttons" "...      multiple-buttons";
-}
 .task--completed {
-  grid-template-areas: "title notes" "category notes" "add-date delete-button" "complete-date delete-button" "time-to-complete delete-button";
   border: 3px solid var(--clr-success);
 }
 .task--due {
@@ -907,6 +924,13 @@ nav a:hover {
   background-color: var(--clr-gray-800);
 }
 
+.task-footer-spacer {
+  /* not sure how else to get the padding for the fixed footer without messing up other layout elements */
+  margin: 0px;
+  padding: 0px;
+  margin-top: calc(var(--space-xl) * 2.5);
+}
+
 .task-footer {
   position: fixed;
   bottom: 0;
@@ -916,7 +940,7 @@ nav a:hover {
   grid-template-columns: repeat(6, 1fr);
   justify-content: space-evenly;
   margin-inline: var(--space-3xl);
-  padding: var(--space-m);
+  padding: var(--space-s);
   padding-inline: var(--space-xl);
   background-color: var(--clr-gray-trans-900);
   border: 3px solid var(--clr-gray-300);
