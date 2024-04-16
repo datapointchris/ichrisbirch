@@ -5,7 +5,7 @@
   {% endif %}
   <div class="task__priority">Priority: {{ task.priority }}</div>
   <div class="task__category">Category: {{ task.category }}</div>
-  <div class="task__add-date">Add Date: {{ task.add_date }}</div>
+  <div class="task__add-date">Add Date: {{ task.add_date | pretty_date }}</div>
   <div class="task__complete-button">
     <form method="POST" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="id" value="{{ task.id }}">

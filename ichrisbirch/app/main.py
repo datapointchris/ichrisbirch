@@ -44,6 +44,10 @@ def create_app(settings: Settings) -> Flask:
         app.register_error_handler(502, partial(handle_errors, error_code=502))
         logger.info('Flask App Error Handlers Registered')
 
+        @app.template_filter()
+        def pretty_date(dttm, format='%B %d, %Y'):
+            return '' if dttm is None else dttm.strftime(format)
+
         app.register_blueprint(home.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')

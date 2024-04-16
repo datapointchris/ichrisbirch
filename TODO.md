@@ -120,11 +120,14 @@
 
 - [ ] Alexa skill, use the to-do API to add a task
   - [ ] <https://github.com/johnwheeler/flask-ask>
+  - [ ] I have a tutorial saved on the desktop for this
 - [ ] Make an Alfred shortcut for todo
   - [ ] Using API most likely
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
+- [ ] - [ ] /all
+  - [ ] Count of various types of tasks left to do
 
 ## Infrastructure Management
 
