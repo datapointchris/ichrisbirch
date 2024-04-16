@@ -35,9 +35,9 @@
     {% endfor %}
   </div>
   <div class="task-layout task-layout--one-column-wide">
-    <h2> Average Completion Time: {{ average_completion }}</h2>
-    <div>
-      <canvas id="completedChart" width="600" height="400"></canvas>
+    <h3>Average Completion Time: {{ average_completion }}</h3>
+    <div class="completed-task-graph">
+      <canvas id="completedChart" height="150"></canvas>
     </div>
     <script>
       var ctx = document.getElementById("completedChart").getContext("2d");
@@ -73,11 +73,6 @@
                     }
                 });
     </script>
-    <br>
-    {% for label, value in zip(chart_labels, chart_values) %}
-    {{ label }} {{ value }}
-    <br>
-    {% endfor %}
   </div>
 </div>
 {% endif %}

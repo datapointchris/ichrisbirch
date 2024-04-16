@@ -209,13 +209,10 @@
     }
 }
 
-#completed-averages {
-    margin-bottom: 100px;
-    text-align: center;
-}
-
-#graph {
-    text-align: center;
+.completed-task-graph {
+    width: 80%;
+    margin: auto;
+    background-color: var(--clr-gray-800);
 }
 
 .task-footer {
