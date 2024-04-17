@@ -211,7 +211,7 @@ h2 {
 }
 
 h3 {
-  font-size: var(--fs-500);
+  font-size: var(--fs-600);
 }
 
 nav ul {
@@ -780,16 +780,15 @@ nav a:hover {
   grid-row-start: 1;
   grid-row-end: 1;
   margin: var(--space-xs);
+  margin-top: 0;
   margin-left: 0;
   color: var(--clr-accent-light);
 }
 .task__notes {
   grid-column-start: 2;
   grid-column-end: 3;
-  grid-row-start: 1;
+  grid-row-start: 2;
   grid-row-end: 7;
-  margin-top: var(--space-xs);
-  align-content: start;
   text-align: justify;
 }
 .task__priority {

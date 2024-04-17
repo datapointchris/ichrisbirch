@@ -48,6 +48,7 @@
         grid-row-start: 1;
         grid-row-end: 1;
         margin: var(--space-xs);
+        margin-top: 0;
         margin-left: 0;
         color: var(--clr-accent-light);
     }
@@ -55,10 +56,8 @@
     &__notes {
         grid-column-start: 2;
         grid-column-end: 3;
-        grid-row-start: 1;
+        grid-row-start: 2;
         grid-row-end: 7;
-        margin-top: var(--space-xs);
-        align-content: start;
         text-align: justify;
     }
 
