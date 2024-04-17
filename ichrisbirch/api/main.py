@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
 from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi.responses import JSONResponse
 
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
@@ -21,6 +22,11 @@ async def http_exception_handler_logger(request, exc):
 async def request_validation_exception_handler_logger(request, exc):
     logger.error(repr(exc))
     return await request_validation_exception_handler(request, exc)
+
+
+async def generic_exception_handler(request, exc):
+    logger.error(repr(exc))
+    return JSONResponse(status_code=500, content={"message": repr(exc)})
 
 
 def create_api(settings: Settings) -> FastAPI:
@@ -47,6 +53,7 @@ def create_api(settings: Settings) -> FastAPI:
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
     api.add_exception_handler(RequestValidationError, request_validation_exception_handler_logger)
+    api.add_exception_handler(Exception, generic_exception_handler)
     logger.info('FastAPI Exception Handlers Registered')
 
     return api
