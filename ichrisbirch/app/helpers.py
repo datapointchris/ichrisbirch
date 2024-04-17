@@ -25,5 +25,7 @@ def handle_if_not_response_code(response_code: int, response: httpx.Response, lo
     if response.status_code != response_code:
         error_message = f'expected {response_code} from {response.url} but received {response.status_code}'
         logger.error(error_message)
+        logger.error(response.text)
         flash(error_message, 'error')
-        abort(502, error_message)
+        flash(response.text, 'error')
+        abort(502, (f'{error_message}\n{response.text}'))
