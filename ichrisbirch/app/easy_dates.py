@@ -45,7 +45,7 @@ class EasyDateTime:
         self.next_year: datetime = datetime(self.this_year.year + 1, 1, 1)
         self.last_year: datetime = datetime(self.this_year.year - 1, 1, 1)
 
-        self.filters: dict[str, tuple[datetime | None, datetime | None]] = {
+        self.filters: dict[str, tuple[datetime, datetime]] = {
             'today': (self.today, self.tomorrow),
             'yesterday': (self.yesterday, self.today),
             'this_week': (self.week_start, self.week_end),
@@ -53,5 +53,4 @@ class EasyDateTime:
             'this_month': (self.this_month, self.next_month),
             'last_30': (self.previous_30, self.tomorrow),
             'this_year': (self.this_year, self.next_year),
-            'all': (None, None),
         }

@@ -97,7 +97,10 @@ def completed():
     start_date, end_date = date_filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
-    params = {'start_date': str(start_date), 'end_date': str(end_date)}
+    if start_date is None or end_date is None:
+        params = {}
+    else:
+        params = {'start_date': str(start_date), 'end_date': str(end_date)}
     response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=params)
     handle_if_not_response_code(200, response, logger)
 
@@ -114,7 +117,7 @@ def completed():
         'tasks/completed.html',
         completed_tasks=completed_tasks,
         average_completion=average_completion,
-        filters=date_filters,
+        filters=date_filters | {'all': (None, None)},  # add all filter to frontend
         date_filter=selected_filter,
         chart_labels=chart_labels,
         chart_values=chart_values,
