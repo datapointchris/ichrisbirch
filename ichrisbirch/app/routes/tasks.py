@@ -41,7 +41,11 @@ def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str
 
 
 def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tuple[list[str], list[int]]:
-    """Create chart labels and values from completed tasks"""
+    """Create chart labels and values from completed tasks for chart.js"""
+
+    # Ex: Friday, January 01, 2001
+    DATE_FORMAT = '%A, %B %d, %Y'
+
     first = tasks[0]
     last = tasks[-1]
 
@@ -53,8 +57,9 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
         [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in tasks]
     )
     all_dates_with_counts = timestamps_for_filter | completed_task_timestamps
-    chart_labels = [datetime.strftime(dt, '%m/%d') for dt in all_dates_with_counts]
-    chart_values = list(all_dates_with_counts.values())
+    # Reversed for chronological display in chart.js
+    chart_labels = [datetime.strftime(dt, DATE_FORMAT) for dt in reversed(all_dates_with_counts)]
+    chart_values = list(reversed(all_dates_with_counts.values()))
     return chart_labels, chart_values
 
 

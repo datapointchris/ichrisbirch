@@ -3,7 +3,7 @@
 {% block title %}Completed Tasks{% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -36,43 +36,10 @@
   </div>
   <div class="task-layout task-layout--one-column-wide">
     <h3>Average Completion Time: {{ average_completion }}</h3>
-    <div class="completed-task-graph">
-      <canvas id="completedChart" height="150"></canvas>
-    </div>
-    <script>
-      var ctx = document.getElementById("completedChart").getContext("2d");
-      var barChart = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: [{% for label in chart_labels %}"{{ label }}", {% endfor %}],
-      datasets: [
-        {
-          label: "Completed Tasks",
-          data: [{% for value in chart_values %}"{{ value }}", {% endfor %}],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-          'rgba(255, 205, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(201, 203, 207, 0.2)'
-        ],
-          borderColor: [
-            'rgb(255, 99, 132)',
-            'rgb(255, 159, 64)',
-            'rgb(255, 205, 86)',
-            'rgb(75, 192, 192)',
-            'rgb(54, 162, 235)',
-            'rgb(153, 102, 255)',
-            'rgb(201, 203, 207)'
-          ],
-                            }
-                ],
-      borderWidth: 1
-                    }
-                });
-    </script>
+    <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
+    <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
+    <div class="completed-task-graph"><canvas id="completedChart" height="200"></canvas></div>
+    <script src="{{ url_for('static', filename='js/completed_tasks_chart.js') }}"></script>
   </div>
 </div>
 {% endif %}
