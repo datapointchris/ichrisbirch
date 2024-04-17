@@ -22,6 +22,11 @@
         5px 5px 0px var(--clr-gray-700),
         6px 6px 0px var(--clr-gray-800),
         7px 7px 0px var(--clr-gray-900);
+
+    // prettier-ignore
+    --text-glow: /* this is a text shadow */
+        0 0 7px var(--clr-gray-trans-500),
+        0 0 15px var(--clr-accent);
 }
 
 @mixin deep-3d-text {

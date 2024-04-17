@@ -51,8 +51,7 @@
         &:hover {
             text-shadow:
                 var(--deep-3d-text-shadow),
-                0 0 7px var(--clr-gray-trans-500),
-                0 0 15px var(--clr-accent);
+                var(--text-glow);
         }
     }
 }

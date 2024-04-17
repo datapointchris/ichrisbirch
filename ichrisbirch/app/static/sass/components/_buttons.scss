@@ -33,9 +33,7 @@
     }
 
     &:hover:not(.button--pressed) {
-        text-shadow:
-            0 0 7px var(--clr-gray-trans-500),
-            0 0 15px var(--clr-accent);
+        text-shadow: var(--text-glow);
     }
 
     &__text {
@@ -49,5 +47,119 @@
         &:hover {
             background-size: 100% 2px;
         }
+    }
+}
+
+.btn-submit-issue {
+    --button-size: 150px;
+    --edge-background-blend: 1px;
+    --button-press-time: 0.4s;
+
+    --button-press-delay: calc(var(--button-press-time) * 0.5);
+    --button-press-slow-time: calc(var(--button-press-time) * 2);
+    @mixin smooth-press {
+        transition: all var(--button-press-time) ease-in-out;
+    }
+    @mixin smooth-press-delay {
+        transition: all var(--button-press-time) ease-in-out var(--button-press-delay);
+    }
+    @mixin slow-smooth-press {
+        transition: all var(--button-press-slow-time) ease-in-out;
+    }
+    @mixin slow-smooth-press-delay {
+        transition: all var(--button-press-slow-time) ease-in-out var(--button-press-delay);
+    }
+
+    position: absolute;
+    top: calc(var(--button-size) / 2);
+    right: calc(var(--button-size) / 2);
+    width: var(--button-size);
+    height: var(--button-size);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--button-size);
+
+    color: var(--clr-text);
+    @include smooth-press;
+
+    &__text {
+        position: relative;
+        z-index: 5;
+        user-select: none;
+        cursor: pointer;
+        font-size: var(--fs-400);
+        text-align: center;
+        filter: blur(0);
+    }
+
+    &:hover {
+        color: var(--clr-accent-light);
+        text-shadow: var(--text-glow);
+        @include smooth-press;
+    }
+
+    &::before {
+        /* GRAY BUTTON ON TOP */
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+        width: var(--button-size);
+        height: var(--button-size);
+        content: "";
+        border-radius: var(--button-size);
+        background-color: var(--clr-gray-800);
+        filter: blur(calc(var(--edge-background-blend) * 0.5));
+        @include smooth-press;
+        box-shadow:
+            8px 8px 20px var(--clr-black-trans-600),
+            -8px -8px 20px var(--clr-gray-trans-800),
+            inset -8px -8px 20px var(--clr-black-trans-1000),
+            inset 8px 8px 20px var(--clr-gray-trans-600);
+    }
+
+    &:hover::before {
+        background-color: var(--clr-gray-900);
+        filter: blur(calc(var(--edge-background-blend) * 3));
+        @include smooth-press;
+        box-shadow:
+            -8px -8px 20px var(--clr-black-trans-600),
+            4px 4px 20px var(--clr-gray-trans-800),
+            inset 8px 8px 20px var(--clr-black-trans-1000),
+            inset -8px -8px 20px var(--clr-gray-trans-600);
+    }
+
+    &::after {
+        /* OUTER RING */
+        --button-outline-width: calc(var(--button-size) / 2);
+        --button-outline-size: calc(var(--button-size) + var(--button-outline-width));
+        position: absolute;
+        translate: transform(-50%, -50%);
+        display: block;
+        width: var(--button-outline-size);
+        height: var(--button-outline-size);
+        content: "";
+        cursor: pointer;
+        border-radius: var(--button-outline-size);
+        filter: blur(var(--edge-background-blend));
+        @include smooth-press-delay;
+        box-shadow:
+            8px 8px 20px var(--clr-black-trans-600),
+            -4px -4px 20px var(--clr-gray-trans-800),
+            inset -8px -8px 20px var(--clr-black-trans-1000),
+            inset 8px 8px 20px var(--clr-gray-trans-600);
+    }
+
+    &:hover::after {
+        transform: scale(1.01);
+        filter: blur(calc(var(--edge-background-blend) * 3));
+        @include smooth-press-delay;
+        box-shadow:
+            -8px -8px 20px var(--clr-black-trans-600),
+            4px 4px 20px var(--clr-gray-trans-800),
+            inset 8px 8px 20px var(--clr-black-trans-1000),
+            inset -8px -8px 20px var(--clr-gray-trans-600);
     }
 }
