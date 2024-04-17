@@ -43,7 +43,7 @@ async def completed(
     first: Union[bool, None] = None,
     last: Union[bool, None] = None,
 ):
-
+    logger.debug(f'Parameters passed: {start_date=}, {end_date=}, {first=}, {last=}')
     query = select(models.Task).filter(models.Task.complete_date.is_not(None))
 
     if first:  # first completed task
