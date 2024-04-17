@@ -51,12 +51,13 @@
 }
 
 .btn-submit-issue {
-    --button-size: 150px;
+    --button-size: 120px;
     --edge-background-blend: 1px;
     --button-press-time: 0.4s;
+    --icon-size-ratio: 0.33;
 
-    --button-press-delay: calc(var(--button-press-time) * 0.5);
-    --button-press-slow-time: calc(var(--button-press-time) * 2);
+    --button-press-delay: calc(var(--button-press-time) * 0.3);
+    --button-press-slow-time: calc(var(--button-press-time) * 1.6);
     @mixin smooth-press {
         transition: all var(--button-press-time) ease-in-out;
     }
@@ -81,7 +82,7 @@
     align-items: center;
     border-radius: var(--button-size);
 
-    color: var(--clr-text);
+    color: var(--clr-accent-light);
     @include smooth-press;
 
     &__text {
@@ -91,12 +92,15 @@
         cursor: pointer;
         font-size: var(--fs-400);
         text-align: center;
-        filter: blur(0);
+    }
+
+    &__icon {
+        width: calc(var(--button-size) * var(--icon-size-ratio));
+        height: calc(var(--button-size) * var(--icon-size-ratio));
     }
 
     &:hover {
-        color: var(--clr-accent-light);
-        text-shadow: var(--text-glow);
+        color: var(--clr-accent);
         @include smooth-press;
     }
 

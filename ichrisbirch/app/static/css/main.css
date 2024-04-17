@@ -350,11 +350,12 @@ nav a:hover {
 }
 
 .btn-submit-issue {
-  --button-size: 150px;
+  --button-size: 120px;
   --edge-background-blend: 1px;
   --button-press-time: 0.4s;
-  --button-press-delay: calc(var(--button-press-time) * 0.5);
-  --button-press-slow-time: calc(var(--button-press-time) * 2);
+  --icon-size-ratio: 0.33;
+  --button-press-delay: calc(var(--button-press-time) * 0.3);
+  --button-press-slow-time: calc(var(--button-press-time) * 1.6);
   position: absolute;
   top: calc(var(--button-size) / 2);
   right: calc(var(--button-size) / 2);
@@ -364,7 +365,7 @@ nav a:hover {
   justify-content: center;
   align-items: center;
   border-radius: var(--button-size);
-  color: var(--clr-text);
+  color: var(--clr-accent-light);
   transition: all var(--button-press-time) ease-in-out;
 }
 .btn-submit-issue__text {
@@ -376,11 +377,13 @@ nav a:hover {
   cursor: pointer;
   font-size: var(--fs-400);
   text-align: center;
-  filter: blur(0);
+}
+.btn-submit-issue__icon {
+  width: calc(var(--button-size) * var(--icon-size-ratio));
+  height: calc(var(--button-size) * var(--icon-size-ratio));
 }
 .btn-submit-issue:hover {
-  color: var(--clr-accent-light);
-  text-shadow: var(--text-glow);
+  color: var(--clr-accent);
   transition: all var(--button-press-time) ease-in-out;
 }
 .btn-submit-issue::before {
@@ -498,11 +501,12 @@ nav a:hover {
 }
 
 .btn-submit-issue {
-  --button-size: 150px;
+  --button-size: 120px;
   --edge-background-blend: 1px;
   --button-press-time: 0.4s;
-  --button-press-delay: calc(var(--button-press-time) * 0.5);
-  --button-press-slow-time: calc(var(--button-press-time) * 2);
+  --icon-size-ratio: 0.33;
+  --button-press-delay: calc(var(--button-press-time) * 0.3);
+  --button-press-slow-time: calc(var(--button-press-time) * 1.6);
   position: absolute;
   top: calc(var(--button-size) / 2);
   right: calc(var(--button-size) / 2);
@@ -512,7 +516,7 @@ nav a:hover {
   justify-content: center;
   align-items: center;
   border-radius: var(--button-size);
-  color: var(--clr-text);
+  color: var(--clr-accent-light);
   transition: all var(--button-press-time) ease-in-out;
 }
 .btn-submit-issue__text {
@@ -524,11 +528,13 @@ nav a:hover {
   cursor: pointer;
   font-size: var(--fs-400);
   text-align: center;
-  filter: blur(0);
+}
+.btn-submit-issue__icon {
+  width: calc(var(--button-size) * var(--icon-size-ratio));
+  height: calc(var(--button-size) * var(--icon-size-ratio));
 }
 .btn-submit-issue:hover {
-  color: var(--clr-accent-light);
-  text-shadow: var(--text-glow);
+  color: var(--clr-accent);
   transition: all var(--button-press-time) ease-in-out;
 }
 .btn-submit-issue::before {
