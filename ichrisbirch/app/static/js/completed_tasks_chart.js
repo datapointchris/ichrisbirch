@@ -3,7 +3,7 @@ const data = JSON.parse(document.getElementById('chartValues').textContent);
 const textColor = 'hsl(0 0% 85%)';
 const gridColor = 'hsl(0 0% 35%)';
 const maxDataValue = Math.max(...data);
-const backgroundColor = [
+const dataBarColors = [
     'rgba(255, 99, 132, 0.2)',
     'rgba(255, 159, 64, 0.2)',
     'rgba(255, 205, 86, 0.2)',
@@ -73,7 +73,7 @@ const config = {
             {
                 label: "Completed Tasks",
                 data: data,
-                backgroundColor: backgroundColor
+                backgroundColor: dataBarColors
             }
         ]
     },

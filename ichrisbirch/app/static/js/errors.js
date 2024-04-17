@@ -1,8 +1,8 @@
-var container = document.querySelector('#error-container');
+var container = document.querySelector('.site-errors');
 
 // Define the speed of the movement
-var speedX = Math.random() * 10;
-var speedY = Math.random() * 10;
+var speedX = 2;
+var speedY = 2;
 
 // Set the initial position of the container to the center of the viewport
 var newX = window.innerWidth / 2;

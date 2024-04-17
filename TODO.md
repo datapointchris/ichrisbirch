@@ -55,12 +55,6 @@
 - [ ] (ops) Make validate html only validate pages that have been modified
   - [ ] pass files variable?
 - [ ] (css) `_server_stats.scss` combine 3d text and 3d effect
-- [ ] (research) what is the difference between input type=submit and button type=submit
-- [ ] (refactor) forms should use a button instead of input type=submit
-  - [ ] the name of the button should be the method
-  - [ ] the hidden method can be removed
-  - [ ] `<button type="submit" name="action" value="deleteItem">Delete Item</button>`
-- [ ] (tasks:all) filter tasks should be saved after form submit of delete or complete
 
 ## User Login
 
