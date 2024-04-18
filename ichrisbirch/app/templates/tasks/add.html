@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Task{% endblock %}
+
+{% block content %}
+<div class="grid grid--one-column-wide">
+  <div class="grid__item grid__item--add-new">
+    <h2>Add New Task</h2>
+    <form class="add-item-form" method="POST" action="{{ url_for('tasks.crud') }}">
+      <div class="add-item-form__item--full-width">
+        <label for="name">Name:</label>
+        <input type="text" size="20" class="textbox" name="name" id="name">
+      </div>
+      <div class="add-item-form__item--full-width">
+        <label for="category">Category:</label>
+        <select class="textbox" name="category" id="category">
+          {% for category in task_categories %}
+          <option value="{{ category }}">{{ category }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="add-item-form__item--full-width">
+        <label for="priority">Priority:</label>
+        <input type="number" min="1" class="textbox" name="priority" id="priority">
+      </div>
+      <div class="add-item-form__item--full-width">
+        <label for="notes">Notes:</label>
+        <input type="text" size="40" class="textbox" name="notes" id="notes">
+      </div>
+      <div class="add-item-form__item add-item-form__item--submit">
+        <button type="submit" name="action" class="button" value="add">
+          <span class="button__text">Add New Task</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
