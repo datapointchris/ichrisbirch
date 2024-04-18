@@ -59,7 +59,7 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
     all_dates_with_counts = timestamps_for_filter | completed_task_timestamps
     # Reversed for chronological display in chart.js
     chart_labels = [datetime.strftime(dt, DATE_FORMAT) for dt in reversed(all_dates_with_counts)]
-    chart_values = list(reversed(all_dates_with_counts.values()))
+    chart_values = list(reversed(list(all_dates_with_counts.values())))
     return chart_labels, chart_values
 
 
@@ -146,6 +146,11 @@ def search():
     return render_template(
         'tasks/search.html', todo_tasks=todo_tasks, completed_tasks=completed_tasks, task_categories=TASK_CATEGORIES
     )
+
+
+@blueprint.route('/add/', methods=['GET', 'POST'])
+def add():
+    return render_template('tasks/add.html', task_categories=TASK_CATEGORIES)
 
 
 @blueprint.route('/crud/', methods=['POST'])
