@@ -50,40 +50,26 @@
     }
 }
 
-.btn-submit-issue {
-    --button-size: 120px;
-    --edge-background-blend: 1px;
-    --button-press-time: 0.4s;
-    --icon-size-ratio: 0.33;
-
-    --button-press-delay: calc(var(--button-press-time) * 0.3);
-    --button-press-slow-time: calc(var(--button-press-time) * 1.6);
-    @mixin smooth-press {
-        transition: all var(--button-press-time) ease-in-out;
-    }
-    @mixin smooth-press-delay {
-        transition: all var(--button-press-time) ease-in-out var(--button-press-delay);
-    }
-    @mixin slow-smooth-press {
-        transition: all var(--button-press-slow-time) ease-in-out;
-    }
-    @mixin slow-smooth-press-delay {
-        transition: all var(--button-press-slow-time) ease-in-out var(--button-press-delay);
-    }
-
-    position: absolute;
-    top: calc(var(--button-size) / 2);
-    right: calc(var(--button-size) / 2);
-    width: var(--button-size);
-    height: var(--button-size);
+@mixin double-bevel-button(
+    $button-size: 75px,
+    $button-step-blend: 1px,
+    $button-press-time: 0.4s,
+    $icon-size-ratio: 0.33
+) {
+    width: $button-size;
+    height: $button-size;
 
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: var(--button-size);
+    border-radius: $button-size;
 
     color: var(--clr-accent-light);
-    @include smooth-press;
+    transition: all $button-press-time ease-in-out;
+
+    $button-outline-width: calc($button-size / 2);
+    $button-outline-size: $button-size + $button-outline-width;
+    $button-press-delay: $button-press-time * 0.3;
 
     &__text {
         position: relative;
@@ -95,13 +81,13 @@
     }
 
     &__icon {
-        width: calc(var(--button-size) * var(--icon-size-ratio));
-        height: calc(var(--button-size) * var(--icon-size-ratio));
+        width: $button-size * $icon-size-ratio;
+        height: $button-size * $icon-size-ratio;
     }
 
     &:hover {
         color: var(--clr-accent);
-        @include smooth-press;
+        transition: all $button-press-time ease-in-out;
     }
 
     &::before {
@@ -110,13 +96,13 @@
         top: 0;
         left: 0;
         display: block;
-        width: var(--button-size);
-        height: var(--button-size);
+        width: $button-size;
+        height: $button-size;
         content: "";
-        border-radius: var(--button-size);
+        border-radius: $button-size;
         background-color: var(--clr-gray-800);
-        filter: blur(calc(var(--edge-background-blend) * 0.5));
-        @include smooth-press;
+        filter: blur($button-step-blend * 0.5);
+        transition: all $button-press-time ease-in-out;
         box-shadow:
             8px 8px 20px var(--clr-black-trans-600),
             -8px -8px 20px var(--clr-gray-trans-800),
@@ -126,8 +112,8 @@
 
     &:hover::before {
         background-color: var(--clr-gray-900);
-        filter: blur(calc(var(--edge-background-blend) * 3));
-        @include smooth-press;
+        filter: blur($button-step-blend * 3);
+        transition: all $button-press-time ease-in-out;
         box-shadow:
             -8px -8px 20px var(--clr-black-trans-600),
             4px 4px 20px var(--clr-gray-trans-800),
@@ -136,19 +122,21 @@
     }
 
     &::after {
-        /* OUTER RING */
-        --button-outline-width: calc(var(--button-size) / 2);
-        --button-outline-size: calc(var(--button-size) + var(--button-outline-width));
+        /* OUTER RING
+        The outer ring has a delay for the press animation to make it appear
+        that it is being depressed by the inner button.
+        */
+
         position: absolute;
         translate: transform(-50%, -50%);
         display: block;
-        width: var(--button-outline-size);
-        height: var(--button-outline-size);
+        width: $button-outline-size;
+        height: $button-outline-size;
         content: "";
         cursor: pointer;
-        border-radius: var(--button-outline-size);
-        filter: blur(var(--edge-background-blend));
-        @include smooth-press-delay;
+        border-radius: $button-outline-size;
+        filter: blur($button-step-blend);
+        transition: all $button-press-time ease-in-out $button-press-delay;
         box-shadow:
             8px 8px 20px var(--clr-black-trans-600),
             -4px -4px 20px var(--clr-gray-trans-800),
@@ -157,13 +145,21 @@
     }
 
     &:hover::after {
-        transform: scale(1.01);
-        filter: blur(calc(var(--edge-background-blend) * 3));
-        @include smooth-press-delay;
+        transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+        filter: blur($button-step-blend * 3);
+        transition: all $button-press-time ease-in-out $button-press-delay;
         box-shadow:
             -8px -8px 20px var(--clr-black-trans-600),
             4px 4px 20px var(--clr-gray-trans-800),
             inset 8px 8px 20px var(--clr-black-trans-1000),
             inset -8px -8px 20px var(--clr-gray-trans-600);
     }
+}
+
+.btn-submit-issue {
+    $button-size: 100px;
+    position: absolute;
+    top: calc($button-size / 2);
+    right: calc($button-size / 2);
+    @include double-bevel-button($button-size);
 }

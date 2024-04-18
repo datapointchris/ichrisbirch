@@ -350,23 +350,17 @@ nav a:hover {
 }
 
 .btn-submit-issue {
-  --button-size: 120px;
-  --edge-background-blend: 1px;
-  --button-press-time: 0.4s;
-  --icon-size-ratio: 0.33;
-  --button-press-delay: calc(var(--button-press-time) * 0.3);
-  --button-press-slow-time: calc(var(--button-press-time) * 1.6);
   position: absolute;
-  top: calc(var(--button-size) / 2);
-  right: calc(var(--button-size) / 2);
-  width: var(--button-size);
-  height: var(--button-size);
+  top: 50px;
+  right: 50px;
+  width: 100px;
+  height: 100px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: var(--button-size);
+  border-radius: 100px;
   color: var(--clr-accent-light);
-  transition: all var(--button-press-time) ease-in-out;
+  transition: all 0.4s ease-in-out;
 }
 .btn-submit-issue__text {
   position: relative;
@@ -379,12 +373,12 @@ nav a:hover {
   text-align: center;
 }
 .btn-submit-issue__icon {
-  width: calc(var(--button-size) * var(--icon-size-ratio));
-  height: calc(var(--button-size) * var(--icon-size-ratio));
+  width: 33px;
+  height: 33px;
 }
 .btn-submit-issue:hover {
   color: var(--clr-accent);
-  transition: all var(--button-press-time) ease-in-out;
+  transition: all 0.4s ease-in-out;
 }
 .btn-submit-issue::before {
   /* GRAY BUTTON ON TOP */
@@ -392,41 +386,42 @@ nav a:hover {
   top: 0;
   left: 0;
   display: block;
-  width: var(--button-size);
-  height: var(--button-size);
+  width: 100px;
+  height: 100px;
   content: "";
-  border-radius: var(--button-size);
+  border-radius: 100px;
   background-color: var(--clr-gray-800);
-  filter: blur(calc(var(--edge-background-blend) * 0.5));
-  transition: all var(--button-press-time) ease-in-out;
+  filter: blur(0.5px);
+  transition: all 0.4s ease-in-out;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
 .btn-submit-issue:hover::before {
   background-color: var(--clr-gray-900);
-  filter: blur(calc(var(--edge-background-blend) * 3));
-  transition: all var(--button-press-time) ease-in-out;
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 .btn-submit-issue::after {
-  /* OUTER RING */
-  --button-outline-width: calc(var(--button-size) / 2);
-  --button-outline-size: calc(var(--button-size) + var(--button-outline-width));
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
   position: absolute;
   translate: transform(-50%, -50%);
   display: block;
-  width: var(--button-outline-size);
-  height: var(--button-outline-size);
+  width: 150px;
+  height: 150px;
   content: "";
   cursor: pointer;
-  border-radius: var(--button-outline-size);
-  filter: blur(var(--edge-background-blend));
-  transition: all var(--button-press-time) ease-in-out var(--button-press-delay);
+  border-radius: 150px;
+  filter: blur(1px);
+  transition: all 0.4s ease-in-out 0.12s;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
 .btn-submit-issue:hover::after {
-  transform: scale(1.01);
-  filter: blur(calc(var(--edge-background-blend) * 3));
-  transition: all var(--button-press-time) ease-in-out var(--button-press-delay);
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out 0.12s;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
@@ -501,23 +496,17 @@ nav a:hover {
 }
 
 .btn-submit-issue {
-  --button-size: 120px;
-  --edge-background-blend: 1px;
-  --button-press-time: 0.4s;
-  --icon-size-ratio: 0.33;
-  --button-press-delay: calc(var(--button-press-time) * 0.3);
-  --button-press-slow-time: calc(var(--button-press-time) * 1.6);
   position: absolute;
-  top: calc(var(--button-size) / 2);
-  right: calc(var(--button-size) / 2);
-  width: var(--button-size);
-  height: var(--button-size);
+  top: 50px;
+  right: 50px;
+  width: 100px;
+  height: 100px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: var(--button-size);
+  border-radius: 100px;
   color: var(--clr-accent-light);
-  transition: all var(--button-press-time) ease-in-out;
+  transition: all 0.4s ease-in-out;
 }
 .btn-submit-issue__text {
   position: relative;
@@ -530,12 +519,12 @@ nav a:hover {
   text-align: center;
 }
 .btn-submit-issue__icon {
-  width: calc(var(--button-size) * var(--icon-size-ratio));
-  height: calc(var(--button-size) * var(--icon-size-ratio));
+  width: 33px;
+  height: 33px;
 }
 .btn-submit-issue:hover {
   color: var(--clr-accent);
-  transition: all var(--button-press-time) ease-in-out;
+  transition: all 0.4s ease-in-out;
 }
 .btn-submit-issue::before {
   /* GRAY BUTTON ON TOP */
@@ -543,41 +532,42 @@ nav a:hover {
   top: 0;
   left: 0;
   display: block;
-  width: var(--button-size);
-  height: var(--button-size);
+  width: 100px;
+  height: 100px;
   content: "";
-  border-radius: var(--button-size);
+  border-radius: 100px;
   background-color: var(--clr-gray-800);
-  filter: blur(calc(var(--edge-background-blend) * 0.5));
-  transition: all var(--button-press-time) ease-in-out;
+  filter: blur(0.5px);
+  transition: all 0.4s ease-in-out;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
 .btn-submit-issue:hover::before {
   background-color: var(--clr-gray-900);
-  filter: blur(calc(var(--edge-background-blend) * 3));
-  transition: all var(--button-press-time) ease-in-out;
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 .btn-submit-issue::after {
-  /* OUTER RING */
-  --button-outline-width: calc(var(--button-size) / 2);
-  --button-outline-size: calc(var(--button-size) + var(--button-outline-width));
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
   position: absolute;
   translate: transform(-50%, -50%);
   display: block;
-  width: var(--button-outline-size);
-  height: var(--button-outline-size);
+  width: 150px;
+  height: 150px;
   content: "";
   cursor: pointer;
-  border-radius: var(--button-outline-size);
-  filter: blur(var(--edge-background-blend));
-  transition: all var(--button-press-time) ease-in-out var(--button-press-delay);
+  border-radius: 150px;
+  filter: blur(1px);
+  transition: all 0.4s ease-in-out 0.12s;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
 .btn-submit-issue:hover::after {
-  transform: scale(1.01);
-  filter: blur(calc(var(--edge-background-blend) * 3));
-  transition: all var(--button-press-time) ease-in-out var(--button-press-delay);
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out 0.12s;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
