@@ -7,10 +7,10 @@
 
   <form method="POST" action="{{ url_for('journal.index') }}">
     <h2><label id="journalDateLabel" for="journalDate"></label></h2>
-    <input type="date" id="journalDate" name="journalDate" class="textbox button-3d" value="{{ date }}"
+    <input type="date" id="journalDate" name="journalDate" class="textbox" value="{{ date }}"
       onchange="changeDate(this.form.journalDate.value)">
     <br><br>
-    <textarea rows="30" cols="90" class="textbox button-3d" name="entry" id="entry"></textarea>
+    <textarea rows="30" cols="90" class="textbox" name="entry" id="entry"></textarea>
     <br><br>
     <h3>Feeling:</h3>
     <div class="feeling-buttons">

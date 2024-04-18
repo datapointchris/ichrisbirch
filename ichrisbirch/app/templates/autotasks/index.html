@@ -53,15 +53,15 @@
   <form class="add-item-form" method="POST">
     <div class="add-item-form__item">
       <label for="name">Name</label>
-      <input type="text" size="20" class="textbox button-3d" name="name" id="name">
+      <input type="text" size="20" class="textbox" name="name" id="name">
     </div>
     <div class="add-item-form__item">
       <label for="priority">Priority</label>
-      <input type="number" min="1" class="textbox button-3d" name="priority" id="priority">
+      <input type="number" min="1" class="textbox" name="priority" id="priority">
     </div>
     <div class="add-item-form__item">
       <label for="category">Category</label>
-      <select class="textbox button-3d" name="category" id="category">
+      <select class="textbox" name="category" id="category">
         {% for category in task_categories %}
         <option value="{{ category }}">{{ category }}
         </option>
@@ -70,7 +70,7 @@
     </div>
     <div class="add-item-form__item">
       <label for="frequency">Task Frequency</label>
-      <select class="textbox button-3d" name="frequency" id="frequency">
+      <select class="textbox" name="frequency" id="frequency">
         {% for frequency in task_frequencies %}
         <option value="{{ frequency }}">{{ frequency }}
         </option>
@@ -79,7 +79,7 @@
     </div>
     <div class="add-item-form__item add-item-form__item--full-width">
       <label for="notes">Notes</label>
-      <textarea rows="3" class="textbox button-3d" name="notes" id="notes"></textarea>
+      <textarea rows="3" class="textbox" name="notes" id="notes"></textarea>
     </div>
 
     <div class="add-item-form__item add-item-form__item--submit">
