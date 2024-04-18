@@ -3,9 +3,8 @@
     --border-thickness: 30px;
     position: relative;
     z-index: 0;
-    width: 60%;
-    margin: var(--space-l) auto;
-    padding: var(--space-m);
+    margin: var(--space-3xl);
+    padding: var(--space-2xl);
     background-color: var(--clr-gray-900);
     border-radius: var(--border-radius);
     overflow: hidden;
@@ -26,6 +25,12 @@
         animation: rotate 4s linear infinite;
     }
 
+    @keyframes rotate {
+        100% {
+            transform: rotate(1turn);
+        }
+    }
+
     &::after {
         content: "";
         position: absolute;
@@ -38,37 +43,26 @@
         border-radius: var(--border-radius);
     }
 
-    > img {
-        height: 60%;
-        width: 60%;
-        filter: brightness(0.75);
-    }
-
     > h1,
     h2 {
+        color: var(--clr-accent-light);
         text-shadow: var(--deep-3d-text-shadow);
 
         &:hover {
-            text-shadow:
-                var(--deep-3d-text-shadow),
-                var(--text-glow);
+            text-shadow: var(--deep-3d-text-shadow), var(--text-glow);
         }
-    }
-}
-
-@keyframes rotate {
-    100% {
-        transform: rotate(1turn);
     }
 }
 
 .home-links {
     display: flex;
-    justify-content: center;
-    gap: var(--space-l);
-    margin-bottom: var(--space-l);
+    margin: var(--space-3xl);
+    gap: var(--space-3xl);
+    justify-content: space-evenly;
+}
 
-    &__link {
-        text-align: center;
-    }
+.home-link-button {
+    position: relative;
+    margin: var(--space-3xl);
+    @include double-bevel-button(200px, 0px);
 }

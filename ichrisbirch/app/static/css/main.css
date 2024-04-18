@@ -369,7 +369,7 @@ nav a:hover {
      -moz-user-select: none;
           user-select: none;
   cursor: pointer;
-  font-size: var(--fs-400);
+  font-size: calc(var(--fs-400) * 1.5);
   text-align: center;
 }
 .btn-submit-issue__icon {
@@ -515,7 +515,7 @@ nav a:hover {
      -moz-user-select: none;
           user-select: none;
   cursor: pointer;
-  font-size: var(--fs-400);
+  font-size: calc(var(--fs-400) * 1.5);
   text-align: center;
 }
 .btn-submit-issue__icon {
@@ -779,9 +779,8 @@ nav a:hover {
   --border-thickness: 30px;
   position: relative;
   z-index: 0;
-  width: 60%;
-  margin: var(--space-l) auto;
-  padding: var(--space-m);
+  margin: var(--space-3xl);
+  padding: var(--space-2xl);
   background-color: var(--clr-gray-900);
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -801,6 +800,11 @@ nav a:hover {
   background-image: conic-gradient(transparent, var(--clr-accent), var(--clr-accent-light), transparent 30%);
   animation: rotate 4s linear infinite;
 }
+@keyframes rotate {
+  100% {
+    transform: rotate(1turn);
+  }
+}
 .main-index-content::after {
   content: "";
   position: absolute;
@@ -812,13 +816,9 @@ nav a:hover {
   background: var(--clr-gray-900);
   border-radius: var(--border-radius);
 }
-.main-index-content > img {
-  height: 60%;
-  width: 60%;
-  filter: brightness(0.75);
-}
 .main-index-content > h1,
 .main-index-content h2 {
+  color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
 }
 .main-index-content > h1:hover,
@@ -826,19 +826,86 @@ nav a:hover {
   text-shadow: var(--deep-3d-text-shadow), var(--text-glow);
 }
 
-@keyframes rotate {
-  100% {
-    transform: rotate(1turn);
-  }
-}
 .home-links {
   display: flex;
-  justify-content: center;
-  gap: var(--space-l);
-  margin-bottom: var(--space-l);
+  margin: var(--space-3xl);
+  gap: var(--space-3xl);
+  justify-content: space-evenly;
 }
-.home-links__link {
+
+.home-link-button {
+  position: relative;
+  margin: var(--space-3xl);
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 200px;
+  color: var(--clr-accent-light);
+  transition: all 0.4s ease-in-out;
+}
+.home-link-button__text {
+  position: relative;
+  z-index: 5;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  cursor: pointer;
+  font-size: calc(var(--fs-400) * 1.5);
   text-align: center;
+}
+.home-link-button__icon {
+  width: 66px;
+  height: 66px;
+}
+.home-link-button:hover {
+  color: var(--clr-accent);
+  transition: all 0.4s ease-in-out;
+}
+.home-link-button::before {
+  /* GRAY BUTTON ON TOP */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 200px;
+  height: 200px;
+  content: "";
+  border-radius: 200px;
+  background-color: var(--clr-gray-800);
+  filter: blur(0px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.home-link-button:hover::before {
+  background-color: var(--clr-gray-900);
+  filter: blur(0px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.home-link-button::after {
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
+  position: absolute;
+  translate: transform(-50%, -50%);
+  display: block;
+  width: 300px;
+  height: 300px;
+  content: "";
+  cursor: pointer;
+  border-radius: 300px;
+  filter: blur(0px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.home-link-button:hover::after {
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(0px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
 .perspective-wrapper {

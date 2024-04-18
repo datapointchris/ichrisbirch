@@ -54,6 +54,7 @@
     $button-size: 75px,
     $button-step-blend: 1px,
     $button-press-time: 0.4s,
+    $font-size-ratio: 1.5,
     $icon-size-ratio: 0.33
 ) {
     width: $button-size;
@@ -76,7 +77,7 @@
         z-index: 5;
         user-select: none;
         cursor: pointer;
-        font-size: var(--fs-400);
+        font-size: calc(var(--fs-400) * $font-size-ratio);
         text-align: center;
     }
 
