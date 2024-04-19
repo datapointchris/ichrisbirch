@@ -97,4 +97,62 @@ Add this to the CICD workflow, which will re-create the line breaks and import i
     git secret hide
 ```
 
-SUCCESS!!!
+## Expired GPG key
+
+**`git-secret: warning: at least one key for email(s) is revoked, expired, or otherwise invalid: ichrisbirch@gmail.com`**
+
+Expired keys need to have their expiry date extended, which requires the following steps:
+
+```bash
+# List keys and subkey(s)
+gpg --list-secret-keys --verbose --with-subkey-fingerprints
+
+>>> sec   ed25519 2022-04-19 [SC] [expired: 2024-04-18]
+>>>       B98C7D8073BB87...
+>>> uid           [ultimate] Chris Birch <ichrisbirch@gmail.com>
+>>> ssb   cv25519 2022-04-19 [E] [expired: 2024-04-18]
+>>>       2E418AB946A0ECA...
+
+# Set new expiry date for key and subkey(s)
+gpg --quick-set-expire B98C7D8073BB87... 1y 2E418AB946A0ECA...
+
+# Check that the keys are no longer expired
+gpg --list-secret-keys --verbose --with-subkey-fingerprints
+
+>>> sec   ed25519 2022-04-19 [SC] [expires: 2025-04-19]
+>>>       B98C7D8073BB87...
+>>> uid           [ultimate] Chris Birch <ichrisbirch@gmail.com>
+>>> ssb   cv25519 2022-04-19 [E] [expires: 2025-04-19]
+>>>       2E418AB946A0ECA...
+
+# Remove the expired email address from `git-secret`
+git secret removeperson ichrisbirch@gmail.com
+
+>>> git-secret: removed keys.
+>>> git-secret: now [ichrisbirch@gmail.com] do not have an access to the repository.
+>>> git-secret: make sure to hide the existing secrets again.
+
+# Hide the keys without the email (this may not be necessary)
+git secret hide
+
+>>> git-secret: done. 3 of 3 files are hidden.
+
+# Add the email address as authorized viewer
+git secret tell ichrisbirch@gmail.com
+
+git-secret: done. ichrisbirch@gmail.com added as user(s) who know the secret.
+
+# Hide the secrets again
+git secret hide
+
+>>> git-secret: done. 3 of 3 files are hidden.
+
+# Check status to see that they are hidden
+git status
+
+>>>        modified:   .dev.env.secret
+>>>        modified:   .gitsecret/keys/pubring.kbx
+>>>        modified:   .gitsecret/keys/pubring.kbx~
+>>>        modified:   .prod.env.secret
+>>>        modified:   .test.env.secret
+```
