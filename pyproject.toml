@@ -33,6 +33,7 @@ requests = "^2.31.0"
 sqlalchemy = "^2.0.27"
 strenum = "^0.4.15"
 uvicorn = "^0.27.1"
+flask-caching = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 deptry = "^0.12.0"

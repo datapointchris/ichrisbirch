@@ -75,13 +75,25 @@ class PlaywrightSettings:
         self.timeout = 2_000
 
 
+class GithubSettings:
+    def __init__(self):
+        self.api_token: Optional[str] = os.getenv('GITHUB_API_TOKEN')
+        self.api_url_issues: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/issues'
+        self.api_url_labels: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/labels'
+        self.api_headers = {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': f'Bearer {self.api_token}',
+            'X-GitHub-Api-Version': '2022-11-28',
+        }
+
+
 class Settings:
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
-        self.name: str = 'ichrisbirch'
-        self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
-        self.environment: Optional[str] = os.environ.get('ENVIRONMENT')
-        self.env_file: pathlib.Path = env_file
-        self.request_timeout: int = 3
+        self.NAME: str = 'ichrisbirch'
+        self.DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
+        self.ENVIRONMENT: Optional[str] = os.environ.get('ENVIRONMENT')
+        self.ENV_FILE: pathlib.Path = env_file
+        self.REQUEST_TIMEOUT: int = 3
 
         self.flask = FlaskSettings()
         self.fastapi = FastAPISettings()
@@ -90,6 +102,7 @@ class Settings:
         self.mongodb = MongoDBSettings()
         self.sqlite = SQLiteSettings()
         self.playwright = PlaywrightSettings()
+        self.github = GithubSettings()
 
     @property
     def api_url(self) -> str:

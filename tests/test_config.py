@@ -12,32 +12,32 @@ def test_load_environment_by_ENVIRONMENT_variable():
     os.environ['ENVIRONMENT'] = 'development'
     get_settings.cache_clear()
     settings = get_settings()
-    assert settings.environment == 'development'
-    assert settings.env_file.name == '.dev.env'
+    assert settings.ENVIRONMENT == 'development'
+    assert settings.ENV_FILE.name == '.dev.env'
 
 
 def test_load_environment_by_string():
     """Test if settings can be loaded by string choice"""
     get_settings.cache_clear()
     settings = get_settings('testing')
-    assert settings.environment == 'testing'
-    assert settings.env_file.name == '.test.env'
+    assert settings.ENVIRONMENT == 'testing'
+    assert settings.ENV_FILE.name == '.test.env'
 
 
 def test_load_environment_by_string_path():
     """Test if settings can be loaded by string path"""
     get_settings.cache_clear()
     settings = get_settings(str(string_path))
-    assert settings.environment == 'development'
-    assert settings.env_file.name == '.dev.env'
+    assert settings.ENVIRONMENT == 'development'
+    assert settings.ENV_FILE.name == '.dev.env'
 
 
 def test_load_environment_by_path():
     """Test if settings can be loaded by pathlib.Path"""
     get_settings.cache_clear()
     settings = get_settings(env_file=test_env_file)
-    assert settings.environment == 'testing'
-    assert settings.env_file.name == 'test_env_file'
+    assert settings.ENVIRONMENT == 'testing'
+    assert settings.ENV_FILE.name == 'test_env_file'
 
 
 def test_postgres_user():

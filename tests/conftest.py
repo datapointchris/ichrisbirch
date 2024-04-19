@@ -25,7 +25,7 @@ from tests import testing_data
 logger = logging.getLogger(__name__)
 
 settings = get_settings('testing')
-logger.info(f"load settings from environment: {settings.environment}")
+logger.info(f"load settings from environment: {settings.ENVIRONMENT}")
 
 ENGINE = create_engine(settings.sqlalchemy.db_uri, echo=False, future=True)
 TESTING_SESSION = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, future=True, expire_on_commit=False)
@@ -95,7 +95,7 @@ def setup_test_environment():
             image='postgres:14',
             name='postgres_testing',
             environment={
-                'ENVIRONMENT': settings.environment,
+                'ENVIRONMENT': settings.ENVIRONMENT,
                 'POSTGRES_USER': settings.postgres.user,
                 'POSTGRES_PASSWORD': settings.postgres.password,
                 'POSTGRES_DB': settings.postgres.database,
@@ -118,7 +118,7 @@ def setup_test_environment():
 
     # Create Schemas
     with next(get_testing_session()) as session:
-        for schema_name in settings.db_schemas:
+        for schema_name in settings.DB_SCHEMAS:
             try:
                 session.execute(CreateSchema(schema_name))
             except Exception as e:

@@ -736,6 +736,24 @@ nav a:hover {
     overflow: hidden;
   }
 }
+.submit-issue-form {
+  width: 100%;
+  padding: var(--space-m) var(--space-3xl);
+}
+.submit-issue-form * label {
+  display: block;
+}
+.submit-issue-form__item {
+  padding: var(--space-2xs);
+}
+.submit-issue-form__buttons {
+  display: flex;
+  justify-content: space-evenly;
+}
+.submit-issue-form input[type=checkbox] {
+  display: none;
+}
+
 /*     INDEX PAGE     */
 .box-packing-index-layout {
   display: grid;

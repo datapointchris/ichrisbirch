@@ -113,7 +113,7 @@
     }
 
     30% {
-        transform: translate(50%, -50%) scale(.75);
+        transform: translate(50%, -50%) scale(0.75);
         opacity: 1;
         overflow: hidden;
     }
@@ -121,8 +121,30 @@
     100% {
         transform: translate(50%, -50%) scale(0);
         rotate: 900deg;
-        filter: blur(10px) brightness(.5);
+        filter: blur(10px) brightness(0.5);
         opacity: 0;
         overflow: hidden;
+    }
+}
+
+.submit-issue-form {
+    width: 100%;
+    padding: var(--space-m) var(--space-3xl);
+
+    & * label {
+        display: block;
+    }
+
+    &__item {
+        padding: var(--space-2xs);
+    }
+
+    &__buttons {
+        display: flex;
+        justify-content: space-evenly;
+    }
+
+    input[type="checkbox"] {
+        display: none;
     }
 }

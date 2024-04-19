@@ -10,7 +10,7 @@
     <h3>{{ habit.name.title() }}</h3>
     <label class="specialbox" for="{{ name }}">{{ name }}
       <input type="checkbox" id="{{ name }}" name="{{ name }}" value=1>
-      <span class="checkmark button-3d"></span>
+      <span class="checkmark button"></span>
     </label>
     <button type="submit" name="action" class="button" value="complete_habit">
       <span class="button__text">Complete</span>
@@ -20,7 +20,7 @@
     <h3>{{ habit.name.title() }}</h3>
     <label class="specialbox completed" for="{{ name }}">{{ name }}
       <input type="checkbox" id="{{ name }}" name="{{ name }}" value=1 checked>
-      <span class="checkmark button-3d"></span>
+      <span class="checkmark button"></span>
     </label>
     {% endfor %}
   </form>

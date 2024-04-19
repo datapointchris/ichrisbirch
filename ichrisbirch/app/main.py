@@ -2,7 +2,9 @@ import http
 import logging
 from functools import partial
 
-from flask import Flask, render_template
+import httpx
+from flask import Flask, flash, g, render_template
+from flask_caching import Cache
 
 from ichrisbirch.app.routes import (
     autotasks,
@@ -29,6 +31,8 @@ def handle_errors(e, error_code):
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
     logger.info('Flask App Created')
+    cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
+    logger.info('Flask Cache Created')
 
     with app.app_context():
         app.config.from_object(settings.flask)
@@ -48,6 +52,8 @@ def create_app(settings: Settings) -> Flask:
         def pretty_date(dttm, format='%B %d, %Y'):
             return '' if dttm is None else dttm.strftime(format)
 
+        logger.info('Flask App Template Filters Registered')
+
         app.register_blueprint(home.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')
@@ -59,4 +65,17 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(tasks.blueprint, url_prefix='/tasks')
         logger.info('Flask App Blueprints Registered')
+
+        @app.before_request
+        @cache.cached(timeout=60 * 60 * 24, key_prefix='repo_labels')
+        def load_repo_labels():
+            response = httpx.get(settings.github.api_url_labels, headers=settings.github.api_headers)
+            if response.status_code != 200:
+                logger.error(response.text)
+                flash(response.text, 'error')
+            labels = [label.get('name') for label in response.json()]
+            g.repo_labels = labels
+
+        logger.info('repo labels loaded and cached')
+
     return app
