@@ -1,0 +1,43 @@
+<div id="submit-issue-background-overlay"></div>
+<div id="submit-issue-window">
+  <div class="grid grid--one-column-wide">
+    <div class="grid__item">
+      <h2>Submit an Issue</h2>
+      <form class="add-item-form" method="POST">
+
+        <div class="add-item-form__item">
+          <label for="issue-title">Title</label>
+          <input type="text" size="20" class="textbox" name="title" id="issue-title">
+        </div>
+
+        <div class="add-item-form__item">
+          <label for="issue-body">Body</label>
+          <input type="number" min="1" class="textbox" name="body" id="issue-body">
+        </div>
+
+        <div class="add-item-form__item">
+          <label for="issue-label">Label</label>
+          <select class="textbox" name="label" id="issue-label">
+            {% for label in task_categories %}
+            <option value="{{ label }}">{{ label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="add-item-form__item add-item-form__item--submit">
+          <button type="submit" name="action" class="button" value="create">
+            <span class="button__text">Create Issue</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="add-item-form__item" onclick="closeSubmitIssueWindow()">
+        <button type="submit" name="action" class="button" value="close">
+          <span class="button__text">Close Window</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

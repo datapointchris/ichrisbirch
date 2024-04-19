@@ -74,8 +74,7 @@
 
     &__text {
         position: relative;
-        z-index: 5;
-        user-select: none;
+        z-index: 2;
         cursor: pointer;
         font-size: calc(var(--fs-400) * $font-size-ratio);
         text-align: center;
