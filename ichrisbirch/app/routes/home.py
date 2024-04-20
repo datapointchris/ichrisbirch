@@ -25,11 +25,10 @@ def issue():
     if request.method == 'GET':
         return redirect(url_for('home.index'))
 
-    logger.debug(f'Issue submitted from page: {request.referrer}')
     issue = request.form.to_dict()
     labels = [k for k, v in issue.items() if v == 'on']
+    logger.debug(f'Issue submitted from page: {request.referrer}')
     logger.debug(f'Issue details: {issue}')
-    logger.debug(f'Issue labels: {labels}')
     body_template = f'''
         {issue['description']}
 
@@ -49,4 +48,4 @@ def issue():
     response = httpx.post(settings.github.api_url_issues, content=data, headers=settings.github.api_headers)
     handle_if_not_response_code(201, response, logger)
 
-    return {'message': 'Issue submitted successfully'}, 200
+    return redirect(request.referrer or url_for('home.index'))
