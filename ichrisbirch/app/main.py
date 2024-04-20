@@ -2,9 +2,7 @@ import http
 import logging
 from functools import partial
 
-import httpx
-from flask import Flask, flash, g, render_template
-from flask_caching import Cache
+from flask import Flask, g, render_template
 
 from ichrisbirch.app.routes import (
     autotasks,
@@ -31,8 +29,6 @@ def handle_errors(e, error_code):
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
     logger.info('Flask App Created')
-    cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
-    logger.info('Flask Cache Created')
 
     with app.app_context():
         app.config.from_object(settings.flask)
@@ -67,15 +63,12 @@ def create_app(settings: Settings) -> Flask:
         logger.info('Flask App Blueprints Registered')
 
         @app.before_request
-        @cache.cached(timeout=60 * 60 * 24, key_prefix='repo_labels')
-        def load_repo_labels():
-            response = httpx.get(settings.github.api_url_labels, headers=settings.github.api_headers)
-            if response.status_code != 200:
-                logger.error(response.text)
-                flash(response.text, 'error')
-            labels = [label.get('name') for label in response.json()]
-            g.repo_labels = labels
-
-        logger.info('repo labels loaded and cached')
+        def repo_labels_and_icons():
+            g.github_issue_labels_and_icons = [
+                ('bug', 'fa-solid fa-bug'),
+                ('docs', 'fa-solid fa-file-lines'),
+                ('feature', 'fa-regular fa-star'),
+                ('refactor', 'fa-solid fa-code'),
+            ]
 
     return app
