@@ -7,6 +7,11 @@
 
 @import "base/reset";
 @import "base/typography";
+
+@import "../fontawesome/scss/fontawesome.scss";
+@import "../fontawesome/scss/solid.scss";
+@import "../fontawesome/scss/brands.scss";
+
 @import "base/base";
 
 @import "layout/navigation";
@@ -18,6 +23,7 @@
 
 // @import 'components/carousel';
 @import "components/buttons";
+@import "components/checkboxes";
 @import "components/flash_messages";
 @import "components/errors";
 @import "components/submit_issue";

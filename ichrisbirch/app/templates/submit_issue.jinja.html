@@ -1,42 +1,39 @@
-<div id="submit-issue-background-overlay"></div>
-<div id="submit-issue-window">
-  <div class="grid grid--one-column-wide">
-    <div class="grid__item">
-      <div class="submit-issue-form">
-        <h2>Submit an Issue</h2>
-        <form method="POST" action="{{ url_for('home.issue') }}">
+<div id="github-issue-background-overlay"></div>
+<div id="github-issue-window">
+  <form class="github-issue-form" method="POST" action="{{ url_for('home.issue') }}">
+    <h2>Submit an Issue</h2>
 
-          <div class="submit-issue-form__item">
-            <label for="issue-title">Title</label>
-            <input type="text" size="60" class="textbox" name="title" id="issue-title">
-          </div>
-
-          <div class="submit-issue-form__item">
-            <label for="issue-description">Description (markdown is accepted)</label>
-            <textarea rows="16" cols="60" class="textbox" name="description" id="issue-description"></textarea>
-          </div>
-
-          <div class="submit-issue-form__item">
-            {% for label in g.repo_labels %}
-            <label class="submit-issue-form__checkbox-label" for="{{ label }}">{{ label }}
-              <input type="checkbox" id="{{ label }}" name="{{ label }}" value=1>
-              <span class="submit-issue-form__checkmark button"></span>
-            </label>
-            {% endfor %}
-          </div>
-
-          <div class="submit-issue-form__buttons">
-            <button type="submit" name="action" class="button" value="create">
-              <span class="button__text">Create Issue</span>
-            </button>
-            <button type="button" onclick="closeSubmitIssueWindow()" name="action" class="button" value="close">
-              <span class="button__text">Close Window</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
+    <div class="github-issue-form__item">
+      <label for="issue-title">Title</label>
+      <input type="text" size="60" class="textbox" name="title" id="issue-title">
     </div>
-  </div>
-</div>
+
+    <div class="github-issue-form__item">
+      <label for="issue-description">Description</label>
+      <textarea rows="16" cols="60" class="textbox" name="description" id="issue-description"></textarea>
+    </div>
+
+    <div class="github-issue-form__item">
+      <div class="github-issue-labels">
+        {% for label, icon in g.github_issue_labels_and_icons %}
+        <label class="github-issue-labels__wrapper">
+          <input type="checkbox" name="{{ label }}" class="github-issue-labels__input" />
+          <span class="github-issue-labels__tile fa-2x">
+            <span class="github-issue-labels__checkbox-icon {{ icon }}"></span>
+            <span class="github-issue-labels__checkbox-label">{{ label }}</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="github-issue-form__buttons">
+      <button type="submit" name="action" class="button" value="create">
+        <span class="button__text">Create Issue</span>
+      </button>
+      <button type="button" onclick="closeSubmitIssueWindow()" name="action" class="button" value="close">
+        <span class="button__text">Close Window</span>
+      </button>
+    </div>
+  </form>
 </div>

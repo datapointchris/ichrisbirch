@@ -3,7 +3,7 @@ import logging
 import re
 
 import httpx
-from flask import Blueprint, render_template, request
+from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.app.helpers import handle_if_not_response_code
 from ichrisbirch.config import get_settings
@@ -20,10 +20,16 @@ def index():
     return render_template('index.html', settings=settings)
 
 
-@blueprint.route('/issue/', methods=['POST'])
+@blueprint.route('/issue/', methods=['GET', 'POST'])
 def issue():
+    if request.method == 'GET':
+        return redirect(url_for('home.index'))
+
     logger.debug(f'Issue submitted from page: {request.referrer}')
     issue = request.form.to_dict()
+    labels = [k for k, v in issue.items() if v == 'on']
+    logger.debug(f'Issue details: {issue}')
+    logger.debug(f'Issue labels: {labels}')
     body_template = f'''
         {issue['description']}
 
@@ -39,7 +45,7 @@ def issue():
         **Address:** {request.headers.get('X-Forwarded-For', request.remote_addr)}
     '''
     dedented = '\n'.join(line.strip() for line in body_template.split('\n'))
-    data = json.dumps({'title': issue['title'], 'body': dedented, 'labels': ['bug']})
+    data = json.dumps({'title': issue['title'], 'body': dedented, 'labels': labels})
     response = httpx.post(settings.github.api_url_issues, content=data, headers=settings.github.api_headers)
     handle_if_not_response_code(201, response, logger)
 

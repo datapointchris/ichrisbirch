@@ -3,6 +3,7 @@
 :root {
     --ff-base: "Ubuntu Mono", monospace;
 
+    --fs-200: clamp(0.75rem, 0.6522rem + 0.0435vi, 0.875rem);
     --fs-300: clamp(0.9375rem, 0.9158rem + 0.1087vi, 1rem);
     --fs-400: clamp(1.125rem, 1.0815rem + 0.2174vi, 1.25rem);
     --fs-500: clamp(1.35rem, 1.2761rem + 0.3696vi, 1.5625rem);
