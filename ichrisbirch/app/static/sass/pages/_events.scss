@@ -9,6 +9,6 @@
   &__buttons {
     display: flex;
     justify-content: space-evenly;
-    margin-top: var(--space-m);
+    gap: var(--space-m);
   }
 }

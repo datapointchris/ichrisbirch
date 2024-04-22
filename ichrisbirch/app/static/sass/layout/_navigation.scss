@@ -40,4 +40,11 @@ nav {
             text-decoration: underline;
         }
     }
+
+    @media screen and (max-width: 600px) {
+        & ul {
+            // display: none;
+            flex-wrap: wrap;
+        }
+    }
 }

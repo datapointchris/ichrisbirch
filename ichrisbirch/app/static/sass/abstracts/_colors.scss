@@ -14,7 +14,6 @@
     --clr-accent--red: hsl(0, 100%, 71%);
     --clr-accent--blue: hsl(207, 48%, 45%);
     --clr-accent--green: hsl(120 100% 18%);
-    --clr-accent--green: hsl(120 100% 18%);
 
     --clr-success: hsl(120 100% 18% / 0.8);
     --clr-warning: hsl(60 100% 18% / 0.8);
@@ -31,18 +30,20 @@
     --clr-gray-900: hsl(0, 0%, 13%);
     --clr-gray-1000: hsl(0, 0%, 7%);
 
-    --clr-gray-trans-500: hsl(0 0% 100% / 0.5);
-    --clr-gray-trans-600: hsl(0 0% 100% / 0.2);
+    --clr-gray-trans-400: hsla(0 0% 100% / 0.5);
+    --clr-gray-trans-500: hsla(0 0% 100% / 0.5);
+    --clr-gray-trans-600: hsla(0 0% 100% / 0.2);
     --clr-gray-trans-700: hsla(0 0% 50% / 0.5);
     --clr-gray-trans-800: hsla(0 0% 50% / 0.3);
+    --clr-gray-trans-850: hsla(0 0% 50% / 0.2);
+    --clr-gray-trans-875: hsla(0 0% 50% / 0.1);
     --clr-gray-trans-900: hsla(0 0% 15% / 0.95);
 
     --clr-black-trans-200: hsl(0 0% 5% / 0.2);
     --clr-black-trans-400: hsl(0 0% 5% / 0.4);
     --clr-black-trans-600: hsl(0 0% 5% / 0.6);
     --clr-black-trans-800: hsl(0 0% 5% / 0.8);
-    --clr-black-trans-1000: hsl(0 0% 5% / 1.0);
-
+    --clr-black-trans-1000: hsl(0 0% 5% / 1);
 }
 
 // TODO: Update this to be actual dark and the regular to be light

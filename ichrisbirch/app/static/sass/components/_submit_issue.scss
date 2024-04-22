@@ -138,7 +138,7 @@
     color: var(--clr-accent-light);
     font-size: var(--fs-500);
     box-shadow:
-        var(--box-shadow-base),
+        var(--floating-box),
         2px 4px 10px var(--clr-gray-trans-700);
 
     &__item {

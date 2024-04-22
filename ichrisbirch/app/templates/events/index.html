@@ -51,36 +51,44 @@
   </div>
   {% endfor %}
 </div>
-<div class="grid__item grid__item--add-new">
-  <h2>Add New Event:</h2>
-  <div id="add-form">
-    <form method="POST">
+
+<div class="add-item-wrapper">
+  <h2>Add New Event</h2>
+  <form class="add-item-form" method="POST">
+    <div class="add-item-form__item">
       <label for="name">Name:</label>
-      <input type="text" size="30" class="textbox" name="name" id="name">
-      <br><br>
+      <input type="text" class="textbox" name="name" id="name">
+    </div>
+    <div class="add-item-form__item">
       <label for="date">Date and Time:</label>
       <input type="datetime-local" id="date" name="date" class="textbox" data-webshim="datetime-local">
-      <br><br>
+    </div>
+    <div class="add-item-form__item">
       <label for="url">URL:</label>
-      <input type="text" size="30" class="textbox" name="url" id="url">
-      <br><br>
+      <input type="text" class="textbox" name="url" id="url">
+    </div>
+    <div class="add-item-form__item">
       <label for="venue">Venue:</label>
-      <input type="text" size="30" class="textbox" name="venue" id="venue">
-      <br><br>
+      <input type="text" class="textbox" name="venue" id="venue">
+    </div>
+    <div class="add-item-form__item">
       <label for="cost">Cost:</label>
       <input type="number" id="cost" name="cost" class="textbox">
-      <br><br>
+    </div>
+    <div class="add-item-form__item">
       <label for="attending">Attending:</label>
       <input type="checkbox" name="attending" id="attending" class="textbox" value="1">
       <input type="hidden" name="attending" value="0">
-      <br><br>
-      <label for="notes">Notes:</label><br>
-      <textarea rows="10" cols="80" id="notes" name="notes" class="textbox"></textarea>
-      <br><br>
+    </div>
+    <div class="add-item-form__item add-item-form__item--full-width">
+      <label for="notes">Notes:</label>
+      <textarea rows="3" id="notes" name="notes" class="textbox"></textarea>
+    </div>
+    <div class="add-item-form__item add-item-form__item--full-width">
       <button type="submit" name="action" class="button" value="add">
         <span class="button__text">Add Event</span>
       </button>
-    </form>
-  </div>
+    </div>
+  </form>
 </div>
 {% endblock %}

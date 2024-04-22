@@ -39,7 +39,7 @@
     border-radius: var(--btn-border-radius);
     background-color: var(--clr-gray-700);
     box-shadow:
-        var(--box-shadow-base),
+        var(--floating-box),
         2px 4px 10px var(--clr-gray-trans-700);
 
     &__title {
