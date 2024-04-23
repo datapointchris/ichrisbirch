@@ -4,7 +4,11 @@
 
 {% block content %}
 <div class="task-layout task-layout--two-columns">
-  <h2 class="task-layout__title">Priority Tasks</h2>
+  <div>
+    <h2 class="task-layout__title">Priority Tasks</h2>
+    <span class="task--due">Critical Tasks: {{ critical_count }}</span>
+    <span class="task--soon">Soon Tasks: {{ warning_count }}</span>
+  </div>
   <h2 class="task-layout__title">Completed Today</h2>
   <div class="task-layout task-layout--one-column-wide">
     {% for task in top_tasks %}

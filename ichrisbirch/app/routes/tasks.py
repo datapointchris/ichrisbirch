@@ -63,27 +63,54 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
     return chart_labels, chart_values
 
 
+def critical_tasks_count(tasks: list[schemas.Task]) -> int:
+    return sum(1 for task in tasks if task.priority <= 1)
+
+
+def warning_tasks_count(tasks: list[schemas.Task]) -> int:
+    return sum(1 for task in tasks if task.priority > 1 and task.priority <= 3)
+
+
+def query_tasks_with_error_handling(
+    endpoint: str = '',
+    params: dict = {},
+    expected_response_code: int = 200,
+) -> list[schemas.Task]:
+    response = httpx.get(url_builder(TASKS_API_URL, endpoint), params=params)
+    handle_if_not_response_code(expected_response_code, response, logger)
+    return [schemas.Task(**task) for task in response.json()]
+
+
 @blueprint.route('/', methods=['GET'])
 def index():
-    top_tasks_params = {'completed_filter': 'not_completed', 'limit': 5}
-    top_tasks_response = httpx.get(TASKS_API_URL, params=top_tasks_params)
-    handle_if_not_response_code(200, top_tasks_response, logger)
-    top_tasks = [schemas.Task(**task) for task in top_tasks_response.json()]
+    # top_tasks_response = httpx.get(TASKS_API_URL)
+    # handle_if_not_response_code(200, top_tasks_response, logger)
+    # top_tasks = [schemas.Task(**task) for task in top_tasks_response.json()]
+    top_tasks = query_tasks_with_error_handling('todo')
+    critical_count = critical_tasks_count(top_tasks)
+    warning_count = warning_tasks_count(top_tasks)
 
-    today_filter = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
-    completed_response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=today_filter)
+    completed_today_params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
+    completed_response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=completed_today_params)
     handle_if_not_response_code(200, completed_response, logger)
     completed_today = [schemas.TaskCompleted(**task) for task in completed_response.json()]
+
     return render_template(
-        'tasks/index.html', top_tasks=top_tasks, completed_today=completed_today, task_categories=TASK_CATEGORIES
+        'tasks/index.html',
+        top_tasks=top_tasks,
+        critical_count=critical_count,
+        warning_count=warning_count,
+        completed_today=completed_today,
+        task_categories=TASK_CATEGORIES,
     )
 
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    response = httpx.get(TASKS_API_URL, params={'completed_filter': 'not_completed'})
-    handle_if_not_response_code(200, response, logger)
-    tasks = [schemas.Task(**task) for task in response.json()]
+    # response = httpx.get(TASKS_API_URL)
+    # handle_if_not_response_code(200, response, logger)
+    # tasks = [schemas.Task(**task) for task in response.json()]
+    tasks = query_tasks_with_error_handling()
     return render_template('tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES)
 
 
@@ -132,9 +159,11 @@ def search():
         data: dict[str, Any] = request.form.to_dict()
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
+
         if not search_terms:
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
+
         search_url = url_builder(TASKS_API_URL, 'search')
         response = httpx.get(search_url, params={'q': search_terms})
         handle_if_not_response_code(200, response, logger)
