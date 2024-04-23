@@ -81,19 +81,24 @@ def query_tasks_with_error_handling(
     return [schemas.Task(**task) for task in response.json()]
 
 
+def query_completed_tasks_with_error_handling(
+    endpoint: str = 'completed',
+    params: dict = {},
+    expected_response_code: int = 200,
+) -> list[schemas.TaskCompleted]:
+    response = httpx.get(url_builder(TASKS_API_URL, endpoint), params=params)
+    handle_if_not_response_code(expected_response_code, response, logger)
+    return [schemas.TaskCompleted(**task) for task in response.json()]
+
+
 @blueprint.route('/', methods=['GET'])
 def index():
-    # top_tasks_response = httpx.get(TASKS_API_URL)
-    # handle_if_not_response_code(200, top_tasks_response, logger)
-    # top_tasks = [schemas.Task(**task) for task in top_tasks_response.json()]
     top_tasks = query_tasks_with_error_handling('todo')
     critical_count = critical_tasks_count(top_tasks)
     warning_count = warning_tasks_count(top_tasks)
 
     completed_today_params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
-    completed_response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=completed_today_params)
-    handle_if_not_response_code(200, completed_response, logger)
-    completed_today = [schemas.TaskCompleted(**task) for task in completed_response.json()]
+    completed_today = query_completed_tasks_with_error_handling(params=completed_today_params)
 
     return render_template(
         'tasks/index.html',
@@ -107,9 +112,6 @@ def index():
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    # response = httpx.get(TASKS_API_URL)
-    # handle_if_not_response_code(200, response, logger)
-    # tasks = [schemas.Task(**task) for task in response.json()]
     tasks = query_tasks_with_error_handling()
     return render_template('tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES)
 
@@ -128,16 +130,12 @@ def completed():
         params = {}
     else:
         params = {'start_date': str(start_date), 'end_date': str(end_date)}
-    response = httpx.get(url_builder(TASKS_API_URL, 'completed'), params=params)
-    handle_if_not_response_code(200, response, logger)
 
-    if completed_tasks := [schemas.TaskCompleted(**task) for task in response.json()]:
+    if completed_tasks := query_completed_tasks_with_error_handling(params=params):
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
-        average_completion = (
-            f"No completed tasks for time period: '{' '.join(selected_filter.split('_')).capitalize()}'"
-        )
+        average_completion = f"No completed tasks for time period: {' '.join(selected_filter.split('_')).capitalize()}"
         chart_labels, chart_values = None, None
 
     return render_template(
@@ -155,7 +153,9 @@ def completed():
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
-    if request.method == 'POST':
+    if request.method == 'GET':
+        tasks = []
+    else:
         data: dict[str, Any] = request.form.to_dict()
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
@@ -164,14 +164,10 @@ def search():
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
 
-        search_url = url_builder(TASKS_API_URL, 'search')
-        response = httpx.get(search_url, params={'q': search_terms})
-        handle_if_not_response_code(200, response, logger)
-        tasks = [schemas.Task(**task) for task in response.json()]
+        tasks = query_tasks_with_error_handling('search', params={'q': search_terms})
         todo_tasks = [task for task in tasks if not task.complete_date]
         completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
-    else:
-        tasks = []
+
     return render_template(
         'tasks/search.html', todo_tasks=todo_tasks, completed_tasks=completed_tasks, task_categories=TASK_CATEGORIES
     )
@@ -201,8 +197,7 @@ def crud():
         return redirect(request.referrer or url_for('tasks.index'))
 
     elif action == 'complete':
-        task_id = data.get('id')
-        url = url_builder(TASKS_API_URL, 'complete', task_id)
+        url = url_builder(TASKS_API_URL, 'complete', data.get('id'))
         response = httpx.post(url)
         handle_if_not_response_code(200, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
@@ -211,6 +206,18 @@ def crud():
         url = url_builder(TASKS_API_URL, data.get('id'))
         response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
+        return redirect(request.referrer or url_for('tasks.all'))
+
+    elif action == 'extend7':
+        url = url_builder(TASKS_API_URL, data.get('id'))
+        response = httpx.patch(url, params={'extension': 7})
+        handle_if_not_response_code(200, response, logger)
+        return redirect(request.referrer or url_for('tasks.all'))
+
+    elif action == 'extend30':
+        url = url_builder(TASKS_API_URL, data.get('id'))
+        response = httpx.patch(url, params={'extension': 30})
+        handle_if_not_response_code(200, response, logger)
         return redirect(request.referrer or url_for('tasks.all'))
 
     return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
