@@ -16,22 +16,24 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def read_many(
-    session: Session = Depends(sqlalchemy_session), completed_filter: Optional[str] = None, limit: Optional[int] = None
+async def read_many(session: Session = Depends(sqlalchemy_session), limit: Optional[int] = None):
+    query = select(models.Task).order_by(models.Task.priority.asc(), models.Task.add_date.asc()).limit(limit)
+    return list(session.scalars(query).all())
+
+
+@router.get("/todo/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
+async def todo(
+    session: Session = Depends(sqlalchemy_session),
+    limit: Optional[int] = None,
+    priority: Optional[tuple[int, int]] = None,
 ):
+    """Priority is a tuple of INCLUSIVE priority values."""
+    logger.debug(f'{priority=}')
+    query = select(models.Task).filter(models.Task.complete_date.is_(None))
+    if priority:
+        query = query.filter(models.Task.priority >= priority[0], models.Task.priority <= priority[1])
 
-    logger.debug(f'{completed_filter=}')
-
-    query = select(models.Task)
-    if completed_filter == 'completed':
-        query = query.filter(models.Task.complete_date.is_not(None))
-
-    if completed_filter == 'not_completed':
-        query = query.filter(models.Task.complete_date.is_(None))
-
-    query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
-    if limit:
-        query = query.limit(limit)
+    query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc()).limit(limit)
     return list(session.scalars(query).all())
 
 
@@ -56,9 +58,8 @@ async def completed(
         query = query.order_by(models.Task.complete_date.desc())
 
     else:  # filtered by start and end date
-        query = query.filter(models.Task.complete_date >= start_date, models.Task.complete_date <= end_date).order_by(
-            models.Task.complete_date.desc()
-        )
+        query = query.filter(models.Task.complete_date >= start_date, models.Task.complete_date <= end_date)
+        query = query.order_by(models.Task.complete_date.desc())
 
     return list(session.scalars(query).all())
 

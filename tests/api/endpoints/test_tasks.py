@@ -26,13 +26,13 @@ def test_read_many_tasks(test_api):
 
 
 def test_read_many_tasks_completed(test_api):
-    response = test_api.get('/tasks/?completed_filter=completed')
+    response = test_api.get('/tasks/completed/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 1
 
 
 def test_read_many_tasks_not_completed(test_api):
-    response = test_api.get('/tasks/?completed_filter=not_completed')
+    response = test_api.get('/tasks/todo/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 2
 
