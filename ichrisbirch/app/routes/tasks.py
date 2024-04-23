@@ -93,7 +93,7 @@ def query_completed_tasks_with_error_handling(
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    top_tasks = query_tasks_with_error_handling('todo')
+    top_tasks = query_tasks_with_error_handling('todo', params={'limit': 5})
     critical_count = critical_tasks_count(top_tasks)
     warning_count = warning_tasks_count(top_tasks)
 
