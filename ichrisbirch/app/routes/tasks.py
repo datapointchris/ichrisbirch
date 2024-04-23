@@ -110,10 +110,19 @@ def index():
     )
 
 
-@blueprint.route('/all/', methods=['GET', 'POST'])
-def all():
-    tasks = query_tasks_with_error_handling()
-    return render_template('tasks/all.html', tasks=tasks, task_categories=TASK_CATEGORIES)
+@blueprint.route('/todo/', methods=['GET', 'POST'])
+def todo():
+    tasks = query_tasks_with_error_handling('todo')
+    critical_count = critical_tasks_count(tasks)
+    warning_count = warning_tasks_count(tasks)
+    return render_template(
+        'tasks/todo.html',
+        tasks=tasks,
+        critical_count=critical_count,
+        warning_count=warning_count,
+        todo_count=len(tasks),
+        task_categories=TASK_CATEGORIES,
+    )
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
@@ -206,18 +215,18 @@ def crud():
         url = url_builder(TASKS_API_URL, data.get('id'))
         response = httpx.delete(url)
         handle_if_not_response_code(204, response, logger)
-        return redirect(request.referrer or url_for('tasks.all'))
+        return redirect(request.referrer or url_for('tasks.todo'))
 
     elif action == 'extend7':
         url = url_builder(TASKS_API_URL, data.get('id'))
         response = httpx.patch(url, params={'extension': 7})
         handle_if_not_response_code(200, response, logger)
-        return redirect(request.referrer or url_for('tasks.all'))
+        return redirect(request.referrer or url_for('tasks.todo'))
 
     elif action == 'extend30':
         url = url_builder(TASKS_API_URL, data.get('id'))
         response = httpx.patch(url, params={'extension': 30})
         handle_if_not_response_code(200, response, logger)
-        return redirect(request.referrer or url_for('tasks.all'))
+        return redirect(request.referrer or url_for('tasks.todo'))
 
     return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

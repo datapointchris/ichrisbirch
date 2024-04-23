@@ -10,11 +10,11 @@
 {% block app_navigation %}
 <ul data-secondary>
   <li><a href="{{ url_for('tasks.index') }}">Priority Tasks</a></li>
-  <li><a href="{{ url_for('tasks.all') }}">All Tasks</a></li>
+  <li><a href="{{ url_for('tasks.todo') }}">Outstanding Tasks</a></li>
   <li><a href="{{ url_for('tasks.completed') }}">Completed Tasks</a></li>
   <li>
     <form class="search-form" method="POST" action="{{ url_for('tasks.search') }}">
-      <input type="text" size="20" class="textbox" name="terms" id="terms">
+      <input type="text" class="textbox" name="terms" id="terms">
       <button type="submit" name="action" class="button" value="search">
         <span class="button__text">Search</span>
       </button>

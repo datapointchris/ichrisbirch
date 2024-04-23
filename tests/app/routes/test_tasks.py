@@ -10,10 +10,10 @@ def test_index(test_app):
     assert b'<title>Priority Tasks</title>' in response.data
 
 
-def test_all(test_app):
-    response = test_app.get('/tasks/all/')
+def test_todo(test_app):
+    response = test_app.get('/tasks/todo/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert b'<title>All Tasks</title>' in response.data
+    assert b'<title>Outstanding Tasks</title>' in response.data
 
 
 def test_completed(test_app):
@@ -52,8 +52,8 @@ def test_crud_delete(test_app):
     response = test_app.post('/tasks/crud/', data={'id': 1, 'action': 'delete'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.history) == 1
-    assert response.request.path == '/tasks/all/'
-    assert b'All Tasks' in response.data
+    assert response.request.path == '/tasks/todo/'
+    assert b'Outstanding Tasks' in response.data
 
 
 def test_crud_search(test_app):

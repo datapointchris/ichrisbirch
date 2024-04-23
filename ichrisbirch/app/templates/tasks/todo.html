@@ -1,0 +1,21 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Outstanding Tasks{% endblock %}
+
+{% block content %}
+<div class="task-layout task-layout--one-column-narrow">
+  <div>
+    <h2 class="task-layout__title">Priority Tasks</h2>
+    <span class="task--due">Critical Tasks: {{ critical_count }}</span>
+    <span class="task--soon">Soon Tasks: {{ warning_count }}</span>
+    <span class="">Total Tasks: {{ todo_count }}</span>
+  </div>
+  {% for task in tasks %}
+  {% include 'tasks/templates/todo.jinja.html' %}
+  {% else %}
+  <div class="task task--todo">
+    <h2>No Tasks</h2>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
