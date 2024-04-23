@@ -6,22 +6,21 @@
   <div class="task__priority">Priority: {{ task.priority }}</div>
   <div class="task__category">Category: {{ task.category }}</div>
   <div class="task__add-date">Add Date: {{ task.add_date | pretty_date }}</div>
-  <div class="task__complete-button">
+  <div class="task__todo-buttons">
     <form method="POST" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="id" value="{{ task.id }}">
-      <input type="hidden" name="name" value="{{ task.name }}">
       <button type="submit" name="action" class="button" value="complete">
         <span class="button__text">Complete Task</span>
       </button>
+      <button type="submit" name="action" class="button" value="extend7">
+        <span class="button__text">Extend 7 Days</span>
+      </button>
+      <button type="submit" name="action" class="button" value="extend30">
+        <span class="button__text">Extend 30 Days</span>
+      </button>
+      <button type="submit" name="action" class="button" value="delete">
+        <span class="button__text">Delete Task</span>
+      </button>
     </form>
   </div>
-    <div class="task__delete-button">
-      <form method="POST" action="{{ url_for('tasks.crud') }}">
-        <input type="hidden" name="id" value="{{ task.id }}">
-        <input type="hidden" name="name" value="{{ task.name }}">
-        <button type="submit" name="action" class="button" value="delete">
-          <span class="button__text">Delete Task</span>
-        </button>
-      </form>
-    </div>
 </div>

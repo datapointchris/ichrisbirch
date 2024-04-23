@@ -154,7 +154,7 @@ def completed():
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
     if request.method == 'GET':
-        tasks = []
+        todo_tasks, completed_tasks = [], []
     else:
         data: dict[str, Any] = request.form.to_dict()
         search_terms = data.get('terms')
