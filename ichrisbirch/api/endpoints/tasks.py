@@ -66,7 +66,6 @@ async def completed(
 
 @router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def search(q: str, session: Session = Depends(sqlalchemy_session)):
-
     logger.debug(f'searching for {q=}')
     tasks = (
         select(models.Task)
@@ -80,7 +79,6 @@ async def search(q: str, session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy_session)):
-
     db_obj = models.Task(**task.model_dump())
     session.add(db_obj)
     session.commit()
@@ -88,9 +86,22 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy
     return db_obj
 
 
+@router.patch('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def update(task_id: int, extension: int, session: Session = Depends(sqlalchemy_session)):
+    """This endpoint is only used to extend the priority of a task."""
+    if task := session.get(models.Task, task_id):
+        task.priority += extension
+        session.add(task)
+        session.commit()
+        return Response(status_code=status.HTTP_200_OK)
+    else:
+        message = f'Task {task_id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
 @router.get('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session)):
-
     if task := session.get(models.Task, task_id):
         return task
     else:
@@ -101,7 +112,6 @@ async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session))
 
 @router.delete('/{task_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
-
     if task := session.get(models.Task, task_id):
         session.delete(task)
         session.commit()
@@ -114,7 +124,6 @@ async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
 
 @router.post('/complete/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
-
     if task := session.get(models.Task, task_id):
         task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
         session.add(task)
