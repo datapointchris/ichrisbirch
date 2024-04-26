@@ -1,12 +1,12 @@
-<div class="task {% if task.priority == 1 %}task--due{% elif task.priority <= 3 %}task--soon{% endif %}">
-  <h3 class="task__title">{{ task.name }}</h3>
+<div class="task task__todo {% if task.priority == 1 %}task--due{% elif task.priority <= 3 %}task--soon{% endif %}">
+  <h3 class="task-title">{{ task.name }}</h3>
+  <div class="task-priority">Priority: {{ task.priority }}</div>
+  <div class="task-category">Category: {{ task.category }}</div>
+  <div class="task-add-date">Add Date: {{ task.add_date | pretty_date }}</div>
   {% if task.notes %}
-  <div class="task__notes"><strong>Notes: </strong>{{ task.notes }}</div>
+  <div class="task-notes"><strong>Notes: </strong>{{ task.notes }}</div>
   {% endif %}
-  <div class="task__priority">Priority: {{ task.priority }}</div>
-  <div class="task__category">Category: {{ task.category }}</div>
-  <div class="task__add-date">Add Date: {{ task.add_date | pretty_date }}</div>
-  <div class="task__todo-buttons">
+  <div class="task-buttons">
     <form method="POST" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="id" value="{{ task.id }}">
       <button type="submit" name="action" class="button" value="complete">

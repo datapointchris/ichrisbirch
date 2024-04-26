@@ -26,8 +26,6 @@
 
 .task {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr;
-    grid-template-rows: repeat(6, auto);
 
     margin-inline: var(--space-2xl);
     padding: var(--space-xs);
@@ -42,82 +40,80 @@
         var(--floating-box),
         2px 4px 10px var(--clr-gray-trans-700);
 
-    &__title {
-        grid-column-start: 1;
-        grid-column-end: 4;
-        grid-row-start: 1;
-        grid-row-end: 1;
+    &__priority {
+        grid-template-areas:
+            "title title buttons"
+            "priority notes buttons"
+            "category notes buttons"
+            "add-date notes buttons";
+        grid-template-columns: 1.5fr 1fr 1fr;
+        grid-template-rows: repeat(4, auto);
+    }
+
+    &__completed {
+        grid-template-areas:
+            "title title buttons"
+            "priority notes buttons"
+            "category notes buttons"
+            "add-date notes buttons"
+            "complete-date notes buttons"
+            "time-to-complete notes buttons";
+        grid-template-columns: 1.5fr 1fr 1fr;
+        grid-template-rows: repeat(6, auto);
+    }
+
+    &__todo {
+        grid-template-areas:
+            "title title title"
+            "priority notes notes"
+            "category notes notes"
+            "add-date notes notes"
+            "buttons buttons buttons";
+        grid-template-columns: 1.5fr 1fr 1fr;
+        grid-template-rows: repeat(4, auto);
+    }
+
+    &-title {
+        grid-area: title;
         margin: var(--space-xs);
         margin-top: 0;
         margin-left: 0;
         color: var(--clr-accent-light);
+        line-height: 1.3em;
     }
 
-    &__notes {
-        grid-column-start: 2;
-        grid-column-end: 3;
-        grid-row-start: 2;
-        grid-row-end: 7;
+    &-notes {
+        grid-area: notes;
         text-align: justify;
     }
 
-    &__priority {
-        grid-column-start: 1;
-        grid-column-end: 2;
-        grid-row-start: 2;
-        grid-row-end: 3;
+    &-priority {
+        grid-area: priority;
         margin-left: var(--space-m);
     }
 
-    &__category {
-        grid-column-start: 1;
-        grid-column-end: 2;
-        grid-row-start: 3;
-        grid-row-end: 4;
+    &-category {
+        grid-area: category;
         margin-left: var(--space-m);
     }
 
-    &__add-date {
-        grid-column-start: 1;
-        grid-column-end: 2;
-        grid-row-start: 4;
-        grid-row-end: 5;
+    &-add-date {
+        grid-area: add-date;
         margin-left: var(--space-m);
     }
 
-    &__complete-date {
-        grid-column-start: 1;
-        grid-column-end: 2;
-        grid-row-start: 5;
-        grid-row-end: 6;
+    &-complete-date {
+        grid-area: complete-date;
         margin-left: var(--space-m);
     }
 
-    &__time-to-complete {
-        grid-column-start: 1;
-        grid-column-end: 2;
-        grid-row-start: 6;
-        grid-row-end: 7;
+    &-time-to-complete {
+        grid-area: time-to-complete;
         margin-left: var(--space-m);
     }
 
-    &__complete-button {
-        grid-column-start: 3;
-        grid-column-end: 4;
-        grid-row-start: 1;
-        grid-row-end: 4;
-        text-align: right;
-    }
-
-    &__delete-button {
-        grid-column-start: 3;
-        grid-column-end: 4;
-        grid-row-start: 4;
-        grid-row-end: 7;
-        text-align: right;
-    }
-
-    &__todo-buttons {
+    &-buttons {
+        grid-area: buttons;
         display: flex;
         justify-content: space-evenly;
     }
@@ -270,4 +266,8 @@
     &__button {
         flex: 1;
     }
+}
+
+.task-search-form {
+    display: flex;
 }
