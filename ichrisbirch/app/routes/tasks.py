@@ -93,16 +93,16 @@ def query_completed_tasks_with_error_handling(
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    top_tasks = query_tasks_with_error_handling('todo', params={'limit': 5})
-    critical_count = critical_tasks_count(top_tasks)
-    warning_count = warning_tasks_count(top_tasks)
+    tasks = query_tasks_with_error_handling('todo')
+    critical_count = critical_tasks_count(tasks)
+    warning_count = warning_tasks_count(tasks)
 
     completed_today_params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
     completed_today = query_completed_tasks_with_error_handling(params=completed_today_params)
 
     return render_template(
         'tasks/index.html',
-        top_tasks=top_tasks,
+        top_tasks=tasks[:5],
         critical_count=critical_count,
         warning_count=warning_count,
         completed_today=completed_today,
