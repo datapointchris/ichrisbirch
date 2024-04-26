@@ -42,7 +42,9 @@ class HabitCompletedCreate(HabitConfig):
 class HabitCategory(HabitConfig):
     id: int
     name: str
+    is_current: bool
 
 
 class HabitCategoryCreate(HabitConfig):
     name: str
+    is_current: bool
