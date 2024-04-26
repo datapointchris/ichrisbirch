@@ -3,6 +3,7 @@ from ichrisbirch.schemas.box import Box, BoxCreate, BoxUpdate
 from ichrisbirch.schemas.boxitem import BoxItem, BoxItemCreate, BoxItemUpdate
 from ichrisbirch.schemas.countdown import Countdown, CountdownCreate, CountdownUpdate
 from ichrisbirch.schemas.event import Event, EventCreate, EventUpdate
+from ichrisbirch.schemas.habit import Habit, HabitCreate, HabitUpdate, HabitCompleted
 from ichrisbirch.schemas.server_stats import ServerStats
 from ichrisbirch.schemas.task import Task, TaskCompleted, TaskCreate, TaskUpdate
 
@@ -22,6 +23,10 @@ __all__ = [
     'Event',
     'EventCreate',
     'EventUpdate',
+    'Habit',
+    'HabitCreate',
+    'HabitUpdate',
+    'HabitCompleted',
     'ServerStats',
     'Task',
     'TaskCompleted',
