@@ -4,7 +4,7 @@ from ichrisbirch.schemas.boxitem import BoxItem, BoxItemCreate, BoxItemUpdate
 from ichrisbirch.schemas.countdown import Countdown, CountdownCreate, CountdownUpdate
 from ichrisbirch.schemas.event import Event, EventCreate, EventUpdate
 from ichrisbirch.schemas.server_stats import ServerStats
-from ichrisbirch.schemas.task import Task, TaskCategory, TaskCompleted, TaskCreate, TaskUpdate
+from ichrisbirch.schemas.task import Task, TaskCompleted, TaskCreate, TaskUpdate
 
 __all__ = [
     'AutoTask',
@@ -24,7 +24,6 @@ __all__ = [
     'EventUpdate',
     'ServerStats',
     'Task',
-    'TaskCategory',
     'TaskCompleted',
     'TaskCreate',
     'TaskUpdate',
