@@ -6,14 +6,10 @@ from ichrisbirch.models.task import TaskCategory
 
 
 class TaskConfig(BaseModel):
-    """Base config class for Task models"""
-
     model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 
 class TaskCreate(TaskConfig):
-    """Pydantic model for creating a task"""
-
     name: str
     notes: str | None = None
     category: TaskCategory
@@ -21,8 +17,6 @@ class TaskCreate(TaskConfig):
 
 
 class Task(TaskConfig):
-    """Pydantic model for a task"""
-
     id: int
     name: str
     notes: str | None = None
@@ -33,8 +27,6 @@ class Task(TaskConfig):
 
 
 class TaskUpdate(TaskConfig):
-    """Pydantic model for updating a task"""
-
     name: str | None = None
     notes: str | None = None
     category: TaskCategory | None = None
@@ -44,8 +36,6 @@ class TaskUpdate(TaskConfig):
 
 
 class TaskCompleted(TaskConfig):
-    """Pydantic model for a completed task"""
-
     id: int
     name: str
     notes: str | None = None
