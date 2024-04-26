@@ -31,3 +31,18 @@ class HabitCompleted(HabitConfig):
     name: str
     category_id: int
     complete_date: datetime
+
+
+class HabitCompletedCreate(HabitConfig):
+    name: str
+    category_id: int
+    complete_date: datetime
+
+
+class HabitCategory(HabitConfig):
+    id: int
+    name: str
+
+
+class HabitCategoryCreate(HabitConfig):
+    name: str
