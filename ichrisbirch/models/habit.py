@@ -1,66 +1,40 @@
-from sqlalchemy import Column, Date, Integer, String
+from datetime import datetime
+
+from sqlalchemy import DateTime, Integer, String, ForeignKey, Boolean
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Habit(Base):
-    """SQLAlchemy model for habits.habits table"""
-
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'habits'
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
+    is_current: Mapped[bool] = mapped_column(Boolean)
+
+    def __repr__(self):
+        return f'Habit(name={self.name!r}, category_id={self.category_id!r}, is_current={self.is_current!r})'
 
 
-class Category(Base):
-    """SQLAlchemy model for habits.categories table"""
-
+class HabitCategory(Base):
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'categories'
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+
+    def __repr__(self):
+        return f'Category(name={self.name!r})'
 
 
-class CompletedHabit(Base):
-    """SQLAlchemy model for habits.completed table"""
-
+class HabitCompleted(Base):
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'completed'
-    id = Column(Integer, primary_key=True)
-    completed_date = Column(Date, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
+    complete_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-
-# class Habit(Base):
-#     __table_args__ = {'schema': 'habits'}
-#     __tablename__ = 'habits'
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String, nullable=False)
-#     # TODO: This is broken
-#     category_id = Column(String, ForeignKey('habits.categories.id'), nullable=False)
-#     current = Column(Boolean)
-
-#     def __repr__(self):
-#         return (
-#             f'Habit(name={self.name!r}, category_id={self.category_id!r}, current={self.current!r})'
-#         )
-
-
-# class Category(Base):
-#     __table_args__ = {'schema': 'habits'}
-#     __tablename__ = 'categories'
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String, nullable=False)
-
-#     def __repr__(self):
-#         return f'Category(name={self.name!r})'
-
-
-# class CompletedHabit(Base):
-#     __table_args__ = {'schema': 'habits'}
-#     __tablename__ = 'completed'
-#     id = Column(Integer, primary_key=True)
-#     habit_id = Column(Integer, ForeignKey('habits.habits.id'), nullable=False)
-#     completed_date = Column(Date, nullable=False)
-
-#     def __repr__(self):
-#         return f'CompletedHabit(habit_id={self.habit_id!r}, completed_date={self.completed_date!r})'
+    def __repr__(self):
+        return f'HabitCompleted(name={self.name!r}, category_id={self.category_id!r}, complete_date={self.complete_date!r})'
