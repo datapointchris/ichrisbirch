@@ -5,12 +5,12 @@ from ichrisbirch.schemas.countdown import Countdown, CountdownCreate, CountdownU
 from ichrisbirch.schemas.event import Event, EventCreate, EventUpdate
 from ichrisbirch.schemas.habit import (
     Habit,
-    HabitCreate,
-    HabitUpdate,
-    HabitCompleted,
-    HabitCompletedCreate,
     HabitCategory,
     HabitCategoryCreate,
+    HabitCompleted,
+    HabitCompletedCreate,
+    HabitCreate,
+    HabitUpdate,
 )
 from ichrisbirch.schemas.server_stats import ServerStats
 from ichrisbirch.schemas.task import Task, TaskCompleted, TaskCreate, TaskUpdate
