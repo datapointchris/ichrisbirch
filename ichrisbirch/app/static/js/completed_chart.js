@@ -1,5 +1,6 @@
 const labels = JSON.parse(document.getElementById('chartLabels').textContent);
 const data = JSON.parse(document.getElementById('chartValues').textContent);
+const chartTitle = document.getElementById('chartTitle').textContent;
 const textColor = 'hsl(0 0% 85%)';
 const gridColor = 'hsl(0 0% 35%)';
 const maxDataValue = Math.max(...data);
@@ -56,7 +57,7 @@ const options = {
         },
         title: {
             display: true,
-            text: 'Completed Tasks',
+            text: chartTitle,
             color: textColor,
             font: {
                 size: 20
@@ -71,7 +72,7 @@ const config = {
         labels: labels,
         datasets: [
             {
-                label: "Completed Tasks",
+                label: chartTitle,
                 data: data,
                 backgroundColor: dataBarColors
             }

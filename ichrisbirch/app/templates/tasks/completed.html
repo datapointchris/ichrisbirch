@@ -9,9 +9,9 @@
 {% block content %}
 <div class="task-layout task-layout--one-column-wide">
   <form method="POST" action="{{ url_for('tasks.completed') }}">
-    <div class="filter-buttons">
+    <div class="radio-scale-selector">
       {% for filter in filters %}
-      <input type="radio" id="radio-{{ filter }}" class="filterbutton" name="filter" value="{{ filter }}" {% if
+      <input type="radio" id="radio-{{ filter }}" class="radio-scale-selector__option" name="filter" value="{{ filter }}" {% if
         filter==date_filter %}checked{% endif %}>
       <label for="radio-{{ filter }}">{{ filter.title().replace('_',' ') }}</label>
       {% endfor %}
@@ -38,8 +38,11 @@
     <h3>Average Completion Time: {{ average_completion }}</h3>
     <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
     <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
-    <div class="completed-task-graph"><canvas id="completedChart" height="200"></canvas></div>
-    <script src="{{ url_for('static', filename='js/completed_tasks_chart.js') }}"></script>
+    <div id="chartTitle" style="display: none;">Completed Tasks</div>
+    <div class="completed-task-graph">
+      <canvas id="completedChart" height="200"></canvas>
+    </div>
+    <script src="{{ url_for('static', filename='js/completed_chart.js') }}"></script>
   </div>
 </div>
 {% endif %}
