@@ -47,6 +47,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.box_packing.router, prefix='/box_packing', tags=['box_packing'])
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', tags=['countdowns'])
     api.include_router(endpoints.events.router, prefix='/events', tags=['events'])
+    api.include_router(endpoints.habits.router, prefix='/habits', tags=['habits'])
     api.include_router(endpoints.server_stats.router, prefix='/server_stats', tags=['server_stats'])
     api.include_router(endpoints.tasks.router, prefix='/tasks', tags=['tasks'])
     logger.info('FastAPI Routers Registered')
