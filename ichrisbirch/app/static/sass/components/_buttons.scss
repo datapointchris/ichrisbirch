@@ -65,7 +65,9 @@
     $button-step-blend: 1px,
     $button-press-time: 0.4s,
     $font-size-ratio: 1.5,
-    $icon-size-ratio: 0.33
+    $icon-size-ratio: 0.33,
+    $text-and-icon-color: var(--clr-accent-light),
+    $selected-color: var(--clr-accent)
 ) {
     width: $button-size;
     height: $button-size;
@@ -75,7 +77,7 @@
     align-items: center;
     border-radius: $button-size;
 
-    color: var(--clr-accent-light);
+    color: $text-and-icon-color;
     transition: all $button-press-time ease-in-out;
 
     $button-outline-width: calc($button-size / 2);
@@ -96,7 +98,7 @@
     }
 
     &:hover {
-        color: var(--clr-accent);
+        color: $selected-color;
         transition: all $button-press-time ease-in-out;
     }
 

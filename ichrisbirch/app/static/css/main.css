@@ -12,6 +12,7 @@
   --clr-accent--red: hsl(0, 100%, 71%);
   --clr-accent--blue: hsl(207, 48%, 45%);
   --clr-accent--green: hsl(120 100% 18%);
+  --clr-accent--green-bright: hsl(120, 100%, 45%);
   --clr-success: hsl(120 100% 18% / 0.8);
   --clr-warning: hsl(60 100% 18% / 0.8);
   --clr-error: hsl(4 100% 18% / 0.8);
@@ -11009,97 +11010,6 @@ nav a:hover {
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
-.github-issue-labels {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-evenly;
-  margin-inline: auto;
-  gap: var(--space-s);
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
-  padding: var(--space-m);
-}
-.github-issue-labels__input {
-  clip: rect(0 0 0 0);
-  -webkit-clip-path: inset(100%);
-          clip-path: inset(100%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
-}
-.github-issue-labels__input:checked + .github-issue-labels__tile {
-  border-color: var(--clr-accent);
-  box-shadow: 0 5px 10px var(--clr-black-trans-1000);
-  color: var(--clr-accent);
-}
-.github-issue-labels__input:checked + .github-issue-labels__tile:before {
-  transform: scale(1);
-  opacity: 1;
-  background-color: var(--clr-accent);
-  border-color: var(--clr-accent);
-}
-.github-issue-labels__input:checked + .github-issue-labels__tile .github-issue-labels__checkbox-icon,
-.github-issue-labels__input:checked + .github-issue-labels__tile .github-issue-labels__checkbox-label {
-  color: var(--clr-accent);
-}
-.github-issue-labels__tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 9rem;
-  min-height: 7rem;
-  border-radius: 0.5rem;
-  border: 2px solid var(--clr-accent-light);
-  background-color: var(--clr-primary);
-  box-shadow: 0 5px 10px var(--clr-black-trans-1000);
-  transition: 0.15s ease;
-  cursor: pointer;
-  position: relative;
-}
-.github-issue-labels__tile:before {
-  content: "";
-  position: absolute;
-  display: block;
-  width: var(--fs-500);
-  height: var(--fs-500);
-  border: 2px solid var(--clr-accent-light);
-  background-color: var(--clr-primary);
-  border-radius: 50%;
-  top: var(--space-3xs);
-  left: var(--space-3xs);
-  opacity: 0;
-  transform: scale(0);
-  transition: 0.25s ease;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' fill='%23FFFFFF' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' fill='none'%3E%3C/rect%3E%3Cpolyline points='216 72.005 104 184 48 128.005' fill='none' stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='32'%3E%3C/polyline%3E%3C/svg%3E");
-  background-size: var(--fs-300);
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-}
-.github-issue-labels__tile:hover {
-  border-color: var(--clr-accent);
-}
-.github-issue-labels__tile:hover:before {
-  transform: scale(1);
-  opacity: 1;
-}
-.github-issue-labels__checkbox-icon {
-  color: var(--clr-accent-light);
-  text-align: center;
-  margin-bottom: var(--space-s);
-  transition: 0.375s ease;
-}
-.github-issue-labels__checkbox-label {
-  color: var(--clr-accent-light);
-  text-align: center;
-  font-size: var(--fs-200);
-  letter-spacing: var(--space-3xs);
-  transition: 0.375s ease;
-}
-
 .flash-messages {
   position: fixed;
   left: 50%;
@@ -11159,6 +11069,52 @@ nav a:hover {
 
 .site-errors__message {
   font-size: var(--fs-500);
+}
+
+.radio-scale-selector {
+  display: inline-flex;
+  margin: 0;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  border: 0;
+  box-sizing: border-box;
+  font-size: var(--fs-400);
+}
+.radio-scale-selector__option:first-of-type:not(:last-of-type) + label {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin: 3px;
+  margin-right: 0px;
+}
+.radio-scale-selector__option:not(:first-of-type):not(:last-of-type) + label {
+  border-radius: 0;
+  margin: 0px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
+.radio-scale-selector__option:last-of-type:not(:first-of-type) + label {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin: 3px;
+  margin-left: 0px;
+}
+.radio-scale-selector input[type=radio] {
+  opacity: 0;
+  position: fixed;
+  width: 0;
+}
+.radio-scale-selector input[type=radio]:checked + label {
+  color: var(--clr-success);
+  font-weight: bold;
+  background-color: var(--clr-gray-800);
+  box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px var(--clr-black-trans-800);
+}
+.radio-scale-selector label {
+  display: inline-block;
+  padding: 15px 20px;
+  border-radius: var(--btn-border-radius);
+  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
 #github-issue-background-overlay {
@@ -11294,6 +11250,97 @@ nav a:hover {
 .github-issue-form__buttons button {
   color: var(--clr-accent-light);
   font-size: var(--fs-500);
+}
+
+.github-issue-labels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  margin-inline: auto;
+  gap: var(--space-s);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  padding: var(--space-m);
+}
+.github-issue-labels__input {
+  clip: rect(0 0 0 0);
+  -webkit-clip-path: inset(100%);
+          clip-path: inset(100%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.github-issue-labels__input:checked + .github-issue-labels__tile {
+  border-color: var(--clr-accent);
+  box-shadow: 0 5px 10px var(--clr-black-trans-1000);
+  color: var(--clr-accent);
+}
+.github-issue-labels__input:checked + .github-issue-labels__tile:before {
+  transform: scale(1);
+  opacity: 1;
+  background-color: var(--clr-accent);
+  border-color: var(--clr-accent);
+}
+.github-issue-labels__input:checked + .github-issue-labels__tile .github-issue-labels__checkbox-icon,
+.github-issue-labels__input:checked + .github-issue-labels__tile .github-issue-labels__checkbox-label {
+  color: var(--clr-accent);
+}
+.github-issue-labels__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 9rem;
+  min-height: 7rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--clr-accent-light);
+  background-color: var(--clr-primary);
+  box-shadow: 0 5px 10px var(--clr-black-trans-1000);
+  transition: 0.15s ease;
+  cursor: pointer;
+  position: relative;
+}
+.github-issue-labels__tile:before {
+  content: "";
+  position: absolute;
+  display: block;
+  width: var(--fs-500);
+  height: var(--fs-500);
+  border: 2px solid var(--clr-accent-light);
+  background-color: var(--clr-primary);
+  border-radius: 50%;
+  top: var(--space-3xs);
+  left: var(--space-3xs);
+  opacity: 0;
+  transform: scale(0);
+  transition: 0.25s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' fill='%23FFFFFF' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' fill='none'%3E%3C/rect%3E%3Cpolyline points='216 72.005 104 184 48 128.005' fill='none' stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='32'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: var(--fs-300);
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+}
+.github-issue-labels__tile:hover {
+  border-color: var(--clr-accent);
+}
+.github-issue-labels__tile:hover:before {
+  transform: scale(1);
+  opacity: 1;
+}
+.github-issue-labels__checkbox-icon {
+  color: var(--clr-accent-light);
+  text-align: center;
+  margin-bottom: var(--space-s);
+  transition: 0.375s ease;
+}
+.github-issue-labels__checkbox-label {
+  color: var(--clr-accent-light);
+  text-align: center;
+  font-size: var(--fs-200);
+  letter-spacing: var(--space-3xs);
+  transition: 0.375s ease;
 }
 
 /*     INDEX PAGE     */
@@ -11436,6 +11483,162 @@ nav a:hover {
   display: flex;
   justify-content: space-evenly;
   gap: var(--space-m);
+}
+
+.habit {
+  margin: 20px;
+  padding: 10px;
+  border: 2px solid gray;
+  border-radius: 30px;
+}
+.habit.completed {
+  border-color: var(--clr-success);
+}
+
+.completed-habit-graph {
+  width: 80%;
+  margin: auto;
+  background-color: var(--clr-gray-800);
+}
+
+.habit-check {
+  position: relative;
+  margin: var(--space-m);
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50px;
+  color: var(--clr-accent-light);
+  transition: all 0.4s ease-in-out;
+}
+.habit-check__text {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  font-size: calc(var(--fs-400) * 1.5);
+  text-align: center;
+}
+.habit-check__icon {
+  width: 16.5px;
+  height: 16.5px;
+}
+.habit-check:hover {
+  color: var(--clr-accent--green-bright);
+  transition: all 0.4s ease-in-out;
+}
+.habit-check::before {
+  /* GRAY BUTTON ON TOP */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 50px;
+  height: 50px;
+  content: "";
+  border-radius: 50px;
+  background-color: var(--clr-gray-800);
+  filter: blur(1px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.habit-check:hover::before {
+  background-color: var(--clr-gray-900);
+  filter: blur(6px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.habit-check::after {
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
+  position: absolute;
+  translate: transform(-50%, -50%);
+  display: block;
+  width: 75px;
+  height: 75px;
+  content: "";
+  cursor: pointer;
+  border-radius: 75px;
+  filter: blur(2px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.habit-check:hover::after {
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(6px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.habit-check * button {
+  color: inherit;
+}
+
+.habit-checked-wrapper {
+  /* this is janky along with the habit-checked class
+  just a copy of the double-bevel-button with hover effects removed
+  */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+  align-items: center;
+  justify-self: center;
+}
+
+.habit-checked {
+  position: relative;
+  margin: var(--space-m);
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50px;
+  color: var(--clr-accent--green-bright);
+}
+.habit-checked__text {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  font-size: calc(var(--fs-400) * 1.5);
+  text-align: center;
+}
+.habit-checked__icon {
+  width: 16.5px;
+  height: 16.5px;
+}
+.habit-checked::before {
+  /* GRAY BUTTON ON TOP */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 50px;
+  height: 50px;
+  content: "";
+  border-radius: 50px;
+  background-color: var(--clr-gray-900);
+  filter: blur(6px);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.habit-checked::after {
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
+  position: absolute;
+  translate: transform(-50%, -50%);
+  display: block;
+  width: 75px;
+  height: 75px;
+  content: "";
+  cursor: pointer;
+  border-radius: 75px;
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(6px);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
 .main-index-content {
@@ -11728,61 +11931,6 @@ nav a:hover {
   50% {
     border: 3px solid var(--clr-accent--orange);
   }
-}
-
-.filter-buttons {
-  display: inline-flex;
-  margin: 0;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
-  border: 0;
-  box-sizing: border-box;
-  font-size: var(--fs-400);
-}
-
-.filter-buttons input[type=radio] {
-  opacity: 0;
-  position: fixed;
-  width: 0;
-}
-
-.filter-buttons label {
-  display: inline-block;
-  padding: var(--space-s) var(--space-m);
-  border-radius: var(--btn-border-radius);
-  box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
-}
-
-.filter-buttons input[type=radio]:checked + label {
-  color: var(--clr-success);
-  font-weight: bold;
-  background-color: var(--clr-black-trans-800);
-  box-shadow: inset 5px 5px 5px 0px var(--clr-black-trans-800), inset -3px -3px 5px 0px var(--clr-black-trans-200);
-}
-
-.filter-buttons label:hover {
-  font-style: italic;
-  font-weight: bold;
-}
-
-.filterbutton:first-of-type:not(:last-of-type) + label {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  margin: 3px;
-  margin-right: 0px;
-}
-.filterbutton:not(:first-of-type):not(:last-of-type) + label {
-  border-radius: 0;
-  margin: 0px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-}
-.filterbutton:last-of-type:not(:first-of-type) + label {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  margin: 3px;
-  margin-left: 0px;
 }
 
 .completed-task-graph {

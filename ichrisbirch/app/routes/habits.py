@@ -53,15 +53,21 @@ def index():
 
     completed_response = httpx.get(url_builder(HABITS_API_URL, 'completed'), params=params)
     handle_if_not_response_code(200, completed_response, logger)
-    completed = [schemas.Habit(**habit) for habit in completed_response.json()]
+    completed = [schemas.HabitCompleted(**habit) for habit in completed_response.json()]
+    completed_names = [habit.name for habit in completed]
 
     daily_response = httpx.get(HABITS_API_URL)
     handle_if_not_response_code(200, daily_response, logger)
     daily = [schemas.Habit(**habit) for habit in daily_response.json()]
+    # TODO: [2024/04/27] - Find better way to filter these out
+    daily_filtered = [habit for habit in daily if habit.name in completed_names]
 
-    not_completed = [habit for habit in daily if habit not in completed]
-
-    return render_template('habits/index.html', completed_today=completed, not_completed=not_completed)
+    return render_template(
+        'habits/index.html',
+        completed=completed,
+        habits=daily_filtered,
+        long_date=edt.today.strftime('%A %B %d, %Y'),
+    )
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])

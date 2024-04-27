@@ -4,63 +4,36 @@
 
 {% block content %}
 <div id="habit-add-remove">
-  <table class="habit-table">
-    <tr>
-      <td colspan="2" align="center">
-        <h2>Add / Remove Habits</h2>
-      </td>
-    </tr>
-    {% for cat in current_categories %}
-    {% if loop.index == 1 %}
-    <tr>
-      {% endif %}
-      <td>
-        <h3>{{ cat.title() }}</h3>
-        {% for habit, values in
-        current_categories.get(cat).items() %}
-        <form method="POST" action="{{ url_for('tracks_bp.delete_habit') }}">
-          <input type="hidden" name="habit_name" value="{{ habit }}">
-          <input type="hidden" name="habit_category" value="{{ values.get('category') }}">
-          <button type="submit" name="action" class="button" value="delete">
-            <span class="button__text">Delete</span>
-          </button>
-          {{ habit }}
-        </form>
-        {% endfor %}
-      </td>
-      {% if loop.index % 2 == 0 %}
-    </tr>
-    {% endif %}
-    {% if loop.index % 2 == 0 and loop.index < current_categories|length %} <tr>
-      {% endif %}
-      {% endfor %}
-      <tr>
-        <td colspan="2" align="center">
-          <h4>Add New Habit:</h4>
-        </td>
-      </tr>
-      <tr>
-        <form method="POST" action="{{ url_for('tracks_bp.add_habit') }}">
-          <td>
-            <label for="habit_name">Name:</label>
-            <input type="text" size="30" class="textbox" name="habit_name" id="habit_name">
-            <br><br>
-            <label for="habit_category">Category:</label>
-            <select class="textbox" name="habit_category" id="habit_category">
-              {% for cat in current_categories %}
-              <option value="{{ cat }}">{{ cat.title() }}
-              </option>
-              {% endfor %}
-            </select>
-          </td>
 
-          <td>
-            <button type="submit" name="action" class="button" value="add_habit">
-              <span class="button__text">Add New Habit</span>
-            </button>
-          </td>
-        </form>
-      </tr>
-  </table>
+  <h2>Add / Remove Habits</h2>
+  {% for cat in current_categories %}
+  <h3>{{ cat.title() }}</h3>
+  {% for habit, values in current_categories.get(cat).items() %}
+  <form method="POST" action="{{ url_for('habits.crud') }}">
+    <input type="hidden" name="habit_name" value="{{ habit }}">
+    <input type="hidden" name="habit_category" value="{{ values.get('category') }}">
+    <button type="submit" name="action" class="button" value="delete">
+      <span class="button__text">Delete</span>
+    </button>
+    {{ habit }}
+  </form>
+  {% endfor %}
+  {% endfor %}
+  <h4>Add New Habit:</h4>
+
+  <form method="POST" action="{{ url_for('habits.crud') }}">
+    <label for="habit_name">Name:</label>
+    <input type="text" size="30" class="textbox" name="habit_name" id="habit_name">
+    <label for="habit_category">Category:</label>
+    <select class="textbox" name="habit_category" id="habit_category">
+      {% for cat in current_categories %}
+      <option value="{{ cat }}">{{ cat.title() }}
+      </option>
+      {% endfor %}
+    </select>
+    <button type="submit" name="action" class="button" value="add_habit">
+      <span class="button__text">Add New Habit</span>
+    </button>
+  </form>
 </div>
 {% endblock %}

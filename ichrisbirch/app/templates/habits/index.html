@@ -3,26 +3,33 @@
 {% block title %}Daily Habits{% endblock %}
 
 {% block content %}
-<div id="habit_display">
-  <h2>{{ long_date }}</h2>
-  <form method="POST" action="habits.form">
-    {% for habit in not_completed %}
-    <h3>{{ habit.name.title() }}</h3>
-    <label class="specialbox" for="{{ name }}">{{ name }}
-      <input type="checkbox" id="{{ name }}" name="{{ name }}" value=1>
-      <span class="checkmark button"></span>
-    </label>
-    <button type="submit" name="action" class="button" value="complete_habit">
-      <span class="button__text">Complete</span>
-    </button>
+<h1>{{ long_date }}</h1>
+<div class="grid grid--two-columns">
+
+  <div class="habit-checked-wrapper">
+    {% for habit in habits %}
+    <form method="POST" class="habit-check" action="{{ url_for('habits.crud') }}">
+      <input type="hidden" name="id" value={{ habit.id }}>
+      <span class="habit-check__text">
+        <button type="submit" name="action" value="complete_habit">
+          <span class="fa-solid fa-check"></span>
+        </button>
+      </span>
+    </form>
+    <h2>{{ habit.name }}</h2>
     {% endfor %}
+  </div>
+
+  <div class="habit-checked-wrapper">
     {% for habit in completed %}
-    <h3>{{ habit.name.title() }}</h3>
-    <label class="specialbox completed" for="{{ name }}">{{ name }}
-      <input type="checkbox" id="{{ name }}" name="{{ name }}" value=1 checked>
-      <span class="checkmark button"></span>
-    </label>
+    <div class="habit-checked">
+      <p class="habit-check__text">
+        <span class="fa-solid fa-check"></span>
+      </p>
+    </div>
+    <h2>{{ habit.name }}</h2>
     {% endfor %}
-  </form>
+  </div>
+
 </div>
 {% endblock %}

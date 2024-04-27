@@ -1,23 +1,3 @@
-#content-layout-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-gap: 40px;
-    padding: 10px;
-    align-items: flex-start;
-    overflow: auto;
-    margin-bottom: 200px;
-}
-
-.habit-list {
-    // margin-auto will vertical center!
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.habit-header {
-    text-align: center;
-}
-
 .habit {
     margin: 20px;
     padding: 10px;
@@ -29,202 +9,118 @@
     }
 }
 
-///// COMPLETED HABIT FILTERS /////
-
-#completed-filters {
-    width: 100%;
+.completed-habit-graph {
+    width: 80%;
     margin: auto;
-    margin-bottom: 100px;
-    text-align: center;
-}
-
-.filter-buttons {
-    display: inline-flex;
-    margin: 0;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-    border: 0;
-    box-sizing: border-box;
-    font-size: var(--fs-400);
-}
-
-.filterbutton {
-    &:first-of-type:not(:last-of-type) + label {
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-        margin: 3px;
-        margin-right: 0px;
-    }
-
-    &:not(:first-of-type):not(:last-of-type) + label {
-        border-radius: 0;
-        margin: 0px;
-        margin-top: 3px;
-        margin-bottom: 3px;
-    }
-
-    &:last-of-type:not(:first-of-type) + label {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        margin: 3px;
-        margin-left: 0px;
-    }
-}
-
-.filter-buttons input[type="radio"] {
-    opacity: 0;
-    position: fixed;
-    width: 0;
-}
-
-.filter-buttons label {
-    display: inline-block;
-    padding: 15px 20px;
-    border-radius: var(--btn-border-radius);
-    box-shadow:
-        5px 5px 5px 0px black,
-        inset 0px 0px 5px 0px var(--clr-gray-400),
-        inset -5px -5px 4px -2px var(--clr-gray-400);
-}
-
-.filter-buttons input[type="radio"]:checked + label {
-    color: var(--clr-success);
-    font-weight: bold;
     background-color: var(--clr-gray-800);
-    box-shadow:
-        inset 5px 5px 5px 0px black,
-        inset -3px -3px 5px 0px var(--clr-black-trans-800);
 }
 
-.filter-buttons label:hover {
-    font-style: italic;
-    font-weight: bold;
+// Custom Checkboxes
+
+.habit-check {
+    position: relative;
+    margin: var(--space-m);
+    @include double-bevel-button(
+        $button-size: 50px,
+        $button-step-blend: 2px,
+        $selected-color: var(--clr-accent--green-bright)
+    );
+
+    * button {
+        color: inherit;
+    }
 }
 
-#completed-averages {
-    margin-bottom: 100px;
-    text-align: center;
+.habit-checked-wrapper {
+    /* this is janky along with the habit-checked class
+    just a copy of the double-bevel-button with hover effects removed
+    */
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    align-items: center;
+    justify-self: center;
 }
 
-#graph {
-    text-align: center;
-}
-
-/* NEW CUSTOM CHECKBOXES */
-
-.checkbox-wrapper-26 * {
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-}
-
-.checkbox-wrapper-26 input[type="checkbox"] {
-    display: none;
-}
-
-.checkbox-wrapper-26 label {
-    --size: 50px;
-    --shadow: calc(var(--size) * 0.07) calc(var(--size) * 0.1);
+.habit-checked {
+    $button-size: 50px;
+    $button-step-blend: 2px;
+    $button-press-time: 0.4s;
+    $font-size-ratio: 1.5;
+    $icon-size-ratio: 0.33;
+    $text-and-icon-color: var(--clr-accent-light);
+    $selected-color: var(--clr-accent--green-bright);
 
     position: relative;
-    display: block;
-    width: var(--size);
-    height: var(--size);
-    margin: 0 auto;
-    background-color: #f72414;
-    border-radius: 50%;
-    box-shadow: 0 var(--shadow) #ffbeb8;
-    cursor: pointer;
-    transition:
-        0.2s ease transform,
-        0.2s ease background-color,
-        0.2s ease box-shadow;
-    overflow: hidden;
-    z-index: 1;
-}
+    margin: var(--space-m);
 
-.checkbox-wrapper-26 label:before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    right: 0;
-    left: 0;
-    width: calc(var(--size) * 0.7);
-    height: calc(var(--size) * 0.7);
-    margin: 0 auto;
-    background-color: #fff;
-    transform: translateY(-50%);
-    border-radius: 50%;
-    box-shadow: inset 0 var(--shadow) #ffbeb8;
-    transition:
-        0.2s ease width,
-        0.2s ease height;
-}
+    width: $button-size;
+    height: $button-size;
 
-.checkbox-wrapper-26 label:hover:before {
-    width: calc(var(--size) * 0.55);
-    height: calc(var(--size) * 0.55);
-    box-shadow: inset 0 var(--shadow) #ff9d96;
-}
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: $button-size;
 
-.checkbox-wrapper-26 label:active {
-    transform: scale(0.9);
-}
+    color: $selected-color;
 
-.checkbox-wrapper-26 .tick_mark {
-    position: absolute;
-    top: -1px;
-    right: 0;
-    left: calc(var(--size) * -0.05);
-    width: calc(var(--size) * 0.6);
-    height: calc(var(--size) * 0.6);
-    margin: 0 auto;
-    margin-left: calc(var(--size) * 0.14);
-    transform: rotateZ(-40deg);
-}
+    $button-outline-width: calc($button-size / 2);
+    $button-outline-size: $button-size + $button-outline-width;
+    $button-press-delay: $button-press-time * 0.3;
 
-.checkbox-wrapper-26 .tick_mark:before,
-.checkbox-wrapper-26 .tick_mark:after {
-    content: "";
-    position: absolute;
-    background-color: #fff;
-    border-radius: 2px;
-    opacity: 0;
-    transition:
-        0.2s ease transform,
-        0.2s ease opacity;
-}
+    &__text {
+        position: relative;
+        z-index: 2;
+        cursor: pointer;
+        font-size: calc(var(--fs-400) * $font-size-ratio);
+        text-align: center;
+    }
 
-.checkbox-wrapper-26 .tick_mark:before {
-    left: 0;
-    bottom: 0;
-    width: calc(var(--size) * 0.1);
-    height: calc(var(--size) * 0.3);
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.23);
-    transform: translateY(calc(var(--size) * -0.68));
-}
+    &__icon {
+        width: $button-size * $icon-size-ratio;
+        height: $button-size * $icon-size-ratio;
+    }
 
-.checkbox-wrapper-26 .tick_mark:after {
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: calc(var(--size) * 0.1);
-    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.23);
-    transform: translateX(calc(var(--size) * 0.78));
-}
+    &::before {
+        /* GRAY BUTTON ON TOP */
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+        width: $button-size;
+        height: $button-size;
+        content: "";
+        border-radius: $button-size;
+        background-color: var(--clr-gray-900);
+        filter: blur($button-step-blend * 3);
+        box-shadow:
+            -8px -8px 20px var(--clr-black-trans-600),
+            4px 4px 20px var(--clr-gray-trans-800),
+            inset 8px 8px 20px var(--clr-black-trans-1000),
+            inset -8px -8px 20px var(--clr-gray-trans-600);
+    }
 
-.checkbox-wrapper-26 input[type="checkbox"]:checked + label {
-    background-color: #07d410;
-    box-shadow: 0 var(--shadow) #92ff97;
-}
+    &::after {
+        /* OUTER RING
+        The outer ring has a delay for the press animation to make it appear
+        that it is being depressed by the inner button.
+        */
 
-.checkbox-wrapper-26 input[type="checkbox"]:checked + label:before {
-    width: 0;
-    height: 0;
-}
-
-.checkbox-wrapper-26 input[type="checkbox"]:checked + label .tick_mark:before,
-.checkbox-wrapper-26 input[type="checkbox"]:checked + label .tick_mark:after {
-    transform: translate(0);
-    opacity: 1;
+        position: absolute;
+        translate: transform(-50%, -50%);
+        display: block;
+        width: $button-outline-size;
+        height: $button-outline-size;
+        content: "";
+        cursor: pointer;
+        border-radius: $button-outline-size;
+        transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+        filter: blur($button-step-blend * 3);
+        box-shadow:
+            -8px -8px 20px var(--clr-black-trans-600),
+            4px 4px 20px var(--clr-gray-trans-800),
+            inset 8px 8px 20px var(--clr-black-trans-1000),
+            inset -8px -8px 20px var(--clr-gray-trans-600);
+    }
 }

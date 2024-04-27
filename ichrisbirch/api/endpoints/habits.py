@@ -91,9 +91,6 @@ async def read_many_completed(
     return list(session.scalars(query).all())
 
 
-######################
-
-
 @router.get('/{habit_id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
 async def read_one_habit(habit_id: int, session: Session = Depends(sqlalchemy_session)):
     if habit := session.get(models.Habit, habit_id):

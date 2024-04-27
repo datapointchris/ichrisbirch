@@ -1,6 +1,6 @@
 @import "abstracts/colors";
 @import "abstracts/spacing";
-@import 'abstracts/effects';
+@import "abstracts/effects";
 // @import 'abstracts/mixins';
 // @import 'abstracts/functions';
 // @import 'abstracts/placeholders';
@@ -15,7 +15,7 @@
 @import "base/base";
 
 @import "layout/navigation";
-@import 'layout/grid';
+@import "layout/grid";
 // @import 'layout/header';
 // @import 'layout/footer';
 // @import 'layout/sidebar';
@@ -23,9 +23,9 @@
 
 // @import 'components/carousel';
 @import "components/buttons";
-@import "components/checkboxes";
 @import "components/flash_messages";
 @import "components/errors";
+@import "components/radio_scale_selector";
 @import "components/submit_issue";
 // @import 'components/dropdown';
 
@@ -34,7 +34,7 @@
 @import "pages/box_packing";
 @import "pages/countdowns";
 @import "pages/events";
-// @import 'pages/habits';
+@import "pages/habits";
 @import "pages/home";
 // @import 'pages/journal';
 // @import 'pages/portfolio';
