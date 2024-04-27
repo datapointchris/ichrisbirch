@@ -5,7 +5,20 @@ from flask import abort, flash
 
 
 def url_builder(base_url: str, *parts) -> str:
-    """Build a URL from a base URL and parts, will always include the trailing slash"""
+    """Build a URL from a base URL and parts, will always include the trailing slash
+
+    Examples::
+        >>> url_builder('http://example.com', 'api', 'v1', 'tasks')
+        'http://example.com/api/v1/tasks/'
+
+        >>> url_builder('http://example.com', 'api', 'v1', 'tasks', 1)
+        'http://example.com/api/v1/tasks/1/'
+
+        >>> API_URL = 'http://example.com/api/v1'
+        >>> url_builder(API_URL, 'tasks')
+        'http://example.com/api/v1/tasks/'
+
+    """
     stripped_parts = []
     for part in parts:
         if isinstance(part, (list, tuple, set)):
