@@ -112,16 +112,27 @@ def completed():
     )
 
 
-@blueprint.route('/manage/', methods=['GET', 'POST'])
+@blueprint.route('/manage/', methods=['GET'])
 def manage():
-    """Manage habits page"""
-    # if request.method == 'POST':
-    #     data = request.form.to_dict()
-    #     action = data.pop('action')
-    #     habit = Habit(**data)
-    #     print(action, habit)
 
-    return render_template('habits/manage.html')
+    current_habits_response = httpx.get(HABITS_API_URL)
+    handle_if_not_response_code(200, current_habits_response, logger)
+    current_habits = [schemas.Habit(**habit) for habit in current_habits_response.json()]
+
+    current_categories_response = httpx.get(url_builder(HABITS_API_URL, 'categories'))
+    handle_if_not_response_code(200, current_categories_response, logger)
+    current_categories = [schemas.HabitCategory(**habit) for habit in current_categories_response.json()]
+
+    completed_response = httpx.get(url_builder(HABITS_API_URL, 'completed'))
+    handle_if_not_response_code(200, completed_response, logger)
+    completed_habits = [schemas.HabitCompleted(**habit) for habit in completed_response.json()]
+
+    return render_template(
+        'habits/manage.html',
+        current_habits=current_habits,
+        current_categories=current_categories,
+        completed_habits=completed_habits,
+    )
 
 
 @blueprint.route('/crud/', methods=['POST'])
@@ -137,7 +148,7 @@ def crud():
         except pydantic.ValidationError as e:
             logger.exception(e)
             flash(str(e), 'error')
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            return redirect(request.referrer or url_for('habits.manage'))
         response = httpx.post(HABITS_API_URL, content=category.model_dump_json())
         handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))
@@ -160,7 +171,7 @@ def crud():
         except pydantic.ValidationError as e:
             logger.exception(e)
             flash(str(e), 'error')
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            return redirect(request.referrer or url_for('habits.manage'))
         response = httpx.post(url_builder(HABITS_API_URL, 'categories'), content=category.model_dump_json())
         handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))

@@ -3,37 +3,92 @@
 {% block title %}Manage Habits{% endblock %}
 
 {% block content %}
-<div id="habit-add-remove">
+<div class="grid grid--one-column">
 
-  <h2>Add / Remove Habits</h2>
-  {% for cat in current_categories %}
-  <h3>{{ cat.title() }}</h3>
-  {% for habit, values in current_categories.get(cat).items() %}
-  <form method="POST" action="{{ url_for('habits.crud') }}">
-    <input type="hidden" name="habit_name" value="{{ habit }}">
-    <input type="hidden" name="habit_category" value="{{ values.get('category') }}">
-    <button type="submit" name="action" class="button" value="delete">
-      <span class="button__text">Delete</span>
-    </button>
-    {{ habit }}
-  </form>
-  {% endfor %}
-  {% endfor %}
-  <h4>Add New Habit:</h4>
+  <div class="add-item-wrapper">
+    <h2>Current Habits</h2>
+    {% for habit in current_habits %}
+    <div class="habit">
+      <h2>{{ habit.name }}</h2>
+      <form method="POST" action="{{ url_for('habits.crud') }}">
+        <input type="hidden" name="id" value="{{ habit.id }}">
+        <button type="submit" name="action" class="button" value="delete_habit">
+          <span class="button__text">Delete</span>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
 
-  <form method="POST" action="{{ url_for('habits.crud') }}">
-    <label for="habit_name">Name:</label>
-    <input type="text" size="30" class="textbox" name="habit_name" id="habit_name">
-    <label for="habit_category">Category:</label>
-    <select class="textbox" name="habit_category" id="habit_category">
-      {% for cat in current_categories %}
-      <option value="{{ cat }}">{{ cat.title() }}
-      </option>
-      {% endfor %}
-    </select>
-    <button type="submit" name="action" class="button" value="add_habit">
-      <span class="button__text">Add New Habit</span>
-    </button>
-  </form>
+  <div class="add-item-wrapper">
+    <h2>Add New Habit</h2>
+    <form method="POST" class="add-item-form" action="{{ url_for('habits.crud') }}">
+      <div class="add-item-form__item">
+        <label for="habit_name">Name:</label>
+        <input type="text" class="textbox" name="name" id="habit_name">
+      </div>
+      <div class="add-item-form__item">
+        <label for="habit_category">Category:</label>
+        <select class="textbox" name="habit_category" id="habit_category">
+          {% for category in current_categories %}
+          <option value="{{ category }}">{{ category.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" name="action" class="button" value="add_habit">
+          <span class="button__text">Add New Habit</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="add-item-wrapper">
+    <h2>Current Categories</h2>
+    {% for category in current_categories %}
+    <div class="habit">
+      <h2>{{ category.name }}</h2>
+      <form method="POST" action="{{ url_for('habits.crud') }}">
+        <input type="hidden" name="id" value="{{ category.id }}">
+        <button type="submit" name="action" class="button" value="delete_category">
+          <span class="button__text">Delete</span>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="add-item-wrapper">
+    <h2>Add New Category</h2>
+    <form method="POST" class="add-item-form" action="{{ url_for('habits.crud') }}">
+      <div class="add-item-form__item">
+        <label for="category_name">Name:</label>
+        <input type="text" class="textbox" name="name" id="category_name">
+      </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" name="action" class="button" value="add_category">
+          <span class="button__text">Add New Category</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="add-item-wrapper">
+    <h2>Completed Habits</h2>
+    {% for habit in completed_habits %}
+    <div class="habit completed">
+      <h2>{{ habit.name }}</h2>
+      <div class="add-item-form__item">Complete Date: {{ habit.complete_date }}</div>
+      <form method="POST" action="{{ url_for('habits.crud') }}">
+        <input type="hidden" name="id" value="{{ habit.id }}">
+        <button type="submit" name="action" class="button" value="delete_habit">
+          <span class="button__text">Delete</span>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
 {% endblock %}

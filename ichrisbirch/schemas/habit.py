@@ -10,7 +10,7 @@ class HabitConfig(BaseModel):
 class HabitCreate(HabitConfig):
     name: str
     category_id: int
-    is_current: bool
+    is_current: bool = True
 
 
 class Habit(HabitConfig):
@@ -47,4 +47,4 @@ class HabitCategory(HabitConfig):
 
 class HabitCategoryCreate(HabitConfig):
     name: str
-    is_current: bool
+    is_current: bool = True
