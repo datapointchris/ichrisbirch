@@ -130,9 +130,8 @@ def completed():
     """Completed tasks endpoint.  Filtered by date selection."""
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime()
-    date_filters = edt.filters
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
-    start_date, end_date = date_filters.get(selected_filter, (None, None))
+    start_date, end_date = edt.filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
     if start_date is None or end_date is None:
@@ -151,7 +150,7 @@ def completed():
         'tasks/completed.html',
         completed_tasks=completed_tasks,
         average_completion=average_completion,
-        filters=date_filters | {'all': (None, None)},  # add all filter to frontend
+        filters=list(edt.filters) + ['all'], # additional 'all' filter to frontend
         date_filter=selected_filter,
         chart_labels=chart_labels,
         chart_values=chart_values,
