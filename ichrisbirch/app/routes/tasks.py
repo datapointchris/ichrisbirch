@@ -150,7 +150,7 @@ def completed():
         'tasks/completed.html',
         completed_tasks=completed_tasks,
         average_completion=average_completion,
-        filters=list(edt.filters) + ['all'], # additional 'all' filter to frontend
+        filters=list(edt.filters) + ['all'],  # additional 'all' filter to frontend
         date_filter=selected_filter,
         chart_labels=chart_labels,
         chart_values=chart_values,
@@ -199,7 +199,7 @@ def crud():
         except pydantic.ValidationError as e:
             logger.exception(e)
             flash(str(e), 'error')
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+            return redirect(request.referrer or url_for('tasks.index'))
         response = httpx.post(TASKS_API_URL, content=task.model_dump_json())
         handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))

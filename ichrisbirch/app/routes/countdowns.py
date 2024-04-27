@@ -4,7 +4,7 @@ from typing import Any
 import httpx
 import pydantic
 from fastapi import status
-from flask import Blueprint, Response, flash, render_template, request
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
 from ichrisbirch.app.helpers import handle_if_not_response_code, url_builder
@@ -32,7 +32,7 @@ def index():
             except pydantic.ValidationError as e:
                 logger.exception(e)
                 flash(str(e), 'error')
-                return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+                return redirect(request.referrer or url_for('countdowns.index'))
             response = httpx.post(COUNTDOWNS_API_URL, content=countdown)
             handle_if_not_response_code(201, response, logger)
 
