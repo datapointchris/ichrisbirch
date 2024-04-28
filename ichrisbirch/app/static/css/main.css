@@ -10800,6 +10800,8 @@ nav a:hover {
   text-align: center;
 }
 .btn-submit-issue__icon {
+  /* This works with svg but not fontawesome ie (fa-solid fa-code)
+  must use class names for sizing */
   width: 33px;
   height: 33px;
 }
@@ -10958,6 +10960,8 @@ nav a:hover {
   text-align: center;
 }
 .btn-submit-issue__icon {
+  /* This works with svg but not fontawesome ie (fa-solid fa-code)
+  must use class names for sizing */
   width: 33px;
   height: 33px;
 }
@@ -11521,6 +11525,8 @@ nav a:hover {
   text-align: center;
 }
 .habit-check__icon {
+  /* This works with svg but not fontawesome ie (fa-solid fa-code)
+  must use class names for sizing */
   width: 16.5px;
   height: 16.5px;
 }
@@ -11720,6 +11726,8 @@ nav a:hover {
   text-align: center;
 }
 .home-link-button__icon {
+  /* This works with svg but not fontawesome ie (fa-solid fa-code)
+  must use class names for sizing */
   width: 66px;
   height: 66px;
 }

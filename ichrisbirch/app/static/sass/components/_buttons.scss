@@ -93,6 +93,8 @@
     }
 
     &__icon {
+        /* This works with svg but not fontawesome ie (fa-solid fa-code)
+        must use class names for sizing */
         width: $button-size * $icon-size-ratio;
         height: $button-size * $icon-size-ratio;
     }
