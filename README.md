@@ -1,6 +1,6 @@
 # iChrisBirch
 
-![Visualization of the codebase](./diagram.svg)
+## [Chris Birch - Data Engineer](http://www.ichrisbirch.com)
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
