@@ -33,18 +33,19 @@
            <li><a href="{{ url_for('journal.index') }}">Journal</a></li>
           -->
         <li><a href="{{ url_for('server_stats.index') }}">Server Stats</a></li>
+        <li><a href="https://github.com/datapointchris/ichrisbirch/issues" target="_blank">Github Issues</a></li>
       </ul>
       {% block app_navigation %}{% endblock %}
     </nav>
   </header>
-  {% include 'submit_issue.jinja.html' %}
+  {% include 'submit-issue.jinja.html' %}
   <div class="btn-submit-issue" onclick="openSubmitIssueWindow()" tabindex="0">
     <div class="btn-submit-issue__text">
       <span class="fa-solid fa-bug"></span>
     </div>
   </div>
 
-  {% include 'messages.jinja.html' %}
+  {% include 'flash-messages.jinja.html' %}
 
 
   {% block content %}{% endblock %}
