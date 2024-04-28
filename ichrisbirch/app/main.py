@@ -56,7 +56,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(countdowns.blueprint, url_prefix='/countdowns')
         app.register_blueprint(events.blueprint, url_prefix='/events')
         app.register_blueprint(habits.blueprint, url_prefix='/habits')
-        app.register_blueprint(server_stats.blueprint, url_prefix='/server_stats')
+        app.register_blueprint(server_stats.blueprint, url_prefix='/server-stats')
         app.register_blueprint(journal.blueprint, url_prefix='/journal')
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(tasks.blueprint, url_prefix='/tasks')
