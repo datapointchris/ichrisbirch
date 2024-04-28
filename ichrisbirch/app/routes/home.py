@@ -3,6 +3,7 @@ import logging
 import re
 
 import httpx
+import pendulum
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from ichrisbirch.app.helpers import handle_if_not_response_code
@@ -18,6 +19,16 @@ logger = logging.getLogger(__name__)
 @blueprint.route('/', methods=['GET'])
 def index():
     return render_template('index.html', settings=settings)
+
+
+@blueprint.route('/server-stats/')
+def server_stats():
+    return render_template(
+        'server-stats.html',
+        settings=settings,
+        server_time=pendulum.now('UTC').isoformat(),
+        local_time=pendulum.now().isoformat(),
+    )
 
 
 @blueprint.route('/issue/', methods=['GET', 'POST'])
