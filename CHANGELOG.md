@@ -240,3 +240,15 @@ Pre-commit Possibilities:
 
 - [X] Need to have reset
 - [X] [mkdocs-material/_resets.scss at master · squidfunk/mkdocs-material · GitHub](https://github.com/squidfunk/mkdocs-material/blob/master/src/assets/stylesheets/main/_resets.scss)
+
+## Submit Github Issue
+
+- [X] Add button to submit github issue
+  - [X] Style the button as the other buttons with class "button box3d"
+  - [X] Clicking button should open pseudo-window
+  - [X] Auto-populate lots of information
+    - [X] time / date
+    - [X] browser information
+    - [X] page currently on
+    - [X] Have a template set up
+    - [X] Select from only a few types of issues

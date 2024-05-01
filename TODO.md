@@ -43,18 +43,8 @@
 
 ## Small Tasks
 
-- [ ] Add button to submit github issue
-  - [ ] Style the button as the other buttons with class "button box3d"
-  - [ ] Clicking button should open pseudo-window
-  - [ ] Auto-populate lots of information
-    - [ ] time / date
-    - [ ] browser information
-    - [ ] page currently on
-    - [ ] Have a template set up
-    - [ ] Select from only a few types of issues
 - [ ] (ops) Make validate html only validate pages that have been modified
   - [ ] pass files variable?
-- [ ] (css) `_server_stats.scss` combine 3d text and 3d effect
 
 ## User Login
 
