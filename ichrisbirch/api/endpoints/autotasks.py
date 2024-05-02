@@ -59,8 +59,9 @@ async def run(id: int, session: Session = Depends(sqlalchemy_session)):
         autotask.last_run_date = datetime.now()
         autotask.run_count += 1
         session.commit()
+        session.refresh(autotask)
         logger.debug(f'Ran autotask {id}, created task {task.id}')
-        return Response(status_code=status.HTTP_200_OK)
+        return autotask
     else:
         message = f'AutoTask {id} not found'
         logger.warning(message)
