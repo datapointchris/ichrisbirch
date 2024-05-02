@@ -17,17 +17,14 @@ def index():
     if request.method == 'POST':
         data: dict[str, Any] = request.form.to_dict()
         action = data.pop('action')
-        logger.debug(f'{request.referrer=} {action=}')
-        logger.debug(f'{data=}')
 
-        if action == 'add':
-            countdowns_api.post(data=data)
-
-        elif action == 'delete':
-            countdowns_api.delete(data.get('id'))
-
-        else:
-            return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        match action:
+            case 'add':
+                countdowns_api.post(data=data)
+            case 'delete':
+                countdowns_api.delete(data.get('id'))
+            case _:
+                return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     countdowns = countdowns_api.get()
     return render_template('countdowns/index.html', countdowns=countdowns)
