@@ -122,7 +122,7 @@ async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.post('/complete/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+@router.patch('/{task_id}/complete/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
     if task := session.get(models.Task, task_id):
         task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
