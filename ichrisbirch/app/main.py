@@ -29,6 +29,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_error_handler(400, partial(handle_errors, error_code=400))
         app.register_error_handler(404, partial(handle_errors, error_code=404))
         app.register_error_handler(405, partial(handle_errors, error_code=405))
+        app.register_error_handler(422, partial(handle_errors, error_code=422))
         app.register_error_handler(500, partial(handle_errors, error_code=500))
         app.register_error_handler(502, partial(handle_errors, error_code=502))
         logger.info('Flask App Error Handlers Registered')
