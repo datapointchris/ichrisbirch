@@ -27,7 +27,7 @@ def index():
                 created = autotasks_api.post(data=data)
                 autotasks_api.get([created.id, 'run'])
             case 'run':
-                autotasks_api.get([data.get('id'), 'run'])
+                autotasks_api.patch([data.get('id'), 'run'])
             case 'delete':
                 autotasks_api.delete(data.get('id'))
             case _:
