@@ -1,36 +1,24 @@
 import logging
 from collections import Counter
 from datetime import datetime, timedelta
-from typing import Any
 
-import httpx
 import pendulum
-import pydantic
 from fastapi import status
 from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.helpers import handle_if_not_response_code, url_builder
-from ichrisbirch.config import get_settings
+from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.models.task import TaskCategory
 
-settings = get_settings()
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
-
 logger = logging.getLogger(__name__)
+tasks_api = QueryAPI(base_url='tasks', api_key='', logger=logger, response_model=schemas.Task)
+tasks_completed_api = QueryAPI(
+    base_url='tasks/completed/', api_key='', logger=logger, response_model=schemas.TaskCompleted
+)
 
-TASKS_API_URL = f'{settings.api_url}/tasks/'
 TASK_CATEGORIES = [t.value for t in TaskCategory]
-
-
-def get_first_and_last_task():
-    url = url_builder(TASKS_API_URL, 'completed')
-    first = httpx.get(url, params={'first': True}).json()
-    last = httpx.get(url, params={'last': True}).json()
-    first_task = schemas.TaskCompleted(**first)
-    last_task = schemas.TaskCompleted(**last)
-    return first_task, last_task
 
 
 def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
@@ -71,34 +59,14 @@ def warning_tasks_count(tasks: list[schemas.Task]) -> int:
     return sum(1 for task in tasks if task.priority > 1 and task.priority <= 3)
 
 
-def query_tasks_with_error_handling(
-    endpoint: str = '',
-    params: dict = {},
-    expected_response_code: int = 200,
-) -> list[schemas.Task]:
-    response = httpx.get(url_builder(TASKS_API_URL, endpoint), params=params)
-    handle_if_not_response_code(expected_response_code, response, logger)
-    return [schemas.Task(**task) for task in response.json()]
-
-
-def query_completed_tasks_with_error_handling(
-    endpoint: str = 'completed',
-    params: dict = {},
-    expected_response_code: int = 200,
-) -> list[schemas.TaskCompleted]:
-    response = httpx.get(url_builder(TASKS_API_URL, endpoint), params=params)
-    handle_if_not_response_code(expected_response_code, response, logger)
-    return [schemas.TaskCompleted(**task) for task in response.json()]
-
-
 @blueprint.route('/', methods=['GET'])
 def index():
-    tasks = query_tasks_with_error_handling('todo')
+    tasks = tasks_api.get('todo')
     critical_count = critical_tasks_count(tasks)
     warning_count = warning_tasks_count(tasks)
 
     completed_today_params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
-    completed_today = query_completed_tasks_with_error_handling(params=completed_today_params)
+    completed_today = tasks_completed_api.get(params=completed_today_params)
 
     return render_template(
         'tasks/index.html',
@@ -112,7 +80,7 @@ def index():
 
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
-    tasks = query_tasks_with_error_handling('todo')
+    tasks = tasks_api.get('todo')
     critical_count = critical_tasks_count(tasks)
     warning_count = warning_tasks_count(tasks)
     return render_template(
@@ -139,7 +107,7 @@ def completed():
     else:
         params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
-    if completed_tasks := query_completed_tasks_with_error_handling(params=params):
+    if completed_tasks := tasks_completed_api.get(params=params):
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
@@ -164,7 +132,7 @@ def search():
     if request.method == 'GET':
         todo_tasks, completed_tasks = [], []
     else:
-        data: dict[str, Any] = request.form.to_dict()
+        data = request.form.to_dict()
         search_terms = data.get('terms')
         logger.debug(f'{request.referrer=} | {search_terms=}')
 
@@ -172,7 +140,7 @@ def search():
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
 
-        tasks = query_tasks_with_error_handling('search', params={'q': search_terms})
+        tasks = tasks_api.get('search', params={'q': search_terms})
         todo_tasks = [task for task in tasks if not task.complete_date]
         completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
 
@@ -188,44 +156,21 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    data: dict[str, Any] = request.form.to_dict()
+    data = request.form.to_dict()
     action = data.pop('action')
-    logger.debug(f'{request.referrer=} {action=}')
-    logger.debug(f'{data=}')
 
-    if action == 'add':
-        try:
-            task = schemas.TaskCreate(**data)
-        except pydantic.ValidationError as e:
-            logger.exception(e)
-            flash(str(e), 'error')
+    match action:
+        case 'add':
+            tasks_api.post(data=data)
             return redirect(request.referrer or url_for('tasks.index'))
-        response = httpx.post(TASKS_API_URL, content=task.model_dump_json())
-        handle_if_not_response_code(201, response, logger)
-        return redirect(request.referrer or url_for('tasks.index'))
-
-    elif action == 'complete':
-        url = url_builder(TASKS_API_URL, data.get('id'), 'complete')
-        response = httpx.patch(url)
-        handle_if_not_response_code(200, response, logger)
-        return redirect(request.referrer or url_for('tasks.index'))
-
-    elif action == 'delete':
-        url = url_builder(TASKS_API_URL, data.get('id'))
-        response = httpx.delete(url)
-        handle_if_not_response_code(204, response, logger)
-        return redirect(request.referrer or url_for('tasks.todo'))
-
-    elif action == 'extend7':
-        url = url_builder(TASKS_API_URL, data.get('id'))
-        response = httpx.patch(url, params={'extension': 7})
-        handle_if_not_response_code(200, response, logger)
-        return redirect(request.referrer or url_for('tasks.todo'))
-
-    elif action == 'extend30':
-        url = url_builder(TASKS_API_URL, data.get('id'))
-        response = httpx.patch(url, params={'extension': 30})
-        handle_if_not_response_code(200, response, logger)
-        return redirect(request.referrer or url_for('tasks.todo'))
+        case 'complete':
+            tasks_api.patch([data.get('id'), 'complete'])
+            return redirect(request.referrer or url_for('tasks.index'))
+        case 'extend':
+            tasks_api.patch([data.get('id'), 'extend', data.get('days')])
+            return redirect(request.referrer or url_for('tasks.todo'))
+        case 'delete':
+            tasks_api.delete(data.get('id'))
+            return redirect(request.referrer or url_for('tasks.todo'))
 
     return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

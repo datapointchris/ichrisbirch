@@ -9,13 +9,16 @@
   <div class="task-buttons">
     <form method="POST" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="id" value="{{ task.id }}">
+      <input type="hidden" name="days" id="{{ task.id }}-days" value="">
       <button type="submit" name="action" class="button" value="complete">
         <span class="button__text">Complete Task</span>
       </button>
-      <button type="submit" name="action" class="button" value="extend7">
+      <button type="submit" name="action" class="button" value="extend"
+        onclick="document.getElementById('{{ task.id }}-days').value = '7';">
         <span class="button__text">Extend 7 Days</span>
       </button>
-      <button type="submit" name="action" class="button" value="extend30">
+      <button type="submit" name="action" class="button" value="extend"
+        onclick="document.getElementById('{{ task.id }}-days').value = '30';">
         <span class="button__text">Extend 30 Days</span>
       </button>
       <button type="submit" name="action" class="button" value="delete">

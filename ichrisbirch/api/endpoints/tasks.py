@@ -86,20 +86,6 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(sqlalchemy
     return db_obj
 
 
-@router.patch('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def update(task_id: int, extension: int, session: Session = Depends(sqlalchemy_session)):
-    """This endpoint is only used to extend the priority of a task."""
-    if task := session.get(models.Task, task_id):
-        task.priority += extension
-        session.add(task)
-        session.commit()
-        return Response(status_code=status.HTTP_200_OK)
-    else:
-        message = f'Task {task_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-
 @router.get('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def read_one(task_id: int, session: Session = Depends(sqlalchemy_session)):
     if task := session.get(models.Task, task_id):
@@ -126,6 +112,20 @@ async def delete(task_id: int, session: Session = Depends(sqlalchemy_session)):
 async def complete(task_id: int, session: Session = Depends(sqlalchemy_session)):
     if task := session.get(models.Task, task_id):
         task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        return task
+    else:
+        message = f'Task {task_id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+@router.patch('/{task_id}/extend/{days}', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def extend(task_id: int, days: int, session: Session = Depends(sqlalchemy_session)):
+    if task := session.get(models.Task, task_id):
+        task.priority += days
         session.add(task)
         session.commit()
         session.refresh(task)
