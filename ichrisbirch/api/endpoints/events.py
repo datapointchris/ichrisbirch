@@ -50,7 +50,7 @@ async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.post('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
+@router.patch('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
 async def complete(id: int, session: Session = Depends(sqlalchemy_session)):
     if event := session.get(models.Event, id):
         event.attending = True
