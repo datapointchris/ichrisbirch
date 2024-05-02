@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 from fastapi import status
 from flask import Blueprint, Response, render_template, request
@@ -15,7 +14,7 @@ countdowns_api = QueryAPI(base_url='countdowns', api_key='', logger=logger, resp
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        data: dict[str, Any] = request.form.to_dict()
+        data = request.form.to_dict()
         action = data.pop('action')
 
         match action:
