@@ -60,9 +60,9 @@ class QueryAPI:
                 abort_message = error_message
             abort(response.status_code, abort_message)
 
-    def get(self, endpoint: Any | None = None):
+    def get(self, endpoint: Any | None = None, params: dict | None = None):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
-        response = httpx.get(url, follow_redirects=True)
+        response = httpx.get(url, follow_redirects=True, params=params)
         self.handle_if_not_response_code(200, response)
         return [self.response_model(**result) for result in response.json()]
 
