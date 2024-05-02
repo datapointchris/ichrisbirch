@@ -67,6 +67,7 @@ class QueryAPI:
 
     def post(self, endpoint: Any | None = None, data: dict = {}):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
+        self.logger.debug(f'{data=}')
         response = httpx.post(url, json=data)
         self.handle_if_not_response_code(201, response)
         return self.response_model(**response.json())
