@@ -1,3 +1,4 @@
+import pytest
 from fastapi import status
 
 from ichrisbirch.models.task import TaskCategory
@@ -20,6 +21,12 @@ def test_completed(test_app):
     response = test_app.get('/tasks/completed/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'Completed Tasks' in response.data
+
+
+def test_search(test_app):
+    response = test_app.post('/tasks/search/', data={'terms': 'test'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert b'<title>Tasks Search</title>' in response.data
 
 
 def test_crud_add(test_app):
@@ -48,15 +55,29 @@ def test_crud_complete(test_app):
     assert b'<title>Priority Tasks</title>' in response.data
 
 
+@pytest.mark.parametrize('days', [7, 30])
+def test_crud_extend(test_app, test_api, days):
+    """test_api needs to be used because the flask /tasks route always delegates to the api to get specific tasks"""
+    task_id = 1
+    task = test_api.get(f'/tasks/{task_id}/')
+    priority = task.json()['priority']
+
+    extend_response = test_app.post(
+        '/tasks/crud/', data={'id': 1, 'action': 'extend', 'days': days}, follow_redirects=True
+    )
+    assert extend_response.status_code == status.HTTP_200_OK, show_status_and_response(extend_response)
+    assert len(extend_response.history) == 1
+    assert extend_response.request.path == '/tasks/todo/'
+    assert b'<title>Outstanding Tasks</title>' in extend_response.data
+
+    updated_task = test_api.get(f'/tasks/{task_id}/')
+    extended_priority = updated_task.json()['priority']
+    assert priority + days == extended_priority
+
+
 def test_crud_delete(test_app):
     response = test_app.post('/tasks/crud/', data={'id': 1, 'action': 'delete'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/todo/'
     assert b'Outstanding Tasks' in response.data
-
-
-def test_crud_search(test_app):
-    response = test_app.post('/tasks/search/', data={'terms': 'test'}, follow_redirects=True)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert b'<title>Tasks Search</title>' in response.data

@@ -122,7 +122,7 @@ async def complete(task_id: int, session: Session = Depends(sqlalchemy_session))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.patch('/{task_id}/extend/{days}', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+@router.patch('/{task_id}/extend/{days}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def extend(task_id: int, days: int, session: Session = Depends(sqlalchemy_session)):
     if task := session.get(models.Task, task_id):
         task.priority += days
