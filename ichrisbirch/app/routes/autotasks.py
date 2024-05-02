@@ -1,5 +1,4 @@
 import logging
-from typing import Any
 
 from fastapi import status
 from flask import Blueprint, Response, render_template, request
@@ -20,23 +19,19 @@ autotasks_api = QueryAPI(base_url='autotasks', api_key='', logger=logger, respon
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        data: dict[str, Any] = request.form.to_dict()
+        data = request.form.to_dict()
         action = data.pop('action')
-        logger.debug(f'{request.referrer=} {action=}')
-        logger.debug(f'{data=}')
 
-        if action == 'add':
-            created = autotasks_api.post(data=data)
-            autotasks_api.get([created.id, 'run'])
-
-        elif action == 'run':
-            autotasks_api.get([data.get('id'), 'run'])
-
-        elif action == 'delete':
-            autotasks_api.delete(data.get('id'))
-
-        else:
-            return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        match action:
+            case 'add':
+                created = autotasks_api.post(data=data)
+                autotasks_api.get([created.id, 'run'])
+            case 'run':
+                autotasks_api.get([data.get('id'), 'run'])
+            case 'delete':
+                autotasks_api.delete(data.get('id'))
+            case _:
+                return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     autotasks = autotasks_api.get()
     return render_template(
