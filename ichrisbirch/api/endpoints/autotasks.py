@@ -49,7 +49,7 @@ async def delete(id: int, session: Session = Depends(sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.get('/{id}/run/', status_code=status.HTTP_200_OK)
+@router.patch('/{id}/run/', status_code=status.HTTP_200_OK)
 async def run(id: int, session: Session = Depends(sqlalchemy_session)):
     if autotask := session.get(models.AutoTask, id):
         task = models.Task(
