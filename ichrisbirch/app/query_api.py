@@ -1,5 +1,4 @@
 import logging
-from json.decoder import JSONDecodeError
 from typing import Any
 
 import httpx
@@ -52,24 +51,33 @@ class QueryAPI:
             error_message = f'expected {response_code} from {response.url} but received {response.status_code}'
             self.logger.error(error_message)
             self.logger.error(response.text)
-            flash(error_message, 'error')
-            flash(response.text, 'error')
-            abort(502, (f'{error_message}\n{response.text}'))
+            if settings.ENVIRONMENT == 'development':
+                flash(error_message, 'error')
+                flash(response.text, 'error')
+                abort_message = f'{error_message}\n{response.text}'
+            else:
+                flash(error_message, 'error')
+                abort_message = error_message
+            abort(response.status_code, abort_message)
 
     def get(self, endpoint: Any | None = None):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         response = httpx.get(url, follow_redirects=True)
         self.handle_if_not_response_code(200, response)
-        try:
-            return [self.response_model(**result) for result in response.json()]
-        except (TypeError, JSONDecodeError):  # Response was only a 200 status code, no data
-            return response
+        return [self.response_model(**result) for result in response.json()]
 
     def post(self, endpoint: Any | None = None, data: dict = {}):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
-        self.logger.debug(f'{data=}')
+        self.logger.debug(f'POST: {data=}')
         response = httpx.post(url, json=data)
         self.handle_if_not_response_code(201, response)
+        return self.response_model(**response.json())
+
+    def patch(self, endpoint: Any | None = None, data: dict = {}):
+        url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
+        self.logger.debug(f'PATCH: {data=}')
+        response = httpx.patch(url, json=data)
+        self.handle_if_not_response_code(200, response)
         return self.response_model(**response.json())
 
     def delete(self, endpoint: Any | None = None):

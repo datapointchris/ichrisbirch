@@ -63,7 +63,7 @@ def test_delete_task(test_api, task_id):
 
 @pytest.mark.parametrize('task_id', [1, 2, 3])
 def test_complete_task(test_api, task_id):
-    response = test_api.post(f'/tasks/complete/{task_id}/')
+    response = test_api.patch(f'/tasks/{task_id}/complete/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 

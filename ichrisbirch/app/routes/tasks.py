@@ -205,8 +205,8 @@ def crud():
         return redirect(request.referrer or url_for('tasks.index'))
 
     elif action == 'complete':
-        url = url_builder(TASKS_API_URL, 'complete', data.get('id'))
-        response = httpx.post(url)
+        url = url_builder(TASKS_API_URL, data.get('id'), 'complete')
+        response = httpx.patch(url)
         handle_if_not_response_code(200, response, logger)
         return redirect(request.referrer or url_for('tasks.index'))
 

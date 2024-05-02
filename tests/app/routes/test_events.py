@@ -33,16 +33,16 @@ def test_add_event_missing_attending_field(test_app):
     response = test_app.post(
         '/events/',
         data=dict(
-            name='Should redirect from validation error',
+            name='Should give validation error',
             date=datetime(2022, 10, 4, 20, 0).isoformat(),
             venue='Venue 4',
             url='https://example.com/event4',
             cost=40.0,
-            notes='400 status code is caught and flashed and logged, request is redirected',
+            notes='Should raise 422 Unprocessable Entity error because of missing attending field',
             action='add',
         ),
     )
-    assert response.status_code == status.HTTP_302_FOUND, show_status_and_response(response)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
 
 
 def test_delete_event(test_app):
