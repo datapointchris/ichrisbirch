@@ -1,3 +1,5 @@
+import logging
+
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -5,6 +7,8 @@ from apscheduler.triggers.cron import CronTrigger
 from ichrisbirch.config import Settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.scheduler import jobs
+
+logger = logging.getLogger(__name__)
 
 
 def create_scheduler(settings: Settings) -> BlockingScheduler:
@@ -29,4 +33,15 @@ def create_scheduler(settings: Settings) -> BlockingScheduler:
         jobstore='ichrisbirch',
         replace_existing=True,
     )
+
+    try:
+        logger.info('starting scheduler')
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        logger.info('shutting down scheduler')
+        scheduler.shutdown()
+        logger.info('scheduler shutdown')
+
     return scheduler
