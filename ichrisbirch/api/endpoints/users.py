@@ -12,20 +12,20 @@ from sqlalchemy.orm import Session
 # from ..dependencies import auth
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
+from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.get("/", response_model=list[schemas.User], status_code=status.HTTP_200_OK)
-async def read_many(session: Session = Depends(sqlalchemy_session), limit: Optional[int] = None):
+async def read_many(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
     query = select(models.User).limit(limit)
     return list(session.scalars(query).all())
 
 
 @router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def me(user_id: int, session: Session = Depends(sqlalchemy_session)):
+async def me(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         return user
     else:
@@ -35,7 +35,7 @@ async def me(user_id: int, session: Session = Depends(sqlalchemy_session)):
 
 
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-async def create(user: schemas.UserCreate, session: Session = Depends(sqlalchemy_session)):
+async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.User(**user.model_dump())
     session.add(db_obj)
     session.commit()
@@ -44,7 +44,7 @@ async def create(user: schemas.UserCreate, session: Session = Depends(sqlalchemy
 
 
 @router.get('/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def read_one(user_id: int, alt: bool = False, session: Session = Depends(sqlalchemy_session)):
+async def read_one(user_id: int, alt: bool = False, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         return user
     else:
@@ -54,7 +54,7 @@ async def read_one(user_id: int, alt: bool = False, session: Session = Depends(s
 
 
 @router.delete('/{user_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(user_id: int, session: Session = Depends(sqlalchemy_session)):
+async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         session.delete(user)
         session.commit()
@@ -66,7 +66,7 @@ async def delete(user_id: int, session: Session = Depends(sqlalchemy_session)):
 
 
 @router.get('/alt/{alternative_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def read_by_alternative_id(alternative_id: int, session: Session = Depends(sqlalchemy_session)):
+async def read_by_alternative_id(alternative_id: int, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.alternative_id == alternative_id)
     if result := session.scalars(query).first():
         return result
@@ -77,7 +77,7 @@ async def read_by_alternative_id(alternative_id: int, session: Session = Depends
 
 
 @router.get('/email/{email}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def read_by_email(email: str, session: Session = Depends(sqlalchemy_session)):
+async def read_by_email(email: str, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.email == email)
     if not (user := session.execute(query).scalars().first()):
         message = f'User with email {email} not found'

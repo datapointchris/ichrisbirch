@@ -3,6 +3,8 @@ Jobs that run on the scheduler.
 
 Jobs have to have the session created in this file,
 since the session is not serializable and cannot be passed in as a parameter.
+`SessionLocal` must be used instead of `get_sqlalchemy_session` because the generator produced
+by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 """
 
 import logging
@@ -17,7 +19,7 @@ from sqlalchemy import and_
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch.database.sqlalchemy.session import get_session
+from ichrisbirch.database.sqlalchemy.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ class JobToAdd:
 def decrease_task_priority() -> None:
     """Decrease priority of all tasks by 1"""
     logger.info('scheduler: job started: task priority decrease')
-    with get_session() as session:
+    with SessionLocal() as session:
         query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
         for task in session.scalars(query).all():
             task.priority -= 1
@@ -55,7 +57,7 @@ def decrease_task_priority() -> None:
 def check_and_run_autotasks() -> None:
     """Check if any autotasks should run today and create tasks if so"""
     logger.info('scheduler: job started: autotask check and run')
-    with get_session() as session:
+    with SessionLocal() as session:
         for autotask in session.scalars(select(models.AutoTask)).all():
             if autotask.should_run_today:
                 session.add(

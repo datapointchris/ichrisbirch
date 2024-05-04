@@ -22,7 +22,7 @@ from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.base import Base
-from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
+from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 from tests import testing_data
 
 logger = logging.getLogger(__name__)
@@ -200,7 +200,7 @@ def insert_test_data():
 @pytest.fixture(scope='module')
 def test_api() -> Generator[TestClient, Any, None]:
     api = create_api(settings=settings)
-    api.dependency_overrides[sqlalchemy_session] = get_testing_session
+    api.dependency_overrides[get_sqlalchemy_session] = get_testing_session
     with TestClient(api) as client:
         yield client
 

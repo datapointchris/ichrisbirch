@@ -1,5 +1,5 @@
 # Test that when only creating the db and not inserting data that the db is fully created.
-# check all tables, maybe parameterized by pytest
+# check all tables, maybe parametrized by pytest
 # from tests.conftest import ENGINE, get_testing_session
 
 # def test_insert_data(insert_test_data):

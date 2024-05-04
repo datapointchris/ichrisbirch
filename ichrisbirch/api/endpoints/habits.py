@@ -1,22 +1,28 @@
 import logging
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
+from fastapi import Response
+from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 # from ..dependencies import auth
-from ichrisbirch import models, schemas
-from ichrisbirch.database.sqlalchemy.session import sqlalchemy_session
+from ichrisbirch import models
+from ichrisbirch import schemas
+from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.post('/', response_model=schemas.Habit, status_code=status.HTTP_201_CREATED)
-async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(sqlalchemy_session)):
+async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.Habit(**habit.model_dump())
     session.add(db_obj)
     session.commit()
@@ -26,7 +32,7 @@ async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(sq
 
 @router.get("/", response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
 async def read_many_habits(
-    session: Session = Depends(sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
+    session: Session = Depends(get_sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
 ):
     query = select(models.Habit).limit(limit)
     if current:
@@ -35,7 +41,7 @@ async def read_many_habits(
 
 
 @router.post('/categories/', response_model=schemas.HabitCategory, status_code=status.HTTP_201_CREATED)
-async def create_category(category: schemas.HabitCategoryCreate, session: Session = Depends(sqlalchemy_session)):
+async def create_category(category: schemas.HabitCategoryCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.HabitCategory(**category.model_dump())
     session.add(db_obj)
     session.commit()
@@ -45,7 +51,7 @@ async def create_category(category: schemas.HabitCategoryCreate, session: Sessio
 
 @router.get("/categories/", response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
 async def read_many_categories(
-    session: Session = Depends(sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
+    session: Session = Depends(get_sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
 ):
     query = select(models.HabitCategory).limit(limit)
     if current:
@@ -54,7 +60,7 @@ async def read_many_categories(
 
 
 @router.post('/completed/', response_model=schemas.HabitCompleted, status_code=status.HTTP_201_CREATED)
-async def create_completed(habit: schemas.HabitCompletedCreate, session: Session = Depends(sqlalchemy_session)):
+async def create_completed(habit: schemas.HabitCompletedCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.HabitCompleted(**habit.model_dump())
     session.add(db_obj)
     session.commit()
@@ -64,7 +70,7 @@ async def create_completed(habit: schemas.HabitCompletedCreate, session: Session
 
 @router.get("/completed/", response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 async def read_many_completed(
-    session: Session = Depends(sqlalchemy_session),
+    session: Session = Depends(get_sqlalchemy_session),
     start_date: Union[str, None] = None,
     end_date: Union[str, None] = None,
     first: Union[bool, None] = None,
@@ -92,7 +98,7 @@ async def read_many_completed(
 
 
 @router.get('/{habit_id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
-async def read_one_habit(habit_id: int, session: Session = Depends(sqlalchemy_session)):
+async def read_one_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.Habit, habit_id):
         return habit
     else:
@@ -102,7 +108,7 @@ async def read_one_habit(habit_id: int, session: Session = Depends(sqlalchemy_se
 
 
 @router.delete('/{habit_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_habit(habit_id: int, session: Session = Depends(sqlalchemy_session)):
+async def delete_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.Habit, habit_id):
         session.delete(habit)
         session.commit()
@@ -114,7 +120,7 @@ async def delete_habit(habit_id: int, session: Session = Depends(sqlalchemy_sess
 
 
 @router.post('/complete/{habit_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
-async def complete_habit(habit_id: int, session: Session = Depends(sqlalchemy_session)):
+async def complete_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.Habit, habit_id):
         complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
         completed_habit = models.HabitCompleted(
@@ -131,7 +137,7 @@ async def complete_habit(habit_id: int, session: Session = Depends(sqlalchemy_se
 
 
 @router.get('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
-async def read_one_category(category_id: int, session: Session = Depends(sqlalchemy_session)):
+async def read_one_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.HabitCategory, category_id):
         return habit
     else:
@@ -141,7 +147,7 @@ async def read_one_category(category_id: int, session: Session = Depends(sqlalch
 
 
 @router.delete('/categories/{category_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(category_id: int, session: Session = Depends(sqlalchemy_session)):
+async def delete_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.HabitCategory, category_id):
         session.delete(habit)
         session.commit()
@@ -153,7 +159,7 @@ async def delete_category(category_id: int, session: Session = Depends(sqlalchem
 
 
 @router.get('/completed/{completed_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
-async def read_one_completed(completed_id: int, session: Session = Depends(sqlalchemy_session)):
+async def read_one_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.HabitCompleted, completed_id):
         return habit
     else:
@@ -163,7 +169,7 @@ async def read_one_completed(completed_id: int, session: Session = Depends(sqlal
 
 
 @router.delete('/completed/{completed_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_completed(completed_id: int, session: Session = Depends(sqlalchemy_session)):
+async def delete_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.HabitCompleted, completed_id):
         session.delete(habit)
         session.commit()
