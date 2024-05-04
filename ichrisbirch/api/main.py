@@ -1,8 +1,10 @@
 import logging
 
 from fastapi import FastAPI
-from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
-from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from ichrisbirch.api import endpoints
@@ -48,7 +50,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', tags=['countdowns'])
     api.include_router(endpoints.events.router, prefix='/events', tags=['events'])
     api.include_router(endpoints.habits.router, prefix='/habits', tags=['habits'])
-    api.include_router(endpoints.server_stats.router, prefix='/server_stats', tags=['server_stats'])
+    api.include_router(endpoints.server.router, prefix='/server', tags=['server'])
     api.include_router(endpoints.tasks.router, prefix='/tasks', tags=['tasks'])
     logger.info('FastAPI Routers Registered')
 
