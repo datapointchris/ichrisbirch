@@ -1,0 +1,25 @@
+from ichrisbirch.app.routes import auth
+from ichrisbirch.app.routes import autotasks
+from ichrisbirch.app.routes import box_packing
+from ichrisbirch.app.routes import countdowns
+from ichrisbirch.app.routes import events
+from ichrisbirch.app.routes import habits
+from ichrisbirch.app.routes import home
+from ichrisbirch.app.routes import journal
+from ichrisbirch.app.routes import portfolio
+from ichrisbirch.app.routes import tasks
+from ichrisbirch.app.routes import users
+
+__all__ = [
+    'auth',
+    'autotasks',
+    'box_packing',
+    'countdowns',
+    'events',
+    'habits',
+    'home',
+    'journal',
+    'portfolio',
+    'tasks',
+    'users',
+]

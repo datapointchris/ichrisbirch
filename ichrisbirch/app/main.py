@@ -6,18 +6,8 @@ from flask import Flask
 from flask import g
 from flask import render_template
 
+from ichrisbirch.app import routes
 from ichrisbirch.app.login import login_manager
-from ichrisbirch.app.routes import auth
-from ichrisbirch.app.routes import autotasks
-from ichrisbirch.app.routes import box_packing
-from ichrisbirch.app.routes import countdowns
-from ichrisbirch.app.routes import events
-from ichrisbirch.app.routes import habits
-from ichrisbirch.app.routes import home
-from ichrisbirch.app.routes import journal
-from ichrisbirch.app.routes import portfolio
-from ichrisbirch.app.routes import tasks
-from ichrisbirch.app.routes import users
 from ichrisbirch.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -56,17 +46,17 @@ def create_app(settings: Settings) -> Flask:
 
         logger.info('Flask App Template Filters Registered')
 
-        app.register_blueprint(home.blueprint)
-        app.register_blueprint(auth.blueprint)
-        app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
-        app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')
-        app.register_blueprint(countdowns.blueprint, url_prefix='/countdowns')
-        app.register_blueprint(events.blueprint, url_prefix='/events')
-        app.register_blueprint(habits.blueprint, url_prefix='/habits')
-        app.register_blueprint(journal.blueprint, url_prefix='/journal')
-        app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
-        app.register_blueprint(tasks.blueprint, url_prefix='/tasks')
-        app.register_blueprint(users.blueprint, url_prefix='/users')
+        app.register_blueprint(routes.home.blueprint)
+        app.register_blueprint(routes.auth.blueprint)
+        app.register_blueprint(routes.autotasks.blueprint, url_prefix='/autotasks')
+        app.register_blueprint(routes.box_packing.blueprint, url_prefix='/box-packing')
+        app.register_blueprint(routes.countdowns.blueprint, url_prefix='/countdowns')
+        app.register_blueprint(routes.events.blueprint, url_prefix='/events')
+        app.register_blueprint(routes.habits.blueprint, url_prefix='/habits')
+        app.register_blueprint(routes.journal.blueprint, url_prefix='/journal')
+        app.register_blueprint(routes.portfolio.blueprint, url_prefix='/portfolio')
+        app.register_blueprint(routes.tasks.blueprint, url_prefix='/tasks')
+        app.register_blueprint(routes.users.blueprint, url_prefix='/users')
         logger.info('Flask App Blueprints Registered')
 
         # TODO: [2024/05/03] - Database Initialization

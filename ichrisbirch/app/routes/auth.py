@@ -56,15 +56,16 @@ def login():
 def signup():
     form = SignupForm()
     if form.validate_on_submit():
+        logger.debug('signup form validated')
         if not (existing_user := users_api.get(['email', form.email.data])):
-            logger.debug(f'Creating a new user with email: {form.email.data}')
+            logger.debug(f'creating a new user with email: {form.email.data}')
             user = models.User(name=form.name.data, email=form.email.data)
             user.set_password(form.password.data)
             users_api.post(user)
             login_user(user)
             return redirect(url_for('user.profile'))
-        logger.info(f'Duplicate email registration: {form.email.data}')
-        logger.info(f'Last login: {existing_user.last_login}')
+        logger.info(f'duplicate email registration: {form.email.data}')
+        logger.info(f'last login: {existing_user.last_login}')
         flash('A user already exists with that email address.')
 
     return render_template(
