@@ -83,3 +83,31 @@ def test_autotask_lifecycle(test_api):
     # Make sure it's missing
     missing_autotask = test_api.get(f'/autotasks/{task_id}')
     assert missing_autotask.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(missing_autotask)
+
+
+@pytest.mark.parametrize('category', list(TaskCategory))
+def test_task_categories(test_api, category):
+    test_autotask = schemas.AutoTaskCreate(
+        name='AutoTask 4 Computer with notes priority 3',
+        notes='Notes task 4',
+        category=category,
+        priority=3,
+        frequency=TaskFrequency.Biweekly,
+    )
+    created_autotask = test_api.post('/autotasks/', json=test_autotask.model_dump())
+    assert created_autotask.status_code == status.HTTP_201_CREATED, show_status_and_response(created_autotask)
+    assert created_autotask.json()['name'] == test_autotask.name
+
+
+@pytest.mark.parametrize('frequency', list(TaskFrequency))
+def test_task_frequencies(test_api, frequency):
+    test_autotask = schemas.AutoTaskCreate(
+        name='AutoTask 4 Computer with notes priority 3',
+        notes='Notes task 4',
+        category=TaskCategory.Personal,
+        priority=3,
+        frequency=frequency,
+    )
+    created_autotask = test_api.post('/autotasks/', json=test_autotask.model_dump())
+    assert created_autotask.status_code == status.HTTP_201_CREATED, show_status_and_response(created_autotask)
+    assert created_autotask.json()['name'] == test_autotask.name
