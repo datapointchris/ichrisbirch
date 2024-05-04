@@ -1,6 +1,5 @@
 fail_fast: false
 repos:
-
   - repo: local
     hooks:
       - id: git-secret
@@ -49,6 +48,12 @@ repos:
     hooks:
       - id: blacken-docs
 
+  - repo: https://github.com/PyCQA/docformatter
+    rev: v1.7.5
+    hooks:
+      - id: docformatter
+        args: [--config ./pyproject.toml]
+
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
@@ -89,7 +94,13 @@ repos:
     rev: v1.10.0
     hooks:
       - id: mypy
-        args: ["--config-file", "pyproject.toml", --install-types, --non-interactive]
+        args:
+          [
+            "--config-file",
+            "pyproject.toml",
+            --install-types,
+            --non-interactive,
+          ]
         additional_dependencies: ["pydantic"]
 
   - repo: local
