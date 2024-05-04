@@ -34,6 +34,8 @@ sqlalchemy = "^2.0.29"
 strenum = "^0.4.15"
 uvicorn = "^0.29.0"
 flask-login = "^0.6.3"
+flask-wtf = "^1.2.1"
+sqlalchemy-json = "^0.7.0"
 
 [tool.poetry.group.dev.dependencies]
 deptry = "^0.16.1"
@@ -119,6 +121,7 @@ exclude_lines = ["pragma: no cover"]
 line_length = 120
 profile = "black"
 atomic = true
+force_single_line = true
 skip = [".gitignore"]
 extend_skip = [".md", ".json"]
 
@@ -127,7 +130,6 @@ extend_skip = [".md", ".json"]
 pretty = true
 ignore_missing_imports = true
 # strict = true
-allow_untyped_defs = true
 check_untyped_defs = false  # Can enable this when all the routes are updated
 plugins = ["pydantic.mypy"]
 warn_return_any = false
