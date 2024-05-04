@@ -15,17 +15,17 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 class TaskCategory(enum.Enum):
     Automotive = 'Automotive'
-    Home = 'Home'
-    Work = 'Work'
     Chore = 'Chore'
-    Kitchen = 'Kitchen'
+    Computer = 'Computer'
     Dingo = 'Dingo'
+    Financial = 'Financial'
+    Home = 'Home'
+    Kitchen = 'Kitchen'
     Learn = 'Learn'
     Personal = 'Personal'
-    Research = 'Research'
-    Computer = 'Computer'
-    Financial = 'Financial'
     Purchase = 'Purchase'
+    Research = 'Research'
+    Work = 'Work'
 
 
 class Task(Base):
