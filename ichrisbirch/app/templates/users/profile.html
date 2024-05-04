@@ -1,0 +1,19 @@
+{% extends 'users/base.html' %}
+
+{% block title %}{{current_user}} Profile{% endblock %}
+
+{% block content %}
+
+<div class="profile-wrapper">
+  <div class="profile-header">
+    <h1>{{current_user.name}}</h1>
+    <p>{{current_user.email}}</p>
+  </div>
+
+  <div class="profile-body">
+    <h2>Profile Information</h2>
+    <ul>
+      <li><strong>Name:</strong> {{current_user.name}}</li>
+      <li><strong>Email:</strong> {{current_user.email}}</li>
+    </ul>
+  </div>
