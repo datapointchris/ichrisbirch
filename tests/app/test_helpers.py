@@ -79,6 +79,14 @@ def test_url_builder_empty_string():
     assert url_builder(BASE, '') == 'http://url.com/autotasks/'
 
 
+def test_url_builder_none():
+    assert url_builder(BASE, None) == 'http://url.com/autotasks/'
+
+
+def test_url_builder_none_in_middle():
+    assert url_builder(BASE, 'abc', None, 'def') == 'http://url.com/autotasks/abc/def/'
+
+
 def test_url_builder_only_slash():
     assert url_builder(BASE, '/') == 'http://url.com/autotasks/'
 
