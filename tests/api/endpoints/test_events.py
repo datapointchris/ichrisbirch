@@ -75,7 +75,7 @@ def test_delete_event(test_api, event_id):
 
 
 def test_event_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a event"""
+    """Integration test for CRUD lifecylce of a event."""
 
     # Read all events
     all_events = test_api.get('/events/')

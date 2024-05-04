@@ -29,7 +29,7 @@ class TaskFrequency(enum.Enum):
 
 
 def frequency_to_duration(frequency: TaskFrequency | str) -> Duration:
-    """Converts a frequency string or TaskFrequency to a pendulum.Duration object"""
+    """Converts a frequency string or TaskFrequency to a pendulum.Duration object."""
 
     if isinstance(frequency, str):
         frequency = TaskFrequency(frequency.capitalize())
@@ -49,7 +49,7 @@ def frequency_to_duration(frequency: TaskFrequency | str) -> Duration:
 
 
 class AutoTask(Base):
-    """SQLAlchemy model for tasks table"""
+    """SQLAlchemy model for tasks table."""
 
     __tablename__ = 'autotasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -69,10 +69,10 @@ class AutoTask(Base):
 
     @property
     def next_run_date(self) -> date:
-        """Returns the next date the task should be run"""
+        """Returns the next date the task should be run."""
         return self.last_run_date.date() + frequency_to_duration(self.frequency)
 
     @property
     def should_run_today(self):
-        """Returns true if the task should be run today"""
+        """Returns true if the task should be run today."""
         return self.next_run_date <= datetime.now().date() and self.last_run_date.date() != datetime.now().date()

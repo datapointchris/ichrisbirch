@@ -50,7 +50,7 @@ def test_delete_countdown(test_api, countdown_id):
 
 
 def test_countdown_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a countdown"""
+    """Integration test for CRUD lifecylce of a countdown."""
 
     # Read all countdowns
     all_countdowns = test_api.get('/countdowns/')

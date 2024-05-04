@@ -14,9 +14,10 @@ def test_index(test_app):
 
 
 def test_add_autotask(test_app, test_api):
-    """Test add a new autotask
+    """Test add a new autotask.
 
     Expected: Both create an autotask AND run it, which will create a new task
+
     """
     data = dict(
         name='AutoTask 4 Computer with notes priority 3',

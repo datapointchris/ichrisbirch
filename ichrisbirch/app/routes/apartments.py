@@ -21,7 +21,7 @@ blueprint = Blueprint(
 
 @blueprint.route('/')
 def index():
-    """Apartments home"""
+    """Apartments home."""
     apartments = [apt for apt in Apartment.scan()]
     return render_template(
         'apartments.html',
@@ -34,7 +34,7 @@ def index():
 
 @blueprint.route('/<string:name>/')
 def apartment(name):
-    """Single apartment details"""
+    """Single apartment details."""
     apartments = [apt for apt in Apartment.scan()]
     if apartment := next((apt for apt in apartments if apt.name == name), None):
         features = [Feature(**f) for f in apartment.features]
@@ -50,7 +50,7 @@ def apartment(name):
 # transparently redirect to main page
 @blueprint.route('/edit/')
 def noedit():
-    """Redirect from edit page to apartments home"""
+    """Redirect from edit page to apartments home."""
     apartments = [apt for apt in Apartment.scan()]
     return render_template(
         'apartments.html', apartments=apartments, apartment=None, features=None, message='No apartment selected'
@@ -59,7 +59,7 @@ def noedit():
 
 @blueprint.route('/edit/<string:name>/')
 def edit(name):
-    """Edit apartment details"""
+    """Edit apartment details."""
     apartments = [apt for apt in Apartment.scan()]
     if apartment := next((apt for apt in apartments if apt.name == name), None):
         features = [Feature(**f) for f in apartment.features]
@@ -74,7 +74,7 @@ def edit(name):
 
 @blueprint.route('/form/', methods=['POST'])
 def crud():
-    """CRUD operations for apartments"""
+    """CRUD operations for apartments."""
     api_url = settings.api_url
     data = request.form.to_dict()
     action = data.pop('action')

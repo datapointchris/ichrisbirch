@@ -10,7 +10,7 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class BoxItem(Base):
-    """SQLAlchemy model for box_packing.items table"""
+    """SQLAlchemy model for box_packing.items table."""
 
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'items'

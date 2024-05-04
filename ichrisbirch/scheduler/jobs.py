@@ -1,10 +1,10 @@
-"""
-Jobs that run on the scheduler.
+"""Jobs that run on the scheduler.
 
 Jobs have to have the session created in this file,
 since the session is not serializable and cannot be passed in as a parameter.
 `SessionLocal` must be used instead of `get_sqlalchemy_session` because the generator produced
 by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
+
 """
 
 import logging
@@ -29,8 +29,8 @@ daily_1am_trigger = CronTrigger(day='*', hour=1)
 
 @dataclass
 class JobToAdd:
-    """Dataclass for packaging jobs to add to the scheduler
-    This class is really only necessary to make main.py more clean in adding jobs
+    """Dataclass for packaging jobs to add to the scheduler This class is really only necessary to make main.py more
+    clean in adding jobs.
     """
 
     func: Callable
@@ -44,7 +44,7 @@ class JobToAdd:
 
 
 def decrease_task_priority() -> None:
-    """Decrease priority of all tasks by 1"""
+    """Decrease priority of all tasks by 1."""
     logger.info('scheduler: job started: task priority decrease')
     with SessionLocal() as session:
         query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
@@ -55,7 +55,7 @@ def decrease_task_priority() -> None:
 
 
 def check_and_run_autotasks() -> None:
-    """Check if any autotasks should run today and create tasks if so"""
+    """Check if any autotasks should run today and create tasks if so."""
     logger.info('scheduler: job started: autotask check and run')
     with SessionLocal() as session:
         for autotask in session.scalars(select(models.AutoTask)).all():

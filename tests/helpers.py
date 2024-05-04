@@ -5,7 +5,7 @@ from fastapi import status
 
 
 def show_status_and_response(response: httpx.Response) -> dict[str, str]:
-    """Convert status code to description and return response if any"""
+    """Convert status code to description and return response if any."""
     d = {}
     for attr in dir(status):
         code = attr.split('_')[1]
@@ -22,7 +22,7 @@ def find_project_root(
     directory: pathlib.Path = pathlib.Path.cwd(),
     target_file: str = 'pyproject.toml',
 ) -> pathlib.Path:
-    """Find the project root directory"""
+    """Find the project root directory."""
     for file in directory.iterdir():
         if file.name == target_file:
             return directory.absolute()

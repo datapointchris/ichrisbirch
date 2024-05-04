@@ -25,10 +25,8 @@ class EventCreate(EventConfig):
     @field_validator('date', mode='before')
     @classmethod
     def convert_string_date_to_utc_datetime(cls, v):
-        """Require string or datetime
-        Datetime from form comes in a string without timezone
-        Pendulum will parse a string without a timezone, but will assign UTC
-        Pendulum default includes timezone, datetime does not
+        """Require string or datetime Datetime from form comes in a string without timezone Pendulum will parse a string
+        without a timezone, but will assign UTC Pendulum default includes timezone, datetime does not.
         """
         logger.debug(f'date validator in: {v}, {type(v)}')
         if isinstance(v, datetime):

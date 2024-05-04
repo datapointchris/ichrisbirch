@@ -1,5 +1,7 @@
 """Functions in this file were pulled from Django per direction of flask-login documentation.
+
 https://github.com/django/django/blob/4.0/django/utils/http.py
+
 """
 
 import unicodedata
@@ -7,8 +9,7 @@ import urllib.parse
 
 
 def url_has_allowed_host_and_scheme(url, allowed_hosts, require_https=False):
-    """
-    Return ``True`` if the url uses an allowed host and a safe scheme.
+    """Return ``True`` if the url uses an allowed host and a safe scheme.
 
     Always return ``False`` on an empty url.
 
@@ -18,6 +19,7 @@ def url_has_allowed_host_and_scheme(url, allowed_hosts, require_https=False):
     Note: "True" doesn't entail that a URL is "safe". It may still be e.g.
     quoted incorrectly. Ensure to also use django.utils.encoding.iri_to_uri()
     on the path component of untrusted URLs.
+
     """
     if url is not None:
         url = url.strip()

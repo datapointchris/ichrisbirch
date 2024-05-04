@@ -29,14 +29,14 @@ TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 
 def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
-    """Calculate the average completion time of the supplied completed tasks"""
+    """Calculate the average completion time of the supplied completed tasks."""
     average_days = sum(task.days_to_complete for task in tasks) / len(tasks)
     weeks, days = divmod(average_days, 7)
     return f'{int(weeks)} weeks, {int(days)} days'
 
 
 def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tuple[list[str], list[int]]:
-    """Create chart labels and values from completed tasks for chart.js"""
+    """Create chart labels and values from completed tasks for chart.js."""
 
     # Ex: Friday, January 01, 2001
     DATE_FORMAT = '%A, %B %d, %Y'
@@ -102,7 +102,11 @@ def todo():
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
-    """Completed tasks endpoint.  Filtered by date selection."""
+    """Completed tasks endpoint.
+
+    Filtered by date selection.
+
+    """
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime()
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER

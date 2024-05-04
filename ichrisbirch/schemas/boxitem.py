@@ -3,13 +3,13 @@ from pydantic import ConfigDict
 
 
 class BoxItemConfig(BaseModel):
-    """Base config class for BoxItem models"""
+    """Base config class for BoxItem models."""
 
     model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
 
 class BoxItemCreate(BoxItemConfig):
-    """Pydantic model for creating a box item"""
+    """Pydantic model for creating a box item."""
 
     box_id: int
     name: str
@@ -19,7 +19,7 @@ class BoxItemCreate(BoxItemConfig):
 
 
 class BoxItem(BoxItemConfig):
-    """Pydantic model for a box item"""
+    """Pydantic model for a box item."""
 
     id: int
     box_id: int
@@ -30,7 +30,7 @@ class BoxItem(BoxItemConfig):
 
 
 class BoxItemUpdate(BoxItemConfig):
-    """Pydantic model for updating a box item"""
+    """Pydantic model for updating a box item."""
 
     id: int
     box_id: int | None = None

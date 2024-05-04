@@ -86,7 +86,7 @@ def test_search_task(test_api):
 
 
 def test_task_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a task"""
+    """Integration test for CRUD lifecylce of a task."""
 
     # Read all tasks
     all_tasks = test_api.get('/tasks/')

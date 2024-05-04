@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 
 class EasyDate:
-    """Create easy to use python date filters"""
+    """Create easy to use python date filters."""
 
     def __init__(self, today: Optional[date] = None):
         self.today: date = today or date.today()
@@ -27,7 +27,7 @@ class EasyDate:
 
 
 class EasyDateTime:
-    """Create easy to use python datetime filters"""
+    """Create easy to use python datetime filters."""
 
     def __init__(self, today: Optional[datetime] = None):
         self.today: datetime = today or datetime.combine(date.today(), time(), tzinfo=ZoneInfo("America/Chicago"))

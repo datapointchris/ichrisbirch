@@ -57,7 +57,7 @@ def test_crud_complete(test_app):
 
 @pytest.mark.parametrize('days', [7, 30])
 def test_crud_extend(test_app, test_api, days):
-    """test_api needs to be used because the flask /tasks route always delegates to the api to get specific tasks"""
+    """test_api needs to be used because the flask /tasks route always delegates to the api to get specific tasks."""
     task_id = 1
     task = test_api.get(f'/tasks/{task_id}/')
     priority = task.json()['priority']

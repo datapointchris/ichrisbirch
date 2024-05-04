@@ -52,7 +52,7 @@ def test_delete_autotask(test_api, autotask_id):
 
 
 def test_autotask_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a autotask"""
+    """Integration test for CRUD lifecylce of a autotask."""
 
     # Read all autotasks
     all_autotasks = test_api.get('/autotasks/')

@@ -10,7 +10,7 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class Apartment(Base):
-    """SQLAlchemy model for apartments.apartments table"""
+    """SQLAlchemy model for apartments.apartments table."""
 
     __table_args__ = {'schema': 'apartments'}
     __tablename__ = 'apartments'
@@ -27,7 +27,7 @@ class Apartment(Base):
 
 
 class Feature(Base):
-    """SQLAlchemy model for apartments.features table"""
+    """SQLAlchemy model for apartments.features table."""
 
     __table_args__ = {'schema': 'apartments'}
     __tablename__ = 'features'

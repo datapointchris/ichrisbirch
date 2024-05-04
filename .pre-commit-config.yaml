@@ -52,7 +52,7 @@ repos:
     rev: v1.7.5
     hooks:
       - id: docformatter
-        args: [--config ./pyproject.toml]
+        args: ["--config", "pyproject.toml"]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6

@@ -11,5 +11,5 @@ blueprint = Blueprint(
 
 @blueprint.route('/')
 def index():
-    """Portfolio home endpoint"""
+    """Portfolio home endpoint."""
     return render_template('index.html')

@@ -63,7 +63,7 @@ def test_search_box_items(test_api):
 
 
 def test_box_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a box"""
+    """Integration test for CRUD lifecylce of a box."""
 
     # Read all boxes
     all_boxes = test_api.get('/box_packing/boxes/')

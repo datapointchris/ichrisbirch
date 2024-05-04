@@ -63,7 +63,7 @@ def create_app(settings: Settings) -> Flask:
 
         @app.before_request
         def repo_labels_and_icons():
-            """Must be set on the entire app to be available on every route"""
+            """Must be set on the entire app to be available on every route."""
             g.github_issue_labels_and_icons = [
                 ('bug', 'fa-solid fa-bug'),
                 ('docs', 'fa-solid fa-file-lines'),

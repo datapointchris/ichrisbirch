@@ -8,7 +8,7 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class PortfolioProject(Base):
-    """SQLAlchemy model for portfolio table"""
+    """SQLAlchemy model for portfolio table."""
 
     __tablename__ = 'portfolio'
     id = Column(Integer, primary_key=True)

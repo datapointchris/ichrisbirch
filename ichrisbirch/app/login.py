@@ -17,12 +17,12 @@ user_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=
 
 @login_manager.user_loader
 def load_user(alternative_id):
-    """
-    Reload the user object from the user ID stored in the session.
-    Must return the User object or None
-    Using the user ID as the value of the remember token means you must change
-    the user ID to invalidate their login sessions.
-    One way to improve this is to use an alternative user id instead of the user ID.
+    """Reload the user object from the user ID stored in the session.
+
+    Must return the User object or None Using the user ID as the value of the remember token means you must change the
+    user ID to invalidate their login sessions. One way to improve this is to use an alternative user id instead of the
+    user ID.
+
     """
     return user_api.get(['alt', alternative_id])
 

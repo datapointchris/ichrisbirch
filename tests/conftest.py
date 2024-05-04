@@ -184,8 +184,10 @@ def setup_test_environment():
 @pytest.fixture(scope='function', autouse=True)
 def insert_test_data():
     """All tables are created and dropped for each test function.
-    This is the easiest way to ensure a clean db each time a new test is run.
-    Have to deep copy or else the instances are the same and persist through sessions.
+
+    This is the easiest way to ensure a clean db each time a new test is run. Have to deep copy or else the instances
+    are the same and persist through sessions.
+
     """
 
     Base.metadata.create_all(ENGINE)

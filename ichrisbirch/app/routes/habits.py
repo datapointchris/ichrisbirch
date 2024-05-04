@@ -30,7 +30,7 @@ HABITS_API_URL = url_builder(settings.api_url, 'habits')
 
 
 def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> tuple[list[str], list[int]]:
-    """Create chart labels and values from completed habits for chart.js"""
+    """Create chart labels and values from completed habits for chart.js."""
 
     # Ex: Friday, January 01, 2001
     DATE_FORMAT = '%A, %B %d, %Y'
@@ -80,7 +80,7 @@ def index():
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
-    """Completed habits"""
+    """Completed habits."""
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime()
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER

@@ -66,7 +66,7 @@ class User(UserMixin, Base):
         return str(self.alternative_id)
 
     def set_alternative_id(self):
-        """Set alternative_id as 64-bit integer"""
+        """Set alternative_id as 64-bit integer."""
         self.alternative_id = self.generate_64_bit_int()
 
     def set_password(self, password):

@@ -8,7 +8,7 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class JournalEntry(Base):
-    """SQLAlchemy model for journal table"""
+    """SQLAlchemy model for journal table."""
 
     __tablename__ = 'journal'
     id = Column(Integer, primary_key=True)
