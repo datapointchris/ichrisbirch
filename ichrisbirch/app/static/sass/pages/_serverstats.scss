@@ -3,7 +3,7 @@
     transform-style: preserve-3d;
 }
 
-.server-stats-wrapper {
+.serverstats-wrapper {
     width: 60%;
     padding: 25px;
     margin: 50px;
@@ -14,7 +14,7 @@
     @include deep-3d-box;
 }
 
-.server-stats {
+.serverstats {
     --font-size: var(--fs-600);
     list-style: none;
     font-size: var(--font-size);
