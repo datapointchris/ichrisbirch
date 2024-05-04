@@ -1,7 +1,8 @@
 import logging
 
 import httpx
-from flask import abort, flash
+from flask import abort
+from flask import flash
 
 
 def url_builder(base_url: str, *parts) -> str:

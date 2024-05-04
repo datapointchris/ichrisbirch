@@ -11785,7 +11785,7 @@ nav a:hover {
   transform-style: preserve-3d;
 }
 
-.server-stats-wrapper {
+.serverstats-wrapper {
   width: 60%;
   padding: 25px;
   margin: 50px;
@@ -11796,26 +11796,26 @@ nav a:hover {
   box-shadow: var(--deep-3d-box-shadow);
 }
 
-.server-stats {
+.serverstats {
   --font-size: var(--fs-600);
   list-style: none;
   font-size: var(--font-size);
   line-height: 3em;
   text-shadow: var(--deep-3d-text-shadow);
 }
-.server-stats__item {
+.serverstats__item {
   margin: 40px;
   border: 1px solid var(--clr-gray-800);
   border-radius: 25px;
   box-shadow: var(--deep-3d-box-shadow);
 }
-.server-stats__item::before {
+.serverstats__item::before {
   content: "→  ";
   font-size: calc((var(--font-size)) * 1.5);
   color: var(--clr-accent);
   margin-inline: 40px;
 }
-.server-stats__item:hover {
+.serverstats__item:hover {
   animation-name: highlight-cycle;
   animation-duration: 3s;
   animation-timing-function: cubic-bezier(0.5, 0.25, 0.5, 1);

@@ -22,17 +22,21 @@
     <nav>
       <ul>
         <li><a href="{{ url_for('home.index') }}">Home</a></li>
+        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+        <li><a href="{{ url_for('auth.signup') }}">Signup</a></li>
         <li><a href="{{ url_for('autotasks.index') }}">AutoTasks</a></li>
         <li><a href="{{ url_for('box_packing.index') }}">Box Packing</a></li>
         <li><a href="{{ url_for('countdowns.index') }}">Countdowns</a></li>
         <li><a href="{{ url_for('events.index') }}">Events</a></li>
         <li><a href="{{ url_for('habits.index') }}">Habits</a></li>
         <li><a href="{{ url_for('tasks.index') }}">Tasks</a></li>
+        <li><a href="{{ url_for('users.profile') }}">User Profile</a></li>
+        <li><a href="{{ url_for('users.update') }}">User Update</a></li>
         <!--
            <li><a href="{{ url_for('portfolio.index') }}">Portfolio</a></li>
            <li><a href="{{ url_for('journal.index') }}">Journal</a></li>
           -->
-        <li><a href="{{ url_for('home.server_stats') }}">Server Stats</a></li>
+        <li><a href="{{ url_for('home.server') }}">Server Stats</a></li>
         <li><a href="https://github.com/datapointchris/ichrisbirch/issues" target="_blank">Github Issues</a></li>
       </ul>
       {% block app_navigation %}{% endblock %}

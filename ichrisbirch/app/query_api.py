@@ -1,8 +1,11 @@
 import logging
+
+# from contextlib import contextmanager
 from typing import Any
 
 import httpx
-from flask import abort, flash
+from flask import abort
+from flask import flash
 
 from ichrisbirch.config import get_settings
 
@@ -60,6 +63,9 @@ class QueryAPI:
                 abort_message = error_message
             abort(response.status_code, abort_message)
 
+    # @contextmanager
+    # def handle_request(self):
+
     def get(self, endpoint: Any | None = None, params: dict | None = None):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         response = httpx.get(url, follow_redirects=True, params=params)
@@ -68,14 +74,14 @@ class QueryAPI:
 
     def post(self, endpoint: Any | None = None, data: dict = {}):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
-        self.logger.debug(f'POST: {data=}')
+        self.logger.debug(f'POST {url} {data=}')
         response = httpx.post(url, json=data)
         self.handle_if_not_response_code(201, response)
         return self.response_model(**response.json())
 
     def patch(self, endpoint: Any | None = None, data: dict = {}):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
-        self.logger.debug(f'PATCH: {data=}')
+        self.logger.debug(f'PATCH {url} {data=}')
         response = httpx.patch(url, json=data)
         self.handle_if_not_response_code(200, response)
         return self.response_model(**response.json())

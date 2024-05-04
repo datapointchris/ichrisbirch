@@ -4,7 +4,12 @@ import re
 
 import httpx
 import pendulum
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint
+from flask import flash
+from flask import redirect
+from flask import render_template
+from flask import request
+from flask import url_for
 
 from ichrisbirch.app.helpers import handle_if_not_response_code
 from ichrisbirch.config import get_settings
@@ -21,10 +26,10 @@ def index():
     return render_template('index.html', settings=settings)
 
 
-@blueprint.route('/server-stats/')
-def server_stats():
+@blueprint.route('/server/')
+def server():
     return render_template(
-        'server-stats.html',
+        'server.html',
         settings=settings,
         server_time=pendulum.now('UTC').isoformat(),
         local_time=pendulum.now().isoformat(),

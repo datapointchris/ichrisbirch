@@ -2,9 +2,22 @@ import http
 import logging
 from functools import partial
 
-from flask import Flask, g, render_template
+from flask import Flask
+from flask import g
+from flask import render_template
 
-from ichrisbirch.app.routes import autotasks, box_packing, countdowns, events, habits, home, journal, portfolio, tasks
+from ichrisbirch.app.login import login_manager
+from ichrisbirch.app.routes import auth
+from ichrisbirch.app.routes import autotasks
+from ichrisbirch.app.routes import box_packing
+from ichrisbirch.app.routes import countdowns
+from ichrisbirch.app.routes import events
+from ichrisbirch.app.routes import habits
+from ichrisbirch.app.routes import home
+from ichrisbirch.app.routes import journal
+from ichrisbirch.app.routes import portfolio
+from ichrisbirch.app.routes import tasks
+from ichrisbirch.app.routes import users
 from ichrisbirch.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -18,6 +31,9 @@ def handle_errors(e, error_code):
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
     logger.info('Flask App Created')
+
+    login_manager.init_app(app)
+    logger.info('Flask Login Manager Initialized')
 
     with app.app_context():
         app.config.from_object(settings.flask)
@@ -41,6 +57,7 @@ def create_app(settings: Settings) -> Flask:
         logger.info('Flask App Template Filters Registered')
 
         app.register_blueprint(home.blueprint)
+        app.register_blueprint(auth.blueprint)
         app.register_blueprint(autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(box_packing.blueprint, url_prefix='/box-packing')
         app.register_blueprint(countdowns.blueprint, url_prefix='/countdowns')
@@ -49,7 +66,10 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(journal.blueprint, url_prefix='/journal')
         app.register_blueprint(portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(tasks.blueprint, url_prefix='/tasks')
+        app.register_blueprint(users.blueprint, url_prefix='/users')
         logger.info('Flask App Blueprints Registered')
+
+        # TODO: [2024/05/03] - Database Initialization
 
         @app.before_request
         def repo_labels_and_icons():
