@@ -3,7 +3,8 @@ import subprocess
 import threading
 import time
 from copy import deepcopy
-from typing import Any, Generator
+from typing import Any
+from typing import Generator
 
 import docker
 import pytest
@@ -11,8 +12,10 @@ from docker.errors import DockerException
 from docker.models.containers import Container
 from fastapi.testclient import TestClient
 from flask.testing import FlaskClient
+from flask_login import FlaskLoginClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch.api.main import create_api
@@ -207,6 +210,17 @@ def test_app() -> Generator[FlaskClient, Any, None]:
     app = create_app(settings=settings)
     app.testing = True
     app.config.update({'TESTING': True})
+    with app.test_client() as client:
+        with app.app_context():
+            yield client
+
+
+@pytest.fixture(scope='module')
+def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
+    app = create_app(settings=settings)
+    app.testing = True
+    app.config.update({'TESTING': True})
+    app.test_client_class = FlaskLoginClient
     with app.test_client() as client:
         with app.app_context():
             yield client
