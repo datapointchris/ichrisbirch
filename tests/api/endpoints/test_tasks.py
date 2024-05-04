@@ -116,3 +116,16 @@ def test_task_lifecycle(test_api):
     # Make sure it's missing
     missing_task = test_api.get(f'/tasks/{task_id}')
     assert missing_task.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(missing_task)
+
+
+@pytest.mark.parametrize('category', list(TaskCategory))
+def test_task_categories(test_api, category):
+    test_task = schemas.TaskCreate(
+        name='Task 4 Computer with notes priority 3',
+        notes='Notes task 4',
+        category=category,
+        priority=3,
+    )
+    created_task = test_api.post('/tasks/', json=test_task.model_dump())
+    assert created_task.status_code == status.HTTP_201_CREATED, show_status_and_response(created_task)
+    assert created_task.json()['name'] == test_task.name
