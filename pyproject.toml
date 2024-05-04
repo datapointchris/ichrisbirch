@@ -66,6 +66,7 @@ pytest-asyncio = "^0.23.6"
 pytest-cov = "^5.0.0"
 pytest-md = "^0.2.0"
 pytest-playwright = "^0.4.4"
+docformatter = "^1.7.5"
 
 [tool.poetry.group.prod.dependencies]
 pydeps = "^1.12.20"
@@ -116,6 +117,14 @@ fail_under = 25
 show_missing = true
 exclude_lines = ["pragma: no cover"]
 
+[tool.docformatter]
+recursive = true
+in-place = true
+exclude = ["alembic", ".git", ".mypy_cache", ".venv", "build", "dist"]
+wrap-summaries = 120
+wrap-descriptions = 120
+close-quotes-on-newline = true
+blank = true
 
 [tool.isort]
 line_length = 120
