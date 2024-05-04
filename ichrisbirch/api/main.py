@@ -52,6 +52,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.habits.router, prefix='/habits', tags=['habits'])
     api.include_router(endpoints.server.router, prefix='/server', tags=['server'])
     api.include_router(endpoints.tasks.router, prefix='/tasks', tags=['tasks'])
+    api.include_router(endpoints.users.router, prefix='/users', tags=['users'])
     logger.info('FastAPI Routers Registered')
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
