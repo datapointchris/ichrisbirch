@@ -6,21 +6,12 @@
 <div class="form-wrapper">
 
   <div class="logo">
-    <img src="{{ url_for('static', filename='dist/img/logo.png') }}" alt="logo" />
+    <img src="{{ url_for('static', filename='dist/img/logo.png') }}" alt="logo">
   </div>
-
-  {% for message in get_flashed_messages() %}
-  <div class="alert alert-warning">
-    <button type="button" class="close" data-dismiss="alert">
-      x
-    </button>
-    {{ message }}
-  </div>
-  {% endfor %}
 
   <h1>Log In</h1>
 
-  <form method="POST" action="/login">
+  <form method="POST" action="{{ url_for('auth.login') }}">
     {{ form.csrf_token }}
 
     <fieldset class="email">

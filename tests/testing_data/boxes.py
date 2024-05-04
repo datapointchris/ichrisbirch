@@ -1,4 +1,5 @@
-from ichrisbirch.models.box import Box, BoxSize
+from ichrisbirch.models.box import Box
+from ichrisbirch.models.box import BoxSize
 
 BASE_DATA: list[Box] = [
     Box(

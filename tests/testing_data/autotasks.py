@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from ichrisbirch.models.autotask import AutoTask, TaskFrequency
+from ichrisbirch.models.autotask import AutoTask
+from ichrisbirch.models.autotask import TaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 BASE_DATA: list[AutoTask] = [

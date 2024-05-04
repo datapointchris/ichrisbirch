@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter
+from fastapi import status
 from fastapi.responses import RedirectResponse
 
 router = APIRouter()

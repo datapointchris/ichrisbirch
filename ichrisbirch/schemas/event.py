@@ -2,7 +2,9 @@ import logging
 from datetime import datetime
 
 import pendulum
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel
+from pydantic import ConfigDict
+from pydantic import field_validator
 
 logger = logging.getLogger(__name__)
 

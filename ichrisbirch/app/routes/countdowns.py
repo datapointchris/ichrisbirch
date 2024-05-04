@@ -1,7 +1,10 @@
 import logging
 
 from fastapi import status
-from flask import Blueprint, Response, render_template, request
+from flask import Blueprint
+from flask import Response
+from flask import render_template
+from flask import request
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI

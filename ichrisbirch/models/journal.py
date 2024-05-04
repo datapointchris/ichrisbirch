@@ -1,4 +1,7 @@
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy.sql import func
 
 from ichrisbirch.database.sqlalchemy.base import Base

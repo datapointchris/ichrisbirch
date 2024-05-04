@@ -1,7 +1,12 @@
 import enum
 
-from sqlalchemy import Boolean, Enum, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Boolean
+from sqlalchemy import Enum
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.sqlalchemy.base import Base
 

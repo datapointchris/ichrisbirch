@@ -1,7 +1,13 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Boolean
+from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.sqlalchemy.base import Base
 

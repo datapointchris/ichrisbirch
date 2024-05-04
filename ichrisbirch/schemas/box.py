@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+from pydantic import ConfigDict
 
 from ichrisbirch.models.box import BoxSize
 from ichrisbirch.schemas.boxitem import BoxItem

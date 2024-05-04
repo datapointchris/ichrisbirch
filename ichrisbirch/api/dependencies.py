@@ -1,4 +1,5 @@
-from fastapi import Header, HTTPException
+from fastapi import Header
+from fastapi import HTTPException
 
 tokens = {'default': 'fake-super-secret', 'jessica': 'jessica-0123'}
 

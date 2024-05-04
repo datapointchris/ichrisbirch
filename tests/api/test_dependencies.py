@@ -1,7 +1,8 @@
 import pytest
 from fastapi import HTTPException
 
-from ichrisbirch.api.dependencies import get_query_token, get_token_header
+from ichrisbirch.api.dependencies import get_query_token
+from ichrisbirch.api.dependencies import get_token_header
 
 
 @pytest.mark.asyncio

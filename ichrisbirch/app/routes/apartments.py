@@ -1,8 +1,13 @@
 import httpx
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint
+from flask import redirect
+from flask import render_template
+from flask import request
+from flask import url_for
 
 from ichrisbirch.config import get_settings
-from ichrisbirch.models.apartment import Apartment, Feature
+from ichrisbirch.models.apartment import Apartment
+from ichrisbirch.models.apartment import Feature
 
 settings = get_settings()
 

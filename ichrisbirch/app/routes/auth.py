@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
 
 
-@blueprint.route('/login', methods=['GET'])
+@blueprint.route('/login/', methods=['GET'])
 def login():
     if current_user.is_authenticated:
         return redirect(request.referrer or url_for('user.profile'))
@@ -52,7 +52,7 @@ def login():
     )
 
 
-@blueprint.route('/signup', methods=['GET', 'POST'])
+@blueprint.route('/signup/', methods=['GET', 'POST'])
 def signup():
     form = SignupForm()
     if form.validate_on_submit():
@@ -77,7 +77,7 @@ def signup():
     )
 
 
-@blueprint.route('/logout')
+@blueprint.route('/logout/')
 @login_required
 def logout():
     logout_user()

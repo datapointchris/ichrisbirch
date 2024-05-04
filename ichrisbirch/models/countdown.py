@@ -1,7 +1,11 @@
 from datetime import date
 
-from sqlalchemy import Date, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import Text
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
 
 from ichrisbirch.database.sqlalchemy.base import Base
 

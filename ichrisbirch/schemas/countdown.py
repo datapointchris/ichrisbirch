@@ -1,6 +1,7 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+from pydantic import ConfigDict
 
 
 class CountdownConfig(BaseModel):

@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
 
 
-@blueprint.route('/profile', methods=['GET'])
+@blueprint.route('/profile/', methods=['GET'])
 @login_required
 def profile():
     return render_template('users/profile.html', user=current_user)
 
 
-@blueprint.route('/update', methods=['GET', 'POST'])
+@blueprint.route('/update/', methods=['GET', 'POST'])
 @fresh_login_required
 def update():
     return render_template('users/update.html', user=current_user)

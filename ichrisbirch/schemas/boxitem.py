@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+from pydantic import ConfigDict
 
 
 class BoxItemConfig(BaseModel):

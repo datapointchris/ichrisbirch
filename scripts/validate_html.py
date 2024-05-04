@@ -57,8 +57,9 @@ class ValidateWebsite:
         return httpx.post(self.validator, content=html_content, headers=headers).json()
 
     def validate_pages(self):
-        for page_url, html_content in self.page_content.items():
+        for page_url, html_content in sorted(self.page_content.items()):
             try:
+                print(f'Validating {page_url}')
                 validation_result = self.validate_page(html_content)
                 if validation_result['messages']:
                     print(f"Validation errors found for {page_url}:")
@@ -73,7 +74,7 @@ class ValidateWebsite:
 
 
 def main() -> int:
-    v = ValidateWebsite('http://localhost:4000/')
+    v = ValidateWebsite('http://localhost:6200/')
     v.discover_webpages_from_local_server()
     v.validate_pages()
     return v.return_code

@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from ichrisbirch.models.task import Task, TaskCategory
+from ichrisbirch.models.task import Task
+from ichrisbirch.models.task import TaskCategory
 
 BASE_DATA: list[Task] = [
     Task(

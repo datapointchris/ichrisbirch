@@ -1,7 +1,9 @@
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 
-from ichrisbirch.models.autotask import TaskFrequency, frequency_to_duration
+from ichrisbirch.models.autotask import TaskFrequency
+from ichrisbirch.models.autotask import frequency_to_duration
 from tests.testing_data.autotasks import BASE_DATA
 
 # TODO: [2023/06/14] - This is a hack for the sqlalchemy model that for some reason is

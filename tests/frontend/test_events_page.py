@@ -1,5 +1,6 @@
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
+from playwright.sync_api import expect
 
 from ichrisbirch.config import get_settings
 

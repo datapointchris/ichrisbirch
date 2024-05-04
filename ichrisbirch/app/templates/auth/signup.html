@@ -20,7 +20,7 @@
 
   <h1>Sign Up</h1>
 
-  <form method="POST" action="/signup">
+  <form method="POST" action="{{ url_for('auth.signup') }}">
     {{ form.csrf_token }}
 
     <fieldset class="name">
