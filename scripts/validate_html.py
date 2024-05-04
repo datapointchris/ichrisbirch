@@ -47,19 +47,34 @@ class ValidateWebsite:
                             self.pages_to_visit.put(absolute_url)
                             self.discovered_pages.add(absolute_url)
 
-                time.sleep(2)
-
             except Exception as e:
                 print(f"Error while processing {current_page}: {e}")
 
     def validate_page(self, html_content: str):
+        delay = 1
+        max_delay = 8
+        total_delay = 0
         headers = {"Content-Type": "text/html; charset=utf-8"}
-        return httpx.post(self.validator, content=html_content, headers=headers).json()
+        while True:
+            response = httpx.post(self.validator, content=html_content, headers=headers)
+            if response.status_code == 200:
+                return response.json()
+
+            if response.status_code == 429:
+                delay = delay * 2
+                total_delay += delay
+                if delay > max_delay:
+                    print(f'Max delay of {max_delay} exceeded, exiting.')
+                    raise SystemExit(1)
+                print(f'Rate limit exceeded. Increasing delay to {delay} for total delay so far: {total_delay}')
+                time.sleep(delay)
+            else:
+                response.raise_for_status()
 
     def validate_pages(self):
         for page_url, html_content in sorted(self.page_content.items()):
             try:
-                print(f'Validating {page_url}')
+                print(f'Validating {page_url} {len(html_content)} bytes')
                 validation_result = self.validate_page(html_content)
                 if validation_result['messages']:
                     print(f"Validation errors found for {page_url}:")
@@ -71,6 +86,7 @@ class ValidateWebsite:
             except Exception as e:
                 print(f"Error while validating {page_url}: {e}")
                 self.return_code = 1
+                raise
 
 
 def main() -> int:
