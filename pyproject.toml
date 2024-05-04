@@ -36,6 +36,7 @@ uvicorn = "^0.29.0"
 flask-login = "^0.6.3"
 flask-wtf = "^1.2.1"
 sqlalchemy-json = "^0.7.0"
+boto3 = "^1.34.98"
 
 [tool.poetry.group.dev.dependencies]
 deptry = "^0.16.1"
