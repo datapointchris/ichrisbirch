@@ -81,3 +81,22 @@ def test_crud_delete(test_app):
     assert len(response.history) == 1
     assert response.request.path == '/tasks/todo/'
     assert b'Outstanding Tasks' in response.data
+
+
+@pytest.mark.parametrize('category', [t.value for t in TaskCategory])
+def test_task_categories(test_app, category):
+    response = test_app.post(
+        '/tasks/crud/',
+        data=dict(
+            name='Task 4 Computer with notes priority 3',
+            notes='Notes task 4',
+            category=category,
+            priority=3,
+            action='add',
+        ),
+        follow_redirects=True,
+    )
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert len(response.history) == 1
+    assert response.request.path == '/tasks/'
+    assert b'<title>Priority Tasks</title>' in response.data
