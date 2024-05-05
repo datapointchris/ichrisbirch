@@ -20,11 +20,13 @@ from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
+from ichrisbirch.scheduler.postgres_snapshot_to_s3 import postgres_snapshot_to_s3
 
 logger = logging.getLogger(__name__)
 
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
+daily_3pm_trigger = CronTrigger(day='*', hour=15)
 
 
 @dataclass
@@ -91,5 +93,10 @@ jobs_to_add = [
         func=check_and_run_autotasks,
         trigger=daily_1am_trigger,
         id='check_for_autotasks_to_run',
+    ),
+    JobToAdd(
+        func=postgres_snapshot_to_s3,
+        trigger=daily_3pm_trigger,
+        id='daily_postgres_snapshot_to_s3',
     ),
 ]
