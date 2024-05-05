@@ -93,3 +93,33 @@ def test_box_lifecycle(test_api):
     # Make sure it's missing
     missing_box = test_api.get(f'/box_packing/boxes/{box_id}')
     assert missing_box.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(missing_box)
+
+
+@pytest.mark.parametrize('box_size', list(BoxSize))
+def test_create_box_all_sizes(test_api, box_size):
+    test_box = schemas.BoxCreate(
+        name='Box X',
+        size=box_size,
+        essential=True,
+        warm=False,
+        liquid=False,
+    )
+    response = test_api.post('/box_packing/boxes/', json=test_box.model_dump())
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    assert dict(response.json())['name'] == test_box.name
+
+
+@pytest.mark.parametrize('essential', [True, False])
+@pytest.mark.parametrize('warm', [True, False])
+@pytest.mark.parametrize('liquid', [True, False])
+def test_create_box_options_combinations(test_api, essential, warm, liquid):
+    test_box = schemas.BoxCreate(
+        name='Box X',
+        size=BoxSize.Large,
+        essential=essential,
+        warm=warm,
+        liquid=liquid,
+    )
+    response = test_api.post('/box_packing/boxes/', json=test_box.model_dump())
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    assert dict(response.json())['name'] == test_box.name
