@@ -10,21 +10,30 @@ import dotenv
 logger = logging.getLogger(__name__)
 
 
+class AWSSettings:
+    def __init__(self):
+        self.region: str = os.environ['AWS_REGION']
+        self.account_id: str = os.environ['AWS_ACCOUNT_ID']
+        self.kms_key: str = os.environ['AWS_KMS_KEY']
+        self.postgres_backup_role: str = 'role/S3DatabaseBackups'
+        self.s3_backup_bucket: str = 'ichrisbirch-backups'
+
+
 class FastAPISettings:
     def __init__(self):
-        self.host: Optional[str] = os.getenv('FASTAPI_HOST')
-        self.port: Optional[str] = os.getenv('FASTAPI_PORT')
+        self.host: str = os.environ['FASTAPI_HOST']
+        self.port: str = os.environ['FASTAPI_PORT']
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
 
 
 class FlaskSettings:
     def __init__(self):
-        self.host: Optional[str] = os.getenv('FLASK_HOST')
-        self.port: Optional[str] = os.getenv('FLASK_PORT')
-        self.SECRET_KEY: Optional[str] = os.getenv('FLASK_SECRET_KEY')  # MUST be capitalized
-        self.TESTING: Optional[bool] = bool(os.getenv('FLASK_TESTING'))
-        self.DEBUG: Optional[bool] = bool(os.getenv('FLASK_DEBUG'))
+        self.host: str = os.environ['FLASK_HOST']
+        self.port: str = os.environ['FLASK_PORT']
+        self.SECRET_KEY: str = os.environ['FLASK_SECRET_KEY']  # MUST be capitalized
+        self.TESTING: bool = bool(os.environ['FLASK_TESTING'])
+        self.DEBUG: bool = bool(os.environ['FLASK_DEBUG'])
 
 
 class FlaskLoginSettings:
@@ -39,7 +48,7 @@ class FlaskLoginSettings:
 
 class GithubSettings:
     def __init__(self):
-        self.api_token: Optional[str] = os.getenv('GITHUB_API_TOKEN')
+        self.api_token: str = os.environ['GITHUB_API_TOKEN']
         self.api_url_issues: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/issues'
         self.api_url_labels: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/labels'
         self.api_headers = {
@@ -51,9 +60,9 @@ class GithubSettings:
 
 class MongoDBSettings:
     def __init__(self):
-        self.host: Optional[str] = os.getenv('MONGO_HOST')
-        self.user: Optional[str] = os.getenv('MONGO_USER')
-        self.password: Optional[str] = os.getenv('MONGO_PASSWORD')
+        self.host: str = os.environ['MONGO_HOST']
+        self.user: str = os.environ['MONGO_USER']
+        self.password: str = os.environ['MONGO_PASSWORD']
 
     @property
     def db_uri(self) -> str:
@@ -67,11 +76,11 @@ class PlaywrightSettings:
 
 class PostgresSettings:
     def __init__(self):
-        self.host: Optional[str] = os.getenv('POSTGRES_HOST')
-        self.user: Optional[str] = os.getenv('POSTGRES_USER')
-        self.password: Optional[str] = os.getenv('POSTGRES_PASSWORD')
-        self.port: Optional[str] = os.getenv('POSTGRES_PORT')
-        self.database: Optional[str] = os.getenv('POSTGRES_DB')
+        self.host: str = os.environ['POSTGRES_HOST']
+        self.user: str = os.environ['POSTGRES_USER']
+        self.password: str = os.environ['POSTGRES_PASSWORD']
+        self.port: str = os.environ['POSTGRES_PORT']
+        self.database: str = os.environ['POSTGRES_DB']
 
     @property
     def db_uri(self) -> str:
@@ -82,11 +91,11 @@ class SQLAlchemySettings:
     def __init__(self):
         self.echo: bool = False
         self.track_modifications: bool = False
-        self.host: Optional[str] = os.getenv('POSTGRES_HOST')
-        self.user: Optional[str] = os.getenv('POSTGRES_USER')
-        self.password: Optional[str] = os.getenv('POSTGRES_PASSWORD')
-        self.port: Optional[str] = os.getenv('POSTGRES_PORT')
-        self.database: Optional[str] = os.getenv('POSTGRES_DB')
+        self.host: str = os.environ['POSTGRES_HOST']
+        self.user: str = os.environ['POSTGRES_USER']
+        self.password: str = os.environ['POSTGRES_PASSWORD']
+        self.port: str = os.environ['POSTGRES_PORT']
+        self.database: str = os.environ['POSTGRES_DB']
 
     @property
     def db_uri(self) -> str:
@@ -95,17 +104,18 @@ class SQLAlchemySettings:
 
 class SQLiteSettings:
     def __init__(self):
-        self.db_uri: Optional[str] = os.getenv('SQLITE_DATABASE_URI')
+        self.db_uri: str = os.environ['SQLITE_DATABASE_URI']
 
 
 class Settings:
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
         self.NAME: str = 'ichrisbirch'
         self.DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
-        self.ENVIRONMENT: Optional[str] = os.environ.get('ENVIRONMENT')
+        self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
         self.ENV_FILE: pathlib.Path = env_file
         self.REQUEST_TIMEOUT: int = 3
 
+        self.aws = AWSSettings()
         self.fastapi = FastAPISettings()
         self.flask = FlaskSettings()
         self.flasklogin = FlaskLoginSettings()
@@ -148,8 +158,8 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
             env_file = pathlib.Path(env_file)
 
     else:
-        logger.info(f'Loading environment: {os.getenv("ENVIRONMENT")}')
-        match ENV := os.getenv('ENVIRONMENT'):
+        logger.info(f'Loading environment: {os.environ["ENVIRONMENT"]}')
+        match (ENV := os.environ['ENVIRONMENT']):
             case 'development':
                 filename = '.dev.env'
             case 'testing':
