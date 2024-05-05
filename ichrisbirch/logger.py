@@ -64,12 +64,14 @@ logging_config = {
     },
     'loggers': {
         '': {'level': 'DEBUG', 'handlers': ['stdout', 'stderr', 'file', 'json']},
-        'matplotlib': {'level': 'INFO'},
-        'urllib3': {'level': 'INFO'},
         'apscheduler': {'level': 'WARNING'},
+        'boto3': {'level': 'INFO'},
+        'fsevents': {'level': 'INFO'},
         'httpcore': {'level': 'INFO'},
         'httpx': {'level': 'INFO'},
-        'fsevents': {'level': 'INFO'},
+        'matplotlib': {'level': 'INFO'},
+        's3transfer': {'level': 'INFO'},
+        'urllib3': {'level': 'INFO'},
     },
 }
 
