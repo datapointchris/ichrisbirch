@@ -238,5 +238,8 @@ pip-selfcheck.json
 TESTING.*
 *pylogger*
 
+# Local copies of backup files
+ichrisbirch-backups/
+
 # css map files
 *.css.map

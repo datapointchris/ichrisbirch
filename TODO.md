@@ -1,6 +1,5 @@
 # TODO
 
-- [Small Tasks](#small-tasks)
 - [User Login](#user-login)
 - [Random](#random)
 - [Tasks](#tasks)
@@ -41,38 +40,15 @@
   - [User Customization](#user-customization)
   - [Whylogs](#whylogs)
 
-## Small Tasks
-
-- [ ] (ops) Make validate html only validate pages that have been modified
-  - [ ] pass files variable?
-
 ## User Login
 
-- [Flask Authentication By Example](https://developer.auth0.com/resources/guides/web-app/flask/basic-authentication)
 - [GitHub - MushroomMaula/fastapi_login: FastAPI-Login tries to provide similar functionality as Flask-Login does.](https://github.com/MushroomMaula/fastapi_login)
-- [How to Authenticate Users in Flask with Flask-Login](https://www.freecodecamp.org/news/how-to-authenticate-users-in-flask/)
-- [Flask-Login — Flask-Login 0.7.0 documentation](https://flask-login.readthedocs.io/en/latest/)
+
 - [GitHub - fastapi-users/fastapi-users: Ready-to-use and customizable users management for FastAPI](https://github.com/fastapi-users/fastapi-users)
-- [Token-Based Authentication With Flask – Real Python](https://realpython.com/token-based-authentication-with-flask/)
-- [How To Add Authentication to Your App with Flask-Login  | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-your-app-with-flask-login)
-- [GitHub - auth0/auth0-python: Auth0 SDK for Python](https://github.com/auth0/auth0-python)
 
-- [ ] Create login for all apps as a main page.
-- [ ] [Basic Usage - FastAPI JWT Auth](https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/)
-- [ ] [fastapi-github-actions-test/auth.py at master · rexsimiloluwah/fastapi-github-actions-test · GitHub](https://github.com/rexsimiloluwah/fastapi-github-actions-test/blob/master/src/routes/auth.py)
-  - [ ] [Flask User Accounts & Authentication in with Flask-Login](https://hackersandslackers.com/flask-login-user-authentication/)
-  - [ ] [Flask-Login — Flask-Login 0.7.0 documentation](https://flask-login.readthedocs.io/en/latest/)
-  - [ ] [GitHub - maxcountryman/flask-login: Flask user session management.](https://github.com/maxcountryman/flask-login)
-  - [ ] [Cookies with the Flask web framework | Verdant Fox](https://verdantfox.com/blog/view/cookies-with-the-flask-web-framework)
+- [Basic Usage - FastAPI JWT Auth](https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/)
 
-- SSL for nginx
-  - [How To Serve Flask Applications with Gunicorn and Nginx on Ubuntu 18.04  | DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-18-04)
-    - Step 6 - Securing the Application
-
-- Flask Admin -- NO
-- [GitHub - flask-admin/flask-admin: Simple and extensible administrative interface framework for Flask](https://github.com/flask-admin/flask-admin)
-
-- [Stop Using JSON Web Tokens For Authentication. Use Stateful Sessions Instead | by Francisco Sainz | Better Programming](https://betterprogramming.pub/stop-using-json-web-tokens-for-authentication-use-stateful-sessions-instead-c0a803931a5d)
+- [fastapi-github-actions-test/auth.py at master · rexsimiloluwah/fastapi-github-actions-test · GitHub](https://github.com/rexsimiloluwah/fastapi-github-actions-test/blob/master/src/routes/auth.py)
 
 - FastAPI Signup
 - [python-api-examples/api.py at main · ChristopherGS/python-api-examples · GitHub](https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py)
@@ -169,6 +145,9 @@ Is this something I want to do?
 - [“Don’t Mock What You Don’t Own” in 5 Minutes](https://hynek.me/articles/what-to-mock-in-5-mins/)
 
 ## Logging
+
+- [ ] Set up separate loggers for app, api, and scheduler.
+- [ ] Check logs because the startup scripts are being run multiple times.
 
 [python - Using logging in multiple modules - Stack Overflow](https://stackoverflow.com/questions/15727420/using-logging-in-multiple-modules/15729700#15729700)
 
