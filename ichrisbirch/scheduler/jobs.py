@@ -15,18 +15,23 @@ from typing import Any
 from typing import Callable
 
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import and_
 from sqlalchemy import select
 
 from ichrisbirch import models
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
+from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import postgres_snapshot_to_s3
 
+settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
 daily_3pm_trigger = CronTrigger(day='*', hour=15)
+every_6_hour_18_minute = IntervalTrigger(hours=6, minutes=18)
 
 
 @dataclass
@@ -83,6 +88,18 @@ def make_logs():
 log_test = JobToAdd(func=make_logs, trigger=CronTrigger(second='*/10'), id='make_logs')
 
 
+def postgres_backup():
+    pbr = PostgresBackupRestore(
+        environment=settings.ENVIRONMENT,
+        backup_bucket=settings.aws.s3_backup_bucket,
+        source_host=settings.postgres.host,
+        source_port=settings.postgres.port,
+        source_username=settings.postgres.username,
+        source_password=settings.postgres.password,
+    )
+    pbr.backup()
+
+
 jobs_to_add = [
     JobToAdd(
         func=decrease_task_priority,
@@ -99,4 +116,5 @@ jobs_to_add = [
         trigger=daily_3pm_trigger,
         id='daily_postgres_snapshot_to_s3',
     ),
+    JobToAdd(func=postgres_backup, trigger=every_6_hour_18_minute, id='postgres_backup_every_6_hour_18_minute'),
 ]
