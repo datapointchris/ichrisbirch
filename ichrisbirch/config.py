@@ -61,12 +61,12 @@ class GithubSettings:
 class MongoDBSettings:
     def __init__(self):
         self.host: str = os.environ['MONGO_HOST']
-        self.user: str = os.environ['MONGO_USER']
+        self.username: str = os.environ['MONGO_USERNAME']
         self.password: str = os.environ['MONGO_PASSWORD']
 
     @property
     def db_uri(self) -> str:
-        return f'mongodb://{self.user}:{self.password}@{self.host}'
+        return f'mongodb://{self.username}:{self.password}@{self.host}'
 
 
 class PlaywrightSettings:
@@ -77,14 +77,14 @@ class PlaywrightSettings:
 class PostgresSettings:
     def __init__(self):
         self.host: str = os.environ['POSTGRES_HOST']
-        self.user: str = os.environ['POSTGRES_USER']
+        self.username: str = os.environ['POSTGRES_USERNAME']
         self.password: str = os.environ['POSTGRES_PASSWORD']
         self.port: str = os.environ['POSTGRES_PORT']
         self.database: str = os.environ['POSTGRES_DB']
 
     @property
     def db_uri(self) -> str:
-        return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
+        return f'postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
 class SQLAlchemySettings:
@@ -92,14 +92,14 @@ class SQLAlchemySettings:
         self.echo: bool = False
         self.track_modifications: bool = False
         self.host: str = os.environ['POSTGRES_HOST']
-        self.user: str = os.environ['POSTGRES_USER']
+        self.username: str = os.environ['POSTGRES_USERNAME']
         self.password: str = os.environ['POSTGRES_PASSWORD']
         self.port: str = os.environ['POSTGRES_PORT']
         self.database: str = os.environ['POSTGRES_DB']
 
     @property
     def db_uri(self) -> str:
-        return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}'
+        return f'postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
 class SQLiteSettings:

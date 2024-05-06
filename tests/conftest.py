@@ -99,7 +99,7 @@ def setup_test_environment():
             name='postgres_testing',
             environment={
                 'ENVIRONMENT': settings.ENVIRONMENT,
-                'POSTGRES_USER': settings.postgres.user,
+                'POSTGRES_USER': settings.postgres.username,
                 'POSTGRES_PASSWORD': settings.postgres.password,
                 'POSTGRES_DB': settings.postgres.database,
             },
