@@ -25,101 +25,104 @@ import boto3
 import pendulum
 from botocore.exceptions import ClientError
 
+from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-rds = boto3.client('rds')
+class AwsRdsSnapshotS3:
+    """Class for creating a snapshot from an RDS instance and exporting to S3."""
 
+    def __init__(self, bucket_prefix: str, settings: Settings):
+        self.region = settings.aws.region
+        self.account_id = settings.aws.account_id
+        self.aws_role = settings.aws.postgres_backup_role
+        self.kms_key = settings.aws.kms_key
 
-def _create_rds_snapshot(db_name: str, snapshot_name: str):
-    try:
-        rds.create_db_snapshot(DBInstanceIdentifier=db_name, DBSnapshotIdentifier=snapshot_name)
-        waiter = rds.get_waiter('db_snapshot_completed')
-        waiter.wait(DBInstanceIdentifier=db_name, DBSnapshotIdentifier=snapshot_name)
-        # get the size of the snapshot
-        snapshot = rds.describe_db_snapshots(DBSnapshotIdentifier=snapshot_name)
-        return snapshot
-    except ClientError as e:
-        logger.error(f'error creating rds snapshot: {e}')
-        raise
+        self.bucket_prefix = bucket_prefix
+        self.backup_bucket = settings.aws.s3_backup_bucket
+        self.db_name = settings.postgres.database
 
+        self.rds = boto3.client('rds')
 
-def _export_rds_snapshot_to_s3(
-    region: str,
-    account_id: str,
-    aws_role: str,
-    bucket: str,
-    bucket_prefix: str,
-    snapshot_name: str,
-):
-    try:
-        source_arn = f'arn:aws:rds:{region}:{account_id}:snapshot:{snapshot_name}'
-        iam_role_arn = f'arn:aws:iam::{account_id}:{aws_role}'
-        kms_key_arn = f'arn:aws:kms:{region}:{account_id}:{settings.aws.kms_key}'
-        export_task = rds.start_export_task(
-            ExportTaskIdentifier=snapshot_name,
-            SourceArn=source_arn,
-            S3BucketName=bucket,
-            S3Prefix=bucket_prefix,
-            IamRoleArn=iam_role_arn,
-            KmsKeyId=kms_key_arn,
-        )
-        export_status = ''
-        while export_status.lower() != 'complete':
-            time.sleep(300)
-            tasks = rds.describe_export_tasks(ExportTaskIdentifier=export_task['ExportTaskIdentifier'])
-            export_status = tasks['ExportTasks'][0]['Status']
-            percent_progress = tasks['ExportTasks'][0]['PercentProgress']
-            logger.info(f'snapshot export status: {export_status.lower()}, progress: {percent_progress}%')
-    except ClientError as e:
-        logger.error(f'error exporting rds snapshot to s3: {e}')
-        raise
+    def _snapshot_size_in_kb(self, snapshot):
+        size_in_gibibytes = snapshot['DBSnapshots'][0].get('AllocatedStorage', 0)
+        size_in_kilobytes = round(size_in_gibibytes / 1073741.824, 2)
+        if size_in_kilobytes < 1:
+            logger.warning('snapshot size is < 1 KB, check for errors in snapshot creation')
+        return size_in_kilobytes
 
+    def _create_rds_snapshot(self, snapshot_name: str):
+        try:
+            self.rds.create_db_snapshot(DBInstanceIdentifier=self.db_name, DBSnapshotIdentifier=snapshot_name)
+            waiter = self.rds.get_waiter('db_snapshot_completed')
+            waiter.wait(DBInstanceIdentifier=self.db_name, DBSnapshotIdentifier=snapshot_name)
+            snapshot = self.rds.describe_db_snapshots(DBSnapshotIdentifier=snapshot_name)
+            return snapshot
+        except ClientError as e:
+            logger.error(f'error creating rds snapshot: {e}')
+            raise
 
-def _delete_rds_snapshot(db_name: str, snapshot_name: str):
-    try:
-        rds.delete_db_snapshot(DBSnapshotIdentifier=snapshot_name)
-        waiter = rds.get_waiter('db_snapshot_deleted')
-        waiter.wait(DBInstanceIdentifier=db_name, DBSnapshotIdentifier=snapshot_name)
-    except ClientError as e:
-        logger.error(f'error deleting rds snapshot: {e}')
-        raise
+    def _export_rds_snapshot_to_s3(
+        self,
+        snapshot_name: str,
+    ):
+        try:
+            source_arn = f'arn:aws:rds:{self.region}:{self.account_id}:snapshot:{snapshot_name}'
+            iam_role_arn = f'arn:aws:iam::{self.account_id}:{self.aws_role}'
+            kms_key_arn = f'arn:aws:kms:{self.region}:{self.account_id}:{self.kms_key}'
+            export_task = self.rds.start_export_task(
+                ExportTaskIdentifier=snapshot_name,
+                SourceArn=source_arn,
+                S3BucketName=self.backup_bucket,
+                S3Prefix=self.bucket_prefix,
+                IamRoleArn=iam_role_arn,
+                KmsKeyId=kms_key_arn,
+            )
+            export_status = ''
+            while export_status.lower() != 'complete':
+                time.sleep(300)
+                tasks = self.rds.describe_export_tasks(ExportTaskIdentifier=export_task['ExportTaskIdentifier'])
+                export_status = tasks['ExportTasks'][0]['Status']
+                percent_progress = tasks['ExportTasks'][0]['PercentProgress']
+                logger.info(f'rds snapshot export status: {export_status.lower()}, progress: {percent_progress}%')
+        except ClientError as e:
+            logger.error(f'error exporting rds snapshot to s3: {e}')
+            raise
 
+    def _delete_rds_snapshot(self, snapshot_name: str):
+        try:
+            self.rds.delete_db_snapshot(DBSnapshotIdentifier=snapshot_name)
+            waiter = self.rds.get_waiter('db_snapshot_deleted')
+            waiter.wait(DBInstanceIdentifier=self.db_name, DBSnapshotIdentifier=snapshot_name)
+        except ClientError as e:
+            logger.error(f'error deleting rds snapshot: {e}')
+            raise
 
-def postgres_snapshot_to_s3():
-    bucket_prefix = 'postgres'
-    start = pendulum.now()
-    snapshot_name = f'{settings.postgres.database}-{start.format('YYYY-MM-DDTHHmm')}-snapshot'
-    logger.info('postgres backup started')
+    def snapshot(self):
+        logger.info('rds snapshot started')
+        start = pendulum.now()
+        snapshot_name = f'{settings.postgres.database}-{start.format('YYYY-MM-DDTHHmm')}-snapshot'
+        full_bucket_path = f's3://{self.backup_bucket}/{self.bucket_prefix}/{snapshot_name}'
 
-    logger.info(f'creating rds snapshot: {snapshot_name}')
-    snapshot = _create_rds_snapshot(db_name=settings.postgres.database, snapshot_name=snapshot_name)
-    size_in_gibibytes = snapshot['DBSnapshots'][0]['AllocatedStorage']
-    size_in_kilobytes = round(size_in_gibibytes / 1073741.824, 2)
-    logger.info(f'snapshot created successfully: {size_in_kilobytes} KB')
+        logger.info(f'creating rds snapshot: {snapshot_name}')
+        snapshot = self._create_rds_snapshot(snapshot_name=snapshot_name)
+        logger.info(f'created rds snapshot: {self._snapshot_size_in_kb(snapshot)} KB')
 
-    full_bucket_path = f's3://{settings.aws.s3_backup_bucket}/{bucket_prefix}/{snapshot_name}'
-    logger.info(f'exporting snapshot: {full_bucket_path}')
-    _export_rds_snapshot_to_s3(
-        region=settings.aws.region,
-        account_id=settings.aws.account_id,
-        aws_role=settings.aws.postgres_backup_role,
-        bucket=settings.aws.s3_backup_bucket,
-        bucket_prefix=bucket_prefix,
-        snapshot_name=snapshot_name,
-    )
-    logger.info('snapshot exported successfully')
+        logger.info('exporting rds snapshot to s3')
+        self._export_rds_snapshot_to_s3(snapshot_name=snapshot_name)
+        logger.info(f'exported rds snapshot: {full_bucket_path}')
 
-    logger.info('deleting rds snapshot')
-    _delete_rds_snapshot(db_name=settings.postgres.database, snapshot_name=snapshot_name)
-    logger.info('snapshot deleted successfully')
+        logger.info('deleting rds snapshot')
+        self._delete_rds_snapshot(snapshot_name=snapshot_name)
+        logger.info('deleted rds snapshot')
 
-    elapsed_time = (pendulum.now() - start).in_words()
-    logger.info(f'postgres backup completed successfully: {elapsed_time}')
+        elapsed_time = (pendulum.now() - start).in_words()
+        logger.info(f'rds snapshot completed: {elapsed_time}')
 
 
 if __name__ == '__main__':
-    postgres_snapshot_to_s3()
+    rds_snap = AwsRdsSnapshotS3(bucket_prefix='postgres/snapshots', settings=settings)
+    rds_snap.snapshot()
