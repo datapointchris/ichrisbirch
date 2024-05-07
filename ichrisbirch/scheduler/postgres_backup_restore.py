@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresBackupRestore:
+    """Backing up or Restoring a Postgres Database in AWS.
+
+    backup_description:
+        used when calling the backup function for a specific purpose
+        Default: 'scheduled'
+
+    """
 
     def __init__(
         self,
@@ -86,9 +93,18 @@ class PostgresBackupRestore:
         else:
             logger.info(f'deleted: ./{self.local_prefix}')
 
-    def _backup_database(self, host, port, username, password, out_dir: Path, verbose=False) -> Path:
+    def _backup_database(
+        self,
+        host,
+        port,
+        username,
+        password,
+        out_dir: Path,
+        backup_description: str,
+        verbose=False,
+    ) -> Path:
         timestamp = pendulum.now().format('YYYY-MM-DDTHHmm')
-        backup_filename = f'backup-{timestamp}.dump'
+        backup_filename = f'backup-{timestamp}-{backup_description}.dump'
         backup_fullpath = out_dir / backup_filename
         command = [
             'pg_dumpall',
@@ -127,7 +143,12 @@ class PostgresBackupRestore:
         s3.upload_fileobj(file.open('rb'), Key=key)
         logger.info('upload completed')
 
-    def backup(self, upload=True, delete_local_file=True):
+    def backup(
+        self,
+        upload=True,
+        save_local=False,
+        backup_description: str = 'scheduled',
+    ):
         start = pendulum.now()
         logger.info(f'started: postgres backup to s3 - {self.environment}')
         backup = self._backup_database(
@@ -136,10 +157,11 @@ class PostgresBackupRestore:
             username=self.source_username,
             password=self.source_password,
             out_dir=self.local_dir,
+            backup_description=backup_description,
         )
         if upload:
             self._upload_to_s3(file=backup)
-        if delete_local_file:
+        if not save_local:
             self._delete_file(backup)
         elapsed = (pendulum.now() - start).in_words()
         logger.info(f'postgres backup to s3 completed - {elapsed}')
@@ -198,7 +220,7 @@ class PostgresBackupRestore:
         self._run_command(command, env={'PGPASSWORD': password})
         logger.info(f'restored to: {host}:{port}')
 
-    def restore(self, filename: str | Path, download=True, delete_local_file=True):
+    def restore(self, filename: str | Path, download=True, save_local=True):
         start = pendulum.now()
         logger.info(f'started: postgres restore from s3 - {self.environment}')
         if download:
@@ -212,7 +234,7 @@ class PostgresBackupRestore:
             password=self.target_password,
             file=download_file,
         )
-        if download and delete_local_file:
+        if download and not save_local:
             self._delete_file(Path(download_file))
         elapsed = (pendulum.now() - start).in_words()
         logger.info(f'postgres backup to s3 completed - {elapsed}')
@@ -231,5 +253,5 @@ if __name__ == '__main__':
         target_username='postgres',
         target_password='postgres',  # nosec
     )
-    pbr.backup(delete_local_file=False)
-    pbr.restore('latest', delete_local_file=False)
+    pbr.backup()
+    pbr.restore('latest')
