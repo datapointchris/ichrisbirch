@@ -144,7 +144,7 @@ class PostgresBackupRestore:
         elapsed = (pendulum.now() - start).in_words()
         logger.info(f'postgres backup to s3 completed - {elapsed}')
 
-    def _download_from_s3(self, filename: str):
+    def _download_from_s3(self, filename: Path | str):
         """Either a dump file name of a specific backup, or 'latest' which will get the latest backup."""
         s3 = boto3.resource('s3').Bucket(self.backup_bucket)
         if filename == 'latest':
@@ -163,7 +163,7 @@ class PostgresBackupRestore:
         logger.info(f'download location: {download_path}')
         return download_path
 
-    def _restore(self, host, port, username, password, file: Path, verbose=False):
+    def _restore(self, host, port, username, password, file: Path | str, verbose=False):
         """Restore the database in the dump file.
 
         NOTE: the --dbname used to connect is 'postgres' because it is used as the base database
@@ -198,11 +198,13 @@ class PostgresBackupRestore:
         self._run_command(command, env={'PGPASSWORD': password})
         logger.info(f'restored to: {host}:{port}')
 
-    def restore(self, filename: str, download=True, delete_local_file=True):
+    def restore(self, filename: str | Path, download=True, delete_local_file=True):
         start = pendulum.now()
         logger.info(f'started: postgres restore from s3 - {self.environment}')
         if download:
             download_file = self._download_from_s3(filename)
+        else:
+            download_file = filename
         self._restore(
             host=self.target_host,
             port=self.target_port,
@@ -210,8 +212,8 @@ class PostgresBackupRestore:
             password=self.target_password,
             file=download_file,
         )
-        if delete_local_file:
-            self._delete_file(download_file)
+        if download and delete_local_file:
+            self._delete_file(Path(download_file))
         elapsed = (pendulum.now() - start).in_words()
         logger.info(f'postgres backup to s3 completed - {elapsed}')
 
@@ -225,9 +227,9 @@ if __name__ == '__main__':
         source_username=settings.postgres.username,
         source_password=settings.postgres.password,
         target_host='localhost',
-        target_port='5455',
+        target_port='5432',
         target_username='postgres',
         target_password='postgres',  # nosec
     )
-    pbr.backup()
-    pbr.restore('latest')
+    pbr.backup(delete_local_file=False)
+    pbr.restore('latest', delete_local_file=False)
