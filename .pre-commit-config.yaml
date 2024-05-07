@@ -28,6 +28,12 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 
+  - repo: https://github.com/PyCQA/docformatter
+    rev: v1.7.5
+    hooks:
+      - id: docformatter
+        args: ["--config", "pyproject.toml"]
+
   - repo: https://github.com/psf/black
     rev: 24.4.2
     hooks:
@@ -47,12 +53,6 @@ repos:
     rev: 1.16.0
     hooks:
       - id: blacken-docs
-
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
-    hooks:
-      - id: docformatter
-        args: ["--config", "pyproject.toml"]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
