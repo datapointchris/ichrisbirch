@@ -66,6 +66,7 @@ logging_config = {
         '': {'level': 'DEBUG', 'handlers': ['stdout', 'stderr', 'file', 'json']},
         'apscheduler': {'level': 'WARNING'},
         'boto3': {'level': 'INFO'},
+        'botocore': {'level': 'INFO'},
         'fsevents': {'level': 'INFO'},
         'httpcore': {'level': 'INFO'},
         'httpx': {'level': 'INFO'},
@@ -77,14 +78,25 @@ logging_config = {
 
 
 def initialize_logging():
+    github_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
+    development = os.environ.get('ENVIRONMENT') == 'development'
+    mac_os = platform.system() == 'Darwin'
+
     # Don't log to file in GitHub Actions
-    if os.environ.get('GITHUB_ACTIONS') == 'true':
+    if github_actions:
         del logging_config['handlers']['file']
         del logging_config['handlers']['json']
         logging_config['loggers']['']['handlers'] = ['stdout', 'stderr']
 
+    # Don't log to stdout or stderr when developing or on macos
+    # use the logs and running app and api in debug mode instead
+    if development or mac_os:
+        del logging_config['handlers']['stdout']
+        del logging_config['handlers']['stderr']
+        logging_config['loggers']['']['handlers'] = ['file', 'json']
+
     # Change log location on MacOS
-    if platform.system() == 'Darwin':
+    if mac_os:
         logging_config['handlers']['file']['filename'] = '/usr/local/var/log/ichrisbirch/pylogger.log'
         logging_config['handlers']['json']['filename'] = '/usr/local/var/log/ichrisbirch/pylogger.json'
 
