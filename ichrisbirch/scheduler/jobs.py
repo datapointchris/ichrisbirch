@@ -7,6 +7,7 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 
 """
 
+import functools
 import logging
 from dataclasses import asdict
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from datetime import datetime
 from typing import Any
 from typing import Callable
 
+import pendulum
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import and_
@@ -23,7 +25,7 @@ from ichrisbirch import models
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
-from ichrisbirch.scheduler.postgres_snapshot_to_s3 import postgres_snapshot_to_s3
+from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -50,20 +52,33 @@ class JobToAdd:
         return asdict(self)
 
 
+def job_logger(func: Callable) -> Callable:
+    """Decorator to log job start and completion."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        logger.info(f'scheduler: job started: {func.__name__}')
+        start = pendulum.now()
+        func(*args, **kwargs)
+        elapsed = (pendulum.now() - start).in_words()
+        logger.info(f'scheduler: job completed: {func.__name__} - {elapsed}')
+
+    return wrapper
+
+
+@job_logger
 def decrease_task_priority() -> None:
     """Decrease priority of all tasks by 1."""
-    logger.info('scheduler: job started: task priority decrease')
     with SessionLocal() as session:
         query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
         for task in session.scalars(query).all():
             task.priority -= 1
         session.commit()
-    logger.info('scheduler: job completed: task priority decrease')
 
 
+@job_logger
 def check_and_run_autotasks() -> None:
     """Check if any autotasks should run today and create tasks if so."""
-    logger.info('scheduler: job started: autotask check and run')
     with SessionLocal() as session:
         for autotask in session.scalars(select(models.AutoTask)).all():
             if autotask.should_run_today:
@@ -78,7 +93,6 @@ def check_and_run_autotasks() -> None:
                 autotask.last_run_date = datetime.now()
                 autotask.run_count += 1
         session.commit()
-    logger.info('scheduler: job completed: autotask check and run')
 
 
 def make_logs():
@@ -88,6 +102,18 @@ def make_logs():
 log_test = JobToAdd(func=make_logs, trigger=CronTrigger(second='*/10'), id='make_logs')
 
 
+@job_logger
+def aws_postgres_snapshot_to_s3():
+    """Wrapper to get the job logging and to be consistent because the function is too complex to reimplement.
+
+    This function is an alternative to the postgres_backup for testing but it is difficult to restore from a snapshot.
+
+    """
+    rds_snap = AwsRdsSnapshotS3(bucket_prefix='postgres/snapshots', settings=settings)
+    rds_snap.snapshot()
+
+
+@job_logger
 def postgres_backup():
     pbr = PostgresBackupRestore(
         environment=settings.ENVIRONMENT,
@@ -104,17 +130,21 @@ jobs_to_add = [
     JobToAdd(
         func=decrease_task_priority,
         trigger=daily_1am_trigger,
-        id='daily_decrease_task_priority',
+        id='decrease_task_priority_daily',
     ),
     JobToAdd(
         func=check_and_run_autotasks,
         trigger=daily_1am_trigger,
-        id='check_for_autotasks_to_run',
+        id='check_and_run_autotasks_daily',
     ),
     JobToAdd(
-        func=postgres_snapshot_to_s3,
+        func=aws_postgres_snapshot_to_s3,
         trigger=daily_3pm_trigger,
-        id='daily_postgres_snapshot_to_s3',
+        id='aws_postgres_snapshot_to_s3_daily',
     ),
-    JobToAdd(func=postgres_backup, trigger=every_6_hour_18_minute, id='postgres_backup_every_6_hour_18_minute'),
+    JobToAdd(
+        func=postgres_backup,
+        trigger=every_6_hour_18_minute,
+        id='postgres_backup_every_6_hour_18_minute',
+    ),
 ]
