@@ -35,6 +35,7 @@
     {% endfor %}
   </div>
   <div class="task-layout task-layout--one-column-wide">
+    <h3>Total Tasks Completed: {{ total_completed }}</h3>
     <h3>Average Completion Time: {{ average_completion }}</h3>
     <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
     <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>

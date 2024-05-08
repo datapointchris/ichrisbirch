@@ -134,6 +134,7 @@ def completed():
         chart_labels=chart_labels,
         chart_values=chart_values,
         task_categories=TASK_CATEGORIES,
+        total_completed=len(completed_tasks),
         zip=zip,
     )
 
