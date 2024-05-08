@@ -176,9 +176,12 @@ def initialize_logging(config=LOGGING_CONFIG):
 
     # Don't log to file in GitHub Actions
     if github_actions:
+        temp = config['handlers'].copy()
         for handler in config['handlers']:
             if '_file' in handler:
-                del config['handlers'][handler]
+                del temp[handler]
+                # del config['handlers'][handler]
+        config['handlers'] = temp
         for logger in config['loggers']:
             config['loggers'][logger]['handlers'] = ['console']
 
