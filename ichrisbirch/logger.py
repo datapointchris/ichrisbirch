@@ -126,6 +126,11 @@ HANDLERS = {
 }
 
 LOGGERS = {
+    'ichrisbirch': {
+        'level': 'DEBUG',
+        'handlers': ['console', 'ichrisbirch_file'],
+        'propagate': False,
+    },
     'app': {
         'level': 'DEBUG',
         'handlers': ['console', 'ichrisbirch_file', 'app_file'],
@@ -175,15 +180,17 @@ def initialize_logging(config=LOGGING_CONFIG):
     mac_os = platform.system() == 'Darwin'
 
     # Don't log to file in GitHub Actions
+    # 1. Delete handlers so they don't try to create the log files
+    # 2. Change loggers to only log to console
+    # 3. Change root logger to only log to console
     if github_actions:
-        temp = config['handlers'].copy()
-        for handler in config['handlers']:
+        temp = config['handlers'].copy()  # make a copy to avoid dict length change on iteration
+        for handler in temp:
             if '_file' in handler:
-                del temp[handler]
-                # del config['handlers'][handler]
-        config['handlers'] = temp
+                del config['handlers'][handler]
         for logger in config['loggers']:
             config['loggers'][logger]['handlers'] = ['console']
+        config['root']['handlers'] = ['console']
 
     # Change log location on MacOS
     if mac_os:
