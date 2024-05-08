@@ -28,9 +28,9 @@
             {% elif feature.type == 'boolean' %}
             <label class="checkboxes">
               {% if value == 1 %}
-              <input type="checkbox" id="{{ feature.name }}-true" name="{{ feature.name }}" value=1 checked="checked" />
+              <input type="checkbox" id="{{ feature.name }}-true" name="{{ feature.name }}" value=1 checked="checked">
               {% else %}
-              <input type="checkbox" id="{{ feature }}-true" name="{{ feature.name }}" value=1 />
+              <input type="checkbox" id="{{ feature }}-true" name="{{ feature.name }}" value=1>
               {% endif %}
               <span class="checkmark"></span>
               </h2>
