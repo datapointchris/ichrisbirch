@@ -15,10 +15,8 @@ from ichrisbirch.app.helpers import handle_if_not_response_code
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
-
+logger = logging.getLogger('app.home')
 blueprint = Blueprint('home', __name__, template_folder='templates', static_folder='static')
-
-logger = logging.getLogger(__name__)
 
 
 @blueprint.route('/', methods=['GET'])

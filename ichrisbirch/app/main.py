@@ -10,7 +10,7 @@ from ichrisbirch.app import routes
 from ichrisbirch.app.login import login_manager
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('app')
 
 
 def handle_errors(e, error_code):
@@ -20,14 +20,14 @@ def handle_errors(e, error_code):
 
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
-    logger.info('Flask App Created')
+    logger.info('created')
 
     login_manager.init_app(app)
-    logger.info('Flask Login Manager Initialized')
+    logger.info('login manager initialized')
 
     with app.app_context():
         app.config.from_object(settings.flask)
-        logger.info('Flask App Configured')
+        logger.info('configured')
         logger.debug(
             f'DEBUG={app.config.get("DEBUG")}, TESTING={app.config.get("TESTING")}, ENV={app.config.get("ENV")}'
         )
@@ -38,13 +38,13 @@ def create_app(settings: Settings) -> Flask:
         app.register_error_handler(422, partial(handle_errors, error_code=422))
         app.register_error_handler(500, partial(handle_errors, error_code=500))
         app.register_error_handler(502, partial(handle_errors, error_code=502))
-        logger.info('Flask App Error Handlers Registered')
+        logger.info('error handlers registered')
 
         @app.template_filter()
         def pretty_date(dttm, format='%B %d, %Y'):
             return '' if dttm is None else dttm.strftime(format)
 
-        logger.info('Flask App Template Filters Registered')
+        logger.info('template filters registered')
 
         app.register_blueprint(routes.home.blueprint)
         app.register_blueprint(routes.auth.blueprint)
@@ -57,7 +57,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(routes.tasks.blueprint, url_prefix='/tasks')
         app.register_blueprint(routes.users.blueprint, url_prefix='/users')
-        logger.info('Flask App Blueprints Registered')
+        logger.info('blueprints registered')
 
         # TODO: [2024/05/03] - Database Initialization
 

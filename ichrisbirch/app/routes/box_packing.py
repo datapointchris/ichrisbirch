@@ -19,9 +19,9 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.models.box import BoxSize
 
 settings = get_settings()
+logger = logging.getLogger('app.box_packing')
 blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_packing', static_folder='static')
 
-logger = logging.getLogger(__name__)
 
 BOX_PACKING_API_URL = f'{settings.api_url}/box_packing/'
 BOXES_API_URL = url_builder(BOX_PACKING_API_URL, 'boxes')

@@ -9,8 +9,8 @@ from flask import request
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
+logger = logging.getLogger('app.countdowns')
 blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
-logger = logging.getLogger(__name__)
 countdowns_api = QueryAPI(base_url='countdowns', api_key='', logger=logger, response_model=schemas.Countdown)
 
 

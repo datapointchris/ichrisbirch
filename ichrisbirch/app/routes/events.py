@@ -12,8 +12,8 @@ from ichrisbirch.app.query_api import QueryAPI
 
 LOCAL_TZ = datetime.now().astimezone().tzinfo
 
+logger = logging.getLogger('app.events')
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
-logger = logging.getLogger(__name__)
 events_api = QueryAPI(base_url='events', api_key='', logger=logger, response_model=schemas.Event)
 
 

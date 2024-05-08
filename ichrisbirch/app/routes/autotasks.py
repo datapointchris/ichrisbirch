@@ -14,8 +14,8 @@ from ichrisbirch.models.task import TaskCategory
 TASK_FREQUENCIES = [t.value for t in TaskFrequency]
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
+logger = logging.getLogger('app.autotasks')
 blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotasks', static_folder='static')
-logger = logging.getLogger(__name__)
 autotasks_api = QueryAPI(base_url='autotasks', api_key='', logger=logger, response_model=schemas.AutoTask)
 
 

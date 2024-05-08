@@ -3,7 +3,7 @@ import logging
 from ichrisbirch.api.main import create_api
 from ichrisbirch.config import get_settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('api')
 
 settings = get_settings()
 logger.info(f'loaded settings for environment: {settings.ENVIRONMENT}')

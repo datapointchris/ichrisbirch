@@ -7,7 +7,7 @@ from typing import Optional
 
 import dotenv
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('config')
 
 
 class AWSSettings:
@@ -133,12 +133,12 @@ class Settings:
 
 def load_environment(env_file: Optional[pathlib.Path | str] = None):
     if isinstance(env_file, pathlib.Path):
-        logger.info(f'Loading Environment from pathlib.Path: {env_file}')
+        logger.info(f'loading environment from pathlib.Path: {env_file}')
         if not env_file.exists():
             raise FileNotFoundError(f'Environment pathlib.Path not found: {env_file}')
 
     elif isinstance(env_file, str):
-        logger.info(f'Loading Environment from string: {env_file}')
+        logger.info(f'loading environment from string: {env_file}')
         if not pathlib.Path(env_file).exists():
             match env_file:
                 case 'development':
@@ -148,17 +148,17 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                 case 'production':
                     filename = '.prod.env'
                 case _:
-                    error_msg = f'Unrecognized Environment Selection: {env_file}'
+                    error_msg = f'unrecognized environment selection: {env_file}'
                     logger.error(error_msg)
                     raise ValueError(error_msg)
-            logger.info(f'Loading environment variables from: {filename}')
+            logger.info(f'loading environment variables from: {filename}')
             env_file = pathlib.Path(dotenv.find_dotenv(filename))
         else:
-            logger.info(f'Loading environment variables from: {env_file}')
+            logger.info(f'loading environment variables from: {env_file}')
             env_file = pathlib.Path(env_file)
 
     else:
-        logger.info(f'Loading environment: {os.environ["ENVIRONMENT"]}')
+        logger.info(f'loading environment: {os.environ["ENVIRONMENT"]}')
         match (ENV := os.environ['ENVIRONMENT']):
             case 'development':
                 filename = '.dev.env'
@@ -172,7 +172,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                 raise ValueError(error_msg)
         env_file = pathlib.Path(dotenv.find_dotenv(filename))
 
-    logger.info(f'Env file: {env_file}')
+    logger.info(f'env file: {env_file}')
     dotenv.load_dotenv(env_file, override=True)
     return env_file
 

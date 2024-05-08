@@ -7,7 +7,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.scheduler.jobs import jobs_to_add
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('scheduler')
 
 
 def create_scheduler(settings: Settings) -> BlockingScheduler:

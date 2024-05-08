@@ -22,9 +22,8 @@ from ichrisbirch.app.helpers import url_builder
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger('app.habits')
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
-
-logger = logging.getLogger(__name__)
 
 HABITS_API_URL = url_builder(settings.api_url, 'habits')
 

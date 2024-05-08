@@ -12,7 +12,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('api.countdowns')
 router = APIRouter()
 
 

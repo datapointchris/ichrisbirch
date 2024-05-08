@@ -20,9 +20,8 @@ from ichrisbirch.app.forms import SignupForm
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import http as http_utils
 
+logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
-logger = logging.getLogger(__name__)
-
 users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
 
 

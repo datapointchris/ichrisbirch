@@ -29,7 +29,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('ops')
 
 
 class AwsRdsSnapshotS3:

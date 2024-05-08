@@ -8,10 +8,8 @@ from flask_login import LoginManager
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger('app.login_manager')
 login_manager = LoginManager()
-
 user_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
 
 

@@ -28,7 +28,7 @@ from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 
 settings = get_settings()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('scheduler.jobs')
 
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)

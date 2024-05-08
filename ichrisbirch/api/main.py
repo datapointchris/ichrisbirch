@@ -13,7 +13,7 @@ from ichrisbirch.config import Settings
 
 # TODO: for authentication
 # from ichrisbirch.api.dependencies import get_query_token, get_token_header
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('api')
 
 
 async def http_exception_handler_logger(request, exc):
@@ -33,10 +33,10 @@ async def generic_exception_handler(request, exc):
 
 def create_api(settings: Settings) -> FastAPI:
     api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
-    logger.info('FastAPI Started')
+    logger.info('created')
 
     api.add_middleware(ResponseLoggerMiddleware)
-    logger.debug(f'FastAPI middleware added: {ResponseLoggerMiddleware.__name__}')
+    logger.info('middleware added')
 
     # TODO: for auth
     # app = FastAPI(dependencies=[Depends(get_query_token)])
@@ -53,11 +53,11 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.server.router, prefix='/server', tags=['server'])
     api.include_router(endpoints.tasks.router, prefix='/tasks', tags=['tasks'])
     api.include_router(endpoints.users.router, prefix='/users', tags=['users'])
-    logger.info('FastAPI Routers Registered')
+    logger.info('routers registered')
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
     api.add_exception_handler(RequestValidationError, request_validation_exception_handler_logger)
     api.add_exception_handler(Exception, generic_exception_handler)
-    logger.info('FastAPI Exception Handlers Registered')
+    logger.info('exception handlers registered')
 
     return api

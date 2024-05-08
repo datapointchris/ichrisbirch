@@ -9,8 +9,8 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
+logger = logging.getLogger('app.users')
 blueprint = Blueprint('users', __name__, template_folder='templates/users', static_folder='static')
-logger = logging.getLogger(__name__)
 
 users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
 
