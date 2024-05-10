@@ -33,7 +33,6 @@ def get_sqlalchemy_session():
     you can use `yield SessionLocal()`,
     but you'll need to manually close the session in the caller code
     or use contextlib.closing to make the generator usable with a with statement.
-
     """
 
     with SessionLocal() as session:

@@ -15,7 +15,6 @@ Requirements:
   3. RDS delete-db-snapshot
 Locally: user or IAM credentials must have these permissions
 EC2: the instance *should* have the necessary permissions through a security group or IAM role
-
 """
 
 import logging

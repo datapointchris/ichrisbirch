@@ -127,7 +127,7 @@ exclude = ["alembic", ".git", ".mypy_cache", ".venv", "build", "dist"]
 wrap-summaries = 120
 wrap-descriptions = 120
 close-quotes-on-newline = true
-blank = true
+blank = false
 
 [tool.isort]
 line_length = 120

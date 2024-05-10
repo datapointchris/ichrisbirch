@@ -33,7 +33,6 @@ class QueryAPI:
             >>> API_URL = 'http://example.com/api/v1'
             >>> url_builder(API_URL, 'tasks')
             'http://example.com/api/v1/tasks/'
-
         """
         stripped_parts = []
         for part in parts:
@@ -49,7 +48,6 @@ class QueryAPI:
         """Flash and log an error if the response status code is not the expected response code.
 
         Logger needs to be passed in as a parameter, or all logging is logged from the helpers file
-
         """
         if response.status_code != response_code:
             error_message = f'expected {response_code} from {response.url} but received {response.status_code}'

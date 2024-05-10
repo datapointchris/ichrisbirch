@@ -1,9 +1,8 @@
-"""create box size enum
+"""Create box size enum.
 
 Revision ID: 6d0ab5ffd636
 Revises: 74af91565f9a
 Create Date: 2024-02-24 21:14:01.681253
-
 """
 
 from alembic import op

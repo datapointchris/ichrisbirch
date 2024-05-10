@@ -4,7 +4,6 @@ Jobs have to have the session created in this file,
 since the session is not serializable and cannot be passed in as a parameter.
 `SessionLocal` must be used instead of `get_sqlalchemy_session` because the generator produced
 by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
-
 """
 
 import functools
@@ -107,7 +106,6 @@ def aws_postgres_snapshot_to_s3():
     """Wrapper to get the job logging and to be consistent because the function is too complex to reimplement.
 
     This function is an alternative to the postgres_backup for testing but it is difficult to restore from a snapshot.
-
     """
     rds_snap = AwsRdsSnapshotS3(bucket_prefix='postgres/snapshots', settings=settings)
     rds_snap.snapshot()

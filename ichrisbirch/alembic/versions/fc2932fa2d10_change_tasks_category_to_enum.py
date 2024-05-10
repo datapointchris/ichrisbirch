@@ -1,9 +1,8 @@
-"""Change tasks category to enum
+"""Change tasks category to enum.
 
 Revision ID: fc2932fa2d10
 Revises: c119daabf840
 Create Date: 2023-01-16 02:00:52.070281
-
 """
 
 import sqlalchemy as sa

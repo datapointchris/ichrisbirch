@@ -1,9 +1,8 @@
-"""Create users table
+"""Create users table.
 
 Revision ID: 3170c2adb2bb
 Revises: 02bb8d55588c
 Create Date: 2024-05-04 01:54:51.507817
-
 """
 
 import sqlalchemy as sa

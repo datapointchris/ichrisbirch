@@ -105,7 +105,6 @@ def completed():
     """Completed tasks endpoint.
 
     Filtered by date selection.
-
     """
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime()

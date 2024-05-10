@@ -18,7 +18,6 @@ class PostgresBackupRestore:
     backup_description:
         used when calling the backup function for a specific purpose
         Default: 'scheduled'
-
     """
 
     def __init__(
@@ -191,7 +190,6 @@ class PostgresBackupRestore:
         NOTE: the --dbname used to connect is 'postgres' because it is used as the base database
         to issue the CREATE DATABASE command.  The database name to create is embedded in the dump file.
         --no-privileges because rdsadmin privilege GRANT and REVOKE will cause errors.
-
         """
         command = [
             'psql',

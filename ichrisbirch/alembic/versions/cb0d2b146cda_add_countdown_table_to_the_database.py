@@ -1,9 +1,8 @@
-"""Add countdown table to the database
+"""Add countdown table to the database.
 
 Revision ID: cb0d2b146cda
 Revises: 733fbc2709b9
 Create Date: 2023-05-14 14:33:41.682515
-
 """
 
 import sqlalchemy as sa

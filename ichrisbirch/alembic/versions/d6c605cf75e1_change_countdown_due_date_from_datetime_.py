@@ -1,9 +1,8 @@
-"""Change countdown `due_date` from datetime to date
+"""Change countdown `due_date` from datetime to date.
 
 Revision ID: d6c605cf75e1
 Revises: cb0d2b146cda
 Create Date: 2023-05-15 18:05:45.992110
-
 """
 
 import sqlalchemy as sa

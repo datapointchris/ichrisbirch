@@ -1,9 +1,8 @@
-"""Add Purchase, Work, Kitchen to ENUM values for TaskCategory
+"""Add Purchase, Work, Kitchen to ENUM values for TaskCategory.
 
 Revision ID: 0bc20d6a3ae1
 Revises: fc2932fa2d10
 Create Date: 2023-04-26 19:32:09.826042
-
 """
 
 from alembic import op

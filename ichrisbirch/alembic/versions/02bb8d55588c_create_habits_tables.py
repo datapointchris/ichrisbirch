@@ -1,9 +1,8 @@
-"""Create habits tables
+"""Create habits tables.
 
 Revision ID: 02bb8d55588c
 Revises: 6d0ab5ffd636
 Create Date: 2024-04-27 00:05:43.707829
-
 """
 
 import sqlalchemy as sa

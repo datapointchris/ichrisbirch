@@ -103,7 +103,6 @@ def insert_test_data() -> None:
 
     The data is manually added, must update when a new endpoint is added. deepcopy(data) is necessary or the tests will
     mutate the BASE_DATA and cause test failures
-
     """
     base_datasets = [
         tests.test_data.autotasks.BASE_DATA,

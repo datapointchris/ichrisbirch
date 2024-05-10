@@ -1,9 +1,8 @@
-"""init_tables
+"""init_tables.
 
 Revision ID: 0f98f2e006f5
 Revises:
 Create Date: 2022-11-18 22:36:50.716104
-
 """
 
 import sqlalchemy as sa

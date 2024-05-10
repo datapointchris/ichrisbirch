@@ -1,9 +1,8 @@
-"""Change date and datetime types
+"""Change date and datetime types.
 
 Revision ID: 74af91565f9a
 Revises: d6c605cf75e1
 Create Date: 2023-06-27 23:10:22.277315
-
 """
 
 import sqlalchemy as sa

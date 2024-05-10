@@ -20,7 +20,6 @@ def load_user(alternative_id):
     Must return the User object or None Using the user ID as the value of the remember token means you must change the
     user ID to invalidate their login sessions. One way to improve this is to use an alternative user id instead of the
     user ID.
-
     """
     return user_api.get(['alt', alternative_id])
 

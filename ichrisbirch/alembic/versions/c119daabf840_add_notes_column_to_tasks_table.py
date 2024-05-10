@@ -1,9 +1,8 @@
-"""Add notes column to tasks table
+"""Add notes column to tasks table.
 
 Revision ID: c119daabf840
 Revises: 0f98f2e006f5
 Create Date: 2022-12-31 00:35:59.776047
-
 """
 
 import sqlalchemy as sa

@@ -58,7 +58,6 @@ def create_tables_insert_data_drop_tables():
     """All tables are created and dropped for each test function.
 
     This is the easiest way to ensure a clean db each time a new test is run.
-
     """
     Base.metadata.create_all(tests.helpers.ENGINE)
     tests.helpers.insert_test_data()
@@ -82,7 +81,6 @@ def setup_test_environment():
     7. Control back to setup_test_environment
     8. Stop Postgres container
     9. Kill Postgres, Uvicorn, and Gunicorn threads
-
     """
     docker_client = tests.helpers.get_docker_client()
     postgres_container_config = dict(
