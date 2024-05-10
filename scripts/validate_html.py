@@ -1,5 +1,4 @@
 import sys
-import time
 from queue import Queue
 from urllib.parse import urljoin
 
@@ -51,25 +50,10 @@ class ValidateWebsite:
                 print(f"Error while processing {current_page}: {e}")
 
     def validate_page(self, html_content: str):
-        delay = 1
-        max_delay = 8
-        total_delay = 0
         headers = {"Content-Type": "text/html; charset=utf-8"}
-        while True:
-            response = httpx.post(self.validator, content=html_content, headers=headers)
-            if response.status_code == 200:
-                return response.json()
-
-            if response.status_code == 429:
-                delay = delay * 2
-                total_delay += delay
-                if delay > max_delay:
-                    print(f'Max delay of {max_delay} exceeded, exiting.')
-                    raise SystemExit(1)
-                print(f'Rate limit exceeded. Increasing delay to {delay} for total delay so far: {total_delay}')
-                time.sleep(delay)
-            else:
-                response.raise_for_status()
+        response = httpx.post(self.validator, content=html_content, headers=headers)
+        response.raise_for_status()
+        return response.json()
 
     def validate_pages(self):
         for page_url, html_content in sorted(self.page_content.items()):
