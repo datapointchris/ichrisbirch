@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.autotask import frequency_to_duration
-from tests.testing_data.autotasks import BASE_DATA
+from tests.test_data.autotasks import BASE_DATA
 
 # TODO: [2023/06/14] - This is a hack for the sqlalchemy model that for some reason is
 # returning a string for the date that needs to be parsed for the properties to work.

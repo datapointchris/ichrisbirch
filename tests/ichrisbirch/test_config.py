@@ -4,7 +4,7 @@ from ichrisbirch.config import get_settings
 from tests.helpers import find_project_root
 
 string_path = find_project_root() / '.dev.env'
-test_env_file = find_project_root() / 'tests' / 'testing_data' / '.test_env_file.env'
+test_env_file = find_project_root() / 'tests' / 'test_data' / '.test_env_file.env'
 
 
 def test_load_environment_by_ENVIRONMENT_variable():

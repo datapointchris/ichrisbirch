@@ -2,125 +2,118 @@ import logging
 import subprocess
 import threading
 import time
-from copy import deepcopy
 from typing import Any
 from typing import Generator
 
-import docker
 import pytest
-from docker.errors import DockerException
-from docker.models.containers import Container
 from fastapi.testclient import TestClient
 from flask.testing import FlaskClient
 from flask_login import FlaskLoginClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 
+import tests.helpers
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
-from tests import testing_data
 
 logger = logging.getLogger(__name__)
 
 settings = get_settings('testing')
 logger.info(f"load settings from environment: {settings.ENVIRONMENT}")
 
-ENGINE = create_engine(settings.sqlalchemy.db_uri, echo=False, future=True)
-TESTING_SESSION = sessionmaker(bind=ENGINE, autocommit=False, autoflush=True, future=True, expire_on_commit=False)
+
+@pytest.fixture(scope='module')
+def test_api() -> Generator[TestClient, Any, None]:
+    api = create_api(settings=settings)
+    api.dependency_overrides[get_sqlalchemy_session] = tests.helpers.get_testing_session
+    with TestClient(api) as client:
+        yield client
 
 
-def create_docker_container(client: docker.APIClient, config: dict[str, Any]) -> Container:
-    image = config.pop("image")
-    try:
-        client.pull(image)
-        container = client.create_container(image, **config)
-    except DockerException as e:
-        message = f"Failed to CREATE Docker client: {e}"
-        logger.error(message)
-        try:
-            client.remove_container(container=config.get("name"), force=True)
-            container = client.create_container(image, **config)
-        except DockerException as e:
-            message = f"Failed to REMOVE and RECREATE Docker container: {e}"
-            logger.error(message)
-            pytest.exit(message)
-    time.sleep(3)  # Must sleep to allow creation of detached Docker container
-    # TODO: I don't think this works, need to see when logging is fixed
-    for log in client.logs(container=container.get("Id"), stream=True):
-        logger.info(log.strip())
-    return container
+@pytest.fixture(scope='module')
+def test_app() -> Generator[FlaskClient, Any, None]:
+    app = create_app(settings=settings)
+    app.testing = True
+    app.config.update({'TESTING': True})
+    with app.test_client() as client:
+        with app.app_context():
+            yield client
 
 
-def get_testing_session() -> Generator[Session, None, None]:
-    session = TESTING_SESSION()
-    try:
-        yield session
-    finally:
-        session.close()
+@pytest.fixture(scope='module')
+def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
+    app = create_app(settings=settings)
+    app.testing = True
+    app.config.update({'TESTING': True})
+    app.test_client_class = FlaskLoginClient
+    with app.test_client() as client:
+        with app.app_context():
+            yield client
 
 
-def get_test_data() -> list:
-    all_test_data = []
-    for data in (
-        testing_data.autotasks.BASE_DATA,
-        testing_data.boxes.BASE_DATA,
-        testing_data.boxitems.BASE_DATA,
-        testing_data.countdowns.BASE_DATA,
-        testing_data.events.BASE_DATA,
-        testing_data.tasks.BASE_DATA,
-    ):
-        all_test_data.extend(deepcopy(data))
-    return all_test_data
+@pytest.fixture(scope='function', autouse=True)
+def create_tables_insert_data_drop_tables():
+    """All tables are created and dropped for each test function.
+
+    This is the easiest way to ensure a clean db each time a new test is run.
+
+    """
+    Base.metadata.create_all(tests.helpers.ENGINE)
+    tests.helpers.insert_test_data()
+    yield
+    Base.metadata.drop_all(tests.helpers.ENGINE)
 
 
 @pytest.fixture(scope='session', autouse=True)
 def setup_test_environment():
-    try:
-        docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
-    except DockerException:
-        # Docker is not running
-        print('docker is not running, starting...')
-        subprocess.run(['open', '-ga', 'docker'])
-        subprocess.run(['sleep', '20'])
-        print('docker started')
-        # Try again, let failure surface in the next command if this was not the issue
-        docker_client = docker.APIClient(base_url='unix://var/run/docker.sock')
+    """Setup testing environment.
 
-    # Create Postgres Docker container
-    postgres_docker_container = create_docker_container(
-        docker_client,
-        dict(
-            image='postgres:16',
-            name='postgres_testing',
-            environment={
-                'ENVIRONMENT': settings.ENVIRONMENT,
-                'POSTGRES_USER': settings.postgres.username,
-                'POSTGRES_PASSWORD': settings.postgres.password,
-                'POSTGRES_DB': settings.postgres.database,
-            },
-            ports=[5432],
-            # Bind to port 5434 on host machine, so that it doesn't conflict with local Postgres
-            host_config=docker_client.create_host_config(port_bindings={5432: 5434}, auto_remove=True),
-            detach=True,
-            labels=['testing'],
-        ),
+    1. Get Docker client (will attempt to start Docker if not running)
+    2. Create Postgres Docker container
+    3. Create schemas
+    4. Start Uvicorn API (FastAPI) subprocess
+    5. Start Gunicorn App (Flask) subprocess
+    6. Yield to test
+    6a. create_tables_insert_data_drop_tables runs here
+    6b. Function yields after inserting data to run test
+    6c. Drop all tables after test completes
+    7. Control back to setup_test_environment
+    8. Stop Postgres container
+    9. Kill Postgres, Uvicorn, and Gunicorn threads
+
+    """
+    docker_client = tests.helpers.get_docker_client()
+    postgres_container_config = dict(
+        image='postgres:16',
+        name='postgres_testing',
+        environment={
+            'ENVIRONMENT': settings.ENVIRONMENT,
+            'POSTGRES_USER': settings.postgres.username,
+            'POSTGRES_PASSWORD': settings.postgres.password,
+            'POSTGRES_DB': settings.postgres.database,
+        },
+        ports=[5432],
+        # Bind to port 5434 on host machine, so that it doesn't conflict with local Postgres
+        host_config=docker_client.create_host_config(port_bindings={5432: 5434}, auto_remove=True),
+        detach=True,
+        labels=['testing'],
     )
+    # Create Postgres Docker container
+    postgres_container = tests.helpers.create_docker_container(client=docker_client, config=postgres_container_config)
     # Start Postgres container in its own thread
     postgres_thread = threading.Thread(
         target=docker_client.start,
-        kwargs={'container': postgres_docker_container.get('Id')},
+        kwargs={'container': postgres_container.get('Id')},
     )
     postgres_thread.start()
     # Allow Postgres time to start
     time.sleep(3)
 
     # Create Schemas
-    with next(get_testing_session()) as session:
+    # with next(tests.helpers.get_testing_session()) as session:
+    with tests.helpers.SessionTesting() as session:
         for schema_name in settings.DB_SCHEMAS:
             try:
                 session.execute(CreateSchema(schema_name))
@@ -171,7 +164,7 @@ def setup_test_environment():
     finally:
         # No need to delete the database, as it is in a Docker container
         # Stop container and join thread to main thread
-        docker_client.stop(container=postgres_docker_container.get('Id'))
+        docker_client.stop(container=postgres_container.get('Id'))
         postgres_thread.join()
         # Kill uvicorn process and join thread to main thread
         uvicorn_api_process.kill()
@@ -179,50 +172,3 @@ def setup_test_environment():
         # Kill flask process and join thread to main thread
         gunicorn_app_process.kill()
         gunicorn_app_thread.join()
-
-
-@pytest.fixture(scope='function', autouse=True)
-def insert_test_data():
-    """All tables are created and dropped for each test function.
-
-    This is the easiest way to ensure a clean db each time a new test is run. Have to deep copy or else the instances
-    are the same and persist through sessions.
-
-    """
-
-    Base.metadata.create_all(ENGINE)
-    session = next(get_testing_session())
-    session.add_all(get_test_data())
-    session.commit()
-    yield
-    session.close()
-    Base.metadata.drop_all(ENGINE)
-
-
-@pytest.fixture(scope='module')
-def test_api() -> Generator[TestClient, Any, None]:
-    api = create_api(settings=settings)
-    api.dependency_overrides[get_sqlalchemy_session] = get_testing_session
-    with TestClient(api) as client:
-        yield client
-
-
-@pytest.fixture(scope='module')
-def test_app() -> Generator[FlaskClient, Any, None]:
-    app = create_app(settings=settings)
-    app.testing = True
-    app.config.update({'TESTING': True})
-    with app.test_client() as client:
-        with app.app_context():
-            yield client
-
-
-@pytest.fixture(scope='module')
-def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
-    app = create_app(settings=settings)
-    app.testing = True
-    app.config.update({'TESTING': True})
-    app.test_client_class = FlaskLoginClient
-    with app.test_client() as client:
-        with app.app_context():
-            yield client
