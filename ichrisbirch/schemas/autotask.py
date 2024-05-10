@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
-from ichrisbirch.models.autotask import TaskFrequency
+from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 
@@ -16,7 +16,7 @@ class AutoTaskCreate(AutoTaskConfig):
     notes: str | None = None
     category: TaskCategory
     priority: int
-    frequency: TaskFrequency
+    frequency: AutoTaskFrequency
 
 
 class AutoTask(AutoTaskConfig):
@@ -25,7 +25,7 @@ class AutoTask(AutoTaskConfig):
     category: TaskCategory
     priority: int
     notes: str | None = None
-    frequency: TaskFrequency
+    frequency: AutoTaskFrequency
     first_run_date: datetime
     last_run_date: datetime
     run_count: int
@@ -36,4 +36,4 @@ class AutoTaskUpdate(AutoTaskConfig):
     category: TaskCategory | None = None
     priority: int | None = None
     notes: str | None = None
-    frequency: TaskFrequency | None = None
+    frequency: AutoTaskFrequency | None = None

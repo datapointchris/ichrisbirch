@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from ichrisbirch.models.autotask import AutoTask
-from ichrisbirch.models.autotask import TaskFrequency
+from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 BASE_DATA: list[AutoTask] = [
@@ -10,7 +10,7 @@ BASE_DATA: list[AutoTask] = [
         notes='Notes for task 1',
         category=TaskCategory.Chore.value,
         priority=5,
-        frequency=TaskFrequency.Daily.value,
+        frequency=AutoTaskFrequency.Daily.value,
         first_run_date=datetime(2020, 4, 20, 3, 3, 39, 50648).isoformat(),
         last_run_date=datetime(2020, 4, 24, 3, 3, 39, 50648).isoformat(),
         run_count=5,
@@ -20,7 +20,7 @@ BASE_DATA: list[AutoTask] = [
         notes=None,
         category=TaskCategory.Home.value,
         priority=10,
-        frequency=TaskFrequency.Weekly.value,
+        frequency=AutoTaskFrequency.Weekly.value,
         first_run_date=datetime(2020, 3, 20, 3, 3, 39, 50648).isoformat(),
         last_run_date=datetime(2020, 3, 24, 3, 3, 39, 50648).isoformat(),
         run_count=1,
@@ -30,7 +30,7 @@ BASE_DATA: list[AutoTask] = [
         notes='Notes for task 3',
         category=TaskCategory.Home.value,
         priority=15,
-        frequency=TaskFrequency.Quarterly.value,
+        frequency=AutoTaskFrequency.Quarterly.value,
         first_run_date=datetime(2020, 1, 20, 3, 3, 39, 50648).isoformat(),
         last_run_date=datetime(2020, 1, 24, 3, 3, 39, 50648).isoformat(),
         run_count=2,

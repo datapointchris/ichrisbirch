@@ -1,4 +1,4 @@
-"""Add autotasks table
+"""Add autotasks table.
 
 Revision ID: 3260e545c581
 Revises: 0bc20d6a3ae1
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-from ichrisbirch.models.autotask import TaskFrequency
+from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
 # revision identifiers, used by Alembic.
@@ -22,7 +22,7 @@ depends_on = None
 
 def upgrade() -> None:
     category_enum = postgresql.ENUM(TaskCategory, name='TaskCategory')
-    frequency_enum = postgresql.ENUM(TaskFrequency, name='TaskFrequency')
+    frequency_enum = postgresql.ENUM(AutoTaskFrequency, name='TaskFrequency')
     op.create_table(
         'autotasks',
         sa.Column('id', sa.Integer(), nullable=False),

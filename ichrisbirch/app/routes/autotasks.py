@@ -8,10 +8,10 @@ from flask import request
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.models.autotask import TaskFrequency
+from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
-TASK_FREQUENCIES = [t.value for t in TaskFrequency]
+AUTOTASK_FREQUENCIES = [t.value for t in AutoTaskFrequency]
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 logger = logging.getLogger('app.autotasks')
@@ -38,5 +38,8 @@ def index():
 
     autotasks = autotasks_api.get()
     return render_template(
-        'autotasks/index.html', autotasks=autotasks, task_categories=TASK_CATEGORIES, task_frequencies=TASK_FREQUENCIES
+        'autotasks/index.html',
+        autotasks=autotasks,
+        task_categories=TASK_CATEGORIES,
+        autotask_frequencies=AUTOTASK_FREQUENCIES,
     )
