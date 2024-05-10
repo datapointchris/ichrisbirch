@@ -57,11 +57,11 @@ def job_logger(func: Callable) -> Callable:
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        logger.info(f'scheduler: job started: {func.__name__}')
+        logger.info(f'started: {func.__name__}')
         start = pendulum.now()
         func(*args, **kwargs)
         elapsed = (pendulum.now() - start).in_words()
-        logger.info(f'scheduler: job completed: {func.__name__} - {elapsed}')
+        logger.info(f'completed: {func.__name__} - {elapsed}')
 
     return wrapper
 

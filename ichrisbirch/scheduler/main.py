@@ -18,13 +18,13 @@ def create_scheduler(settings: Settings) -> BlockingScheduler:
         scheduler.add_job(**job.as_dict())
 
     try:
-        logger.info('scheduler: started')
+        logger.info('started')
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
         pass
     finally:
-        logger.info('scheduler: shutting down')
+        logger.info('shutting down')
         scheduler.shutdown()
-        logger.info('scheduler: shutdown')
+        logger.info('shutdown complete')
 
     return scheduler

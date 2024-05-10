@@ -76,7 +76,6 @@ async def read_many_completed(
     first: Union[bool, None] = None,
     last: Union[bool, None] = None,
 ):
-    logger.debug(f'Parameters passed: {start_date=}, {end_date=}, {first=}, {last=}')
     query = select(models.HabitCompleted)
 
     if first:  # first completed

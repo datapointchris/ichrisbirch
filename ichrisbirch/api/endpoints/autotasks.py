@@ -65,7 +65,7 @@ async def run(id: int, session: Session = Depends(get_sqlalchemy_session)):
         autotask.run_count += 1
         session.commit()
         session.refresh(autotask)
-        logger.debug(f'Ran autotask {id}, created task {task.id}')
+        logger.debug(f'ran autotask {id}, created task {task.id}')
         return autotask
     else:
         message = f'AutoTask {id} not found'

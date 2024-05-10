@@ -33,7 +33,7 @@ async def generic_exception_handler(request, exc):
 
 def create_api(settings: Settings) -> FastAPI:
     api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
-    logger.info('created')
+    logger.info('initializing')
 
     api.add_middleware(ResponseLoggerMiddleware)
     logger.info('middleware added')
@@ -60,4 +60,5 @@ def create_api(settings: Settings) -> FastAPI:
     api.add_exception_handler(Exception, generic_exception_handler)
     logger.info('exception handlers registered')
 
+    logger.info('initialized successfully')
     return api

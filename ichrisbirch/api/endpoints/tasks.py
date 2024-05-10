@@ -34,7 +34,6 @@ async def todo(
     priority: Optional[tuple[int, int]] = None,
 ):
     """Priority is a tuple of INCLUSIVE priority values."""
-    logger.debug(f'{priority=}')
     query = select(models.Task).filter(models.Task.complete_date.is_(None))
     if priority:
         query = query.filter(models.Task.priority >= priority[0], models.Task.priority <= priority[1])
@@ -51,7 +50,6 @@ async def completed(
     first: Union[bool, None] = None,
     last: Union[bool, None] = None,
 ):
-    logger.debug(f'Parameters passed: {start_date=}, {end_date=}, {first=}, {last=}')
     query = select(models.Task).filter(models.Task.complete_date.is_not(None))
 
     if first:  # first completed task

@@ -46,6 +46,7 @@ def box(box_id):
     selected_box = next((box for box in boxes if str(box.id) == box_id), None)
     if not selected_box:
         flash(f'Box {box_id} not found', 'error')
+        logger.warning(f'box {box_id} not found')
         return redirect(url_for('box_packing.index'))
     logger.debug(f'{selected_box=}')
     return render_template('box_packing/index.html', selected_box=selected_box, boxes=boxes, box_sizes=BOX_SIZES)

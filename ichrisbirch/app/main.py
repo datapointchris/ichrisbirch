@@ -20,14 +20,14 @@ def handle_errors(e, error_code):
 
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
-    logger.info('created')
+    logger.info('initializing')
 
     login_manager.init_app(app)
     logger.info('login manager initialized')
 
     with app.app_context():
         app.config.from_object(settings.flask)
-        logger.info('configured')
+        logger.info(f'configured from: {type(settings.flask)}')
         logger.debug(
             f'DEBUG={app.config.get("DEBUG")}, TESTING={app.config.get("TESTING")}, ENV={app.config.get("ENV")}'
         )
@@ -71,4 +71,5 @@ def create_app(settings: Settings) -> Flask:
                 ('refactor', 'fa-solid fa-code'),
             ]
 
+    logger.info('initialized successfully')
     return app

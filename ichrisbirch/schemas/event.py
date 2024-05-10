@@ -32,7 +32,7 @@ class EventCreate(EventConfig):
         if isinstance(v, datetime):
             dt = pendulum.instance(v)
         else:  # assume string, try to parse anything
-            dt = pendulum.parser.parse(v)
+            dt = pendulum.parse(v)
         logger.debug(f'date validator out: {dt}, {type(dt)}')
         return dt
 
