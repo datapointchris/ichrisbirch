@@ -95,7 +95,7 @@ def setup_test_environment():
     postgres_docker_container = create_docker_container(
         docker_client,
         dict(
-            image='postgres:14',
+            image='postgres:16',
             name='postgres_testing',
             environment={
                 'ENVIRONMENT': settings.ENVIRONMENT,
