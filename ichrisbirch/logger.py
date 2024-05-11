@@ -17,7 +17,10 @@ class LogLevelBracketFormatter(logging.Formatter):
 
 
 class ColoredLevelFormatter(logging.Formatter):
-    """Logging colored formatter, adapted from https://stackoverflow.com/a/56944256/3638629"""
+    """Logging colored formatter, adapted from https://stackoverflow.com/a/56944256/3638629
+
+    NOT currently being used, this is here for reference only.
+    """
 
     GRAY = '\x1b[38;21m'
     GREEN = '\x1b[38;5;40m'
@@ -150,7 +153,7 @@ LOGGERS = {
 
 THIRD_PARTY_LOGGERS = {
     'apscheduler': {
-        'level': 'WARNING',
+        'level': 'DEBUG',
         'handlers': ['console', 'ichrisbirch_file', 'scheduler_file'],
         'propagate': False,
     },

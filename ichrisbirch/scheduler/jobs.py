@@ -8,6 +8,7 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 
 import functools
 import logging
+import subprocess  # nosec
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -67,10 +68,23 @@ def job_logger(func: Callable) -> Callable:
     return wrapper
 
 
+def find_git_root(path: Path = Path.cwd()) -> Path:
+    command = ['git', 'rev-parse', '--show-toplevel']
+    print(f'finding git root: {path}')
+    try:
+        git_root = subprocess.check_output(command, cwd=path)  # nosec
+    except subprocess.CalledProcessError as e:
+        print(e)
+        print('exiting program')
+        raise SystemExit(1)
+    return Path(git_root.decode().strip())
+
+
 @job_logger
 def make_logs():
     logger.debug(f'The time is: {pendulum.now()}')
     logger.info(f'The current working directory is: {Path.cwd()}')
+    logger.info(f'Git root is: {find_git_root()}')
     logger.warning('This is a warning')
     logger.error('PAUSE this job to stop the logs')
 
