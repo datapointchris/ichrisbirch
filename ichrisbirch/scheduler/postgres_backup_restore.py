@@ -56,7 +56,14 @@ class PostgresBackupRestore:
         self.local_dir = self.base_dir / self.local_prefix
 
     def _find_git_root(self, path: Path = Path.cwd()) -> Path:
-        git_root = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], cwd=path)  # nosec
+        logger.debug(f'finding git root: {path}')
+        command = ['git', 'rev-parse', '--show-toplevel']
+        try:
+            git_root = subprocess.check_output(command, cwd=path)  # nosec
+        except subprocess.CalledProcessError as e:
+            logger.error(e)
+            logger.error('exiting program')
+            raise SystemExit(1)
         return Path(git_root.decode().strip())
 
     def _run_command(self, command: list, env: dict = {}):
