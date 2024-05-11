@@ -1,3 +1,19 @@
+"""Set up the logger for the entire project.
+
+Loggers are set up for: app, api, scheduler, and third-party libraries.
+The root logger is also set up to log to console and to a JSON file.
+The app, api, and scheduler all log to their respectively named files,
+while the ichrisbirch_file handler receives logs from everywhere, similar to the console.
+
+NOTE: for some reason, setting the console handler to `log_level_in_brackets` formatter will affect
+all of the other handlers when they are included in the same logger.
+
+Example: the console handler logs in brackets.  If it is included in the app logger with the
+app_file handler, the app_file handler will also log in brackets.
+
+It appears that the custom formatter affects all of the handlers of that particular logger when set.
+"""
+
 import functools
 import logging
 import logging.config
@@ -82,14 +98,14 @@ HANDLERS = {
     'console': {
         'class': 'logging.StreamHandler',
         'level': 'DEBUG',
-        'formatter': 'standard',
+        'formatter': 'log_level_in_brackets',
         'stream': 'ext://sys.stdout',
         'filters': ['no_304_status'],
     },
     'ichrisbirch_file': {
         'class': 'logging.FileHandler',
         'level': 'DEBUG',
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'standard',
         'filename': f'{LOG_BASE_LOCATION}/ichrisbirch.log',
         'mode': 'a',
         'filters': ['no_304_status'],
@@ -97,7 +113,7 @@ HANDLERS = {
     'app_file': {
         'class': 'logging.FileHandler',
         'level': 'DEBUG',
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'standard',
         'filename': f'{LOG_BASE_LOCATION}/app.log',
         'mode': 'a',
         'filters': ['no_304_status'],
@@ -105,7 +121,7 @@ HANDLERS = {
     'api_file': {
         'class': 'logging.FileHandler',
         'level': 'DEBUG',
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'standard',
         'filename': f'{LOG_BASE_LOCATION}/api.log',
         'mode': 'a',
         'filters': ['no_304_status'],
@@ -113,7 +129,7 @@ HANDLERS = {
     'scheduler_file': {
         'class': 'logging.FileHandler',
         'level': 'DEBUG',
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'standard',
         'filename': f'{LOG_BASE_LOCATION}/scheduler.log',
         'mode': 'a',
         'filters': ['no_304_status'],

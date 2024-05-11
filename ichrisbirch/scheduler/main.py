@@ -11,6 +11,7 @@ logger = logging.getLogger('scheduler')
 
 
 def create_scheduler(settings: Settings) -> BlockingScheduler:
+    logger.info('initializing')
     jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri, metadata=Base.metadata)
     logger.info(f'jobstore added: {jobstore}')
     scheduler = BlockingScheduler()
