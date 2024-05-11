@@ -11,6 +11,7 @@ import logging
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from typing import Callable
 
@@ -66,6 +67,14 @@ def job_logger(func: Callable) -> Callable:
 
 
 @job_logger
+def make_logs():
+    logger.debug(f'The time is: {pendulum.now()}')
+    logger.info(f'The current working directory is: {Path.cwd()}')
+    logger.warning('This is a warning')
+    logger.error('PAUSE this job to stop the logs')
+
+
+@job_logger
 def decrease_task_priority() -> None:
     """Decrease priority of all tasks by 1."""
     with SessionLocal() as session:
@@ -94,13 +103,6 @@ def check_and_run_autotasks() -> None:
         session.commit()
 
 
-def make_logs():
-    logger.warning('This is a warning')
-
-
-log_test = JobToAdd(func=make_logs, trigger=CronTrigger(second='*/10'), id='make_logs')
-
-
 @job_logger
 def aws_postgres_snapshot_to_s3():
     """Wrapper to get the job logging and to be consistent because the function is too complex to reimplement.
@@ -125,6 +127,11 @@ def postgres_backup():
 
 
 jobs_to_add = [
+    # JobToAdd(
+    #     func=make_logs,
+    #     trigger=CronTrigger(second='*/10'),
+    #     id='make_logs',
+    # ),
     JobToAdd(
         func=decrease_task_priority,
         trigger=daily_1am_trigger,
