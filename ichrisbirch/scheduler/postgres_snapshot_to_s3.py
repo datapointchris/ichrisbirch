@@ -44,7 +44,7 @@ class AwsRdsSnapshotS3:
         self.backup_bucket = settings.aws.s3_backup_bucket
         self.db_name = settings.postgres.database
 
-        self.rds = boto3.client('rds')
+        self.rds = boto3.client('rds', region_name=self.region)
 
     def _snapshot_size_in_kb(self, snapshot):
         size_in_gibibytes = snapshot['DBSnapshots'][0].get('AllocatedStorage', 0)
