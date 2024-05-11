@@ -70,12 +70,12 @@ def job_logger(func: Callable) -> Callable:
 
 def find_git_root(path: Path = Path.cwd()) -> Path:
     command = ['git', 'rev-parse', '--show-toplevel']
-    print(f'finding git root: {path}')
+    logger.debug(f'finding git root: {path}')
     try:
         git_root = subprocess.check_output(command, cwd=path)  # nosec
     except subprocess.CalledProcessError as e:
-        print(e)
-        print('exiting program')
+        logger.debug(e)
+        logger.debug('exiting program')
         raise SystemExit(1)
     return Path(git_root.decode().strip())
 
