@@ -12,13 +12,16 @@ logger = logging.getLogger('scheduler')
 
 def create_scheduler(settings: Settings) -> BlockingScheduler:
     jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri, metadata=Base.metadata)
+    logger.info(f'jobstore added: {jobstore}')
     scheduler = BlockingScheduler()
+    logger.info(f'scheduler: {scheduler.__class__.__name__}')
     scheduler.add_jobstore(jobstore, alias='ichrisbirch', extend_existing=True)
     for job in jobs_to_add:
         scheduler.add_job(**job.as_dict())
+        logger.info(f'job added: {job.id}')
 
     try:
-        logger.info('started')
+        logger.info('scheduler starting')
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
         pass

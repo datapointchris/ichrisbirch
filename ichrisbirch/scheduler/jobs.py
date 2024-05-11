@@ -32,6 +32,7 @@ logger = logging.getLogger('scheduler.jobs')
 
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
+daily_115am_trigger = CronTrigger(day='*', hour=1, minute=15)
 daily_3pm_trigger = CronTrigger(day='*', hour=15)
 every_6_hour_18_minute = IntervalTrigger(hours=6, minutes=18)
 
@@ -127,11 +128,11 @@ def postgres_backup():
 
 
 jobs_to_add = [
-    # JobToAdd(
-    #     func=make_logs,
-    #     trigger=CronTrigger(second='*/10'),
-    #     id='make_logs',
-    # ),
+    JobToAdd(
+        func=make_logs,
+        trigger=CronTrigger(minute='*'),
+        id='make_logs',
+    ),
     JobToAdd(
         func=decrease_task_priority,
         trigger=daily_1am_trigger,
@@ -139,7 +140,7 @@ jobs_to_add = [
     ),
     JobToAdd(
         func=check_and_run_autotasks,
-        trigger=daily_1am_trigger,
+        trigger=daily_115am_trigger,
         id='check_and_run_autotasks_daily',
     ),
     JobToAdd(
