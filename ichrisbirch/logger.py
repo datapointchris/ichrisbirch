@@ -149,7 +149,11 @@ LOGGERS = {
 }
 
 THIRD_PARTY_LOGGERS = {
-    'apscheduler': {'level': 'WARNING'},
+    'apscheduler': {
+        'level': 'WARNING',
+        'handlers': ['console', 'ichrisbirch_file', 'scheduler_file'],
+        'propagate': False,
+    },
     'boto3': {'level': 'INFO'},
     'botocore': {'level': 'INFO'},
     'fsevents': {'level': 'INFO'},
@@ -192,7 +196,7 @@ def initialize_logging(config=LOGGING_CONFIG):
             config['loggers'][logger]['handlers'] = ['console']
         config['root']['handlers'] = ['console']
 
-    # Change log location on MacOS
+    # Change log location on MacOS to /usr/local/var/log/ichrisbirch from /var/log/ichrisbirch
     if mac_os:
         for handler in config['handlers']:
             if '_file' in handler:
@@ -206,6 +210,9 @@ def initialize_logging(config=LOGGING_CONFIG):
     return logger
 
 
+# Currently not using this, was possibly a way to use a decorator to setup logging
+# instead of calling initialize_logging() in the project __init__.py
+# but the imports were triggering first and messing up logger instantiation
 def with_logging_setup(target_function):
     @functools.wraps(target_function)
     def wrapper(*args, **kwargs):
