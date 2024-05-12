@@ -1,7 +1,7 @@
 import os
 
 from ichrisbirch.config import get_settings
-from tests.helpers import find_project_root
+from ichrisbirch.util import find_project_root
 
 string_path = find_project_root() / '.dev.env'
 test_env_file = find_project_root() / 'tests' / 'test_data' / '.test_env_file.env'

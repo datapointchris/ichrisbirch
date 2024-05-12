@@ -7,6 +7,7 @@ import boto3
 import pendulum
 
 from ichrisbirch.config import get_settings
+from ichrisbirch.util import find_project_root
 
 settings = get_settings()
 logger = logging.getLogger('ops')
@@ -51,20 +52,9 @@ class PostgresBackupRestore:
         self.target_username = target_username
         self.target_password = target_password
 
-        self.base_dir = base_dir or self._find_git_root()
+        self.base_dir = base_dir or find_project_root()
         self.local_prefix = Path(f'{backup_bucket}/{environment}/postgres')
         self.local_dir = self.base_dir / self.local_prefix
-
-    def _find_git_root(self, path: Path = Path.cwd()) -> Path:
-        logger.debug(f'finding git root: {path}')
-        command = ['git', 'rev-parse', '--show-toplevel']
-        try:
-            git_root = subprocess.check_output(command, cwd=path)  # nosec
-        except subprocess.CalledProcessError as e:
-            logger.error(e)
-            logger.error('exiting program')
-            raise SystemExit(1)
-        return Path(git_root.decode().strip())
 
     def _run_command(self, command: list, env: dict = {}):
         local_env = os.environ | env
