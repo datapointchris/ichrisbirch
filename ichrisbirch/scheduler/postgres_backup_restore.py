@@ -23,12 +23,12 @@ class PostgresBackupRestore:
 
     def __init__(
         self,
-        environment: str,
-        backup_bucket: str,
-        source_host: str | None = None,
-        source_port: str | None = None,
-        source_username: str | None = None,
-        source_password: str | None = None,
+        environment: str = settings.ENVIRONMENT,
+        backup_bucket: str = settings.aws.s3_backup_bucket,
+        source_host: str = settings.postgres.host,
+        source_port: str = settings.postgres.port,
+        source_username: str = settings.postgres.username,
+        source_password: str = settings.postgres.password,
         target_host: str | None = None,
         target_port: str | None = None,
         target_username: str | None = None,
@@ -237,12 +237,6 @@ class PostgresBackupRestore:
 
 if __name__ == '__main__':
     pbr = PostgresBackupRestore(
-        environment=settings.ENVIRONMENT,
-        backup_bucket=settings.aws.s3_backup_bucket,
-        source_host=settings.postgres.host,
-        source_port=settings.postgres.port,
-        source_username=settings.postgres.username,
-        source_password=settings.postgres.password,
         target_host='localhost',
         target_port='5432',
         target_username='postgres',

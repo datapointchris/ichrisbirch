@@ -70,10 +70,11 @@ def job_logger(func: Callable) -> Callable:
 
 @job_logger
 def make_logs():
-    logger.debug(f'The time is: {pendulum.now()}')
-    logger.info(f'The current working directory is: {Path.cwd()}')
-    logger.info(f'Project root is: {find_project_root()}')
-    logger.warning('This is a warning')
+    logger.debug(f'time: {pendulum.now()}')
+    logger.info(f'cwd: {Path.cwd()}')
+    logger.info(f'project root: {find_project_root()}')
+    logger.debug(f"environment: '{settings.ENVIRONMENT}'")
+    logger.warning('this is a warning')
     logger.error('PAUSE this job to stop the logs')
 
 

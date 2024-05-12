@@ -5,18 +5,13 @@ The root logger is also set up to log to console and to a JSON file.
 The app, api, and scheduler all log to their respectively named files,
 while the ichrisbirch_file handler receives logs from everywhere, similar to the console.
 
-NOTE: for some reason, setting the console handler to `log_level_in_brackets` formatter will affect
-all of the other handlers when they are included in the same logger.
-
-Example: the console handler logs in brackets.  If it is included in the app logger with the
-app_file handler, the app_file handler will also log in brackets.
-
-It appears that the custom formatter affects all of the handlers of that particular logger when set.
+Awesome logging tutorial: https://www.youtube.com/watch?v=9L77QExPmI0
 """
 
 import functools
 import logging
 import logging.config
+import logging.handlers
 import os
 import platform
 
@@ -28,7 +23,8 @@ class No304StatusFilter(logging.Filter):
 
 class LogLevelBracketFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord):
-        record.levelname = f'[{record.levelname}]'
+        if not record.levelname.startswith('['):
+            record.levelname = f'[{record.levelname}]'
         return logging.Formatter.format(self, record)
 
 
@@ -68,6 +64,8 @@ DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 LOG_BASE_LOCATION = '/var/log/ichrisbirch'
 MACOS_LOG_BASE_LOCATION = '/usr/local/var/log/ichrisbirch'
 
+GLOBAL_LOG_LEVEL = 'DEBUG'
+
 FILTERS = {
     'no_304_status': {
         '()': No304StatusFilter,
@@ -96,82 +94,61 @@ FORMATTERS = {
 
 HANDLERS = {
     'console': {
-        'class': 'logging.StreamHandler',
-        'level': 'DEBUG',
         'formatter': 'log_level_in_brackets',
+        'class': 'logging.StreamHandler',
         'stream': 'ext://sys.stdout',
-        'filters': ['no_304_status'],
     },
     'ichrisbirch_file': {
-        'class': 'logging.FileHandler',
-        'level': 'DEBUG',
-        'formatter': 'standard',
+        'formatter': 'log_level_in_brackets',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/ichrisbirch.log',
-        'mode': 'a',
-        'filters': ['no_304_status'],
     },
     'app_file': {
-        'class': 'logging.FileHandler',
-        'level': 'DEBUG',
-        'formatter': 'standard',
+        'formatter': 'log_level_in_brackets',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/app.log',
-        'mode': 'a',
-        'filters': ['no_304_status'],
     },
     'api_file': {
-        'class': 'logging.FileHandler',
-        'level': 'DEBUG',
-        'formatter': 'standard',
+        'formatter': 'log_level_in_brackets',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/api.log',
-        'mode': 'a',
-        'filters': ['no_304_status'],
     },
     'scheduler_file': {
-        'class': 'logging.FileHandler',
-        'level': 'DEBUG',
-        'formatter': 'standard',
+        'formatter': 'log_level_in_brackets',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/scheduler.log',
-        'mode': 'a',
-        'filters': ['no_304_status'],
     },
     'json_file': {
-        'class': 'logging.FileHandler',
-        'level': 'DEBUG',
         'formatter': 'json',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/ichrisbirch.json',
-        'mode': 'a',
-        'filters': ['no_304_status'],
     },
 }
+
 
 LOGGERS = {
-    'ichrisbirch': {
-        'level': 'DEBUG',
-        'handlers': ['console', 'ichrisbirch_file'],
-        'propagate': False,
+    'root': {
+        'level': GLOBAL_LOG_LEVEL,
+        'handlers': ['console', 'ichrisbirch_file', 'json_file'],
+        'filters': ['no_304_status'],
     },
-    'app': {
-        'level': 'DEBUG',
-        'handlers': ['console', 'ichrisbirch_file', 'app_file'],
-        'propagate': False,
-    },
-    'api': {
-        'level': 'DEBUG',
-        'handlers': ['console', 'ichrisbirch_file', 'api_file'],
-        'propagate': False,
-    },
-    'scheduler': {
-        'level': 'DEBUG',
-        'handlers': ['console', 'ichrisbirch_file', 'scheduler_file'],
-        'propagate': False,
-    },
+    'ichrisbirch': {},
+    'app': {'handlers': ['app_file']},
+    'api': {'handlers': ['api_file']},
+    'scheduler': {'handlers': ['scheduler_file']},
 }
 
+
+# these are set to quiet down noisy libraries when debug is on
 THIRD_PARTY_LOGGERS = {
     'apscheduler': {
         'level': 'WARNING',
-        'handlers': ['console', 'ichrisbirch_file', 'scheduler_file'],
-        'propagate': False,
+        'handlers': ['scheduler_file'],
     },
     'boto3': {'level': 'INFO'},
     'botocore': {'level': 'INFO'},
@@ -185,15 +162,11 @@ THIRD_PARTY_LOGGERS = {
 
 LOGGING_CONFIG = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'filters': FILTERS,
     'formatters': FORMATTERS,
     'handlers': HANDLERS,
     'loggers': LOGGERS | THIRD_PARTY_LOGGERS,
-    'root': {
-        'level': 'DEBUG',
-        'handlers': ['console', 'ichrisbirch_file', 'json_file'],
-    },
 }
 
 
