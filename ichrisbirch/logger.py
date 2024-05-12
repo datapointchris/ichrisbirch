@@ -178,7 +178,6 @@ def initialize_logging(config=LOGGING_CONFIG):
     # Don't log to file in GitHub Actions
     # 1. Delete handlers so they don't try to create the log files
     # 2. Change loggers to only log to console
-    # 3. Change root logger to only log to console
     if github_actions:
         temp = config['handlers'].copy()  # make a copy to avoid dict length change on iteration
         for handler in temp:
@@ -186,7 +185,6 @@ def initialize_logging(config=LOGGING_CONFIG):
                 del config['handlers'][handler]
         for logger in config['loggers']:
             config['loggers'][logger]['handlers'] = ['console']
-        config['root']['handlers'] = ['console']
 
     # Change log location on MacOS to /usr/local/var/log/ichrisbirch from /var/log/ichrisbirch
     if mac_os:
