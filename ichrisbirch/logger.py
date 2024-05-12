@@ -169,7 +169,7 @@ LOGGERS = {
 
 THIRD_PARTY_LOGGERS = {
     'apscheduler': {
-        'level': 'DEBUG',
+        'level': 'WARNING',
         'handlers': ['console', 'ichrisbirch_file', 'scheduler_file'],
         'propagate': False,
     },

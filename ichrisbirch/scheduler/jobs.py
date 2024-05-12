@@ -130,11 +130,11 @@ def postgres_backup():
 
 
 jobs_to_add = [
-    JobToAdd(
-        func=make_logs,
-        trigger=CronTrigger(second=15),
-        id='make_logs',
-    ),
+    # JobToAdd(
+    #     func=make_logs,
+    #     trigger=CronTrigger(second=15),
+    #     id='make_logs',
+    # ),
     JobToAdd(
         func=decrease_task_priority,
         trigger=daily_1am_trigger,
