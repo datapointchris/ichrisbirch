@@ -120,6 +120,7 @@ def aws_postgres_snapshot_to_s3():
 @job_logger
 def postgres_backup():
     pbr = PostgresBackupRestore(
+        logger=logger,
         environment=settings.ENVIRONMENT,
         backup_bucket=settings.aws.s3_backup_bucket,
         source_host=settings.postgres.host,
