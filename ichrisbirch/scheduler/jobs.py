@@ -109,11 +109,11 @@ def check_and_run_autotasks() -> None:
 
 @job_logger
 def aws_postgres_snapshot_to_s3():
-    """Wrapper to get the job logging and to be consistent because the function is too complex to reimplement.
+    """Create a snapshot from RDS postgres and save it to S3, then delete the snapshot.
 
     This function is an alternative to the postgres_backup for testing but it is difficult to restore from a snapshot.
     """
-    rds_snap = AwsRdsSnapshotS3(bucket_prefix='postgres/snapshots', settings=settings)
+    rds_snap = AwsRdsSnapshotS3(logger=logger, settings=settings)
     rds_snap.snapshot()
 
 
