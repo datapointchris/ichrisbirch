@@ -1,13 +1,13 @@
-{% extends 'countdowns/base.html' %}
+{% extends 'admin/base.html' %}
 
-{% block title %}Countdowns{% endblock %}
+{% block title %}Backups{% endblock %}
 
 {% block content %}
 <div class="grid grid--one-column">
     <h2>Backups</h2>
     {% if prefix %}
     <h3>{{ prefix }}</h3>
-    <a href="{{ url_for('backups.index', prefix=up_one_level) }}">
+    <a href="{{ url_for('admin.backups', prefix=up_one_level) }}">
       Up One Level
     </a>
     {% else %}
@@ -15,7 +15,7 @@
     {% endif %}
     <ul>
       {% for folder in folders %}
-      <li><a href="{{ url_for('backups.index', prefix=folder) }}">{{ folder }}</a></li>
+      <li><a href="{{ url_for('admin.backups', prefix=folder) }}">{{ folder }}</a></li>
       {% endfor %}
       {% for backup in backups %}
       <li>{{ backup.filename }} | {{ backup.last_modified }} | {{ backup.size }}</li>

@@ -24,16 +24,6 @@ def index():
     return render_template('index.html', settings=settings)
 
 
-@blueprint.route('/server/')
-def server():
-    return render_template(
-        'server.html',
-        settings=settings,
-        server_time=pendulum.now('UTC').isoformat(),
-        local_time=pendulum.now().isoformat(),
-    )
-
-
 @blueprint.route('/issue/', methods=['GET', 'POST'])
 def issue():
     if request.method == 'GET':

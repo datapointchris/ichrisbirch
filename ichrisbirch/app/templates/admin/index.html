@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admin/base.html' %}
 
 {% block title %}Server Stats{% endblock %}
 
@@ -6,8 +6,8 @@
 <div class="perspective-wrapper">
   <div class="serverstats-wrapper">
     <ul class="serverstats">
-      <li class="serverstats__item">Name: {{ settings.name }}</li>
-      <li class="serverstats__item">Environment: {{ settings.environment }}</li>
+      <li class="serverstats__item">Name: {{ settings.NAME }}</li>
+      <li class="serverstats__item">Environment: {{ settings.ENVIRONMENT }}</li>
       <li class="serverstats__item">API URL: {{ settings.api_url }}</li>
       <li class="serverstats__item">Server time: {{ server_time }}</li>
       <li class="serverstats__item">Local time: {{ local_time }}</li>

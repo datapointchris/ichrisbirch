@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block app_navigation %}
+  <ul data-secondary>
+    <li><a href="{{ url_for('admin.index') }}">Server Stats</a></li>
+    <li><a href="{{ url_for('admin.backups') }}">Backups</a></li>
+    <li><a href="{{ url_for('admin.scheduler') }}">Scheduler</a></li>
+  </ul>
+{% endblock %}
+
+{% block content %}{% endblock %}
