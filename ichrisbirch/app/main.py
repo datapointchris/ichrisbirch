@@ -53,6 +53,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.home.blueprint)
         app.register_blueprint(routes.auth.blueprint)
         app.register_blueprint(routes.autotasks.blueprint, url_prefix='/autotasks')
+        app.register_blueprint(routes.backups.blueprint, url_prefix='/backups')
         app.register_blueprint(routes.box_packing.blueprint, url_prefix='/box-packing')
         app.register_blueprint(routes.countdowns.blueprint, url_prefix='/countdowns')
         app.register_blueprint(routes.events.blueprint, url_prefix='/events')

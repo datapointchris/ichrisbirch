@@ -1,5 +1,6 @@
 from ichrisbirch.app.routes import auth
 from ichrisbirch.app.routes import autotasks
+from ichrisbirch.app.routes import backups
 from ichrisbirch.app.routes import box_packing
 from ichrisbirch.app.routes import countdowns
 from ichrisbirch.app.routes import events
@@ -14,6 +15,7 @@ from ichrisbirch.app.routes import users
 __all__ = [
     'auth',
     'autotasks',
+    'backups',
     'box_packing',
     'countdowns',
     'events',
