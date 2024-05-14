@@ -27,6 +27,7 @@ async def request_validation_exception_handler_logger(request, exc):
 
 
 async def generic_exception_handler(request, exc):
+    logger.error(exc)
     logger.error(repr(exc))
     return JSONResponse(status_code=500, content={"message": repr(exc)})
 

@@ -65,6 +65,14 @@ class QueryAPI:
     # @contextmanager
     # def handle_request(self):
 
+    def get_one(self, endpoint: Any | None = None, params: dict | None = None):
+        url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
+        response = httpx.get(url, follow_redirects=True, params=params)
+        self.handle_if_not_response_code(200, response)
+        if exists := response.json():
+            return self.response_model(**exists)
+        return None
+
     def get(self, endpoint: Any | None = None, params: dict | None = None):
         url = self.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         response = httpx.get(url, follow_redirects=True, params=params)

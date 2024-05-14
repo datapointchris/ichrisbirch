@@ -7,7 +7,6 @@
 <div class="profile-wrapper">
   <div class="profile-header">
     <h1>{{current_user.name}}</h1>
-    <p>{{current_user.email}}</p>
   </div>
 
   <div class="profile-body">
@@ -15,5 +14,22 @@
     <ul>
       <li><strong>Name:</strong> {{current_user.name}}</li>
       <li><strong>Email:</strong> {{current_user.email}}</li>
+      <li><strong>ID:</strong> {{current_user.id}}</li>
+      <li><strong>Alt ID:</strong> {{current_user.alternative_id}}</li>
+      <li><strong>password:</strong> {{current_user.password}}</li>
+      <li><strong>created_on:</strong> {{current_user.created_on}}</li>
+      <li><strong>last_login:</strong> {{current_user.last_login}}</li>
+      <li><strong>is_active:</strong> {{current_user.is_active}}</li>
+      <li><strong>is_authenticated:</strong> {{current_user.is_authenticated}}</li>
+      <li><strong>is_anonymous:</strong> {{current_user.is_anonymous}}</li>
+      <li><strong>get_id:</strong> {{current_user.get_id()}}</li>
+    </ul>
+    <h3>Preferences</h3>
+    <ul>
+      {% for preference, value in user.preferences.items() %}
+      <li><strong>{{ preference }}:</strong> {{ value }}</li>
+      {% endfor %}
     </ul>
   </div>
+
+  {% endblock %}

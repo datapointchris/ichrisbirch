@@ -13,7 +13,6 @@ class UserCreate(UserConfig):
     name: str
     email: str
     password: str
-    preferences: Any
 
 
 class User(UserConfig):
@@ -22,7 +21,7 @@ class User(UserConfig):
     name: str
     email: str
     created_on: datetime
-    last_login: datetime
+    last_login: datetime | None
     preferences: Any
 
 

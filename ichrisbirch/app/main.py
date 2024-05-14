@@ -5,12 +5,14 @@ from functools import partial
 from flask import Flask
 from flask import g
 from flask import render_template
+from flask_wtf.csrf import CSRFProtect
 
 from ichrisbirch.app import routes
 from ichrisbirch.app.login import login_manager
 from ichrisbirch.config import Settings
 
 logger = logging.getLogger('app')
+csrf = CSRFProtect()
 
 
 def handle_errors(e, error_code):
@@ -24,6 +26,9 @@ def create_app(settings: Settings) -> Flask:
 
     login_manager.init_app(app)
     logger.info('login manager initialized')
+
+    csrf.init_app(app)
+    logger.info('csrf protection initialized')
 
     with app.app_context():
         app.config.from_object(settings.flask)

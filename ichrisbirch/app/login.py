@@ -5,6 +5,7 @@ from flask import redirect
 from flask import url_for
 from flask_login import LoginManager
 
+from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
@@ -21,7 +22,8 @@ def load_user(alternative_id):
     user ID to invalidate their login sessions. One way to improve this is to use an alternative user id instead of the
     user ID.
     """
-    return user_api.get(['alt', alternative_id])
+    user_response = user_api.get_one(['alt', alternative_id])
+    return models.User(**user_response.model_dump())
 
 
 @login_manager.unauthorized_handler

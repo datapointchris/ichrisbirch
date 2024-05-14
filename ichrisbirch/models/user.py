@@ -1,8 +1,10 @@
-import uuid
+import random
 from datetime import datetime
 from typing import Any
 
 from flask_login import UserMixin
+from sqlalchemy import BigInteger
+from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -32,21 +34,25 @@ class User(UserMixin, Base):
     __tablename__ = 'users'
 
     @staticmethod
-    def generate_64_bit_int():
-        """Generate a 64-bit integer to use as alternative_id."""
-        return uuid.uuid4().int >> 64
+    def generate_63_bit_int():
+        """Generate a 63-bit integer to use as alternative_id.
+
+        63 bits to ensure it will fit inside Postgres BigInt column
+        """
+        return random.getrandbits(63)
 
     @staticmethod
     def default_preferences():
         return DEFAULT_USER_PREFERENCES
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    alternative_id: Mapped[int] = mapped_column(Integer, unique=True, default=generate_64_bit_int)
+    alternative_id: Mapped[int] = mapped_column(BigInteger, unique=True, default=generate_63_bit_int)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=False)
     email: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(200), primary_key=False, unique=False, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, primary_key=False, unique=False, nullable=False, default=False)
     created_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
-    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=False, unique=False, nullable=True)
+    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
     preferences: Mapped[Any] = mapped_column(MutableJSONB, index=False, unique=False, default=default_preferences)
 
     @property
@@ -67,7 +73,7 @@ class User(UserMixin, Base):
 
     def set_alternative_id(self):
         """Set alternative_id as 64-bit integer."""
-        self.alternative_id = self.generate_64_bit_int()
+        self.alternative_id = self.generate_63_bit_int()
 
     def set_password(self, password):
         """Create hashed password."""

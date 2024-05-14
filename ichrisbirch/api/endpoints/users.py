@@ -29,7 +29,7 @@ async def me(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         return user
     else:
-        message = f'User {user_id} not found'
+        message = f'user {user_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
@@ -37,6 +37,9 @@ async def me(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.User(**user.model_dump())
+    logger.error(db_obj.password)
+    db_obj.set_password(db_obj.password)
+    logger.error(db_obj.password)
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
@@ -44,11 +47,11 @@ async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalc
 
 
 @router.get('/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def read_one(user_id: int, alt: bool = False, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         return user
     else:
-        message = f'User {user_id} not found'
+        message = f'user {user_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
@@ -60,7 +63,7 @@ async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
-        message = f'User {user_id} not found'
+        message = f'user {user_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
@@ -71,15 +74,15 @@ async def read_by_alternative_id(alternative_id: int, session: Session = Depends
     if result := session.scalars(query).first():
         return result
     else:
-        message = f'User with alternative_id {alternative_id} not found'
+        message = f'user with alternative_id {alternative_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.get('/email/{email}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.get('/email/{email}/', response_model=Optional[schemas.User], status_code=status.HTTP_200_OK)
 async def read_by_email(email: str, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.email == email)
-    if not (user := session.execute(query).scalars().first()):
-        message = f'User with email {email} not found'
+    if user := session.execute(query).scalars().first():
+        message = f'user with email {email} not found'
         logger.warning(message)
     return user
