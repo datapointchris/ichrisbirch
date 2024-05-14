@@ -11,6 +11,7 @@
     <div class="habit">
       <h2>{{ habit.name }}</h2>
       <form method="POST" action="{{ url_for('habits.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" name="id" value="{{ habit.id }}">
         <button type="submit" name="action" class="button" value="delete_habit">
           <span class="button__text">Delete</span>
@@ -23,6 +24,7 @@
   <div class="add-item-wrapper">
     <h2>Add New Habit</h2>
     <form method="POST" class="add-item-form" action="{{ url_for('habits.crud') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="add-item-form__item">
         <label for="habit_name">Name:</label>
         <input type="text" class="textbox" name="name" id="habit_name">
@@ -50,6 +52,7 @@
     <div class="habit">
       <h2>{{ category.name }}</h2>
       <form method="POST" action="{{ url_for('habits.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" name="id" value="{{ category.id }}">
         <button type="submit" name="action" class="button" value="delete_category">
           <span class="button__text">Delete</span>
@@ -62,6 +65,7 @@
   <div class="add-item-wrapper">
     <h2>Add New Category</h2>
     <form method="POST" class="add-item-form" action="{{ url_for('habits.crud') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="add-item-form__item">
         <label for="category_name">Name:</label>
         <input type="text" class="textbox" name="name" id="category_name">
@@ -81,6 +85,7 @@
       <h2>{{ habit.name }}</h2>
       <div class="add-item-form__item">Complete Date: {{ habit.complete_date }}</div>
       <form method="POST" action="{{ url_for('habits.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" name="id" value="{{ habit.id }}">
         <button type="submit" name="action" class="button" value="delete_habit">
           <span class="button__text">Delete</span>

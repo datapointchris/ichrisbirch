@@ -24,18 +24,17 @@ def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
     logger.info('initializing')
 
-    login_manager.init_app(app)
-    logger.info('login manager initialized')
-
-    csrf.init_app(app)
-    logger.info('csrf protection initialized')
-
     with app.app_context():
         app.config.from_object(settings.flask)
         logger.info(f'configured from: {type(settings.flask)}')
-        logger.debug(
-            f'DEBUG={app.config.get("DEBUG")}, TESTING={app.config.get("TESTING")}, ENV={app.config.get("ENV")}'
-        )
+        cfg = app.config
+        logger.debug(f'DEBUG={cfg.get("DEBUG")}, TESTING={cfg.get("TESTING")}, ENV={cfg.get("ENV")}')
+
+        login_manager.init_app(app)
+        logger.info('login manager initialized')
+
+        csrf.init_app(app)
+        logger.info('csrf protection initialized')
 
         app.register_error_handler(400, partial(handle_errors, error_code=400))
         app.register_error_handler(404, partial(handle_errors, error_code=404))

@@ -7,6 +7,7 @@
   <div class="add-item-wrapper">
     <h2>Add New Task</h2>
     <form class="add-item-form" method="POST" action="{{ url_for('tasks.crud') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="add-item-form__item">
         <label for="name">Name:</label>
         <input type="text" class="textbox" name="name" id="name">

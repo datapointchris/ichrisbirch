@@ -42,6 +42,7 @@ def test_app() -> Generator[FlaskClient, Any, None]:
     app = create_app(settings=settings)
     app.testing = True
     app.config.update({'TESTING': True})
+    app.config.update({'WTF_CSRF_ENABLED': False})
     with app.test_client() as client:
         with app.app_context():
             yield client
@@ -52,6 +53,7 @@ def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
     app = create_app(settings=settings)
     app.testing = True
     app.config.update({'TESTING': True})
+    app.config.update({'WTF_CSRF_ENABLED': False})
     app.test_client_class = FlaskLoginClient
     with app.test_client() as client:
         with app.app_context():

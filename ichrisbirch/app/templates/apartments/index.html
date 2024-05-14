@@ -11,6 +11,7 @@
 <div id="add-feature">
   <h2>Add a New Feature:</h2>
   <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" id="apartment_id" name="apartment_id" value="{{ aptid }}">
     <input type="text" class="bigbox" size="20" name="name" id="name">
     <h2>Type:</h2>

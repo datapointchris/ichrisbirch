@@ -6,6 +6,7 @@
 <div id="journal">
 
   <form method="POST" action="{{ url_for('journal.index') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <h2><label id="journalDateLabel" for="journalDate"></label></h2>
     <input type="date" id="journalDate" name="journalDate" class="textbox" value="{{ date }}"
       onchange="changeDate(this.form.journalDate.value)">

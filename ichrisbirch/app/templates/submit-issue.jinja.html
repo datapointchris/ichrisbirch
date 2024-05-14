@@ -1,6 +1,7 @@
 <div id="github-issue-background-overlay"></div>
 <div id="github-issue-window">
   <form class="github-issue-form" method="POST" action="{{ url_for('home.issue') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <h2>Submit an Issue</h2>
 
     <div class="github-issue-form__item">
