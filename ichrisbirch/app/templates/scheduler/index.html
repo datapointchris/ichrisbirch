@@ -1,0 +1,48 @@
+{% extends 'scheduler/base.html' %}
+
+{% block title %}Scheduler{% endblock %}
+
+{% block content %}
+<div class="grid grid--two-columns">
+  {% for job, time_until_next_run in zip(jobs, time_until_next_runs) %}
+  <div class="grid__item">
+    <h2>{{ job.id.replace('_', ' ').title() }}</h2>
+    <div class="item-details">
+      <div class="item-details__item">
+        <strong>Trigger</strong>
+        <span class="item-details__item-content">{{ job.trigger }}</span>
+      </div>
+      <div class="item-details__item">
+        <strong>Next Run Time</strong>
+        <span class="item-details__item-content">{{ job.next_run_time | pretty_datetime }}</span>
+      </div>
+      <div class="item-details__item">
+        <strong>Time Until Next Run</strong>
+        <span class="item-details__item-content">{{ time_until_next_run }}</span>
+      </div>
+      <div class="item-details__buttons">
+        <form method="POST">
+          <input type="hidden" name="job_id" value="{{ job.id }}">
+          {% if job.next_run_time %}
+          <button type="submit" name="action" class="button" value="pause_job">
+            <span class="button__text">Pause Job</span>
+          </button>
+          {% else %}
+          <button type="submit" name="action" class="button" value="resume_job">
+            <span class="button__text">Resume Job</span>
+          </button>
+          {% endif %}
+          <button type="submit" name="action" class="button" value="delete_job">
+            <span class="button__text">Delete Job</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="grid__item">
+    <h2>No Jobs</h2>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

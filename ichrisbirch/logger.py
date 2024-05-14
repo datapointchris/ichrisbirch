@@ -158,6 +158,7 @@ THIRD_PARTY_LOGGERS = {
     'matplotlib': {'level': 'INFO'},
     's3transfer': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},
+    'werkzeug': {'handlers': ['app_file'], 'filters': ['no_304_status']},
 }
 
 LOGGING_CONFIG = {
@@ -190,9 +191,8 @@ def initialize_logging(config=LOGGING_CONFIG):
     if mac_os:
         for handler in config['handlers']:
             if '_file' in handler:
-                config['handlers'][handler][
-                    'filename'
-                ] = f'{MACOS_LOG_BASE_LOCATION}/{handler.removesuffix('_file')}.log'
+                filename = f'{MACOS_LOG_BASE_LOCATION}/{handler.removesuffix('_file')}.log'
+                config['handlers'][handler]['filename'] = filename
 
     logging.config.dictConfig(config)
     logger = logging.getLogger()

@@ -44,6 +44,10 @@ def create_app(settings: Settings) -> Flask:
         def pretty_date(dttm, format='%B %d, %Y'):
             return '' if dttm is None else dttm.strftime(format)
 
+        @app.template_filter()
+        def pretty_datetime(dttm, format='%B %d, %Y, %I:%M %p'):
+            return '' if dttm is None else dttm.strftime(format)
+
         logger.info('template filters registered')
 
         app.register_blueprint(routes.home.blueprint)
@@ -55,6 +59,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.habits.blueprint, url_prefix='/habits')
         app.register_blueprint(routes.journal.blueprint, url_prefix='/journal')
         app.register_blueprint(routes.portfolio.blueprint, url_prefix='/portfolio')
+        app.register_blueprint(routes.scheduler.blueprint, url_prefix='/scheduler')
         app.register_blueprint(routes.tasks.blueprint, url_prefix='/tasks')
         app.register_blueprint(routes.users.blueprint, url_prefix='/users')
         logger.info('blueprints registered')

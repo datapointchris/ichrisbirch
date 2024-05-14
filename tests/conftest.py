@@ -1,4 +1,5 @@
 import logging
+import os
 import subprocess
 import threading
 import time
@@ -6,6 +7,8 @@ from typing import Any
 from typing import Generator
 
 import pytest
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
 from flask.testing import FlaskClient
 from flask_login import FlaskLoginClient
@@ -17,6 +20,8 @@ from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.scheduler.main import get_jobstore
+from tests import test_data
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +58,11 @@ def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
             yield client
 
 
+@pytest.fixture(scope='module')
+def test_jobstore() -> Generator[SQLAlchemyJobStore, Any, None]:
+    yield get_jobstore(settings=settings)
+
+
 @pytest.fixture(scope='function', autouse=True)
 def create_tables_insert_data_drop_tables():
     """All tables are created and dropped for each test function.
@@ -63,6 +73,24 @@ def create_tables_insert_data_drop_tables():
     tests.helpers.insert_test_data()
     yield
     Base.metadata.drop_all(tests.helpers.ENGINE)
+
+
+@pytest.fixture(scope='function')
+def insert_jobs_in_test_scheduler():
+    # Start Scheduler in its own thread to test the scheduler
+    test_scheduler = BlockingScheduler()
+    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri)
+    test_scheduler.add_jobstore(jobstore, alias='ichrisbirch', extend_existing=True)
+    scheduler_thread = threading.Thread(target=test_scheduler.start, daemon=True)
+    scheduler_thread.start()
+    for job in test_data.scheduler.BASE_DATA:
+        test_scheduler.add_job(**job.as_dict())
+    try:
+        yield
+    finally:
+        # Shutdown scheduler process and join thread to main thread
+        test_scheduler.shutdown()
+        scheduler_thread.join()
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -129,9 +157,12 @@ def setup_test_environment():
                 pytest.exit(debug_message)
         session.commit()
 
+    # Copy current environment and set ENVIRONMENT to testing for subprocesses
+    testing_env = os.environ | {'ENVIRONMENT': settings.ENVIRONMENT}
+
     # Start Uvicorn API (FastAPI) subprocess in its own thread (for testing APP, that needs an API response)
     # This is easier than mocking everything
-    uvicorn_api_command = ' '.join(
+    api_uvicorn_command = ' '.join(
         [
             'poetry run uvicorn ichrisbirch.wsgi_api:api',
             f'--host {settings.fastapi.host}',
@@ -139,22 +170,22 @@ def setup_test_environment():
             '--log-level debug',
         ]
     )
-    uvicorn_api_process = subprocess.Popen(uvicorn_api_command.split())
-    uvicorn_api_thread = threading.Thread(target=uvicorn_api_process.wait)
-    uvicorn_api_thread.start()
+    api_uvicorn_process = subprocess.Popen(api_uvicorn_command.split(), env=testing_env)
+    api_uvicorn_thread = threading.Thread(target=api_uvicorn_process.wait)
+    api_uvicorn_thread.start()
     time.sleep(1)  # Allow Uvicorn FastAPI to start
 
     # Start Gunicorn App (Flask) subprocess in its own thread (for testing the frontend)
-    gunicorn_app_command = ' '.join(
+    app_gunicorn_command = ' '.join(
         [
             'poetry run gunicorn ichrisbirch.wsgi_app:app',
             f'--bind {settings.flask.host}:{settings.flask.port}',
             '--log-level DEBUG',
         ]
     )
-    gunicorn_app_process = subprocess.Popen(gunicorn_app_command.split())
-    gunicorn_app_thread = threading.Thread(target=gunicorn_app_process.wait)
-    gunicorn_app_thread.start()
+    app_gunicorn_process = subprocess.Popen(app_gunicorn_command.split(), env=testing_env)
+    app_gunicorn_thread = threading.Thread(target=app_gunicorn_process.wait)
+    app_gunicorn_thread.start()
     time.sleep(1)  # Allow Flask to start
 
     try:
@@ -165,8 +196,8 @@ def setup_test_environment():
         docker_client.stop(container=postgres_container.get('Id'))
         postgres_thread.join()
         # Kill uvicorn process and join thread to main thread
-        uvicorn_api_process.kill()
-        uvicorn_api_thread.join()
+        api_uvicorn_process.kill()
+        api_uvicorn_thread.join()
         # Kill flask process and join thread to main thread
-        gunicorn_app_process.kill()
-        gunicorn_app_thread.join()
+        app_gunicorn_process.kill()
+        app_gunicorn_thread.join()

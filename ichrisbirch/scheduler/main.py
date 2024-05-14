@@ -10,16 +10,24 @@ from ichrisbirch.scheduler.jobs import jobs_to_add
 logger = logging.getLogger('scheduler')
 
 
+def get_jobstore(settings: Settings) -> SQLAlchemyJobStore:
+    """Get the jobstore for the scheduler in order to manipulate jobs in the app."""
+    return SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri)
+
+
 def create_scheduler(settings: Settings) -> BlockingScheduler:
     logger.info('initializing')
-    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri, metadata=Base.metadata)
-    logger.info(f'jobstore added: {jobstore}')
     scheduler = BlockingScheduler()
     logger.info(f'class: {scheduler.__class__.__name__}')
+    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri, metadata=Base.metadata)
     scheduler.add_jobstore(jobstore, alias='ichrisbirch', extend_existing=True)
+    logger.info(f'jobstore added: {jobstore}')
     for job in jobs_to_add:
-        scheduler.add_job(**job.as_dict())
+        j = scheduler.add_job(**job.as_dict())
         logger.info(f'job added: {job.id}')
+        if j.id == 'make_logs':
+            j.pause()
+            logger.info(f'job paused: {j.id}')
 
     try:
         logger.info('scheduler starting')

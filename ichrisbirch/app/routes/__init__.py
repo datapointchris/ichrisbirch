@@ -7,6 +7,7 @@ from ichrisbirch.app.routes import habits
 from ichrisbirch.app.routes import home
 from ichrisbirch.app.routes import journal
 from ichrisbirch.app.routes import portfolio
+from ichrisbirch.app.routes import scheduler
 from ichrisbirch.app.routes import tasks
 from ichrisbirch.app.routes import users
 
@@ -20,6 +21,7 @@ __all__ = [
     'home',
     'journal',
     'portfolio',
+    'scheduler',
     'tasks',
     'users',
 ]
