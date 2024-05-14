@@ -4,16 +4,21 @@
 
 {% block content %}
 <div class="grid grid--one-column">
-    <h2>ichrisbirch-backups</h2>
+    <h2>Backups</h2>
     {% if prefix %}
-    <a href="{{ url_for('backups.index', prefix=prefix.rsplit('/', 2)[0]) }}">Back</a>
+    <h3>{{ prefix }}</h3>
+    <a href="{{ url_for('backups.index', prefix=up_one_level) }}">
+      Up One Level
+    </a>
+    {% else %}
+    <h3>/</h3>
     {% endif %}
     <ul>
       {% for folder in folders %}
       <li><a href="{{ url_for('backups.index', prefix=folder) }}">{{ folder }}</a></li>
       {% endfor %}
-      {% for file in files %}
-      <li>{{ file }}</li>
+      {% for backup in backups %}
+      <li>{{ backup.filename }} | {{ backup.last_modified }} | {{ backup.size }}</li>
       {% endfor %}
     </ul>
 </div>
