@@ -32,3 +32,24 @@ def test_remove_multiple_subpages():
         assert page in deduplicated, f'{page} should not be removed'
     for page in no_pages:
         assert page not in deduplicated, f'{page} should be removed'
+
+
+def test_remove_query_parameter_endpoints():
+    validator = ValidateWebsite('http://testserver')
+    pages = {
+        'http://testserver/endpoint1/1/': '<html><body>yes</body></html>',
+        'http://testserver/endpoint1/?param=okay': '<html><body>no</body></html>',
+        'http://testserver/endpoint2/1/': '<html><body>yes</body></html>',
+        'http://testserver/endpoint2/?param=okay': '<html><body>no</body></html>',
+        'http://testserver/end/end/2/': '<html><body>yes</body></html>',
+        'http://testserver/end/?q=search': '<html><body>no</body></html>',
+    }
+
+    yes_pages = {k for k, v in pages.items() if 'yes' in v}
+    no_pages = {k for k, v in pages.items() if 'no' in v}
+
+    deduplicated = validator.remove_endpoints_with_query_parameters(pages)
+    for page in yes_pages:
+        assert page in deduplicated, f'{page} should not be removed'
+    for page in no_pages:
+        assert page not in deduplicated, f'{page} should be removed'

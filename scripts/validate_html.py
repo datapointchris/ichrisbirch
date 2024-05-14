@@ -77,6 +77,10 @@ class ValidateWebsite:
                 deduped_pages[page_url] = html_content
         return OrderedDict(sorted(deduped_pages.items()))
 
+    def remove_endpoints_with_query_parameters(self, pages_with_content: dict[str, str]):
+        self.print_title('REMOVING QUERY PARAMETER ENDPOINTS')
+        return {page_url: html_content for page_url, html_content in pages_with_content.items() if '?' not in page_url}
+
     def validate_page(self, html_content: str):
         headers = {'Content-Type': 'text/html; charset=utf-8'}
         try:
@@ -109,7 +113,8 @@ class ValidateWebsite:
 def main() -> int:
     v = ValidateWebsite('http://localhost:6200/')
     pages_with_content = v.discover_webpages_from_local_server()
-    deduplicated_pages = v.remove_multiple_subpages(pages_with_content)
+    no_query_parameters = v.remove_endpoints_with_query_parameters(pages_with_content)
+    deduplicated_pages = v.remove_multiple_subpages(no_query_parameters)
     v.validate_pages(deduplicated_pages)
     return v.return_code
 
