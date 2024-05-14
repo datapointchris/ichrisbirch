@@ -42,3 +42,12 @@ def handle_if_not_response_code(response_code: int, response: httpx.Response, lo
         flash(error_message, 'error')
         flash(response.text, 'error')
         abort(502, (f'{error_message}\n{response.text}'))
+
+
+def convert_bytes(num: int | float) -> str:
+    """Convert bytes to human readable format."""
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB', 'PB'):
+        if num < 1024.0 or unit == 'PB':
+            break
+        num /= 1024.0
+    return f'{num:.2f} {unit}'
