@@ -20,6 +20,7 @@ class User(UserConfig):
     alternative_id: int
     name: str
     email: str
+    password: str
     created_on: datetime
     last_login: datetime | None
     preferences: Any

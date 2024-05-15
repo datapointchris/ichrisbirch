@@ -39,9 +39,6 @@ async def me(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.User(**user.model_dump())
-    logger.error(db_obj.password)
-    db_obj.set_password(db_obj.password)
-    logger.error(db_obj.password)
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)

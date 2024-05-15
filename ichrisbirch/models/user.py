@@ -8,6 +8,7 @@ from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -55,6 +56,10 @@ class User(UserMixin, Base):
     last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
     preferences: Mapped[Any] = mapped_column(MutableJSONB, index=False, unique=False, default=default_preferences)
 
+    @staticmethod
+    def _hash_password(mapper, connection, target):
+        target.password = generate_password_hash(target.password)
+
     @property
     def is_active(self):
         return True
@@ -85,3 +90,7 @@ class User(UserMixin, Base):
 
     def __repr__(self):
         return f'User(name={self.name}, email={self.email}, created_on={self.created_on}, last_login={self.last_login})'
+
+
+# Associate the listener function with User model, before_insert event
+event.listen(User, 'before_insert', User._hash_password)
