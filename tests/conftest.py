@@ -14,7 +14,7 @@ from flask.testing import FlaskClient
 from flask_login import FlaskLoginClient
 from sqlalchemy.schema import CreateSchema
 
-import tests.helpers
+import tests.util
 from ichrisbirch import models
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
@@ -33,7 +33,7 @@ logger.info(f"load settings from environment: {settings.ENVIRONMENT}")
 @pytest.fixture(scope='module')
 def test_api() -> Generator[TestClient, Any, None]:
     api = create_api(settings=settings)
-    api.dependency_overrides[get_sqlalchemy_session] = tests.helpers.get_testing_session
+    api.dependency_overrides[get_sqlalchemy_session] = tests.util.get_testing_session
     with TestClient(api) as client:
         yield client
 
@@ -57,7 +57,7 @@ def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
     app.test_client_class = FlaskLoginClient
-    with tests.helpers.SessionTesting() as session:
+    with tests.util.SessionTesting() as session:
         regular_user = session.get(models.User, 1)
     with app.test_client(user=regular_user) as client:
         with app.app_context():
@@ -72,7 +72,7 @@ def test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
     app.test_client_class = FlaskLoginClient
-    with tests.helpers.SessionTesting() as session:
+    with tests.util.SessionTesting() as session:
         admin_user = session.get(models.User, 3)
     with app.test_client(user=admin_user) as client:
         with app.app_context():
@@ -85,15 +85,14 @@ def test_jobstore() -> Generator[SQLAlchemyJobStore, Any, None]:
 
 
 @pytest.fixture(scope='function', autouse=True)
-def create_tables_insert_data_drop_tables():
+def create_drop_tables():
     """All tables are created and dropped for each test function.
 
     This is the easiest way to ensure a clean db each time a new test is run.
     """
-    Base.metadata.create_all(tests.helpers.ENGINE)
-    tests.helpers.insert_test_data()
+    Base.metadata.create_all(tests.util.ENGINE)
     yield
-    Base.metadata.drop_all(tests.helpers.ENGINE)
+    Base.metadata.drop_all(tests.util.ENGINE)
 
 
 @pytest.fixture(scope='function')
@@ -131,7 +130,7 @@ def setup_test_environment():
     8. Stop Postgres container
     9. Kill Postgres, Uvicorn, and Gunicorn threads
     """
-    docker_client = tests.helpers.get_docker_client()
+    docker_client = tests.util.get_docker_client()
     postgres_container_config = dict(
         image='postgres:16',
         name='postgres_testing',
@@ -148,7 +147,7 @@ def setup_test_environment():
         labels=['testing'],
     )
     # Create Postgres Docker container
-    postgres_container = tests.helpers.create_docker_container(client=docker_client, config=postgres_container_config)
+    postgres_container = tests.util.create_docker_container(client=docker_client, config=postgres_container_config)
     # Start Postgres container in its own thread
     postgres_thread = threading.Thread(
         target=docker_client.start,
@@ -160,7 +159,7 @@ def setup_test_environment():
 
     # Create Schemas
     # with next(tests.helpers.get_testing_session()) as session:
-    with tests.helpers.SessionTesting() as session:
+    with tests.util.SessionTesting() as session:
         for schema_name in settings.DB_SCHEMAS:
             try:
                 session.execute(CreateSchema(schema_name))

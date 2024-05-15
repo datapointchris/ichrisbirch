@@ -1,10 +1,17 @@
 import pytest
 from fastapi import status
 
+import tests.util
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
-from tests.helpers import show_status_and_response
+from tests.util import show_status_and_response
+
+
+@pytest.fixture(autouse=True)
+def insert_testing_data():
+    tests.util.insert_test_data('autotasks')
+
 
 NEW_AUTOTASK = schemas.AutoTaskCreate(
     name='AutoTask 4 Computer with notes priority 3',

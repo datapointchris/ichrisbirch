@@ -2,7 +2,14 @@ import pytest
 from playwright.sync_api import Page
 from playwright.sync_api import expect
 
+import tests.util
 from ichrisbirch.config import get_settings
+
+
+@pytest.fixture(autouse=True)
+def insert_testing_data():
+    tests.util.insert_test_data('tasks')
+
 
 settings = get_settings()
 

@@ -1,8 +1,15 @@
 from datetime import date
 
+import pytest
 from fastapi import status
 
-from tests.helpers import show_status_and_response
+import tests.util
+from tests.util import show_status_and_response
+
+
+@pytest.fixture(autouse=True)
+def insert_testing_data():
+    tests.util.insert_test_data('countdowns')
 
 
 def test_index(test_app):

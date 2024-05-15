@@ -83,22 +83,38 @@ def get_testing_session() -> Generator[Session, None, None]:
         session.close()
 
 
-def insert_test_data() -> None:
+def insert_test_data(*datasets) -> None:
     """Insert testing data for each endpoint.
 
-    The data is manually added, must update when a new endpoint is added. deepcopy(data) is necessary or the tests will
-    mutate the BASE_DATA and cause test failures
+    The data is manually added, must update when a new endpoint is added.
+    deepcopy(data) is necessary or the tests will mutate the BASE_DATA
+    and cause test failures
+
+    Get only the data needed for each endpoint, speeds up tests a bunch.
+    The tradeoff is a fixture must be created in each testing file
+
+    Example (put at the top of each file using the testing data):
+
+    ```python
+    import tests.util
+
+
+    @pytest.fixture(autouse=True)
+    def insert_testing_data():
+        tests.util.insert_test_data("tasks")
+    ```
     """
-    base_datasets = [
-        tests.test_data.autotasks.BASE_DATA,
-        tests.test_data.boxes.BASE_DATA,
-        tests.test_data.boxitems.BASE_DATA,
-        tests.test_data.countdowns.BASE_DATA,
-        tests.test_data.events.BASE_DATA,
-        tests.test_data.tasks.BASE_DATA,
-        tests.test_data.users.BASE_DATA,
-    ]
+    base_datasets = {
+        'autotasks': tests.test_data.autotasks.BASE_DATA,
+        'boxes': tests.test_data.boxes.BASE_DATA,
+        'boxitems': tests.test_data.boxitems.BASE_DATA,
+        'countdowns': tests.test_data.countdowns.BASE_DATA,
+        'events': tests.test_data.events.BASE_DATA,
+        'tasks': tests.test_data.tasks.BASE_DATA,
+        'users': tests.test_data.users.BASE_DATA,
+    }
+    selected_datasets = [deepcopy(base_datasets[key]) for key in datasets if key in base_datasets]
     with SessionTesting() as session:
-        for data in base_datasets:
-            session.add_all(deepcopy(data))
+        for data in selected_datasets:
+            session.add_all(data)
         session.commit()

@@ -1,5 +1,13 @@
+import pytest
+
+import tests.util
 from ichrisbirch.scheduler import jobs
-from tests.helpers import show_status_and_response
+from tests.util import show_status_and_response
+
+
+@pytest.fixture(autouse=True)
+def insert_testing_data():
+    tests.util.insert_test_data('tasks', 'autotasks')
 
 
 def test_decrease_task_priority(test_api):

@@ -1,9 +1,16 @@
 import pytest
 from fastapi import status
 
+import tests.util
 from ichrisbirch import schemas
 from ichrisbirch.models.box import BoxSize
-from tests.helpers import show_status_and_response
+from tests.util import show_status_and_response
+
+
+@pytest.fixture(autouse=True)
+def insert_testing_data():
+    tests.util.insert_test_data('boxes', 'boxitems')
+
 
 NEW_BOX = schemas.BoxCreate(
     name='Box 4 - Bag of clothes',

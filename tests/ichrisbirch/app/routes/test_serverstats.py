@@ -1,6 +1,6 @@
 from fastapi import status
 
-from tests.helpers import show_status_and_response
+from tests.util import show_status_and_response
 
 
 def test_get_serverstats(test_app):

@@ -2,9 +2,16 @@ import pytest
 from fastapi import status
 
 import tests.test_data
+import tests.util
 from ichrisbirch import models
 from ichrisbirch import schemas
-from tests.helpers import show_status_and_response
+from tests.util import show_status_and_response
+
+
+@pytest.fixture(autouse=True)
+def insert_testing_data():
+    tests.util.insert_test_data('users')
+
 
 TEST_DATA_USERS = tests.test_data.users.BASE_DATA
 TEST_DATA_EMAILS = [user.email for user in TEST_DATA_USERS]
