@@ -5,7 +5,7 @@
 {% block content %}
 <div class="searchbox">
   <form method="POST" action="{{ url_for('box_packing.search') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="search_text"></label>
     <input type="text" class="button" name="search_text" id="search_text">
     <button type="submit" name="action" class="button" value="search">

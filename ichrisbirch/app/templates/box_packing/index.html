@@ -31,7 +31,7 @@
 
         <div>
           <form method="POST" action="{{ url_for('box_packing.crud') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="id" value={{ selected_box.id }}>
             <button type="submit" name="action" class="button" value="delete_box">
               <span class="button__text">Delete Box</span>
@@ -47,7 +47,7 @@
 
     <div id="select-box" class="box-function">
       <form method="GET" id="select_box_form" action="/box-packing/">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <select class="button" id="selected_box_id" onchange="updateAction(); this.form.submit();">
           <option value="none" selected disabled hidden>Select a Box</option>
           {% for box in boxes %}
@@ -62,7 +62,7 @@
     {% if selected_box %}
     <div id="add-item" class="box-function">
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h3>Add Item to <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span></h3>
         <input type="hidden" name="box_id" id="add-item-box_id" value={{ selected_box.id }}>
         <label for="add-item-name">Name:</label>
@@ -85,7 +85,7 @@
 
     <div id="delete-item" class="box-function">
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h3>Delete Item from <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span>
         </h3>
         <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
@@ -103,7 +103,7 @@
 
     <div id="delete-box" class="box-function">
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h3>Delete <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span></h3>
         <input type="hidden" name="id" id="delete-box-id" value={{ selected_box.id }}>
         <button type="submit" name="action" class="button" value="delete_box">

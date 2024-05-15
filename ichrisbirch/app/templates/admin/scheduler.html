@@ -22,7 +22,7 @@
       </div>
       <div class="item-details__buttons">
         <form method="POST">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="job_id" value="{{ job.id }}">
           {% if job.next_run_time %}
           <button type="submit" name="action" class="button" value="pause_job">

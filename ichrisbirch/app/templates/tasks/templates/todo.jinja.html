@@ -8,7 +8,7 @@
   {% endif %}
   <div class="task-buttons">
     <form method="POST" action="{{ url_for('tasks.crud') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="id" value="{{ task.id }}">
       <input type="hidden" name="days" id="{{ task.id }}-days" value="">
       <button type="submit" name="action" class="button" value="complete">

@@ -1,6 +1,6 @@
 <div class="task-footer-spacer">
   <form class="task-footer" method="POST" action="{{ url_for('tasks.crud') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="task-footer__item task-footer__title">
       Add New Task:
     </div>

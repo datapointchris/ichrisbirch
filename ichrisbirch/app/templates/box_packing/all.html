@@ -5,7 +5,7 @@
 {% block content %}
 <div class="box-listing-sort">
   <form method="POST" action="{{ url_for('box_packing.all') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <span class="box-listing-sort__item">
       <select class="button" name="sort_1" id="sort_1">
         <option value="none" selected disabled hidden>Box Sort Order 1</option>
@@ -52,7 +52,7 @@
 <div class="grid__item grid__item--add-new">
   <h2>Add a New Box</h2>
   <form class="add-item-form" method="POST" action="{{ url_for('box_packing.crud') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="add-item-form__item">
       <label for="add-box-name">Name:</label>
       <input type="text" class="button" name="name" id="add-box-name">

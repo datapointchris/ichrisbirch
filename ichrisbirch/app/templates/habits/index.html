@@ -9,7 +9,7 @@
   <div class="habit-checked-wrapper">
     {% for habit in habits %}
     <form method="POST" class="habit-check" action="{{ url_for('habits.crud') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="id" value={{ habit.id }}>
       <span class="habit-check__text">
         <button type="submit" name="action" value="complete_habit">

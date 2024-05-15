@@ -12,7 +12,7 @@
       <h1 class="title">{{ apartment.name.upper() }}</h1>
       <h2>Edit Apartment Data:</h2>
       <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" id="id" name="id" value="{{ aptid }}">
         <input type="text" class="manage-box" size="90" name="name" value="{{ name }}">
         <input type="text" class="manage-box" size="90" name="address" value="{{ address }}">
@@ -49,7 +49,7 @@
     <br><br><br><br><br><br>
     <div class="feature-list">
       <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" id="id" name="id" value="{{ aptid }}">
         <!-- <button type="submit" name="action" class="button button--warning" value="delete">
           <span class="button__text">Delete Apartment</span>

@@ -81,7 +81,7 @@ async def read_by_alternative_id(alternative_id: int, session: Session = Depends
 @router.get('/email/{email}/', response_model=Optional[schemas.User], status_code=status.HTTP_200_OK)
 async def read_by_email(email: str, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.email == email)
-    if user := session.execute(query).scalars().first():
+    if not (user := session.execute(query).scalars().first()):
         message = f'user with email {email} not found'
         logger.warning(message)
     return user

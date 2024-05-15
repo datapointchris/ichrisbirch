@@ -2,8 +2,9 @@ import logging
 
 from flask import flash
 from flask import redirect
-from flask import url_for
+from flask import request
 from flask_login import LoginManager
+from flask_login.utils import login_url
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -28,6 +29,12 @@ def load_user(alternative_id):
 
 @login_manager.unauthorized_handler
 def unauthorized():
-    """Redirect unauthorized users to Login page."""
-    flash('You must be logged in to view that page.')
-    return redirect(url_for('auth.login'))
+    """Redirect unauthorized users to Login page.
+
+    `login` puts the requesting url in the address as the 'next' parameter
+    which is assigned to the session in the `auth.login` endpoint
+    for redirection after successfult login.
+    """
+    login = login_url(login_view='auth.login', next_url=request.url)
+    flash('You must be logged in to view that page.', 'warning')
+    return redirect(login)

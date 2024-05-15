@@ -7,6 +7,7 @@ from flask import flash
 from flask import redirect
 from flask import render_template
 from flask import request
+from flask import session
 from flask import url_for
 from flask_login import current_user
 from flask_login import login_required
@@ -29,14 +30,17 @@ users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model
 def login():
     if current_user.is_authenticated:
         return redirect(request.referrer or url_for('users.profile'))
-
+    if request.method == 'GET':
+        session['next'] = request.args.get('next')
     form = LoginForm()
     if form.validate_on_submit():
         user = users_api.get_one(['email', form.email.data])
         user = models.User(**user.model_dump())
         if user and user.check_password(password=form.password.data):
             login_user(user, remember=form.remember_me.data)
-            next_page = request.args.get('next')
+            logger.debug(f'logged in user: {user.name} - last login: {user.last_login}')
+            next_page = session.pop('next', url_for('users.profile'))
+            logger.debug(f'login will redirect to: {next_page}')
 
             if not http_utils.url_has_allowed_host_and_scheme(next_page, request.host):
                 return abort(status.HTTP_401_UNAUTHORIZED, f'Unauthorized URL: {next_page}')

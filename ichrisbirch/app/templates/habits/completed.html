@@ -9,7 +9,7 @@
 {% block content %}
 <div class="task-layout task-layout--one-column-wide">
   <form method="POST" action="{{ url_for('habits.completed') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="habit__selected">
       <label for="habit">Select a Habit:</label>
       <select class="textbox" name="habit" id="habit">

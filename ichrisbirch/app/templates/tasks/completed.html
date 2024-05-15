@@ -9,7 +9,7 @@
 {% block content %}
 <div class="task-layout task-layout--one-column-wide">
   <form method="POST" action="{{ url_for('tasks.completed') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="radio-scale-selector">
       {% for filter in filters %}
       <input type="radio" id="radio-{{ filter }}" class="radio-scale-selector__option" name="filter" value="{{ filter }}" {% if
