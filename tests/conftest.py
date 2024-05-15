@@ -15,6 +15,7 @@ from flask_login import FlaskLoginClient
 from sqlalchemy.schema import CreateSchema
 
 import tests.helpers
+from ichrisbirch import models
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
@@ -50,12 +51,30 @@ def test_app() -> Generator[FlaskClient, Any, None]:
 
 @pytest.fixture(scope='module')
 def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
+    """Produces a test client with a regular user logged in."""
     app = create_app(settings=settings)
     app.testing = True
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
     app.test_client_class = FlaskLoginClient
-    with app.test_client() as client:
+    with tests.helpers.SessionTesting() as session:
+        regular_user = session.get(models.User, 1)
+    with app.test_client(user=regular_user) as client:
+        with app.app_context():
+            yield client
+
+
+@pytest.fixture(scope='module')
+def test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
+    """Produces a test client with a regular user logged in."""
+    app = create_app(settings=settings)
+    app.testing = True
+    app.config.update({'TESTING': True})
+    app.config.update({'WTF_CSRF_ENABLED': False})
+    app.test_client_class = FlaskLoginClient
+    with tests.helpers.SessionTesting() as session:
+        admin_user = session.get(models.User, 3)
+    with app.test_client(user=admin_user) as client:
         with app.app_context():
             yield client
 

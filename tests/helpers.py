@@ -96,6 +96,7 @@ def insert_test_data() -> None:
         tests.test_data.countdowns.BASE_DATA,
         tests.test_data.events.BASE_DATA,
         tests.test_data.tasks.BASE_DATA,
+        tests.test_data.users.BASE_DATA,
     ]
     with SessionTesting() as session:
         for data in base_datasets:

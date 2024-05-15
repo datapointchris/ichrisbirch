@@ -24,6 +24,8 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session), limit: O
     return list(session.scalars(query).all())
 
 
+# TODO: [2024/05/14] - This should get and return current_user
+# refer to fastapi full stack example for implementation with jwt
 @router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def me(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
