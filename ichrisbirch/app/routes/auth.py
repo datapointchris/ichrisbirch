@@ -47,8 +47,7 @@ def login():
             if next_page := session.get('next'):
                 logger.debug(f'next page stored in session: {next_page}')
             else:
-                logger.warning('session["next"] was not set!')
-                logger.warning(session)
+                logger.debug('session["next"] was not set')
                 next_page = url_for('users.profile')
             logger.debug(f'login will redirect to: {next_page}')
 
@@ -57,7 +56,9 @@ def login():
 
             return redirect(next_page or url_for('users.profile'))
 
-        flash('Invalid username/password combination')
+        flash('Invalid credentials')
+        logger.warning(f'invalid login attempt for: {form.email.data}')
+
         return redirect(url_for('auth.login'))
 
     return render_template('auth/login.html', form=form, template='login-page')
@@ -75,9 +76,13 @@ def signup():
             new_user = models.User(**new_user.model_dump())
             login_user(new_user)
             return redirect(url_for('users.profile'))
-        logger.warning(f'duplicate email registration: {form.email.data}')
-        logger.info(f'last login: {existing_user.last_login}')
-        flash('A user already exists with that email address.')
+        logger.warning(
+            f'duplicate email registration attempt: {form.email.data} - last login: {existing_user.last_login}'
+        )
+        flash('email address already registered', 'error')
+    else:
+        if request.method == 'POST':
+            logger.warning(f'form validation failed: {form.errors}')
 
     return render_template(
         'auth/signup.html',

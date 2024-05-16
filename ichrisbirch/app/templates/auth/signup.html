@@ -56,12 +56,12 @@
       {% endif %}
     </fieldset>
 
-    <fieldset class="confirm">
-      {{ form.confirm.label }}
-      {{ form.confirm }}
-      {% if form.confirm.errors %}
+    <fieldset class="confirm_password">
+      {{ form.confirm_password.label }}
+      {{ form.confirm_password }}
+      {% if form.confirm_password.errors %}
       <ul class="errors">
-        {% for error in form.confirm.errors %}
+        {% for error in form.confirm_password.errors %}
         <li>{{ error }}</li>{% endfor %}
       </ul>
       {% endif %}
