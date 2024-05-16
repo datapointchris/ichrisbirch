@@ -11,7 +11,7 @@ from flask import flash
 from flask import render_template
 from flask import request
 
-from ichrisbirch.app.helpers import convert_bytes
+from ichrisbirch.app import utils
 from ichrisbirch.config import get_settings
 from ichrisbirch.scheduler.main import get_jobstore
 
@@ -39,7 +39,7 @@ class Backup:
 
     @property
     def size(self):
-        return convert_bytes(self._size)
+        return utils.convert_bytes(self._size)
 
 
 @blueprint.route('/backups/', methods=['GET', 'POST'])

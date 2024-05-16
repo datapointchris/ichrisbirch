@@ -68,12 +68,12 @@ def warning_tasks_count(tasks: list[schemas.Task]) -> int:
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    tasks = tasks_api.get('todo')
+    tasks = tasks_api.get_many('todo')
     critical_count = critical_tasks_count(tasks)
     warning_count = warning_tasks_count(tasks)
 
     completed_today_params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
-    completed_today = tasks_completed_api.get(params=completed_today_params)
+    completed_today = tasks_completed_api.get_many(params=completed_today_params)
 
     return render_template(
         'tasks/index.html',
@@ -87,7 +87,7 @@ def index():
 
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
-    tasks = tasks_api.get('todo')
+    tasks = tasks_api.get_many('todo')
     critical_count = critical_tasks_count(tasks)
     warning_count = warning_tasks_count(tasks)
     return render_template(
@@ -117,7 +117,7 @@ def completed():
     else:
         params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
-    if completed_tasks := tasks_completed_api.get(params=params):
+    if completed_tasks := tasks_completed_api.get_many(params=params):
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
@@ -151,7 +151,7 @@ def search():
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
 
-        tasks = tasks_api.get('search', params={'q': search_terms})
+        tasks = tasks_api.get_many('search', params={'q': search_terms})
         todo_tasks = [task for task in tasks if not task.complete_date]
         completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
 

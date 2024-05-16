@@ -11,7 +11,7 @@ from flask import render_template
 from flask import request
 from flask import url_for
 
-from ichrisbirch.app.helpers import handle_if_not_response_code
+from ichrisbirch.app import utils
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
@@ -52,7 +52,7 @@ def issue():
     dedented = '\n'.join(line.strip() for line in body_template.split('\n'))
     data = json.dumps({'title': issue['title'], 'body': dedented, 'labels': labels})
     response = httpx.post(settings.github.api_url_issues, content=data, headers=settings.github.api_headers)
-    handle_if_not_response_code(201, response, logger)
+    utils.handle_if_not_response_code(201, response, logger)
     flash('Issue submitted successfully', 'success')
 
     return redirect(request.referrer or url_for('home.index'))

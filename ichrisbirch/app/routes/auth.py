@@ -1,5 +1,6 @@
 import logging
 
+import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import abort
@@ -29,17 +30,26 @@ users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model
 @blueprint.route('/login/', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        flash(f'logged in as: {current_user.name}', 'success')
         return redirect(request.referrer or url_for('users.profile'))
-    if request.method == 'GET':
-        session['next'] = request.args.get('next')
     form = LoginForm()
     if form.validate_on_submit():
-        user = users_api.get_one(['email', form.email.data])
-        user = models.User(**user.model_dump())
+        if user := users_api.get_one(['email', form.email.data]):
+            user = models.User(**user.model_dump())
         if user and user.check_password(password=form.password.data):
             login_user(user, remember=form.remember_me.data)
-            logger.debug(f'logged in user: {user.name} - last login: {user.last_login}')
-            next_page = session.pop('next', url_for('users.profile'))
+            logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
+            try:
+                users_api.patch([user.id], data={'last_login': pendulum.now().for_json()})
+                logger.debug(f'updated last login for user: {user.name}')
+            except Exception as e:
+                logger.error(f'error updating last login for user {user.name}: {e}')
+            if next_page := session.get('next'):
+                logger.debug(f'next page stored in session: {next_page}')
+            else:
+                logger.warning('session["next"] was not set!')
+                logger.warning(session)
+                next_page = url_for('users.profile')
             logger.debug(f'login will redirect to: {next_page}')
 
             if not http_utils.url_has_allowed_host_and_scheme(next_page, request.host):

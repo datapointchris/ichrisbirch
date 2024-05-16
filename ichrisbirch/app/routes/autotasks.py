@@ -36,7 +36,7 @@ def index():
             case _:
                 return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    autotasks = autotasks_api.get()
+    autotasks = autotasks_api.get_many()
     return render_template(
         'autotasks/index.html',
         autotasks=autotasks,

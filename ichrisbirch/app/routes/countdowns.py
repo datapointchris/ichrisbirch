@@ -28,5 +28,5 @@ def index():
             case _:
                 return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    countdowns = countdowns_api.get()
+    countdowns = countdowns_api.get_many()
     return render_template('countdowns/index.html', countdowns=countdowns)

@@ -16,16 +16,15 @@ from flask import request
 from flask import url_for
 
 from ichrisbirch import schemas
+from ichrisbirch.app import utils
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.helpers import handle_if_not_response_code
-from ichrisbirch.app.helpers import url_builder
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger('app.habits')
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 
-HABITS_API_URL = url_builder(settings.api_url, 'habits')
+HABITS_API_URL = utils.url_builder(settings.api_url, 'habits')
 
 
 def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> tuple[list[str], list[int]]:
@@ -58,13 +57,13 @@ def index():
     start_date, end_date = edt.filters.get('today', (None, None))
     params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
-    completed_response = httpx.get(url_builder(HABITS_API_URL, 'completed'), params=params)
-    handle_if_not_response_code(200, completed_response, logger)
+    completed_response = httpx.get(utils.url_builder(HABITS_API_URL, 'completed'), params=params)
+    utils.handle_if_not_response_code(200, completed_response, logger)
     completed = [schemas.HabitCompleted(**habit) for habit in completed_response.json()]
     completed_names = [habit.name for habit in completed]
 
     daily_response = httpx.get(HABITS_API_URL)
-    handle_if_not_response_code(200, daily_response, logger)
+    utils.handle_if_not_response_code(200, daily_response, logger)
     daily = [schemas.Habit(**habit) for habit in daily_response.json()]
     # TODO: [2024/04/27] - Find better way to filter these out
     daily_filtered = [habit for habit in daily if habit.name in completed_names]
@@ -91,8 +90,8 @@ def completed():
     else:
         params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
-    completed_response = httpx.get(url_builder(HABITS_API_URL, 'completed'), params=params)
-    handle_if_not_response_code(200, completed_response, logger)
+    completed_response = httpx.get(utils.url_builder(HABITS_API_URL, 'completed'), params=params)
+    utils.handle_if_not_response_code(200, completed_response, logger)
     completed_habits = [schemas.HabitCompleted(**habit) for habit in completed_response.json()]
     if completed_habits:
         completed_count = len(completed_habits)
@@ -102,7 +101,7 @@ def completed():
         chart_labels, chart_values = None, None
 
     daily_response = httpx.get(HABITS_API_URL)
-    handle_if_not_response_code(200, daily_response, logger)
+    utils.handle_if_not_response_code(200, daily_response, logger)
     daily = [schemas.Habit(**habit) for habit in daily_response.json()]
 
     return render_template(
@@ -123,15 +122,15 @@ def completed():
 def manage():
 
     current_habits_response = httpx.get(HABITS_API_URL)
-    handle_if_not_response_code(200, current_habits_response, logger)
+    utils.handle_if_not_response_code(200, current_habits_response, logger)
     current_habits = [schemas.Habit(**habit) for habit in current_habits_response.json()]
 
-    current_categories_response = httpx.get(url_builder(HABITS_API_URL, 'categories'))
-    handle_if_not_response_code(200, current_categories_response, logger)
+    current_categories_response = httpx.get(utils.url_builder(HABITS_API_URL, 'categories'))
+    utils.handle_if_not_response_code(200, current_categories_response, logger)
     current_categories = [schemas.HabitCategory(**habit) for habit in current_categories_response.json()]
 
-    completed_response = httpx.get(url_builder(HABITS_API_URL, 'completed'))
-    handle_if_not_response_code(200, completed_response, logger)
+    completed_response = httpx.get(utils.url_builder(HABITS_API_URL, 'completed'))
+    utils.handle_if_not_response_code(200, completed_response, logger)
     completed_habits = [schemas.HabitCompleted(**habit) for habit in completed_response.json()]
 
     return render_template(
@@ -157,19 +156,19 @@ def crud():
             flash(str(e), 'error')
             return redirect(request.referrer or url_for('habits.manage'))
         response = httpx.post(HABITS_API_URL, content=category.model_dump_json())
-        handle_if_not_response_code(201, response, logger)
+        utils.handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))
 
     elif action == 'complete_habit':
-        url = url_builder(HABITS_API_URL, 'complete', data.get('id'))
+        url = utils.url_builder(HABITS_API_URL, 'complete', data.get('id'))
         response = httpx.post(url)
-        handle_if_not_response_code(200, response, logger)
+        utils.handle_if_not_response_code(200, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))
 
     elif action == 'delete_habit':
-        url = url_builder(HABITS_API_URL, data.get('id'))
+        url = utils.url_builder(HABITS_API_URL, data.get('id'))
         response = httpx.delete(url)
-        handle_if_not_response_code(204, response, logger)
+        utils.handle_if_not_response_code(204, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))
 
     elif action == 'add_category':
@@ -179,14 +178,14 @@ def crud():
             logger.exception(e)
             flash(str(e), 'error')
             return redirect(request.referrer or url_for('habits.manage'))
-        response = httpx.post(url_builder(HABITS_API_URL, 'categories'), content=category.model_dump_json())
-        handle_if_not_response_code(201, response, logger)
+        response = httpx.post(utils.url_builder(HABITS_API_URL, 'categories'), content=category.model_dump_json())
+        utils.handle_if_not_response_code(201, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))
 
     elif action == 'delete_category':
-        url = url_builder(HABITS_API_URL, 'categories', data.get('id'))
+        url = utils.url_builder(HABITS_API_URL, 'categories', data.get('id'))
         response = httpx.delete(url)
-        handle_if_not_response_code(204, response, logger)
+        utils.handle_if_not_response_code(204, response, logger)
         return redirect(request.referrer or url_for('habits.manage'))
 
     return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

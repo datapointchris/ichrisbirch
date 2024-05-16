@@ -36,5 +36,5 @@ def index():
             case _:
                 return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    events = events_api.get()
+    events = events_api.get_many()
     return render_template('events/index.html', events=events)
