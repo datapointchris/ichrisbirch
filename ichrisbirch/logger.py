@@ -152,6 +152,7 @@ THIRD_PARTY_LOGGERS = {
     },
     'boto3': {'level': 'INFO'},
     'botocore': {'level': 'INFO'},
+    'faker': {'level': 'INFO'},
     'fsevents': {'level': 'INFO'},
     'httpcore': {'level': 'INFO'},
     'httpx': {'level': 'INFO'},
