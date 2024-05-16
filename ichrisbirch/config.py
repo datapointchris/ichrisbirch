@@ -109,6 +109,16 @@ class SQLiteSettings:
         self.db_uri: str = os.environ['SQLITE_DATABASE_URI']
 
 
+class UserSettings:
+    def __init__(self):
+        self.default_admin_user_name = os.environ['USERS_DEFAULT_ADMIN_USER_NAME']
+        self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
+        self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
+        self.default_regular_user_name = os.environ['USERS_DEFAULT_REGULAR_USER_NAME']
+        self.default_regular_user_email = os.environ['USERS_DEFAULT_REGULAR_USER_EMAIL']
+        self.default_regular_user_password = os.environ['USERS_DEFAULT_REGULAR_USER_PASSWORD']
+
+
 class Settings:
     def __init__(self, env_file: pathlib.Path = pathlib.Path()):
         self.NAME: str = 'ichrisbirch'
@@ -127,6 +137,7 @@ class Settings:
         self.postgres = PostgresSettings()
         self.sqlalchemy = SQLAlchemySettings()
         self.sqlite = SQLiteSettings()
+        self.user = UserSettings()
 
     @property
     def api_url(self) -> str:
@@ -160,7 +171,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
             env_file = pathlib.Path(env_file)
 
     else:
-        logger.info(f'loading environment: {os.environ["ENVIRONMENT"]}')
+        logger.info(f'loading environment from ENVIRONMENT: {os.environ["ENVIRONMENT"]}')
         match (ENV := os.environ['ENVIRONMENT']):
             case 'development':
                 filename = '.dev.env'
