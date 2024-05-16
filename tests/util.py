@@ -34,7 +34,8 @@ def show_status_and_response(response: httpx.Response) -> dict[str, str]:
         d[int(code)] = attr
     try:
         content = response.json()
-    except (httpx.DecodingError, TypeError):
+    except (httpx.DecodingError, TypeError) as e:
+        logger.warning(f'error decoding response content: {e}')
         content = '<no response content>'
 
     return {d.get(response.status_code, 'UNKNOWN'): content}
