@@ -1,5 +1,6 @@
 import logging
 from functools import wraps
+from typing import Any
 
 from flask import current_app
 from flask import request
@@ -14,7 +15,7 @@ from ichrisbirch.app.query_api import QueryAPI
 
 #: A proxy for the current user. If no user is logged in, this will be an
 #: anonymous user
-current_user = LocalProxy(_get_user)
+current_user: Any = LocalProxy(_get_user)
 
 logger = logging.getLogger('app.login_manager')
 user_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
