@@ -33,8 +33,9 @@ def load_user(alternative_id):
     user ID to invalidate their login sessions. One way to improve this is to use an alternative user id instead of the
     user ID.
     """
-    user_response = user_api.get_one(['alt', alternative_id])
-    return models.User(**user_response.model_dump())
+    if user := user_api.get_one(['alt', alternative_id]):
+        return models.User(**user.model_dump())
+    return None
 
 
 def admin_login_required(func):

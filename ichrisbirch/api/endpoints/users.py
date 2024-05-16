@@ -67,6 +67,23 @@ async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
+@router.patch('/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+async def update_user(
+    user_id: int, user_update: schemas.UserUpdate, session: Session = Depends(get_sqlalchemy_session)
+):
+    if user := session.get(models.User, user_id):
+        for attr, value in user_update.model_dump().items():
+            if value is not None:
+                setattr(user, attr, value)
+        session.commit()
+        session.refresh(user)
+        return user
+    else:
+        message = f'user {user_id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
 @router.get('/alt/{alternative_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def read_by_alternative_id(alternative_id: int, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.alternative_id == alternative_id)
