@@ -79,9 +79,9 @@ def make_logs():
 
 
 @job_logger
-def decrease_task_priority() -> None:
+def decrease_task_priority(session=SessionLocal) -> None:
     """Decrease priority of all tasks by 1."""
-    with SessionLocal() as session:
+    with session() as session:
         query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
         for task in session.scalars(query).all():
             task.priority -= 1
@@ -89,9 +89,9 @@ def decrease_task_priority() -> None:
 
 
 @job_logger
-def check_and_run_autotasks() -> None:
+def check_and_run_autotasks(session=SessionLocal) -> None:
     """Check if any autotasks should run today and create tasks if so."""
-    with SessionLocal() as session:
+    with session() as session:
         for autotask in session.scalars(select(models.AutoTask)).all():
             if autotask.should_run_today:
                 session.add(
