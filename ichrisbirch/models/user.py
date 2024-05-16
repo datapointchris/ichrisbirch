@@ -58,6 +58,22 @@ class User(UserMixin, Base):
 
     @staticmethod
     def _hash_password(mapper, connection, target):
+        """The mapper and connection parameters are part of SQLAlchemy's event API. This method is being used as a
+        listener function, which is a special kind of function that gets called when a certain event happens. In this
+        case, the event is 'before_insert' on the User model.
+
+        mapper:
+            This is the Mapper that is handling the operation.
+            In SQLAlchemy, a Mapper is the component that links a Python class (in this case, User) to a database table.
+            It's responsible for loading objects from the database and saving them back.
+
+        connection:
+            This is the Connection being used to communicate with the database.
+            It provides a source of database connectivity and behavior.
+
+        target:
+            This is the specific instance of the mapped class (in this case, User) that the event is being performed on.
+        """
         target.password = generate_password_hash(target.password)
 
     @property
@@ -93,4 +109,6 @@ class User(UserMixin, Base):
 
 
 # Associate the listener function with User model, before_insert event
+# This will hash the user's password before inserting into the database,
+# but not re-hash it any other time, perfect.
 event.listen(User, 'before_insert', User._hash_password)

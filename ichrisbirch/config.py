@@ -34,6 +34,7 @@ class FlaskSettings:
         self.SECRET_KEY: str = os.environ['FLASK_SECRET_KEY']  # MUST be capitalized
         self.TESTING: bool = bool(os.environ['FLASK_TESTING'])
         self.DEBUG: bool = bool(os.environ['FLASK_DEBUG'])
+        # For flask-login, use the session to store the `next` value instead of passing as url parameters
         self.USE_SESSION_FOR_NEXT: bool = True
 
 

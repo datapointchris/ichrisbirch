@@ -27,6 +27,7 @@ def create_app(settings: Settings) -> Flask:
     with app.app_context():
         app.config.from_object(settings.flask)
         logger.info(f'configured from: {type(settings.flask)}')
+
         cfg = app.config
         logger.debug(f'DEBUG={cfg.get("DEBUG")}, TESTING={cfg.get("TESTING")}, ENV={cfg.get("ENV")}')
 
@@ -55,8 +56,8 @@ def create_app(settings: Settings) -> Flask:
         logger.info('template filters registered')
 
         app.register_blueprint(routes.home.blueprint)
-        app.register_blueprint(routes.admin.blueprint, url_prefix='/admin')
         app.register_blueprint(routes.auth.blueprint)
+        app.register_blueprint(routes.admin.blueprint, url_prefix='/admin')
         app.register_blueprint(routes.autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(routes.box_packing.blueprint, url_prefix='/box-packing')
         app.register_blueprint(routes.countdowns.blueprint, url_prefix='/countdowns')
@@ -67,8 +68,6 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.tasks.blueprint, url_prefix='/tasks')
         app.register_blueprint(routes.users.blueprint, url_prefix='/users')
         logger.info('blueprints registered')
-
-        # TODO: [2024/05/03] - Database Initialization
 
         @app.before_request
         def repo_labels_and_icons():
