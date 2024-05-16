@@ -4,6 +4,10 @@ import httpx
 from flask import abort
 from flask import flash
 
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
+
 
 def url_builder(base_url: str, *parts) -> str:
     """Build a URL from a base URL and parts, will always include the trailing slash.
@@ -39,9 +43,14 @@ def handle_if_not_response_code(response_code: int, response: httpx.Response, lo
         error_message = f'expected {response_code} from {response.url} but received {response.status_code}'
         logger.error(error_message)
         logger.error(response.text)
-        flash(error_message, 'error')
-        flash(response.text, 'error')
-        abort(502, (f'{error_message}\n{response.text}'))
+        if settings.ENVIRONMENT == 'development':
+            flash(error_message, 'error')
+            flash(response.text, 'error')
+            abort_message = f'{error_message}\n{response.text}'
+        else:
+            flash(error_message, 'error')
+            abort_message = error_message
+        abort(response.status_code, abort_message)
 
 
 def convert_bytes(num: int | float) -> str:
