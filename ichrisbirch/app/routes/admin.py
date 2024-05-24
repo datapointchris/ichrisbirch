@@ -20,16 +20,6 @@ logger = logging.getLogger('app.admin')
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
 
 
-@blueprint.route('/', methods=['GET'])
-def index():
-    return render_template(
-        'admin/index.html',
-        settings=settings,
-        server_time=pendulum.now('UTC').isoformat(),
-        local_time=pendulum.now().isoformat(),
-    )
-
-
 @dataclass
 class Backup:
     filename: str
@@ -40,6 +30,16 @@ class Backup:
     @property
     def size(self):
         return utils.convert_bytes(self._size)
+
+
+@blueprint.route('/', methods=['GET'])
+def index():
+    return render_template(
+        'admin/index.html',
+        settings=settings,
+        server_time=pendulum.now('UTC').isoformat(),
+        local_time=pendulum.now().isoformat(),
+    )
 
 
 @blueprint.route('/backups/', methods=['GET', 'POST'])
@@ -59,13 +59,18 @@ def backups():
         )
         for content in contents
     ]
-    backups = sorted(backups, key=lambda backup: backup.filename, reverse=True)
+    backups = sorted(backups, key=lambda backup: backup.last_modified, reverse=True)
 
     common_prefixes = response.get('CommonPrefixes', [])
     folders = [prefix.get('Prefix') for prefix in common_prefixes]
 
     return render_template(
-        'admin/backups.html', folders=folders, backups=backups, prefix=prefix, up_one_level=up_one_level
+        'admin/backups.html',
+        backup_bucket=settings.aws.s3_backup_bucket,
+        folders=folders,
+        backups=backups,
+        prefix=prefix,
+        up_one_level=up_one_level,
     )
 
 

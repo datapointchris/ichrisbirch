@@ -3,23 +3,35 @@
 {% block title %}Backups{% endblock %}
 
 {% block content %}
-<div class="grid grid--one-column">
-    <h2>Backups</h2>
-    {% if prefix %}
-    <h3>{{ prefix }}</h3>
-    <a href="{{ url_for('admin.backups', prefix=up_one_level) }}">
-      Up One Level
-    </a>
-    {% else %}
-    <h3>/</h3>
-    {% endif %}
-    <ul>
-      {% for folder in folders %}
-      <li><a href="{{ url_for('admin.backups', prefix=folder) }}">{{ folder }}</a></li>
-      {% endfor %}
-      {% for backup in backups %}
-      <li>{{ backup.filename }} | {{ backup.last_modified }} | {{ backup.size }}</li>
-      {% endfor %}
-    </ul>
-</div>
-{% endblock %}
+<div class="backups">
+  <h1 class="backups__title">Backups</h1>
+  <h2 class="backups__subtitle"><span class="fa-regular fa-folder-open">&nbsp;&nbsp;</span>
+    {{backup_bucket}} / {{ ' / '.join(prefix.split('/')) }}
+  </h2>
+  {% if prefix != '' %}
+  <h3 class="backups__link"><a href="{{ url_for('admin.backups', prefix=up_one_level) }}">Up One Level</a></h3>
+  {% endif %}
+
+  <div class="bucket-contents">
+    <div class="bucket-contents__header">Filename</div>
+    <div class="bucket-contents__header">Last Modified</div>
+    <div class="bucket-contents__header">Size</div>
+
+    {% for folder in folders %}
+    <div class="bucket-contents__item">
+      <span class="fa-regular fa-folder-closed">&nbsp;&nbsp;</span>
+      <a class="bucket-contents__link" href="{{ url_for('admin.backups', prefix=folder) }}">{{ folder.split('/')[-2] }}/</a>
+    </div>
+    <div class="bucket-contents__item"> </div>
+    <div class="bucket-contents__item"> </div>
+    {% endfor %}
+
+    {% for backup in backups %}
+    <div class="bucket-contents__item">
+      <span class="fa-regular fa-floppy-disk">&nbsp;&nbsp;</span>{{ backup.filename }}
+    </div>
+    <div class="bucket-contents__item">{{ backup.last_modified }}</div>
+    <div class="bucket-contents__item">{{ backup.size }}</div>
+    {% endfor %}
+  </div>
+  {% endblock %}
