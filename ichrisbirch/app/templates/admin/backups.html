@@ -20,7 +20,8 @@
     {% for folder in folders %}
     <div class="bucket-contents__item">
       <span class="fa-regular fa-folder-closed">&nbsp;&nbsp;</span>
-      <a class="bucket-contents__link" href="{{ url_for('admin.backups', prefix=folder) }}">{{ folder.split('/')[-2] }}/</a>
+      <a class="bucket-contents__link"
+        href="{{ url_for('admin.backups', prefix=folder) }}">{{folder.split('/')[-2]}}/</a>
     </div>
     <div class="bucket-contents__item"> </div>
     <div class="bucket-contents__item"> </div>
@@ -34,4 +35,5 @@
     <div class="bucket-contents__item">{{ backup.size }}</div>
     {% endfor %}
   </div>
-  {% endblock %}
+</div>
+{% endblock %}
