@@ -11831,6 +11831,20 @@ nav a:hover {
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
+.log-window {
+  width: 80vw;
+  height: 80vh;
+  margin: auto;
+  margin-block: var(--space-2xl);
+  padding: var(--space-m);
+  overflow: auto;
+  font-size: var(--fs-300);
+  line-height: 1.5em;
+  border-radius: var(--btn-border-radius);
+  background-color: var(--clr-black-trans-600);
+  box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
+}
+
 .perspective-wrapper {
   perspective: 1000px;
   transform-style: preserve-3d;

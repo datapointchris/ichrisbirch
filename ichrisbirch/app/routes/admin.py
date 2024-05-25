@@ -20,6 +20,16 @@ logger = logging.getLogger('app.admin')
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
 
 
+@blueprint.route('/', methods=['GET'])
+def index():
+    return render_template(
+        'admin/index.html',
+        settings=settings,
+        server_time=pendulum.now('UTC').isoformat(),
+        local_time=pendulum.now().isoformat(),
+    )
+
+
 @dataclass
 class Backup:
     filename: str
@@ -30,16 +40,6 @@ class Backup:
     @property
     def size(self):
         return utils.convert_bytes(self._size)
-
-
-@blueprint.route('/', methods=['GET'])
-def index():
-    return render_template(
-        'admin/index.html',
-        settings=settings,
-        server_time=pendulum.now('UTC').isoformat(),
-        local_time=pendulum.now().isoformat(),
-    )
 
 
 @blueprint.route('/backups/', methods=['GET', 'POST'])
@@ -117,3 +117,8 @@ def scheduler():
     jobs = jobstore.get_all_jobs()
     time_until_next_runs = calculate_time_until_next_runs(jobs)
     return render_template('admin/scheduler.html', jobs=jobs, time_until_next_runs=time_until_next_runs, zip=zip)
+
+
+@blueprint.route('/logs/', methods=['GET'])
+def logs():
+    return render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port)

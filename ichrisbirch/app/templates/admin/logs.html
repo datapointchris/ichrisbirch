@@ -1,0 +1,11 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Live Log Stream{% endblock %}
+
+{% block content %}
+<div id="logs" class="log-window"></div>
+
+<div id="apiHost" style="display: none;">{{ api_host }}</div>
+<div id="apiPort" style="display: none;">{{ api_port }}</div>
+<script src="{{ url_for('static', filename='js/live_logs.js') }}"></script>
+{% endblock %}`
