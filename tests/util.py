@@ -111,6 +111,7 @@ def insert_test_data(*datasets) -> None:
         'boxitems': tests.test_data.boxitems.BASE_DATA,
         'countdowns': tests.test_data.countdowns.BASE_DATA,
         'events': tests.test_data.events.BASE_DATA,
+        'habits': tests.test_data.habits.BASE_DATA,
         'tasks': tests.test_data.tasks.BASE_DATA,
         'users': tests.test_data.users.BASE_DATA,
     }

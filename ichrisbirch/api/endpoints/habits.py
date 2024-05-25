@@ -1,8 +1,6 @@
 import logging
-from datetime import datetime
 from typing import Optional
 from typing import Union
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -10,9 +8,9 @@ from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-# from ..dependencies import auth
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
@@ -35,8 +33,10 @@ async def read_many_habits(
     session: Session = Depends(get_sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
 ):
     query = select(models.Habit).limit(limit)
-    if current:
+    if current is True:
         query = query.filter(models.Habit.is_current.is_(True))
+    if current is False:
+        query = query.filter(models.Habit.is_current.is_(False))
     return list(session.scalars(query).all())
 
 
@@ -54,8 +54,10 @@ async def read_many_categories(
     session: Session = Depends(get_sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
 ):
     query = select(models.HabitCategory).limit(limit)
-    if current:
+    if current is True:
         query = query.filter(models.HabitCategory.is_current.is_(True))
+    if current is False:
+        query = query.filter(models.HabitCategory.is_current.is_(False))
     return list(session.scalars(query).all())
 
 
@@ -106,6 +108,23 @@ async def read_one_habit(habit_id: int, session: Session = Depends(get_sqlalchem
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
+@router.patch('/{habit_id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+async def update_habit(
+    habit_id: int, habit_update: schemas.HabitUpdate, session: Session = Depends(get_sqlalchemy_session)
+):
+    if habit := session.get(models.Habit, habit_id):
+        for attr, value in habit_update.model_dump().items():
+            if value is not None:
+                setattr(habit, attr, value)
+        session.commit()
+        session.refresh(habit)
+        return habit
+    else:
+        message = f'habit {habit_id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
 @router.delete('/{habit_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.Habit, habit_id):
@@ -113,24 +132,7 @@ async def delete_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
-        message = f'Habit {habit_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-
-@router.post('/complete/{habit_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
-async def complete_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.Habit, habit_id):
-        complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
-        completed_habit = models.HabitCompleted(
-            name=habit.name, category_id=habit.category_id, complete_date=complete_date
-        )
-        session.add(completed_habit)
-        session.commit()
-        session.refresh(completed_habit)
-        return completed_habit
-    else:
-        message = f'Habit {habit_id} not found'
+        message = f'habit {habit_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
@@ -140,19 +142,42 @@ async def read_one_category(category_id: int, session: Session = Depends(get_sql
     if habit := session.get(models.HabitCategory, category_id):
         return habit
     else:
-        message = f'Habit Category {category_id} not found'
+        message = f'habit category {category_id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+@router.patch('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
+async def update_habit_category(
+    category_id: int, category_update: schemas.HabitCategoryUpdate, session: Session = Depends(get_sqlalchemy_session)
+):
+    if category := session.get(models.HabitCategory, category_id):
+        for attr, value in category_update.model_dump().items():
+            if value is not None:
+                setattr(category, attr, value)
+        session.commit()
+        session.refresh(category)
+        return category
+    else:
+        message = f'habit category {category_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
 @router.delete('/categories/{category_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.HabitCategory, category_id):
-        session.delete(habit)
-        session.commit()
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    if category := session.get(models.HabitCategory, category_id):
+        try:
+            session.delete(category)
+            session.commit()
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        except IntegrityError as e:
+            message = f"Habit category '{category.name}' cannot be deleted because it is in use"
+            logger.warning(message)
+            logger.warning(str(e).split('\n')[0])
+            return Response(message, status_code=status.HTTP_409_CONFLICT)
     else:
-        message = f'Habit Category {category_id} not found'
+        message = f'Habit category {category_id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 

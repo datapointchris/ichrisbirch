@@ -1,3 +1,5 @@
+from ichrisbirch.api.endpoints import admin
+from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.endpoints import autotasks
 from ichrisbirch.api.endpoints import box_packing
 from ichrisbirch.api.endpoints import countdowns
@@ -8,4 +10,4 @@ from ichrisbirch.api.endpoints import server
 from ichrisbirch.api.endpoints import tasks
 from ichrisbirch.api.endpoints import users
 
-__all__ = ['autotasks', 'box_packing', 'countdowns', 'events', 'habits', 'home', 'server', 'tasks', 'users']
+__all__ = ['auth', 'autotasks', 'box_packing', 'countdowns', 'events', 'habits', 'home', 'server', 'tasks', 'users']

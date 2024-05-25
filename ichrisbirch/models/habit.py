@@ -17,6 +17,8 @@ class HabitCategory(Base):
     __tablename__ = 'categories'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    habits: Mapped[list['Habit']] = relationship('Habit', back_populates='category')
+    completed_habits: Mapped[list['HabitCompleted']] = relationship('HabitCompleted', back_populates='category')
     is_current: Mapped[bool] = mapped_column(Boolean)
 
     def __repr__(self):
@@ -29,7 +31,7 @@ class Habit(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
-    category: Mapped[HabitCategory] = relationship('HabitCategory', backref='habits')
+    category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='habits')
     is_current: Mapped[bool] = mapped_column(Boolean)
 
     def __repr__(self):
@@ -42,7 +44,7 @@ class HabitCompleted(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
-    category: Mapped[HabitCategory] = relationship('HabitCategory', backref='completed_habits')
+    category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='completed_habits')
     complete_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self):

@@ -7,33 +7,58 @@
 
   <div class="add-item-wrapper">
     <h2>Current Habits</h2>
-    {% for habit in current_habits %}
-    <div class="habit">
-      <h2>{{ habit.name }}</h2>
-      <form method="POST" action="{{ url_for('habits.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id" value="{{ habit.id }}">
-        <button type="submit" name="action" class="button" value="delete_habit">
-          <span class="button__text">Delete</span>
-        </button>
-      </form>
+    <div class="item-details">
+      {% for habit in current_habits %}
+      <div class="habit">
+        <h2>{{ habit.name }}</h2>
+        {{ habit.category.name }}
+        <form method="POST" action="{{ url_for('habits.crud') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ habit.id }}">
+          <button type="submit" name="action" class="button" value="hibernate_habit">
+            <span class="button__text">Hibernate</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 
   <div class="add-item-wrapper">
+    <h2>Hibernating Habits</h2>
+    <div class="item-details">
+      {% for habit in hibernating_habits %}
+      <div class="habit">
+        <h2>{{ habit.name }}</h2>
+        {{ habit.category.name }}
+          <form method="POST" action="{{ url_for('habits.crud') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="id" value="{{ habit.id }}">
+            <button type="submit" name="action" class="button" value="revive_habit">
+              <span class="button__text">Revive</span>
+            </button>
+            <button type="submit" name="action" class="button" value="delete_habit">
+              <span class="button__text">Permanently Delete</span>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  <div class="add-item-wrapper">
     <h2>Add New Habit</h2>
-    <form method="POST" class="add-item-form" action="{{ url_for('habits.crud') }}">
+    <form method="POST" class="add-item-form add-item-form__item--full-width" action="{{ url_for('habits.crud') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="add-item-form__item">
         <label for="habit_name">Name:</label>
         <input type="text" class="textbox" name="name" id="habit_name">
       </div>
-      <div class="add-item-form__item">
+      <div class="add-item-form__item add-item-form__item--full-width">
         <label for="habit_category">Category:</label>
-        <select class="textbox" name="habit_category" id="habit_category">
+        <select class="textbox" name="category_id" id="habit_category">
           {% for category in current_categories %}
-          <option value="{{ category }}">{{ category.name }}
+          <option value="{{ category.id }}">{{ category.name }}
           </option>
           {% endfor %}
         </select>
@@ -48,18 +73,41 @@
 
   <div class="add-item-wrapper">
     <h2>Current Categories</h2>
-    {% for category in current_categories %}
-    <div class="habit">
-      <h2>{{ category.name }}</h2>
-      <form method="POST" action="{{ url_for('habits.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id" value="{{ category.id }}">
-        <button type="submit" name="action" class="button" value="delete_category">
-          <span class="button__text">Delete</span>
-        </button>
-      </form>
+    <div class="item-details">
+      {% for category in current_categories %}
+      <div class="habit">
+        <h2>{{ category.name }}</h2>
+        <form method="POST" action="{{ url_for('habits.crud') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ category.id }}">
+          <button type="submit" name="action" class="button" value="hibernate_category">
+            <span class="button__text">Hibernate</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+  </div>
+
+  <div class="add-item-wrapper">
+    <h2>Hibernating Categories</h2>
+    <div class="item-details">
+      {% for category in hibernating_categories %}
+      <div class="habit">
+        <h2>{{ category.name }}</h2>
+        <form method="POST" action="{{ url_for('habits.crud') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ category.id }}">
+          <button type="submit" name="action" class="button" value="revive_category">
+            <span class="button__text">Revive</span>
+          </button>
+          <button type="submit" name="action" class="button" value="delete_category">
+            <span class="button__text">Permanently Delete</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="add-item-wrapper">
@@ -87,7 +135,7 @@
       <form method="POST" action="{{ url_for('habits.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ habit.id }}">
-        <button type="submit" name="action" class="button" value="delete_habit">
+        <button type="submit" name="action" class="button" value="delete_completed_habit">
           <span class="button__text">Delete</span>
         </button>
       </form>

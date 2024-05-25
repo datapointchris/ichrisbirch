@@ -38,7 +38,7 @@ def test_read_many_events(test_api):
 
 
 def test_create_event(test_api):
-    response = test_api.post('/events/', json=NEW_EVENT.model_dump(mode='json'))
+    response = test_api.post('/events/', content=NEW_EVENT.model_dump_json())
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
     assert dict(response.json())['name'] == NEW_EVENT.name
 
@@ -61,7 +61,7 @@ def test_create_event(test_api):
 )
 def test_create_event_date_formats(test_api, event_date, output):
     NEW_EVENT.date = event_date
-    response = test_api.post('/events/', json=NEW_EVENT.model_dump(mode='json'))
+    response = test_api.post('/events/', content=NEW_EVENT.model_dump_json())
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
     event = test_api.get(f'/events/{response.json()["id"]}/')
     assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -90,7 +90,7 @@ def test_event_lifecycle(test_api):
     assert len(all_events.json()) == 3
 
     # Create new event
-    created_event = test_api.post('/events/', json=NEW_EVENT.model_dump(mode='json'))
+    created_event = test_api.post('/events/', content=NEW_EVENT.model_dump_json())
     assert created_event.status_code == status.HTTP_201_CREATED, show_status_and_response(created_event)
     assert created_event.json()['name'] == NEW_EVENT.name
 

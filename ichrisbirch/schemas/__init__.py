@@ -16,6 +16,7 @@ from ichrisbirch.schemas.event import EventUpdate
 from ichrisbirch.schemas.habit import Habit
 from ichrisbirch.schemas.habit import HabitCategory
 from ichrisbirch.schemas.habit import HabitCategoryCreate
+from ichrisbirch.schemas.habit import HabitCategoryUpdate
 from ichrisbirch.schemas.habit import HabitCompleted
 from ichrisbirch.schemas.habit import HabitCompletedCreate
 from ichrisbirch.schemas.habit import HabitCreate
@@ -52,6 +53,7 @@ __all__ = [
     'HabitCompletedCreate',
     'HabitCategory',
     'HabitCategoryCreate',
+    'HabitCategoryUpdate',
     'ServerStats',
     'Task',
     'TaskCompleted',
