@@ -25,6 +25,16 @@ class EasyDate:
         self.this_year: date = date(self.today.year, 1, 1)
         self.next_year: date = date(self.today.year + 1, 1, 1)
 
+        self.filters: dict[str, tuple[date, date]] = {
+            'today': (self.today, self.tomorrow),
+            'yesterday': (self.yesterday, self.today),
+            'this_week': (self.week_start, self.week_end),
+            'last_7': (self.previous_7, self.tomorrow),
+            'this_month': (self.this_month, self.next_month),
+            'last_30': (self.previous_30, self.tomorrow),
+            'this_year': (self.this_year, self.next_year),
+        }
+
 
 class EasyDateTime:
     """Create easy to use python datetime filters."""
