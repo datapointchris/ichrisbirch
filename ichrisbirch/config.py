@@ -10,6 +10,13 @@ import dotenv
 logger = logging.getLogger('config')
 
 
+class AuthSettings:
+    def __init__(self):
+        self.secret_key: str = os.environ['AUTH_SECRET_KEY']
+        self.algorithm: str = 'HS256'
+        self.token_expire_minutes = timedelta(minutes=30)
+
+
 class AWSSettings:
     def __init__(self):
         self.region: str = os.environ['AWS_REGION']
@@ -36,6 +43,7 @@ class FlaskSettings:
         self.DEBUG: bool = bool(os.environ['FLASK_DEBUG'])
         # For flask-login, use the session to store the `next` value instead of passing as url parameters
         self.USE_SESSION_FOR_NEXT: bool = True
+        self.app_id = '6d7926137c903013f5e71f15749f1f2b7e66f147c03b228e53be771a7c1289d4'
 
 
 class FlaskLoginSettings:
@@ -109,14 +117,19 @@ class SQLiteSettings:
         self.db_uri: str = os.environ['SQLITE_DATABASE_URI']
 
 
-class UserSettings:
+class UsersSettings:
     def __init__(self):
         self.default_admin_user_name = os.environ['USERS_DEFAULT_ADMIN_USER_NAME']
         self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
         self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
+
         self.default_regular_user_name = os.environ['USERS_DEFAULT_REGULAR_USER_NAME']
         self.default_regular_user_email = os.environ['USERS_DEFAULT_REGULAR_USER_EMAIL']
         self.default_regular_user_password = os.environ['USERS_DEFAULT_REGULAR_USER_PASSWORD']
+
+        self.service_account_user_name = os.environ['USERS_SERVICE_ACCOUNT_USER_NAME']
+        self.service_account_user_email = os.environ['USERS_SERVICE_ACCOUNT_USER_EMAIL']
+        self.service_account_user_password = os.environ['USERS_SERVICE_ACCOUNT_USER_PASSWORD']
 
 
 class Settings:
@@ -127,6 +140,7 @@ class Settings:
         self.ENV_FILE: pathlib.Path = env_file
         self.REQUEST_TIMEOUT: int = 3
 
+        self.auth = AuthSettings()
         self.aws = AWSSettings()
         self.fastapi = FastAPISettings()
         self.flask = FlaskSettings()
@@ -137,7 +151,7 @@ class Settings:
         self.postgres = PostgresSettings()
         self.sqlalchemy = SQLAlchemySettings()
         self.sqlite = SQLiteSettings()
-        self.user = UserSettings()
+        self.users = UsersSettings()
 
     @property
     def api_url(self) -> str:
