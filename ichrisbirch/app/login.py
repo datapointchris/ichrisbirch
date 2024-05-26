@@ -1,24 +1,19 @@
 import logging
 from functools import wraps
-from typing import Any
 
 from flask import current_app
 from flask import request
 from flask_login import LoginManager
+from flask_login import current_user
 from flask_login.config import EXEMPT_METHODS
-from flask_login.utils import _get_user
-from werkzeug.local import LocalProxy
 
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-
-#: A proxy for the current user. If no user is logged in, this will be an
-#: anonymous user
-current_user: Any = LocalProxy(_get_user)
+from ichrisbirch.app.query_api import ServiceUser
 
 logger = logging.getLogger('app.login_manager')
-user_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
+user_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
