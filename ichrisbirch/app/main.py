@@ -15,6 +15,9 @@ logger = logging.getLogger('app')
 csrf = CSRFProtect()
 
 
+error_codes = [400, 404, 405, 409, 422, 500, 502]
+
+
 def handle_errors(e, error_code):
     error_title = f'{error_code} {http.HTTPStatus(error_code).phrase}'
     return render_template('error.html', error_title=error_title, error_message=e.description), error_code
@@ -37,12 +40,8 @@ def create_app(settings: Settings) -> Flask:
         csrf.init_app(app)
         logger.info('csrf protection initialized')
 
-        app.register_error_handler(400, partial(handle_errors, error_code=400))
-        app.register_error_handler(404, partial(handle_errors, error_code=404))
-        app.register_error_handler(405, partial(handle_errors, error_code=405))
-        app.register_error_handler(422, partial(handle_errors, error_code=422))
-        app.register_error_handler(500, partial(handle_errors, error_code=500))
-        app.register_error_handler(502, partial(handle_errors, error_code=502))
+        for error_code in error_codes:
+            app.register_error_handler(error_code, partial(handle_errors, error_code=error_code))
         logger.info('error handlers registered')
 
         @app.template_filter()
