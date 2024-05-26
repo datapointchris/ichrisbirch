@@ -46,6 +46,7 @@ def test_app() -> Generator[FlaskClient, Any, None]:
     app.config.update({'WTF_CSRF_ENABLED': False})
     with app.test_client() as client:
         with app.app_context():
+            client.delete_cookie('session')
             yield client
 
 
