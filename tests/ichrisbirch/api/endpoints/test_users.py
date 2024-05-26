@@ -5,6 +5,8 @@ import tests.test_data
 import tests.util
 from ichrisbirch import models
 from ichrisbirch import schemas
+from tests.ichrisbirch.api.endpoints.test_auth import make_app_headers_for_user
+from tests.ichrisbirch.api.endpoints.test_auth import make_jwt_header
 from tests.util import show_status_and_response
 
 
@@ -21,6 +23,13 @@ NEW_USER = schemas.UserCreate(
     email='test.api.user@openai.com',
     password='stupidP@ssw0rd',
 )
+
+
+@pytest.fixture()
+def test_user():
+    # look in tests.test_data.users to see user
+    with tests.util.SessionTesting() as session:
+        return session.get(models.User, 1)
 
 
 @pytest.mark.parametrize('user_id', [1, 2, 3])
@@ -145,3 +154,21 @@ def test_check_user_password_functions(test_api, user):
     response = test_api.get(f'/users/email/{user.email}/')
     db_user = models.User(**response.json())
     assert db_user.check_password(user.password)
+
+
+def test_get_user_me_application_headers(test_api, test_user):
+    headers = make_app_headers_for_user(test_user)
+    response = test_api.get('/users/me/', headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+
+
+def test_get_user_me_jwt(test_api, test_user):
+    """Send a request to /auth/token/ to get a token using oauth2 username and password.
+    Then use the token to get /me/ endpoint
+    """
+    data = {'username': test_user.email, 'password': 'regular_user_1_password'}
+    response = test_api.post('/auth/token/', data=data)
+    token = response.json()['access_token']
+    headers = make_jwt_header(token)
+    response = test_api.get('/users/me/', headers=headers)
+    assert response.status_code == status.HTTP_200_OK
