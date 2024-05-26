@@ -14,7 +14,7 @@ LOCAL_TZ = datetime.now().astimezone().tzinfo
 
 logger = logging.getLogger('app.events')
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
-events_api = QueryAPI(base_url='events', api_key='', logger=logger, response_model=schemas.Event)
+events_api = QueryAPI(base_url='events', logger=logger, response_model=schemas.Event)
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

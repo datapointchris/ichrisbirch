@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 import pendulum
 from fastapi import status
 from flask import Blueprint
@@ -20,11 +21,15 @@ from ichrisbirch import schemas
 from ichrisbirch.app.forms.auth import LoginForm
 from ichrisbirch.app.forms.auth import SignupForm
 from ichrisbirch.app.query_api import QueryAPI
+from ichrisbirch.app.query_api import ServiceUser
 from ichrisbirch.app.utils import http as http_utils
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
 
 logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
-users_api = QueryAPI(base_url='users', api_key='', logger=logger, response_model=schemas.User)
+users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
 
 
 @blueprint.route('/login/', methods=['GET', 'POST'])
@@ -58,6 +63,8 @@ def login():
 
         flash('Invalid credentials')
         logger.warning(f'invalid login attempt for: {form.email.data}')
+
+        # TODO: [2024/05/21] - add a login attempt counter, possibly using redis or something similar
 
         return redirect(url_for('auth.login'))
 

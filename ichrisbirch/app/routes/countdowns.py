@@ -11,7 +11,7 @@ from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger('app.countdowns')
 blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
-countdowns_api = QueryAPI(base_url='countdowns', api_key='', logger=logger, response_model=schemas.Countdown)
+countdowns_api = QueryAPI(base_url='countdowns', logger=logger, response_model=schemas.Countdown)
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

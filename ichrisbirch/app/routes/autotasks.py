@@ -16,7 +16,7 @@ TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 logger = logging.getLogger('app.autotasks')
 blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotasks', static_folder='static')
-autotasks_api = QueryAPI(base_url='autotasks', api_key='', logger=logger, response_model=schemas.AutoTask)
+autotasks_api = QueryAPI(base_url='autotasks', logger=logger, response_model=schemas.AutoTask)
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

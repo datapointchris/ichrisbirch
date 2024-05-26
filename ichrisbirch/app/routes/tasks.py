@@ -20,10 +20,8 @@ from ichrisbirch.models.task import TaskCategory
 
 logger = logging.getLogger('app.tasks')
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
-tasks_api = QueryAPI(base_url='tasks', api_key='', logger=logger, response_model=schemas.Task)
-tasks_completed_api = QueryAPI(
-    base_url='tasks/completed/', api_key='', logger=logger, response_model=schemas.TaskCompleted
-)
+tasks_api = QueryAPI(base_url='tasks', logger=logger, response_model=schemas.Task)
+tasks_completed_api = QueryAPI(base_url='tasks/completed', logger=logger, response_model=schemas.TaskCompleted)
 
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
