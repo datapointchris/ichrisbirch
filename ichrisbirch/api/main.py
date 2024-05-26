@@ -17,18 +17,17 @@ logger = logging.getLogger('api')
 
 
 async def http_exception_handler_logger(request, exc):
-    logger.error(repr(exc))
+    logger.error(exc)
     return await http_exception_handler(request, exc)
 
 
 async def request_validation_exception_handler_logger(request, exc):
-    logger.error(repr(exc))
+    logger.error(exc)
     return await request_validation_exception_handler(request, exc)
 
 
 async def generic_exception_handler(request, exc):
-    logger.error(exc)
-    logger.error(repr(exc))
+    logger.error('RECEIVED', exc)
     return JSONResponse(status_code=500, content={"message": repr(exc)})
 
 
@@ -46,6 +45,8 @@ def create_api(settings: Settings) -> FastAPI:
     # dependencies=[Depends(auth)],
 
     api.include_router(endpoints.home.router, prefix='', tags=['home'], include_in_schema=False)
+    api.include_router(endpoints.admin.router, prefix='/admin', tags=['admin'])
+    api.include_router(endpoints.auth.router, prefix='/auth', tags=['auth'])
     api.include_router(endpoints.autotasks.router, prefix='/autotasks', tags=['autotasks'])
     api.include_router(endpoints.box_packing.router, prefix='/box_packing', tags=['box_packing'])
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', tags=['countdowns'])
