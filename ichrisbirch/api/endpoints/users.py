@@ -36,7 +36,7 @@ async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalc
 @router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def me(user: CurrentUser):
     """Get the current user using authentication methods for CurrentUser
-    
+
     NOTE: even though CurrentUser accepts oauth2 authentication, the form data
     cannot be POSTed to this endpoint.
     Instead the client must send the POST to /auth/token/ to obtain a token
