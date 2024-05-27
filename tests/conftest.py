@@ -9,6 +9,7 @@ from typing import Generator
 import pytest
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
+from docker.models.containers import Container
 from fastapi.testclient import TestClient
 from flask.testing import FlaskClient
 from flask_login import FlaskLoginClient
@@ -25,6 +26,7 @@ from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
 
 logger = logging.getLogger(__name__)
+docker_logger = logging.getLogger('DOCKER')
 
 settings = get_settings('testing')
 logger.info(f"load settings from environment: {settings.ENVIRONMENT}")
@@ -118,18 +120,19 @@ def insert_jobs_in_test_scheduler():
 def setup_test_environment():
     """Setup testing environment.
 
-    1. Get Docker client (will attempt to start Docker if not running)
-    2. Create Postgres Docker container
-    3. Create schemas
-    4. Start Uvicorn API (FastAPI) subprocess
-    5. Start Gunicorn App (Flask) subprocess
-    6. Yield to test
-    6a. create_tables_insert_data_drop_tables runs here
-    6b. Function yields after inserting data to run test
-    6c. Drop all tables after test completes
-    7. Control back to setup_test_environment
-    8. Stop Postgres container
-    9. Kill Postgres, Uvicorn, and Gunicorn threads
+    => Get Docker client (will attempt to start Docker if not running)
+    => Create Postgres Docker container
+    => Create Postgres logs thread
+    => Create schemas
+    => Start Uvicorn API (FastAPI) subprocess
+    => Start Gunicorn App (Flask) subprocess
+    => Yield to test
+    =>a create_tables_insert_data_drop_tables runs here
+    =>b Function yields after inserting data to run test
+    =>c Drop all tables after test completes
+    => Control back to setup_test_environment
+    => Stop Postgres container
+    => Kill Postgres, Uvicorn, and Gunicorn threads
     """
     docker_client = tests.util.get_docker_client()
     postgres_container_config = dict(
@@ -149,6 +152,18 @@ def setup_test_environment():
     )
     # Create Postgres Docker container
     postgres_container = tests.util.create_docker_container(client=docker_client, config=postgres_container_config)
+
+    def stream_docker_container_logs(container: Container):
+        for log in docker_client.logs(container=container.get('Id'), stream=True, follow=True):
+            log = log.decode().strip()
+            docker_logger.info(log)
+
+    # Start Docker log stream in its own thread
+    docker_log_thread = threading.Thread(
+        target=stream_docker_container_logs,
+        kwargs={'container': postgres_container},
+    )
+
     # Start Postgres container in its own thread
     postgres_thread = threading.Thread(
         target=docker_client.start,
@@ -157,6 +172,7 @@ def setup_test_environment():
     postgres_thread.start()
     # Allow Postgres time to start
     time.sleep(3)
+    docker_log_thread.start()
 
     # Create Schemas
     # with next(tests.helpers.get_testing_session()) as session:
@@ -216,6 +232,8 @@ def setup_test_environment():
         # Stop container and join thread to main thread
         docker_client.stop(container=postgres_container.get('Id'))
         postgres_thread.join()
+
+        docker_log_thread.join()
         # Kill uvicorn process and join thread to main thread
         api_uvicorn_process.kill()
         api_uvicorn_thread.join()

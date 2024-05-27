@@ -70,9 +70,6 @@ def create_docker_container(client: docker.APIClient, config: dict[str, Any]) ->
             logger.error(message)
             pytest.exit(message)
     time.sleep(3)  # Must sleep to allow creation of detached Docker container
-    # TODO: I don't think this works, need to see when logging is fixed
-    for log in client.logs(container=container.get("Id"), stream=True):
-        logger.info(log.strip())
     return container
 
 
