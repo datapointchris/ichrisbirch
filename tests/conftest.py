@@ -88,7 +88,7 @@ def test_jobstore() -> Generator[SQLAlchemyJobStore, Any, None]:
 
 
 @pytest.fixture(scope='function', autouse=True)
-def create_drop_tables():
+def create_and_drop_tables():
     """All tables are created and dropped for each test function.
 
     This is the easiest way to ensure a clean db each time a new test is run.
@@ -120,19 +120,11 @@ def insert_jobs_in_test_scheduler():
 def setup_test_environment():
     """Setup testing environment.
 
-    => Get Docker client (will attempt to start Docker if not running)
-    => Create Postgres Docker container
-    => Create Postgres logs thread
-    => Create schemas
-    => Start Uvicorn API (FastAPI) subprocess
-    => Start Gunicorn App (Flask) subprocess
-    => Yield to test
-    =>a create_tables_insert_data_drop_tables runs here
-    =>b Function yields after inserting data to run test
-    =>c Drop all tables after test completes
-    => Control back to setup_test_environment
-    => Stop Postgres container
-    => Kill Postgres, Uvicorn, and Gunicorn threads
+    => Get Docker client (will attempt to start Docker if not running) => Create Postgres Docker container => Create
+    Postgres logs thread => Create schemas => Start Uvicorn API (FastAPI) subprocess => Start Gunicorn App (Flask)
+    subprocess => Yield to test =>a create_tables_insert_data_drop_tables runs here =>b Function yields after inserting
+    data to run test =>c Drop all tables after test completes => Control back to setup_test_environment => Stop Postgres
+    container => Kill Postgres, Uvicorn, and Gunicorn threads
     """
     docker_client = tests.util.get_docker_client()
     postgres_container_config = dict(
@@ -232,7 +224,6 @@ def setup_test_environment():
         # Stop container and join thread to main thread
         docker_client.stop(container=postgres_container.get('Id'))
         postgres_thread.join()
-
         docker_log_thread.join()
         # Kill uvicorn process and join thread to main thread
         api_uvicorn_process.kill()
