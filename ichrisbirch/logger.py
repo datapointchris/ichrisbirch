@@ -85,7 +85,7 @@ FORMATTERS = {
         'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
     },
     'log_level_in_brackets': {
-        'format': BASIC_FORMAT,
+        'format': DETAILED_FORMAT,
         'datefmt': DATE_FORMAT,
         'style': '{',
         'class': 'ichrisbirch.logger.LogLevelBracketFormatter',
