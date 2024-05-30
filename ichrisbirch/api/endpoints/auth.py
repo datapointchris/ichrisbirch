@@ -100,8 +100,8 @@ def authenticate_with_application_headers(
 async def authenticate_with_oauth2(request: Request, session: Session = Depends(get_sqlalchemy_session)) -> str | None:
     form_data = await request.form()
     if form_data and 'username' in form_data and 'password' in form_data:
-        if user := validate_user_email(form_data['username'], session):
-            if validate_password(user, form_data['password']):
+        if user := validate_user_email(str(form_data['username']), session):
+            if validate_password(user, str(form_data['password'])):
                 return user.get_id()
     return None
 
