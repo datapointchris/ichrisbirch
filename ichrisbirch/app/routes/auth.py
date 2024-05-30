@@ -1,6 +1,5 @@
 import logging
 
-import httpx
 import pendulum
 from fastapi import status
 from flask import Blueprint
@@ -21,7 +20,6 @@ from ichrisbirch import schemas
 from ichrisbirch.app.forms.auth import LoginForm
 from ichrisbirch.app.forms.auth import SignupForm
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.app.query_api import ServiceUser
 from ichrisbirch.app.utils import http as http_utils
 from ichrisbirch.config import get_settings
 
