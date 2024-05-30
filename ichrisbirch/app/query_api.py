@@ -49,8 +49,16 @@ class QueryAPI(Generic[ModelType]):
         expected_response_code: int = 200,
     ):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
-        self.logger.debug(f'{method} {url} {data if settings.ENVIRONMENT != "production" else ""}')
-        headers = {'X-User-ID': self.user.get_id() or '', 'X-Application-ID': settings.flask.app_id}
+        headers = {
+            'X-User-ID': (self.user.get_id() or '') if self.user else '',
+            'X-Application-ID': settings.flask.app_id,
+        }
+        headers_to_log = {'X-User-ID': headers.get('X-User-ID'), 'X-Application-ID': 'XXXXXXXX'}
+        self.logger.debug(
+            f'{method} {url} '
+            f'headers={headers_to_log}, '
+            f'data={data if settings.ENVIRONMENT != "production" else "XXXXXXXX"}'
+        )
         response = httpx.request(method, url, follow_redirects=True, params=params, headers=headers, json=data)
         utils.handle_if_not_response_code(expected_response_code, response, self.logger)
         return response
