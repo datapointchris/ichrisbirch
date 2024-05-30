@@ -10,7 +10,6 @@ from flask_login.config import EXEMPT_METHODS
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.app.query_api import ServiceUser
 
 logger = logging.getLogger('app.login_manager')
 user_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
