@@ -1,7 +1,6 @@
 import logging
 from unittest.mock import patch
 
-import pendulum
 import pytest
 from fastapi import status
 
@@ -65,7 +64,7 @@ def test_post(mock_handle_if_not_response_code, test_query_api):
 def test_patch(mock_handle_if_not_response_code, test_query_api):
     mock_handle_if_not_response_code.return_value = None
     new_name = 'User 1 Updated Name'
-    result = test_query_api.patch('1', data={'name': new_name, 'last_login': pendulum.now().isoformat()})
+    result = test_query_api.patch('1', data={'name': new_name})
     assert result.name == new_name
 
     updated = test_query_api.get_one('1')

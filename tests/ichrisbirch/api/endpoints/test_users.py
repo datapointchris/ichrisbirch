@@ -68,6 +68,13 @@ def test_delete_user(test_api, user_id):
     assert deleted.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(deleted)
 
 
+def test_patch_user(test_api):
+    endpoint = '/users/1/'
+    new_name = 'Updated User 1 Name'
+    response = test_api.patch(endpoint, json={'name': new_name})
+    assert response.json()['name'] == new_name
+
+
 def test_user_lifecycle(test_api):
     """Integration test for CRUD lifecylce of a user."""
 
@@ -160,10 +167,12 @@ def test_get_user_me_application_headers(test_api, test_user):
     headers = make_app_headers_for_user(test_user)
     response = test_api.get('/users/me/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
+    assert response.json()['name'] == test_user.name
 
 
 def test_get_user_me_jwt(test_api, test_user):
     """Send a request to /auth/token/ to get a token using oauth2 username and password.
+
     Then use the token to get /me/ endpoint
     """
     data = {'username': test_user.email, 'password': 'regular_user_1_password'}
@@ -172,3 +181,4 @@ def test_get_user_me_jwt(test_api, test_user):
     headers = make_jwt_header(token)
     response = test_api.get('/users/me/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
+    assert response.json()['name'] == test_user.name

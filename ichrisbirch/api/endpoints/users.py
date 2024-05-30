@@ -9,9 +9,9 @@ from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ichrisbirch.api.endpoints.auth import CurrentUser
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import CurrentUser
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.users')
@@ -35,7 +35,7 @@ async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalc
 
 @router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def me(user: CurrentUser):
-    """Get the current user using authentication methods for CurrentUser
+    """Get the current user using authentication methods for CurrentUser.
 
     NOTE: even though CurrentUser accepts oauth2 authentication, the form data
     cannot be POSTed to this endpoint.
@@ -71,12 +71,15 @@ async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session
 async def update_user(
     user_id: int, user_update: schemas.UserUpdate, session: Session = Depends(get_sqlalchemy_session)
 ):
+    logger.debug(f'INPUT DATA: {user_update}')
     if user := session.get(models.User, user_id):
-        for attr, value in user_update.model_dump().items():
-            if value is not None:
-                setattr(user, attr, value)
+        update_data = user_update.model_dump(exclude_unset=True)
+        for attr, value in update_data.items():
+            setattr(user, attr, value)
+        logger.debug(f'UPDATED USER: {user}')
         session.commit()
         session.refresh(user)
+        logger.debug(f'RETURNING USER: {user}')
         return user
     else:
         message = f'user {user_id} not found'

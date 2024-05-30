@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -27,8 +28,8 @@ class User(UserConfig):
 
 
 class UserUpdate(UserConfig):
-    name: str | None = None
-    email: str | None = None
-    password: str | None = None
-    last_login: datetime | None
-    preferences: Any | None = None
+    name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    last_login: Optional[datetime] = None
+    preferences: Optional[Any] = None
