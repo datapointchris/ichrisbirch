@@ -17,8 +17,7 @@ from flask_login import logout_user
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.app.forms.auth import LoginForm
-from ichrisbirch.app.forms.auth import SignupForm
+from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import http as http_utils
 from ichrisbirch.config import get_settings
@@ -35,7 +34,7 @@ def login():
     if current_user.is_authenticated:
         flash(f'logged in as: {current_user.name}', 'success')
         return redirect(request.referrer or url_for('users.profile'))
-    form = LoginForm()
+    form = forms.LoginForm()
     if form.validate_on_submit():
         if user := users_api.get_one(['email', form.email.data]):
             user = models.User(**user.model_dump())
@@ -71,7 +70,7 @@ def login():
 
 @blueprint.route('/signup/', methods=['GET', 'POST'])
 def signup():
-    form = SignupForm()
+    form = forms.SignupForm()
     if form.validate_on_submit():
         logger.debug('signup form validated')
         if not (existing_user := users_api.get_one(['email', form.email.data])):
