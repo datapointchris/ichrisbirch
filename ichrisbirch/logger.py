@@ -157,6 +157,7 @@ THIRD_PARTY_LOGGERS = {
     'httpcore': {'level': 'INFO'},
     'httpx': {'level': 'INFO'},
     'matplotlib': {'level': 'INFO'},
+    'openai': {'level': 'INFO'},
     's3transfer': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},
     'werkzeug': {'handlers': ['app_file'], 'filters': ['no_304_status']},
