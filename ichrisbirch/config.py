@@ -79,6 +79,12 @@ class MongoDBSettings:
         return f'mongodb://{self.username}:{self.password}@{self.host}'
 
 
+class OpenAISettings:
+    def __init__(self):
+        self.api_key: str = os.environ['OPENAI_API_KEY']
+        self.model = 'gpt-3.5-turbo-0125'
+
+
 class PlaywrightSettings:
     def __init__(self):
         self.timeout = 5_000
@@ -147,6 +153,7 @@ class Settings:
         self.flasklogin = FlaskLoginSettings()
         self.github = GithubSettings()
         self.mongodb = MongoDBSettings()
+        self.openai = OpenAISettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()
         self.sqlalchemy = SQLAlchemySettings()

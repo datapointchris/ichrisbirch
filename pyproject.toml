@@ -39,6 +39,8 @@ sqlalchemy-json = "^0.7.0"
 boto3 = "^1.34.98"
 pyjwt = "^2.8.0"
 pygtail = "^0.14.0"
+openai = "^1.32.0"
+youtube-transcript-api = "^0.6.2"
 
 [tool.poetry.group.dev.dependencies]
 deptry = "^0.16.1"
