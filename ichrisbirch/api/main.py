@@ -5,6 +5,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from ichrisbirch.api import endpoints
@@ -36,7 +37,16 @@ def create_api(settings: Settings) -> FastAPI:
     logger.info('initializing')
 
     api.add_middleware(ResponseLoggerMiddleware)
-    logger.info('middleware added')
+    logger.info('response logger middleware added')
+
+    api.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.fastapi.allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    logger.info('cors middleware added')
 
     # TODO: for auth
     # app = FastAPI(dependencies=[Depends(get_query_token)])
@@ -46,6 +56,7 @@ def create_api(settings: Settings) -> FastAPI:
 
     api.include_router(endpoints.home.router, prefix='', tags=['home'], include_in_schema=False)
     api.include_router(endpoints.admin.router, prefix='/admin', tags=['admin'])
+    # api.include_router(endpoints.articles.router, prefix='/articles', tags=['articles'])
     api.include_router(endpoints.auth.router, prefix='/auth', tags=['auth'])
     api.include_router(endpoints.autotasks.router, prefix='/autotasks', tags=['autotasks'])
     api.include_router(endpoints.box_packing.router, prefix='/box_packing', tags=['box_packing'])

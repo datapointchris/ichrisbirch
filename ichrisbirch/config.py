@@ -32,6 +32,14 @@ class FastAPISettings:
         self.port: str = os.environ['FASTAPI_PORT']
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
+        self.allowed_origins: list[str] = [
+            "http://www.ichrisbirch.com",
+            "https://www.ichrisbirch.com",
+            "http://localhost",
+            "http://localhost:4200",
+            "http://localhost:5500",
+            "http://localhost:6200",
+        ]
 
 
 class FlaskSettings:
