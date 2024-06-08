@@ -11,17 +11,21 @@ router = APIRouter()
 
 log_queue: queue.Queue = queue.Queue()
 
+if handler := logging.getHandlerByName('ichrisbirch_file'):
+    if isinstance(handler, logging.FileHandler):
+        filename = handler.baseFilename
+
 
 async def read_new_logs():
-    handler = logging.getHandlerByName('ichrisbirch_file')
-    filename = handler.baseFilename
     for line in Pygtail(filename, paranoid=True):
         log_queue.put(line)
 
 
 @router.websocket('/log-stream/')
 async def websocket_endpoint_log(websocket: WebSocket):
+    logger.debug(f'logstream source: {filename}')
     logger.debug(f'websocket: {websocket}')
+    logger.debug(f'websocket: {websocket.base_url}')
     await websocket.accept()
     logger.debug('websocket accepted')
 
