@@ -161,7 +161,6 @@ async def summarize(url: str = Body(media_type='text/plain')):
         messages = client.beta.threads.messages.list(thread_id=thread.id)
         data = json.loads(messages.data[0].content[0].text.value)  # type: ignore
         logger.info(f'tokens used: {run.usage.total_tokens}')  # type: ignore
-        logger.debug(f'openai summary returned: {data}')
         summary = data.get('summary')
         tags = data.get('tags')
         return summary, tags
@@ -200,15 +199,13 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 async def complete(id: int, update: schemas.ArticleUpdate, session: Session = Depends(get_sqlalchemy_session)):
-    logger.debug(f'INPUT DATA: {update}')
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug(f'update: article {id} {update_data}')
     if obj := session.get(models.Article, id):
-        update_data = update.model_dump(exclude_unset=True)
         for attr, value in update_data.items():
             setattr(obj, attr, value)
-        logger.debug(f'UPDATED: {obj}')
         session.commit()
         session.refresh(obj)
-        logger.debug(f'RETURNING: {obj}')
         return obj
     else:
         IDNotFoundError(id)
