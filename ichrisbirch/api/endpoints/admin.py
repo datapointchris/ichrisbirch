@@ -21,7 +21,9 @@ async def read_new_logs():
 
 @router.websocket('/log-stream/')
 async def websocket_endpoint_log(websocket: WebSocket):
+    logger.debug(f'websocket: {websocket}')
     await websocket.accept()
+    logger.debug('websocket accepted')
 
     try:
         while True:
@@ -32,4 +34,5 @@ async def websocket_endpoint_log(websocket: WebSocket):
                 await read_new_logs()
                 await asyncio.sleep(1)
     finally:
+        logger.debug('closed websocket')
         await websocket.close()
