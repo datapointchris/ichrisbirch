@@ -159,8 +159,8 @@ async def summarize(url: str = Body(media_type='text/plain')):
             )
             time.sleep(1)
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-        data = json.loads(messages.data[0].content[0].text.value)
-        logger.info(f'tokens used: {run.usage.total_tokens}')
+        data = json.loads(messages.data[0].content[0].text.value)  # type: ignore
+        logger.info(f'tokens used: {run.usage.total_tokens}')  # type: ignore
         logger.debug(f'openai summary returned: {data}')
         summary = data.get('summary')
         tags = data.get('tags')
