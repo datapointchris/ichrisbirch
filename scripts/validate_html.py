@@ -1,23 +1,32 @@
+import subprocess
 import sys
+import time
 from collections import OrderedDict
 from queue import Queue
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 
 import httpx
+import pendulum
 from bs4 import BeautifulSoup
 
 
 class ValidateWebsite:
-    def __init__(self, base_url, debug=False, dry_run=False):
+    def __init__(self, base_url, debug=False, dry_run=False, scrape_delay: float | None = None):
         self.base_url = base_url
         self.debug = debug
         self.dry_run = dry_run
+        self.scrape_delay = scrape_delay
         self.discovered_pages: set[str] = set()
 
         self.validator = 'https://validator.w3.org/nu/?out=json'
         self.return_code = 0
-        self.logs = []
+        self.logs: list[str] = []
+        self.total_discovered_pages: set[str] = set()
+        self.total_visited_pages: set[str] = set()
+        self.total_path_duplicates_removed: set[str] = set()
+        self.total_validated: set[str] = set()
+        self.total_validation_errors: set[str] = set()
 
     def section_title(self, title: str):
         return f"\n{'*'*20} {title} {'*'*20}\n"
@@ -39,8 +48,22 @@ class ValidateWebsite:
             print(log)
 
     def save_logs(self, filename: str):
-        with open(filename, 'a') as f:
+        with open(filename, 'w') as f:
             f.writelines(log + '\n' for log in self.logs)
+
+    def print_summary(self):
+        self.logprint(self.section_title(f'SUMMARY FOR {self.base_url}'))
+        self.logprint(f'Total Pages Discovered: {len(self.total_discovered_pages)}')
+        self.logprint(f'Total Pages Visited: {len(self.total_visited_pages)}')
+        self.logprint(f'Total Path Duplicates Removed: {len(self.total_path_duplicates_removed)}')
+        self.logprint(f'Total Pages Validated: {len(self.total_validated)}')
+        self.logprint(f'Total Validation Errors: {len(self.total_validation_errors)}')
+        if visited_not_validated := self.total_visited_pages.difference(self.total_path_duplicates_removed).difference(
+            self.total_validated
+        ):
+            self.logprint('Pages Visited but not Validated:')
+            for page in visited_not_validated:
+                self.logprint(page)
 
     def _parse_urls_from_page_content(self, page, content: str):
         urls_found = []
@@ -66,93 +89,96 @@ class ValidateWebsite:
         urls_with_content: dict[str, str] = {}
 
         self.logprint(self.section_title('DISCOVERY'))
-        self.logprint(f'Base URL: {self.base_url}')
+        self.logprint(f'BASE URL: {self.base_url}')
         pages_to_visit.put(self.base_url)
         self.discovered_pages.add(self.base_url)
+        self.total_discovered_pages.add(self.base_url)
 
         while not pages_to_visit.empty():
             current_page = pages_to_visit.get()
             self.logprint(f'Visiting: {current_page}')
+            self.total_visited_pages.add(current_page)
             try:
-                response = httpx.get(current_page)
+                response = httpx.get(current_page, follow_redirects=True)
+                if self.scrape_delay:
+                    time.sleep(self.scrape_delay)
                 if response.status_code == 200 and response.headers.get('content-type', '').startswith('text/html'):
                     urls_with_content[current_page] = response.text
                     for url in self._parse_urls_from_page_content(current_page, response.text):
-                        self.logprint(f'Discovered: {current_page}')
+                        self.logprint(f'Discovered: {url}')
                         pages_to_visit.put(url)
                         self.discovered_pages.add(url)
+                        self.total_discovered_pages.add(url)
+                else:
+                    self.alwaysprint(f'Error with response: {response}')
             except Exception as e:
-                print(f'Error while processing {current_page}: {e}')
+                self.alwaysprint(f'Error while processing {current_page}: {e}')
         return urls_with_content
 
     def remove_endpoints_with_query_parameters(self, pages_with_content: dict[str, str]):
         self.logprint(self.section_title('REMOVING QUERY PARAMETER ENDPOINTS'))
         valid_urls = {}
-        for page_url, html_content in pages_with_content.items():
-            if '?' in page_url:
-                self.logprint(f'Discarding Query Parameter URL: {page_url}')
+        for url, html_content in pages_with_content.items():
+            if '?' in url:
+                self.logprint(f'Discarding Query Parameter URL: {url}')
                 continue
-            valid_urls[page_url] = html_content
+            valid_urls[url] = html_content
         return valid_urls
 
     def remove_multiple_subpages(self, pages_with_content: dict[str, str]):
         self.logprint(self.section_title('REMOVING ENDPOINT SUBPAGES'))
         deduped_pages: dict[str, str] = {}
         endpoints_with_id_path: set[str] = set()
-        for page_url, html_content in pages_with_content.items():
-            parsed_url = urlparse(page_url)
+        for url, html_content in pages_with_content.items():
+            parsed_url = urlparse(url)
             path_parts = parsed_url.path.strip('/').split('/')
             endpoint = '/'.join(path_parts[:-1])
             final_path = path_parts[-1]
             try:
                 int(final_path)
-                if endpoint in endpoints_with_id_path:
-                    self.logprint(f'Skipping Duplicate: {page_url}\t - /{endpoint}/ already has an ID path endpoint.')
-                else:
-                    self.logprint(f'ID Path Endpoint: {page_url}')
-                    deduped_pages[page_url] = html_content
+                if endpoint not in endpoints_with_id_path:
+                    deduped_pages[url] = html_content
                     endpoints_with_id_path.add(endpoint)
-            except ValueError:
-                self.logprint(f'Regular Endpoint: {page_url}')
-                deduped_pages[page_url] = html_content
+                else:
+                    self.logprint(f'Removing Path Duplicate: {url}')
+                    self.total_path_duplicates_removed.add(url)
+            except ValueError:  # not id endpoint
+                deduped_pages[url] = html_content
         return OrderedDict(sorted(deduped_pages.items()))
 
     def validate_page(self, html_content: str):
-        headers = {'Content-Type': 'text/html; charset=utf-8'}
-        try:
-            response = httpx.post(self.validator, content=html_content, headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            self.alwaysprint(f'Error while validating: {e}')
-            self.return_code = 1
-            exit(1)  # error from server, most likely 429 too many requests
+        """Validate html pages using tidy command line."""
+        command = 'tidy -q -e'
+        tidy = subprocess.Popen(
+            command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, _stderr = tidy.communicate(input=html_content.encode())
+        return stdout.decode()
 
     def validate_pages(self, pages_with_content):
         self.logprint(self.section_title('VALIDATION'))
-        for page_url, html_content in pages_with_content.items():
+        for url, html_content in pages_with_content.items():
             try:
-                self.logprint(f'Validating: {page_url} {len(html_content)} bytes')
-                if not self.dry_run:
-                    validation_result = self.validate_page(html_content)
-                    if validation_result['messages']:
-                        self.alwaysprint(f'Validation errors found for {page_url}:')
-                        for message in validation_result['messages']:
-                            self.alwaysprint(message['message'])
-                            self.alwaysprint(f'Line: {message["lastLine"]}, Column: {message["lastColumn"]}')
-                            self.alwaysprint(message['extract'])
-                        self.return_code = 1
+                self.logprint(f'Validating: {url} {len(html_content)} bytes')
+                self.total_validated.add(url)
+                if validation_result := self.validate_page(html_content):
+                    self.alwaysprint(f'Validation errors found for {url}:')
+                    self.alwaysprint(validation_result)
+                    self.total_validation_errors.add(url)
+                    self.return_code = 1
             except Exception as e:
-                self.alwaysprint(f'Error while validating {page_url}: {e}')
+                self.alwaysprint(f'Error while validating {url}: {e}')
                 self.return_code = 1
 
 
 def main() -> int:
+    start = pendulum.now()
     v = ValidateWebsite('http://localhost:6200/')
     pages = v.discover_webpages_from_local_server()
-    # pages = v.remove_endpoints_with_query_parameters(pages)
     pages = v.remove_multiple_subpages(pages)
     v.validate_pages(pages)
+    v.print_summary()
+    v.logprint(f'Total Elapsed Time for Validation: {(pendulum.now() - start).in_words()}')
     v.save_logs('validate_html_logs.log')
     return v.return_code
 
