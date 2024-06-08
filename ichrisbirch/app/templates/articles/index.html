@@ -1,0 +1,16 @@
+{% extends 'articles/base.html' %}
+
+{% block title %}Current Article{% endblock %}
+
+{% block content %}
+<div class="grid grid--one-column-wide">
+  {% if article %}
+  {% include 'articles/article.jinja.html' %}
+  {% else %}
+  <div class="grid__item">
+    <h2>No articles</h2>
+    <p>Add an article in <a href="{{ url_for('articles.all') }}">All Articles</a> page.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'articles/base.html' %}
+
+{% block title %}Articles - Search{% endblock %}
+
+{% block content %}
+<div class="searchbox">
+  <form method="POST" action="{{ url_for('articles.search') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="search_text"></label>
+    <input type="text" class="button" name="search_text" id="search_text">
+    <button type="submit" name="action" class="button" value="search">
+      <span class="button__text">Search</span>
+    </button>
+  </form>
+</div>
+<ul class="articles-search-results articles-search-results__header">
+  <li>Title</li>
+  <li>URL</li>
+  <li>Save Date</li>
+  <li>Last Read Date</li>
+  <li>Favorite</li>
+</ul>
+{% if articles %}
+{% for article in articles %}
+<ul class="articles-search-results articles-search-results__item">
+  <li>{{ article.title }}</li>
+  <li><a class="articles-search-results__link" href="{{ article.url }}">{{ article.url | max_length(80) }}</a></li>
+  <li>{{ article.save_date | pretty_date }}</li>
+  <li>{{ article.last_read_date | pretty_date }}</li>
+  <li>{{ article.is_favorite }}</li>
+</ul>
+{% endfor %}
+{% endif %}
+{% endblock %}

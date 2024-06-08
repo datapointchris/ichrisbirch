@@ -1,8 +1,8 @@
 import functools
 import logging
 import os
-import pathlib
 from datetime import timedelta
+from pathlib import Path
 from typing import Optional
 
 import dotenv
@@ -91,6 +91,7 @@ class OpenAISettings:
     def __init__(self):
         self.api_key: str = os.environ['OPENAI_API_KEY']
         self.model = 'gpt-3.5-turbo-0125'
+        self.articles_summary_instructions = (Path(__file__).parent / 'openai_summary_instructions.txt').read_text()
 
 
 class PlaywrightSettings:
@@ -147,11 +148,11 @@ class UsersSettings:
 
 
 class Settings:
-    def __init__(self, env_file: pathlib.Path = pathlib.Path()):
+    def __init__(self, env_file: Path = Path()):
         self.NAME: str = 'ichrisbirch'
         self.DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
-        self.ENV_FILE: pathlib.Path = env_file
+        self.ENV_FILE: Path = env_file
         self.REQUEST_TIMEOUT: int = 3
 
         self.auth = AuthSettings()
@@ -173,15 +174,15 @@ class Settings:
         return f'http://{self.fastapi.host}:{self.fastapi.port}'
 
 
-def load_environment(env_file: Optional[pathlib.Path | str] = None):
-    if isinstance(env_file, pathlib.Path):
-        logger.info(f'loading environment from pathlib.Path: {env_file}')
+def load_environment(env_file: Optional[Path | str] = None):
+    if isinstance(env_file, Path):
+        logger.info(f'loading environment from Path: {env_file}')
         if not env_file.exists():
-            raise FileNotFoundError(f'Environment pathlib.Path not found: {env_file}')
+            raise FileNotFoundError(f'Environment Path not found: {env_file}')
 
     elif isinstance(env_file, str):
         logger.info(f'loading environment from string: {env_file}')
-        if not pathlib.Path(env_file).exists():
+        if not Path(env_file).exists():
             match env_file:
                 case 'development':
                     filename = '.dev.env'
@@ -194,10 +195,10 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                     logger.error(error_msg)
                     raise ValueError(error_msg)
             logger.info(f'loading environment variables from: {filename}')
-            env_file = pathlib.Path(dotenv.find_dotenv(filename))
+            env_file = Path(dotenv.find_dotenv(filename))
         else:
             logger.info(f'loading environment variables from: {env_file}')
-            env_file = pathlib.Path(env_file)
+            env_file = Path(env_file)
 
     else:
         logger.info(f'loading environment from ENVIRONMENT: {os.environ["ENVIRONMENT"]}')
@@ -212,7 +213,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
                 error_msg = f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.'
                 logger.error(error_msg)
                 raise ValueError(error_msg)
-        env_file = pathlib.Path(dotenv.find_dotenv(filename))
+        env_file = Path(dotenv.find_dotenv(filename))
 
     logger.info(f'env file: {env_file}')
     dotenv.load_dotenv(env_file, override=True)
@@ -220,7 +221,7 @@ def load_environment(env_file: Optional[pathlib.Path | str] = None):
 
 
 @functools.lru_cache(maxsize=1)
-def get_settings(env_file: Optional[pathlib.Path | str] = None) -> Settings:
+def get_settings(env_file: Optional[Path | str] = None) -> Settings:
     """Return settings based on Path, str, or ENVIRONMENT variable."""
     resolved_env_file = load_environment(env_file)
     return Settings(env_file=resolved_env_file)

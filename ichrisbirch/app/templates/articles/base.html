@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block app_navigation %}
+  <ul data-secondary>
+    <li><a href="{{ url_for('articles.index') }}">Current Article</a></li>
+    <li><a href="{{ url_for('articles.all') }}">All Articles</a></li>
+    <li><a href="{{ url_for('articles.search') }}">Search Articles</a></li>
+  </ul>
+{% endblock %}
+
+{% block content %}{% endblock %}

@@ -1,0 +1,89 @@
+<div class="grid__item">
+  <h2><a href="{{ article.url}}" target="_blank">{{ article.title }}</a></h2>
+  <div class="item-details">
+    <div class="item-details__item item-details__item--full-width">
+      <strong>Tags (comma separated)</strong>
+      <span class="item-details__item-content">{{ article.tags }}</span>
+    </div>
+    <div class="item-details__item item-details__item--full-width">
+      <strong>Summary</strong>
+      <span class="item-details__item-content">{{ article.summary }}</span>
+    </div>
+    <div class="item-details__item item-details__item--full-width">
+      <strong>URL</strong>
+      <span class="item-details__item-content"><a href="{{ article.url}}" target="_blank">{{ article.url }}</a></span>
+    </div>
+    <div class="item-details__item item-details__item--full-width">
+      <strong>Notes</strong>
+      <span class="item-details__item-content">{{ article.notes }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Save Date</strong>
+      <span class="item-details__item-content">{{ article.save_date | pretty_date }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Last Read Date</strong>
+      <span class="item-details__item-content">{{ article.last_read_date | pretty_date }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Read Count</strong>
+      <span class="item-details__item-content">{{ article.read_count }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Favorite</strong>
+      <span class="item-details__item-content">{{ article.is_favorite }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Review Days</strong>
+      <span class="item-details__item-content">{{ article.review_days }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Current</strong>
+      <span class="item-details__item-content">{{ article.is_current }}</span>
+    </div>
+    <div class="item-details__item">
+      <strong>Archived</strong>
+      <span class="item-details__item-content">{{ article.is_archived }}</span>
+    </div>
+    <div class="item-details__buttons">
+      <form method="POST" action="{{ url_for('articles.crud')}}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="id" value="{{ article.id }}">
+        <input type="hidden" name="title" value="{{ article.title }}">
+
+        {% if article.is_favorite %}
+        <button type="submit" name="action" class="button" value="unfavorite">
+          <span class="button__text">Unfavorite</span>
+        </button>
+        {% else %}
+        <button type="submit" name="action" class="button" value="make_favorite">
+          <span class="button__text">Make Favorite</span>
+        </button>
+        {% endif %}
+
+        {% if article.is_current %}
+        <button type="submit" name="action" class="button" value="remove_current">
+          <span class="button__text">Remove Current Status</span>
+        </button>
+        {% else %}
+        <button type="submit" name="action" class="button" value="make_current">
+          <span class="button__text">Make Current</span>
+        </button>
+        {% endif %}
+
+        {% if article.is_archived %}
+        <button type="submit" name="action" class="button" value="unarchive">
+          <span class="button__text">Unarchive</span>
+        </button>
+        {% else %}
+        <button type="submit" name="action" class="button" value="archive">
+          <span class="button__text">Archive</span>
+        </button>
+        {% endif %}
+        <button type="submit" name="action" class="button" value="mark_read">
+          <span class="button__text">Mark as Read</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

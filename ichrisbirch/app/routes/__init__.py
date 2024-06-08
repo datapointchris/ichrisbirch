@@ -1,4 +1,5 @@
 from ichrisbirch.app.routes import admin
+from ichrisbirch.app.routes import articles
 from ichrisbirch.app.routes import auth
 from ichrisbirch.app.routes import autotasks
 from ichrisbirch.app.routes import box_packing
@@ -13,6 +14,7 @@ from ichrisbirch.app.routes import users
 
 __all__ = [
     'admin',
+    'articles',
     'auth',
     'autotasks',
     'box_packing',

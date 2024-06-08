@@ -63,7 +63,7 @@ class QueryAPI(Generic[ModelType]):
         utils.handle_if_not_response_code(expected_response_code, response, self.logger)
         return response
 
-    def get_one(self, endpoint: Any | None = None, params: dict | None = None):
+    def get_one(self, endpoint: Any | None = None, params: dict | None = None) -> ModelType | None:
         response = self._handle_request('GET', endpoint, params)
         if exists := response.json():
             return self.response_model(**exists)

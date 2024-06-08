@@ -56,7 +56,7 @@ def create_api(settings: Settings) -> FastAPI:
 
     api.include_router(endpoints.home.router, prefix='', tags=['home'], include_in_schema=False)
     api.include_router(endpoints.admin.router, prefix='/admin', tags=['admin'])
-    # api.include_router(endpoints.articles.router, prefix='/articles', tags=['articles'])
+    api.include_router(endpoints.articles.router, prefix='/articles', tags=['articles'])
     api.include_router(endpoints.auth.router, prefix='/auth', tags=['auth'])
     api.include_router(endpoints.autotasks.router, prefix='/autotasks', tags=['autotasks'])
     api.include_router(endpoints.box_packing.router, prefix='/box_packing', tags=['box_packing'])

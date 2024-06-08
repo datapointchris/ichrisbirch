@@ -104,7 +104,7 @@ exclude = '''
 
 [tool.codespell]
 skip = '*.css.map'
-ignore-words-list = "astroid,aNULL,ANULL,anull"
+ignore-words-list = "astroid,aNULL,ANULL,anull,iterm"
 exclude-file = "poetry.lock"
 check-filenames = true
 # count = ""

@@ -1,4 +1,5 @@
 from ichrisbirch.models.apartment import Apartment
+from ichrisbirch.models.article import Article
 from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.box import Box
 from ichrisbirch.models.boxitem import BoxItem
@@ -14,6 +15,7 @@ from ichrisbirch.models.user import User
 
 __all__ = [
     'Apartment',
+    'Article',
     'AutoTask',
     'Box',
     'BoxItem',

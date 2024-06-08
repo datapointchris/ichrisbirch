@@ -11,6 +11,7 @@ from ichrisbirch.database.sqlalchemy.session import engine
 
 # Need the models imported for Base to find the tables
 from ichrisbirch.models import Apartment  # noqa
+from ichrisbirch.models import Article  # noqa
 from ichrisbirch.models import AutoTask  # noqa
 from ichrisbirch.models import Box  # noqa
 from ichrisbirch.models import BoxItem  # noqa

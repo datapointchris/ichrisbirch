@@ -52,11 +52,16 @@ def create_app(settings: Settings) -> Flask:
         def pretty_datetime(dttm, format='%B %d, %Y, %I:%M %p'):
             return '' if dttm is None else dttm.strftime(format)
 
+        @app.template_filter()
+        def max_length(value, length=80):
+            return str(value)[: length - 3] + '...'
+
         logger.info('template filters registered')
 
         app.register_blueprint(routes.home.blueprint)
         app.register_blueprint(routes.auth.blueprint)
         app.register_blueprint(routes.admin.blueprint, url_prefix='/admin')
+        app.register_blueprint(routes.articles.blueprint, url_prefix='/articles')
         app.register_blueprint(routes.autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(routes.box_packing.blueprint, url_prefix='/box-packing')
         app.register_blueprint(routes.countdowns.blueprint, url_prefix='/countdowns')

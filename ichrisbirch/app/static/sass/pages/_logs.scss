@@ -1,5 +1,5 @@
 .log-window {
-    width: clamp(90vw, 80vw);
+    width: clamp(90vw, 2rem, 80vw);
     height: 80vh;
     margin: auto;
     margin-block: var(--space-2xl);
