@@ -39,6 +39,7 @@ class FastAPISettings:
             "http://localhost:4200",
             "http://localhost:5500",
             "http://localhost:6200",
+            "http://localhost:8000",
         ]
 
 
