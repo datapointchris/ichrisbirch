@@ -170,7 +170,7 @@ def crud():
 
     match action:
         case 'add':
-            tasks_api.post(data=data)
+            tasks_api.post(json=data)
             return redirect(request.referrer or url_for('tasks.index'))
         case 'complete':
             tasks_api.patch([data.get('id'), 'complete'])

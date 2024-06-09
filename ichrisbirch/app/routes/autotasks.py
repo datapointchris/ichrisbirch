@@ -27,7 +27,7 @@ def index():
 
         match action:
             case 'add':
-                created = autotasks_api.post(data=data)
+                created = autotasks_api.post(json=data)
                 autotasks_api.patch([created.id, 'run'])
             case 'run':
                 autotasks_api.patch([data.get('id'), 'run'])

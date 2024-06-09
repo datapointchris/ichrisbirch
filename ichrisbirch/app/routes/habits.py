@@ -138,20 +138,20 @@ def crud():
 
     match action:
         case 'add_habit':
-            habits_api.post(data=data)
+            habits_api.post(json=data)
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'complete_habit':
             data.update({'complete_date': str(pendulum.now())})
-            habits_completed_api.post(data=data)
+            habits_completed_api.post(json=data)
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'hibernate_habit':
-            habits_api.patch([data.get('id')], data={'is_current': False})
+            habits_api.patch([data.get('id')], json={'is_current': False})
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'revive_habit':
-            habits_api.patch([data.get('id')], data={'is_current': True})
+            habits_api.patch([data.get('id')], json={'is_current': True})
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'delete_habit':
@@ -163,15 +163,15 @@ def crud():
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'add_category':
-            habits_categories_api.post(data=data)
+            habits_categories_api.post(json=data)
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'hibernate_category':
-            habits_categories_api.patch([data.get('id')], data={'is_current': False})
+            habits_categories_api.patch([data.get('id')], json={'is_current': False})
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'revive_category':
-            habits_categories_api.patch([data.get('id')], data={'is_current': True})
+            habits_categories_api.patch([data.get('id')], json={'is_current': True})
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'delete_category':

@@ -22,7 +22,7 @@ def index():
 
         match action:
             case 'add':
-                countdowns_api.post(data=data)
+                countdowns_api.post(json=data)
             case 'delete':
                 countdowns_api.delete(data.get('id'))
             case _:

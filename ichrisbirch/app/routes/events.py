@@ -28,7 +28,7 @@ def index():
                 # add local timezone if one isn't provided
                 if not datetime.fromisoformat(data['date']).tzname:
                     data['date'] = datetime.fromisoformat(data['date']).replace(tzinfo=LOCAL_TZ).isoformat()
-                events_api.post(data=data)
+                events_api.post(json=data)
             case 'delete':
                 events_api.delete(data.get('id'))
             case 'attend':

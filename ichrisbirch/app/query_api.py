@@ -40,46 +40,44 @@ class QueryAPI(Generic[ModelType]):
         self.response_model = response_model
         self.user = user
 
-    def _handle_request(
-        self,
-        method: str,
-        endpoint: Any | None = None,
-        params: dict | None = None,
-        data: dict | None = None,
-        expected_response_code: int = 200,
-    ):
+    def _handle_request(self, method: str, endpoint: Any | None = None, expected_response_code: int = 200, **kwargs):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         headers = {
             'X-User-ID': (self.user.get_id() or '') if self.user else '',
             'X-Application-ID': settings.flask.app_id,
         }
         headers_to_log = {'X-User-ID': headers.get('X-User-ID'), 'X-Application-ID': 'XXXXXXXX'}
-        self.logger.debug(
-            f'{method} {url} '
-            f'headers={headers_to_log}, '
-            f'data={data if settings.ENVIRONMENT != "production" else "XXXXXXXX"}'
-        )
-        response = httpx.request(method, url, follow_redirects=True, params=params, headers=headers, json=data)
+        kwargs_to_log = ''
+        if additional_headers := kwargs.pop('headers', None):
+            headers.update(**additional_headers)
+            headers_to_log.update(**additional_headers)
+        if kwargs:
+            if settings.ENVIRONMENT != 'production':
+                kwargs_to_log = ', '.join([f'{k}=XXXXXXXX' for k in kwargs.keys()])
+            else:
+                kwargs_to_log = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
+        self.logger.debug(f'{method} {url} headers={headers_to_log}, {kwargs_to_log}')
+        response = httpx.request(method, url, follow_redirects=True, **kwargs)
         utils.handle_if_not_response_code(expected_response_code, response, self.logger)
         return response
 
-    def get_one(self, endpoint: Any | None = None, params: dict | None = None) -> ModelType | None:
-        response = self._handle_request('GET', endpoint, params)
+    def get_one(self, endpoint: Any | None = None, **kwargs) -> ModelType | None:
+        response = self._handle_request('GET', endpoint, **kwargs)
         if exists := response.json():
             return self.response_model(**exists)
         return None
 
-    def get_many(self, endpoint: Any | None = None, params: dict | None = None):
-        response = self._handle_request('GET', endpoint, params)
+    def get_many(self, endpoint: Any | None = None, **kwargs) -> list[ModelType]:
+        response = self._handle_request('GET', endpoint, **kwargs)
         return [self.response_model(**result) for result in response.json()]
 
-    def post(self, endpoint: Any | None = None, data: dict = {}):
-        response = self._handle_request('POST', endpoint, data=data, expected_response_code=201)
+    def post(self, endpoint: Any | None = None, **kwargs):
+        response = self._handle_request('POST', endpoint, **kwargs, expected_response_code=201)
         return self.response_model(**response.json())
 
-    def patch(self, endpoint: Any | None = None, data: dict = {}):
-        response = self._handle_request('PATCH', endpoint, data=data)
+    def patch(self, endpoint: Any | None = None, **kwargs):
+        response = self._handle_request('PATCH', endpoint, **kwargs)
         return self.response_model(**response.json())
 
-    def delete(self, endpoint: Any | None = None):
-        return self._handle_request('DELETE', endpoint, expected_response_code=204)
+    def delete(self, endpoint: Any | None = None, **kwargs):
+        return self._handle_request('DELETE', endpoint, **kwargs, expected_response_code=204)

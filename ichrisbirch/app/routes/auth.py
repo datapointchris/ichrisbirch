@@ -42,7 +42,7 @@ def login():
             login_user(user, remember=form.remember_me.data)
             logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
             try:
-                users_api.patch([user.id], data={'last_login': pendulum.now().for_json()})
+                users_api.patch([user.id], json={'last_login': pendulum.now().for_json()})
                 logger.debug(f'updated last login for user: {user.name}')
             except Exception as e:
                 logger.error(f'error updating last login for user {user.name}: {e}')
@@ -76,7 +76,7 @@ def signup():
         if not (existing_user := users_api.get_one(['email', form.email.data])):
             logger.info(f'creating a new user with email: {form.email.data}')
             data = {'name': form.name.data, 'email': form.email.data, 'password': form.password.data}
-            new_user = users_api.post(data=data)
+            new_user = users_api.post(json=data)
             new_user = models.User(**new_user.model_dump())
             login_user(new_user)
             return redirect(url_for('users.profile'))

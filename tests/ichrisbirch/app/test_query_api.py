@@ -53,7 +53,7 @@ def test_get_many(mock_handle_if_not_response_code, test_query_api):
 @patch('ichrisbirch.app.utils.handle_if_not_response_code')
 def test_post(mock_handle_if_not_response_code, test_query_api):
     mock_handle_if_not_response_code.return_value = None
-    result = test_query_api.post(data=NEW_USER.model_dump())
+    result = test_query_api.post(json=NEW_USER.model_dump())
     assert result.name == NEW_USER.name
 
     results = test_query_api.get_many()
@@ -64,7 +64,7 @@ def test_post(mock_handle_if_not_response_code, test_query_api):
 def test_patch(mock_handle_if_not_response_code, test_query_api):
     mock_handle_if_not_response_code.return_value = None
     new_name = 'User 1 Updated Name'
-    result = test_query_api.patch('1', data={'name': new_name})
+    result = test_query_api.patch('1', json={'name': new_name})
     assert result.name == new_name
 
     updated = test_query_api.get_one('1')
