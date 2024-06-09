@@ -159,6 +159,7 @@ THIRD_PARTY_LOGGERS = {
     'matplotlib': {'level': 'INFO'},
     'openai': {'level': 'INFO'},
     's3transfer': {'level': 'INFO'},
+    'tzlocal': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},
     'werkzeug': {'handlers': ['app_file'], 'filters': ['no_304_status']},
 }
