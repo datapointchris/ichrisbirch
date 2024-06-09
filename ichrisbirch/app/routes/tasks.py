@@ -143,7 +143,7 @@ def search():
     else:
         data = request.form.to_dict()
         search_terms = data.get('terms')
-        logger.debug(f'{request.referrer=} | {search_terms=}')
+        logger.debug(f'{request.referrer=}, {search_terms=}')
 
         if not search_terms:
             flash('No search terms provided', 'warning')
