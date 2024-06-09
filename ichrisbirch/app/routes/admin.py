@@ -122,3 +122,12 @@ def scheduler():
 @blueprint.route('/logs/', methods=['GET'])
 def logs():
     return render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port)
+
+
+def make_log_graphs():
+    pass
+
+
+@blueprint.route('/log-graphs/', methods=['GET', 'POST'])
+def log_graphs():
+    return render_template('admin/log_graphs.html')

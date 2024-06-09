@@ -41,6 +41,9 @@ pyjwt = "^2.8.0"
 pygtail = "^0.14.0"
 openai = "^1.32.0"
 youtube-transcript-api = "^0.6.2"
+polars = "^0.20.31"
+hvplot = "^0.10.0"
+pyarrow = "^16.1.0"
 
 [tool.poetry.group.dev.dependencies]
 deptry = "^0.16.1"
