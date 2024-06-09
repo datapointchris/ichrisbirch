@@ -18,7 +18,7 @@ class Article(Base):
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(String), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
-    url: Mapped[str] = mapped_column(Text, nullable=True)
+    url: Mapped[str] = mapped_column(Text, unique=True, nullable=True)
     save_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_read_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     read_count: Mapped[int] = mapped_column(Integer, nullable=False)
