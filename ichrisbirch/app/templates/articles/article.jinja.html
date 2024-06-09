@@ -71,6 +71,10 @@
         </button>
         {% endif %}
 
+        <button type="submit" name="action" class="button" value="mark_read">
+          <span class="button__text">Mark as Read</span>
+        </button>
+
         {% if article.is_archived %}
         <button type="submit" name="action" class="button" value="unarchive">
           <span class="button__text">Unarchive</span>
@@ -80,9 +84,11 @@
           <span class="button__text">Archive</span>
         </button>
         {% endif %}
-        <button type="submit" name="action" class="button" value="mark_read">
-          <span class="button__text">Mark as Read</span>
+
+        <button type="submit" name="action" class="button" value="delete">
+          <span class="button__text">Delete</span>
         </button>
+
       </form>
     </div>
   </div>

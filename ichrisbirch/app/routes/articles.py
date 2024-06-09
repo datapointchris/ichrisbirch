@@ -181,6 +181,8 @@ def crud():
                         'read_count': article.read_count + 1,
                     },
                 )
+        case 'delete':
+            articles_api.delete(data.get('id'))
 
         case _:
             return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
