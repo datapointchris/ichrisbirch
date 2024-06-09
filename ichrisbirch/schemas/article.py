@@ -49,3 +49,9 @@ class ArticleUpdate(ArticleConfig):
     last_read_date: datetime | None = None
     read_count: int | None = None
     review_days: int | None = None
+
+
+class ArticleSummary(ArticleConfig):
+    title: str
+    summary: str
+    tags: list[str]

@@ -1,0 +1,44 @@
+{% extends 'articles/base.html' %}
+
+{% block title %}Articles{% endblock %}
+
+{% block content %}
+<div class="grid grid--one-column-wide">
+  <div class="add-item-wrapper">
+    <h2>Bulk Add New Articles</h2>
+    <form class="add-item-form" method="POST" enctype="multipart/form-data" action="{{ url_for('articles.crud')}}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <input type="file" class="textbox" name="file" id="file" style="display: none;">
+        <button type="button" class="button">
+          <label for="file">Upload Text File with URLs</label>
+        </button>
+        <h4 id="fileInfo">&nbsp;</h4>
+      </div>
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <label for="text">URLs for Articles (One per line)</label>
+        <textarea rows="12" class="textbox" name="text" id="text"></textarea>
+      </div>
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" name="action" class="button" value="bulk_add">
+          <span class="button__text">Add New Articles</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  window.onload = () => {
+    document.getElementById('file').addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const fileInfo = `<i class="fa-solid fa-file-lines"></i>&emsp;${file.name}&emsp;${file.size} bytes`;
+        document.getElementById('fileInfo').innerHTML = fileInfo;
+      }
+    });
+  };
+</script>
+{% endblock %}

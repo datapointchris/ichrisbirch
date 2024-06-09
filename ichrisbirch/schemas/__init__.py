@@ -1,5 +1,6 @@
 from ichrisbirch.schemas.article import Article
 from ichrisbirch.schemas.article import ArticleCreate
+from ichrisbirch.schemas.article import ArticleSummary
 from ichrisbirch.schemas.article import ArticleUpdate
 from ichrisbirch.schemas.autotask import AutoTask
 from ichrisbirch.schemas.autotask import AutoTaskCreate
@@ -36,6 +37,7 @@ from ichrisbirch.schemas.user import UserUpdate
 __all__ = [
     'Article',
     'ArticleCreate',
+    'ArticleSummary',
     'ArticleUpdate',
     'AutoTask',
     'AutoTaskCreate',

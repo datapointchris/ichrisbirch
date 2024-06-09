@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from typing import Optional
@@ -9,9 +8,9 @@ from typing import Optional
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
-from fastapi import Body
 from fastapi import Depends
 from fastapi import HTTPException
+from fastapi import Request
 from fastapi import Response
 from fastapi import status
 from openai import OpenAI
@@ -102,15 +101,8 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
     return list(results)
 
 
-@dataclass
-class ArticleSummary:
-    title: str
-    summary: str
-    tags: list[str]
-
-
-@router.post('/summarize/', response_model=ArticleSummary, status_code=status.HTTP_201_CREATED)
-async def summarize(url: str = Body(media_type='text/plain')):
+@router.post('/summarize/', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
+async def summarize(request: Request):
     """Summarize youtube video or article based on the url.
 
     Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video
@@ -165,6 +157,9 @@ async def summarize(url: str = Body(media_type='text/plain')):
         tags = data.get('tags')
         return summary, tags
 
+    data = await request.json()
+    logger.info(data)
+    url = data.get('url')
     logger.debug(f'summarizing url: {url}')
     url_response = httpx.get(url, follow_redirects=True).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
@@ -176,7 +171,7 @@ async def summarize(url: str = Body(media_type='text/plain')):
 
     title = _get_formatted_title(soup)
     summary, tags = _get_summary_and_tags_from_openai(text_content)
-    return ArticleSummary(title, summary, tags)
+    return schemas.ArticleSummary(title=title, summary=summary, tags=tags)
 
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
