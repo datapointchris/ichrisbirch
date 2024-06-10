@@ -50,7 +50,9 @@
     </div>
   </div>
 
+  {% block flash_messages %}
   {% include 'flash-messages.jinja.html' %}
+  {% endblock %}
 
 
   {% block content %}{% endblock %}

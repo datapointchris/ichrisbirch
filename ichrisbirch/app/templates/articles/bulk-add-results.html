@@ -1,0 +1,56 @@
+{% extends 'articles/base.html' %}
+
+{% block title %}Articles{% endblock %}
+
+<!-- Suppress flash messages on this page, as failed articles may produce many messages -->
+{% block flash_messages %}
+{% with messages = get_flashed_messages(with_categories=true) %}{% endwith %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid--one-column-wide">
+  <div class="add-item-wrapper">
+    <form class="add-item-form">
+
+      {% if succeeded_articles %}
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <h2><label for="succeeded">Succeeded</label></h2>
+        <textarea rows="12" class="textbox" name="succeeded" id="succeeded" disabled>
+          {{- succeeded_articles -}}
+          </textarea>
+      </div>
+      {% endif %}
+
+      {% if errored_articles %}
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <h2><label for="failed">Failed</label></h2>
+        <textarea rows="12" class="textbox" name="failed" id="failed" disabled>
+              {{- errored_articles -}}
+              </textarea>
+      </div>
+      {% endif %}
+
+      {% if errored_debug %}
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <h2><label for="failed">Debug Errors for Failed</label></h2>
+        <textarea rows="12" class="textbox" name="failed" id="failed" disabled>
+            {{- errored_debug -}}
+            </textarea>
+      </div>
+      {% endif %}
+
+      <div class="add-item-form__item">
+        <button type="button" class="button">
+          <span class="button__text"><a href="{{ url_for('articles.bulk_add') }}">Bulk Add More Articles</a></span>
+        </button>
+      </div>
+
+      <div class="add-item-form__item">
+        <button type="button" class="button">
+          <span class="button__text"><a href="{{ url_for('articles.all') }}">All Articles</a></span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

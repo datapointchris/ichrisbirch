@@ -46,10 +46,12 @@ def process_bulk_urls(request, data):
     return urls
 
 
-def add_article(url: str):
-    """Add article using summarize endpoint to auto generate summary and tags."""
+def add_bulk_article(url: str):
+    """Add article using summarize endpoint to auto generate summary and tags for the bulk endpoint."""
     logger.info(f'processing: {url}')
-    httpx.get(url, follow_redirects=True).raise_for_status()
+    if articles_api.get_one('url', params={'url': url}):
+        raise ValueError(f'already exists: {url}')
+    httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     openai_summary = summarize_api.post(json={'url': url}, timeout=10)
     article = dict(
         title=openai_summary.title,
@@ -60,7 +62,6 @@ def add_article(url: str):
     )
     articles_api.post(json=article)
     logger.info(f'created: {url}')
-    flash(f'Created: {openai_summary.title}', 'success')
 
 
 def bulk_add_articles(urls: list[str]):
@@ -68,29 +69,20 @@ def bulk_add_articles(urls: list[str]):
 
     Each url is tried twice, sometimes a delayed response from openai causes a failure.
     """
-    errors = []
-    fatal = []
+    added: list[str] = []
+    errors: list[tuple[str, str]] = []
     for url in urls:
         try:
-            add_article(url)
+            add_bulk_article(url)
+            added.append(url)
+        except ValueError as e:
+            logger.warning(e)
+            errors.append((url, str(e)))
         except Exception as e:
-            logger.error(f'error processing: {url}')
-            logger.error(e)
-            errors.append(url)
-    if errors:
-        logger.info('retrying urls with errors')
-        for url in errors:
-            try:
-                add_article(url)
-            except Exception as e:
-                flash(f'error processing: {url}', 'error')
-                logger.error(f'error processing: {url}')
-                logger.error(e)
-                flash(str(e), 'error')
-                fatal.append(url)
-    if fatal:
-        for url in fatal:
-            logger.warning(f'fatal: {url}')
+            logger.warning(f'error processing: {url}')
+            logger.warning(e)
+            errors.append((url, str(e)))
+    return added, errors
 
 
 @blueprint.route('/', methods=['GET', 'POST'])
@@ -126,6 +118,11 @@ def bulk_add():
     return render_template('articles/bulk-add.html')
 
 
+@blueprint.route('/bulk-add-results/', methods=['GET', 'POST'])
+def bulk_add_results():
+    return render_template('articles/bulk-add-results.html')
+
+
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
     articles = []
@@ -155,9 +152,18 @@ def crud():
                 articles_api.post(json=data)
         case 'bulk_add':
             if urls := process_bulk_urls(request, data):
-                bulk_add_articles(urls)
+                succeeded, errored = bulk_add_articles(urls)
             else:
                 flash('No URLs provided', 'warning')
+            succeeded_articles = '\n'.join([article.strip() for article in succeeded])
+            errored_articles = '\n'.join([article[0].strip() for article in errored])
+            errored_debug = '\n\n'.join([f'{article[0].strip()}\n{article[1].strip()}' for article in errored])
+            return render_template(
+                'articles/bulk-add-results.html',
+                succeeded_articles=succeeded_articles,
+                errored_articles=errored_articles,
+                errored_debug=errored_debug,
+            )
         case 'archive':
             articles_api.patch(data.get('id'), json={'is_archived': True})
         case 'unarchive':

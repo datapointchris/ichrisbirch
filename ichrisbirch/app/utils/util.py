@@ -1,7 +1,6 @@
 import logging
 
 import httpx
-from flask import abort
 from flask import flash
 
 from ichrisbirch.config import get_settings
@@ -46,11 +45,9 @@ def handle_if_not_response_code(response_code: int, response: httpx.Response, lo
         if settings.ENVIRONMENT == 'development':
             flash(error_message, 'error')
             flash(response.text, 'error')
-            abort_message = f'{error_message}\n{response.text}'
         else:
             flash(error_message, 'error')
-            abort_message = error_message
-        abort(response.status_code, abort_message)
+        response.raise_for_status()
 
 
 def convert_bytes(num: int | float) -> str:

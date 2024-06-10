@@ -71,6 +71,13 @@ async def current(session: Session = Depends(get_sqlalchemy_session)):
     return session.scalars(query).first()
 
 
+@router.get('/url/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
+async def read_one_url(url: str, session: Session = Depends(get_sqlalchemy_session)):
+    if article := session.scalar(select(models.Article).where(models.Article.url == url)):
+        return article
+    return None  # no error if not exists, this is only used to check for url existence
+
+
 @router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
 async def create(obj_in: schemas.ArticleCreate, session: Session = Depends(get_sqlalchemy_session)):
     obj = models.Article(**obj_in.model_dump())
@@ -161,7 +168,7 @@ async def summarize(request: Request):
     logger.info(data)
     url = data.get('url')
     logger.debug(f'summarizing url: {url}')
-    url_response = httpx.get(url, follow_redirects=True).raise_for_status()
+    url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
 
     if "youtube.com" in url or "youtu.be" in url:
@@ -184,8 +191,8 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if event := session.get(models.Article, id):
-        session.delete(event)
+    if article := session.get(models.Article, id):
+        session.delete(article)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:

@@ -155,6 +155,12 @@ class Settings:
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
         self.ENV_FILE: Path = env_file
         self.REQUEST_TIMEOUT: int = 3
+        self.mac_safari_request_headers = {
+            'User-Agent': (
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) '
+                'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.4 Safari/605.1.15'
+            ),
+        }
 
         self.auth = AuthSettings()
         self.aws = AWSSettings()
