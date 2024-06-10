@@ -27,7 +27,7 @@ from tests import test_data
 logger = logging.getLogger(__name__)
 
 settings = get_settings('testing')
-logger.info(f"load settings from environment: {settings.ENVIRONMENT}")
+logger.debug(f"load settings from environment: {settings.ENVIRONMENT}")
 
 
 @pytest.fixture(scope='module')
@@ -92,10 +92,10 @@ def create_and_drop_tables():
     This is the easiest way to ensure a clean db each time a new test is run.
     """
     Base.metadata.create_all(tests.util.ENGINE)
-    logger.info('created all tables')
+    logger.debug('created all tables')
     yield
     Base.metadata.drop_all(tests.util.ENGINE)
-    logger.info('dropped all tables')
+    logger.debug('dropped all tables')
 
 
 @pytest.fixture(scope='function')

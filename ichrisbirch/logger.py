@@ -141,6 +141,7 @@ LOGGERS = {
     'app': {'handlers': ['app_file']},
     'api': {'handlers': ['api_file']},
     'scheduler': {'handlers': ['scheduler_file']},
+    'tests.conftest': {'level': 'INFO'},
 }
 
 
