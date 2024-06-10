@@ -21,10 +21,13 @@ class No304StatusFilter(logging.Filter):
         return '304 -' not in record.getMessage()
 
 
-class LogLevelBracketFormatter(logging.Formatter):
+class SingleLineLogLevelBracketFormatter(logging.Formatter):
+    """Add brackets around log level and remove all newlines"""
+
     def format(self, record: logging.LogRecord):
         if not record.levelname.startswith('['):
             record.levelname = f'[{record.levelname}]'
+        # record.msg = record.msg.replace('\n', ' ').replace('\r', ' ')
         return logging.Formatter.format(self, record)
 
 
@@ -84,40 +87,40 @@ FORMATTERS = {
         'style': '{',
         'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
     },
-    'log_level_in_brackets': {
+    'single_line_log_level_in_brackets': {
         'format': DETAILED_FORMAT,
         'datefmt': DATE_FORMAT,
         'style': '{',
-        'class': 'ichrisbirch.logger.LogLevelBracketFormatter',
+        'class': 'ichrisbirch.logger.SingleLineLogLevelBracketFormatter',
     },
 }
 
 HANDLERS = {
     'console': {
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'single_line_log_level_in_brackets',
         'class': 'logging.StreamHandler',
         'stream': 'ext://sys.stdout',
     },
     'ichrisbirch_file': {
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'single_line_log_level_in_brackets',
         'class': 'logging.handlers.RotatingFileHandler',
         'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/ichrisbirch.log',
     },
     'app_file': {
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'single_line_log_level_in_brackets',
         'class': 'logging.handlers.RotatingFileHandler',
         'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/app.log',
     },
     'api_file': {
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'single_line_log_level_in_brackets',
         'class': 'logging.handlers.RotatingFileHandler',
         'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/api.log',
     },
     'scheduler_file': {
-        'formatter': 'log_level_in_brackets',
+        'formatter': 'single_line_log_level_in_brackets',
         'class': 'logging.handlers.RotatingFileHandler',
         'maxBytes': 10_000_000,
         'filename': f'{LOG_BASE_LOCATION}/scheduler.log',
@@ -147,10 +150,7 @@ LOGGERS = {
 
 # these are set to quiet down noisy libraries when debug is on
 THIRD_PARTY_LOGGERS = {
-    'apscheduler': {
-        'level': 'WARNING',
-        'handlers': ['scheduler_file'],
-    },
+    'apscheduler': {'level': 'WARNING', 'handlers': ['scheduler_file']},
     'boto3': {'level': 'INFO'},
     'botocore': {'level': 'INFO'},
     'faker': {'level': 'INFO'},
@@ -158,6 +158,7 @@ THIRD_PARTY_LOGGERS = {
     'httpcore': {'level': 'INFO'},
     'httpx': {'level': 'INFO'},
     'matplotlib': {'level': 'INFO'},
+    'multipart.multipart': {'level': 'INFO'},
     'openai': {'level': 'INFO'},
     's3transfer': {'level': 'INFO'},
     'tzlocal': {'level': 'INFO'},

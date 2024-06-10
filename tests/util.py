@@ -20,7 +20,7 @@ from ichrisbirch.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings('testing')
-logger.info(f"load settings from environment: {settings.ENVIRONMENT}")
+logger.debug(f"load settings from environment: {settings.ENVIRONMENT}")
 
 
 ENGINE = create_engine(
@@ -78,7 +78,7 @@ def insert_test_data(*datasets) -> None:
         'users': tests.test_data.users.BASE_DATA,
     }
     selected_datasets = [deepcopy(base_datasets[key]) for key in datasets if key in base_datasets]
-    logger.info(f'inserting testing dataset: {' '.join(f"'{d}'" for d in datasets)}')
+    logger.debug(f'inserting testing dataset: {' '.join(f"'{d}'" for d in datasets)}')
     with SessionTesting() as session:
         for data in selected_datasets:
             session.add_all(data)
@@ -155,4 +155,4 @@ def docker_logs(client: docker.APIClient, container_id: str):
     docker_logger = logging.getLogger('DOCKER')
     for log in client.logs(container=container_id, stream=True, follow=True):
         log = log.decode().strip()
-        docker_logger.info(log)
+        docker_logger.debug(log)
