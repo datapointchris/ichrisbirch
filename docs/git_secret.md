@@ -32,8 +32,8 @@ gpg --gen-key
 # Export and upload keys to EC2 Instance
 gpg --export --armor "iChrisBirch EC2" > ec2-public.key
 gpg --export-secret-key --armor "iChrisBirch EC2" > ec2-private.key
-scp -i ~/.ssh/apps.pem ec2-public.key ubuntu@ichrisbirch:~
-scp -i ~/.ssh/apps.pem ec2-private.key ubuntu@ichrisbirch:~
+scp -i ~/.ssh/ichrisbirch-webserver.pem ec2-public.key ubuntu@ichrisbirch:~
+scp -i ~/.ssh/ichrisbirch-webserver.pem ec2-private.key ubuntu@ichrisbirch:~
 
 # Project Directory
 git secret tell ec2@ichrisbirch.com
