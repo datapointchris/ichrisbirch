@@ -1,7 +1,6 @@
 import logging
 import os
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter
 from fastapi import status
@@ -22,5 +21,4 @@ def health():
         api_url=os.getenv('API_URL', 'NOT SET'),
         log_level=os.getenv('LOG_LEVEL', 'NOT SET'),
         server_time=datetime.now().isoformat(),
-        local_time=datetime.now(tz=ZoneInfo('America/Chicago')).isoformat(),
     )
