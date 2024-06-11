@@ -10,8 +10,20 @@
       <li class="serverstats__item">Environment: {{ settings.ENVIRONMENT }}</li>
       <li class="serverstats__item">API URL: {{ settings.api_url }}</li>
       <li class="serverstats__item">Server time: {{ server_time }}</li>
-      <li class="serverstats__item">Local time: {{ local_time }}</li>
+      <li class="serverstats__item">Local time: <span id="localTime"></span></li>
     </ul>
   </div>
 </div>
+{% endblock %}
+
+{% block endscripts %}
+<script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', (event) => {
+    const now = new Date();
+    const localISOTime = dateFns.formatISO(now, {representation: 'complete' });
+    const localTimeElement = document.getElementById('localTime');
+    localTimeElement.textContent = localISOTime;
+  });
+</script>
 {% endblock %}

@@ -23,10 +23,7 @@ blueprint = Blueprint('admin', __name__, template_folder='templates/admin', stat
 @blueprint.route('/', methods=['GET'])
 def index():
     return render_template(
-        'admin/index.html',
-        settings=settings,
-        server_time=pendulum.now('UTC').isoformat(),
-        local_time=pendulum.now().isoformat(),
+        'admin/serverstats.html', settings=settings, server_time=pendulum.now().isoformat(timespec='seconds')
     )
 
 
