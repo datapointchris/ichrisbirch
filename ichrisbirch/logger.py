@@ -22,7 +22,7 @@ class No304StatusFilter(logging.Filter):
 
 
 class SingleLineLogLevelBracketFormatter(logging.Formatter):
-    """Add brackets around log level and remove all newlines"""
+    """Add brackets around log level and remove all newlines."""
 
     def format(self, record: logging.LogRecord):
         if not record.levelname.startswith('['):
