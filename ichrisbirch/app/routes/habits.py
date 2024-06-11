@@ -26,7 +26,7 @@ habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.H
 habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
 habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, response_model=schemas.HabitCategory)
 # Ex: Friday, January 01, 2001
-DATE_FORMAT = '%A, %B %d, %Y'
+DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
 
 
 def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> tuple[list[str], list[int]]:
@@ -70,7 +70,7 @@ def index():
         'habits/index.html',
         completed=completed_by_category,
         todo=todo_by_category,
-        long_date=pendulum.today().strftime(DATE_FORMAT),
+        long_date=pendulum.now().strftime(DATE_FORMAT),
     )
 
 
