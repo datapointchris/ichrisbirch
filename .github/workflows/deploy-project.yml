@@ -23,8 +23,8 @@ jobs:
             git pull &&
             git secret reveal -f &&
             sudo rm -rf .venv &&
-            poetry env use $(/home/ubuntu/.pyenv/bin/pyenv which python) &&
-            poetry install
+            /home/ubuntu/.local/bin/poetry env use $(/home/ubuntu/.pyenv/bin/pyenv which python) &&
+            /home/ubuntu/.local/bin/poetry install
           '
       - name: Restart Supervisor
         run: |

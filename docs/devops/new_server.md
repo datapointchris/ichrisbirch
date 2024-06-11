@@ -21,9 +21,10 @@ exec $SHELL
 
 # Install python
 pyenv install 3.12
+pyenv global 3.12
 
-# Install poetry
-pipx install poetry
+# Install poetry making sure to use pyenv python
+pipx install --python $(/home/ubuntu/.pyenv/bin/pyenv which python) poetry
 
 ##### AT THIS POINT THE AMI SHOULD BE MADE #####
 
