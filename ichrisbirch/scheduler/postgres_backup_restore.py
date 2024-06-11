@@ -233,4 +233,4 @@ class PostgresBackupRestore:
         if not skip_download and delete_local:
             self._delete_file(Path(download_file))
         elapsed = (pendulum.now() - start).in_words()
-        self.logger.info(f'postgres backup to s3 completed - {elapsed}')
+        self.logger.info(f'postgres restore to s3 completed - {elapsed}')

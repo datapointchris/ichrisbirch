@@ -27,14 +27,29 @@ parser.add_argument(
     3) local path of restore file (MUST also specify --skip-download for this option)"""
     ),
 )
+parser.add_argument('--environment', required=False, help='Environment')
+
 restore_target = parser.add_argument_group(
     'Restore Target', description="""All of the following arguments are required."""
 )
-restore_target.add_argument('--environment', required=True, help='Environment')
 restore_target.add_argument('--target-host', required=True, help='Target host')
 restore_target.add_argument('--target-port', required=True, help='Target port')
 restore_target.add_argument('--target-username', required=True, help='Target username')
 restore_target.add_argument('--target-password', required=True, help='Target password')
 args = parser.parse_args()
-pbr = PostgresBackupRestore(logger=ops_logger, show_command_output=True)
+
+args_dict = {
+    'environment': args.environment,
+    'target_host': args.target_host,
+    'target_port': args.target_port,
+    'target_username': args.target_username,
+    'target_password': args.target_password,
+    'logger': ops_logger,
+    'show_command_output': True,
+}
+
+# remove unset args
+args_dict = {k: v for k, v in args_dict.items() if v is not None}
+
+pbr = PostgresBackupRestore(**args_dict)
 pbr.restore(filename=args.filename, skip_download=args.skip_download, delete_local=args.delete_local)

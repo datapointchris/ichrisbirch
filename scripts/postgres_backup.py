@@ -48,10 +48,22 @@ if any(required_as_group) and not all(required_as_group):
         print(f'Missing Argument: {arg}')
     exit(1)
 
+args_dict = {
+    'environment': args.environment,
+    'source_host': args.source_host,
+    'source_port': args.source_port,
+    'source_username': args.source_username,
+    'source_password': args.source_password,
+    'logger': ops_logger,
+    'show_command_output': True,
+}
+
+# remove unset args
+args_dict = {k: v for k, v in args_dict.items() if v is not None}
+
 upload = not args.skip_upload
 description = args.description
 description = ''.join([d.lower() for d in description]).replace(' ', '-')
 
-pbr = PostgresBackupRestore(logger=ops_logger, show_command_output=True)
-
+pbr = PostgresBackupRestore(**args_dict)
 pbr.backup(upload=upload, save_local=args.save_local, backup_description=description)
