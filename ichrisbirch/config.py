@@ -4,6 +4,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import dotenv
 
@@ -155,7 +156,7 @@ class Settings:
         self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
         self.env_file: Path = env_file
-        self.request_timeout: int = 3
+        self.global_timezone = ZoneInfo('US/Eastern')
         self.mac_safari_request_headers = {
             'User-Agent': (
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) '
