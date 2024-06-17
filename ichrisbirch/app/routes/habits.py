@@ -20,10 +20,12 @@ from ichrisbirch.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger('app.habits')
+
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
 habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
 habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, response_model=schemas.HabitCategory)
+
 # Ex: Friday, January 01, 2001 12:00:00 EDT
 DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
 TZ = settings.global_timezone

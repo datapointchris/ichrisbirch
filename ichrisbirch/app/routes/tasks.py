@@ -16,13 +16,19 @@ from flask import url_for
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
+from ichrisbirch.config import get_settings
 from ichrisbirch.models.task import TaskCategory
 
+settings = get_settings()
 logger = logging.getLogger('app.tasks')
+
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
 tasks_api = QueryAPI(base_url='tasks', logger=logger, response_model=schemas.Task)
 tasks_completed_api = QueryAPI(base_url='tasks/completed', logger=logger, response_model=schemas.TaskCompleted)
 
+# Ex: Friday, January 01, 2001
+DATE_FORMAT = '%A, %B %d, %Y'
+TZ = settings.global_timezone
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 
@@ -35,10 +41,6 @@ def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str
 
 def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tuple[list[str], list[int]]:
     """Create chart labels and values from completed tasks for chart.js."""
-
-    # Ex: Friday, January 01, 2001
-    DATE_FORMAT = '%A, %B %d, %Y'
-
     first = tasks[0]
     last = tasks[-1]
 
@@ -64,13 +66,18 @@ def warning_tasks_count(tasks: list[schemas.Task]) -> int:
     return sum(1 for task in tasks if task.priority > 1 and task.priority <= 3)
 
 
+def overdue_tasks_count(tasks: list[schemas.Task]) -> int:
+    return sum(1 for task in tasks if task.priority < 1)
+
+
 @blueprint.route('/', methods=['GET'])
 def index():
     tasks = tasks_api.get_many('todo')
     critical_count = critical_tasks_count(tasks)
     warning_count = warning_tasks_count(tasks)
+    overdue_count = overdue_tasks_count(tasks)
 
-    completed_today_params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
+    completed_today_params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed_today = tasks_completed_api.get_many(params=completed_today_params)
 
     return render_template(
@@ -78,6 +85,7 @@ def index():
         top_tasks=tasks[:5],
         critical_count=critical_count,
         warning_count=warning_count,
+        overdue_count=overdue_count,
         completed_today=completed_today,
         task_categories=TASK_CATEGORIES,
     )
