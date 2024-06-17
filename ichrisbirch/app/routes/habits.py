@@ -1,6 +1,5 @@
 import logging
 from collections import Counter
-from collections import defaultdict
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
@@ -50,22 +49,28 @@ def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> t
     return chart_labels, chart_values
 
 
+def sort_habits_by_category(habits: list[schemas.Habit] | list[schemas.HabitCompleted]) -> dict[str, list]:
+    categories = [habit.category.name for habit in habits]
+    i = 'IMPORTANT'
+    if i in categories:
+        categories.remove(i)
+        categories.insert(0, i)
+    habits_by_category: dict[str, list] = {category: [] for category in categories}
+    for habit in habits:
+        habits_by_category[habit.category.name].append(habit)
+    return habits_by_category
+
+
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
 
     params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed = habits_completed_api.get_many(params=params)
+    completed_by_category = sort_habits_by_category(completed)
 
     daily_habits = habits_api.get_many(params={'current': True})
     todo = [h for h in daily_habits if h.name not in [d.name for d in completed]]
-
-    todo_by_category = defaultdict(list)
-    for habit in todo:
-        todo_by_category[habit.category.name].append(habit)
-
-    completed_by_category = defaultdict(list)
-    for habit in completed:
-        completed_by_category[habit.category.name].append(habit)
+    todo_by_category = sort_habits_by_category(todo)
 
     return render_template(
         'habits/index.html',
