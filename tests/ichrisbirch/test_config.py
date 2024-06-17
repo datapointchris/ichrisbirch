@@ -13,7 +13,7 @@ def test_load_environment_by_ENVIRONMENT_variable():
     get_settings.cache_clear()
     settings = get_settings()
     assert settings.ENVIRONMENT == 'development'
-    assert settings.ENV_FILE.name == '.dev.env'
+    assert settings.env_file.name == '.dev.env'
 
 
 def test_load_environment_by_string():
@@ -21,7 +21,7 @@ def test_load_environment_by_string():
     get_settings.cache_clear()
     settings = get_settings('testing')
     assert settings.ENVIRONMENT == 'testing'
-    assert settings.ENV_FILE.name == '.test.env'
+    assert settings.env_file.name == '.test.env'
 
 
 def test_load_environment_by_string_path():
@@ -29,7 +29,7 @@ def test_load_environment_by_string_path():
     get_settings.cache_clear()
     settings = get_settings(str(string_path))
     assert settings.ENVIRONMENT == 'development'
-    assert settings.ENV_FILE.name == '.dev.env'
+    assert settings.env_file.name == '.dev.env'
 
 
 def test_load_environment_by_path():
@@ -37,7 +37,7 @@ def test_load_environment_by_path():
     get_settings.cache_clear()
     settings = get_settings(env_file=test_env_file)
     assert settings.ENVIRONMENT == 'testing'
-    assert settings.ENV_FILE.name == '.test_env_file.env'
+    assert settings.env_file.name == '.test_env_file.env'
 
 
 def test_postgres_user():

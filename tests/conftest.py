@@ -143,7 +143,7 @@ def setup_test_environment():
         docker_log_thread.start()
         logger.info('started docker log stream thread')
 
-        _create_database_schemas(schemas=settings.DB_SCHEMAS, session=tests.util.SessionTesting)
+        _create_database_schemas(schemas=settings.db_schemas, session=tests.util.SessionTesting)
         logger.info('created database schemas')
 
         # Copy current environment and set ENVIRONMENT to testing for subprocesses

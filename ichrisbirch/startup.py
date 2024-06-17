@@ -15,7 +15,7 @@ inspector = sqlalchemy.inspect(engine)
 # Help me write a startup script for this entire project
 
 with SessionLocal() as session:
-    for schema_name in settings.DB_SCHEMAS:
+    for schema_name in settings.db_schemas:
         if schema_name not in inspector.get_schema_names():
             session.execute(CreateSchema(schema_name))
             logger.info(f'Created schema: {schema_name}')

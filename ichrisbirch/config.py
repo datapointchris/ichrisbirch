@@ -151,11 +151,11 @@ class UsersSettings:
 
 class Settings:
     def __init__(self, env_file: Path = Path()):
-        self.NAME: str = 'ichrisbirch'
-        self.DB_SCHEMAS: list[str] = ['apartments', 'box_packing', 'habits']
+        self.name: str = 'ichrisbirch'
+        self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
-        self.ENV_FILE: Path = env_file
-        self.REQUEST_TIMEOUT: int = 3
+        self.env_file: Path = env_file
+        self.request_timeout: int = 3
         self.mac_safari_request_headers = {
             'User-Agent': (
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) '
