@@ -7,7 +7,8 @@
 sudo apt update && sudo apt upgrade -y
 
 # Install apt required
-sudo apt install zsh tmux tldr supervisor nginx neofetch pipx curl git git-secret build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
+# NOTE: Install the postgresql-client version that matches the database, this is for pg_dump backups with the scheduler.
+sudo apt install postgresql-client-16 zsh tmux tldr supervisor nginx neofetch pipx curl git git-secret build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
 pipx ensurepath
 
 # Install pyenv
