@@ -15,6 +15,7 @@ class AuthSettings:
         self.secret_key: str = os.environ['AUTH_SECRET_KEY']
         self.algorithm: str = 'HS256'
         self.token_expire_minutes = timedelta(minutes=30)
+        self.accepting_new_signups = False
 
 
 class AWSSettings:
