@@ -18,7 +18,6 @@ from typing import Callable
 import pendulum
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-from sqlalchemy import and_
 from sqlalchemy import select
 
 from ichrisbirch import models
@@ -82,7 +81,7 @@ def make_logs():
 def decrease_task_priority(session=SessionLocal) -> None:
     """Decrease priority of all tasks by 1."""
     with session() as session:
-        query = select(models.Task).filter(and_(models.Task.priority > 1, models.Task.complete_date.is_(None)))
+        query = select(models.Task).filter(models.Task.complete_date.is_(None))
         for task in session.scalars(query).all():
             task.priority -= 1
         session.commit()
