@@ -4,14 +4,20 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 from typing import Optional
-from zoneinfo import ZoneInfo
+
+import pendulum
+
+from ichrisbirch.config import get_settings
+
+settings = get_settings()
+TZ = settings.global_timezone
 
 
 class EasyDate:
     """Create easy to use python date filters."""
 
     def __init__(self, today: Optional[date] = None):
-        self.today: date = today or date.today()
+        self.today: date = today or pendulum.today(TZ).date()
         self.tomorrow: date = self.today + timedelta(days=1)
         self.yesterday: date = self.today - timedelta(days=1)
         self.previous_7: date = self.today - timedelta(days=7)
@@ -40,7 +46,7 @@ class EasyDateTime:
     """Create easy to use python datetime filters."""
 
     def __init__(self, today: Optional[datetime] = None):
-        self.today: datetime = today or datetime.combine(date.today(), time(), tzinfo=ZoneInfo("America/Chicago"))
+        self.today: datetime = today or pendulum.today(TZ)
         self.tomorrow: datetime = self.today + timedelta(days=1)
         self.yesterday: datetime = self.today - timedelta(days=1)
         self.previous_7: datetime = self.today - timedelta(days=7)
