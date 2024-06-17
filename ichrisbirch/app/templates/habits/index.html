@@ -14,8 +14,8 @@
       {% for habit in todo.get(category) %}
       <form method="POST" class="habit-check" action="{{ url_for('habits.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="name" value={{ habit.name }}>
-        <input type="hidden" name="category_id" value={{ habit.category_id }}>
+        <input type="hidden" name="name" value="{{ habit.name }}">
+        <input type="hidden" name="category_id" value="{{ habit.category_id }}"">
         <span class="habit-check__text">
           <button type="submit" name="action" value="complete_habit">
             <span class="fa-solid fa-check"></span>

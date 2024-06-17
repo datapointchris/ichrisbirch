@@ -25,8 +25,9 @@ blueprint = Blueprint('habits', __name__, template_folder='templates/habits', st
 habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
 habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
 habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, response_model=schemas.HabitCategory)
-# Ex: Friday, January 01, 2001
+# Ex: Friday, January 01, 2001 12:00:00 EDT
 DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
+TZ = settings.global_timezone
 
 
 def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> tuple[list[str], list[int]]:
@@ -52,7 +53,7 @@ def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> t
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
 
-    params = {'start_date': str(pendulum.today()), 'end_date': str(pendulum.tomorrow())}
+    params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed = habits_completed_api.get_many(params=params)
 
     daily_habits = habits_api.get_many(params={'current': True})
@@ -70,7 +71,7 @@ def index():
         'habits/index.html',
         completed=completed_by_category,
         todo=todo_by_category,
-        long_date=pendulum.now().strftime(DATE_FORMAT),
+        long_date=pendulum.now(TZ).strftime(DATE_FORMAT),
     )
 
 
@@ -142,7 +143,7 @@ def crud():
             return redirect(request.referrer or url_for('habits.manage'))
 
         case 'complete_habit':
-            data.update({'complete_date': str(pendulum.now())})
+            data.update({'complete_date': str(pendulum.now(TZ))})
             habits_completed_api.post(json=data)
             return redirect(request.referrer or url_for('habits.manage'))
 

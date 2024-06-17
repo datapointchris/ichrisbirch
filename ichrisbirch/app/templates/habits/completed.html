@@ -44,7 +44,7 @@
     {% for habit in completed %}
     <div class="habit completed">
       <h1>{{ habit.name }}</h1>
-      Category: {{ habit.category }}<br>
+      Category: {{ habit.category.name }}<br>
       Complete Date: {{ habit.complete_date }}<br>
     </div>
     {% endfor %}
