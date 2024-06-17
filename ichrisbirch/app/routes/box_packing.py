@@ -47,7 +47,7 @@ def box(box_id):
         flash(f'Box {box_id} not found', 'error')
         logger.warning(f'box {box_id} not found')
         return redirect(url_for('box_packing.index'))
-    logger.debug(f'{selected_box=}')
+    logger.debug(f'{selected_box.name=}')
     return render_template('box_packing/index.html', selected_box=selected_box, boxes=boxes, box_sizes=BOX_SIZES)
 
 
@@ -61,7 +61,6 @@ def all():
     response = httpx.get(BOXES_API_URL, params=params)
     utils.handle_if_not_response_code(200, response, logger)
     boxes = [schemas.Box(**box) for box in response.json()]
-    logger.debug(f'{boxes=}')
     # TODO: check if sort_1 will always be present
     if sort_1:
         if sort_2:
