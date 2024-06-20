@@ -1,5 +1,10 @@
 {% extends 'habits/base.html' %}
 
+{% block meta %}
+<!-- Refresh page every 5 minutes to keep csrf token valid and complete habits with correct timestamp -->
+<meta http-equiv="refresh" content="300">
+{% endblock %}
+
 {% block title %}Daily Habits{% endblock %}
 
 {% block content %}
