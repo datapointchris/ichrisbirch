@@ -15,8 +15,8 @@ def test_index(insert_jobs_in_test_scheduler, test_app):
 
 @pytest.mark.parametrize('job_id', test_job_ids)
 def test_pause_and_resume_job(insert_jobs_in_test_scheduler, test_app, test_jobstore, job_id):
-    resume_response = test_app.post('/admin/scheduler/', data={'job_id': job_id, 'action': 'pause_job'})
-    assert resume_response.status_code == status.HTTP_200_OK, show_status_and_response(resume_response)
+    pause_response = test_app.post('/admin/scheduler/', data={'job_id': job_id, 'action': 'pause_job'})
+    assert pause_response.status_code == status.HTTP_200_OK, show_status_and_response(pause_response)
     assert test_jobstore.lookup_job(job_id).next_run_time is None
 
     resume_response = test_app.post('/admin/scheduler/', data={'job_id': job_id, 'action': 'resume_job'})
