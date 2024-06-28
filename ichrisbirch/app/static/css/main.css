@@ -11379,6 +11379,16 @@ nav a:hover {
   color: var(--clr-accent-light);
 }
 
+.article-insight {
+  padding: var(--space-m);
+  text-align: left;
+  font-size: var(--fs-400);
+  line-height: 1.6em;
+  border-radius: var(--btn-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+}
+
 .backups {
   width: 80svw;
   margin: var(--space-xl) auto;

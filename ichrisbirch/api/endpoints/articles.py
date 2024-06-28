@@ -6,6 +6,7 @@ from datetime import timedelta
 from typing import Optional
 
 import httpx
+import markdown
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
@@ -36,6 +37,87 @@ def IDNotFoundError(id: int):
     message = f'article {id} not found'
     logger.warning(message)
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+def _get_youtube_video_text_captions(url: str) -> str:
+    yt_trans = YouTubeTranscriptApi()
+    formatter = TextFormatter()
+    video_id = url.split('v=')[1]
+    transcript = yt_trans.get_transcript(video_id)
+    formatted = formatter.format_transcript(transcript)
+    return formatted
+
+
+def _get_formatted_title(soup: BeautifulSoup) -> str:
+    if soup.title and soup.title.string:
+        title = soup.title.string.split('|')[0].replace('...', '')
+        title = title.removesuffix(' - YouTube')
+    else:
+        logger.warning('could not parse title')
+        title = 'Could not parse title'
+    return title
+
+
+def _get_text_content_from_html(soup: BeautifulSoup) -> str:
+    relevant_content_tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'li']
+    tag_content = soup.find_all(relevant_content_tags)
+    text_content = ' '.join(tag.get_text() for tag in tag_content)
+    return text_content
+
+
+def _get_summary_and_tags_from_openai(text_content: str):
+    client = OpenAI(api_key=settings.openai.api_key)
+    assistant = client.beta.assistants.create(
+        name='Content Summarizer with Tags',
+        instructions=settings.openai.articles_summary_instructions,
+        model=settings.openai.model,
+    )
+    thread = client.beta.threads.create()
+    client.beta.threads.messages.create(
+        thread_id=thread.id,
+        role='user',
+        content=f'Create a summary and tags from the following content: \n{text_content}',
+    )
+    run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
+    while run.status in ('queued', 'in_progress'):
+        run = client.beta.threads.runs.retrieve(
+            thread_id=thread.id,
+            run_id=run.id,
+        )
+        time.sleep(1)
+    messages = client.beta.threads.messages.list(thread_id=thread.id)
+    data = json.loads(messages.data[0].content[0].text.value)  # type: ignore
+    logger.info(f'tokens used: {run.usage.total_tokens}')  # type: ignore
+    summary = data.get('summary')
+    tags = data.get('tags')
+    return summary, tags
+
+
+def _get_summary_and_insights_from_openai(text_content: str):
+    client = OpenAI(api_key=settings.openai.api_key)
+    assistant = client.beta.assistants.create(
+        name='Article Insights',
+        instructions=settings.openai.articles_insights_instructions,
+        model=settings.openai.model,
+    )
+    thread = client.beta.threads.create()
+    client.beta.threads.messages.create(
+        thread_id=thread.id,
+        role='user',
+        content=text_content,
+    )
+    run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
+    while run.status in ('queued', 'in_progress'):
+        run = client.beta.threads.runs.retrieve(
+            thread_id=thread.id,
+            run_id=run.id,
+        )
+        time.sleep(3)
+    messages = client.beta.threads.messages.list(thread_id=thread.id)
+    data = messages.data[0].content[0].text.value  # type: ignore
+    tokens_used = run.usage.total_tokens  # type: ignore
+    logger.info(f'tokens used: {tokens_used}')  # type: ignore
+    return data
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
@@ -116,56 +198,8 @@ async def summarize(request: Request):
     summary. If article, use html content for summary. Using openai chat to summarize and provide tags.
     """
 
-    def _get_youtube_video_text_captions(url: str) -> str:
-        yt_trans = YouTubeTranscriptApi()
-        formatter = TextFormatter()
-        video_id = url.split('v=')[1]
-        transcript = yt_trans.get_transcript(video_id)
-        formatted = formatter.format_transcript(transcript)
-        return formatted
-
-    def _get_formatted_title(soup: BeautifulSoup) -> str:
-        if soup.title and soup.title.string:
-            title = soup.title.string.split('|')[0].replace('...', '')
-        else:
-            title = 'Could not parse title'
-        return title
-
-    def _get_text_content_from_html(soup: BeautifulSoup) -> str:
-        relevant_content_tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'li']
-        tag_content = soup.find_all(relevant_content_tags)
-        text_content = ' '.join(tag.get_text() for tag in tag_content)
-        return text_content
-
-    def _get_summary_and_tags_from_openai(text_content: str):
-        client = OpenAI(api_key=settings.openai.api_key)
-        assistant = client.beta.assistants.create(
-            name='Content Summarizer with Tags',
-            instructions=settings.openai.articles_summary_instructions,
-            model=settings.openai.model,
-        )
-        thread = client.beta.threads.create()
-        client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role='user',
-            content=f'Create a summary and tags from the following content: \n{text_content}',
-        )
-        run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
-        while run.status in ('queued', 'in_progress'):
-            run = client.beta.threads.runs.retrieve(
-                thread_id=thread.id,
-                run_id=run.id,
-            )
-            time.sleep(1)
-        messages = client.beta.threads.messages.list(thread_id=thread.id)
-        data = json.loads(messages.data[0].content[0].text.value)  # type: ignore
-        logger.info(f'tokens used: {run.usage.total_tokens}')  # type: ignore
-        summary = data.get('summary')
-        tags = data.get('tags')
-        return summary, tags
-
     data = await request.json()
-    logger.info(data)
+    logger.debug(data)
     url = data.get('url')
     logger.debug(f'summarizing url: {url}')
     url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
@@ -179,6 +213,34 @@ async def summarize(request: Request):
     title = _get_formatted_title(soup)
     summary, tags = _get_summary_and_tags_from_openai(text_content)
     return schemas.ArticleSummary(title=title, summary=summary, tags=tags)
+
+
+@router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
+async def insights(request: Request):
+    """Summarize youtube video or article based on the url.
+
+    Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If
+    article, use html content for summary. Using openai chat to summarize and provide tags.
+    """
+
+    request_data = await request.json()
+    logger.debug(request_data)
+    url = request_data.get('url')
+    logger.debug(f'summarizing with insights url: {url}')
+    url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
+    soup = BeautifulSoup(url_response.content, 'html.parser')
+
+    if "youtube.com" in url or "youtu.be" in url:
+        text_content = _get_youtube_video_text_captions(url)
+    else:
+        text_content = _get_text_content_from_html(soup)
+
+    title = _get_formatted_title(soup)
+    mkd = _get_summary_and_insights_from_openai(text_content)
+    mkd = f'## {title}\n{mkd}'
+    html = markdown.markdown(mkd)
+
+    return Response(html)
 
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)

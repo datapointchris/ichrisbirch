@@ -123,6 +123,24 @@ def bulk_add_results():
     return render_template('articles/bulk-add-results.html')
 
 
+@blueprint.route('/insights/', methods=['GET', 'POST'])
+def insights():
+    insights_endpoint = f'{settings.api_url}/articles/insights/'
+    if request.method == 'POST':
+        url = request.form.get('url')
+        start = pendulum.now()
+        response = httpx.post(insights_endpoint, json={'url': url}, timeout=30)
+        response.raise_for_status()
+        elapsed = (pendulum.now() - start).in_words()
+        article_insights = response.text
+        submitted_url = url
+    else:
+        article_insights, submitted_url, elapsed = '', '', ''
+    return render_template(
+        'articles/insights.html', submitted_url=submitted_url, article_insights=article_insights, elapsed=elapsed
+    )
+
+
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
     articles = []
