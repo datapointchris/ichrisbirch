@@ -53,7 +53,7 @@ class FlaskSettings:
         self.DEBUG: bool = bool(os.environ['FLASK_DEBUG'])
         # For flask-login, use the session to store the `next` value instead of passing as url parameters
         self.USE_SESSION_FOR_NEXT: bool = True
-        self.app_id = '6d7926137c903013f5e71f15749f1f2b7e66f147c03b228e53be771a7c1289d4'
+        self.app_id: str = os.environ['FLASK_APP_ID']
 
 
 class FlaskLoginSettings:
@@ -94,6 +94,7 @@ class OpenAISettings:
         self.api_key: str = os.environ['OPENAI_API_KEY']
         self.model = 'gpt-3.5-turbo-0125'
         self.articles_summary_instructions = (Path(__file__).parent / 'openai_summary_instructions.txt').read_text()
+        self.articles_insights_instructions = (Path(__file__).parent / 'openai_insights_instructions.txt').read_text()
 
 
 class PlaywrightSettings:
