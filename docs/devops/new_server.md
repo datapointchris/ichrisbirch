@@ -3,12 +3,21 @@
 ## Installs
 
 ```bash
-# Update
 sudo apt update && sudo apt upgrade -y
 
-# Install apt required
+# base installs
+sudo apt install curl git git-secret
+
 # NOTE: Install the postgresql-client version that matches the database, this is for pg_dump backups with the scheduler.
-sudo apt install postgresql-client-16 zsh tmux tldr supervisor nginx neofetch pipx curl git git-secret build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
+sudo apt install postgresql-client-16 tmux tldr supervisor nginx neofetch neovim pipx -y
+
+# for pyenv
+sudo apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
+
+# for building psycopg from source
+sudo apt install python3-dev libpq-dev -y
+
+# make sure
 pipx ensurepath
 
 # Install pyenv
