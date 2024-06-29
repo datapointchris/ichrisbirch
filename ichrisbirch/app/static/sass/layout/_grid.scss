@@ -51,9 +51,10 @@
 
 .grid {
     display: grid;
-    gap: var(--space-xl);
     width: 80svw;
+    gap: var(--space-xl);
     margin: var(--space-2xl) auto;
+    margin-top: var(--space-xl);
     justify-content: center;
 
     &--one-column {
