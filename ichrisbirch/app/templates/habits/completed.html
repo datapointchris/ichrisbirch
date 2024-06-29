@@ -7,19 +7,17 @@
 {% endblock %}
 
 {% block content %}
-<div class="task-layout task-layout--one-column-wide">
+<div class="grid grid--one-column-wide">
   <form method="POST" action="{{ url_for('habits.completed') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="habit__selected">
-      <label for="habit">Select a Habit:</label>
-      <select class="textbox" name="habit" id="habit">
-        <option value="None">All</option>
-        {% for habit in habits %}
-        <option value="{{ habit }}">{{ habit.name.title() }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
+    <label for="habit">Select a Habit:</label>
+    <select class="textbox" name="habit" id="habit">
+      <option value="None">All</option>
+      {% for habit in habits %}
+      <option value="{{ habit }}">{{ habit.name.title() }}
+      </option>
+      {% endfor %}
+    </select>
     <div class="radio-scale-selector">
       {% for filter in filters %}
       <input type="radio" id="radio-{{ filter }}" class="radio-scale-selector__option" name="filter"
@@ -32,33 +30,17 @@
       <span class="button__text">Filter Habits</span>
     </button>
   </form>
-</div>
-
-{% if not completed %}
-<div class="task-layout task-layout--one-column-wide">
+  {% if not completed %}
   <h3>{{ completed_count }}</h3>
-</div>
-{% else %}
-<div class="task-layout task-layout--two-columns">
-  <div class="task-layout task-layout--one-column-wide">
-    {% for habit in completed %}
-    <div class="habit completed">
-      <h1>{{ habit.name }}</h1>
-      Category: {{ habit.category.name }}<br>
-      Complete Date: {{ habit.complete_date }}<br>
-    </div>
-    {% endfor %}
+  {% else %}
+  <h3>Completed Habits: {{ completed_count }}</h3>
+  <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
+  <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
+  <div id="chartTitle" style="display: none;">Completed Habits</div>
+  <div class="completed-habit-graph">
+    <canvas id="completedChart" height="200"></canvas>
   </div>
-  <div class="task-layout task-layout--one-column-wide">
-    <h3>Completed Habits: {{ completed_count }}</h3>
-    <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
-    <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
-    <div id="chartTitle" style="display: none;">Completed Habits</div>
-    <div class="completed-habit-graph">
-      <canvas id="completedChart" height="200"></canvas>
-    </div>
-    <script src="{{ url_for('static', filename='js/completed_chart.js') }}"></script>
-  </div>
+  <script src="{{ url_for('static', filename='js/completed_chart.js') }}"></script>
 </div>
 {% endif %}
 {% endblock %}

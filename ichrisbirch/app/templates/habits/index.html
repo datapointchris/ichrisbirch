@@ -8,47 +8,49 @@
 {% block title %}Daily Habits{% endblock %}
 
 {% block content %}
-<h1>{{ long_date }}</h1>
-<div class="grid grid--two-columns">
+<div class="grid grid--one-column-wide">
+  <h1>{{ long_date }}</h1>
+  <div class="grid grid--two-columns">
 
-  <div>
-    <h2>To Do</h2>
-    {% for category in todo %}
-    <h3>{{ category }}</h3>
-    <div class="habit-checked-wrapper">
-      {% for habit in todo.get(category) %}
-      <form method="POST" class="habit-check" action="{{ url_for('habits.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="name" value="{{ habit.name }}">
-        <input type="hidden" name="category_id" value="{{ habit.category_id }}"">
-        <span class="habit-check__text">
+    <div>
+      <h2>To Do</h2>
+      {% for category in todo %}
+      <h3>{{ category }}</h3>
+      <div class="habit-checked-wrapper">
+        {% for habit in todo.get(category) %}
+        <form method="POST" class="habit-check" action="{{ url_for('habits.crud') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="name" value="{{ habit.name }}">
+          <input type="hidden" name="category_id" value="{{ habit.category_id }}"">
+        <span class=" habit-check__text">
           <button type="submit" name="action" value="complete_habit">
             <span class="fa-solid fa-check"></span>
           </button>
-        </span>
-      </form>
-      <h2>{{ habit.name }}</h2>
-      {% endfor %}
-    </div>
-    {% endfor %}
-  </div>
-
-  <div>
-    <h2>Done</h2>
-    {% for category in completed %}
-    <h3>{{ category }}</h3>
-    <div class="habit-checked-wrapper">
-      {% for habit in completed.get(category) %}
-      <div class="habit-checked">
-        <p class="habit-check__text">
-          <span class="fa-solid fa-check"></span>
-        </p>
+          </span>
+        </form>
+        <h2>{{ habit.name }}</h2>
+        {% endfor %}
       </div>
-      <h2>{{ habit.name }}</h2>
       {% endfor %}
     </div>
-    {% endfor %}
-  </div>
 
+    <div>
+      <h2>Done</h2>
+      {% for category in completed %}
+      <h3>{{ category }}</h3>
+      <div class="habit-checked-wrapper">
+        {% for habit in completed.get(category) %}
+        <div class="habit-checked">
+          <p class="habit-check__text">
+            <span class="fa-solid fa-check"></span>
+          </p>
+        </div>
+        <h2>{{ habit.name }}</h2>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
 </div>
 {% endblock %}
