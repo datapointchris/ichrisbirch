@@ -28,6 +28,7 @@ habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, re
 
 # Ex: Friday, January 01, 2001 12:00:00 EDT
 DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
+CHART_DATE_FORMAT = '%A, %B %d, %Y'
 TZ = settings.global_timezone
 
 
@@ -46,7 +47,7 @@ def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> t
     )
     all_dates_with_counts = timestamps_zero_counts | completed_counts
     # Reversed for chronological display in chart.js
-    chart_labels = [datetime.strftime(dt, DATE_FORMAT) for dt in reversed(all_dates_with_counts)]
+    chart_labels = [datetime.strftime(dt, CHART_DATE_FORMAT) for dt in reversed(all_dates_with_counts)]
     chart_values = list(reversed(list(all_dates_with_counts.values())))
     return chart_labels, chart_values
 
@@ -86,7 +87,7 @@ def index():
 def completed():
     """Completed habits."""
     DEFAULT_DATE_FILTER = 'this_week'
-    edt = EasyDateTime()
+    edt = EasyDateTime(tz=TZ)
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
     start_date, end_date = edt.filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
@@ -147,43 +148,36 @@ def crud():
     match action:
         case 'add_habit':
             habits_api.post(json=data)
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'complete_habit':
             data.update({'complete_date': str(pendulum.now(TZ))})
             habits_completed_api.post(json=data)
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'hibernate_habit':
             habits_api.patch([data.get('id')], json={'is_current': False})
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'revive_habit':
             habits_api.patch([data.get('id')], json={'is_current': True})
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'delete_habit':
             habits_api.delete([data.get('id')])
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'delete_completed_habit':
             habits_completed_api.delete([data.get('id')])
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'add_category':
             habits_categories_api.post(json=data)
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'hibernate_category':
             habits_categories_api.patch([data.get('id')], json={'is_current': False})
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'revive_category':
             habits_categories_api.patch([data.get('id')], json={'is_current': True})
-            return redirect(request.referrer or url_for('habits.manage'))
 
         case 'delete_category':
             habits_categories_api.delete([data.get('id')])
-            return redirect(request.referrer or url_for('habits.manage'))
 
-    return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        case _:
+            return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    return redirect(request.referrer or url_for('habits.manage'))
