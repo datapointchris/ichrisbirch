@@ -1,6 +1,5 @@
 # TODO
 
-- [User Login](#user-login)
 - [Random](#random)
 - [Tasks](#tasks)
 - [Infrastructure Management](#infrastructure-management)
@@ -39,19 +38,6 @@
   - [Ummmm and Like counter](#ummmm-and-like-counter)
   - [User Customization](#user-customization)
   - [Whylogs](#whylogs)
-
-## User Login
-
-- [GitHub - MushroomMaula/fastapi_login: FastAPI-Login tries to provide similar functionality as Flask-Login does.](https://github.com/MushroomMaula/fastapi_login)
-
-- [GitHub - fastapi-users/fastapi-users: Ready-to-use and customizable users management for FastAPI](https://github.com/fastapi-users/fastapi-users)
-
-- [Basic Usage - FastAPI JWT Auth](https://indominusbyte.github.io/fastapi-jwt-auth/usage/basic/)
-
-- [fastapi-github-actions-test/auth.py at master · rexsimiloluwah/fastapi-github-actions-test · GitHub](https://github.com/rexsimiloluwah/fastapi-github-actions-test/blob/master/src/routes/auth.py)
-
-- FastAPI Signup
-- [python-api-examples/api.py at main · ChristopherGS/python-api-examples · GitHub](https://github.com/ChristopherGS/python-api-examples/blob/main/fastapi_project/app/api/api.py)
 
 ## Random
 
