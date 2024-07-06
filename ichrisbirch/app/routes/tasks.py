@@ -113,7 +113,7 @@ def completed():
     Filtered by date selection.
     """
     DEFAULT_DATE_FILTER = 'this_week'
-    edt = EasyDateTime()
+    edt = EasyDateTime(tz=TZ)
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
     start_date, end_date = edt.filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
