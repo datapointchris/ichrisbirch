@@ -7,17 +7,12 @@ from typing import Optional
 
 import pendulum
 
-from ichrisbirch.config import get_settings
-
-settings = get_settings()
-TZ = settings.global_timezone
-
 
 class EasyDate:
     """Create easy to use python date filters."""
 
-    def __init__(self, today: Optional[date] = None):
-        self.today: date = today or pendulum.today(TZ).date()
+    def __init__(self, today: Optional[date] = None, tz='local'):
+        self.today: date = today or pendulum.today(tz).date()
         self.tomorrow: date = self.today + timedelta(days=1)
         self.yesterday: date = self.today - timedelta(days=1)
         self.previous_7: date = self.today - timedelta(days=7)
@@ -45,8 +40,8 @@ class EasyDate:
 class EasyDateTime:
     """Create easy to use python datetime filters."""
 
-    def __init__(self, today: Optional[datetime] = None):
-        self.today: datetime = today or pendulum.today(TZ)
+    def __init__(self, today: Optional[datetime] = None, tz='local'):
+        self.today: datetime = today or pendulum.today(tz)
         self.tomorrow: datetime = self.today + timedelta(days=1)
         self.yesterday: datetime = self.today - timedelta(days=1)
         self.previous_7: datetime = self.today - timedelta(days=7)
