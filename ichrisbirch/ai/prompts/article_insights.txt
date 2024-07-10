@@ -7,8 +7,6 @@ Summary: the overarching theme, viewpoint, or purpose of the content, written as
 Key Insights: a list of key insights about the content provided.  These insights are each detailed enough to understand the context of the article and how the relate to each other.
 The insights should be well explained and written in the imperative style as a bulleted list of key points.
 
-Heedeth Thy Warning: a clever and creative warning to the reader about what could happen if they do not follow the insights and recommendations.  This should be written in the form of a Chinese proverb, Shakespearean quote, or similar.  It can be humorous or serious, and can be exaggerated.
-
 Notable Quotes: a short list of notable quotes from the content that support the insights and recommendations.  These quotes should be written in block quotes and should be the most impactful and memorable quotes from the content.  You should provide as many quotes as you find relevant to the insights and recommendations.
 
 Recommendations: a list of recommendations based on the key insights. The recommendations should be written in the imperative style as a bulleted list  with possible actions to take and why, along with examples if relevant.  Recommendations are not generic such as "consider exploring further resources" unless you can provide specific examples of what resources to explore.

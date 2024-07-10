@@ -69,14 +69,14 @@ def _get_summary_and_tags_from_openai(text_content: str):
     client = OpenAI(api_key=settings.openai.api_key)
     assistant = client.beta.assistants.create(
         name='Content Summarizer with Tags',
-        instructions=settings.openai.articles_summary_instructions,
+        instructions=settings.ai_prompts.articles_summary_instructions,
         model=settings.openai.model,
     )
     thread = client.beta.threads.create()
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role='user',
-        content=f'Create a summary and tags from the following content: \n{text_content}',
+        content=text_content,
     )
     run = client.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant.id)
     while run.status in ('queued', 'in_progress'):
@@ -97,7 +97,7 @@ def _get_summary_and_insights_from_openai(text_content: str):
     client = OpenAI(api_key=settings.openai.api_key)
     assistant = client.beta.assistants.create(
         name='Article Insights',
-        instructions=settings.openai.articles_insights_instructions,
+        instructions=settings.ai_prompts.articles_insights_instructions,
         model=settings.openai.model,
     )
     thread = client.beta.threads.create()

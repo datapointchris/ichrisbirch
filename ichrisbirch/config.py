@@ -7,7 +7,17 @@ from typing import Optional
 
 import dotenv
 
+from ichrisbirch.util import find_project_root
+
 logger = logging.getLogger('config')
+
+
+class AIPromptSettings:
+    PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
+
+    def __init__(self):
+        self.articles_summary_instructions = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
+        self.articles_insights_instructions = (self.PROMPT_DIR / 'article_insights.txt').read_text()
 
 
 class AuthSettings:
@@ -93,8 +103,6 @@ class OpenAISettings:
     def __init__(self):
         self.api_key: str = os.environ['OPENAI_API_KEY']
         self.model = 'gpt-3.5-turbo-0125'
-        self.articles_summary_instructions = (Path(__file__).parent / 'openai_summary_instructions.txt').read_text()
-        self.articles_insights_instructions = (Path(__file__).parent / 'openai_insights_instructions.txt').read_text()
 
 
 class PlaywrightSettings:
@@ -164,6 +172,7 @@ class Settings:
             ),
         }
 
+        self.ai_prompts = AIPromptSettings()
         self.auth = AuthSettings()
         self.aws = AWSSettings()
         self.fastapi = FastAPISettings()
