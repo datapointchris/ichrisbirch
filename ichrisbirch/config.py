@@ -12,12 +12,23 @@ from ichrisbirch.util import find_project_root
 logger = logging.getLogger('config')
 
 
-class AIPromptSettings:
-    PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
+class AISettings:
+
+    class OpenAISettings:
+        def __init__(self):
+            self.api_key: str = os.environ['OPENAI_API_KEY']
+            self.model = 'gpt-3.5-turbo-0125'
+
+    class PromptSettings:
+        PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
+
+        def __init__(self):
+            self.article_summary_tags = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
+            self.article_insights = (self.PROMPT_DIR / 'article_insights.txt').read_text()
 
     def __init__(self):
-        self.articles_summary_instructions = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
-        self.articles_insights_instructions = (self.PROMPT_DIR / 'article_insights.txt').read_text()
+        self.openai = self.OpenAISettings()
+        self.prompts = self.PromptSettings()
 
 
 class AuthSettings:
@@ -99,12 +110,6 @@ class MongoDBSettings:
         return f'mongodb://{self.username}:{self.password}@{self.host}'
 
 
-class OpenAISettings:
-    def __init__(self):
-        self.api_key: str = os.environ['OPENAI_API_KEY']
-        self.model = 'gpt-3.5-turbo-0125'
-
-
 class PlaywrightSettings:
     def __init__(self):
         self.timeout = 5_000
@@ -172,7 +177,7 @@ class Settings:
             ),
         }
 
-        self.ai_prompts = AIPromptSettings()
+        self.ai = AISettings()
         self.auth = AuthSettings()
         self.aws = AWSSettings()
         self.fastapi = FastAPISettings()
@@ -180,7 +185,6 @@ class Settings:
         self.flasklogin = FlaskLoginSettings()
         self.github = GithubSettings()
         self.mongodb = MongoDBSettings()
-        self.openai = OpenAISettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()
         self.sqlalchemy = SQLAlchemySettings()
