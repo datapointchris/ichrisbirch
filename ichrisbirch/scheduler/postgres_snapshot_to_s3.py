@@ -39,7 +39,7 @@ class AwsRdsSnapshotS3:
         self.environment = settings.ENVIRONMENT
         self.bucket_prefix = f'{self.environment}/postgres'
         self.backup_bucket = settings.aws.s3_backup_bucket
-        self.db_name = settings.postgres.database
+        self.db_name = 'ichrisbirch-pg16'
 
         self.region = settings.aws.region
         self.account_id = settings.aws.account_id
