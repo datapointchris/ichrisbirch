@@ -12,26 +12,21 @@
   - [Watch these videos](#watch-these-videos)
 - [Build Portfolio Page](#build-portfolio-page)
 - [Basic Main page and Portfolio](#basic-main-page-and-portfolio)
-- [Employers](#employers)
-- [ML Models](#ml-models)
+- [Update README](#update-readme)
 - [Front-end Framework](#front-end-framework)
 - [Project Specific](#project-specific)
   - [ichrisbirch](#ichrisbirch)
   - [Apartments](#apartments)
   - [Habits](#habits)
-  - [Tracks](#tracks)
   - [Events](#events)
   - [Countdowns](#countdowns)
   - [Box Moving](#box-moving)
   - [Journal](#journal)
 - [Future Projects](#future-projects)
+  - [AutoFun](#autofun)
+  - [Quote of the Day](#quote-of-the-day)
   - [Books](#books)
-  - [Manage Github](#manage-github)
-  - [Stable Diffusion](#stable-diffusion)
   - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
-  - [Desktop App](#desktop-app)
-  - [Webstore Project](#webstore-project)
-  - [Interview Star Questions](#interview-star-questions)
   - [Learning](#learning)
   - [Goals](#goals)
   - [Overview](#overview)
@@ -61,19 +56,13 @@
 - [ ] [GitHub - igorbenav/FastAPI-boilerplate: An extendable async API using FastAPI, Pydantic V2, SQLAlchemy 2.0, PostgreSQL and Redis.](https://github.com/igorbenav/FastAPI-boilerplate)
 - [ ] Change datetimes over to `Arrow`
 - [ ] [Identity Federation for GitHub Actions on AWS | ScaleSec](https://scalesec.com/blog/identity-federation-for-github-actions-on-aws/)
+- [ ] Cloud Infra Diagrams - [Installation · Diagrams](https://diagrams.mingrammer.com/docs/getting-started/installation)
 
 ## Tasks
 
-- [ ] Alexa skill, use the to-do API to add a task
-  - [ ] <https://github.com/johnwheeler/flask-ask>
-  - [ ] I have a tutorial saved on the desktop for this
-- [ ] Make an Alfred shortcut for todo
-  - [ ] Using API most likely
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
-- [ ] - [ ] /all
-  - [ ] Count of various types of tasks left to do
 
 ## Infrastructure Management
 
@@ -208,22 +197,10 @@ def favicon():
   - [ ] Of course have the stupid carousel portfolio
     - [ ] When hover on project, get the 'highlights' reel.
 
-## Employers
+## Update README
 
-- Super awesome employers only link
-  - Enter their super special employer code
-  - Customized short video (my own voice from computer)
-
-## ML Models
-
-- [ ] API
-- [ ] Corresponding Flask interface
-  - [ ] Choose models
-  - [ ] Choose dataset
-    - [ ] Use the scikit-learn toy datasets to get a feel
-  - [ ] Graphing, maybe this is part of Front-End
-<https://towardsdatascience.com/how-to-properly-ship-and-deploy-your-machine-learning-model-8a8664b763c4>
-<https://testdriven.io/blog/fastapi-machine-learning/>
+- [ ] [Static Badge | Shields.io](https://shields.io/badges)
+- [ ] Example: [fabric/README.md at main · danielmiessler/fabric · GitHub](https://github.com/danielmiessler/fabric/blob/main/README.md)
 
 ## Front-end Framework
 
@@ -234,15 +211,12 @@ def favicon():
 Test this out on the portfolio page
 resume page
 
-Speed Dial component for frontend that has the error report and other useful shit
-
 ## Project Specific
 
 ### ichrisbirch
 
 - [ ] Command to bring up the menu, like in github
 - [ ] Make a home tab that is present in every page somewhere
-- [ ] `Report an Issue` button at the bottom or floating somewhere in the footer or nav that pops up a form in the middle that they submit easily and it goes to the correct repository as an issue on github and auto assigns me and I get an email.
 - [ ] Automated web testing of all the buttons and forms?
 - [ ] Nav on the bottom that when you click it, it comes up with rotating gears on each side.
   - [ ] [Floating Buttons](https://codepen.io/rashiq/pen/eqGEzw)
@@ -254,8 +228,6 @@ Speed Dial component for frontend that has the error report and other useful shi
   - [ ] <https://jsfiddle.net/LukaszWiktor/4qpcqymp/>
   - [ ] <https://codepen.io/alextebbs/pen/tHhrz>
   - [ ] <https://www.script-tutorials.com/css3-animated-gears/>
-- [ ] Integrate with bookmarks
-  - [ ] Article of the Day
 
 ### Apartments
 
@@ -265,13 +237,6 @@ Speed Dial component for frontend that has the error report and other useful shi
 
 Ranking
  [Slider with value and ruler](https://codepen.io/thebabydino/pen/RwjWrKz)
-
-### Tracks
-
-- [ ] Quote of the day!
-- [ ] DELETE the Todo Part. This is being handled by `Tasks` and Obsidian for notes
-- [ ] Re-design the tabs so that they are layered, eliminate tabs within tabs
-- [ ] Daily Habits date changes at wrong time.  Set time to be local
 
 ### Events
 
@@ -313,28 +278,14 @@ Ranking
 
 ## Future Projects
 
+### AutoFun
+
+### Quote of the Day
+
 ### Books
 
 <https://stackabuse.com/file-management-with-aws-s3-python-and-flask/>
 <https://stackoverflow.com/questions/73211035/how-do-i-configure-nginx-to-serve-static-files-from-an-aws-s3-bucket>
-
-### Manage Github
-
-Use API to pull github projects
-If they have issues that need taken care of display those.
-Make a link to go to the issues.
-Each github project should have:
-
-- Name
-- Link
-- local directory {projects, apps, tutorials, etc}
-This should have an API that I can call in a python script to download all of them.
-Upon opening it should check if there is a new github repository and alert me so that I can properly add it.
-
-### Stable Diffusion
-
-Because why not?
-<https://github.com/huggingface/diffusers>
 
 ### Postgres Permissions Graphical Interface with Approvals / Stats
 
@@ -343,24 +294,7 @@ Because why not?
 - [ ] Be able to call these functions in API
 - [ ] Tabbed interface for the different functions / stats
 - [ ] class PermissionRequest
-- [ ] <https://github.com/AykutSarac/jsoncrack.com?utm_source=substack&utm_medium=email>
-
-### Desktop App
-
-[GitHub - kivy/kivy: Open source UI framework written in Python, running on Windows, Linux, macOS, Android and iOS](https://github.com/kivy/kivy)
-[GitHub - TomSchimansky/CustomTkinter: A modern and customizable python UI-library based on Tkinter](https://github.com/TomSchimansky/CustomTkinter)
-
-### Webstore Project
-
-I want to make the sales follow a pattern that I specify, like sin waves or certain shapes, then see if the models can pick up on the shapes as a visual guide to accuracy.
-Measuring their average or std or whatever over time and plotting it should give the right numbers.  See if the model can guess the correct shape.
-
-### Interview Star Questions
-
-- Have it talk to the command line version
-- Update Command line Version
-- Maybe use rich?
-  - <https://github.com/Textualize/rich>
+- [ ] [GitHub - AykutSarac/jsoncrack.com: ✨ Innovative and open-source visualization application that transforms various data formats, such as JSON, YAML, XML, CSV and more, into interactive graphs.](https://github.com/AykutSarac/jsoncrack.com)
 
 ### Learning
 
