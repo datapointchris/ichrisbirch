@@ -12024,19 +12024,37 @@ nav a:hover {
   display: flex;
   justify-content: space-evenly;
 }
+.task__counts {
+  display: flex;
+  justify-content: space-evenly;
+}
 .task--completed {
+  padding: 2px;
   border: 3px solid var(--clr-success);
 }
-.task--due {
-  border: 3px solid var(--clr-error);
-  animation: task-due 2s 5;
+.task--overdue {
+  padding-inline: var(--space-xs);
+  border: 3px solid var(--clr-accent--red);
+  box-sizing: content-box;
+  animation: task-overdue 0.5s 20;
 }
-@keyframes task-due {
+@keyframes task-overdue {
+  50% {
+    border: 3px solid var(--clr-error);
+  }
+}
+.task--critical {
+  padding-inline: var(--space-xs);
+  border: 3px solid var(--clr-error);
+  animation: task-critical 2s 5;
+}
+@keyframes task-critical {
   50% {
     border: 3px solid var(--clr-accent--red);
   }
 }
 .task--soon {
+  padding-inline: var(--space-xs);
   border: 3px solid var(--clr-warning);
   animation: task-soon 3s 3;
 }

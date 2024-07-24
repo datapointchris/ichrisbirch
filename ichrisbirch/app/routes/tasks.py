@@ -58,24 +58,24 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
     return chart_labels, chart_values
 
 
-def critical_tasks_count(tasks: list[schemas.Task]) -> int:
-    return sum(1 for task in tasks if task.priority <= 1)
+def due_soon_tasks(tasks: list[schemas.Task]) -> int:
+    return sum(1 for task in tasks if 2 < task.priority <= 5)
 
 
-def warning_tasks_count(tasks: list[schemas.Task]) -> int:
-    return sum(1 for task in tasks if task.priority > 1 and task.priority <= 3)
+def critical_tasks(tasks: list[schemas.Task]) -> int:
+    return sum(1 for task in tasks if 0 < task.priority <= 2)
 
 
-def overdue_tasks_count(tasks: list[schemas.Task]) -> int:
+def overdue_tasks(tasks: list[schemas.Task]) -> int:
     return sum(1 for task in tasks if task.priority < 1)
 
 
 @blueprint.route('/', methods=['GET'])
 def index():
     tasks = tasks_api.get_many('todo')
-    critical_count = critical_tasks_count(tasks)
-    warning_count = warning_tasks_count(tasks)
-    overdue_count = overdue_tasks_count(tasks)
+    critical_count = critical_tasks(tasks)
+    due_soon_count = due_soon_tasks(tasks)
+    overdue_count = overdue_tasks(tasks)
 
     completed_today_params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed_today = tasks_completed_api.get_many(params=completed_today_params)
@@ -84,8 +84,9 @@ def index():
         'tasks/index.html',
         top_tasks=tasks[:5],
         critical_count=critical_count,
-        warning_count=warning_count,
+        due_soon_count=due_soon_count,
         overdue_count=overdue_count,
+        total_count=len(tasks),
         completed_today=completed_today,
         task_categories=TASK_CATEGORIES,
     )
@@ -94,14 +95,16 @@ def index():
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
     tasks = tasks_api.get_many('todo')
-    critical_count = critical_tasks_count(tasks)
-    warning_count = warning_tasks_count(tasks)
+    critical_count = critical_tasks(tasks)
+    due_soon_count = due_soon_tasks(tasks)
+    overdue_count = overdue_tasks(tasks)
     return render_template(
         'tasks/todo.html',
         tasks=tasks,
         critical_count=critical_count,
-        warning_count=warning_count,
-        todo_count=len(tasks),
+        due_soon_count=due_soon_count,
+        overdue_count=overdue_count,
+        total_count=len(tasks),
         task_categories=TASK_CATEGORIES,
     )
 

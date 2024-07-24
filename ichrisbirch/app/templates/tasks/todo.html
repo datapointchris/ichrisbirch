@@ -5,10 +5,13 @@
 {% block content %}
 <div class="task-layout task-layout--one-column-narrow">
   <div>
-    <h2 class="task-layout__title">Priority Tasks</h2>
-    <span class="task--due">Critical Tasks: {{ critical_count }}</span>
-    <span class="task--soon">Soon Tasks: {{ warning_count }}</span>
-    <span class="">Total Tasks: {{ todo_count }}</span>
+    <h2 class="task-layout__title">Outstanding Tasks</h2>
+    <div class="task__counts">
+      <span class="task--overdue">Overdue Tasks: {{ overdue_count }}</span>
+      <span class="task--critical">Critical Tasks: {{ critical_count }}</span>
+      <span class="task--soon">Due Soon Tasks: {{ due_soon_count }}</span>
+      <span class="">Total Tasks: {{ total_count }}</span>
+    </div>
   </div>
   {% for task in tasks %}
   {% include 'tasks/templates/todo.jinja.html' %}
