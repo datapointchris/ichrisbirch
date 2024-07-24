@@ -75,6 +75,9 @@ class QueryAPI(Generic[ModelType]):
         response = self._handle_request('POST', endpoint, **kwargs, expected_response_code=201)
         return self.response_model(**response.json())
 
+    def post_action(self, endpoint: Any | None = None, **kwargs):
+        return self._handle_request('POST', endpoint, **kwargs, expected_response_code=200)
+
     def patch(self, endpoint: Any | None = None, **kwargs):
         response = self._handle_request('PATCH', endpoint, **kwargs)
         return self.response_model(**response.json())

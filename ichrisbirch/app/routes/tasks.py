@@ -192,5 +192,10 @@ def crud():
         case 'delete':
             tasks_api.delete(data.get('id'))
             return redirect(request.referrer or url_for('tasks.todo'))
+        case 'reset_priorities':
+            response = tasks_api.post_action('reset-priorities')
+            message = response.json().get('message')
+            flash(message, 'info')
+            return redirect(request.referrer or url_for('tasks.todo'))
 
     return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

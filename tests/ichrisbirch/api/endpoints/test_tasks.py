@@ -136,3 +136,35 @@ def test_task_categories(test_api, category):
     created_task = test_api.post('/tasks/', json=test_task.model_dump())
     assert created_task.status_code == status.HTTP_201_CREATED, show_status_and_response(created_task)
     assert created_task.json()['name'] == test_task.name
+
+
+def test_reset_priorities(test_api):
+    # Priority of first task
+    task_1 = test_api.get('/tasks/1/')
+    p1 = task_1.json()['priority']
+
+    # Create a task with negative priority
+    NEGATIVE_PRIORITY_TASK = schemas.TaskCreate(
+        name='Task Negative priority',
+        notes='Notes task negative',
+        category=TaskCategory.Home,
+        priority=-5,
+    )
+    test_api.post('/tasks/', json=NEGATIVE_PRIORITY_TASK.model_dump())
+
+    # Reset priorities
+    response = test_api.post('/tasks/reset-priorities/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    # One of the 3 original tasks is completed, so 2 tasks + 1 new task = 3
+    assert response.json().get('message') == 'Reset priorities for 3 tasks'
+
+    # Check that the negative priority task updated other task priorities
+    task_1_updated = test_api.get('/tasks/1/')
+    p1_updated = task_1_updated.json()['priority']
+    assert p1_updated == p1 + abs(NEGATIVE_PRIORITY_TASK.priority)
+
+
+def test_reset_priorities_no_negative_priorities(test_api):
+    response = test_api.post('/tasks/reset-priorities/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json().get('message') == 'No negative priorities to reset'

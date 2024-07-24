@@ -2,6 +2,7 @@ import pytest
 from fastapi import status
 
 import tests.util
+from ichrisbirch import schemas
 from ichrisbirch.models.task import TaskCategory
 from tests.util import show_status_and_response
 
@@ -87,6 +88,51 @@ def test_crud_delete(test_app):
     assert len(response.history) == 1
     assert response.request.path == '/tasks/todo/'
     assert b'Outstanding Tasks' in response.data
+
+
+def test_crud_reset_priorities(test_app, test_api):
+    # Get priority of first task
+    task_1 = test_api.get('/tasks/1/')
+    p1 = task_1.json()['priority']
+
+    # Create a task with negative priority
+    NEGATIVE_PRIORITY_TASK = schemas.TaskCreate(
+        name='Task Negative priority',
+        notes='Notes task negative',
+        category=TaskCategory.Home,
+        priority=-5,
+    )
+    test_app.post('/tasks/crud/', data=NEGATIVE_PRIORITY_TASK.model_dump() | {'action': 'add'})
+
+    # Reset priorities
+    response = test_app.post('/tasks/crud/', data={'action': 'reset_priorities'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert len(response.history) == 1
+    assert response.request.path == '/tasks/todo/'
+    assert b'Outstanding Tasks' in response.data
+
+    # Check that the negative priority task updated other task priorities
+    task_1_updated = test_api.get('/tasks/1/')
+    p1_updated = task_1_updated.json()['priority']
+    assert p1_updated == p1 + abs(NEGATIVE_PRIORITY_TASK.priority)
+
+
+def test_crud_reset_priorities_no_negative_priorities(test_app, test_api):
+    # Get priority of first task
+    task_1 = test_api.get('/tasks/1/')
+    p1 = task_1.json()['priority']
+
+    # Reset priorities (no negative priorities)
+    response = test_app.post('/tasks/crud/', data={'action': 'reset_priorities'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert len(response.history) == 1
+    assert response.request.path == '/tasks/todo/'
+    assert b'Outstanding Tasks' in response.data
+
+    # Check that the priority has not changed
+    task_1_updated = test_api.get('/tasks/1/')
+    p1_updated = task_1_updated.json()['priority']
+    assert p1 == p1_updated
 
 
 @pytest.mark.parametrize('category', [t.value for t in TaskCategory])

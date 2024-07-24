@@ -90,6 +90,27 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(get_sqlalc
     return db_obj
 
 
+@router.post('/reset-priorities/', status_code=status.HTTP_200_OK)
+async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
+    # Query for all tasks that are not completed
+    query = select(models.Task).filter(models.Task.complete_date.is_(None))
+    tasks = session.scalars(query).all()
+    min_val = min(task.priority for task in tasks)
+    if min_val >= 0:
+        message = 'No negative priorities to reset'
+        logger.info(message)
+        return {'message': message}
+
+    for task in tasks:
+        task.priority += abs(min_val)
+        session.add(task)
+    session.commit()
+    message = f'Reset priorities for {len(tasks)} tasks'
+    logger.info(message)
+
+    return {'message': message}
+
+
 @router.get('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def read_one(task_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if task := session.get(models.Task, task_id):
