@@ -1,0 +1,43 @@
+{% extends 'users/base.html' %}
+
+{% block title %}{{current_user.name}} Settings{% endblock %}
+
+{% block content %}
+
+<div class="grid grid--one-column">
+  <div class="add-item-wrapper">
+    <h1>{{current_user.name}}</h1>
+    <h2>Settings</h2>
+  </div>
+</div>
+
+<div class="grid grid--two-columns">
+
+  <div class="grid__item">
+    <h3>Tasks</h3>
+    <form method="POST" action="{{ url_for('tasks.crud') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" name="action" class="button" value="reset_priorities">
+        <span class="button__text">Reset Task Priorities</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="grid__item">
+    <h3>Time Zone (Not Functioning)</h3>
+    <h3>Current Time Zone: {{current_user.preferences.get('timezone')}}</h3>
+    <form method="POST">
+      <label for="timezone">Time Zone:</label>
+      <select name="timezone" id="timezone">
+        <option value="US/Pacific">US/Pacific</option>
+        <option value="US/Mountain">US/Mountain</option>
+        <option value="US/Central">US/Central</option>
+        <option value="US/Eastern">US/Eastern</option>
+        <option value="UTC">UTC</option>
+      </select>
+      <button type="submit" name="action" class="button" value="update">
+        <span class="button__text">Update Time Zone</span>
+      </button>
+</div>
+
+{% endblock %}

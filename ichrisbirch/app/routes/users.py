@@ -25,3 +25,9 @@ def profile():
 @fresh_login_required
 def update():
     return render_template('users/update.html', user=current_user)
+
+
+@blueprint.route('/settings/', methods=['GET', 'POST'])
+@fresh_login_required
+def settings():
+    return render_template('users/settings.html', user=current_user)
