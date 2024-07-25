@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
 import tests.test_data
+import tests.test_data.articles
 from ichrisbirch.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ def insert_test_data(*datasets) -> None:
     ```
     """
     base_datasets = {
+        'articles': tests.test_data.articles.BASE_DATA,
         'autotasks': tests.test_data.autotasks.BASE_DATA,
         'boxes': tests.test_data.boxes.BASE_DATA,
         'boxitems': tests.test_data.boxitems.BASE_DATA,

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from ichrisbirch.models.autotask import AutoTask
+from ichrisbirch.models import AutoTask
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 
