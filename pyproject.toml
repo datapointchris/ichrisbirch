@@ -163,6 +163,7 @@ testpaths = ["tests"]
 
 [tool.refurb]
 enable_all = true
+ignore = ["FURB184"]
 
 
 # ---------- Build System ---------- #

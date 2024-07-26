@@ -11,12 +11,7 @@ from ichrisbirch.models.apartment import Feature
 
 settings = get_settings()
 
-blueprint = Blueprint(
-    'apartments',
-    __name__,
-    template_folder='templates/apartments',
-    static_folder='static',
-)
+blueprint = Blueprint('apartments', __name__, template_folder='templates/apartments', static_folder='static')
 
 
 @blueprint.route('/')

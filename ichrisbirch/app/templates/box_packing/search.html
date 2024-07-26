@@ -23,7 +23,7 @@
 {% if results %}
 {% for result in results %}
 <ul class="search-results search-results__item">
-  <li><a class="search-results__link" href="{{ url_for('box_packing.box', box_id=result.box_id) }}">{{ result.box_id
+  <li><a class="search-results__link" href="{{ url_for('box_packing.index', box_id=result.box_id) }}">{{ result.box_id
       }}</a></li>
   <li>{{ result.name }}</li>
   <li class="packed-box-item__details--essential">{% if result.essential == 1 %}Essential{% endif %}</li>

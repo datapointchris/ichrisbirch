@@ -18,6 +18,15 @@ logger = logging.getLogger('api.box_packing')
 router = APIRouter()
 
 
+@router.get('/search/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
+async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
+    logger.debug(f'searching for {q=}')
+    items = select(models.BoxItem).filter(models.BoxItem.name.ilike('%' + q + '%'))
+    results = session.scalars(items).all()
+    logger.debug(f'search found {len(results)} results')
+    return results
+
+
 @router.get('/boxes/', response_model=list[schemas.Box], status_code=status.HTTP_200_OK)
 async def read_many_boxes(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
     query = select(models.Box).order_by(models.Box.id)
@@ -94,12 +103,3 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
         message = f'BoxItem {id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-
-@router.get('/search/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
-async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
-    logger.debug(f'searching for {q=}')
-    items = select(models.BoxItem).filter(models.BoxItem.name.ilike('%' + q + '%'))
-    results = session.scalars(items).all()
-    logger.debug(f'search found {len(results)} results')
-    return results

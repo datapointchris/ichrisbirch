@@ -18,13 +18,12 @@ from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.config import get_settings
 
 logger = logging.getLogger('app.articles')
-blueprint = Blueprint('articles', __name__, template_folder='templates/articles', static_folder='static')
-articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
-summarize_api = QueryAPI(base_url='articles/summarize', logger=logger, response_model=schemas.ArticleSummary)
 settings = get_settings()
 
+blueprint = Blueprint('articles', __name__, template_folder='templates/articles', static_folder='static')
 
-def make_random_article_current(unread=True, favorites=False):
+
+def make_random_article_current(articles_api, unread=True, favorites=False):
     params = {'archived': False, 'unread': unread, 'favorites': favorites}
     if not (articles := articles_api.get_many(params=params)):
         return None
@@ -46,7 +45,7 @@ def process_bulk_urls(request, data):
     return urls
 
 
-def add_bulk_article(url: str):
+def add_bulk_article(articles_api, summarize_api, url: str):
     """Add article using summarize endpoint to auto generate summary and tags for the bulk endpoint."""
     logger.info(f'processing: {url}')
     if articles_api.get_one('url', params={'url': url}):
@@ -64,7 +63,7 @@ def add_bulk_article(url: str):
     logger.info(f'created: {url}')
 
 
-def bulk_add_articles(urls: list[str]):
+def bulk_add_articles(articles_api, summarize_api, urls: list[str]):
     """Add all articles in url list.
 
     Each url is tried twice, sometimes a delayed response from openai causes a failure.
@@ -73,7 +72,7 @@ def bulk_add_articles(urls: list[str]):
     errors: list[tuple[str, str]] = []
     for url in urls:
         try:
-            add_bulk_article(url)
+            add_bulk_article(articles_api, summarize_api, url)
             added.append(url)
         except ValueError as e:
             logger.warning(e)
@@ -87,13 +86,14 @@ def bulk_add_articles(urls: list[str]):
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
     if not (article := articles_api.get_one('current')):
         logger.warning('no current article')
         # TODO: [2024/06/07] - Get user preference for current articles, whether to filter only unread
         # or include favorites
         # unread_only = current_user.preferences.articles.get('only_unread_for_new_current')
         # include_favorites = current_user.preferences.articles.get('include_favorites_for_new_current')
-        if article := make_random_article_current():
+        if article := make_random_article_current(articles_api):
             logger.info(f"made article '{article.title}' current")
         else:
             logger.info('no articles')
@@ -102,6 +102,7 @@ def index():
 
 @blueprint.route('/all/', methods=['GET'])
 def all():
+    articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
     articles = articles_api.get_many()
     return render_template('articles/all.html', articles=articles)
 
@@ -145,6 +146,7 @@ def insights():
 def search():
     articles = []
     if request.method == 'POST':
+        articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
         data = request.form.to_dict()
         search_text = data.get('search_text')
         logger.debug(f'{request.referrer=} | {search_text=}')
@@ -157,6 +159,8 @@ def search():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
+    articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
+    summarize_api = QueryAPI(base_url='articles/summarize', logger=logger, response_model=schemas.ArticleSummary)
     data = request.form.to_dict()
     action = data.pop('action')
 
@@ -170,7 +174,7 @@ def crud():
                 articles_api.post(json=data)
         case 'bulk_add':
             if urls := process_bulk_urls(request, data):
-                succeeded, errored = bulk_add_articles(urls)
+                succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls)
             else:
                 flash('No URLs provided', 'warning')
             succeeded_articles = '\n'.join([article.strip() for article in succeeded])

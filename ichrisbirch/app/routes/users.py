@@ -11,7 +11,6 @@ from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger('app.users')
 blueprint = Blueprint('users', __name__, template_folder='templates/users', static_folder='static')
-
 users_api = QueryAPI(base_url='users', user='', logger=logger, response_model=schemas.User)
 
 

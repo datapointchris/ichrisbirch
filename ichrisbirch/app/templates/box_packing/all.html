@@ -37,7 +37,7 @@
   {% for box in boxes %}
   <div class="packed-box">
     <h1 class="packed-box__title">
-      <a class="packed-box__link" href="{{ url_for('box_packing.box', box_id=box.id) }}">Box {{ box.id }}: {{ box.name
+      <a class="packed-box__link" href="{{ url_for('box_packing.index', box_id=box.id) }}">Box {{ box.id }}: {{ box.name
         }}</a>
     </h1>
     <h2>Size: {{ box.size }}</h2>

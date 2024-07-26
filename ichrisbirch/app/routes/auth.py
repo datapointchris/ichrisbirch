@@ -26,11 +26,11 @@ settings = get_settings()
 
 logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
-users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
 
 
 @blueprint.route('/login/', methods=['GET', 'POST'])
 def login():
+    users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
     if current_user.is_authenticated:
         flash(f'logged in as: {current_user.name}', 'success')
         return redirect(request.referrer or url_for('users.profile'))
@@ -70,6 +70,7 @@ def login():
 
 @blueprint.route('/signup/', methods=['GET', 'POST'])
 def signup():
+    users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
     form = forms.SignupForm()
     if form.validate_on_submit():
         logger.debug('signup form validated')

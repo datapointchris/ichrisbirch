@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -9,16 +10,17 @@ from flask import request
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
+from ichrisbirch.config import get_settings
 
-LOCAL_TZ = datetime.now().astimezone().tzinfo
-
+settings = get_settings()
 logger = logging.getLogger('app.events')
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
-events_api = QueryAPI(base_url='events', logger=logger, response_model=schemas.Event)
+TZ = pendulum.timezone(settings.global_timezone)
 
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    events_api = QueryAPI(base_url='events', logger=logger, response_model=schemas.Event)
     if request.method == 'POST':
         data = request.form.to_dict()
         action = data.pop('action')
@@ -27,7 +29,7 @@ def index():
             case 'add':
                 # add local timezone if one isn't provided
                 if not datetime.fromisoformat(data['date']).tzname:
-                    data['date'] = datetime.fromisoformat(data['date']).replace(tzinfo=LOCAL_TZ).isoformat()
+                    data['date'] = TZ.convert(datetime.fromisoformat(data['date'])).isoformat()
                 events_api.post(json=data)
             case 'delete':
                 events_api.delete(data.get('id'))

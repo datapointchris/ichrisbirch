@@ -25,6 +25,9 @@ from ichrisbirch.schemas.habit import HabitCompleted
 from ichrisbirch.schemas.habit import HabitCompletedCreate
 from ichrisbirch.schemas.habit import HabitCreate
 from ichrisbirch.schemas.habit import HabitUpdate
+from ichrisbirch.schemas.journal import JournalEntry
+from ichrisbirch.schemas.journal import JournalEntryCreate
+from ichrisbirch.schemas.journal import JournalEntryUpdate
 from ichrisbirch.schemas.server import ServerStats
 from ichrisbirch.schemas.task import Task
 from ichrisbirch.schemas.task import TaskCompleted
@@ -62,6 +65,9 @@ __all__ = [
     'HabitCategory',
     'HabitCategoryCreate',
     'HabitCategoryUpdate',
+    'JournalEntry',
+    'JournalEntryCreate',
+    'JournalEntryUpdate',
     'ServerStats',
     'Task',
     'TaskCompleted',

@@ -22,9 +22,7 @@ settings = get_settings()
 logger = logging.getLogger('app.habits')
 
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
-habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
-habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
-habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, response_model=schemas.HabitCategory)
+
 
 # Ex: Friday, January 01, 2001 12:00:00 EDT
 DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
@@ -53,6 +51,7 @@ def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> t
 
 
 def sort_habits_by_category(habits: list[schemas.Habit] | list[schemas.HabitCompleted]) -> dict[str, list]:
+    """Sort habits by category alphabetically, but put 'IMPORTANT' first."""
     categories = [habit.category.name for habit in habits]
     i = 'IMPORTANT'
     if i in categories:
@@ -66,7 +65,8 @@ def sort_habits_by_category(habits: list[schemas.Habit] | list[schemas.HabitComp
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-
+    habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
     params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed = habits_completed_api.get_many(params=params)
     completed_by_category = sort_habits_by_category(completed)
@@ -86,6 +86,8 @@ def index():
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
     """Completed habits."""
+    habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime(tz=TZ)
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
@@ -123,6 +125,9 @@ def completed():
 
 @blueprint.route('/manage/', methods=['GET'])
 def manage():
+    habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
+    habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, response_model=schemas.HabitCategory)
     current_habits = habits_api.get_many(params={'current': True})
     hibernating_habits = habits_api.get_many(params={'current': False})
     current_categories = habits_categories_api.get_many(params={'current': True})
@@ -140,6 +145,9 @@ def manage():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
+    habits_api = QueryAPI(base_url='habits', logger=logger, response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_url='habits/completed', logger=logger, response_model=schemas.HabitCompleted)
+    habits_categories_api = QueryAPI(base_url='habits/categories', logger=logger, response_model=schemas.HabitCategory)
     data: dict[str, Any] = request.form.to_dict()
     action = data.pop('action')
     logger.debug(f'{request.referrer=} {action=}')
