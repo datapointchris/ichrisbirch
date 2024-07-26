@@ -1,3 +1,11 @@
+"""Startup of the project.
+
+This should only be run when a new blank database is created.
+Schemas and default users should transfer over from backups if restoring.
+
+Note: The user information is different for each environment. Dev has simple passwords.
+"""
+
 import logging
 
 import sqlalchemy
@@ -6,16 +14,47 @@ from sqlalchemy.schema import CreateSchema
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
 from ichrisbirch.database.sqlalchemy.session import engine
+from ichrisbirch.models import User
 
 settings = get_settings()
-logger = logging.getLogger('ichrisbirch')
+logger = logging.getLogger('startup')
 inspector = sqlalchemy.inspect(engine)
 
-# TODO: [2023/05/02] - Write this
-# Help me write a startup script for this entire project
 
 with SessionLocal() as session:
     for schema_name in settings.db_schemas:
         if schema_name not in inspector.get_schema_names():
             session.execute(CreateSchema(schema_name))
-            logger.info(f'Created schema: {schema_name}')
+            logger.info(f'created schema: {schema_name}')
+
+
+with SessionLocal() as session:
+    default_regular_user = User(
+        name=settings.users.default_regular_user_name,
+        email=settings.users.default_regular_user_email,
+        password=settings.users.default_regular_user_password,
+    )
+    default_admin_user = User(
+        name=settings.users.default_admin_user_name,
+        email=settings.users.default_admin_user_email,
+        password=settings.users.default_admin_user_password,
+        is_admin=True,
+    )
+    service_account_user = User(
+        name=settings.users.service_account_user_name,
+        email=settings.users.service_account_user_email,
+        password=settings.users.service_account_user_password,
+    )
+
+    for user in (default_regular_user, default_admin_user, service_account_user):
+        try:
+            session.add(user)
+            session.commit()
+            logger.info(f'created user: {user.name}')
+        except sqlalchemy.exc.IntegrityError:
+            logger.warning(f'user {user.name} already exists, skipping')
+            session.rollback()
+        except Exception as e:
+            logger.error(f'error creating user: {user.name}')
+            logger.error(e)
+            session.rollback()

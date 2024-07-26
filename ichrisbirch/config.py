@@ -150,13 +150,13 @@ class SQLiteSettings:
 
 class UsersSettings:
     def __init__(self):
-        self.default_admin_user_name = os.environ['USERS_DEFAULT_ADMIN_USER_NAME']
-        self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
-        self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
-
         self.default_regular_user_name = os.environ['USERS_DEFAULT_REGULAR_USER_NAME']
         self.default_regular_user_email = os.environ['USERS_DEFAULT_REGULAR_USER_EMAIL']
         self.default_regular_user_password = os.environ['USERS_DEFAULT_REGULAR_USER_PASSWORD']
+
+        self.default_admin_user_name = os.environ['USERS_DEFAULT_ADMIN_USER_NAME']
+        self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
+        self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
 
         self.service_account_user_name = os.environ['USERS_SERVICE_ACCOUNT_USER_NAME']
         self.service_account_user_email = os.environ['USERS_SERVICE_ACCOUNT_USER_EMAIL']
