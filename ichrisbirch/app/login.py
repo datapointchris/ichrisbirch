@@ -29,6 +29,7 @@ def load_user(alternative_id):
     user ID.
     """
     if user := user_api.get_one(['alt', alternative_id]):
+        logger.debug(f'Load user: {user.alternative_id} - {user.email}')
         return models.User(**user.model_dump())
     return None
 

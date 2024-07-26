@@ -26,6 +26,7 @@ ServiceUser = models.User(
 class QueryAPI(Generic[ModelType]):
     """
     user: solely for adding the headers to authenticate with the api
+    WARNING: setting the default user to `current_user` causes the API to make hundreds of identical requests.
     """
 
     def __init__(
@@ -33,12 +34,12 @@ class QueryAPI(Generic[ModelType]):
         base_url: str,
         logger: logging.Logger,
         response_model: Type[ModelType],
-        user: models.User | Any = current_user,
+        user: models.User | Any = None,
     ):
         self.base_url = utils.url_builder(settings.api_url, base_url)
         self.logger = logger
         self.response_model = response_model
-        self.user = user
+        self.user = user or (current_user if (current_user and current_user.is_authenticated) else None)
 
     def _handle_request(self, method: str, endpoint: Any | None = None, expected_response_code: int = 200, **kwargs):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
@@ -56,7 +57,8 @@ class QueryAPI(Generic[ModelType]):
                 kwargs_to_log = ', '.join([f'{k}=XXXXXXXX' for k in kwargs.keys()])
             else:
                 kwargs_to_log = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
-        self.logger.debug(f'{method} {url} headers={headers_to_log}, {kwargs_to_log}')
+        self.logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log if kwargs_to_log else ""}')
+        self.logger.debug(f'current_user={self.user}')
         response = httpx.request(method, url, follow_redirects=True, **kwargs)
         utils.handle_if_not_response_code(expected_response_code, response, self.logger)
         return response

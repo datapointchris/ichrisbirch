@@ -5,16 +5,14 @@
 {% block app_navigation %}
 <ul data-secondary>
   {% if current_user.is_authenticated %}
-  <li><a href="{{ url_for('users.update') }}" class="navbar-item">Profile Home</a></li>
+  <li><a href="{{ url_for('users.profile') }}" class="navbar-item">Profile Home</a></li>
   <li><a href="{{ url_for('users.update') }}" class="navbar-item">Update Profile</a></li>
   <li><a href="{{ url_for('users.settings') }}" class="navbar-item">Settings</a></li>
+  <li><a href="{{ url_for('auth.logout') }}" class="navbar-item">Logout</a></li>
   {% endif %}
   {% if not current_user.is_authenticated %}
   <li><a href="{{ url_for('auth.login') }}" class="navbar-item">Login</a></li>
   <li><a href="{{ url_for('auth.signup') }}" class="navbar-item">Sign Up</a></li>
-  {% endif %}
-  {% if current_user.is_authenticated %}
-  <li><a href="{{ url_for('auth.logout') }}" class="navbar-item">Logout</a></li>
   {% endif %}
 </ul>
 
