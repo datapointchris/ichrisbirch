@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean
+from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -14,14 +15,18 @@ if TYPE_CHECKING:
     from ichrisbirch.models.habitcategory import HabitCategory
 
 
-class Habit(Base):
+class HabitCompleted(Base):
     __table_args__ = {'schema': 'habits'}
-    __tablename__ = 'habits'
+    __tablename__ = 'completed'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
-    category: Mapped['HabitCategory'] = relationship('HabitCategory', back_populates='habits')
-    is_current: Mapped[bool] = mapped_column(Boolean)
+    category: Mapped['HabitCategory'] = relationship('HabitCategory', back_populates='completed_habits')
+    complete_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self):
-        return f'Habit(name={self.name!r}, category_id={self.category_id!r}, is_current={self.is_current!r})'
+        return (
+            f'HabitCompleted(name={self.name!r}, '
+            f'category_id={self.category_id!r}, '
+            f'complete_date={self.complete_date!r})'
+        )

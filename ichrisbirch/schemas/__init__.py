@@ -19,12 +19,12 @@ from ichrisbirch.schemas.event import EventCreate
 from ichrisbirch.schemas.event import EventUpdate
 from ichrisbirch.schemas.habit import Habit
 from ichrisbirch.schemas.habit import HabitCategory
-from ichrisbirch.schemas.habit import HabitCategoryCreate
-from ichrisbirch.schemas.habit import HabitCategoryUpdate
-from ichrisbirch.schemas.habit import HabitCompleted
-from ichrisbirch.schemas.habit import HabitCompletedCreate
 from ichrisbirch.schemas.habit import HabitCreate
 from ichrisbirch.schemas.habit import HabitUpdate
+from ichrisbirch.schemas.habitcategory import HabitCategoryCreate
+from ichrisbirch.schemas.habitcategory import HabitCategoryUpdate
+from ichrisbirch.schemas.habitcompleted import HabitCompleted
+from ichrisbirch.schemas.habitcompleted import HabitCompletedCreate
 from ichrisbirch.schemas.journal import JournalEntry
 from ichrisbirch.schemas.journal import JournalEntryCreate
 from ichrisbirch.schemas.journal import JournalEntryUpdate
