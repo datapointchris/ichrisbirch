@@ -9,8 +9,10 @@ Note: The user information is different for each environment. Dev has simple pas
 import logging
 
 import sqlalchemy
+from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
 
+from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
 from ichrisbirch.database.sqlalchemy.session import engine
@@ -18,17 +20,17 @@ from ichrisbirch.models import User
 
 settings = get_settings()
 logger = logging.getLogger('startup')
-inspector = sqlalchemy.inspect(engine)
 
 
-with SessionLocal() as session:
+def create_schemas(session: Session, settings: Settings, logger: logging.Logger):
+    inspector = sqlalchemy.inspect(engine)
     for schema_name in settings.db_schemas:
         if schema_name not in inspector.get_schema_names():
             session.execute(CreateSchema(schema_name))
             logger.info(f'created schema: {schema_name}')
 
 
-with SessionLocal() as session:
+def insert_default_users(session: Session, settings: Settings, logger: logging.Logger):
     default_regular_user = User(
         name=settings.users.default_regular_user_name,
         email=settings.users.default_regular_user_email,
@@ -58,3 +60,11 @@ with SessionLocal() as session:
             logger.error(f'error creating user: {user.name}')
             logger.error(e)
             session.rollback()
+
+
+if __name__ == '__main__':
+    with SessionLocal() as session:
+        create_schemas(session, settings, logger)
+
+    with SessionLocal() as session:
+        insert_default_users(session, settings, logger)

@@ -156,10 +156,9 @@ warn_return_any = false
 
 
 [tool.pytest.ini_options]
-addopts = ""
+addopts = "-v"
 minversion = "6.0"
 testpaths = ["tests"]
-
 
 [tool.refurb]
 enable_all = true
