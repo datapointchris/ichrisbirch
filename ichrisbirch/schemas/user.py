@@ -22,6 +22,7 @@ class User(UserConfig):
     name: str
     email: str
     password: str
+    is_admin: bool
     created_on: datetime
     last_login: datetime | None
     preferences: Any

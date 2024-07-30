@@ -48,7 +48,7 @@ class User(UserMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     alternative_id: Mapped[int] = mapped_column(BigInteger, unique=True, default=generate_63_bit_int)
-    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=False)
+    name: Mapped[str] = mapped_column(String(100), unique=False, nullable=False)
     email: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(200), primary_key=False, unique=False, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, primary_key=False, unique=False, nullable=False, default=False)
