@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
@@ -22,5 +20,3 @@ class HabitCategoryCreate(HabitConfig):
 class HabitCategoryUpdate(HabitConfig):
     name: str | None = None
     is_current: bool | None = None
-
-

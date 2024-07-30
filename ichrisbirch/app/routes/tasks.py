@@ -12,6 +12,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
@@ -21,8 +22,13 @@ from ichrisbirch.models.task import TaskCategory
 
 settings = get_settings()
 logger = logging.getLogger('app.tasks')
-
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
+
+
+@blueprint.before_request
+@login_required
+def enforce_login():
+    pass
 
 
 # Ex: Friday, January 01, 2001

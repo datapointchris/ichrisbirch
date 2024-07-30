@@ -22,6 +22,8 @@ TEST_DATA = tests.test_data.users.BASE_DATA.copy()
 @pytest.fixture(autouse=True)
 def insert_testing_data():
     tests.util.insert_test_data('users')
+    yield
+    tests.util.delete_test_data('users')
 
 
 @pytest.fixture
@@ -38,7 +40,8 @@ def test_query_api():
 def test_get_one(mock_handle_if_not_response_code, test_query_api):
     mock_handle_if_not_response_code.return_value = None
     result = test_query_api.get_one('1')
-    assert result.name == TEST_DATA[0].name
+    # annoyingly, the login users for the app are inserted first, before the test data
+    assert result.name == tests.util.TEST_LOGIN_REGULAR_USER['name']
 
 
 @patch('ichrisbirch.app.utils.handle_if_not_response_code')
@@ -47,7 +50,11 @@ def test_get_many(mock_handle_if_not_response_code, test_query_api):
     result = test_query_api.get_many()
     assert isinstance(result, list)
     for r in result:
-        assert r.name in (t.name for t in TEST_DATA)
+        assert r.name in (
+            *[t.name for t in TEST_DATA],
+            tests.util.TEST_LOGIN_REGULAR_USER['name'],
+            tests.util.TEST_LOGIN_ADMIN_USER['name'],
+        )
 
 
 @patch('ichrisbirch.app.utils.handle_if_not_response_code')
@@ -57,7 +64,7 @@ def test_post(mock_handle_if_not_response_code, test_query_api):
     assert result.name == NEW_USER.name
 
     results = test_query_api.get_many()
-    assert len(results) == 4
+    assert len(results) == 6  # 2 app login users, 3 test users, 1 new user
 
 
 @patch('ichrisbirch.app.utils.handle_if_not_response_code')

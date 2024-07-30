@@ -4,6 +4,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask_login import login_required
 
 from ichrisbirch.config import get_settings
 from ichrisbirch.models.apartment import Apartment
@@ -12,6 +13,12 @@ from ichrisbirch.models.apartment import Feature
 settings = get_settings()
 
 blueprint = Blueprint('apartments', __name__, template_folder='templates/apartments', static_folder='static')
+
+
+@blueprint.before_request
+@login_required
+def enforce_login():
+    pass
 
 
 @blueprint.route('/')

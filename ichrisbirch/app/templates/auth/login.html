@@ -1,50 +1,43 @@
-{% extends 'auth/base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Login for iChrisBirch{% endblock %}
 
 {% block content %}
-<div class="form-wrapper">
+<div class="grid grid--one-column">
+  <div class="add-item-wrapper">
+    <h2>Log In</h2>
+    <form class="add-item-form" method="POST" action="{{ url_for('auth.login') }}">
+      {{ form.csrf_token }}
 
-  <div class="logo">
-    <img src="{{ url_for('static', filename='dist/img/logo.png') }}" alt="logo">
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ form.email.label }}
+        {{ form.email(placeholder='youremail@example.com', class_="textbox") }}
+        {% if form.email.errors %}
+        <ul class="errors">
+          {% for error in form.email.errors %}
+          <li>{{ error }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ form.password.label }}
+        {{ form.password(class_="textbox") }}
+        {% if form.email.errors %}
+        <ul class="errors">
+          {% for error in form.password.errors %}
+          <li>{{ error }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" name="login" class="button" value="login">
+          <span class="button__text">Log In</span>
+        </button>
+      </div>
+
+    </form>
   </div>
-
-  <h1>Log In</h1>
-
-  <form method="POST" action="{{ url_for('auth.login') }}">
-    {{ form.csrf_token }}
-
-    <fieldset class="email">
-      {{ form.email.label }}
-      {{ form.email(placeholder='youremail@example.com') }}
-      {% if form.email.errors %}
-      <ul class="errors">
-        {% for error in form.email.errors %}
-        <li>{{ error }}</li>{% endfor %}
-      </ul>
-      {% endif %}
-    </fieldset>
-
-    <fieldset class="password">
-      {{ form.password.label }}
-      {{ form.password }}
-      {% if form.email.errors %}
-      <ul class="errors">
-        {% for error in form.password.errors %}
-        <li>{{ error }}</li>{% endfor %}
-      </ul>
-      {% endif %}
-    </fieldset>
-
-    <div class="submit-button">
-      {{ form.submit }}
-    </div>
-
-    <div class="login-signup">
-      <a href="{{ url_for('auth.signup') }}">Sign Up</a>
-    </div>
-
-  </form>
 </div>
-
 {% endblock %}

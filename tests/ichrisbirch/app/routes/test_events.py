@@ -11,16 +11,18 @@ from tests.util import show_status_and_response
 @pytest.fixture(autouse=True)
 def insert_testing_data():
     tests.util.insert_test_data('events')
+    yield
+    tests.util.delete_test_data('events')
 
 
-def test_index(test_app):
-    response = test_app.get('/events/')
+def test_index(test_app_logged_in):
+    response = test_app_logged_in.get('/events/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
 
 
-def test_add_event(test_app):
-    response = test_app.post(
+def test_add_event(test_app_logged_in):
+    response = test_app_logged_in.post(
         '/events/',
         data=dict(
             name='Event 4',
@@ -37,9 +39,9 @@ def test_add_event(test_app):
     assert b'<title>Events</title>' in response.data
 
 
-def test_add_event_missing_attending_field(test_app):
+def test_add_event_missing_attending_field(test_app_logged_in):
     with pytest.raises(httpx.HTTPError):
-        test_app.post(
+        test_app_logged_in.post(
             '/events/',
             data=dict(
                 name='Should give validation error',
@@ -53,14 +55,14 @@ def test_add_event_missing_attending_field(test_app):
         )
 
 
-def test_delete_event(test_app):
-    response = test_app.post('/events/', data={'id': 1, 'action': 'delete'})
+def test_delete_event(test_app_logged_in):
+    response = test_app_logged_in.post('/events/', data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
 
 
-def test_send_bad_method(test_app):
-    response = test_app.post(
+def test_send_bad_method(test_app_logged_in):
+    response = test_app_logged_in.post(
         '/events/',
         data=dict(
             name='Event 4',

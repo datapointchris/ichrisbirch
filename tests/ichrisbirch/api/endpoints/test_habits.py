@@ -8,354 +8,199 @@ import tests.util
 from ichrisbirch import schemas
 from tests.util import show_status_and_response
 
+from .crud_test import ApiCrudTester
+
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
+    tests.util.insert_test_data('habitcategories')
     tests.util.insert_test_data('habits')
-
-
-TEST_DATA_COMPLETED_HABITS = tests.test_data.habits.COMPLETED_HABITS
-
-NEW_HABIT = schemas.HabitCreate(
-    name='NEW Habit Category ID 2',
-    category_id=2,
-    is_current=True,
-)
-
-NEW_HABIT_CATEGORY = schemas.HabitCategoryCreate(
-    name='NEW Category Do Things',
-    is_current=True,
-)
-
-NEW_COMPLETED_HABIT = schemas.HabitCompletedCreate(
-    name='NEW Completed Habit Category ID 1',
-    category_id=1,
-    complete_date=datetime(2024, 3, 15),
-)
-
-# ----------------- HABITS ----------------- #
-
-
-@pytest.mark.parametrize('habit_id', [1, 2, 3])
-def test_read_one_habit(test_api, habit_id):
-    response = test_api.get(f'/habits/{habit_id}/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-
-
-def test_read_many_habits(test_api):
-    response = test_api.get('/habits/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 3
-
-
-def test_read_many_habits_current(test_api):
-    params = {'current': True}
-    response = test_api.get('/habits/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 2
-
-
-def test_read_many_habits_not_current(test_api):
-    params = {'current': False}
-    response = test_api.get('/habits/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 1
-
-
-def test_create_habit(test_api):
-    response = test_api.post('/habits/', json=NEW_HABIT.model_dump())
-    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    assert dict(response.json())['name'] == NEW_HABIT.name
-
-    # Test habit was created
-    created = test_api.get('/habits/')
-    assert created.status_code == status.HTTP_200_OK, show_status_and_response(created)
-    assert len(created.json()) == 4
-
-
-def test_hibernate_habit(test_api):
-    endpoint = '/habits/1/'
-    habit = test_api.patch(endpoint, json={'is_current': False})
-    assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
-    assert habit.json()['is_current'] is False
-
-
-def test_revive_habit(test_api):
-    endpoint = '/habits/3/'
-    habit = test_api.patch(endpoint, json={'is_current': True})
-    assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
-    assert habit.json()['is_current'] is True
-
-
-@pytest.mark.parametrize('habit_id', [1, 2, 3])
-def test_delete_habit(test_api, habit_id):
-    endpoint = f'/habits/{habit_id}/'
-    habit = test_api.get(endpoint)
-    assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
-
-    response = test_api.delete(endpoint)
-    assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
-
-    deleted = test_api.get(endpoint)
-    assert deleted.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(deleted)
-
-
-def test_habit_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a habit."""
-
-    # Read all habits
-    all_habits = test_api.get('/habits/')
-    assert all_habits.status_code == status.HTTP_200_OK, show_status_and_response(all_habits)
-    assert len(all_habits.json()) == 3
-
-    created_habit = test_api.post('/habits/', json=NEW_HABIT.model_dump())
-    assert created_habit.status_code == status.HTTP_201_CREATED, show_status_and_response(created_habit)
-    assert created_habit.json()['name'] == NEW_HABIT.name
-
-    # Get created habit
-    habit_id = created_habit.json().get('id')
-    endpoint = f'/habits/{habit_id}/'
-    response_habit = test_api.get(endpoint)
-    assert response_habit.status_code == status.HTTP_200_OK, show_status_and_response(response_habit)
-    assert response_habit.json()['name'] == NEW_HABIT.name
-
-    # Read all habits with new habit
-    all_habits = test_api.get('/habits/')
-    assert all_habits.status_code == status.HTTP_200_OK, show_status_and_response(all_habits)
-    assert len(all_habits.json()) == 4
-
-    # Delete habit
-    deleted_habit = test_api.delete(f'/habits/{habit_id}/')
-    assert deleted_habit.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(deleted_habit)
-
-    # Make sure it's missing
-    missing_habit = test_api.get(f'/habits/{habit_id}')
-    assert missing_habit.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(missing_habit)
-
-
-# ----------------- HABIT CATEGORIES ----------------- #
-
-
-@pytest.mark.parametrize('category_id', [1, 2, 3])
-def test_read_one_category(test_api, category_id):
-    response = test_api.get(f'/habits/categories/{category_id}/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-
-
-def test_read_many_categories(test_api):
-    response = test_api.get('/habits/categories/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 3
-
-
-def test_read_many_categories_current(test_api):
-    params = {'current': True}
-    response = test_api.get('/habits/categories/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 2
-
-
-def test_read_many_categories_not_current(test_api):
-    params = {'current': False}
-    response = test_api.get('/habits/categories/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 1
-
-
-def test_create_category(test_api):
-    response = test_api.post('/habits/categories/', json=NEW_HABIT_CATEGORY.model_dump())
-    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    assert response.json()['name'] == NEW_HABIT_CATEGORY.name
-
-    # Test category was created
-    created = test_api.get('/habits/categories/')
-    assert created.status_code == status.HTTP_200_OK, show_status_and_response(created)
-    assert len(created.json()) == 4
-
-    # Test can assign new habit to this new category
-    new_category_id = response.json()['id']
-    modified = NEW_HABIT.model_dump().copy()
-    modified.update(category_id=new_category_id)
-    new_habit = test_api.post('/habits/', json=modified)
-    assert new_habit.status_code == status.HTTP_201_CREATED, show_status_and_response(new_habit)
-    assert new_habit.json()['category_id'] == new_category_id
-
-
-def test_hibernate_category(test_api):
-    endpoint = '/habits/categories/1/'
-    category = test_api.patch(endpoint, json={'is_current': False})
-    assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
-    assert category.json()['is_current'] is False
-
-
-def test_revive_category(test_api):
-    endpoint = '/habits/categories/3/'
-    category = test_api.patch(endpoint, json={'is_current': True})
-    assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
-    assert category.json()['is_current'] is True
-
-
-def test_delete_category(test_api):
-    endpoint = '/habits/categories/1/'
-    category = test_api.get(endpoint)
-    assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
-
-    response = test_api.delete(endpoint)
-    assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
-
-    deleted = test_api.get(endpoint)
-    assert deleted.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(deleted)
-
-
-def test_delete_category_in_use_gives_error(test_api):
-    """Test that a category in use cannot be deleted.
-
-    TypeError: not all arguments converted during string formatting
-    -> This error will be raised, although in the actual API the NotNullConstraint produces
-    an IntegrityError which is caught and a 409 response is returned.
-
-    ## Error Code Below ##
-    Original exception was:
-    (psycopg2.errors.NotNullViolation)
-        null value in column "category_id" of relation "habits" violates not-null constraint
-    DETAIL:  Failing row contains (1, Habit 1 Category Id 2, null, t).
-    [SQL: UPDATE habits.habits SET category_id=%(category_id)s WHERE habits.habits.id = %(habits_habits_id)s]
-    [parameters: [{\'category_id\': None, \'habits_habits_id\': 1}, {\'category_id\': None, \'habits_habits_id\': 3}]]
-    (Background on this error at: https://sqlalche.me/e/20/gkpj)'),)
-    """
-    endpoint = '/habits/categories/2/'
-    category = test_api.get(endpoint)
-    assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
-
-    with pytest.raises(TypeError):
-        test_api.delete(endpoint)
-
-
-def test_category_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a category."""
-
-    # Read all categories
-    all_categories = test_api.get('/habits/categories/')
-    assert all_categories.status_code == status.HTTP_200_OK, show_status_and_response(all_categories)
-    assert len(all_categories.json()) == 3
-
-    created_category = test_api.post('/habits/categories/', json=NEW_HABIT.model_dump())
-    assert created_category.status_code == status.HTTP_201_CREATED, show_status_and_response(created_category)
-    assert created_category.json()['name'] == NEW_HABIT.name
-
-    # Get created category
-    category_id = created_category.json().get('id')
-    endpoint = f'/habits/categories/{category_id}/'
-    response_category = test_api.get(endpoint)
-    assert response_category.status_code == status.HTTP_200_OK, show_status_and_response(response_category)
-    assert response_category.json()['name'] == NEW_HABIT.name
-
-    # Read all categories with new category
-    all_categories = test_api.get('/habits/categories/')
-    assert all_categories.status_code == status.HTTP_200_OK, show_status_and_response(all_categories)
-    assert len(all_categories.json()) == 4
-
-    # Delete category
-    deleted_category = test_api.delete(f'/habits/categories/{category_id}/')
-    assert deleted_category.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(deleted_category)
-
-    # Make sure it's missing
-    missing_category = test_api.get(f'/habits/categories/{category_id}')
-    assert missing_category.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(missing_category)
-
-
-# ----------------- COMPLETED HABITS ----------------- #
-
-
-def test_read_many_completed_habits(test_api):
-    response = test_api.get('/habits/completed/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 3
-
-
-def test_read_many_completed_habits_first(test_api):
-    params = {'first': True}
-    response = test_api.get('/habits/completed/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 1
-    assert response.json()[0]['name'] == TEST_DATA_COMPLETED_HABITS[0].name
-
-
-def test_read_many_completed_habits_last(test_api):
-    params = {'last': True}
-    response = test_api.get('/habits/completed/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 1
-    assert response.json()[0]['name'] == TEST_DATA_COMPLETED_HABITS[2].name
-
-
-def test_read_many_completed_habits_between_dates(test_api):
-    params = {'start_date': '2024-01-01', 'end_date': '2024-01-02'}
-    response = test_api.get('/habits/completed/', params=params)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert len(response.json()) == 2
-
-
-def test_create_completed_habit(test_api):
-    response = test_api.post('/habits/completed/', content=NEW_COMPLETED_HABIT.model_dump_json())
-    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    assert response.json()['name'] == NEW_COMPLETED_HABIT.name
-
-    # Test habit was created
-    created = test_api.get('/habits/completed/')
-    assert created.status_code == status.HTTP_200_OK, show_status_and_response(created)
-    assert len(created.json()) == 4
-
-
-@pytest.mark.parametrize('habit_id', [1, 2, 3])
-def test_delete_completed_habit(test_api, habit_id):
-    endpoint = f'/habits/completed/{habit_id}/'
-    habit = test_api.get(endpoint)
-    assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
-
-    response = test_api.delete(endpoint)
-    assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
-
-    deleted = test_api.get(endpoint)
-    assert deleted.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(deleted)
-
-
-def test_completed_habit_lifecycle(test_api):
-    """Integration test for CRUD lifecylce of a habit."""
-
-    # Read all habits
-    all_completed_habits = test_api.get('/habits/completed/')
-    assert all_completed_habits.status_code == status.HTTP_200_OK, show_status_and_response(all_completed_habits)
-    assert len(all_completed_habits.json()) == 3
-
-    created_completed_habit = test_api.post('/habits/completed/', content=NEW_COMPLETED_HABIT.model_dump_json())
-    assert created_completed_habit.status_code == status.HTTP_201_CREATED, show_status_and_response(
-        created_completed_habit
+    tests.util.insert_test_data('habitscompleted')
+    yield
+    tests.util.delete_test_data('habits')
+    tests.util.delete_test_data('habitscompleted')
+    tests.util.delete_test_data('habitcategories')
+
+
+class TestHabits:
+    ENDPOINT = '/habits/'
+    NEW_OBJ = schemas.HabitCreate(
+        name='NEW Habit Category ID 2',
+        category_id=2,
+        is_current=True,
     )
-    assert dict(created_completed_habit.json())['name'] == NEW_COMPLETED_HABIT.name
+    crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
-    # Get created habit
-    habit_id = created_completed_habit.json().get('id')
-    endpoint = f'/habits/completed/{habit_id}/'
-    response_completed_habit = test_api.get(endpoint)
-    assert response_completed_habit.status_code == status.HTTP_200_OK, show_status_and_response(
-        response_completed_habit
+    def test_read_one(self, test_api):
+        self.crud_tests.test_read_one(test_api)
+
+    def test_read_many(self, test_api):
+        self.crud_tests.test_read_many(test_api)
+
+    def test_create(self, test_api):
+        self.crud_tests.test_create(test_api)
+
+    def test_delete(self, test_api):
+        self.crud_tests.test_delete(test_api)
+
+    def test_lifecycle(self, test_api):
+        self.crud_tests.test_lifecycle(test_api)
+
+    def test_read_many_habits_current(self, test_api):
+        params = {'current': True}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 2
+
+    def test_read_many_habits_not_current(self, test_api):
+        params = {'current': False}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 1
+
+    def test_hibernate_habit(self, test_api):
+        first_id = self.crud_tests.item_id_by_position(test_api, position=1)
+        habit = test_api.patch(f'{self.ENDPOINT}{first_id}/', json={'is_current': False})
+        assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
+        assert habit.json()['is_current'] is False
+
+    def test_revive_habit(self, test_api):
+        third_id = self.crud_tests.item_id_by_position(test_api, position=3)
+        habit = test_api.patch(f'{self.ENDPOINT}{third_id}/', json={'is_current': True})
+        assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
+        assert habit.json()['is_current'] is True
+
+
+class TestHabitCategories:
+    ENDPOINT = '/habits/categories/'
+    NEW_OBJ = schemas.HabitCategoryCreate(
+        name='NEW Category Do Things',
+        is_current=True,
     )
-    assert dict(response_completed_habit.json())['name'] == NEW_COMPLETED_HABIT.name
+    crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
-    # Read all habits with new habit
-    all_completed_habits = test_api.get('/habits/completed/')
-    assert all_completed_habits.status_code == status.HTTP_200_OK, show_status_and_response(all_completed_habits)
-    assert len(all_completed_habits.json()) == 4
+    def test_read_one(self, test_api):
+        self.crud_tests.test_read_one(test_api)
 
-    # Delete habit
-    deleted_completed_habit = test_api.delete(f'/habits/completed/{habit_id}/')
-    assert deleted_completed_habit.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(
-        deleted_completed_habit
+    def test_read_many(self, test_api):
+        self.crud_tests.test_read_many(test_api)
+
+    def test_create(self, test_api):
+        self.crud_tests.test_create(test_api)
+
+    def test_delete(self, test_api):
+        self.crud_tests.test_delete(test_api)
+
+    def test_lifecycle(self, test_api):
+        self.crud_tests.test_lifecycle(test_api)
+
+    def test_read_many_categories_current(self, test_api):
+        params = {'current': True}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 2
+
+    def test_read_many_categories_not_current(self, test_api):
+        params = {'current': False}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 1
+
+    def test_assign_habit_to_new_category(self, test_api):
+        created = test_api.post(self.ENDPOINT, json=self.NEW_OBJ.model_dump())
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['name'] == self.NEW_OBJ.name
+
+        # Test category was created
+        all_obj = test_api.get(self.ENDPOINT)
+        assert all_obj.status_code == status.HTTP_200_OK, show_status_and_response(all_obj)
+        assert len(all_obj.json()) == 4
+
+        # Test can assign new habit to this new category
+        new_category_id = created.json()['id']
+        modified = self.NEW_OBJ.model_dump().copy()
+        modified.update(category_id=new_category_id)
+        new_habit = test_api.post(TestHabits.ENDPOINT, json=modified)
+        assert new_habit.status_code == status.HTTP_201_CREATED, show_status_and_response(new_habit)
+        assert new_habit.json()['category_id'] == new_category_id
+
+    def test_hibernate_category(self, test_api):
+        endpoint = f'{self.ENDPOINT}1/'
+        category = test_api.patch(endpoint, json={'is_current': False})
+        assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
+        assert category.json()['is_current'] is False
+
+    def test_revive_category(self, test_api):
+        endpoint = f'{self.ENDPOINT}3/'
+        category = test_api.patch(endpoint, json={'is_current': True})
+        assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
+        assert category.json()['is_current'] is True
+
+    def test_delete_category_in_use_gives_error(self, test_api):
+        """Test that a category in use cannot be deleted.
+
+        TypeError: not all arguments converted during string formatting
+        -> This error will be raised, although in the actual API the NotNullConstraint produces
+        an IntegrityError which is caught and a 409 response is returned.
+
+        ## Error Code Below ##
+        Original exception was:
+        (psycopg2.errors.NotNullViolation)
+            null value in column "category_id" of relation "habits" violates not-null constraint
+        DETAIL:  Failing row contains (1, Habit 1 Category Id 2, null, t).
+        [SQL: UPDATE habits.habits SET category_id=%(category_id)s WHERE habits.habits.id = %(habits_habits_id)s]
+        [parameters: [{'category_id': None, 'habits_habits_id': 1}, {'category_id': None, 'habits_habits_id': 3}]]
+        (Background on this error at: https://sqlalche.me/e/20/gkpj)'),)
+        """
+        endpoint = f'{self.ENDPOINT}2/'
+        category = test_api.get(endpoint)
+        assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
+        with pytest.raises(TypeError):
+            test_api.delete(endpoint)
+
+
+class TestCompletedHabits:
+    ENDPOINT = '/habits/completed/'
+    NEW_COMPLETED_HABIT = schemas.HabitCompletedCreate(
+        name='NEW Completed Habit Category ID 1',
+        category_id=1,
+        complete_date=datetime(2024, 3, 15),
     )
+    TEST_DATA_COMPLETED_HABITS = tests.test_data.habitscompleted.BASE_DATA
 
-    # Make sure it's missing
-    missing_completed_habit = test_api.get(f'/habits/completed/{habit_id}')
-    assert missing_completed_habit.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(
-        missing_completed_habit
-    )
+    crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_COMPLETED_HABIT)
+
+    def test_read_one(self, test_api):
+        self.crud_tests.test_read_one(test_api)
+
+    def test_read_many(self, test_api):
+        self.crud_tests.test_read_many(test_api)
+
+    def test_create(self, test_api):
+        self.crud_tests.test_create(test_api)
+
+    def test_delete(self, test_api):
+        self.crud_tests.test_delete(test_api)
+
+    def test_lifecycle(self, test_api):
+        self.crud_tests.test_lifecycle(test_api)
+
+    def test_read_many_completed_habits_first(self, test_api):
+        params = {'first': True}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 1
+        assert response.json()[0]['name'] == self.TEST_DATA_COMPLETED_HABITS[0].name
+
+    def test_read_many_completed_habits_last(self, test_api):
+        params = {'last': True}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 1
+        assert response.json()[0]['name'] == self.TEST_DATA_COMPLETED_HABITS[2].name
+
+    def test_read_many_completed_habits_between_dates(self, test_api):
+        params = {'start_date': '2024-01-01', 'end_date': '2024-01-02'}
+        response = test_api.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 2

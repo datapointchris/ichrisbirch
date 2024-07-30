@@ -7,15 +7,22 @@ from flask import Blueprint
 from flask import Response
 from flask import render_template
 from flask import request
+from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
+TZ = pendulum.timezone(settings.global_timezone)
 logger = logging.getLogger('app.events')
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
-TZ = pendulum.timezone(settings.global_timezone)
+
+
+@blueprint.before_request
+@login_required
+def enforce_login():
+    pass
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

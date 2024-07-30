@@ -2,6 +2,7 @@ import pytest
 from fastapi import status
 
 import tests.util
+from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
@@ -11,15 +12,18 @@ from tests.util import show_status_and_response
 @pytest.fixture(autouse=True)
 def insert_testing_data():
     tests.util.insert_test_data('autotasks', 'tasks')
+    yield
+    tests.util.delete_test_data('autotasks', 'tasks')
 
 
-def test_index(test_app):
-    response = test_app.get('/autotasks/')
+def test_index(test_app_logged_in):
+    response = test_app_logged_in.get('/autotasks/')
+    tests.util.log_all_table_items('autotasks', models.AutoTask, 'name')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 
 
-def test_add_autotask(test_app, test_api):
+def test_add_autotask(test_app_logged_in, test_api):
     """Test add a new autotask.
 
     Expected: Both create an autotask AND run it, which will create a new task
@@ -31,7 +35,7 @@ def test_add_autotask(test_app, test_api):
         priority=3,
         frequency=AutoTaskFrequency.Biweekly.value,
     )
-    response = test_app.post('/autotasks/', data=data | {'action': 'add'})
+    response = test_app_logged_in.post('/autotasks/', data=data | {'action': 'add'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 
@@ -41,8 +45,8 @@ def test_add_autotask(test_app, test_api):
     assert len(tasks_response.json()) == 4
 
 
-def test_delete_autotask(test_app):
-    response = test_app.post('/autotasks/', data={'id': 1, 'action': 'delete'})
+def test_delete_autotask(test_app_logged_in):
+    response = test_app_logged_in.post('/autotasks/', data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 

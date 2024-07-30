@@ -2,16 +2,6 @@
 
 {% block title %}Events{% endblock %}
 
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/@webshim/polyfill@1.17.23/dist/polyfiller.js"></script>
-<script>
-  webshims.setOptions('forms-ext', {
-    types: 'datetime-local'
-  });
-  webshims.polyfill('forms forms-ext');
-</script>
-{% endblock %}
-
 {% block content %}
 <div class="grid grid--one-column">
   {% for event in events %}
@@ -64,7 +54,7 @@
     </div>
     <div class="add-item-form__item">
       <label for="date">Date and Time:</label>
-      <input type="datetime-local" id="date" name="date" class="textbox" data-webshim="datetime-local">
+      <input type="datetime-local" id="date" name="date" class="textbox">
     </div>
     <div class="add-item-form__item">
       <label for="url">URL:</label>

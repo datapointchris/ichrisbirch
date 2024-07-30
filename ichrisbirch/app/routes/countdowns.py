@@ -5,12 +5,19 @@ from flask import Blueprint
 from flask import Response
 from flask import render_template
 from flask import request
+from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger('app.countdowns')
 blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
+
+
+@blueprint.before_request
+@login_required
+def enforce_login():
+    pass
 
 
 @blueprint.route('/', methods=['GET', 'POST'])

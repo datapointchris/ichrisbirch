@@ -6,6 +6,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask_login import login_required
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -14,9 +15,13 @@ from ichrisbirch.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger('app.journal')
-
-
 blueprint = Blueprint('journal', __name__, template_folder='templates/journal', static_folder='static')
+
+
+@blueprint.before_request
+@login_required
+def enforce_login():
+    pass
 
 
 @blueprint.route('/<int:id>/')

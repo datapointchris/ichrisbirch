@@ -10,6 +10,9 @@ from tests.util import show_status_and_response
 def insert_testing_data():
     tests.util.insert_test_data('tasks')
     tests.util.insert_test_data('autotasks')
+    yield
+    tests.util.delete_test_data('tasks')
+    tests.util.delete_test_data('autotasks')
 
 
 def test_decrease_task_priority(test_api):

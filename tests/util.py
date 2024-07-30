@@ -14,14 +14,26 @@ from fastapi import status
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import select
+from sqlalchemy.sql import text
 
 import tests.test_data
-import tests.test_data.articles
+import tests.test_data.habitcategories
+import tests.test_data.habitscompleted
+from ichrisbirch import models
 from ichrisbirch.config import get_settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('tests.util')
 settings = get_settings('testing')
-logger.debug(f"load settings from environment: {settings.ENVIRONMENT}")
+
+# NOTE: These have to be dicts, if they are models.User objects, they will be incorrect
+# when called after the first module that uses them because they will change somehow (sqlalchemy bullshit magic)
+TEST_LOGIN_REGULAR_USER = dict(
+    name='Test Login Regular User', email='testregular@testuser.com', password='regularpassword'
+)
+TEST_LOGIN_ADMIN_USER = dict(
+    name='Test Login Admin User', email='testadmin@testadmin.com', password='adminpassword', is_admin=True
+)
 
 
 ENGINE = create_engine(
@@ -47,7 +59,7 @@ def get_testing_session() -> Generator[Session, None, None]:
         session.close()
 
 
-def insert_test_data(*datasets) -> None:
+def insert_test_data(*datasets):
     """Insert testing data for each endpoint.
 
     The data is manually added, must update when a new endpoint is added.
@@ -65,7 +77,7 @@ def insert_test_data(*datasets) -> None:
 
     @pytest.fixture(autouse=True)
     def insert_testing_data():
-        tests.util.insert_test_data("tasks")
+        insert_test_data("tasks")
     ```
     """
     base_datasets = {
@@ -75,16 +87,76 @@ def insert_test_data(*datasets) -> None:
         'boxitems': tests.test_data.boxitems.BASE_DATA,
         'countdowns': tests.test_data.countdowns.BASE_DATA,
         'events': tests.test_data.events.BASE_DATA,
+        'habitcategories': tests.test_data.habitcategories.BASE_DATA,
         'habits': tests.test_data.habits.BASE_DATA,
+        'habitscompleted': tests.test_data.habitscompleted.BASE_DATA,
         'tasks': tests.test_data.tasks.BASE_DATA,
         'users': tests.test_data.users.BASE_DATA,
     }
     selected_datasets = [deepcopy(base_datasets[key]) for key in datasets if key in base_datasets]
-    logger.debug(f'inserting testing dataset: {' '.join(f"'{d}'" for d in datasets)}')
     with SessionTesting() as session:
         for data in selected_datasets:
             session.add_all(data)
         session.commit()
+    logger.info(f'inserted testing dataset: {' '.join(f"'{d}'" for d in datasets)}')
+
+
+def delete_test_data(*datasets):
+    table_models = {
+        'articles': models.Article,
+        'autotasks': models.AutoTask,
+        'boxes': models.Box,
+        'boxitems': models.BoxItem,
+        'countdowns': models.Countdown,
+        'events': models.Event,
+        'habitcategories': models.HabitCategory,
+        'habits': models.Habit,
+        'habitscompleted': models.HabitCompleted,
+        'tasks': models.Task,
+        'users': models.User,
+    }
+    with SessionTesting() as session:
+        for table in datasets:
+            table_model = table_models[table]
+            if 'users' in table:
+                dont_delete_login_users = table_model.email.notin_(
+                    [TEST_LOGIN_REGULAR_USER['email'], TEST_LOGIN_ADMIN_USER['email']]
+                )
+                all_table_items = session.execute(select(table_model).where(dont_delete_login_users)).scalars().all()
+            else:
+                all_table_items = session.execute(select(table_model)).scalars().all()
+            for item in all_table_items:
+                session.delete(item)
+            if table_model.__table__.schema is not None:
+                table_name = f"{table_model.__table__.schema}.{table_model.__table__.name}"
+            else:
+                table_name = table_model.__table__.name
+            if 'users' not in table:
+                session.execute(text(f"ALTER SEQUENCE {table_name}_id_seq RESTART WITH 1"))
+                logger.info(f'reset sequence for {table_name}')
+        session.commit()
+    logger.info(f'deleted testing dataset: {' '.join(f"'{d}'" for d in datasets)}')
+
+
+def get_test_regular_user():
+    with SessionTesting() as session:
+        return session.execute(
+            select(models.User).where(models.User.email == TEST_LOGIN_REGULAR_USER['email'])
+        ).scalar_one()
+
+
+def get_test_admin_user():
+    with SessionTesting() as session:
+        return session.execute(
+            select(models.User).where(models.User.email == TEST_LOGIN_ADMIN_USER['email'])
+        ).scalar_one()
+
+
+def log_all_table_items(table_name, model, model_attribute=None):
+    with SessionTesting() as session:
+        all_table_items = session.execute(select(model)).scalars().all()
+        items = [getattr(item, model_attribute) if model_attribute else item for item in all_table_items]
+        logger.info(f'ALL {table_name.upper()}: {', '.join(items)}')
 
 
 def show_status_and_response(response: httpx.Response) -> dict[str, str]:

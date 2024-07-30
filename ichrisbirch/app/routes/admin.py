@@ -21,7 +21,12 @@ logger = logging.getLogger('app.admin')
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
 
 
+@blueprint.before_request
 @admin_login_required
+def enforce_admin_login():
+    pass
+
+
 @blueprint.route('/', methods=['GET'])
 def index():
     return render_template(
@@ -41,7 +46,6 @@ class Backup:
         return utils.convert_bytes(self._size)
 
 
-@admin_login_required
 @blueprint.route('/backups/', methods=['GET', 'POST'])
 def backups():
     s3 = boto3.client('s3')
@@ -85,7 +89,6 @@ def calculate_time_until_next_runs(jobs: list[Job]) -> list[str]:
     return time_until_next_runs
 
 
-@admin_login_required
 @blueprint.route('/scheduler/', methods=['GET', 'POST'])
 def scheduler():
     jobstore = get_jobstore(settings=settings)
@@ -120,7 +123,6 @@ def scheduler():
     return render_template('admin/scheduler.html', jobs=jobs, time_until_next_runs=time_until_next_runs, zip=zip)
 
 
-@admin_login_required
 @blueprint.route('/logs/', methods=['GET'])
 def logs():
     return render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port)
@@ -130,7 +132,6 @@ def make_log_graphs():
     pass
 
 
-@admin_login_required
 @blueprint.route('/log-graphs/', methods=['GET', 'POST'])
 def log_graphs():
     return render_template('admin/log_graphs.html')

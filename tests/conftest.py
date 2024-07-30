@@ -10,6 +10,7 @@ import pytest
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
+from flask import Flask
 from flask.testing import FlaskClient
 from flask_login import FlaskLoginClient
 from sqlalchemy.schema import CreateSchema
@@ -25,9 +26,35 @@ from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
 
 logger = logging.getLogger(__name__)
-
 settings = get_settings('testing')
-logger.debug(f"load settings from environment: {settings.ENVIRONMENT}")
+
+
+@pytest.fixture(scope='module')
+def create_drop_tables():
+    """Create all tables once per module."""
+    Base.metadata.create_all(tests.util.ENGINE)
+    logger.info('created all tables')
+    yield
+    Base.metadata.drop_all(tests.util.ENGINE)
+    logger.info('dropped all tables')
+
+
+@pytest.fixture(scope='module', autouse=True)
+def insert_users_for_login(create_drop_tables):
+    with tests.util.SessionTesting() as session:
+        session.add(models.User(**tests.util.TEST_LOGIN_REGULAR_USER))
+        session.add(models.User(**tests.util.TEST_LOGIN_ADMIN_USER))
+        session.commit()
+        logger.info('inserted regular and admin test users')
+
+        regular_user = tests.util.get_test_regular_user()
+        admin_user = tests.util.get_test_admin_user()
+        if regular_user and admin_user:
+            logger.info('verified insertion of regular and admin test users')
+        else:
+            msg = 'failed to verify insertion of regular and admin test users'
+            logger.error(msg)
+            pytest.exit(msg, 1)
 
 
 @pytest.fixture(scope='module')
@@ -38,46 +65,81 @@ def test_api() -> Generator[TestClient, Any, None]:
         yield client
 
 
-@pytest.fixture(scope='module')
-def test_app() -> Generator[FlaskClient, Any, None]:
+def base_testing_app():
     app = create_app(settings=settings)
-    app.testing = True
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
-    with app.test_client() as client:
-        with app.app_context():
-            # client.delete_cookie('session')
-            yield client
+    return app
+
+
+def create_test_client(app: Flask, user=None):
+    if user:
+        app.test_client_class = FlaskLoginClient
+        with app.test_client(user=user) as client:
+            with app.app_context():
+                yield client
+    else:
+        with app.test_client() as client:
+            with app.app_context():
+                yield client
+
+
+def base_test_app() -> Generator[FlaskClient, Any, None]:
+    """Base fixture for creating a test client."""
+    app = base_testing_app()
+    yield from create_test_client(app)
+
+
+def base_test_app_logged_in() -> Generator[FlaskClient, Any, None]:
+    """Base fixture for creating a test client with a logged-in user."""
+    app = base_testing_app()
+    user = tests.util.get_test_regular_user()
+    logger.info(f'logged in user to test app: {user.email}')
+    yield from create_test_client(app, user=user)
+
+
+def base_test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
+    """Base fixture for creating a test client with a logged-in admin user."""
+    app = base_testing_app()
+    admin = tests.util.get_test_admin_user()
+    logger.info(f'logged in admin user to test app: {admin.email}')
+    yield from create_test_client(app, user=admin)
 
 
 @pytest.fixture(scope='module')
-def test_app_logged_in() -> Generator[FlaskClient, Any, None]:
-    """Produces a test client with a regular user logged in."""
-    app = create_app(settings=settings)
-    app.testing = True
-    app.config.update({'TESTING': True})
-    app.config.update({'WTF_CSRF_ENABLED': False})
-    app.test_client_class = FlaskLoginClient
-    with tests.util.SessionTesting() as session:
-        regular_user = session.get(models.User, 1)
-    with app.test_client(user=regular_user) as client:
-        with app.app_context():
-            yield client
+def test_app():
+    """Produces a test client with module scope."""
+    yield from base_test_app()
+
+
+@pytest.fixture(scope='function')
+def test_app_function():
+    """Produces a test client with function scope."""
+    yield from base_test_app()
 
 
 @pytest.fixture(scope='module')
-def test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
-    """Produces a test client with a regular user logged in."""
-    app = create_app(settings=settings)
-    app.testing = True
-    app.config.update({'TESTING': True})
-    app.config.update({'WTF_CSRF_ENABLED': False})
-    app.test_client_class = FlaskLoginClient
-    with tests.util.SessionTesting() as session:
-        admin_user = session.get(models.User, 3)
-    with app.test_client(user=admin_user) as client:
-        with app.app_context():
-            yield client
+def test_app_logged_in():
+    """Produces a test client with module scope and user login."""
+    yield from base_test_app_logged_in()
+
+
+@pytest.fixture(scope='function')
+def test_app_logged_in_function():
+    """Produces a test client with function scope and user login."""
+    yield from base_test_app_logged_in()
+
+
+@pytest.fixture(scope='module')
+def test_app_logged_in_admin():
+    """Produces a test client with module scope and admin user login."""
+    yield from base_test_app_logged_in_admin()
+
+
+@pytest.fixture(scope='function')
+def test_app_logged_in_admin_function():
+    """Produces a test client with function scope and admin user login."""
+    yield from base_test_app_logged_in_admin()
 
 
 @pytest.fixture(scope='module')
@@ -85,20 +147,7 @@ def test_jobstore() -> Generator[SQLAlchemyJobStore, Any, None]:
     yield get_jobstore(settings=settings)
 
 
-@pytest.fixture(scope='function', autouse=True)
-def create_and_drop_tables():
-    """All tables are created and dropped for each test function.
-
-    This is the easiest way to ensure a clean db each time a new test is run.
-    """
-    Base.metadata.create_all(tests.util.ENGINE)
-    logger.debug('created all tables')
-    yield
-    Base.metadata.drop_all(tests.util.ENGINE)
-    logger.debug('dropped all tables')
-
-
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 def insert_jobs_in_test_scheduler():
     # Start Scheduler in its own thread to test the scheduler
     test_scheduler = BlockingScheduler()
@@ -108,11 +157,13 @@ def insert_jobs_in_test_scheduler():
     scheduler_thread.start()
     for job in test_data.scheduler.BASE_DATA:
         test_scheduler.add_job(**job.as_dict())
+        logger.info(f'added job: {job.id}')
     try:
         yield
     finally:
         # Shutdown scheduler process and join thread to main thread
         test_scheduler.shutdown()
+        logger.info('scheduler was shutdown')
         scheduler_thread.join()
 
 
@@ -122,11 +173,13 @@ def setup_test_environment():
 
     => Get Docker client (will attempt to start Docker if not running) => Create Postgres Docker container => Create
     Postgres logs thread => Create schemas => Start Uvicorn API (FastAPI) subprocess => Start Gunicorn App (Flask)
-    subprocess => Yield to test =>a create_tables_insert_data_drop_tables runs here =>b Function yields after inserting
-    data to run test =>c Drop all tables after test completes => Control back to setup_test_environment => Stop Postgres
-    container => Kill Postgres, Uvicorn, and Gunicorn threads
+    subprocess => Yield to test => A create_tables_insert_data_drop_tables runs here => B Function yields after
+    inserting data to run test => C Drop all tables after test completes => Control back to setup_test_environment =>
+    Stop Postgres container => Kill Postgres, Uvicorn, and Gunicorn threads
     """
-
+    logger.warning('')
+    logger.warning(f'{'='*30}>  STARTING TESTING  <{'='*30}')
+    logger.warning('')
     try:
         docker_client = tests.util.get_docker_client(logger=logger)
         postgres_container = tests.util.create_postgres_docker_container(client=docker_client)
@@ -190,13 +243,17 @@ def setup_test_environment():
         logger.info('stopping app gunicorn thread')
         app_gunicorn_thread.join()
 
+    logger.warning('')
+    logger.warning(f'{'='*30}>  TESTING FINISHED  <{'='*30}')
+    logger.warning('')
+
 
 def _create_database_schemas(schemas, session):
     with session() as session:
         for schema_name in schemas:
             try:
                 session.execute(CreateSchema(schema_name))
-                logger.debug(f'created schema {schema_name}')
+                logger.info(f'created schema {schema_name}')
             except Exception as e:
                 logger.error(f"Failed to create schema: {e}")
                 debug_message = f"""Failed to create schema: {e}
