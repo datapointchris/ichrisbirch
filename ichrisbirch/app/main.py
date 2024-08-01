@@ -56,6 +56,10 @@ def create_app(settings: Settings) -> Flask:
         def max_length(value, length=80):
             return str(value)[: length - 3] + '...'
 
+        @app.template_filter('currency')
+        def currency_filter(value):
+            return "$ {:,.2f}".format(value)
+
         logger.info('template filters registered')
 
         app.register_blueprint(routes.home.blueprint)
@@ -68,6 +72,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.events.blueprint, url_prefix='/events')
         app.register_blueprint(routes.habits.blueprint, url_prefix='/habits')
         app.register_blueprint(routes.journal.blueprint, url_prefix='/journal')
+        app.register_blueprint(routes.money_wasted.blueprint, url_prefix='/money-wasted')
         app.register_blueprint(routes.portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(routes.tasks.blueprint, url_prefix='/tasks')
         app.register_blueprint(routes.users.blueprint, url_prefix='/users')

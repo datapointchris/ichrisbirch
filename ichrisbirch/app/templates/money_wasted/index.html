@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Money Wasted{% endblock %}
+
+
+{% block content %}
+<div class="grid grid--one-column-wide">
+  <div class="grid__item">
+    <h1 class = "money-wasted--total">Total Money Wasted: <span class="money-wasted--total-amount">{{ total_money_wasted | currency }}</span></h1>
+
+  <ul class="money-wasted money-wasted__header">
+    <li class="money-wasted__column">Item</li>
+    <li class="money-wasted__column">Amount</li>
+    <li class="money-wasted__column">Date Purchased</li>
+    <li class="money-wasted__column">Date Wasted</li>
+    <li class="money-wasted__column">Notes</li>
+    <li class="money-wasted__column">Delete</li>
+  </ul>
+  {% if money_wasted %}
+  {% for money in money_wasted %}
+  <ul class="money-wasted money-wasted__item">
+    <li class="money-wasted__column">{{ money.item }}</li>
+    <li class="money-wasted__column">{{ money.amount | currency }}</li>
+    <li class="money-wasted__column">{{ money.date_purchased if money.date_purchased else '' }}</li>
+    <li class="money-wasted__column">{{ money.date_wasted }}</li>
+    <li class="money-wasted__column">{{ money.notes if money.notes else '' }}</li>
+    <li class="money-wasted__column">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" value="{{ money.id }}">
+        <button type="submit" name="action" class="button" value="delete">
+          <span class="button__text">Delete</span>
+        </button>
+      </form>
+    </li>
+  </ul>
+  {% endfor %}
+  {% else %}
+  <div class="grid__item">
+    <h2>No Money Wasted</h2>
+  </div>
+  {% endif %}
+</div>
+
+<div class="add-item-wrapper">
+  <h2>Add New Money Wasted:</h2>
+  <form class="add-item-form" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="add-item-form__item">
+      <label for="item">Item:</label>
+      <input type="text" size="30" class="textbox" name="item" id="item">
+    </div>
+    <div class="add-item-form__item">
+      <label for="amount">Amount:</label>
+      <input type="float" class="textbox" name="amount" id="amount">
+    </div>
+    <div class="add-item-form__item">
+      <label for="date_purchased">Date Purchased:</label>
+      <input type="date" class="textbox" name="date_purchased" id="date_purchased">
+    </div>
+    <div class="add-item-form__item">
+      <label for="date_wasted">Date Wasted:</label>
+      <input type="date" class="textbox" name="date_wasted" id="date_wasted">
+    </div>
+    <div class="add-item-form__item add-item-form__item--full-width">
+      <label for="notes">Notes:</label>
+      <input type="text" size="40" class="textbox" name="notes" id="notes">
+    </div>
+    <div class="add-item-form__item--full-width">
+      <button type="submit" name="action" class="button" value="add">
+        <span class="button__text">Add Money Wasted</span>
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

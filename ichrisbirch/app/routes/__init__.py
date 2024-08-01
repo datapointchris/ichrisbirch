@@ -8,6 +8,7 @@ from ichrisbirch.app.routes import events
 from ichrisbirch.app.routes import habits
 from ichrisbirch.app.routes import home
 from ichrisbirch.app.routes import journal
+from ichrisbirch.app.routes import money_wasted
 from ichrisbirch.app.routes import portfolio
 from ichrisbirch.app.routes import tasks
 from ichrisbirch.app.routes import users
@@ -23,6 +24,7 @@ __all__ = [
     'habits',
     'home',
     'journal',
+    'money_wasted',
     'portfolio',
     'tasks',
     'users',

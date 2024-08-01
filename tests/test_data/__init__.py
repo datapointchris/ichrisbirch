@@ -7,6 +7,7 @@ from tests.test_data import events
 from tests.test_data import habitcategories
 from tests.test_data import habits
 from tests.test_data import habitscompleted
+from tests.test_data import money_wasted
 from tests.test_data import scheduler
 from tests.test_data import tasks
 from tests.test_data import users
@@ -21,6 +22,7 @@ __all__ = [
     'habitcategories',
     'habits',
     'habitscompleted',
+    'money_wasted',
     'scheduler',
     'tasks',
     'users',

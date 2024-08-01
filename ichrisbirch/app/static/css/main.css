@@ -11871,6 +11871,49 @@ nav a:hover {
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
+.money-wasted {
+  display: flex;
+  margin: 0;
+  list-style: none;
+  text-align: center;
+  justify-content: center;
+}
+.money-wasted__header, .money-wasted__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: var(--space-s);
+  border-top: 1px solid var(--clr-accent);
+  border-bottom: 1px solid var(--clr-accent);
+  border-collapse: collapse;
+}
+.money-wasted__header {
+  padding-block: var(--space-s);
+  font-size: var(--fs-500);
+  border-top-width: 3px;
+  border-bottom-width: 3px;
+}
+.money-wasted__item {
+  font-size: var(--fs-400);
+  line-height: 1.5em;
+}
+.money-wasted__column {
+  flex: 1 1 16.66%; /* Adjust the percentage based on the number of columns */
+  text-align: left;
+}
+.money-wasted__link {
+  text-decoration: underline;
+  color: var(--clr-accent-light);
+}
+.money-wasted--total {
+  color: var(--clr-accent-light);
+  text-shadow: var(--deep-3d-text-shadow);
+}
+.money-wasted--total-amount {
+  border: 4px solid var(--clr-accent--red);
+  border-radius: var(--btn-border-radius);
+}
+
 .log-window {
   width: clamp(90vw, 2rem, 80vw);
   height: 80vh;

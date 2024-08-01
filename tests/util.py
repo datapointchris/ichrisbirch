@@ -90,6 +90,7 @@ def insert_test_data(*datasets):
         'habitcategories': tests.test_data.habitcategories.BASE_DATA,
         'habits': tests.test_data.habits.BASE_DATA,
         'habitscompleted': tests.test_data.habitscompleted.BASE_DATA,
+        'money_wasted': tests.test_data.money_wasted.BASE_DATA,
         'tasks': tests.test_data.tasks.BASE_DATA,
         'users': tests.test_data.users.BASE_DATA,
     }
@@ -112,6 +113,7 @@ def delete_test_data(*datasets):
         'habitcategories': models.HabitCategory,
         'habits': models.Habit,
         'habitscompleted': models.HabitCompleted,
+        'money_wasted': models.MoneyWasted,
         'tasks': models.Task,
         'users': models.User,
     }

@@ -28,6 +28,9 @@ from ichrisbirch.schemas.habitcompleted import HabitCompletedCreate
 from ichrisbirch.schemas.journal import JournalEntry
 from ichrisbirch.schemas.journal import JournalEntryCreate
 from ichrisbirch.schemas.journal import JournalEntryUpdate
+from ichrisbirch.schemas.money_wasted import MoneyWasted
+from ichrisbirch.schemas.money_wasted import MoneyWastedCreate
+from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
 from ichrisbirch.schemas.server import ServerStats
 from ichrisbirch.schemas.task import Task
 from ichrisbirch.schemas.task import TaskCompleted
@@ -68,6 +71,9 @@ __all__ = [
     'JournalEntry',
     'JournalEntryCreate',
     'JournalEntryUpdate',
+    'MoneyWasted',
+    'MoneyWastedCreate',
+    'MoneyWastedUpdate',
     'ServerStats',
     'Task',
     'TaskCompleted',

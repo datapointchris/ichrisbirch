@@ -53,7 +53,7 @@ class QueryAPI(Generic[ModelType]):
             headers.update(**additional_headers)
             headers_to_log.update(**additional_headers)
         if kwargs:
-            if settings.ENVIRONMENT != 'production':
+            if settings.ENVIRONMENT == 'production':
                 kwargs_to_log = ', '.join([f'{k}=XXXXXXXX' for k in kwargs.keys()])
             else:
                 kwargs_to_log = ', '.join([f'{k}={v}' for k, v in kwargs.items()])

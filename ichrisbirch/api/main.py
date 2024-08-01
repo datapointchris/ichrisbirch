@@ -63,6 +63,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', tags=['countdowns'])
     api.include_router(endpoints.events.router, prefix='/events', tags=['events'])
     api.include_router(endpoints.habits.router, prefix='/habits', tags=['habits'])
+    api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', tags=['money', 'money wasted'])
     api.include_router(endpoints.server.router, prefix='/server', tags=['server'])
     api.include_router(endpoints.tasks.router, prefix='/tasks', tags=['tasks'])
     api.include_router(endpoints.users.router, prefix='/users', tags=['users'])
