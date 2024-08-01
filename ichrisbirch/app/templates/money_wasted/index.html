@@ -6,40 +6,36 @@
 {% block content %}
 <div class="grid grid--one-column-wide">
   <div class="grid__item">
-    <h1 class = "money-wasted--total">Total Money Wasted: <span class="money-wasted--total-amount">{{ total_money_wasted | currency }}</span></h1>
-
-  <ul class="money-wasted money-wasted__header">
-    <li class="money-wasted__column">Item</li>
-    <li class="money-wasted__column">Amount</li>
-    <li class="money-wasted__column">Date Purchased</li>
-    <li class="money-wasted__column">Date Wasted</li>
-    <li class="money-wasted__column">Notes</li>
-    <li class="money-wasted__column">Delete</li>
-  </ul>
-  {% if money_wasted %}
-  {% for money in money_wasted %}
-  <ul class="money-wasted money-wasted__item">
-    <li class="money-wasted__column">{{ money.item }}</li>
-    <li class="money-wasted__column">{{ money.amount | currency }}</li>
-    <li class="money-wasted__column">{{ money.date_purchased if money.date_purchased else '' }}</li>
-    <li class="money-wasted__column">{{ money.date_wasted }}</li>
-    <li class="money-wasted__column">{{ money.notes if money.notes else '' }}</li>
-    <li class="money-wasted__column">
-      <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id" value="{{ money.id }}">
-        <button type="submit" name="action" class="button" value="delete">
-          <span class="button__text">Delete</span>
-        </button>
-      </form>
-    </li>
-  </ul>
-  {% endfor %}
-  {% else %}
-  <div class="grid__item">
-    <h2>No Money Wasted</h2>
+    <h1 class="money-wasted--total">Total Money Wasted:
+      <span class="money-wasted--total-amount">{{ total_money_wasted | currency }}</span>
+    </h1>
+    <ul class="money-wasted money-wasted__header">
+      <li class="money-wasted__column">Item</li>
+      <li class="money-wasted__column">Amount</li>
+      <li class="money-wasted__column">Date Purchased</li>
+      <li class="money-wasted__column">Date Wasted</li>
+      <li class="money-wasted__column">Notes</li>
+      <li class="money-wasted__column">Delete</li>
+    </ul>
+    {% for money in money_wasted %}
+    <ul class="money-wasted money-wasted__item">
+      <li class="money-wasted__column">{{ money.item }}</li>
+      <li class="money-wasted__column">{{ money.amount | currency }}</li>
+      <li class="money-wasted__column">{{ money.date_purchased if money.date_purchased else '' }}</li>
+      <li class="money-wasted__column">{{ money.date_wasted }}</li>
+      <li class="money-wasted__column">{{ money.notes if money.notes else '' }}</li>
+      <li class="money-wasted__column">
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ money.id }}">
+          <button type="submit" name="action" class="button" value="delete">
+            <span class="button__text">Delete</span>
+          </button>
+        </form>
+      </li>
+    </ul>
+    {% endfor %}
   </div>
-  {% endif %}
 </div>
 
 <div class="add-item-wrapper">
