@@ -2,6 +2,8 @@
 
 - [Random](#random)
 - [Tasks](#tasks)
+- [AutoFun](#autofun)
+- [BooksToRead / BooksHaveRead](#bookstoread--bookshaveread)
 - [Infrastructure Management](#infrastructure-management)
 - [WTForms](#wtforms)
 - [Testing](#testing)
@@ -23,7 +25,6 @@
   - [Box Moving](#box-moving)
   - [Journal](#journal)
 - [Future Projects](#future-projects)
-  - [AutoFun](#autofun)
   - [Quote of the Day](#quote-of-the-day)
   - [Books](#books)
   - [Postgres Permissions Graphical Interface with Approvals / Stats](#postgres-permissions-graphical-interface-with-approvals--stats)
@@ -63,6 +64,24 @@
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
+
+## AutoFun
+
+- [ ] Similar to Autotasks
+  - [ ] Set a number of days to automatically add an event to the task list
+
+## BooksToRead / BooksHaveRead
+
+- [ ] List of books IN ORDER to read
+- [ ] Another list of have read
+  - [ ] Get the info from ISBN?
+  - [ ] Time started
+  - [ ] Time finished
+  - [ ] Current book
+  - [ ] Rating and notes / thoughts
+  - [ ] Sell
+  - [ ] Keep
+  - [ ] Location BookBox #X - Can add these to BoxPacking as well
 
 ## Infrastructure Management
 
@@ -277,8 +296,6 @@ Ranking
   - [ ] Music theme for repetition
 
 ## Future Projects
-
-### AutoFun
 
 ### Quote of the Day
 

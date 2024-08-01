@@ -2,6 +2,29 @@
 
 {% block title %}Log Graphs{% endblock %}
 
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
-<h1>Log Graphs Not Implemented</h1>
-{% endblock %}`
+<div class="grid grid--one-column-wide">
+  <h1 class="centered">Log Graphs</h1>
+
+  {% for log_chart in log_charts %}
+  <div class="log-chart" data-log-chart='{{ log_chart|tojson }}'>
+    <canvas id="{{ log_chart.chart_element_id }}" height="200"></canvas>
+  </div>
+  {% endfor %}
+</div>
+
+<script src="{{ url_for('static', filename='js/log_charts/log_chart.js') }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const charts = document.querySelectorAll('.log-chart');
+    charts.forEach(chartElement => {
+      const logChart = JSON.parse(chartElement.getAttribute('data-log-chart'));
+      createLogChart(logChart.title, logChart.data, logChart.x_axis_key, logChart.y_axis_key, logChart.chart_element_id);
+    });
+  });
+</script>
+{% endblock %}

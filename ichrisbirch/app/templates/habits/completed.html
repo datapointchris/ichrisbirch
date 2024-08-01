@@ -34,9 +34,9 @@
   <h3>{{ completed_count }}</h3>
   {% else %}
   <h3>Completed Habits: {{ completed_count }}</h3>
+  <div id="chartTitle" style="display: none;">Completed Habits</div>
   <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
   <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
-  <div id="chartTitle" style="display: none;">Completed Habits</div>
   <div class="completed-habit-graph">
     <canvas id="completedChart" height="200"></canvas>
   </div>
