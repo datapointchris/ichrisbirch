@@ -11883,19 +11883,17 @@ nav a:hover {
   justify-content: space-between;
   align-items: center;
   padding-inline: var(--space-s);
-  border-top: 1px solid var(--clr-accent);
-  border-bottom: 1px solid var(--clr-accent);
-  border-collapse: collapse;
 }
 .money-wasted__header {
   padding-block: var(--space-s);
   font-size: var(--fs-500);
-  border-top-width: 3px;
-  border-bottom-width: 3px;
+  border-top: 3px solid var(--clr-accent);
+  border-bottom: 3px solid var(--clr-accent);
 }
 .money-wasted__item {
   font-size: var(--fs-400);
   line-height: 1.5em;
+  border-bottom: 1px solid var(--clr-accent);
 }
 .money-wasted__column {
   flex: 1 1 16.66%; /* Adjust the percentage based on the number of columns */
