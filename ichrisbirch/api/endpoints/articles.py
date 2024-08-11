@@ -181,8 +181,8 @@ async def insights(request: Request):
             logger.debug('getting youtube video captions')
             text_content = _get_youtube_video_text_captions(url)
         except Exception as e:
-            logger.error(f'error getting youtube video captions: {e}')
-            return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f'error getting youtube video captions: {str(e).replace('\n', ' | ')}')
+            return Response(content=e)  # must return status code 200 to void error in form javascript
     else:
         text_content = _get_text_content_from_html(soup)
 
