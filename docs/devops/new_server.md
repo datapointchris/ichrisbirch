@@ -6,10 +6,10 @@
 sudo apt update && sudo apt upgrade -y
 
 # base installs
-sudo apt install curl git git-secret
+sudo apt install curl git git-secret -y
 
 # NOTE: Install the postgresql-client version that matches the database, this is for pg_dump backups with the scheduler.
-sudo apt install postgresql-client-16 tmux tldr supervisor nginx neofetch neovim pipx -y
+sudo apt install postgresql-client-16 tmux tldr supervisor nginx neovim pipx -y
 
 # for pyenv
 sudo apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
@@ -36,24 +36,27 @@ pyenv global 3.12
 # Install poetry making sure to use pyenv python
 pipx install --python $(/home/ubuntu/.pyenv/bin/pyenv which python) poetry
 
+sudo chown ubuntu /var/www
+
 ##### AT THIS POINT THE AMI SHOULD BE MADE #####
 
 # Clone project
-sudo chown ubuntu /var/www
 git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
-git secret reveal
+cd /var/www/ichrisbirch
+
+# REFER to https://docs.ichrisbirch.com/git_secret/ to get gpg key for git-secret
 
 # Install project
 poetry config virtualenvs.in-project true
-poetry install
 
 # Make log files for project
 ./scripts/make_log_files.sh
 
 # Set up nginx and supervisor
+sudo rm /etc/nginx/sites-enabled/default
+
 cd deploy
 ./deploy-nginx.sh
-sudo rm /etc/nginx/sites-enabled/default
 
 ./deploy-supervisor.sh
 ```
