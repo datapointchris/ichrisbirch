@@ -177,7 +177,12 @@ async def insights(request: Request):
     title = _get_formatted_title(soup)
 
     if "youtube.com" in url or "youtu.be" in url:
-        text_content = _get_youtube_video_text_captions(url)
+        try:
+            logger.debug('getting youtube video captions')
+            text_content = _get_youtube_video_text_captions(url)
+        except Exception as e:
+            logger.error(f'error getting youtube video captions: {e}')
+            return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:
         text_content = _get_text_content_from_html(soup)
 
