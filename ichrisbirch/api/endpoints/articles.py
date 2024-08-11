@@ -181,8 +181,19 @@ async def insights(request: Request):
             logger.debug('getting youtube video captions')
             text_content = _get_youtube_video_text_captions(url)
         except Exception as e:
-            logger.error(f'error getting youtube video captions: {str(e).replace('\n', ' | ')}')
-            return Response(content=e)  # must return status code 200 to void error in form javascript
+            logger.error(
+                f'error getting youtube video captions for: {url} '
+                f'-- transcripts are disabled or IP is being blocked by YouTube API'
+            )
+            # format error response into html
+            lines = []
+            for i, line in enumerate(str(e).split('\n')):
+                if i == 0:
+                    lines.append(f'<h2>{line}</h2>')
+                else:
+                    lines.append(f'<p>{line}</p>')
+            html = ''.join(lines).replace('<p></p>', '')
+            return Response(content=html)  # must return status code 200 to avoid error in form javascript
     else:
         text_content = _get_text_content_from_html(soup)
 

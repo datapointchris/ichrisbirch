@@ -137,7 +137,6 @@ def insights():
         url = request.form.get('url')
         start = pendulum.now()
         response = httpx.post(insights_endpoint, json={'url': url}, timeout=30)
-        response.raise_for_status()
         elapsed = (pendulum.now() - start).in_words()
         article_insights = response.text
         submitted_url = url
