@@ -187,9 +187,9 @@ async def insights(request: Request):
             )
             # format error response into html
             lines = []
-            for i, line in enumerate(str(e).split('\n')):
+            for i, line in enumerate(str(e).strip().split('\n')):
                 if i == 0:
-                    lines.append(f'<h2>{line}</h2>')
+                    lines.append(f'<h3>{line}</h3>')
                 else:
                     lines.append(f'<p>{line}</p>')
             html = ''.join(lines).replace('<p></p>', '')
