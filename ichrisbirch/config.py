@@ -17,7 +17,7 @@ class AISettings:
     class OpenAISettings:
         def __init__(self):
             self.api_key: str = os.environ['OPENAI_API_KEY']
-            self.model = 'gpt-3.5-turbo-0125'
+            self.model = 'gpt-4o'
 
     class PromptSettings:
         PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'

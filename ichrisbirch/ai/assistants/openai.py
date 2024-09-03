@@ -25,7 +25,7 @@ class OpenAIAssistant:
         run = self.client.beta.threads.runs.create(thread_id=thread.id, assistant_id=self.assistant.id)
         while run.status in ('queued', 'in_progress'):
             run = self.client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-            time.sleep(3)
+            time.sleep(6)
         messages = self.client.beta.threads.messages.list(thread_id=thread.id)
         data = messages.data[0].content[0].text.value  # type: ignore
         tokens_used = run.usage.total_tokens  # type: ignore
