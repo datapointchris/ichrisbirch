@@ -19,3 +19,8 @@ To restart nginx after an upgrade:
   brew services restart nginx
 Or, if you don't want/need a background service you can just run:
   /usr/local/opt/nginx/bin/nginx -g daemon off;
+
+### `pytest-xdist`
+
+This plugin does not work with the current configuration (08/28/2024) using a local Docker Postgres and running the app, api, and postgres in a separate thread.
+`pytest-xdist` bypasses the start of the docker container and all tests fail.
