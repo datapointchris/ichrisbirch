@@ -7,6 +7,7 @@ import customtkinter as ctk
 import httpx
 
 from ichrisbirch.config import get_settings
+from ichrisbirch.gui.utils import set_app_geometry
 from ichrisbirch.models.task import TaskCategory
 
 settings = get_settings()
@@ -70,13 +71,7 @@ ctk.set_default_color_theme(ui.theme)
 app = ctk.CTk()
 app.title('Add New Priority Task')
 
-screen_width = app.winfo_screenwidth()
-screen_height = app.winfo_screenheight()
-window_width = screen_width * 0.4
-window_height = screen_height * 0.7
-x = (screen_width / 2) - (window_width / 2)
-y = (screen_height / 2) - (window_height / 2)
-app.geometry('%dx%d+%d+%d' % (window_width, window_height, x, y))
+set_app_geometry(app, width_percent=40, height_percent=70)
 
 center_frame = ctk.CTkFrame(app)
 center_frame.pack(padx=ui.bigpad, pady=ui.bigpad, expand=True)

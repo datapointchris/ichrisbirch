@@ -199,7 +199,7 @@ async def insights(request: Request):
 
     assistant = OpenAIAssistant(name='Article Insights', instructions=settings.ai.prompts.article_insights)
     mkd = assistant.generate(text_content)
-    full_mkd = f'## {title}\n{mkd}'
+    full_mkd = f'# {title}\n{mkd}'
     html = markdown.markdown(full_mkd)
 
     return Response(html)
