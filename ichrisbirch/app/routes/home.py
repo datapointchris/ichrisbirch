@@ -24,6 +24,11 @@ def index():
     return render_template('index.html', settings=settings)
 
 
+@blueprint.route('/loading/', methods=['GET'])
+def loading():
+    return render_template('loading.html')
+
+
 @blueprint.route('/issue/', methods=['GET', 'POST'])
 def issue():
     if request.method == 'GET':
