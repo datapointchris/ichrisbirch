@@ -5,29 +5,24 @@
       Add New Task:
     </div>
     <div class="task-footer__item">
-      <label for="name">Name:</label>
-      <input type="text" size="20" class="textbox" name="name" id="name">
+      {{ create_form.name.label }}
+      {{ create_form.name(size=20, class_="textbox") }}
     </div>
     <div class="task-footer__item">
-      <label for="category">Category:</label>
-      <select class="textbox" name="category" id="category">
-        {% for category in task_categories %}
-        <option value="{{ category }}">{{ category }}
-        </option>
-        {% endfor %}
-      </select>
+      {{ create_form.category.label }}
+      {{ create_form.category(class_="textbox") }}
     </div>
     <div class="task-footer__item">
-      <label for="priority">Priority:</label>
-      <input type="number" min="1" class="textbox" name="priority" id="priority">
+      {{ create_form.priority.label }}
+      {{ create_form.priority(min=1, class_="textbox") }}
     </div>
     <div class="task-footer__item">
-      <label for="notes">Notes:</label>
-      <input type="text" size="40" class="textbox" name="notes" id="notes">
+      {{ create_form.notes.label }}
+      {{ create_form.notes(size=40, class_="textbox") }}
     </div>
     <div class="task-footer__item task-footer__button">
       <button type="submit" name="action" class="button" value="add">
-        <span class="button__text">Add New Task</span>
+        <span class="button__text">Add</span>
       </button>
     </div>
   </form>

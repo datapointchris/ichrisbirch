@@ -15,6 +15,7 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.app import forms
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.config import get_settings
@@ -25,16 +26,27 @@ logger = logging.getLogger('app.tasks')
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
 
 
+# Ex: Friday, January 01, 2001
+DATE_FORMAT = '%A, %B %d, %Y'
+TZ = settings.global_timezone
+TASK_CATEGORIES = [t.value for t in TaskCategory]
+
+
 @blueprint.before_request
 @login_required
 def enforce_login():
     pass
 
 
-# Ex: Friday, January 01, 2001
-DATE_FORMAT = '%A, %B %d, %Y'
-TZ = settings.global_timezone
-TASK_CATEGORIES = [t.value for t in TaskCategory]
+@blueprint.context_processor
+def inject_task_create_form():
+    """Create a task create form for the request context.
+
+    Since the add task form is on every page, this will inject the create form into the context.
+    `before_request` is not the correct decorator to use
+    """
+    create_form = forms.TaskCreateForm()
+    return dict(create_form=create_form)
 
 
 def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:

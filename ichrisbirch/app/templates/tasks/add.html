@@ -9,25 +9,20 @@
     <form class="add-item-form" method="POST" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="add-item-form__item">
-        <label for="name">Name:</label>
-        <input type="text" class="textbox" name="name" id="name">
+        {{ create_form.name.label }}
+        {{ create_form.name(class_="textbox") }}
       </div>
       <div class="add-item-form__item">
-        <label for="category">Category:</label>
-        <select class="textbox" name="category" id="category">
-          {% for category in task_categories %}
-          <option value="{{ category }}">{{ category }}
-          </option>
-          {% endfor %}
-        </select>
+        {{ create_form.category.label }}
+        {{ create_form.category(class_="textbox") }}
       </div>
       <div class="add-item-form__item">
-        <label for="priority">Priority:</label>
-        <input type="number" min="1" class="textbox" name="priority" id="priority">
+        {{ create_form.priority.label }}
+        {{ create_form.priority(min=1, class_="textbox") }}
       </div>
       <div class="add-item-form__item add-item-form__item--full-width">
-        <label for="notes">Notes:</label>
-        <input type="text" class="textbox" name="notes" id="notes">
+        {{ create_form.notes.label }}
+        {{ create_form.notes(class_="textbox") }}
       </div>
       <div class="add-item-form__item add-item-form__item--full-width">
         <button type="submit" name="action" class="button" value="add">
