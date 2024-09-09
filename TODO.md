@@ -1,9 +1,16 @@
 # TODO
 
 - [Random](#random)
+- [Docker](#docker)
+- [Terraform](#terraform)
 - [Tasks](#tasks)
+- [Quotes Endpoint](#quotes-endpoint)
+- [Lists Endpoint](#lists-endpoint)
+- [Goals Endpoint](#goals-endpoint)
+- [Duration Endpoint](#duration-endpoint)
 - [AutoFun](#autofun)
 - [BooksToRead / BooksHaveRead](#bookstoread--bookshaveread)
+- [SignupCodes Table](#signupcodes-table)
 - [Infrastructure Management](#infrastructure-management)
 - [WTForms](#wtforms)
 - [Testing](#testing)
@@ -37,6 +44,7 @@
 
 ## Random
 
+- [ ] <https://docs.all-hands.dev/modules/usage/intro>
 - [ ] mypy - `--check-untyped-defs`
   - [ ] Add this option when ready to deal with other routes
 - [ ] Make a startup script
@@ -58,12 +66,79 @@
 - [ ] Change datetimes over to `Arrow`
 - [ ] [Identity Federation for GitHub Actions on AWS | ScaleSec](https://scalesec.com/blog/identity-federation-for-github-actions-on-aws/)
 - [ ] Cloud Infra Diagrams - [Installation · Diagrams](https://diagrams.mingrammer.com/docs/getting-started/installation)
+- [ ] [Top 6 Tools to Turn Code into Beautiful Diagrams - YouTube](https://www.youtube.com/watch?v=jCd6XfWLZsg)
+- [Diagram as Code: Crafting AWS Architecture Diagrams Using Python | Level Up Coding](https://levelup.gitconnected.com/diagram-as-code-crafting-aws-architecture-diagrams-using-python-084926d0dd49)
+
+## Docker
+
+- [ ] [Docker Tutorial for Beginners - YouTube](https://www.youtube.com/watch?v=b0HMimUb4f0)
+
+## Terraform
+
+- [ ] Import initial config
+  - [ ] AMI
+    - [ ] t3.medium
+    - [ ] 2cpu, 4gb ram
+  - [ ] IAM
 
 ## Tasks
 
 - [ ] FIX: Catch error when priority is not specified in add task, currently there is a server error
   - [ ] This needs to be done in the form itself, before it gets sent
   - [ ] Either wtforms or some frontend framework with validation
+
+## Quotes Endpoint
+
+- [ ] NodeJS API
+- [ ] Vue Frontend
+  - [ ] Choose how often to change
+  - [ ] AI Generate pictures?
+
+## Lists Endpoint
+
+- [ ] VueJS
+  - [ ] Click and drag re-order
+  - [ ] Can belong to multiple lists
+- [ ] Python API
+  - [ ] How to make a DAG to reference order of completion
+- LISTS
+  - Udemy
+  - Class
+  - Psychology Book
+  - Recreational Book
+  - Computer Book
+  - Coding
+  - Job
+  - Elite Code Studios
+  - ichrisbirch
+
+## Goals Endpoint
+
+- [ ] VueJS
+- [ ] Python API
+  - [ ] Make DAG for order
+- COLUMNS
+  - `create_date`
+  - `start_date`
+  - `target_date`
+  - `completion_date`
+  - `category`
+  - `tags`
+  - `difficulty`
+  - `depends_on`
+  - `required_by`
+  - `tasks`
+  - `list_items`
+  - `status`:
+    - PENDING
+    - SUCCESS
+    - FAILURE
+    - NOT_STARTED
+    - IN_PROGRESS
+
+## Duration Endpoint
+
+- Like timers, by the day
 
 ## AutoFun
 
@@ -83,6 +158,19 @@
   - [ ] Keep
   - [ ] Location BookBox #X - Can add these to BoxPacking as well
 
+## SignupCodes Table
+
+- COLUMNS
+  - `code`
+  - `start_ts`
+  - `end_ts`
+  - `use_count`
+  - `max_uses`
+  - `purpose`
+  - `users`
+- [ ] Add to admin panel
+- [ ] Table should have validity check like users password hash
+
 ## Infrastructure Management
 
 - [ ] [How to Manage OpenStack Private Clouds Episode 1](https://www.patreon.com/posts/how-to-manage-1-78070880)
@@ -95,6 +183,10 @@ Is this something I want to do?
 - [Quickstart — Flask-WTF Documentation (1.1.x)](https://flask-wtf.readthedocs.io/en/latest/quickstart/)
 
 ## Testing
+
+- [ ] These are important
+  - [ ] [GitHub - pytest-dev/pytest-mock: Thin-wrapper around the mock package for easier use with pytest](https://github.com/pytest-dev/pytest-mock)
+  - [ ] [Testing with Python (part 1): the basics - Bite code!](https://www.bitecode.dev/p/testing-with-python-part-1-the-basics)
 
 [Mastering Integration Testing with FastAPI | Alex Jacobs](https://alex-jacobs.com/posts/fastapitests/)
 [fastApi-Integration-tests/app/auth.py at main · alexjacobs08/fastApi-Integration-tests · GitHub](https://github.com/alexjacobs08/fastApi-Integration-tests/blob/main/app/auth.py)
@@ -338,6 +430,7 @@ You can select which common phrases you want to find in the audio
 - timezone
 - session / cookies
   - I don't know anything about this
+- pagination #
 
 ### Whylogs
 
