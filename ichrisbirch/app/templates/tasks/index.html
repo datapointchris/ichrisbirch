@@ -12,7 +12,10 @@
       <span class="task--soon">Due Soon Tasks: {{ due_soon_count }}</span>
       <span class="">Total Tasks: {{ total_count }}</span>
     </div>
-  <h2 class="task-layout__title">Completed Today</h2>
+  </div>
+  <div>
+    <h2 class="task-layout__title">Completed Today</h2>
+  </div>
   <div class="task-layout task-layout--one-column-wide">
     {% for task in top_tasks %}
     {% include 'tasks/templates/priority.jinja.html' %}
