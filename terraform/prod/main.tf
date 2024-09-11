@@ -6,7 +6,7 @@ provider "aws" {
 
 # ---------- DynamoDB ---------- #
 
-module "users_table" {
+module "terraform_state_table" {
   source         = "../modules/dynamodb"
   table_name     = var.terraform_state_table_name
   hash_key       = var.terraform_state_hash_key
@@ -15,11 +15,12 @@ module "users_table" {
 
 # ---------- EC2 ---------- #
 
-module "ec2" {
+module "ichrisbirch_webserver" {
   source = "../modules/ec2"
   instance_type = var.instance_type
   ami_id = var.ami_id
   subnet_id = module.vpc.subnet_id
+  security_group_id = var.security_group_id
 }
 
 # ---------- IAM ---------- #
@@ -28,15 +29,7 @@ module "iam" {
   source = "../modules/iam"
 }
 
-# ---------- Lambda ---------- #
 
-module "lambda" {
-  source = "../modules/lambda"
-  function_name = var.lambda_function_name
-  handler = var.lambda_handler
-  runtime = var.lambda_runtime
-  role = module.iam.lambda_role_arn
-}
 
 # ---------- RDS ---------- #
 

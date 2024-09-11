@@ -25,30 +25,18 @@ variable "terraform_state_hash_key_type" {
 
 # ---------- EC2 ---------- #
 
-variable "ichrisbirch_instance_type" {
+variable "instance_type" {
   description = "The type of instance to use"
   type        = string
 }
 
-variable "ichrisbirch_ami_id" {
+variable "ami_id" {
   description = "The AMI ID to use for the instance"
   type        = string
 }
 
-# ---------- Lambda ---------- #
-
-variable "lambda_function_name" {
-  description = "The name of the Lambda function"
-  type        = string
-}
-
-variable "lambda_handler" {
-  description = "The handler for the Lambda function"
-  type        = string
-}
-
-variable "lambda_runtime" {
-  description = "The runtime for the Lambda function"
+variable "security_group_id" {
+  description = "The security group ID to attach to the instance"
   type        = string
 }
 
