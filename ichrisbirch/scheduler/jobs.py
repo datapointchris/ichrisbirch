@@ -17,7 +17,6 @@ from typing import Callable
 
 import pendulum
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select
 
 from ichrisbirch import models
@@ -33,8 +32,8 @@ logger = logging.getLogger('scheduler.jobs')
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
 daily_115am_trigger = CronTrigger(day='*', hour=1, minute=15)
+daily_130am_trigger = CronTrigger(day='*', hour=1, minute=30)
 daily_3pm_trigger = CronTrigger(day='*', hour=15)
-every_6_hour_18_minute = IntervalTrigger(hours=6, minutes=18)
 
 
 @dataclass
@@ -147,13 +146,8 @@ jobs_to_add = [
         id='check_and_run_autotasks_daily',
     ),
     JobToAdd(
-        func=aws_postgres_snapshot_to_s3,
-        trigger=daily_3pm_trigger,
-        id='aws_postgres_snapshot_to_s3_daily',
-    ),
-    JobToAdd(
         func=postgres_backup,
-        trigger=every_6_hour_18_minute,
+        trigger=daily_130am_trigger,
         id='postgres_backup_every_6_hour_18_minute',
     ),
 ]
