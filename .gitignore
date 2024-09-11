@@ -250,3 +250,4 @@ terraform.tfstate
 terraform.tfstate.*
 *.tfstate
 *.tfstate.*
+*.tfvars
