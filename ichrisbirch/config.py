@@ -45,7 +45,7 @@ class AWSSettings:
         self.account_id: str = os.environ['AWS_ACCOUNT_ID']
         self.kms_key: str = os.environ['AWS_KMS_KEY']
         self.postgres_backup_role: str = 'role/S3DatabaseBackups'
-        self.s3_backup_bucket: str = 'ichrisbirch-backups'
+        self.s3_backup_bucket: str = os.environ['AWS_S3_BACKUP_BUCKET']
 
 
 class FastAPISettings:
