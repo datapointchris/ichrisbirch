@@ -1,11 +1,19 @@
+# ---------- AWS ---------- #
+
 provider "aws" {
   region = var.region
 }
 
-module "vpc" {
-  source = "../modules/vpc"
-  vpc_cidr = var.vpc_cidr
+# ---------- DynamoDB ---------- #
+
+module "users_table" {
+  source         = "../modules/dynamodb"
+  table_name     = var.terraform_state_table_name
+  hash_key       = var.terraform_state_hash_key
+  hash_key_type  = var.terraform_state_hash_key_type
 }
+
+# ---------- EC2 ---------- #
 
 module "ec2" {
   source = "../modules/ec2"
@@ -14,33 +22,13 @@ module "ec2" {
   subnet_id = module.vpc.subnet_id
 }
 
-module "rds" {
-  source = "../modules/rds"
-  db_instance_class = var.db_instance_class
-  db_name = var.db_name
-  db_username = var.db_username
-  db_password = var.db_password
-  subnet_ids = module.vpc.subnet_ids
-}
-
-module "route53" {
-  source = "../modules/route53"
-  domain_name = var.domain_name
-}
-
-module "s3" {
-  source = "../modules/s3"
-  bucket_name = var.bucket_name
-}
+# ---------- IAM ---------- #
 
 module "iam" {
   source = "../modules/iam"
 }
 
-module "dynamodb" {
-  source = "../modules/dynamodb"
-  table_name = var.dynamodb_table_name
-}
+# ---------- Lambda ---------- #
 
 module "lambda" {
   source = "../modules/lambda"
@@ -48,4 +36,37 @@ module "lambda" {
   handler = var.lambda_handler
   runtime = var.lambda_runtime
   role = module.iam.lambda_role_arn
+}
+
+# ---------- RDS ---------- #
+
+module "rds" {
+  source = "../modules/rds"
+  db_instance_class = var.db_instance_class
+  db_name = var.db_name
+  db_username = var.db_username
+  db_password = var.db_password
+  vpc_id = module.vpc.vpc_id
+  subnet_ids = module.vpc.subnet_ids
+}
+
+# ---------- Route 53 ---------- #
+
+module "route53" {
+  source = "../modules/route53"
+  domain_name = var.domain_name
+}
+
+# ---------- S3 ---------- #
+
+module "s3" {
+  source = "../modules/s3"
+  bucket_name = var.bucket_name
+}
+
+# ---------- VPC ---------- #
+
+module "vpc" {
+  source = "../modules/vpc"
+  vpc_cidr = var.vpc_cidr
 }
