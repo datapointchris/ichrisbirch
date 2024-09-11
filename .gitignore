@@ -243,3 +243,10 @@ ichrisbirch-backups/
 
 # css map files
 *.css.map
+
+# terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+*.tfstate
+*.tfstate.*
