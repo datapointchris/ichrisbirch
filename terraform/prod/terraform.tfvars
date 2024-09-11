@@ -10,8 +10,8 @@ terraform_state_hash_key_type = "S"
 
 # ---------- EC2 ---------- #
 
-instance_type      = "t3.micro"
-ami_id             = "ami-12345678"
+ichrisbirch_instance_type      = "t3.medium"
+ichrisbirch_ami_id             = "ami-12345678"
 
 # ---------- RDS ---------- #
 

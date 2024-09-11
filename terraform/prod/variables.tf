@@ -25,13 +25,12 @@ variable "terraform_state_hash_key_type" {
 
 # ---------- EC2 ---------- #
 
-variable "instance_type" {
+variable "ichrisbirch_instance_type" {
   description = "The type of instance to use"
   type        = string
-  default     = "t3.medium"
 }
 
-variable "ami_id" {
+variable "ichrisbirch_ami_id" {
   description = "The AMI ID to use for the instance"
   type        = string
 }

@@ -1,0 +1,49 @@
+{
+    "Modules": [
+        {
+            "Key": "",
+            "Source": "",
+            "Dir": "."
+        },
+        {
+            "Key": "ec2",
+            "Source": "../modules/ec2",
+            "Dir": "../modules/ec2"
+        },
+        {
+            "Key": "iam",
+            "Source": "../modules/iam",
+            "Dir": "../modules/iam"
+        },
+        {
+            "Key": "lambda",
+            "Source": "../modules/lambda",
+            "Dir": "../modules/lambda"
+        },
+        {
+            "Key": "rds",
+            "Source": "../modules/rds",
+            "Dir": "../modules/rds"
+        },
+        {
+            "Key": "route53",
+            "Source": "../modules/route53",
+            "Dir": "../modules/route53"
+        },
+        {
+            "Key": "s3",
+            "Source": "../modules/s3",
+            "Dir": "../modules/s3"
+        },
+        {
+            "Key": "users_table",
+            "Source": "../modules/dynamodb",
+            "Dir": "../modules/dynamodb"
+        },
+        {
+            "Key": "vpc",
+            "Source": "../modules/vpc",
+            "Dir": "../modules/vpc"
+        }
+    ]
+}
