@@ -9,6 +9,6 @@ variable "hash_key" {
 }
 
 variable "hash_key_type" {
-  description = "The type of the hash key (S for string, N for number)"
+  description = "The type of the hash key"
   type        = string
 }
