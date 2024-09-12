@@ -1,15 +1,15 @@
-# ---------- Route 53 ---------- #
+# ---------- RDS ---------- #
 
-variable "domain_name" {
-  description = "The domain name for Route 53"
+variable "db_username" {
+  description = "The username for the database"
   type        = string
+  sensitive   = true
 }
 
-# ---------- S3 ---------- #
-
-variable "bucket_name" {
-  description = "The name of the S3 bucket"
+variable "db_password" {
+  description = "The password for the database"
   type        = string
+  sensitive   = true
 }
 
 # ---------- VPC ---------- #
@@ -20,8 +20,20 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "availability_zone" {
-  description = "The availability zone for the subnet"
-  type        = string
-  default     = "us-east-2a"
+variable "azs" {
+  type        = list(string)
+  description = "Availability Zones"
+  default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
+}
+
+variable "public_subnet_cidrs" {
+  type        = list(string)
+  description = "Public Subnet CIDR values"
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+  type        = list(string)
+  description = "Private Subnet CIDR values"
+  default     = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
 }
