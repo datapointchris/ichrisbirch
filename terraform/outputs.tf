@@ -1,4 +1,3 @@
-
 output "prod_vpc_id" {
   value = aws_vpc.prod.id
 }

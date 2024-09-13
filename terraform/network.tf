@@ -9,7 +9,6 @@
 # Elastic IP
 # Network Interface
 
-
 resource "aws_vpc" "prod" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -51,7 +50,6 @@ resource "aws_internet_gateway" "prod" {
 
 }
 
-
 resource "aws_route_table" "prod_public" {
   vpc_id = aws_vpc.prod.id
 
@@ -70,9 +68,6 @@ resource "aws_route_table_association" "prod_public" {
   subnet_id      = element(aws_subnet.prod_public[*].id, count.index)
   route_table_id = aws_route_table.prod_public.id
 }
-
-
-
 
 resource "aws_security_group" "ichrisbirch_webserver" {
   description = "HTTP, HTTPS, SSH"
@@ -109,7 +104,6 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_ssh_ipv4_in" {
   ip_protocol       = "tcp"
   to_port           = 22
 }
-
 
 resource "aws_network_interface" "ichrisbirch_webserver" {
   subnet_id       = aws_subnet.prod_public[0].id

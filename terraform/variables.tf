@@ -1,4 +1,3 @@
-
 # ---------- RDS ---------- #
 
 variable "db_username" {

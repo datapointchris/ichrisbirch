@@ -22,6 +22,7 @@ resource "aws_route53_record" "docs_ichrisbirch_com_cname" {
   zone_id = aws_route53_zone.ichrisbirch_com.zone_id
 }
 
+
 # ---------- Docs Site ---------- #
 
 resource "aws_route53_zone" "docs_ichrisbirch_com" {
@@ -37,7 +38,6 @@ resource "aws_route53_record" "docs_ichrisbirch_com_a" {
   type    = "A"
   zone_id = aws_route53_zone.docs_ichrisbirch_com.zone_id
 }
-
 
 
 # ---------- API Subdomain ---------- #

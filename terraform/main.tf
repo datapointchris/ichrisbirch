@@ -20,6 +20,7 @@ resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {
     name = "LockID"
     type = "S"
   }
+
   point_in_time_recovery {
     enabled = "false"
   }
@@ -46,8 +47,7 @@ locals {
 }
 
 resource "aws_instance" "ichrisbirch_webserver" {
-  ami = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
-  # ami                                  = "ami-085f9c64a9b75eed5" # Ubuntu 24.04
+  ami                         = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
   associate_public_ip_address = false
   availability_zone           = local.azs[0]
   iam_instance_profile        = aws_iam_instance_profile.ichrisbirch_webserver.name

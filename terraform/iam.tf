@@ -4,6 +4,7 @@
 resource "aws_iam_policy" "access_webserver_keys" {
   name        = "AccessWebserverKeys"
   description = "Policy to allow access to the webserver keys"
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
