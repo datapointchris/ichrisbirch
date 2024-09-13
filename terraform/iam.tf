@@ -64,7 +64,7 @@ resource "aws_iam_policy" "access_webserver_keys" {
 }
 
 resource "aws_iam_policy" "assume_admin_role" {
-  name        = "AssumeAdminRolePolicy"
+  name        = "AssumeAdminRole"
   description = "Policy to allow assuming the admin role"
   depends_on  = [aws_iam_role.admin]
 
@@ -112,6 +112,30 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
   })
 }
 
+resource "aws_iam_policy" "cloud_developer" {
+  name        = "CloudDeveloper"
+  description = "Combined policy for general cloud development"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "lambda:*",
+          "dynamodb:*",
+          "ec2:*",
+          "ecs:*",
+          "rds:*",
+          "route53:*",
+          "s3:*",
+          "ssm:*"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
 
 # ---------- ROLE POLICY ATTACHMENTS ---------- #
 
@@ -168,39 +192,9 @@ resource "aws_iam_group_policy_attachment" "developer_assume_admin_role" {
   policy_arn = aws_iam_policy.assume_admin_role.arn
 }
 
-resource "aws_iam_group_policy_attachment" "developer_AWSLambda_FullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_AmazonDynamoDBFullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_AmazonEC2FullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_AmazonECS_FullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_AmazonRDSFullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_AmazonS3FullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_AmazonSSMFullAccess" {
-  group      = "developer"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+resource "aws_iam_group_policy_attachment" "developer_cloud_developer" {
+  group      = aws_iam_group.developer.name
+  policy_arn = aws_iam_policy.cloud_developer.arn
 }
 
 
