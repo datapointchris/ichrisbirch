@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-echo "Starting new server setup"
-echo "Script must be run with the ubuntu user to use AWS credentials"
-echo "Current User: $(whoami)"
-echo "Home Directory: $HOME"
-
 sudo apt update && sudo apt upgrade -y
 
 # base installs
@@ -34,9 +29,10 @@ rm "$HOME/ec2-public.key"
 rm "$HOME/ec2-private.key"
 
 # Install poetry
+export POETRY_HOME=/etc/poetry
 curl -sSL https://install.python-poetry.org | python3 -
-export PATH="$HOME/.local/bin:$PATH"
-echo "export PATH=\"$HOME/.local/bin:$PATH\"" >> ~/.bashrc
+export PATH="$POETRY_HOME/bin:$PATH"
+echo "export PATH=\"$POETRY_HOME/bin:$PATH\"" >> ~/.bashrc
 poetry config virtualenvs.in-project true
 
 # Set permissions - ubuntu must own in order to poetry install and git secret reveal
@@ -63,3 +59,5 @@ cd deploy || return
 ./deploy-nginx.sh
 
 ./deploy-supervisor.sh
+
+sudo reboot
