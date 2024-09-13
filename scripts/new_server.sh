@@ -22,7 +22,7 @@ aws s3 cp s3://ichrisbirch-webserver-keys/ec2-private.key "$HOME/ec2-private.key
 
 # Import the keys
 gpg --import "$HOME/ec2-public.key"
-gpg --allow-secret-key-import --import "$HOME/ec2-private.key"
+gpg --import "$HOME/ec2-private.key"
 
 # Delete the key files
 rm "$HOME/ec2-public.key"
