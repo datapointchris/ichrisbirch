@@ -186,11 +186,3 @@ resource "aws_iam_user_policy_attachment" "john_kundycki_iam_user_change_passwor
   policy_arn = "arn:aws:iam::aws:policy/IAMUserChangePassword"
   user       = "john.kundycki"
 }
-
-# ---------- USER ACCESS KEYS ---------- #
-
-resource "aws_iam_access_key" "chris_birch" {
-  depends_on = [aws_iam_user.chris_birch]
-  status     = "Active"
-  user       = "chris.birch"
-}
