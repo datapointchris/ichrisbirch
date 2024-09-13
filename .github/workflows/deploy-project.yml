@@ -15,7 +15,7 @@ jobs:
     env:
       SSH_KEY_PATH: ichrisbirch_key
       REMOTE_USER: ubuntu
-      REMOTE_HOST: 23.22.30.103
+      REMOTE_HOST: 3.22.113.231
       PROJECT_DIR: /var/www/ichrisbirch
       POETRY_HOME: /etc/poetry
 
