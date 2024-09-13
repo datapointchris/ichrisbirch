@@ -48,7 +48,7 @@ locals {
 resource "aws_instance" "ichrisbirch_webserver" {
   ami = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
   # ami                                  = "ami-085f9c64a9b75eed5" # Ubuntu 24.04
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   availability_zone           = local.azs[0]
   iam_instance_profile        = aws_iam_instance_profile.ichrisbirch_webserver.name
   instance_type               = "t3.medium"
@@ -68,15 +68,26 @@ resource "aws_instance" "ichrisbirch_webserver" {
 
 # ---------- RDS ---------- #
 
-resource "aws_db_instance" "ichrisbirch_pg16" {
-  identifier          = "ichrisbirch-pg16"
-  instance_class      = "db.t3.micro"
-  engine              = "postgres"
-  engine_version      = "16.2"
-  allocated_storage   = 20
-  skip_final_snapshot = true
-  username            = var.db_username
-  password            = var.db_password
+resource "aws_db_subnet_group" "ichrisbirch" {
+  name       = "ichrisbirch"
+  subnet_ids = [element(aws_subnet.prod_public, 0).id, element(aws_subnet.prod_public, 1).id, element(aws_subnet.prod_public, 2).id]
+}
+
+resource "aws_db_instance" "ichrisbirch" {
+  identifier = "ichrisbirch-db"
+  # do not create the database because the pg_restore command will do that
+  # db_name             = "ichrisbirch" # name of the database to create
+  instance_class         = "db.t3.micro"
+  engine                 = "postgres"
+  engine_version         = "16.2"
+  allocated_storage      = 20
+  skip_final_snapshot    = true
+  username               = var.db_username
+  password               = var.db_password
+  publicly_accessible    = true
+  db_subnet_group_name   = aws_db_subnet_group.ichrisbirch.name
+  vpc_security_group_ids = [aws_security_group.ichrisbirch_webserver.id]
+  depends_on             = [aws_security_group.ichrisbirch_webserver]
 }
 
 # ---------- S3 ---------- #

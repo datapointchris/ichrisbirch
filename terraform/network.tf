@@ -11,7 +11,9 @@
 
 
 resource "aws_vpc" "prod" {
-  cidr_block = var.vpc_cidr
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
 
   tags = {
     Name = "Prod VPC"
@@ -125,47 +127,4 @@ resource "aws_eip" "ichrisbirch_elastic_ip" {
   tags = {
     Name = "ichrisbirch.com"
   }
-}
-
-
-
-
-
-
-
-
-
-output "prod_id" {
-  value = aws_vpc.prod.id
-}
-
-output "prod_cidr_block" {
-  value = aws_vpc.prod.cidr_block
-}
-output "internet_gateway_id" {
-  value = aws_internet_gateway.prod.id
-}
-
-output "prod_public_route_table_id" {
-  value = aws_route_table.prod_public.id
-}
-
-output "prod_public_subnet_ids" {
-  value = aws_subnet.prod_public[*].id
-}
-
-output "prod_private_subnet_ids" {
-  value = aws_subnet.prod_private[*].id
-}
-
-output "ichrisbirch_webserver_security_group_id" {
-  value = aws_security_group.ichrisbirch_webserver.id
-}
-
-output "ichrisbirch_webserver_network_interface_id" {
-  value = aws_network_interface.ichrisbirch_webserver.id
-}
-
-output "ichrisbirch_elastic_ip" {
-  value = aws_eip.ichrisbirch_elastic_ip.public_ip
 }
