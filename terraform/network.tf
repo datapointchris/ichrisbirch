@@ -1,13 +1,24 @@
 # ---------- NETWORKING ---------- #
 
 # VPC
-# Subnets - Public and Private
 # Internet Gateway
-# Route Table
-# Route Table Association
+# Public Subnet
+# Public Route Table
+# Public Route Table Association
+# Public Route Table Main Association
+# Private Subnet
+# Private Route Table
+# Private Route Table Association
 # Security Group
-# Elastic IP
+# # Egress Allow All Traffic Out
+# # Ingress Allow All HTTP IPv4 In
+# # Ingress Allow All TLS IPv4 In
+# # Ingress Allow All SSH IPv4 In
+# # Ingress Allow All ICMP IPv4 In
+# # Ingress Allow Postgres Inside SG
 # Network Interface
+# Elastic IP
+# Elastic IP Association
 
 # VPC
 resource "aws_vpc" "prod" {
@@ -120,6 +131,14 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_icmp_ipv4_in" {
   from_port         = -1
   ip_protocol       = "icmp"
   to_port           = -1
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_postgres_inside_sg" {
+  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  cidr_ipv4         = aws_vpc.prod.cidr_block
+  from_port         = 5432
+  ip_protocol       = "tcp"
+  to_port           = 5432
 }
 
 # Network Interface
