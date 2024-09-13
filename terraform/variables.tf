@@ -1,3 +1,4 @@
+
 # ---------- RDS ---------- #
 
 variable "db_username" {
@@ -18,12 +19,6 @@ variable "vpc_cidr" {
   description = "The CIDR block for the VPC"
   type        = string
   default     = "10.0.0.0/16"
-}
-
-variable "azs" {
-  type        = list(string)
-  description = "Availability Zones"
-  default     = ["us-east-2a", "us-east-2b", "us-east-2c"]
 }
 
 variable "public_subnet_cidrs" {

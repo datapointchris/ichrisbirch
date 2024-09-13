@@ -1,12 +1,12 @@
 # ---------- AWS ---------- #
 
 provider "aws" {
-  region = "us-east-1"
+  region = "us-east-2"
 }
 
 # ---------- DynamoDB ---------- #
 
-resource "aws_dynamodb_table" "ichrisbirch-terraform-state-locking" {
+resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {
   name                        = "ichrisbirch-terraform-state-locking"
   hash_key                    = "LockID"
   billing_mode                = "PROVISIONED"
@@ -27,52 +27,49 @@ resource "aws_dynamodb_table" "ichrisbirch-terraform-state-locking" {
 
 # ---------- EC2 ---------- #
 
-data "aws_ami" "ichrisbirch" {
+data "aws_ami" "ichrisbirch_t3medium_2vcpu_4gb_py312" {
   most_recent = true
+  owners      = ["self"]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"]
+    values = ["ichrisbirch-t3medium-2vcpu-4gb-py312"]
   }
+}
 
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
-  owners = ["099720109477"] # Canonical
+locals {
+  azs = data.aws_availability_zones.available.names
 }
 
 resource "aws_instance" "ichrisbirch_webserver" {
-  ami                                  = data.aws_ami.ichrisbirch.id
-  associate_public_ip_address          = "true"
-  availability_zone                    = "us-east-1b"
-  iam_instance_profile                 = "S3DatabaseBackups"
-  instance_initiated_shutdown_behavior = "stop"
-  instance_type                        = "t3.medium"
-  ipv6_address_count                   = "0"
-  key_name                             = "ichrisbirch-webserver"
-  security_groups                      = [aws_security_group.ichrisbirch_webserver.name]
-  vpc_security_group_ids               = [aws_security_group.ichrisbirch_webserver.id]
-  subnet_id                            = aws_subnet.prod_public[0].id
+  ami = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
+  # ami                                  = "ami-085f9c64a9b75eed5" # Ubuntu 24.04
+  associate_public_ip_address = true
+  availability_zone           = local.azs[0]
+  iam_instance_profile        = aws_iam_instance_profile.ichrisbirch_webserver.name
+  instance_type               = "t3.medium"
+  key_name                    = "ichrisbirch-webserver"
+  security_groups             = [aws_security_group.ichrisbirch_webserver.id]
+  subnet_id                   = element(aws_subnet.prod_public, 0).id
 
-  capacity_reservation_specification {
-    capacity_reservation_preference = "open"
+  instance_market_options {
+    market_type = "spot"
   }
 
   tags = {
     Name = "ichrisbirch"
   }
-
-  tags_all = {
-    Name = "ichrisbirch"
-  }
+  depends_on = [aws_security_group.ichrisbirch_webserver]
 }
 
 # ---------- RDS ---------- #
 
 resource "aws_db_instance" "ichrisbirch_pg16" {
-  db_name             = "ichrisbirch-pg16"
+  identifier          = "ichrisbirch-pg16"
   instance_class      = "db.t3.micro"
   engine              = "postgres"
   engine_version      = "16.2"
@@ -146,4 +143,47 @@ resource "aws_s3_bucket_public_access_block" "ichrisbirch_terraform" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket" "ichrisbirch_webserver_keys" {
+  bucket = "ichrisbirch-webserver-keys"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "ichrisbirch_webserver_keys" {
+  bucket = aws_s3_bucket.ichrisbirch_webserver_keys.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "ichrisbirch_webserver_keys_admin_role_only_policy" {
+  bucket = aws_s3_bucket.ichrisbirch_webserver_keys.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.admin.arn
+        }
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          aws_s3_bucket.ichrisbirch_webserver_keys.arn,
+          format("%s/*", aws_s3_bucket.ichrisbirch_webserver_keys.arn),
+        ]
+      }
+    ]
+  })
 }

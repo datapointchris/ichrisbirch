@@ -22,7 +22,7 @@ resource "aws_subnet" "prod_public" {
   count             = length(var.public_subnet_cidrs)
   vpc_id            = aws_vpc.prod.id
   cidr_block        = element(var.public_subnet_cidrs, count.index)
-  availability_zone = element(var.azs, count.index)
+  availability_zone = element(local.azs, count.index)
 
   tags = {
     Name = "Prod Public Subnet ${count.index + 1}"
@@ -33,7 +33,7 @@ resource "aws_subnet" "prod_private" {
   count             = length(var.private_subnet_cidrs)
   vpc_id            = aws_vpc.prod.id
   cidr_block        = element(var.private_subnet_cidrs, count.index)
-  availability_zone = element(var.azs, count.index)
+  availability_zone = element(local.azs, count.index)
 
   tags = {
     Name = "Prod Private Subnet ${count.index + 1}"
@@ -74,7 +74,7 @@ resource "aws_route_table_association" "prod_public" {
 
 resource "aws_security_group" "ichrisbirch_webserver" {
   description = "HTTP, HTTPS, SSH"
-  name        = "ichrisbirch-sg"
+  name        = "ichrisbirch-webserver"
   vpc_id      = aws_vpc.prod.id
 }
 
@@ -120,20 +120,13 @@ resource "aws_network_interface" "ichrisbirch_webserver" {
 }
 
 resource "aws_eip" "ichrisbirch_elastic_ip" {
-  instance             = aws_instance.ichrisbirch_webserver.id
-  network_interface    = aws_network_interface.ichrisbirch_webserver.id
-  domain               = "vpc"
-  network_border_group = "us-east-2"
-  public_ipv4_pool     = "amazon"
-
+  domain            = "vpc"
+  network_interface = aws_network_interface.ichrisbirch_webserver.id
   tags = {
     Name = "ichrisbirch.com"
   }
-
-  tags_all = {
-    Name = "ichrisbirch.com"
-  }
 }
+
 
 
 
