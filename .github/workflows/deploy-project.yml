@@ -16,8 +16,6 @@ jobs:
       SSH_KEY_PATH: ichrisbirch_key
       REMOTE_USER: ubuntu
       REMOTE_HOST: 3.22.113.231
-      PROJECT_DIR: /var/www/ichrisbirch
-      POETRY_HOME: /etc/poetry
 
     steps:
       - name: Checkout code
@@ -27,12 +25,12 @@ jobs:
         run: |
           echo "${{ secrets.ICHRISBIRCH_KEY }}" > $SSH_KEY_PATH && chmod 600 $SSH_KEY_PATH
           ssh -t -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $REMOTE_USER@$REMOTE_HOST '
-            cd $PROJECT_DIR &&
+            cd /var/www/ichrisbirch &&
             git pull &&
             git secret reveal -f &&
             sudo rm -rf .venv &&
-            $POETRY_HOME/bin/poetry env use $(/home/ubuntu/.pyenv/bin/pyenv which python) &&
-            $POETRY_HOME/bin/poetry install --without dev,cicd
+            /etc/poetry/bin/poetry env use $(/home/ubuntu/.pyenv/bin/pyenv which python) &&
+            /etc/poetry/bin/poetry install --without dev,cicd
           '
 
       - name: Restart Supervisor
