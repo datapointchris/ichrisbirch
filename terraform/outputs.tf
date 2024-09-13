@@ -101,3 +101,8 @@ output "prod_vpc_cidr_block" {
 output "prod_vpc_id" {
   value = aws_vpc.prod.id
 }
+
+output "user_chris_birch_generated_password" {
+  value     = aws_iam_user_login_profile.chris_birch.password
+  sensitive = true
+}

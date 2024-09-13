@@ -42,6 +42,22 @@ resource "aws_iam_role" "ichrisbirch_webserver" {
   })
 }
 
+resource "aws_iam_policy" "allow_pass_webserver_role" {
+  name        = "AllowPassRoleToWebserverRole"
+  description = "Policy to allow passing the WebserverRole"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = aws_iam_role.ichrisbirch_webserver.arn
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "webserver_access_webserver_keys" {
   role       = aws_iam_role.ichrisbirch_webserver.name
   policy_arn = aws_iam_policy.access_webserver_keys.arn
@@ -112,6 +128,11 @@ resource "aws_iam_group" "developer" {
 
 # ---------- USER GROUP POLICIES ---------- #
 
+resource "aws_iam_group_policy_attachment" "developer_pass_webserver_role" {
+  group      = aws_iam_group.developer.name
+  policy_arn = aws_iam_policy.allow_pass_webserver_role.arn
+}
+
 resource "aws_iam_group_policy_attachment" "developer_assume_admin_role" {
   group      = aws_iam_group.developer.name
   policy_arn = aws_iam_policy.assume_admin_role.arn
@@ -157,6 +178,11 @@ resource "aws_iam_group_policy_attachment" "developer_AmazonSSMFullAccess" {
 resource "aws_iam_user" "chris_birch" {
   name       = "chris.birch"
   depends_on = [aws_iam_group.developer]
+}
+
+resource "aws_iam_user_login_profile" "chris_birch" {
+  user                    = aws_iam_user.chris_birch.name
+  password_reset_required = true
 }
 
 resource "aws_iam_user" "john_kundycki" {
