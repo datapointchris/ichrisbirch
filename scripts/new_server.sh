@@ -43,7 +43,7 @@ git clone https://www.github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
 cd /var/www/ichrisbirch || return
 
 # Install project
-poetry install
+poetry install --without dev,cicd
 
 # Unlock secret files
 git secret reveal
