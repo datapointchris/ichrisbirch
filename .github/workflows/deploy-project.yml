@@ -15,7 +15,7 @@ jobs:
     env:
       SSH_KEY_PATH: ichrisbirch_key
       REMOTE_USER: ubuntu
-      REMOTE_HOST: 3.22.113.231
+      REMOTE_HOST: 18.117.41.228
 
     steps:
       - name: Checkout code
