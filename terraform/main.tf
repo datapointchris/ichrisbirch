@@ -1,8 +1,6 @@
 # ---------- AWS ---------- #
 
-provider "aws" {
-  region = "us-east-2"
-}
+provider "aws" { region = "us-east-2" }
 
 # ---------- DynamoDB ---------- #
 
@@ -38,32 +36,35 @@ data "aws_ami" "ichrisbirch_t3medium_2vcpu_4gb_py312" {
   }
 }
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
+data "aws_availability_zones" "available" { state = "available" }
 
-locals {
-  azs = data.aws_availability_zones.available.names
-}
+locals { azs = data.aws_availability_zones.available.names }
 
 resource "aws_instance" "ichrisbirch_webserver" {
-  ami                         = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
-  associate_public_ip_address = false
-  availability_zone           = local.azs[0]
-  iam_instance_profile        = aws_iam_instance_profile.ichrisbirch_webserver.name
-  instance_type               = "t3.medium"
-  key_name                    = "ichrisbirch-webserver"
-  security_groups             = [aws_security_group.ichrisbirch_webserver.id]
-  subnet_id                   = element(aws_subnet.prod_public, 0).id
+  # Cannot use the following properties when attaching a network interface:
+  #   subnet_id
+  #   vpc_security_group_ids
+  #   associate_public_ip_address
+  ami                  = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
+  availability_zone    = local.azs[0]
+  iam_instance_profile = aws_iam_instance_profile.ichrisbirch_webserver.name
+  instance_type        = "t3.medium"
+  key_name             = "ichrisbirch-webserver"
+  tags                 = { Name = "ichrisbirch" }
+  depends_on           = [aws_security_group.ichrisbirch_webserver, aws_network_interface.ichrisbirch_webserver]
+
+  # The network interface must be attached here when the instance is created in order
+  # to have it be the primary network interface that the elastic IP can be associated with.
+  # If it is secondary, SSH and inbound traffic will not work.
+  # https://repost.aws/knowledge-center/ec2-ubuntu-secondary-network-interface
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.ichrisbirch_webserver.id
+  }
 
   instance_market_options {
     market_type = "spot"
   }
-
-  tags = {
-    Name = "ichrisbirch"
-  }
-  depends_on = [aws_security_group.ichrisbirch_webserver]
 }
 
 # ---------- RDS ---------- #
@@ -94,28 +95,20 @@ resource "aws_db_instance" "ichrisbirch" {
 
 resource "aws_s3_bucket" "ichrisbirch_backups" {
   bucket = "ichrisbirch-backups"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  lifecycle { prevent_destroy = true }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "ichrisbirch_backups" {
   bucket = aws_s3_bucket.ichrisbirch_backups.bucket
-
   rule {
     id     = "Delete after 30 days"
     status = "Enabled"
-
-    expiration {
-      days = 30
-    }
+    expiration { days = 30 }
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "ichrisbirch_backups" {
-  bucket = aws_s3_bucket.ichrisbirch_backups.id
-
+  bucket                  = aws_s3_bucket.ichrisbirch_backups.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -124,15 +117,11 @@ resource "aws_s3_bucket_public_access_block" "ichrisbirch_backups" {
 
 resource "aws_s3_bucket" "ichrisbirch_stats" {
   bucket = "ichrisbirch-stats"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  lifecycle { prevent_destroy = true }
 }
 
 resource "aws_s3_bucket_public_access_block" "ichrisbirch_stats" {
-  bucket = aws_s3_bucket.ichrisbirch_stats.id
-
+  bucket                  = aws_s3_bucket.ichrisbirch_stats.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -141,15 +130,11 @@ resource "aws_s3_bucket_public_access_block" "ichrisbirch_stats" {
 
 resource "aws_s3_bucket" "ichrisbirch_terraform" {
   bucket = "ichrisbirch-terraform"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  lifecycle { prevent_destroy = true }
 }
 
 resource "aws_s3_bucket_public_access_block" "ichrisbirch_terraform" {
-  bucket = aws_s3_bucket.ichrisbirch_terraform.id
-
+  bucket                  = aws_s3_bucket.ichrisbirch_terraform.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -158,15 +143,11 @@ resource "aws_s3_bucket_public_access_block" "ichrisbirch_terraform" {
 
 resource "aws_s3_bucket" "ichrisbirch_webserver_keys" {
   bucket = "ichrisbirch-webserver-keys"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  lifecycle { prevent_destroy = true }
 }
 
 resource "aws_s3_bucket_public_access_block" "ichrisbirch_webserver_keys" {
-  bucket = aws_s3_bucket.ichrisbirch_webserver_keys.id
-
+  bucket                  = aws_s3_bucket.ichrisbirch_webserver_keys.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
