@@ -37,9 +37,6 @@ poetry config virtualenvs.in-project true
 
 git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
 
-# Set permissions - ubuntu must own in order to poetry install and git secret reveal
-sudo chown -R ubuntu /var/www
-
 cd /var/www/ichrisbirch || return
 
 # Install project
@@ -59,5 +56,9 @@ cd deploy || return
 ./deploy-nginx.sh
 
 ./deploy-supervisor.sh
+
+# Set permissions - ubuntu must own in order to poetry install and git secret reveal
+# Since startup script runs as root, change permissions at the end
+sudo chown -R ubuntu /var/www
 
 sudo reboot
