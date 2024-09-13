@@ -1,64 +1,109 @@
 #!/usr/bin/env bash
 
-sudo apt update && sudo apt upgrade -y
+set_global_vars() {
+    UBUNTU_HOME=/home/ubuntu
+    KEY_BUCKET=ichrisbirch-webserver-keys
+    PUBLIC_KEY=ec2-public.key
+    PRIVATE_KEY=ec2-private.key
+    POETRY_HOME=/etc/poetry
+    POETRY_BIN_DIR=$POETRY_HOME/bin
+    POETRY_EXE=$POETRY_BIN_DIR/poetry
+}
 
-# base installs
-sudo apt install curl git git-secret -y
+update_machine() {
+    apt update && apt upgrade -y
+}
 
-# NOTE: Install the postgresql-client version that matches the database, this is for pg_dump backups with the scheduler.
-sudo apt install postgresql-client-16 unzip tmux tldr supervisor nginx neovim -y
+base_installs() {
+    # NOTE: Install the postgresql-client version that matches the database
+    # this is for pg_dump backups with the scheduler.
+    apt install curl git git-secret postgresql-client-16 unzip tmux tldr supervisor nginx neovim -y
+}
 
-# for building psycopg from source
-sudo apt install python3-dev libpq-dev gcc -y
+installs_for_building_psycopg2_from_source() {
+    apt install python3-dev libpq-dev gcc -y
+}
 
-# Install AWS CLI
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
+install_aws_cli() {
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "$UBUNTU_HOME/awscliv2.zip"
+    cd $UBUNTU_HOME || return
+    unzip awscliv2.zip
+    ./aws/install > /dev/null 2>&1
+}
 
-# Get public and private gpg keys from S3 for unlocking git-secret .env files
-aws s3 cp s3://ichrisbirch-webserver-keys/ec2-public.key "$HOME/ec2-public.key"
-aws s3 cp s3://ichrisbirch-webserver-keys/ec2-private.key "$HOME/ec2-private.key"
+import_gpg_keys() {
+    # Get public and private gpg keys from S3 for unlocking git-secret .env files
+    aws s3 cp "s3://$KEY_BUCKET/$PUBLIC_KEY" "$UBUNTU_HOME/$PUBLIC_KEY"
+    aws s3 cp "s3://$KEY_BUCKET/$PRIVATE_KEY" "$UBUNTU_HOME/$PRIVATE_KEY"
 
-# Import the keys
-gpg --import "$HOME/ec2-public.key"
-gpg --import "$HOME/ec2-private.key"
+    gpg --import "$UBUNTU_HOME/$PUBLIC_KEY"
+    gpg --import "$UBUNTU_HOME/$PRIVATE_KEY"
 
-# Delete the key files
-rm "$HOME/ec2-public.key"
-rm "$HOME/ec2-private.key"
+    sudo -u ubuntu gpg --import "$UBUNTU_HOME/$PUBLIC_KEY"
+    sudo -u ubuntu gpg --import "$UBUNTU_HOME/$PRIVATE_KEY"
 
-# Install poetry
-export POETRY_HOME=/etc/poetry
-curl -sSL https://install.python-poetry.org | python3 -
-export PATH="$POETRY_HOME/bin:$PATH"
-echo "export PATH=\"$POETRY_HOME/bin:$PATH\"" >> ~/.bashrc
-poetry config virtualenvs.in-project true
+    rm "$UBUNTU_HOME/$PUBLIC_KEY"
+    rm "$UBUNTU_HOME/$PRIVATE_KEY"
+}
 
-git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
+install_poetry() {
+    curl -sSL https://install.python-poetry.org | POETRY_HOME="$POETRY_HOME" python3 -
+    # Add poetry to PATH for ubuntu since this script runs as root on startup
+    echo "export PATH=\"$POETRY_BIN_DIR:$PATH\"" >> "$UBUNTU_HOME/.bashrc"
+    $POETRY_EXE config virtualenvs.in-project true && echo "Set poetry to create virtualenvs in project directory"
+    sudo -u ubuntu $POETRY_EXE config virtualenvs.in-project true && echo "Set poetry to create virtualenvs in project directory for ubuntu"
+}
 
-cd /var/www/ichrisbirch || return
+clone_repo() {
+    git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
+}
 
-# Install project
-poetry install --without dev,cicd
+install_project() {
+    cd /var/www/ichrisbirch && $POETRY_EXE install --without dev,cicd
+}
 
-# Unlock secret files
-git secret reveal
+unlock_secret_files() {
+    cd /var/www/ichrisbirch && git secret reveal -f
+}
 
-# Make log files for project
-./scripts/make_log_files.sh
 
-# Set up nginx and supervisor
-sudo rm /etc/nginx/sites-enabled/default
+make_log_files() {
+    /var/www/ichrisbirch/scripts/make_log_files.sh
+}
 
-cd deploy || return
+setup_nginx() {
+    rm /etc/nginx/sites-enabled/default
+    # Must cd here because the deploy script has relative paths
+    cd /var/www/ichrisbirch/deploy && ./deploy-nginx.sh
+}
 
-./deploy-nginx.sh
+setup_supervisor() {
+    # Must cd here because the deploy script has relative paths
+    cd /var/www/ichrisbirch/deploy && ./deploy-supervisor.sh
+}
 
-./deploy-supervisor.sh
+set_permissions() {
+    # Set permissions - ubuntu must own the directory for subsequent poetry install and git secret reveal
+    # Since startup script runs as root, change permissions at the end
+    chown -R ubuntu /var/www
+}
 
-# Set permissions - ubuntu must own in order to poetry install and git secret reveal
-# Since startup script runs as root, change permissions at the end
-sudo chown -R ubuntu /var/www
+main() {
+    set_global_vars
+    update_machine
+    base_installs
+    installs_for_building_psycopg2_from_source
+    install_aws_cli
+    import_gpg_keys
+    install_poetry
+    clone_repo
+    install_project
+    unlock_secret_files
+    make_log_files
+    setup_nginx
+    setup_supervisor
+    set_permissions
+    reboot
+}
 
-sudo reboot
+main || exit 1
