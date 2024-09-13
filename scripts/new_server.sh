@@ -35,7 +35,7 @@ export PATH="$POETRY_HOME/bin:$PATH"
 echo "export PATH=\"$POETRY_HOME/bin:$PATH\"" >> ~/.bashrc
 poetry config virtualenvs.in-project true
 
-git clone https://www.github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
+git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
 
 # Set permissions - ubuntu must own in order to poetry install and git secret reveal
 sudo chown -R ubuntu /var/www
