@@ -1,3 +1,11 @@
+# ---------- AWS ---------- #
+
+variable "region" {
+  description = "The AWS region to deploy resources"
+  type        = string
+  default     = "us-east-2"
+}
+
 # ---------- RDS ---------- #
 
 variable "db_username" {

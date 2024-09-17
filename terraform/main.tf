@@ -1,7 +1,3 @@
-# ---------- AWS ---------- #
-
-provider "aws" { region = "us-east-2" }
-
 # ---------- DynamoDB ---------- #
 
 resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {

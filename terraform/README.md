@@ -128,6 +128,7 @@ No modules.
 | db\_username | The username for the database | `string` | n/a | yes |
 | private\_subnet\_cidrs | Private Subnet CIDR values | `list(string)` | ```[ "10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24" ]``` | no |
 | public\_subnet\_cidrs | Public Subnet CIDR values | `list(string)` | ```[ "10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24" ]``` | no |
+| region | The AWS region to deploy resources | `string` | `"us-east-2"` | no |
 | vpc\_cidr | The CIDR block for the VPC | `string` | `"10.0.0.0/16"` | no |
 
 ## Outputs
