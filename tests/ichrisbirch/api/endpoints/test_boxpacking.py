@@ -59,6 +59,7 @@ def test_search_box_items(test_api):
     assert len(search_results.json()) == 0
 
 
+# must explicitly use values because Sixteen = '16x16x16', where '16x16x16' is not valid Enum member name
 @pytest.mark.parametrize('box_size', list(BoxSize))
 def test_create_box_all_sizes(test_api, box_size):
     test_box = schemas.BoxCreate(
