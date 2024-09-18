@@ -1,4 +1,20 @@
 # ------------------------------------------------------------------ #
+# AWS
+# ------------------------------------------------------------------ #
+
+output "aws_region" {
+  value = var.region
+}
+
+output "aws_account_id" {
+  value = data.aws_caller_identity.current.account_id
+}
+
+output "aws_caller_identity_arn" {
+  value = data.aws_caller_identity.current.arn
+}
+
+# ------------------------------------------------------------------ #
 # DATABASE
 # ------------------------------------------------------------------ #
 
@@ -47,7 +63,7 @@ output "prod_private_route_table_id" {
 }
 
 output "prod_private_subnet_ids" {
-  value = aws_subnet.prod_private[*].id
+  value = join(", ", aws_subnet.prod_private[*].id)
 }
 
 output "prod_public_route_table_id" {
@@ -55,7 +71,7 @@ output "prod_public_route_table_id" {
 }
 
 output "prod_public_subnet_ids" {
-  value = aws_subnet.prod_public[*].id
+  value = join(", ", aws_subnet.prod_public[*].id)
 }
 
 output "prod_vpc_cidr_block" {
@@ -118,74 +134,68 @@ output "webserver_subnet_id" {
 # IAM
 # ------------------------------------------------------------------ #
 
-# ---------- IAM ROLES ---------- #
+# ---------- IDENTITY PROVIDERS ---------- #
 
-output "iam_role_admin_arn" {
-  value = aws_iam_role.admin.arn
+output "iam_oidc_provider_github_arn" {
+  value = aws_iam_openid_connect_provider.github.arn
 }
 
-output "iam_role_admin_name" {
-  value = aws_iam_role.admin.name
+# ---------- ROLES ---------- #
+
+output "iam_role_github_actions_arn" {
+  value = aws_iam_role.github_actions.arn
+}
+
+output "iam_role_terraform_arn" {
+  value = aws_iam_role.terraform.arn
 }
 
 output "iam_role_ichrisbirch_webserver_arn" {
   value = aws_iam_role.ichrisbirch_webserver.arn
 }
 
-output "iam_role_ichrisbirch_webserver_name" {
-  value = aws_iam_role.ichrisbirch_webserver.name
+output "iam_role_admin_arn" {
+  value = aws_iam_role.admin.arn
 }
 
-# ---------- IAM POLICIES ---------- #
 
-output "iam_policy_access_webserver_keys_arn" {
-  value = aws_iam_policy.access_webserver_keys.arn
-}
-
-output "iam_policy_access_webserver_keys_name" {
-  value = aws_iam_policy.access_webserver_keys.name
-}
-
-output "iam_policy_allow_pass_webserver_role_arn" {
-  value = aws_iam_policy.allow_pass_webserver_role.arn
-}
-
-output "iam_policy_allow_pass_webserver_role_name" {
-  value = aws_iam_policy.allow_pass_webserver_role.name
-}
+# ---------- ASSUME ROLE POLICIES ---------- #
 
 output "iam_policy_assume_admin_role_arn" {
   value = aws_iam_policy.assume_admin_role.arn
 }
 
-output "iam_policy_assume_admin_role_name" {
-  value = aws_iam_policy.assume_admin_role.name
+output "iam_policy_assume_terraform_role_arn" {
+  value = aws_iam_policy.assume_terraform_role.arn
 }
 
-output "iam_policy_cloud_developer_arn" {
-  value = aws_iam_policy.cloud_developer.arn
+# ---------- POLICIES ---------- #
+
+output "iam_policy_terraform_execution_arn" {
+  value = aws_iam_policy.terraform_execution.arn
 }
 
-output "iam_policy_cloud_developer_name" {
-  value = aws_iam_policy.cloud_developer.name
+output "iam_policy_access_webserver_keys_arn" {
+  value = aws_iam_policy.access_webserver_keys.arn
 }
 
 output "iam_policy_ec2_instance_connect_arn" {
   value = aws_iam_policy.ec2_instance_connect.arn
 }
 
-output "iam_policy_ec2_instance_connect_name" {
-  value = aws_iam_policy.ec2_instance_connect.name
+output "iam_policy_allow_pass_webserver_role_arn" {
+  value = aws_iam_policy.allow_pass_webserver_role.arn
 }
+
+output "iam_policy_cloud_developer_arn" {
+  value = aws_iam_policy.cloud_developer.arn
+}
+
 
 # ---------- IAM INSTANCE PROFILES ---------- #
 
 output "iam_instance_profile_ichrisbirch_webserver_arn" {
   value = aws_iam_instance_profile.ichrisbirch_webserver.arn
-}
-
-output "iam_instance_profile_ichrisbirch_webserver_name" {
-  value = aws_iam_instance_profile.ichrisbirch_webserver.name
 }
 
 # ---------- IAM GROUPS ---------- #
@@ -194,8 +204,12 @@ output "iam_group_developer_arn" {
   value = aws_iam_group.developer.arn
 }
 
-output "iam_group_developer_name" {
-  value = aws_iam_group.developer.name
+output "iam_group_developer_admin_arn" {
+  value = aws_iam_group.developer_admin.arn
+}
+
+output "iam_group_security_arn" {
+  value = aws_iam_group.security.arn
 }
 
 # ---------- IAM USERS ---------- #
@@ -204,16 +218,8 @@ output "iam_user_chris_birch_arn" {
   value = aws_iam_user.chris_birch.arn
 }
 
-output "iam_user_chris_birch_name" {
-  value = aws_iam_user.chris_birch.name
-}
-
 output "iam_user_john_kundycki_arn" {
   value = aws_iam_user.john_kundycki.arn
-}
-
-output "iam_user_john_kundycki_name" {
-  value = aws_iam_user.john_kundycki.name
 }
 
 output "user_chris_birch_generated_password" {
@@ -227,20 +233,8 @@ output "user_chris_birch_generated_password" {
 
 # ---------- Main Site ---------- #
 
-output "route53_api_ichrisbirch_ns_ns_fqdn" {
-  value = aws_route53_record.api_ichrisbirch_ns_ns.fqdn
-}
-
-output "route53_api_ichrisbirch_ns_ns_name" {
-  value = aws_route53_record.api_ichrisbirch_ns_ns.name
-}
-
-output "route53_ichrisbirch_ns_fqdn" {
-  value = aws_route53_record.ichrisbirch_ns.fqdn
-}
-
-output "route53_ichrisbirch_ns_name" {
-  value = aws_route53_record.ichrisbirch_ns.name
+output "route53_ichrisbirch_zone_name" {
+  value = aws_route53_zone.ichrisbirch.name
 }
 
 output "route53_ichrisbirch_zone_id" {
@@ -248,37 +242,17 @@ output "route53_ichrisbirch_zone_id" {
 }
 
 output "route53_ichrisbirch_zone_name_servers" {
-  value = aws_route53_zone.ichrisbirch.name_servers
+  value = join(", ", aws_route53_zone.ichrisbirch.name_servers[*])
 }
 
 output "route53_ichrisbirch_zone_primary_name_server" {
   value = aws_route53_zone.ichrisbirch.primary_name_server
 }
 
-output "route53_www_ichrisbirch_a_fqdn" {
-  value = aws_route53_record.www_ichrisbirch_a.fqdn
-}
-
-output "route53_www_ichrisbirch_a_name" {
-  value = aws_route53_record.www_ichrisbirch_a.name
-}
-
 # ---------- API Subdomain ---------- #
 
-output "route53_api_ichrisbirch_a_fqdn" {
-  value = aws_route53_record.api_ichrisbirch_a.fqdn
-}
-
-output "route53_api_ichrisbirch_a_name" {
-  value = aws_route53_record.api_ichrisbirch_a.name
-}
-
-output "route53_api_ichrisbirch_ns_fqdn" {
-  value = aws_route53_record.api_ichrisbirch_ns.fqdn
-}
-
-output "route53_api_ichrisbirch_ns_name" {
-  value = aws_route53_record.api_ichrisbirch_ns.name
+output "route53_api_ichrisbirch_zone_name" {
+  value = aws_route53_zone.api_ichrisbirch.name
 }
 
 output "route53_api_ichrisbirch_zone_id" {
@@ -286,7 +260,7 @@ output "route53_api_ichrisbirch_zone_id" {
 }
 
 output "route53_api_ichrisbirch_zone_name_servers" {
-  value = aws_route53_zone.api_ichrisbirch.name_servers
+  value = join(", ", aws_route53_zone.api_ichrisbirch.name_servers[*])
 }
 
 output "route53_api_ichrisbirch_zone_primary_name_server" {
@@ -295,38 +269,18 @@ output "route53_api_ichrisbirch_zone_primary_name_server" {
 
 # ---------- Docs Site ---------- #
 
+output "route53_docs_ichrisbirch_zone_name" {
+  value = aws_route53_zone.docs_ichrisbirch.name
+}
+
 output "route53_docs_ichrisbirch_zone_id" {
   value = aws_route53_zone.docs_ichrisbirch.zone_id
 }
 
 output "route53_docs_ichrisbirch_zone_name_servers" {
-  value = aws_route53_zone.docs_ichrisbirch.name_servers
+  value = join(", ", aws_route53_zone.docs_ichrisbirch.name_servers[*])
 }
 
 output "route53_docs_ichrisbirch_zone_primary_name_server" {
   value = aws_route53_zone.docs_ichrisbirch.primary_name_server
-}
-
-output "route53_docs_ichrisbirch_ns_name" {
-  value = aws_route53_record.docs_ichrisbirch_ns.name
-}
-
-output "route53_docs_ichrisbirch_ns_fqdn" {
-  value = aws_route53_record.docs_ichrisbirch_ns.fqdn
-}
-
-output "route53_docs_ichrisbirch_a_name" {
-  value = aws_route53_record.docs_ichrisbirch_a.name
-}
-
-output "route53_docs_ichrisbirch_a_fqdn" {
-  value = aws_route53_record.docs_ichrisbirch_a.fqdn
-}
-
-output "route53_docs_ichrisbirch_cname_name" {
-  value = aws_route53_record.docs_ichrisbirch_cname.name
-}
-
-output "route53_docs_ichrisbirch_cname_fqdn" {
-  value = aws_route53_record.docs_ichrisbirch_cname.fqdn
 }

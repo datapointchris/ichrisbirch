@@ -34,12 +34,14 @@ An IAM role and an instance profile are related but distinct concepts in AWS. He
 |------|---------|
 | terraform | >= 1.9 |
 | aws | ~> 5.6 |
+| tls | ~> 4.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | 5.66.0 |
+| aws | 5.67.0 |
+| tls | 4.0.6 |
 
 ## Modules
 
@@ -55,26 +57,37 @@ No modules.
 | [aws_eip.ichrisbirch_elastic_ip](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
 | [aws_eip_association.ichrisbirch_elastic_ip_assoc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip_association) | resource |
 | [aws_iam_group.developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
-| [aws_iam_group_policy_attachment.developer_assume_admin_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
+| [aws_iam_group.developer_admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
+| [aws_iam_group.security](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
+| [aws_iam_group_membership.developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_membership) | resource |
+| [aws_iam_group_membership.developer_admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_membership) | resource |
+| [aws_iam_group_policy_attachment.developer_admin_assume_admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
+| [aws_iam_group_policy_attachment.developer_admin_assume_terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
 | [aws_iam_group_policy_attachment.developer_cloud_developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
 | [aws_iam_group_policy_attachment.developer_ec2_instance_connect](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
 | [aws_iam_group_policy_attachment.developer_pass_webserver_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
+| [aws_iam_group_policy_attachment.security_assume_adming](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group_policy_attachment) | resource |
 | [aws_iam_instance_profile.ichrisbirch_webserver](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
+| [aws_iam_openid_connect_provider.github](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_openid_connect_provider) | resource |
 | [aws_iam_policy.access_webserver_keys](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.allow_pass_webserver_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.assume_admin_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_policy.assume_terraform_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.cloud_developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.ec2_instance_connect](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_policy.terraform_execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_role.admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.github_actions](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role.ichrisbirch_webserver](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role.terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy_attachment.admin_access_webserver_keys](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.admin_administrator_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.admin_view_cost_and_usage](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.github_actions_terraform_execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.terraform_role_terraform_execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.webserver_access_webserver_keys](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_user.chris_birch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
 | [aws_iam_user.john_kundycki](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
-| [aws_iam_user_group_membership.chris_birch_developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_group_membership) | resource |
-| [aws_iam_user_group_membership.john_kundycki_developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_group_membership) | resource |
 | [aws_iam_user_login_profile.chris_birch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_login_profile) | resource |
 | [aws_iam_user_policy_attachment.chris_birch_iam_user_change_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy_attachment) | resource |
 | [aws_iam_user_policy_attachment.john_kundycki_iam_user_change_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy_attachment) | resource |
@@ -119,6 +132,11 @@ No modules.
 | [aws_vpc_security_group_ingress_rule.allow_postgres_inside_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_policy.admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy) | data source |
+| [aws_iam_policy.billing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy) | data source |
+| [aws_iam_policy_document.assume_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [tls_certificate.github_actions](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/data-sources/certificate) | data source |
 
 ## Inputs
 
@@ -126,6 +144,9 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | db\_password | The password for the database | `string` | n/a | yes |
 | db\_username | The username for the database | `string` | n/a | yes |
+| gh\_actions\_token\_url | URL for the Github Actions API | `string` | `"https://token.actions.githubusercontent.com"` | no |
+| gh\_org | Name of the Github Organization. | `string` | `"datapointchris"` | no |
+| gh\_repo | Name of the ECR Repository- should match the Github repo name. | `string` | `"ichrisbirch"` | no |
 | private\_subnet\_cidrs | Private Subnet CIDR values | `list(string)` | ```[ "10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24" ]``` | no |
 | public\_subnet\_cidrs | Public Subnet CIDR values | `list(string)` | ```[ "10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24" ]``` | no |
 | region | The AWS region to deploy resources | `string` | `"us-east-2"` | no |
@@ -135,6 +156,9 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| aws\_account\_id | n/a |
+| aws\_caller\_identity\_arn | n/a |
+| aws\_region | n/a |
 | db\_endpoint | n/a |
 | db\_engine | n/a |
 | db\_engine\_version | n/a |
@@ -142,28 +166,24 @@ No modules.
 | db\_instance\_class | n/a |
 | db\_security\_group\_ids | n/a |
 | dynamodb\_terraform\_state\_locking\_table\_id | n/a |
+| iam\_group\_developer\_admin\_arn | n/a |
 | iam\_group\_developer\_arn | n/a |
-| iam\_group\_developer\_name | n/a |
+| iam\_group\_security\_arn | n/a |
 | iam\_instance\_profile\_ichrisbirch\_webserver\_arn | n/a |
-| iam\_instance\_profile\_ichrisbirch\_webserver\_name | n/a |
+| iam\_oidc\_provider\_github\_arn | n/a |
 | iam\_policy\_access\_webserver\_keys\_arn | n/a |
-| iam\_policy\_access\_webserver\_keys\_name | n/a |
 | iam\_policy\_allow\_pass\_webserver\_role\_arn | n/a |
-| iam\_policy\_allow\_pass\_webserver\_role\_name | n/a |
 | iam\_policy\_assume\_admin\_role\_arn | n/a |
-| iam\_policy\_assume\_admin\_role\_name | n/a |
+| iam\_policy\_assume\_terraform\_role\_arn | n/a |
 | iam\_policy\_cloud\_developer\_arn | n/a |
-| iam\_policy\_cloud\_developer\_name | n/a |
 | iam\_policy\_ec2\_instance\_connect\_arn | n/a |
-| iam\_policy\_ec2\_instance\_connect\_name | n/a |
+| iam\_policy\_terraform\_execution\_arn | n/a |
 | iam\_role\_admin\_arn | n/a |
-| iam\_role\_admin\_name | n/a |
+| iam\_role\_github\_actions\_arn | n/a |
 | iam\_role\_ichrisbirch\_webserver\_arn | n/a |
-| iam\_role\_ichrisbirch\_webserver\_name | n/a |
+| iam\_role\_terraform\_arn | n/a |
 | iam\_user\_chris\_birch\_arn | n/a |
-| iam\_user\_chris\_birch\_name | n/a |
 | iam\_user\_john\_kundycki\_arn | n/a |
-| iam\_user\_john\_kundycki\_name | n/a |
 | internet\_gateway\_id | n/a |
 | network\_interface\_ichrisbirch\_webserver\_id | n/a |
 | prod\_private\_route\_table\_id | n/a |
@@ -172,31 +192,18 @@ No modules.
 | prod\_public\_subnet\_ids | n/a |
 | prod\_vpc\_cidr\_block | n/a |
 | prod\_vpc\_id | n/a |
-| route53\_api\_ichrisbirch\_a\_fqdn | n/a |
-| route53\_api\_ichrisbirch\_a\_name | n/a |
-| route53\_api\_ichrisbirch\_ns\_fqdn | n/a |
-| route53\_api\_ichrisbirch\_ns\_name | n/a |
-| route53\_api\_ichrisbirch\_ns\_ns\_fqdn | n/a |
-| route53\_api\_ichrisbirch\_ns\_ns\_name | n/a |
 | route53\_api\_ichrisbirch\_zone\_id | n/a |
+| route53\_api\_ichrisbirch\_zone\_name | n/a |
 | route53\_api\_ichrisbirch\_zone\_name\_servers | n/a |
 | route53\_api\_ichrisbirch\_zone\_primary\_name\_server | n/a |
-| route53\_docs\_ichrisbirch\_a\_fqdn | n/a |
-| route53\_docs\_ichrisbirch\_a\_name | n/a |
-| route53\_docs\_ichrisbirch\_cname\_fqdn | n/a |
-| route53\_docs\_ichrisbirch\_cname\_name | n/a |
-| route53\_docs\_ichrisbirch\_ns\_fqdn | n/a |
-| route53\_docs\_ichrisbirch\_ns\_name | n/a |
 | route53\_docs\_ichrisbirch\_zone\_id | n/a |
+| route53\_docs\_ichrisbirch\_zone\_name | n/a |
 | route53\_docs\_ichrisbirch\_zone\_name\_servers | n/a |
 | route53\_docs\_ichrisbirch\_zone\_primary\_name\_server | n/a |
-| route53\_ichrisbirch\_ns\_fqdn | n/a |
-| route53\_ichrisbirch\_ns\_name | n/a |
 | route53\_ichrisbirch\_zone\_id | n/a |
+| route53\_ichrisbirch\_zone\_name | n/a |
 | route53\_ichrisbirch\_zone\_name\_servers | n/a |
 | route53\_ichrisbirch\_zone\_primary\_name\_server | n/a |
-| route53\_www\_ichrisbirch\_a\_fqdn | n/a |
-| route53\_www\_ichrisbirch\_a\_name | n/a |
 | security\_group\_ichrisbirch\_webserver\_id | n/a |
 | user\_chris\_birch\_generated\_password | n/a |
 | webserver\_ami\_id | n/a |
