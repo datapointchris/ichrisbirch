@@ -58,7 +58,7 @@ def login():
 
             return redirect(next_page or url_for('users.profile'))
 
-        flash('Invalid credentials')
+        flash('Invalid credentials', 'error')
         logger.warning(f'invalid login attempt for: {form.email.data}')
 
         # TODO: [2024/05/21] - add a login attempt counter, possibly using redis or something similar
