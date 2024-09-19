@@ -75,6 +75,8 @@ class FlaskSettings:
         # For flask-login, use the session to store the `next` value instead of passing as url parameters
         self.USE_SESSION_FOR_NEXT: bool = True
         self.app_id: str = os.environ['FLASK_APP_ID']
+        # CSRF token is valid for life of the session, prevents most errors from leaving a tab open too long
+        self.WTF_CSRF_TIME_LIMIT: int | None = None
 
 
 class FlaskLoginSettings:
