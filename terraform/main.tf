@@ -76,7 +76,7 @@ resource "aws_db_instance" "ichrisbirch" {
   # db_name             = "ichrisbirch" # name of the database to create
   instance_class         = "db.t3.micro"
   engine                 = "postgres"
-  engine_version         = "16.2"
+  engine_version         = "16.3"
   allocated_storage      = 20
   skip_final_snapshot    = true
   username               = var.db_username
