@@ -1,4 +1,4 @@
-# ---------- DynamoDB ---------- #
+# --- DynamoDB ---------------------------------------- #
 
 resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {
   name                        = "ichrisbirch-terraform-state-locking"
@@ -20,7 +20,7 @@ resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {
   }
 }
 
-# ---------- EC2 ---------- #
+# --- EC2 ---------------------------------------- #
 
 data "aws_ami" "ichrisbirch_t3medium_2vcpu_4gb_py312" {
   most_recent = true
@@ -63,7 +63,7 @@ resource "aws_instance" "ichrisbirch_webserver" {
   }
 }
 
-# ---------- RDS ---------- #
+# --- RDS ---------------------------------------- #
 
 resource "aws_db_subnet_group" "ichrisbirch" {
   name       = "ichrisbirch"
@@ -87,7 +87,7 @@ resource "aws_db_instance" "ichrisbirch" {
   depends_on             = [aws_security_group.ichrisbirch_webserver]
 }
 
-# ---------- S3 ---------- #
+# --- S3 ---------------------------------------- #
 
 resource "aws_s3_bucket" "ichrisbirch_backups" {
   bucket = "ichrisbirch-backups"

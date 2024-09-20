@@ -1,4 +1,4 @@
-# -------------------- DATA SOURCES -------------------- #
+# --- DATA SOURCES ---------------------------------------- #
 
 data "aws_caller_identity" "current" {}
 
@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 
-# -------------------- IDENTITY PROVIDERS -------------------- #
+# --- IDENTITY PROVIDERS ---------------------------------------- #
 
 resource "aws_iam_openid_connect_provider" "github" {
   url            = data.tls_certificate.github_actions.url
@@ -36,7 +36,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 
-# -------------------- ROLES -------------------- #
+# --- ROLES ---------------------------------------- #
 
 resource "aws_iam_role" "github_actions" {
   name = "GithubActions${title(var.gh_org)}${title(var.gh_repo)}Role"
@@ -88,11 +88,11 @@ resource "aws_iam_role" "admin" {
 }
 
 
-# -------------------- ASSUME ROLE POLICIES -------------------- #
+# --- ASSUME ROLE POLICIES ---------------------------------------- #
 
 resource "aws_iam_policy" "assume_admin_role" {
   name        = "AssumeAdmin"
-  description = "Policy to allow assuming the admin role"
+  description = "Allow assuming the admin role"
   depends_on  = [aws_iam_role.admin]
 
   policy = jsonencode({
@@ -109,7 +109,7 @@ resource "aws_iam_policy" "assume_admin_role" {
 
 resource "aws_iam_policy" "assume_terraform_role" {
   name        = "AssumeTerraform"
-  description = "Policy to allow assuming the terraform role"
+  description = "Allow assuming the terraform role"
   depends_on  = [aws_iam_role.terraform]
 
   policy = jsonencode({
@@ -124,11 +124,12 @@ resource "aws_iam_policy" "assume_terraform_role" {
   })
 }
 
-# -------------------- POLICIES -------------------- #
+
+# --- POLICIES ---------------------------------------- #
 
 resource "aws_iam_policy" "terraform_execution" {
   name        = "TerraformExecution"
-  description = "Policy to allow Terraform to execute changes in the AWS account"
+  description = "Allow Terraform to execute changes in the AWS account"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -154,7 +155,7 @@ resource "aws_iam_policy" "terraform_execution" {
 
 resource "aws_iam_policy" "access_webserver_keys" {
   name        = "AccessWebserverKeys"
-  description = "Policy to allow access to the webserver keys"
+  description = "Allow access to the webserver keys"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -176,9 +177,33 @@ resource "aws_iam_policy" "access_webserver_keys" {
   })
 }
 
+resource "aws_iam_policy" "access_backups_bucket" {
+  name        = "AccessBackupsBucket"
+  description = "Allow access to the ichrisbirch backups bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          aws_s3_bucket.ichrisbirch_backups.arn,
+          format("%s/*", aws_s3_bucket.ichrisbirch_backups.arn),
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_policy" "ec2_instance_connect" {
   name        = "EC2InstanceConnect"
-  description = "Policy to allow EC2 Instance Connect"
+  description = "Allow EC2 Instance Connect"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -194,7 +219,7 @@ resource "aws_iam_policy" "ec2_instance_connect" {
 
 resource "aws_iam_policy" "allow_pass_webserver_role" {
   name        = "AllowPassRoleToWebserverRole"
-  description = "Policy to allow passing the WebserverRole"
+  description = "Allow passing the WebserverRole"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -234,7 +259,7 @@ resource "aws_iam_policy" "cloud_developer" {
 }
 
 
-# -------------------- ROLE POLICY ATTACHMENTS -------------------- #
+# --- ROLE POLICY ATTACHMENTS ---------------------------------------- #
 
 resource "aws_iam_role_policy_attachment" "github_actions_terraform_execution" {
   role       = aws_iam_role.github_actions.name
@@ -249,6 +274,11 @@ resource "aws_iam_role_policy_attachment" "terraform_role_terraform_execution" {
 resource "aws_iam_role_policy_attachment" "webserver_access_webserver_keys" {
   role       = aws_iam_role.ichrisbirch_webserver.name
   policy_arn = aws_iam_policy.access_webserver_keys.arn
+}
+
+resource "aws_iam_role_policy_attachment" "webserver_access_backups_bucket" {
+  role       = aws_iam_role.ichrisbirch_webserver.name
+  policy_arn = aws_iam_policy.access_backups_bucket.arn
 }
 
 # --- Admin --- #
@@ -268,7 +298,7 @@ resource "aws_iam_role_policy_attachment" "admin_view_cost_and_usage" {
 }
 
 
-# -------------------- INSTANCE PROFILES -------------------- #
+# --- INSTANCE PROFILES ---------------------------------------- #
 
 resource "aws_iam_instance_profile" "ichrisbirch_webserver" {
   name = "WebserverInstanceProfile"
@@ -276,7 +306,7 @@ resource "aws_iam_instance_profile" "ichrisbirch_webserver" {
 }
 
 
-# -------------------- USERS -------------------- #
+# --- USERS ---------------------------------------- #
 
 resource "aws_iam_user" "chris_birch" {
   name = "chris.birch"
@@ -292,7 +322,7 @@ resource "aws_iam_user" "john_kundycki" {
 }
 
 
-# -------------------- USER POLICIES -------------------- #
+# --- USER POLICIES ---------------------------------------- #
 
 resource "aws_iam_user_policy_attachment" "chris_birch_iam_user_change_password" {
   policy_arn = "arn:aws:iam::aws:policy/IAMUserChangePassword"
@@ -305,7 +335,7 @@ resource "aws_iam_user_policy_attachment" "john_kundycki_iam_user_change_passwor
 }
 
 
-# -------------------- USER GROUPS -------------------- #
+# --- USER GROUPS ---------------------------------------- #
 
 resource "aws_iam_group" "developer" {
   name = "developer"
@@ -320,7 +350,7 @@ resource "aws_iam_group" "security" {
 }
 
 
-# -------------------- USER GROUP POLICY ATTACHMENTS -------------------- #
+# --- USER GROUP POLICY ATTACHMENTS ---------------------------------------- #
 
 # --- Developer --- #
 
@@ -358,7 +388,7 @@ resource "aws_iam_group_policy_attachment" "security_assume_adming" {
   policy_arn = aws_iam_policy.assume_admin_role.arn
 }
 
-# -------------------- GROUP MEMBERSHIPS -------------------- #
+# --- GROUP MEMBERSHIPS ---------------------------------------- #
 
 resource "aws_iam_group_membership" "developer" {
   name  = "developer"
