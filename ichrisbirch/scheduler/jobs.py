@@ -148,6 +148,6 @@ jobs_to_add = [
     JobToAdd(
         func=postgres_backup,
         trigger=daily_130am_trigger,
-        id='postgres_backup_every_6_hour_18_minute',
+        id='postgres_backup_daily',
     ),
 ]
