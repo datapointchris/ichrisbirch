@@ -22,7 +22,7 @@ resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {
 
 # --- EC2 ---------------------------------------- #
 
-data "aws_ami" "ichrisbirch_t3medium_2vcpu_4gb_py312" {
+data "aws_ami" "ichrisbirch_webserver" {
   most_recent = true
   owners      = ["self"]
 
@@ -32,17 +32,13 @@ data "aws_ami" "ichrisbirch_t3medium_2vcpu_4gb_py312" {
   }
 }
 
-data "aws_availability_zones" "available" { state = "available" }
-
-locals { azs = data.aws_availability_zones.available.names }
-
 resource "aws_instance" "ichrisbirch_webserver" {
   # Cannot use the following properties when attaching a network interface:
   #   subnet_id
   #   vpc_security_group_ids
   #   associate_public_ip_address
-  ami                  = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
-  availability_zone    = local.azs[0]
+  ami                  = data.aws_ami.ichrisbirch_webserver.id
+  availability_zone    = data.aws_availability_zones.available.names[0]
   iam_instance_profile = aws_iam_instance_profile.ichrisbirch_webserver.name
   instance_type        = "t3.medium"
   key_name             = "ichrisbirch-webserver"
@@ -70,6 +66,11 @@ resource "aws_db_subnet_group" "ichrisbirch" {
   subnet_ids = [element(aws_subnet.prod_public, 0).id, element(aws_subnet.prod_public, 1).id, element(aws_subnet.prod_public, 2).id]
 }
 
+resource "aws_db_subnet_group" "icb" {
+  name       = "icb"
+  subnet_ids = [element(aws_subnet.prod_private, 0).id, element(aws_subnet.prod_private, 1).id, element(aws_subnet.prod_private, 2).id]
+}
+
 resource "aws_db_instance" "ichrisbirch" {
   identifier = "ichrisbirch-db"
   # do not create the database because the pg_restore command will do that
@@ -81,10 +82,33 @@ resource "aws_db_instance" "ichrisbirch" {
   skip_final_snapshot    = true
   username               = var.db_username
   password               = var.db_password
-  publicly_accessible    = true
+  publicly_accessible    = false
   db_subnet_group_name   = aws_db_subnet_group.ichrisbirch.name
-  vpc_security_group_ids = [aws_security_group.ichrisbirch_webserver.id]
-  depends_on             = [aws_security_group.ichrisbirch_webserver]
+  vpc_security_group_ids = [aws_security_group.ichrisbirch_database.id]
+  depends_on             = [aws_security_group.ichrisbirch_database]
+}
+
+resource "aws_db_instance" "icb" {
+  identifier = "icb-db"
+  # do not create the database because the pg_restore command will do that
+  # db_name             = "ichrisbirch" # name of the database to create
+  instance_class         = "db.t3.micro"
+  engine                 = "postgres"
+  engine_version         = "16.3"
+  allocated_storage      = 20
+  skip_final_snapshot    = true
+  snapshot_identifier    = aws_db_snapshot.db_snapshot.id
+  username               = var.db_username
+  password               = var.db_password
+  publicly_accessible    = false
+  db_subnet_group_name   = aws_db_subnet_group.icb.name
+  vpc_security_group_ids = [aws_security_group.ichrisbirch_database.id]
+  depends_on             = [aws_security_group.ichrisbirch_database]
+}
+
+resource "aws_db_snapshot" "db_snapshot" {
+  db_instance_identifier = aws_db_instance.ichrisbirch.identifier
+  db_snapshot_identifier = "ichrisbirch-postgres-snapshot"
 }
 
 # --- S3 ---------------------------------------- #

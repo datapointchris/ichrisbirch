@@ -91,7 +91,7 @@ output "security_group_ichrisbirch_webserver_id" {
 # ------------------------------------------------------------------ #
 
 output "webserver_ami_id" {
-  value = data.aws_ami.ichrisbirch_t3medium_2vcpu_4gb_py312.id
+  value = data.aws_ami.ichrisbirch_webserver.id
 }
 
 output "webserver_availability_zone" {
