@@ -1,28 +1,28 @@
 # git-secret
 
-[gpg cheatsheet](https://aws-labs.com/gpg-keys-cheatsheet/)
+!!! danger
+    It seems that if `gpg` is updated then it causes some or all of the keys to need to be re-imported with `git secret`  
+    Also if there is a mismatch between `gpg` versions between computers or cicd and macos then it can create an issue.  
+    Overall, this is not the best way of handling secrets :sadface:
 
 ## Making a Secret
 
-1. `git secret init` - for new repository
-2. `git secret tell ichrisbirch@gmail.com`
-   1. This user has to have a public GPG key on THIS computer
-3. `git secret tell 'user@email.com'`
-   1. Import this user's public GPG key
-4. `git secret add .env`
-5. `git secret hide`
-6. Add and commit new .secret file(s)
+```shell
+# for new repository
+git secret init
 
-## Getting a Secret
+# This user has to have a public GPG key on THIS computer
+git secret tell ichrisbirch@gmail.com
 
-1. Git pull the .secret file(s)
-2. `git secret reveal`
+git secret add .env
+git secret hide
+
+git commit -am 'build: add secret .env file'
+```
 
 ## Using git-secret with EC2 instance
 
-### Make gpg key for EC2 instance
-
-#### Local Machine
+### Make gpg key for EC2 instance on local machine
 
 ```bash
 gpg --gen-key
@@ -30,8 +30,8 @@ gpg --gen-key
 # Email address: ec2@ichrisbirch.com
 
 # Export and upload keys to EC2 Instance
-gpg --export --armor "iChrisBirch EC2" > ec2-public.key
-gpg --export-secret-key --armor "iChrisBirch EC2" > ec2-private.key
+gpg --export --armor ec2@ichrisbirch.com > ec2-public.key
+gpg --export-secret-key --armor ec2@ichrisbirch.com > ec2-private.key
 scp -i ~/.ssh/ichrisbirch-webserver.pem ec2-public.key ubuntu@ichrisbirch:~
 scp -i ~/.ssh/ichrisbirch-webserver.pem ec2-private.key ubuntu@ichrisbirch:~
 
@@ -45,7 +45,7 @@ git commit -m 'ops: Update secrets with new authorized user'
 git push
 ```
 
-#### EC2 Instance
+### Import gpg key on EC2 Instance
 
 ```bash
 # Import keys
@@ -59,19 +59,21 @@ git secret reveal
 
 ## Make a gpg key for CICD
 
+### Make a new key locally
+
 ```bash
 # Generate new key, no passphrase
 gpg --gen-key
 # Export the secret key as one line, multiline not allowed
 gpg --armor --export-secret-key datapointchris@github.com | tr '\n' ',' > cicd-gpg-key.gpg
-# In the repository:
-git secret reveal
+# In the repository, make sure to add the new identity to allowed:
 git secret tell datapointchris@github.com
 git secret hide
 ```
 
-Add the key to the CICD environment secrets.
-Add this to the CICD workflow, which will re-create the line breaks and import into gpg
+### Add the key to the CICD environment secrets
+
+### Add Run Step to CICD workflow
 
 ```yaml
 - name: "git-secret Reveal .env files"
@@ -79,22 +81,6 @@ Add this to the CICD workflow, which will re-create the line breaks and import i
     # Import private key and avoid the "Inappropriate ioctl for device" error
     echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
     git secret reveal
-```
-
-!!! note "Note for Ubuntu 20.04"
-    It is necessary to downgrade the version of gpg in MacOS to be compatible with the version running on Ubuntu 20.04, specifically the runners on GitHub Actions.
-    <https://github.com/sobolevn/git-secret/issues/760#issuecomment-1126163319>
-
-```bash
-    brew uninstall git-secret
-    brew uninstall gpg
-    brew cleanup
-    brew install gnupg@2.2
-    # MUST add /usr/local/opt/gnupg@2.2/bin to PATH in dotfiles
-    brew install git-secret
-    # brew says it installs gnupg with git-secret, but after gpg still points to 2.2
-    git secret clean
-    git secret hide
 ```
 
 ## Expired GPG key
@@ -125,7 +111,7 @@ gpg --list-secret-keys --verbose --with-subkey-fingerprints
 >>> ssb   cv25519 2022-04-19 [E] [expires: 2025-04-19]
 >>>       2E418AB946A0ECA...
 
-# Remove the expired email address from `git-secret`
+# Remove the expired email address frogit-secret`
 git secret removeperson ichrisbirch@gmail.com
 
 >>> git-secret: removed keys.
