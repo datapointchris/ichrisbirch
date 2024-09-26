@@ -19,27 +19,27 @@ output "aws_caller_identity_arn" {
 # ------------------------------------------------------------------ #
 
 output "db_endpoint" {
-  value = aws_db_instance.ichrisbirch.endpoint
+  value = aws_db_instance.icb.endpoint
 }
 
 output "db_engine" {
-  value = aws_db_instance.ichrisbirch.engine
+  value = aws_db_instance.icb.engine
 }
 
 output "db_engine_version" {
-  value = aws_db_instance.ichrisbirch.engine_version
+  value = aws_db_instance.icb.engine_version
 }
 
 output "db_id" {
-  value = aws_db_instance.ichrisbirch.id
+  value = aws_db_instance.icb.id
 }
 
 output "db_instance_class" {
-  value = aws_db_instance.ichrisbirch.instance_class
+  value = aws_db_instance.icb.instance_class
 }
 
 output "db_security_group_ids" {
-  value = join(", ", aws_db_instance.ichrisbirch.vpc_security_group_ids[*])
+  value = join(", ", aws_db_instance.icb.vpc_security_group_ids[*])
 }
 
 output "dynamodb_terraform_state_locking_table_id" {

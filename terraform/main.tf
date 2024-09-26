@@ -20,6 +20,7 @@ resource "aws_dynamodb_table" "ichrisbirch_terraform_state_locking" {
   }
 }
 
+
 # --- EC2 ---------------------------------------- #
 
 data "aws_ami" "ichrisbirch_webserver" {
@@ -59,45 +60,24 @@ resource "aws_instance" "ichrisbirch_webserver" {
   }
 }
 
-# --- RDS ---------------------------------------- #
 
-resource "aws_db_subnet_group" "ichrisbirch" {
-  name       = "ichrisbirch"
-  subnet_ids = [element(aws_subnet.prod_public, 0).id, element(aws_subnet.prod_public, 1).id, element(aws_subnet.prod_public, 2).id]
-}
+# --- RDS ---------------------------------------- #
 
 resource "aws_db_subnet_group" "icb" {
   name       = "icb"
   subnet_ids = [element(aws_subnet.prod_private, 0).id, element(aws_subnet.prod_private, 1).id, element(aws_subnet.prod_private, 2).id]
 }
 
-resource "aws_db_instance" "ichrisbirch" {
-  identifier = "ichrisbirch-db"
-  # do not create the database because the pg_restore command will do that
-  # db_name             = "ichrisbirch" # name of the database to create
-  instance_class         = "db.t3.micro"
-  engine                 = "postgres"
-  engine_version         = "16.3"
-  allocated_storage      = 20
-  skip_final_snapshot    = true
-  username               = var.db_username
-  password               = var.db_password
-  publicly_accessible    = false
-  db_subnet_group_name   = aws_db_subnet_group.ichrisbirch.name
-  vpc_security_group_ids = [aws_security_group.ichrisbirch_database.id]
-  depends_on             = [aws_security_group.ichrisbirch_database]
-}
-
 resource "aws_db_instance" "icb" {
   identifier = "icb-db"
   # do not create the database because the pg_restore command will do that
   # db_name             = "ichrisbirch" # name of the database to create
-  instance_class         = "db.t3.micro"
-  engine                 = "postgres"
-  engine_version         = "16.3"
-  allocated_storage      = 20
-  skip_final_snapshot    = true
-  snapshot_identifier    = aws_db_snapshot.db_snapshot.id
+  instance_class      = "db.t3.micro"
+  engine              = "postgres"
+  engine_version      = "16.3"
+  allocated_storage   = 20
+  skip_final_snapshot = true
+  # snapshot_identifier    = aws_db_snapshot.db_snapshot.id
   username               = var.db_username
   password               = var.db_password
   publicly_accessible    = false
@@ -106,10 +86,6 @@ resource "aws_db_instance" "icb" {
   depends_on             = [aws_security_group.ichrisbirch_database]
 }
 
-resource "aws_db_snapshot" "db_snapshot" {
-  db_instance_identifier = aws_db_instance.ichrisbirch.identifier
-  db_snapshot_identifier = "ichrisbirch-postgres-snapshot"
-}
 
 # --- S3 ---------------------------------------- #
 
