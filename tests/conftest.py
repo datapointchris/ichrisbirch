@@ -171,11 +171,19 @@ def insert_jobs_in_test_scheduler():
 def setup_test_environment():
     """Setup testing environment.
 
-    => Get Docker client (will attempt to start Docker if not running) => Create Postgres Docker container => Create
-    Postgres logs thread => Create schemas => Start Uvicorn API (FastAPI) subprocess => Start Gunicorn App (Flask)
-    subprocess => Yield to test => A create_tables_insert_data_drop_tables runs here => B Function yields after
-    inserting data to run test => C Drop all tables after test completes => Control back to setup_test_environment =>
-    Stop Postgres container => Kill Postgres, Uvicorn, and Gunicorn threads
+    - Get Docker client (will attempt to start Docker if not running)
+    - Create Postgres Docker container
+    - Create Postgres logs thread
+    - Create schemas
+    - Start Uvicorn API (FastAPI) subprocess
+    - Start Gunicorn App (Flask) subprocess
+    - Yield to test
+    - A create_tables_insert_data_drop_tables runs here
+    - B Function yields after inserting data to run test
+    - C Drop all tables after test completes
+    - Control back to setup_test_environment
+    - Stop Postgres container
+    - Kill Postgres, Uvicorn, and Gunicorn threads
     """
     logger.warning('')
     logger.warning(f'{'='*30}>  STARTING TESTING  <{'='*30}')
