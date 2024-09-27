@@ -39,7 +39,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 # --- ROLES ---------------------------------------- #
 
 resource "aws_iam_role" "github_actions" {
-  name = "GithubActions${title(var.gh_org)}${title(var.gh_repo)}Role"
+  name = "github-actions-${var.gh_repo}-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -61,7 +61,7 @@ resource "aws_iam_role" "github_actions" {
 }
 
 resource "aws_iam_role" "ichrisbirch_webserver" {
-  name = "WebserverRole"
+  name = "webserver-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -78,7 +78,7 @@ resource "aws_iam_role" "ichrisbirch_webserver" {
 }
 
 resource "aws_iam_role" "terraform" {
-  name               = "TerraformRole"
+  name               = "terraform-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
@@ -91,7 +91,7 @@ resource "aws_iam_role" "admin" {
 # --- ASSUME ROLE POLICIES ---------------------------------------- #
 
 resource "aws_iam_policy" "assume_admin_role" {
-  name        = "AssumeAdmin"
+  name        = "assume-admin"
   description = "Allow assuming the admin role"
   depends_on  = [aws_iam_role.admin]
 
@@ -108,7 +108,7 @@ resource "aws_iam_policy" "assume_admin_role" {
 }
 
 resource "aws_iam_policy" "assume_terraform_role" {
-  name        = "AssumeTerraform"
+  name        = "assume-terraform"
   description = "Allow assuming the terraform role"
   depends_on  = [aws_iam_role.terraform]
 
@@ -128,7 +128,7 @@ resource "aws_iam_policy" "assume_terraform_role" {
 # --- POLICIES ---------------------------------------- #
 
 resource "aws_iam_policy" "terraform_execution" {
-  name        = "TerraformExecution"
+  name        = "terraform-execution"
   description = "Allow Terraform to execute changes in the AWS account"
 
   policy = jsonencode({
@@ -154,7 +154,7 @@ resource "aws_iam_policy" "terraform_execution" {
 }
 
 resource "aws_iam_policy" "access_webserver_keys" {
-  name        = "AccessWebserverKeys"
+  name        = "access-webserver-keys"
   description = "Allow access to the webserver keys"
 
   policy = jsonencode({
@@ -178,7 +178,7 @@ resource "aws_iam_policy" "access_webserver_keys" {
 }
 
 resource "aws_iam_policy" "access_backups_bucket" {
-  name        = "AccessBackupsBucket"
+  name        = "access-backups-bucket"
   description = "Allow access to the ichrisbirch backups bucket"
 
   policy = jsonencode({
@@ -202,7 +202,7 @@ resource "aws_iam_policy" "access_backups_bucket" {
 }
 
 resource "aws_iam_policy" "ec2_instance_connect" {
-  name        = "EC2InstanceConnect"
+  name        = "ec2-instance-connect"
   description = "Allow EC2 Instance Connect"
 
   policy = jsonencode({
@@ -218,7 +218,7 @@ resource "aws_iam_policy" "ec2_instance_connect" {
 }
 
 resource "aws_iam_policy" "allow_pass_webserver_role" {
-  name        = "AllowPassRoleToWebserverRole"
+  name        = "allow-pass-webserver-role"
   description = "Allow passing the WebserverRole"
 
   policy = jsonencode({
@@ -234,7 +234,7 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
 }
 
 resource "aws_iam_policy" "cloud_developer" {
-  name        = "CloudDeveloper"
+  name        = "cloud-developer"
   description = "Combined policy for general cloud development"
 
   policy = jsonencode({
@@ -301,7 +301,7 @@ resource "aws_iam_role_policy_attachment" "admin_view_cost_and_usage" {
 # --- INSTANCE PROFILES ---------------------------------------- #
 
 resource "aws_iam_instance_profile" "ichrisbirch_webserver" {
-  name = "WebserverInstanceProfile"
+  name = "webserver-instance-profile"
   role = aws_iam_role.ichrisbirch_webserver.name
 }
 
