@@ -21,8 +21,6 @@ defaults:
 
 jobs:
 
-
-
   lint:
     name: Lint Code
     runs-on: ${{matrix.os}}
@@ -124,6 +122,8 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
+        # The poetry dependencies have to be cached by the matrix.os and matrix.python-version instead of only
+        # the runner.os version since psycopg2-binary gets compiled for one 'Linux' runner.os and then errors on another os
       - name: Cache Poetry Dependencies
         uses: actions/cache@v3
         with:
@@ -141,7 +141,9 @@ jobs:
         run: poetry install --without dev,prod
 
       - name: Get Playwright Version for Cache
-        run: echo "PLAYWRIGHT_VERSION=$(poetry run playwright --version)" >> "$GITHUB_ENV"
+        run: |
+          PLAYWRIGHT_VERSION=$(poetry run playwright --version | grep -oE '[0-9.]+')
+          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> "$GITHUB_ENV"
 
       # Cache browser binaries, cache key is based on Playwright version and OS
       - name: Cache Playwright Browser Binaries
