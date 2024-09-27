@@ -145,6 +145,18 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Ubuntu Installs
+        if: matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-24.04'
+        run: |
+          sudo apt update
+          sudo apt install git-secret gpg -y
+
+      - name: "git-secret Reveal .env files"
+        run: |
+          # Import private key and avoid the "Inappropriate ioctl for device" error
+          echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
+          git secret reveal
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
