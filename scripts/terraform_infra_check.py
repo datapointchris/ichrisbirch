@@ -8,10 +8,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 WEBSERVER_NAME = 'ichrisbirch_webserver'
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
