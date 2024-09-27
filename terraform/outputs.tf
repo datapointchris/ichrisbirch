@@ -10,9 +10,6 @@ output "aws_account_id" {
   value = data.aws_caller_identity.current.account_id
 }
 
-output "aws_caller_identity_arn" {
-  value = data.aws_caller_identity.current.arn
-}
 
 # ------------------------------------------------------------------ #
 # DATABASE
@@ -42,9 +39,14 @@ output "db_security_group_ids" {
   value = join(", ", aws_db_instance.icb.vpc_security_group_ids[*])
 }
 
+output "db_subnet_group_name" {
+  value = aws_db_instance.icb.db_subnet_group_name
+}
+
 output "dynamodb_terraform_state_locking_table_id" {
   value = aws_dynamodb_table.ichrisbirch_terraform_state_locking.id
 }
+
 
 # ------------------------------------------------------------------ #
 # NETWORK
@@ -85,6 +87,7 @@ output "prod_vpc_id" {
 output "security_group_ichrisbirch_webserver_id" {
   value = aws_security_group.ichrisbirch_webserver.id
 }
+
 
 # ------------------------------------------------------------------ #
 # WEBSERVER
@@ -129,6 +132,7 @@ output "webserver_security_groups" {
 output "webserver_subnet_id" {
   value = aws_instance.ichrisbirch_webserver.subnet_id
 }
+
 
 # ------------------------------------------------------------------ #
 # IAM
@@ -226,6 +230,7 @@ output "user_chris_birch_generated_password" {
   value     = aws_iam_user_login_profile.chris_birch.password
   sensitive = true
 }
+
 
 # ------------------------------------------------------------------ #
 # ROUTE 53

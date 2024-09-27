@@ -161,7 +161,6 @@ No modules.
 | Name | Description |
 |------|-------------|
 | aws\_account\_id | n/a |
-| aws\_caller\_identity\_arn | n/a |
 | aws\_region | n/a |
 | db\_endpoint | n/a |
 | db\_engine | n/a |
@@ -169,6 +168,7 @@ No modules.
 | db\_id | n/a |
 | db\_instance\_class | n/a |
 | db\_security\_group\_ids | n/a |
+| db\_subnet\_group\_name | n/a |
 | dynamodb\_terraform\_state\_locking\_table\_id | n/a |
 | iam\_group\_developer\_admin\_arn | n/a |
 | iam\_group\_developer\_arn | n/a |
