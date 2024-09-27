@@ -21,10 +21,10 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-${{ github.event.repository.name }}-role
@@ -37,7 +37,7 @@ jobs:
           chmod 600 ${{ env.SSH_KEY_PATH }}
         shell: bash
 
-      - name: Set up Terraform
+      - name: Set Up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.6
@@ -46,7 +46,7 @@ jobs:
         run: terraform init
         working-directory: ${{ github.workspace }}/terraform
 
-      - name: Get Terraform output
+      - name: Get Elastic IP from Terraform Output
         id: terraform_output
         run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> $GITHUB_ENV
         working-directory: ${{ github.workspace }}/terraform
