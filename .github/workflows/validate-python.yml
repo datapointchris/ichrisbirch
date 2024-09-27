@@ -15,12 +15,17 @@ permissions:
 env:
   ENVIRONMENT: "testing"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  validate-project:
-    name: Validate project
+
+  setup:
+    name: Setup Environment
     runs-on: ${{matrix.os}}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
         python-version: ["3.12"]
@@ -42,10 +47,6 @@ jobs:
           # Import private key and avoid the "Inappropriate ioctl for device" error
           echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
           git secret reveal
-          sleep 3
-          ls -la
-          sleep 1
-          cat .test.env
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -55,11 +56,37 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
       - name: Install poetry
         run: python -m pip install poetry==${{ matrix.poetry-version }}
 
       - name: Poetry install CICD Dependencies
         run: poetry install --without dev,prod
+
+  lint:
+    name: Lint Code
+    runs-on: ${{matrix.os}}
+    needs: setup
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
+        python-version: ["3.12"]
+        poetry-version: ["1.3.2"]
+        # Current poetry.lock file incompatible < 1.3.2
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Run black formatter
         uses: psf/black@stable
@@ -81,8 +108,38 @@ jobs:
       - name: Run bandit
         run: poetry run bandit -c pyproject.toml -r .
 
-      - name: Install browsers for playwright for frontend tests
-        run: poetry run playwright install
+  test:
+    name: Run Tests
+    runs-on: ${{matrix.os}}
+    needs: setup
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
+        python-version: ["3.12"]
+        poetry-version: ["1.3.2"]
+        # Current poetry.lock file incompatible < 1.3.2
 
-      - name: Run pytest coverage
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Get Playwright Version for Cache
+        run: echo "PLAYWRIGHT_VERSION=$(poetry run playwright --version)" >> $GITHUB_ENV
+
+      # Cache browser binaries, cache key is based on Playwright version and OS
+      - name: Cache Playwright Browser Binaries
+        uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: "~/.cache/ms-playwright"
+          key: "${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
+          restore-keys: |
+                  ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Browsers
+        run: poetry run playwright install
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Run pytest with Coverage
         run: poetry run pytest --cov=ichrisbirch
