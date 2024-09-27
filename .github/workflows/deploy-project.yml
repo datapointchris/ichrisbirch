@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -48,7 +48,7 @@ jobs:
 
       - name: Get Elastic IP from Terraform Output
         id: terraform_output
-        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> $GITHUB_ENV
+        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_ENV"
         working-directory: ${{ github.workspace }}/terraform
 
       - name: Pull and Re-install Project
