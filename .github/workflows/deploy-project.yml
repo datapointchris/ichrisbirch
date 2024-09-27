@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  SSH_KEY_PATH: ichrisbirch_key
+  SSH_KEY_PATH: webserver.pem
 
 jobs:
   deploy-project:
@@ -33,7 +33,7 @@ jobs:
       - name: Retrieve SSH Key from S3 Bucket
         id: get_ssh_key
         run: |
-          aws s3 cp s3://ichrisbirch-webserver-keys/ec2-private.key ${{ env.SSH_KEY_PATH }}
+          aws s3 cp s3://ichrisbirch-webserver-keys/${{ env.SSH_KEY_PATH }} ${{ env.SSH_KEY_PATH }}
           chmod 600 ${{ env.SSH_KEY_PATH }}
         shell: bash
 
