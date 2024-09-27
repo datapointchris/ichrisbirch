@@ -6,25 +6,60 @@ on:
     types: [completed]
   workflow_dispatch:
 
+env:
+  SSH_KEY_PATH: ichrisbirch_key
+
 jobs:
   deploy-project:
     name: Deploy project to EC2
     runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
-    env:
-      SSH_KEY_PATH: ichrisbirch_key
-      REMOTE_USER: ubuntu
-      REMOTE_HOST: 18.117.41.228
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-${{ github.event.repository.name }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+        shell: bash
+
+      - name: Retrieve SSH Key from S3 Bucket
+        id: get_ssh_key
+        run: |
+          aws s3 cp s3://ichrisbirch-webserver-keys/ec2-private.key ${{ env.SSH_KEY_PATH }}
+          chmod 600 ${{ env.SSH_KEY_PATH }}
+        shell: bash
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      - name: Initialize Terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/terraform
+
+      - name: Get Terraform output
+        id: terraform_output
+        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> $GITHUB_ENV
+        working-directory: ${{ github.workspace }}/terraform
+
       - name: Pull and Re-install Project
         run: |
-          echo "${{ secrets.ICHRISBIRCH_KEY }}" > $SSH_KEY_PATH && chmod 600 $SSH_KEY_PATH
-          ssh -t -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $REMOTE_USER@$REMOTE_HOST '
+          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
             cd /var/www/ichrisbirch &&
             git pull &&
             git secret reveal -f &&
@@ -34,4 +69,6 @@ jobs:
 
       - name: Restart Supervisor
         run: |
-          ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $REMOTE_USER@$REMOTE_HOST 'sudo supervisorctl reload'
+          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
+            sudo supervisorctl restart all
+          '
