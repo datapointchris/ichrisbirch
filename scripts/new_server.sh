@@ -17,7 +17,7 @@ update_machine() {
 base_installs() {
     # NOTE: Install the postgresql-client version that matches the database
     # this is for pg_dump backups with the scheduler.
-    apt install curl git git-secret postgresql-client-16 unzip tmux tldr supervisor nginx neovim -y
+    apt install curl git git-secret postgresql-client-16 unzip tmux tldr tree supervisor nginx neovim -y
 }
 
 installs_for_building_psycopg2_from_source() {
