@@ -2,7 +2,7 @@ name: Check for Terraform Infrastructure Changes
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every Hour
+    - cron: '0 0/4 * * *'  # Every 6 Hours
   workflow_dispatch:
 
 # These permissions are needed to interact with GitHub's OIDC Token endpoint.
