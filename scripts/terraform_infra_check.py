@@ -102,5 +102,6 @@ if __name__ == "__main__":
             print(email_subject)
             print(f'Sending email to {EMAIL_TO}')
             send_email(email_subject, email_body)
+            exit(1)
         else:
             print('No infrastructure changes detected')
