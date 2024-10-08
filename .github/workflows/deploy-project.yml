@@ -2,7 +2,7 @@ name: Deploy Project
 
 on:
   workflow_run:
-    workflows: [Validate Python Project]
+    workflows: [Validate Project]
     types: [completed]
   workflow_dispatch:
 
