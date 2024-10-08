@@ -20,6 +20,7 @@ class BoxSize(enum.Enum):
     Monitor = 'Monitor'
     Misc = 'Misc'
     Sixteen = 'Sixteen'
+    UhaulSmall = 'UhaulSmall'
 
 
 class Box(Base):
