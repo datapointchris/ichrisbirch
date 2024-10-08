@@ -43,7 +43,7 @@ resource "aws_instance" "ichrisbirch_webserver" {
   iam_instance_profile = aws_iam_instance_profile.ichrisbirch_webserver.name
   instance_type        = "t3.medium"
   key_name             = "ichrisbirch-webserver"
-  tags                 = { Name = "ichrisbirch" }
+  tags                 = { Name = "ichrisbirch_webserver" }
   depends_on           = [aws_security_group.ichrisbirch_webserver, aws_network_interface.ichrisbirch_webserver]
 
   # The network interface must be attached here when the instance is created in order
