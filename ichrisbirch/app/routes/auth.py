@@ -74,9 +74,14 @@ def signup():
     form = forms.SignupForm()
     if form.validate_on_submit():
         logger.debug('signup form validated')
+        logger.debug('checking for existing user')
         if not (existing_user := users_api.get_one(['email', form.email.data])):
             logger.info(f'creating a new user with email: {form.email.data}')
-            data = {'name': form.name.data, 'email': form.email.data, 'password': form.password.data}
+            data = {
+                'name': form.name.data,
+                'email': form.email.data,
+                'password': form.password.data,
+            }
             new_user = users_api.post(json=data)
             new_user = models.User(**new_user.model_dump())
             login_user(new_user)
@@ -94,7 +99,7 @@ def signup():
         title='Create an Account.',
         form=form,
         template='signup-page',
-        body="Sign up for a user account.",
+        body='Sign up for a user account.',
     )
 
 

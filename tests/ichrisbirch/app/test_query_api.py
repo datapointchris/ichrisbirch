@@ -1,5 +1,4 @@
 import logging
-from unittest.mock import patch
 
 import pytest
 from fastapi import status
@@ -36,17 +35,13 @@ def test_query_api():
     return QueryAPI(base_url, logger, response_model)
 
 
-@patch('ichrisbirch.app.utils.handle_if_not_response_code')
-def test_get_one(mock_handle_if_not_response_code, test_query_api):
-    mock_handle_if_not_response_code.return_value = None
+def test_get_one(test_query_api):
     result = test_query_api.get_one('1')
     # annoyingly, the login users for the app are inserted first, before the test data
     assert result.name == tests.util.TEST_LOGIN_REGULAR_USER['name']
 
 
-@patch('ichrisbirch.app.utils.handle_if_not_response_code')
-def test_get_many(mock_handle_if_not_response_code, test_query_api):
-    mock_handle_if_not_response_code.return_value = None
+def test_get_many(test_query_api):
     result = test_query_api.get_many()
     assert isinstance(result, list)
     for r in result:
@@ -57,9 +52,7 @@ def test_get_many(mock_handle_if_not_response_code, test_query_api):
         )
 
 
-@patch('ichrisbirch.app.utils.handle_if_not_response_code')
-def test_post(mock_handle_if_not_response_code, test_query_api):
-    mock_handle_if_not_response_code.return_value = None
+def test_post(test_query_api):
     result = test_query_api.post(json=NEW_USER.model_dump())
     assert result.name == NEW_USER.name
 
@@ -67,9 +60,7 @@ def test_post(mock_handle_if_not_response_code, test_query_api):
     assert len(results) == 6  # 2 app login users, 3 test users, 1 new user
 
 
-@patch('ichrisbirch.app.utils.handle_if_not_response_code')
-def test_patch(mock_handle_if_not_response_code, test_query_api):
-    mock_handle_if_not_response_code.return_value = None
+def test_patch(test_query_api):
     new_name = 'User 1 Updated Name'
     result = test_query_api.patch('1', json={'name': new_name})
     assert result.name == new_name
@@ -78,8 +69,6 @@ def test_patch(mock_handle_if_not_response_code, test_query_api):
     assert updated.name == new_name
 
 
-@patch('ichrisbirch.app.utils.handle_if_not_response_code')
-def test_delete(mock_handle_if_not_response_code, test_query_api):
-    mock_handle_if_not_response_code.return_value = None
+def test_delete(test_query_api):
     result = test_query_api.delete('1')
     assert result.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(result)

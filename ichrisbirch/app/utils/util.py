@@ -1,8 +1,3 @@
-import logging
-
-import httpx
-from flask import flash
-
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
@@ -31,23 +26,6 @@ def url_builder(base_url: str, *parts) -> str:
         elif isinstance(part, int):
             stripped_parts.append(str(part))
     return '/'.join([base_url.rstrip('/')] + stripped_parts) + '/'
-
-
-def handle_if_not_response_code(response_code: int, response: httpx.Response, logger: logging.Logger):
-    """Flash and log an error if the response status code is not the expected response code.
-
-    Logger needs to be passed in as a parameter, or all logging is logged from the helpers file
-    """
-    if response.status_code != response_code:
-        error_message = f'expected {response_code} from {response.url} but received {response.status_code}'
-        logger.error(error_message)
-        logger.error(response.text)
-        if settings.ENVIRONMENT == 'development':
-            flash(error_message, 'error')
-            flash(response.text, 'error')
-        else:
-            flash(error_message, 'error')
-        response.raise_for_status()
 
 
 def convert_bytes(num: int | float) -> str:

@@ -1,10 +1,10 @@
 import logging
 from typing import Any
 from typing import Generic
-from typing import Type
 from typing import TypeVar
 
 import httpx
+from flask import flash
 from flask_login import current_user
 from pydantic import BaseModel
 
@@ -33,7 +33,7 @@ class QueryAPI(Generic[ModelType]):
         self,
         base_url: str,
         logger: logging.Logger,
-        response_model: Type[ModelType],
+        response_model: type[ModelType],
         user: models.User | Any = None,
     ):
         self.base_url = utils.url_builder(settings.api_url, base_url)
@@ -41,13 +41,13 @@ class QueryAPI(Generic[ModelType]):
         self.response_model = response_model
         self.user = user or (current_user if (current_user and current_user.is_authenticated) else None)
 
-    def _handle_request(self, method: str, endpoint: Any | None = None, expected_response_code: int = 200, **kwargs):
+    def _handle_request(self, method: str, endpoint: Any | None = None, **kwargs):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         headers = {
             'X-User-ID': (self.user.get_id() or '') if self.user else '',
             'X-Application-ID': settings.flask.app_id,
         }
-        headers_to_log = {'X-User-ID': headers.get('X-User-ID'), 'X-Application-ID': 'XXXXXXXX'}
+        headers_to_log = {'X-User-ID': headers.get('X-User-ID'), 'X-Application-ID': f'XXXX{settings.flask.app_id[:4]}'}
         kwargs_to_log = ''
         if additional_headers := kwargs.pop('headers', None):
             headers.update(**additional_headers)
@@ -57,32 +57,47 @@ class QueryAPI(Generic[ModelType]):
                 kwargs_to_log = ', '.join([f'{k}=XXXXXXXX' for k in kwargs.keys()])
             else:
                 kwargs_to_log = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
-        self.logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log if kwargs_to_log else ""}')
+        self.logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log}')
         self.logger.debug(f'current_user={self.user}')
-        response = httpx.request(method, url, follow_redirects=True, **kwargs)
-        utils.handle_if_not_response_code(expected_response_code, response, self.logger)
-        return response
+        response = None
+        try:
+            with httpx.Client(timeout=10) as client:
+                response = client.request(method, url, headers=headers, **kwargs, follow_redirects=True)
+                response.raise_for_status()
+                return response
+        except httpx.HTTPError as e:
+            error_message = f'Request Error: {e}'
+            self.logger.error(error_message)
+            flash(error_message, 'error')
+            if response:
+                self.logger.error(response.text)
+                if settings.ENVIRONMENT == 'development':
+                    flash(response.text, 'error')
+            return None
 
     def get_one(self, endpoint: Any | None = None, **kwargs) -> ModelType | None:
         response = self._handle_request('GET', endpoint, **kwargs)
-        if exists := response.json():
-            return self.response_model(**exists)
+        if response and response.json():
+            return self.response_model(**response.json())
         return None
 
     def get_many(self, endpoint: Any | None = None, **kwargs) -> list[ModelType]:
-        response = self._handle_request('GET', endpoint, **kwargs)
-        return [self.response_model(**result) for result in response.json()]
+        if response := self._handle_request('GET', endpoint, **kwargs):
+            return [self.response_model(**result) for result in response.json()]
+        return []
 
     def post(self, endpoint: Any | None = None, **kwargs):
-        response = self._handle_request('POST', endpoint, **kwargs, expected_response_code=201)
-        return self.response_model(**response.json())
+        if response := self._handle_request('POST', endpoint, **kwargs):
+            return self.response_model(**response.json())
+        return None
 
     def post_action(self, endpoint: Any | None = None, **kwargs):
-        return self._handle_request('POST', endpoint, **kwargs, expected_response_code=200)
+        return self._handle_request('POST', endpoint, **kwargs)
 
     def patch(self, endpoint: Any | None = None, **kwargs):
-        response = self._handle_request('PATCH', endpoint, **kwargs)
-        return self.response_model(**response.json())
+        if response := self._handle_request('PATCH', endpoint, **kwargs):
+            return self.response_model(**response.json())
+        return None
 
     def delete(self, endpoint: Any | None = None, **kwargs):
-        return self._handle_request('DELETE', endpoint, **kwargs, expected_response_code=204)
+        return self._handle_request('DELETE', endpoint, **kwargs)
