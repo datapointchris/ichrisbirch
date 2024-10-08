@@ -11,7 +11,7 @@ repos:
         always_run: true
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.2
+    rev: v1.7.3
     hooks:
       - id: actionlint
 
@@ -33,7 +33,7 @@ repos:
       - id: poetry-lock
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: check-toml
@@ -51,7 +51,7 @@ repos:
         args: ["--config", "pyproject.toml"]
 
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 24.10.0
     hooks:
       - id: black
 
@@ -66,7 +66,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.18.0
+    rev: 1.19.0
     hooks:
       - id: blacken-docs
 

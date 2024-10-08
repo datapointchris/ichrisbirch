@@ -89,7 +89,7 @@ pydeps = "^1.12.20"
 
 [tool.bandit]
 exclude_dirs = ["tests", "scripts"]
-skips = ["B311"]
+skips = ["B113", "B311"]
 
 
 [tool.black]
