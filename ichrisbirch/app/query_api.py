@@ -61,7 +61,7 @@ class QueryAPI(Generic[ModelType]):
         self.logger.debug(f'current_user={self.user}')
         response = None
         try:
-            with httpx.Client(timeout=10) as client:
+            with httpx.Client() as client:
                 response = client.request(method, url, headers=headers, **kwargs, follow_redirects=True)
                 response.raise_for_status()
                 return response
