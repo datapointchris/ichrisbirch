@@ -54,6 +54,15 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Terraform Plan
+        id: terraform_plan
+        run: terraform plan -detailed-exitcode -out=tfplan
+        continue-on-error: true
+
+      - name: Display Terraform Plan Return Code
+        run: echo ${{ steps.terraform_plan.outcome }}
+
+
       - name: Check for Infrastructure Changes
         id: check_infra_changes
         run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
