@@ -18,14 +18,16 @@ EMAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD') or sys.argv[1]
 TIMEOUT = 60  # Timeout in seconds (2 minutes)
 
 if EMAIL_PASSWORD:
-    print('Email password found')
+    print('GMAIL_APP_PASSWORD found in environment')
 
 
 def infrastrucuture_has_changes(outfile: Path) -> bool:
     cmd = ['terraform', 'plan', '-detailed-exitcode', '-out', str(outfile), '-no-color']
     result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
-    print('Terraform Plan Result:')
+    print()
+    print('---------- Terraform Plan Result ----------')
     print(result.stdout.decode())
+    print()
     print('Terraform Plan Exit Code:', result.returncode)
     return result.returncode == 2
 
@@ -84,6 +86,7 @@ if __name__ == '__main__':
         jsonfile_path = Path(tf_jsonfile.name)
 
         print('Checking for infrastructure changes...')
+        print()
         if infrastrucuture_has_changes(outfile_path):
             print('Infrastructure changes detected')
             generate_terraform_plan_json(outfile_path, jsonfile_path)
@@ -115,7 +118,7 @@ if __name__ == '__main__':
             print(f'Sending email to {EMAIL_TO}')
             send_email(email_subject, email_body)
             print('Email sent successfully')
-            exit(1)
+            exit(0)
         else:
             print('No infrastructure changes detected')
             exit(0)
