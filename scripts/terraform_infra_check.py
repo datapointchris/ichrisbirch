@@ -1,5 +1,4 @@
 import json
-import sys
 import smtplib
 import subprocess
 from email.mime.multipart import MIMEMultipart
@@ -64,11 +63,11 @@ def send_email(subject: str, body: str):
 
 if __name__ == '__main__':
     print('Working Directory: ', subprocess.run('pwd', capture_output=True).stdout.decode())
-    
+
     jsonfile = Path('terraform_plan.json')
     generate_terraform_plan_json(TERRAFORM_PLAN_FILE, jsonfile)
     print(f'Generated terraform plan JSON from {TERRAFORM_PLAN_FILE}')
-    
+
     plan_changes = parse_terraform_plan_changes(jsonfile)
     webserver_terminated = is_webserver_terminated(plan_changes)
     additional_changes = has_additional_changes(plan_changes)
