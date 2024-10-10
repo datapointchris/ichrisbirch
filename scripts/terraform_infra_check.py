@@ -21,15 +21,6 @@ if EMAIL_PASSWORD:
     print('Email password found')
 
 
-def validate_infrastructure() -> bool:
-    cmd = ['terraform', 'validate']
-    result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
-    print('Terraform Validate Result:')
-    print(result.stdout.decode())
-    print('Terraform Validate Exit Code:', result.returncode)
-    return result.returncode == 0
-
-
 def infrastrucuture_has_changes(outfile: Path) -> bool:
     cmd = ['terraform', 'plan', '-detailed-exitcode', '-out', str(outfile), '-no-color']
     result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
@@ -87,10 +78,6 @@ def send_email(subject: str, body: str):
 if __name__ == '__main__':
     email_subject = EMAIL_SUBJECT_PREFIX
     print('Working Directory: ', subprocess.run('pwd', capture_output=True).stdout.decode())
-
-    if not validate_infrastructure():
-        print('Terraform validation failed, exiting...')
-        exit(1)
 
     with tempfile.NamedTemporaryFile() as tf_outfile, tempfile.NamedTemporaryFile() as tf_jsonfile:
         outfile_path = Path(tf_outfile.name)
