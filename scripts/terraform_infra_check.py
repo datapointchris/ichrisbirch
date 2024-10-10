@@ -24,10 +24,6 @@ if EMAIL_PASSWORD:
 def infrastrucuture_has_changes(outfile: Path) -> bool:
     cmd = ['terraform', 'plan', '-detailed-exitcode', '-out', str(outfile), '-no-color']
     result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
-    print()
-    print('---------- Terraform Plan Result ----------')
-    print(result.stdout.decode())
-    print()
     print('Terraform Plan Exit Code:', result.returncode)
     return result.returncode == 2
 
