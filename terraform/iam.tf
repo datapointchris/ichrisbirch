@@ -266,6 +266,11 @@ resource "aws_iam_role_policy_attachment" "github_actions_terraform_execution" {
   policy_arn = aws_iam_policy.terraform_execution.arn
 }
 
+resource "aws_iam_role_policy_attachment" "github_actions_assume_terraform_role" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.assume_terraform_role.arn
+}
+
 resource "aws_iam_role_policy_attachment" "terraform_role_terraform_execution" {
   role       = aws_iam_role.terraform.name
   policy_arn = aws_iam_policy.terraform_execution.arn
