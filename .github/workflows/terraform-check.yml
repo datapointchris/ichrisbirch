@@ -9,10 +9,13 @@ on:
 permissions:
   id-token: write
   contents: read
-
 jobs:
   terraform:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/terraform
 
     steps:
       - name: Checkout Code
@@ -29,11 +32,14 @@ jobs:
         with:
           terraform_version: 1.9.6
 
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
       - name: Initialize Terraform
         run: terraform init
-        working-directory: ${{ github.workspace }}/terraform
 
       - name: Check for Infrastructure Changes
         id: check_infra_changes
         run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
-        working-directory: ${{ github.workspace }}/terraform

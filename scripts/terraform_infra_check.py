@@ -15,7 +15,7 @@ EMAIL_FROM = EMAIL_USERNAME = 'ichrisbirch@gmail.com'
 EMAIL_TO = 'chrisbirch@live.com'
 EMAIL_SUBJECT_PREFIX = 'iChrisBirch Infrastructure Changes - '
 EMAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD') or sys.argv[1]
-TIMEOUT = 120  # Timeout in seconds (2 minutes)
+TIMEOUT = 60  # Timeout in seconds (2 minutes)
 
 if EMAIL_PASSWORD:
     print('Email password found')
