@@ -69,11 +69,11 @@ jobs:
       - name: Test Python subprocess output codes
         run: |
           import subprocess
-          o = subprocess.run(['sh', '-c', 'exit', '55'])
-          print(o.returncode)
+          result = subprocess.run(['sh', '-c', 'exit 55'])
+          print(f'Exit code: {result.returncode}')
         shell: python
 
-      - name: Check for Infrastructure Changes
-        id: check_infra_changes
-        run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
-        # if: steps.terraform_plan.outputs.exitcode == 2
+      # - name: Check for Infrastructure Changes
+      #   id: check_infra_changes
+      #   run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
+      #   # if: steps.terraform_plan.outputs.exitcode == 2
