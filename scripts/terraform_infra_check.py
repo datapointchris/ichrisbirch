@@ -24,6 +24,7 @@ if EMAIL_PASSWORD:
 def infrastrucuture_has_changes(outfile: Path) -> bool:
     cmd = ['sh', '-c', 'terraform', 'plan', '-detailed-exitcode', '-out', str(outfile)]
     cmd = ['sh', '-c', f'terraform plan -detailed-exitcode -out {outfile}']
+    cmd = ['sh', '-c', f'terraform plan -detailed-exitcode']
     # result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
     result = subprocess.run(cmd, timeout=TIMEOUT)
     print()
