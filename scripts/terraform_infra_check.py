@@ -14,8 +14,8 @@ SMTP_PORT = 587
 EMAIL_FROM = EMAIL_USERNAME = 'ichrisbirch@gmail.com'
 EMAIL_TO = 'chrisbirch@live.com'
 EMAIL_SUBJECT_PREFIX = 'iChrisBirch Infrastructure Changes - '
-EMAIL_PASSWORD = os.environ['GMAIL_APP_PASSWORD']
-TERRAFORM_PLAN_FILE = Path('terraform_plan.out')
+EMAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD', '')
+TERRAFORM_PLAN_FILE = Path('tfplan')
 TIMEOUT = 60
 
 
