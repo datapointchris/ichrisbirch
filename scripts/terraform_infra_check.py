@@ -75,6 +75,7 @@ if __name__ == '__main__':
     changes_text = subprocess.getoutput(f'terraform show -no-color {TERRAFORM_PLAN_FILE}')
 
     email_subject = EMAIL_SUBJECT_PREFIX
+    email_body = 'TEST BODY'
     if webserver_terminated and not additional_changes:
         print('Webserver was terminated, re-creating...')
         apply_terraform_plan(TERRAFORM_PLAN_FILE)
