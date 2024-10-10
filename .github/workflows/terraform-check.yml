@@ -63,8 +63,8 @@ jobs:
         continue-on-error: true
 
       - name: Display Terraform Plan Exit Code
-        run: "Terraform plan exit code: ${{ steps.terraform_plan.outputs.exitcode }}"
-
+        run: |
+          echo "Terraform plan exit code: ${{ steps.terraform_plan.outputs.exitcode }}"
 
       - name: Check for Infrastructure Changes
         id: check_infra_changes
