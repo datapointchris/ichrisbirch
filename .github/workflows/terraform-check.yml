@@ -54,17 +54,17 @@ jobs:
       - name: Initialize Terraform
         run: terraform init
 
-      # - name: Terraform Validate
-      #   run: terraform validate
+      - name: Terraform Validate
+        run: terraform validate
 
-      # - name: Terraform Plan
-      #   id: terraform_plan
-      #   run: terraform plan -detailed-exitcode -out=tfplan
-      #   continue-on-error: true
+      - name: Terraform Plan
+        id: terraform_plan
+        run: terraform plan -detailed-exitcode -out=tfplan
+        continue-on-error: true
 
-      # - name: Display Terraform Plan Exit Code
-      #   run: |
-      #     echo "Terraform plan exit code: ${{ steps.terraform_plan.outputs.exitcode }}"
+      - name: Display Terraform Plan Exit Code
+        run: |
+          echo "Terraform plan exit code: ${{ steps.terraform_plan.outputs.exitcode }}"
 
       - name: Test Python subprocess output codes
         run: |
@@ -76,4 +76,4 @@ jobs:
       - name: Check for Infrastructure Changes
         id: check_infra_changes
         run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
-        # if: steps.terraform_plan.outputs.exitcode == 2
+        if: steps.terraform_plan.outputs.exitcode == 2

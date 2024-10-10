@@ -14,25 +14,9 @@ SMTP_PORT = 587
 EMAIL_FROM = EMAIL_USERNAME = 'ichrisbirch@gmail.com'
 EMAIL_TO = 'chrisbirch@live.com'
 EMAIL_SUBJECT_PREFIX = 'iChrisBirch Infrastructure Changes - '
-EMAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD') or sys.argv[1]
-TIMEOUT = 60  # Timeout in seconds (2 minutes)
-
-if EMAIL_PASSWORD:
-    print('GMAIL_APP_PASSWORD found in environment')
-
-
-def infrastrucuture_has_changes(outfile: Path) -> bool:
-    cmd = ['sh', '-c', 'terraform', 'plan', '-detailed-exitcode', '-out', str(outfile)]
-    cmd = ['sh', '-c', f'terraform plan -detailed-exitcode -out {outfile}']
-    cmd = ['sh', '-c', f'terraform plan -detailed-exitcode']
-    # result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
-    result = subprocess.run(cmd, timeout=TIMEOUT)
-    print()
-    print('---------- Terraform Plan Result ----------')
-    # print(result.stdout.decode())
-    print()
-    print('Terraform Plan Exit Code:', result.returncode)
-    return result.returncode == 2
+EMAIL_PASSWORD = os.environ['GMAIL_APP_PASSWORD']
+TERRAFORM_PLAN_FILE = Path('terraform_plan.out')
+TIMEOUT = 60
 
 
 def generate_terraform_plan_json(outfile: Path, jsonfile: Path):
@@ -83,46 +67,34 @@ def send_email(subject: str, body: str):
 if __name__ == '__main__':
     email_subject = EMAIL_SUBJECT_PREFIX
     print('Working Directory: ', subprocess.run('pwd', capture_output=True).stdout.decode())
+    jsonfile = Path('terraform_plan.json')
+    generate_terraform_plan_json(TERRAFORM_PLAN_FILE, jsonfile)
+    print(f'Generated terraform plan JSON from {TERRAFORM_PLAN_FILE}')
+    plan_changes = parse_terraform_plan_changes(jsonfile)
+    webserver_terminated = is_webserver_terminated(plan_changes)
+    additional_changes = has_additional_changes(plan_changes)
+    changes_text = subprocess.getoutput(f'terraform show -no-color {TERRAFORM_PLAN_FILE}')
 
-    with tempfile.NamedTemporaryFile() as tf_outfile, tempfile.NamedTemporaryFile() as tf_jsonfile:
-        outfile_path = Path(tf_outfile.name)
-        jsonfile_path = Path(tf_jsonfile.name)
+    if webserver_terminated and not additional_changes:
+        print('Webserver was terminated, re-creating...')
+        apply_terraform_plan(TERRAFORM_PLAN_FILE)
+        email_subject += f'{WEBSERVER_NAME} Terminated'
+        email_body = f"""<h2>{WEBSERVER_NAME} was terminated!!</h2>
+        Re-created the webserver successfully.\n\n<pre>{changes_text}</pre>"""
 
-        print('Checking for infrastructure changes...')
-        print()
-        if infrastrucuture_has_changes(outfile_path):
-            print('Infrastructure changes detected')
-            generate_terraform_plan_json(outfile_path, jsonfile_path)
-            print('Generated terraform plan JSON')
-            plan_changes = parse_terraform_plan_changes(jsonfile_path)
-            webserver_terminated = is_webserver_terminated(plan_changes)
-            additional_changes = has_additional_changes(plan_changes)
-            changes_text = subprocess.getoutput(f'terraform show -no-color {outfile_path}')
+    elif webserver_terminated and additional_changes:
+        print('Webserver was terminated, additional changes detected, pending review...')
+        email_subject += f'{WEBSERVER_NAME} Terminated and Unexpected Infrastructure Changes Detected'
+        email_body = f"""<h2>{WEBSERVER_NAME} was terminated!!</h2>
+        Could not re-create the webserver, pending review of additional changes:\n\n<pre>{changes_text}</pre>"""
 
-            if webserver_terminated and not additional_changes:
-                print('Webserver was terminated, re-creating...')
-                apply_terraform_plan(outfile_path)
-                email_subject += f'{WEBSERVER_NAME} Terminated'
-                email_body = f"""<h2>{WEBSERVER_NAME} was terminated!!</h2>
-                Re-created the webserver successfully.\n\n<pre>{changes_text}</pre>"""
+    elif not webserver_terminated and additional_changes:
+        print('Unexpected infrastructure changes detected, pending review...')
+        email_subject += 'Unexpected Infrastructure Changes Detected'
+        email_body = f"""<h2>Unexpected infrastructure changes detected, pending review:</h2>
+            <pre>{changes_text}</pre>"""
 
-            elif webserver_terminated and additional_changes:
-                print('Webserver was terminated, additional changes detected, pending review...')
-                email_subject += f'{WEBSERVER_NAME} Terminated and Unexpected Infrastructure Changes Detected'
-                email_body = f"""<h2>{WEBSERVER_NAME} was terminated!!</h2>
-                Could not re-create the webserver, pending review of additional changes:\n\n<pre>{changes_text}</pre>"""
-
-            elif not webserver_terminated and additional_changes:
-                print('Unexpected infrastructure changes detected, pending review...')
-                email_subject += 'Unexpected Infrastructure Changes Detected'
-                email_body = f"""<h2>Unexpected infrastructure changes detected, pending review:</h2>
-                    <pre>{changes_text}</pre>"""
-
-            print()
-            print(f'Sending email to {EMAIL_TO}')
-            send_email(email_subject, email_body)
-            print('Email sent successfully')
-            exit(0)
-        else:
-            print('No infrastructure changes detected')
-            exit(0)
+    print()
+    print(f'Sending email to {EMAIL_TO}')
+    send_email(email_subject, email_body)
+    print('Email sent successfully')
