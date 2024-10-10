@@ -28,7 +28,7 @@ def infrastrucuture_has_changes(outfile: Path) -> bool:
     result = subprocess.run(cmd, timeout=TIMEOUT)
     print()
     print('---------- Terraform Plan Result ----------')
-    print(result.stdout.decode())
+    # print(result.stdout.decode())
     print()
     print('Terraform Plan Exit Code:', result.returncode)
     return result.returncode == 2
