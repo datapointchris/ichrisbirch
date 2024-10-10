@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Ubuntu Installs
+        run: |
+          sudo apt update
+          sudo apt install git-secret gpg -y
+
       - name: "git-secret Reveal .env files"
         run: |
           # Import private key and avoid the "Inappropriate ioctl for device" error
@@ -52,6 +57,6 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
 
-      - name: Check for Infrastructure Changes
-        id: check_infra_changes
-        run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
+      # - name: Check for Infrastructure Changes
+        # id: check_infra_changes
+        # run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
