@@ -7,12 +7,12 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 WEBSERVER_NAME = 'ichrisbirch_webserver'
-SMTP_SERVER = 'smtp.gmail.com'
+SMTP_SERVER = ''
 SMTP_PORT = 587
-EMAIL_FROM = EMAIL_USERNAME = 'ichrisbirch@gmail.com'
-EMAIL_TO = 'chrisbirch@live.com'
+EMAIL_FROM = EMAIL_USERNAME = ''
+EMAIL_TO = ''
 EMAIL_SUBJECT_PREFIX = 'iChrisBirch Infrastructure Changes - '
-EMAIL_PASSWORD = sys.argv[1]
+EMAIL_PASSWORD = ''
 TERRAFORM_PLAN_FILE = Path('tfplan')
 TIMEOUT = 60
 
@@ -96,6 +96,6 @@ if __name__ == '__main__':
             <pre>{changes_text}</pre>"""
 
     print()
-    print(f'Sending email to {EMAIL_TO}')
-    send_email(email_subject, email_body)
-    print('Email sent successfully')
+    # print(f'Sending email to {EMAIL_TO}')
+    # send_email(email_subject, email_body)
+    # print('Email sent successfully')

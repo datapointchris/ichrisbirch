@@ -68,5 +68,5 @@ jobs:
 
       - name: Check for Infrastructure Changes
         id: check_infra_changes
-        run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python3 ../scripts/terraform_infra_check.py
         # if: steps.terraform_plan.outputs.exitcode == 2
