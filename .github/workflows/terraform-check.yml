@@ -68,7 +68,7 @@ jobs:
 
       - name: Test Python subprocess output codes
         run: |
-          python3 'import subprocess; o = subprocess.run(['exit 2']); print(o.returncode)'
+          python3 'import subprocess; o = subprocess.run(['exit 55']); print(o.returncode)'
 
       - name: Check for Infrastructure Changes
         id: check_infra_changes
