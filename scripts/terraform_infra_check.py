@@ -97,14 +97,14 @@ if __name__ == '__main__':
             changes_text = subprocess.getoutput(f'terraform show -no-color {outfile_path}')
 
             if webserver_terminated and not additional_changes:
-                print('Webserver terminated, re-creating...')
+                print('Webserver was terminated, re-creating...')
                 apply_terraform_plan(outfile_path)
                 email_subject += f'{WEBSERVER_NAME} Terminated'
                 email_body = f"""<h2>{WEBSERVER_NAME} was terminated!!</h2>
                 Re-created the webserver successfully.\n\n<pre>{changes_text}</pre>"""
 
             elif webserver_terminated and additional_changes:
-                print('Webserver terminated, additional changes detected, pending review...')
+                print('Webserver was terminated, additional changes detected, pending review...')
                 email_subject += f'{WEBSERVER_NAME} Terminated and Unexpected Infrastructure Changes Detected'
                 email_body = f"""<h2>{WEBSERVER_NAME} was terminated!!</h2>
                 Could not re-create the webserver, pending review of additional changes:\n\n<pre>{changes_text}</pre>"""
@@ -115,6 +115,7 @@ if __name__ == '__main__':
                 email_body = f"""<h2>Unexpected infrastructure changes detected, pending review:</h2>
                     <pre>{changes_text}</pre>"""
 
+            print()
             print(f'Sending email to {EMAIL_TO}')
             send_email(email_subject, email_body)
             print('Email sent successfully')

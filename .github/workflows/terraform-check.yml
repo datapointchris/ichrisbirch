@@ -4,6 +4,9 @@ on:
 #   schedule:
 #     - cron: '0 0/2 * * *'  # Every 12 Hours
   workflow_dispatch:
+  push:
+    branches:
+      - master
 
 # These permissions are needed to interact with GitHub's OIDC Token endpoint.
 permissions:
