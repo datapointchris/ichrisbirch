@@ -1,9 +1,7 @@
 import json
-import os
+import sys
 import smtplib
 import subprocess
-import sys
-import tempfile
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -14,7 +12,7 @@ SMTP_PORT = 587
 EMAIL_FROM = EMAIL_USERNAME = 'ichrisbirch@gmail.com'
 EMAIL_TO = 'chrisbirch@live.com'
 EMAIL_SUBJECT_PREFIX = 'iChrisBirch Infrastructure Changes - '
-EMAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD', '')
+EMAIL_PASSWORD = sys.argv[1]
 TERRAFORM_PLAN_FILE = Path('tfplan')
 TIMEOUT = 60
 
