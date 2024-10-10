@@ -69,7 +69,7 @@ jobs:
       - name: Test Python subprocess output codes
         run: |
           import subprocess
-          o = subprocess.run(['exit', '55'])
+          o = subprocess.run(['sh', '-c', 'exit', '55'])
           print(o.returncode)
         shell: python
 
