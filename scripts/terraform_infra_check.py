@@ -23,7 +23,7 @@ if EMAIL_PASSWORD:
 
 def infrastrucuture_has_changes(outfile: Path) -> bool:
     cmd = ['terraform', 'plan', '-detailed-exitcode', '-out', str(outfile)]
-    status = subprocess.getstatusoutput(['terraform', 'plan', '-detailed-exitcode'])[0]
+    status = subprocess.getstatusoutput('terraform plan -detailed-exitcode')[0]
     print('Terraform Plan Status:', status)
     result = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT)
     print()
