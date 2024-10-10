@@ -57,6 +57,6 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
 
-      # - name: Check for Infrastructure Changes
-        # id: check_infra_changes
-        # run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
+      - name: Check for Infrastructure Changes
+        id: check_infra_changes
+        run: python3 ../scripts/terraform_infra_check.py ${{ secrets.GMAIL_APP_PASSWORD }}
