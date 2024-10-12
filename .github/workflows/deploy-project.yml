@@ -2,7 +2,9 @@ name: Deploy Project
 
 on:
   workflow_run:
-    workflows: [Validate Project]
+    workflows:
+      - Validate Project
+      - Check for Terraform Infrastructure Changes
     types: [completed]
   workflow_dispatch:
 
