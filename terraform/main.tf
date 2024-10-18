@@ -55,9 +55,9 @@ resource "aws_instance" "ichrisbirch_webserver" {
     network_interface_id = aws_network_interface.ichrisbirch_webserver.id
   }
 
-  instance_market_options {
-    market_type = "spot"
-  }
+  # instance_market_options {
+  #   market_type = "spot"
+  # }
 }
 
 
