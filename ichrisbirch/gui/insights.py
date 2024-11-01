@@ -27,7 +27,7 @@ def submit_form():
 
     try:
         start = pendulum.now()
-        response = httpx.post(insights_endpoint, headers=headers, json={'url': url}, timeout=30)
+        response = httpx.post(insights_endpoint, headers=headers, json={'url': url}, timeout=60)
         response.raise_for_status()
         elapsed = (pendulum.now() - start).in_words()
         article_insights = response.text
@@ -45,7 +45,7 @@ def submit_form():
 
 
 def display_elapsed_time(elapsed_time):
-    elapsed_time_label.configure(text=f"Elapsed Time: {elapsed_time}")
+    elapsed_time_label.configure(text=f'Elapsed Time: {elapsed_time}')
 
 
 def display_html_response(html_content):
@@ -92,17 +92,17 @@ url_entry = ctk.CTkEntry(app, width=600)
 url_entry.pack(pady=ui.smallpad)
 
 # Create the submit button
-submit_button = ctk.CTkButton(app, text="Get Insights!", command=submit_form)
+submit_button = ctk.CTkButton(app, text='Get Insights!', command=submit_form)
 submit_button.pack(pady=ui.smallpad)
 
 # Create the Label to display the elapsed time
-elapsed_time_label = ctk.CTkLabel(app, text="")
+elapsed_time_label = ctk.CTkLabel(app, text='')
 elapsed_time_label.pack(pady=ui.smallpad)
 
 
 response_html_label = HTMLText(
     app,
-    html="",
+    html='',
     background='#1A1A1A',
     borderwidth=0,
     highlightthickness=0,
@@ -110,7 +110,7 @@ response_html_label = HTMLText(
     pady=ui.bigpad,
     spacing2=10,
 )
-response_html_label.pack(fill="both", expand=True)
+response_html_label.pack(fill='both', expand=True)
 response_html_label.fit_height()
 
 url_entry.focus_set()
