@@ -145,10 +145,10 @@ async def summarize(request: Request):
     request_data = await request.json()
     logger.debug(request_data)
     url = request_data.get('url')
-    logger.debug(f'summarizing url: {url}')
     url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
+    logger.debug(f'retrieved title: {title}')
 
     if "youtube.com" in url or "youtu.be" in url:
         text_content = _get_youtube_video_text_captions(url)
