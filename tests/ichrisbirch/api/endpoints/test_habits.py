@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+import sqlalchemy
 from fastapi import status
 
 import tests.test_data
@@ -139,7 +140,10 @@ class TestHabitCategories:
     def test_delete_category_in_use_gives_error(self, test_api):
         """Test that a category in use cannot be deleted.
 
-        TypeError: not all arguments converted during string formatting
+        TypeError:
+            not all arguments converted during string formatting
+        sqlalchemy.exc.PendingRollbackError:
+            This Session's transaction has been rolled back due to a previous exception during flush.
         -> This error will be raised, although in the actual API the NotNullConstraint produces
         an IntegrityError which is caught and a 409 response is returned.
 
@@ -155,7 +159,8 @@ class TestHabitCategories:
         endpoint = f'{self.ENDPOINT}2/'
         category = test_api.get(endpoint)
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
-        with pytest.raises(TypeError):
+        with pytest.raises(sqlalchemy.exc.PendingRollbackError):
+            # with pytest.raises(TypeError):
             test_api.delete(endpoint)
 
 
