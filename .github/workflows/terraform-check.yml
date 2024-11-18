@@ -1,12 +1,12 @@
 name: Check for Terraform Infrastructure Changes
 
 on:
-#   schedule:
-#     - cron: '0 0/2 * * *'  # Every 12 Hours
   workflow_dispatch:
   push:
     branches:
       - master
+    paths:
+    - 'terraform/**'
 
 # These permissions are needed to interact with GitHub's OIDC Token endpoint.
 permissions:
