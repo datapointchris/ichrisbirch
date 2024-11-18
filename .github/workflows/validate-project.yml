@@ -54,7 +54,7 @@ jobs:
         run: python -m pip install --upgrade pip
 
       - name: Cache Poetry Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pypoetry
@@ -125,7 +125,7 @@ jobs:
         # The poetry dependencies have to be cached by the matrix.os and matrix.python-version instead of only
         # the runner.os version since psycopg2-binary gets compiled for one 'Linux' runner.os and then errors on another os
       - name: Cache Poetry Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pypoetry
@@ -147,7 +147,7 @@ jobs:
 
       # Cache browser binaries, cache key is based on Playwright version and OS
       - name: Cache Playwright Browser Binaries
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
