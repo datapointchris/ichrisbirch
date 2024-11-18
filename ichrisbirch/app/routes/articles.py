@@ -173,10 +173,15 @@ def crud():
         case 'add':
             form = forms.ArticleCreateForm(request.form)
             if form.validate_on_submit():
-                # convert string field of tags to list for storing in postgres array
-                data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
-                data['save_date'] = str(pendulum.now())
-                articles_api.post(json=data)
+                if articles_api.get_one('url', params={'url': data['url']}):
+                    message = f'already exists: {data["url"]}'
+                    flash(message, 'warning')
+                    logger.warning(message)
+                else:
+                    # convert string field of tags to list for storing in postgres array
+                    data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
+                    data['save_date'] = str(pendulum.now())
+                    articles_api.post(json=data)
         case 'bulk_add':
             if urls := process_bulk_urls(request, data):
                 succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls)
