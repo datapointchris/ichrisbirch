@@ -57,7 +57,7 @@ def add_bulk_article(articles_api, summarize_api, url: str):
     if articles_api.get_one('url', params={'url': url}):
         raise ValueError(f'already exists: {url}')
     httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
-    openai_summary = summarize_api.post(json={'url': url}, timeout=10)
+    openai_summary = summarize_api.post(json={'url': url}, timeout=20)
     article = dict(
         title=openai_summary.title,
         url=url,
