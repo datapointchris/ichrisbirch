@@ -11,7 +11,7 @@ settings = get_settings()
 
 class OpenAIAssistant:
 
-    def __init__(self, name: str, instructions: str):
+    def __init__(self, name: str, instructions: str, response_format=None):
         self.name = name
         self.instructions = instructions
         self.client = OpenAI(api_key=settings.ai.openai.api_key)
@@ -19,7 +19,7 @@ class OpenAIAssistant:
             name=self.name,
             instructions=self.instructions,
             model=settings.ai.openai.model,
-            response_format={'type': 'json_object'},
+            response_format=response_format,
         )
 
     def generate(self, content: str) -> str:
@@ -31,7 +31,7 @@ class OpenAIAssistant:
             time.sleep(3)
         messages = self.client.beta.threads.messages.list(thread_id=thread.id)
         data = messages.data[0].content[0].text.value  # type: ignore
-        logger.debug(f'openai generated: {data}')
+        logger.debug(f'openai generated: {data[:100]}...')
         tokens_used = run.usage.total_tokens  # type: ignore
         logger.info(f'tokens used: {tokens_used}')  # type: ignore
         return data

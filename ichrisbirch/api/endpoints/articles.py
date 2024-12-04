@@ -155,7 +155,11 @@ async def summarize(request: Request):
     else:
         text_content = _get_text_content_from_html(soup)
 
-    assistant = OpenAIAssistant(name='Article Summary with Tags', instructions=settings.ai.prompts.article_summary_tags)
+    assistant = OpenAIAssistant(
+        name='Article Summary with Tags',
+        instructions=settings.ai.prompts.article_summary_tags,
+        response_format={'type': 'json_object'},
+    )
     data = json.loads(assistant.generate(text_content))
     return schemas.ArticleSummary(title=title, summary=data.get('summary'), tags=data.get('tags'))
 
