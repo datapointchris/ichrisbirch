@@ -66,6 +66,11 @@
         @include grid-set-columns(1);
     }
 
+    &--one-column-full {
+        width: 98svw;
+        @include grid-set-columns(1);
+    }
+
     &--two-columns {
         @include grid-set-columns(2);
     }

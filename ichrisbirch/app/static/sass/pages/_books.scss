@@ -1,0 +1,38 @@
+.books {
+    display: flex;
+    margin: 0;
+    list-style: none;
+    text-align: center;
+    justify-content: center;
+
+    &__header,
+    &__item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-inline: var(--space-s);
+    }
+
+    &__header {
+        padding-block: var(--space-s);
+        font-size: var(--fs-500);
+        border-top: 3px solid var(--clr-accent);
+        border-bottom: 3px solid var(--clr-accent);
+    }
+
+    &__item {
+        font-size: var(--fs-400);
+        line-height: 1.5em;
+        border-bottom: 1px solid var(--clr-accent);
+    }
+
+    &__column {
+        flex: 1 1 16.66%; /* Adjust the percentage based on the number of columns */
+        text-align: left;
+    }
+
+    &__link {
+        text-decoration: underline;
+        color: var(--clr-accent-light);
+    }
+}

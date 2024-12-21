@@ -1,6 +1,7 @@
 from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.article import Article
 from ichrisbirch.models.autotask import AutoTask
+from ichrisbirch.models.book import Book
 from ichrisbirch.models.box import Box
 from ichrisbirch.models.boxitem import BoxItem
 from ichrisbirch.models.countdown import Countdown
@@ -18,6 +19,7 @@ __all__ = [
     'Apartment',
     'Article',
     'AutoTask',
+    'Book',
     'Box',
     'BoxItem',
     'Countdown',

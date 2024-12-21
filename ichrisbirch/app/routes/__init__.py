@@ -2,6 +2,7 @@ from ichrisbirch.app.routes import admin
 from ichrisbirch.app.routes import articles
 from ichrisbirch.app.routes import auth
 from ichrisbirch.app.routes import autotasks
+from ichrisbirch.app.routes import books
 from ichrisbirch.app.routes import box_packing
 from ichrisbirch.app.routes import countdowns
 from ichrisbirch.app.routes import events
@@ -18,6 +19,7 @@ __all__ = [
     'articles',
     'auth',
     'autotasks',
+    'books',
     'box_packing',
     'countdowns',
     'events',

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block meta %}
+{% endblock %}
+
+{% block scripts %}{% endblock %}
+
+{% block app_navigation %}
+<ul data-secondary>
+  <li><a href="{{ url_for('books.index') }}">Books</a></li>
+  <li><a href="{{ url_for('books.add') }}">Add Book</a></li>
+  <li>
+    <form class="task-search-form" method="POST" action="{{ url_for('books.crud') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" class="textbox" name="terms" id="terms">
+      <button type="submit" name="action" class="button" value="search">
+        <span class="button__text">Search</span>
+      </button>
+    </form>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}{% endblock %}

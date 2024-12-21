@@ -1,0 +1,123 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Add New Book{% endblock %}
+
+{% block content %}
+<div class="grid grid--one-column">
+  <div class="add-item-wrapper">
+    <h2>Add New Book</h2>
+    <form class="add-item-form" method="POST" action="{{ url_for('books.crud') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="add-item-form__item">
+        {{ create_form.isbn.label }}
+        {{ create_form.isbn(class_="textbox") }}
+      </div>
+
+      <div class="add-item-form__item">
+        <button id="populateButton" type="button" class="button" formnovalidate>
+          <span class="button__text">Auto Populate from ISBN</span>
+        </button>
+      </div>
+
+      <div class="add-item-form__item">
+        {{ create_form.title.label }}
+        {{ create_form.title(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.author.label }}
+        {{ create_form.author(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.tags.label }}
+        {{ create_form.tags(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.goodreads_url.label }}
+        {{ create_form.goodreads_url(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.priority.label }}
+        {{ create_form.priority(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.purchase_date.label }}
+        {{ create_form.purchase_date(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.purchase_price.label }}
+        {{ create_form.purchase_price(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.sell_date.label }}
+        {{ create_form.sell_date(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.sell_price.label }}
+        {{ create_form.sell_price(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.read_start_date.label }}
+        {{ create_form.read_start_date(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.read_finish_date.label }}
+        {{ create_form.read_finish_date(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.rating.label }}
+        {{ create_form.rating(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.abandoned.label }}
+        {{ create_form.abandoned(class_="checkbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.location.label }}
+        {{ create_form.location(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ create_form.notes.label }}
+        {{ create_form.notes(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" name="action" class="button" value="add">
+          <span class="button__text">Add New Book</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="goodreadsInfoEndpoint" style="display: none;">{{ goodreads_info_endpoint }}</div>
+<script>
+  document.querySelector('#populateButton').addEventListener('click', function (event) {
+    event.preventDefault();
+
+    const isbnField = document.querySelector('.add-item-form input[name="isbn"]');
+    const titleField = document.querySelector('.add-item-form input[name="title"]');
+    const authorField = document.querySelector('.add-item-form input[name="author"]');
+    const tagsField = document.querySelector('.add-item-form input[name="tags"]');
+    const goodreadsUrlField = document.querySelector('.add-item-form input[name="goodreads_url"]');
+    const goodreadsInfoEndpoint = document.getElementById('goodreadsInfoEndpoint').textContent;
+
+    fetch(goodreadsInfoEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        isbn: isbnField.value
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        titleField.value = data.title;
+        authorField.value = data.author;
+        tagsField.value = data.tags;
+        goodreadsUrlField.value = data.goodreads_url;
+      })
+      .catch(error => console.error('Error:', error));
+  });
+</script>
+{% endblock %}

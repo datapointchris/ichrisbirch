@@ -5,6 +5,10 @@ from ichrisbirch.schemas.article import ArticleUpdate
 from ichrisbirch.schemas.autotask import AutoTask
 from ichrisbirch.schemas.autotask import AutoTaskCreate
 from ichrisbirch.schemas.autotask import AutoTaskUpdate
+from ichrisbirch.schemas.book import Book
+from ichrisbirch.schemas.book import BookCreate
+from ichrisbirch.schemas.book import BookGoodreadsInfo
+from ichrisbirch.schemas.book import BookUpdate
 from ichrisbirch.schemas.box import Box
 from ichrisbirch.schemas.box import BoxCreate
 from ichrisbirch.schemas.box import BoxUpdate
@@ -48,6 +52,10 @@ __all__ = [
     'AutoTask',
     'AutoTaskCreate',
     'AutoTaskUpdate',
+    'Book',
+    'BookCreate',
+    'BookGoodreadsInfo',
+    'BookUpdate',
     'Box',
     'BoxCreate',
     'BoxUpdate',

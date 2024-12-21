@@ -25,6 +25,7 @@
         {% if current_user.is_authenticated %}
         <li><a href="{{ url_for('articles.index') }}">Articles</a></li>
         <li><a href="{{ url_for('autotasks.index') }}">AutoTasks</a></li>
+        <li><a href="{{ url_for('books.index') }}">Books</a></li>
         <li><a href="{{ url_for('box_packing.index') }}">Box Packing</a></li>
         <li><a href="{{ url_for('countdowns.index') }}">Countdowns</a></li>
         <li><a href="{{ url_for('events.index') }}">Events</a></li>

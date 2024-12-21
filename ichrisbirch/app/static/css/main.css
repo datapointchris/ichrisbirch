@@ -10689,6 +10689,10 @@ nav a:hover {
 .grid--one-column-wide {
   grid-template-columns: repeat(1, minmax(300px, 1fr));
 }
+.grid--one-column-full {
+  width: 98svw;
+  grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
 .grid--two-columns {
   grid-template-columns: repeat(2, minmax(300px, 1fr));
 }
@@ -11512,6 +11516,39 @@ nav a:hover {
   border-bottom: 1px solid var(--clr-gray-600);
 }
 .bucket-contents__link {
+  text-decoration: underline;
+  color: var(--clr-accent-light);
+}
+
+.books {
+  display: flex;
+  margin: 0;
+  list-style: none;
+  text-align: center;
+  justify-content: center;
+}
+.books__header, .books__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: var(--space-s);
+}
+.books__header {
+  padding-block: var(--space-s);
+  font-size: var(--fs-500);
+  border-top: 3px solid var(--clr-accent);
+  border-bottom: 3px solid var(--clr-accent);
+}
+.books__item {
+  font-size: var(--fs-400);
+  line-height: 1.5em;
+  border-bottom: 1px solid var(--clr-accent);
+}
+.books__column {
+  flex: 1 1 16.66%; /* Adjust the percentage based on the number of columns */
+  text-align: left;
+}
+.books__link {
   text-decoration: underline;
   color: var(--clr-accent-light);
 }

@@ -1,0 +1,64 @@
+{% extends 'books/base.html' %}
+
+{% block title %}Books{% endblock %}
+
+{% block content %}
+<div class="grid grid--one-column-full">
+  <div class="grid__item">
+    <ul class="books books__header">
+      <li class="books__column">ISBN</li>
+      <li class="books__column">Title</li>
+      <li class="books__column">Author</li>
+      <li class="books__column">Tags</li>
+      <li class="books__column">Goodreads URL</li>
+      <li class="books__column">Priority</li>
+      <li class="books__column">Purchase Date</li>
+      <li class="books__column">Purchase Price</li>
+      <li class="books__column">Sell Date</li>
+      <li class="books__column">Sell Price</li>
+      <li class="books__column">Read Start Date</li>
+      <li class="books__column">Read Finish Date</li>
+      <li class="books__column">Rating</li>
+      <li class="books__column">Abandoned</li>
+      <li class="books__column">Location</li>
+      <li class="books__column">Notes</li>
+      <li class="books__column">Delete</li>
+    </ul>
+    {% for book in books %}
+    <ul class="books books__item">
+      <li class="books__column">{{ book.isbn }}</li>
+      <li class="books__column">{{ book.title }}</li>
+      <li class="books__column">{{ book.author }}</li>
+      <li class="books__column">{{ book.tags | join(', ') }}</li>
+      <li class="books__column">
+        {% if book.goodreads_url %}
+        <a href="{{ book.goodreads_url }}" target="_blank">Goodreads</a>
+        {% else %}
+        N/A
+        {% endif %}
+      </li>
+      <li class="books__column">{{ book.priority if book.priority else '' }}</li>
+      <li class="books__column">{{ book.purchase_date if book.purchase_date else '' }}</li>
+      <li class="books__column">{{ book.purchase_price if book.purchase_price else '' }}</li>
+      <li class="books__column">{{ book.sell_date if book.sell_date else '' }}</li>
+      <li class="books__column">{{ book.sell_price if book.sell_price else '' }}</li>
+      <li class="books__column">{{ book.read_start_date if book.read_start_date else '' }}</li>
+      <li class="books__column">{{ book.read_finish_date if book.read_finish_date else '' }}</li>
+      <li class="books__column">{{ book.rating if book.rating else '' }}</li>
+      <li class="books__column">{{ 'Yes' if book.abandoned else 'No' }}</li>
+      <li class="books__column">{{ book.location if book.location else '' }}</li>
+      <li class="books__column">{{ book.notes if book.notes else '' }}</li>
+      <li class="books__column">
+        <form method="POST" action="{{ url_for('books.crud') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ book.id }}">
+          <button type="submit" name="action" class="button" value="delete">
+            <span class="button__text">Delete</span>
+          </button>
+        </form>
+      </li>
+    </ul>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

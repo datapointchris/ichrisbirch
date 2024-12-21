@@ -3,49 +3,53 @@
 {% block title %}Articles{% endblock %}
 
 {% block content %}
-<div class="add-item-wrapper">
-  <h2>Add New Article</h2>
-  <form class="add-item-form" method="POST" action="{{ url_for('articles.crud')}}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+<div class="grid grid--one-column">
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      {{ create_form.url.label }}
-      {{ create_form.url(class_="textbox") }}
-    </div>
+  <div class="add-item-wrapper">
+    <h2>Add New Article</h2>
+    <form class="add-item-form" method="POST" action="{{ url_for('articles.crud')}}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      <button id="populateButton" type="button" class="button" formnovalidate>
-        <span class="button__text">Auto Populate from URL</span>
-      </button>
-    </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ create_form.url.label }}
+        {{ create_form.url(class_="textbox") }}
+      </div>
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      {{ create_form.title.label }}
-      {{ create_form.title(class_="textbox") }}
-    </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button id="populateButton" type="button" class="button" formnovalidate>
+          <span class="button__text">Auto Populate from URL</span>
+        </button>
+      </div>
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      {{ create_form.tags.label }}
-      {{ create_form.tags(class_="textbox") }}
-    </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ create_form.title.label }}
+        {{ create_form.title(class_="textbox") }}
+      </div>
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      {{ create_form.summary.label }}
-      {{ create_form.summary(class_="textbox") }}
-    </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ create_form.tags.label }}
+        {{ create_form.tags(class_="textbox") }}
+      </div>
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      {{ create_form.notes.label }}
-      {{ create_form.notes(class_="textbox") }}
-    </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ create_form.summary.label }}
+        {{ create_form.summary(class_="textbox") }}
+      </div>
 
-    <div class="add-item-form__item add-item-form__item--full-width">
-      <button type="submit" name="action" class="button" value="add">
-        <span class="button__text">Add New Article</span>
-      </button>
-    </div>
-  </form>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ create_form.notes.label }}
+        {{ create_form.notes(class_="textbox") }}
+      </div>
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" name="action" class="button" value="add">
+          <span class="button__text">Add New Article</span>
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
+
 <div id="summaryEndpoint" style="display: none;">{{ summary_endpoint }}</div>
 <script>
   document.querySelector('#populateButton').addEventListener('click', function (event) {
