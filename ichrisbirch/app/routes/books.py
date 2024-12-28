@@ -60,6 +60,14 @@ def crud():
                     data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
                     books_api.post(json=data)
                     flash(f'Added: {data['title']}', 'success')
+            else:
+                message = 'Form validation failed'
+                flash(message, 'error')
+                logger.warning(message)
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{field}: {error}', 'error')
+                        logger.warning(f'{field}: {error}')
         case 'archive':
             books_api.patch(data.get('id'), json={'is_archived': True})
         case 'unarchive':
