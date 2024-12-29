@@ -11,7 +11,6 @@ from flask import render_template
 from flask import request
 from flask import url_for
 
-from ichrisbirch.app import utils
 from ichrisbirch.config import get_settings
 
 settings = get_settings()
@@ -56,8 +55,18 @@ def issue():
     '''
     dedented = '\n'.join(line.strip() for line in body_template.split('\n'))
     data = json.dumps({'title': issue['title'], 'body': dedented, 'labels': labels})
-    response = httpx.post(settings.github.api_url_issues, content=data, headers=settings.github.api_headers)
-    utils.handle_if_not_response_code(201, response, logger)
-    flash('Issue submitted successfully', 'success')
+
+    try:
+        response = httpx.post(settings.github.api_url_issues, content=data, headers=settings.github.api_headers)
+        response.raise_for_status()
+        flash('Issue submitted successfully', 'success')
+    except httpx.HTTPError as e:
+        error_message = f'Request Error: {e}'
+        logger.error(error_message)
+        flash(error_message, 'error')
+        if response:
+            logger.error(response.text)
+            if settings.ENVIRONMENT == 'development':
+                flash(response.text, 'error')
 
     return redirect(request.referrer or url_for('home.index'))
