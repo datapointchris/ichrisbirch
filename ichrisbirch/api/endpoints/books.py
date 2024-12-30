@@ -80,8 +80,11 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
     logger.debug(f'searching for {q=}')
     search_terms = [f'%{term.strip()}%' for term in q.split(',')]
     logger.debug(f'search terms: {search_terms}')
-    conditions = [cast((models.Book.tags), postgresql.TEXT).ilike(term) for term in search_terms]
-    books = select(models.Book).filter(or_(*conditions)).order_by(models.Book.title.asc())
+    title_matches = [models.Book.title.ilike(term) for term in search_terms]
+    author_matches = [models.Book.author.ilike(term) for term in search_terms]
+    tag_matches = [cast((models.Book.tags), postgresql.TEXT).ilike(term) for term in search_terms]
+    all_matches = set(title_matches + author_matches + tag_matches)
+    books = select(models.Book).filter(or_(*all_matches)).order_by(models.Book.title.asc())
     logger.debug(books)
     results = session.scalars(books).all()
     logger.debug(f'search found {len(results)} results')

@@ -32,7 +32,7 @@
       <li class="books__column">{{ book.tags | join(', ') }}</li>
       <li class="books__column">
         {% if book.goodreads_url %}
-        <a href="{{ book.goodreads_url }}" target="_blank">Goodreads</a>
+        <a href="{{ book.goodreads_url }}" target="_blank">{{ book.isbn }}</a>
         {% else %}
         N/A
         {% endif %}
