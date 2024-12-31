@@ -21,7 +21,8 @@
           <div class="packed-box-item">
             <h3>{{ item.name }}</h3>
             <div class="packed-box-item__details">
-              {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif %}
+              {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif
+              %}
               {% if item.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
               {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
             </div>
@@ -86,13 +87,15 @@
     <div id="delete-item" class="box-function">
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+        <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+        <input type="hidden" name="item_name" id="delete-item-name">
         <h3>Delete Item from <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span>
         </h3>
-        <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-        <select class="button" name="id" id="delete-item-id">
+        <select class="button" name="id" id="delete-item-id" onchange="updateItemName()">
           <option value="none" selected disabled hidden>Select an Item</option>
           {% for item in selected_box.items %}
-          <option value={{ item.id }}>{{ item.name }}</option>
+          <option value="{{ item.id }}" data-name="{{ item.name }}">{{ item.name }}</option>
           {% endfor %}
         </select><br><br>
         <button type="submit" name="action" class="button" value="delete_item">
@@ -116,6 +119,12 @@
   </aside>
 </div>
 <script>
+  function updateItemName() {
+    const selectElement = document.getElementById('delete-item-id');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const itemName = selectedOption.getAttribute('data-name');
+    document.getElementById('delete-item-name').value = itemName;
+  }
   function updateAction() {
     var selectedBoxId = document.getElementById('selected_box_id').value;
     document.getElementById('select_box_form').action = "/box-packing/" + (selectedBoxId ? selectedBoxId : '');

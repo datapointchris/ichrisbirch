@@ -92,8 +92,8 @@ async def create_item(item: schemas.BoxItemCreate, session: Session = Depends(ge
     db_obj = models.BoxItem(**item.model_dump())
     session.add(db_obj)
     session.commit()
-    session.refresh(db_obj)
     _update_box_details(db_obj.box, session)
+    session.refresh(db_obj)
     return db_obj
 
 
@@ -110,9 +110,10 @@ async def read_one_item(id: int, session: Session = Depends(get_sqlalchemy_sessi
 @router.delete('/items/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if item := session.get(models.BoxItem, id):
+        box = item.box
         session.delete(item)
         session.commit()
-        _update_box_details(item.box, session)
+        _update_box_details(box, session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'BoxItem {id} not found'

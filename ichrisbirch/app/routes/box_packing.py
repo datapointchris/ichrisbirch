@@ -110,9 +110,11 @@ def crud():
 
         case 'delete_item':
             item_id = data.get('id')
+            item_name = data.get('item_name')
             box_id = data.get('box_id')
+            box_name = data.get('box_name')
             boxitems_api.delete(item_id)
-            flash(f'Item {item_id} deleted from box {box_id}', 'success')
+            flash(f'{item_name} deleted from Box {box_id}: {box_name}', 'success')
 
         case _:
             return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
