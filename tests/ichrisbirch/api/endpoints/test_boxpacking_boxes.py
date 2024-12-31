@@ -23,7 +23,7 @@ NEW_OBJ = schemas.BoxCreate(
     warm=False,
     liquid=False,
 )
-ENDPOINT = '/box_packing/boxes/'
+ENDPOINT = '/box-packing/boxes/'
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
 
@@ -49,12 +49,12 @@ def test_lifecycle(test_api):
 
 def test_search_box_items(test_api):
     search_term = 'find'
-    search_results = test_api.get('/box_packing/search/', params={'q': search_term})
+    search_results = test_api.get('/box-packing/search/', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     search_term = 'home'
-    search_results = test_api.get('/box_packing/search/', params={'q': search_term})
+    search_results = test_api.get('/box-packing/search/', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 0
 

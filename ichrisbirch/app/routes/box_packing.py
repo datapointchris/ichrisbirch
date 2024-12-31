@@ -31,7 +31,7 @@ def enforce_login():
 @blueprint.route('/', defaults={'box_id': None}, methods=['GET'])
 @blueprint.route('/<box_id>/', methods=['GET'])
 def index(box_id):
-    boxes_api = QueryAPI(base_url='box_packing/boxes', logger=logger, response_model=schemas.Box)
+    boxes_api = QueryAPI(base_url='box-packing/boxes', logger=logger, response_model=schemas.Box)
     boxes = boxes_api.get_many()
     selected_box = None
     if box_id:
@@ -47,7 +47,7 @@ def index(box_id):
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    boxes_api = QueryAPI(base_url='box_packing/boxes', logger=logger, response_model=schemas.Box)
+    boxes_api = QueryAPI(base_url='box-packing/boxes', logger=logger, response_model=schemas.Box)
     sort_1 = request.form.get('sort_1')
     sort_2 = request.form.get('sort_2')
     logger.debug(f'{sort_1=} {sort_2=}')
@@ -66,7 +66,7 @@ def all():
 def search():
     results = []
     if request.method == 'POST':
-        box_search_api = QueryAPI(base_url='box_packing/search', logger=logger, response_model=schemas.BoxItem)
+        box_search_api = QueryAPI(base_url='box-packing/search', logger=logger, response_model=schemas.BoxItem)
         data: dict[str, Any] = request.form.to_dict()
         if search_text := data.get('search_text'):
             logger.debug(f'{request.referrer=} | {search_text=}')
@@ -78,8 +78,8 @@ def search():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    boxes_api = QueryAPI(base_url='box_packing/boxes', logger=logger, response_model=schemas.Box)
-    boxitems_api = QueryAPI(base_url='box_packing/items', logger=logger, response_model=schemas.BoxItem)
+    boxes_api = QueryAPI(base_url='box-packing/boxes', logger=logger, response_model=schemas.Box)
+    boxitems_api = QueryAPI(base_url='box-packing/items', logger=logger, response_model=schemas.BoxItem)
     data: dict = request.form.to_dict()
     action = data.pop('action')
     logger.debug(f'{request.referrer=} {action=}')

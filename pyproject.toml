@@ -160,7 +160,7 @@ warn_return_any = false
 
 
 [tool.pyright]
-analyzeUnannotatedFunctions = false
+analyzeUnannotatedFunctions = true # needed or pylance does not work in vscode
 reportAny = false
 reportImplicitOverride = false
 reportMissingParameterType = false

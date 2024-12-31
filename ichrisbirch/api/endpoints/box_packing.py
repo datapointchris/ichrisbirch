@@ -74,12 +74,26 @@ async def read_many_items(session: Session = Depends(get_sqlalchemy_session), li
     return list(session.scalars(query).all())
 
 
+def _update_box_details(box: models.Box, session: Session):
+    """Update the box details based on the items in the box.
+
+    When a new item is added or deleted from the box, see if it changes the box details
+    """
+    for attr in ('liquid', 'warm', 'essential'):
+        value = any(getattr(item, attr) for item in box.items)
+        if value != getattr(box, attr):
+            setattr(box, attr, value)
+            logger.debug(f'Box {box.id} {attr} changed from {value} to {getattr(box, attr)}')
+    session.commit()
+
+
 @router.post('/items/', response_model=schemas.BoxItem, status_code=status.HTTP_201_CREATED)
 async def create_item(item: schemas.BoxItemCreate, session: Session = Depends(get_sqlalchemy_session)):
     db_obj = models.BoxItem(**item.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
+    _update_box_details(db_obj.box, session)
     return db_obj
 
 
@@ -98,6 +112,7 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
     if item := session.get(models.BoxItem, id):
         session.delete(item)
         session.commit()
+        _update_box_details(item.box, session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'BoxItem {id} not found'

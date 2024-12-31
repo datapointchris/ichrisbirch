@@ -5,8 +5,8 @@ BASE_DATA: list[BoxItem] = [
         box_id=1,
         name='Box 1 - Item 1 of 2 find me',
         essential=True,
-        warm=False,
-        liquid=False,
+        warm=True,
+        liquid=True,
     ),
     BoxItem(
         box_id=1,
