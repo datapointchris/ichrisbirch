@@ -3,120 +3,103 @@
 {% block title %}Box Packing{% endblock %}
 
 {% block content %}
-<div class="box-packing-index-layout">
-  <main>
-    {% if selected_box %}
-    <section class="grid grid--one-column-wide">
-      <div class="packed-box">
-        <h1 class="packed-box__title">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
-        <h2>Size: {{ selected_box.size }}</h2>
-        <div class="packed-box__details">
-          {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
-          {% if selected_box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
-          {% if selected_box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
-        </div>
-        <h2><u>Items in Box</u></h2>
-        <div class="grid grid--one-column-wide">
-          {% for item in selected_box.items %}
-          <div class="packed-box-item">
-            <h3>{{ item.name }}</h3>
-            <div class="packed-box-item__details">
-              {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif
-              %}
-              {% if item.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
-              {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
+<div class="grid grid--one-column-wide">
 
+  <div class="grid__item">
+    <form method="GET" id="select_box_form" action="{{ url_for('box_packing.index') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <select class="button" id="selected_box_id" onchange="updateSelectedBox(); this.form.submit();">
+        <option value="none" selected disabled hidden>Select a Box</option>
+        {% for box in boxes %}
+        <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% if selected_box %}
+    <h1 class="packed-box__title">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
+    <h2>Size: {{ selected_box.size }}</h2>
+    <div class="packed-box__details">
+      {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
+      {% if selected_box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
+      {% if selected_box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
+    </div>
+
+    <div class="grid grid--two-columns-nested">
+      {% for item in selected_box.items %}
+      <div class="grid__item">
+        <h3>{{ item.name }}</h3>
+        <div class="packed-box-item__details">
+          {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif
+          %}
+          {% if item.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
+          {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
+        </div>
         <div>
-          <form method="POST" action="{{ url_for('box_packing.crud') }}">
+          <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="id" value={{ selected_box.id }}>
-            <button type="submit" name="action" class="button" value="delete_box">
-              <span class="button__text">Delete Box</span>
+            <input type="hidden" name="id" value="{{ item.id }}">
+            <input type="hidden" name="id" value="{{ item.name }}">
+            <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+            <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+            <button type="submit" name="action" class="hidden-button" value="delete">
+              <span class="fa-regular fa-trash-can"></span>
             </button>
           </form>
         </div>
+
       </div>
-    </section>
-    {% endif %}
-  </main>
-
-  <aside class="box-functions">
-
-    <div id="select-box" class="box-function">
-      <form method="GET" id="select_box_form" action="{{ url_for('box_packing.index') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <select class="button" id="selected_box_id" onchange="updateAction(); this.form.submit();">
-          <option value="none" selected disabled hidden>Select a Box</option>
-          {% for box in boxes %}
-          <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
-          {% endfor %}
-        </select>
-      </form>
+      {% endfor %}
     </div>
 
-
-
-    {% if selected_box %}
-    <div id="add-item" class="box-function">
-      <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h3>Add Item to <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span></h3>
-        <input type="hidden" name="box_id" id="add-item-box_id" value={{ selected_box.id }}>
-        <label for="add-item-name">Name:</label>
-        <input type="text" class="button" name="name" id="add-item-name">
-        <br><br>
-        <input type="checkbox" name="essential" id="add-item-essential" value=1>
-        <label for="add-item-essential">Essential</label>
-        <br><br>
-        <input type="checkbox" name="warm" id="add-item-warm" value=1>
-        <label for="add-item-warm">Warm</label>
-        <br><br>
-        <input type="checkbox" name="liquid" id="add-item-liquid" value=1>
-        <label for="add-item-liquid">Liquid</label>
-        <br><br>
-        <button type="submit" name="action" class="button" value="add_item">
-          <span class="button__text">Add Item</span>
-        </button>
-      </form>
-    </div>
-
-    <div id="delete-item" class="box-function">
-      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+    <div class="add-item-wrapper">
+      <form class="add-item-form" method="POST" action="{{ url_for('box_packing.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
         <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
-        <input type="hidden" name="item_name" id="delete-item-name">
-        <h3>Delete Item from <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span>
-        </h3>
-        <select class="button" name="id" id="delete-item-id" onchange="updateItemName()">
-          <option value="none" selected disabled hidden>Select an Item</option>
-          {% for item in selected_box.items %}
-          <option value="{{ item.id }}" data-name="{{ item.name }}">{{ item.name }}</option>
-          {% endfor %}
-        </select><br><br>
-        <button type="submit" name="action" class="button" value="delete_item">
-          <span class="button__text">Delete Item</span>
-        </button>
+        <div class="add-item-form__item add-item-form__item--full-width">
+          <h3>Add Item:</h3>
+        </div>
+        <div class="add-item-form__item add-item-form__item--full-width">
+          <label for="add-item-name">Name:</label>
+          <input type="text" size="40" class="button" name="name" id="add-item-name">
+        </div>
+        <div class="add-item-form__item add-item-form__item--full-width">
+          <div class="packed-box-item__details">
+            <span>
+              <label for="add-item-essential">Essential</label>
+              <input type="checkbox" name="essential" id="add-item-essential" value=1>
+            </span>
+            <span>
+              <label for="add-item-warm">Warm</label>
+              <input type="checkbox" name="warm" id="add-item-warm" value=1>
+            </span>
+            <span>
+              <label for="add-item-liquid">Liquid</label>
+              <input type="checkbox" name="liquid" id="add-item-liquid" value=1>
+            </span>
+          </div>
+        </div>
+        <div class="add-item-form__item add-item-form__item--full-width">
+          <button type="submit" name="action" class="button" value="add_item">
+            <span class="button__text">Add Item</span>
+          </button>
+        </div>
       </form>
     </div>
 
-    <div id="delete-box" class="box-function">
+    <div>
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h3>Delete <span class="selected">Box {{ selected_box.id }}: {{ selected_box.name }}</span></h3>
-        <input type="hidden" name="id" id="delete-box-id" value={{ selected_box.id }}>
-        <input type="hidden" name="name" id="delete-box-name" value={{ selected_box.name }}>
+        <input type="hidden" name="id" value={{ selected_box.id }}>
         <button type="submit" name="action" class="button" value="delete_box">
           <span class="button__text">Delete Box</span>
         </button>
       </form>
     </div>
-    {% endif %}
-  </aside>
+
+  </div>
+  {% endif %}
 </div>
 <script>
   function updateItemName() {
@@ -125,7 +108,7 @@
     const itemName = selectedOption.getAttribute('data-name');
     document.getElementById('delete-item-name').value = itemName;
   }
-  function updateAction() {
+  function updateSelectedBox() {
     var selectedBoxId = document.getElementById('selected_box_id').value;
     document.getElementById('select_box_form').action = "/box-packing/" + (selectedBoxId ? selectedBoxId : '');
   }

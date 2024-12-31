@@ -1,27 +1,26 @@
 /////////////////////////
 /*     INDEX PAGE     */
 ///////////////////////
-.box-packing-index-layout {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--space-m);
-    padding: var(--space-2xs);
+
+@mixin details-styles {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+
+    &--essential {
+        color: var(--clr-accent--orange);
+    }
+
+    &--warm {
+        color: var(--clr-accent--red);
+    }
+
+    &--liquid {
+        color: var(--clr-accent--blue);
+    }
 }
 
 .packed-box {
-    padding: var(--space-m);
-    text-align: center;
-    font-size: var(--fs-400);
-    border-radius: var(--btn-border-radius);
-    background-color: var(--clr-primary);
-    box-shadow:
-        var(--floating-box),
-        2px 4px 10px var(--clr-gray-trans-700);
-
-    &--size {
-        font-size: var(--fs-700);
-    }
-
     &__title {
         color: var(--clr-accent-light);
         text-shadow: var(--deep-3d-text-shadow);
@@ -32,57 +31,18 @@
     }
 
     &__details {
-        display: flex;
-        justify-content: space-evenly;
-        align-items: center;
+        @include details-styles;
         font-size: var(--fs-600);
-
-        &--essential {
-            color: var(--clr-accent--orange);
-        }
-
-        &--warm {
-            color: var(--clr-accent--red);
-        }
-
-        &--liquid {
-            color: var(--clr-accent--blue);
-        }
     }
 }
 
 .packed-box-item {
-    padding-bottom: var(--space-m);
-    border-top: 1px dotted var(--clr-accent);
-
-    &:last-child {
-        border-bottom: 1px dotted var(--clr-accent);
-    }
-
     &__details {
-        display: flex;
-        justify-content: space-evenly;
-        align-items: center;
-
-        &--essential {
-            color: var(--clr-accent--orange);
-        }
-
-        &--warm {
-            color: var(--clr-accent--red);
-        }
-
-        &--liquid {
-            color: var(--clr-accent--blue);
-        }
+        @include details-styles;
+        margin-bottom: var(--space-s);
     }
 }
 
-.box-function {
-    border: 3px solid var(--clr-gray-1000);
-    padding: 25px;
-    margin: 15px;
-}
 
 ///////////////////////
 /*     ALL PAGE     */

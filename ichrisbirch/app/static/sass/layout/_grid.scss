@@ -75,6 +75,12 @@
         @include grid-set-columns(2);
     }
 
+    &--two-columns-nested {
+        // For nesting inside other grids, so the svw does not overflow
+        @include grid-set-columns(2);
+        width: 80%;
+    }
+
     &--three-columns {
         @include grid-set-columns(3);
     }
