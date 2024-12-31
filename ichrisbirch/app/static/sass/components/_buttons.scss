@@ -60,6 +60,13 @@
     }
 }
 
+.hidden-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--clr-text);
+}
+
 @mixin double-bevel-button(
     $button-size: 75px,
     $button-step-blend: 1px,

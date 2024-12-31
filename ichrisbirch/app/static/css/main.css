@@ -10787,6 +10787,13 @@ nav a:hover {
   background-size: 100% 2px;
 }
 
+.hidden-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--clr-text);
+}
+
 .btn-submit-issue {
   position: absolute;
   top: 50px;
@@ -10945,6 +10952,13 @@ nav a:hover {
 }
 .button__text:hover {
   background-size: 100% 2px;
+}
+
+.hidden-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--clr-text);
 }
 
 .btn-submit-issue {
