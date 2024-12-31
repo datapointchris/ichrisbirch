@@ -86,6 +86,13 @@ class QueryAPI(Generic[ModelType]):
             return [self.response_model(**result) for result in response.json()]
         return []
 
+    def get_generic(self, endpoint: Any | None = None, **kwargs) -> Any | None:
+        """Use this method when the response is not a single ModelType."""
+        response = self._handle_request('GET', endpoint, **kwargs)
+        if response and response.json():
+            return response.json()
+        return None
+
     def post(self, endpoint: Any | None = None, **kwargs):
         if response := self._handle_request('POST', endpoint, **kwargs):
             return self.response_model(**response.json())

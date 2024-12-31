@@ -64,13 +64,17 @@ def all():
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
-    results = []
+    """Search for box items."""
+    results: list[tuple[schemas.Box, schemas.BoxItem]] = []
     if request.method == 'POST':
-        box_search_api = QueryAPI(base_url='box-packing/search', logger=logger, response_model=schemas.BoxItem)
+        box_search_api = QueryAPI(
+            base_url='box-packing/search', logger=logger, response_model=(schemas.Box, schemas.BoxItem)
+        )
         data: dict[str, Any] = request.form.to_dict()
         if search_text := data.get('search_text'):
             logger.debug(f'{request.referrer=} | {search_text=}')
-            results = box_search_api.get_many(params={'q': search_text})
+            if rows := box_search_api.get_generic(params={'q': search_text}):
+                results = [(schemas.Box(**row[0]), schemas.BoxItem(**row[1])) for row in rows]
         else:
             flash('No search terms provided', 'warning')
     return render_template('box_packing/search.html', results=results)

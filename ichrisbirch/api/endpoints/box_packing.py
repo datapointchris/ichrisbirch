@@ -18,13 +18,19 @@ logger = logging.getLogger('api.box_packing')
 router = APIRouter()
 
 
-@router.get('/search/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
+@router.get('/search/', response_model=list[tuple[schemas.Box, schemas.BoxItem]], status_code=status.HTTP_200_OK)
 async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
+    """This search is different from the other searches as it joins the Box and BoxItem tables and returns a list of
+    tuples of Box and BoxItem objects instead of only BoxItem objects.
+
+    This requires the QueryAPI to use the `get_generic` method instead of the `get_many` method since this search
+    returns more than one type of ModelType.
+    """
     logger.debug(f'searching for {q=}')
-    items = select(models.BoxItem).filter(models.BoxItem.name.ilike('%' + q + '%'))
-    results = session.scalars(items).all()
+    items = select(models.Box, models.BoxItem).join(models.Box).filter(models.BoxItem.name.ilike('%' + q + '%'))
+    results = session.execute(items).all()
     logger.debug(f'search found {len(results)} results')
-    return results
+    return list(results)
 
 
 @router.get('/boxes/', response_model=list[schemas.Box], status_code=status.HTTP_200_OK)
