@@ -24,10 +24,14 @@
     &__title {
         color: var(--clr-accent-light);
         text-shadow: var(--deep-3d-text-shadow);
+        line-height: 1.1em;
     }
 
     &__link {
         text-decoration: none;
+        &:hover {
+            text-decoration: underline;
+        }
     }
 
     &__details {

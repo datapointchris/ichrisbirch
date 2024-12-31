@@ -11575,9 +11575,13 @@ nav a:hover {
 .packed-box__title {
   color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
+  line-height: 1.1em;
 }
 .packed-box__link {
   text-decoration: none;
+}
+.packed-box__link:hover {
+  text-decoration: underline;
 }
 .packed-box__details {
   display: flex;

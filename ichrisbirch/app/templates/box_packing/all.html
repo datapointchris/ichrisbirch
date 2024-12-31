@@ -33,14 +33,15 @@
     </span>
   </form>
 </div>
+
 <div class="grid grid--two-columns">
   {% for box in boxes %}
-  <div class="packed-box">
-    <h1 class="packed-box__title">
+  <div class="grid__item">
+    <h2 class="packed-box__title">
       <a class="packed-box__link" href="{{ url_for('box_packing.index', box_id=box.id) }}">Box {{ box.id }}: {{ box.name
         }}</a>
-    </h1>
-    <h2>Size: {{ box.size }}</h2>
+    </h2>
+    <h3>Size: {{ box.size }}</h3>
     <div class="packed-box-item__details">
       {% if box.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif %}
       {% if box.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
