@@ -27,12 +27,13 @@ class Box(Base):
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'boxes'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    number: Mapped[int] = mapped_column(Integer, nullable=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     size: Mapped[BoxSize] = mapped_column(Enum(BoxSize), nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean)
     warm: Mapped[bool] = mapped_column(Boolean)
     liquid: Mapped[bool] = mapped_column(Boolean)
-    items = relationship('BoxItem', back_populates='box', cascade='all, delete')
+    items = relationship('BoxItem', back_populates='box')
 
     def __repr__(self):
         return f'''Box(id={self.id}, name={self.name}, size={self.size}, essential={self.essential},

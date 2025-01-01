@@ -10,12 +10,10 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 
 class BoxItem(Base):
-    """SQLAlchemy model for box_packing.items table."""
-
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'items'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    box_id: Mapped[int] = mapped_column(Integer, ForeignKey('box_packing.boxes.id'), nullable=False)
+    box_id: Mapped[int] = mapped_column(Integer, ForeignKey('box_packing.boxes.id', ondelete='SET NULL'), nullable=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean, nullable=False)
     warm: Mapped[bool] = mapped_column(Boolean, nullable=False)
