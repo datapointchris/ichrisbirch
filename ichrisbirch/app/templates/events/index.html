@@ -31,8 +31,8 @@
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ event.id }}">
-        <button type="submit" name="action" class="button" value="delete">
-          <span class="button__text">Delete Event</span>
+        <button type="submit" name="action" class="button button--danger" value="delete">
+          <span class="button__text button__text--danger">Delete Event</span>
         </button>
       </form>
     </div>

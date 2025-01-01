@@ -52,8 +52,8 @@
         <form method="POST" action="{{ url_for('books.crud') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id" value="{{ book.id }}">
-          <button type="submit" name="action" class="button" value="delete">
-            <span class="button__text">Delete</span>
+          <button type="submit" name="action" class="button--hidden" value="delete">
+            <span class="button--icon button--danger fa-regular fa-trash-can"></span>
           </button>
         </form>
       </li>

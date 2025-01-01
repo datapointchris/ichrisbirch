@@ -43,13 +43,28 @@
         border-radius: var(--border-radius);
     }
 
-    > h1,
-    h2 {
+    > h1 {
         color: var(--clr-accent-light);
         text-shadow: var(--deep-3d-text-shadow);
+        transition: ease-in-out 0.3s;
 
         &:hover {
-            text-shadow: var(--deep-3d-text-shadow), var(--text-glow);
+            text-shadow: var(--deep-3d-text-shadow-elongated);
+            transform: scale(1.3) translateY(-20px);
+            transition: ease-in-out 0.3s;
+        }
+    }
+
+    > h2 {
+        color: var(--clr-accent-light);
+        text-shadow: var(--deep-3d-text-shadow);
+        transition: ease-in-out 0.2s;
+
+        &:hover {
+            text-shadow: var(--deep-3d-text-shadow-reversed-elongated);
+            transform: scale(1.3) translateY(20px);
+            transition: text-shadow 0.1s transform 0.2s ease-in-out;
+
         }
     }
 }

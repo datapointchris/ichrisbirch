@@ -12,8 +12,8 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="id" value="{{ task.id }}">
       <input type="hidden" name="name" value="{{ task.name }}">
-      <button type="submit" name="action" class="button" value="delete">
-        <span class="button__text">Delete Task</span>
+      <button type="submit" name="action" class="button button--danger" value="delete">
+        <span class="button__text button__text--danger">Delete Task</span>
       </button>
     </form>
   </div>

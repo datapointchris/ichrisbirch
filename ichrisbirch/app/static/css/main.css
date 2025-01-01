@@ -9,6 +9,7 @@
   --clr-accent-dark: hsl(34 100% 16%);
   --clr-text: hsl(0 0% 87%);
   --clr-accent--orange: hsl(31 90% 57%);
+  --clr-accent--yellow: hsl(55, 80%, 55%);
   --clr-accent--red: hsl(0, 100%, 71%);
   --clr-accent--blue: hsl(207, 48%, 45%);
   --clr-accent--green: hsl(120 100% 18%);
@@ -194,7 +195,31 @@ select {
       5px 5px 0px var(--clr-gray-700),
       6px 6px 0px var(--clr-gray-800),
       7px 7px 0px var(--clr-gray-900);
-  --text-glow: /* this is a text shadow */
+  --deep-3d-text-shadow-elongated:
+      1px 1px 0px var(--clr-gray-900),
+      2px 2px 0px var(--clr-gray-800),
+      3px 3px 0px var(--clr-gray-700),
+      4px 4px 0px var(--clr-gray-600),
+      5px 5px 0px var(--clr-gray-500),
+      6px 6px 0px var(--clr-gray-400),
+      7px 7px 0px var(--clr-gray-400);
+  --deep-3d-text-shadow-reversed:
+      1px -1px 0px var(--clr-gray-400),
+      2px -2px 0px var(--clr-gray-400),
+      3px -3px 0px var(--clr-gray-500),
+      4px -4px 0px var(--clr-gray-600),
+      5px -5px 0px var(--clr-gray-700),
+      6px -6px 0px var(--clr-gray-800),
+      7px -7px 0px var(--clr-gray-900);
+  --deep-3d-text-shadow-reversed-elongated:
+      1px -1px 0px var(--clr-gray-400),
+      2px -2px 0px var(--clr-gray-500),
+      3px -3px 0px var(--clr-gray-600),
+      4px -4px 0px var(--clr-gray-700),
+      5px -5px 0px var(--clr-gray-800),
+      6px -6px 0px var(--clr-gray-900),
+      7px -7px 0px var(--clr-gray-900);
+  --text-glow:
       0 0 7px var(--clr-gray-trans-500),
       0 0 15px var(--clr-accent);
 }
@@ -10776,8 +10801,30 @@ nav a:hover {
   color: var(--clr-accent-light);
   box-shadow: var(--floating-box-pressed);
 }
-.button:hover:not(.button--pressed) {
-  text-shadow: var(--text-glow);
+.button--hidden {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.button--icon {
+  transition: all 0.2s ease-in-out;
+  color: var(--clr-text);
+}
+.button--icon:hover {
+  transform: scale(1.8);
+  transition: all 0.2s ease-in-out;
+}
+.button--success:hover {
+  color: var(--clr-accent--green);
+}
+.button--warning:hover {
+  color: var(--clr-accent--yellow);
+}
+.button--danger:hover {
+  color: var(--clr-accent--red);
+}
+.button:hover:not(.button--pressed, .button--success, .button--warning, .button--danger) {
+  text-shadow: 0 0 7px var(--clr-gray-trans-500), 0 0 15px var(--clr-accent);
 }
 .button__text {
   display: inline-block;
@@ -10790,12 +10837,29 @@ nav a:hover {
 .button__text:hover {
   background-size: 100% 2px;
 }
-
-.hidden-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--clr-text);
+.button__text--success {
+  background: linear-gradient(var(--clr-accent--green), var(--clr-accent--green)) center bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+}
+.button__text--success:hover {
+  background-size: 100% 2px;
+}
+.button__text--warning {
+  background: linear-gradient(var(--clr-accent--yellow), var(--clr-accent--yellow)) center bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+}
+.button__text--warning:hover {
+  background-size: 100% 2px;
+}
+.button__text--danger {
+  background: linear-gradient(var(--clr-accent--red), var(--clr-accent--red)) center bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+}
+.button__text--danger:hover {
+  background-size: 100% 2px;
 }
 
 .btn-submit-issue {
@@ -10943,8 +11007,30 @@ nav a:hover {
   color: var(--clr-accent-light);
   box-shadow: var(--floating-box-pressed);
 }
-.button:hover:not(.button--pressed) {
-  text-shadow: var(--text-glow);
+.button--hidden {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.button--icon {
+  transition: all 0.2s ease-in-out;
+  color: var(--clr-text);
+}
+.button--icon:hover {
+  transform: scale(1.8);
+  transition: all 0.2s ease-in-out;
+}
+.button--success:hover {
+  color: var(--clr-accent--green);
+}
+.button--warning:hover {
+  color: var(--clr-accent--yellow);
+}
+.button--danger:hover {
+  color: var(--clr-accent--red);
+}
+.button:hover:not(.button--pressed, .button--success, .button--warning, .button--danger) {
+  text-shadow: 0 0 7px var(--clr-gray-trans-500), 0 0 15px var(--clr-accent);
 }
 .button__text {
   display: inline-block;
@@ -10957,12 +11043,29 @@ nav a:hover {
 .button__text:hover {
   background-size: 100% 2px;
 }
-
-.hidden-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--clr-text);
+.button__text--success {
+  background: linear-gradient(var(--clr-accent--green), var(--clr-accent--green)) center bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+}
+.button__text--success:hover {
+  background-size: 100% 2px;
+}
+.button__text--warning {
+  background: linear-gradient(var(--clr-accent--yellow), var(--clr-accent--yellow)) center bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+}
+.button__text--warning:hover {
+  background-size: 100% 2px;
+}
+.button__text--danger {
+  background: linear-gradient(var(--clr-accent--red), var(--clr-accent--red)) center bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+}
+.button__text--danger:hover {
+  background-size: 100% 2px;
 }
 
 .btn-submit-issue {
@@ -11887,14 +11990,25 @@ nav a:hover {
   background: var(--clr-gray-900);
   border-radius: var(--border-radius);
 }
-.main-index-content > h1,
-.main-index-content h2 {
+.main-index-content > h1 {
   color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
+  transition: ease-in-out 0.3s;
 }
-.main-index-content > h1:hover,
-.main-index-content h2:hover {
-  text-shadow: var(--deep-3d-text-shadow), var(--text-glow);
+.main-index-content > h1:hover {
+  text-shadow: var(--deep-3d-text-shadow-elongated);
+  transform: scale(1.3) translateY(-20px);
+  transition: ease-in-out 0.3s;
+}
+.main-index-content > h2 {
+  color: var(--clr-accent-light);
+  text-shadow: var(--deep-3d-text-shadow);
+  transition: ease-in-out 0.2s;
+}
+.main-index-content > h2:hover {
+  text-shadow: var(--deep-3d-text-shadow-reversed-elongated);
+  transform: scale(1.3) translateY(20px);
+  transition: text-shadow 0.1s transform 0.2s ease-in-out;
 }
 
 .home-links {

@@ -42,8 +42,8 @@
             <input type="hidden" name="id" value="{{ item.name }}">
             <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
             <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
-            <button type="submit" name="action" class="hidden-button" value="delete">
-              <span class="fa-regular fa-trash-can"></span>
+            <button type="submit" name="action" class="button--hidden" value="delete">
+              <span class="button--icon button--danger fa-regular fa-trash-can"></span>
             </button>
           </form>
         </div>
@@ -67,15 +67,15 @@
         <div class="add-item-form__item add-item-form__item--full-width">
           <div class="packed-box-item__details">
             <span>
-              <label for="add-item-essential">Essential</label>
+              <label for="add-item-essential" class="packed-box__details--essential">Essential</label>
               <input type="checkbox" name="essential" id="add-item-essential" value=1>
             </span>
             <span>
-              <label for="add-item-warm">Warm</label>
+              <label for="add-item-warm" class="packed-box__details--warm">Warm</label>
               <input type="checkbox" name="warm" id="add-item-warm" value=1>
             </span>
             <span>
-              <label for="add-item-liquid">Liquid</label>
+              <label for="add-item-liquid" class="packed-box__details--liquid">Liquid</label>
               <input type="checkbox" name="liquid" id="add-item-liquid" value=1>
             </span>
           </div>
@@ -92,8 +92,8 @@
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value={{ selected_box.id }}>
-        <button type="submit" name="action" class="button" value="delete_box">
-          <span class="button__text">Delete Box</span>
+        <button type="submit" name="action" class="button button--danger" value="delete_box">
+          <span class="button__text button__text--danger">Delete Box</span>
         </button>
       </form>
     </div>
