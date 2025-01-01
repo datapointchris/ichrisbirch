@@ -17,6 +17,7 @@
   --clr-success: hsl(120 100% 18% / 0.8);
   --clr-warning: hsl(60 100% 18% / 0.8);
   --clr-error: hsl(4 100% 18% / 0.8);
+  --clr-gray-050: hsl(0, 0%, 87%);
   --clr-gray-100: hsl(0, 0%, 67%);
   --clr-gray-200: hsl(0, 0%, 60%);
   --clr-gray-300: hsl(0, 0%, 53%);
@@ -11141,6 +11142,55 @@ nav a:hover {
   filter: blur(3px);
   transition: all 0.4s ease-in-out 0.12s;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+
+input[type=checkbox] {
+  box-sizing: border-box;
+  width: var(--space-m);
+  height: var(--space-m);
+  margin: var(--space-xs);
+  padding: 0;
+  border: 3px solid var(--clr-gray-300);
+  border-radius: 6px;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  background-color: transparent;
+  transition: all 0.1s;
+  --bottom-color: var(--clr-gray-200);
+  --right-color: var(--clr-gray-050);
+  box-shadow: 1px 0 0 var(--right-color), 1px 1px 0 var(--bottom-color), 2px 1px 0 var(--right-color), 2px 2px 0 var(--bottom-color), 3px 2px 0 var(--right-color), 3px 3px 0 var(--bottom-color), 4px 3px 0 var(--right-color), 4px 4px 0 var(--bottom-color);
+}
+input[type=checkbox]:checked::after {
+  content: "";
+  display: block;
+  width: 60%;
+  height: 60%;
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--clr-accent);
+  border-radius: 3px;
+}
+input[type=checkbox]:disabled {
+  background-color: var(--clr-gray-400);
+}
+input[type=checkbox]:disabled:checked {
+  background-color: var(--clr-gray-400);
+}
+@media (hover: hover) {
+  input[type=checkbox]:not(:disabled):hover {
+    transform: scale(1.1);
+  }
+}
+input[type=checkbox]:focus-visible {
+  transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  input[type=checkbox] {
+    transition: none;
+  }
 }
 
 .flash-messages {
