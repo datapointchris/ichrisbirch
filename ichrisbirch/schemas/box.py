@@ -30,6 +30,10 @@ class Box(BoxConfig):
     liquid: bool
     items: list[BoxItem]
 
+    @property
+    def item_count(self):
+        return len(self.items)
+
 
 class BoxUpdate(BoxConfig):
     """Pydantic model for updating a box."""
