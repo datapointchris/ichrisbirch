@@ -104,7 +104,8 @@
     <div>
       <form method="POST" action="{{ url_for('box_packing.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="id" value={{ selected_box.id }}>
+        <input type="hidden" name="box_id" value={{ selected_box.id }}>
+        <input type="hidden" name="box_name" value={{ selected_box.name }}>
         <button type="submit" name="action" class="button button--danger" value="delete_box">
           <span class="button__text button__text--danger">Delete Box</span>
         </button>
@@ -115,12 +116,6 @@
   {% endif %}
 </div>
 <script>
-  function updateItemName() {
-    const selectElement = document.getElementById('delete-item-id');
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    const itemName = selectedOption.getAttribute('data-name');
-    document.getElementById('delete-item-name').value = itemName;
-  }
   function updateSelectedBox() {
     var selectedBoxId = document.getElementById('selected_box_id').value;
     document.getElementById('select_box_form').action = "/box-packing/" + (selectedBoxId ? selectedBoxId : '');

@@ -107,22 +107,25 @@ def crud():
             liquid = bool(data.pop('liquid', 0))
             box = data | dict(essential=essential, warm=warm, liquid=liquid)
             if new_box := boxes_api.post(json=box):
+                flash(f'Box {new_box.id}: {new_box.name} created', 'success')
                 box_id = new_box.id
 
         case 'delete_box':
-            box_name = data.get('name')
-            if boxes_api.delete(data.get('id')):
+            box_id = data.get('box_id')
+            box_name = data.get('box_name')
+            if boxes_api.delete(box_id):
                 flash(f'Box {box_name} deleted', 'success')
             box_id = None
 
         case 'add_item':
             box_id = data.get('box_id')
+            box_name = data.get('box_name')
             essential = bool(data.pop('essential', 0))
             warm = bool(data.pop('warm', 0))
             liquid = bool(data.pop('liquid', 0))
             box_item = data | dict(essential=essential, warm=warm, liquid=liquid)
             if item := boxitems_api.post(json=box_item):
-                flash(f'Item {item.name} added to box {item.box_id}', 'success')
+                flash(f'{item.name} added to Box {item.box_id}: {box_name}', 'success')
 
         case 'delete_item':
             item_id = data.get('item_id')
@@ -144,10 +147,11 @@ def crud():
 
         case 'add_orphan_to_box':
             box_id = data.get('box_id')
+            box_name = data.get('box_name')
             item_id = data.get('item_id')
             item_name = data.get('item_name')
             if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': box_id}):
-                flash(f'Item {item_name} added to box {box_id}', 'success')
+                flash(f'{item_name} added to Box {box_id}: {box_name}', 'success')
 
         case _:
             return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
