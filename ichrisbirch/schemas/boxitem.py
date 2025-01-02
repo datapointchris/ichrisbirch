@@ -22,11 +22,16 @@ class BoxItem(BoxItemConfig):
     """Pydantic model for a box item."""
 
     id: int
-    box_id: int
+    box_id: int | None
     name: str
     essential: bool
     warm: bool
     liquid: bool
+
+    @property
+    def is_orphan(self) -> bool:
+        """Return True if the item is not associated with a box."""
+        return self.box_id is None
 
 
 class BoxItemUpdate(BoxItemConfig):

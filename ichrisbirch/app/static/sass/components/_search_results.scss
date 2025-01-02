@@ -1,0 +1,32 @@
+.searchbox {
+    margin: var(--space-xl) auto;
+    text-align: center;
+}
+
+@mixin search-results {
+    // Define grid-template-columns to use
+    // grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    display: grid;
+    list-style: none;
+    text-align: center;
+    padding: var(--space-s) 0;
+    margin: var(--space-xs) 0;
+
+    &__header {
+        font-size: var(--fs-500);
+        border-top: 5px dashed var(--clr-accent);
+        border-bottom: 5px dashed var(--clr-accent);
+    }
+
+    &__item {
+        font-size: var(--fs-400);
+        line-height: 1.5em;
+        border-top: 1px dotted var(--clr-accent);
+        border-bottom: 1px dotted var(--clr-accent);
+    }
+
+    &__link {
+        text-decoration: underline;
+        color: var(--clr-accent-light);
+    }
+}

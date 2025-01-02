@@ -13,28 +13,30 @@
     </button>
   </form>
 </div>
-<ul class="search-results search-results__header">
-  <li>Box ID</li>
-  <li>Box Name</li>
-  <li>Box Size</li>
-  <li>Item</li>
-  <li>Essential</li>
-  <li>Warm</li>
-  <li>Liquid</li>
-</ul>
-{% if results %}
-{% for box, item in results %}
-<ul class="search-results search-results__item">
-  <li><a class="search-results__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.id
-      }}</a></li>
-  <li><a class="search-results__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.name
-      }}</a></li>
-  <li>{{ box.size }}</li>
-  <li>{{ item.name }}</li>
-  <li class="packed-box-item__details--essential">{% if item.essential == 1 %}Essential{% endif %}</li>
-  <li class="packed-box-item__details--warm">{% if item.warm == 1 %}Warm{% endif %}</li>
-  <li class="packed-box-item__details--liquid">{% if item.liquid == 1 %}Liquid{% endif %}</li>
-</ul>
-{% endfor %}
-{% endif %}
+<div class="grid grid--one-column-full">
+  <ul class="search-results-boxes search-results-boxes__header">
+    <li>Box ID</li>
+    <li>Box Name</li>
+    <li>Box Size</li>
+    <li>Item</li>
+    <li>Essential</li>
+    <li>Warm</li>
+    <li>Liquid</li>
+  </ul>
+  {% if results %}
+  {% for box, item in results %}
+  <ul class="search-results-boxes search-results-boxes__item">
+    <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.id
+        }}</a></li>
+    <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.name
+        }}</a></li>
+    <li>{{ box.size }}</li>
+    <li>{{ item.name }}</li>
+    <li class="packed-box-item__details--essential">{% if item.essential == 1 %}Essential{% endif %}</li>
+    <li class="packed-box-item__details--warm">{% if item.warm == 1 %}Warm{% endif %}</li>
+    <li class="packed-box-item__details--liquid">{% if item.liquid == 1 %}Liquid{% endif %}</li>
+  </ul>
+  {% endfor %}
+  {% endif %}
+</div>
 {% endblock %}

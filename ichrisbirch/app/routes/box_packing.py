@@ -52,14 +52,26 @@ def all():
     sort_2 = request.form.get('sort_2')
     logger.debug(f'{sort_1=} {sort_2=}')
 
-    params = {'sort_1': sort_1, 'sort_2': sort_2}
-    boxes = boxes_api.get_many(params=params)
+    boxes = boxes_api.get_many()
     if sort_1:
         if sort_2:
             boxes = sorted(boxes, key=lambda box: (getattr(box, sort_1), getattr(box, sort_2)))
         else:
             boxes = sorted(boxes, key=lambda box: getattr(box, sort_1))
     return render_template('box_packing/all.html', boxes=boxes, sort_1=sort_1, sort_2=sort_2, box_sizes=BOX_SIZES)
+
+
+@blueprint.route('/orphans/', methods=['GET', 'POST'])
+def orphans():
+    boxes_api = QueryAPI(base_url='box-packing/boxes', logger=logger, response_model=schemas.Box)
+    boxitem_orphans_api = QueryAPI(base_url='box-packing/items/orphans', logger=logger, response_model=schemas.BoxItem)
+    sort = request.form.get('sort', 'name')
+    logger.debug(f'{sort=}')
+
+    orphans = boxitem_orphans_api.get_many()
+    orphans = sorted(orphans, key=lambda boxitem: getattr(boxitem, sort))
+    boxes = boxes_api.get_many()
+    return render_template('box_packing/orphans.html', boxes=boxes, orphans=orphans, sort=sort)
 
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
@@ -94,31 +106,48 @@ def crud():
             warm = bool(data.pop('warm', 0))
             liquid = bool(data.pop('liquid', 0))
             box = data | dict(essential=essential, warm=warm, liquid=liquid)
-            new_box = boxes_api.post(json=box)
-            box_id = new_box.id
+            if new_box := boxes_api.post(json=box):
+                box_id = new_box.id
 
         case 'delete_box':
             box_name = data.get('name')
-            boxes_api.delete(data.get('id'))
-            flash(f'Box {box_name} deleted', 'success')
+            if boxes_api.delete(data.get('id')):
+                flash(f'Box {box_name} deleted', 'success')
             box_id = None
 
         case 'add_item':
+            box_id = data.get('box_id')
             essential = bool(data.pop('essential', 0))
             warm = bool(data.pop('warm', 0))
             liquid = bool(data.pop('liquid', 0))
             box_item = data | dict(essential=essential, warm=warm, liquid=liquid)
-            item = boxitems_api.post(json=box_item)
-            flash(f'Item {item.name} added to box {item.box_id}', 'success')
-            box_id = item.box_id
+            if item := boxitems_api.post(json=box_item):
+                flash(f'Item {item.name} added to box {item.box_id}', 'success')
 
         case 'delete_item':
-            item_id = data.get('id')
+            item_id = data.get('item_id')
             item_name = data.get('item_name')
             box_id = data.get('box_id')
             box_name = data.get('box_name')
-            boxitems_api.delete(item_id)
-            flash(f'{item_name} deleted from Box {box_id}: {box_name}', 'success')
+            if boxitems_api.delete(item_id):
+                flash(f'{item_name} deleted from Box {box_id}: {box_name}', 'success')
+
+        case 'orphan_item':
+            logger.warning('Orphan item not implemented')
+            item_id = data.get('item_id')
+            item_name = data.get('item_name')
+            box_id = data.get('box_id')
+            box_name = data.get('box_name')
+            logger.warning(f'{item_id=} {item_name=} {box_id=} {box_name=}')
+            if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': None}):
+                flash(f'{item_name} orphaned from Box {box_id}: {box_name}', 'success')
+
+        case 'add_orphan_to_box':
+            box_id = data.get('box_id')
+            item_id = data.get('item_id')
+            item_name = data.get('item_name')
+            if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': box_id}):
+                flash(f'Item {item_name} added to box {box_id}', 'success')
 
         case _:
             return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

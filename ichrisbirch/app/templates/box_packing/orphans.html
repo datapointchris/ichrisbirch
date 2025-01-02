@@ -1,0 +1,63 @@
+{% extends 'box_packing/base.html' %}
+
+{% block title %}Box Packing - Search{% endblock %}
+
+{% block content %}
+
+{% if orphans %}
+<div class="box-listing-sort">
+  <form method="POST" action="{{ url_for('box_packing.orphans') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <span class="box-listing-sort__item">
+      <select class="button" name="sort" id="sort">
+        <option value="none" selected disabled hidden>Orphan Sort Order</option>
+        <option value="name">Name</option>
+        <option value="essential">Essential</option>
+        <option value="warm">Warm</option>
+        <option value="liquid">Liquid</option>
+      </select>
+    </span>
+    <span class="box-listing-sort__item">
+      <button type="submit" name="action" class="button" value="sort">
+        <span class="button__text">Sort Orphaned Items</span>
+      </button>
+    </span>
+  </form>
+</div>
+
+<div class="grid grid--one-column-wide">
+  <ul class="search-results-orphans search-results-orphans__header">
+    <li>Item</li>
+    <li>Essential</li>
+    <li>Warm</li>
+    <li>Liquid</li>
+    <li><span class="button--icon fa-solid fa-box-open"></span></li>
+  </ul>
+  {% for item in orphans %}
+  <ul class="search-results-orphans search-results-orphans__item">
+    <li>{{ item.name }}</li>
+    <li class="packed-box-item__details--essential">{% if item.essential == 1 %}Essential{% endif %}</li>
+    <li class="packed-box-item__details--warm">{% if item.warm == 1 %}Warm{% endif %}</li>
+    <li class="packed-box-item__details--liquid">{% if item.liquid == 1 %}Liquid{% endif %}</li>
+    <li>
+      <form method="POST" id="select_box_form" action="{{ url_for('box_packing.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="item_id" value="{{ item.id }}">
+        <input type="hidden" name="item_name" value="{{ item.name }}">
+        <input type="hidden" name="action" value="add_orphan_to_box">
+        <select class="button" name="box_id" id="box_id" onchange="this.form.submit();">
+          <option value="none" selected disabled hidden>Add Item to a Box</option>
+          {% for box in boxes %}
+          <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </li>
+  </ul>
+  {% endfor %}
+</div>
+{% else %}
+<h2>No Orphaned BoxItems</h2>
+{% endif %}
+
+{% endblock %}

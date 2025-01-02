@@ -73,6 +73,22 @@ async def delete_box(id: int, session: Session = Depends(get_sqlalchemy_session)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
+@router.patch('/boxes/{id}/', response_model=schemas.Box, status_code=status.HTTP_200_OK)
+async def complete(id: int, update: schemas.BoxUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug(f'update: box {id} {update_data}')
+    if obj := session.get(models.Box, id):
+        for attr, value in update_data.items():
+            setattr(obj, attr, value)
+        session.commit()
+        session.refresh(obj)
+        return obj
+    else:
+        message = f'Box {id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
 @router.get('/items/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
 async def read_many_items(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
     query = select(models.BoxItem).order_by(models.BoxItem.id)
@@ -80,7 +96,7 @@ async def read_many_items(session: Session = Depends(get_sqlalchemy_session), li
     return list(session.scalars(query).all())
 
 
-def _update_box_details(box: models.Box, session: Session):
+def _update_box_details_based_on_contents(box: models.Box, session: Session):
     """Update the box details based on the items in the box.
 
     When a new item is added or deleted from the box, see if it changes the box details
@@ -98,9 +114,15 @@ async def create_item(item: schemas.BoxItemCreate, session: Session = Depends(ge
     db_obj = models.BoxItem(**item.model_dump())
     session.add(db_obj)
     session.commit()
-    _update_box_details(db_obj.box, session)
+    _update_box_details_based_on_contents(db_obj.box, session)
     session.refresh(db_obj)
     return db_obj
+
+
+@router.get('/items/orphans/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
+async def read_many_orphans(session: Session = Depends(get_sqlalchemy_session)):
+    query = select(models.BoxItem).filter(models.BoxItem.box_id.is_(None))
+    return list(session.scalars(query).all())
 
 
 @router.get('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
@@ -119,9 +141,25 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
         box = item.box
         session.delete(item)
         session.commit()
-        _update_box_details(box, session)
+        _update_box_details_based_on_contents(box, session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'BoxItem {id} not found'
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+@router.patch('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
+async def update(id: int, update: schemas.BoxItemUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug(f'update: box item {id} {update_data}')
+    if obj := session.get(models.BoxItem, id):
+        for attr, value in update_data.items():
+            setattr(obj, attr, value)
+        session.commit()
+        session.refresh(obj)
+        return obj
+    else:
+        message = f'Box Item {id} not found'
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)

@@ -36,15 +36,28 @@
           {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
         </div>
         <div>
-          <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="id" value="{{ item.id }}">
-            <input type="hidden" name="id" value="{{ item.name }}">
-            <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-            <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
-            <button type="submit" name="action" class="button--hidden" value="delete">
-              <span class="button--icon button--danger fa-regular fa-trash-can"></span>
-            </button>
+          <span class="packed-box-item">
+            <form method="POST" action="{{ url_for('box_packing.crud') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="item_id" value="{{ item.id }}">
+              <input type="hidden" name="item_name" value="{{ item.name }}">
+              <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+              <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+              <button type="submit" name="action" class="button--hidden" value="orphan_item">
+                <span class="button--icon button--warning fa-solid fa-arrow-up-from-bracket"></span>
+              </button>
+          </span>
+          <span class="packed-box-item">
+            <form method="POST" action="{{ url_for('box_packing.crud') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="item_id" value="{{ item.id }}">
+              <input type="hidden" name="item_name" value="{{ item.name }}">
+              <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+              <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+              <button type="submit" name="action" class="button--hidden" value="delete_item">
+                <span class="button--icon button--danger fa-regular fa-trash-can"></span>
+              </button>
+          </span>
           </form>
         </div>
 

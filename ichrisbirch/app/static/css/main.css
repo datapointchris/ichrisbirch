@@ -11378,6 +11378,11 @@ input[type=checkbox]:focus-visible {
   box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
+.searchbox {
+  margin: var(--space-xl) auto;
+  text-align: center;
+}
+
 #github-issue-background-overlay {
   position: fixed;
   display: none;
@@ -11724,7 +11729,6 @@ input[type=checkbox]:focus-visible {
   color: var(--clr-accent-light);
 }
 
-/*     INDEX PAGE     */
 .packed-box__title {
   color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
@@ -11768,7 +11772,6 @@ input[type=checkbox]:focus-visible {
   color: var(--clr-accent--blue);
 }
 
-/*     ALL PAGE     */
 .box-listing-sort {
   display: flex;
   justify-content: space-evenly;
@@ -11781,32 +11784,50 @@ input[type=checkbox]:focus-visible {
   padding: 0 var(--space-m);
 }
 
-/*     SEARCH PAGE     */
-.searchbox {
-  margin: var(--space-xl) auto;
-  text-align: center;
-}
-
-.search-results {
+.search-results-boxes {
   display: grid;
-  grid-template-columns: 1fr 4fr 1fr 3fr 1fr 1fr 1fr;
   list-style: none;
   text-align: center;
   padding: var(--space-s) 0;
   margin: var(--space-xs) 0;
+  grid-template-columns: 1fr 4fr 1fr 3fr 1fr 1fr 1fr;
 }
-.search-results__header {
+.search-results-boxes__header {
   font-size: var(--fs-500);
   border-top: 5px dashed var(--clr-accent);
   border-bottom: 5px dashed var(--clr-accent);
 }
-.search-results__item {
+.search-results-boxes__item {
   font-size: var(--fs-400);
   line-height: 1.5em;
   border-top: 1px dotted var(--clr-accent);
   border-bottom: 1px dotted var(--clr-accent);
 }
-.search-results__link {
+.search-results-boxes__link {
+  text-decoration: underline;
+  color: var(--clr-accent-light);
+}
+
+.search-results-orphans {
+  display: grid;
+  list-style: none;
+  text-align: center;
+  padding: var(--space-s) 0;
+  margin: var(--space-xs) 0;
+  grid-template-columns: 4fr 1fr 1fr 1fr 4fr;
+}
+.search-results-orphans__header {
+  font-size: var(--fs-500);
+  border-top: 5px dashed var(--clr-accent);
+  border-bottom: 5px dashed var(--clr-accent);
+}
+.search-results-orphans__item {
+  font-size: var(--fs-400);
+  line-height: 1.5em;
+  border-top: 1px dotted var(--clr-accent);
+  border-bottom: 1px dotted var(--clr-accent);
+}
+.search-results-orphans__link {
   text-decoration: underline;
   color: var(--clr-accent-light);
 }
