@@ -11814,7 +11814,7 @@ input[type=checkbox]:focus-visible {
   text-align: center;
   padding: var(--space-s) 0;
   margin: var(--space-xs) 0;
-  grid-template-columns: 4fr 1fr 1fr 1fr 4fr;
+  grid-template-columns: 4fr 1fr 1fr 1fr 4fr 1fr;
 }
 .search-results-orphans__header {
   font-size: var(--fs-500);

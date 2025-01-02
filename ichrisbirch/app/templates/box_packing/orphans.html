@@ -31,7 +31,8 @@
     <li>Essential</li>
     <li>Warm</li>
     <li>Liquid</li>
-    <li><span class="button--icon fa-solid fa-box-open"></span></li>
+    <li>Box</li>
+    <li>Delete</li>
   </ul>
   {% for item in orphans %}
   <ul class="search-results-orphans search-results-orphans__item">
@@ -40,33 +41,43 @@
     <li class="packed-box-item__details--warm">{% if item.warm == 1 %}Warm{% endif %}</li>
     <li class="packed-box-item__details--liquid">{% if item.liquid == 1 %}Liquid{% endif %}</li>
     <li>
-    <form method="POST" id="select_box_form_{{ item.id }}" action="{{ url_for('box_packing.crud') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="item_id" value="{{ item.id }}">
-      <input type="hidden" name="item_name" value="{{ item.name }}">
-      <input type="hidden" name="box_name" id="box_name_{{ item.id }}" value="">
-      <input type="hidden" name="action" value="add_orphan_to_box">
-      <select class="button" name="box_id" id="box_id_{{ item.id }}"
-        onchange="updateItemName({{ item.id }}); this.form.submit();">
-        <option value="none" selected disabled hidden>Add Item to a Box</option>
-        {% for box in boxes %}
-        <option data-name="{{ box.name }}" value="{{ box.id }}">Box {{ box.id }}: {{ box.name }}</option>
-        {% endfor %}
-      </select>
-    </form>
+      <form method="POST" id="select_box_form_{{ item.id }}" action="{{ url_for('box_packing.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="item_id" value="{{ item.id }}">
+        <input type="hidden" name="item_name" value="{{ item.name }}">
+        <input type="hidden" name="box_name" id="box_name_{{ item.id }}" value="">
+        <input type="hidden" name="action" value="add_orphan_to_box">
+        <select class="button" name="box_id" id="box_id_{{ item.id }}"
+          onchange="updateItemName({{ item.id }}); this.form.submit();">
+          <option value="none" selected disabled hidden>Add Item to a Box</option>
+          {% for box in boxes %}
+          <option data-name="{{ box.name }}" value="{{ box.id }}">Box {{ box.id }}: {{ box.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
     </li>
-    </ul>
-    {% endfor %}
-    </div>
-    {% else %}
-    <h2>No Orphaned BoxItems</h2>
-    {% endif %}
-    <script>
-      function updateItemName(itemId) {
-        const selectElement = document.getElementById('box_id_' + itemId);
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
-        const itemName = selectedOption.getAttribute('data-name');
-        document.getElementById('box_name_' + itemId).value = itemName;
-      }
-    </script>
-    {% endblock %}
+    <li>
+      <form method="POST" action="{{ url_for('box_packing.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="item_id" value="{{ item.id }}">
+        <input type="hidden" name="item_name" value="{{ item.name }}">
+        <button type="submit" name="action" class="button--hidden" value="delete_orphan">
+          <span class="button--icon button--danger fa-regular fa-trash-can"></span>
+        </button>
+      </form>
+    </li>
+  </ul>
+  {% endfor %}
+</div>
+{% else %}
+<h2>No Orphaned BoxItems</h2>
+{% endif %}
+<script>
+  function updateItemName(itemId) {
+    const selectElement = document.getElementById('box_id_' + itemId);
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const itemName = selectedOption.getAttribute('data-name');
+    document.getElementById('box_name_' + itemId).value = itemName;
+  }
+</script>
+{% endblock %}

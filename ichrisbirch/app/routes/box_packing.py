@@ -153,6 +153,13 @@ def crud():
             if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': box_id}):
                 flash(f'{item_name} added to Box {box_id}: {box_name}', 'success')
 
+        case 'delete_orphan':
+            item_id = data.get('item_id')
+            item_name = data.get('item_name')
+            if boxitems_api.delete(item_id):
+                flash(f'Orphan {item_name} deleted', 'success')
+            return redirect(url_for('box_packing.orphans'))
+
         case _:
             return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 

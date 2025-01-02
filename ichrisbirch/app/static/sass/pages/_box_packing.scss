@@ -63,5 +63,5 @@
 
 .search-results-orphans {
     @include search-results;
-    grid-template-columns: 4fr 1fr 1fr 1fr 4fr;
+    grid-template-columns: 4fr 1fr 1fr 1fr 4fr 1fr;
 }

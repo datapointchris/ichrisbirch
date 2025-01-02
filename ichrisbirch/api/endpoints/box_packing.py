@@ -63,6 +63,10 @@ async def read_one_box(id: int, session: Session = Depends(get_sqlalchemy_sessio
 @router.delete('/boxes/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_box(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if box := session.get(models.Box, id):
+        # orphan items in box
+        for item in box.items:
+            item.box_id = None
+            logger.debug(f'{item.name} orphaned from box {id}: {box.name}')
         session.delete(box)
         session.commit()
         # return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -141,7 +145,8 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
         box = item.box
         session.delete(item)
         session.commit()
-        _update_box_details_based_on_contents(box, session)
+        if box:  # if item was in a box and not an orphan
+            _update_box_details_based_on_contents(box, session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
         message = f'BoxItem {id} not found'
