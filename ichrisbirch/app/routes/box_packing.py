@@ -120,12 +120,25 @@ def crud():
 
     match action:
         case 'add_box':
+            boxes = boxes_api.get_many()
+            if box_number is not None and any(box.number == int(box_number) for box in boxes):
+                flash(f'Box {box_number} already exists', 'error')
+                return redirect(url_for('box_packing.all'))
             box = dict(name=box_name, number=box_number, size=box_size, essential=essential, warm=warm, liquid=liquid)
             if new_box := boxes_api.post(json=box):
                 flash(f'Box {new_box.number}: {new_box.name} created', 'success')
                 box_id = new_box.id
 
         case 'edit_box':
+            boxes = boxes_api.get_many()
+            current_box = next(box for box in boxes if box_id is not None and box.id == int(box_id))
+            if (
+                box_number is not None
+                and any(box.number == int(box_number) for box in boxes)
+                and int(box_number) != current_box.number
+            ):
+                flash(f'Box {box_number} already exists', 'error')
+                return redirect(url_for('box_packing.edit', box_id=box_id))
             update = dict(id=box_id, number=box_number, name=box_name, size=box_size)
             if boxes_api.patch(box_id, json=update):
                 flash(f'Box {box_number}: {box_name} updated', 'success')
