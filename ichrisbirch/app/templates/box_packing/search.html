@@ -15,7 +15,7 @@
 </div>
 <div class="grid grid--one-column-full">
   <ul class="search-results-boxes search-results-boxes__header">
-    <li>Box ID</li>
+    <li>Box Number</li>
     <li>Box Name</li>
     <li>Box Size</li>
     <li>Item</li>
@@ -26,7 +26,7 @@
   {% if results %}
   {% for box, item in results %}
   <ul class="search-results-boxes search-results-boxes__item">
-    <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.id
+    <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.number
         }}</a></li>
     <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.name
         }}</a></li>

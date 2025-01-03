@@ -51,7 +51,7 @@
           onchange="updateItemName({{ item.id }}); this.form.submit();">
           <option value="none" selected disabled hidden>Add Item to a Box</option>
           {% for box in boxes %}
-          <option data-name="{{ box.name }}" value="{{ box.id }}">Box {{ box.id }}: {{ box.name }}</option>
+          <option data-name="{{ box.name }}" value="{{ box.id }}">Box {{ box.number }}: {{ box.name }}</option>
           {% endfor %}
         </select>
       </form>

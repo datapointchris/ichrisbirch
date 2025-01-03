@@ -107,66 +107,52 @@ def crud():
     action = data.pop('action')
     logger.debug(f'{request.referrer=} {action=}')
 
+    # some of these will be None for different actions, which is okay
+    box_id = data.get('box_id')
+    box_number = data.get('box_number')
+    box_name = data.get('box_name')
+    box_size = data.get('box_size')
+    item_id = data.get('item_id')
+    item_name = data.get('item_name')
+    essential = bool(data.pop('essential', 0))
+    warm = bool(data.pop('warm', 0))
+    liquid = bool(data.pop('liquid', 0))
+
     match action:
         case 'add_box':
-            essential = bool(data.pop('essential', 0))
-            warm = bool(data.pop('warm', 0))
-            liquid = bool(data.pop('liquid', 0))
-            box = data | dict(essential=essential, warm=warm, liquid=liquid)
+            box = dict(name=box_name, number=box_number, size=box_size, essential=essential, warm=warm, liquid=liquid)
             if new_box := boxes_api.post(json=box):
-                flash(f'Box {new_box.id}: {new_box.name} created', 'success')
+                flash(f'Box {new_box.number}: {new_box.name} created', 'success')
                 box_id = new_box.id
 
         case 'edit_box':
-            box_id = data.get('id')
-            if boxes_api.patch(box_id, json=data):
-                flash(f'Box {box_id}: {data.get("name")} updated', 'success')
+            update = dict(id=box_id, number=box_number, name=box_name, size=box_size)
+            if boxes_api.patch(box_id, json=update):
+                flash(f'Box {box_number}: {box_name} updated', 'success')
 
         case 'delete_box':
-            box_id = data.get('box_id')
-            box_name = data.get('box_name')
             if boxes_api.delete(box_id):
-                flash(f'Box {box_name} deleted', 'success')
+                flash(f'Box {box_number}: {box_name} deleted', 'success')
             box_id = None
 
         case 'add_item':
-            box_id = data.get('box_id')
-            box_name = data.get('box_name')
-            essential = bool(data.pop('essential', 0))
-            warm = bool(data.pop('warm', 0))
-            liquid = bool(data.pop('liquid', 0))
-            box_item = data | dict(essential=essential, warm=warm, liquid=liquid)
+            box_item = dict(box_id=box_id, name=item_name, essential=essential, warm=warm, liquid=liquid)
             if item := boxitems_api.post(json=box_item):
-                flash(f'{item.name} added to Box {item.box_id}: {box_name}', 'success')
+                flash(f'{item.name} added to Box {box_number}: {box_name}', 'success')
 
         case 'delete_item':
-            item_id = data.get('item_id')
-            item_name = data.get('item_name')
-            box_id = data.get('box_id')
-            box_name = data.get('box_name')
             if boxitems_api.delete(item_id):
-                flash(f'{item_name} deleted from Box {box_id}: {box_name}', 'success')
+                flash(f'{item_name} deleted from Box {box_number}: {box_name}', 'success')
 
         case 'orphan_item':
-            logger.warning('Orphan item not implemented')
-            item_id = data.get('item_id')
-            item_name = data.get('item_name')
-            box_id = data.get('box_id')
-            box_name = data.get('box_name')
             if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': None}):
-                flash(f'{item_name} orphaned from Box {box_id}: {box_name}', 'success')
+                flash(f'{item_name} orphaned from Box {box_number}: {box_name}', 'success')
 
         case 'add_orphan_to_box':
-            box_id = data.get('box_id')
-            box_name = data.get('box_name')
-            item_id = data.get('item_id')
-            item_name = data.get('item_name')
             if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': box_id}):
-                flash(f'{item_name} added to Box {box_id}: {box_name}', 'success')
+                flash(f'{item_name} added to Box {box_number}: {box_name}', 'success')
 
         case 'delete_orphan':
-            item_id = data.get('item_id')
-            item_name = data.get('item_name')
             if boxitems_api.delete(item_id):
                 flash(f'Orphan {item_name} deleted', 'success')
             return redirect(url_for('box_packing.orphans'))

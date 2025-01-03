@@ -11,13 +11,13 @@
       <select class="button" id="selected_box_id" onchange="updateSelectedBox(); this.form.submit();">
         <option value="none" selected disabled hidden>Select a Box</option>
         {% for box in boxes %}
-        <option value={{ box.id }}>Box {{ box.id }}: {{ box.name }}</option>
+        <option value={{ box.id }}>Box {{ box.number }}: {{ box.name }}</option>
         {% endfor %}
       </select>
     </form>
 
     {% if selected_box %}
-    <h1 class="packed-box__title">Box {{ selected_box.id }}: {{ selected_box.name }}</h1>
+    <h1 class="packed-box__title">Box {{ selected_box.number }}: {{ selected_box.name }}</h1>
     <h2>Size: {{ selected_box.size }}</h2>
     <div class="packed-box__details">
       {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
@@ -43,17 +43,19 @@
               <input type="hidden" name="item_name" value="{{ item.name }}">
               <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
               <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+              <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
               <button type="submit" name="action" class="button--hidden" value="orphan_item">
                 <span class="button--icon button--warning fa-solid fa-arrow-up-from-bracket"></span>
               </button>
-          </span>
-          <span class="packed-box-item">
-            <form method="POST" action="{{ url_for('box_packing.crud') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="item_name" value="{{ item.name }}">
-              <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-              <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+            </span>
+            <span class="packed-box-item">
+              <form method="POST" action="{{ url_for('box_packing.crud') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <input type="hidden" name="item_name" value="{{ item.name }}">
+                <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+                <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+                <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
               <button type="submit" name="action" class="button--hidden" value="delete_item">
                 <span class="button--icon button--danger fa-regular fa-trash-can"></span>
               </button>
@@ -70,26 +72,27 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
         <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
+        <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
         <div class="add-item-form__item add-item-form__item--full-width">
           <h3>Add Item:</h3>
         </div>
         <div class="add-item-form__item add-item-form__item--full-width">
           <label for="add-item-name">Name:</label>
-          <input type="text" size="40" class="button" name="name" id="add-item-name">
+          <input type="text" size="40" class="button" name="item_name" id="item_name">
         </div>
         <div class="add-item-form__item add-item-form__item--full-width">
           <div class="packed-box-item__details">
             <span>
-              <label for="add-item-essential" class="packed-box__details--essential">Essential</label>
-              <input type="checkbox" name="essential" id="add-item-essential" value=1>
+              <label for="essential" class="packed-box__details--essential">Essential</label>
+              <input type="checkbox" name="essential" id="essential" value=1>
             </span>
             <span>
-              <label for="add-item-warm" class="packed-box__details--warm">Warm</label>
-              <input type="checkbox" name="warm" id="add-item-warm" value=1>
+              <label for="warm" class="packed-box__details--warm">Warm</label>
+              <input type="checkbox" name="warm" id="warm" value=1>
             </span>
             <span>
-              <label for="add-item-liquid" class="packed-box__details--liquid">Liquid</label>
-              <input type="checkbox" name="liquid" id="add-item-liquid" value=1>
+              <label for="liquid" class="packed-box__details--liquid">Liquid</label>
+              <input type="checkbox" name="liquid" id="liquid" value=1>
             </span>
           </div>
         </div>
@@ -106,6 +109,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="box_id" value={{ selected_box.id }}>
         <input type="hidden" name="box_name" value={{ selected_box.name }}>
+        <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
         <button type="submit" name="action" class="button button--danger" value="delete_box">
           <span class="button__text button__text--danger">Delete Box</span>
         </button>
