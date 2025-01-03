@@ -42,6 +42,7 @@
         }}</a>
     </h2>
     <h3>Size: {{ box.size }}</h3>
+    <h3><a href="{{ url_for('box_packing.edit', box_id=box.id) }}"><span class="button--icon button--warning fa-solid fa-pen-to-square"></span></a></h3>
     <h4>{{ box.item_count }} Item{% if box.item_count > 1 %}s{% endif %}</h4>
     <div class="packed-box-item__details">
       {% if box.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif %}

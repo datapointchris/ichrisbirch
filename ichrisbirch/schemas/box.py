@@ -10,9 +10,8 @@ class BoxConfig(BaseModel):
 
 
 class BoxCreate(BoxConfig):
-    """Pydantic model for creating a box."""
-
     name: str
+    number: int | None
     size: BoxSize
     essential: bool
     warm: bool
@@ -20,9 +19,8 @@ class BoxCreate(BoxConfig):
 
 
 class Box(BoxConfig):
-    """Pydantic model for a box."""
-
     id: int
+    number: int | None
     name: str
     size: BoxSize
     essential: bool
@@ -36,10 +34,9 @@ class Box(BoxConfig):
 
 
 class BoxUpdate(BoxConfig):
-    """Pydantic model for updating a box."""
-
     id: int
     name: str | None = None
+    number: int | None = None
     size: BoxSize | None = None
     essential: bool | None = None
     warm: bool | None = None

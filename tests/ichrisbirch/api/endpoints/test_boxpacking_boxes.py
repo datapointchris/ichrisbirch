@@ -18,6 +18,7 @@ def insert_testing_data():
 
 NEW_OBJ = schemas.BoxCreate(
     name='Box 4 - Bag of clothes',
+    number=4,
     size=BoxSize.Bag,
     essential=True,
     warm=False,
@@ -64,6 +65,7 @@ def test_search_box_items(test_api):
 def test_create_box_all_sizes(test_api, box_size):
     test_box = schemas.BoxCreate(
         name='Box X',
+        number=5,
         size=box_size,
         essential=True,
         warm=False,
@@ -80,6 +82,7 @@ def test_create_box_all_sizes(test_api, box_size):
 def test_create_box_options_combinations(test_api, essential, warm, liquid):
     test_box = schemas.BoxCreate(
         name='Box X',
+        number=5,
         size=BoxSize.Large,
         essential=essential,
         warm=warm,

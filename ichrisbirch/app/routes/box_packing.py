@@ -45,6 +45,13 @@ def index(box_id):
     return render_template('box_packing/index.html', selected_box=selected_box, boxes=boxes, box_sizes=BOX_SIZES)
 
 
+@blueprint.route('/edit/<box_id>/', methods=['GET', 'POST'])
+def edit(box_id):
+    boxes_api = QueryAPI(base_url='box-packing/boxes', logger=logger, response_model=schemas.Box)
+    box = boxes_api.get_one(box_id)
+    return render_template('box_packing/edit.html', box=box, box_sizes=BOX_SIZES)
+
+
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
     boxes_api = QueryAPI(base_url='box-packing/boxes', logger=logger, response_model=schemas.Box)
@@ -110,6 +117,11 @@ def crud():
                 flash(f'Box {new_box.id}: {new_box.name} created', 'success')
                 box_id = new_box.id
 
+        case 'edit_box':
+            box_id = data.get('id')
+            if boxes_api.patch(box_id, json=data):
+                flash(f'Box {box_id}: {data.get("name")} updated', 'success')
+
         case 'delete_box':
             box_id = data.get('box_id')
             box_name = data.get('box_name')
@@ -141,7 +153,6 @@ def crud():
             item_name = data.get('item_name')
             box_id = data.get('box_id')
             box_name = data.get('box_name')
-            logger.warning(f'{item_id=} {item_name=} {box_id=} {box_name=}')
             if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': None}):
                 flash(f'{item_name} orphaned from Box {box_id}: {box_name}', 'success')
 
