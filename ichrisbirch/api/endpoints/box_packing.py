@@ -35,7 +35,7 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 
 @router.get('/boxes/', response_model=list[schemas.Box], status_code=status.HTTP_200_OK)
 async def read_many_boxes(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
-    query = select(models.Box).order_by(models.Box.id)
+    query = select(models.Box).order_by(models.Box.number)
     query = query.limit(limit) if limit else query
     results = list(session.scalars(query).all())
     return results
@@ -95,7 +95,7 @@ async def complete(id: int, update: schemas.BoxUpdate, session: Session = Depend
 
 @router.get('/items/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
 async def read_many_items(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
-    query = select(models.BoxItem).order_by(models.BoxItem.id)
+    query = select(models.BoxItem).order_by(models.BoxItem.name)
     query = query.limit(limit) if limit else query
     return list(session.scalars(query).all())
 
@@ -125,7 +125,7 @@ async def create_item(item: schemas.BoxItemCreate, session: Session = Depends(ge
 
 @router.get('/items/orphans/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
 async def read_many_orphans(session: Session = Depends(get_sqlalchemy_session)):
-    query = select(models.BoxItem).filter(models.BoxItem.box_id.is_(None))
+    query = select(models.BoxItem).filter(models.BoxItem.box_id.is_(None)).order_by(models.BoxItem.name)
     return list(session.scalars(query).all())
 
 
