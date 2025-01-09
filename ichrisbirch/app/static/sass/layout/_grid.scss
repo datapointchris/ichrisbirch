@@ -89,7 +89,7 @@
         padding: var(--space-m);
         text-align: center;
         font-size: var(--fs-400);
-        border-radius: var(--btn-border-radius);
+        border-radius: var(--button-border-radius);
         background-color: var(--clr-primary);
         box-shadow: var(--floating-box);
 
@@ -97,6 +97,48 @@
             background-color: var(--clr-primary--darker);
             box-shadow: var(--floating-box-pressed);
         }
+    }
+
+    &--highlighted {
+        background-color: var(--clr-primary--darker);
+        box-shadow: var(--floating-box-pressed);
+    }
+}
+
+.grid-compact {
+    display: grid;
+    width: 80svw;
+    gap: 0;
+    margin: 0 auto;
+    padding: 0;
+    justify-content: center;
+
+    &--one-column {
+        width: 50svw;
+        @include grid-set-columns(1);
+    }
+
+    &--one-column-wide {
+        @include grid-set-columns(1);
+    }
+
+    &--one-column-full {
+        width: 98svw;
+        @include grid-set-columns(1);
+    }
+
+    &--two-columns {
+        @include grid-set-columns(2);
+    }
+
+    &--two-columns-nested {
+        // For nesting inside other grids, so the svw does not overflow
+        @include grid-set-columns(2);
+        width: 80%;
+    }
+
+    &--three-columns {
+        @include grid-set-columns(3);
     }
 }
 
@@ -111,7 +153,7 @@
         padding: var(--space-xs);
         padding-top: var();
         background-color: var(--clr-gray-800);
-        border-radius: var(--btn-border-radius);
+        border-radius: var(--button-border-radius);
 
         &--full-width {
             grid-column: 1 / -1;
@@ -123,7 +165,7 @@
         padding: var(--space-3xs);
         margin-top: var(--space-2xs);
         background-color: var(--clr-gray-900);
-        border-radius: var(--btn-border-radius);
+        border-radius: var(--button-border-radius);
     }
 
     &__buttons {
