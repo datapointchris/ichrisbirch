@@ -24,6 +24,9 @@ DEFAULT_USER_PREFERENCES = {
     'theme': 'turquoise',
     'dark_mode': True,
     'notifications': False,
+    'box_packing': {
+        'compact_view': True,
+    },
     'dashboard_layout': [
         ['tasks_priority', 'countdowns', 'events'],
         ['habits', 'brainlog', 'devlog'],
