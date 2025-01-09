@@ -1,19 +1,17 @@
 :root {
-    --btn-border-radius: 12px;
+    --button-border-radius: 12px;
 }
 
-@mixin button-boxy {
-    --bottom-color: var(--clr-gray-200);
-    --right-color: var(--clr-gray-050);
+@mixin button-boxy($bottom-color: var(--clr-gray-200), $right-color: var(--clr-gray-050)) {
     box-shadow:
-        1px 0 0 var(--right-color),
-        1px 1px 0 var(--bottom-color),
-        2px 1px 0 var(--right-color),
-        2px 2px 0 var(--bottom-color),
-        3px 2px 0 var(--right-color),
-        3px 3px 0 var(--bottom-color),
-        4px 3px 0 var(--right-color),
-        4px 4px 0 var(--bottom-color);
+        1px 0 0 $right-color,
+        1px 1px 0 $bottom-color,
+        2px 1px 0 $right-color,
+        2px 2px 0 $bottom-color,
+        3px 2px 0 $right-color,
+        3px 3px 0 $bottom-color,
+        4px 3px 0 $right-color,
+        4px 4px 0 $bottom-color;
 }
 
 @mixin button-textbox {
@@ -22,7 +20,7 @@
     font-size: var(--fs-400);
     color: var(--clr-text);
     background-color: var(--clr-gray-800);
-    border-radius: var(--btn-border-radius);
+    border-radius: var(--button-border-radius);
     box-shadow:
         5px 5px 5px 0px var(--clr-black-trans-1000),
         inset 0px 0px 5px 0px var(--clr-gray-400),
@@ -46,17 +44,6 @@
         background: none;
         border: none;
         padding: 0;
-    }
-
-    &--icon {
-        // for submit buttons that are using a fontawesome icon
-        transition: all 0.2s ease-in-out;
-        color: var(--clr-text);
-
-        &:hover {
-            transform: scale(1.8);
-            transition: all 0.2s ease-in-out;
-        }
     }
 
     &--success {
@@ -120,6 +107,48 @@
                 background-size: 100% 2px;
             }
         }
+    }
+}
+
+.button-icon {
+    // for submit buttons that are using a fontawesome icon
+    transition: all 0.2s ease-in-out;
+    color: var(--clr-text);
+
+    &:hover:not(.pressed) {
+        transform: scale(1.8);
+        transition: all 0.2s ease-in-out;
+        color: var(--clr-accent-light);
+    }
+    &.pressed {
+        color: var(--clr-accent);
+    }
+}
+
+.button-toggle-selector {
+    padding: var(--space-s);
+    border-radius: var(--button-border-radius);
+    background-color: var(--clr-primary);
+    box-shadow: var(--floating-box);
+    font-size: var(--fs-400);
+    color: var(--clr-text);
+    text-align: center;
+
+    &.pressed {
+        // invert the regular button-3d box-shadow
+        transform: scale(1.05); /* a depressed button looks smaller */
+        color: var(--clr-accent-light);
+        box-shadow: var(--floating-box-pressed);
+    }
+
+    &.left {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    &.right {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
     }
 }
 
@@ -233,7 +262,7 @@
     }
 }
 
-.btn-submit-issue {
+.button-submit-issue {
     $button-size: 100px;
     position: absolute;
     top: calc($button-size / 2);
