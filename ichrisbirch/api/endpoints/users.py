@@ -45,6 +45,15 @@ async def me(user: CurrentUser):
     return user
 
 
+@router.patch('/me/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+async def complete(user: CurrentUser, update: dict, session: Session = Depends(get_sqlalchemy_session)):
+    logger.debug(f'update: user preferences {update}')
+    user.preferences = user.preferences | update
+    session.commit()
+    session.refresh(user)
+    return user
+
+
 @router.get('/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def read_one(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
