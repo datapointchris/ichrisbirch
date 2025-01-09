@@ -28,7 +28,7 @@
     </div>
 
     <div class="grid grid--two-columns-nested">
-      {% for item in selected_box.items %}
+      {% for item in selected_box.items|sort(attribute='name') %}
       <div class="grid__item">
         <h3>{{ item.name }}</h3>
         <div class="packed-box-item__details">
