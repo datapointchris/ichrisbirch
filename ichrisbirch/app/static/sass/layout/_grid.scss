@@ -97,6 +97,10 @@
             background-color: var(--clr-primary--darker);
             box-shadow: var(--floating-box-pressed);
         }
+
+        >h3 {
+            line-height: var(--space-l);
+        }
     }
 
     &--highlighted {

@@ -10741,6 +10741,9 @@ nav a:hover {
   background-color: var(--clr-primary--darker);
   box-shadow: var(--floating-box-pressed);
 }
+.grid__item > h3 {
+  line-height: var(--space-l);
+}
 .grid--highlighted {
   background-color: var(--clr-primary--darker);
   box-shadow: var(--floating-box-pressed);
