@@ -27,7 +27,7 @@ class Box(Base):
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'boxes'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    number: Mapped[int] = mapped_column(Integer, nullable=True)
+    number: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     size: Mapped[BoxSize] = mapped_column(Enum(BoxSize), nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean)
