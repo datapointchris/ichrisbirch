@@ -10733,13 +10733,47 @@ nav a:hover {
   padding: var(--space-m);
   text-align: center;
   font-size: var(--fs-400);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   background-color: var(--clr-primary);
   box-shadow: var(--floating-box);
 }
 .grid__item--highlighted {
   background-color: var(--clr-primary--darker);
   box-shadow: var(--floating-box-pressed);
+}
+.grid--highlighted {
+  background-color: var(--clr-primary--darker);
+  box-shadow: var(--floating-box-pressed);
+}
+
+.grid-compact {
+  display: grid;
+  width: 80svw;
+  gap: 0;
+  margin: 0 auto;
+  padding: 0;
+  justify-content: center;
+}
+.grid-compact--one-column {
+  width: 50svw;
+  grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
+.grid-compact--one-column-wide {
+  grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
+.grid-compact--one-column-full {
+  width: 98svw;
+  grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
+.grid-compact--two-columns {
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
+}
+.grid-compact--two-columns-nested {
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
+  width: 80%;
+}
+.grid-compact--three-columns {
+  grid-template-columns: repeat(3, minmax(300px, 1fr));
 }
 
 .item-details {
@@ -10753,7 +10787,7 @@ nav a:hover {
   padding: var(--space-xs);
   padding-top: var();
   background-color: var(--clr-gray-800);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
 }
 .item-details__item--full-width {
   grid-column: 1/-1;
@@ -10763,7 +10797,7 @@ nav a:hover {
   padding: var(--space-3xs);
   margin-top: var(--space-2xs);
   background-color: var(--clr-gray-900);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
 }
 .item-details__buttons {
   display: flex;
@@ -10783,7 +10817,7 @@ nav a:hover {
   }
 }
 :root {
-  --btn-border-radius: 12px;
+  --button-border-radius: 12px;
 }
 
 .button {
@@ -10792,7 +10826,7 @@ nav a:hover {
   font-size: var(--fs-400);
   color: var(--clr-text);
   background-color: var(--clr-gray-800);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
   text-shadow: 2px 4px 1px var(--clr-black-trans-800);
   transition: all 0.1s ease-in-out;
@@ -10806,14 +10840,6 @@ nav a:hover {
   background: none;
   border: none;
   padding: 0;
-}
-.button--icon {
-  transition: all 0.2s ease-in-out;
-  color: var(--clr-text);
-}
-.button--icon:hover {
-  transform: scale(1.8);
-  transition: all 0.2s ease-in-out;
 }
 .button--success:hover {
   color: var(--clr-accent--green);
@@ -10863,7 +10889,43 @@ nav a:hover {
   background-size: 100% 2px;
 }
 
-.btn-submit-issue {
+.button-icon {
+  transition: all 0.2s ease-in-out;
+  color: var(--clr-text);
+}
+.button-icon:hover:not(.pressed) {
+  transform: scale(1.8);
+  transition: all 0.2s ease-in-out;
+  color: var(--clr-accent-light);
+}
+.button-icon.pressed {
+  color: var(--clr-accent);
+}
+
+.button-toggle-selector {
+  padding: var(--space-s);
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+  font-size: var(--fs-400);
+  color: var(--clr-text);
+  text-align: center;
+}
+.button-toggle-selector.pressed {
+  transform: scale(1.05); /* a depressed button looks smaller */
+  color: var(--clr-accent-light);
+  box-shadow: var(--floating-box-pressed);
+}
+.button-toggle-selector.left {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.button-toggle-selector.right {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.button-submit-issue {
   position: absolute;
   top: 50px;
   right: 50px;
@@ -10876,24 +10938,24 @@ nav a:hover {
   color: var(--clr-accent-light);
   transition: all 0.4s ease-in-out;
 }
-.btn-submit-issue__text {
+.button-submit-issue__text {
   position: relative;
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
   text-align: center;
 }
-.btn-submit-issue__icon {
+.button-submit-issue__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
   width: 33px;
   height: 33px;
 }
-.btn-submit-issue:hover {
+.button-submit-issue:hover {
   color: var(--clr-accent);
   transition: all 0.4s ease-in-out;
 }
-.btn-submit-issue::before {
+.button-submit-issue::before {
   /* GRAY BUTTON ON TOP */
   position: absolute;
   top: 0;
@@ -10908,13 +10970,13 @@ nav a:hover {
   transition: all 0.4s ease-in-out;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
-.btn-submit-issue:hover::before {
+.button-submit-issue:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(3px);
   transition: all 0.4s ease-in-out;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
-.btn-submit-issue::after {
+.button-submit-issue::after {
   /* OUTER RING
   The outer ring has a delay for the press animation to make it appear
   that it is being depressed by the inner button.
@@ -10931,7 +10993,7 @@ nav a:hover {
   transition: all 0.4s ease-in-out 0.12s;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
-.btn-submit-issue:hover::after {
+.button-submit-issue:hover::after {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(3px);
   transition: all 0.4s ease-in-out 0.12s;
@@ -10944,11 +11006,11 @@ nav a:hover {
   font-size: var(--fs-400);
   color: var(--clr-text);
   background-color: var(--clr-gray-800);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
   width: 90%;
   border: none;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   font-size: var(--fs-400);
   padding: 0.5em 1.75em;
   color: var(--clr-text);
@@ -10963,7 +11025,7 @@ nav a:hover {
   text-align: center;
   font-size: var(--fs-400);
   line-height: 1.5em;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   background-color: var(--clr-black-trans-600);
   box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
 }
@@ -10989,7 +11051,7 @@ nav a:hover {
 }
 
 :root {
-  --btn-border-radius: 12px;
+  --button-border-radius: 12px;
 }
 
 .button {
@@ -10998,7 +11060,7 @@ nav a:hover {
   font-size: var(--fs-400);
   color: var(--clr-text);
   background-color: var(--clr-gray-800);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
   text-shadow: 2px 4px 1px var(--clr-black-trans-800);
   transition: all 0.1s ease-in-out;
@@ -11012,14 +11074,6 @@ nav a:hover {
   background: none;
   border: none;
   padding: 0;
-}
-.button--icon {
-  transition: all 0.2s ease-in-out;
-  color: var(--clr-text);
-}
-.button--icon:hover {
-  transform: scale(1.8);
-  transition: all 0.2s ease-in-out;
 }
 .button--success:hover {
   color: var(--clr-accent--green);
@@ -11069,7 +11123,43 @@ nav a:hover {
   background-size: 100% 2px;
 }
 
-.btn-submit-issue {
+.button-icon {
+  transition: all 0.2s ease-in-out;
+  color: var(--clr-text);
+}
+.button-icon:hover:not(.pressed) {
+  transform: scale(1.8);
+  transition: all 0.2s ease-in-out;
+  color: var(--clr-accent-light);
+}
+.button-icon.pressed {
+  color: var(--clr-accent);
+}
+
+.button-toggle-selector {
+  padding: var(--space-s);
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+  font-size: var(--fs-400);
+  color: var(--clr-text);
+  text-align: center;
+}
+.button-toggle-selector.pressed {
+  transform: scale(1.05); /* a depressed button looks smaller */
+  color: var(--clr-accent-light);
+  box-shadow: var(--floating-box-pressed);
+}
+.button-toggle-selector.left {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.button-toggle-selector.right {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.button-submit-issue {
   position: absolute;
   top: 50px;
   right: 50px;
@@ -11082,24 +11172,24 @@ nav a:hover {
   color: var(--clr-accent-light);
   transition: all 0.4s ease-in-out;
 }
-.btn-submit-issue__text {
+.button-submit-issue__text {
   position: relative;
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
   text-align: center;
 }
-.btn-submit-issue__icon {
+.button-submit-issue__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
   width: 33px;
   height: 33px;
 }
-.btn-submit-issue:hover {
+.button-submit-issue:hover {
   color: var(--clr-accent);
   transition: all 0.4s ease-in-out;
 }
-.btn-submit-issue::before {
+.button-submit-issue::before {
   /* GRAY BUTTON ON TOP */
   position: absolute;
   top: 0;
@@ -11114,13 +11204,13 @@ nav a:hover {
   transition: all 0.4s ease-in-out;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
-.btn-submit-issue:hover::before {
+.button-submit-issue:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(3px);
   transition: all 0.4s ease-in-out;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
-.btn-submit-issue::after {
+.button-submit-issue::after {
   /* OUTER RING
   The outer ring has a delay for the press animation to make it appear
   that it is being depressed by the inner button.
@@ -11137,7 +11227,7 @@ nav a:hover {
   transition: all 0.4s ease-in-out 0.12s;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
 }
-.btn-submit-issue:hover::after {
+.button-submit-issue:hover::after {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(3px);
   transition: all 0.4s ease-in-out 0.12s;
@@ -11157,9 +11247,7 @@ input[type=checkbox] {
           appearance: none;
   background-color: transparent;
   transition: all 0.1s;
-  --bottom-color: var(--clr-gray-200);
-  --right-color: var(--clr-gray-050);
-  box-shadow: 1px 0 0 var(--right-color), 1px 1px 0 var(--bottom-color), 2px 1px 0 var(--right-color), 2px 2px 0 var(--bottom-color), 3px 2px 0 var(--right-color), 3px 3px 0 var(--bottom-color), 4px 3px 0 var(--right-color), 4px 4px 0 var(--bottom-color);
+  box-shadow: 1px 0 0 var(--clr-gray-050), 1px 1px 0 var(--clr-gray-200), 2px 1px 0 var(--clr-gray-050), 2px 2px 0 var(--clr-gray-200), 3px 2px 0 var(--clr-gray-050), 3px 3px 0 var(--clr-gray-200), 4px 3px 0 var(--clr-gray-050), 4px 4px 0 var(--clr-gray-200);
 }
 input[type=checkbox]:checked::after {
   content: "";
@@ -11205,7 +11293,7 @@ input[type=checkbox]:focus-visible {
 .flash-messages__message {
   margin: var(--space-2xs);
   padding: var(--space-2xs) var(--space-s);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
   font-size: var(--fs-400);
   line-height: 2em;
@@ -11374,7 +11462,7 @@ input[type=checkbox]:focus-visible {
 .radio-scale-selector label {
   display: inline-block;
   padding: 15px 20px;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
@@ -11496,7 +11584,7 @@ input[type=checkbox]:focus-visible {
 .github-issue-form {
   padding: var(--space-s) var(--space-l);
   text-align: center;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   background-color: var(--clr-primary);
   color: var(--clr-accent-light);
   font-size: var(--fs-500);
@@ -11609,6 +11697,114 @@ input[type=checkbox]:focus-visible {
   transition: 0.375s ease;
 }
 
+span[data-tooltip] {
+  position: relative;
+}
+span[data-tooltip]:after, span[data-tooltip]:before {
+  position: absolute;
+  visibility: hidden;
+  opacity: 0;
+  box-shadow: var(--floating-box);
+  z-index: 99;
+  transition: all 0.2s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+}
+span[data-tooltip]:before {
+  content: attr(data-tooltip);
+  background: var(--clr-black-trans-600);
+  color: var(--clr-text);
+  font-size: var(--fs-300);
+  padding: var(--space-3xs) var(--space-2xs);
+  border-radius: var(--button-border-radius);
+  white-space: nowrap;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+span[data-tooltip]:after {
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  content: "";
+}
+span[data-tooltip]:hover:after, span[data-tooltip]:hover:before {
+  visibility: visible;
+  opacity: 0.85;
+  transform: translateY(0px);
+  transition: all 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+}
+span[data-tooltip].top:before, span[data-tooltip].top:after {
+  transform: translateY(20px);
+}
+span[data-tooltip].top:hover:after, span[data-tooltip].top:hover:before {
+  transform: translateY(0px);
+}
+span[data-tooltip].bottom:before, span[data-tooltip].bottom:after {
+  transform: translateY(-20px);
+}
+span[data-tooltip].bottom:hover:after, span[data-tooltip].bottom:hover:before {
+  transform: translateY(0px);
+}
+span[data-tooltip].left:before, span[data-tooltip].left:after {
+  transform: translateX(0px);
+}
+span[data-tooltip].left:hover:after, span[data-tooltip].left:hover:before {
+  transform: translateX(-20px);
+}
+span[data-tooltip].right:before, span[data-tooltip].right:after {
+  transform: translateX(0px);
+}
+span[data-tooltip].right:hover:after, span[data-tooltip].right:hover:before {
+  transform: translateX(20px);
+}
+span[data-tooltip][data-position=top]:before {
+  bottom: 100%;
+  left: -130%;
+  margin-bottom: 10px;
+}
+span[data-tooltip][data-position=top]:after {
+  border-top-color: var(--clr-gray-1000);
+  border-bottom: none;
+  bottom: 101%;
+  left: calc(50% - 6px);
+  margin-bottom: 4px;
+}
+span[data-tooltip][data-position=bottom]:before {
+  top: 100%;
+  left: -130%;
+  margin-top: 10px;
+}
+span[data-tooltip][data-position=bottom]:after {
+  border-bottom-color: var(--clr-gray-1000);
+  border-top: none;
+  top: 100%;
+  left: 5px;
+  margin-top: 4px;
+}
+span[data-tooltip][data-position=left]:before {
+  top: -12%;
+  right: 100%;
+  margin-right: 10px;
+}
+span[data-tooltip][data-position=left]:after {
+  border-left-color: var(--clr-gray-1000);
+  border-right: none;
+  top: calc(50% - 3px);
+  right: 100%;
+  margin-top: -6px;
+  margin-right: 4px;
+}
+span[data-tooltip][data-position=right]:before {
+  top: -5%;
+  left: 100%;
+  margin-left: 10px;
+}
+span[data-tooltip][data-position=right]:after {
+  border-right-color: var(--clr-gray-1000);
+  border-left: none;
+  top: calc(50% - 6px);
+  left: calc(100% + 4px);
+}
+
 .searchbox {
   margin: var(--space-xl) auto;
   text-align: center;
@@ -11643,7 +11839,7 @@ input[type=checkbox]:focus-visible {
   text-align: left;
   font-size: var(--fs-400);
   line-height: 1.6em;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   background-color: var(--clr-primary);
   box-shadow: var(--floating-box);
 }
@@ -11732,6 +11928,7 @@ input[type=checkbox]:focus-visible {
 .packed-box__title {
   color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
+  font-weight: var(--fs-400);
   line-height: 1.1em;
 }
 .packed-box__link {
@@ -11753,6 +11950,51 @@ input[type=checkbox]:focus-visible {
   color: var(--clr-accent--red);
 }
 .packed-box__details--liquid {
+  color: var(--clr-accent--blue);
+}
+
+.packed-box-compact {
+  display: grid;
+  grid-template-columns: 6fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  margin-bottom: var(--space-xs);
+  padding-block: var(--space-xs);
+  padding-inline: var(--space-m);
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+  font-size: var(--fs-400);
+  transition: transform 0.3s ease-in-out;
+}
+.packed-box-compact:hover {
+  box-shadow: var(--bubble-box);
+  transform: scale(1.01) translateY(calc(var(--space-3xs) * -0.4));
+  transition: transform 0.3s ease-in-out;
+}
+.packed-box-compact__title {
+  margin: 0;
+  font-size: var(--fs-500);
+  font-weight: var(--fs-400);
+  color: var(--clr-accent-light);
+  text-shadow: var(--deep-3d-text-shadow);
+}
+.packed-box-compact__link {
+  text-decoration: none;
+}
+.packed-box-compact__link:hover {
+  text-decoration: underline;
+}
+.packed-box-compact__details {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+.packed-box-compact__details--essential {
+  color: var(--clr-accent--orange);
+}
+.packed-box-compact__details--warm {
+  color: var(--clr-accent--red);
+}
+.packed-box-compact__details--liquid {
   color: var(--clr-accent--blue);
 }
 
@@ -11781,6 +12023,10 @@ input[type=checkbox]:focus-visible {
   text-align: center;
 }
 .box-listing-sort__item {
+  padding: 0 var(--space-m);
+}
+.box-listing-sort__title {
+  font-size: var(--fs-700);
   padding: 0 var(--space-m);
 }
 
@@ -12201,7 +12447,7 @@ input[type=checkbox]:focus-visible {
 }
 .money-wasted--total-amount {
   border: 4px solid var(--clr-accent--red);
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
 }
 
 .log-window {
@@ -12213,7 +12459,7 @@ input[type=checkbox]:focus-visible {
   overflow: auto;
   font-size: var(--fs-300);
   line-height: 1.5em;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   background-color: var(--clr-black-trans-600);
   box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
 }
@@ -12301,7 +12547,7 @@ input[type=checkbox]:focus-visible {
   align-items: start;
   line-height: 1.5em;
   text-align: left;
-  border-radius: var(--btn-border-radius);
+  border-radius: var(--button-border-radius);
   background-color: var(--clr-gray-700);
   box-shadow: var(--floating-box), 2px 4px 10px var(--clr-gray-trans-700);
 }
