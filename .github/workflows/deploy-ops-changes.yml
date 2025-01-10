@@ -1,0 +1,65 @@
+name: Deploy Ops Changes
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Deploy Project
+    types: [completed]
+  push:
+    paths:
+    - 'ichrisbirch/deploy/**'
+
+env:
+  SSH_KEY_PATH: webserver.pem
+
+jobs:
+  deploy-ops:
+    name: Deploy project to EC2
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-${{ github.event.repository.name }}-role
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Retrieve SSH Key from S3 Bucket
+        id: get_ssh_key
+        run: |
+          aws s3 cp s3://ichrisbirch-webserver-keys/${{ env.SSH_KEY_PATH }} ${{ env.SSH_KEY_PATH }}
+          chmod 600 ${{ env.SSH_KEY_PATH }}
+        shell: bash
+
+      - name: Set Up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.6
+
+      - name: Initialize Terraform
+        run: terraform init
+        working-directory: ${{ github.workspace }}/terraform
+
+      - name: Get Elastic IP from Terraform Output
+        id: terraform_output
+        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_ENV"
+        working-directory: ${{ github.workspace }}/terraform
+
+      - name: Run Alembic Migrations
+        run: |
+          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
+            cd /var/www/ichrisbirch/deploy &&
+            export ENVIRONMENT=production &&
+            ./deploy-nginx.sh &&
+            ./deploy-supervisor.sh
+          '
