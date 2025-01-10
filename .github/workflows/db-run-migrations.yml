@@ -1,4 +1,4 @@
-name: Run DB Migrations
+name: DB Run Migrations
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ env:
 
 jobs:
   run-migrations:
-    name: Deploy project to EC2
+    name: Alembic Migrations
     runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 

@@ -15,7 +15,7 @@ env:
 
 jobs:
   deploy-ops:
-    name: Deploy project to EC2
+    name: Deploy Operational Changes
     runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
@@ -55,11 +55,18 @@ jobs:
         run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_ENV"
         working-directory: ${{ github.workspace }}/terraform
 
-      - name: Run Alembic Migrations
+      - name: Run NGINX Deploy Script
         run: |
           ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
             cd /var/www/ichrisbirch/deploy &&
             export ENVIRONMENT=production &&
-            ./deploy-nginx.sh &&
+            ./deploy-nginx.sh
+          '
+
+      - name: Run Supervisor Deploy Script
+        run: |
+          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
+            cd /var/www/ichrisbirch/deploy &&
+            export ENVIRONMENT=production &&
             ./deploy-supervisor.sh
           '
