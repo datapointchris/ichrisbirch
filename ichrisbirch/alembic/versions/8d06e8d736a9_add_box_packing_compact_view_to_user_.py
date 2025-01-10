@@ -18,7 +18,12 @@ def upgrade() -> None:
     op.execute(
         """
         UPDATE users
-        SET preferences = jsonb_insert(preferences::jsonb, '{box_packing}', '{"compact_view":true}'::jsonb);
+        SET preferences = jsonb_insert(
+            preferences::jsonb,
+            '{box_packing}',
+            '{"compact_view": true}'::jsonb,
+            true
+        );
     """
     )
 
