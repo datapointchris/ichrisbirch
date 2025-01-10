@@ -1,4 +1,4 @@
-name: Deploy Ops Changes
+name: Ops Update Supervisor
 
 on:
   workflow_dispatch:
@@ -8,14 +8,14 @@ on:
     types: [completed]
   push:
     paths:
-    - 'ichrisbirch/deploy/**'
+    - 'ichrisbirch/deploy/prod/supervisor/**'
 
 env:
   SSH_KEY_PATH: webserver.pem
 
 jobs:
   deploy-ops:
-    name: Deploy Operational Changes
+    name: Update Supervisor Config
     runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
@@ -54,14 +54,6 @@ jobs:
         id: terraform_output
         run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_ENV"
         working-directory: ${{ github.workspace }}/terraform
-
-      - name: Run NGINX Deploy Script
-        run: |
-          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
-            cd /var/www/ichrisbirch/deploy &&
-            export ENVIRONMENT=production &&
-            ./deploy-nginx.sh
-          '
 
       - name: Run Supervisor Deploy Script
         run: |
