@@ -16,10 +16,6 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/terraform
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -53,13 +49,16 @@ jobs:
 
       - name: Initialize Terraform
         run: terraform init
+        working-directory: ${{ github.workspace }}/terraform
 
       - name: Terraform Validate
         run: terraform validate
+        working-directory: ${{ github.workspace }}/terraform
 
       - name: Terraform Plan
         id: terraform_plan
         run: terraform plan -detailed-exitcode -out=tfplan
+        working-directory: ${{ github.workspace }}/terraform
         continue-on-error: true
 
       - name: Display Terraform Plan Exit Code
@@ -68,5 +67,5 @@ jobs:
 
       - name: Check for Infrastructure Changes
         id: check_infra_changes
-        run: python3 ../scripts/terraform_infra_check.py
+        run: python3 scripts/terraform_infra_check.py
         if: steps.terraform_plan.outputs.exitcode == 2
