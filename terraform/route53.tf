@@ -10,6 +10,14 @@ resource "aws_route53_zone" "ichrisbirch" {
   force_destroy = false
 }
 
+resource "aws_route53_record" "ichrisbirch_a" {
+  name    = "ichrisbirch.com"
+  zone_id = aws_route53_zone.ichrisbirch.zone_id
+  ttl     = 300
+  type    = "A"
+  records = [aws_eip.ichrisbirch_elastic_ip.public_ip]
+}
+
 resource "aws_route53_record" "www_ichrisbirch_a" {
   name    = "www.ichrisbirch.com"
   zone_id = aws_route53_zone.ichrisbirch.zone_id

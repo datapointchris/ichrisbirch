@@ -20,7 +20,8 @@ update_machine() {
 base_installs() {
   # NOTE: Install the postgresql-client version that matches the database
   # this is for pg_dump backups with the scheduler.
-  apt install curl git git-secret postgresql-client-16 unzip tmux tldr tree supervisor nginx neovim -y
+  apt install curl git git-secret postgresql-client-16 unzip -y
+  apt install tmux tldr tree supervisor nginx neovim -y
 }
 
 installs_for_building_psycopg2_from_source() {
@@ -79,6 +80,19 @@ make_log_files() {
   /var/www/ichrisbirch/scripts/make_log_files.sh
 }
 
+
+install_certbot() {
+  sudo snap install --classic certbot
+  sudo ln -s /snap/bin/certbot /usr/bin/certbot
+}
+
+install_ssl_certificate_for_nginx() {
+  # note: no need for docs.ichrisbirch because Github Pages handles in the Pages > Custom domain section
+  sudo certbot certonly --cert-name ichrisbirch.com --nginx \
+    --non-interactive --agree-tos --no-eff-email --email ichrisbirch@gmail.com \
+    --domains ichrisbirch.com,www.ichrisbirch.com,api.ichrisbirch.com
+}
+
 setup_nginx() {
   rm /etc/nginx/sites-enabled/default
   # Must cd here because the deploy script has relative paths
@@ -109,6 +123,9 @@ main() {
   install_project
   unlock_secret_files
   make_log_files
+  install_certbot
+  # This may be a manual step of copying certs from old to new
+  # install_ssl_certificate_for_nginx
   setup_nginx
   setup_supervisor
   set_permissions
