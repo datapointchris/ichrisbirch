@@ -56,6 +56,7 @@ class FastAPISettings:
         self.description: str = """## Backend API for iChrisBirch.com"""
         _protocol = os.environ['PROTOCOL']
         self.allowed_origins: list[str] = [
+            '127.0.0.1',
             'https://ichrisbirch.com',
             'https://www.ichrisbirch.com',
             f'{_protocol}://localhost',
