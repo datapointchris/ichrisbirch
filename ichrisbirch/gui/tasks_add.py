@@ -26,8 +26,8 @@ def submit_form():
         messagebox.showwarning('Validation Error', 'Please fill all fields correctly.')
         return
 
-    url = 'http://api.ichrisbirch.com/tasks/'
-    # url = 'http://localhost:6201/tasks/'
+    url = 'https://api.ichrisbirch.com/tasks/'
+    # url = 'https://localhost:6201/tasks/'
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_ACCESS_TOKEN',  # Placeholder for authorization header

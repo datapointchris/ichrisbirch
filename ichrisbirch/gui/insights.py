@@ -19,7 +19,7 @@ def submit_form():
         messagebox.showwarning('Validation Error', 'Please fill all fields correctly.')
         return
 
-    insights_endpoint = 'http://localhost:6201/articles/insights/'
+    insights_endpoint = f'{settings.api_url}/articles/insights/'
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_ACCESS_TOKEN',  # Placeholder for authorization header
