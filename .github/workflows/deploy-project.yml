@@ -33,7 +33,7 @@ jobs:
           IP: ${{ needs.retrieve-webserver-key-and-ip.outputs.webserver_ip }}
         run: |
           SSH_KEY_PATH="${{ github.workspace }}/${{ vars.SSH_KEY_FILENAME }}"
-          SSH_CMD="ssh -t -o StrictHostKeyChecking=no -i ${{ vars.SSH_KEY_FILENAME }} ubuntu@$IP"
+          SSH_CMD="ssh -t -o StrictHostKeyChecking=no -i $SSH_KEY_PATH ubuntu@$IP"
           echo "SSH_CMD=$SSH_CMD" >> $GITHUB_OUTPUT
 
   changed-files:
