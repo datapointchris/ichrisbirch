@@ -14,6 +14,8 @@ jobs:
     name: Setup Deploy
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
     - name: Retrieve Webserver Key and IP
       id: webserver-key-ip
       uses: ./.github/workflows/reusable-retrieve-webserver-key-and-ip.yml@main
