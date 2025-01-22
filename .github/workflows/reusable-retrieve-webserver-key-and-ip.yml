@@ -32,9 +32,14 @@ jobs:
       - name: Retrieve SSH Key from S3 Bucket
         id: get_ssh_key
         run: |
-          aws s3 cp s3://ichrisbirch-webserver-keys/${{ vars.SSH_KEY_FILENAME }} ${{ github.workspace }}/${{ vars.SSH_KEY_FILENAME }}
-          chmod 600 ${{ github.workspace }}/${{ vars.SSH_KEY_FILENAME }}
-        shell: bash
+          aws s3 cp s3://ichrisbirch-webserver-keys/${{ vars.SSH_KEY_FILENAME }} ${{ vars.SSH_KEY_FILENAME }}
+          chmod 600 ${{ vars.SSH_KEY_FILENAME }}
+
+      - name: Upload SSH Key to GitHub Actions Runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssh-key
+          path: ${{ vars.SSH_KEY_FILENAME }}
 
       - name: Set Up Terraform
         uses: hashicorp/setup-terraform@v3

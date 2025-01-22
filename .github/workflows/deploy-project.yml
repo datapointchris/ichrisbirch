@@ -27,13 +27,16 @@ jobs:
     outputs:
       ssh-cmd: ${{ steps.ssh-command.outputs.SSH_CMD }}
     steps:
+      - name: Download SSH Key
+        uses: actions/download-artifact@v4
+        with:
+          name: ssh-key
       - name: Set SSH Command
         id: ssh-command
         env:
           IP: ${{ needs.retrieve-webserver-key-and-ip.outputs.webserver_ip }}
         run: |
-          SSH_KEY_PATH="${{ github.workspace }}/${{ vars.SSH_KEY_FILENAME }}"
-          SSH_CMD="ssh -t -o StrictHostKeyChecking=no -i $SSH_KEY_PATH ubuntu@$IP"
+          SSH_CMD="ssh -t -o StrictHostKeyChecking=no -i ${{ vars.SSH_KEY_FILENAME }} ubuntu@$IP"
           echo "SSH_CMD=$SSH_CMD" >> $GITHUB_OUTPUT
 
   changed-files:
