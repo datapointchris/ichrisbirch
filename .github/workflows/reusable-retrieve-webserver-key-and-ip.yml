@@ -32,8 +32,8 @@ jobs:
       - name: Retrieve SSH Key from S3 Bucket
         id: get_ssh_key
         run: |
-          aws s3 cp s3://ichrisbirch-webserver-keys/${{ vars.SSH_KEY_FILENAME }} ${{ vars.SSH_KEY_FILENAME }}
-          chmod 600 ${{ vars.SSH_KEY_FILENAME }}
+          aws s3 cp s3://ichrisbirch-webserver-keys/${{ vars.SSH_KEY_FILENAME }} ${{ github.workspace }}/${{ vars.SSH_KEY_FILENAME }}
+          chmod 600 ${{ github.workspace }}/${{ vars.SSH_KEY_FILENAME }}
         shell: bash
 
       - name: Set Up Terraform
