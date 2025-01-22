@@ -1,6 +1,5 @@
 import logging
 
-import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -30,7 +29,10 @@ def enforce_login():
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
     books_api = QueryAPI(base_url='books', logger=logger, response_model=schemas.Book)
-    books = books_api.get_many()
+    if search := request.args.get('search'):
+        books = books_api.get_many('search', params={'q': search})
+    else:
+        books = books_api.get_many()
     return render_template('books/index.html', books=books)
 
 
@@ -68,34 +70,8 @@ def crud():
                     for error in errors:
                         flash(f'{field}: {error}', 'error')
                         logger.warning(f'{field}: {error}')
-        case 'archive':
-            books_api.patch(data.get('id'), json={'is_archived': True})
-        case 'unarchive':
-            books_api.patch(data.get('id'), json={'is_archived': False})
-        case 'make_current':
-            books_api.patch(data.get('id'), json={'is_current': True})
-        case 'remove_current':
-            books_api.patch(data.get('id'), json={'is_current': False})
-        case 'make_favorite':
-            books_api.patch(data.get('id'), json={'is_favorite': True})
-        case 'unfavorite':
-            books_api.patch(data.get('id'), json={'is_favorite': False})
-        case 'mark_read':
-            if article := books_api.get_one(data.get('id')):
-                books_api.patch(
-                    data.get('id'),
-                    json={
-                        'is_current': False,
-                        'is_archived': True,
-                        'last_read_date': str(pendulum.now()),
-                        'read_count': article.read_count + 1,
-                    },
-                )
         case 'delete':
             books_api.delete(data.get('id'))
-        case 'search':
-            books = books_api.get_many('search', params={'q': data.get('search_text')})
-            return render_template('books/index.html', books=books)
 
         case _:
             return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)

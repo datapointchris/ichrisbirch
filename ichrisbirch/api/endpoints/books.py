@@ -32,29 +32,9 @@ def IDNotFoundError(id: int | str):
 
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def read_many(
-    favorites: Optional[bool] = None,
-    archived: Optional[bool] = None,
-    unread: Optional[bool] = None,
-    session: Session = Depends(get_sqlalchemy_session),
-):
+async def read_many(search: Optional[bool] = None, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.Book).order_by(models.Book.priority.asc())
-    # if favorites is True:
-    #     is_due_for_review = (models.Book.last_read_date.is_not(None)) & (
-    #         models.Book.last_read_date + timedelta(days=float(models.Book.review_days)) <= datetime.now()
-    #     )
-    #     query = query.where(models.Book.is_favorite.is_(True))
-    #     query = query.where((models.Book.last_read_date.is_(None)) | is_due_for_review)
-    # if favorites is False:
-    #     query = query.where(models.Book.is_favorite.is_(False))
-    # if archived is True:
-    #     query = query.where(models.Book.is_archived.is_(True))
-    # if archived is False:
-    #     query = query.where(models.Book.is_archived.is_(False))
-    # if unread is True:
-    #     query = query.where(models.Book.last_read_date.is_(None))
-    # if unread is False:
-    #     query = query.where(models.Book.last_read_date.is_not(None))
+
     return list(session.scalars(query).all())
 
 

@@ -10,10 +10,9 @@
   <li><a href="{{ url_for('books.index') }}">Books</a></li>
   <li><a href="{{ url_for('books.add') }}">Add Book</a></li>
   <li>
-    <form class="task-search-form" method="POST" action="{{ url_for('books.crud') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="text" class="textbox" name="search_text" id="search_text">
-      <button type="submit" name="action" class="button" value="search">
+    <form class="task-search-form" method="GET" action="{{ url_for('books.index') }}">
+      <input type="text" class="textbox" name="search" id="search">
+      <button type="submit" class="button">
         <span class="button__text">Search</span>
       </button>
     </form>
