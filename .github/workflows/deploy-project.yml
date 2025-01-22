@@ -8,54 +8,53 @@ on:
     types: [completed]
   workflow_dispatch:
 
-env:
-  SSH_KEY_PATH: webserver.pem
-
 jobs:
-  deploy-project:
-    name: Deploy project to EC2
-    runs-on: ubuntu-24.04
+  setup:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
-    permissions:
-      id-token: write
-      contents: read
-
+    name: Setup Deploy
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Retrieve Webserver Key and IP
+      id: webserver-key-ip
+      uses: ./.github/workflows/reusable-retrieve-webserver-key-and-ip.yml@main
+    - name: Set SSH Command
+      env:
+        IP: ${{ steps.webserver-key-ip.outputs.webserver_ip }}
+      run: |
+        SSH_CMD="ssh -t -o StrictHostKeyChecking=no -i ${{ vars.SSH_KEY_FILENAME }} ubuntu@$IP"
+        echo "SSH_CMD=$SSH_CMD" >> $GITHUB_ENV
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+  changed-files:
+    name: Get Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      db_any_changed: ${{ steps.changed-files.outputs.db_any_changed }}
+      nginx_any_changed: ${{ steps.changed-files.outputs.nginx_any_changed }}
+      supervisor_any_changed: ${{ steps.changed-files.outputs.supervisor_any_changed }}
+      terraform_any_changed: ${{ steps.changed-files.outputs.terraform_any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
         with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-${{ github.event.repository.name }}-role
-          aws-region: ${{ vars.AWS_REGION }}
+          files_yaml: |
+            db:
+              - ichrisbirch/alembic/versions/*.py
+            nginx:
+              - deploy/prod/nginx/**
+            supervisor:
+              - deploy/prod/supervisor/**
+            terraform:
+              - terraform/**
 
-      - name: Retrieve SSH Key from S3 Bucket
-        id: get_ssh_key
-        run: |
-          aws s3 cp s3://ichrisbirch-webserver-keys/${{ env.SSH_KEY_PATH }} ${{ env.SSH_KEY_PATH }}
-          chmod 600 ${{ env.SSH_KEY_PATH }}
-        shell: bash
-
-      - name: Set Up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.6
-
-      - name: Initialize Terraform
-        run: terraform init
-        working-directory: ${{ github.workspace }}/terraform
-
-      - name: Get Elastic IP from Terraform Output
-        id: terraform_output
-        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_ENV"
-        working-directory: ${{ github.workspace }}/terraform
-
-      - name: Pull and Re-install Project
-        run: |
-          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
+  deploy:
+    name: Pull and Re-install Project
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - run: |
+          ${{ env.SSH_CMD }} '
             cd /var/www/ichrisbirch &&
             git pull &&
             git secret reveal -f &&
@@ -63,8 +62,48 @@ jobs:
             /etc/poetry/bin/poetry install --without dev,cicd
           '
 
-      - name: Restart Supervisor
-        run: |
-          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
-            sudo supervisorctl restart all
+  db-migrations:
+    if: needs.changed-files.outputs.db_any_changed == 'true'
+    name: Run Alembic Migrations
+    runs-on: ubuntu-latest
+    needs: [changed-files, deploy]
+    steps:
+      - run: |
+          ${{ env.SSH_CMD }} '
+            cd /var/www/ichrisbirch/ichrisbirch &&
+            export ENVIRONMENT=production &&
+            /var/www/ichrisbirch/.venv/bin/alembic upgrade head
           '
+
+  nginx-config-deploy:
+    if: needs.changed-files.outputs.nginx_any_changed == 'true'
+    name: Run NGINX Deploy Script
+    runs-on: ubuntu-latest
+    needs: [changed-files, deploy]
+    steps:
+      - run: |
+          ${{ env.SSH_CMD }} '
+            cd /var/www/ichrisbirch/deploy &&
+            export ENVIRONMENT=production &&
+            ./deploy-nginx.sh
+          '
+
+  supervisor-config-deploy:
+    if: needs.changed-files.outputs.supervisor_any_changed == 'true'
+    name: Run Supervisor Deploy Script
+    runs-on: ubuntu-latest
+    needs: [changed-files, deploy]
+    steps:
+      - run: |
+          ${{ env.SSH_CMD }} '
+            cd /var/www/ichrisbirch/deploy &&
+            export ENVIRONMENT=production &&
+            ./deploy-supervisor.sh
+          '
+
+  supervisor-restart:
+    name: Restart Supervisor
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    steps:
+      - run: ${{ env.SSH_CMD }} 'sudo supervisorctl restart all'

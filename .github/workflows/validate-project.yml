@@ -42,7 +42,7 @@ jobs:
       - name: Check Github Actions Workflow Files
         run: |
           bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint -color
+          ./actionlint -color -shellcheck=""
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5

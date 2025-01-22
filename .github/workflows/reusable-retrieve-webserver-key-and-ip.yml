@@ -1,23 +1,18 @@
-name: Ops Update Supervisor
-
+name: Retrieve Webserver Key and IP
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Deploy Project
-    types: [completed]
-  push:
-    paths:
-    - 'ichrisbirch/deploy/prod/supervisor/**'
+  workflow_call:
+    outputs:
+      webserver_ip:
+        value: ${{ jobs.retrieve-webserver-key-and-ip.outputs.webserver_ip }}
 
-env:
-  SSH_KEY_PATH: webserver.pem
 
 jobs:
-  deploy-ops:
-    name: Update Supervisor Config
-    runs-on: ubuntu-24.04
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+  retrieve-webserver-key-and-ip:
+    name: Retrieve Webserver Key and IP
+    runs-on: ubuntu-latest
+    outputs:
+      webserver_ip: ${{ steps.terraform_output.outputs.ELASTIC_IP }}
 
     # These permissions are needed to interact with GitHub's OIDC Token endpoint.
     permissions:
@@ -37,8 +32,8 @@ jobs:
       - name: Retrieve SSH Key from S3 Bucket
         id: get_ssh_key
         run: |
-          aws s3 cp s3://ichrisbirch-webserver-keys/${{ env.SSH_KEY_PATH }} ${{ env.SSH_KEY_PATH }}
-          chmod 600 ${{ env.SSH_KEY_PATH }}
+          aws s3 cp s3://ichrisbirch-webserver-keys/${{ vars.SSH_KEY_FILENAME }} ${{ vars.SSH_KEY_FILENAME }}
+          chmod 600 ${{ vars.SSH_KEY_FILENAME }}
         shell: bash
 
       - name: Set Up Terraform
@@ -52,13 +47,5 @@ jobs:
 
       - name: Get Elastic IP from Terraform Output
         id: terraform_output
-        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_ENV"
+        run: echo "ELASTIC_IP=$(terraform output -raw webserver_elastic_ip)" >> "$GITHUB_OUTPUT"
         working-directory: ${{ github.workspace }}/terraform
-
-      - name: Run Supervisor Deploy Script
-        run: |
-          ssh -t -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} ubuntu@${{ env.ELASTIC_IP }} '
-            cd /var/www/ichrisbirch/deploy &&
-            export ENVIRONMENT=production &&
-            ./deploy-supervisor.sh
-          '
