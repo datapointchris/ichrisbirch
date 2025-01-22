@@ -198,7 +198,8 @@ class Settings:
 
     @property
     def api_url(self) -> str:
-        return f'{self.protocol}://{self.fastapi.host}:{self.fastapi.port}'
+        port = f':{self.fastapi.port}' if self.fastapi.port else ''
+        return f'{self.protocol}://{self.fastapi.host}{port}'
 
 
 def load_environment(env_file: Optional[Path | str] = None):
