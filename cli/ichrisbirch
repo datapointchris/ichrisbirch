@@ -52,7 +52,7 @@ function watchlogs() {
 }
 
 function install() {
-    sudo ln -sf "$ICHRISBIRCH_HOME/bin/ichrisbirch" /usr/local/bin/ichrisbirch
+    sudo ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" /usr/local/bin/ichrisbirch
 }
 
 function dev-start() {
