@@ -123,6 +123,24 @@
     &.pressed {
         color: var(--clr-accent);
     }
+
+    &.success {
+        &:hover {
+            color: var(--clr-accent--green);
+        }
+    }
+
+    &.warning {
+        &:hover {
+            color: var(--clr-accent--yellow);
+        }
+    }
+
+    &.danger {
+        &:hover {
+            color: var(--clr-accent--red);
+        }
+    }
 }
 
 .button-toggle-selector {

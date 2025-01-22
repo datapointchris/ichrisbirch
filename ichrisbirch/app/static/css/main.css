@@ -10904,6 +10904,15 @@ nav a:hover {
 .button-icon.pressed {
   color: var(--clr-accent);
 }
+.button-icon.success:hover {
+  color: var(--clr-accent--green);
+}
+.button-icon.warning:hover {
+  color: var(--clr-accent--yellow);
+}
+.button-icon.danger:hover {
+  color: var(--clr-accent--red);
+}
 
 .button-toggle-selector {
   padding: var(--space-s);
@@ -11137,6 +11146,15 @@ nav a:hover {
 }
 .button-icon.pressed {
   color: var(--clr-accent);
+}
+.button-icon.success:hover {
+  color: var(--clr-accent--green);
+}
+.button-icon.warning:hover {
+  color: var(--clr-accent--yellow);
+}
+.button-icon.danger:hover {
+  color: var(--clr-accent--red);
 }
 
 .button-toggle-selector {

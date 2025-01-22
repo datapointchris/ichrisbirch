@@ -20,7 +20,7 @@
     <h1 class="packed-box__title">Box {{ selected_box.number }}: {{ selected_box.name }}</h1>
     <h2>Size: {{ selected_box.size }}</h2>
     <h3><a href="{{ url_for('box_packing.edit', box_id=selected_box.id) }}"><span
-          class="button-icon button--warning fa-solid fa-pen-to-square"></span></a></h3>
+          class="button-icon warning fa-solid fa-pen-to-square"></span></a></h3>
     <div class="packed-box__details">
       {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
       {% if selected_box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
@@ -47,7 +47,7 @@
               <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
               <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
               <button type="submit" name="action" class="button--hidden" value="orphan_item">
-                <i class="button-icon button--warning fa-solid fa-arrow-up-from-bracket"></i>
+                <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
               </button>
           </span>
           <span class="packed-box-item">
@@ -59,7 +59,7 @@
               <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
               <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
               <button type="submit" name="action" class="button--hidden" value="delete_item">
-                <i class="button-icon button--danger fa-regular fa-trash-can"></i>
+                <i class="button-icon danger fa-regular fa-trash-can"></i>
               </button>
             </form>
           </span>
