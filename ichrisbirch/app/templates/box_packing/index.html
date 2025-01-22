@@ -6,8 +6,7 @@
 <div class="grid grid--one-column-wide">
 
   <div class="grid__item">
-    <form method="GET" id="select_box_form" action="{{ url_for('box_packing.index') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <form method="GET" id="select_box_form">
       <select class="button" id="selected_box_id" onchange="updateSelectedBox(); this.form.submit();">
         <option value="none" selected disabled hidden>Select a Box</option>
         {% for box in boxes %}
