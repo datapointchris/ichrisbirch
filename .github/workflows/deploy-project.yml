@@ -27,10 +27,6 @@ jobs:
     outputs:
       ssh-cmd: ${{ steps.ssh-command.outputs.SSH_CMD }}
     steps:
-      - name: Download SSH Key
-        uses: actions/download-artifact@v4
-        with:
-          name: ssh-key
       - name: Set SSH Command
         id: ssh-command
         env:
@@ -72,6 +68,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ssh-key
+      - name: Set Permissions on SSH Key
+        run: chmod 600 ${{ vars.SSH_KEY_FILENAME }}
       - run: |
           ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch &&
@@ -91,6 +89,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ssh-key
+      - name: Set Permissions on SSH Key
+        run: chmod 600 ${{ vars.SSH_KEY_FILENAME }}
       - run: |
           ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch/ichrisbirch &&
@@ -108,6 +108,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ssh-key
+      - name: Set Permissions on SSH Key
+        run: chmod 600 ${{ vars.SSH_KEY_FILENAME }}
       - run: |
           ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch/deploy &&
@@ -125,6 +127,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ssh-key
+      - name: Set Permissions on SSH Key
+        run: chmod 600 ${{ vars.SSH_KEY_FILENAME }}
       - run: |
           ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch/deploy &&
@@ -141,4 +145,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ssh-key
+      - name: Set Permissions on SSH Key
+        run: chmod 600 ${{ vars.SSH_KEY_FILENAME }}
       - run: ${{ needs.set-ssh-command.outputs.ssh-cmd }} 'sudo supervisorctl restart all'
