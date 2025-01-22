@@ -24,13 +24,16 @@ jobs:
     name: Set SSH Command
     runs-on: ubuntu-latest
     needs: [retrieve-webserver-key-and-ip]
+    outputs:
+      ssh-cmd: ${{ steps.ssh-command.outputs.SSH_CMD }}
     steps:
       - name: Set SSH Command
+        id: ssh-command
         env:
           IP: ${{ needs.retrieve-webserver-key-and-ip.outputs.webserver_ip }}
         run: |
           SSH_CMD="ssh -t -o StrictHostKeyChecking=no -i ${{ vars.SSH_KEY_FILENAME }} ubuntu@$IP"
-          echo "SSH_CMD=$SSH_CMD" >> $GITHUB_ENV
+          echo "SSH_CMD=$SSH_CMD" >> $GITHUB_OUTPUT
 
   changed-files:
     name: Get Changed Files
@@ -62,7 +65,7 @@ jobs:
     needs: [set-ssh-command]
     steps:
       - run: |
-          ${{ env.SSH_CMD }} '
+          ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch &&
             git pull &&
             git secret reveal -f &&
@@ -74,10 +77,10 @@ jobs:
     if: needs.changed-files.outputs.db_any_changed == 'true'
     name: Run Alembic Migrations
     runs-on: ubuntu-latest
-    needs: [changed-files, deploy]
+    needs: [set-ssh-command, changed-files, deploy]
     steps:
       - run: |
-          ${{ env.SSH_CMD }} '
+          ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch/ichrisbirch &&
             export ENVIRONMENT=production &&
             /var/www/ichrisbirch/.venv/bin/alembic upgrade head
@@ -87,10 +90,10 @@ jobs:
     if: needs.changed-files.outputs.nginx_any_changed == 'true'
     name: Run NGINX Deploy Script
     runs-on: ubuntu-latest
-    needs: [changed-files, deploy]
+    needs: [set-ssh-command, changed-files, deploy]
     steps:
       - run: |
-          ${{ env.SSH_CMD }} '
+          ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch/deploy &&
             export ENVIRONMENT=production &&
             ./deploy-nginx.sh
@@ -100,10 +103,10 @@ jobs:
     if: needs.changed-files.outputs.supervisor_any_changed == 'true'
     name: Run Supervisor Deploy Script
     runs-on: ubuntu-latest
-    needs: [changed-files, deploy]
+    needs: [set-ssh-command, changed-files, deploy]
     steps:
       - run: |
-          ${{ env.SSH_CMD }} '
+          ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch/deploy &&
             export ENVIRONMENT=production &&
             ./deploy-supervisor.sh
@@ -112,6 +115,6 @@ jobs:
   supervisor-restart:
     name: Restart Supervisor
     runs-on: ubuntu-latest
-    needs: [deploy]
+    needs: [set-ssh-command, deploy]
     steps:
-      - run: ${{ env.SSH_CMD }} 'sudo supervisorctl restart all'
+      - run: ${{ needs.set-ssh-command.outputs.ssh-cmd }} 'sudo supervisorctl restart all'
