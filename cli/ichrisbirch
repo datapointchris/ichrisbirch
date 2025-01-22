@@ -1,0 +1,172 @@
+#!/usr/bin/env zsh
+# shellcheck shell=bash
+
+if [[ $(uname) == "Darwin" ]]; then
+    ICHRISBIRCH_HOME="$HOME/code/ichrisbirch"
+    LOG_DIR="/usr/local/var/log/ichrisbirch"
+else
+    ICHRISBIRCH_HOME="/var/www/ichrisbirch"
+    LOG_DIR="/var/log/ichrisbirch"
+fi
+DEV_URL="http://macmini.local"
+LOCAL_APP_PORT="6200"
+LOCAL_API_PORT="6201"
+LOCAL_APP_URL="http://localhost:$LOCAL_APP_PORT"
+LOCAL_API_URL="http://localhost:$LOCAL_API_PORT"
+
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
+magenta=$(tput setaf 5)
+aqua=$(tput setaf 6)
+reset=$(tput sgr0)
+title_color=$yellow
+
+function colored-log() {
+    RED_ERROR="${red}[ERROR]${reset}"
+    YELLOW_WARNING="${yellow}[WARNING]${reset}"
+    BLUE_INFO="${blue}[INFO]${reset}"
+    GREEN_DEBUG="${green}[DEBUG]${reset}"
+    MAGENTA_CRITICAL="${magenta}[CRITICAL]${reset}"
+
+    tail -f "$1" | awk -v error="$RED_ERROR" -v warning="$YELLOW_WARNING" -v debug="$GREEN_DEBUG" -v info="$BLUE_INFO" -v critical="$MAGENTA_CRITICAL" '{
+        if (match($0, /\[ERROR\]/))     { gsub(/\[ERROR\]/, error); }
+        else if (match($0, /\[WARNING\]/)) { gsub(/\[WARNING\]/, warning); }
+        else if (match($0, /\[DEBUG\]/)) { gsub(/\[DEBUG\]/, debug); }
+        else if (match($0, /\[INFO\]/)) { gsub(/\[INFO\]/, info); }
+        else if (match($0, /\[CRITICAL\]/)) { gsub(/\[CRITICAL\]/, critical); }
+        print $0;
+    }'
+}
+
+function logs() {
+    cd "$LOG_DIR" || exit
+    ls -lH
+    exec $SHELL
+}
+
+function watchlogs() {
+    cd "$LOG_DIR" || exit
+    colored-log ichrisbirch.log
+}
+
+function install() {
+    sudo ln -sf "$ICHRISBIRCH_HOME/bin/ichrisbirch" /usr/local/bin/ichrisbirch
+}
+
+function dev-start() {
+    tmuxinator start ichrisbirch-development
+}
+
+function dev-runapp() {
+    cd "$ICHRISBIRCH_HOME" || exit
+    echo "Starting ${blue}DEV${reset} ${green}APP${reset} at ${aqua}$LOCAL_APP_URL${reset}"
+    ENVIRONMENT=development FLASK_APP=ichrisbirch.wsgi_app:app flask run --host localhost --port $LOCAL_APP_PORT --debug --reload
+    # NOTE: Does not work when using `poetry run uvicorn...`.
+}
+
+function dev-runapi() {
+    cd "$ICHRISBIRCH_HOME" || exit
+    echo "Starting ${blue}DEV${reset} ${green}API${reset} at ${aqua}$LOCAL_API_URL${reset}"
+    ENVIRONMENT=development poetry run uvicorn ichrisbirch.wsgi_api:api --host localhost --port $LOCAL_API_PORT --log-level debug --reload --reload-dir ichrisbirch/api/
+}
+
+function dev-runscheduler() {
+    cd "$ICHRISBIRCH_HOME" || exit
+    echo "Starting ${blue}DEV${reset} ${green}Scheduler${reset}"
+    ENVIRONMENT=development poetry run python ichrisbirch/wsgi_scheduler.py
+}
+
+function dev-reload() {
+    echo "Restarting ${blue}DEV${reset} ${green}NGINX${reset} and ${green}Supervisor:${reset} ${aqua}$DEV_URL${reset}"
+    sudo nginx -s reload && sudo supervisorctl reload >>/dev/null
+}
+
+function dev-monitor() {
+    tmuxinator ichrisbirch-dev-monitoring
+}
+
+function prod-monitor() {
+    tmuxinator ichrisbirch-prod-monitoring
+}
+
+function prod-apihealth() {
+    curl --silent https://api.ichrisbirch.com/health/ | jq
+}
+
+function prod-reboot-ec2() {
+    instance_name=${1:-ichrisbirch-webserver}
+    echo "Looking for instance with name '$instance_name'"
+    instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$instance_name" --query "Reservations[*].Instances[*].InstanceId" --output text)
+    if [ -z "$instance_id" ]; then
+        echo "${red}No instance found with the name '$instance_name'${reset}"
+        echo "${green}Current running instances:${reset}"
+        aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId,Tags[?Key=='Name'].Value]" --output text
+    fi
+    echo "Rebooting the ec2 instance with the name '$instance_name'"
+    aws ec2 reboot-instances --instance-ids "$instance_id"
+}
+
+function usage() {
+    echo "${title_color}☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐${reset}"
+    echo "${title_color}            _       _           _      _     _            _                 ${reset}"
+    echo "${title_color}           (*)     |=|         (*)    |=|   (*)          |=|                ${reset}"
+    echo "${title_color}            _  ____|=| _   ____ _  ___|=| _  _  ____ ____|=| _              ${reset}"
+    echo "${title_color}           |=|/ ___)=|| =\/ ___)=|/___)=|| \|=|/ ___) ___)=|| =\            ${reset}"
+    echo "${title_color}           |=(=(___|=| |=|=|   |=|___ |=|_)=)=|=|  (=(___|=| |=|            ${reset}"
+    echo "${title_color}           |_|\____)_| |_|_|   |_(___/|____/|_|_|   \____)_| |_|            ${reset}"
+    echo "${title_color}                                                                            ${reset}"
+    echo "${title_color}☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐☐${reset}"
+    echo
+    echo "${green}Main Commands:${reset}"
+    echo "  ${blue}open${reset}: open the ichrisbirch project in VSCode and start a tmux session"
+    echo "  ${blue}cd${reset}: open the ichrisbirch project and activate virtual environment"
+    echo "  ${blue}logs${reset}: list the logs in the log directory"
+    echo "  ${blue}watchlogs${reset}: watch the ichrisbirch.log in color"
+    echo
+    echo "${green}Development Subcommands:${reset}"
+    echo "  ${blue}dev start${reset}: open tmux session with running APP, API, and scheduler"
+    echo "  ${blue}dev runapp${reset}: run the ichrisbirch APP on port $LOCAL_APP_PORT"
+    echo "  ${blue}dev runapi${reset}: run the ichrisbirch API on port $LOCAL_API_PORT"
+    echo "  ${blue}dev runscheduler${reset}: run the ichrisbirch scheduler on port $LOCAL_API_PORT"
+    echo "  ${blue}dev listlogs${reset}: list the logs in the development environment"
+    echo "  ${blue}dev monitor${reset}: start the development monitoring environment"
+    echo
+    echo "${green}Production Subcommands:${reset}"
+    echo "  ${blue}prod listlogs${reset}: list the logs in the production environment"
+    echo "  ${blue}prod monitor${reset}: start the production monitoring environment"
+    echo "  ${blue}prod apihealth${reset}: check the health of the api production environment"
+    echo "  ${blue}prod reboot-ec2${reset}: reboot the ec2 instance: specify name or 'ichrisbirch-webserver' default"
+}
+# check if the first argument is empty and print usage if so
+if [ -z "$1" ]; then
+    usage
+    exit 0
+fi
+
+case $1 in
+help | -h | --help | -help)
+    usage
+    ;;
+install)
+    install
+    ;;
+logs)
+    logs
+    ;;
+watchlogs)
+    watchlogs
+    ;;
+dev)
+    dev-"$2"
+    ;;
+prod)
+    prod-"$2"
+    ;;
+*)
+    echo "${red}!! '$1' is not a valid ichrisbirch command !!${reset}"
+    echo ""
+    usage
+    ;;
+esac
