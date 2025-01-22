@@ -6,8 +6,8 @@ authors = ["Chris Birch <datapointchris@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/datapointchris/ichrisbirch"
-homepage = "http://www.ichrisbirch.com"
-documentation = "http://docs.ichrisbirch.com"
+homepage = "https://www.ichrisbirch.com"
+documentation = "https://docs.ichrisbirch.com"
 
 
 # ---------- Dependencies ---------- #
