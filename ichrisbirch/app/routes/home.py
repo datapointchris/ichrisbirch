@@ -10,6 +10,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask_login import login_required
 
 from ichrisbirch.config import get_settings
 
@@ -29,6 +30,7 @@ def loading():
 
 
 @blueprint.route('/issue/', methods=['GET', 'POST'])
+@login_required
 def issue():
     if request.method == 'GET':
         return redirect(url_for('home.index'))

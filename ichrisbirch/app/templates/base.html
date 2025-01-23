@@ -51,12 +51,14 @@
       {% block app_navigation %}{% endblock %}
     </nav>
   </header>
+  {% if current_user.is_authenticated %}
   {% include 'submit-issue.jinja.html' %}
   <div class="button-submit-issue" onclick="openSubmitIssueWindow()" tabindex="0">
     <div class="button-submit-issue__text">
       <span class="fa-solid fa-bug"></span>
     </div>
   </div>
+  {% endif %}
 
   {% block flash_messages %}
   {% include 'flash-messages.jinja.html' %}
