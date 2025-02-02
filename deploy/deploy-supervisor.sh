@@ -26,21 +26,79 @@ SUPERVISOR_HOME="$ETC_DIR/supervisor"
 SUPERVISOR_CONFIG_TARGET="$SUPERVISOR_HOME/conf.d"
 SUPERVISOR_LOG_TARGET="$OS_PREFIX/var/log/supervisor"
 
+CONFIG_FILES=("api.conf" "app.conf" "chat.conf" "scheduler.conf")
+LOG_FILES=("supervisord.log" "$PROJECT_NAME-api.log" "$PROJECT_NAME-app.log" "$PROJECT_NAME-chat.log" "$PROJECT_NAME-scheduler.log")
+
+make_directories() {
+    sudo mkdir -vp $SUPERVISOR_HOME
+    sudo mkdir -vp $SUPERVISOR_CONFIG_TARGET
+    sudo mkdir -vp $SUPERVISOR_LOG_TARGET
+}
+
+check_supervisor_updated() {
+    if [[ ! -f "$ETC_DIR/supervisord.conf" ]] || ! diff -q "$SUPERVISOR_SOURCE/supervisord.conf" "$ETC_DIR/supervisord.conf" &>/dev/null; then
+        sudo cp -v "$SUPERVISOR_SOURCE/supervisord.conf" "$ETC_DIR/supervisord.conf"
+        SUPERVISORD_UPDATED=1
+    fi
+}
+
+copy_config_files() {
+    for CONFIG_FILE in "${CONFIG_FILES[@]}"; do
+        SOURCE="$SUPERVISOR_SOURCE/$CONFIG_FILE"
+        TARGET="$SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-$CONFIG_FILE"
+        if [[ ! -f "$TARGET" ]] || ! diff -q "$SOURCE" "$TARGET" &>/dev/null; then
+            sudo cp -v "$SOURCE" "$TARGET"
+        fi
+    done
+}
+
+create_log_files() {
+    for LOG_FILE in "${LOG_FILES[@]}"; do
+        TARGET="$SUPERVISOR_LOG_TARGET/$LOG_FILE"
+        if [[ -f "$TARGET" ]]; then
+            echo "log file exists: $TARGET"
+        else
+            sudo touch "$TARGET"
+            echo created log file: "$TARGET"
+        fi
+    done
+}
+
+set_macos_permissions() {
+    echo "updating macos owner permissions to: $USER"
+    sudo chown -vR "$USER" $SUPERVISOR_HOME
+    sudo chown -vR "$USER" $SUPERVISOR_LOG_TARGET
+    echo
+}
+
 dry_run() {
     if [[ $MACOS ]]; then
-        echo "macos detected: /usr/local prefix will be used"
+        echo "=====> MacOS Detected: /usr/local/ prefix will be used <====="
+        echo
     fi
-    echo script actions:
+    echo "::::: Script Actions :::::"
+    echo
+
+    echo "::::: Create Directories :::::"
+    echo "$SUPERVISOR_HOME"
+    echo "$SUPERVISOR_CONFIG_TARGET"
+    echo "$SUPERVISOR_LOG_TARGET"
+    echo
+
+    echo "::::: Copy Config Files :::::"
     {
-    echo "copy: ./$SUPERVISOR_SOURCE/supervisord.conf => $ETC_DIR/supervisord.conf"
-    echo "copy: ./$SUPERVISOR_SOURCE/api.conf => $SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-api.conf"
-    echo "copy: ./$SUPERVISOR_SOURCE/app.conf => $SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-app.conf"
-    echo "copy: ./$SUPERVISOR_SOURCE/scheduler.conf => $SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-scheduler.conf"
+        echo "$PROJECT_NAME/deploy/$SUPERVISOR_SOURCE/supervisord.conf => $ETC_DIR/supervisord.conf"
+
+        for config_file in "${CONFIG_FILES[@]}"; do
+            echo "$PROJECT_NAME/deploy/$SUPERVISOR_SOURCE/$config_file => $SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-$config_file"
+        done
     } | column -t
-    echo "create: $SUPERVISOR_LOG_TARGET/supervisord.log"
-    echo "create: $SUPERVISOR_LOG_TARGET/$PROJECT_NAME-api.log"
-    echo "create: $SUPERVISOR_LOG_TARGET/$PROJECT_NAME-app.log"
-    echo "create: $SUPERVISOR_LOG_TARGET/$PROJECT_NAME-scheduler.log"
+    echo
+
+    echo "::::: Create Log Files :::::"
+    for log_file in "${LOG_FILES[@]}"; do
+        echo "$SUPERVISOR_LOG_TARGET/$log_file"
+    done
 }
 
 # -- Check for arguments -- #
@@ -48,49 +106,27 @@ dry_run() {
 
 if [[ "$1" = "--dry-run" ]]; then
     dry_run
-    exit 0;
+    exit 0
 fi
 
-echo "deploying supervisor config files to $ENVIRONMENT"
-# Note: Make sure log direcitories match entries in `supervisord.conf`
-
-sudo mkdir -vp $SUPERVISOR_HOME
-sudo mkdir -vp $SUPERVISOR_CONFIG_TARGET
-sudo mkdir -vp $SUPERVISOR_LOG_TARGET
-
-if [[ ! -f "$ETC_DIR/supervisord.conf" ]] || ! diff -q "$SUPERVISOR_SOURCE/supervisord.conf" "$ETC_DIR/supervisord.conf" &>/dev/null; then
-    sudo cp -v "$SUPERVISOR_SOURCE/supervisord.conf" "$ETC_DIR/supervisord.conf"
-    SUPERVISORD_UPDATED=1
-fi
-
-CONFIG_FILES=("app.conf" "api.conf" "scheduler.conf")
-for CONFIG_FILE in "${CONFIG_FILES[@]}"; do
-    SOURCE="$SUPERVISOR_SOURCE/$CONFIG_FILE"
-    TARGET="$SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-$CONFIG_FILE"
-    if [[ ! -f "$TARGET" ]] || ! diff -q "$SOURCE" "$TARGET" &>/dev/null; then
-        sudo cp -v "$SOURCE" "$TARGET"
-    fi
-done
-echo
-
-LOG_FILES=("supervisord.log" "$PROJECT_NAME-app.log" "$PROJECT_NAME-api.log" "$PROJECT_NAME-scheduler.log")
-for LOG_FILE in "${LOG_FILES[@]}"; do
-    TARGET="$SUPERVISOR_LOG_TARGET/$LOG_FILE"
-    if [[ -f "$TARGET" ]]; then
-        echo "log file exists: $TARGET"
-    else
-        sudo touch "$TARGET"
-        echo created log file: "$TARGET"
-    fi
-done
-echo
-
-# Set owner on MacOS in dev
 if [[ $MACOS ]]; then
-    echo "updating macos owner permissions to: $USER"
-    sudo chown -vR "$USER" $SUPERVISOR_HOME
-    sudo chown -vR "$USER" $SUPERVISOR_LOG_TARGET
+    echo "=====> MacOS Detected: /usr/local/ prefix will be used <====="
     echo
+fi
+
+# Note: Make sure log direcitories match entries in `supervisord.conf`
+echo "deploying supervisor config files to $ENVIRONMENT"
+make_directories
+echo
+check_supervisor_updated
+echo
+copy_config_files
+echo
+create_log_files
+echo
+
+if [[ $MACOS ]]; then
+    set_macos_permissions
 fi
 
 if [[ $SUPERVISORD_UPDATED ]]; then
