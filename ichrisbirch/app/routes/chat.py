@@ -19,4 +19,4 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    return redirect('http://localhost:8505')
+    return redirect(settings.chat_url)

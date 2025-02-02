@@ -48,6 +48,12 @@ class AWSSettings:
         self.s3_backup_bucket: str = os.environ['AWS_S3_BACKUP_BUCKET']
 
 
+class ChatSettings:
+    def __init__(self):
+        self.host: str = os.environ['CHAT_HOST']
+        self.port: str = os.environ['CHAT_PORT']
+
+
 class FastAPISettings:
     def __init__(self):
         self.host: str = os.environ['FASTAPI_HOST']
@@ -185,6 +191,7 @@ class Settings:
         self.ai = AISettings()
         self.auth = AuthSettings()
         self.aws = AWSSettings()
+        self.chat = ChatSettings()
         self.fastapi = FastAPISettings()
         self.flask = FlaskSettings()
         self.flasklogin = FlaskLoginSettings()
@@ -200,6 +207,11 @@ class Settings:
     def api_url(self) -> str:
         port = f':{self.fastapi.port}' if self.fastapi.port else ''
         return f'{self.protocol}://{self.fastapi.host}{port}'
+
+    @property
+    def chat_url(self) -> str:
+        port = f':{self.chat.port}' if self.chat.port else ''
+        return f'{self.protocol}://{self.chat.host}{port}'
 
 
 def load_environment(env_file: Optional[Path | str] = None):
