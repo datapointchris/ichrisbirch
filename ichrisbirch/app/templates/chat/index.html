@@ -3,5 +3,9 @@
 {% block title %}Chat{% endblock %}
 
 {% block content %}
-<iframe src="{{ chat_url }}?embed=true" style="height: 100%; width: 100%;"></iframe>
+<div class="grid grid--one-column-wide" style="margin-top: 1em; margin-bottom: 0em;">
+  <div class="grid__item" style="height: 92vh;">
+    <iframe src="{{ chat_url }}?embed=true" style="height: 100%; width: 100%; border: none;"></iframe>
+  </div>
+</div>
 {% endblock %}

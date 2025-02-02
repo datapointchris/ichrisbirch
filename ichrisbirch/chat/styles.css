@@ -1,12 +1,32 @@
 .main .block-container {
-    max-width: 50vw;
+    max-width: 80vw;
     margin-left: auto !important;
     margin-right: auto !important;
 }
-
-*, p, h1 {
+html,
+body,
+*,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+ul,
+li,
+a,
+.markdown-body *,
+.markdown-body p,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
     font-size: 1.1rem;
 }
+
 
 .sidebar-title {
     text-align: center;
