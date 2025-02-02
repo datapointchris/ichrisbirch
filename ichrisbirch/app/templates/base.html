@@ -27,6 +27,7 @@
         <li><a href="{{ url_for('autotasks.index') }}">AutoTasks</a></li>
         <li><a href="{{ url_for('books.index') }}">Books</a></li>
         <li><a href="{{ url_for('box_packing.index') }}">Box Packing</a></li>
+        <li><a href="{{ url_for('chat.index') }}">Chat</a></li>
         <li><a href="{{ url_for('countdowns.index') }}">Countdowns</a></li>
         <li><a href="{{ url_for('events.index') }}">Events</a></li>
         <li><a href="{{ url_for('habits.index') }}">Habits</a></li>
@@ -35,10 +36,6 @@
         <li><a href="{{ url_for('users.profile') }}">My Profile</a></li>
         <li><a href="{{ url_for('auth.logout') }}" class="navbar-item">Logout</a></li>
         {% endif %}
-        <!--
-          <li><a href="{{ url_for('portfolio.index') }}">Portfolio</a></li>
-          <li><a href="{{ url_for('journal.index') }}">Journal</a></li>
-          -->
         {% if not current_user.is_authenticated %}
         <li><a href="{{ url_for('auth.login') }}">Login</a></li>
         <li><a href="{{ url_for('auth.signup') }}">Signup</a></li>
