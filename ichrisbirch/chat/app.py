@@ -21,6 +21,7 @@ client = OpenAI(api_key=settings.ai.openai.api_key)
 def load_chat_sessions():
     if DB_NAME.exists():
         with DB_NAME.open() as file:
+            logger.info(f'Loading chat history from: {DB_NAME}')
             return json.load(file)
     logger.warning(f'Could not find chat history file at: {DB_NAME}')
     return []
