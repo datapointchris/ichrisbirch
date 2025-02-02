@@ -47,6 +47,7 @@ uvicorn = "^0.29.0"
 youtube-transcript-api = "^0.6.2"
 customtkinter = "^5.2.2"
 tkhtmlview = "^0.3.1"
+streamlit = "^1.41.1"
 
 [tool.poetry.group.dev.dependencies]
 boto3-stubs = { extras = ["essential"], version = "^1.34.98" }
@@ -108,7 +109,7 @@ exclude = '''
 '''
 
 [tool.codespell]
-skip = '*.css.map'
+skip = '*.css.map,*chat_history.json'
 ignore-words-list = "astroid,aNULL,ANULL,anull,iterm"
 exclude-file = "poetry.lock"
 check-filenames = true

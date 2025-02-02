@@ -69,6 +69,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.autotasks.blueprint, url_prefix='/autotasks')
         app.register_blueprint(routes.books.blueprint, url_prefix='/books')
         app.register_blueprint(routes.box_packing.blueprint, url_prefix='/box-packing')
+        app.register_blueprint(routes.chat.blueprint, url_prefix='/chat')
         app.register_blueprint(routes.countdowns.blueprint, url_prefix='/countdowns')
         app.register_blueprint(routes.events.blueprint, url_prefix='/events')
         app.register_blueprint(routes.habits.blueprint, url_prefix='/habits')

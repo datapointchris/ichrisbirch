@@ -4,6 +4,7 @@ from ichrisbirch.app.routes import auth
 from ichrisbirch.app.routes import autotasks
 from ichrisbirch.app.routes import books
 from ichrisbirch.app.routes import box_packing
+from ichrisbirch.app.routes import chat
 from ichrisbirch.app.routes import countdowns
 from ichrisbirch.app.routes import events
 from ichrisbirch.app.routes import habits
@@ -21,6 +22,7 @@ __all__ = [
     'autotasks',
     'books',
     'box_packing',
+    'chat',
     'countdowns',
     'events',
     'habits',
