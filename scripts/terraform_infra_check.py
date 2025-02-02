@@ -13,7 +13,7 @@ EMAIL_TO = ''
 EMAIL_SUBJECT_PREFIX = 'iChrisBirch Infrastructure Changes - '
 EMAIL_PASSWORD = ''
 TERRAFORM_PLAN_FILE = Path('tfplan')
-TIMEOUT = 60
+TIMEOUT = 120
 
 
 def generate_terraform_plan_json(outfile: Path, jsonfile: Path):
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     jsonfile = Path('terraform_plan.json')
     generate_terraform_plan_json(TERRAFORM_PLAN_FILE, jsonfile)
-    print(f'Generated terraform plan JSON from {TERRAFORM_PLAN_FILE}')
+    print(f'Generated terraform plan JSON from {TERRAFORM_PLAN_FILE.resolve()} -> {jsonfile.resolve()}')
 
     plan_changes = parse_terraform_plan_changes(jsonfile)
     webserver_terminated = is_webserver_terminated(plan_changes)
