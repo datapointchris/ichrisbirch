@@ -1,0 +1,7 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<iframe src="{{ chat_url }}?embed=true" style="height: 100%; width: 100%;"></iframe>
+{% endblock %}
