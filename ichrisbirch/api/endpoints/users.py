@@ -46,7 +46,7 @@ async def me(user: CurrentUser):
 
 
 @router.patch('/me/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def complete(user: CurrentUser, update: dict, session: Session = Depends(get_sqlalchemy_session)):
+async def update(user: CurrentUser, update: dict, session: Session = Depends(get_sqlalchemy_session)):
     logger.debug(f'update: user preferences {update}')
     user.preferences = user.preferences | update
     session.commit()

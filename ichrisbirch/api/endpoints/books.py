@@ -128,7 +128,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def complete(id: int, update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug(f'update: book {id} {update_data}')
     if obj := session.get(models.Book, id):

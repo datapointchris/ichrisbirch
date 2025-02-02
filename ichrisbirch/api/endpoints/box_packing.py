@@ -78,7 +78,7 @@ async def delete_box(id: int, session: Session = Depends(get_sqlalchemy_session)
 
 
 @router.patch('/boxes/{id}/', response_model=schemas.Box, status_code=status.HTTP_200_OK)
-async def complete(id: int, update: schemas.BoxUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update_box(id: int, update: schemas.BoxUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug(f'update: box {id} {update_data}')
     if obj := session.get(models.Box, id):
@@ -155,7 +155,7 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
 
 
 @router.patch('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.BoxItemUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update_item(id: int, update: schemas.BoxItemUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug(f'update: box item {id} {update_data}')
     if obj := session.get(models.BoxItem, id):
