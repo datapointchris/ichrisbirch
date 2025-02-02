@@ -77,7 +77,7 @@ function dev-runapi() {
 function dev-runchat() {
     cd "$ICHRISBIRCH_HOME" || exit
     echo "Starting ${blue}DEV${reset} ${green}Chat${reset} at ${aqua}$LOCAL_CHAT_URL${reset}"
-    ENVIRONMENT=development poetry run streamlit run ichrisbirch/chat/app.py --server.port $LOCAL_CHAT_PORT --server.headless true
+    ENVIRONMENT=development poetry run streamlit run ichrisbirch/chat/app.py --server.port $LOCAL_CHAT_PORT --server.headless true --server.runOnSave true
 }
 
 function dev-runscheduler() {
