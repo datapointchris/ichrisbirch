@@ -56,7 +56,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
-async def complete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def attend(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if event := session.get(models.Event, id):
         event.attending = True
         session.add(event)
