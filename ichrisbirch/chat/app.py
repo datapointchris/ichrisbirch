@@ -9,45 +9,50 @@ from ichrisbirch.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger('app.chat')
-st.set_page_config(page_title='Chatter', page_icon='🤖')
+st.set_page_config(page_title='Chatter', page_icon='🤖', layout='wide')
 
 USER_AVATAR = '👤'
 BOT_AVATAR = '🤖'
-DB_NAME = Path('chat_history.json')
-CUSTOM_STYLESHEET = 'chat/styles.css'
+CHAT_DIR = Path('ichrisbirch/chat')
+DB_NAME = 'chat_history.json'
+STYLESHEET = 'styles.css'
+LOCAL_DB = CHAT_DIR / DB_NAME
+CUSTOM_STYLESHEET = CHAT_DIR / STYLESHEET
 client = OpenAI(api_key=settings.ai.openai.api_key)
 
 
 def load_chat_sessions():
-    if DB_NAME.exists():
-        with DB_NAME.open() as file:
-            logger.info(f'Loading chat history from: {DB_NAME}')
+    if LOCAL_DB.exists():
+        with LOCAL_DB.open() as file:
+            logger.info(f'Loading chat history from: {LOCAL_DB}')
             return json.load(file)
-    logger.warning(f'Could not find chat history file at: {DB_NAME}')
+    logger.warning(f'Could not find chat history file at: {LOCAL_DB}')
     return []
 
 
 def save_chat_sessions(chat_sessions):
-    with DB_NAME.open('w') as file:
+    with LOCAL_DB.open('w') as file:
         json.dump(chat_sessions, file)
 
 
 def create_name_for_session(prompt):
-    summary_response = client.chat.completions.create(
+    response = client.chat.completions.create(
         model=st.session_state['openai_model'],
         messages=[
             {
                 'role': 'system',
-                'content': 'Summarize the following prompt in a few words.',
+                'content': 'Give a short, descriptive name to this chat prompt.',
             },
             {'role': 'user', 'content': prompt},
         ],
         max_tokens=10,
     )
-    if summary := summary_response.choices[0].message.content:
-        return summary.strip()
+    if name := response.choices[0].message.content:
+        logger.info(f'Generated name for chat session: {name}')
+        return name.strip()
     else:
         logger.warning('Failed to generate a summary for the chat session')
+        print('okay')
         return create_name_for_session(prompt)
 
 
@@ -60,8 +65,11 @@ if 'chat_sessions' not in st.session_state:
     st.session_state.current_session = None
 
 
-with open(CUSTOM_STYLESHEET) as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+with CUSTOM_STYLESHEET.open() as f:
+    logger.info(f'Loading custom stylesheet: {CUSTOM_STYLESHEET}')
+    styles = f.read()
+
+st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.write("<h1 class='sidebar-title'>Chat Sessions</h1>", unsafe_allow_html=True)
