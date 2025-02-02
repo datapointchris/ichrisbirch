@@ -45,6 +45,16 @@ resource "aws_route53_record" "api_ichrisbirch_ns_ns" {
   depends_on      = [aws_route53_zone.api_ichrisbirch]
 }
 
+resource "aws_route53_record" "chat_ichrisbirch_ns_ns" {
+  name            = "chat.ichrisbirch.com"
+  zone_id         = aws_route53_zone.ichrisbirch.zone_id
+  ttl             = 300
+  type            = "NS"
+  allow_overwrite = true
+  records         = aws_route53_zone.chat_ichrisbirch.name_servers
+  depends_on      = [aws_route53_zone.chat_ichrisbirch]
+}
+
 resource "aws_route53_record" "docs_ichrisbirch_cname" {
   name    = "docs.ichrisbirch.com"
   zone_id = aws_route53_zone.ichrisbirch.zone_id
@@ -52,6 +62,7 @@ resource "aws_route53_record" "docs_ichrisbirch_cname" {
   type    = "CNAME"
   records = ["datapointchris.github.io"]
 }
+
 
 # ---------- api.ichrisbirch.com ---------- #
 
@@ -77,6 +88,33 @@ resource "aws_route53_record" "api_ichrisbirch_ns" {
   type            = "NS"
   allow_overwrite = true
   records         = aws_route53_zone.api_ichrisbirch.name_servers
+}
+
+
+# ---------- chat.ichrisbirch.com ---------- #
+
+resource "aws_route53_zone" "chat_ichrisbirch" {
+  name          = "chat.ichrisbirch.com"
+  comment       = "API Subdomain"
+  force_destroy = false
+}
+
+resource "aws_route53_record" "chat_ichrisbirch_a" {
+  name    = "chat.ichrisbirch.com"
+  zone_id = aws_route53_zone.chat_ichrisbirch.zone_id
+  ttl     = 300
+  type    = "A"
+  records = [aws_eip.ichrisbirch_elastic_ip.public_ip]
+}
+
+
+resource "aws_route53_record" "chat_ichrisbirch_ns" {
+  name            = "chat.ichrisbirch.com"
+  zone_id         = aws_route53_zone.chat_ichrisbirch.zone_id
+  ttl             = 172800
+  type            = "NS"
+  allow_overwrite = true
+  records         = aws_route53_zone.chat_ichrisbirch.name_servers
 }
 
 
