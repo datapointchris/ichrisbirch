@@ -23,20 +23,57 @@ NGINX_SOURCE="$ENVIRONMENT/nginx"
 ETC_DIR="$OS_PREFIX/etc"
 
 NGINX_HOME="$ETC_DIR/nginx"
-NGINX_SITES_AVAILABLE="$NGINX_HOME/sites-available"
-NGINX_SITES_ENABLED="$NGINX_HOME/sites-enabled"
+SITES_AVAILABLE="$NGINX_HOME/sites-available"
+SITES_ENABLED="$NGINX_HOME/sites-enabled"
+
+CONFIG_FILES=("api.conf" "app.conf" "chat.conf")
+
+make_directories() {
+    sudo mkdir -vp $SITES_AVAILABLE
+    sudo mkdir -vp $SITES_ENABLED
+}
+
+copy_configuration_files() {
+    sudo cp -v "$NGINX_SOURCE/nginx.conf" "$NGINX_HOME/nginx.conf"
+    for config_file in "${CONFIG_FILES[@]}"; do
+        sudo cp -v "$NGINX_SOURCE/$config_file" "$SITES_AVAILABLE/$PROJECT_NAME-$config_file"
+    done
+}
+
+symlink_from_sites_available_to_sites_enabled() {
+    for config_file in "${CONFIG_FILES[@]}"; do
+        sudo ln -sfv "$SITES_AVAILABLE/$PROJECT_NAME-$config_file" "$SITES_ENABLED/$PROJECT_NAME-$config_file"
+    done
+}
+
+set_macos_permissions() {
+    echo "Updating MacOS owner permissions to: $USER"
+    sudo chown -vR "$USER" $NGINX_HOME
+    echo
+}
 
 dry_run() {
     if [[ $MACOS ]]; then
-        echo "macos detected: /usr/local prefix will be used"
+        echo "=====> MacOS Detected: /usr/local/ prefix will be used <====="
+        echo
     fi
-    echo script actions:
+    echo "::::: Script Actions :::::"
+    echo
+
+    echo "::::: Copy Config Files :::::"
     {
-    echo "copy: ./$NGINX_SOURCE/nginx.conf => $NGINX_HOME/nginx.conf"
-    echo "copy: ./$NGINX_SOURCE/api.conf => $NGINX_SITES_AVAILABLE/$PROJECT_NAME-api.conf"
-    echo "copy: ./$NGINX_SOURCE/app.conf => $NGINX_SITES_AVAILABLE/$PROJECT_NAME-app.conf"
-    echo "symlink: $NGINX_SITES_AVAILABLE/$PROJECT_NAME-api.conf => $NGINX_SITES_ENABLED/$PROJECT_NAME-api.conf"
-    echo "symlink: $NGINX_SITES_AVAILABLE/$PROJECT_NAME-app.conf => $NGINX_SITES_ENABLED/$PROJECT_NAME-app.conf"
+        echo "$PROJECT_NAME/deploy/$NGINX_SOURCE/nginx.conf => $NGINX_HOME/nginx.conf"
+        for config_file in "${CONFIG_FILES[@]}"; do
+            echo "$PROJECT_NAME/deploy/$NGINX_SOURCE/$config_file => $SITES_AVAILABLE/$PROJECT_NAME-$config_file"
+        done
+    } | column -t
+    echo
+
+    echo "::::: Symlink Config Files :::::"
+    {
+        for config_file in "${CONFIG_FILES[@]}"; do
+            echo "symlink: $SITES_AVAILABLE/$PROJECT_NAME-$config_file => $SITES_ENABLED/$PROJECT_NAME-$config_file"
+        done
     } | column -t
 
 }
@@ -46,31 +83,19 @@ dry_run() {
 
 if [[ "$1" = "--dry-run" ]]; then
     dry_run
-    exit 0;
+    exit 0
 fi
 
 echo "Deploying NGINX Config Files to $ENVIRONMENT"
-
-# Directories
-sudo mkdir -vp $NGINX_SITES_AVAILABLE
-sudo mkdir -vp $NGINX_SITES_ENABLED
-
-# Configuration
-sudo cp -v "$NGINX_SOURCE/nginx.conf" "$NGINX_HOME/nginx.conf"
-sudo cp -v "$NGINX_SOURCE/api.conf" "$NGINX_SITES_AVAILABLE/$PROJECT_NAME-api.conf"
-sudo cp -v "$NGINX_SOURCE/app.conf" "$NGINX_SITES_AVAILABLE/$PROJECT_NAME-app.conf"
-
-# Symlink from sites-available to sites-enabled
-sudo ln -sfv "$NGINX_SITES_AVAILABLE/$PROJECT_NAME-api.conf" "$NGINX_SITES_ENABLED/$PROJECT_NAME-api.conf"
-sudo ln -sfv "$NGINX_SITES_AVAILABLE/$PROJECT_NAME-app.conf" "$NGINX_SITES_ENABLED/$PROJECT_NAME-app.conf"
+make_directories
+echo
+copy_configuration_files
+echo
+symlink_from_sites_available_to_sites_enabled
 echo
 
-
-# ---------- Set owner on MacOS in dev ---------- #
 if [[ $MACOS ]]; then
-    echo "Updating MacOS owner permissions to: $USER"
-    sudo chown -vR "$USER" $NGINX_HOME
-    echo
+    set_macos_permissions
 fi
 
 echo restarting nginx
