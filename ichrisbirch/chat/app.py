@@ -161,11 +161,11 @@ if st.session_state.current_session is not None:
             current_messages = [{'role': m.role, 'content': m.content} for m in current_chat.messages]
             stream = openai_client.chat.completions.create(
                 model=st.session_state['openai_model'],
-                messages=current_messages,
+                messages=current_messages,  # type: ignore
                 stream=True,
             )  # type: ignore
             for chunk in stream:
-                full_response += chunk.choices[0].delta.content or ''
+                full_response += chunk.choices[0].delta.content or ''  # type: ignore
                 message_placeholder.markdown(full_response + '|')
             message_placeholder.markdown(full_response)
         current_chat.messages.append(
