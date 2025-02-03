@@ -18,18 +18,18 @@ logger = logging.getLogger('api')
 
 
 async def http_exception_handler_logger(request, exc):
-    logger.error(exc)
+    logger.error(f'api error: {exc}')
     return await http_exception_handler(request, exc)
 
 
 async def request_validation_exception_handler_logger(request, exc):
-    logger.error(exc)
+    logger.error(f'api error: {exc}')
     return await request_validation_exception_handler(request, exc)
 
 
 async def generic_exception_handler(request, exc):
-    logger.error(f'RECEIVED  {exc}')
-    return JSONResponse(status_code=500, content={"message": repr(exc)})
+    logger.error(f'api error: {exc}')
+    return JSONResponse(status_code=500, content={'message': f'api error: {exc}'})
 
 
 def create_api(settings: Settings) -> FastAPI:
@@ -43,8 +43,8 @@ def create_api(settings: Settings) -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.fastapi.allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=['*'],
+        allow_headers=['*'],
     )
     logger.info('cors middleware added')
 
@@ -62,6 +62,8 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.books.router, prefix='/books', tags=['books'])
     api.include_router(endpoints.box_packing.router, prefix='/box-packing', tags=['box packing'])
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', tags=['countdowns'])
+    api.include_router(endpoints.chat.chats.router, prefix='/chat/chats', tags=['chats'])
+    api.include_router(endpoints.chat.messages.router, prefix='/chat/messages', tags=['messages'])
     api.include_router(endpoints.events.router, prefix='/events', tags=['events'])
     api.include_router(endpoints.habits.router, prefix='/habits', tags=['habits'])
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', tags=['money', 'money wasted'])

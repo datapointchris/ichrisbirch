@@ -4,6 +4,7 @@ from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.endpoints import autotasks
 from ichrisbirch.api.endpoints import books
 from ichrisbirch.api.endpoints import box_packing
+from ichrisbirch.api.endpoints import chat
 from ichrisbirch.api.endpoints import countdowns
 from ichrisbirch.api.endpoints import events
 from ichrisbirch.api.endpoints import habits
@@ -20,6 +21,7 @@ __all__ = [
     'autotasks',
     'books',
     'box_packing',
+    'chat',
     'countdowns',
     'events',
     'habits',

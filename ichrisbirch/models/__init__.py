@@ -4,6 +4,8 @@ from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.book import Book
 from ichrisbirch.models.box import Box
 from ichrisbirch.models.boxitem import BoxItem
+from ichrisbirch.models.chat import Chat
+from ichrisbirch.models.chatmessage import ChatMessage
 from ichrisbirch.models.countdown import Countdown
 from ichrisbirch.models.event import Event
 from ichrisbirch.models.habit import Habit
@@ -22,6 +24,8 @@ __all__ = [
     'Book',
     'Box',
     'BoxItem',
+    'Chat',
+    'ChatMessage',
     'Countdown',
     'Event',
     'Habit',
