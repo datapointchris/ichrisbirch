@@ -176,7 +176,7 @@ class UsersSettings:
 class Settings:
     def __init__(self, env_file: Path = Path()):
         self.name: str = 'ichrisbirch'
-        self.db_schemas: list[str] = ['apartments', 'box_packing', 'habits']
+        self.db_schemas: list[str] = ['apartments', 'box_packing', 'chat', 'habits']
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
         self.env_file: Path = env_file
         self.global_timezone = 'US/Eastern'

@@ -15,6 +15,12 @@ from ichrisbirch.schemas.box import BoxUpdate
 from ichrisbirch.schemas.boxitem import BoxItem
 from ichrisbirch.schemas.boxitem import BoxItemCreate
 from ichrisbirch.schemas.boxitem import BoxItemUpdate
+from ichrisbirch.schemas.chat import Chat
+from ichrisbirch.schemas.chat import ChatCreate
+from ichrisbirch.schemas.chat import ChatUpdate
+from ichrisbirch.schemas.chatmessage import ChatMessage
+from ichrisbirch.schemas.chatmessage import ChatMessageCreate
+from ichrisbirch.schemas.chatmessage import ChatMessageUpdate
 from ichrisbirch.schemas.countdown import Countdown
 from ichrisbirch.schemas.countdown import CountdownCreate
 from ichrisbirch.schemas.countdown import CountdownUpdate
@@ -52,6 +58,12 @@ __all__ = [
     'AutoTask',
     'AutoTaskCreate',
     'AutoTaskUpdate',
+    'Chat',
+    'ChatCreate',
+    'ChatUpdate',
+    'ChatMessage',
+    'ChatMessageCreate',
+    'ChatMessageUpdate',
     'Book',
     'BookCreate',
     'BookGoodreadsInfo',
