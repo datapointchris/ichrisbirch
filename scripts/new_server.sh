@@ -90,7 +90,7 @@ install_ssl_certificate_for_nginx() {
   # note: no need for docs.ichrisbirch because Github Pages handles in the Pages > Custom domain section
   sudo certbot certonly --cert-name ichrisbirch.com --nginx \
     --non-interactive --agree-tos --no-eff-email --email ichrisbirch@gmail.com \
-    --domains ichrisbirch.com,www.ichrisbirch.com,api.ichrisbirch.com
+    --domains ichrisbirch.com,www.ichrisbirch.com,api.ichrisbirch.com,chat.ichrisbirch.com
 }
 
 setup_nginx() {
