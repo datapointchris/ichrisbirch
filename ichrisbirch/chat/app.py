@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 import httpx
 import streamlit as st
@@ -9,6 +8,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app import utils
 from ichrisbirch.config import get_settings
+from ichrisbirch.util import find_project_root
 
 settings = get_settings()
 logger = logging.getLogger('app.chat')
@@ -16,11 +16,7 @@ st.set_page_config(page_title='Chatter', page_icon='🤖', layout='wide')
 
 USER_AVATAR = '👤'
 BOT_AVATAR = '🤖'
-CHAT_DIR = Path('ichrisbirch/chat')
-DB_NAME = 'chat_history.json'
-STYLESHEET = 'styles.css'
-LOCAL_DB = CHAT_DIR / DB_NAME
-CUSTOM_STYLESHEET = CHAT_DIR / STYLESHEET
+STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
 openai_client = OpenAI(api_key=settings.ai.openai.api_key)
 
 
@@ -114,8 +110,8 @@ if 'chats' not in st.session_state:
     st.session_state.current_session = None
 
 
-with CUSTOM_STYLESHEET.open() as f:
-    logger.info(f'Loading custom stylesheet: {CUSTOM_STYLESHEET}')
+with STYLESHEET.open() as f:
+    logger.info(f'Loading custom stylesheet: {STYLESHEET.resolve()}')
     styles = f.read()
 
 st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
