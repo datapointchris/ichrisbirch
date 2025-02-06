@@ -80,15 +80,12 @@ async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session
 async def update_user(
     user_id: int, user_update: schemas.UserUpdate, session: Session = Depends(get_sqlalchemy_session)
 ):
-    logger.debug(f'INPUT DATA: {user_update}')
     if user := session.get(models.User, user_id):
         update_data = user_update.model_dump(exclude_unset=True)
         for attr, value in update_data.items():
             setattr(user, attr, value)
-        logger.debug(f'UPDATED USER: {user}')
         session.commit()
         session.refresh(user)
-        logger.debug(f'RETURNING USER: {user}')
         return user
     else:
         message = f'user {user_id} not found'

@@ -35,7 +35,8 @@ class AuthSettings:
     def __init__(self):
         self.secret_key: str = os.environ['AUTH_SECRET_KEY']
         self.algorithm: str = 'HS256'
-        self.token_expire_minutes = timedelta(minutes=30)
+        self.refresh_token_expire = timedelta(days=30)
+        self.access_token_expire = timedelta(minutes=30)
         self.accepting_new_signups = False
 
 
