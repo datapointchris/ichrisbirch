@@ -18,13 +18,14 @@ class ChatAPI:
         self.message_url = f'{settings.api_url}/chat/messages/'
 
     def _convert_chat_to_model(self, chat: dict):
-        if chat['messages']:
+        if chat.get('messages'):
             chat['messages'] = [models.ChatMessage(**message) for message in chat['messages']]
         return models.Chat(**chat)
 
     def get_chat(self, name: str):
-        response = self.client.get(utils.url_builder(self.chat_url, name)).raise_for_status()
-        return self._convert_chat_to_model(response.json())
+        if chat := self.client.get(utils.url_builder(self.chat_url, name)).raise_for_status().json():
+            return self._convert_chat_to_model(chat)
+        return models.Chat()
 
     def get_all_chats(self):
         response = self.client.get(self.chat_url).raise_for_status()
