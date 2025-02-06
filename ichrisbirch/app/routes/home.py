@@ -21,7 +21,7 @@ blueprint = Blueprint('home', __name__, template_folder='templates', static_fold
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', settings=settings)
+    return render_template('index.html', api_url=settings.api_url, chat_url=settings.chat_url)
 
 
 @blueprint.route('/loading/', methods=['GET'])
