@@ -1,12 +1,12 @@
 import logging
 
-import httpx
 import streamlit as st
 from openai import OpenAI
 
 from ichrisbirch import models
-from ichrisbirch import schemas
-from ichrisbirch.app import utils
+from ichrisbirch.chat.api import ChatAPI
+from ichrisbirch.chat.auth import logout_user
+from ichrisbirch.chat.auth import require_user_logged_in
 from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
 
@@ -17,68 +17,10 @@ st.set_page_config(page_title='Chatter', page_icon='🤖', layout='wide')
 USER_AVATAR = '👤'
 BOT_AVATAR = '🤖'
 STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
-openai_client = OpenAI(api_key=settings.ai.openai.api_key)
 
 
-class ChatAPI:
-    def __init__(self, api_url: str):
-        self.api_url = api_url
-        self.client = httpx.Client(follow_redirects=True)
-        self.chat_url = f'{settings.api_url}/chat/chats/'
-        self.message_url = f'{settings.api_url}/chat/messages/'
-
-    def _convert_chat_to_model(self, chat: dict):
-        if chat['messages']:
-            chat['messages'] = [models.ChatMessage(**message) for message in chat['messages']]
-        return models.Chat(**chat)
-
-    def get_chat(self, name: str):
-        response = self.client.get(utils.url_builder(self.chat_url, name)).raise_for_status()
-        if chat := response.json():
-            return self._convert_chat_to_model(chat)
-
-    def get_all_chats(self):
-        response = self.client.get(self.chat_url).raise_for_status()
-        if chats := response.json():
-            return [self._convert_chat_to_model(chat) for chat in chats]
-        return []
-
-    def create_new_chat(self, chat: models.Chat):
-        json_model = schemas.ChatCreate.model_validate(chat).model_dump()
-        response = self.client.post(self.chat_url, json=json_model).raise_for_status()
-        if new_chat := response.json():
-            logger.info(f'created new chat session: {chat.name}')
-        return self._convert_chat_to_model(new_chat)
-
-    def update_chat(self, existing_chat: models.Chat, chat: models.Chat):
-        if new_messages := [m for m in chat.messages if m.id not in [m.id for m in existing_chat.messages]]:
-            for message in new_messages:
-                msg_info = {
-                    'id': {message.id},
-                    'chat_id': {message.chat_id},
-                    'role': {message.role},
-                    'content': {message.content[:20]},
-                }
-                logger.info(f'found new message: {msg_info}')
-                # NOTE: ChatMessageCreate DOES NOT WORK, it erases the chat_id
-                json_model = dict(chat_id=message.chat_id or chat.id, role=message.role, content=message.content)
-                response = self.client.post(self.message_url, json=json_model)
-                response.raise_for_status()
-                logger.info(f'created new message: {str(response.json())[:100]}')
-            return self.get_chat(chat.name)
-        return chat
-
-    def save_chat_session(self, chat: models.Chat):
-        if existing_chat := self.get_chat(chat.name):
-            logger.info(f'found chat session: {chat.name}')
-            return self.update_chat(existing_chat, chat)
-        else:
-            logger.info(f'chat session not found: {chat.name}, creating...')
-            return self.create_new_chat(chat)
-
-
-def create_name_for_session(prompt):
-    response = openai_client.chat.completions.create(
+def create_name_for_session(prompt, client):
+    response = client.chat.completions.create(
         model=st.session_state['openai_model'],
         messages=[
             {
@@ -94,12 +36,15 @@ def create_name_for_session(prompt):
         return name.strip()
     else:
         logger.warning('Failed to generate a summary for the chat session')
-        print('okay')
-        return create_name_for_session(prompt)
+        return create_name_for_session(prompt, client)
 
 
+if not require_user_logged_in():
+    st.stop()
+
+
+openai_client = OpenAI(api_key=settings.ai.openai.api_key)
 chat_api = ChatAPI(settings.api_url)
-
 
 if 'openai_model' not in st.session_state:
     st.session_state['openai_model'] = settings.ai.openai.model
@@ -117,6 +62,9 @@ with STYLESHEET.open() as f:
 st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
 
 with st.sidebar:
+    if st.button('Logout'):
+        logout_user()
+        st.rerun()
     st.write("<h1 class='sidebar-title'>Chats</h1>", unsafe_allow_html=True)
     for i, chat in enumerate(st.session_state.chats):
         chat_name = chat.name or f'Chat {i+1}'
@@ -146,7 +94,7 @@ if st.session_state.current_session is not None:
 
         # set session name automatically after first question
         if not current_chat.name:
-            current_chat.name = create_name_for_session(prompt)
+            current_chat.name = create_name_for_session(prompt, openai_client)
 
         with st.chat_message('user', avatar=USER_AVATAR):
             st.markdown(prompt)
