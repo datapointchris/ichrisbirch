@@ -4,8 +4,13 @@
 
 {% block content %}
 <div class="grid grid--one-column">
+  {% if not accepting_new_signups %}
+  <div class="github-issue-form">
+    <h2>Signups currently only for VIP persons</h2>
+  </div>
+  {% endif %}
+  <h2>Sign Up</h2>
   <div class="add-item-wrapper">
-    <h2>Sign Up</h2>
 
     <form class="add-item-form" method="POST" action="{{ url_for('auth.signup') }}">
       {{ form.csrf_token }}
@@ -61,5 +66,6 @@
       </div>
     </form>
   </div>
+</div>
 
-  {% endblock %}
+{% endblock %}

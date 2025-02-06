@@ -38,7 +38,9 @@
         {% endif %}
         {% if not current_user.is_authenticated %}
         <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+        {% if accepting_new_signups %}
         <li><a href="{{ url_for('auth.signup') }}">Signup</a></li>
+        {% endif %}
         {% endif %}
         {% if current_user.is_authenticated and current_user.is_admin %}
         <li><a href="{{ url_for('admin.index') }}">Admin</a></li>

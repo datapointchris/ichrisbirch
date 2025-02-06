@@ -3,7 +3,6 @@ import logging
 from functools import partial
 
 from flask import Flask
-from flask import g
 from flask import render_template
 from flask_wtf.csrf import CSRFProtect
 
@@ -80,15 +79,18 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.users.blueprint, url_prefix='/users')
         logger.info('blueprints registered')
 
-        @app.before_request
-        def repo_labels_and_icons():
+        @app.context_processor
+        def insert_variables():
             """Must be set on the entire app to be available on every route."""
-            g.github_issue_labels_and_icons = [
-                ('bug', 'fa-solid fa-bug'),
-                ('docs', 'fa-solid fa-file-lines'),
-                ('feature', 'fa-regular fa-star'),
-                ('refactor', 'fa-solid fa-code'),
-            ]
+            return {
+                'github_issue_labels_and_icons': [
+                    ('bug', 'fa-solid fa-bug'),
+                    ('docs', 'fa-solid fa-file-lines'),
+                    ('feature', 'fa-regular fa-star'),
+                    ('refactor', 'fa-solid fa-code'),
+                ],
+                'accepting_new_signups': settings.auth.accepting_new_signups,
+            }
 
     logger.info('initialized successfully')
     return app

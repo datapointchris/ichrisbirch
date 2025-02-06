@@ -37,7 +37,8 @@ class AuthSettings:
         self.algorithm: str = 'HS256'
         self.refresh_token_expire = timedelta(days=30)
         self.access_token_expire = timedelta(minutes=30)
-        self.accepting_new_signups = False
+        self.accepting_new_signups: bool = bool(os.environ['ACCEPTING_NEW_SIGNUPS'])
+        self.no_new_signups_message = 'New signups for VIP users only.'
 
 
 class AWSSettings:

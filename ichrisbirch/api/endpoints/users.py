@@ -12,8 +12,10 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import CurrentUser
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
+settings = get_settings()
 logger = logging.getLogger('api.users')
 router = APIRouter()
 
@@ -26,6 +28,10 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session), limit: O
 
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create(user: schemas.UserCreate, session: Session = Depends(get_sqlalchemy_session)):
+    if not settings.auth.accepting_new_signups:
+        message = settings.auth.no_new_signups_message
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
     db_obj = models.User(**user.model_dump())
     session.add(db_obj)
     session.commit()
