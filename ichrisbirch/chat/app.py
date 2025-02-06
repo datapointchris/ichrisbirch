@@ -153,7 +153,7 @@ if st.session_state.current_session is not None:
             full_response = ''
             current_messages = [{'role': m.role, 'content': m.content} for m in current_chat.messages]
             stream = openai_client.chat.completions.create(
-                model=st.session_state['openai_model'],
+                model=settings.ai.openai.model,
                 messages=current_messages,  # type: ignore
                 stream=True,
             )  # type: ignore
