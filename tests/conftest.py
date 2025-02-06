@@ -28,6 +28,9 @@ from tests import test_data
 logger = logging.getLogger(__name__)
 settings = get_settings('testing')
 
+# Enable new signups for testing
+settings.auth.accepting_new_signups = True
+
 
 @pytest.fixture(scope='module')
 def create_drop_tables():

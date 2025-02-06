@@ -70,6 +70,9 @@ def login():
 
 @blueprint.route('/signup/', methods=['GET', 'POST'])
 def signup():
+    if not settings.auth.accepting_new_signups:
+        flash(settings.auth.no_new_signups_message, 'error')
+        return redirect(url_for('home.index'))
     users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
     form = forms.SignupForm()
     if form.validate_on_submit():
@@ -82,10 +85,11 @@ def signup():
                 'email': form.email.data,
                 'password': form.password.data,
             }
-            new_user = users_api.post(json=data)
-            new_user = models.User(**new_user.model_dump())
-            login_user(new_user)
-            return redirect(url_for('users.profile'))
+            if new_user := users_api.post(json=data):
+                user = models.User(**new_user.model_dump())
+                login_user(user)
+                return redirect(url_for('users.profile'))
+            return redirect(url_for('auth.signup'))
         logger.warning(
             f'duplicate email registration attempt: {form.email.data} - last login: {existing_user.last_login}'
         )
