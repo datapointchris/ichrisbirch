@@ -5,15 +5,14 @@ import httpx
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app import utils
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import Settings
 
-settings = get_settings()
-logger = logging.getLogger('app.chat_api')
+logger = logging.getLogger(__file__)
 
 
 class ChatAPI:
-    def __init__(self, api_url: str):
-        self.api_url = api_url
+    def __init__(self, settings: Settings):
+        self.api_url = settings.api_url
         self.client = httpx.Client(follow_redirects=True)
         self.chat_url = f'{settings.api_url}/chat/chats/'
         self.message_url = f'{settings.api_url}/chat/messages/'
@@ -25,8 +24,7 @@ class ChatAPI:
 
     def get_chat(self, name: str):
         response = self.client.get(utils.url_builder(self.chat_url, name)).raise_for_status()
-        if chat := response.json():
-            return self._convert_chat_to_model(chat)
+        return self._convert_chat_to_model(response.json())
 
     def get_all_chats(self):
         response = self.client.get(self.chat_url).raise_for_status()
@@ -58,11 +56,3 @@ class ChatAPI:
                 logger.info(f'created new message: {str(response.json())[:100]}')
             return self.get_chat(chat.name)
         return chat
-
-    def save_chat_session(self, chat: models.Chat):
-        if existing_chat := self.get_chat(chat.name):
-            logger.info(f'found chat session: {chat.name}')
-            return self.update_chat(existing_chat, chat)
-        else:
-            logger.info(f'chat session not found: {chat.name}, creating...')
-            return self.create_new_chat(chat)
