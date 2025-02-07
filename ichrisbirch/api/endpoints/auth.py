@@ -100,15 +100,15 @@ async def authenticate_with_oauth2(request: Request, session: Session = Depends(
 
 
 def get_current_user(
-    user_id_headers=Depends(authenticate_with_application_headers),
-    user_id_jwt=Depends(authenticate_with_jwt),
-    user_id_oauth2=Depends(authenticate_with_oauth2),
+    auth_headers=Depends(authenticate_with_application_headers),
+    auth_jwt=Depends(authenticate_with_jwt),
+    auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
 ):
-    logger.debug(f'headers: {user_id_headers}')
-    logger.debug(f'jwt token: {user_id_jwt}')
-    logger.debug(f'oauth form: {user_id_oauth2}')
-    if not (user_id := user_id_headers or user_id_jwt or user_id_oauth2):
+    logger.debug(f'headers: {auth_headers}')
+    logger.debug(f'jwt token: {auth_jwt}')
+    logger.debug(f'oauth form: {auth_oauth2}')
+    if not (user_id := auth_headers or auth_jwt or auth_oauth2):
         raise InvalidCredentialsError()
     if user := validate_user_id(user_id, session):
         logger.debug(f'validated current user: {user}')
@@ -140,9 +140,9 @@ def delete_refresh_token(user_id: str):
                 f.write(line)
 
 
-@router.get('/logout/', status_code=status.HTTP_200_OK)
+@router.get('/logout/', response_model=None, status_code=status.HTTP_200_OK)
 async def logout_user(user: CurrentUser):
-    delete_refresh_token(user.get_id())
+    delete_refresh_token(str(user.get_id()))
     return Response(status_code=status.HTTP_200_OK)
 
 
@@ -168,10 +168,10 @@ async def validate_token(cookie_token: str = Cookie(None), header_token: str = H
 
 
 @router.post('/token/refresh/', status_code=status.HTTP_200_OK)
-async def refresh_token(cookie_token: Optional[str] = Cookie(None), header_token: Optional[str] = Header(None)):
-    if refresh_token := cookie_token or header_token:
-        if not (user_id := authenticate_with_jwt(refresh_token)):
-            return InvalidCredentialsError
+async def refresh_token(cookie_token: str = Cookie(None), header_token: str = Header(None)):
+    refresh_token = cookie_token or header_token
+    if not (user_id := authenticate_with_jwt(refresh_token)):
+        return InvalidCredentialsError
 
     stored_refresh_token = retrieve_refresh_token(user_id)
     if refresh_token != stored_refresh_token:

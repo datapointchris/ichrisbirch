@@ -7,7 +7,7 @@ from ichrisbirch import schemas
 from ichrisbirch.app import utils
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger('chat.api')
 
 
 class ChatAPI:

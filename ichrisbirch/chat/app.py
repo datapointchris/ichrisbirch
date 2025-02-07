@@ -10,7 +10,7 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
 
 settings = get_settings()
-logger = logging.getLogger('app.chat')
+logger = logging.getLogger('chat.app')
 st.set_page_config(page_title='Chatter', page_icon='🤖', layout='wide')
 
 USER_AVATAR = '👤'
@@ -42,10 +42,12 @@ def generate_chat_session_name(prompt, client):
         return generate_chat_session_name(prompt, client)
 
 
-def user_logged_in():
+def user_must_be_logged_in():
     logger.info('initializing session')
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
+    if "user_id" not in st.session_state:
+        st.session_state.user_id = None
     if "access_token" not in st.session_state:
         st.session_state.access_token = None
     if "refresh_token" not in st.session_state:
@@ -55,16 +57,17 @@ def user_logged_in():
         return True
 
     if not (st.session_state.access_token and chat_auth_client.validate_jwt_token(st.session_state.access_token)):
-        logger.info('no access token found, or token is invalid, trying to refresh')
+        logger.debug('no access token found, or token is invalid, trying to refresh')
         if st.session_state.refresh_token:
             if access_token := chat_auth_client.refresh_access_token(st.session_state.refresh_token):
                 st.session_state.access_token = access_token
                 st.session_state.logged_in = True
                 return True
-            logger.info('failed to refresh access token, displaying login form')
-            display_login_form()
-            if not st.session_state.logged_in:
-                return False
+            logger.debug('failed to refresh access token, displaying login form')
+        logger.debug('no refresh token found, displaying login form')
+        display_login_form()
+        if not st.session_state.logged_in:
+            return False
     return True
 
 
@@ -82,17 +85,18 @@ def login_flow():
             st.session_state.refresh_token = tokens.get("refresh_token")
             logger.info(f'JWT tokens received for user: {user.name}')
             st.session_state.logged_in = True
+            st.session_state.user = user
         else:
             logger.error('failed to obtain jwt tokens')
             st.error('Failed to obtain JWT tokens')
     else:
-        st.error('Invalid username or password')
-        logger.warning(f'invalid login attempt for: {st.session_state["username"]}')
+        st.error('Login Error')
+        logger.warning(f'error trying to log in user: {st.session_state["username"]}')
     st.session_state.pop("username", None)
     st.session_state.pop("password", None)
 
 
-if not user_logged_in():
+if not user_must_be_logged_in():
     st.stop()
 
 
@@ -109,7 +113,7 @@ st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
 
 with st.sidebar:
     if st.button('Logout'):
-        chat_auth_client.logout_user(st.session_state.access_token)
+        chat_auth_client.logout_user(st.session_state.user, st.session_state.access_token)
         st.session_state.logged_in = False
         st.session_state.access_token = None
         st.session_state.refresh_token = None

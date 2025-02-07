@@ -116,4 +116,5 @@ async def read_by_email(email: str, session: Session = Depends(get_sqlalchemy_se
     if not (user := session.execute(query).scalars().first()):
         message = f'user with email {email} not found'
         logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
     return user

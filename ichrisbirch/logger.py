@@ -160,6 +160,7 @@ THIRD_PARTY_LOGGERS = {
     'matplotlib': {'level': 'INFO'},
     'multipart.multipart': {'level': 'INFO'},
     'openai': {'level': 'INFO'},
+    'pytho_multipart': {'level': 'INFO'},
     's3transfer': {'level': 'INFO'},
     'tzlocal': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},

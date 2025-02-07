@@ -9,7 +9,7 @@ from ichrisbirch import models
 from ichrisbirch.app.utils import url_builder
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger('chat.auth')
 
 
 class ChatAuthClient:
@@ -59,15 +59,20 @@ class ChatAuthClient:
         user_login_url = url_builder(self.users_url, 'email', username)
         with self.safe_request_client() as client:
             user_data = client.get(user_login_url).raise_for_status().json()
-            user = models.User(**user_data)
-            if user and user.check_password(password=password):
-                logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
-                client.patch(url_builder(self.users_url, user.id), json={'last_login': pendulum.now().for_json()})
-                return user
+            if user := models.User(**user_data):
+                if user.check_password(password=password):
+                    logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
+                    client.patch(url_builder(self.users_url, user.id), json={'last_login': pendulum.now().for_json()})
+                    return user
+                else:
+                    logger.warning(f'incorrect password for user: {user.email}')
+            else:
+                logger.warning(f'user with email {username} not found')
         return None
 
-    def logout_user(self, token: str):
+    def logout_user(self, user: models.User, token: str):
         headers = {'Authorization': f'Bearer {token}'}
+        logger.debug(f'logging out user: {user} with token {token}')
         user_logout_url = url_builder(self.api_url, 'auth', 'logout')
         with self.safe_request_client() as client:
             client.get(user_logout_url, headers=headers).raise_for_status()
