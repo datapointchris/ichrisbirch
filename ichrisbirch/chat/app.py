@@ -172,10 +172,10 @@ if st.session_state.current_session is not None:
     # Save chat sessions after each interaction
     # but only after the first prompt and response to generate a name from
     if current_chat.name:
-        if existing_chat := chat_api.get_chat(chat.name):
-            logger.info(f'found chat session: {chat.name}')
-            updated_chat = chat_api.update_chat(existing_chat, chat)
+        if existing_chat := chat_api.get_chat(current_chat.name):
+            logger.info(f'found chat session: {current_chat.name}')
+            updated_chat = chat_api.update_chat(existing_chat, current_chat)
         else:
-            logger.info(f'chat session not found: {chat.name}, creating...')
-            updated_chat = chat_api.create_new_chat(chat)
-        st.session_state.chats[st.session_state.current_session] = updated_chat
+            logger.info(f'chat session not found: {current_chat.name}, creating...')
+            updated_chat = chat_api.create_new_chat(current_chat)
+            st.session_state.chats[st.session_state.current_session] = updated_chat

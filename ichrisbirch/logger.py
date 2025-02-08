@@ -156,7 +156,7 @@ THIRD_PARTY_LOGGERS = {
     'faker': {'level': 'INFO'},
     'fsevents': {'level': 'INFO'},
     'httpcore': {'level': 'INFO'},
-    'httpx': {'level': 'INFO'},
+    'httpx': {'level': 'WARNING'},
     'matplotlib': {'level': 'INFO'},
     'multipart.multipart': {'level': 'INFO'},
     'openai': {'level': 'INFO'},

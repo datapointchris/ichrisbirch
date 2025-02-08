@@ -25,7 +25,7 @@ class ChatAPI:
     def get_chat(self, name: str):
         if chat := self.client.get(utils.url_builder(self.chat_url, name)).raise_for_status().json():
             return self._convert_chat_to_model(chat)
-        return models.Chat()
+        return None
 
     def get_all_chats(self):
         response = self.client.get(self.chat_url).raise_for_status()
@@ -40,20 +40,20 @@ class ChatAPI:
             logger.info(f'created new chat session: {chat.name}')
         return self._convert_chat_to_model(new_chat)
 
-    def update_chat(self, existing_chat: models.Chat, chat: models.Chat):
-        if new_messages := [m for m in chat.messages if m.id not in [m.id for m in existing_chat.messages]]:
-            for message in new_messages:
-                msg_info = {
-                    'id': {message.id},
-                    'chat_id': {message.chat_id},
-                    'role': {message.role},
-                    'content': {message.content[:20]},
-                }
-                logger.info(f'found new message: {msg_info}')
-                # NOTE: ChatMessageCreate DOES NOT WORK, it erases the chat_id
-                json_model = dict(chat_id=message.chat_id or chat.id, role=message.role, content=message.content)
-                response = self.client.post(self.message_url, json=json_model)
-                response.raise_for_status()
-                logger.info(f'created new message: {str(response.json())[:100]}')
-            return self.get_chat(chat.name)
-        return chat
+    def update_chat(self, existing_chat: models.Chat, current_chat: models.Chat):
+        existing_chat_message_ids = [m.id for m in existing_chat.messages]
+        new_chat_messages = [m for m in current_chat.messages if m.id not in existing_chat_message_ids]
+        for message in new_chat_messages:
+            msg_info = {
+                'id': message.id,
+                'chat_id': message.chat_id,
+                'role': message.role,
+                'content': message.content[:20],
+            }
+            logger.info(f'found new message: {msg_info}')
+            # NOTE: ChatMessageCreate DOES NOT WORK, it erases the chat_id
+            json_model = dict(chat_id=message.chat_id or current_chat.id, role=message.role, content=message.content)
+            response = self.client.post(self.message_url, json=json_model)
+            response.raise_for_status()
+            logger.info(f'created new message: {str(response.json())[:100]}')
+        return self.get_chat(current_chat.name)
