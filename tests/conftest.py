@@ -25,11 +25,9 @@ from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('tests.conftest')
+logger.warning('<-- file imported')
 settings = get_settings('testing')
-
-# Enable new signups for testing
-settings.auth.accepting_new_signups = True
 
 
 @pytest.fixture(scope='module')

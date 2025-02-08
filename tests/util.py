@@ -24,6 +24,7 @@ from ichrisbirch import models
 from ichrisbirch.config import get_settings
 
 logger = logging.getLogger('tests.util')
+logger.info('testing util loaded')
 settings = get_settings('testing')
 
 # NOTE: These have to be dicts, if they are models.User objects, they will be incorrect
