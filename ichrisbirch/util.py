@@ -1,5 +1,9 @@
+import functools
+import inspect
 import logging
 from pathlib import Path
+
+logger = logging.getLogger('util')
 
 
 def find_project_root(
@@ -21,3 +25,16 @@ def get_logger_filename_from_handlername(handler_name: str = 'ichrisbirch_file')
         if isinstance(handler, logging.FileHandler):
             return handler.baseFilename
     return None
+
+
+def log_caller(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        current_frame = inspect.currentframe()
+        caller_frame = current_frame.f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_file = caller_frame.f_code.co_filename
+        logger.info(f"function '{func.__name__}' was called by '{caller_name}' in {caller_file}")
+        return func(*args, **kwargs)
+
+    return wrapper
