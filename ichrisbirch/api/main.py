@@ -14,7 +14,7 @@ from ichrisbirch.config import Settings
 
 # TODO: for authentication
 # from ichrisbirch.api.dependencies import get_query_token, get_token_header
-logger = logging.getLogger('api')
+logger = logging.getLogger('api.main')
 
 
 async def http_exception_handler_logger(request, exc):
