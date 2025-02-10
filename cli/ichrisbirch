@@ -9,12 +9,13 @@ else
     LOG_DIR="/var/log/ichrisbirch"
 fi
 DEV_URL="http://macmini.local"
+LOCAL_HOST_URL="127.0.0.1"
 LOCAL_APP_PORT="6200"
 LOCAL_API_PORT="6201"
 LOCAL_CHAT_PORT="8505"
-LOCAL_APP_URL="http://localhost:$LOCAL_APP_PORT"
-LOCAL_API_URL="http://localhost:$LOCAL_API_PORT"
-LOCAL_CHAT_URL="http://localhost:$LOCAL_CHAT_PORT"
+LOCAL_APP_URL="$LOCAL_HOST_URL:$LOCAL_APP_PORT"
+LOCAL_API_URL="$LOCAL_HOST_URL:$LOCAL_API_PORT"
+LOCAL_CHAT_URL="$LOCAL_HOST_URL:$LOCAL_CHAT_PORT"
 
 red=$(tput setaf 1)
 green=$(tput setaf 2)
@@ -64,20 +65,20 @@ function dev-start() {
 function dev-runapp() {
     cd "$ICHRISBIRCH_HOME" || exit
     echo "Starting ${blue}DEV${reset} ${green}APP${reset} at ${aqua}$LOCAL_APP_URL${reset}"
-    ENVIRONMENT=development FLASK_APP=ichrisbirch.wsgi_app:app flask run --host localhost --port $LOCAL_APP_PORT --debug --reload
+    ENVIRONMENT=development FLASK_APP=ichrisbirch.wsgi_app:app flask run --host $LOCAL_HOST_URL --port $LOCAL_APP_PORT --debug --reload
     # NOTE: Does not work when using `poetry run uvicorn...`.
 }
 
 function dev-runapi() {
     cd "$ICHRISBIRCH_HOME" || exit
     echo "Starting ${blue}DEV${reset} ${green}API${reset} at ${aqua}$LOCAL_API_URL${reset}"
-    ENVIRONMENT=development poetry run uvicorn ichrisbirch.wsgi_api:api --host localhost --port $LOCAL_API_PORT --log-level debug --reload --reload-dir ichrisbirch/api/
+    ENVIRONMENT=development poetry run uvicorn ichrisbirch.wsgi_api:api --host $LOCAL_HOST_URL --port $LOCAL_API_PORT --log-level debug --reload --reload-dir ichrisbirch/api/
 }
 
 function dev-runchat() {
     cd "$ICHRISBIRCH_HOME" || exit
     echo "Starting ${blue}DEV${reset} ${green}Chat${reset} at ${aqua}$LOCAL_CHAT_URL${reset}"
-    ENVIRONMENT=development poetry run streamlit run ichrisbirch/chat/app.py --server.port $LOCAL_CHAT_PORT --server.headless true --server.runOnSave true
+    ENVIRONMENT=development poetry run streamlit run ichrisbirch/chat/app.py --server.address=$LOCAL_HOST_URL --server.port $LOCAL_CHAT_PORT --server.headless true --server.runOnSave true
 }
 
 function dev-runscheduler() {
