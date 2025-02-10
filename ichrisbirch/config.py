@@ -8,6 +8,7 @@ from typing import Optional
 import dotenv
 
 from ichrisbirch.util import find_project_root
+from ichrisbirch.util import log_caller
 
 logger = logging.getLogger('config')
 
@@ -65,13 +66,16 @@ class FastAPISettings:
         _protocol = os.environ['PROTOCOL']
         self.allowed_origins: list[str] = [
             '127.0.0.1',
+            '127.0.0.1:8505',
             'https://ichrisbirch.com',
             'https://www.ichrisbirch.com',
+            'https://chat.ichrisbirch.com',
             f'{_protocol}://localhost',
             f'{_protocol}://localhost:4200',
             f'{_protocol}://localhost:5500',
             f'{_protocol}://localhost:6200',
             f'{_protocol}://localhost:8000',
+            f'{_protocol}://localhost:8505',
         ]
 
 
@@ -263,6 +267,7 @@ def load_environment(env_file: Optional[Path | str] = None):
 
 
 @functools.lru_cache(maxsize=1)
+@log_caller
 def get_settings(env_file: Optional[Path | str] = None) -> Settings:
     """Return settings based on Path, str, or ENVIRONMENT variable."""
     resolved_env_file = load_environment(env_file)
