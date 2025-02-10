@@ -1,11 +1,9 @@
-import json
 import logging
 from datetime import timedelta
 from typing import Annotated
 from typing import Optional
 
 import jwt
-import pendulum
 from fastapi import APIRouter
 from fastapi import Cookie
 from fastapi import Depends
@@ -19,13 +17,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
+from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 settings = get_settings()
 logger = logging.getLogger('api.auth')
 router = APIRouter()
-
+token_handler = JWTTokenHandler(access_token_expire_delta=timedelta(seconds=15))
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f'{settings.api_url}/auth/token/', auto_error=False)
 
 
@@ -59,21 +58,13 @@ def validate_password(user: models.User, password: str):
     return True
 
 
-def generate_jwt(user_id: str, expires_delta: timedelta = settings.auth.access_token_expire):
-    payload = {'sub': user_id, 'iat': pendulum.now(), 'exp': pendulum.now() + expires_delta}
-    token = jwt.encode(payload=payload, key=settings.auth.secret_key, algorithm=settings.auth.algorithm)
-    return token
-
-
 def authenticate_with_jwt(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         payload = jwt.decode(jwt=token, key=settings.auth.secret_key, algorithms=[settings.auth.algorithm])
         user_id = payload.get('sub')
-        if user_id is None:
-            logger.warning('user_id missing from jwt')
-            return None
     except Exception as e:
-        logger.info(f'{e}: token type {type(token)}')
+        if 'Invalid token type' not in str(e):
+            logger.warning(e)
         return None
     logger.info(f'authenticated user with jwt: {user_id}')
     return user_id
@@ -118,49 +109,26 @@ def get_current_user(
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
 
 
-def store_refresh_token(user_id: str, refresh_token: str):
-    with open('rfrtkns.txt', 'a') as f:
-        f.write(f'{user_id}: {refresh_token}\n')
-
-
-def retrieve_refresh_token(user_id: str) -> str:
-    with open('rfrtkns.txt') as f:
-        for line in f:
-            if line.startswith(user_id):
-                return line.split(': ')[1].strip()
-    return ''
-
-
-def delete_refresh_token(user_id: str):
-    with open('rfrtkns.txt') as f:
-        lines = f.readlines()
-    with open('rfrtkns.txt', 'w') as f:
-        for line in lines:
-            if not line.startswith(user_id):
-                f.write(line)
-
-
 @router.get('/logout/', response_model=None, status_code=status.HTTP_200_OK)
-async def logout_user(user: CurrentUser):
-    delete_refresh_token(str(user.get_id()))
+async def logout_user(x_user_id: str = Header(...)):
+    token_handler.delete_refresh_token(x_user_id)
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post("/token/", response_model=None, status_code=status.HTTP_201_CREATED)
-async def access_token(user: CurrentUser):
-    access_token = generate_jwt(user.get_id())
-    refresh_token = generate_jwt(user.get_id(), expires_delta=settings.auth.refresh_token_expire)
-    store_refresh_token(user.get_id(), refresh_token)
-
-    tokens = {'access_token': access_token, 'refresh_token': refresh_token}
-    response = Response(content=json.dumps(tokens), status_code=status.HTTP_201_CREATED)
+async def access_token(response: Response, user: CurrentUser):
+    access_token = token_handler.create_access_token(user.get_id())
+    refresh_token = token_handler.create_refresh_token(user.get_id())
+    token_handler.store_refresh_token(user.get_id(), refresh_token)
     response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)  # Not "Bearer" prefixed
-    return response
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
+    return {'access_token': access_token, 'refresh_token': refresh_token}
 
 
 @router.get('/token/validate/', status_code=status.HTTP_200_OK)
 async def validate_token(cookie_token: str = Cookie(None), header_token: str = Header(None)):
+    logger.debug(f'token validation - cookie: {cookie_token}')
+    logger.debug(f'token validation - header: {header_token}')
     token = cookie_token or header_token
     if not authenticate_with_jwt(token):
         return InvalidCredentialsError
@@ -168,16 +136,15 @@ async def validate_token(cookie_token: str = Cookie(None), header_token: str = H
 
 
 @router.post('/token/refresh/', status_code=status.HTTP_200_OK)
-async def refresh_token(cookie_token: str = Cookie(None), header_token: str = Header(None)):
+async def refresh_token(response: Response, cookie_token: str = Cookie(None), header_token: str = Header(None)):
+    logger.debug(f'token validation - cookie: {cookie_token}')
+    logger.debug(f'token validation - header: {header_token}')
     refresh_token = cookie_token or header_token
     if not (user_id := authenticate_with_jwt(refresh_token)):
         return InvalidCredentialsError
-
-    stored_refresh_token = retrieve_refresh_token(user_id)
+    stored_refresh_token = token_handler.retrieve_refresh_token(user_id)
     if refresh_token != stored_refresh_token:
         return InvalidCredentialsError
-
-    new_access_token = generate_jwt(user_id)
-    response = Response(status_code=status.HTTP_200_OK)
+    new_access_token = token_handler.create_access_token(user_id)
     response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True)
     return response

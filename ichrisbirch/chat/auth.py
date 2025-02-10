@@ -1,5 +1,6 @@
 import logging
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator
 
 import httpx
@@ -17,6 +18,8 @@ class ChatAuthClient:
         self.api_url = settings.api_url
         self.token_url = f'{self.api_url}/auth/token/'
         self.users_url = f'{self.api_url}/users/'
+        self.local_access_storage = Path('scrtacctkns.json')
+        self.local_refresh_storage = Path('scrtrfrtkns.json')
 
     @contextmanager
     def safe_request_client(self) -> Generator[httpx.Client, None, None]:
@@ -71,8 +74,50 @@ class ChatAuthClient:
         return None
 
     def logout_user(self, user: models.User, token: str):
-        headers = {'Authorization': f'Bearer {token}'}
+        headers = {'X-User-ID': user.get_id()}
         logger.debug(f'logging out user: {user} with token {token}')
         user_logout_url = url_builder(self.api_url, 'auth', 'logout')
         with self.safe_request_client() as client:
             client.get(user_logout_url, headers=headers).raise_for_status()
+
+    def _save_token_local(self, token: str, filename: Path):
+        if not filename.exists():
+            filename.touch()
+        with filename.open('w') as f:
+            f.write(token)
+            logger.info('saved token locally')
+
+    def _retrieve_token_local(self, filename: Path) -> str | None:
+        if not filename.exists():
+            filename.touch()
+        with filename.open() as f:
+            if token := next(f, None):
+                logger.info('retrieved token from local')
+            else:
+                logger.warning('no token found locally')
+            return token
+
+    def _delete_token_local(self, filename: Path):
+        if not filename.exists():
+            filename.touch()
+        with filename.open('w') as f:
+            f.truncate(0)
+            logger.info('deleted token')
+
+    def save_access_token(self, token: str):
+        self._save_token_local(token, self.local_access_storage)
+
+    def retrieve_access_token(self) -> str | None:
+        return self._retrieve_token_local(self.local_access_storage)
+
+    def delete_access_token(self):
+        self._delete_token_local(self.local_access_storage)
+
+    def save_refresh_token(self, token: str):
+        self._save_token_local(token, self.local_refresh_storage)
+
+    def retrieve_refresh_token(self) -> str | None:
+        return self._retrieve_token_local(self.local_refresh_storage)
+
+    def delete_refresh_token(self):
+        self._delete_token_local(self.local_refresh_storage)

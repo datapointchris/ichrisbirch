@@ -38,7 +38,6 @@ async def create(obj_in: schemas.ChatCreate, session: Session = Depends(get_sqla
     obj_in.messages = []
     obj = models.Chat(**obj_in.model_dump())
     obj.messages.extend(messages)
-    logger.warning('before adding object')
     session.add(obj)
     session.commit()
     session.refresh(obj)
