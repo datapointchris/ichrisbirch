@@ -10,7 +10,7 @@ from ichrisbirch.app import routes
 from ichrisbirch.app.login import login_manager
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger('app')
+logger = logging.getLogger('app.main')
 csrf = CSRFProtect()
 
 
