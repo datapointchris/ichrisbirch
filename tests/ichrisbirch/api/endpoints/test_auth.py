@@ -5,13 +5,15 @@ from sqlalchemy.sql import select
 import tests.test_data
 import tests.util
 from ichrisbirch import models
-from ichrisbirch.api.endpoints.auth import generate_jwt
 from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
+from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from tests.conftest import settings
 
 USERS_TEST_DATA = tests.test_data.users.BASE_DATA
+
+jwt_handler = JWTTokenHandler()
 
 
 @pytest.fixture(autouse=True)
@@ -61,7 +63,7 @@ def test_validate_user_id(test_user):
 
 
 def test_generate_jwt(test_user):
-    token = generate_jwt(test_user.id)
+    token = jwt_handler.create_access_token(test_user.id)
     assert token
     assert isinstance(token, str)
 
@@ -74,7 +76,7 @@ def test_access_token_application_headers(test_api, test_user):
 
 
 def test_access_token_jwt_auth(test_api, test_user):
-    token = generate_jwt(test_user.get_id())
+    token = jwt_handler.create_access_token(test_user.get_id())
     headers = make_jwt_header(token)
     response = test_api.post('/auth/token/', headers=headers)
     assert response.status_code == status.HTTP_201_CREATED
@@ -87,6 +89,6 @@ def test_access_token_oauth2(test_api, test_user):
 
 
 def test_validate_token(test_api, test_user):
-    token = generate_jwt(test_user.get_id())
+    token = jwt_handler.create_access_token(test_user.get_id())
     response = test_api.get('/auth/token/validate/', headers={'token': token})
     assert response.status_code == status.HTTP_200_OK

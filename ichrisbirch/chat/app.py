@@ -2,6 +2,7 @@ import logging
 
 import streamlit as st
 from openai import OpenAI
+from streamlit import session_state as ss
 
 from ichrisbirch import models
 from ichrisbirch.chat.api import ChatAPI
@@ -42,31 +43,62 @@ def generate_chat_session_name(prompt, client):
         return generate_chat_session_name(prompt, client)
 
 
-def user_must_be_logged_in():
-    logger.info('initializing session')
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-    if "user_id" not in st.session_state:
-        st.session_state.user_id = None
-    if "access_token" not in st.session_state:
-        st.session_state.access_token = None
-    if "refresh_token" not in st.session_state:
-        st.session_state.refresh_token = None
+def load_local_tokens():
+    ss.access_token = chat_auth_client.retrieve_access_token()
+    ss.refresh_token = chat_auth_client.retrieve_refresh_token()
 
-    if st.session_state.logged_in:
+
+def initialize_session():
+    logger.info('initializing session')
+
+    if 'logged_in' not in ss:
+        ss.logged_in = False
+    else:
+        logger.debug(f'logged_in: {ss.logged_in}')
+
+    if 'user' not in ss:
+        ss.user = None
+    else:
+        logger.debug(f'user: {ss.user}')
+
+    if 'access_token' not in ss or ss.access_token is None:
+        ss.access_token = None
+    else:
+        logger.debug(f'access_token: {ss.access_token[-10:]}')
+
+    if 'refresh_token' not in ss or ss.refresh_token is None:
+        ss.refresh_token = None
+    else:
+        logger.debug(f'refresh_token: {ss.refresh_token[-10:]}')
+
+    if 'current_chat_index' not in ss:
+        ss.current_chat_index = None
+    else:
+        logger.debug(f'current_chat_index: {ss.current_chat_index}')
+
+    if 'anon_chat' not in ss:
+        ss.anon_chat = False
+    else:
+        logger.debug(f'anon_chat: {ss.anon_chat}')
+
+
+def user_must_be_logged_in():
+    load_local_tokens()
+    initialize_session()
+    if ss.logged_in:
         return True
 
-    if not (st.session_state.access_token and chat_auth_client.validate_jwt_token(st.session_state.access_token)):
+    if not (ss.access_token and chat_auth_client.validate_jwt_token(ss.access_token)):
         logger.debug('no access token found, or token is invalid, trying to refresh')
-        if st.session_state.refresh_token:
-            if access_token := chat_auth_client.refresh_access_token(st.session_state.refresh_token):
-                st.session_state.access_token = access_token
-                st.session_state.logged_in = True
+        if ss.refresh_token:
+            if access_token := chat_auth_client.refresh_access_token(ss.refresh_token):
+                ss.access_token = access_token
+                ss.logged_in = True
                 return True
             logger.debug('failed to refresh access token, displaying login form')
         logger.debug('no refresh token found, displaying login form')
         display_login_form()
-        if not st.session_state.logged_in:
+        if not ss.logged_in:
             return False
     return True
 
@@ -79,30 +111,32 @@ def display_login_form():
 
 
 def login_flow():
-    if user := chat_auth_client.login_user(st.session_state['username'], st.session_state['password']):
-        if tokens := chat_auth_client.request_jwt_tokens(user, st.session_state['password']):
-            st.session_state.access_token = tokens.get("access_token")
-            st.session_state.refresh_token = tokens.get("refresh_token")
-            logger.info(f'JWT tokens received for user: {user.name}')
-            st.session_state.logged_in = True
-            st.session_state.user = user
+    if user := chat_auth_client.login_user(ss['username'], ss['password']):
+        if tokens := chat_auth_client.request_jwt_tokens(user, ss['password']):
+            logger.info(f'jwt tokens received for user: {user.name}')
+            ss.access_token = tokens.get("access_token")
+            ss.refresh_token = tokens.get("refresh_token")
+            chat_auth_client.save_access_token(ss.access_token)
+            chat_auth_client.save_refresh_token(ss.refresh_token)
+            ss.logged_in = True
+            ss.user = user
         else:
             logger.error('failed to obtain jwt tokens')
             st.error('Failed to obtain JWT tokens')
     else:
         st.error('Login Error')
-        logger.warning(f'error trying to log in user: {st.session_state["username"]}')
-    st.session_state.pop("username", None)
-    st.session_state.pop("password", None)
+        logger.warning(f'error trying to log in user: {ss["username"]}')
+    ss.pop("username", None)
+    ss.pop("password", None)
 
 
 if not user_must_be_logged_in():
     st.stop()
 
 
-if 'chats' not in st.session_state:
-    st.session_state.chats = chat_api.get_all_chats()
-    st.session_state.current_session = None
+if 'chats' not in ss:
+    ss.chats = chat_api.get_all_chats()
+    ss.current_chat_index = None
 
 
 with STYLESHEET.open() as f:
@@ -113,29 +147,39 @@ st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
 
 with st.sidebar:
     if st.button('Logout'):
-        chat_auth_client.logout_user(st.session_state.user, st.session_state.access_token)
-        st.session_state.logged_in = False
-        st.session_state.access_token = None
-        st.session_state.refresh_token = None
+        chat_auth_client.logout_user(ss.user, ss.access_token)
+        ss.logged_in = False
+        ss.user = None
+        ss.access_token = None
+        ss.refresh_token = None
+        chat_auth_client.delete_access_token()
+        chat_auth_client.delete_refresh_token()
         logger.info('user logged out')
         st.rerun()
 
-    st.write("<h1 class='sidebar-title'>Chats</h1>", unsafe_allow_html=True)
-    for i, chat in enumerate(st.session_state.chats):
-        chat_name = chat.name or f'Chat {i+1}'
-        if st.button(chat_name):
-            st.session_state.current_session = i
+    if st.button('Anon Chat'):
+        ss.anon_chat = True
+        new_chat = models.Chat(name='', messages=[])
+        ss.chats.append(new_chat)
+        ss.current_chat_index = len(ss.chats) - 1
 
     if st.button('New Chat'):
         new_chat = models.Chat(name='', messages=[])
-        st.session_state.chats.append(new_chat)
-        st.session_state.current_session = len(st.session_state.chats) - 1
+        ss.chats.append(new_chat)
+        ss.current_chat_index = len(ss.chats) - 1
 
-if st.session_state.current_session is None and st.session_state.chats:
-    st.session_state.current_session = len(st.session_state.chats) - 1
+    st.write("<h1 class='sidebar-title'>Chats</h1>", unsafe_allow_html=True)
+    for i, chat in enumerate(ss.chats):
+        chat_name = chat.name or f'Chat {i+1}'
+        if st.button(chat_name):
+            ss.current_chat_index = i
 
-if st.session_state.current_session is not None:
-    current_chat = st.session_state.chats[st.session_state.current_session]
+
+if ss.current_chat_index is None and ss.chats:
+    ss.current_chat_index = len(ss.chats) - 1
+
+if ss.current_chat_index is not None:
+    current_chat = ss.chats[ss.current_chat_index]
     for message in current_chat.messages:
         avatar = USER_AVATAR if message.role == 'user' else BOT_AVATAR
         with st.chat_message(message.role, avatar=avatar):
@@ -169,13 +213,15 @@ if st.session_state.current_session is not None:
             models.ChatMessage(chat_id=current_chat.id, role='assistant', content=full_response)
         )
 
-    # Save chat sessions after each interaction
-    # but only after the first prompt and response to generate a name from
-    if current_chat.name:
-        if existing_chat := chat_api.get_chat(current_chat.name):
-            logger.info(f'found chat session: {current_chat.name}')
-            updated_chat = chat_api.update_chat(existing_chat, current_chat)
-        else:
-            logger.info(f'chat session not found: {current_chat.name}, creating...')
-            updated_chat = chat_api.create_new_chat(current_chat)
-            st.session_state.chats[st.session_state.current_session] = updated_chat
+    if not ss.anon_chat:
+        # Don't save anonymous chat sessions
+        if current_chat.name:
+            # Save chat sessions after each interaction
+            # but only after the first prompt and response to generate a name from
+            if existing_chat := chat_api.get_chat(current_chat.name):
+                logger.info(f'found chat session: {current_chat.name}')
+                updated_chat = chat_api.update_chat(existing_chat, current_chat)
+            else:
+                logger.info(f'chat session not found: {current_chat.name}, creating...')
+                updated_chat = chat_api.create_new_chat(current_chat)
+                ss.chats[ss.current_chat_index] = updated_chat
