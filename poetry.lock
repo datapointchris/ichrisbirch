@@ -5435,6 +5435,22 @@ future = "*"
 mando = ">=0.6,<0.7"
 
 [[package]]
+name = "redis"
+version = "5.2.1"
+description = "Python client for Redis database and key-value store"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "redis-5.2.1-py3-none-any.whl", hash = "sha256:ee7e1056b9aea0f04c6c2ed59452947f34c4940ee025f5dd83e6a6418b6989e4"},
+    {file = "redis-5.2.1.tar.gz", hash = "sha256:16f2e22dff21d5125e8481515e386711a34cbec50f0e44413dd7d9c060a54e0f"},
+]
+
+[package.extras]
+hiredis = ["hiredis (>=3.0.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==23.2.1)", "requests (>=2.31.0)"]
+
+[[package]]
 name = "referencing"
 version = "0.36.2"
 description = "JSON Referencing + Python"
@@ -6118,6 +6134,24 @@ watchdog = {version = ">=2.1.5,<7", markers = "platform_system != \"Darwin\""}
 
 [package.extras]
 snowflake = ["snowflake-connector-python (>=2.8.0)", "snowflake-snowpark-python[modin] (>=1.17.0)"]
+
+[[package]]
+name = "streamlit-cookies-controller"
+version = "0.0.4"
+description = "Streamlit cookies controller"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "streamlit-cookies-controller-0.0.4.tar.gz", hash = "sha256:f5df2543de858f1585dcb6e90f58f38aafbf313ee8e237c64663b2d9761583cc"},
+    {file = "streamlit_cookies_controller-0.0.4-py3-none-any.whl", hash = "sha256:f97fec6acdeee9cb9e16da25c3fc91d404b5b0ddced87c1d9fa9c62f65ca3251"},
+]
+
+[package.dependencies]
+streamlit = ">=0.63"
+
+[package.extras]
+devel = ["playwright (==1.39.0)", "pytest (==7.4.0)", "pytest-playwright-snapshot (==1.0)", "pytest-rerunfailures (==12.0)", "requests (==2.31.0)", "wheel"]
 
 [[package]]
 name = "strenum"
@@ -6942,4 +6976,4 @@ requests = "*"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "ad88515f650684e65e5789f457b1574cc8a3f3ad57b476f1c3819ddc0953c63e"
+content-hash = "c597141b40dda15265e366192e3363c021e806b87f75facd0e358cf0a178751d"
