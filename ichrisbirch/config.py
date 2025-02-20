@@ -144,6 +144,14 @@ class PostgresSettings:
         return f'postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
+class RedisSettings:
+    def __init__(self):
+        self.host: str = os.environ['REDIS_HOST']
+        self.password: str = os.environ['REDIS_PASSWORD']
+        self.port: int = int(os.environ['REDIS_PORT'])
+        self.db: int = int(os.environ['REDIS_DB'])
+
+
 class SQLAlchemySettings:
     def __init__(self):
         self.echo: bool = False
@@ -205,6 +213,7 @@ class Settings:
         self.mongodb = MongoDBSettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()
+        self.redis = RedisSettings()
         self.sqlalchemy = SQLAlchemySettings()
         self.sqlite = SQLiteSettings()
         self.users = UsersSettings()
