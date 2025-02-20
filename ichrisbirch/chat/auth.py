@@ -1,6 +1,5 @@
 import logging
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Generator
 
 import httpx
@@ -8,6 +7,7 @@ import pendulum
 
 from ichrisbirch import models
 from ichrisbirch.app.utils import url_builder
+from ichrisbirch.chat.redis_token_storage import RedisTokenStorage
 from ichrisbirch.config import Settings
 
 logger = logging.getLogger('chat.auth')
@@ -18,8 +18,7 @@ class ChatAuthClient:
         self.api_url = settings.api_url
         self.token_url = f'{self.api_url}/auth/token/'
         self.users_url = f'{self.api_url}/users/'
-        self.local_access_storage = Path('scrtacctkns.json')
-        self.local_refresh_storage = Path('scrtrfrtkns.json')
+        self.token_storage = RedisTokenStorage(host=settings.redis.host, port=settings.redis.port, db=settings.redis.db)
 
     @contextmanager
     def safe_request_client(self) -> Generator[httpx.Client, None, None]:
@@ -75,49 +74,27 @@ class ChatAuthClient:
 
     def logout_user(self, user: models.User, token: str):
         headers = {'X-User-ID': user.get_id()}
-        logger.debug(f'logging out user: {user} with token {token}')
+        logger.debug(f'logging out user: {user} with token {token[:10]}')
+        self.delete_access_token(user.get_id())
+        self.delete_refresh_token(user.get_id())
         user_logout_url = url_builder(self.api_url, 'auth', 'logout')
         with self.safe_request_client() as client:
             client.get(user_logout_url, headers=headers).raise_for_status()
 
-    def _save_token_local(self, token: str, filename: Path):
-        if not filename.exists():
-            filename.touch()
-        with filename.open('w') as f:
-            f.write(token)
-            logger.info('saved token locally')
+    def save_access_token(self, user_id: str, token: str):
+        self.token_storage.save_token(user_id, token, 'access')
 
-    def _retrieve_token_local(self, filename: Path) -> str | None:
-        if not filename.exists():
-            filename.touch()
-        with filename.open() as f:
-            if token := next(f, None):
-                logger.info('retrieved token from local')
-            else:
-                logger.warning('no token found locally')
-            return token
+    def retrieve_access_token(self, user_id: str) -> str | None:
+        return self.token_storage.get_token(user_id, 'access')
 
-    def _delete_token_local(self, filename: Path):
-        if not filename.exists():
-            filename.touch()
-        with filename.open('w') as f:
-            f.truncate(0)
-            logger.info('deleted token')
+    def delete_access_token(self, user_id: str):
+        self.token_storage.delete_token(user_id, 'access')
 
-    def save_access_token(self, token: str):
-        self._save_token_local(token, self.local_access_storage)
+    def save_refresh_token(self, user_id: str, token: str):
+        self.token_storage.save_token(user_id, token, 'refresh')
 
-    def retrieve_access_token(self) -> str | None:
-        return self._retrieve_token_local(self.local_access_storage)
+    def retrieve_refresh_token(self, user_id: str) -> str | None:
+        return self.token_storage.get_token(user_id, 'refresh')
 
-    def delete_access_token(self):
-        self._delete_token_local(self.local_access_storage)
-
-    def save_refresh_token(self, token: str):
-        self._save_token_local(token, self.local_refresh_storage)
-
-    def retrieve_refresh_token(self) -> str | None:
-        return self._retrieve_token_local(self.local_refresh_storage)
-
-    def delete_refresh_token(self):
-        self._delete_token_local(self.local_refresh_storage)
+    def delete_refresh_token(self, user_id: str):
+        self.token_storage.delete_token(user_id, 'refresh')

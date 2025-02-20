@@ -3,6 +3,7 @@ import logging
 import streamlit as st
 from openai import OpenAI
 from streamlit import session_state as ss
+from streamlit_cookies_controller import CookieController
 
 from ichrisbirch import models
 from ichrisbirch.chat.api import ChatAPI
@@ -21,6 +22,7 @@ STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
 chat_auth_client = ChatAuthClient(settings=settings)
 openai_client = OpenAI(api_key=settings.ai.openai.api_key)
 chat_api = ChatAPI(settings=settings)
+cookie_controller = CookieController()
 
 
 def generate_chat_session_name(prompt, client):
@@ -41,11 +43,6 @@ def generate_chat_session_name(prompt, client):
     else:
         logger.warning('failed to generate a summary for the chat session')
         return generate_chat_session_name(prompt, client)
-
-
-def load_local_tokens():
-    ss.access_token = chat_auth_client.retrieve_access_token()
-    ss.refresh_token = chat_auth_client.retrieve_refresh_token()
 
 
 def initialize_session():
@@ -83,31 +80,37 @@ def initialize_session():
 
 
 def user_must_be_logged_in():
-    load_local_tokens()
     initialize_session()
+
     if ss.logged_in:
         return True
 
-    if not (ss.access_token and chat_auth_client.validate_jwt_token(ss.access_token)):
-        logger.debug('no access token found, or token is invalid, trying to refresh')
-        if ss.refresh_token:
-            if access_token := chat_auth_client.refresh_access_token(ss.refresh_token):
-                ss.access_token = access_token
-                ss.logged_in = True
-                return True
-            logger.debug('failed to refresh access token, displaying login form')
-        logger.debug('no refresh token found, displaying login form')
-        display_login_form()
-        if not ss.logged_in:
-            return False
-    return True
+    access_token = cookie_controller.get('access_token')
+    refresh_token = cookie_controller.get('refresh_token')
+
+    if access_token and chat_auth_client.validate_jwt_token(access_token):
+        logger.info('validated access token')
+        ss.access_token = access_token
+        ss.logged_in = True
+        return True
+
+    if refresh_token:
+        if new_access_token := chat_auth_client.refresh_access_token(refresh_token):
+            logger.info('refreshed access token')
+            cookie_controller.set('access_token', new_access_token)
+            ss.access_token = new_access_token
+            ss.logged_in = True
+            return True
+
+    display_login_form()
+    return ss.logged_in
 
 
 def display_login_form():
-    with st.form("LoginForm"):
-        st.text_input("Username", key="username")
-        st.text_input("Password", type="password", key="password")
-        st.form_submit_button("Log in", on_click=login_flow)
+    with st.form('LoginForm'):
+        st.text_input('Username', key='username')
+        st.text_input('Password', type='password', key='password')
+        st.form_submit_button('Log in', on_click=login_flow)
 
 
 def login_flow():
@@ -116,8 +119,10 @@ def login_flow():
             logger.info(f'jwt tokens received for user: {user.name}')
             ss.access_token = tokens.get("access_token")
             ss.refresh_token = tokens.get("refresh_token")
-            chat_auth_client.save_access_token(ss.access_token)
-            chat_auth_client.save_refresh_token(ss.refresh_token)
+            cookie_controller.set('access_token', ss.access_token)
+            cookie_controller.set('refresh_token', ss.refresh_token)
+            chat_auth_client.save_access_token(user.get_id(), ss.access_token)
+            chat_auth_client.save_refresh_token(user.get_id(), ss.refresh_token)
             ss.logged_in = True
             ss.user = user
         else:
@@ -147,13 +152,13 @@ st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
 
 with st.sidebar:
     if st.button('Logout'):
+        cookie_controller.remove('access_token')
+        cookie_controller.remove('refresh_token')
         chat_auth_client.logout_user(ss.user, ss.access_token)
         ss.logged_in = False
         ss.user = None
         ss.access_token = None
         ss.refresh_token = None
-        chat_auth_client.delete_access_token()
-        chat_auth_client.delete_refresh_token()
         logger.info('user logged out')
         st.rerun()
 
