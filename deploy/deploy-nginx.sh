@@ -60,6 +60,10 @@ dry_run() {
     echo "::::: Script Actions :::::"
     echo
 
+    echo "::::: Create Directories :::::"
+    echo "$SITES_AVAILABLE"
+    echo "$SITES_ENABLED"
+
     echo "::::: Copy Config Files :::::"
     {
         echo "$PROJECT_NAME/deploy/$NGINX_SOURCE/nginx.conf => $NGINX_HOME/nginx.conf"
@@ -76,6 +80,10 @@ dry_run() {
         done
     } | column -t
 
+    if [[ $MACOS ]]; then
+        echo "Update MacOS owner permissions for: $REDIS_HOME to: $USER"
+    fi
+    echo
 }
 
 # -- Check for arguments -- #
