@@ -21,7 +21,7 @@ base_installs() {
   # NOTE: Install the postgresql-client version that matches the database
   # this is for pg_dump backups with the scheduler.
   apt install curl git git-secret postgresql-client-16 unzip -y
-  apt install tmux tldr tree supervisor nginx neovim -y
+  apt install tmux tldr tree supervisor nginx neovim redis -y
 }
 
 installs_for_building_psycopg2_from_source() {
@@ -99,15 +99,23 @@ setup_nginx() {
   cd /var/www/ichrisbirch/deploy && ./deploy-nginx.sh
 }
 
+setup_redis() {
+  # Must cd here because the deploy script has relative paths
+  cd /var/www/ichrisbirch/deploy && ./deploy-redis.sh
+}
+
 setup_supervisor() {
   # Must cd here because the deploy script has relative paths
   cd /var/www/ichrisbirch/deploy && ./deploy-supervisor.sh
 }
 
+
 set_permissions() {
   # Set permissions - ubuntu must own the directory for subsequent poetry install and git secret reveal
   # Since startup script runs as root, change permissions at the end
   chown -R ubuntu /var/www
+  chown redis:redis /var/lib/redis
+  chmod 770 /var/lib/redis
 }
 
 main() {
@@ -127,6 +135,7 @@ main() {
   # This may be a manual step of copying certs from old to new
   # install_ssl_certificate_for_nginx
   setup_nginx
+  setup_redis
   setup_supervisor
   set_permissions
   reboot
