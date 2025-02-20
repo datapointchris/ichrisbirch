@@ -99,7 +99,8 @@ gpg --list-secret-keys --verbose --with-subkey-fingerprints
 >>> ssb   cv25519 2022-04-19 [E] [expired: 2024-04-18]
 >>>       2E418AB946A0ECA...
 
-# Set new expiry date for key and subkey(s)
+# Set new expiry date for primary key and subkey(s)
+# NOTE: MUST put the primary key first, expire date, subkeys after in the same command
 gpg --quick-set-expire B98C7D8073BB87... 1y 2E418AB946A0ECA...
 
 # Check that the keys are no longer expired
@@ -111,17 +112,12 @@ gpg --list-secret-keys --verbose --with-subkey-fingerprints
 >>> ssb   cv25519 2022-04-19 [E] [expires: 2025-04-19]
 >>>       2E418AB946A0ECA...
 
-# Remove the expired email address frogit-secret`
+# Remove the expired email address for git-secret
 git secret removeperson ichrisbirch@gmail.com
 
 >>> git-secret: removed keys.
 >>> git-secret: now [ichrisbirch@gmail.com] do not have an access to the repository.
 >>> git-secret: make sure to hide the existing secrets again.
-
-# Hide the keys without the email (this may not be necessary)
-git secret hide
-
->>> git-secret: done. 3 of 3 files are hidden.
 
 # Add the email address as authorized viewer
 git secret tell ichrisbirch@gmail.com
