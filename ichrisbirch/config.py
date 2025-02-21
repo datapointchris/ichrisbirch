@@ -16,24 +16,24 @@ logger = logging.getLogger('config')
 class AISettings:
 
     class OpenAISettings:
-        def __init__(self):
+        def __init__(self) -> None:
             self.api_key: str = os.environ['OPENAI_API_KEY']
             self.model = 'gpt-4o'
 
     class PromptSettings:
         PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.article_summary_tags = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
             self.article_insights = (self.PROMPT_DIR / 'article_insights.txt').read_text()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.openai = self.OpenAISettings()
         self.prompts = self.PromptSettings()
 
 
 class AuthSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.secret_key: str = os.environ['AUTH_SECRET_KEY']
         self.algorithm: str = 'HS256'
         self.refresh_token_expire = timedelta(days=30)
@@ -43,7 +43,7 @@ class AuthSettings:
 
 
 class AWSSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.region: str = os.environ['AWS_REGION']
         self.account_id: str = os.environ['AWS_ACCOUNT_ID']
         self.kms_key: str = os.environ['AWS_KMS_KEY']
@@ -52,13 +52,13 @@ class AWSSettings:
 
 
 class ChatSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.host: str = os.environ['CHAT_HOST']
         self.port: str = os.environ['CHAT_PORT']
 
 
 class FastAPISettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.host: str = os.environ['FASTAPI_HOST']
         self.port: str = os.environ['FASTAPI_PORT']
         self.title: str = 'iChrisBirch API'
@@ -80,7 +80,7 @@ class FastAPISettings:
 
 
 class FlaskSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.host: str = os.environ['FLASK_HOST']
         self.port: str = os.environ['FLASK_PORT']
         self.SECRET_KEY: str = os.environ['FLASK_SECRET_KEY']  # MUST be capitalized
@@ -94,7 +94,7 @@ class FlaskSettings:
 
 
 class FlaskLoginSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.login_view: str = 'auth.login'
         self.login_message: str = 'Please log in to access this page.'
         self.login_message_category: str = 'info'
@@ -104,7 +104,7 @@ class FlaskLoginSettings:
 
 
 class GithubSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_token: str = os.environ['GITHUB_API_TOKEN']
         self.api_url_issues: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/issues'
         self.api_url_labels: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/labels'
@@ -116,7 +116,7 @@ class GithubSettings:
 
 
 class MongoDBSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.host: str = os.environ['MONGO_HOST']
         self.username: str = os.environ['MONGO_USERNAME']
         self.password: str = os.environ['MONGO_PASSWORD']
@@ -127,12 +127,12 @@ class MongoDBSettings:
 
 
 class PlaywrightSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.timeout = 5_000
 
 
 class PostgresSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.host: str = os.environ['POSTGRES_HOST']
         self.username: str = os.environ['POSTGRES_USERNAME']
         self.password: str = os.environ['POSTGRES_PASSWORD']
@@ -145,7 +145,7 @@ class PostgresSettings:
 
 
 class RedisSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.host: str = os.environ['REDIS_HOST']
         self.password: str = os.environ['REDIS_PASSWORD']
         self.port: int = int(os.environ['REDIS_PORT'])
@@ -153,7 +153,7 @@ class RedisSettings:
 
 
 class SQLAlchemySettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.echo: bool = False
         self.track_modifications: bool = False
         self.host: str = os.environ['POSTGRES_HOST']
@@ -168,12 +168,12 @@ class SQLAlchemySettings:
 
 
 class SQLiteSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.db_uri: str = os.environ['SQLITE_DATABASE_URI']
 
 
 class UsersSettings:
-    def __init__(self):
+    def __init__(self) -> None:
         self.default_regular_user_name = os.environ['USERS_DEFAULT_REGULAR_USER_NAME']
         self.default_regular_user_email = os.environ['USERS_DEFAULT_REGULAR_USER_EMAIL']
         self.default_regular_user_password = os.environ['USERS_DEFAULT_REGULAR_USER_PASSWORD']

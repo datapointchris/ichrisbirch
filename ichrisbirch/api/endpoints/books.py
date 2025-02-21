@@ -80,20 +80,20 @@ async def goodreads(request: Request):
     url = f'https://www.goodreads.com/search?q={isbn}'
     response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     logger.debug(f'retrieved info from goodreads for isbn: {isbn}')
-
+    # TODO: Fix the typing errors for this POS
     soup = BeautifulSoup(response.content, 'html.parser')
     if title := soup.find('h1', class_='Text Text__title1'):
-        title = title.text.strip()
+        title = title.text.strip()  # type: ignore
     else:
-        title = 'Not found'
+        title = 'Not found'  # type: ignore
         logger.error('Title not found')
     if author := soup.find('span', class_='ContributorLink__name'):
-        author = author.text.strip()
+        author = author.text.strip()  # type: ignore
     else:
-        author = 'Not found'
+        author = 'Not found'  # type: ignore
         logger.error('Author not found')
     if genre_section := soup.find('div', class_='BookPageMetadataSection__genres'):
-        genres = [g.text for g in genre_section.find_all('span', class_='Button__labelItem')][:-1]
+        genres = [g.text for g in genre_section.find_all('span', class_='Button__labelItem')][:-1]  # type: ignore
         tags = ', '.join(genres)
     else:
         tags = 'None found'
