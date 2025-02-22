@@ -4,10 +4,10 @@ from flask import Blueprint
 from flask import render_template
 from flask_login import login_required
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.chat')
-settings = get_settings()
+
 blueprint = Blueprint('chat', __name__, template_folder='templates/chat', static_folder='static')
 
 

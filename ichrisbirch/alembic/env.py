@@ -5,7 +5,7 @@ from alembic import context
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import engine
 
@@ -26,7 +26,7 @@ from ichrisbirch.models import Task  # noqa
 from ichrisbirch.models import User  # noqa
 
 # settings from ichrisbirch/config.py
-settings = get_settings()
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

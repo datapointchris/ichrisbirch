@@ -15,11 +15,10 @@ from flask import request
 
 from ichrisbirch.app import utils
 from ichrisbirch.app.login import admin_login_required
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.scheduler.main import get_jobstore
 from ichrisbirch.util import get_logger_filename_from_handlername
 
-settings = get_settings()
 logger = logging.getLogger('app.admin')
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
 

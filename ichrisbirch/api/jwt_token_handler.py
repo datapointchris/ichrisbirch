@@ -4,9 +4,8 @@ from datetime import timedelta
 import jwt
 import pendulum
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
-settings = get_settings()
 logger = logging.getLogger('api.token_handler')
 
 

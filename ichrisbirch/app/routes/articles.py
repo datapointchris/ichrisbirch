@@ -16,10 +16,10 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.articles')
-settings = get_settings()
+
 blueprint = Blueprint('articles', __name__, template_folder='templates/articles', static_folder='static')
 
 

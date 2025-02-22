@@ -18,10 +18,9 @@ from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.models.task import TaskCategory
 
-settings = get_settings()
 logger = logging.getLogger('app.tasks')
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
 

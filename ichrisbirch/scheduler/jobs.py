@@ -20,13 +20,12 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 from ichrisbirch.util import find_project_root
 
-settings = get_settings()
 logger = logging.getLogger('scheduler.jobs')
 
 
@@ -117,15 +116,7 @@ def aws_postgres_snapshot_to_s3():
 
 @job_logger
 def postgres_backup():
-    pbr = PostgresBackupRestore(
-        logger=logger,
-        environment=settings.ENVIRONMENT,
-        backup_bucket=settings.aws.s3_backup_bucket,
-        source_host=settings.postgres.host,
-        source_port=settings.postgres.port,
-        source_username=settings.postgres.username,
-        source_password=settings.postgres.password,
-    )
+    pbr = PostgresBackupRestore(logger=logger)
     pbr.backup()
 
 

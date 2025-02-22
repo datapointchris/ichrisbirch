@@ -7,10 +7,9 @@ import httpx
 import pendulum
 from tkhtmlview import HTMLText
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.gui.utils import set_app_geometry
 
-settings = get_settings()
 logger = logging.getLogger('gui.insights')
 
 

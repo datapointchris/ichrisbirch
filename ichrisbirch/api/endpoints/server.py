@@ -6,10 +6,10 @@ from fastapi import APIRouter
 from fastapi import status
 
 from ichrisbirch import schemas
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
 logger = logging.getLogger('api.server')
-settings = get_settings()
+
 router = APIRouter()
 
 
