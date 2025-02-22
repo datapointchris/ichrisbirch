@@ -46,9 +46,7 @@ copy_config_files() {
     for CONFIG_FILE in "${CONFIG_FILES[@]}"; do
         SOURCE="$SUPERVISOR_SOURCE/$CONFIG_FILE"
         TARGET="$SUPERVISOR_CONFIG_TARGET/$PROJECT_NAME-$CONFIG_FILE"
-        if [[ ! -f "$TARGET" ]] || ! diff -q "$SOURCE" "$TARGET" &>/dev/null; then
-            sudo cp -v "$SOURCE" "$TARGET"
-        fi
+        sudo cp -v "$SOURCE" "$TARGET"
     done
 }
 
@@ -59,7 +57,7 @@ create_log_files() {
             echo "log file exists: $TARGET"
         else
             sudo touch "$TARGET"
-            echo created log file: "$TARGET"
+            echo log file created: "$TARGET"
         fi
     done
 }
