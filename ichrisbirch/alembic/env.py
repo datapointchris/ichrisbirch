@@ -13,14 +13,19 @@ from ichrisbirch.database.sqlalchemy.session import engine
 from ichrisbirch.models import Apartment  # noqa
 from ichrisbirch.models import Article  # noqa
 from ichrisbirch.models import AutoTask  # noqa
+from ichrisbirch.models import Book  # noqa
 from ichrisbirch.models import Box  # noqa
 from ichrisbirch.models import BoxItem  # noqa
+from ichrisbirch.models import Chat  # noqa
+from ichrisbirch.models import ChatMessage  # noqa
 from ichrisbirch.models import Countdown  # noqa
 from ichrisbirch.models import Event  # noqa
 from ichrisbirch.models import Habit  # noqa
-from ichrisbirch.models import HabitCategory
-from ichrisbirch.models import HabitCompleted
+from ichrisbirch.models import HabitCategory  # noqa
+from ichrisbirch.models import HabitCompleted  # noqa
 from ichrisbirch.models import JournalEntry  # noqa
+from ichrisbirch.models import JWTRefreshToken  # noqa
+from ichrisbirch.models import MoneyWasted  # noqa
 from ichrisbirch.models import PortfolioProject  # noqa
 from ichrisbirch.models import Task  # noqa
 from ichrisbirch.models import User  # noqa
