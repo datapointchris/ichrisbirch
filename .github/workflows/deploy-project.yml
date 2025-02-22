@@ -41,6 +41,7 @@ jobs:
     outputs:
       db_any_changed: ${{ steps.changed-files.outputs.db_any_changed }}
       nginx_any_changed: ${{ steps.changed-files.outputs.nginx_any_changed }}
+      redis_any_changed: ${{ steps.changed-files.outputs.redis_any_changed }}
       supervisor_any_changed: ${{ steps.changed-files.outputs.supervisor_any_changed }}
       terraform_any_changed: ${{ steps.changed-files.outputs.terraform_any_changed }}
     steps:
@@ -54,6 +55,8 @@ jobs:
               - ichrisbirch/alembic/versions/*.py
             nginx:
               - deploy/prod/nginx/**
+            redis:
+              - deploy/prod/redis/**
             supervisor:
               - deploy/prod/supervisor/**
             terraform:
@@ -115,6 +118,25 @@ jobs:
             cd /var/www/ichrisbirch/deploy &&
             export ENVIRONMENT=production &&
             ./deploy-nginx.sh
+          '
+
+  redis-config-deploy:
+    if: needs.changed-files.outputs.redis_any_changed == 'true'
+    name: Run Supervisor Deploy Script
+    runs-on: ubuntu-latest
+    needs: [set-ssh-command, changed-files, deploy]
+    steps:
+      - name: Download SSH Key
+        uses: actions/download-artifact@v4
+        with:
+          name: ssh-key
+      - name: Set Permissions on SSH Key
+        run: chmod 600 ${{ vars.SSH_KEY_FILENAME }}
+      - run: |
+          ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
+            cd /var/www/ichrisbirch/deploy &&
+            export ENVIRONMENT=production &&
+            ./deploy-redis.sh
           '
 
   supervisor-config-deploy:
