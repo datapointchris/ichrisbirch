@@ -17,12 +17,11 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.books')
 router = APIRouter()
-settings = get_settings()
 
 
 def IDNotFoundError(id: int | str):

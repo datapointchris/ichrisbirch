@@ -6,11 +6,9 @@ from flask import request
 from flask import url_for
 from flask_login import login_required
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.apartment import Feature
-
-settings = get_settings()
 
 blueprint = Blueprint('apartments', __name__, template_folder='templates/apartments', static_folder='static')
 

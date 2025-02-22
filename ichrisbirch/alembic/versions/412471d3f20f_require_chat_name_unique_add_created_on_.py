@@ -1,4 +1,4 @@
-"""Require chat name unique, add created_on to chat and chatmessage tables
+"""Require chat name unique, add created_on to chat and chatmessage tables.
 
 Revision ID: 412471d3f20f
 Revises: 01d40de7ea0e

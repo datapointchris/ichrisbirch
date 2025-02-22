@@ -13,12 +13,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch.config import Settings
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
 from ichrisbirch.database.sqlalchemy.session import engine
 from ichrisbirch.models import User
 
-settings = get_settings()
 logger = logging.getLogger('startup')
 
 

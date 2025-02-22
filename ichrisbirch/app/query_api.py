@@ -10,9 +10,7 @@ from pydantic import BaseModel
 
 from ichrisbirch import models
 from ichrisbirch.app import utils
-from ichrisbirch.config import get_settings
-
-settings = get_settings()
+from ichrisbirch.config import settings
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
 

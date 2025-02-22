@@ -1,8 +1,3 @@
-from ichrisbirch.config import get_settings
-
-settings = get_settings()
-
-
 def url_builder(base_url: str, *parts) -> str:
     """Build a URL from a base URL and parts, will always include the trailing slash.
 

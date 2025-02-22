@@ -11,9 +11,8 @@ from flask_login import login_required
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
-settings = get_settings()
 logger = logging.getLogger('app.journal')
 blueprint = Blueprint('journal', __name__, template_folder='templates/journal', static_folder='static')
 

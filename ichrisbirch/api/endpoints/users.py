@@ -12,10 +12,9 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import CurrentUser
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-settings = get_settings()
 logger = logging.getLogger('api.users')
 router = APIRouter()
 

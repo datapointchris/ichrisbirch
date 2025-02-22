@@ -1,4 +1,4 @@
-"""Create chat.chats and chat.messages tables
+"""Create chat.chats and chat.messages tables.
 
 Revision ID: 01d40de7ea0e
 Revises: 30e0d61e2678

@@ -6,11 +6,9 @@ from tkinter import messagebox
 import customtkinter as ctk
 import httpx
 
-from ichrisbirch.config import get_settings
 from ichrisbirch.gui.utils import set_app_geometry
 from ichrisbirch.models.task import TaskCategory
 
-settings = get_settings()
 logger = logging.getLogger('gui.tasks_add')
 
 TASK_CATEGORIES = [t.value for t in TaskCategory]

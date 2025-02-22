@@ -20,9 +20,7 @@ from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import http as http_utils
-from ichrisbirch.config import get_settings
-
-settings = get_settings()
+from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')

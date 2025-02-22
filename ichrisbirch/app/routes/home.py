@@ -12,9 +12,8 @@ from flask import request
 from flask import url_for
 from flask_login import login_required
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
-settings = get_settings()
 logger = logging.getLogger('app.home')
 blueprint = Blueprint('home', __name__, template_folder='templates', static_folder='static')
 

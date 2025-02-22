@@ -6,10 +6,8 @@ from pathlib import Path
 import boto3
 import pendulum
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.util import find_project_root
-
-settings = get_settings()
 
 
 class PostgresBackupRestore:

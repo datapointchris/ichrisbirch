@@ -13,11 +13,10 @@ from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import get_settings
 from ichrisbirch.models.box import BoxSize
 
 BOX_SIZES = [s.value for s in BoxSize]
-settings = get_settings()
+
 logger = logging.getLogger('app.box_packing')
 blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_packing', static_folder='static')
 

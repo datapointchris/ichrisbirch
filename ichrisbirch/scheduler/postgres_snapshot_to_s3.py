@@ -25,9 +25,8 @@ import pendulum
 from botocore.exceptions import ClientError
 
 from ichrisbirch.config import Settings
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
-settings = get_settings()
 logger = logging.getLogger('ops')
 
 

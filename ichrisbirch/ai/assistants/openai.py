@@ -3,10 +3,9 @@ import time
 
 from openai import OpenAI
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
 logger = logging.getLogger('assistants.openai')
-settings = get_settings()
 
 
 class OpenAIAssistant:

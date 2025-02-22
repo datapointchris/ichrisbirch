@@ -8,10 +8,9 @@ from streamlit_cookies_controller import CookieController
 from ichrisbirch import models
 from ichrisbirch.chat.api import ChatAPI
 from ichrisbirch.chat.auth import ChatAuthClient
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.util import find_project_root
 
-settings = get_settings()
 logger = logging.getLogger('chat.app')
 st.set_page_config(page_title='Chatter', page_icon='🤖', layout='wide')
 

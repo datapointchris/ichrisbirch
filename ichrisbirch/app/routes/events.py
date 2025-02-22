@@ -11,9 +11,8 @@ from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
-settings = get_settings()
 TZ = pendulum.timezone(settings.global_timezone)
 logger = logging.getLogger('app.events')
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')

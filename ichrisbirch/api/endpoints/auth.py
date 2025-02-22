@@ -18,10 +18,9 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-settings = get_settings()
 logger = logging.getLogger('api.auth')
 router = APIRouter()
 token_handler = JWTTokenHandler(access_token_expire_delta=timedelta(seconds=15))

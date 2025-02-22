@@ -281,3 +281,6 @@ def get_settings(env_file: Optional[Path | str] = None) -> Settings:
     """Return settings based on Path, str, or ENVIRONMENT variable."""
     resolved_env_file = load_environment(env_file)
     return Settings(env_file=resolved_env_file)
+
+
+settings = get_settings()

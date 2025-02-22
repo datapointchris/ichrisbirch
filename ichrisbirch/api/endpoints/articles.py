@@ -24,12 +24,11 @@ from youtube_transcript_api.formatters import TextFormatter
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.openai import OpenAIAssistant
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.articles')
 router = APIRouter()
-settings = get_settings()
 
 
 def IDNotFoundError(id: int):
