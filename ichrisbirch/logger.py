@@ -164,6 +164,7 @@ THIRD_PARTY_LOGGERS = {
     's3transfer': {'level': 'INFO'},
     'tzlocal': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},
+    'watchdog': {'level': 'INFO'},
     'werkzeug': {'handlers': ['app_file'], 'filters': ['no_304_status']},
 }
 
