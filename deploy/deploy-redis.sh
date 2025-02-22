@@ -20,47 +20,47 @@ fi
 REDIS_SOURCE="$ENVIRONMENT/redis"
 
 # Config Locations
-REDIS_HOME="$OS_PREFIX/var/lib/redis"
+REDIS_HOME="$OS_PREFIX/etc/redis"
+REDIS_DATA="$OS_PREFIX/var/lib/redis"
 REDIS_LOG="$OS_PREFIX/var/log/redis"
 
 make_directories() {
-    sudo mkdir -vp $REDIS_HOME
+    sudo mkdir -vp $REDIS_DATA
     sudo mkdir -vp $REDIS_LOG
+    sudo touch $REDIS_LOG/redis.log
+    sudo chown -vR "$USER" $REDIS_LOG
+    sudo chmod -v 755 $REDIS_LOG
 }
 
 copy_configuration_files() {
-    sudo cp -v "$REDIS_SOURCE/redis.conf" "$REDIS_HOME/redis.conf"
+    if [[ $MACOS ]]; then
+        sudo cp -v "$REDIS_SOURCE/redis.conf" "$OS_PREFIX/etc/redis.conf"
+    else
+        sudo cp -v "$REDIS_SOURCE/redis.conf" "$REDIS_HOME/redis.conf"
+        sudo cp -v "$REDIS_SOURCE/redis_init_script" "/etc/init.d/redis"
+    fi
 
-}
-
-set_macos_permissions() {
-    echo "Updating MacOS owner permissions to: $USER"
-    sudo chown redis:redis $REDIS_HOME
-    sudo chown redis:redis $REDIS_LOG
-    sudo chmod 750 $REDIS_HOME
-    sudo chown redis:redis $REDIS_LOG
-    echo
 }
 
 dry_run() {
     if [[ $MACOS ]]; then
-        echo "=====> MacOS Detected: /usr/local/ prefix will be used <====="
+        echo "=====> MacOS Detected: **Conditions Apply** <====="
         echo
+        echo "::::: Copy Configuration Files :::::"
+        echo "$PROJECT_NAME/deploy/$REDIS_SOURCE/redis.conf => $REDIS_HOME/redis.conf"
+    else
+        echo "::::: Script Actions :::::"
+        echo
+
+        echo "::::: Create Directories :::::"
+        echo "$REDIS_HOME"
+        echo "$REDIS_DATA"
+        echo "$REDIS_LOG"
+
+        echo "::::: Copy Configuration Files :::::"
+        echo "$PROJECT_NAME/deploy/$REDIS_SOURCE/redis.conf => $REDIS_HOME/redis.conf"
+        echo "$REDIS_SOURCE/redis_init_script ==> /etc/init.d/redis (Linux Only)"
     fi
-    echo "::::: Script Actions :::::"
-    echo
-
-    echo "::::: Create Directories :::::"
-    echo "$REDIS_HOME"
-    echo "$REDIS_LOG"
-
-    echo "::::: Copy Configuration Files :::::"
-    echo "$PROJECT_NAME/deploy/$REDIS_SOURCE/nginx.conf => $REDIS_HOME/nginx.conf"
-
-    if [[ $MACOS ]]; then
-        echo "Update MacOS owner permissions for: $REDIS_HOME to: $USER"
-    fi
-    echo
 }
 
 if [[ "$1" = "--dry-run" ]]; then
@@ -69,11 +69,17 @@ if [[ "$1" = "--dry-run" ]]; then
 fi
 
 echo "Deploying Redis Configuration Files to $ENVIRONMENT"
+
+
 make_directories
 echo
 copy_configuration_files
 echo
-
 if [[ $MACOS ]]; then
-    set_macos_permissions
+    echo "Starting or Restarting Redis Service"
+    brew services restart redis
+else
+    echo "Starting or Restarting Redis Service"
+    sudo /etc/init.d/redis stop
+    sudo /etc/init.d/redis start
 fi

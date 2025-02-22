@@ -20,7 +20,7 @@ update_machine() {
 base_installs() {
   # NOTE: Install the postgresql-client version that matches the database
   # this is for pg_dump backups with the scheduler.
-  apt install curl git git-secret postgresql-client-16 unzip -y
+  apt install curl git git-secret postgresql-client-16 unzip make -y
   apt install tmux tldr tree supervisor nginx neovim -y
 }
 
@@ -99,15 +99,22 @@ setup_nginx() {
 }
 
 setup_redis() {
-  # From redis.io
-  apt install lsb-release
-  curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
-  chmod 644 /usr/share/keyrings/redis-archive-keyring.gpg
-  echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
-  apt install redis -y
+  wget https://download.redis.io/redis-stable.tar.gz
+  tar -xzvf redis-stable.tar.gz
+  cd redis-stable && make
+  make install
+
+  cd ../
+  rm -rf redis-stable
+  rm redis-stable.tar.gz
+
+  mkdir /etc/redis
+  mkdir /var/redis
 
   # Must cd here because the deploy script has relative paths
-  cd /var/www/ichrisbirch/deploy && ./deploy-redis.sh
+  cd /var/www/ichrisbirch/deploy && ENVIRONMENT=production sudo ./deploy-redis.sh
+
+  update-rc.d redis defaults
 }
 
 setup_supervisor() {
