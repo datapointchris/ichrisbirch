@@ -21,7 +21,7 @@ base_installs() {
   # NOTE: Install the postgresql-client version that matches the database
   # this is for pg_dump backups with the scheduler.
   apt install curl git git-secret postgresql-client-16 unzip -y
-  apt install tmux tldr tree supervisor nginx neovim redis -y
+  apt install tmux tldr tree supervisor nginx neovim -y
 }
 
 installs_for_building_psycopg2_from_source() {
@@ -80,15 +80,14 @@ make_log_files() {
   /var/www/ichrisbirch/scripts/make_log_files.sh
 }
 
-
 install_certbot() {
-  sudo snap install --classic certbot
-  sudo ln -s /snap/bin/certbot /usr/bin/certbot
+  snap install --classic certbot
+  ln -s /snap/bin/certbot /usr/bin/certbot
 }
 
 install_ssl_certificate_for_nginx() {
   # note: no need for docs.ichrisbirch because Github Pages handles in the Pages > Custom domain section
-  sudo certbot certonly --cert-name ichrisbirch.com --nginx \
+  certbot certonly --cert-name ichrisbirch.com --nginx \
     --non-interactive --agree-tos --no-eff-email --email ichrisbirch@gmail.com \
     --domains ichrisbirch.com,www.ichrisbirch.com,api.ichrisbirch.com,chat.ichrisbirch.com
 }
@@ -100,6 +99,13 @@ setup_nginx() {
 }
 
 setup_redis() {
+  # From redis.io
+  apt install lsb-release
+  curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+  chmod 644 /usr/share/keyrings/redis-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+  apt install redis -y
+
   # Must cd here because the deploy script has relative paths
   cd /var/www/ichrisbirch/deploy && ./deploy-redis.sh
 }
@@ -108,7 +114,6 @@ setup_supervisor() {
   # Must cd here because the deploy script has relative paths
   cd /var/www/ichrisbirch/deploy && ./deploy-supervisor.sh
 }
-
 
 set_permissions() {
   # Set permissions - ubuntu must own the directory for subsequent poetry install and git secret reveal
