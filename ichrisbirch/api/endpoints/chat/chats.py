@@ -25,8 +25,7 @@ def IDNotFoundError(id: int | str):
 
 @router.get('/', response_model=list[schemas.Chat], status_code=status.HTTP_200_OK)
 async def read_many(search: Optional[bool] = None, session: Session = Depends(get_sqlalchemy_session)):
-    query = select(models.Chat)
-
+    query = select(models.Chat).order_by(models.Chat.created_at.desc())
     return list(session.scalars(query).all())
 
 

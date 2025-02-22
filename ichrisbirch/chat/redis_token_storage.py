@@ -1,14 +1,40 @@
 import logging
-from typing import Optional
+from typing import Protocol
 
 import redis
 
 logger = logging.getLogger('chat.storage')
 
 
+class TokenStorage(Protocol):
+    """Protocol for token storage implementations."""
+
+    def save_token(self, user_id: str, token: str, token_type: str) -> None:
+        """Store a token."""
+
+    def get_token(self, user_id: str, token_type: str) -> str | None:
+        """Retrieve a token."""
+
+    def delete_token(self, user_id: str, token_type: str) -> None:
+        """Delete a token."""
+
+
+class FakeTokenStorage(TokenStorage):
+    """Fake token storage that does nothing."""
+
+    def save_token(self, user_id: str, token: str, token_type: str) -> None:
+        pass
+
+    def get_token(self, user_id: str, token_type: str) -> str | None:
+        return None
+
+    def delete_token(self, user_id: str, token_type: str) -> None:
+        pass
+
+
 class RedisTokenStorage:
-    def __init__(self, host: str, port: int, db: int):
-        self.redis = redis.Redis(host=host, port=port, db=db, decode_responses=True)
+    def __init__(self):
+        self.redis = redis.Redis()
         days_30 = 60 * 60 * 24 * 30
         self.token_expiry = days_30
 
@@ -18,12 +44,12 @@ class RedisTokenStorage:
         self.redis.set(key, token, ex=self.token_expiry)
         logger.info(f'Saved {token_type} token for user {user_id} in Redis')
 
-    def get_token(self, user_id: str, token_type: str) -> Optional[str]:
+    def get_token(self, user_id: str, token_type: str) -> str | None:
         """Retrieve token from Redis."""
         key = f'{user_id}:{token_type}'
         if token := self.redis.get(key):
             logger.info(f'Retrieved {token_type} token for user {user_id} from Redis')
-            return token
+            return str(token)
         logger.warning(f'No {token_type} token found for user {user_id}')
         return None
 
