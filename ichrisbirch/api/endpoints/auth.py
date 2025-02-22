@@ -1,5 +1,4 @@
 import logging
-from datetime import timedelta
 from typing import Annotated
 from typing import Optional
 
@@ -12,7 +11,7 @@ from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,17 +22,7 @@ from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.auth')
 router = APIRouter()
-token_handler = JWTTokenHandler(access_token_expire_delta=timedelta(seconds=15))
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f'{settings.api_url}/auth/token/', auto_error=False)
-
-
-class InvalidCredentialsError(HTTPException):
-    def __init__(self, msg: str = 'Could not validate credentials'):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=msg,
-            headers={'WWW-Authenticate': 'Bearer'},
-        )
+token_handler = JWTTokenHandler()
 
 
 def validate_user_email(email: str, session: Session):
@@ -57,16 +46,25 @@ def validate_password(user: models.User, password: str):
     return True
 
 
-def authenticate_with_jwt(token: Annotated[str, Depends(oauth2_scheme)]):
+def get_token_from_header(authorization: Annotated[Optional[str], Header()] = None) -> str | None:
+    if authorization is None:
+        return None
     try:
-        payload = jwt.decode(jwt=token, key=settings.auth.secret_key, algorithms=[settings.auth.algorithm])
-        user_id = payload.get('sub')
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization scheme must be Bearer")
+        return token
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authorization header format")
+
+
+def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)]) -> str | None:
+    try:
+        return jwt.decode(jwt=token, key=settings.auth.secret_key, algorithms=[settings.auth.algorithm]).get('sub')
     except Exception as e:
         if 'Invalid token type' not in str(e):
             logger.warning(e)
         return None
-    logger.info(f'authenticated user with jwt: {user_id}')
-    return user_id
 
 
 def authenticate_with_application_headers(
@@ -90,18 +88,18 @@ async def authenticate_with_oauth2(request: Request, session: Session = Depends(
 
 
 def get_current_user(
-    auth_headers=Depends(authenticate_with_application_headers),
+    app_headers=Depends(authenticate_with_application_headers),
     auth_jwt=Depends(authenticate_with_jwt),
     auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
 ):
-    logger.debug(f'headers: {auth_headers}')
-    logger.debug(f'jwt token: {auth_jwt}')
-    logger.debug(f'oauth form: {auth_oauth2}')
-    if not (user_id := auth_headers or auth_jwt or auth_oauth2):
-        raise InvalidCredentialsError()
+    logger.debug(f'app headers: {bool(app_headers)}')
+    logger.debug(f'jwt token: {bool(auth_jwt)}')
+    logger.debug(f'oauth form: {bool(auth_oauth2)}')
+    if not (user_id := app_headers or auth_jwt or auth_oauth2):
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
     if user := validate_user_id(user_id, session):
-        logger.debug(f'validated current user: {user}')
+        logger.debug(f'validated current user: {user.email}')
         return user
 
 
@@ -114,7 +112,7 @@ async def logout_user(x_user_id: str = Header(...)):
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.post("/token/", response_model=None, status_code=status.HTTP_201_CREATED)
+@router.post('/token/', response_model=None, status_code=status.HTTP_201_CREATED)
 async def access_token(response: Response, user: CurrentUser):
     access_token = token_handler.create_access_token(user.get_id())
     refresh_token = token_handler.create_refresh_token(user.get_id())
@@ -125,25 +123,31 @@ async def access_token(response: Response, user: CurrentUser):
 
 
 @router.get('/token/validate/', status_code=status.HTTP_200_OK)
-async def validate_token(cookie_token: str = Cookie(None), header_token: str = Header(None)):
-    logger.debug(f'token validation - cookie: {cookie_token}')
-    logger.debug(f'token validation - header: {header_token}')
-    token = cookie_token or header_token
-    if not authenticate_with_jwt(token):
-        return InvalidCredentialsError
+async def validate_token(
+    jwt_token: Annotated[str, Depends(get_token_from_header)], access_token: Optional[str] = Cookie(None)
+):
+    logger.debug(f'token validation - header: {bool(jwt_token)}')
+    logger.debug(f'token validation - cookie: {bool(access_token)}')
+    token = jwt_token or access_token
+    if not token or not authenticate_with_jwt(token):
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': 'Invalid token'})
     return Response(status_code=status.HTTP_200_OK)
 
 
-@router.post('/token/refresh/', status_code=status.HTTP_200_OK)
-async def refresh_token(response: Response, cookie_token: str = Cookie(None), header_token: str = Header(None)):
-    logger.debug(f'token validation - cookie: {cookie_token}')
-    logger.debug(f'token validation - header: {header_token}')
-    refresh_token = cookie_token or header_token
+@router.post('/token/refresh/', status_code=status.HTTP_201_CREATED)
+async def refresh_token(jwt_token: Annotated[str, Depends(get_token_from_header)], refresh_token: str = Cookie(None)):
+    logger.debug(f'token validation - header: {bool(jwt_token)}')
+    logger.debug(f'token validation - cookie: {bool(refresh_token)}')
+    refresh_token = jwt_token or refresh_token
     if not (user_id := authenticate_with_jwt(refresh_token)):
-        return InvalidCredentialsError
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': 'Invalid refresh token'})
+    logger.debug(f'refreshing token for user: {user_id}')
     stored_refresh_token = token_handler.retrieve_refresh_token(user_id)
     if refresh_token != stored_refresh_token:
-        return InvalidCredentialsError
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': 'Invalid refresh token'})
+    logger.debug(f'refresh token validated for user: {user_id}')
     new_access_token = token_handler.create_access_token(user_id)
+    logger.debug(f'new access token: {new_access_token[-10:]}')
+    response = JSONResponse(status_code=status.HTTP_201_CREATED, content={'access_token': new_access_token})
     response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True)
     return response

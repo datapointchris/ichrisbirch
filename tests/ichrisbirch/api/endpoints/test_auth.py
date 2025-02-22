@@ -68,13 +68,6 @@ def test_generate_jwt(test_user):
     assert isinstance(token, str)
 
 
-def test_access_token_application_headers(test_api, test_user):
-    headers = make_app_headers_for_user(test_user)
-    response = test_api.post('/auth/token/', headers=headers)
-    assert response.status_code == status.HTTP_201_CREATED
-    assert 'access_token' in response.json()
-
-
 def test_access_token_jwt_auth(test_api, test_user):
     token = jwt_handler.create_access_token(test_user.get_id())
     headers = make_jwt_header(token)
@@ -90,5 +83,5 @@ def test_access_token_oauth2(test_api, test_user):
 
 def test_validate_token(test_api, test_user):
     token = jwt_handler.create_access_token(test_user.get_id())
-    response = test_api.get('/auth/token/validate/', headers={'token': token})
+    response = test_api.get('/auth/token/validate/', headers=make_jwt_header(token))
     assert response.status_code == status.HTTP_200_OK

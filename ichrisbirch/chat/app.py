@@ -18,10 +18,10 @@ USER_AVATAR = '👤'
 BOT_AVATAR = '🤖'
 STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
 
-chat_auth_client = ChatAuthClient(settings=settings)
-openai_client = OpenAI(api_key=settings.ai.openai.api_key)
+auth = ChatAuthClient(settings=settings)
 chat_api = ChatAPI(settings=settings)
-cookie_controller = CookieController()
+cookie = CookieController()
+openai = OpenAI(api_key=settings.ai.openai.api_key)
 
 
 def generate_chat_session_name(prompt, client):
@@ -84,22 +84,38 @@ def user_must_be_logged_in():
     if ss.logged_in:
         return True
 
-    access_token = cookie_controller.get('access_token')
-    refresh_token = cookie_controller.get('refresh_token')
+    if access_token := cookie.get('access_token'):
+        logger.info('found access token in cookie')
+    if refresh_token := cookie.get('refresh_token'):
+        logger.info('found refresh token in cookie')
 
-    if access_token and chat_auth_client.validate_jwt_token(access_token):
+    if access_token and auth.validate_jwt_token(access_token):
+        logger.info(f'access token is: {access_token[-10:]}')
         logger.info('validated access token')
         ss.access_token = access_token
-        ss.logged_in = True
-        return True
-
-    if refresh_token:
-        if new_access_token := chat_auth_client.refresh_access_token(refresh_token):
-            logger.info('refreshed access token')
-            cookie_controller.set('access_token', new_access_token)
-            ss.access_token = new_access_token
+        if user := auth.login_token(access_token):
+            ss.user = user
             ss.logged_in = True
             return True
+        logger.info('failed to log in user with access token')
+
+    if refresh_token:
+        if new_access_token := auth.refresh_access_token(refresh_token):
+            logger.info('refreshed access token')
+            cookie.set('access_token', new_access_token)
+            ss.access_token = new_access_token
+            if user := auth.login_token(new_access_token):
+                ss.user = user
+                ss.logged_in = True
+                return True
+            else:
+                logger.info('failed to log in user with refreshed access token')
+        else:
+            logger.info('failed to refresh access token')
+        ss.access_token = None
+        ss.refresh_token = None
+        cookie.remove('access_token')
+        cookie.remove('refresh_token')
 
     display_login_form()
     return ss.logged_in
@@ -113,17 +129,16 @@ def display_login_form():
 
 
 def login_flow():
-    if user := chat_auth_client.login_user(ss['username'], ss['password']):
-        if tokens := chat_auth_client.request_jwt_tokens(user, ss['password']):
-            logger.info(f'jwt tokens received for user: {user.name}')
+    if user := auth.login_username(ss['username'], ss['password']):
+        if tokens := auth.request_jwt_tokens(user, ss['password']):
+            logger.info(f'jwt tokens received for user: {user.email}')
             ss.access_token = tokens.get("access_token")
             ss.refresh_token = tokens.get("refresh_token")
-            cookie_controller.set('access_token', ss.access_token)
-            cookie_controller.set('refresh_token', ss.refresh_token)
-            chat_auth_client.save_access_token(user.get_id(), ss.access_token)
-            chat_auth_client.save_refresh_token(user.get_id(), ss.refresh_token)
+            cookie.set('access_token', ss.access_token)
+            cookie.set('refresh_token', ss.refresh_token)
             ss.logged_in = True
             ss.user = user
+            logger.debug(f'session user: {ss.user.email}')
         else:
             logger.error('failed to obtain jwt tokens')
             st.error('Failed to obtain JWT tokens')
@@ -132,6 +147,22 @@ def login_flow():
         logger.warning(f'error trying to log in user: {ss["username"]}')
     ss.pop("username", None)
     ss.pop("password", None)
+
+
+def logout_user():
+    logger.debug(f'logging out user: {ss.user.email}')
+    try:
+        auth.logout_user(ss.user, ss.access_token)
+    except Exception as e:
+        logger.error(f'error logging out user: {e}')
+    cookie.remove('access_token')
+    cookie.remove('refresh_token')
+    ss.logged_in = False
+    ss.user = None
+    ss.access_token = None
+    ss.refresh_token = None
+    ss.current_chat_index = None
+    logger.info('user logged out')
 
 
 if not user_must_be_logged_in():
@@ -144,21 +175,14 @@ if 'chats' not in ss:
 
 
 with STYLESHEET.open() as f:
-    logger.info(f'Loading custom stylesheet: {STYLESHEET.resolve()}')
+    logger.debug(f'Loading custom stylesheet: {STYLESHEET.resolve()}')
     styles = f.read()
 
 st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
 
 with st.sidebar:
     if st.button('Logout'):
-        cookie_controller.remove('access_token')
-        cookie_controller.remove('refresh_token')
-        chat_auth_client.logout_user(ss.user, ss.access_token)
-        ss.logged_in = False
-        ss.user = None
-        ss.access_token = None
-        ss.refresh_token = None
-        logger.info('user logged out')
+        logout_user()
         st.rerun()
 
     if st.button('Anon Chat'):
@@ -180,7 +204,7 @@ with st.sidebar:
 
 
 if ss.current_chat_index is None and ss.chats:
-    ss.current_chat_index = len(ss.chats) - 1
+    ss.current_chat_index = 0
 
 if ss.current_chat_index is not None:
     current_chat = ss.chats[ss.current_chat_index]
@@ -195,7 +219,7 @@ if ss.current_chat_index is not None:
 
         # set session name automatically after first question
         if not current_chat.name:
-            current_chat.name = generate_chat_session_name(prompt, openai_client)
+            current_chat.name = generate_chat_session_name(prompt, openai)
 
         with st.chat_message('user', avatar=USER_AVATAR):
             st.markdown(prompt)
@@ -204,7 +228,7 @@ if ss.current_chat_index is not None:
             message_placeholder = st.empty()
             full_response = ''
             current_messages = [{'role': m.role, 'content': m.content} for m in current_chat.messages]
-            stream = openai_client.chat.completions.create(
+            stream = openai.chat.completions.create(
                 model=settings.ai.openai.model,
                 messages=current_messages,  # type: ignore
                 stream=True,
