@@ -44,19 +44,11 @@ def create_drop_tables():
 
 @pytest.fixture(scope='module', autouse=True)
 def insert_users_for_login(create_drop_tables):
-    test_users = [
-        tests.util.SACRIFICIAL_TEST_USER,
-        tests.util.TEST_LOGIN_REGULAR_USER,
-        tests.util.TEST_LOGIN_ADMIN_USER,
-        tests.util.TEST_SERVICE_ACCOUNT_USER,
-        tests.util.TEST_LOGIN_API_REGULAR_USER,
-        tests.util.TEST_LOGIN_API_ADMIN_USER,
-    ]
     with tests.util.SessionTesting() as session:
-        for user in test_users:
+        for user in tests.util.ALL_TEST_LOGIN_USERS:
             session.add(models.User(**user))
         session.commit()
-        users = [tests.util.get_test_user(user) for user in test_users]
+        users = [tests.util.get_test_user(user) for user in tests.util.ALL_TEST_LOGIN_USERS]
         for user in users:
             logger.info(f'inserted in test db: {user.email}')
     yield
