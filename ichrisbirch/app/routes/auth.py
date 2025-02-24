@@ -18,28 +18,34 @@ from flask_login import logout_user
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app import forms
+from ichrisbirch.app.query_api import APIServiceUser
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import http as http_utils
 from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
+service_user = APIServiceUser()
 
 
 @blueprint.route('/login/', methods=['GET', 'POST'])
 def login():
-    users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
     if current_user.is_authenticated:
         flash(f'logged in as: {current_user.name}', 'success')
         return redirect(request.referrer or url_for('users.profile'))
     form = forms.LoginForm()
     if form.validate_on_submit():
-        if user := users_api.get_one(['email', form.email.data]):
+        service_user.get()
+        service_user.login()
+        service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_user.user)
+        if user := service_account_users_api.get_one(['email', form.email.data]):
             user = models.User(**user.model_dump())
         if user and user.check_password(password=form.password.data):
+            service_user.logout()
             login_user(user, remember=form.remember_me.data)
             logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
             try:
+                users_api = QueryAPI(base_url='users', response_model=schemas.User)
                 users_api.patch([user.id], json={'last_login': pendulum.now().for_json()})
                 logger.debug(f'updated last login for user: {user.name}')
             except Exception as e:
@@ -50,17 +56,14 @@ def login():
                 logger.debug('session["next"] was not set')
                 next_page = url_for('users.profile')
             logger.debug(f'login will redirect to: {next_page}')
-
             if not http_utils.url_has_allowed_host_and_scheme(next_page, request.host):
                 return abort(status.HTTP_401_UNAUTHORIZED, f'Unauthorized URL: {next_page}')
+            return redirect(next_page)
 
-            return redirect(next_page or url_for('users.profile'))
-
+        service_user.logout()
         flash('Invalid credentials', 'error')
         logger.warning(f'invalid login attempt for: {form.email.data}')
-
         # TODO: [2024/05/21] - add a login attempt counter, possibly using redis or something similar
-
         return redirect(url_for('auth.login'))
 
     return render_template('auth/login.html', form=form, template='login-page')
@@ -71,20 +74,23 @@ def signup():
     if not settings.auth.accepting_new_signups:
         flash(settings.auth.no_new_signups_message, 'error')
         return redirect(url_for('home.index'))
-    users_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
+    service_user.get()
+    service_user.login()
+    service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_user.user)
     form = forms.SignupForm()
     if form.validate_on_submit():
         logger.debug('signup form validated')
         logger.debug('checking for existing user')
-        if not (existing_user := users_api.get_one(['email', form.email.data])):
+        if not (existing_user := service_account_users_api.get_one(['email', form.email.data])):
             logger.info(f'creating a new user with email: {form.email.data}')
             data = {
                 'name': form.name.data,
                 'email': form.email.data,
                 'password': form.password.data,
             }
-            if new_user := users_api.post(json=data):
+            if new_user := service_account_users_api.post(json=data):
                 user = models.User(**new_user.model_dump())
+                service_user.logout()
                 login_user(user)
                 return redirect(url_for('users.profile'))
             return redirect(url_for('auth.signup'))

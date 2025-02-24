@@ -9,7 +9,7 @@ from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from tests.conftest import settings
+from tests.conftest import testing_settings
 
 USERS_TEST_DATA = tests.test_data.users.BASE_DATA
 
@@ -38,7 +38,7 @@ def test_admin_user():
 
 
 def make_app_headers_for_user(user: models.User):
-    return {'X-Application-ID': settings.flask.app_id, 'X-User-ID': user.get_id()}
+    return {'X-Application-ID': testing_settings.flask.app_id, 'X-User-ID': user.get_id()}
 
 
 def make_jwt_header(token: str):
@@ -68,20 +68,20 @@ def test_generate_jwt(test_user):
     assert isinstance(token, str)
 
 
-def test_access_token_jwt_auth(test_api, test_user):
+def test_access_token_jwt_auth(test_api_function, test_user):
     token = jwt_handler.create_access_token(test_user.get_id())
     headers = make_jwt_header(token)
-    response = test_api.post('/auth/token/', headers=headers)
+    response = test_api_function.post('/auth/token/', headers=headers)
     assert response.status_code == status.HTTP_201_CREATED
 
 
-def test_access_token_oauth2(test_api, test_user):
+def test_access_token_oauth2(test_api_function, test_user):
     data = {'username': test_user.email, 'password': USERS_TEST_DATA[0].password}
-    response = test_api.post('/auth/token/', data=data)
+    response = test_api_function.post('/auth/token/', data=data)
     assert response.status_code == status.HTTP_201_CREATED
 
 
-def test_validate_token(test_api, test_user):
+def test_validate_token(test_api_function, test_user):
     token = jwt_handler.create_access_token(test_user.get_id())
-    response = test_api.get('/auth/token/validate/', headers=make_jwt_header(token))
+    response = test_api_function.get('/auth/token/validate/', headers=make_jwt_header(token))
     assert response.status_code == status.HTTP_200_OK

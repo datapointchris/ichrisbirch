@@ -34,28 +34,28 @@ ENDPOINT = '/autotasks/'
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
 
-def test_read_one(test_api):
-    crud_tests.test_read_one(test_api)
+def test_read_one(test_api_logged_in):
+    crud_tests.test_read_one(test_api_logged_in)
 
 
-def test_read_many(test_api):
-    crud_tests.test_read_many(test_api)
+def test_read_many(test_api_logged_in):
+    crud_tests.test_read_many(test_api_logged_in)
 
 
-def test_create(test_api):
-    crud_tests.test_create(test_api)
+def test_create(test_api_logged_in):
+    crud_tests.test_create(test_api_logged_in)
 
 
-def test_delete(test_api):
-    crud_tests.test_delete(test_api)
+def test_delete(test_api_logged_in):
+    crud_tests.test_delete(test_api_logged_in)
 
 
-def test_lifecycle(test_api):
-    crud_tests.test_lifecycle(test_api)
+def test_lifecycle(test_api_logged_in):
+    crud_tests.test_lifecycle(test_api_logged_in)
 
 
 @pytest.mark.parametrize('category', list(TaskCategory))
-def test_task_categories(test_api, category):
+def test_task_categories(test_api_logged_in, category):
     test_obj = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
@@ -63,13 +63,13 @@ def test_task_categories(test_api, category):
         priority=3,
         frequency=AutoTaskFrequency.Biweekly,
     )
-    created = test_api.post(ENDPOINT, json=test_obj.model_dump())
+    created = test_api_logged_in.post(ENDPOINT, json=test_obj.model_dump())
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
     assert created.json()['name'] == test_obj.name
 
 
 @pytest.mark.parametrize('frequency', list(AutoTaskFrequency))
-def test_task_frequencies(test_api, frequency):
+def test_task_frequencies(test_api_logged_in, frequency):
     test_obj = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
@@ -77,6 +77,6 @@ def test_task_frequencies(test_api, frequency):
         priority=3,
         frequency=frequency,
     )
-    created = test_api.post(ENDPOINT, json=test_obj.model_dump())
+    created = test_api_logged_in.post(ENDPOINT, json=test_obj.model_dump())
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
     assert created.json()['name'] == test_obj.name

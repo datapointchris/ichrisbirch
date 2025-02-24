@@ -34,24 +34,24 @@ ENDPOINT = '/events/'
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
 
-def test_read_one(test_api):
-    crud_tests.test_read_one(test_api)
+def test_read_one(test_api_logged_in):
+    crud_tests.test_read_one(test_api_logged_in)
 
 
-def test_read_many(test_api):
-    crud_tests.test_read_many(test_api)
+def test_read_many(test_api_logged_in):
+    crud_tests.test_read_many(test_api_logged_in)
 
 
-def test_create(test_api):
-    crud_tests.test_create(test_api)
+def test_create(test_api_logged_in):
+    crud_tests.test_create(test_api_logged_in)
 
 
-def test_delete(test_api):
-    crud_tests.test_delete(test_api)
+def test_delete(test_api_logged_in):
+    crud_tests.test_delete(test_api_logged_in)
 
 
-def test_lifecycle(test_api):
-    crud_tests.test_lifecycle(test_api)
+def test_lifecycle(test_api_logged_in):
+    crud_tests.test_lifecycle(test_api_logged_in)
 
 
 @pytest.mark.parametrize(
@@ -65,10 +65,10 @@ def test_lifecycle(test_api):
         ('2022-10-04T12:00:00-05:00', '2022-10-04T17:00:00Z'),
     ],
 )
-def test_create_event_date_formats(test_api, event_date, output):
+def test_create_event_date_formats(test_api_logged_in, event_date, output):
     NEW_OBJ.date = event_date
-    response = test_api.post(ENDPOINT, content=NEW_OBJ.model_dump_json())
+    response = test_api_logged_in.post(ENDPOINT, content=NEW_OBJ.model_dump_json())
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    event = test_api.get(f'{ENDPOINT}{response.json()["id"]}/')
+    event = test_api_logged_in.get(f'{ENDPOINT}{response.json()["id"]}/')
     assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert event.json()['date'] == output

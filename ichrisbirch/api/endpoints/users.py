@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import CurrentUser
+from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
@@ -19,7 +20,12 @@ logger = logging.getLogger('api.users')
 router = APIRouter()
 
 
-@router.get("/", response_model=list[schemas.User], status_code=status.HTTP_200_OK)
+@router.get(
+    "/",
+    response_model=list[schemas.User],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_user)],
+)
 async def read_many(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
     query = select(models.User).limit(limit)
     return list(session.scalars(query).all())
@@ -59,7 +65,9 @@ async def update(user: CurrentUser, update: dict, session: Session = Depends(get
     return user
 
 
-@router.get('/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.get(
+    '/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_user)]
+)
 async def read_one(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         return user
@@ -69,7 +77,7 @@ async def read_one(user_id: int, session: Session = Depends(get_sqlalchemy_sessi
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.delete('/{user_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{user_id}/', status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(get_current_user)])
 async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if user := session.get(models.User, user_id):
         session.delete(user)
@@ -81,7 +89,9 @@ async def delete(user_id: int, session: Session = Depends(get_sqlalchemy_session
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.patch('/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.patch(
+    '/{user_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_user)]
+)
 async def update_user(
     user_id: int, user_update: schemas.UserUpdate, session: Session = Depends(get_sqlalchemy_session)
 ):
@@ -98,7 +108,12 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.get('/alt/{alternative_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.get(
+    '/alt/{alternative_id}/',
+    response_model=schemas.User,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_user)],
+)
 async def read_by_alternative_id(alternative_id: int, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.alternative_id == alternative_id)
     if result := session.scalars(query).first():
@@ -109,7 +124,12 @@ async def read_by_alternative_id(alternative_id: int, session: Session = Depends
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
-@router.get('/email/{email}/', response_model=Optional[schemas.User], status_code=status.HTTP_200_OK)
+@router.get(
+    '/email/{email}/',
+    response_model=Optional[schemas.User],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(get_current_user)],
+)
 async def read_by_email(email: str, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.User).where(models.User.email == email)
     if not (user := session.execute(query).scalars().first()):

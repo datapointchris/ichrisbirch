@@ -5,20 +5,49 @@ from typing import TypeVar
 
 import httpx
 from flask import flash
+from flask import session
 from flask_login import current_user
+from flask_login import login_user
+from flask_login import logout_user
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.app import utils
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
+from ichrisbirch.database.sqlalchemy.session import SessionLocal
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
+logger = logging.getLogger('app.query_api')
 
-ServiceUser = models.User(
-    name=settings.users.service_account_user_name,
-    email=settings.users.service_account_user_email,
-    password=settings.users.service_account_user_password,
-)
+
+class APIServiceUser(models.User):
+    def __init__(self):
+        self.settings = get_settings()
+        self.user = None
+
+    def get(self):
+        with SessionLocal() as session:
+            q = select(models.User).filter(models.User.email == self.settings.users.service_account_user_email)
+            if user := (session.execute(q).scalars().first()):
+                logger.debug(f'retreieved service account user: {user.email}')
+                self.user = user
+            else:
+                message = f'Coud not find service account user: {self.settings.users.service_account_user_email}'
+                logger.error(message)
+                raise Exception(message)
+
+    def login(self):
+        if not self.user:
+            self.get()
+        login_user(self.user)
+        logger.debug('logged in service account user')
+
+    def logout(self):
+        if not self.user:
+            self.get()
+        logout_user()
+        logger.debug('logged out service account user')
 
 
 class QueryAPI(Generic[ModelType]):
@@ -30,33 +59,38 @@ class QueryAPI(Generic[ModelType]):
     def __init__(
         self,
         base_url: str,
-        logger: logging.Logger,
         response_model: type[ModelType],
         user: models.User | Any = None,
     ):
-        self.base_url = utils.url_builder(settings.api_url, base_url)
-        self.logger = logger
+        self.settings = get_settings()
+        self.base_url = utils.url_builder(self.settings.api_url, base_url)
         self.response_model = response_model
         self.user = user or (current_user if (current_user and current_user.is_authenticated) else None)
 
     def _handle_request(self, method: str, endpoint: Any | None = None, **kwargs):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
+        if not self.user:
+            if user_id := session.get('_user_id'):
+                logger.info('found user id in session')
         headers = {
-            'X-User-ID': (self.user.get_id() or '') if self.user else '',
-            'X-Application-ID': settings.flask.app_id,
+            'X-User-ID': (self.user.get_id() or '') if self.user else user_id or '',
+            'X-Application-ID': self.settings.flask.app_id,
         }
-        headers_to_log = {'X-User-ID': headers.get('X-User-ID'), 'X-Application-ID': f'XXXX{settings.flask.app_id[:4]}'}
+        headers_to_log = {
+            'X-User-ID': headers.get('X-User-ID'),
+            'X-Application-ID': f'XXXX{self.settings.flask.app_id[:4]}',
+        }
         kwargs_to_log = ''
         if additional_headers := kwargs.pop('headers', None):
             headers.update(**additional_headers)
             headers_to_log.update(**additional_headers)
         if kwargs:
-            if settings.ENVIRONMENT == 'production':
+            if self.settings.ENVIRONMENT == 'production':
                 kwargs_to_log = ', '.join([f'{k}=XXXXXXXX' for k in kwargs.keys()])
             else:
                 kwargs_to_log = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
-        self.logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log}')
-        self.logger.debug(f'current_user={self.user}')
+        logger.debug(f'CurrentUser: {self.user.email if self.user else ''}')
+        logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log}')
         response = None
         try:
             with httpx.Client() as client:
@@ -65,11 +99,11 @@ class QueryAPI(Generic[ModelType]):
                 return response
         except httpx.HTTPError as e:
             error_message = f'Request Error: {e}'
-            self.logger.error(error_message)
+            logger.error(error_message)
             flash(error_message, 'error')
             if response:
-                self.logger.error(response.text)
-                if settings.ENVIRONMENT == 'development':
+                logger.error(response.text)
+                if self.settings.ENVIRONMENT == 'development':
                     flash(response.text, 'error')
             return None
 

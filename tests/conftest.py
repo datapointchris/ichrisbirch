@@ -10,13 +10,15 @@ import pytest
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
-from flask import Flask
 from flask.testing import FlaskClient
 from flask_login import FlaskLoginClient
+from flask_login import login_user
 from sqlalchemy.schema import CreateSchema
 
 import tests.util
 from ichrisbirch import models
+from ichrisbirch.api.endpoints.auth import get_admin_user
+from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
@@ -27,7 +29,7 @@ from tests import test_data
 
 logger = logging.getLogger('tests.conftest')
 logger.warning('<-- file imported')
-settings = get_settings('testing')
+testing_settings = get_settings('testing')
 
 
 @pytest.fixture(scope='module')
@@ -42,69 +44,114 @@ def create_drop_tables():
 
 @pytest.fixture(scope='module', autouse=True)
 def insert_users_for_login(create_drop_tables):
+    test_users = [
+        tests.util.SACRIFICIAL_TEST_USER,
+        tests.util.TEST_LOGIN_REGULAR_USER,
+        tests.util.TEST_LOGIN_ADMIN_USER,
+        tests.util.TEST_SERVICE_ACCOUNT_USER,
+        tests.util.TEST_LOGIN_API_REGULAR_USER,
+        tests.util.TEST_LOGIN_API_ADMIN_USER,
+    ]
     with tests.util.SessionTesting() as session:
-        session.add(models.User(**tests.util.TEST_LOGIN_REGULAR_USER))
-        session.add(models.User(**tests.util.TEST_LOGIN_ADMIN_USER))
+        for user in test_users:
+            session.add(models.User(**user))
         session.commit()
-        logger.info('inserted regular and admin test users')
+        users = [tests.util.get_test_user(user) for user in test_users]
+        for user in users:
+            logger.info(f'inserted in test db: {user.email}')
+    yield
 
-        regular_user = tests.util.get_test_regular_user()
-        admin_user = tests.util.get_test_admin_user()
-        if regular_user and admin_user:
-            logger.info('verified insertion of regular and admin test users')
-        else:
-            msg = 'failed to verify insertion of regular and admin test users'
-            logger.error(msg)
-            pytest.exit(msg, 1)
+
+def base_testing_api():
+    api = create_api(settings=testing_settings)
+    api.dependency_overrides[get_sqlalchemy_session] = tests.util.get_testing_session
+    return api
 
 
 @pytest.fixture(scope='module')
-def test_api() -> Generator[TestClient, Any, None]:
-    api = create_api(settings=settings)
-    api.dependency_overrides[get_sqlalchemy_session] = tests.util.get_testing_session
-    with TestClient(api) as client:
+def test_api():
+    """Produces a test client with module scope."""
+    with TestClient(base_testing_api()) as client:
         yield client
 
 
-def base_testing_app():
-    app = create_app(settings=settings)
-    app.config.update({'TESTING': True})
-    app.config.update({'WTF_CSRF_ENABLED': False})
-    return app
+@pytest.fixture(scope='function')
+def test_api_function():
+    """Produces a test client with function scope."""
+    with TestClient(base_testing_api()) as client:
+        yield client
 
 
-def create_test_client(app: Flask, user=None):
-    if user:
-        app.test_client_class = FlaskLoginClient
-        with app.test_client(user=user) as client:
-            with app.app_context():
-                yield client
-    else:
-        with app.test_client() as client:
-            with app.app_context():
-                yield client
+def base_testing_api_logged_in():
+    api = base_testing_api()
+    api_regular_user = tests.util.get_test_user(tests.util.TEST_LOGIN_API_REGULAR_USER)
+    api.dependency_overrides[get_current_user] = lambda: api_regular_user
+    logger.info(f'logged in user to test api: {api_regular_user.email}')
+    return api
+
+
+@pytest.fixture(scope='module')
+def test_api_logged_in():
+    """Produces a test client with module scope and user login."""
+    with TestClient(base_testing_api_logged_in()) as client:
+        yield client
+
+
+@pytest.fixture(scope='function')
+def test_api_logged_in_function():
+    """Produces a test client with function scope and user login."""
+    with TestClient(base_testing_api_logged_in()) as client:
+        yield client
+
+
+def base_testing_api_logged_in_admin():
+    api = base_testing_api()
+    api_admin_user = tests.util.get_test_user(tests.util.TEST_LOGIN_API_ADMIN_USER)
+    api.dependency_overrides[get_admin_user] = lambda: api_admin_user
+    logger.info(f'logged in admin user to test api: {api_admin_user.email}')
+    return api
+
+
+@pytest.fixture(scope='module')
+def test_api_logged_in_admin():
+    """Produces a test client with module scope and admin user login."""
+    with TestClient(base_testing_api_logged_in_admin()) as client:
+        yield client
+
+
+@pytest.fixture(scope='function')
+def test_api_logged_in_admin_function():
+    """Produces a test client with function scope and admin user login."""
+    with TestClient(base_testing_api_logged_in_admin()) as client:
+        yield client
+
+
+class APIHeadersFlaskClient(FlaskLoginClient):
+    """A Flask test client that allows for setting API headers.
+
+    This class sets the API headers for application login to the API.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.api_headers = kwargs.pop('api_headers', {})
+        super().__init__(*args, **kwargs)
+
+    def open(self, *args, **kwargs):
+        headers = kwargs.pop('headers', {})
+        headers.update(self.api_headers)
+        kwargs['headers'] = headers
+        # kwargs['follow_redirects'] = True
+        return super().open(*args, **kwargs)
 
 
 def base_test_app() -> Generator[FlaskClient, Any, None]:
     """Base fixture for creating a test client."""
-    app = base_testing_app()
-    yield from create_test_client(app)
-
-
-def base_test_app_logged_in() -> Generator[FlaskClient, Any, None]:
-    """Base fixture for creating a test client with a logged-in user."""
-    app = base_testing_app()
-    user = tests.util.get_test_regular_user()
-    logger.info(f'logged in user to test app: {user.email}')
-    yield from create_test_client(app, user=user)
-
-
-def base_test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
-    """Base fixture for creating a test client with a logged-in admin user."""
-    app = base_testing_app()
-    admin = tests.util.get_test_admin_user()
-    logger.info(f'logged in admin user to test app: {admin.email}')
-    yield from create_test_client(app, user=admin)
+    app = create_app(settings=testing_settings)
+    app.config.update({'TESTING': True})
+    app.config.update({'WTF_CSRF_ENABLED': False})
+    with app.test_request_context():
+        with app.test_client() as client:
+            yield client
 
 
 @pytest.fixture(scope='module')
@@ -119,6 +166,24 @@ def test_app_function():
     yield from base_test_app()
 
 
+def base_test_app_logged_in() -> Generator[FlaskClient, Any, None]:
+    """Base fixture for creating a test client with a logged-in user.
+
+    MUST set up the test_request_context first in order to have it to log in the user.
+    """
+    app = create_app(settings=testing_settings)
+    app.config.update({'TESTING': True})
+    app.config.update({'WTF_CSRF_ENABLED': False})
+    app.test_client_class = APIHeadersFlaskClient
+    user = tests.util.get_test_user(tests.util.TEST_LOGIN_REGULAR_USER)
+    api_headers = {'X-Application-ID': testing_settings.flask.app_id, 'X-User-ID': user.get_id()}
+    with app.test_request_context():
+        login_user(user)
+        logger.info(f'logged in user to test app: {user.email}: {user.get_id()}')
+        with app.test_client(user=user, api_headers=api_headers) as client:
+            yield client
+
+
 @pytest.fixture(scope='module')
 def test_app_logged_in():
     """Produces a test client with module scope and user login."""
@@ -129,6 +194,21 @@ def test_app_logged_in():
 def test_app_logged_in_function():
     """Produces a test client with function scope and user login."""
     yield from base_test_app_logged_in()
+
+
+def base_test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
+    """Base fixture for creating a test client with a logged-in admin user."""
+    app = create_app(settings=testing_settings)
+    app.config.update({'TESTING': True})
+    app.config.update({'WTF_CSRF_ENABLED': False})
+    app.test_client_class = APIHeadersFlaskClient
+    admin = tests.util.get_test_user(tests.util.TEST_LOGIN_ADMIN_USER)
+    api_headers = {'X-Application-ID': testing_settings.flask.app_id, 'X-User-ID': admin.get_id()}
+    with app.test_request_context():
+        login_user(admin)
+        logger.info(f'logged in admin user to test app: {admin.email}: {admin.get_id()}')
+        with app.test_client(user=admin, api_headers=api_headers) as client:
+            yield client
 
 
 @pytest.fixture(scope='module')
@@ -145,14 +225,14 @@ def test_app_logged_in_admin_function():
 
 @pytest.fixture(scope='module')
 def test_jobstore() -> Generator[SQLAlchemyJobStore, Any, None]:
-    yield get_jobstore(settings=settings)
+    yield get_jobstore(settings=testing_settings)
 
 
 @pytest.fixture(scope='module')
 def insert_jobs_in_test_scheduler():
     # Start Scheduler in its own thread to test the scheduler
     test_scheduler = BlockingScheduler()
-    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri)
+    jobstore = SQLAlchemyJobStore(url=testing_settings.sqlalchemy.db_uri)
     test_scheduler.add_jobstore(jobstore, alias='ichrisbirch', extend_existing=True)
     scheduler_thread = threading.Thread(target=test_scheduler.start, daemon=True)
     scheduler_thread.start()
@@ -179,9 +259,9 @@ def setup_test_environment():
     - Start Uvicorn API (FastAPI) subprocess
     - Start Gunicorn App (Flask) subprocess
     - Yield to test
-    - A create_tables_insert_data_drop_tables runs here
-    - B Function yields after inserting data to run test
-    - C Drop all tables after test completes
+    - - A create_tables_insert_data_drop_tables runs here
+    - - B Function yields after inserting data to run test
+    - - C Drop all tables after test completes
     - Control back to setup_test_environment
     - Stop Postgres container
     - Kill Postgres, Uvicorn, and Gunicorn threads
@@ -205,7 +285,7 @@ def setup_test_environment():
         docker_log_thread.start()
         logger.info('started docker log stream thread')
 
-        _create_database_schemas(schemas=settings.db_schemas, session=tests.util.SessionTesting)
+        _create_database_schemas(schemas=testing_settings.db_schemas, session=tests.util.SessionTesting)
         logger.info('created database schemas')
 
         # Copy current environment and set ENVIRONMENT to testing for subprocesses
@@ -266,7 +346,7 @@ def _create_database_schemas(schemas, session):
             except Exception as e:
                 logger.error(f"Failed to create schema: {e}")
                 debug_message = f"""Failed to create schema: {e}
-                postgres_connection_string = {settings.sqlalchemy.db_uri}
+                postgres_connection_string = {testing_settings.sqlalchemy.db_uri}
                 Connection Parameters:
                 database_name = {session.bind.url.database}
                 database_user = {session.bind.url.username}
@@ -283,8 +363,8 @@ def _create_api_uvicorn_process(env):
     api_uvicorn_command = ' '.join(
         [
             'poetry run uvicorn ichrisbirch.wsgi_api:api',
-            f'--host {settings.fastapi.host}',
-            f'--port {settings.fastapi.port}',
+            f'--host {testing_settings.fastapi.host}',
+            f'--port {testing_settings.fastapi.port}',
             '--log-level debug',
         ]
     )
@@ -297,7 +377,7 @@ def _create_app_gunicorn_process(env):
     app_gunicorn_command = ' '.join(
         [
             'poetry run gunicorn ichrisbirch.wsgi_app:app',
-            f'--bind {settings.flask.host}:{settings.flask.port}',
+            f'--bind {testing_settings.flask.host}:{testing_settings.flask.port}',
             '--log-level DEBUG',
         ]
     )

@@ -23,7 +23,7 @@ def test_index(test_app_logged_in):
     assert b'<title>AutoTasks</title>' in response.data
 
 
-def test_add_autotask(test_app_logged_in, test_api):
+def test_add_autotask(test_app_logged_in, test_api_logged_in):
     """Test add a new autotask.
 
     Expected: Both create an autotask AND run it, which will create a new task
@@ -40,7 +40,7 @@ def test_add_autotask(test_app_logged_in, test_api):
     assert b'<title>AutoTasks</title>' in response.data
 
     # Expect that the autotask ran so it should have inserted the task into tasks table
-    tasks_response = test_api.get('/tasks/')
+    tasks_response = test_api_logged_in.get('/tasks/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(tasks_response)
     assert len(tasks_response.json()) == 4
 
@@ -52,7 +52,7 @@ def test_delete_autotask(test_app_logged_in):
 
 
 @pytest.mark.parametrize('category', list(TaskCategory))
-def test_task_categories(test_api, category):
+def test_task_categories(test_api_logged_in, category):
     test_autotask = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
@@ -60,13 +60,13 @@ def test_task_categories(test_api, category):
         priority=3,
         frequency=AutoTaskFrequency.Biweekly,
     )
-    created_autotask = test_api.post('/autotasks/', json=test_autotask.model_dump())
+    created_autotask = test_api_logged_in.post('/autotasks/', json=test_autotask.model_dump())
     assert created_autotask.status_code == status.HTTP_201_CREATED, show_status_and_response(created_autotask)
     assert created_autotask.json()['name'] == test_autotask.name
 
 
 @pytest.mark.parametrize('frequency', list(AutoTaskFrequency))
-def test_autotask_frequency(test_api, frequency):
+def test_autotask_frequency(test_api_logged_in, frequency):
     test_autotask = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
@@ -74,6 +74,6 @@ def test_autotask_frequency(test_api, frequency):
         priority=3,
         frequency=frequency,
     )
-    created_autotask = test_api.post('/autotasks/', json=test_autotask.model_dump())
+    created_autotask = test_api_logged_in.post('/autotasks/', json=test_autotask.model_dump())
     assert created_autotask.status_code == status.HTTP_201_CREATED, show_status_and_response(created_autotask)
     assert created_autotask.json()['name'] == test_autotask.name

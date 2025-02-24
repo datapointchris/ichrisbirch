@@ -22,7 +22,7 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    countdowns_api = QueryAPI(base_url='countdowns', logger=logger, response_model=schemas.Countdown)
+    countdowns_api = QueryAPI(base_url='countdowns', response_model=schemas.Countdown)
     if request.method == 'POST':
         data = request.form.to_dict()
         action = data.pop('action')

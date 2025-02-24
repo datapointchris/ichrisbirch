@@ -237,7 +237,10 @@ def load_environment(env_file: Optional[Path | str] = None):
 
     elif isinstance(env_file, str):
         logger.info(f'loading environment from string: {env_file}')
-        if not Path(env_file).exists():
+        if Path(env_file).exists():
+            logger.info(f'loading environment variables from: {env_file}')
+            env_file = Path(env_file)
+        else:
             match env_file:
                 case 'development':
                     filename = '.dev.env'
@@ -251,9 +254,6 @@ def load_environment(env_file: Optional[Path | str] = None):
                     raise ValueError(error_msg)
             logger.info(f'loading environment variables from: {filename}')
             env_file = Path(dotenv.find_dotenv(filename))
-        else:
-            logger.info(f'loading environment variables from: {env_file}')
-            env_file = Path(env_file)
 
     else:
         logger.info(f'loading environment from ENVIRONMENT: {os.environ["ENVIRONMENT"]}')
@@ -275,7 +275,7 @@ def load_environment(env_file: Optional[Path | str] = None):
     return env_file
 
 
-@functools.lru_cache(maxsize=1)
+@functools.lru_cache(maxsize=3)
 @log_caller
 def get_settings(env_file: Optional[Path | str] = None) -> Settings:
     """Return settings based on Path, str, or ENVIRONMENT variable."""

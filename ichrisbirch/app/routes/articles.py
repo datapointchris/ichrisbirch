@@ -92,7 +92,7 @@ def bulk_add_articles(articles_api, summarize_api, urls: list[str]):
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
+    articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
     if not (article := articles_api.get_one('current')):
         logger.warning('no current article')
         # TODO: [2024/06/07] - Get user preference for current articles, whether to filter only unread
@@ -108,7 +108,7 @@ def index():
 
 @blueprint.route('/all/', methods=['GET'])
 def all():
-    articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
+    articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
     articles = articles_api.get_many()
     return render_template('articles/all.html', articles=articles)
 
@@ -151,7 +151,7 @@ def insights():
 def search():
     articles = []
     if request.method == 'POST':
-        articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
+        articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
         data = request.form.to_dict()
         search_text = data.get('search_text')
         logger.debug(f'{request.referrer=} | {search_text=}')
@@ -164,8 +164,8 @@ def search():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    articles_api = QueryAPI(base_url='articles', logger=logger, response_model=schemas.Article)
-    summarize_api = QueryAPI(base_url='articles/summarize', logger=logger, response_model=schemas.ArticleSummary)
+    articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
+    summarize_api = QueryAPI(base_url='articles/summarize', response_model=schemas.ArticleSummary)
     data = request.form.to_dict()
     action = data.pop('action')
 

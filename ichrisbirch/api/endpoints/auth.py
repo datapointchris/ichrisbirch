@@ -17,7 +17,8 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from ichrisbirch.config import settings
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.auth')
@@ -59,6 +60,7 @@ def get_token_from_header(authorization: Annotated[Optional[str], Header()] = No
 
 
 def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)]) -> str | None:
+    settings = get_settings()
     try:
         return jwt.decode(jwt=token, key=settings.auth.secret_key, algorithms=[settings.auth.algorithm]).get('sub')
     except Exception as e:
@@ -68,11 +70,13 @@ def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)])
 
 
 def authenticate_with_application_headers(
-    x_application_id: Optional[str] = Header(None), x_user_id: Optional[str] = Header(None)
+    x_application_id: Optional[str] = Header(None),
+    x_user_id: Optional[str] = Header(None),
+    settings: Settings = Depends(get_settings),
 ) -> str | None:
     if x_application_id and x_user_id:
         if not x_application_id == settings.flask.app_id:
-            logger.warning(f'invalid X-Application-ID header: {x_application_id}')
+            logger.warning(f'invalid X-Application-ID header: {x_application_id[:-8]}')
             return None
         return x_user_id
     return None
@@ -93,17 +97,30 @@ def get_current_user(
     auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
 ):
-    logger.debug(f'app headers: {bool(app_headers)}')
-    logger.debug(f'jwt token: {bool(auth_jwt)}')
-    logger.debug(f'oauth form: {bool(auth_oauth2)}')
+    if app_headers:
+        logger.debug(f'app headers: {bool(app_headers)}')
+    if auth_jwt:
+        logger.debug(f'jwt token: {bool(auth_jwt)}')
+    if auth_oauth2:
+        logger.debug(f'oauth form: {bool(auth_oauth2)}')
+
     if not (user_id := app_headers or auth_jwt or auth_oauth2):
-        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     if user := validate_user_id(user_id, session):
-        logger.debug(f'validated current user: {user.email}')
+        logger.debug(f'validated request for user: {user.email}')
         return user
 
 
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
+
+
+def get_admin_user(user: CurrentUser):
+    if user.is_admin:
+        return user
+    return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+AdminUser = Annotated[models.User, Depends(get_admin_user)]
 
 
 @router.get('/logout/', response_model=None, status_code=status.HTTP_200_OK)
