@@ -27,21 +27,21 @@ ENDPOINT = '/countdowns/'
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
 
-def test_read_one(test_api):
-    crud_tests.test_read_one(test_api)
+def test_read_one(test_api_logged_in):
+    crud_tests.test_read_one(test_api_logged_in)
 
 
-def test_read_many(test_api):
-    crud_tests.test_read_many(test_api)
+def test_read_many(test_api_logged_in):
+    crud_tests.test_read_many(test_api_logged_in)
 
 
-def test_create(test_api):
-    crud_tests.test_create(test_api)
+def test_create(test_api_logged_in):
+    crud_tests.test_create(test_api_logged_in)
 
 
-def test_delete(test_api):
-    crud_tests.test_delete(test_api)
+def test_delete(test_api_logged_in):
+    crud_tests.test_delete(test_api_logged_in)
 
 
-def test_lifecycle(test_api):
-    crud_tests.test_lifecycle(test_api)
+def test_lifecycle(test_api_logged_in):
+    crud_tests.test_lifecycle(test_api_logged_in)

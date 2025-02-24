@@ -40,49 +40,49 @@ def test_user():
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
 
-def test_read_one(test_api):
-    crud_tests.test_read_one(test_api)
+def test_read_one(test_api_logged_in):
+    crud_tests.test_read_one(test_api_logged_in)
 
 
-def test_read_many(test_api):
-    crud_tests.test_read_many(test_api)
+def test_read_many(test_api_logged_in):
+    crud_tests.test_read_many(test_api_logged_in)
 
 
-def test_create(test_api):
-    crud_tests.test_create(test_api)
+def test_create(test_api_logged_in):
+    crud_tests.test_create(test_api_logged_in)
 
 
-def test_delete(test_api):
-    crud_tests.test_delete(test_api)
+def test_delete(test_api_logged_in):
+    crud_tests.test_delete(test_api_logged_in)
 
 
 @pytest.mark.skip(reason='An extra user is inserted for login, which changes length in users table, 3 => 4')
-def test_lifecycle(test_api):
-    crud_tests.test_lifecycle(test_api)
+def test_lifecycle(test_api_logged_in):
+    crud_tests.test_lifecycle(test_api_logged_in)
 
 
-def test_patch_user(test_api):
-    first_user_id = crud_tests.item_id_by_position(test_api, position=1)
+def test_patch_user(test_api_logged_in):
+    first_user_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
     new_name = 'Updated User 1 Name'
-    response = test_api.patch(f'{ENDPOINT}{first_user_id}/', json={'name': new_name})
+    response = test_api_logged_in.patch(f'{ENDPOINT}{first_user_id}/', json={'name': new_name})
     assert response.json()['name'] == new_name
 
 
 @pytest.mark.parametrize('email', TEST_DATA_EMAILS)
-def test_read_one_user_by_email(test_api, email):
-    response = test_api.get(f'/users/email/{email}/')
+def test_read_one_user_by_email(test_api_logged_in, email):
+    response = test_api_logged_in.get(f'/users/email/{email}/')
     user = schemas.User(**response.json())
     assert user.email == email
 
 
-def test_read_one_user_by_alt_id(test_api):
+def test_read_one_user_by_alt_id(test_api_logged_in):
     """Since alternative id is assigned by the database, get the user by id then query with alternative id and see if
     they match.
     """
-    first_id = crud_tests.item_id_by_position(test_api, position=1)
-    response = test_api.get(f'/users/{first_id}/')
+    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
+    response = test_api_logged_in.get(f'/users/{first_id}/')
     id_user = schemas.User(**response.json())
-    response = test_api.get(f'/users/alt/{id_user.alternative_id}/')
+    response = test_api_logged_in.get(f'/users/alt/{id_user.alternative_id}/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     alt_user = schemas.User(**response.json())
     assert id_user == alt_user
@@ -97,8 +97,8 @@ def test_user_set_password():
     assert user.check_password(NEW_OBJ.password)
 
 
-def test_create_user_password_hashed(test_api):
-    created_response = test_api.post('/users/', content=NEW_OBJ.model_dump_json())
+def test_create_user_password_hashed(test_api_logged_in):
+    created_response = test_api_logged_in.post('/users/', content=NEW_OBJ.model_dump_json())
     assert created_response.status_code == status.HTTP_201_CREATED, show_status_and_response(created_response)
     created_user = models.User(**created_response.json())
     assert created_user.name == NEW_OBJ.name
@@ -109,7 +109,7 @@ def test_create_user_password_hashed(test_api):
 
 
 @pytest.mark.parametrize('user', TEST_DATA_USERS)
-def test_check_user_password_functions(test_api, user):
+def test_check_user_password_functions(test_api_logged_in, user):
     """When creating new users, the password should be hashed by the model in the post endpoint and stored in the
     database as the hash.
 
@@ -117,27 +117,27 @@ def test_check_user_password_functions(test_api, user):
     testing data should be equivalent. Users need to be retrieved by email since id and alternative_id are both assigned
     by the db and not available in the testing data
     """
-    response = test_api.get(f'/users/email/{user.email}/')
+    response = test_api_logged_in.get(f'/users/email/{user.email}/')
     db_user = models.User(**response.json())
     assert db_user.check_password(user.password)
 
 
-def test_get_user_me_application_headers(test_api, test_user):
+def test_get_user_me_application_headers(test_api_function, test_user):
     headers = make_app_headers_for_user(test_user)
-    response = test_api.get('/users/me/', headers=headers)
+    response = test_api_function.get('/users/me/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['name'] == test_user.name
 
 
-def test_get_user_me_jwt(test_api, test_user):
+def test_get_user_me_jwt(test_api_function, test_user):
     """Send a request to /auth/token/ to get a token using oauth2 username and password.
 
     Then use the token to get /me/ endpoint
     """
     data = {'username': test_user.email, 'password': 'regular_user_1_password'}
-    response = test_api.post('/auth/token/', data=data)
+    response = test_api_function.post('/auth/token/', data=data)
     token = response.json()['access_token']
     headers = make_jwt_header(token)
-    response = test_api.get('/users/me/', headers=headers)
+    response = test_api_function.get('/users/me/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['name'] == test_user.name

@@ -28,7 +28,7 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    books_api = QueryAPI(base_url='books', logger=logger, response_model=schemas.Book)
+    books_api = QueryAPI(base_url='books', response_model=schemas.Book)
     if search := request.args.get('search'):
         books = books_api.get_many('search', params={'q': search})
     else:
@@ -45,7 +45,7 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    books_api = QueryAPI(base_url='books', logger=logger, response_model=schemas.Book)
+    books_api = QueryAPI(base_url='books', response_model=schemas.Book)
     data = request.form.to_dict()
     action = data.pop('action')
 

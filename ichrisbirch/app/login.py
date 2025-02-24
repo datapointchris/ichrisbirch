@@ -12,7 +12,7 @@ from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger('app.login_manager')
-user_api = QueryAPI(base_url='users', logger=logger, response_model=schemas.User)
+user_api = QueryAPI(base_url='users', response_model=schemas.User)
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -29,16 +29,14 @@ def load_user(alternative_id):
     user ID.
     """
     if user := user_api.get_one(['alt', alternative_id]):
-        logger.debug(f'Load user: {user.alternative_id} - {user.email}')
+        logger.debug(f'logged in user: {user.alternative_id} - {user.email}')
         return models.User(**user.model_dump())
     return None
 
 
 def admin_login_required(func):
     """A version of `login_required` from `flask-login`
-
     https://github.com/maxcountryman/flask-login/blob/529be4b5f49075500010811d6c739e85e02b9c2e/src/flask_login/utils.py#L246
-
     This decorator requires both the user is logged in and also the user is an admin
     """
 

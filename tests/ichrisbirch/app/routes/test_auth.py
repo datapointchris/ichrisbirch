@@ -6,7 +6,7 @@ from tests import test_data
 from tests.util import show_status_and_response
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope='module', autouse=True)
 def insert_testing_data():
     tests.util.insert_test_data('users')
     yield
@@ -46,15 +46,16 @@ class TestLogin:
         assert f'<title>Welcome, {TEST_USER.name}</title>' in response.text
 
     def test_login_wrong_password(self, test_app_function, caplog):
-        test_app_function.post(
-            '/login/', follow_redirects=True, data={'email': TEST_USER.email, 'password': 'wrong_password'}
-        )
+        login_data = {'email': TEST_USER.email, 'password': 'wrong_password'}
+        response = test_app_function.post('/login/', follow_redirects=False, data=login_data)
         assert f'invalid login attempt for: {TEST_USER.email}' in caplog.text, 'No error log produced'
+        assert response.status_code == status.HTTP_302_FOUND, show_status_and_response(response)
+        assert 'login' in response.headers['Location']
 
 
 class TestSignup:
-    def test_signup_page(self, test_app_logged_in_function):
-        response = test_app_logged_in_function.get('/signup/')
+    def test_signup_page(self, test_app_function):
+        response = test_app_function.get('/signup/')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert b'<title>Signup for iChrisBirch</title>' in response.data
 

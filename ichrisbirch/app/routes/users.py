@@ -36,8 +36,9 @@ def settings():
 
 
 @blueprint.route('/preferences/', methods=['POST'])
+@login_required
 def preferences():
-    users_api = QueryAPI(base_url='users', user='', logger=logger, response_model=schemas.User)
+    users_api = QueryAPI(base_url='users', response_model=schemas.User)
 
     data = request.form.to_dict()
     action = data.pop('action')

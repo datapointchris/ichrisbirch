@@ -26,7 +26,7 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    events_api = QueryAPI(base_url='events', logger=logger, response_model=schemas.Event)
+    events_api = QueryAPI(base_url='events', response_model=schemas.Event)
     if request.method == 'POST':
         data = request.form.to_dict()
         action = data.pop('action')

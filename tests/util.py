@@ -25,15 +25,30 @@ from ichrisbirch.config import get_settings
 
 logger = logging.getLogger('tests.util')
 logger.info('testing util loaded')
-settings = get_settings('testing')
+settings = get_settings()
 
 # NOTE: These have to be dicts, if they are models.User objects, they will be incorrect
 # when called after the first module that uses them because they will change somehow (sqlalchemy bullshit magic)
+# Sacrificial test user is inserted first, deleted for testing, so as not to delete the login users
+SACRIFICIAL_TEST_USER = dict(
+    name='User to be Sacrificed to Testing Gods', email='sacrifice@testgods.com', password='repentance'
+)
 TEST_LOGIN_REGULAR_USER = dict(
     name='Test Login Regular User', email='testregular@testuser.com', password='regularpassword'
 )
 TEST_LOGIN_ADMIN_USER = dict(
     name='Test Login Admin User', email='testadmin@testadmin.com', password='adminpassword', is_admin=True
+)
+TEST_LOGIN_API_REGULAR_USER = dict(
+    name='Test Login API Regular User', email='testregularapi@testuser.com', password='regularpassword'
+)
+TEST_LOGIN_API_ADMIN_USER = dict(
+    name='Test Login API Admin User', email='testadminapi@testadmin.com', password='adminpassword', is_admin=True
+)
+TEST_SERVICE_ACCOUNT_USER = dict(
+    name=settings.users.service_account_user_name,
+    email=settings.users.service_account_user_email,
+    password=settings.users.service_account_user_password,
 )
 
 
@@ -58,6 +73,11 @@ def get_testing_session() -> Generator[Session, None, None]:
         yield session
     finally:
         session.close()
+
+
+def get_test_user(user_dict: dict):
+    with SessionTesting() as session:
+        return session.execute(select(models.User).where(models.User.email == user_dict['email'])).scalar_one()
 
 
 def insert_test_data(*datasets):
@@ -141,25 +161,11 @@ def delete_test_data(*datasets):
     logger.info(f'deleted testing dataset: {' '.join(f"'{d}'" for d in datasets)}')
 
 
-def get_test_regular_user():
-    with SessionTesting() as session:
-        return session.execute(
-            select(models.User).where(models.User.email == TEST_LOGIN_REGULAR_USER['email'])
-        ).scalar_one()
-
-
-def get_test_admin_user():
-    with SessionTesting() as session:
-        return session.execute(
-            select(models.User).where(models.User.email == TEST_LOGIN_ADMIN_USER['email'])
-        ).scalar_one()
-
-
 def log_all_table_items(table_name, model, model_attribute=None):
     with SessionTesting() as session:
         all_table_items = session.execute(select(model)).scalars().all()
         items = [getattr(item, model_attribute) if model_attribute else item for item in all_table_items]
-        logger.info(f'ALL {table_name.upper()}: {', '.join(items)}')
+        logger.warning(f'ALL {table_name.upper()}: {', '.join(items)}')
 
 
 def show_status_and_response(response: httpx.Response) -> dict[str, str]:

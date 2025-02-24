@@ -27,7 +27,7 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    autotasks_api = QueryAPI(base_url='autotasks', logger=logger, response_model=schemas.AutoTask)
+    autotasks_api = QueryAPI(base_url='autotasks', response_model=schemas.AutoTask)
     if request.method == 'POST':
         data = request.form.to_dict()
         action = data.pop('action')

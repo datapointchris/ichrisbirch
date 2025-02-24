@@ -88,8 +88,8 @@ def overdue_tasks(tasks: list[schemas.Task]) -> int:
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    tasks_api = QueryAPI(base_url='tasks', logger=logger, response_model=schemas.Task)
-    tasks_completed_api = QueryAPI(base_url='tasks/completed', logger=logger, response_model=schemas.TaskCompleted)
+    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+    tasks_completed_api = QueryAPI(base_url='tasks/completed', response_model=schemas.TaskCompleted)
     tasks = tasks_api.get_many('todo')
     critical_count = critical_tasks(tasks)
     due_soon_count = due_soon_tasks(tasks)
@@ -112,7 +112,7 @@ def index():
 
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
-    tasks_api = QueryAPI(base_url='tasks', logger=logger, response_model=schemas.Task)
+    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
     tasks = tasks_api.get_many('todo')
     critical_count = critical_tasks(tasks)
     due_soon_count = due_soon_tasks(tasks)
@@ -134,7 +134,7 @@ def completed():
 
     Filtered by date selection.
     """
-    tasks_completed_api = QueryAPI(base_url='tasks/completed', logger=logger, response_model=schemas.TaskCompleted)
+    tasks_completed_api = QueryAPI(base_url='tasks/completed', response_model=schemas.TaskCompleted)
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime(tz=TZ)
     selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
@@ -169,7 +169,7 @@ def completed():
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
-    tasks_api = QueryAPI(base_url='tasks', logger=logger, response_model=schemas.Task)
+    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
     if request.method == 'GET':
         todo_tasks, completed_tasks = [], []
     else:
@@ -197,7 +197,7 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    tasks_api = QueryAPI(base_url='tasks', logger=logger, response_model=schemas.Task)
+    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
 
     data = request.form.to_dict()
     action = data.pop('action')

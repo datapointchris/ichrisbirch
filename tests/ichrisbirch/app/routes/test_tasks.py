@@ -65,10 +65,10 @@ def test_crud_complete(test_app_logged_in):
 
 
 @pytest.mark.parametrize('days', [7, 30])
-def test_crud_extend(test_app_logged_in, test_api, days):
+def test_crud_extend(test_app_logged_in, test_api_logged_in, days):
     """test_api needs to be used because the flask /tasks route always delegates to the api to get specific tasks."""
     task_id = 1
-    task = test_api.get(f'/tasks/{task_id}/')
+    task = test_api_logged_in.get(f'/tasks/{task_id}/')
     priority = task.json()['priority']
 
     extend_response = test_app_logged_in.post(
@@ -79,7 +79,7 @@ def test_crud_extend(test_app_logged_in, test_api, days):
     assert extend_response.request.path == '/tasks/todo/'
     assert b'<title>Outstanding Tasks</title>' in extend_response.data
 
-    updated_task = test_api.get(f'/tasks/{task_id}/')
+    updated_task = test_api_logged_in.get(f'/tasks/{task_id}/')
     extended_priority = updated_task.json()['priority']
     assert priority + days == extended_priority
 
@@ -92,9 +92,9 @@ def test_crud_delete(test_app_logged_in):
     assert b'Outstanding Tasks' in response.data
 
 
-def test_crud_reset_priorities(test_app_logged_in, test_api):
+def test_crud_reset_priorities(test_app_logged_in, test_api_logged_in):
     # Get priority of first task
-    task_1 = test_api.get('/tasks/1/')
+    task_1 = test_api_logged_in.get('/tasks/1/')
     p1 = task_1.json()['priority']
 
     # Create a task with negative priority
@@ -114,14 +114,14 @@ def test_crud_reset_priorities(test_app_logged_in, test_api):
     assert b'Outstanding Tasks' in response.data
 
     # Check that the negative priority task updated other task priorities
-    task_1_updated = test_api.get('/tasks/1/')
+    task_1_updated = test_api_logged_in.get('/tasks/1/')
     p1_updated = task_1_updated.json()['priority']
     assert p1_updated == p1 + abs(NEGATIVE_PRIORITY_TASK.priority)
 
 
-def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_api):
+def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_api_logged_in):
     # Get priority of first task
-    task_1 = test_api.get('/tasks/1/')
+    task_1 = test_api_logged_in.get('/tasks/1/')
     p1 = task_1.json()['priority']
 
     # Reset priorities (no negative priorities)
@@ -132,7 +132,7 @@ def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_a
     assert b'Outstanding Tasks' in response.data
 
     # Check that the priority has not changed
-    task_1_updated = test_api.get('/tasks/1/')
+    task_1_updated = test_api_logged_in.get('/tasks/1/')
     p1_updated = task_1_updated.json()['priority']
     assert p1 == p1_updated
 

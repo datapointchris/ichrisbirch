@@ -32,42 +32,42 @@ class TestHabits:
     )
     crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
-    def test_read_one(self, test_api):
-        self.crud_tests.test_read_one(test_api)
+    def test_read_one(self, test_api_logged_in):
+        self.crud_tests.test_read_one(test_api_logged_in)
 
-    def test_read_many(self, test_api):
-        self.crud_tests.test_read_many(test_api)
+    def test_read_many(self, test_api_logged_in):
+        self.crud_tests.test_read_many(test_api_logged_in)
 
-    def test_create(self, test_api):
-        self.crud_tests.test_create(test_api)
+    def test_create(self, test_api_logged_in):
+        self.crud_tests.test_create(test_api_logged_in)
 
-    def test_delete(self, test_api):
-        self.crud_tests.test_delete(test_api)
+    def test_delete(self, test_api_logged_in):
+        self.crud_tests.test_delete(test_api_logged_in)
 
-    def test_lifecycle(self, test_api):
-        self.crud_tests.test_lifecycle(test_api)
+    def test_lifecycle(self, test_api_logged_in):
+        self.crud_tests.test_lifecycle(test_api_logged_in)
 
-    def test_read_many_habits_current(self, test_api):
+    def test_read_many_habits_current(self, test_api_logged_in):
         params = {'current': True}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 2
 
-    def test_read_many_habits_not_current(self, test_api):
+    def test_read_many_habits_not_current(self, test_api_logged_in):
         params = {'current': False}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
 
-    def test_hibernate_habit(self, test_api):
-        first_id = self.crud_tests.item_id_by_position(test_api, position=1)
-        habit = test_api.patch(f'{self.ENDPOINT}{first_id}/', json={'is_current': False})
+    def test_hibernate_habit(self, test_api_logged_in):
+        first_id = self.crud_tests.item_id_by_position(test_api_logged_in, position=1)
+        habit = test_api_logged_in.patch(f'{self.ENDPOINT}{first_id}/', json={'is_current': False})
         assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
         assert habit.json()['is_current'] is False
 
-    def test_revive_habit(self, test_api):
-        third_id = self.crud_tests.item_id_by_position(test_api, position=3)
-        habit = test_api.patch(f'{self.ENDPOINT}{third_id}/', json={'is_current': True})
+    def test_revive_habit(self, test_api_logged_in):
+        third_id = self.crud_tests.item_id_by_position(test_api_logged_in, position=3)
+        habit = test_api_logged_in.patch(f'{self.ENDPOINT}{third_id}/', json={'is_current': True})
         assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
         assert habit.json()['is_current'] is True
 
@@ -80,40 +80,40 @@ class TestHabitCategories:
     )
     crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
-    def test_read_one(self, test_api):
-        self.crud_tests.test_read_one(test_api)
+    def test_read_one(self, test_api_logged_in):
+        self.crud_tests.test_read_one(test_api_logged_in)
 
-    def test_read_many(self, test_api):
-        self.crud_tests.test_read_many(test_api)
+    def test_read_many(self, test_api_logged_in):
+        self.crud_tests.test_read_many(test_api_logged_in)
 
-    def test_create(self, test_api):
-        self.crud_tests.test_create(test_api)
+    def test_create(self, test_api_logged_in):
+        self.crud_tests.test_create(test_api_logged_in)
 
-    def test_delete(self, test_api):
-        self.crud_tests.test_delete(test_api)
+    def test_delete(self, test_api_logged_in):
+        self.crud_tests.test_delete(test_api_logged_in)
 
-    def test_lifecycle(self, test_api):
-        self.crud_tests.test_lifecycle(test_api)
+    def test_lifecycle(self, test_api_logged_in):
+        self.crud_tests.test_lifecycle(test_api_logged_in)
 
-    def test_read_many_categories_current(self, test_api):
+    def test_read_many_categories_current(self, test_api_logged_in):
         params = {'current': True}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 2
 
-    def test_read_many_categories_not_current(self, test_api):
+    def test_read_many_categories_not_current(self, test_api_logged_in):
         params = {'current': False}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
 
-    def test_assign_habit_to_new_category(self, test_api):
-        created = test_api.post(self.ENDPOINT, json=self.NEW_OBJ.model_dump())
+    def test_assign_habit_to_new_category(self, test_api_logged_in):
+        created = test_api_logged_in.post(self.ENDPOINT, json=self.NEW_OBJ.model_dump())
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         assert created.json()['name'] == self.NEW_OBJ.name
 
         # Test category was created
-        all_obj = test_api.get(self.ENDPOINT)
+        all_obj = test_api_logged_in.get(self.ENDPOINT)
         assert all_obj.status_code == status.HTTP_200_OK, show_status_and_response(all_obj)
         assert len(all_obj.json()) == 4
 
@@ -121,23 +121,23 @@ class TestHabitCategories:
         new_category_id = created.json()['id']
         modified = self.NEW_OBJ.model_dump().copy()
         modified.update(category_id=new_category_id)
-        new_habit = test_api.post(TestHabits.ENDPOINT, json=modified)
+        new_habit = test_api_logged_in.post(TestHabits.ENDPOINT, json=modified)
         assert new_habit.status_code == status.HTTP_201_CREATED, show_status_and_response(new_habit)
         assert new_habit.json()['category_id'] == new_category_id
 
-    def test_hibernate_category(self, test_api):
+    def test_hibernate_category(self, test_api_logged_in):
         endpoint = f'{self.ENDPOINT}1/'
-        category = test_api.patch(endpoint, json={'is_current': False})
+        category = test_api_logged_in.patch(endpoint, json={'is_current': False})
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         assert category.json()['is_current'] is False
 
-    def test_revive_category(self, test_api):
+    def test_revive_category(self, test_api_logged_in):
         endpoint = f'{self.ENDPOINT}3/'
-        category = test_api.patch(endpoint, json={'is_current': True})
+        category = test_api_logged_in.patch(endpoint, json={'is_current': True})
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         assert category.json()['is_current'] is True
 
-    def test_delete_category_in_use_gives_error(self, test_api):
+    def test_delete_category_in_use_gives_error(self, test_api_logged_in):
         """Test that a category in use cannot be deleted.
 
         TypeError:
@@ -157,11 +157,11 @@ class TestHabitCategories:
         (Background on this error at: https://sqlalche.me/e/20/gkpj)'),)
         """
         endpoint = f'{self.ENDPOINT}2/'
-        category = test_api.get(endpoint)
+        category = test_api_logged_in.get(endpoint)
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         with pytest.raises(sqlalchemy.exc.PendingRollbackError):
             # with pytest.raises(TypeError):
-            test_api.delete(endpoint)
+            test_api_logged_in.delete(endpoint)
 
 
 class TestCompletedHabits:
@@ -175,37 +175,37 @@ class TestCompletedHabits:
 
     crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_COMPLETED_HABIT)
 
-    def test_read_one(self, test_api):
-        self.crud_tests.test_read_one(test_api)
+    def test_read_one(self, test_api_logged_in):
+        self.crud_tests.test_read_one(test_api_logged_in)
 
-    def test_read_many(self, test_api):
-        self.crud_tests.test_read_many(test_api)
+    def test_read_many(self, test_api_logged_in):
+        self.crud_tests.test_read_many(test_api_logged_in)
 
-    def test_create(self, test_api):
-        self.crud_tests.test_create(test_api)
+    def test_create(self, test_api_logged_in):
+        self.crud_tests.test_create(test_api_logged_in)
 
-    def test_delete(self, test_api):
-        self.crud_tests.test_delete(test_api)
+    def test_delete(self, test_api_logged_in):
+        self.crud_tests.test_delete(test_api_logged_in)
 
-    def test_lifecycle(self, test_api):
-        self.crud_tests.test_lifecycle(test_api)
+    def test_lifecycle(self, test_api_logged_in):
+        self.crud_tests.test_lifecycle(test_api_logged_in)
 
-    def test_read_many_completed_habits_first(self, test_api):
+    def test_read_many_completed_habits_first(self, test_api_logged_in):
         params = {'first': True}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
         assert response.json()[0]['name'] == self.TEST_DATA_COMPLETED_HABITS[0].name
 
-    def test_read_many_completed_habits_last(self, test_api):
+    def test_read_many_completed_habits_last(self, test_api_logged_in):
         params = {'last': True}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
         assert response.json()[0]['name'] == self.TEST_DATA_COMPLETED_HABITS[2].name
 
-    def test_read_many_completed_habits_between_dates(self, test_api):
+    def test_read_many_completed_habits_between_dates(self, test_api_logged_in):
         params = {'start_date': '2024-01-01', 'end_date': '2024-01-02'}
-        response = test_api.get(self.ENDPOINT, params=params)
+        response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 2
