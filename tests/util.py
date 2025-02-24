@@ -51,6 +51,15 @@ TEST_SERVICE_ACCOUNT_USER = dict(
     password=settings.users.service_account_user_password,
 )
 
+ALL_TEST_LOGIN_USERS = [
+    SACRIFICIAL_TEST_USER,
+    TEST_LOGIN_REGULAR_USER,
+    TEST_LOGIN_ADMIN_USER,
+    TEST_LOGIN_API_REGULAR_USER,
+    TEST_LOGIN_API_ADMIN_USER,
+    TEST_SERVICE_ACCOUNT_USER,
+]
+
 
 ENGINE = create_engine(
     settings.sqlalchemy.db_uri,
@@ -142,9 +151,7 @@ def delete_test_data(*datasets):
         for table in datasets:
             table_model = table_models[table]
             if 'users' in table:
-                dont_delete_login_users = table_model.email.notin_(
-                    [TEST_LOGIN_REGULAR_USER['email'], TEST_LOGIN_ADMIN_USER['email']]
-                )
+                dont_delete_login_users = table_model.email.notin_([user['email'] for user in ALL_TEST_LOGIN_USERS])
                 all_table_items = session.execute(select(table_model).where(dont_delete_login_users)).scalars().all()
             else:
                 all_table_items = session.execute(select(table_model)).scalars().all()

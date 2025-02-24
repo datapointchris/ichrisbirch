@@ -6,7 +6,7 @@ from tests import test_data
 from tests.util import show_status_and_response
 
 
-@pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(autouse=True)
 def insert_testing_data():
     tests.util.insert_test_data('users')
     yield
