@@ -45,7 +45,7 @@ def generate_chat_session_name(prompt, client):
 
 
 def initialize_session():
-    logger.info('initializing session')
+    logger.info('initializing chat app session')
 
     if 'logged_in' not in ss:
         ss.logged_in = False
@@ -122,14 +122,14 @@ def user_must_be_logged_in():
 
 
 def display_login_form():
-    with st.form('LoginForm'):
-        st.text_input('Username', key='username')
-        st.text_input('Password', type='password', key='password')
+    with st.form('LoginForm', clear_on_submit=True):
+        st.text_input('Username', key='username', value=ss.get('username', ''))
+        st.text_input('Password', type='password', key='password', value='')
         st.form_submit_button('Log in', on_click=login_flow)
 
 
 def login_flow():
-    if user := auth.login_username(ss['username'], ss['password']):
+    if user := auth.login_username(ss.get('username', ''), ss.get('password', '')):
         if tokens := auth.request_jwt_tokens(user, ss['password']):
             logger.info(f'jwt tokens received for user: {user.email}')
             ss.access_token = tokens.get("access_token")
@@ -145,7 +145,6 @@ def login_flow():
     else:
         st.error('Login Error')
         logger.warning(f'error trying to log in user: {ss["username"]}')
-    ss.pop("username", None)
     ss.pop("password", None)
 
 
