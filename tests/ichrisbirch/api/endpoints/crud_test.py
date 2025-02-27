@@ -1,8 +1,6 @@
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from ichrisbirch import models
-from tests.util import log_all_table_items
 from tests.util import show_status_and_response
 
 
@@ -38,10 +36,7 @@ class ApiCrudTester:
         all_obj = test_api_logged_in.get(self.endpoint)
         num_obj = len(all_obj.json())
         first_id = all_obj.json()[0]['id']
-
-        log_all_table_items('users', models.User, 'name')
         response = test_api_logged_in.delete(f'{self.endpoint}{first_id}/')
-        log_all_table_items('users', models.User, 'name')
         assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
 
         all_obj = test_api_logged_in.get(self.endpoint)
@@ -51,7 +46,6 @@ class ApiCrudTester:
         all_obj = test_api_logged_in.get(self.endpoint)
         assert all_obj.status_code == status.HTTP_200_OK, show_status_and_response(all_obj)
         num_all_obj = len(all_obj.json())
-        log_all_table_items('users', models.User, 'name')
         assert num_all_obj == 3
 
         created = test_api_logged_in.post(self.endpoint, content=self.new_obj.model_dump_json())
