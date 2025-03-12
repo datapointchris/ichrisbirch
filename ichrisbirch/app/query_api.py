@@ -6,8 +6,6 @@ from typing import TypeVar
 import httpx
 from flask import session
 from flask_login import current_user
-from flask_login import login_user
-from flask_login import logout_user
 from pydantic import BaseModel
 from sqlalchemy import select
 
@@ -20,12 +18,12 @@ ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger('app.query_api')
 
 
-class APIServiceUser(models.User):
+class APIServiceAccount(models.User):
     def __init__(self):
         self.settings = get_settings()
         self.user = None
 
-    def get(self):
+    def get_user(self):
         with SessionLocal() as session:
             q = select(models.User).filter(models.User.email == self.settings.users.service_account_user_email)
             if user := (session.execute(q).scalars().first()):
@@ -36,18 +34,6 @@ class APIServiceUser(models.User):
                 message = f'Coud not find service account user: {self.settings.users.service_account_user_email}'
                 logger.error(message)
                 raise Exception(message)
-
-    def login(self):
-        if not self.user:
-            self.get()
-        login_user(self.user)
-        logger.debug('logged in service account user')
-
-    def logout(self):
-        if not self.user:
-            self.get()
-        logout_user()
-        logger.debug('logged out service account user')
 
 
 class QueryAPI(Generic[ModelType]):
@@ -70,7 +56,7 @@ class QueryAPI(Generic[ModelType]):
     def _handle_request(self, method: str, endpoint: Any | None = None, **kwargs):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         if not self.user:
-            user_id = ''
+            user_id = None
             try:
                 if user_id := session.get('_user_id'):
                     logger.info('found user id in session')

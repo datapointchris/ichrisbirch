@@ -18,14 +18,14 @@ from flask_login import logout_user
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app import forms
-from ichrisbirch.app.query_api import APIServiceUser
+from ichrisbirch.app.query_api import APIServiceAccount
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import http as http_utils
 from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
-service_user = APIServiceUser()
+service_account = APIServiceAccount()
 
 
 @blueprint.route('/login/', methods=['GET', 'POST'])
@@ -35,13 +35,13 @@ def login():
         return redirect(request.referrer or url_for('users.profile'))
     form = forms.LoginForm()
     if form.validate_on_submit():
-        service_user.get()
-        service_user.login()
-        service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_user.user)
+        service_user = service_account.get_user()
+        login_user(service_user)
+        service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_account.user)
         if user := service_account_users_api.get_one(['email', form.email.data]):
             user = models.User(**user.model_dump())
         if user and user.check_password(password=form.password.data):
-            service_user.logout()
+            logout_user()
             login_user(user, remember=form.remember_me.data)
             logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
             try:
@@ -60,7 +60,7 @@ def login():
                 return abort(status.HTTP_401_UNAUTHORIZED, f'Unauthorized URL: {next_page}')
             return redirect(next_page)
 
-        service_user.logout()
+        logout_user()
         flash('Invalid credentials', 'error')
         logger.warning(f'invalid login attempt for: {form.email.data}')
         # TODO: [2024/05/21] - add a login attempt counter, possibly using redis or something similar
@@ -74,9 +74,9 @@ def signup():
     if not settings.auth.accepting_new_signups:
         flash(settings.auth.no_new_signups_message, 'error')
         return redirect(url_for('home.index'))
-    service_user.get()
-    service_user.login()
-    service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_user.user)
+    service_user = service_account.get_user()
+    login_user(service_user)
+    service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_account.user)
     form = forms.SignupForm()
     if form.validate_on_submit():
         logger.debug('signup form validated')
@@ -90,7 +90,7 @@ def signup():
             }
             if new_user := service_account_users_api.post(json=data):
                 user = models.User(**new_user.model_dump())
-                service_user.logout()
+                logout_user()
                 login_user(user)
                 return redirect(url_for('users.profile'))
             return redirect(url_for('auth.signup'))

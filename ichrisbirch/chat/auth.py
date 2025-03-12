@@ -7,13 +7,13 @@ import pendulum
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.app.query_api import APIServiceUser
+from ichrisbirch.app.query_api import APIServiceAccount
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import url_builder
 from ichrisbirch.config import Settings
 
 logger = logging.getLogger('chat.auth')
-service_user = APIServiceUser()
+service_user = APIServiceAccount()
 
 
 class ChatAuthClient:
@@ -63,7 +63,7 @@ class ChatAuthClient:
 
     def login_username(self, username: str, password: str):
         users_api = QueryAPI(base_url='users', response_model=schemas.User)
-        service_user.get()
+        service_user.get_user()
         service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_user.user)
 
         if user := service_account_users_api.get_one(['email', username]):
