@@ -19,7 +19,6 @@ BOT_AVATAR = '🤖'
 STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
 
 auth = ChatAuthClient(settings=settings)
-chat_api = ChatAPI(settings=settings)
 cookie = CookieController()
 openai = OpenAI(api_key=settings.ai.openai.api_key)
 
@@ -167,6 +166,7 @@ def logout_user():
 if not user_must_be_logged_in():
     st.stop()
 
+chat_api = ChatAPI(user=ss.user)
 
 if 'chats' not in ss:
     ss.chats = chat_api.get_all_chats()
@@ -250,5 +250,6 @@ if ss.current_chat_index is not None:
                 updated_chat = chat_api.update_chat(existing_chat, current_chat)
             else:
                 logger.info(f'chat session not found: {current_chat.name}, creating...')
-                updated_chat = chat_api.create_new_chat(current_chat)
-                ss.chats[ss.current_chat_index] = updated_chat
+                if updated_chat := chat_api.create_new_chat(current_chat):
+                    logger.info(f'created new chat session: {chat.name}')
+                    ss.chats[ss.current_chat_index] = updated_chat
