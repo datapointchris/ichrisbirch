@@ -4,7 +4,6 @@ from typing import Generic
 from typing import TypeVar
 
 import httpx
-from flask import flash
 from flask import session
 from flask_login import current_user
 from flask_login import login_user
@@ -32,6 +31,7 @@ class APIServiceUser(models.User):
             if user := (session.execute(q).scalars().first()):
                 logger.debug(f'retreieved service account user: {user.email}')
                 self.user = user
+                return user
             else:
                 message = f'Coud not find service account user: {self.settings.users.service_account_user_email}'
                 logger.error(message)
@@ -70,10 +70,14 @@ class QueryAPI(Generic[ModelType]):
     def _handle_request(self, method: str, endpoint: Any | None = None, **kwargs):
         url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
         if not self.user:
-            if user_id := session.get('_user_id'):
-                logger.info('found user id in session')
+            user_id = ''
+            try:
+                if user_id := session.get('_user_id'):
+                    logger.info('found user id in session')
+            except RuntimeError:
+                logger.warning('could not access session, outside of request context')
         headers = {
-            'X-User-ID': (self.user.get_id() or '') if self.user else user_id or '',
+            'X-User-ID': (self.user.get_id() or '') if self.user else user_id,
             'X-Application-ID': self.settings.flask.app_id,
         }
         headers_to_log = {
@@ -94,17 +98,11 @@ class QueryAPI(Generic[ModelType]):
         response = None
         try:
             with httpx.Client() as client:
-                response = client.request(method, url, headers=headers, **kwargs, follow_redirects=True)
-                response.raise_for_status()
-                return response
+                return client.request(method, url, headers=headers, **kwargs, follow_redirects=True).raise_for_status()
         except httpx.HTTPError as e:
-            error_message = f'Request Error: {e}'
-            logger.error(error_message)
-            flash(error_message, 'error')
+            logger.error(e)
             if response:
                 logger.error(response.text)
-                if self.settings.ENVIRONMENT == 'development':
-                    flash(response.text, 'error')
             return None
 
     def get_one(self, endpoint: Any | None = None, **kwargs) -> ModelType | None:
