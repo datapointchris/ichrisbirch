@@ -8,6 +8,7 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 
 import functools
 import logging
+from collections import defaultdict
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -87,10 +88,22 @@ def decrease_task_priority(session=SessionLocal) -> None:
 
 @job_logger
 def check_and_run_autotasks(session=SessionLocal) -> None:
-    """Check if any autotasks should run today and create tasks if so."""
+    """Check if any autotasks should run today and create tasks if not at max concurrent."""
     with session() as session:
+        tasks_count_by_name: dict[str, int] = defaultdict(int)
+        for task in session.scalars(select(models.Task)).all():
+            tasks_count_by_name[task.name] += 1
         for autotask in session.scalars(select(models.AutoTask)).all():
-            if autotask.should_run_today:
+            if not autotask.should_run_today:
+                continue
+            concurrent = tasks_count_by_name.get(autotask.name, 0)
+            logger.info(f"{autotask.name} concurrent tasks: {concurrent}")
+            if concurrent >= autotask.max_concurrent:
+                logger.info(
+                    f"skipping {autotask.name} with concurrent {concurrent}"
+                    f"tasks and max concurrent of {autotask.max_concurrent}"
+                )
+            else:
                 session.add(
                     models.Task(
                         name=autotask.name,
