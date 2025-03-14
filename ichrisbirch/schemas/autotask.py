@@ -17,6 +17,7 @@ class AutoTaskCreate(AutoTaskConfig):
     category: TaskCategory
     priority: int
     frequency: AutoTaskFrequency
+    max_concurrent: int | None = None
 
 
 class AutoTask(AutoTaskConfig):
@@ -26,6 +27,7 @@ class AutoTask(AutoTaskConfig):
     priority: int
     notes: str | None = None
     frequency: AutoTaskFrequency
+    max_concurrent: int
     first_run_date: datetime
     last_run_date: datetime
     run_count: int
@@ -37,3 +39,4 @@ class AutoTaskUpdate(AutoTaskConfig):
     priority: int | None = None
     notes: str | None = None
     frequency: AutoTaskFrequency | None = None
+    max_concurrent: int | None = None
