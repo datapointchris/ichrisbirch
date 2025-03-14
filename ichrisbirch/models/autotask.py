@@ -56,7 +56,7 @@ class AutoTask(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[TaskCategory] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
-    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=True)
+    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, server_default='2')
     frequency: Mapped[AutoTaskFrequency] = mapped_column(Enum(AutoTaskFrequency), nullable=False)
     first_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
