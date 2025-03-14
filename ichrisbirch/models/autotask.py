@@ -56,6 +56,7 @@ class AutoTask(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[TaskCategory] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=True)
     frequency: Mapped[AutoTaskFrequency] = mapped_column(Enum(AutoTaskFrequency), nullable=False)
     first_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -63,8 +64,9 @@ class AutoTask(Base):
 
     def __repr__(self):
         return f'''AutoTask(name = {self.name}, priority = {self.priority}, category = {self.category},
-                    frequency = {self.frequency}, first_run_date = {self.first_run_date},
-                    last_run_date = {self.last_run_date}, run_count = {self.run_count})'''
+                    frequency = {self.frequency}, max_concurrent = {self.max_concurrent},
+                    first_run_date = {self.first_run_date}, last_run_date = {self.last_run_date},
+                    run_count = {self.run_count})'''
 
     @property
     def next_run_date(self) -> date:
@@ -74,4 +76,4 @@ class AutoTask(Base):
     @property
     def should_run_today(self):
         """Returns true if the task should be run today."""
-        return self.next_run_date <= datetime.now().date() and self.last_run_date.date() != datetime.now().date()
+        return self.next_run_date <= date.today() and self.last_run_date.date() != date.today()
