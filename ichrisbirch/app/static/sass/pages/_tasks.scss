@@ -123,46 +123,25 @@
         justify-content: space-evenly;
     }
 
+    @mixin task-state($color) {
+        padding-inline: var(--space-xs);
+        box-shadow:
+            inset 0 0 8px 2px $color;
+    }
+
     &--completed {
-        padding: 2px;
-        border: 3px solid var(--clr-success);
-    }
-
-    &--overdue {
-        padding-inline: var(--space-xs);
-        border: 3px solid var(--clr-accent--red);
-        box-sizing: content-box;
-        animation: task-overdue .5s 20;
-
-        @keyframes task-overdue {
-            50% {
-                border: 3px solid var(--clr-error);
-            }
-        }
-    }
-
-    &--critical {
-        padding-inline: var(--space-xs);
-        border: 3px solid var(--clr-error);
-        animation: task-critical 2s 5;
-
-        @keyframes task-critical {
-            50% {
-                border: 3px solid var(--clr-accent--red);
-            }
-        }
+        @include task-state(var(--clr-success));
     }
 
     &--soon {
-        padding-inline: var(--space-xs);
-        border: 3px solid var(--clr-warning);
-        animation: task-soon 3s 3;
+        @include task-state(var(--clr-warning));
+    }
 
-        @keyframes task-soon {
-            50% {
-                border: 3px solid var(--clr-accent--orange);
-            }
-        }
+    &--critical {
+        @include task-state(var(--clr-critical));
+    }
+    &--overdue {
+        @include task-state(var(--clr-overdue));
     }
 }
 
