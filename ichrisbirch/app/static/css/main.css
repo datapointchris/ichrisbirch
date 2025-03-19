@@ -10,13 +10,15 @@
   --clr-text: hsl(0 0% 87%);
   --clr-accent--orange: hsl(31 90% 57%);
   --clr-accent--yellow: hsl(55, 80%, 55%);
-  --clr-accent--red: hsl(0, 100%, 71%);
+  --clr-accent--red: hsl(0, 100%, 60%);
   --clr-accent--blue: hsl(207, 48%, 45%);
   --clr-accent--green: hsl(120 100% 18%);
   --clr-accent--green-bright: hsl(120, 100%, 45%);
   --clr-success: hsl(120 100% 18% / 0.8);
-  --clr-warning: hsl(60 100% 18% / 0.8);
-  --clr-error: hsl(4 100% 18% / 0.8);
+  --clr-warning: hsla(60, 100%, 28%, 0.8);
+  --clr-error: hsla(3, 100%, 30%, 0.8);
+  --clr-critical: var(--clr-error);
+  --clr-overdue: hsla(4, 100%, 40%, 0.8);
   --clr-gray-050: hsl(0, 0%, 87%);
   --clr-gray-100: hsl(0, 0%, 67%);
   --clr-gray-200: hsl(0, 0%, 60%);
@@ -12629,39 +12631,20 @@ span[data-tooltip][data-position=right]:after {
   justify-content: space-evenly;
 }
 .task--completed {
-  padding: 2px;
-  border: 3px solid var(--clr-success);
-}
-.task--overdue {
   padding-inline: var(--space-xs);
-  border: 3px solid var(--clr-accent--red);
-  box-sizing: content-box;
-  animation: task-overdue 0.5s 20;
-}
-@keyframes task-overdue {
-  50% {
-    border: 3px solid var(--clr-error);
-  }
-}
-.task--critical {
-  padding-inline: var(--space-xs);
-  border: 3px solid var(--clr-error);
-  animation: task-critical 2s 5;
-}
-@keyframes task-critical {
-  50% {
-    border: 3px solid var(--clr-accent--red);
-  }
+  box-shadow: inset 0 0 8px 2px var(--clr-success);
 }
 .task--soon {
   padding-inline: var(--space-xs);
-  border: 3px solid var(--clr-warning);
-  animation: task-soon 3s 3;
+  box-shadow: inset 0 0 8px 2px var(--clr-warning);
 }
-@keyframes task-soon {
-  50% {
-    border: 3px solid var(--clr-accent--orange);
-  }
+.task--critical {
+  padding-inline: var(--space-xs);
+  box-shadow: inset 0 0 8px 2px var(--clr-critical);
+}
+.task--overdue {
+  padding-inline: var(--space-xs);
+  box-shadow: inset 0 0 8px 2px var(--clr-overdue);
 }
 
 .completed-task-graph {
