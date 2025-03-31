@@ -1,4 +1,7 @@
+"""Utility functions for testing."""
+
 import logging
+import re
 import subprocess
 import time
 from copy import deepcopy
@@ -188,6 +191,13 @@ def show_status_and_response(response: httpx.Response) -> dict[str, str]:
         content = '<no response content>'
 
     return {d.get(response.status_code, 'UNKNOWN'): content}
+
+
+def search_for_page_title(response, title):
+    """Check that the title is present in the response text."""
+    # Match <title>, any whitespace/newlines, the title, and </title>
+    pattern = rf"<title>\s*{re.escape(title)}\s*</title>"
+    assert re.search(pattern, response.text)
 
 
 def get_docker_client(logger: logging.Logger) -> docker.APIClient:

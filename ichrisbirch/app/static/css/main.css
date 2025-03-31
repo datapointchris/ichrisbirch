@@ -10704,32 +10704,61 @@ nav a:hover {
 
 .grid {
   display: grid;
-  width: 80svw;
   gap: var(--space-xl);
   margin: var(--space-2xl) auto;
   margin-top: var(--space-xl);
   justify-content: center;
 }
-.grid--one-column {
+.grid--one-column-narrow {
   width: 50svw;
   grid-template-columns: repeat(1, minmax(300px, 1fr));
 }
-.grid--one-column-wide {
+.grid--one-column-narrow-nested {
+  width: 80%;
   grid-template-columns: repeat(1, minmax(300px, 1fr));
 }
-.grid--one-column-full {
-  width: 98svw;
+.grid--one-column {
+  width: 80svw;
   grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
+.grid--one-column-wide {
+  width: 96svw;
+  grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
+.grid--one-column-wide-nested {
+  width: 96%;
+  grid-template-columns: repeat(1, minmax(300px, 1fr));
+}
+.grid--two-columns-narrow {
+  width: 80%;
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
 }
 .grid--two-columns {
+  width: 80svw;
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
+}
+.grid--two-columns-wide {
+  width: 96svw;
   grid-template-columns: repeat(2, minmax(300px, 1fr));
 }
 .grid--two-columns-nested {
-  grid-template-columns: repeat(2, minmax(300px, 1fr));
   width: 80%;
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
 }
 .grid--three-columns {
+  width: 80svw;
   grid-template-columns: repeat(3, minmax(300px, 1fr));
+}
+.grid--tight {
+  gap: var(--space-s);
+  margin: var(--space-m) auto;
+  align-items: start; /* so fewer tasks on one side don't stretch to fill space */
+  text-align: center;
+}
+.grid--compact {
+  gap: 0;
+  margin: 0 auto;
+  padding: 0;
 }
 .grid__item {
   padding: var(--space-m);
@@ -10749,36 +10778,6 @@ nav a:hover {
 .grid--highlighted {
   background-color: var(--clr-primary--darker);
   box-shadow: var(--floating-box-pressed);
-}
-
-.grid-compact {
-  display: grid;
-  width: 80svw;
-  gap: 0;
-  margin: 0 auto;
-  padding: 0;
-  justify-content: center;
-}
-.grid-compact--one-column {
-  width: 50svw;
-  grid-template-columns: repeat(1, minmax(300px, 1fr));
-}
-.grid-compact--one-column-wide {
-  grid-template-columns: repeat(1, minmax(300px, 1fr));
-}
-.grid-compact--one-column-full {
-  width: 98svw;
-  grid-template-columns: repeat(1, minmax(300px, 1fr));
-}
-.grid-compact--two-columns {
-  grid-template-columns: repeat(2, minmax(300px, 1fr));
-}
-.grid-compact--two-columns-nested {
-  grid-template-columns: repeat(2, minmax(300px, 1fr));
-  width: 80%;
-}
-.grid-compact--three-columns {
-  grid-template-columns: repeat(3, minmax(300px, 1fr));
 }
 
 .item-details {
@@ -12540,56 +12539,68 @@ span[data-tooltip][data-position=right]:after {
     border-left: 1px solid var(--clr-text);
   }
 }
-.task-layout {
-  display: grid;
-  gap: var(--space-s);
-  margin: var(--space-m);
-  align-items: start; /* so fewer tasks on one side don't stretch to fill space */
-  text-align: center;
+:root {
+  --task-completed-box-shadow: inset 0 0 8px 2px var(--clr-success);
+  --task-soon-box-shadow: inset 0 0 8px 2px var(--clr-warning);
+  --task-critical-box-shadow: inset 0 0 8px 2px var(--clr-critical);
+  --task-overdue-box-shadow: inset 0 0 8px 2px var(--clr-overdue);
+  --task-total-box-shadow: inset 0 0 8px 2px var(--clr-gray-400);
 }
-.task-layout--one-column-narrow {
-  grid-template-columns: minmax(200px, 0.5fr);
-  justify-content: center; /* because it's half the size, center it */
-}
-.task-layout--one-column-wide {
-  grid-template-columns: minmax(200px, 1fr);
-}
-.task-layout--two-columns {
-  grid-template-columns: repeat(2, minmax(200px, 1fr));
-}
+
 .task-layout__title {
-  text-align: center;
   margin: var(--space-xs);
+  margin-bottom: var(--space-m);
+  text-align: center;
+}
+.task-layout__info {
+  margin: var(--space-xs);
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+.task-layout__count {
+  padding-block: var(--space-2xs);
+  padding-inline: var(--space-m);
+  border-radius: var(--button-border-radius);
 }
 
 .task {
   display: grid;
+  align-items: start;
+  border-radius: var(--button-border-radius);
+  box-shadow: var(--floating-box);
+  transition: transform 0.3s ease-in-out;
+}
+.task:hover {
+  box-shadow: var(--bubble-box);
+  transform: scale(1.01) translateY(calc(var(--space-3xs) * -0.4));
+  transition: transform 0.3s ease-in-out;
+}
+.task--block-layout {
   margin-inline: var(--space-2xl);
   padding: var(--space-xs);
   padding-inline: var(--space-l);
-  align-items: start;
+  background-color: var(--clr-gray-700);
+  align-items: center;
   line-height: 1.5em;
   text-align: left;
-  border-radius: var(--button-border-radius);
-  background-color: var(--clr-gray-700);
-  box-shadow: var(--floating-box), 2px 4px 10px var(--clr-gray-trans-700);
 }
-.task__priority {
+.task--block-layout.priority {
   grid-template-areas: "title title buttons" "priority notes buttons" "category notes buttons" "add-date notes buttons";
   grid-template-columns: 1.5fr 1fr 1fr;
   grid-template-rows: repeat(4, auto);
 }
-.task__completed {
+.task--block-layout.completed {
   grid-template-areas: "title title buttons" "priority notes buttons" "category notes buttons" "add-date notes buttons" "complete-date notes buttons" "time-to-complete notes buttons";
   grid-template-columns: 1.5fr 1fr 1fr;
   grid-template-rows: repeat(6, auto);
 }
-.task__todo {
+.task--block-layout.todo {
   grid-template-areas: "title title title" "priority notes notes" "category notes notes" "add-date notes notes" "buttons buttons buttons";
   grid-template-columns: 1.5fr 1fr 1fr;
   grid-template-rows: repeat(4, auto);
 }
-.task-title {
+.task--block-layout__title {
   grid-area: title;
   margin: var(--space-xs);
   margin-top: 0;
@@ -12597,54 +12608,99 @@ span[data-tooltip][data-position=right]:after {
   color: var(--clr-accent-light);
   line-height: 1.3em;
 }
-.task-notes {
+.task--block-layout__notes {
   grid-area: notes;
   text-align: justify;
 }
-.task-priority {
+.task--block-layout__priority {
   grid-area: priority;
   margin-left: var(--space-m);
 }
-.task-category {
+.task--block-layout__category {
   grid-area: category;
   margin-left: var(--space-m);
 }
-.task-add-date {
+.task--block-layout__add-date {
   grid-area: add-date;
   margin-left: var(--space-m);
 }
-.task-complete-date {
+.task--block-layout__complete-date {
   grid-area: complete-date;
   margin-left: var(--space-m);
 }
-.task-time-to-complete {
+.task--block-layout__time-to-complete {
   grid-area: time-to-complete;
   margin-left: var(--space-m);
 }
-.task-buttons {
+.task--block-layout__buttons {
   grid-area: buttons;
   display: flex;
   justify-content: space-evenly;
 }
-.task__counts {
-  display: flex;
-  justify-content: space-evenly;
+.task--compact-layout {
+  display: grid;
+  margin-bottom: var(--space-xs);
+  padding-block: var(--space-xs);
+  padding-inline: var(--space-m);
+  background-color: var(--clr-primary);
+  align-items: center;
+  font-size: var(--fs-400);
+  text-align: left;
 }
-.task--completed {
-  padding-inline: var(--space-xs);
-  box-shadow: inset 0 0 8px 2px var(--clr-success);
+.task--compact-layout.priority {
+  grid-template-columns: 6fr 2fr 4fr 1fr 1fr 1fr;
+}
+.task--compact-layout.completed {
+  grid-template-columns: 6fr 4fr 4fr 4fr 4fr 1fr 1fr;
+}
+.task--compact-layout.completed-narrow {
+  grid-template-columns: 6fr 4fr 4fr 1fr 1fr;
+}
+.task--compact-layout.todo {
+  grid-template-columns: 6fr 2fr 4fr 4fr 3fr 3fr 3fr 1fr 1fr;
+}
+.task--compact-layout__title {
+  margin: 0;
+  font-size: var(--fs-500);
+  font-weight: var(--fs-400);
+  color: var(--clr-accent-light);
+  text-shadow: var(--deep-3d-text-shadow);
+}
+.task--compact-layout__link {
+  text-decoration: none;
+}
+.task--compact-layout__link:hover {
+  text-decoration: underline;
+}
+.task--complete {
+  box-shadow: var(--task-completed-box-shadow), var(--floating-box);
+}
+.task--complete:hover:not(.task-layout__count) {
+  box-shadow: var(--task-completed-box-shadow), var(--bubble-box);
 }
 .task--soon {
-  padding-inline: var(--space-xs);
-  box-shadow: inset 0 0 8px 2px var(--clr-warning);
+  box-shadow: var(--task-soon-box-shadow), var(--floating-box);
+}
+.task--soon:hover:not(.task-layout__count) {
+  box-shadow: var(--task-soon-box-shadow), var(--bubble-box);
 }
 .task--critical {
-  padding-inline: var(--space-xs);
-  box-shadow: inset 0 0 8px 2px var(--clr-critical);
+  box-shadow: var(--task-critical-box-shadow), var(--floating-box);
+}
+.task--critical:hover:not(.task-layout__count) {
+  box-shadow: var(--task-critical-box-shadow), var(--bubble-box);
 }
 .task--overdue {
-  padding-inline: var(--space-xs);
-  box-shadow: inset 0 0 8px 2px var(--clr-overdue);
+  box-shadow: var(--task-overdue-box-shadow), var(--floating-box);
+}
+.task--overdue:hover:not(.task-layout__count) {
+  box-shadow: var(--task-overdue-box-shadow), var(--bubble-box);
+}
+.task--total {
+  box-shadow: var(--task-total-box-shadow), var(--floating-box);
+}
+.task--total:hover:not(.task-layout__count) {
+  box-shadow: var(--task-total-box-shadow), var(--bubble-box);
 }
 
 .completed-task-graph {

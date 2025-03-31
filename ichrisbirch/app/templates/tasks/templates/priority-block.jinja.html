@@ -1,0 +1,24 @@
+{% from 'tasks/macros.jinja.html' import task_state_class %}
+
+<form method="post" action="{{ url_for('tasks.crud') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="id" value="{{ task.id }}">
+  <input type="hidden" name="name" value="{{ task.name }}">
+  <div class="{{ task_class }} {{ task_state_class(task.priority) }}">
+    <h3 class="{{ element_class }}__title">{{ task.name }}</h3>
+    <div class="{{ element_class }}__priority">Priority: {{ task.priority }}</div>
+    <div class="{{ element_class }}__category">Category: {{ task.category }}</div>
+    <div class="{{ element_class }}__add-date">Add Date: {{ task.add_date | pretty_date }}</div>
+    {% if task.notes %}
+      <div class="{{ element_class }}__notes">
+        <strong>Notes:</strong>{{ task.notes }}
+      </div>
+    {% endif %}
+
+    <div class="{{ element_class }}__buttons">
+      <button type="submit" name="action" class="button" value="complete">
+        <span class="button__text">Complete Task</span>
+      </button>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,47 @@
+{% from 'tasks/macros.jinja.html' import task_state_class %}
+
+<form method="post" action="{{ url_for('tasks.crud') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="id" value="{{ task.id }}">
+  <input type="hidden" name="days" id="{{ task.id }}-days" value="">
+  <div class="{{ task_class }} {{ task_state_class(task.priority) }}">
+
+    <h3 class="task--compact-layout__title">{{ task.name }}</h3>
+    <span>Priority: {{ task.priority }}</span>
+    <span>Category: {{ task.category }}</span>
+    <span>Add Date: {{ task.add_date | pretty_date }}</span>
+    <span>
+      <button type="submit" name="action" class="button" value="complete">
+        <span class="button__text">Complete Task</span>
+      </button>
+    </span>
+    <span>
+      <button type="submit"
+              name="action"
+              class="button"
+              value="extend"
+              onclick="document.getElementById('{{ task.id }}-days').value = '7';">
+        <span class="button__text">Extend 7 Days</span>
+      </button>
+    </span>
+    <span>
+      <button type="submit"
+              name="action"
+              class="button"
+              value="extend"
+              onclick="document.getElementById('{{ task.id }}-days').value = '30';">
+        <span class="button__text">Extend 30 Days</span>
+      </button>
+    </span>
+    <span>
+      <!-- <a href="{{ url_for('tasks.crud', id=task.id) }}"> -->
+      <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+      <!-- </a> -->
+    </span>
+    <span>
+      <button type="submit" name="action" class="button--hidden" value="delete">
+        <i class="button-icon danger fa-regular fa-trash-can"></i>
+      </button>
+    </span>
+  </div>
+</form>

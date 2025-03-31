@@ -9,7 +9,7 @@ from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from tests.conftest import testing_settings
+from tests.conftest import settings
 
 USERS_TEST_DATA = tests.test_data.users.BASE_DATA
 
@@ -38,7 +38,7 @@ def test_admin_user():
 
 
 def make_app_headers_for_user(user: models.User):
-    return {'X-Application-ID': testing_settings.flask.app_id, 'X-User-ID': user.get_id()}
+    return {'X-Application-ID': settings.flask.app_id, 'X-User-ID': user.get_id()}
 
 
 def make_jwt_header(token: str):

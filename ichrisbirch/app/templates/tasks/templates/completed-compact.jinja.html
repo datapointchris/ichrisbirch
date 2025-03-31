@@ -1,0 +1,20 @@
+<form method="post" action="{{ url_for('tasks.crud') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="id" value="{{ task.id }}">
+  <input type="hidden" name="name" value="{{ task.name }}">
+  <div class="{{ task_class }} task--complete">
+    <h3 class="task--compact-layout__title">{{ task.name }}</h3>
+    <span>Category: {{ task.category }}</span>
+    <span>Age: {{ task.time_to_complete }}</span>
+    <span>
+      <!-- <button type="submit" name="action" class="button--hidden" value="edit"> -->
+      <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+      <!-- </button> -->
+    </span>
+    <span>
+      <button type="submit" name="action" class="button--hidden" value="delete">
+        <i class="button-icon danger fa-regular fa-trash-can"></i>
+      </button>
+    </span>
+  </div>
+</form>
