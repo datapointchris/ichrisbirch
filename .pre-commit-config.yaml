@@ -137,7 +137,7 @@ repos:
         name: pytest with coverage
         stages: [commit]
         language: system
-        entry: zsh -c 'export ENVIRONMENT=testing && pytest --cov=ichrisbirch'
+        entry: zsh -c 'export ENVIRONMENT=testing && pytest -v --cov=ichrisbirch'
         types: [python]
         pass_filenames: false
         always_run: false

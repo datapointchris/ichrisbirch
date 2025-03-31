@@ -5,32 +5,12 @@
 {% block content %}
 <div class="box-listing-sort">
 
-  <form method="POST" action="{{ url_for('users.preferences') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    {% if current_user.preferences.box_packing.compact_view %}
-    <span class="button-toggle-selector left">
-      <span class="left" data-tooltip="block layout" data-position="left">
-        <button type="submit" name="action" class="button--hidden" value="toggle_box_packing_compact_view">
-          <i class="button-icon fa-solid fa-table-cells-large"></i>
-        </button>
-      </span>
-    </span>
-    <span class="button-toggle-selector right pressed">
-      <i class="button-icon pressed fa-solid fa-bars"></i>
-    </span>
-    {% else %}
-    <span class="button-toggle-selector left pressed">
-      <i class="button-icon pressed fa-solid fa-table-cells-large"></i>
-    </span>
-    <span class="button-toggle-selector right">
-      <span class="right" data-tooltip="compact layout" data-position="right">
-        <button type="submit" name="action" class="button--hidden" value="toggle_box_packing_compact_view">
-          <i class="button-icon fa-solid fa-bars"></i>
-        </button>
-      </span>
-    </span>
-    {% endif %}
-  </form>
+  {% with
+  compact_view=current_user.preferences.box_packing.compact_view,
+  toggle_action='toggle_box_packing_compact_view'
+  %}
+  {% include 'toggle-compact-view.jinja.html' %}
+  {% endwith %}
 
   <form method="POST" action="{{ url_for('box_packing.all') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

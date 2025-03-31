@@ -21,7 +21,7 @@ from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
@@ -29,7 +29,6 @@ from tests import test_data
 
 logger = logging.getLogger('tests.conftest')
 logger.warning('<-- file imported')
-testing_settings = get_settings('testing')
 
 
 @pytest.fixture(scope='module')
@@ -55,7 +54,7 @@ def insert_users_for_login(create_drop_tables):
 
 
 def base_testing_api():
-    api = create_api(settings=testing_settings)
+    api = create_api(settings=settings)
     api.dependency_overrides[get_sqlalchemy_session] = tests.util.get_testing_session
     return api
 
@@ -138,7 +137,7 @@ class APIHeadersFlaskClient(FlaskLoginClient):
 
 def base_test_app() -> Generator[FlaskClient, Any, None]:
     """Base fixture for creating a test client."""
-    app = create_app(settings=testing_settings)
+    app = create_app(settings=settings)
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
     with app.test_request_context():
@@ -163,12 +162,12 @@ def base_test_app_logged_in() -> Generator[FlaskClient, Any, None]:
 
     MUST set up the test_request_context first in order to have it to log in the user.
     """
-    app = create_app(settings=testing_settings)
+    app = create_app(settings=settings)
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
     app.test_client_class = APIHeadersFlaskClient
     user = tests.util.get_test_user(tests.util.TEST_LOGIN_REGULAR_USER)
-    api_headers = {'X-Application-ID': testing_settings.flask.app_id, 'X-User-ID': user.get_id()}
+    api_headers = {'X-Application-ID': settings.flask.app_id, 'X-User-ID': user.get_id()}
     with app.test_request_context():
         login_user(user)
         logger.info(f'logged in user to test app: {user.email}: {user.get_id()}')
@@ -190,12 +189,12 @@ def test_app_logged_in_function():
 
 def base_test_app_logged_in_admin() -> Generator[FlaskClient, Any, None]:
     """Base fixture for creating a test client with a logged-in admin user."""
-    app = create_app(settings=testing_settings)
+    app = create_app(settings=settings)
     app.config.update({'TESTING': True})
     app.config.update({'WTF_CSRF_ENABLED': False})
     app.test_client_class = APIHeadersFlaskClient
     admin = tests.util.get_test_user(tests.util.TEST_LOGIN_ADMIN_USER)
-    api_headers = {'X-Application-ID': testing_settings.flask.app_id, 'X-User-ID': admin.get_id()}
+    api_headers = {'X-Application-ID': settings.flask.app_id, 'X-User-ID': admin.get_id()}
     with app.test_request_context():
         login_user(admin)
         logger.info(f'logged in admin user to test app: {admin.email}: {admin.get_id()}')
@@ -217,14 +216,14 @@ def test_app_logged_in_admin_function():
 
 @pytest.fixture(scope='module')
 def test_jobstore() -> Generator[SQLAlchemyJobStore, Any, None]:
-    yield get_jobstore(settings=testing_settings)
+    yield get_jobstore(settings=settings)
 
 
 @pytest.fixture(scope='module')
 def insert_jobs_in_test_scheduler():
     # Start Scheduler in its own thread to test the scheduler
     test_scheduler = BlockingScheduler()
-    jobstore = SQLAlchemyJobStore(url=testing_settings.sqlalchemy.db_uri)
+    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri)
     test_scheduler.add_jobstore(jobstore, alias='ichrisbirch', extend_existing=True)
     scheduler_thread = threading.Thread(target=test_scheduler.start, daemon=True)
     scheduler_thread.start()
@@ -277,7 +276,7 @@ def setup_test_environment():
         docker_log_thread.start()
         logger.info('started docker log stream thread')
 
-        _create_database_schemas(schemas=testing_settings.db_schemas, session=tests.util.SessionTesting)
+        _create_database_schemas(schemas=settings.db_schemas, session=tests.util.SessionTesting)
         logger.info('created database schemas')
 
         # Copy current environment and set ENVIRONMENT to testing for subprocesses
@@ -338,7 +337,7 @@ def _create_database_schemas(schemas, session):
             except Exception as e:
                 logger.error(f"Failed to create schema: {e}")
                 debug_message = f"""Failed to create schema: {e}
-                postgres_connection_string = {testing_settings.sqlalchemy.db_uri}
+                postgres_connection_string = {settings.sqlalchemy.db_uri}
                 Connection Parameters:
                 database_name = {session.bind.url.database}
                 database_user = {session.bind.url.username}
@@ -355,8 +354,8 @@ def _create_api_uvicorn_process(env):
     api_uvicorn_command = ' '.join(
         [
             'poetry run uvicorn ichrisbirch.wsgi_api:api',
-            f'--host {testing_settings.fastapi.host}',
-            f'--port {testing_settings.fastapi.port}',
+            f'--host {settings.fastapi.host}',
+            f'--port {settings.fastapi.port}',
             '--log-level debug',
         ]
     )
@@ -369,7 +368,7 @@ def _create_app_gunicorn_process(env):
     app_gunicorn_command = ' '.join(
         [
             'poetry run gunicorn ichrisbirch.wsgi_app:app',
-            f'--bind {testing_settings.flask.host}:{testing_settings.flask.port}',
+            f'--bind {settings.flask.host}:{settings.flask.port}',
             '--log-level DEBUG',
         ]
     )

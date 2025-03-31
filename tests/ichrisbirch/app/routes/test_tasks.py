@@ -4,7 +4,6 @@ from fastapi import status
 import tests.util
 from ichrisbirch import schemas
 from ichrisbirch.models.task import TaskCategory
-from tests.util import show_status_and_response
 
 
 @pytest.fixture(autouse=True)
@@ -16,26 +15,26 @@ def insert_testing_data():
 
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/tasks/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert b'<title>Priority Tasks</title>' in response.data
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    tests.util.search_for_page_title(response, 'Priority Tasks')
 
 
 def test_todo(test_app_logged_in):
     response = test_app_logged_in.get('/tasks/todo/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert b'<title>Outstanding Tasks</title>' in response.data
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    tests.util.search_for_page_title(response, 'Outstanding Tasks')
 
 
 def test_completed(test_app_logged_in):
     response = test_app_logged_in.get('/tasks/completed/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert b'Completed Tasks' in response.data
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    tests.util.search_for_page_title(response, 'Completed Tasks')
 
 
 def test_search(test_app_logged_in):
     response = test_app_logged_in.post('/tasks/search/', data={'terms': 'test'}, follow_redirects=True)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert b'<title>Tasks Search</title>' in response.data
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    tests.util.search_for_page_title(response, 'Tasks Search')
 
 
 def test_crud_add(test_app_logged_in):
@@ -50,18 +49,18 @@ def test_crud_add(test_app_logged_in):
         ),
         follow_redirects=True,
     )
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/'
-    assert b'<title>Priority Tasks</title>' in response.data
+    tests.util.search_for_page_title(response, 'Priority Tasks')
 
 
 def test_crud_complete(test_app_logged_in):
     response = test_app_logged_in.post('/tasks/crud/', data={'id': 1, 'action': 'complete'}, follow_redirects=True)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/'
-    assert b'<title>Priority Tasks</title>' in response.data
+    tests.util.search_for_page_title(response, 'Priority Tasks')
 
 
 @pytest.mark.parametrize('days', [7, 30])
@@ -71,13 +70,13 @@ def test_crud_extend(test_app_logged_in, test_api_logged_in, days):
     task = test_api_logged_in.get(f'/tasks/{task_id}/')
     priority = task.json()['priority']
 
-    extend_response = test_app_logged_in.post(
+    response = test_app_logged_in.post(
         '/tasks/crud/', data={'id': 1, 'action': 'extend', 'days': days}, follow_redirects=True
     )
-    assert extend_response.status_code == status.HTTP_200_OK, show_status_and_response(extend_response)
-    assert len(extend_response.history) == 1
-    assert extend_response.request.path == '/tasks/todo/'
-    assert b'<title>Outstanding Tasks</title>' in extend_response.data
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    assert len(response.history) == 1
+    assert response.request.path == '/tasks/todo/'
+    tests.util.search_for_page_title(response, 'Outstanding Tasks')
 
     updated_task = test_api_logged_in.get(f'/tasks/{task_id}/')
     extended_priority = updated_task.json()['priority']
@@ -86,10 +85,10 @@ def test_crud_extend(test_app_logged_in, test_api_logged_in, days):
 
 def test_crud_delete(test_app_logged_in):
     response = test_app_logged_in.post('/tasks/crud/', data={'id': 1, 'action': 'delete'}, follow_redirects=True)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/todo/'
-    assert b'Outstanding Tasks' in response.data
+    tests.util.search_for_page_title(response, 'Outstanding Tasks')
 
 
 def test_crud_reset_priorities(test_app_logged_in, test_api_logged_in):
@@ -108,10 +107,10 @@ def test_crud_reset_priorities(test_app_logged_in, test_api_logged_in):
 
     # Reset priorities
     response = test_app_logged_in.post('/tasks/crud/', data={'action': 'reset_priorities'}, follow_redirects=True)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/todo/'
-    assert b'Outstanding Tasks' in response.data
+    tests.util.search_for_page_title(response, 'Outstanding Tasks')
 
     # Check that the negative priority task updated other task priorities
     task_1_updated = test_api_logged_in.get('/tasks/1/')
@@ -126,10 +125,10 @@ def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_a
 
     # Reset priorities (no negative priorities)
     response = test_app_logged_in.post('/tasks/crud/', data={'action': 'reset_priorities'}, follow_redirects=True)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/todo/'
-    assert b'Outstanding Tasks' in response.data
+    tests.util.search_for_page_title(response, 'Outstanding Tasks')
 
     # Check that the priority has not changed
     task_1_updated = test_api_logged_in.get('/tasks/1/')
@@ -150,7 +149,7 @@ def test_task_categories(test_app_logged_in, category):
         ),
         follow_redirects=True,
     )
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert len(response.history) == 1
     assert response.request.path == '/tasks/'
-    assert b'<title>Priority Tasks</title>' in response.data
+    tests.util.search_for_page_title(response, 'Priority Tasks')

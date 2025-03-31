@@ -38,6 +38,12 @@ def enforce_login():
 
 
 @blueprint.context_processor
+def inject_task_categories():
+    """Inject task categories into the request context."""
+    return dict(task_categories=TASK_CATEGORIES)
+
+
+@blueprint.context_processor
 def inject_task_create_form():
     """Create a task create form for the request context.
 
@@ -46,6 +52,23 @@ def inject_task_create_form():
     """
     create_form = forms.TaskCreateForm()
     return dict(create_form=create_form)
+
+
+@blueprint.context_processor
+def inject_task_info_counts():
+    """Inject task counts into the request context."""
+    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+    tasks = tasks_api.get_many('todo')
+    due_soon_count = sum(1 for task in tasks if 2 < task.priority <= 5)
+    critical_count = sum(1 for task in tasks if 0 < task.priority <= 2)
+    overdue_count = sum(1 for task in tasks if task.priority < 1)
+
+    return dict(
+        critical_count=critical_count,
+        due_soon_count=due_soon_count,
+        overdue_count=overdue_count,
+        total_count=len(tasks),
+    )
 
 
 def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
@@ -74,58 +97,23 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
     return chart_labels, chart_values
 
 
-def due_soon_tasks(tasks: list[schemas.Task]) -> int:
-    return sum(1 for task in tasks if 2 < task.priority <= 5)
-
-
-def critical_tasks(tasks: list[schemas.Task]) -> int:
-    return sum(1 for task in tasks if 0 < task.priority <= 2)
-
-
-def overdue_tasks(tasks: list[schemas.Task]) -> int:
-    return sum(1 for task in tasks if task.priority < 1)
-
-
 @blueprint.route('/', methods=['GET'])
 def index():
     tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
-    tasks_completed_api = QueryAPI(base_url='tasks/completed', response_model=schemas.TaskCompleted)
     tasks = tasks_api.get_many('todo')
-    critical_count = critical_tasks(tasks)
-    due_soon_count = due_soon_tasks(tasks)
-    overdue_count = overdue_tasks(tasks)
 
+    tasks_completed_api = QueryAPI(base_url='tasks/completed', response_model=schemas.TaskCompleted)
     completed_today_params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed_today = tasks_completed_api.get_many(params=completed_today_params)
 
-    return render_template(
-        'tasks/index.html',
-        top_tasks=tasks[:5],
-        critical_count=critical_count,
-        due_soon_count=due_soon_count,
-        overdue_count=overdue_count,
-        total_count=len(tasks),
-        completed_today=completed_today,
-        task_categories=TASK_CATEGORIES,
-    )
+    return render_template('tasks/index.html', top_tasks=tasks[:5], completed_today=completed_today)
 
 
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
     tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
     tasks = tasks_api.get_many('todo')
-    critical_count = critical_tasks(tasks)
-    due_soon_count = due_soon_tasks(tasks)
-    overdue_count = overdue_tasks(tasks)
-    return render_template(
-        'tasks/todo.html',
-        tasks=tasks,
-        critical_count=critical_count,
-        due_soon_count=due_soon_count,
-        overdue_count=overdue_count,
-        total_count=len(tasks),
-        task_categories=TASK_CATEGORIES,
-    )
+    return render_template('tasks/todo.html', tasks=tasks)
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
@@ -161,7 +149,6 @@ def completed():
         date_filter=selected_filter,
         chart_labels=chart_labels,
         chart_values=chart_values,
-        task_categories=TASK_CATEGORIES,
         total_completed=len(completed_tasks),
         zip=zip,
     )
@@ -169,7 +156,7 @@ def completed():
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
-    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+
     if request.method == 'GET':
         todo_tasks, completed_tasks = [], []
     else:
@@ -181,18 +168,17 @@ def search():
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
 
+        tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
         tasks = tasks_api.get_many('search', params={'q': search_terms})
         todo_tasks = [task for task in tasks if not task.complete_date]
         completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
 
-    return render_template(
-        'tasks/search.html', todo_tasks=todo_tasks, completed_tasks=completed_tasks, task_categories=TASK_CATEGORIES
-    )
+    return render_template('tasks/search.html', todo_tasks=todo_tasks, completed_tasks=completed_tasks)
 
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
 def add():
-    return render_template('tasks/add.html', task_categories=TASK_CATEGORIES)
+    return render_template('tasks/add.html')
 
 
 @blueprint.route('/crud/', methods=['POST'])

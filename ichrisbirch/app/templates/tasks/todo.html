@@ -1,24 +1,28 @@
-{% extends 'tasks/base.html' %}
+{% extends "tasks/base.html" %}
 
-{% block title %}Outstanding Tasks{% endblock %}
+{% block title %}
+  Outstanding Tasks
+{% endblock title %}
 
 {% block content %}
-<div class="task-layout task-layout--one-column-narrow">
-  <div>
+  <div class="grid grid--one-column grid--tight">
+    {% include "tasks/task-info-bar.jinja.html" %}
     <h2 class="task-layout__title">Outstanding Tasks</h2>
-    <div class="task__counts">
-      <span class="task--overdue">Overdue Tasks: {{ overdue_count }}</span>
-      <span class="task--critical">Critical Tasks: {{ critical_count }}</span>
-      <span class="task--soon">Due Soon Tasks: {{ due_soon_count }}</span>
-      <span class="">Total Tasks: {{ total_count }}</span>
-    </div>
   </div>
-  {% for task in tasks %}
-  {% include 'tasks/templates/todo.jinja.html' %}
+
+  {% if current_user.preferences.box_packing.compact_view %}
+    {% set view = "compact" %}
+    {% set grid_type = "grid grid--one-column-wide grid--compact" %}
   {% else %}
-  <div class="task task--todo">
-    <h2>No Tasks</h2>
+    {% set view = "block" %}
+    {% set grid_type = "grid grid--one-column-narrow grid--tight" %}
+  {% endif %}
+
+  <div class="{{ grid_type }}">
+    {% with task_class="task task--" ~ view ~ "-layout todo", element_class="task--" ~ view ~ "-layout" %}
+      {% for task in tasks %}
+        {% include "tasks/templates/todo-" ~ view ~ ".jinja.html" %}
+      {% endfor %}
+    {% endwith %}
   </div>
-  {% endfor %}
-</div>
-{% endblock %}
+{% endblock content %}

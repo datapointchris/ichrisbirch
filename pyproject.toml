@@ -64,6 +64,7 @@ pymdown-extensions = "^10.8.1"
 pyyaml = "^6.0.1"
 wily = "^1.25.0"
 ruff = "^0.7.0"
+djlint = "^1.36.4"
 
 [tool.poetry.group.cicd.dependencies]
 bandit = "^1.7.8"
@@ -137,6 +138,13 @@ fail_under = 25
 show_missing = true
 exclude_lines = ["pragma: no cover"]
 
+[tool.djlint]
+profile="jinja"
+max_line_length = 120
+blank_line_after_tag="endblock, extends"
+# blank_line_before_tag="include"
+format_attribute_template_tags=true
+max_blank_lines=1
 
 [tool.docformatter]
 recursive = true

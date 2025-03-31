@@ -1,0 +1,20 @@
+<form method="POST" action="{{ url_for('tasks.crud') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="id" value="{{ task.id }}">
+  <input type="hidden" name="name" value="{{ task.name }}">
+<div class="{{ task_class }} task--complete">
+  <h3 class="{{ element_class }}__title">{{ task.name }}</h3>
+  <div class="{{ element_class }}__category">Category: {{ task.category }}</div>
+  <div class="{{ element_class }}__add-date">Add Date: {{ task.add_date | pretty_date }}</div>
+  <div class="{{ element_class }}__complete-date">Complete Date: {{ task.complete_date | pretty_date }}</div>
+  <div class="{{ element_class }}__time-to-complete">Time to Complete: {{ task.time_to_complete }}</div>
+  {% if task.notes %}
+  <div class="{{ element_class }}__notes"><strong>Notes: </strong>{{ task.notes }}</div>
+  {% endif %}
+  <div class="{{ element_class }}__buttons">
+      <button type="submit" name="action" class="button button--danger" value="delete">
+        <span class="button__text button__text--danger">Delete Task</span>
+      </button>
+    </div>
+  </div>
+</form>

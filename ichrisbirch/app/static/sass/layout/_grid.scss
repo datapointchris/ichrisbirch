@@ -50,39 +50,83 @@
 }
 
 .grid {
+    $narrow-width: 50svw;
+    $narrow-width-nested: 80%;
+    $regular-width: 80svw;
+    $regular-width-nested: 80%;
+    $wide-width: 96svw;
+    $wide-width-nested: 96%;
+
     display: grid;
-    width: 80svw;
     gap: var(--space-xl);
     margin: var(--space-2xl) auto;
     margin-top: var(--space-xl);
     justify-content: center;
 
-    &--one-column {
-        width: 50svw;
+    &--one-column-narrow {
+        width: $narrow-width;
         @include grid-set-columns(1);
     }
+
+    &--one-column-narrow-nested {
+        width: $narrow-width-nested;
+        @include grid-set-columns(1);
+    }
+
+    &--one-column {
+        width: $regular-width;
+        @include grid-set-columns(1);
+    }
+
 
     &--one-column-wide {
+        width: $wide-width;
         @include grid-set-columns(1);
     }
 
-    &--one-column-full {
-        width: 98svw;
+    &--one-column-wide-nested {
+        width: $wide-width-nested;
         @include grid-set-columns(1);
+    }
+
+    &--two-columns-narrow {
+        width: $narrow-width-nested;
+        @include grid-set-columns(2);
     }
 
     &--two-columns {
+        width: $regular-width;
+        @include grid-set-columns(2);
+    }
+
+    &--two-columns-wide {
+        width: $wide-width;
         @include grid-set-columns(2);
     }
 
     &--two-columns-nested {
         // For nesting inside other grids, so the svw does not overflow
+        width: $regular-width-nested;
         @include grid-set-columns(2);
-        width: 80%;
     }
 
     &--three-columns {
+        width: $regular-width;
         @include grid-set-columns(3);
+    }
+
+    &--tight {
+        gap: var(--space-s);
+        margin: var(--space-m) auto;
+        align-items: start; /* so fewer tasks on one side don't stretch to fill space */
+        text-align: center;
+    }
+
+    &--compact {
+        gap: 0;
+        margin: 0 auto;
+        padding: 0;
+
     }
 
     &__item {
@@ -98,7 +142,7 @@
             box-shadow: var(--floating-box-pressed);
         }
 
-        >h3 {
+        > h3 {
             line-height: var(--space-l);
         }
     }
@@ -109,42 +153,6 @@
     }
 }
 
-.grid-compact {
-    display: grid;
-    width: 80svw;
-    gap: 0;
-    margin: 0 auto;
-    padding: 0;
-    justify-content: center;
-
-    &--one-column {
-        width: 50svw;
-        @include grid-set-columns(1);
-    }
-
-    &--one-column-wide {
-        @include grid-set-columns(1);
-    }
-
-    &--one-column-full {
-        width: 98svw;
-        @include grid-set-columns(1);
-    }
-
-    &--two-columns {
-        @include grid-set-columns(2);
-    }
-
-    &--two-columns-nested {
-        // For nesting inside other grids, so the svw does not overflow
-        @include grid-set-columns(2);
-        width: 80%;
-    }
-
-    &--three-columns {
-        @include grid-set-columns(3);
-    }
-}
 
 .item-details {
     display: grid;

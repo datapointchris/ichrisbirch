@@ -1,0 +1,36 @@
+<form method="post" action="{{ url_for('users.preferences') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if compact_view %}
+    <span class="button-toggle-selector left">
+      <span class="left" data-tooltip="block layout" data-position="left">
+        <button type="submit"
+                name="action"
+                class="button--hidden"
+                value="{{ toggle_action }}">
+          <i class="button-icon fa-solid fa-table-cells-large"></i>
+        </button>
+      </span>
+    </span>
+    <span class="button-toggle-selector right pressed">
+      <span class="right" data-tooltip="compact layout" data-position="right">
+        <i class="button-icon pressed fa-solid fa-bars"></i>
+      </span>
+    </span>
+  {% else %}
+    <span class="button-toggle-selector left pressed">
+      <span class="left" data-tooltip="block layout" data-position="left">
+        <i class="button-icon pressed fa-solid fa-table-cells-large"></i>
+      </span>
+    </span>
+    <span class="button-toggle-selector right">
+      <span class="right" data-tooltip="compact layout" data-position="right">
+        <button type="submit"
+                name="action"
+                class="button--hidden"
+                value="{{ toggle_action }}">
+          <i class="button-icon fa-solid fa-bars"></i>
+        </button>
+      </span>
+    </span>
+  {% endif %}
+</form>

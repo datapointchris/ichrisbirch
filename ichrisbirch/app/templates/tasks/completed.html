@@ -1,51 +1,72 @@
-{% extends 'tasks/base.html' %}
+{% extends "tasks/base.html" %}
 
-{% block title %}Completed Tasks{% endblock %}
+{% block title %}
+  Completed Tasks
+{% endblock title %}
 
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{% endblock %}
+{% block scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
 
 {% block content %}
-<div class="task-layout task-layout--one-column-wide">
-  <form method="POST" action="{{ url_for('tasks.completed') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="radio-scale-selector">
-      {% for filter in filters %}
-      <input type="radio" id="radio-{{ filter }}" class="radio-scale-selector__option" name="filter" value="{{ filter }}" {% if
-        filter==date_filter %}checked{% endif %}>
-      <label for="radio-{{ filter }}">{{ filter.title().replace('_',' ') }}</label>
-      {% endfor %}
-    </div>
-    <br><br>
-    <button type="submit" name="action" class="button" value="filter">
-      <span class="button__text">Filter Tasks</span>
-    </button>
-  </form>
-</div>
+  <div class="grid grid--one-column grid--tight">
+    {% include "tasks/task-info-bar.jinja.html" %}
 
-{% if not completed_tasks %}
-<div class="task-layout task-layout--one-column-wide">
-  <h3>{{ average_completion }}</h3>
-</div>
-{% else %}
-<div class="task-layout task-layout--two-columns">
-  <div class="task-layout task-layout--one-column-wide">
-    {% for task in completed_tasks %}
-    {% include 'tasks/templates/completed.jinja.html' %}
-    {% endfor %}
+    <h2 class="task-layout__title">Completed Tasks</h2>
+    <form id="filterForm"
+          method="post"
+          action="{{ url_for('tasks.completed') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="radio-scale-selector">
+        {% for filter in filters %}
+          <input type="radio"
+                 id="radio-{{ filter }}"
+                 class="radio-scale-selector__option"
+                 name="filter"
+                 value="{{ filter }}"
+                 {% if filter==date_filter %}checked{% endif %}
+                 onchange="document.getElementById('filterForm').submit();">
+          <label for="radio-{{ filter }}">{{ filter.title().replace('_',' ') }}</label>
+        {% endfor %}
+      </div>
+    </form>
   </div>
-  <div class="task-layout task-layout--one-column-wide">
-    <h3>Total Tasks Completed: {{ total_completed }}</h3>
-    <h3>Average Completion Time: {{ average_completion }}</h3>
-    <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
-    <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
-    <div id="chartTitle" style="display: none;">Completed Tasks</div>
-    <div class="completed-task-graph">
-      <canvas id="completedChart" height="200"></canvas>
+
+  {% if completed_tasks %}
+
+    {% if current_user.preferences.box_packing.compact_view %}
+      {% set view = "compact" %}
+    {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
+    {% else %}
+      {% set view = "block" %}
+    {% set grid_type = "grid grid--one-column-narrow-nested grid--tight" %}
+    {% endif %}
+
+    <div class="grid grid--two-columns-wide grid--tight">
+      <h3 class="task-layout__title">Total Tasks Completed: {{ total_completed }}</h3>
+      <h3 class="task-layout__title">Average Completion Time: {{ average_completion }}</h3>
+
+       <div class="{{ grid_type }}">
+        {% with task_class="task task--" ~ view ~ "-layout completed", element_class="task--" ~ view ~ "-layout" %}
+          {% for task in completed_tasks %}
+            {% include "tasks/templates/completed-" ~ view ~ ".jinja.html" %}
+          {% endfor %}
+        {% endwith %}
+      </div>
+
+      <div class="grid grid--one-column-narrow-nested grid--tight">
+        <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
+        <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
+        <div id="chartTitle" style="display: none;">Completed Tasks</div>
+        <div class="completed-task-graph">
+          <canvas id="completedChart" height="200"></canvas>
+        </div>
+        <script src="{{ url_for('static', filename='js/completed_chart.js') }}"></script>
+      </div>
     </div>
-    <script src="{{ url_for('static', filename='js/completed_chart.js') }}"></script>
-  </div>
-</div>
-{% endif %}
-{% endblock %}
+
+  {% else %}
+    <div class="grid grid--one-column-wide grid--tight">
+      <h3>{{ average_completion }}</h3>
+    </div>
+  {% endif %}
+
+{% endblock content %}

@@ -1,0 +1,12 @@
+<div class="task-layout__info">
+  <span class="task-layout__count task--overdue">Overdue Tasks: {{ overdue_count }}</span>
+  <span class="task-layout__count task--critical">Critical Tasks: {{ critical_count }}</span>
+  {% with
+  compact_view=current_user.preferences.box_packing.compact_view,
+  toggle_action='toggle_box_packing_compact_view'
+  %}
+  {% include 'toggle-compact-view.jinja.html' %}
+  {% endwith %}
+  <span class="task-layout__count task--soon">Due Soon Tasks: {{ due_soon_count }}</span>
+  <span class="task-layout__count task--total">Total Tasks: {{ total_count }}</span>
+</div>

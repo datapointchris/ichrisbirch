@@ -1,30 +1,36 @@
-{% extends 'tasks/base.html' %}
+{% extends "tasks/base.html" %}
 
-{% block title %}Priority Tasks{% endblock %}
+{% block title %}
+  Priority Tasks
+{% endblock title %}
 
 {% block content %}
-<div class="task-layout task-layout--two-columns">
-  <div>
-    <h2 class="task-layout__title">Priority Tasks</h2>
-    <div class="task__counts">
-      <span class="task--overdue">Overdue Tasks: {{ overdue_count }}</span>
-      <span class="task--critical">Critical Tasks: {{ critical_count }}</span>
-      <span class="task--soon">Due Soon Tasks: {{ due_soon_count }}</span>
-      <span class="">Total Tasks: {{ total_count }}</span>
+  <div class="grid grid--one-column grid--tight">{% include "tasks/task-info-bar.jinja.html" %}</div>
+
+  {% if current_user.preferences.box_packing.compact_view %}
+    {% set view = "compact" %}
+    {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
+  {% else %}
+    {% set view = "block" %}
+    {% set grid_type = "grid grid--one-column-narrow-nested grid--tight" %}
+  {% endif %}
+
+  <div class="grid grid--two-columns-wide grid--tight">
+    <div class="{{ grid_type }}">
+      <h2 class="task-layout__title">Priority Tasks</h2>
+      {% with task_class="task task--" ~ view ~ "-layout priority", element_class="task--" ~ view ~ "-layout" %}
+        {% for task in top_tasks %}
+          {% include "tasks/templates/priority-" ~ view ~ ".jinja.html" %}
+        {% endfor %}
+      {% endwith %}
+    </div>
+    <div class="{{ grid_type }}">
+      <h2 class="task-layout__title">Completed Today</h2>
+      {% with task_class="task task--" ~ view ~ "-layout completed", element_class="task--" ~ view ~ "-layout" %}
+        {% for task in completed_today %}
+          {% include "tasks/templates/completed-" ~ view ~ ".jinja.html" %}
+        {% endfor %}
+      {% endwith %}
     </div>
   </div>
-  <div>
-    <h2 class="task-layout__title">Completed Today</h2>
-  </div>
-  <div class="task-layout task-layout--one-column-wide">
-    {% for task in top_tasks %}
-    {% include 'tasks/templates/priority.jinja.html' %}
-    {% endfor %}
-  </div>
-  <div class="task-layout task-layout--one-column-wide">
-    {% for task in completed_today %}
-    {% include 'tasks/templates/completed.jinja.html' %}
-    {% endfor %}
-  </div>
-</div>
-{% endblock %}
+{% endblock content %}

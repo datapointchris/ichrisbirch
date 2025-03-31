@@ -1,0 +1,31 @@
+{% macro task_state_class(priority) %}
+  {% if 0 < priority <= 2 %}
+    task--critical
+  {% elif 2 < priority <= 5 %}
+    task--soon
+  {% elif priority < 1 %}
+    task--overdue
+  {% endif %}
+{% endmacro %}
+
+{% macro task_buttons(task_id) %}
+  <div class="task__buttons">
+    <button type="submit" name="action" class="button" value="complete">
+      <span class="button__text">Complete Task</span>
+    </button>
+    <button type="submit" name="action" class="button" value="extend"
+      onclick="document.getElementById('{{ task_id }}-days').value = '7';">
+      <span class="button__text">Extend 7 Days</span>
+    </button>
+    <button type="submit" name="action" class="button" value="extend"
+      onclick="document.getElementById('{{ task_id }}-days').value = '30';">
+      <span class="button__text">Extend 30 Days</span>
+    </button>
+    <!-- <a href="{{ url_for('tasks.crud', id=task.id) }}"> -->
+    <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+    <!-- </a> -->
+    <button type="submit" name="action" class="button--hidden" value="delete">
+      <i class="button-icon danger fa-regular fa-trash-can"></i>
+    </button>
+  </div>
+{% endmacro %}
