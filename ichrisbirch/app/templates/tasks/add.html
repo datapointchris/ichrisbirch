@@ -1,12 +1,12 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Add New Task{% endblock %}
+{% block title %}Add New Task{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
   <div class="add-item-wrapper">
     <h2>Add New Task</h2>
-    <form class="add-item-form" method="POST" action="{{ url_for('tasks.crud') }}">
+    <form class="add-item-form" method="post" action="{{ url_for('tasks.crud') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="add-item-form__item">
         {{ create_form.name.label }}
@@ -32,4 +32,4 @@
     </form>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

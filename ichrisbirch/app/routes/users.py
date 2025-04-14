@@ -39,6 +39,6 @@ def settings():
 def preferences():
     users_api = QueryAPI(base_url='users', response_model=schemas.User)
     data = request.form.to_dict()
-    payload = models.User.dot_preference_to_nested_dict(data['preference'], data['value'])
+    payload = models.User.dot_preference_to_nested_dict(data['preference-key'], data['preference-value'])
     users_api.patch('/me/preferences/', json=payload)
     return redirect(request.referrer)

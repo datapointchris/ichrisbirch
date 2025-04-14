@@ -5,16 +5,16 @@
 {% endblock title %}
 
 {% block content %}
-  <div class="grid grid--one-column grid--tight">{% include "tasks/task-info-bar.jinja.html" %}</div>
+  {% set view = current_user.preferences.tasks.pages.index.view_type %}
+  {% set preference = "tasks.pages.index.view_type" %}
 
-  {% if current_user.preferences.box_packing.compact_view %}
-    {% set view = "compact" %}
+  {% if view == "compact" %}
     {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
   {% else %}
-    {% set view = "block" %}
     {% set grid_type = "grid grid--one-column-narrow-nested grid--tight" %}
   {% endif %}
 
+  <div class="grid grid--one-column grid--tight">{% include "tasks/task-info-bar.jinja.html" %}</div>
   <div class="grid grid--two-columns-wide grid--tight">
     <div class="{{ grid_type }}">
       <h2 class="task-layout__title">Priority Tasks</h2>

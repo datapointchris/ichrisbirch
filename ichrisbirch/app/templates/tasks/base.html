@@ -1,11 +1,11 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block meta %}
 <!-- Refresh pages every 10 minutes so tasks are added and completed with correct timestamp -->
 <meta http-equiv="refresh" content="600">
-{% endblock %}
+{% endblock meta %}
 
-{% block scripts %}{% endblock %}
+{% block scripts %}{% endblock scripts %}
 
 {% block app_navigation %}
 <ul data-secondary>
@@ -13,7 +13,7 @@
   <li><a href="{{ url_for('tasks.todo') }}">Outstanding Tasks</a></li>
   <li><a href="{{ url_for('tasks.completed') }}">Completed Tasks</a></li>
   <li>
-    <form class="task-search-form" method="POST" action="{{ url_for('tasks.search') }}">
+    <form class="task-search-form" method="post" action="{{ url_for('tasks.search') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="text" class="textbox" name="terms" id="terms">
       <button type="submit" name="action" class="button" value="search">
@@ -22,10 +22,10 @@
     </form>
   </li>
 </ul>
-{% endblock %}
+{% endblock app_navigation %}
 
-{% block content %}{% endblock %}
+{% block content %}{% endblock content %}
 
 {% block footer %}
-{% include 'tasks/addtask.jinja.html' %}
-{% endblock %}
+{% include "tasks/addtask.jinja.html" %}
+{% endblock footer %}
