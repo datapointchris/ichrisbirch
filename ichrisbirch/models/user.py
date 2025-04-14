@@ -148,6 +148,34 @@ class User(UserMixin, Base):
         """
         return self._validate_preferences(updated_preferences)
 
+    @staticmethod
+    def dot_preference_to_nested_dict(dot_key: str, value: Any) -> dict:
+        """Create a nested dictionary from a dot-separated key.
+
+        Args:
+            dot_key (str): The dot-separated key.
+            value (Any): The value to set.
+
+        Returns:
+            dict: A nested dictionary representing the dot-separated key.
+
+        Example:
+            ```
+            dot_key = "tasks.pages.index.view_type"
+            value = "grid"
+            result = _convert_dot_separated_prefernce_to_nested_dict(dot_key, value)
+            print(result)
+            >>> {'tasks': {'pages': {'index': {'view_type': 'grid'}}}}
+            ```
+        """
+        if not dot_key:
+            return {}
+        keys = dot_key.split('.')
+        nested_dict = value
+        for key in reversed(keys):
+            nested_dict = {key: nested_dict}
+        return nested_dict
+
     @property
     def is_active(self):
         return True
