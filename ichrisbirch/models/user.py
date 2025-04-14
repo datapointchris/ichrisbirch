@@ -40,7 +40,7 @@ class ThemeColor(enum.StrEnum):
     RANDOM = 'random'
 
 
-preference_value_checks = {'view_type': AppView, 'theme_color': ThemeColor}
+PREFERENCE_VALUE_CHECKS = {'view_type': AppView, 'theme_color': ThemeColor}
 
 DEFAULT_USER_PREFERENCES = {
     'theme_color': ThemeColor.TURQUOISE,
@@ -130,9 +130,9 @@ class User(UserMixin, Base):
             if isinstance(current_pref, dict) and isinstance(value, dict):
                 # Recurse into nested dictionaries
                 self._validate_preferences(value, current_pref)
-            elif key in preference_value_checks:
+            elif key in PREFERENCE_VALUE_CHECKS:
                 # Check if this key needs validation against an enum
-                enum_class = preference_value_checks[key]
+                enum_class = PREFERENCE_VALUE_CHECKS[key]
                 valid_values = [e.value for e in enum_class]
                 if value not in valid_values:
                     raise ValueError(f"Invalid value for '{key}'. Expected one of {valid_values}, got '{value}'.")
