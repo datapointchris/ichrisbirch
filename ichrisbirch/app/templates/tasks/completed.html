@@ -7,6 +7,15 @@
 {% block scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
 
 {% block content %}
+  {% set view = current_user.preferences.tasks.pages.completed.view_type %}
+  {% set preference = "tasks.pages.completed.view_type" %}
+
+  {% if view == "compact" %}
+    {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
+  {% else %}
+    {% set grid_type = "grid grid--one-column-narrow-nested grid--tight" %}
+  {% endif %}
+
   <div class="grid grid--one-column grid--tight">
     {% include "tasks/task-info-bar.jinja.html" %}
 
@@ -31,20 +40,11 @@
   </div>
 
   {% if completed_tasks %}
-
-    {% if current_user.preferences.box_packing.compact_view %}
-      {% set view = "compact" %}
-    {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
-    {% else %}
-      {% set view = "block" %}
-    {% set grid_type = "grid grid--one-column-narrow-nested grid--tight" %}
-    {% endif %}
-
     <div class="grid grid--two-columns-wide grid--tight">
       <h3 class="task-layout__title">Total Tasks Completed: {{ total_completed }}</h3>
       <h3 class="task-layout__title">Average Completion Time: {{ average_completion }}</h3>
 
-       <div class="{{ grid_type }}">
+      <div class="{{ grid_type }}">
         {% with task_class="task task--" ~ view ~ "-layout completed", element_class="task--" ~ view ~ "-layout" %}
           {% for task in completed_tasks %}
             {% include "tasks/templates/completed-" ~ view ~ ".jinja.html" %}

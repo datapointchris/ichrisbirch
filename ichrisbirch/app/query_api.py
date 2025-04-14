@@ -27,7 +27,7 @@ class APIServiceAccount(models.User):
         with SessionLocal() as session:
             q = select(models.User).filter(models.User.email == self.settings.users.service_account_user_email)
             if user := (session.execute(q).scalars().first()):
-                logger.debug(f'retreieved service account user: {user.email}')
+                logger.debug(f'retrieved service account user: {user.email}')
                 self.user = user
                 return user
             else:

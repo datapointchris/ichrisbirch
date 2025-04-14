@@ -1,15 +1,30 @@
-{% extends 'users/base.html' %}
+{% extends "users/base.html" %}
 
-{% block title %}Welcome, {{current_user.name}}{% endblock %}
+{% block title %}Welcome, {{ current_user.name }}{% endblock %}
 
 {% block content %}
 
+{% macro render_preferences(preferences) %}
+  <ul style="list-style-type: none;">
+    {% for key, value in preferences.items() %}
+      <li>
+        <strong>{{ key }}:</strong>
+        {% if value is mapping %}
+          {{ render_preferences(value) }}
+        {% else %}
+          {{ value }}
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
 <div class="grid grid--one-column">
   <div class="add-item-wrapper">
-    <h1>{{current_user.name}}</h1>
+    <h1>{{ current_user.name }}</h1>
 
     <h2>Profile Information</h2>
-    <ul>
+    <ul style="list-style-type: none;">
       <li><strong>Name:</strong> {{current_user.name}}</li>
       <li><strong>Email:</strong> {{current_user.email}}</li>
       <li><strong>ID:</strong> {{current_user.id}}</li>
@@ -22,13 +37,11 @@
       <li><strong>is_anonymous:</strong> {{current_user.is_anonymous}}</li>
       <li><strong>get_id:</strong> {{current_user.get_id()}}</li>
     </ul>
+  </div>
+  <div>
     <h3>Preferences</h3>
-    <ul>
-      {% for preference, value in user.preferences.items() %}
-      <li><strong>{{ preference }}:</strong> {{ value }}</li>
-      {% endfor %}
-    </ul>
+    {{ render_preferences(user.preferences) }}
   </div>
 </div>
 
-{% endblock %}
+{% endblock content %}

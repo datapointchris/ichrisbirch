@@ -1,12 +1,12 @@
 <form method="post" action="{{ url_for('users.preferences') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="preference-key" value="{{ preference }}">
   {% if view == "compact" %}
     <span class="button-toggle-selector left">
       <span class="left" data-tooltip="block layout" data-position="left">
         <button type="submit"
-                name="action"
+                name="preference-value"
                 class="button--hidden"
-                preference="{{ preference }}"
                 value="block">
           <i class="button-icon fa-solid fa-table-cells-large"></i>
         </button>
@@ -26,9 +26,8 @@
     <span class="button-toggle-selector right">
       <span class="right" data-tooltip="compact layout" data-position="right">
         <button type="submit"
-                name="action"
+                name="preference-value"
                 class="button--hidden"
-                preference="{{ preference }}"
                 value="compact">
           <i class="button-icon fa-solid fa-bars"></i>
         </button>
