@@ -1,3 +1,4 @@
+import enum
 import random
 from datetime import datetime
 from typing import Any
@@ -12,6 +13,7 @@ from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import validates
 from sqlalchemy_json import mutable_json_type
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
@@ -20,17 +22,56 @@ from ichrisbirch.database.sqlalchemy.base import Base
 
 MutableJSONB = mutable_json_type(dbtype=JSONB, nested=True)
 
+
+class AppView(enum.StrEnum):
+    BLOCK = 'block'
+    COMPACT = 'compact'
+
+
+class ThemeColor(enum.StrEnum):
+    TURQUOISE = 'turquoise'
+    BLUE = 'blue'
+    GREEN = 'green'
+    ORANGE = 'orange'
+    RED = 'red'
+    PURPLE = 'purple'
+    YELLOW = 'yellow'
+    PINK = 'pink'
+    RANDOM = 'random'
+
+
+preference_value_checks = {'view_type': AppView, 'theme_color': ThemeColor}
+
 DEFAULT_USER_PREFERENCES = {
-    'theme': 'turquoise',
+    'theme_color': ThemeColor.TURQUOISE,
     'dark_mode': True,
     'notifications': False,
-    'box_packing': {
-        'compact_view': True,
-    },
     'dashboard_layout': [
         ['tasks_priority', 'countdowns', 'events'],
         ['habits', 'brainlog', 'devlog'],
     ],
+    'box_packing': {
+        'pages': {
+            'all': {'view_type': AppView.BLOCK},
+            'index': {'view_type': AppView.BLOCK},
+            'edit': {'view_type': AppView.BLOCK},
+            'orphans': {'view_type': AppView.BLOCK},
+            'search': {'view_type': AppView.BLOCK},
+        },
+    },
+    'tasks': {
+        'pages': {
+            'index': {'view_type': AppView.COMPACT},
+            'todo': {'view_type': AppView.COMPACT},
+            'completed': {'view_type': AppView.COMPACT},
+            'search': {'view_type': AppView.COMPACT},
+        },
+    },
+    'events': {
+        'pages': {
+            'index': {'view_type': AppView.COMPACT},
+        },
+    },
 }
 
 
@@ -78,6 +119,34 @@ class User(UserMixin, Base):
             This is the specific instance of the mapped class (in this case, User) that the event is being performed on.
         """
         target.password = generate_password_hash(target.password)
+
+    def _validate_preferences(self, updated_preferences: dict, preferences=DEFAULT_USER_PREFERENCES):
+        """Validate if the preference exists and the value is valid."""
+        for key, value in updated_preferences.items():
+            if key not in preferences:
+                raise ValueError(f"Invalid preference: '{key}'. Expected one of {list(preferences.keys())}.")
+
+            current_pref = preferences[key]
+            if isinstance(current_pref, dict) and isinstance(value, dict):
+                # Recurse into nested dictionaries
+                self._validate_preferences(value, current_pref)
+            elif key in preference_value_checks:
+                # Check if this key needs validation against an enum
+                enum_class = preference_value_checks[key]
+                valid_values = [e.value for e in enum_class]
+                if value not in valid_values:
+                    raise ValueError(f"Invalid value for '{key}'. Expected one of {valid_values}, got '{value}'.")
+
+        return updated_preferences
+
+    @validates('preferences')
+    def validate_preferences(self, key, updated_preferences: dict):
+        """Validate preferences before setting them.
+
+        Must use secondary private method to avoid recursively calling the validates decorator, which will reset the
+        preferences and check for sub preferences at top level.
+        """
+        return self._validate_preferences(updated_preferences)
 
     @property
     def is_active(self):
