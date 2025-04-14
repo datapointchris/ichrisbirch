@@ -1,12 +1,13 @@
 <form method="post" action="{{ url_for('users.preferences') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  {% if compact_view %}
+  {% if view == "compact" %}
     <span class="button-toggle-selector left">
       <span class="left" data-tooltip="block layout" data-position="left">
         <button type="submit"
                 name="action"
                 class="button--hidden"
-                value="{{ toggle_action }}">
+                preference="{{ preference }}"
+                value="block">
           <i class="button-icon fa-solid fa-table-cells-large"></i>
         </button>
       </span>
@@ -27,7 +28,8 @@
         <button type="submit"
                 name="action"
                 class="button--hidden"
-                value="{{ toggle_action }}">
+                preference="{{ preference }}"
+                value="compact">
           <i class="button-icon fa-solid fa-bars"></i>
         </button>
       </span>
