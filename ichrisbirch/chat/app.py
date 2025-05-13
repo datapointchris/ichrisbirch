@@ -8,7 +8,7 @@ from streamlit_cookies_controller import CookieController
 from ichrisbirch import models
 from ichrisbirch.chat.api import ChatAPI
 from ichrisbirch.chat.auth import ChatAuthClient
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
 
 logger = logging.getLogger('chat.app')
@@ -18,6 +18,7 @@ USER_AVATAR = '👤'
 BOT_AVATAR = '🤖'
 STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
 
+settings = get_settings()
 auth = ChatAuthClient(settings=settings)
 cookie = CookieController()
 openai = OpenAI(api_key=settings.ai.openai.api_key)

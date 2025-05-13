@@ -9,8 +9,8 @@ logger = logging.getLogger('chat.api')
 
 class ChatAPI:
     def __init__(self, user: models.User):
-        self.chat_api = QueryAPI(base_url='chat/chats', response_model=schemas.Chat, user=user)
-        self.chat_messages_api = QueryAPI(base_url='chat/messages', response_model=schemas.ChatMessage, user=user)
+        self.chat_api = QueryAPI(base_endpoint='chat/chats', response_model=schemas.Chat, user=user)
+        self.chat_messages_api = QueryAPI(base_endpoint='chat/messages', response_model=schemas.ChatMessage, user=user)
 
     def _convert_chat_to_model(self, chat: schemas.Chat):
         """The chat messages are not automatically converted to models, so must be done manually.
