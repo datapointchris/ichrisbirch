@@ -5,18 +5,19 @@
 {% endblock title %}
 
 {% block content %}
+  {% set view = current_user.preferences.tasks.pages.todo.view_type %}
+  {% set preference = "tasks.pages.todo.view_type" %}
+
+  {% if view == "compact" %}
+    {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
+  {% else %}
+    {% set grid_type = "grid grid--one-column-narrow-nested grid--tight" %}
+  {% endif %}
+
   <div class="grid grid--one-column grid--tight">
     {% include "tasks/task-info-bar.jinja.html" %}
     <h2 class="task-layout__title">Outstanding Tasks</h2>
   </div>
-
-  {% if current_user.preferences.box_packing.compact_view %}
-    {% set view = "compact" %}
-    {% set grid_type = "grid grid--one-column-wide grid--compact" %}
-  {% else %}
-    {% set view = "block" %}
-    {% set grid_type = "grid grid--one-column-narrow grid--tight" %}
-  {% endif %}
 
   <div class="{{ grid_type }}">
     {% with task_class="task task--" ~ view ~ "-layout todo", element_class="task--" ~ view ~ "-layout" %}

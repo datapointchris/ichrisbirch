@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
-{% block title %}Signup for iChrisBirch{% endblock %}
+{% block title %}Signup for iChrisBirch{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
@@ -12,7 +12,7 @@
   <h2>Sign Up</h2>
   <div class="add-item-wrapper">
 
-    <form class="add-item-form" method="POST" action="{{ url_for('auth.signup') }}">
+    <form class="add-item-form" method="post" action="{{ url_for('auth.signup') }}">
       {{ form.csrf_token }}
 
       <div class="add-item-form__item">
@@ -68,4 +68,4 @@
   </div>
 </div>
 
-{% endblock %}
+{% endblock content %}

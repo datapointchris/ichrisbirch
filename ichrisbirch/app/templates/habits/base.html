@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
 {% block app_navigation %}
   <ul data-secondary>
@@ -6,6 +6,6 @@
     <li><a href="{{ url_for('habits.completed') }}">Completed Habits</a></li>
     <li><a href="{{ url_for('habits.manage') }}">Manage Habits</a></li>
   </ul>
-{% endblock %}
+{% endblock app_navigation %}
 
-{% block content %}{% endblock %}
+{% block content %}{% endblock content %}

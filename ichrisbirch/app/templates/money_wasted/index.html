@@ -1,7 +1,6 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
-{% block title %}Money Wasted{% endblock %}
-
+{% block title %}Money Wasted{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column-wide">
@@ -25,7 +24,7 @@
       <li class="money-wasted__column">{{ money.date_wasted }}</li>
       <li class="money-wasted__column">{{ money.notes if money.notes else '' }}</li>
       <li class="money-wasted__column">
-        <form method="POST">
+        <form method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id" value="{{ money.id }}">
           <button type="submit" name="action" class="button--hidden" value="delete">
@@ -40,7 +39,7 @@
 
 <div class="add-item-wrapper">
   <h2>Add New Money Wasted:</h2>
-  <form class="add-item-form" method="POST">
+  <form class="add-item-form" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="add-item-form__item">
       <label for="item">Item:</label>
@@ -69,4 +68,4 @@
     </div>
   </form>
 </div>
-{% endblock %}
+{% endblock content %}

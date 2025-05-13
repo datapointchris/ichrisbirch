@@ -1,6 +1,6 @@
-{% extends 'events/base.html' %}
+{% extends"events/base.html" %}
 
-{% block title %}Events{% endblock %}
+{% block title %}Events{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
@@ -18,7 +18,7 @@
     </ul>
     <div class="event__buttons">
       {% if not event.attending %}
-      <form method="POST">
+      <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ event.id }}">
         <button type="submit" name="action" class="button" value="attend">
@@ -28,7 +28,7 @@
       {% else %}
       <button type="button" name="attend" class="button button--pressed">Attending</button>
       {% endif %}
-      <form method="POST">
+      <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="id" value="{{ event.id }}">
         <button type="submit" name="action" class="button button--danger" value="delete">
@@ -46,7 +46,7 @@
 
 <div class="add-item-wrapper">
   <h2>Add New Event</h2>
-  <form class="add-item-form" method="POST">
+  <form class="add-item-form" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="add-item-form__item">
       <label for="name">Name:</label>
@@ -84,4 +84,4 @@
     </div>
   </form>
 </div>
-{% endblock %}
+{% endblock content %}

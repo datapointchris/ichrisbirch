@@ -1,6 +1,6 @@
-{% extends 'admin/base.html' %}
+{% extends"admin/base.html" %}
 
-{% block title %}Scheduler{% endblock %}
+{% block title %}Scheduler{% endblock title %}
 
 {% block content %}
 <div class="grid grid--two-columns">
@@ -21,7 +21,7 @@
         <span class="item-details__item-content">{{ time_until_next_run }}</span>
       </div>
       <div class="item-details__buttons">
-        <form method="POST">
+        <form method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="job_id" value="{{ job.id }}">
           {% if job.next_run_time %}
@@ -46,4 +46,4 @@
   </div>
   {% endfor %}
 </div>
-{% endblock %}
+{% endblock content %}

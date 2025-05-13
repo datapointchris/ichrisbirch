@@ -1,12 +1,12 @@
-{% extends 'books/base.html' %}
+{% extends"books/base.html" %}
 
-{% block title %}Add New Book{% endblock %}
+{% block title %}Add New Book{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
   <div class="add-item-wrapper">
     <h2>Add New Book</h2>
-    <form class="add-item-form" method="POST" action="{{ url_for('books.crud') }}">
+    <form class="add-item-form" method="post" action="{{ url_for('books.crud') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="add-item-form__item">
@@ -89,7 +89,7 @@
   </div>
 </div>
 
-<div id="goodreadsInfoEndpoint" style="display: none;">{{ goodreads_info_endpoint }}</div>
+<div id="goodreadsInfoEndpoint" class="hidden-data">{{ goodreads_info_endpoint }}</div>
 <script>
   document.querySelector('#populateButton').addEventListener('click', function (event) {
     event.preventDefault();
@@ -120,4 +120,4 @@
       .catch(error => console.error('Error:', error));
   });
 </script>
-{% endblock %}
+{% endblock content %}

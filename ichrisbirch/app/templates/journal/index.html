@@ -1,6 +1,6 @@
-{% extends 'journal/base.html' %}
+{% extends"journal/base.html" %}
 
-{% block title %}Browse Journal{% endblock %}
+{% block title %}Browse Journal{% endblock title %}
 
 {% block content %}
 {% if entry %}
@@ -19,5 +19,6 @@
   Truncate the content here:
   {{ entry.content }}
 </div>
+{% endfor %}
 {% endif %}
-{% endblock %}
+{% endblock content %}

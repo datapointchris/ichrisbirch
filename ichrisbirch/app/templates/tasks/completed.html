@@ -53,9 +53,9 @@
       </div>
 
       <div class="grid grid--one-column-narrow-nested grid--tight">
-        <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
-        <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
-        <div id="chartTitle" style="display: none;">Completed Tasks</div>
+        <div id="chartLabels" class="hidden-chart-data">{{ chart_labels|tojson }}</div>
+        <div id="chartValues" class="hidden-chart-data">{{ chart_values|tojson }}</div>
+        <div id="chartTitle" class="hidden-chart-data">Completed Tasks</div>
         <div class="completed-task-graph">
           <canvas id="completedChart" height="200"></canvas>
         </div>

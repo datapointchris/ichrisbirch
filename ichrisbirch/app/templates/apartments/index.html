@@ -1,16 +1,16 @@
-{% extends 'apartments/base.html' %}
+{% extends"apartments/base.html" %}
 
 {% block title %}
-{% apartment.name if apartment else 'Apartments' %}
-{% endblock %}
+{% if apartment %}{{ apartment.name }}{% else %}Apartments{% endif %}
+{% endblock title %}
 
 {% block content %}
 
-{% include 'apartment_list.jinja' %}
+{% include "apartment_list.jinja" %}
 
 <div id="add-feature">
   <h2>Add a New Feature:</h2>
-  <form method="POST" action="{{ url_for('apartments_bp.edit') }}">
+  <form method="post" action="{{ url_for('apartments_bp.edit') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" id="apartment_id" name="apartment_id" value="{{ aptid }}">
     <input type="text" class="bigbox" size="20" name="name" id="name">
@@ -20,10 +20,10 @@
       <option value="integer">integer</option>
       <option value="boolean">boolean</option>
     </select><br>
-    <!-- <button type="submit" name="action" class="button" value="add-feature">
+<!-- <button type="submit" name="action" class="button" value="add-feature">
       <span class="button__text">Add New Feature</span>
       </button> -->
-    <button type="submit" class="bigbox" value="Add New Feature">
+    <button type="submit" class="bigbox" value="Add New Feature"></button>
   </form>
 </div>
 
@@ -33,7 +33,7 @@
     <div class="feature-list">
       <h1 class="title">{{ apartment.name.upper() }}</h1>
       <h2>
-        <a href="http://www.google.com/maps/place/{{ address }}" target="_blank">{{ apartment.address }}</a>
+        <a href="https://www.google.com/maps/place/{{ address }}" target="_blank">{{ apartment.address }}</a>
       </h2>
       <h2><a href="{{ apartment.url }}" target="_blank">{{ apartment.url }}</a></h2>
       <div id="apt-features">
@@ -49,12 +49,8 @@
       <h2>NOTES</h2>
       {{ apartment.notes }}
       <br><br><br><br><br><br><br><br>
-      <a href="{{ url_for('apartments_bp.edit', name=apartment.name) }}">
-        <!-- <button type="submit" name="action" class="button" value="edit">
-          <span class="button__text">Edit Apartment Info</span>
-        </button> -->
-        <button type="submit" class="manage-box" value="Edit Apartment Info">
-      </a>
+      <form action="{{ url_for('apartments_bp.edit', name=apartment.name) }}" method="get">
+        <button type="submit" class="manage-box">Edit Apartment Info</button>
       </form>
     </div>
   </div>
@@ -66,4 +62,4 @@
   </div>
   {% endif %}
 </div>
-{% endblock %}
+{% endblock content %}

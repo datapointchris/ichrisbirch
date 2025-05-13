@@ -1,14 +1,14 @@
-{% extends 'habits/base.html' %}
+{% extends"habits/base.html" %}
 
-{% block title %}Completed Habits{% endblock %}
+{% block title %}Completed Habits{% endblock title %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{% endblock %}
+{% endblock scripts %}
 
 {% block content %}
 <div class="grid grid--one-column-wide">
-  <form method="POST" action="{{ url_for('habits.completed') }}">
+  <form method="post" action="{{ url_for('habits.completed') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="habit">Select a Habit:</label>
     <select class="textbox" name="habit" id="habit">
@@ -34,13 +34,13 @@
   <h3>{{ completed_count }}</h3>
   {% else %}
   <h3>Completed Habits: {{ completed_count }}</h3>
-  <div id="chartTitle" style="display: none;">Completed Habits</div>
-  <div id="chartLabels" style="display: none;">{{ chart_labels|tojson }}</div>
-  <div id="chartValues" style="display: none;">{{ chart_values|tojson }}</div>
+  <div id="chartTitle" class="hidden-chart-data">Completed Habits</div>
+  <div id="chartLabels" class="hidden-chart-data">{{ chart_labels|tojson }}</div>
+  <div id="chartValues" class="hidden-chart-data">{{ chart_values|tojson }}</div>
   <div class="completed-habit-graph">
     <canvas id="completedChart" height="200"></canvas>
   </div>
   <script src="{{ url_for('static', filename='js/completed_chart.js') }}"></script>
 </div>
 {% endif %}
-{% endblock %}
+{% endblock content %}

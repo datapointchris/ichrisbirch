@@ -1,0 +1,41 @@
+<div class="packed-box-compact">
+    <h3 class="packed-box-compact__title">
+        <a class="packed-box-compact__link" href="{{ url_for('box_packing.index', box_id=box.id) }}">Box {{ box.number }}:
+        {{ box.name }}</a>
+    </h3>
+    <span>Size: {{ box.size }}</span>
+    <!-- djlint:off -->
+        <span>{{ box.item_count }} Item{% if box.item_count != 1 %}s{% endif %}</span>
+    <!-- djlint:on -->
+    {% if box.essential == 1 %}
+        <span class="packed-box-compact__details--essential">Essential</span>
+    {% else %}
+        <span>&nbsp;</span>
+    {% endif %}
+    {% if box.warm == 1 %}
+        <span class="packed-box-compact__details--warm">Warm</span>
+    {% else %}
+        <span>&nbsp;</span>
+    {% endif %}
+    {% if box.liquid == 1 %}
+        <span class="packed-box-compact__details--liquid">Liquid</span>
+    {% else %}
+        <span>&nbsp;</span>
+    {% endif %}
+    <span>
+        <a href="{{ url_for('box_packing.edit', box_id=box.id) }}">
+            <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+        </a>
+    </span>
+    <span>
+        <form method="post" action="{{ url_for('box_packing.crud') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="box_id" id="box_id" value={{ box.id }}>
+            <input type="hidden" name="box_name" id="box_name" value={{ box.name }}>
+            <input type="hidden" name="box_number" id="box_number" value={{ box.number }}>
+            <button type="submit" name="action" class="button--hidden" value="delete_box">
+                <i class="button-icon danger fa-regular fa-trash-can"></i>
+            </button>
+        </form>
+    </span>
+</div>

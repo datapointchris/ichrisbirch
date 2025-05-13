@@ -1,16 +1,16 @@
-{% extends 'articles/base.html' %}
+{% extends"articles/base.html" %}
 
-{% block title %}Articles{% endblock %}
+{% block title %}Articles{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column-wide">
   <div class="add-item-wrapper">
     <h2>Bulk Add New Articles</h2>
-    <form class="add-item-form" method="POST" enctype="multipart/form-data" action="{{ url_for('articles.crud')}}">
+    <form class="add-item-form" method="post" enctype="multipart/form-data" action="{{ url_for('articles.crud') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="add-item-form__item add-item-form__item--full-width">
-        <input type="file" class="textbox" name="file" id="file" style="display: none;">
+        <input type="file" class="textbox file-input" name="file" id="file">
         <button type="button" class="button">
           <label for="file">Upload Text File with URLs</label>
         </button>
@@ -41,4 +41,4 @@
     });
   };
 </script>
-{% endblock %}
+{% endblock content %}

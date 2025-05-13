@@ -1,6 +1,6 @@
-{% extends 'autotasks/base.html' %}
+{% extends"autotasks/base.html" %}
 
-{% block title %}AutoTasks{% endblock %}
+{% block title %}AutoTasks{% endblock title %}
 
 {% block content %}
 <div class="grid grid--two-columns">
@@ -37,7 +37,7 @@
         <span class="item-details__item-content">{{ autotask.notes }}</span>
       </div>
       <div class="item-details__buttons">
-        <form method="POST">
+        <form method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="id" value="{{ autotask.id }}">
           <input type="hidden" name="name" value="{{ autotask.name }}">
@@ -60,7 +60,7 @@
 
 <div class="add-item-wrapper">
   <h2>Add New AutoTask</h2>
-  <form class="add-item-form" method="POST">
+  <form class="add-item-form" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="add-item-form__item">
       <label for="name">Name</label>
@@ -100,4 +100,4 @@
     </div>
   </form>
 </div>
-{% endblock %}
+{% endblock content %}

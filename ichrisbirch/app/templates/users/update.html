@@ -1,12 +1,12 @@
-{% extends 'users/base.html' %}
+{% extends"users/base.html" %}
 
-{% block title %}{{current_user}}Update Profile{% endblock %}
+{% block title %}{{ current_user }} Update Profile{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
   <div class="github-issue-form">
-    <h1>{{current_user.name}}</h1>
-    <h3>TODO: Create a user update form for this page and add it here</h1>
+    <h1>{{ current_user.name }}</h1>
+    <h3>TODO: Create a user update form for this page and add it here</h3>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

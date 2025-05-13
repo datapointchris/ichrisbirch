@@ -1,155 +1,108 @@
-{% extends 'box_packing/base.html' %}
+{% extends "box_packing/base.html" %}
 
-{% block title %}Box Packing{% endblock %}
+{% block title %}
+  Box Packing
+{% endblock title %}
 
 {% block content %}
-<div class="box-listing-sort">
+  <div class="box-listing-sort">
 
-  {% with
-  compact_view=current_user.preferences.box_packing.compact_view,
-  toggle_action='toggle_box_packing_compact_view'
-  %}
-  {% include 'toggle-compact-view.jinja.html' %}
-  {% endwith %}
+    {% set view = current_user.preferences.box_packing.pages.all.view_type %}
+    {% set preference = "box_packing.pages.all.view_type" %}
 
-  <form method="POST" action="{{ url_for('box_packing.all') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <span class="box-listing-sort__item">
-      <select class="button" name="sort_1" id="sort_1">
-        <option value="none" selected disabled hidden>Box Sort Order 1</option>
-        <option value="number">Number (default)</option>
-        <option value="name">Name</option>
-        <option value="size">Size</option>
-        <option value="item_count">Item Count</option>
-        <option value="essential">Essential</option>
-        <option value="warm">Warm</option>
-        <option value="liquid">Liquid</option>
-      </select>
-    </span>
-    <span class="box-listing-sort__item">
-      <select class="button" name="sort_2" id="sort_2">
-        <option value="none" selected disabled hidden>Box Sort Order 2</option>
-        <option value="">None</option>
-        <option value="name">Name</option>
-        <option value="size">Size</option>
-        <option value="item_count">Item Count</option>
-        <option value="essential">Essential</option>
-        <option value="warm">Warm</option>
-        <option value="liquid">Liquid</option>
-      </select>
-    </span>
-    <span class="box-listing-sort__item">
-      <button type="submit" name="action" class="button" value="sort">
-        <span class="button__text">Sort {{ boxes|length }} Boxes</span>
-      </button>
-    </span>
-  </form>
-</div>
-
-{% if current_user.preferences.box_packing.compact_view %}
-<div class="grid-compact grid-compact--one-column-wide">
-  {% for box in boxes %}
-  <div class="packed-box-compact">
-    <h3 class="packed-box-compact__title">
-      <a class="packed-box-compact__link" href="{{ url_for('box_packing.index', box_id=box.id) }}">Box {{ box.number }}:
-        {{ box.name }}</a>
-    </h3>
-    <span>Size: {{ box.size }}</span>
-    <span>{{ box.item_count }} Item{% if box.item_count != 1 %}s{% endif %}</span>
-    {% if box.essential == 1 %}<span class="packed-box-compact__details--essential">Essential</span>
-    {% else %}<span>&nbsp;</span>
+    {% if view == "compact" %}
+      {% set grid_type = "grid grid--one-column-wide-nested grid--compact" %}
+    {% else %}
+      {% set grid_type = "grid grid--one-column-narrow-nested grid--block" %}
     {% endif %}
-    {% if box.warm == 1 %}<span class="packed-box-compact__details--warm">Warm</span>
-    {% else %}<span>&nbsp;</span>
-    {% endif %}
-    {% if box.liquid == 1 %}<span class="packed-box-compact__details--liquid">Liquid</span>
-    {% else %}<span>&nbsp;</span>
-    {% endif %}
-    <span>
-      <a href="{{ url_for('box_packing.edit', box_id=box.id) }}">
-        <i class="button-icon warning fa-solid fa-pen-to-square"></i>
-      </a>
-    </span>
-    <span>
-      <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="box_id" id="box_id" value={{ box.id }}>
-        <input type="hidden" name="box_name" id="box_name" value={{ box.name }}>
-        <input type="hidden" name="box_number" id="box_number" value={{ box.number }}>
-        <button type="submit" name="action" class="button--hidden" value="delete_box">
-          <i class="button-icon danger fa-regular fa-trash-can"></i>
-        </button>
-      </form>
-    </span>
-  </div>
-  {% endfor %}
-</div>
 
-{% else %}
-<div class="grid grid--two-columns">
-  {% for box in boxes %}
-  <div class="grid__item">
-    <h2 class="packed-box__title">
-      <a class="packed-box__link" href="{{ url_for('box_packing.index', box_id=box.id) }}">Box {{ box.number }}: {{
-        box.name }}</a>
-    </h2>
-    <h3>Size: {{ box.size }}</h3>
-    <h3><a href="{{ url_for('box_packing.edit', box_id=box.id) }}"><span
-          class="button-icon warning fa-solid fa-pen-to-square"></span></a></h3>
-    <h4>{{ box.item_count }} Item{% if box.item_count != 1 %}s{% endif %}</h4>
-    <div class="packed-box__details">
-      {% if box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
-      {% if box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
-      {% if box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
-    </div>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
+    {% include "_components/toggle-block-compact-view.jinja.html" %}
 
-<div class="grid grid--one-column">
-  <div class="grid__item grid__item--add-new">
-    <h2>Add a New Box</h2>
-    <form class="add-item-form" method="POST" action="{{ url_for('box_packing.crud') }}">
+    <form method="post" action="{{ url_for('box_packing.all') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="add-item-form__item">
-        <label for="box_name">Name</label>
-        <input type="text" class="button" size="40" name="box_name" id="box_name">
-      </div>
-      <div class="add-item-form__item">
-        <label for="box_name">Number</label>
-        <input type="number" class="button" name="box_number" id="box_number">
-      </div>
-      <div class="add-item-form__item">
-        <label for="box_size">Size</label>
-        <select class='button button-3d' name="box_size" id="box_size">
-          {% for size in box_sizes %}
-          <option value={{ size }}>{{ size }}</option>
-          {% endfor %}
+      <span class="box-listing-sort__item">
+        <select class="button" name="sort_1" id="sort_1">
+          <option value="none" selected disabled hidden>Box Sort Order 1</option>
+          <option value="number">Number (default)</option>
+          <option value="name">Name</option>
+          <option value="size">Size</option>
+          <option value="item_count">Item Count</option>
+          <option value="essential">Essential</option>
+          <option value="warm">Warm</option>
+          <option value="liquid">Liquid</option>
         </select>
-      </div>
-      <div class="add-item-form__item add-item-form__item--full-width">
-        <div class="packed-box-item__details">
-          <div>
-            <input type="checkbox" name="essential" id="essential" value=1>
-            <label for="essential" class="packed-box-item__details--essential">Essential</label>
-          </div>
-          <div>
-            <input type="checkbox" name="warm" id="warm" value=1>
-            <label for="warm" class="packed-box-item__details--warm">Warm</label>
-          </div>
-          <div>
-            <input type="checkbox" name="liquid" id="liquid" value=1>
-            <label for="liquid" class="packed-box-item__details--liquid">Liquid</label>
+      </span>
+      <span class="box-listing-sort__item">
+        <select class="button" name="sort_2" id="sort_2">
+          <option value="none" selected disabled hidden>Box Sort Order 2</option>
+          <option value="">None</option>
+          <option value="name">Name</option>
+          <option value="size">Size</option>
+          <option value="item_count">Item Count</option>
+          <option value="essential">Essential</option>
+          <option value="warm">Warm</option>
+          <option value="liquid">Liquid</option>
+        </select>
+      </span>
+      <span class="box-listing-sort__item">
+        <button type="submit" name="action" class="button" value="sort">
+          <span class="button__text">Sort {{ boxes|length }} Boxes</span>
+        </button>
+      </span>
+    </form>
+
+  </div>
+
+  <div class="{{ grid_type }}">
+    {% for box in boxes %}
+      {% include "box_packing/templates/box-" ~ view ~ ".jinja.html" %}
+    {% endfor %}
+  </div>
+
+  <div class="grid grid--one-column">
+    <div class="grid__item grid__item--add-new">
+      <h2>Add a New Box</h2>
+      <form class="add-item-form" method="post" action="{{ url_for('box_packing.crud') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="add-item-form__item">
+          <label for="box_name">Name</label>
+          <input type="text" class="button" size="40" name="box_name" id="box_name">
+        </div>
+        <div class="add-item-form__item">
+          <label for="box_name">Number</label>
+          <input type="number" class="button" name="box_number" id="box_number">
+        </div>
+        <div class="add-item-form__item">
+          <label for="box_size">Size</label>
+          <select class="button button-3d" name="box_size" id="box_size">
+            {% for size in box_sizes %}
+              <option value={{ size }}>{{ size }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="add-item-form__item add-item-form__item--full-width">
+          <div class="packed-box-item__details">
+            <div>
+              <input type="checkbox" name="essential" id="essential" value=1>
+              <label for="essential" class="packed-box-item__details--essential">Essential</label>
+            </div>
+            <div>
+              <input type="checkbox" name="warm" id="warm" value=1>
+              <label for="warm" class="packed-box-item__details--warm">Warm</label>
+            </div>
+            <div>
+              <input type="checkbox" name="liquid" id="liquid" value=1>
+              <label for="liquid" class="packed-box-item__details--liquid">Liquid</label>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="add-item-form__item add-item-form__item--submit">
-        <button type="submit" name="action" class="button" value="add_box">
-          <span class="button__text">Add Box</span>
-        </button>
-      </div>
-    </form>
+        <div class="add-item-form__item add-item-form__item--submit">
+          <button type="submit" name="action" class="button" value="add_box">
+            <span class="button__text">Add Box</span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
-{% endblock %}
+{% endblock content %}
