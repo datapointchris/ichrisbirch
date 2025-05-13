@@ -3,12 +3,10 @@ import logging
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
 
 import dotenv
 
 from ichrisbirch.util import find_project_root
-from ichrisbirch.util import log_caller
 
 logger = logging.getLogger('config')
 
@@ -18,7 +16,7 @@ class AISettings:
     class OpenAISettings:
         def __init__(self) -> None:
             self.api_key: str = os.environ['OPENAI_API_KEY']
-            self.model = 'gpt-4o'
+            self.model = 'gpt-4.1'
 
     class PromptSettings:
         PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
@@ -229,58 +227,20 @@ class Settings:
         return f'{self.protocol}://{self.chat.host}{port}'
 
 
-def load_environment(env_file: Optional[Path | str] = None):
-    if isinstance(env_file, Path):
-        logger.info(f'loading environment from Path: {env_file}')
-        if not env_file.exists():
-            raise FileNotFoundError(f'Environment Path not found: {env_file}')
-
-    elif isinstance(env_file, str):
-        logger.info(f'loading environment from string: {env_file}')
-        if Path(env_file).exists():
-            logger.info(f'loading environment variables from: {env_file}')
-            env_file = Path(env_file)
-        else:
-            match env_file:
-                case 'development':
-                    filename = '.dev.env'
-                case 'testing':
-                    filename = '.test.env'
-                case 'production':
-                    filename = '.prod.env'
-                case _:
-                    error_msg = f'unrecognized environment selection: {env_file}'
-                    logger.error(error_msg)
-                    raise ValueError(error_msg)
-            logger.info(f'loading environment variables from: {filename}')
-            env_file = Path(dotenv.find_dotenv(filename))
-
-    else:
-        logger.info(f'loading environment from ENVIRONMENT: {os.environ["ENVIRONMENT"]}')
-        match (ENV := os.environ['ENVIRONMENT']):
-            case 'development':
-                filename = '.dev.env'
-            case 'testing':
-                filename = '.test.env'
-            case 'production':
-                filename = '.prod.env'
-            case _:
-                error_msg = f'Unrecognized ENVIRONMENT Variable: {ENV}. Check ENVIRONMENT is set.'
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-        env_file = Path(dotenv.find_dotenv(filename))
-
-    logger.info(f'env file: {env_file}')
+@functools.lru_cache(3)
+def get_settings(environment: str | None = None) -> Settings:
+    env_map = {'development': '.dev.env', 'testing': '.test.env', 'production': '.prod.env'}
+    environment = environment or os.environ.get('ENVIRONMENT', 'development')
+    if environment not in env_map:
+        raise ValueError(f'Invalid environment: {environment}. Must be one of: {", ".join(env_map.keys())}')
+    env_file = Path(dotenv.find_dotenv(env_map[environment], raise_error_if_not_found=True))
     dotenv.load_dotenv(env_file, override=True)
-    return env_file
+    os.environ['ENVIRONMENT'] = environment
+    logger.info(f'env file: {env_file}')
+    return Settings(env_file)
 
 
-@functools.lru_cache(maxsize=3)
-@log_caller
-def get_settings(env_file: Optional[Path | str] = None) -> Settings:
-    """Return settings based on Path, str, or ENVIRONMENT variable."""
-    resolved_env_file = load_environment(env_file)
-    return Settings(env_file=resolved_env_file)
-
-
-settings = get_settings()
+def clear_settings_cache() -> None:
+    get_settings.cache_clear()
+    if 'ENVIRONMENT' in os.environ:
+        os.environ['ENVIRONMENT'] = 'development'
