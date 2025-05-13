@@ -25,9 +25,7 @@ import pendulum
 from botocore.exceptions import ClientError
 
 from ichrisbirch.config import Settings
-from ichrisbirch.config import settings
-
-logger = logging.getLogger('ops')
+from ichrisbirch.config import get_settings
 
 
 class AwsRdsSnapshotS3:
@@ -125,5 +123,7 @@ class AwsRdsSnapshotS3:
 
 
 if __name__ == '__main__':
+    settings = get_settings()
+    logger = logging.getLogger('ops')
     rds_snap = AwsRdsSnapshotS3(logger=logger, settings=settings)
     rds_snap.snapshot()

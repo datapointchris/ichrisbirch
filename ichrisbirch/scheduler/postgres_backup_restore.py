@@ -6,7 +6,7 @@ from pathlib import Path
 import boto3
 import pendulum
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import Settings
 from ichrisbirch.util import find_project_root
 
 
@@ -20,13 +20,13 @@ class PostgresBackupRestore:
 
     def __init__(
         self,
+        settings: Settings,
         logger: logging.Logger,
-        environment: str = settings.ENVIRONMENT,
-        backup_bucket: str = settings.aws.s3_backup_bucket,
-        source_host: str = settings.postgres.host,
-        source_port: str = settings.postgres.port,
-        source_username: str = settings.postgres.username,
-        source_password: str = settings.postgres.password,
+        backup_bucket: str | None = None,
+        source_host: str | None = None,
+        source_port: str | None = None,
+        source_username: str | None = None,
+        source_password: str | None = None,
         target_host: str | None = None,
         target_port: str | None = None,
         target_username: str | None = None,
@@ -35,16 +35,16 @@ class PostgresBackupRestore:
         show_command_output: bool = False,
     ):
         self.logger = logger
-        self.environment = environment
+        self.settings = settings
         self.show_command_output = show_command_output
 
-        self.backup_bucket = backup_bucket
-        self.bucket_prefix = f'{environment}/postgres'
+        self.backup_bucket = backup_bucket or self.settings.aws.s3_backup_bucket
+        self.bucket_prefix = f'{self.settings.ENVIRONMENT}/postgres'
 
-        self.source_host = source_host
-        self.source_port = source_port
-        self.source_username = source_username
-        self.source_password = source_password
+        self.source_host = source_host or self.settings.postgres.host
+        self.source_port = source_port or self.settings.postgres.port
+        self.source_username = source_username or self.settings.postgres.username
+        self.source_password = source_password or self.settings.postgres.password
 
         self.target_host = target_host
         self.target_port = target_port
@@ -52,7 +52,7 @@ class PostgresBackupRestore:
         self.target_password = target_password
 
         self.base_dir = base_dir or find_project_root()
-        self.local_prefix = Path(f'{backup_bucket}/{environment}/postgres')
+        self.local_prefix = Path(f'{self.backup_bucket}/{self.settings.ENVIRONMENT}/postgres')
         self.local_dir = self.base_dir / self.local_prefix
 
     def _run_command(self, command: list, env: dict = {}):
@@ -145,7 +145,7 @@ class PostgresBackupRestore:
         backup_description: str = 'scheduled',
     ):
         start = pendulum.now()
-        self.logger.info(f'started: postgres backup to s3 - {self.environment}')
+        self.logger.info(f'started: postgres backup to s3 - {self.settings.ENVIRONMENT}')
         backup = self._backup_database(
             host=self.source_host,
             port=self.source_port,
@@ -216,7 +216,7 @@ class PostgresBackupRestore:
 
     def restore(self, filename: str | Path, skip_download=False, delete_local=False):
         start = pendulum.now()
-        self.logger.info(f'started: postgres restore from s3 - {self.environment}')
+        self.logger.info(f'started: postgres restore from s3 - {self.settings.ENVIRONMENT}')
         if skip_download:
             download_file = filename
         else:
