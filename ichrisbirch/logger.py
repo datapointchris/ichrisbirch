@@ -162,6 +162,7 @@ THIRD_PARTY_LOGGERS = {
     'openai': {'level': 'INFO'},
     'python_multipart': {'level': 'INFO'},
     's3transfer': {'level': 'INFO'},
+    'sqlalchemy_json': {'level': 'INFO'},
     'tzlocal': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},
     'watchdog': {'level': 'INFO'},
