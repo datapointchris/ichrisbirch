@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
+from ichrisbirch.database.sqlalchemy.session import SessionLocal
+from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
 
 
 def fill_missing_default_preferences(user_prefs: dict, default_prefs: dict) -> dict:
@@ -71,7 +73,7 @@ def prune_unused_preferences(user_prefs: dict, default_prefs: dict) -> dict:
     """Delete keys in user preferences that are not in DEFAULT_USER_PREFERENCES.
 
     Args:
-        user_prefs (dict): The user's current preferences.
+        user_prefs (dict): The users current preferences.
         default_prefs (dict): The default preferences.
 
     Returns:
@@ -94,7 +96,7 @@ def update_preferences(user_prefs: dict, default_prefs: dict, transfer_map: dict
     """Update user preferences to match DEFAULT_USER_PREFERENCES.
 
     Args:
-        user_prefs (dict): The user's current preferences.
+        user_prefs (dict): The users current preferences.
         default_prefs (dict): The default preferences.
         transfer_map (dict | None): A mapping of old to new preference keys where their values should be transferred.
         delete_unused (bool): Whether to delete preferences not in DEFAULT_USER_PREFERENCES.
@@ -121,3 +123,8 @@ def migrate_preferences(session: Session, default_preferences: dict, transfer_ma
         user.preferences = update_preferences(user.preferences, default_preferences, transfer_map)
         session.add(user)
     session.commit()
+
+
+if __name__ == "__main__":
+    with SessionLocal() as session:
+        migrate_preferences(session, default_preferences=DEFAULT_USER_PREFERENCES)
