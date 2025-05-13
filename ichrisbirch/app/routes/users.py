@@ -37,7 +37,7 @@ def settings():
 @blueprint.route('/preferences/', methods=['POST'])
 @login_required
 def preferences():
-    users_api = QueryAPI(base_url='users', response_model=schemas.User)
+    users_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
     data = request.form.to_dict()
     payload = models.User.dot_preference_to_nested_dict(data['preference-key'], data['preference-value'])
     users_api.patch('/me/preferences/', json=payload)

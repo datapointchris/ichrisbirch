@@ -7,6 +7,7 @@ import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import Response
+from flask import current_app
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -18,7 +19,6 @@ from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import settings
 from ichrisbirch.models.task import TaskCategory
 
 logger = logging.getLogger('app.tasks')
@@ -27,7 +27,6 @@ blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', stat
 
 # Ex: Friday, January 01, 2001
 DATE_FORMAT = '%A, %B %d, %Y'
-TZ = settings.global_timezone
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 
@@ -57,7 +56,7 @@ def inject_task_create_form():
 @blueprint.context_processor
 def inject_task_info_counts():
     """Inject task counts into the request context."""
-    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
     tasks = tasks_api.get_many('todo')
     due_soon_count = sum(1 for task in tasks if 2 < task.priority <= 5)
     critical_count = sum(1 for task in tasks if 0 < task.priority <= 2)
@@ -99,10 +98,12 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 
 @blueprint.route('/', methods=['GET'])
 def index():
-    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+    settings = current_app.config['SETTINGS']
+    TZ = settings.global_timezone
+    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
     tasks = tasks_api.get_many('todo')
 
-    tasks_completed_api = QueryAPI(base_url='tasks/completed', response_model=schemas.TaskCompleted)
+    tasks_completed_api = QueryAPI(base_endpoint='tasks/completed', response_model=schemas.TaskCompleted)
     completed_today_params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed_today = tasks_completed_api.get_many(params=completed_today_params)
 
@@ -111,7 +112,7 @@ def index():
 
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
-    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
     tasks = tasks_api.get_many('todo')
     return render_template('tasks/todo.html', tasks=tasks)
 
@@ -122,10 +123,12 @@ def completed():
 
     Filtered by date selection.
     """
-    tasks_completed_api = QueryAPI(base_url='tasks/completed', response_model=schemas.TaskCompleted)
+    settings = current_app.config['SETTINGS']
+    TZ = settings.global_timezone
+    tasks_completed_api = QueryAPI(base_endpoint='tasks/completed', response_model=schemas.TaskCompleted)
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime(tz=TZ)
-    selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
+    selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
     start_date, end_date = edt.filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
@@ -157,7 +160,7 @@ def completed():
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
 
-    if request.method == 'GET':
+    if request.method.upper() == 'GET':
         todo_tasks, completed_tasks = [], []
     else:
         data = request.form.to_dict()
@@ -168,7 +171,7 @@ def search():
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
 
-        tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+        tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
         tasks = tasks_api.get_many('search', params={'q': search_terms})
         todo_tasks = [task for task in tasks if not task.complete_date]
         completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
@@ -183,7 +186,7 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    tasks_api = QueryAPI(base_url='tasks', response_model=schemas.Task)
+    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
 
     data = request.form.to_dict()
     action = data.pop('action')
@@ -202,9 +205,12 @@ def crud():
             tasks_api.delete(data.get('id'))
             return redirect(request.referrer or url_for('tasks.todo'))
         case 'reset_priorities':
-            response = tasks_api.post_action('reset-priorities')
-            message = response.json().get('message')
-            flash(message, 'success')
+            if response := tasks_api.post_action('reset-priorities'):
+                message = response.json().get('message')
+                flash(message, 'success')
+            else:
+                message = 'Failed to reset priorities'
+                flash(message, 'error')
             return redirect(request.referrer or url_for('tasks.todo'))
 
     return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

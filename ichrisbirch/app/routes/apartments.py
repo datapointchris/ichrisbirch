@@ -1,15 +1,18 @@
+import logging
+
 import httpx
 from flask import Blueprint
+from flask import current_app
 from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
 from flask_login import login_required
 
-from ichrisbirch.config import settings
 from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.apartment import Feature
 
+logger = logging.getLogger('app.apartments')
 blueprint = Blueprint('apartments', __name__, template_folder='templates/apartments', static_folder='static')
 
 
@@ -74,6 +77,7 @@ def edit(name):
 
 @blueprint.route('/form/', methods=['POST'])
 def crud():
+    settings = current_app.config['SETTINGS']
     """CRUD operations for apartments."""
     api_url = settings.api_url
     data = request.form.to_dict()

@@ -5,6 +5,7 @@ import re
 import httpx
 import pendulum
 from flask import Blueprint
+from flask import current_app
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -12,14 +13,13 @@ from flask import request
 from flask import url_for
 from flask_login import login_required
 
-from ichrisbirch.config import settings
-
 logger = logging.getLogger('app.home')
 blueprint = Blueprint('home', __name__, template_folder='templates', static_folder='static')
 
 
 @blueprint.route('/', methods=['GET'])
 def index():
+    settings = current_app.config['SETTINGS']
     return render_template('index.html', api_url=settings.api_url, chat_url=settings.chat_url)
 
 
@@ -31,7 +31,8 @@ def loading():
 @blueprint.route('/issue/', methods=['GET', 'POST'])
 @login_required
 def issue():
-    if request.method == 'GET':
+    settings = current_app.config['SETTINGS']
+    if request.method.upper() == 'GET':
         return redirect(url_for('home.index'))
 
     issue = request.form.to_dict()

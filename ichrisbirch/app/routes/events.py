@@ -5,15 +5,14 @@ import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import Response
+from flask import current_app
 from flask import render_template
 from flask import request
 from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import settings
 
-TZ = pendulum.timezone(settings.global_timezone)
 logger = logging.getLogger('app.events')
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
 
@@ -26,8 +25,10 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    events_api = QueryAPI(base_url='events', response_model=schemas.Event)
-    if request.method == 'POST':
+    settings = current_app.config['SETTINGS']
+    TZ = pendulum.timezone(settings.global_timezone)
+    events_api = QueryAPI(base_endpoint='events', response_model=schemas.Event)
+    if request.method.upper() == 'POST':
         data = request.form.to_dict()
         action = data.pop('action')
 

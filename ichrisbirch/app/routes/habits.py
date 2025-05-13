@@ -8,6 +8,7 @@ import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import Response
+from flask import current_app
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -17,7 +18,6 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.habits')
 
@@ -33,7 +33,6 @@ def enforce_login():
 # Ex: Friday, January 01, 2001 12:00:00 EDT
 DATE_FORMAT = '%A, %B %d, %Y %H:%M:%S %Z'
 CHART_DATE_FORMAT = '%A, %B %d, %Y'
-TZ = settings.global_timezone
 
 
 def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> tuple[list[str], list[int]]:
@@ -71,8 +70,10 @@ def sort_habits_by_category(habits: list[schemas.Habit] | list[schemas.HabitComp
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    habits_api = QueryAPI(base_url='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_url='habits/completed', response_model=schemas.HabitCompleted)
+    settings = current_app.config['SETTINGS']
+    TZ = settings.global_timezone
+    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
     params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
     completed = habits_completed_api.get_many(params=params)
     completed_by_category = sort_habits_by_category(completed)
@@ -91,12 +92,13 @@ def index():
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
-    """Completed habits."""
-    habits_api = QueryAPI(base_url='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_url='habits/completed', response_model=schemas.HabitCompleted)
+    settings = current_app.config['SETTINGS']
+    TZ = settings.global_timezone
+    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
     DEFAULT_DATE_FILTER = 'this_week'
     edt = EasyDateTime(tz=TZ)
-    selected_filter = request.form.get('filter', '') if request.method == 'POST' else DEFAULT_DATE_FILTER
+    selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
     start_date, end_date = edt.filters.get(selected_filter, (None, None))
     logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
@@ -131,9 +133,9 @@ def completed():
 
 @blueprint.route('/manage/', methods=['GET'])
 def manage():
-    habits_api = QueryAPI(base_url='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_url='habits/completed', response_model=schemas.HabitCompleted)
-    habits_categories_api = QueryAPI(base_url='habits/categories', response_model=schemas.HabitCategory)
+    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
+    habits_categories_api = QueryAPI(base_endpoint='habits/categories', response_model=schemas.HabitCategory)
     current_habits = habits_api.get_many(params={'current': True})
     hibernating_habits = habits_api.get_many(params={'current': False})
     current_categories = habits_categories_api.get_many(params={'current': True})
@@ -151,9 +153,11 @@ def manage():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    habits_api = QueryAPI(base_url='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_url='habits/completed', response_model=schemas.HabitCompleted)
-    habits_categories_api = QueryAPI(base_url='habits/categories', response_model=schemas.HabitCategory)
+    settings = current_app.config['SETTINGS']
+    TZ = settings.global_timezone
+    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
+    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
+    habits_categories_api = QueryAPI(base_endpoint='habits/categories', response_model=schemas.HabitCategory)
     data: dict[str, Any] = request.form.to_dict()
     action = data.pop('action')
     logger.debug(f'{request.referrer=} {action=}')
@@ -194,4 +198,4 @@ def crud():
         case _:
             return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    return redirect(request.referrer or url_for('habits.manage'))
+    return redirect(request.referrer or url_for('habits.index'))

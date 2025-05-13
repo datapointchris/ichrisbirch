@@ -6,6 +6,7 @@ import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import Response
+from flask import current_app
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -16,7 +17,7 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import settings
+from ichrisbirch.config import Settings
 
 logger = logging.getLogger('app.articles')
 
@@ -51,7 +52,7 @@ def process_bulk_urls(request, data):
     return urls
 
 
-def add_bulk_article(articles_api, summarize_api, url: str):
+def add_bulk_article(articles_api, summarize_api, url: str, settings: Settings):
     """Add article using summarize endpoint to auto generate summary and tags for the bulk endpoint."""
     logger.info(f'processing: {url}')
     if articles_api.get_one('url', params={'url': url}):
@@ -69,7 +70,7 @@ def add_bulk_article(articles_api, summarize_api, url: str):
     logger.info(f'created: {url}')
 
 
-def bulk_add_articles(articles_api, summarize_api, urls: list[str]):
+def bulk_add_articles(articles_api, summarize_api, urls: list[str], settings: Settings):
     """Add all articles in url list.
 
     Each url is tried twice, sometimes a delayed response from openai causes a failure.
@@ -78,7 +79,7 @@ def bulk_add_articles(articles_api, summarize_api, urls: list[str]):
     errors: list[tuple[str, str]] = []
     for url in urls:
         try:
-            add_bulk_article(articles_api, summarize_api, url)
+            add_bulk_article(articles_api, summarize_api, url, settings)
             added.append(url)
         except ValueError as e:
             logger.warning(e)
@@ -92,7 +93,7 @@ def bulk_add_articles(articles_api, summarize_api, urls: list[str]):
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
+    articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
     if not (article := articles_api.get_one('current')):
         logger.warning('no current article')
         # TODO: [2024/06/07] - Get user preference for current articles, whether to filter only unread
@@ -108,13 +109,14 @@ def index():
 
 @blueprint.route('/all/', methods=['GET'])
 def all():
-    articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
+    articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
     articles = articles_api.get_many()
     return render_template('articles/all.html', articles=articles)
 
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
 def add():
+    settings = current_app.config['SETTINGS']
     create_form = forms.ArticleCreateForm()
     summary_endpoint = f'{settings.api_url}/articles/summarize/'
     return render_template('articles/add.html', create_form=create_form, summary_endpoint=summary_endpoint)
@@ -122,7 +124,8 @@ def add():
 
 @blueprint.route('/bulk-add/', methods=['GET', 'POST'])
 def bulk_add():
-    return render_template('articles/bulk-add.html')
+    settings = current_app.config['SETTINGS']
+    return render_template('articles/bulk-add.html', settings=settings)
 
 
 @blueprint.route('/bulk-add-results/', methods=['GET', 'POST'])
@@ -132,8 +135,9 @@ def bulk_add_results():
 
 @blueprint.route('/insights/', methods=['GET', 'POST'])
 def insights():
+    settings = current_app.config['SETTINGS']
     insights_endpoint = f'{settings.api_url}/articles/insights/'
-    if request.method == 'POST':
+    if request.method.upper() == 'POST':
         url = request.form.get('url')
         start = pendulum.now()
         response = httpx.post(insights_endpoint, json={'url': url}, timeout=30)
@@ -150,8 +154,8 @@ def insights():
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
     articles = []
-    if request.method == 'POST':
-        articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
+    if request.method.upper() == 'POST':
+        articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
         data = request.form.to_dict()
         search_text = data.get('search_text')
         logger.debug(f'{request.referrer=} | {search_text=}')
@@ -164,8 +168,9 @@ def search():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    articles_api = QueryAPI(base_url='articles', response_model=schemas.Article)
-    summarize_api = QueryAPI(base_url='articles/summarize', response_model=schemas.ArticleSummary)
+    settings = current_app.config['SETTINGS']
+    articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
+    summarize_api = QueryAPI(base_endpoint='articles/summarize', response_model=schemas.ArticleSummary)
     data = request.form.to_dict()
     action = data.pop('action')
 
@@ -184,7 +189,7 @@ def crud():
                     articles_api.post(json=data)
         case 'bulk_add':
             if urls := process_bulk_urls(request, data):
-                succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls)
+                succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls, settings)
             else:
                 flash('No URLs provided', 'warning')
             succeeded_articles = '\n'.join([article.strip() for article in succeeded])
