@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
 {% block app_navigation %}
 <ul data-secondary>
@@ -6,6 +6,6 @@
   <li><a href="{{ url_for('journal.browse') }}">Browse</a></li>
   <li><a href="{{ url_for('journal.search') }}">Search</a></li>
 </ul>
-{% endblock %}
+{% endblock app_navigation %}
 
-{% block content %}{% endblock %}
+{% block content %}{% endblock content %}

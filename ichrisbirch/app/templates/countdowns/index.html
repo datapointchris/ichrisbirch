@@ -1,10 +1,10 @@
-{% extends 'countdowns/base.html' %}
+{% extends"countdowns/base.html" %}
 
-{% block title %}Countdowns{% endblock %}
+{% block title %}Countdowns{% endblock title %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/countdowns.js') }}"></script>
-{% endblock %}
+{% endblock scripts %}
 
 {% block content %}
 <div class="grid grid--one-column">
@@ -18,7 +18,7 @@
     <br>
     {{ countdown.notes }}
     <br><br>
-    <form method="POST">
+    <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="id" value="{{ countdown.id }}">
       <button type="submit" name="action" class="button button--danger" value="delete">
@@ -35,7 +35,7 @@
 
 <div class="add-item-wrapper">
   <h2>Add New Countdown:</h2>
-  <form class="add-item-form" method="POST">
+  <form class="add-item-form" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="add-item-form__item">
       <label for="name">Name:</label>
@@ -56,4 +56,4 @@
     </div>
   </form>
 </div>
-{% endblock %}
+{% endblock content %}

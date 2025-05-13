@@ -1,5 +1,5 @@
 <div class="grid__item">
-  <h2><a href="{{ article.url}}" target="_blank">{{ article.title }}</a></h2>
+  <h2><a href="{{ article.url }}" target="_blank">{{ article.title }}</a></h2>
   <div class="item-details">
     <div class="item-details__item item-details__item--full-width">
       <strong>Tags (comma separated)</strong>
@@ -11,7 +11,7 @@
     </div>
     <div class="item-details__item item-details__item--full-width">
       <strong>URL</strong>
-      <span class="item-details__item-content"><a href="{{ article.url}}" target="_blank">{{ article.url }}</a></span>
+      <span class="item-details__item-content"><a href="{{ article.url }}" target="_blank">{{ article.url }}</a></span>
     </div>
     <div class="item-details__item item-details__item--full-width">
       <strong>Notes</strong>
@@ -46,7 +46,7 @@
       <span class="item-details__item-content">{{ article.is_archived }}</span>
     </div>
     <div class="item-details__buttons">
-      <form method="POST" action="{{ url_for('articles.crud')}}">
+      <form method="post" action="{{ url_for('articles.crud') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="id" value="{{ article.id }}">
         <input type="hidden" name="title" value="{{ article.title }}">

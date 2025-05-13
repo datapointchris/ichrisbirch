@@ -1,12 +1,12 @@
-{% extends 'articles/base.html' %}
+{% extends"articles/base.html" %}
 
-{% block title %}Articles{% endblock %}
+{% block title %}Articles{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
 <div class="add-item-wrapper">
   <h3>URL</h3>
-  <form class="add-item-form" method="POST">
+  <form class="add-item-form" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
     <div class="add-item-form__item add-item-form__item--full-width">
@@ -29,4 +29,4 @@
   </div>
   {% endif %}
 </div>
-{% endblock %}
+{% endblock content %}

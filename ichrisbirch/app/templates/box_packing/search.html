@@ -1,47 +1,61 @@
-{% extends 'box_packing/base.html' %}
+{% extends "box_packing/base.html" %}
 
-{% block title %}Box Packing - Search{% endblock %}
+{% block title %}
+  Box Packing - Search
+{% endblock title %}
 
 {% block content %}
-<div class="searchbox">
-  <form method="POST" action="{{ url_for('box_packing.search') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label for="search_text"></label>
-    <input type="text" class="button" name="search_text" id="search_text">
-    <button type="submit" name="action" class="button" value="search">
-      <span class="button__text">Search</span>
-    </button>
-  </form>
-</div>
-<div class="grid grid--one-column-full">
-  <ul class="search-results-boxes search-results-boxes__header">
-    <li>Box Number</li>
-    <li>Box Name</li>
-    <li>Box Size</li>
-    <li>Item</li>
-    <li>Essential</li>
-    <li>Warm</li>
-    <li>Liquid</li>
-  </ul>
-  {% if results %}
-  {% for box, item in results %}
-  <ul class="search-results-boxes search-results-boxes__item">
-    <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.number
-        }}</a></li>
-    <li><a class="search-results-boxes__link" href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.name
-        }}</a></li>
-    <li>{{ box.size }}</li>
-    <li>{{ item.name }}</li>
-    <li class="packed-box-item__details--essential">{% if item.essential == 1 %}Essential{% endif %}</li>
-    <li class="packed-box-item__details--warm">{% if item.warm == 1 %}Warm{% endif %}</li>
-    <li class="packed-box-item__details--liquid">{% if item.liquid == 1 %}Liquid{% endif %}</li>
-  </ul>
-  {% endfor %}
-  {% endif %}
-</div>
-<script>
+  <div class="searchbox">
+    <form method="post" action="{{ url_for('box_packing.search') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="search_text"></label>
+      <input type="text" class="button" name="search_text" id="search_text">
+      <button type="submit" name="action" class="button" value="search">
+        <span class="button__text">Search</span>
+      </button>
+    </form>
+  </div>
+  <div class="grid grid--one-column-full">
+    <ul class="search-results-boxes search-results-boxes__header">
+      <li>Box Number</li>
+      <li>Box Name</li>
+      <li>Box Size</li>
+      <li>Item</li>
+      <li>Essential</li>
+      <li>Warm</li>
+      <li>Liquid</li>
+    </ul>
+    {% if results %}
+      {% for box, item in results %}
+        <ul class="search-results-boxes search-results-boxes__item">
+          <li>
+            <a class="search-results-boxes__link"
+               href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.number
+            }}</a>
+          </li>
+          <li>
+            <a class="search-results-boxes__link"
+               href="{{ url_for('box_packing.index', box_id=item.box_id) }}">{{ box.name
+            }}</a>
+          </li>
+          <li>{{ box.size }}</li>
+          <li>{{ item.name }}</li>
+          <li class="packed-box-item__details--essential">
+            {% if item.essential == 1 %}Essential{% endif %}
+          </li>
+          <li class="packed-box-item__details--warm">
+            {% if item.warm == 1 %}Warm{% endif %}
+          </li>
+          <li class="packed-box-item__details--liquid">
+            {% if item.liquid == 1 %}Liquid{% endif %}
+          </li>
+        </ul>
+      {% endfor %}
+    {% endif %}
+  </div>
+  <script>
   document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('search_text').focus();
   });
-</script>
-{% endblock %}
+  </script>
+{% endblock content %}

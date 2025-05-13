@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
 {% block app_navigation %}
   <ul data-secondary>
@@ -7,6 +7,6 @@
     <li><a href="{{ url_for('box_packing.all') }}">All Boxes</a></li>
     <li><a href="{{ url_for('box_packing.orphans') }}">Orphans</a></li>
   </ul>
-{% endblock %}
+{% endblock app_navigation %}
 
-{% block content %}{% endblock %}
+{% block content %}{% endblock content %}

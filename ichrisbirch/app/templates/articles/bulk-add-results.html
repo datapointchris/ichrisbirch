@@ -1,11 +1,11 @@
-{% extends 'articles/base.html' %}
+{% extends"articles/base.html" %}
 
-{% block title %}Articles{% endblock %}
+{% block title %}Articles{% endblock title %}
 
 <!-- Suppress flash messages on this page, as failed articles may produce many messages -->
 {% block flash_messages %}
 {% with messages = get_flashed_messages(with_categories=true) %}{% endwith %}
-{% endblock %}
+{% endblock flash_messages %}
 
 {% block content %}
 <div class="grid grid--one-column-wide">
@@ -53,4 +53,4 @@
     </form>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

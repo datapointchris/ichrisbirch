@@ -5,16 +5,18 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  {% block meta %}{% endblock %}
+  <meta name="description" content="Chris Birch's personal website and app collection">
+  <meta name="keywords" content="Chris Birch, data engineer, python, flask">
+  {% block meta %}{% endblock meta %}
 
-  <title>{% block title %}{% endblock %}</title>
+  <title>{% block title %}{% endblock title %}</title>
 
   <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
   <script src="{{ url_for('static', filename='js/submit_issue.js') }}"></script>
-  {% block scripts %}{% endblock %}
+  {% block scripts %}{% endblock scripts %}
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-  {% block stylesheet %}{% endblock %}
+  {% block stylesheet %}{% endblock stylesheet %}
 </head>
 
 <body>
@@ -47,11 +49,11 @@
         <li><a href="https://github.com/datapointchris/ichrisbirch/issues" target="_blank">Github Issues</a></li>
         {% endif %}
       </ul>
-      {% block app_navigation %}{% endblock %}
+      {% block app_navigation %}{% endblock app_navigation %}
     </nav>
   </header>
   {% if current_user.is_authenticated %}
-  {% include 'submit-issue.jinja.html' %}
+  {% include "submit-issue.jinja.html" %}
   <div class="button-submit-issue" onclick="openSubmitIssueWindow()" tabindex="0">
     <div class="button-submit-issue__text">
       <span class="fa-solid fa-bug"></span>
@@ -60,14 +62,14 @@
   {% endif %}
 
   {% block flash_messages %}
-  {% include 'flash-messages.jinja.html' %}
-  {% endblock %}
+  {% include "flash-messages.jinja.html" %}
+  {% endblock flash_messages %}
 
-  {% block content %}{% endblock %}
+  {% block content %}{% endblock content %}
 
-  {% block footer %}{% endblock %}
+  {% block footer %}{% endblock footer %}
 
-  {% block endscripts %}{% endblock %}
+  {% block endscripts %}{% endblock endscripts %}
 </body>
 
 </html>

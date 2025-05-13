@@ -1,12 +1,12 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
-{% block title %}{{ error_title }}{% endblock %}
+{% block title %}{{ error_title }}{% endblock title %}
 
 {% block stylesheet %}
-{% endblock %}
+{% endblock stylesheet %}
 
 {% block app_navigation %}
-{% endblock %}
+{% endblock app_navigation %}
 
 {% block content %}
 <header class="site-errors">
@@ -17,4 +17,4 @@
 </header>
 
 <script src="{{ url_for('static', filename='js/errors.js') }}"></script>
-{% endblock %}
+{% endblock content %}

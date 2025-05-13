@@ -1,126 +1,121 @@
-{% extends 'box_packing/base.html' %}
+{% extends"box_packing/base.html" %}
 
-{% block title %}Box Packing{% endblock %}
+{% block title %}
+  Box Packing
+{% endblock title %}
 
 {% block content %}
-<div class="grid grid--one-column-wide">
+  <div class="grid grid--one-column-wide">
 
-  <div class="grid__item">
-    <form method="GET" id="select_box_form">
-      <select class="button" id="selected_box_id" onchange="updateSelectedBox(); this.form.submit();">
-        <option value="none" selected disabled hidden>Select a Box</option>
-        {% for box in boxes %}
-        <option value={{ box.id }}>Box {{ box.number }}: {{ box.name }}</option>
-        {% endfor %}
-      </select>
-    </form>
+    <div class="grid__item">
+      <form method="get" id="select_box_form">
+        <select class="button" id="selected_box_id" onchange="updateSelectedBox(); this.form.submit();">
+          <option value="none" selected disabled hidden>Select a Box</option>
+          {% for box in boxes %}
+            <option value={{ box.id }}>Box {{ box.number }}: {{ box.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
 
-    {% if selected_box %}
-    <h1 class="packed-box__title">Box {{ selected_box.number }}: {{ selected_box.name }}</h1>
-    <h2>Size: {{ selected_box.size }}</h2>
-    <h3><a href="{{ url_for('box_packing.edit', box_id=selected_box.id) }}"><span
-          class="button-icon warning fa-solid fa-pen-to-square"></span></a></h3>
-    <div class="packed-box__details">
-      {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
-      {% if selected_box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
-      {% if selected_box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
-    </div>
-
-    <div class="grid grid--two-columns-nested">
-      {% for item in selected_box.items|sort(attribute='name') %}
-      <div class="grid__item">
-        <h3>{{ item.name }}</h3>
-        <div class="packed-box-item__details">
-          {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif
-          %}
-          {% if item.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
-          {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
+      {% if selected_box %}
+        <h1 class="packed-box__title">Box {{ selected_box.number }}: {{ selected_box.name }}</h1>
+        <h2>Size: {{ selected_box.size }}</h2>
+        <h3>
+          <a href="{{ url_for('box_packing.edit', box_id=selected_box.id) }}"><span class="button-icon warning fa-solid fa-pen-to-square"></span></a>
+        </h3>
+        <div class="packed-box__details">
+          {% if selected_box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
+          {% if selected_box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
+          {% if selected_box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
         </div>
+
+        <div class="grid grid--two-columns-nested">
+          {% for item in selected_box.items|sort(attribute='name') %}
+            <div class="grid__item">
+              <h3>{{ item.name }}</h3>
+              <div class="packed-box-item__details">
+                {% if item.essential == 1 %}<span class="packed-box-item__details--essential">Essential</span>{% endif %}
+                {% if item.warm == 1 %}<span class="packed-box-item__details--warm">Warm</span>{% endif %}
+                {% if item.liquid == 1 %}<span class="packed-box-item__details--liquid">Liquid</span>{% endif %}
+              </div>
+              <div>
+                <form method="post" action="{{ url_for('box_packing.crud') }}">
+                  <span class="packed-box-item">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                    <input type="hidden" name="item_name" value="{{ item.name }}">
+                    <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+                    <input type="hidden" name="box_name" id="box_name" value="{{ selected_box.name }}">
+                    <input type="hidden" name="box_number" id="box_number" value="{{ selected_box.number }}">
+                    <button type="submit" name="action" class="button--hidden" value="orphan_item">
+                      <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
+                    </button>
+                  </span>
+                  <span class="packed-box-item">
+                    <button type="submit" name="action" class="button--hidden" value="delete_item">
+                      <i class="button-icon danger fa-regular fa-trash-can"></i>
+                    </button>
+                  </span>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="add-item-wrapper">
+          <form class="add-item-form" method="post" action="{{ url_for('box_packing.crud') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
+            <input type="hidden" name="box_name" id="box_name" value="{{ selected_box.name }}">
+            <input type="hidden" name="box_number" id="box_number" value="{{ selected_box.number }}">
+            <div class="add-item-form__item add-item-form__item--full-width">
+              <h3>Add Item:</h3>
+            </div>
+            <div class="add-item-form__item add-item-form__item--full-width">
+              <label for="add-item-name">Name:</label>
+              <input type="text" size="40" class="button" name="item_name" id="item_name">
+            </div>
+            <div class="add-item-form__item add-item-form__item--full-width">
+              <div class="packed-box-item__details">
+                <span>
+                  <label for="essential" class="packed-box__details--essential">Essential</label>
+                  <input type="checkbox" name="essential" id="essential" value=1>
+                </span>
+                <span>
+                  <label for="warm" class="packed-box__details--warm">Warm</label>
+                  <input type="checkbox" name="warm" id="warm" value=1>
+                </span>
+                <span>
+                  <label for="liquid" class="packed-box__details--liquid">Liquid</label>
+                  <input type="checkbox" name="liquid" id="liquid" value=1>
+                </span>
+              </div>
+            </div>
+            <div class="add-item-form__item add-item-form__item--full-width">
+              <button type="submit" name="action" class="button" value="add_item">
+                <span class="button__text">Add Item</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
         <div>
-          <span class="packed-box-item">
-            <form method="POST" action="{{ url_for('box_packing.crud') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="item_name" value="{{ item.name }}">
-              <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-              <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
-              <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
-              <button type="submit" name="action" class="button--hidden" value="orphan_item">
-                <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
-              </button>
-          </span>
-          <span class="packed-box-item">
-            <form method="POST" action="{{ url_for('box_packing.crud') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="item_id" value="{{ item.id }}">
-              <input type="hidden" name="item_name" value="{{ item.name }}">
-              <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-              <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
-              <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
-              <button type="submit" name="action" class="button--hidden" value="delete_item">
-                <i class="button-icon danger fa-regular fa-trash-can"></i>
-              </button>
-            </form>
-          </span>
+          <form method="post" action="{{ url_for('box_packing.crud') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="box_id" value={{ selected_box.id }}>
+            <input type="hidden" name="box_name" value={{ selected_box.name }}>
+            <input type="hidden" name="box_number" id="box_number" value="{{ selected_box.number }}">
+            <button type="submit" name="action" class="button button--danger" value="delete_box">
+              <span class="button__text button__text--danger">Delete Box</span>
+            </button>
+          </form>
         </div>
 
       </div>
-      {% endfor %}
-    </div>
-
-    <div class="add-item-wrapper">
-      <form class="add-item-form" method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="box_id" id="box_id" value={{ selected_box.id }}>
-        <input type="hidden" name="box_name" id="box_name" value={{ selected_box.name }}>
-        <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <h3>Add Item:</h3>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="add-item-name">Name:</label>
-          <input type="text" size="40" class="button" name="item_name" id="item_name">
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <div class="packed-box-item__details">
-            <span>
-              <label for="essential" class="packed-box__details--essential">Essential</label>
-              <input type="checkbox" name="essential" id="essential" value=1>
-            </span>
-            <span>
-              <label for="warm" class="packed-box__details--warm">Warm</label>
-              <input type="checkbox" name="warm" id="warm" value=1>
-            </span>
-            <span>
-              <label for="liquid" class="packed-box__details--liquid">Liquid</label>
-              <input type="checkbox" name="liquid" id="liquid" value=1>
-            </span>
-          </div>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <button type="submit" name="action" class="button" value="add_item">
-            <span class="button__text">Add Item</span>
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <div>
-      <form method="POST" action="{{ url_for('box_packing.crud') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="box_id" value={{ selected_box.id }}>
-        <input type="hidden" name="box_name" value={{ selected_box.name }}>
-        <input type="hidden" name="box_number" id="box_number" value={{ selected_box.number }}>
-        <button type="submit" name="action" class="button button--danger" value="delete_box">
-          <span class="button__text button__text--danger">Delete Box</span>
-        </button>
-      </form>
-    </div>
-
+    {% endif %}
   </div>
-  {% endif %}
-</div>
-<script>
+  <script>
   function updateSelectedBox() {
     var selectedBoxId = document.getElementById('selected_box_id').value;
     document.getElementById('select_box_form').action = "/box-packing/" + (selectedBoxId ? selectedBoxId : '');
@@ -133,5 +128,5 @@
       $(this).find('input[type=checkbox]:not(:checked)').prop('checked', true).val(0);
     })
   })
-</script>
-{% endblock %}
+  </script>
+{% endblock content %}

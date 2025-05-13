@@ -1,12 +1,12 @@
-{% extends 'articles/base.html' %}
+{% extends "articles/base.html" %}
 
-{% block title %}Articles{% endblock %}
+{% block title %}Articles{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column">
   <div class="add-item-wrapper">
     <h2>Add New Article</h2>
-    <form class="add-item-form" method="POST" action="{{ url_for('articles.crud')}}">
+    <form class="add-item-form" method="post" action="{{ url_for('articles.crud') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <div class="add-item-form__item add-item-form__item--full-width">
@@ -49,7 +49,7 @@
   </div>
 </div>
 
-<div id="summaryEndpoint" style="display: none;">{{ summary_endpoint }}</div>
+<div id="summaryEndpoint" class="hidden-data">{{ summary_endpoint }}</div>
 <script>
   document.querySelector('#populateButton').addEventListener('click', function (event) {
     event.preventDefault();
@@ -78,4 +78,4 @@
       .catch(error => console.error('Error:', error));
   });
 </script>
-{% endblock %}
+{% endblock content %}

@@ -1,6 +1,6 @@
-{% extends 'books/base.html' %}
+{% extends"books/base.html" %}
 
-{% block title %}Books{% endblock %}
+{% block title %}Books{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column-full">
@@ -49,7 +49,7 @@
       <li class="books__column">{{ book.location if book.location else '' }}</li>
       <li class="books__column">{{ book.notes if book.notes else '' }}</li>
       <li class="books__column">
-        <form method="POST" action="{{ url_for('books.crud') }}">
+        <form method="post" action="{{ url_for('books.crud') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="id" value="{{ book.id }}">
           <button type="submit" name="action" class="button--hidden" value="delete">
@@ -61,4 +61,4 @@
     {% endfor %}
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

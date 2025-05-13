@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+{% extends"base.html" %}
 
-{% block scripts %}{% endblock %}
+{% block scripts %}{% endblock scripts %}
 
 {% block app_navigation %}
 <ul data-secondary>
@@ -16,10 +16,8 @@
   {% endif %}
 </ul>
 
+{% endblock app_navigation %}
 
+{% block content %}{% endblock content %}
 
-{% endblock %}
-
-{% block content %}{% endblock %}
-
-{% block footer %}{% endblock %}
+{% block footer %}{% endblock footer %}

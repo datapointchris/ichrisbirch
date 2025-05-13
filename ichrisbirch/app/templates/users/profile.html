@@ -1,11 +1,11 @@
 {% extends "users/base.html" %}
 
-{% block title %}Welcome, {{ current_user.name }}{% endblock %}
+{% block title %}Welcome, {{ current_user.name }}{% endblock title %}
 
 {% block content %}
 
 {% macro render_preferences(preferences) %}
-  <ul style="list-style-type: none;">
+  <ul class="no-bullets">
     {% for key, value in preferences.items() %}
       <li>
         <strong>{{ key }}:</strong>
@@ -24,18 +24,18 @@
     <h1>{{ current_user.name }}</h1>
 
     <h2>Profile Information</h2>
-    <ul style="list-style-type: none;">
-      <li><strong>Name:</strong> {{current_user.name}}</li>
-      <li><strong>Email:</strong> {{current_user.email}}</li>
-      <li><strong>ID:</strong> {{current_user.id}}</li>
-      <li><strong>Alt ID:</strong> {{current_user.alternative_id}}</li>
-      <li><strong>created_on:</strong> {{current_user.created_on}}</li>
-      <li><strong>last_login:</strong> {{current_user.last_login}}</li>
-      <li><strong>is_active:</strong> {{current_user.is_active}}</li>
-      <li><strong>is_authenticated:</strong> {{current_user.is_authenticated}}</li>
-      <li><strong>is_admin:</strong> {{current_user.is_admin}}</li>
-      <li><strong>is_anonymous:</strong> {{current_user.is_anonymous}}</li>
-      <li><strong>get_id:</strong> {{current_user.get_id()}}</li>
+    <ul class="no-bullets">
+      <li><strong>Name:</strong> {{ current_user.name }}</li>
+      <li><strong>Email:</strong> {{ current_user.email }}</li>
+      <li><strong>ID:</strong> {{ current_user.id }}</li>
+      <li><strong>Alt ID:</strong> {{ current_user.alternative_id }}</li>
+      <li><strong>created_on:</strong> {{ current_user.created_on }}</li>
+      <li><strong>last_login:</strong> {{ current_user.last_login }}</li>
+      <li><strong>is_active:</strong> {{ current_user.is_active }}</li>
+      <li><strong>is_authenticated:</strong> {{ current_user.is_authenticated }}</li>
+      <li><strong>is_admin:</strong> {{ current_user.is_admin }}</li>
+      <li><strong>is_anonymous:</strong> {{ current_user.is_anonymous }}</li>
+      <li><strong>get_id:</strong> {{ current_user.get_id() }}</li>
     </ul>
   </div>
   <div>

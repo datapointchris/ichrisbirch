@@ -1,0 +1,20 @@
+<div class="grid__item">
+    <h2 class="packed-box__title">
+        <a class="packed-box__link" href="{{ url_for('box_packing.index', box_id=box.id) }}">Box {{ box.number }}: {{
+        box.name }}</a>
+    </h2>
+    <h3>Size: {{ box.size }}</h3>
+    <h3>
+        <a href="{{ url_for('box_packing.edit', box_id=box.id) }}">
+            <span class="button-icon warning fa-solid fa-pen-to-square"></span>
+        </a>
+    </h3>
+    <!-- djlint:off -->
+        <h4>{{ box.item_count }} Item{% if box.item_count != 1 %}s{% endif %}</h4>
+    <!-- djlint:on -->
+    <div class="packed-box__details">
+        {% if box.essential == 1 %}<span class="packed-box__details--essential">Essential</span>{% endif %}
+        {% if box.warm == 1 %}<span class="packed-box__details--warm">Warm</span>{% endif %}
+        {% if box.liquid == 1 %}<span class="packed-box__details--liquid">Liquid</span>{% endif %}
+    </div>
+</div>

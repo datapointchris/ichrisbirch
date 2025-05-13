@@ -1,11 +1,11 @@
-{% extends 'habits/base.html' %}
+{% extends"habits/base.html" %}
 
 {% block meta %}
 <!-- Refresh page every 5 minutes to keep csrf token valid and complete habits with correct timestamp -->
 <meta http-equiv="refresh" content="300">
-{% endblock %}
+{% endblock meta %}
 
-{% block title %}Daily Habits{% endblock %}
+{% block title %}Daily Habits{% endblock title %}
 
 {% block content %}
 <div class="grid grid--one-column-wide">
@@ -18,7 +18,7 @@
       <h3>{{ category }}</h3>
       <div class="habit-checked-wrapper">
         {% for habit in todo.get(category) %}
-        <form method="POST" class="habit-check" action="{{ url_for('habits.crud') }}">
+        <form method="post" class="habit-check" action="{{ url_for('habits.crud') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="name" value="{{ habit.name }}">
           <input type="hidden" name="category_id" value="{{ habit.category_id }}"">
@@ -53,4 +53,4 @@
 
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

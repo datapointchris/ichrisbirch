@@ -1,15 +1,15 @@
-{% extends 'articles/base.html' %}
+{% extends"articles/base.html" %}
 
-{% block title %}Articles{% endblock %}
+{% block title %}Articles{% endblock title %}
 
 {% block content %}
 <div class="grid grid--two-columns">
   {% for article in articles %}
-  {% include 'articles/article.jinja.html' %}
+  {% include "articles/article.jinja.html" %}
   {% else %}
   <div class="grid__item">
     <h2>No Articles</h2>
   </div>
   {% endfor %}
 </div>
-{% endblock %}
+{% endblock content %}
