@@ -1,9 +1,10 @@
-import asyncio
 import logging
-import queue
+from typing import Iterable
 
 from fastapi import APIRouter
+from fastapi import Depends
 from fastapi import WebSocket
+from fastapi import WebSocketDisconnect
 from pygtail import Pygtail
 
 from ichrisbirch.util import get_logger_filename_from_handlername
@@ -11,32 +12,41 @@ from ichrisbirch.util import get_logger_filename_from_handlername
 logger = logging.getLogger('api.admin')
 router = APIRouter()
 
-log_queue: queue.Queue = queue.Queue()
 
-log_filename = get_logger_filename_from_handlername('ichrisbirch_file')  # noqa: FURB120
+class LogReader:
+    """Log reader class that abstracts the log reading implementation."""
+
+    def get_logs(self) -> Iterable[str]:
+        """Read logs from the application log file."""
+        try:
+            log_filename = get_logger_filename_from_handlername('ichrisbirch_file')
+            logger.debug(f'Reading logs from: {log_filename}')
+            return Pygtail(log_filename, paranoid=True)
+        except Exception as e:
+            logger.error(f"Error setting up log reader: {e}")
+            return []
 
 
-async def read_new_logs():
-    for line in Pygtail(log_filename, paranoid=True):
-        log_queue.put(line)
+# Default log reader dependency
+def get_log_reader() -> LogReader:
+    """Default log reader implementation."""
+    return LogReader()
 
 
 @router.websocket('/log-stream/')
-async def websocket_endpoint_log(websocket: WebSocket):
-    logger.debug(f'logstream source: {log_filename}')
-    logger.debug(f'websocket: {websocket}')
-    logger.debug(f'websocket: {websocket.base_url}')
+async def websocket_endpoint_log(websocket: WebSocket, log_reader: LogReader = Depends(get_log_reader)):
+    logger.debug(f'websocket url: {websocket.url}')
+    logger.debug(f'websocket headers: {websocket.headers}')
     await websocket.accept()
     logger.debug('websocket accepted')
 
     try:
-        while True:
-            if not log_queue.empty():
-                log = log_queue.get()
-                await websocket.send_text(log)
-            else:
-                await read_new_logs()
-                await asyncio.sleep(1)
+        for line in log_reader.get_logs():
+            await websocket.send_text(line)
+    except WebSocketDisconnect:
+        logger.debug('Client disconnected')
+    except Exception as e:
+        logger.error(f"Error in websocket stream: {e}")
     finally:
         logger.debug('closed websocket')
         await websocket.close()
