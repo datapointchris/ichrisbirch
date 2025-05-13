@@ -2,7 +2,6 @@ import logging
 
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -10,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.countdowns')
@@ -35,10 +35,7 @@ async def create(countdown: schemas.CountdownCreate, session: Session = Depends(
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if countdown := session.get(models.Countdown, id):
         return countdown
-    else:
-        message = f'Countdown {id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    raise NotFoundException("countdown", id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -47,7 +44,20 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.delete(countdown)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    else:
-        message = f'Countdown {id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("countdown", id, logger)
+
+
+@router.patch('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
+async def update(id: int, update: schemas.CountdownUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug(f'update: countdown {id} {update_data}')
+
+    if countdown := session.get(models.Countdown, id):
+        for attr, value in update_data.items():
+            setattr(countdown, attr, value)
+        session.commit()
+        session.refresh(countdown)
+        return countdown
+
+    raise NotFoundException("countdown", id, logger)

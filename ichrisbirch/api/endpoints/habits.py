@@ -4,7 +4,6 @@ from typing import Union
 
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -13,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.habits')
@@ -98,53 +98,43 @@ async def read_many_completed(
     return list(session.scalars(query).all())
 
 
-@router.get('/{habit_id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
-async def read_one_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.Habit, habit_id):
+@router.get('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+    if habit := session.get(models.Habit, id):
         return habit
-    else:
-        message = f'Habit {habit_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    raise NotFoundException("habit", id, logger)
 
 
-@router.patch('/{habit_id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
-async def update_habit(
-    habit_id: int, habit_update: schemas.HabitUpdate, session: Session = Depends(get_sqlalchemy_session)
-):
-    if habit := session.get(models.Habit, habit_id):
-        for attr, value in habit_update.model_dump().items():
-            if value is not None:
-                setattr(habit, attr, value)
+@router.patch('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+async def update(id: int, update: schemas.HabitUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug(f'update: habit {id} {update_data}')
+
+    if habit := session.get(models.Habit, id):
+        for attr, value in update_data.items():
+            setattr(habit, attr, value)
         session.commit()
         session.refresh(habit)
         return habit
-    else:
-        message = f'habit {habit_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("habit", id, logger)
 
 
-@router.delete('/{habit_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_habit(habit_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.Habit, habit_id):
+@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+    if habit := session.get(models.Habit, id):
         session.delete(habit)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    else:
-        message = f'habit {habit_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("habit", id, logger)
 
 
 @router.get('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
 async def read_one_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.HabitCategory, category_id):
-        return habit
-    else:
-        message = f'habit category {category_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    if category := session.get(models.HabitCategory, category_id):
+        return category
+    raise NotFoundException("habit category", category_id, logger)
 
 
 @router.patch('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
@@ -158,10 +148,8 @@ async def update_habit_category(
         session.commit()
         session.refresh(category)
         return category
-    else:
-        message = f'habit category {category_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("habit category", category_id, logger)
 
 
 @router.delete('/categories/{category_id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -176,29 +164,22 @@ async def delete_category(category_id: int, session: Session = Depends(get_sqlal
             logger.warning(message)
             logger.warning(str(e).split('\n')[0])
             return Response(message, status_code=status.HTTP_409_CONFLICT)
-    else:
-        message = f'Habit category {category_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("habit category", category_id, logger)
 
 
 @router.get('/completed/{completed_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
 async def read_one_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.HabitCompleted, completed_id):
-        return habit
-    else:
-        message = f'Habit Completed {completed_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    if completed := session.get(models.HabitCompleted, completed_id):
+        return completed
+    raise NotFoundException("habit completed", completed_id, logger)
 
 
 @router.delete('/completed/{completed_id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if habit := session.get(models.HabitCompleted, completed_id):
-        session.delete(habit)
+    if completed := session.get(models.HabitCompleted, completed_id):
+        session.delete(completed)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    else:
-        message = f'Habit Completed {completed_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("habit completed", completed_id, logger)

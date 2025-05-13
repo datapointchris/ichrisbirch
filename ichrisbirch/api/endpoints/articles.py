@@ -24,17 +24,13 @@ from youtube_transcript_api.formatters import TextFormatter
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.openai import OpenAIAssistant
-from ichrisbirch.config import settings
+from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.articles')
 router = APIRouter()
-
-
-def IDNotFoundError(id: int):
-    message = f'article {id} not found'
-    logger.warning(message)
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
 def _get_youtube_video_text_captions(url: str) -> str:
@@ -49,7 +45,7 @@ def _get_youtube_video_text_captions(url: str) -> str:
 def _get_formatted_title(soup: BeautifulSoup) -> str:
     if soup.title and soup.title.string:
         title = soup.title.string.split('|')[0].replace('...', '')
-        title = title.removesuffix(' - YouTube')
+        title = title.removesuffix(' - YouTube').strip()
     else:
         logger.warning('could not parse title')
         title = 'Could not parse title'
@@ -134,7 +130,7 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/summarize/', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
-async def summarize(request: Request):
+async def summarize(request: Request, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
     Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video
@@ -149,7 +145,7 @@ async def summarize(request: Request):
     title = _get_formatted_title(soup)
     logger.debug(f'retrieved title: {title}')
 
-    if "youtube.com" in url or "youtu.be" in url:
+    if 'youtube.com' in url or 'youtu.be' in url:
         text_content = _get_youtube_video_text_captions(url)
     else:
         text_content = _get_text_content_from_html(soup)
@@ -164,7 +160,7 @@ async def summarize(request: Request):
 
 
 @router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
-async def insights(request: Request):
+async def insights(request: Request, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
     Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If
@@ -179,7 +175,7 @@ async def insights(request: Request):
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
 
-    if "youtube.com" in url or "youtu.be" in url:
+    if 'youtube.com' in url or 'youtu.be' in url:
         try:
             logger.debug('getting youtube video captions')
             text_content = _get_youtube_video_text_captions(url)
@@ -210,10 +206,9 @@ async def insights(request: Request):
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if event := session.get(models.Article, id):
-        return event
-    else:
-        IDNotFoundError(id)
+    if article := session.get(models.Article, id):
+        return article
+    raise NotFoundException("article", id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -222,19 +217,17 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.delete(article)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    else:
-        IDNotFoundError(id)
+    raise NotFoundException("article", id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.ArticleUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug(f'update: article {id} {update_data}')
-    if obj := session.get(models.Article, id):
+    if article := session.get(models.Article, id):
         for attr, value in update_data.items():
-            setattr(obj, attr, value)
+            setattr(article, attr, value)
         session.commit()
-        session.refresh(obj)
-        return obj
-    else:
-        IDNotFoundError(id)
+        session.refresh(article)
+        return article
+    raise NotFoundException("article", id, logger)
