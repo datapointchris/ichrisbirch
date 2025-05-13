@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
+from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
@@ -34,7 +35,7 @@ def validate_user_email(email: str, session: Session):
 
 
 def validate_user_id(user_id: str, session: Session):
-    query = select(models.User).where(models.User.alternative_id == user_id)
+    query = select(models.User).where(models.User.alternative_id == int(user_id))
     if not (user := session.execute(query).scalars().first()):
         logger.warning(f'user with id {user_id} not found')
     return user
@@ -59,13 +60,17 @@ def get_token_from_header(authorization: Annotated[Optional[str], Header()] = No
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authorization header format")
 
 
-def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)]) -> str | None:
-    settings = get_settings()
+def authenticate_with_jwt(
+    token: Annotated[str, Depends(get_token_from_header)], settings: Settings = Depends(get_settings)
+) -> str | None:
+    if not token:
+        return None
     try:
-        return jwt.decode(jwt=token, key=settings.auth.secret_key, algorithms=[settings.auth.algorithm]).get('sub')
+        decoded_token = jwt.decode(jwt=token, key=settings.auth.secret_key, algorithms=[settings.auth.algorithm])
+        return decoded_token.get('sub')
     except Exception as e:
         if 'Invalid token type' not in str(e):
-            logger.warning(e)
+            logger.warning(f"JWT token validation error: {e}")
         return None
 
 
@@ -98,17 +103,20 @@ def get_current_user(
     session=Depends(get_sqlalchemy_session),
 ):
     if app_headers:
-        logger.debug(f'app headers: {bool(app_headers)}')
+        logger.debug('login with app headers')
     if auth_jwt:
-        logger.debug(f'jwt token: {bool(auth_jwt)}')
+        logger.debug('login with jwt token')
     if auth_oauth2:
-        logger.debug(f'oauth form: {bool(auth_oauth2)}')
+        logger.debug('login with oauth form')
 
     if not (user_id := app_headers or auth_jwt or auth_oauth2):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
-    if user := validate_user_id(user_id, session):
-        logger.debug(f'validated request for user: {user.email}')
-        return user
+        raise UnauthorizedException("Invalid credentials", logger)
+
+    if not (user := validate_user_id(user_id, session)):
+        raise UnauthorizedException("Invalid credentials", logger)
+
+    logger.debug(f'validated request for user: {user.email}')
+    return user
 
 
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
@@ -117,7 +125,7 @@ CurrentUser = Annotated[models.User, Depends(get_current_user)]
 def get_admin_user(user: CurrentUser):
     if user.is_admin:
         return user
-    return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    raise UnauthorizedException("Admin access required", logger)
 
 
 AdminUser = Annotated[models.User, Depends(get_admin_user)]
@@ -146,25 +154,33 @@ async def validate_token(
     logger.debug(f'token validation - header: {bool(jwt_token)}')
     logger.debug(f'token validation - cookie: {bool(access_token)}')
     token = jwt_token or access_token
-    if not token or not authenticate_with_jwt(token):
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': 'Invalid token'})
+
+    # Directly validate the token instead of using authenticate_with_jwt
+    if not token:
+        raise UnauthorizedException("Missing token", logger)
+
+    if not authenticate_with_jwt(token):
+        raise UnauthorizedException("Invalid token", logger)
+    
     return Response(status_code=status.HTTP_200_OK)
 
 
 @router.post('/token/refresh/', status_code=status.HTTP_201_CREATED)
 async def refresh_token(jwt_token: Annotated[str, Depends(get_token_from_header)], refresh_token: str = Cookie(None)):
-    logger.debug(f'token validation - header: {bool(jwt_token)}')
-    logger.debug(f'token validation - cookie: {bool(refresh_token)}')
+    logger.debug(f'token refresh - header: {bool(jwt_token)}')
+    logger.debug(f'token refresh - cookie: {bool(refresh_token)}')
     refresh_token = jwt_token or refresh_token
     if not (user_id := authenticate_with_jwt(refresh_token)):
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': 'Invalid refresh token'})
+        raise UnauthorizedException("Invalid refresh token", logger)
+
     logger.debug(f'refreshing token for user: {user_id}')
     stored_refresh_token = token_handler.retrieve_refresh_token(user_id)
     if refresh_token != stored_refresh_token:
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': 'Invalid refresh token'})
+        raise UnauthorizedException("Invalid refresh token", logger)
+
     logger.debug(f'refresh token validated for user: {user_id}')
     new_access_token = token_handler.create_access_token(user_id)
-    logger.debug(f'new access token: {new_access_token[-10:]}')
+    logger.debug(f'new access token created for user {user_id}: {new_access_token[-10:]}')
     response = JSONResponse(status_code=status.HTTP_201_CREATED, content={'access_token': new_access_token})
     response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True)
     return response

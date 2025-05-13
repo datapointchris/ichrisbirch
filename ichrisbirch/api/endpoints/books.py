@@ -5,7 +5,6 @@ import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
@@ -17,17 +16,13 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.config import settings
+from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
 logger = logging.getLogger('api.books')
 router = APIRouter()
-
-
-def IDNotFoundError(id: int | str):
-    message = f'book {id} not found'
-    logger.warning(message)
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
@@ -71,7 +66,7 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/goodreads/', response_model=schemas.BookGoodreadsInfo, status_code=status.HTTP_201_CREATED)
-async def goodreads(request: Request):
+async def goodreads(request: Request, settings: Settings = Depends(get_settings)):
     """Get book information from Goodreads using the ISBN."""
     request_data = await request.json()
     logger.debug(request_data)
@@ -103,10 +98,9 @@ async def goodreads(request: Request):
 
 @router.get('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if event := session.get(models.Book, id):
-        return event
-    else:
-        IDNotFoundError(id)
+    if book := session.get(models.Book, id):
+        return book
+    raise NotFoundException("book", id, logger)
 
 
 @router.get('/isbn/{isbn}/', response_model=schemas.Book | None, status_code=status.HTTP_200_OK)
@@ -122,19 +116,20 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.delete(book)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    else:
-        IDNotFoundError(id)
+
+    raise NotFoundException("book", id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug(f'update: book {id} {update_data}')
-    if obj := session.get(models.Book, id):
+
+    if book := session.get(models.Book, id):
         for attr, value in update_data.items():
-            setattr(obj, attr, value)
+            setattr(book, attr, value)
         session.commit()
-        session.refresh(obj)
-        return obj
-    else:
-        IDNotFoundError(id)
+        session.refresh(book)
+        return book
+
+    raise NotFoundException("book", id, logger)

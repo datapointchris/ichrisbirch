@@ -6,30 +6,29 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-# from ..dependencies import auth
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.database.sqlalchemy.session import get_db
 
 logger = logging.getLogger('api.tasks')
 router = APIRouter()
 
 
 @router.get("/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def read_many(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
+async def read_many(session: Session = Depends(get_db), limit: Optional[int] = None):
     query = select(models.Task).order_by(models.Task.priority.asc(), models.Task.add_date.asc()).limit(limit)
     return list(session.scalars(query).all())
 
 
 @router.get("/todo/", response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def todo(
-    session: Session = Depends(get_sqlalchemy_session),
+    session: Session = Depends(get_db),
     limit: Optional[int] = None,
     priority: Optional[tuple[int, int]] = None,
 ):
@@ -44,7 +43,7 @@ async def todo(
 
 @router.get("/completed/", response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
 async def completed(
-    session: Session = Depends(get_sqlalchemy_session),
+    session: Session = Depends(get_db),
     start_date: Union[str, None] = None,
     end_date: Union[str, None] = None,
     first: Union[bool, None] = None,
@@ -69,7 +68,7 @@ async def completed(
 
 
 @router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
+async def search(q: str, session: Session = Depends(get_db)):
     logger.debug(f'searching for {q=}')
     tasks = (
         select(models.Task)
@@ -82,7 +81,7 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
-async def create(task: schemas.TaskCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(task: schemas.TaskCreate, session: Session = Depends(get_db)):
     db_obj = models.Task(**task.model_dump())
     session.add(db_obj)
     session.commit()
@@ -91,7 +90,7 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(get_sqlalc
 
 
 @router.post('/reset-priorities/', status_code=status.HTTP_200_OK)
-async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
+async def reset_priorities(session: Session = Depends(get_db)):
     # Query for all tasks that are not completed
     query = select(models.Task).filter(models.Task.complete_date.is_(None))
     tasks = session.scalars(query).all()
@@ -111,51 +110,57 @@ async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
     return {'message': message}
 
 
-@router.get('/{task_id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def read_one(task_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if task := session.get(models.Task, task_id):
+@router.get('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def read_one(id: int, session: Session = Depends(get_db)):
+    if task := session.get(models.Task, id):
         return task
-    else:
-        message = f'Task {task_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    raise NotFoundException("task", id, logger)
 
 
-@router.delete('/{task_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(task_id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if task := session.get(models.Task, task_id):
+@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def delete(id: int, session: Session = Depends(get_db)):
+    if task := session.get(models.Task, id):
         session.delete(task)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    else:
-        message = f'Task {task_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("task", id, logger)
+
+
+@router.patch('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def update(id: int, update: schemas.TaskUpdate, session: Session = Depends(get_db)):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug(f'update: task {id} {update_data}')
+
+    if task := session.get(models.Task, id):
+        for attr, value in update_data.items():
+            setattr(task, attr, value)
+        session.commit()
+        session.refresh(task)
+        return task
+
+    raise NotFoundException("task", id, logger)
 
 
 @router.patch('/{task_id}/complete/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def complete(task_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def complete(task_id: int, session: Session = Depends(get_db)):
     if task := session.get(models.Task, task_id):
         task.complete_date = datetime.now(tz=ZoneInfo("America/Chicago")).isoformat()  # type: ignore
         session.add(task)
         session.commit()
         session.refresh(task)
         return task
-    else:
-        message = f'Task {task_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("task", task_id, logger)
 
 
 @router.patch('/{task_id}/extend/{days}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def extend(task_id: int, days: int, session: Session = Depends(get_sqlalchemy_session)):
+async def extend(task_id: int, days: int, session: Session = Depends(get_db)):
     if task := session.get(models.Task, task_id):
         task.priority += days
         session.add(task)
         session.commit()
         session.refresh(task)
         return task
-    else:
-        message = f'Task {task_id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    raise NotFoundException("task", task_id, logger)
