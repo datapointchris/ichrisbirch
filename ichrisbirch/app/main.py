@@ -9,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 from ichrisbirch.app import routes
 from ichrisbirch.app.login import login_manager
 from ichrisbirch.config import Settings
+from ichrisbirch.util import log_caller
 
 logger = logging.getLogger('app.main')
 csrf = CSRFProtect()
@@ -22,9 +23,15 @@ def handle_errors(e, error_code):
     return render_template('error.html', error_title=error_title, error_message=e.description), error_code
 
 
+@log_caller
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
-    logger.info('initializing')
+    logger.info('initializing app')
+    logger.debug(f'api url: {settings.api_url}')
+    logger.debug(f'postgres port: {settings.postgres.port}')
+    logger.debug(f'postgres uri: {settings.postgres.db_uri}')
+    logger.debug(f'sqlalchemy port: {settings.sqlalchemy.port}')
+    logger.debug(f'sqlalchemy uri: {settings.sqlalchemy.db_uri}')
 
     with app.app_context():
         app.config.from_object(settings.flask)
@@ -32,6 +39,9 @@ def create_app(settings: Settings) -> Flask:
 
         cfg = app.config
         logger.debug(f'DEBUG={cfg.get("DEBUG")}, TESTING={cfg.get("TESTING")}, ENV={cfg.get("ENV")}')
+
+        cfg['SETTINGS'] = settings
+        logger.info(f'loaded settings: {type(settings)}')
 
         login_manager.init_app(app)
         logger.info('login manager initialized')
@@ -92,5 +102,5 @@ def create_app(settings: Settings) -> Flask:
                 'accepting_new_signups': settings.auth.accepting_new_signups,
             }
 
-    logger.info('initialized successfully')
+    logger.info('initialized app successfully')
     return app
