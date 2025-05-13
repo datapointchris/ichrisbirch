@@ -2,26 +2,26 @@ from datetime import date
 
 import pytest
 
-import tests.util
 from ichrisbirch import schemas
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 from .crud_test import ApiCrudTester
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('countdowns')
+    insert_test_data('countdowns')
     yield
-    tests.util.delete_test_data('countdowns')
+    delete_test_data('countdowns')
 
 
+ENDPOINT = '/countdowns/'
 NEW_OBJ = schemas.CountdownCreate(
     name='Countdown 4 Computer with notes priority 3',
     notes='Notes Countdown 4',
     due_date=date(2040, 1, 20),
 )
-
-ENDPOINT = '/countdowns/'
 
 
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
