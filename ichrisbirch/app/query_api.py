@@ -7,33 +7,13 @@ import httpx
 from flask import session
 from flask_login import current_user
 from pydantic import BaseModel
-from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.app import utils
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.sqlalchemy.session import SessionLocal
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger('app.query_api')
-
-
-class APIServiceAccount(models.User):
-    def __init__(self):
-        self.settings = get_settings()
-        self.user = None
-
-    def get_user(self):
-        with SessionLocal() as session:
-            q = select(models.User).filter(models.User.email == self.settings.users.service_account_user_email)
-            if user := (session.execute(q).scalars().first()):
-                logger.debug(f'retrieved service account user: {user.email}')
-                self.user = user
-                return user
-            else:
-                message = f'Coud not find service account user: {self.settings.users.service_account_user_email}'
-                logger.error(message)
-                raise Exception(message)
 
 
 class QueryAPI(Generic[ModelType]):
@@ -42,19 +22,15 @@ class QueryAPI(Generic[ModelType]):
     WARNING: setting the default user to `current_user` causes the API to make hundreds of identical requests.
     """
 
-    def __init__(
-        self,
-        base_url: str,
-        response_model: type[ModelType],
-        user: models.User | Any = None,
-    ):
-        self.settings = get_settings()
-        self.base_url = utils.url_builder(self.settings.api_url, base_url)
+    def __init__(self, base_endpoint: str, response_model: type[ModelType], user: models.User | Any = None):
+        self.base_endpoint = base_endpoint
         self.response_model = response_model
         self.user = user or (current_user if (current_user and current_user.is_authenticated) else None)
+        self.client = httpx.Client()
+        self.settings = get_settings()
 
     def _handle_request(self, method: str, endpoint: Any | None = None, **kwargs):
-        url = utils.url_builder(self.base_url, endpoint) if endpoint else self.base_url
+        url = utils.url_builder(self.settings.api_url, self.base_endpoint, endpoint)
         if not self.user:
             user_id = None
             try:
@@ -67,7 +43,7 @@ class QueryAPI(Generic[ModelType]):
             'X-Application-ID': self.settings.flask.app_id,
         }
         headers_to_log = {
-            'X-User-ID': headers.get('X-User-ID'),
+            'X-User-ID': f'XXXX{headers.get('X-User-ID', '')[:4]}',
             'X-Application-ID': f'XXXX{self.settings.flask.app_id[:4]}',
         }
         kwargs_to_log = ''
@@ -79,16 +55,12 @@ class QueryAPI(Generic[ModelType]):
                 kwargs_to_log = ', '.join([f'{k}=XXXXXXXX' for k in kwargs.keys()])
             else:
                 kwargs_to_log = ', '.join([f'{k}={v}' for k, v in kwargs.items()])
-        logger.debug(f'CurrentUser: {self.user.email if self.user else ''}')
-        logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log}')
-        response = None
+        logger.debug(f'current user in app: {self.user.email if self.user else ''}')
+        logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log if kwargs_to_log else ""}')
         try:
-            with httpx.Client() as client:
-                return client.request(method, url, headers=headers, **kwargs, follow_redirects=True).raise_for_status()
+            return self.client.request(method, url, headers=headers, **kwargs, follow_redirects=True).raise_for_status()
         except httpx.HTTPError as e:
             logger.error(e)
-            if response:
-                logger.error(response.text)
             return None
 
     def get_one(self, endpoint: Any | None = None, **kwargs) -> ModelType | None:
