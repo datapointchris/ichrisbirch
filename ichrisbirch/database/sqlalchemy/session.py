@@ -1,13 +1,40 @@
+import functools
+from typing import Generator
+
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
-from ichrisbirch.config import settings
-
-engine = create_engine(settings.sqlalchemy.db_uri, echo=settings.sqlalchemy.echo)
-SessionLocal = sessionmaker(bind=engine, autoflush=False)
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 
 
-def get_sqlalchemy_session():
+# Use lazy loading for settings and engine to ensure environment variables are properly set
+@functools.lru_cache(2)
+def get_db_engine(settings: Settings = get_settings()) -> Engine:
+    return create_engine(
+        settings.sqlalchemy.db_uri,
+        echo=settings.sqlalchemy.echo,
+        pool_pre_ping=True,
+        pool_recycle=5,
+        connect_args={
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        },
+    )
+
+
+def get_session_factory(engine: Engine = get_db_engine()) -> sessionmaker:
+    return sessionmaker(bind=engine, autoflush=False)
+
+
+SessionLocal: sessionmaker[Session] = get_session_factory()
+
+
+def get_sqlalchemy_session() -> Generator[Session, None, None]:
     """Return `sqlalchemy.orm.Session`
 
     The difference between return and yield in this context is related to how they
@@ -32,6 +59,9 @@ def get_sqlalchemy_session():
     but you'll need to manually close the session in the caller code
     or use contextlib.closing to make the generator usable with a with statement.
     """
-
     with SessionLocal() as session:
         yield session
+
+
+# Alias for compatibility with existing code
+get_db = get_sqlalchemy_session
