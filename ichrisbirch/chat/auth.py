@@ -7,7 +7,7 @@ import pendulum
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.app.query_api import APIServiceAccount
+from ichrisbirch.api.service_account import APIServiceAccount
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import url_builder
 from ichrisbirch.config import Settings
@@ -62,16 +62,15 @@ class ChatAuthClient:
             return response.json().get("access_token")
 
     def login_username(self, username: str, password: str):
-        users_api = QueryAPI(base_url='users', response_model=schemas.User)
-        service_user.get_user()
-        service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_user.user)
+        users_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
+        service_account_users_api = QueryAPI(base_endpoint='users', response_model=schemas.User, user=service_user.user)
 
         if user := service_account_users_api.get_one(['email', username]):
             user = models.User(**user.model_dump())
             if user.check_password(password):
                 logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
                 try:
-                    users_api = QueryAPI(base_url='users', response_model=schemas.User)
+                    users_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
                     users_api.patch([user.id], json={'last_login': pendulum.now().for_json()})
                     logger.debug(f'updated last login for user: {user.name}')
                 except Exception as e:
