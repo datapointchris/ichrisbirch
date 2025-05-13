@@ -3,11 +3,12 @@ import logging
 import pytest
 from fastapi import status
 
-import tests.util
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 from .crud_test import ApiCrudTester
 
@@ -16,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('autotasks')
+    insert_test_data('autotasks')
     yield
-    tests.util.delete_test_data('autotasks')
+    delete_test_data('autotasks')
 
 
 NEW_OBJ = schemas.AutoTaskCreate(

@@ -1,16 +1,17 @@
 import pytest
 
-import tests.util
 from ichrisbirch import schemas
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 from .crud_test import ApiCrudTester
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('boxes', 'boxitems')
+    insert_test_data('boxes', 'boxitems')
     yield
-    tests.util.delete_test_data('boxes', 'boxitems')
+    delete_test_data('boxes', 'boxitems')
 
 
 NEW_OBJ = schemas.BoxItemCreate(

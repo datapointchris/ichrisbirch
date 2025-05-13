@@ -4,18 +4,19 @@ from zoneinfo import ZoneInfo
 import pytest
 from fastapi import status
 
-import tests.util
 from ichrisbirch import schemas
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 from .crud_test import ApiCrudTester
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('events')
+    insert_test_data('events')
     yield
-    tests.util.delete_test_data('events')
+    delete_test_data('events')
 
 
 NEW_OBJ = schemas.EventCreate(

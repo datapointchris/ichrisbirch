@@ -1,19 +1,20 @@
 import pytest
 from fastapi import status
 
-import tests.util
 from ichrisbirch import schemas
 from ichrisbirch.models.task import TaskCategory
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 from .crud_test import ApiCrudTester
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('tasks')
+    insert_test_data('tasks')
     yield
-    tests.util.delete_test_data('tasks')
+    delete_test_data('tasks')
 
 
 ENDPOINT = '/tasks/'

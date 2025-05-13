@@ -5,22 +5,23 @@ import sqlalchemy
 from fastapi import status
 
 import tests.test_data
-import tests.util
 from ichrisbirch import schemas
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 from .crud_test import ApiCrudTester
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('habitcategories')
-    tests.util.insert_test_data('habits')
-    tests.util.insert_test_data('habitscompleted')
+    insert_test_data('habitcategories')
+    insert_test_data('habits')
+    insert_test_data('habitscompleted')
     yield
-    tests.util.delete_test_data('habits')
-    tests.util.delete_test_data('habitscompleted')
-    tests.util.delete_test_data('habitcategories')
+    delete_test_data('habits')
+    delete_test_data('habitscompleted')
+    delete_test_data('habitcategories')
 
 
 class TestHabits:
