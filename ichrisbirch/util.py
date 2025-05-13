@@ -17,13 +17,13 @@ def find_project_root(
     parent_directory = directory.parent
     if parent_directory == directory:
         raise FileNotFoundError(f'Could not find project root directory searching for {target_file}')
-    return find_project_root(parent_directory)
+    return find_project_root(parent_directory, target_file)
 
 
-def get_logger_filename_from_handlername(handler_name: str = 'ichrisbirch_file') -> str | None:
+def get_logger_filename_from_handlername(handler_name: str) -> str | None:
     if handler := logging.getHandlerByName(handler_name):
         if isinstance(handler, logging.FileHandler):
-            return handler.baseFilename
+            return Path(handler.baseFilename).name
     return None
 
 
@@ -34,7 +34,8 @@ def log_caller(func):
         caller_frame = current_frame.f_back
         caller_name = caller_frame.f_code.co_name
         caller_file = caller_frame.f_code.co_filename
-        logger.info(f"function '{func.__name__}' was called by '{caller_name}' in {caller_file}")
+        truncated_file = '/'.join(caller_file.split('/')[5:])
+        logger.info(f"function '{func.__name__}' was called by '{caller_name}' in {truncated_file}")
         return func(*args, **kwargs)
 
     return wrapper
