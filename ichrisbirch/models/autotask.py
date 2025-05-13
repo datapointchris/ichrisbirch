@@ -2,16 +2,15 @@ import enum
 from datetime import date
 from datetime import datetime
 
-from pendulum import duration
-from pendulum.duration import Duration
+import pendulum
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import func
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
-from sqlalchemy.sql import func
 
 from ichrisbirch.database.sqlalchemy.base import Base
 from ichrisbirch.models.task import TaskCategory
@@ -27,20 +26,20 @@ class AutoTaskFrequency(enum.Enum):
     Yearly = 'Yearly'
 
 
-def frequency_to_duration(frequency: AutoTaskFrequency | str) -> Duration:
+def frequency_to_duration(frequency: AutoTaskFrequency | str) -> pendulum.Duration:
     """Converts a frequency string or TaskFrequency to a pendulum.Duration object."""
 
     if isinstance(frequency, str):
         frequency = AutoTaskFrequency(frequency.capitalize())
     if not (
         delta := {
-            AutoTaskFrequency.Daily: duration(days=1),
-            AutoTaskFrequency.Weekly: duration(weeks=1),
-            AutoTaskFrequency.Biweekly: duration(weeks=2),
-            AutoTaskFrequency.Monthly: duration(months=1),
-            AutoTaskFrequency.Quarterly: duration(months=3),
-            AutoTaskFrequency.Semiannually: duration(months=6),
-            AutoTaskFrequency.Yearly: duration(years=1),
+            AutoTaskFrequency.Daily: pendulum.duration(days=1),
+            AutoTaskFrequency.Weekly: pendulum.duration(weeks=1),
+            AutoTaskFrequency.Biweekly: pendulum.duration(weeks=2),
+            AutoTaskFrequency.Monthly: pendulum.duration(months=1),
+            AutoTaskFrequency.Quarterly: pendulum.duration(months=3),
+            AutoTaskFrequency.Semiannually: pendulum.duration(months=6),
+            AutoTaskFrequency.Yearly: pendulum.duration(years=1),
         }.get(frequency)
     ):
         raise ValueError(f'Invalid frequency: {frequency}')
@@ -48,19 +47,17 @@ def frequency_to_duration(frequency: AutoTaskFrequency | str) -> Duration:
 
 
 class AutoTask(Base):
-    """SQLAlchemy model for tasks table."""
-
     __tablename__ = 'autotasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[TaskCategory] = mapped_column(Enum(TaskCategory), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
-    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, server_default='2')
+    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     frequency: Mapped[AutoTaskFrequency] = mapped_column(Enum(AutoTaskFrequency), nullable=False)
     first_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    run_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default='0')
+    run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     def __repr__(self):
         return f'''AutoTask(name = {self.name}, priority = {self.priority}, category = {self.category},
@@ -76,4 +73,5 @@ class AutoTask(Base):
     @property
     def should_run_today(self):
         """Returns true if the task should be run today."""
-        return self.next_run_date <= date.today() and self.last_run_date.date() != date.today()
+        today = datetime.now().date()
+        return self.next_run_date <= today and self.last_run_date.date() != today
