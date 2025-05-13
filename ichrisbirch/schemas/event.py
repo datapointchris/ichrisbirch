@@ -33,6 +33,11 @@ class EventCreate(EventConfig):
             dt = pendulum.instance(v)
         else:  # assume string, try to parse anything
             dt = pendulum.parse(v)
+
+        # Ensure the datetime is in UTC
+        if dt.timezone_name != 'UTC':
+            dt = dt.in_timezone('UTC')
+
         logger.debug(f'date validator out: {dt}, {type(dt)}')
         return dt
 
