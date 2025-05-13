@@ -6,8 +6,9 @@ import pendulum
 from sqlalchemy import delete
 from sqlalchemy import select
 
-from ichrisbirch.config import settings
-from ichrisbirch.database.sqlalchemy.session import SessionLocal
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
+from ichrisbirch.database.sqlalchemy.session import get_session_factory
 from ichrisbirch.models import JWTRefreshToken
 
 logger = logging.getLogger('api.token_handler')
@@ -16,15 +17,17 @@ logger = logging.getLogger('api.token_handler')
 class JWTTokenHandler:
     def __init__(
         self,
-        access_token_expire_delta=settings.auth.access_token_expire,
-        refresh_token_expire_delta=settings.auth.refresh_token_expire,
-        secret_key=settings.auth.secret_key,
-        algorithm=settings.auth.algorithm,
+        settings: Settings | None = None,
+        access_token_expire_delta: timedelta | None = None,
+        refresh_token_expire_delta: timedelta | None = None,
+        secret_key: str | None = None,
+        algorithm: str | None = None,
     ):
-        self.secret_key = secret_key
-        self.algorithm = algorithm
-        self.access_token_expire_delta = access_token_expire_delta
-        self.refresh_token_expire_delta = refresh_token_expire_delta
+        self._settings = settings or get_settings()
+        self.secret_key = secret_key or self._settings.auth.secret_key
+        self.algorithm = algorithm or self._settings.auth.algorithm
+        self.access_token_expire_delta = access_token_expire_delta or self._settings.auth.access_token_expire
+        self.refresh_token_expire_delta = refresh_token_expire_delta or self._settings.auth.refresh_token_expire
 
     def _generate_jwt(self, user_id: str, expires_delta: timedelta):
         payload = {'sub': user_id, 'iat': pendulum.now(), 'exp': pendulum.now() + expires_delta}
@@ -40,7 +43,8 @@ class JWTTokenHandler:
         return self._generate_jwt(user_id, expires_delta=self.refresh_token_expire_delta)
 
     def store_refresh_token(self, user_id: str, refresh_token: str):
-        with SessionLocal() as session:
+        session_factory = get_session_factory()
+        with session_factory() as session:
             stmt = select(JWTRefreshToken).where(JWTRefreshToken.user_id == user_id)
             if existing_token := session.scalar(stmt):
                 existing_token.refresh_token = refresh_token
@@ -53,7 +57,8 @@ class JWTTokenHandler:
             session.commit()
 
     def retrieve_refresh_token(self, user_id: str) -> str:
-        with SessionLocal() as session:
+        session_factory = get_session_factory()
+        with session_factory() as session:
             stmt = select(JWTRefreshToken).where(JWTRefreshToken.user_id == user_id)
             if token := session.scalar(stmt):
                 logger.debug(f'retrieved refresh token for user: {user_id}')
@@ -62,7 +67,8 @@ class JWTTokenHandler:
         return ''
 
     def delete_refresh_token(self, user_id: str):
-        with SessionLocal() as session:
+        session_factory = get_session_factory()
+        with session_factory() as session:
             session.execute(delete(JWTRefreshToken).where(JWTRefreshToken.user_id == user_id))
             session.commit()
             logger.debug(f'deleted refresh token for user: {user_id}')
