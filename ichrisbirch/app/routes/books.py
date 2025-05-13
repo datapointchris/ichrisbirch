@@ -3,6 +3,7 @@ import logging
 from fastapi import status
 from flask import Blueprint
 from flask import Response
+from flask import current_app
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -13,7 +14,6 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
-from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.books')
 
@@ -28,7 +28,7 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    books_api = QueryAPI(base_url='books', response_model=schemas.Book)
+    books_api = QueryAPI(base_endpoint='books', response_model=schemas.Book)
     if search := request.args.get('search'):
         books = books_api.get_many('search', params={'q': search})
     else:
@@ -38,6 +38,7 @@ def index():
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
 def add():
+    settings = current_app.config['SETTINGS']
     create_form = forms.BookCreateForm()
     goodreads_info_endpoint = f'{settings.api_url}/books/goodreads/'
     return render_template('books/add.html', create_form=create_form, goodreads_info_endpoint=goodreads_info_endpoint)
@@ -45,7 +46,7 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    books_api = QueryAPI(base_url='books', response_model=schemas.Book)
+    books_api = QueryAPI(base_endpoint='books', response_model=schemas.Book)
     data = request.form.to_dict()
     action = data.pop('action')
 

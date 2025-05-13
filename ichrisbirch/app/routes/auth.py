@@ -4,6 +4,7 @@ import pendulum
 from fastapi import status
 from flask import Blueprint
 from flask import abort
+from flask import current_app
 from flask import flash
 from flask import redirect
 from flask import render_template
@@ -17,15 +18,13 @@ from flask_login import logout_user
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.service_account import APIServiceAccount
 from ichrisbirch.app import forms
-from ichrisbirch.app.query_api import APIServiceAccount
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.app.utils import http as http_utils
-from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.auth')
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
-service_account = APIServiceAccount()
 
 
 @blueprint.route('/login/', methods=['GET', 'POST'])
@@ -35,17 +34,17 @@ def login():
         return redirect(request.referrer or url_for('users.profile'))
     form = forms.LoginForm()
     if form.validate_on_submit():
-        service_user = service_account.get_user()
-        login_user(service_user)
-        service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_account.user)
-        if user := service_account_users_api.get_one(['email', form.email.data]):
+        service_account = APIServiceAccount(current_app=current_app)
+        login_user(service_account.user)
+        users_api = QueryAPI(base_endpoint='users', response_model=schemas.User, user=service_account.user)
+        if user := users_api.get_one(['email', form.email.data]):
             user = models.User(**user.model_dump())
         if user and user.check_password(password=form.password.data):
             logout_user()
             login_user(user, remember=form.remember_me.data)
             logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
             try:
-                users_api = QueryAPI(base_url='users', response_model=schemas.User)
+                users_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
                 users_api.patch([user.id], json={'last_login': pendulum.now().for_json()})
                 logger.debug(f'updated last login for user: {user.name}')
             except Exception as e:
@@ -71,24 +70,25 @@ def login():
 
 @blueprint.route('/signup/', methods=['GET', 'POST'])
 def signup():
+    settings = current_app.config['SETTINGS']
     if not settings.auth.accepting_new_signups:
         flash(settings.auth.no_new_signups_message, 'error')
         return redirect(url_for('home.index'))
-    service_user = service_account.get_user()
-    login_user(service_user)
-    service_account_users_api = QueryAPI(base_url='users', response_model=schemas.User, user=service_account.user)
+    service_account = APIServiceAccount(current_app=current_app)
+    login_user(service_account.user)
+    users_api = QueryAPI(base_endpoint='users', response_model=schemas.User, user=service_account.user)
     form = forms.SignupForm()
     if form.validate_on_submit():
         logger.debug('signup form validated')
         logger.debug('checking for existing user')
-        if not (existing_user := service_account_users_api.get_one(['email', form.email.data])):
+        if not (existing_user := users_api.get_one(['email', form.email.data])):
             logger.info(f'creating a new user with email: {form.email.data}')
             data = {
                 'name': form.name.data,
                 'email': form.email.data,
                 'password': form.password.data,
             }
-            if new_user := service_account_users_api.post(json=data):
+            if new_user := users_api.post(json=data):
                 user = models.User(**new_user.model_dump())
                 logout_user()
                 login_user(user)
@@ -99,7 +99,7 @@ def signup():
         )
         flash('email address already registered', 'error')
     else:
-        if request.method == 'POST':
+        if request.method.upper() == 'POST':
             logger.warning(f'form validation failed: {form.errors}')
 
     return render_template(

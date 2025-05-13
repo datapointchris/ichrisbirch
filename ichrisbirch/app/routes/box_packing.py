@@ -30,7 +30,7 @@ def enforce_login():
 @blueprint.route('/', defaults={'box_id': None}, methods=['GET'])
 @blueprint.route('/<box_id>/', methods=['GET'])
 def index(box_id):
-    boxes_api = QueryAPI(base_url='box-packing/boxes', response_model=schemas.Box)
+    boxes_api = QueryAPI(base_endpoint='box-packing/boxes', response_model=schemas.Box)
     boxes = boxes_api.get_many()
     selected_box = None
     if box_id:
@@ -46,14 +46,14 @@ def index(box_id):
 
 @blueprint.route('/edit/<box_id>/', methods=['GET', 'POST'])
 def edit(box_id):
-    boxes_api = QueryAPI(base_url='box-packing/boxes', response_model=schemas.Box)
+    boxes_api = QueryAPI(base_endpoint='box-packing/boxes', response_model=schemas.Box)
     box = boxes_api.get_one(box_id)
     return render_template('box_packing/edit.html', box=box, box_sizes=BOX_SIZES)
 
 
 @blueprint.route('/all/', methods=['GET', 'POST'])
 def all():
-    boxes_api = QueryAPI(base_url='box-packing/boxes', response_model=schemas.Box)
+    boxes_api = QueryAPI(base_endpoint='box-packing/boxes', response_model=schemas.Box)
     sort_1 = request.form.get('sort_1')
     sort_2 = request.form.get('sort_2')
     logger.debug(f'{sort_1=} {sort_2=}')
@@ -69,8 +69,8 @@ def all():
 
 @blueprint.route('/orphans/', methods=['GET', 'POST'])
 def orphans():
-    boxes_api = QueryAPI(base_url='box-packing/boxes', response_model=schemas.Box)
-    boxitem_orphans_api = QueryAPI(base_url='box-packing/items/orphans', response_model=schemas.BoxItem)
+    boxes_api = QueryAPI(base_endpoint='box-packing/boxes', response_model=schemas.Box)
+    boxitem_orphans_api = QueryAPI(base_endpoint='box-packing/items/orphans', response_model=schemas.BoxItem)
     sort = request.form.get('sort', 'name')
     logger.debug(f'{sort=}')
 
@@ -84,8 +84,8 @@ def orphans():
 def search():
     """Search for box items."""
     results: list[tuple[schemas.Box, schemas.BoxItem]] = []
-    if request.method == 'POST':
-        box_search_api = QueryAPI(base_url='box-packing/search', response_model=(schemas.Box, schemas.BoxItem))
+    if request.method.upper() == 'POST':
+        box_search_api = QueryAPI(base_endpoint='box-packing/search', response_model=(schemas.Box, schemas.BoxItem))
         data: dict[str, Any] = request.form.to_dict()
         if search_text := data.get('search_text'):
             logger.debug(f'{request.referrer=} | {search_text=}')
@@ -98,8 +98,8 @@ def search():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    boxes_api = QueryAPI(base_url='box-packing/boxes', response_model=schemas.Box)
-    boxitems_api = QueryAPI(base_url='box-packing/items', response_model=schemas.BoxItem)
+    boxes_api = QueryAPI(base_endpoint='box-packing/boxes', response_model=schemas.Box)
+    boxitems_api = QueryAPI(base_endpoint='box-packing/items', response_model=schemas.BoxItem)
     data: dict = request.form.to_dict()
     action = data.pop('action')
     logger.debug(f'{request.referrer=} {action=}')

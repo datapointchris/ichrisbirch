@@ -1,10 +1,9 @@
 import logging
 
 from flask import Blueprint
+from flask import current_app
 from flask import render_template
 from flask_login import login_required
-
-from ichrisbirch.config import settings
 
 logger = logging.getLogger('app.chat')
 
@@ -19,4 +18,5 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    settings = current_app.config['SETTINGS']
     return render_template('chat/index.html', chat_url=settings.chat_url)

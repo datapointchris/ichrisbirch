@@ -9,13 +9,13 @@ import polars as pl
 from apscheduler.job import Job
 from fastapi import status
 from flask import Blueprint
+from flask import current_app
 from flask import flash
 from flask import render_template
 from flask import request
 
 from ichrisbirch.app import utils
 from ichrisbirch.app.login import admin_login_required
-from ichrisbirch.config import settings
 from ichrisbirch.scheduler.main import get_jobstore
 from ichrisbirch.util import get_logger_filename_from_handlername
 
@@ -31,6 +31,7 @@ def enforce_admin_login():
 
 @blueprint.route('/', methods=['GET'])
 def index():
+    settings = current_app.config['SETTINGS']
     return render_template(
         'admin/serverstats.html', settings=settings, server_time=pendulum.now().isoformat(timespec='seconds')
     )
@@ -50,6 +51,7 @@ class Backup:
 
 @blueprint.route('/backups/', methods=['GET', 'POST'])
 def backups():
+    settings = current_app.config['SETTINGS']
     s3 = boto3.client('s3')
     prefix = request.args.get('prefix', '')
     up_one_level = prefix.rsplit('/', 2)[0] + '/'
@@ -93,8 +95,9 @@ def calculate_time_until_next_runs(jobs: list[Job]) -> list[str]:
 
 @blueprint.route('/scheduler/', methods=['GET', 'POST'])
 def scheduler():
+    settings = current_app.config['SETTINGS']
     jobstore = get_jobstore(settings=settings)
-    if request.method == 'POST':
+    if request.method.upper() == 'POST':
         data = request.form.to_dict()
         job_id = data.get('job_id')
         action = data.pop('action')
@@ -127,6 +130,7 @@ def scheduler():
 
 @blueprint.route('/logs/', methods=['GET'])
 def logs():
+    settings = current_app.config['SETTINGS']
     return render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port)
 
 
@@ -141,13 +145,12 @@ def log_file_to_polars_df(filename: str, debug=False) -> pl.DataFrame:
     }
     num_errors = 0
     previous_line = ''
-    next_line = ''
     errors = []
     was_error = False
     last_error = None
 
     def _process_log_line(line: str):
-        nonlocal num_errors, previous_line, next_line, was_error, last_error
+        nonlocal num_errors, previous_line, was_error, last_error
         try:
             part, message = line.strip().split('|')
             log_level, timestamp, part = part.strip().rsplit(' ', maxsplit=2)

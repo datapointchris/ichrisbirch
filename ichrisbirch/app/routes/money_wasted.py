@@ -22,8 +22,8 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    money_wasted_api = QueryAPI(base_url='money-wasted', response_model=schemas.MoneyWasted)
-    if request.method == 'POST':
+    money_wasted_api = QueryAPI(base_endpoint='money-wasted', response_model=schemas.MoneyWasted)
+    if request.method.upper() == 'POST':
         data = request.form.to_dict()
         action = data.pop('action')
 
