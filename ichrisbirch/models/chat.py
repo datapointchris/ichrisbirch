@@ -23,7 +23,11 @@ class Chat(Base):
     category: Mapped[str] = mapped_column(Text, nullable=True)
     subcategory: Mapped[str] = mapped_column(Text, nullable=True)
     tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)
-    messages: Mapped[list['ChatMessage']] = relationship(back_populates='chat', order_by='ChatMessage.created_at')
+    messages: Mapped[list['ChatMessage']] = relationship(
+        back_populates='chat',
+        order_by='ChatMessage.created_at',
+        cascade="all, delete-orphan",  # This ensures child messages are deleted when a chat is deleted
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now)
 
     def __repr__(self) -> str:
