@@ -4,6 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic import field_validator
 
 
 class UserConfig(BaseModel):
@@ -14,6 +15,13 @@ class UserCreate(UserConfig):
     name: str
     email: str
     password: str
+
+    @field_validator('name', 'email', 'password')
+    @classmethod
+    def check_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v
 
 
 class User(UserConfig):
