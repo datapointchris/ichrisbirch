@@ -13,16 +13,16 @@ from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch.config import Settings
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import SessionLocal
-from ichrisbirch.database.sqlalchemy.session import engine
+from ichrisbirch.database.sqlalchemy.session import get_db_engine
 from ichrisbirch.models import User
 
 logger = logging.getLogger('startup')
 
 
 def create_schemas(session: Session, settings: Settings, logger: logging.Logger):
-    inspector = sqlalchemy.inspect(engine)
+    inspector = sqlalchemy.inspect(get_db_engine())
     for schema_name in settings.db_schemas:
         if schema_name not in inspector.get_schema_names():
             session.execute(CreateSchema(schema_name))
@@ -62,6 +62,7 @@ def insert_default_users(session: Session, settings: Settings, logger: logging.L
 
 
 if __name__ == '__main__':
+    settings = get_settings()
     with SessionLocal() as session:
         create_schemas(session, settings, logger)
 
