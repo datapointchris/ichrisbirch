@@ -12,7 +12,7 @@ from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger('app.login_manager')
-user_api = QueryAPI(base_url='users', response_model=schemas.User)
+user_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -42,7 +42,7 @@ def admin_login_required(func):
 
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if request.method in EXEMPT_METHODS or current_app.config.get("LOGIN_DISABLED"):
+        if request.method in EXEMPT_METHODS or current_app.config.get('LOGIN_DISABLED'):
             pass
         elif not (current_user.is_authenticated and current_user.is_admin):
             return current_app.login_manager.unauthorized()
