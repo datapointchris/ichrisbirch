@@ -17,7 +17,7 @@ repos:
         args: ["-color", "-shellcheck="]
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.97.1
+    rev: v1.99.5
     hooks:
       - id: terraform_validate
       - id: terraform_tflint
@@ -28,7 +28,7 @@ repos:
           - --args=--html=false
 
   - repo: https://github.com/python-poetry/poetry
-    rev: 2.0.1
+    rev: 2.1.3
     hooks:
       - id: poetry-check
       - id: poetry-lock
@@ -46,7 +46,7 @@ repos:
       - id: check-shebang-scripts-are-executable
 
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+    rev: v1.7.7
     hooks:
       - id: docformatter
         args: ["--config", "pyproject.toml"]
@@ -57,12 +57,12 @@ repos:
       - id: black
 
   - repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
+    rev: 7.3.0
     hooks:
       - id: flake8
 
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.0
+    rev: 6.0.1
     hooks:
       - id: isort
 
@@ -78,14 +78,14 @@ repos:
         args: ["--toml", "pyproject.toml"]
 
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.2
+    rev: 1.8.6
     hooks:
       - id: bandit
         args: ["-c", "pyproject.toml"]
         additional_dependencies: ["bandit[toml]"]
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
         args: [--fix]
@@ -97,18 +97,18 @@ repos:
       #       args: ["--severity=warning"]  # Optionally only show errors and warnings
 
   - repo: https://github.com/dosisod/refurb
-    rev: v2.0.0
+    rev: v2.1.0
     hooks:
       - id: refurb
         additional_dependencies: ["pydantic"]
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.16.1
     hooks:
       - id: mypy
         args:
@@ -120,19 +120,52 @@ repos:
           ]
         additional_dependencies: ["pydantic"]
 
+  - repo: https://github.com/djlint/djLint
+    rev: v1.36.4
+    hooks:
+      - id: djlint-jinja
+        args: ["--reformat"]
+      - id: djlint
+
   - repo: local
     hooks:
+      - id: ast-code-sync
+        name: AST Code Sync
+        description: "Synchronize code snippets in documentation using AST parsing"
+        entry: python -m tools.ast-code-sync.code_sync
+        language: python
+        pass_filenames: false
+        always_run: true
+        args: ["docs", "--base-path", "."]
+
+      - id: generate-fixture-diagrams
+        name: Generate fixture diagrams
+        description: "Generate fixture diagrams when test fixture code changes"
+        entry: python -m tools.docs.diagram_generator.generate_diagrams
+        language: python
+        pass_filenames: false
+        files: "(tests/conftest.py|tests/utils/.*|tools/docs/diagram_generator/.*\\.py)$"
+        always_run: false
+
       - id: validate-html
         name: validate html against w3c standards
         stages: [commit]
         language: system
-        entry: python scripts/validate_html.py
+        entry: python tools/validation/validate_html.py
         types: [html]
         pass_filenames: true
         always_run: false
 
-  - repo: local
-    hooks:
+      - id: validate-markdown-links
+        name: validate markdown links
+        description: "Check that all markdown links resolve to existing files"
+        stages: [commit]
+        language: system
+        entry: python tools/validation/validate_markdown_links.py
+        types: [markdown]
+        pass_filenames: true
+        always_run: false
+
       - id: pytest
         name: pytest with coverage
         stages: [commit]
