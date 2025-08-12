@@ -17,7 +17,7 @@ from ichrisbirch.models.box import BoxSize
 
 BOX_SIZES = [s.value for s in BoxSize]
 
-logger = logging.getLogger('app.box_packing')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_packing', static_folder='static')
 
 
@@ -129,11 +129,7 @@ def crud():
         case 'edit_box':
             boxes = boxes_api.get_many()
             current_box = next(box for box in boxes if box_id is not None and box.id == int(box_id))
-            if (
-                box_number is not None
-                and any(box.number == int(box_number) for box in boxes)
-                and int(box_number) != current_box.number
-            ):
+            if box_number is not None and any(box.number == int(box_number) for box in boxes) and int(box_number) != current_box.number:
                 flash(f'Box {box_number} already exists', 'error')
                 return redirect(url_for('box_packing.edit', box_id=box_id))
             update = dict(id=box_id, number=box_number, name=box_name, size=box_size)

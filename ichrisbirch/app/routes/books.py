@@ -15,7 +15,7 @@ from ichrisbirch import schemas
 from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.books')
+logger = logging.getLogger(__name__)
 
 blueprint = Blueprint('books', __name__, template_folder='templates/books', static_folder='static')
 
@@ -54,7 +54,7 @@ def crud():
         case 'add':
             form = forms.BookCreateForm(request.form)
             if form.validate_on_submit():
-                if books_api.get_one(f'isbn/{data['isbn']}'):
+                if books_api.get_one(f'isbn/{data["isbn"]}'):
                     message = f'already exists: {data["isbn"]}'
                     flash(message, 'warning')
                     logger.warning(message)
@@ -62,7 +62,7 @@ def crud():
                     # convert string field of tags to list for storing in postgres array
                     data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
                     books_api.post(json=data)
-                    flash(f'Added: {data['title']}', 'success')
+                    flash(f'Added: {data["title"]}', 'success')
             else:
                 message = 'Form validation failed'
                 flash(message, 'error')

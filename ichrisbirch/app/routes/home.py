@@ -13,7 +13,7 @@ from flask import request
 from flask import url_for
 from flask_login import login_required
 
-logger = logging.getLogger('app.home')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('home', __name__, template_folder='templates', static_folder='static')
 
 
@@ -39,7 +39,7 @@ def issue():
     labels = [k for k, v in issue.items() if v == 'on']
     logger.debug(f'Issue submitted from page: {request.referrer}')
     logger.debug(f'Issue details: {issue}')
-    body_template = f'''
+    body_template = f"""
         {issue['description']}
 
 
@@ -54,7 +54,7 @@ def issue():
 
         **User-Agent:**
         {'\n'.join([f'\t - {part})' for part in re.split(r'\)', request.headers.get('User-Agent', '')) if part])}
-    '''
+    """
     dedented = '\n'.join(line.strip() for line in body_template.split('\n'))
     data = json.dumps({'title': issue['title'], 'body': dedented, 'labels': labels})
 

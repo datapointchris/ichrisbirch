@@ -10,7 +10,7 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.money_wasted')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('money_wasted', __name__, template_folder='templates/money_wasted', static_folder='static')
 
 

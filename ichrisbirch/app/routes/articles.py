@@ -19,7 +19,7 @@ from ichrisbirch.app import forms
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger('app.articles')
+logger = logging.getLogger(__name__)
 
 blueprint = Blueprint('articles', __name__, template_folder='templates/articles', static_folder='static')
 
@@ -146,9 +146,7 @@ def insights():
         submitted_url = url
     else:
         article_insights, submitted_url, elapsed = '', '', ''
-    return render_template(
-        'articles/insights.html', submitted_url=submitted_url, article_insights=article_insights, elapsed=elapsed
-    )
+    return render_template('articles/insights.html', submitted_url=submitted_url, article_insights=article_insights, elapsed=elapsed)
 
 
 @blueprint.route('/search/', methods=['GET', 'POST'])

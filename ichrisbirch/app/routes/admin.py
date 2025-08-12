@@ -19,7 +19,7 @@ from ichrisbirch.app.login import admin_login_required
 from ichrisbirch.scheduler.main import get_jobstore
 from ichrisbirch.util import get_logger_filename_from_handlername
 
-logger = logging.getLogger('app.admin')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
 
 
@@ -32,9 +32,7 @@ def enforce_admin_login():
 @blueprint.route('/', methods=['GET'])
 def index():
     settings = current_app.config['SETTINGS']
-    return render_template(
-        'admin/serverstats.html', settings=settings, server_time=pendulum.now().isoformat(timespec='seconds')
-    )
+    return render_template('admin/serverstats.html', settings=settings, server_time=pendulum.now().isoformat(timespec='seconds'))
 
 
 @dataclass

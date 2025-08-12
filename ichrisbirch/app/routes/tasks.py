@@ -21,7 +21,7 @@ from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.models.task import TaskCategory
 
-logger = logging.getLogger('app.tasks')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
 
 
@@ -82,9 +82,7 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
     first = tasks[0]
     last = tasks[-1]
 
-    filter_timestamps = [
-        first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
-    ]
+    filter_timestamps = [first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)]
     timestamps_for_filter = {timestamp: 0 for timestamp in filter_timestamps}
     completed_task_timestamps = Counter(
         [datetime(task.complete_date.year, task.complete_date.month, task.complete_date.day) for task in tasks]
@@ -141,7 +139,7 @@ def completed():
         average_completion = calculate_average_completion_time(completed_tasks)
         chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
     else:
-        average_completion = f"No completed tasks for time period: {' '.join(selected_filter.split('_')).capitalize()}"
+        average_completion = f'No completed tasks for time period: {" ".join(selected_filter.split("_")).capitalize()}'
         chart_labels, chart_values = None, None
 
     return render_template(
@@ -159,7 +157,6 @@ def completed():
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
 def search():
-
     if request.method.upper() == 'GET':
         todo_tasks, completed_tasks = [], []
     else:

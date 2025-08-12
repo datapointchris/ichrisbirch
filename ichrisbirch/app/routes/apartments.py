@@ -12,7 +12,7 @@ from flask_login import login_required
 from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.apartment import Feature
 
-logger = logging.getLogger('app.apartments')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('apartments', __name__, template_folder='templates/apartments', static_folder='static')
 
 
@@ -45,9 +45,7 @@ def apartment(name):
     else:
         features = None
         message = (f'{name} apartment does not exist',)
-        return render_template(
-            'apartments.html', apartments=apartments, apartment=apartment, features=features, message=message
-        )
+        return render_template('apartments.html', apartments=apartments, apartment=apartment, features=features, message=message)
 
 
 # transparently redirect to main page
@@ -55,9 +53,7 @@ def apartment(name):
 def noedit():
     """Redirect from edit page to apartments home."""
     apartments = [apt for apt in Apartment.scan()]
-    return render_template(
-        'apartments.html', apartments=apartments, apartment=None, features=None, message='No apartment selected'
-    )
+    return render_template('apartments.html', apartments=apartments, apartment=None, features=None, message='No apartment selected')
 
 
 @blueprint.route('/edit/<string:name>/')
