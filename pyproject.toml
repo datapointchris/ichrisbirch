@@ -233,7 +233,7 @@ select = [
     # isort
     "I",
 ]
-ignore = []
+ignore = ["SIM108"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

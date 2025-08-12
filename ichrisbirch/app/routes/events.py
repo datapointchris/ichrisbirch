@@ -13,7 +13,7 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.events')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('events', __name__, template_folder='templates/events', static_folder='static')
 
 

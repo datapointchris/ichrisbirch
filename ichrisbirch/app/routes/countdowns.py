@@ -10,7 +10,7 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.countdowns')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('countdowns', __name__, template_folder='templates/countdowns', static_folder='static')
 
 

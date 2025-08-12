@@ -19,7 +19,7 @@ from ichrisbirch import schemas
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.habits')
+logger = logging.getLogger(__name__)
 
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 
@@ -37,17 +37,12 @@ CHART_DATE_FORMAT = '%A, %B %d, %Y'
 
 def create_completed_habit_chart_data(habits: list[schemas.HabitCompleted]) -> tuple[list[str], list[int]]:
     """Create chart labels and values from completed habits for chart.js."""
-
     first = habits[0]
     last = habits[-1]
 
-    all_timestamps_for_range = [
-        first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)
-    ]
+    all_timestamps_for_range = [first.complete_date + timedelta(days=x) for x in range((last.complete_date - first.complete_date).days)]
     timestamps_zero_counts = {timestamp: 0 for timestamp in all_timestamps_for_range}
-    completed_counts = Counter(
-        [datetime(habit.complete_date.year, habit.complete_date.month, habit.complete_date.day) for habit in habits]
-    )
+    completed_counts = Counter([datetime(habit.complete_date.year, habit.complete_date.month, habit.complete_date.day) for habit in habits])
     all_dates_with_counts = timestamps_zero_counts | completed_counts
     # Reversed for chronological display in chart.js
     chart_labels = [datetime.strftime(dt, CHART_DATE_FORMAT) for dt in reversed(all_dates_with_counts)]
@@ -112,7 +107,7 @@ def completed():
         completed_count = len(completed_habits)
         chart_labels, chart_values = create_completed_habit_chart_data(completed_habits)
     else:
-        completed_count = f"No completed habits for time period: {' '.join(selected_filter.split('_')).capitalize()}"
+        completed_count = f'No completed habits for time period: {" ".join(selected_filter.split("_")).capitalize()}'
         chart_labels, chart_values = None, None
 
     daily = habits_api.get_many()

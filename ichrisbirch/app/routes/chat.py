@@ -5,7 +5,7 @@ from flask import current_app
 from flask import render_template
 from flask_login import login_required
 
-logger = logging.getLogger('app.chat')
+logger = logging.getLogger(__name__)
 
 blueprint = Blueprint('chat', __name__, template_folder='templates/chat', static_folder='static')
 

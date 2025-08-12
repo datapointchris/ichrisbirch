@@ -13,7 +13,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.journal')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('journal', __name__, template_folder='templates/journal', static_folder='static')
 
 

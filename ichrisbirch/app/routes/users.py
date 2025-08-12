@@ -12,7 +12,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('app.users')
+logger = logging.getLogger(__name__)
 blueprint = Blueprint('users', __name__, template_folder='templates/users', static_folder='static')
 
 
