@@ -2,21 +2,21 @@ import functools
 import logging
 import os
 from datetime import timedelta
-from pathlib import Path
 
+import boto3
 import dotenv
 
 from ichrisbirch.util import find_project_root
+from ichrisbirch.util import log_caller
 
-logger = logging.getLogger('config')
+logger = logging.getLogger(__name__)
 
 
 class AISettings:
-
     class OpenAISettings:
         def __init__(self) -> None:
-            self.api_key: str = os.environ['OPENAI_API_KEY']
-            self.model = 'gpt-4.1'
+            self.api_key: str = os.environ['AI_OPENAI_API_KEY']
+            self.model = os.environ['AI_OPENAI_DEFAULT_MODEL']
 
     class PromptSettings:
         PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
@@ -32,12 +32,13 @@ class AISettings:
 
 class AuthSettings:
     def __init__(self) -> None:
-        self.secret_key: str = os.environ['AUTH_SECRET_KEY']
-        self.algorithm: str = 'HS256'
+        self.jwt_secret_key: str = os.environ['AUTH_JWT_SECRET_KEY']
+        self.jwt_signing_algorithm: str = os.environ['AUTH_JWT_SIGNING_ALGORITHM']
         self.refresh_token_expire = timedelta(days=30)
         self.access_token_expire = timedelta(minutes=30)
-        self.accepting_new_signups: bool = bool(os.environ['ACCEPTING_NEW_SIGNUPS'])
+        self.accepting_new_signups: bool = bool(os.environ['AUTH_ACCEPTING_NEW_SIGNUPS'])
         self.no_new_signups_message = 'New signups for VIP users only.'
+        self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']
 
 
 class AWSSettings:
@@ -45,20 +46,20 @@ class AWSSettings:
         self.region: str = os.environ['AWS_REGION']
         self.account_id: str = os.environ['AWS_ACCOUNT_ID']
         self.kms_key: str = os.environ['AWS_KMS_KEY']
-        self.postgres_backup_role: str = 'role/S3DatabaseBackups'
+        self.postgres_backup_role: str = os.environ['AWS_POSTGRES_BACKUP_ROLE'] or 'role/S3DatabaseBackups'
         self.s3_backup_bucket: str = os.environ['AWS_S3_BACKUP_BUCKET']
 
 
 class ChatSettings:
     def __init__(self) -> None:
         self.host: str = os.environ['CHAT_HOST']
-        self.port: str = os.environ['CHAT_PORT']
+        self.port: int = int(os.environ['CHAT_PORT'])
 
 
 class FastAPISettings:
     def __init__(self) -> None:
         self.host: str = os.environ['FASTAPI_HOST']
-        self.port: str = os.environ['FASTAPI_PORT']
+        self.port: int = int(os.environ['FASTAPI_PORT'])
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
         _protocol = os.environ['PROTOCOL']
@@ -80,7 +81,7 @@ class FastAPISettings:
 class FlaskSettings:
     def __init__(self) -> None:
         self.host: str = os.environ['FLASK_HOST']
-        self.port: str = os.environ['FLASK_PORT']
+        self.port: int = int(os.environ['FLASK_PORT'])
         self.SECRET_KEY: str = os.environ['FLASK_SECRET_KEY']  # MUST be capitalized
         self.TESTING: bool = bool(os.environ['FLASK_TESTING'])
         self.DEBUG: bool = bool(os.environ['FLASK_DEBUG'])
@@ -113,17 +114,6 @@ class GithubSettings:
         }
 
 
-class MongoDBSettings:
-    def __init__(self) -> None:
-        self.host: str = os.environ['MONGO_HOST']
-        self.username: str = os.environ['MONGO_USERNAME']
-        self.password: str = os.environ['MONGO_PASSWORD']
-
-    @property
-    def db_uri(self) -> str:
-        return f'mongodb://{self.username}:{self.password}@{self.host}'
-
-
 class PlaywrightSettings:
     def __init__(self) -> None:
         self.timeout = 5_000
@@ -134,12 +124,13 @@ class PostgresSettings:
         self.host: str = os.environ['POSTGRES_HOST']
         self.username: str = os.environ['POSTGRES_USERNAME']
         self.password: str = os.environ['POSTGRES_PASSWORD']
-        self.port: str = os.environ['POSTGRES_PORT']
+        self.port: int = int(os.environ['POSTGRES_PORT'])
         self.database: str = os.environ['POSTGRES_DB']
+        self.db_schemas: list[str] = [schema.strip() for schema in os.environ['POSTGRES_DB_SCHEMAS'].split(',')]
 
     @property
     def db_uri(self) -> str:
-        return f'postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
+        return f'postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
 class RedisSettings:
@@ -157,17 +148,12 @@ class SQLAlchemySettings:
         self.host: str = os.environ['POSTGRES_HOST']
         self.username: str = os.environ['POSTGRES_USERNAME']
         self.password: str = os.environ['POSTGRES_PASSWORD']
-        self.port: str = os.environ['POSTGRES_PORT']
+        self.port: int = int(os.environ['POSTGRES_PORT'])
         self.database: str = os.environ['POSTGRES_DB']
 
     @property
     def db_uri(self) -> str:
-        return f'postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
-
-
-class SQLiteSettings:
-    def __init__(self) -> None:
-        self.db_uri: str = os.environ['SQLITE_DATABASE_URI']
+        return f'postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
 
 
 class UsersSettings:
@@ -180,23 +166,18 @@ class UsersSettings:
         self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
         self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
 
-        self.service_account_user_name = os.environ['USERS_SERVICE_ACCOUNT_USER_NAME']
-        self.service_account_user_email = os.environ['USERS_SERVICE_ACCOUNT_USER_EMAIL']
-        self.service_account_user_password = os.environ['USERS_SERVICE_ACCOUNT_USER_PASSWORD']
+        # Service account settings removed - now using API key authentication
 
 
 class Settings:
-    def __init__(self, env_file: Path = Path()):
+    def __init__(self):
         self.name: str = 'ichrisbirch'
-        self.db_schemas: list[str] = ['apartments', 'box_packing', 'chat', 'habits']
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
-        self.env_file: Path = env_file
         self.global_timezone = 'US/Eastern'
         self.protocol = os.environ['PROTOCOL']
         self.mac_safari_request_headers = {
             'User-Agent': (
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) '
-                'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.4 Safari/605.1.15'
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.4 Safari/605.1.15'
             ),
         }
 
@@ -208,12 +189,10 @@ class Settings:
         self.flask = FlaskSettings()
         self.flasklogin = FlaskLoginSettings()
         self.github = GithubSettings()
-        self.mongodb = MongoDBSettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()
         self.redis = RedisSettings()
         self.sqlalchemy = SQLAlchemySettings()
-        self.sqlite = SQLiteSettings()
         self.users = UsersSettings()
 
     @property
@@ -227,20 +206,36 @@ class Settings:
         return f'{self.protocol}://{self.chat.host}{port}'
 
 
-@functools.lru_cache(3)
-def get_settings(environment: str | None = None) -> Settings:
-    env_map = {'development': '.dev.env', 'testing': '.test.env', 'production': '.prod.env'}
-    environment = environment or os.environ.get('ENVIRONMENT', 'development')
-    if environment not in env_map:
-        raise ValueError(f'Invalid environment: {environment}. Must be one of: {", ".join(env_map.keys())}')
-    env_file = Path(dotenv.find_dotenv(env_map[environment], raise_error_if_not_found=True))
-    dotenv.load_dotenv(env_file, override=True)
-    os.environ['ENVIRONMENT'] = environment
-    logger.info(f'env file: {env_file}')
-    return Settings(env_file)
+def _set_environment_variables(env: str):
+    ssm = boto3.client('ssm', region_name='us-east-2')
+    all_params = []
+    response = ssm.get_parameters_by_path(Path=f'/ichrisbirch/{env}/', Recursive=True, WithDecryption=True)
+    all_params.extend(response['Parameters'])
+    while 'NextToken' in response:
+        response = ssm.get_parameters_by_path(
+            Path=f'/ichrisbirch/{env}/', Recursive=True, WithDecryption=True, NextToken=response['NextToken']
+        )
+        all_params.extend(response['Parameters'])
+    for param in all_params:
+        trimmed = param['Name'].replace(f'/ichrisbirch/{env}/', '')
+        env_var_name = '_'.join(trimmed.split('/')).upper()
+        os.environ[env_var_name] = param['Value']
 
 
-def clear_settings_cache() -> None:
-    get_settings.cache_clear()
-    if 'ENVIRONMENT' in os.environ:
-        os.environ['ENVIRONMENT'] = 'development'
+@log_caller
+@functools.cache
+def get_settings():
+    env_before = os.environ['ENVIRONMENT']
+    if dotenv.load_dotenv():
+        env_after = os.environ['ENVIRONMENT']
+        logger.info(f'{env_after} environment variables loaded from .env file')
+        if env_before != env_after:
+            logger.warning(f'ENVIRONMENT changed from {env_before} to {env_after} after loading .env file')
+    else:
+        logger.info('no .env file found, loading from SSM parameters')
+        _set_environment_variables(env_before)
+        logger.info('environment variables set from SSM parameters')
+    return Settings()
+
+
+settings = get_settings()
