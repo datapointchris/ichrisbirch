@@ -1,0 +1,275 @@
+services:
+  # Explicitly disable nginx for testing - not needed
+  nginx:
+    deploy:
+      replicas: 0
+
+  # Test database - optimized for speed over durability
+  postgres:
+    image: postgres:16-alpine
+    container_name: ichrisbirch-postgres-testing
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/tmp/postgres
+    # Use tmpfs for faster test database (in-memory storage)
+    tmpfs:
+      - /tmp/postgres
+    # Test optimizations: disable durability for maximum speed
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c max_connections=100
+      -c shared_buffers=128MB
+      -c max_wal_size=2GB
+      -c checkpoint_completion_target=0.9
+      -c log_destination=stderr
+      -c logging_collector=off
+    volumes:
+      - ichrisbirch_testing_logs:/var/log/ichrisbirch
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "postgres-test"
+
+  # Test Redis - optimized for speed, no persistence
+  redis:
+    image: redis:7-alpine
+    container_name: ichrisbirch-redis-testing
+    ports:
+      - "6380:6379"
+    # Use tmpfs for test Redis data for maximum speed
+    tmpfs:
+      - /tmp/redis
+    # Test optimizations: no persistence, save to tmpfs
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --dir /tmp/redis
+      --loglevel warning
+      --logfile /var/log/ichrisbirch/testing.log
+    environment: []  # Override production environment
+    volumes:
+      - ichrisbirch_testing_logs:/var/log/ichrisbirch
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "redis-test"
+
+  api:
+    build:
+      context: .
+      target: testing
+    container_name: ichrisbirch-api-testing
+    # Run without reload for consistent test environment
+    command: >
+      uv run uvicorn ichrisbirch.wsgi_api:api
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --log-level debug
+      --no-access-log
+    ports:
+      - "8001:8000"  # Map to different external port to avoid conflicts
+    environment:
+      - ENVIRONMENT=testing
+      - FASTAPI_TESTING=True
+      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: bind
+        source: ~/.config/aws
+        target: /root/.aws
+        read_only: true
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "api-test"
+
+  # Test Flask app
+  app:
+    build:
+      context: .
+      target: testing
+    container_name: ichrisbirch-app-testing
+    command: >
+      uv run flask
+      --app ichrisbirch.wsgi_app:app run
+      --host 0.0.0.0
+      --port 5000
+      --reload
+    ports:
+      - "5001:5000"  # Map to different external port to avoid conflicts
+    environment:
+      - ENVIRONMENT=testing
+      - FLASK_TESTING=True
+      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: bind
+        source: ~/.config/aws
+        target: /root/.aws
+        read_only: true
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "app-test"
+
+  # Test chat service - needed for API tests
+  chat:
+    build:
+      context: .
+      target: testing
+    container_name: ichrisbirch-chat-testing
+    command: >
+      uv run streamlit run ichrisbirch/wsgi_chat.py
+      --server.address=0.0.0.0
+      --server.port=8505
+      --server.headless=true
+    environment:
+      - ENVIRONMENT=testing
+      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: bind
+        source: ~/.config/aws
+        target: /root/.aws
+        read_only: true
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+    ports:
+      - "8507:8505"  # Different port to avoid conflicts
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "chat-test"
+
+  # Test scheduler - enabled for scheduler tests
+  scheduler:
+    build:
+      context: .
+      target: testing
+    container_name: ichrisbirch-scheduler-testing
+    command: uv run python -m ichrisbirch.wsgi_scheduler
+    environment:
+      - ENVIRONMENT=testing
+      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: bind
+        source: ~/.config/aws
+        target: /root/.aws
+        read_only: true
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    working_dir: /app
+    healthcheck:
+      disable: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "scheduler-test"
+
+volumes:
+  ichrisbirch_testing_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${ICHRISBIRCH_HOME:-${PWD}}/test-logs
+  uv_cache:
+    driver: local
+  venv_shared:
+    driver: local

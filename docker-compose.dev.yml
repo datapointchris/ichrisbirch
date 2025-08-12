@@ -1,0 +1,199 @@
+services:
+  # Development nginx with local configuration
+  nginx:
+    container_name: ichrisbirch-nginx-dev
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/dev/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/dev/nginx/api.conf:/etc/nginx/conf.d/api.conf:ro
+      - ./deploy/dev/nginx/app.conf:/etc/nginx/conf.d/app.conf:ro
+      - ./deploy/dev/nginx/chat.conf:/etc/nginx/conf.d/chat.conf:ro
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "nginx-dev"
+
+  # Development database - optimized for debugging and development
+  postgres:
+    container_name: ichrisbirch-postgres-dev
+    environment:
+      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres  # Simple password for development
+    ports:
+      - "5432:5432"
+    # Development optimizations: detailed logging, relaxed performance constraints
+    command: >
+      postgres
+      -c log_destination=stderr
+      -c shared_preload_libraries=pg_stat_statements
+      -c max_connections=200
+    # Use persistent volumes for development
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "postgres-dev"
+
+  # Development Redis - with debugging capabilities
+  redis:
+    container_name: ichrisbirch-redis-dev
+    ports:
+      - "6379:6379"
+    # Development Redis with some persistence and debugging
+    command: redis-server --save 60 1 --loglevel notice --maxmemory 256mb --maxmemory-policy allkeys-lru
+    environment: []  # Override production environment
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "redis-dev"
+
+  # Development overrides for FastAPI service
+  api:
+    build:
+      context: .
+      target: development
+    container_name: ichrisbirch-api-dev
+    # Enable auto-reload for development, disable access logs (handled by middleware)
+    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --log-level debug --no-access-log
+    environment:
+      # Development-specific environment variables
+      - ENVIRONMENT=development
+      - FASTAPI_DEBUG=True
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    # Override health check for API service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+    # Additional volumes for development tools
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude .venv from bind mount for performance
+      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "api-dev"
+
+  # Development overrides for Flask service
+  app:
+    build:
+      context: .
+      target: development
+    container_name: ichrisbirch-app-dev
+    # Enable debug mode and auto-reload for development
+    command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000 --debug --reload
+    environment:
+      - ENVIRONMENT=development
+      - FLASK_DEBUG=True
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    # Override health check for Flask service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+    volumes:
+      - .:/app
+      - /app/.venv
+      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "app-dev"
+
+  # Development overrides for chat service
+  chat:
+    build:
+      context: .
+      target: development
+    container_name: ichrisbirch-chat-dev
+    # Enable hot reloading for Streamlit in development
+    command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
+    environment:
+      - ENVIRONMENT=development
+    # Standard development port
+    ports:
+      - "8505:8505"
+    restart: unless-stopped
+    healthcheck:
+      disable: false  # Override disable, enable for development
+    volumes:
+      - .:/app
+      - /app/.venv
+      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "chat-dev"
+
+  # Development overrides for scheduler
+  scheduler:
+    build:
+      context: .
+      target: development
+    container_name: ichrisbirch-scheduler-dev
+    # In development, you might want to disable or modify the scheduler
+    # Uncomment to disable scheduler in development
+    # command: /bin/sh -c "echo 'Scheduler disabled in development' && sleep infinity"
+    environment:
+      - ENVIRONMENT=development
+    restart: unless-stopped
+    # Disable health check for scheduler (no HTTP server)
+    healthcheck:
+      disable: true
+    volumes:
+      - .:/app
+      - /app/.venv
+      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "scheduler-dev"
+
+# Development volumes using standard names
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
