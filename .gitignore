@@ -9,6 +9,10 @@ instance/*
 .webassets-cache
 .env
 
+# Test environment logs
+test-logs/
+logs/
+
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -237,6 +241,7 @@ pip-selfcheck.json
 # local files
 TESTING*
 *pylogger*
+xperiments/
 
 # Local copies of backup files
 ichrisbirch-backups/
