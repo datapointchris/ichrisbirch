@@ -12,7 +12,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.events')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -37,7 +37,7 @@ async def create(event: schemas.EventCreate, session: Session = Depends(get_sqla
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if event := session.get(models.Event, id):
         return event
-    raise NotFoundException("event", id, logger)
+    raise NotFoundException('event', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -47,7 +47,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    raise NotFoundException("event", id, logger)
+    raise NotFoundException('event', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
@@ -62,7 +62,7 @@ async def update(id: int, update: schemas.EventUpdate, session: Session = Depend
         session.refresh(event)
         return event
 
-    raise NotFoundException("event", id, logger)
+    raise NotFoundException('event', id, logger)
 
 
 @router.patch('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
@@ -74,4 +74,4 @@ async def attend(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.refresh(event)
         return event
 
-    raise NotFoundException("event", id, logger)
+    raise NotFoundException('event', id, logger)

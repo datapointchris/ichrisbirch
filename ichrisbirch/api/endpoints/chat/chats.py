@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -13,12 +12,12 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.chat')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Chat], status_code=status.HTTP_200_OK)
-async def read_many(search: Optional[bool] = None, session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(search: bool | None = None, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.Chat).order_by(models.Chat.created_at.desc())
     return list(session.scalars(query).all())
 
@@ -46,7 +45,7 @@ async def check_chat_exists_by_name(name: str, session: Session = Depends(get_sq
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if chat := session.get(models.Chat, id):
         return chat
-    raise NotFoundException("chat", id, logger)
+    raise NotFoundException('chat', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -56,7 +55,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    raise NotFoundException("chat", id, logger)
+    raise NotFoundException('chat', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)
@@ -71,7 +70,7 @@ async def update(id: int, update: schemas.ChatUpdate, session: Session = Depends
         session.refresh(chat)
         return chat
 
-    raise NotFoundException("chat", id, logger)
+    raise NotFoundException('chat', id, logger)
 
 
 @router.put('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)
@@ -91,4 +90,4 @@ async def update_messages(id: int, update: schemas.ChatUpdate, session: Session 
         logger.debug(f'update by PUT: chat {id}')
         return chat
 
-    raise NotFoundException("chat", id, logger)
+    raise NotFoundException('chat', id, logger)

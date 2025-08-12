@@ -2,14 +2,12 @@ import json
 import logging
 from datetime import datetime
 from datetime import timedelta
-from typing import Optional
 
 import httpx
 import markdown
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
@@ -29,7 +27,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.articles')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -37,7 +35,7 @@ def _get_youtube_video_text_captions(url: str) -> str:
     yt_trans = YouTubeTranscriptApi()
     formatter = TextFormatter()
     video_id = url.split('v=')[1]
-    transcript = yt_trans.get_transcript(video_id)
+    transcript = yt_trans.fetch(video_id)
     formatted = formatter.format_transcript(transcript)
     return formatted
 
@@ -61,9 +59,9 @@ def _get_text_content_from_html(soup: BeautifulSoup) -> str:
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 async def read_many(
-    favorites: Optional[bool] = None,
-    archived: Optional[bool] = None,
-    unread: Optional[bool] = None,
+    favorites: bool | None = None,
+    archived: bool | None = None,
+    unread: bool | None = None,
     session: Session = Depends(get_sqlalchemy_session),
 ):
     query = select(models.Article).order_by(models.Article.title.asc())
@@ -100,8 +98,8 @@ async def read_one_url(url: str, session: Session = Depends(get_sqlalchemy_sessi
 
 
 @router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
-async def create(obj_in: schemas.ArticleCreate, session: Session = Depends(get_sqlalchemy_session)):
-    obj = models.Article(**obj_in.model_dump())
+async def create(article: schemas.ArticleCreate, session: Session = Depends(get_sqlalchemy_session)):
+    obj = models.Article(**article.model_dump())
     session.add(obj)
     session.commit()
     session.refresh(obj)
@@ -136,7 +134,6 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video
     summary. If article, use html content for summary. Using openai chat to summarize and provide tags.
     """
-
     request_data = await request.json()
     logger.debug(request_data)
     url = request_data.get('url')
@@ -154,6 +151,7 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
         name='Article Summary with Tags',
         instructions=settings.ai.prompts.article_summary_tags,
         response_format={'type': 'json_object'},
+        settings=get_settings(),
     )
     data = json.loads(assistant.generate(text_content))
     return schemas.ArticleSummary(title=title, summary=data.get('summary'), tags=data.get('tags'))
@@ -166,7 +164,6 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If
     article, use html content for summary. Using openai chat to summarize and provide tags.
     """
-
     request_data = await request.json()
     logger.debug(request_data)
     url = request_data.get('url')
@@ -196,7 +193,9 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     else:
         text_content = _get_text_content_from_html(soup)
 
-    assistant = OpenAIAssistant(name='Article Insights', instructions=settings.ai.prompts.article_insights)
+    assistant = OpenAIAssistant(
+        name='Article Insights', settings=settings, instructions=settings.ai.prompts.article_insights
+    )
     mkd = assistant.generate(text_content)
     full_mkd = f'# {title}\n{mkd}'
     html = markdown.markdown(full_mkd)
@@ -208,7 +207,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if article := session.get(models.Article, id):
         return article
-    raise NotFoundException("article", id, logger)
+    raise NotFoundException('article', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -217,7 +216,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.delete(article)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    raise NotFoundException("article", id, logger)
+    raise NotFoundException('article', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
@@ -230,4 +229,4 @@ async def update(id: int, update: schemas.ArticleUpdate, session: Session = Depe
         session.commit()
         session.refresh(article)
         return article
-    raise NotFoundException("article", id, logger)
+    raise NotFoundException('article', id, logger)

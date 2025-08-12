@@ -1,7 +1,7 @@
+import datetime as dt
 import logging
-from typing import Optional
-from typing import Union
 
+import pendulum
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -15,7 +15,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.habits')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -28,9 +28,9 @@ async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(ge
     return db_obj
 
 
-@router.get("/", response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
+@router.get('/', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
 async def read_many_habits(
-    session: Session = Depends(get_sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
+    session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None
 ):
     query = select(models.Habit).limit(limit)
     if current is True:
@@ -49,9 +49,9 @@ async def create_category(category: schemas.HabitCategoryCreate, session: Sessio
     return db_obj
 
 
-@router.get("/categories/", response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
+@router.get('/categories/', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
 async def read_many_categories(
-    session: Session = Depends(get_sqlalchemy_session), current: Optional[bool] = None, limit: Optional[int] = None
+    session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None
 ):
     query = select(models.HabitCategory).limit(limit)
     if current is True:
@@ -70,13 +70,13 @@ async def create_completed(habit: schemas.HabitCompletedCreate, session: Session
     return db_obj
 
 
-@router.get("/completed/", response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
+@router.get('/completed/', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 async def read_many_completed(
     session: Session = Depends(get_sqlalchemy_session),
-    start_date: Union[str, None] = None,
-    end_date: Union[str, None] = None,
-    first: Union[bool, None] = None,
-    last: Union[bool, None] = None,
+    start_date: dt.datetime | dt.date | str | None = None,
+    end_date: dt.datetime | dt.date | str | None = None,
+    first: bool | None = None,
+    last: bool | None = None,
 ):
     query = select(models.HabitCompleted)
 
@@ -91,7 +91,8 @@ async def read_many_completed(
 
     else:  # filtered by start and end date
         query = query.filter(
-            models.HabitCompleted.complete_date >= start_date, models.HabitCompleted.complete_date <= end_date
+            models.HabitCompleted.complete_date >= pendulum.parse(str(start_date)),
+            models.HabitCompleted.complete_date <= pendulum.parse(str(end_date)),
         )
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 
@@ -102,7 +103,7 @@ async def read_many_completed(
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if habit := session.get(models.Habit, id):
         return habit
-    raise NotFoundException("habit", id, logger)
+    raise NotFoundException('habit', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
@@ -117,7 +118,7 @@ async def update(id: int, update: schemas.HabitUpdate, session: Session = Depend
         session.refresh(habit)
         return habit
 
-    raise NotFoundException("habit", id, logger)
+    raise NotFoundException('habit', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -127,14 +128,14 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    raise NotFoundException("habit", id, logger)
+    raise NotFoundException('habit', id, logger)
 
 
 @router.get('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
 async def read_one_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if category := session.get(models.HabitCategory, category_id):
         return category
-    raise NotFoundException("habit category", category_id, logger)
+    raise NotFoundException('habit category', category_id, logger)
 
 
 @router.patch('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
@@ -149,7 +150,7 @@ async def update_habit_category(
         session.refresh(category)
         return category
 
-    raise NotFoundException("habit category", category_id, logger)
+    raise NotFoundException('habit category', category_id, logger)
 
 
 @router.delete('/categories/{category_id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -165,14 +166,14 @@ async def delete_category(category_id: int, session: Session = Depends(get_sqlal
             logger.warning(str(e).split('\n')[0])
             return Response(message, status_code=status.HTTP_409_CONFLICT)
 
-    raise NotFoundException("habit category", category_id, logger)
+    raise NotFoundException('habit category', category_id, logger)
 
 
 @router.get('/completed/{completed_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
 async def read_one_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
     if completed := session.get(models.HabitCompleted, completed_id):
         return completed
-    raise NotFoundException("habit completed", completed_id, logger)
+    raise NotFoundException('habit completed', completed_id, logger)
 
 
 @router.delete('/completed/{completed_id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -182,4 +183,4 @@ async def delete_completed(completed_id: int, session: Session = Depends(get_sql
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    raise NotFoundException("habit completed", completed_id, logger)
+    raise NotFoundException('habit completed', completed_id, logger)

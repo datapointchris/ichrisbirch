@@ -12,7 +12,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.money_wasted')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 

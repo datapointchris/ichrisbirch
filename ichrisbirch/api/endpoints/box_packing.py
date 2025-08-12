@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -13,7 +12,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.box_packing')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -33,7 +32,7 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.get('/boxes/', response_model=list[schemas.Box], status_code=status.HTTP_200_OK)
-async def read_many_boxes(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
+async def read_many_boxes(session: Session = Depends(get_sqlalchemy_session), limit: int | None = None):
     query = select(models.Box).order_by(models.Box.number)
     query = query.limit(limit) if limit else query
     results = list(session.scalars(query).all())
@@ -53,7 +52,7 @@ async def create_box(box: schemas.BoxCreate, session: Session = Depends(get_sqla
 async def read_one_box(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if box := session.get(models.Box, id):
         return box
-    raise NotFoundException("box", id, logger)
+    raise NotFoundException('box', id, logger)
 
 
 @router.delete('/boxes/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -66,7 +65,7 @@ async def delete_box(id: int, session: Session = Depends(get_sqlalchemy_session)
         session.delete(box)
         session.commit()
         return {'message': 'Item deleted'}
-    raise NotFoundException("box", id, logger)
+    raise NotFoundException('box', id, logger)
 
 
 @router.patch('/boxes/{id}/', response_model=schemas.Box, status_code=status.HTTP_200_OK)
@@ -79,11 +78,11 @@ async def update_box(id: int, update: schemas.BoxUpdate, session: Session = Depe
         session.commit()
         session.refresh(obj)
         return obj
-    raise NotFoundException("box", id, logger)
+    raise NotFoundException('box', id, logger)
 
 
 @router.get('/items/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
-async def read_many_items(session: Session = Depends(get_sqlalchemy_session), limit: Optional[int] = None):
+async def read_many_items(session: Session = Depends(get_sqlalchemy_session), limit: int | None = None):
     query = select(models.BoxItem).order_by(models.BoxItem.name)
     query = query.limit(limit) if limit else query
     return list(session.scalars(query).all())
@@ -122,7 +121,7 @@ async def read_many_orphans(session: Session = Depends(get_sqlalchemy_session)):
 async def read_one_item(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if item := session.get(models.BoxItem, id):
         return item
-    raise NotFoundException("box item", id, logger)
+    raise NotFoundException('box item', id, logger)
 
 
 @router.delete('/items/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -134,7 +133,7 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
         if box:  # if item was in a box and not an orphan
             _update_box_details_based_on_contents(box, session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    raise NotFoundException("box item", id, logger)
+    raise NotFoundException('box item', id, logger)
 
 
 @router.patch('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
@@ -147,4 +146,4 @@ async def update_item(id: int, update: schemas.BoxItemUpdate, session: Session =
         session.commit()
         session.refresh(obj)
         return obj
-    raise NotFoundException("box item", id, logger)
+    raise NotFoundException('box item', id, logger)
