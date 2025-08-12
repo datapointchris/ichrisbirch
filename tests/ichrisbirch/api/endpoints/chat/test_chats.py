@@ -1,11 +1,8 @@
 import pytest
-from fastapi import status
 
-import tests.util
+from ichrisbirch import schemas
 from tests.utils.database import delete_test_data
 from tests.utils.database import insert_test_data
-from ichrisbirch import schemas
-from tests.util import show_status_and_response
 
 from ..crud_test import ApiCrudTester
 
@@ -24,11 +21,15 @@ NEW_OBJ = schemas.ChatCreate(
     subcategory='Lambda',
     tags=['cloud', 'aws'],
     messages=[
-        schemas.ChatMessageCreate(role="assistant", content="Hello, how can I help you today?"),
-        schemas.ChatMessageCreate(role="user", content="Help me with setting up AWS Lambda SAM"),
+        schemas.ChatMessageCreate(role='assistant', content='Hello, how can I help you today?'),
+        schemas.ChatMessageCreate(role='user', content='Help me with setting up AWS Lambda SAM'),
         schemas.ChatMessageCreate(
-            role="assistant",
-            content="AWS Lambda is a serverless compute service that lets you run code without provisioning or managing servers. You can use AWS Lambda to run code for virtually any type of application or backend service with zero administration. Just upload your code and Lambda takes care of everything required to run and scale your code with high availability.",
+            role='assistant',
+            content="""AWS Lambda is a serverless compute service that lets you run code without provisioning or managing servers.
+
+                    You can use AWS Lambda to run code for virtually any type of application or backend service with zero administration.
+                    Just upload your code and Lambda takes care of everything required to run and scale your code with high availability.
+                    """,
         ),
     ],
 )
