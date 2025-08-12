@@ -10,12 +10,12 @@ from ichrisbirch import schemas
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 
-logger = logging.getLogger('api.server')
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("/", response_model=schemas.ServerStats, status_code=status.HTTP_200_OK)
+@router.get('/', response_model=schemas.ServerStats, status_code=status.HTTP_200_OK)
 def health(settings: Settings = Depends(get_settings)) -> schemas.ServerStats:
     return schemas.ServerStats(
         name=settings.fastapi.title,

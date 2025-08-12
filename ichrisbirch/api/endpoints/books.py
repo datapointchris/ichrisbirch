@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import httpx
 from bs4 import BeautifulSoup
@@ -21,20 +20,20 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.books')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def read_many(search: Optional[bool] = None, session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(search: bool | None = None, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.Book).order_by(models.Book.priority.asc())
 
     return list(session.scalars(query).all())
 
 
 @router.post('/', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
-async def create(obj_in: schemas.BookCreate, session: Session = Depends(get_sqlalchemy_session)):
-    obj = models.Book(**obj_in.model_dump())
+async def create(book: schemas.BookCreate, session: Session = Depends(get_sqlalchemy_session)):
+    obj = models.Book(**book.model_dump())
     session.add(obj)
     session.commit()
     session.refresh(obj)
@@ -100,7 +99,7 @@ async def goodreads(request: Request, settings: Settings = Depends(get_settings)
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if book := session.get(models.Book, id):
         return book
-    raise NotFoundException("book", id, logger)
+    raise NotFoundException('book', id, logger)
 
 
 @router.get('/isbn/{isbn}/', response_model=schemas.Book | None, status_code=status.HTTP_200_OK)
@@ -117,12 +116,12 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    raise NotFoundException("book", id, logger)
+    raise NotFoundException('book', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
-    update_data = update.model_dump(exclude_unset=True)
+async def update(id: int, book_update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    update_data = book_update.model_dump(exclude_unset=True)
     logger.debug(f'update: book {id} {update_data}')
 
     if book := session.get(models.Book, id):
@@ -132,4 +131,4 @@ async def update(id: int, update: schemas.BookUpdate, session: Session = Depends
         session.refresh(book)
         return book
 
-    raise NotFoundException("book", id, logger)
+    raise NotFoundException('book', id, logger)

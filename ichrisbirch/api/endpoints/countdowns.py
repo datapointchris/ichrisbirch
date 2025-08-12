@@ -12,7 +12,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.countdowns')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -35,7 +35,7 @@ async def create(countdown: schemas.CountdownCreate, session: Session = Depends(
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if countdown := session.get(models.Countdown, id):
         return countdown
-    raise NotFoundException("countdown", id, logger)
+    raise NotFoundException('countdown', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -45,7 +45,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    raise NotFoundException("countdown", id, logger)
+    raise NotFoundException('countdown', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
@@ -60,4 +60,4 @@ async def update(id: int, update: schemas.CountdownUpdate, session: Session = De
         session.refresh(countdown)
         return countdown
 
-    raise NotFoundException("countdown", id, logger)
+    raise NotFoundException('countdown', id, logger)

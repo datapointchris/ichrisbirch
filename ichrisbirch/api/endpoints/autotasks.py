@@ -13,7 +13,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
 
-logger = logging.getLogger('api.autotasks')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -24,8 +24,8 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)
-async def create(task: schemas.AutoTaskCreate, session: Session = Depends(get_sqlalchemy_session)):
-    db_obj = models.AutoTask(**task.model_dump())
+async def create(autotask: schemas.AutoTaskCreate, session: Session = Depends(get_sqlalchemy_session)):
+    db_obj = models.AutoTask(**autotask.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)

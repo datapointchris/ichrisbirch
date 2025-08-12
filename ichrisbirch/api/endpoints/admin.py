@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -9,7 +9,7 @@ from pygtail import Pygtail
 
 from ichrisbirch.util import get_logger_filename_from_handlername
 
-logger = logging.getLogger('api.admin')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -23,7 +23,7 @@ class LogReader:
             logger.debug(f'Reading logs from: {log_filename}')
             return Pygtail(log_filename, paranoid=True)
         except Exception as e:
-            logger.error(f"Error setting up log reader: {e}")
+            logger.error(f'Error setting up log reader: {e}')
             return []
 
 
@@ -46,7 +46,7 @@ async def websocket_endpoint_log(websocket: WebSocket, log_reader: LogReader = D
     except WebSocketDisconnect:
         logger.debug('Client disconnected')
     except Exception as e:
-        logger.error(f"Error in websocket stream: {e}")
+        logger.error(f'Error in websocket stream: {e}')
     finally:
         logger.debug('closed websocket')
         await websocket.close()
