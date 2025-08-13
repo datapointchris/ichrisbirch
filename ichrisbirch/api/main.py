@@ -14,10 +14,9 @@ from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
 from ichrisbirch.config import Settings
-from ichrisbirch.config import get_settings
 from ichrisbirch.util import log_caller
 
-logger = logging.getLogger('api.main')
+logger = logging.getLogger(__name__)
 
 
 async def http_exception_handler_logger(request, exc):
@@ -36,13 +35,9 @@ async def api_exception_handler(request, exc):
 
 
 @log_caller
-def create_api(settings: Settings = Depends(get_settings)) -> FastAPI:
+def create_api(settings: Settings) -> FastAPI:
     api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
     logger.info('initializing api')
-
-    # get the settings but then override the function with constant settings to avoid
-    # accidentally reloading with different values throughout the app
-    api.dependency_overrides[get_settings] = lambda: settings
     logger.info(f'loaded settings: {type(settings)}')
     logger.debug(f'api url: {settings.api_url}')
     logger.debug(f'postgres port: {settings.postgres.port}')
@@ -79,7 +74,7 @@ def create_api(settings: Settings = Depends(get_settings)) -> FastAPI:
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
     api.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
     api.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
-    api.include_router(endpoints.users.router, prefix='/users', dependencies=deps)
+    api.include_router(endpoints.users.router, prefix='/users')
     logger.info('routers registered')
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
