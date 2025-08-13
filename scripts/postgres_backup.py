@@ -1,8 +1,7 @@
 """This module can be called from the command line to restore a Postgres database from a backup file.
 
-Usually it is called by the ichrisbirch command line utility (located outside of this repo) to create a one time backup
-with a description for particular events. Events are usually before a database migration or any change that might cause
-database issues.
+Usually it is called by the ichrisbirch command line utility (located outside of this repo) to create a one time backup with a description
+for particular events. Events are usually before a database migration or any change that might cause database issues.
 """
 
 import argparse
@@ -10,7 +9,7 @@ import logging
 
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 
-ops_logger = logging.getLogger('ops')
+ops_logger = logging.getLogger(__name__)
 
 help_msg = """Backup the rds postgres database to S3.
 \n
@@ -29,8 +28,9 @@ parser.add_argument('--description', required=True, help='Description of the bac
 backup_source = parser.add_argument_group(
     'Source to Backup',
     description="""If any of the following parameters are specified, they are all required.
-Otherwise, they will default to the database settings for the current environment,
-set with 'ENVIRONMENT'""",
+
+                Otherwise, they will default to the database settings for the current environment, set with 'ENVIRONMENT'
+                """,
 )
 backup_source.add_argument('--environment', required=False, help='Environment')
 backup_source.add_argument('--source-host', required=False, help='Source host')
@@ -60,10 +60,8 @@ args_dict = {
 
 # remove unset args
 args_dict = {k: v for k, v in args_dict.items() if v is not None}
-
 upload = not args.skip_upload
-description = args.description
-description = ''.join([d.lower() for d in description]).replace(' ', '-')
+description = ''.join([d.lower() for d in args.description]).replace(' ', '-')
 
 pbr = PostgresBackupRestore(**args_dict)
 pbr.backup(upload=upload, save_local=args.save_local, backup_description=description)
