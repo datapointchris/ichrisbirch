@@ -9,25 +9,26 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 import functools
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from typing import Callable
 
 import pendulum
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
 from ichrisbirch import models
+from ichrisbirch.config import Settings
 from ichrisbirch.config import settings
-from ichrisbirch.database.sqlalchemy.session import SessionLocal
+from ichrisbirch.database.sqlalchemy.session import create_session
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 from ichrisbirch.util import find_project_root
 
-logger = logging.getLogger('scheduler.jobs')
+logger = logging.getLogger(__name__)
 
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
@@ -38,11 +39,12 @@ daily_3pm_trigger = CronTrigger(day='*', hour=15)
 
 @dataclass
 class JobToAdd:
-    """Dataclass for packaging jobs to add to the scheduler This class is really only necessary to make main.py more
-    clean in adding jobs.
+    """Dataclass for packaging jobs to add to the scheduler This class is really only necessary to make main.py more clean in adding
+    jobs.
     """
 
     func: Callable
+    args: tuple
     trigger: Any
     id: str
     jobstore: str = 'ichrisbirch'
@@ -67,7 +69,7 @@ def job_logger(func: Callable) -> Callable:
 
 
 @job_logger
-def make_logs():
+def make_logs(settings: Settings) -> None:
     logger.debug(f'time: {pendulum.now()}')
     logger.info(f'cwd: {Path.cwd()}')
     logger.info(f'project root: {find_project_root()}')
@@ -77,9 +79,9 @@ def make_logs():
 
 
 @job_logger
-def decrease_task_priority(session=SessionLocal) -> None:
+def decrease_task_priority(settings: Settings) -> None:
     """Decrease priority of all tasks by 1."""
-    with session() as session:
+    with create_session(settings) as session:
         query = select(models.Task).filter(models.Task.complete_date.is_(None))
         for task in session.scalars(query).all():
             task.priority -= 1
@@ -87,9 +89,9 @@ def decrease_task_priority(session=SessionLocal) -> None:
 
 
 @job_logger
-def check_and_run_autotasks(session=SessionLocal) -> None:
+def check_and_run_autotasks(settings: Settings) -> None:
     """Check if any autotasks should run today and create tasks if not at max concurrent."""
-    with session() as session:
+    with create_session(settings) as session:
         tasks_count_by_name: dict[str, int] = defaultdict(int)
         for task in session.scalars(select(models.Task)).all():
             tasks_count_by_name[task.name] += 1
@@ -97,12 +99,9 @@ def check_and_run_autotasks(session=SessionLocal) -> None:
             if not autotask.should_run_today:
                 continue
             concurrent = tasks_count_by_name.get(autotask.name, 0)
-            logger.info(f"{autotask.name} concurrent tasks: {concurrent}")
+            logger.info(f'{autotask.name} concurrent tasks: {concurrent}')
             if concurrent >= autotask.max_concurrent:
-                logger.info(
-                    f"skipping {autotask.name} with concurrent {concurrent}"
-                    f"tasks and max concurrent of {autotask.max_concurrent}"
-                )
+                logger.info(f'skipping {autotask.name} with {concurrent} of max {autotask.max_concurrent}')
             else:
                 session.add(
                     models.Task(
@@ -128,29 +127,33 @@ def aws_postgres_snapshot_to_s3():
 
 
 @job_logger
-def postgres_backup():
-    pbr = PostgresBackupRestore(logger=logger)
+def postgres_backup(settings: Settings, logger: logging.Logger) -> None:
+    pbr = PostgresBackupRestore(settings=settings, logger=logger)
     pbr.backup()
 
 
 jobs_to_add = [
     JobToAdd(
         func=make_logs,
+        args=(settings,),
         trigger=CronTrigger(second=15),
         id='make_logs',
     ),
     JobToAdd(
         func=decrease_task_priority,
+        args=(settings,),
         trigger=daily_1am_trigger,
         id='decrease_task_priority_daily',
     ),
     JobToAdd(
         func=check_and_run_autotasks,
+        args=(settings,),
         trigger=daily_115am_trigger,
         id='check_and_run_autotasks_daily',
     ),
     JobToAdd(
         func=postgres_backup,
+        args=(settings, logger),
         trigger=daily_130am_trigger,
         id='postgres_backup_daily',
     ),
