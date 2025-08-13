@@ -2,20 +2,27 @@ from ichrisbirch.scheduler.jobs import JobToAdd
 from ichrisbirch.scheduler.jobs import daily_3pm_trigger
 
 
-def test_job_function_1():
-    return 'Test Job Function 1'
+class DummySettings:
+    CLASS_NAME = 'DummySettings'
 
 
-def test_job_function_2():
-    return 'Test Job Function 2'
+dummy_settings = DummySettings()
 
 
-def test_job_function_3():
-    return 'Test Job Function 3'
+def test_job_function_1(settings: DummySettings):
+    return f'Test Job Function 1: settings class {settings.CLASS_NAME}'
+
+
+def test_job_function_2(settings: DummySettings):
+    return f'Test Job Function 2: settings class {settings.CLASS_NAME}'
+
+
+def test_job_function_3(settings: DummySettings):
+    return f'Test Job Function 3: settings class {settings.CLASS_NAME}'
 
 
 BASE_DATA: list[JobToAdd] = [
-    JobToAdd(func=test_job_function_1, trigger=daily_3pm_trigger, id='test_job_function_1'),
-    JobToAdd(func=test_job_function_2, trigger=daily_3pm_trigger, id='test_job_function_2'),
-    JobToAdd(func=test_job_function_3, trigger=daily_3pm_trigger, id='test_job_function_3'),
+    JobToAdd(func=test_job_function_1, args=(dummy_settings,), trigger=daily_3pm_trigger, id='test_job_function_1'),
+    JobToAdd(func=test_job_function_2, args=(dummy_settings,), trigger=daily_3pm_trigger, id='test_job_function_2'),
+    JobToAdd(func=test_job_function_3, args=(dummy_settings,), trigger=daily_3pm_trigger, id='test_job_function_3'),
 ]
