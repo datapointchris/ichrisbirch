@@ -115,7 +115,7 @@ skips = ["B113", "B311"]
 [tool.codespell]
 skip = '*.css.map,*chat_history.json'
 ignore-words-list = "astroid,aNULL,ANULL,anull,iterm"
-exclude-file = "poetry.lock"
+exclude-file = "uv.lock"
 check-filenames = true
 # count = ""
 # quiet-level = 3
