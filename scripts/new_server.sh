@@ -5,9 +5,6 @@ set_global_vars() {
   KEY_BUCKET=ichrisbirch-webserver-keys
   PUBLIC_KEY=ec2-public.key
   PRIVATE_KEY=ec2-private.key
-  POETRY_HOME=/etc/poetry
-  POETRY_BIN_DIR=$POETRY_HOME/bin
-  POETRY_EXE=$POETRY_BIN_DIR/poetry
   AWS_CLI_ZIP="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
   TMUX_CONFIG_GIST="https://gist.github.com/2054319eca6c91523355590fed6135d6.git"
   TMUX_CONFIG_DIR="$UBUNTU_HOME/.config/tmux"
@@ -56,12 +53,12 @@ setup_tmux() {
   rm -rf "$TMUX_CONFIG_DIR/.git"
 }
 
-install_poetry() {
-  curl -sSL https://install.python-poetry.org | POETRY_HOME="$POETRY_HOME" python3 -
-  # Add poetry to PATH for ubuntu since this script runs as root on startup
-  echo "export PATH=\"$POETRY_BIN_DIR:$PATH\"" >>"$UBUNTU_HOME/.bashrc"
-  $POETRY_EXE config virtualenvs.in-project true && echo "Set poetry to create virtualenvs in project directory"
-  sudo -u ubuntu $POETRY_EXE config virtualenvs.in-project true && echo "Set poetry to create virtualenvs in project directory for ubuntu"
+install_uv() {
+  # Install UV for all users
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  # Add UV to PATH for ubuntu user
+  echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$UBUNTU_HOME/.bashrc"
+  source "$UBUNTU_HOME/.bashrc"
 }
 
 clone_repo() {
@@ -69,7 +66,7 @@ clone_repo() {
 }
 
 install_project() {
-  cd /var/www/ichrisbirch && $POETRY_EXE install --without dev,cicd
+  cd /var/www/ichrisbirch && ~/.cargo/bin/uv sync --frozen --no-dev
 }
 
 unlock_secret_files() {
@@ -123,7 +120,7 @@ setup_supervisor() {
 }
 
 set_permissions() {
-  # Set permissions - ubuntu must own the directory for subsequent poetry install and git secret reveal
+  # Set permissions - ubuntu must own the directory for subsequent UV install and git secret reveal
   # Since startup script runs as root, change permissions at the end
   chown -R ubuntu /var/www
   chown redis:redis /var/lib/redis
@@ -138,7 +135,7 @@ main() {
   install_aws_cli
   import_gpg_keys
   setup_tmux
-  install_poetry
+  install_uv
   clone_repo
   install_project
   unlock_secret_files
