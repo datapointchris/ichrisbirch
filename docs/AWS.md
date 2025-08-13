@@ -21,28 +21,7 @@
   - POLICY: `AmazonDynamoDBFullAccess`
 - ROLE: `AWSTrustedAdvisorRole`
 
-```mermaid
-graph TB
-    admin[admin - Administrator access]
-    developer[developer - Access to services]
-    AWSAdministratorAccess[AWSAdministratorAccess]
-    AllowPassRoleS3DatabaseBackups[AllowPassRoleS3DatabaseBackups]
-    AWSKeyManagementServiceUser[AWSKeyManagementServiceUser]
-    AmazonRDSFullAccess[AmazonRDSFullAccess]
-    AmazonS3FullAccess[AmazonS3FullAccess]
-    AmazonDynamoDBFullAccess[AmazonDynamoDBFullAccess]
-    AWSTrustedAdvisorRole[AWSTrustedAdvisorRole]
-    S3DatabaseBackups[S3DatabaseBackups - S3 Full Access]
-    admin -->|Attached Policy| AWSAdministratorAccess
-    developer -->|Attached Policy| AllowPassRoleS3DatabaseBackups
-    developer -->|Attached Policy| AWSKeyManagementServiceUser
-    developer -->|Attached Policy| AmazonRDSFullAccess
-    developer -->|Attached Policy| AmazonS3FullAccess
-    developer -->|Attached Policy| AmazonDynamoDBFullAccess
-    AllowPassRoleS3DatabaseBackups -.->|Assume Role| S3DatabaseBackups
-    style AllowPassRoleS3DatabaseBackups fill:gray,stroke:#333,stroke-width:2px
-    style S3DatabaseBackups fill:gray,stroke:#f66,stroke-width:2px,stroke-dasharray: 5, 5
-  ```
+![AWS IAM Structure](images/generated/aws_iam.svg)
 
 ## EC2
 

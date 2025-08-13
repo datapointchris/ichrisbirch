@@ -79,7 +79,7 @@ git secret hide
 - name: "git-secret Reveal .env files"
   run: |
     # Import private key and avoid the "Inappropriate ioctl for device" error
-    echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
+    echo {% raw %}${{ secrets.CICD_GPG_KEY }}{% endraw %} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
     git secret reveal
 ```
 
