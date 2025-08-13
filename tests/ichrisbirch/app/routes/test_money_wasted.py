@@ -3,15 +3,16 @@ from datetime import date
 import pytest
 from fastapi import status
 
-import tests.util
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('money_wasted')
+    insert_test_data('money_wasted')
     yield
-    tests.util.delete_test_data('money_wasted')
+    delete_test_data('money_wasted')
 
 
 NEW_OBJ = dict(
