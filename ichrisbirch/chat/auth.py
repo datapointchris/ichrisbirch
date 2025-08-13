@@ -1,19 +1,17 @@
 import logging
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
 
 import httpx
 import pendulum
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.api.service_account import APIServiceAccount
-from ichrisbirch.app.query_api import QueryAPI
+from ichrisbirch.api.client.logging_client import logging_internal_service_client
 from ichrisbirch.app.utils import url_builder
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger('chat.auth')
-service_user = APIServiceAccount()
+logger = logging.getLogger(__name__)
 
 
 class ChatAuthClient:
@@ -59,27 +57,30 @@ class ChatAuthClient:
         refresh_url = url_builder(self.token_url, 'refresh')
         with self.safe_request_client() as client:
             response = client.post(refresh_url, headers=headers).raise_for_status()
-            return response.json().get("access_token")
+            return response.json().get('access_token')
 
     def login_username(self, username: str, password: str):
-        users_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
-        service_account_users_api = QueryAPI(base_endpoint='users', response_model=schemas.User, user=service_user.user)
+        """Login user with username/password using modern internal service client."""
+        # Use the new logging internal service client instead of service account
+        with logging_internal_service_client() as client:
+            users = client.resource('users', schemas.User)
 
-        if user := service_account_users_api.get_one(['email', username]):
-            user = models.User(**user.model_dump())
-            if user.check_password(password):
-                logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
-                try:
-                    users_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
-                    users_api.patch([user.id], json={'last_login': pendulum.now().for_json()})
-                    logger.debug(f'updated last login for user: {user.name}')
-                except Exception as e:
-                    logger.error(f'error updating last login for user {user.name}: {e}')
-                return user
+            # Look up user by email using the new client
+            if user_data := users.get_generic(['email', username]):
+                user = models.User(**user_data)
+                if user.check_password(password):
+                    logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
+                    try:
+                        # Update last login using the same client
+                        users.patch([user.id], json={'last_login': pendulum.now().for_json()})
+                        logger.debug(f'updated last login for user: {user.name}')
+                    except Exception as e:
+                        logger.error(f'error updating last login for user {user.name}: {e}')
+                    return user
+                else:
+                    logger.warning(f'incorrect password for user: {user.email}')
             else:
-                logger.warning(f'incorrect password for user: {user.email}')
-        else:
-            logger.warning(f'user with email {username} not found')
+                logger.warning(f'user with email {username} not found')
         return None
 
     def login_token(self, token: str):
