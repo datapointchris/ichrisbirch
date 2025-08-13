@@ -3,17 +3,17 @@ import time
 
 from openai import OpenAI
 
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import Settings
 
-logger = logging.getLogger('assistants.openai')
+logger = logging.getLogger(__name__)
 
 
 class OpenAIAssistant:
 
-    def __init__(self, name: str, instructions: str, response_format=None):
+    def __init__(self, name: str, instructions: str, settings: Settings, response_format=None):
         self.name = name
         self.instructions = instructions
-        self.settings = get_settings()
+        self.settings = settings
         self.client = OpenAI(api_key=self.settings.ai.openai.api_key)
         self.assistant = self.client.beta.assistants.create(
             name=self.name,
