@@ -1,16 +1,17 @@
 import pytest
 from fastapi import status
 
-import tests.util
 from tests import test_data
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('users')
+    insert_test_data('users')
     yield
-    tests.util.delete_test_data('users')
+    delete_test_data('users')
 
 
 @pytest.fixture()
@@ -62,7 +63,7 @@ class TestSignup:
     def test_do_signup(self, test_app_function):
         response = test_app_function.post('/signup/', follow_redirects=True, data=SIGNUP_USER)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-        assert f'<title>Welcome, {SIGNUP_USER['name']}</title>' in response.text
+        assert f'<title>Welcome, {SIGNUP_USER["name"]}</title>' in response.text
 
     def test_duplicate_signup_error(self, test_app_function, caplog):
         test_app_function.post(
