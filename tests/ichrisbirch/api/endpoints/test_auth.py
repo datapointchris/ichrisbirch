@@ -1,20 +1,22 @@
 import pytest
 from fastapi import status
-from sqlalchemy.sql import select
 
 import tests.test_data
-from ichrisbirch import models
 from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
-from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from tests.utils.database import TestSessionLocal
+from ichrisbirch.database.sqlalchemy.session import create_session
+from tests.utils.database import create_jwt_handler
 from tests.utils.database import delete_test_data
+from tests.utils.database import get_test_data_admin_user
+from tests.utils.database import get_test_data_regular_user
 from tests.utils.database import insert_test_data
+from tests.utils.database import make_internal_service_headers
+from tests.utils.database import make_invalid_internal_service_headers
+from tests.utils.database import make_jwt_header
+from tests.utils.database import test_settings
 
 USERS_TEST_DATA = tests.test_data.users.BASE_DATA
-
-jwt_handler = JWTTokenHandler()
 
 
 @pytest.fixture(autouse=True)
@@ -26,27 +28,20 @@ def insert_testing_data():
 
 @pytest.fixture()
 def test_user():
-    # look in tests.test_data.users to see user
-    with TestSessionLocal() as session:
-        return session.execute(select(models.User).where(models.User.email == 'regular_user_1@gmail.com')).scalar()
+    """Fixture to get regular test user."""
+    return get_test_data_regular_user()
 
 
 @pytest.fixture()
 def test_admin_user():
-    # look in tests.test_data.users to see user is admin
-    with TestSessionLocal() as session:
-        return session.execute(select(models.User).where(models.User.email == 'admin@admin.com')).scalar()
+    """Fixture to get admin test user."""
+    return get_test_data_admin_user()
 
 
-def make_app_headers_for_user(user: models.User):
-    from tests.utils.settings import get_test_settings
-
-    test_settings = get_test_settings()
-    return {'X-Application-ID': test_settings.flask.app_id, 'X-User-ID': user.get_id()}
-
-
-def make_jwt_header(token: str):
-    return {'Authorization': f'Bearer {token}'}
+@pytest.fixture()
+def jwt_handler():
+    """Fixture to create JWT token handler."""
+    return create_jwt_handler()
 
 
 def test_validate_password(test_user):
@@ -55,24 +50,24 @@ def test_validate_password(test_user):
 
 
 def test_validate_user_email(test_user):
-    with TestSessionLocal() as session:
+    with create_session(test_settings) as session:
         assert validate_user_email(test_user.email, session)
         assert validate_user_email('not.exist@example.com', session) is None
 
 
 def test_validate_user_id(test_user):
-    with TestSessionLocal() as session:
+    with create_session(test_settings) as session:
         assert validate_user_id(test_user.get_id(), session) is not None
         assert validate_user_id('123456', session) is None
 
 
-def test_generate_jwt(test_user):
-    token = jwt_handler.create_access_token(test_user.id)
+def test_generate_jwt(jwt_handler, test_user):
+    token = jwt_handler.create_access_token(test_user.get_id())
     assert token
     assert isinstance(token, str)
 
 
-def test_access_token_jwt_auth(test_api_function, test_user):
+def test_access_token_jwt_auth(test_api_function, jwt_handler, test_user):
     token = jwt_handler.create_access_token(test_user.get_id())
     headers = make_jwt_header(token)
     response = test_api_function.post('/auth/token/', headers=headers)
@@ -85,7 +80,55 @@ def test_access_token_oauth2(test_api_function, test_user):
     assert response.status_code == status.HTTP_201_CREATED
 
 
-def test_validate_token(test_api_function, test_user):
+def test_validate_token(test_api_function, jwt_handler, test_user):
     token = jwt_handler.create_access_token(test_user.get_id())
     response = test_api_function.get('/auth/token/validate/', headers=make_jwt_header(token))
     assert response.status_code == status.HTTP_200_OK
+
+
+# =============================================================================
+# INTERNAL SERVICE AUTHENTICATION TESTS
+# =============================================================================
+
+
+def test_internal_service_authentication_valid(test_api_function, test_user):
+    """Test valid internal service authentication allows access to email endpoint."""
+    headers = make_internal_service_headers()
+    response = test_api_function.get(f'/users/email/{test_user.email}/', headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+    user_data = response.json()
+    assert user_data['email'] == test_user.email
+    assert user_data['id'] == test_user.id
+
+
+def test_internal_service_authentication_invalid_key(test_api_function, test_user):
+    """Test invalid internal service key returns 401."""
+    headers = make_invalid_internal_service_headers()
+    response = test_api_function.get(f'/users/email/{test_user.email}/', headers=headers)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'Admin or internal service access required' in response.json()['detail']
+
+
+def test_internal_service_authentication_missing_headers(test_api_function, test_user):
+    """Test missing internal service headers returns 401."""
+    response = test_api_function.get(f'/users/email/{test_user.email}/')
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'Admin or internal service access required' in response.json()['detail']
+
+
+def test_internal_service_authentication_missing_service_header(test_api_function, test_user):
+    """Test missing X-Internal-Service header returns 401."""
+    from tests.utils.database import test_settings
+
+    headers = {'X-Service-Key': test_settings.auth.internal_service_key}
+    response = test_api_function.get(f'/users/email/{test_user.email}/', headers=headers)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'Admin or internal service access required' in response.json()['detail']
+
+
+def test_internal_service_authentication_missing_key_header(test_api_function, test_user):
+    """Test missing X-Service-Key header returns 401."""
+    headers = {'X-Internal-Service': 'flask-frontend'}
+    response = test_api_function.get(f'/users/email/{test_user.email}/', headers=headers)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'Admin or internal service access required' in response.json()['detail']
