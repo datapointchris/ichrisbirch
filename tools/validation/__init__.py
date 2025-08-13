@@ -1,5 +1,4 @@
-"""
-Validation Tools
+"""Validation Tools.
 
 This package contains validation tools for the ichrisbirch project:
 - HTML validation (W3C standards)
