@@ -65,7 +65,7 @@ repos:
     rev: v0.45.0
     hooks:
       - id: markdownlint
-        args: [".", "--fix"]
+        args: ["--fix"]
 
   - repo: https://github.com/koalaman/shellcheck-precommit
     rev: v0.10.0
