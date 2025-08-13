@@ -4,7 +4,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.app.query_api import QueryAPI
 
-logger = logging.getLogger('chat.api')
+logger = logging.getLogger(__name__)
 
 
 class ChatAPI:

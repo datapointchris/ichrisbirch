@@ -3,7 +3,7 @@ from typing import Protocol
 
 import redis
 
-logger = logging.getLogger('chat.storage')
+logger = logging.getLogger(__name__)
 
 
 class TokenStorage(Protocol):
