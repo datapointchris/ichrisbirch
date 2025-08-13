@@ -48,4 +48,4 @@ However, if the `PATCH` request doesn't return the updated resource, it should r
 
 ## Good API Design
 
-![API Design](images/api-design.jpg)
+![API Design](../images/api-design.jpg)
