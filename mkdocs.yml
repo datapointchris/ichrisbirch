@@ -7,11 +7,15 @@ theme:
     scheme: slate
     accent: amber
   features:
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.instant
     - navigation.tracking
     - navigation.sections
     - navigation.expand
+    - navigation.indexes
     - content.code.copy
+    - toc.integrate
 extra_css:
   - stylesheets/extra.css
 markdown_extensions:
@@ -36,3 +40,67 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tasklist:
       custom_checkbox: true
+nav:
+  - Home: index.md
+  - Project:
+      - Layout: project_layout.md
+      - Adding New Apps: add_new_app.md
+      - Documentation:
+          - Overview: documentation.md
+          - Documentation Tools: documentation_tools.md
+  - Developer Setup: developer_setup.md
+  - API:
+      - Overview: api/index.md
+      - Authentication Strategies: api/authentication_strategies.md
+      - Client:
+          - Overview: api/client/index.md
+          - Authentication: api/client/auth.md
+          - Session Management: api/client/session.md
+          - Resource Clients: api/client/resources.md
+          - Usage Examples: api/client/examples.md
+          - Migration Guide: api/client/migration.md
+          - Implementation Summary: api/client/summary.md
+  - Docker:
+      - Overview: docker/index.md
+      - Docker Guide: docker/docker.md
+      - Docker Compose: docker/docker-compose.md
+      - Quick Reference: docker/docker-quick-reference.md
+  - Architecture:
+      - Configuration: configuration.md
+      - Database: alembic.md
+      - Scheduler: scheduler.md
+  - AWS: AWS.md
+  - DevOps:
+      - Overview: devops/index.md
+      - Domain Names: domain_names.md
+      - New Server Setup: devops/new_server.md
+      - New Database: devops/new_database.md
+      - Nginx: devops/nginx.md
+      - Supervisor: devops/supervisor.md
+      - PG Cron: devops/pg_cron.md
+      - Backups: backups.md
+      - CI/CD: cicd.md
+      - Terraform: terraform.md
+      - Git Secret: git_secret.md
+  - Frontend:
+      - CSS: css.md
+      - CSS BEM: css_bem.md
+      - HTML5 Semantic: html5_semantic.md
+  - Testing:
+      - Overview: testing/overview.md
+      - Testing Guide: testing/testing.md
+      - Environment: testing/environment.md
+      - Configuration: testing/test_configuration.md
+      - Fixtures: testing/fixtures.md
+      - Test Data: testing/test_data.md
+      - Writing Tests: testing/writing_tests.md
+      - Visualization: testing/visualization_options.md
+  - Troubleshooting:
+      - Overview: troubleshooting/index.md
+      - Poetry to UV Migration: troubleshooting/poetry-uv-migration.md
+      - Docker Issues: troubleshooting/docker-issues.md
+      - Testing Issues: troubleshooting/testing-issues.md
+      - Database Issues: troubleshooting/database-issues.md
+      - Development Setup: troubleshooting/development-issues.md
+      - Deployment Issues: troubleshooting/deployment-issues.md
+      - Legacy Issues: troubleshooting.md
