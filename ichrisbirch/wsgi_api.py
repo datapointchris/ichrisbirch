@@ -1,4 +1,4 @@
 from ichrisbirch.api.main import create_api
-from ichrisbirch.config import get_settings
+from ichrisbirch.config import settings
 
-api = create_api(settings=get_settings())
+api = create_api(settings=settings)
