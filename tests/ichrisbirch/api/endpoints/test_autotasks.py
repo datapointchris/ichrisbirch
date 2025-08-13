@@ -64,7 +64,7 @@ def test_task_categories(test_api_logged_in, category):
         priority=3,
         frequency=AutoTaskFrequency.Biweekly,
     )
-    created = test_api_logged_in.post(ENDPOINT, json=test_obj.model_dump())
+    created = test_api_logged_in.post(ENDPOINT, json=test_obj.model_dump(mode='json'))
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
     assert created.json()['name'] == test_obj.name
 
@@ -78,6 +78,6 @@ def test_task_frequencies(test_api_logged_in, frequency):
         priority=3,
         frequency=frequency,
     )
-    created = test_api_logged_in.post(ENDPOINT, json=test_obj.model_dump())
+    created = test_api_logged_in.post(ENDPOINT, json=test_obj.model_dump(mode='json'))
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
     assert created.json()['name'] == test_obj.name
