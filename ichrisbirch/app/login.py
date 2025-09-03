@@ -9,10 +9,27 @@ from flask_login.config import EXEMPT_METHODS
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.app.query_api import QueryAPI
+from ichrisbirch.api.client.logging_client import logging_internal_service_client
 
-logger = logging.getLogger('app.login_manager')
-user_api = QueryAPI(base_endpoint='users', response_model=schemas.User)
+logger = logging.getLogger(__name__)
+
+
+def get_users_api():
+    """Get users API client using modern internal service authentication."""
+    try:
+        if current_app and 'SETTINGS' in current_app.config:
+            logger.warning('IMPORTANT: Using Flask current_app for settings to get api_url to configure logging_internal_service_client')
+            # Use Flask app's test-compatible settings
+            api_url = current_app.config['SETTINGS'].api_url
+            return logging_internal_service_client(base_url=api_url)
+    except RuntimeError:
+        # Outside Flask context - use global settings
+        logger.warning(
+            'IMPORTANT: Tried to load Flask current_app to get api_url for logging_internal_service_client but it is not available'
+        )
+        pass
+    return logging_internal_service_client()
+
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -24,13 +41,15 @@ login_manager.login_message_category = 'warning'
 def load_user(alternative_id):
     """Reload the user object from the user ID stored in the session.
 
-    Must return the User object or None Using the user ID as the value of the remember token means you must change the
-    user ID to invalidate their login sessions. One way to improve this is to use an alternative user id instead of the
-    user ID.
+    Must return the User object or None Using the user ID as the value of the remember token means you must change the user ID to invalidate
+    their login sessions. One way to improve this is to use an alternative user id instead of the user ID.
     """
-    if user := user_api.get_one(['alt', alternative_id]):
-        logger.debug(f'logged in user: {user.alternative_id} - {user.email}')
-        return models.User(**user.model_dump())
+    with get_users_api() as client:
+        users = client.resource('users', schemas.User)
+        if user_data := users.get_generic(['alt', alternative_id]):
+            user = models.User(**user_data)
+            logger.debug(f'logged in user: {user.alternative_id} - {user.email}')
+            return user
     return None
 
 
