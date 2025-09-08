@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIAssistant:
-
     def __init__(self, name: str, instructions: str, settings: Settings, response_format=None):
         self.name = name
         self.instructions = instructions
