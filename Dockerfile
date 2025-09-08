@@ -1,80 +1,93 @@
-# `python-base` sets up all our shared environment variables
-FROM python:3.8.1-slim as python-base
+# Base stage with common system dependencies and UV setup
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS base
 
-    # python
+# UV optimization settings
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+
+# Install system dependencies needed for all environments
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libpq5 \
+    postgresql-client \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+WORKDIR /app
+
+# Development stage - includes all dependencies (dev + test + production)
+FROM base AS development
+
+# Install all dependencies using UV cache mounts
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
+
+# Copy source code and install project
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
 ENV PYTHONUNBUFFERED=1 \
-    # prevents python creating .pyc files
     PYTHONDONTWRITEBYTECODE=1 \
-    \
-    # pip
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    \
-    # poetry
-    # https://python-poetry.org/docs/configuration/#using-environment-variables
-    POETRY_VERSION=1.0.3 \
-    # make poetry install to this location
-    POETRY_HOME="/opt/poetry" \
-    # make poetry create the virtual environment in the project's root
-    # it gets named `.venv`
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
-    # do not ask any interactive question
-    POETRY_NO_INTERACTION=1 \
-    \
-    # paths
-    # this is where our requirements + virtual environment will live
-    PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+    PATH="/app/.venv/bin:$PATH"
 
+# Testing stage - production dependencies + test dependencies only
+FROM base AS testing
 
-# prepend poetry and venv to path
-ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+# Install production + test dependencies only
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev --group test
 
+# Copy source code and install project
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --group test
 
-# `builder-base` stage is used to build deps + create our virtual environment
-FROM python-base as builder-base
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-        # deps for installing poetry
-        curl \
-        # deps for building python deps
-        build-essential
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
 
-# install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+# Production builder - production dependencies only
+FROM base AS production-builder
 
-# copy project requirement files here to ensure they will be cached.
-WORKDIR $PYSETUP_PATH
-COPY poetry.lock pyproject.toml ./
+# Install production dependencies only
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
 
-# install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
-RUN poetry install --no-dev
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
 
+# Final production stage - minimal runtime image
+FROM python:3.12-slim-bookworm AS production
 
-# `development` image is used during development / testing
-FROM python-base as development
-ENV FASTAPI_ENV=development
-WORKDIR $PYSETUP_PATH
+# Install only runtime system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libpq5 \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# copy in our built poetry + venv
-COPY --from=builder-base $POETRY_HOME $POETRY_HOME
-COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
+# Create non-root user for security
+RUN groupadd --gid 1000 app && \
+    useradd --uid 1000 --gid app --shell /bin/bash --create-home app
 
-# quicker install as runtime deps are already installed
-RUN poetry install
+# Copy the application and virtual environment from builder
+COPY --from=production-builder --chown=app:app /app /app
 
-# will become mountpoint of our code
+USER app
 WORKDIR /app
 
-EXPOSE 8000
-CMD ["uvicorn", "--reload", "main:app"]
-
-
-# `production` image used for runtime
-FROM python-base as production
-ENV FASTAPI_ENV=production
-COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
-COPY ./app /app/
-WORKDIR /app
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "main:app"]
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
