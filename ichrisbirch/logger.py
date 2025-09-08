@@ -1,11 +1,11 @@
 """Set up the logger for the entire project.
 
-Loggers are set up for: app, api, scheduler, and third-party libraries.
-The root logger is also set up to log to console and to a JSON file.
-The app, api, and scheduler all log to their respectively named files,
-while the ichrisbirch_file handler receives logs from everywhere, similar to the console.
+Loggers are set up for: app, api, scheduler, and third-party libraries. The root logger is also set up to log to console and to a JSON file.
+The app, api, and scheduler all log to their respectively named files, while the ichrisbirch_file handler receives logs from everywhere,
+similar to the console.
 
-Awesome logging tutorial: https://www.youtube.com/watch?v=9L77QExPmI0
+Awesome logging tutorial:
+https://www.youtube.com/watch?v=9L77QExPmI0
 """
 
 import functools
@@ -13,21 +13,27 @@ import logging
 import logging.config
 import logging.handlers
 import os
-import platform
 
 
 class No304StatusFilter(logging.Filter):
+    """No longer used, instead app.middleware.RequestLoggingMiddleware is handling request logging and filtering."""
+
     def filter(self, record: logging.LogRecord):
         return '304 -' not in record.getMessage()
 
 
-class SingleLineLogLevelBracketFormatter(logging.Formatter):
-    """Add brackets around log level and remove all newlines."""
+class EnhancedLogFormatter(logging.Formatter):
+    """Enhanced formatter that strips package prefix, adds brackets around log level."""
 
     def format(self, record: logging.LogRecord):
+        record.name.removeprefix('ichrisbirch.')
+        # Add brackets around log level
         if not record.levelname.startswith('['):
             record.levelname = f'[{record.levelname}]'
+
+        # Remove newlines
         # record.msg = record.msg.replace('\n', ' ').replace('\r', ' ')
+
         return logging.Formatter.format(self, record)
 
 
@@ -64,11 +70,8 @@ DETAILED_FORMAT = '{levelname:9} {asctime} {name}:{funcName}:{lineno} | {message
 BASIC_FORMAT = '{levelname:9} {asctime} {name}: {message}'
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
-LOG_BASE_LOCATION = '/var/log/ichrisbirch'
-MACOS_LOG_BASE_LOCATION = '/usr/local/var/log/ichrisbirch'
-
+# LOG_BASE_LOCATION = os.environ['LOG_DIR']
 GLOBAL_LOG_LEVEL = 'DEBUG'
-
 FILTERS = {
     'no_304_status': {
         '()': No304StatusFilter,
@@ -81,76 +84,54 @@ FORMATTERS = {
         'datefmt': DATE_FORMAT,
         'style': '{',
     },
-    'json': {
-        'format': BASIC_FORMAT,
-        'datefmt': DATE_FORMAT,
-        'style': '{',
-        'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-    },
-    'single_line_log_level_in_brackets': {
+    # 'json': {
+    #     'format': BASIC_FORMAT,
+    #     'datefmt': DATE_FORMAT,
+    #     'style': '{',
+    #     'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+    # },
+    'enhanced': {
         'format': DETAILED_FORMAT,
         'datefmt': DATE_FORMAT,
         'style': '{',
-        'class': 'ichrisbirch.logger.SingleLineLogLevelBracketFormatter',
+        'class': 'ichrisbirch.logger.EnhancedLogFormatter',
     },
 }
 
-HANDLERS = {
-    'console': {
-        'formatter': 'single_line_log_level_in_brackets',
+# Build handlers dynamically based on environment
+HANDLERS: dict = {
+    'stdout': {
+        'formatter': 'enhanced',
         'class': 'logging.StreamHandler',
         'stream': 'ext://sys.stdout',
     },
-    'ichrisbirch_file': {
-        'formatter': 'single_line_log_level_in_brackets',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'maxBytes': 10_000_000,
-        'filename': f'{LOG_BASE_LOCATION}/ichrisbirch.log',
-    },
-    'app_file': {
-        'formatter': 'single_line_log_level_in_brackets',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'maxBytes': 10_000_000,
-        'filename': f'{LOG_BASE_LOCATION}/app.log',
-    },
-    'api_file': {
-        'formatter': 'single_line_log_level_in_brackets',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'maxBytes': 10_000_000,
-        'filename': f'{LOG_BASE_LOCATION}/api.log',
-    },
-    'scheduler_file': {
-        'formatter': 'single_line_log_level_in_brackets',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'maxBytes': 10_000_000,
-        'filename': f'{LOG_BASE_LOCATION}/scheduler.log',
-    },
-    'json_file': {
-        'formatter': 'json',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'maxBytes': 10_000_000,
-        'filename': f'{LOG_BASE_LOCATION}/ichrisbirch.json',
-    },
 }
+
+# Add file handler if LOG_FILE_PATH is set (for test environment persistent logging)
+if log_file_path := os.environ.get('LOG_FILE_PATH'):
+    HANDLERS['file'] = {
+        'formatter': 'enhanced',
+        'class': 'logging.handlers.RotatingFileHandler',
+        'maxBytes': 10_000_000,
+        'backupCount': 3,
+        'filename': log_file_path,
+    }
 
 
 LOGGERS = {
     'root': {
         'level': GLOBAL_LOG_LEVEL,
-        'handlers': ['console', 'ichrisbirch_file', 'json_file'],
-        'filters': ['no_304_status'],
+        'handlers': ['stdout'] + (['file'] if 'file' in HANDLERS else []),
     },
     'ichrisbirch': {},
-    'app': {'handlers': ['app_file']},
-    'api': {'handlers': ['api_file']},
-    'scheduler': {'handlers': ['scheduler_file']},
     'tests.conftest': {'level': 'INFO'},
 }
 
 
 # these are set to quiet down noisy libraries when debug is on
 THIRD_PARTY_LOGGERS = {
-    'apscheduler': {'level': 'WARNING', 'handlers': ['scheduler_file']},
+    'apscheduler': {'level': 'WARNING'},
+    'asyncio': {'level': 'INFO'},
     'boto3': {'level': 'INFO'},
     'botocore': {'level': 'INFO'},
     'faker': {'level': 'INFO'},
@@ -166,7 +147,7 @@ THIRD_PARTY_LOGGERS = {
     'tzlocal': {'level': 'INFO'},
     'urllib3': {'level': 'INFO'},
     'watchdog': {'level': 'INFO'},
-    'werkzeug': {'handlers': ['app_file'], 'filters': ['no_304_status']},
+    'werkzeug': {'level': 'WARNING'},
 }
 
 LOGGING_CONFIG = {
@@ -182,7 +163,6 @@ LOGGING_CONFIG = {
 @functools.lru_cache(maxsize=1)
 def initialize_logging(config=LOGGING_CONFIG):
     github_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
-    mac_os = platform.system() == 'Darwin'
 
     # Don't log to file in GitHub Actions
     # 1. Delete handlers so they don't try to create the log files
@@ -194,13 +174,6 @@ def initialize_logging(config=LOGGING_CONFIG):
                 del config['handlers'][handler]
         for logger in config['loggers']:
             config['loggers'][logger]['handlers'] = ['console']
-
-    # Change log location on MacOS to /usr/local/var/log/ichrisbirch from /var/log/ichrisbirch
-    if mac_os:
-        for handler in config['handlers']:
-            if '_file' in handler:
-                filename = f'{MACOS_LOG_BASE_LOCATION}/{handler.removesuffix('_file')}.log'
-                config['handlers'][handler]['filename'] = filename
 
     logging.config.dictConfig(config)
     logger = logging.getLogger()
