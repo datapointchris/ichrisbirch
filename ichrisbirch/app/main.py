@@ -8,11 +8,13 @@ from flask_wtf.csrf import CSRFProtect
 
 from ichrisbirch.app import routes
 from ichrisbirch.app.login import login_manager
+from ichrisbirch.app.middleware import RequestLoggingMiddleware
 from ichrisbirch.config import Settings
 from ichrisbirch.util import log_caller
 
-logger = logging.getLogger('app.main')
+logger = logging.getLogger(__name__)
 csrf = CSRFProtect()
+request_logger = RequestLoggingMiddleware()
 
 
 error_codes = [400, 404, 405, 409, 422, 500, 502]
@@ -49,6 +51,9 @@ def create_app(settings: Settings) -> Flask:
         csrf.init_app(app)
         logger.info('csrf protection initialized')
 
+        request_logger.init_app(app)
+        logger.info('request logging middleware initialized')
+
         for error_code in error_codes:
             app.register_error_handler(error_code, partial(handle_errors, error_code=error_code))
         logger.info('error handlers registered')
@@ -67,7 +72,7 @@ def create_app(settings: Settings) -> Flask:
 
         @app.template_filter('currency')
         def currency_filter(value):
-            return "$ {:,.2f}".format(value)
+            return f'$ {value:,.2f}'
 
         logger.info('template filters registered')
 

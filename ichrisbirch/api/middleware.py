@@ -4,7 +4,7 @@ import time
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-logger = logging.getLogger('api.middleware')
+logger = logging.getLogger(__name__)
 
 
 class ResponseLoggerMiddleware(BaseHTTPMiddleware):
@@ -15,7 +15,10 @@ class ResponseLoggerMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
-        logger.debug(
-            f'{request.method} {request.url.path} completed in {process_time:.6f} status code {response.status_code}'
-        )
+
+        # Skip logging for health endpoint GET requests
+        if request.method == 'GET' and request.url.path == '/health':
+            return response
+
+        logger.debug(f'{request.method} {request.url.path} completed in {process_time:.6f} status code {response.status_code}')
         return response
