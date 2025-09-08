@@ -82,8 +82,9 @@ def test_scheduler():
     # Start Scheduler in its own thread or it will block the main thread
     test_scheduler = BlockingScheduler()
     test_jobstore = get_jobstore(test_settings)
-    test_scheduler.add_jobstore(test_jobstore, alias='ichrisbirch', extend_existing=True)
+    test_scheduler.add_jobstore(test_jobstore, alias=test_settings.sqlalchemy.database, extend_existing=True)
     scheduler_thread = threading.Thread(target=test_scheduler.start, daemon=True)
+    logger.info('starting test scheduler thread')
     scheduler_thread.start()
     try:
         yield test_scheduler
