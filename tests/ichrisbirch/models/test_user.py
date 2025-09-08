@@ -1,23 +1,22 @@
 import pytest
 
 from ichrisbirch import models
-from tests.test_data.users import BASE_DATA as test_users
+from tests.test_data.users import BASE_DATA
 
 
 @pytest.fixture(autouse=True)
 def test_user():
     """Create a user with default preferences for testing."""
-    yield test_users[0]
+    yield BASE_DATA[0]
 
 
 class TestValidatePreferences:
-
     def test_valid_update_shallow(self, test_user):
         update = {'theme_color': 'blue'}
         try:
             test_user.validate_preferences(key='preferences', updated_preferences=update)
         except ValueError:
-            pytest.fail("validate_preference raised ValueError unexpectedly!")
+            pytest.fail('validate_preference raised ValueError unexpectedly!')
 
     def test_invalid_key(self, test_user):
         update = {'non_existent_key': 'value'}
@@ -34,7 +33,7 @@ class TestValidatePreferences:
         try:
             test_user.validate_preferences(key='preferences', updated_preferences=update)
         except ValueError:
-            pytest.fail("validate_preference raised ValueError unexpectedly!")
+            pytest.fail('validate_preference raised ValueError unexpectedly!')
 
     def test_invalid_key_in_nested_dict(self, test_user):
         update = {'box_packing': {'pages': {'all': {'non_existent_key': 'value'}}}}
@@ -55,7 +54,7 @@ class TestValidatePreferences:
         try:
             test_user.validate_preferences(key='preferences', updated_preferences=update)
         except ValueError:
-            pytest.fail("validate_preference raised ValueError unexpectedly!")
+            pytest.fail('validate_preference raised ValueError unexpectedly!')
 
     def test_mixed_valid_invalid_update(self, test_user):
         update = {
@@ -69,50 +68,50 @@ class TestValidatePreferences:
 
 class TestDotPreferenceToNestedDict:
     def test_single_level_key(self):
-        dot_key = "view_type"
-        value = "grid"
-        expected = {"view_type": "grid"}
+        dot_key = 'view_type'
+        value = 'grid'
+        expected = {'view_type': 'grid'}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
 
     def test_two_level_key(self):
-        dot_key = "tasks.view_type"
-        value = "grid"
-        expected = {"tasks": {"view_type": "grid"}}
+        dot_key = 'tasks.view_type'
+        value = 'grid'
+        expected = {'tasks': {'view_type': 'grid'}}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
 
     def test_multi_level_key(self):
-        dot_key = "tasks.pages.index.view_type"
-        value = "grid"
-        expected = {"tasks": {"pages": {"index": {"view_type": "grid"}}}}
+        dot_key = 'tasks.pages.index.view_type'
+        value = 'grid'
+        expected = {'tasks': {'pages': {'index': {'view_type': 'grid'}}}}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
 
     def test_empty_key(self):
-        dot_key = ""
-        value = "grid"
+        dot_key = ''
+        value = 'grid'
         expected = {}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
 
     def test_key_with_empty_parts(self):
-        dot_key = "tasks..view_type"
-        value = "grid"
-        expected = {"tasks": {"": {"view_type": "grid"}}}
+        dot_key = 'tasks..view_type'
+        value = 'grid'
+        expected = {'tasks': {'': {'view_type': 'grid'}}}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
 
     def test_value_is_none(self):
-        dot_key = "tasks.pages.index.view_type"
+        dot_key = 'tasks.pages.index.view_type'
         value = None
-        expected = {"tasks": {"pages": {"index": {"view_type": None}}}}
+        expected = {'tasks': {'pages': {'index': {'view_type': None}}}}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
 
     def test_value_is_complex(self):
-        dot_key = "settings.default_user_preferences"
-        value = {"theme": "dark", "notifications": True}
-        expected = {"settings": {"default_user_preferences": {"theme": "dark", "notifications": True}}}
+        dot_key = 'settings.default_user_preferences'
+        value = {'theme': 'dark', 'notifications': True}
+        expected = {'settings': {'default_user_preferences': {'theme': 'dark', 'notifications': True}}}
         result = models.User.dot_preference_to_nested_dict(dot_key, value)
         assert result == expected
