@@ -2,16 +2,17 @@ import pytest
 from playwright.sync_api import Page
 from playwright.sync_api import expect
 
-import tests.util
 from tests.ichrisbirch.frontend.fixtures import FRONTEND_BASE_URL
-from tests.ichrisbirch.frontend.fixtures import login
+from tests.ichrisbirch.frontend.fixtures import login_regular_user
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('autotasks')
+    insert_test_data('autotasks')
     yield
-    tests.util.delete_test_data('autotasks')
+    delete_test_data('autotasks')
 
 
 @pytest.fixture(autouse=True)
@@ -20,7 +21,7 @@ def login_homepage(page: Page):
 
     autouse=True means it does not need to be called in the test function
     """
-    login(page)
+    login_regular_user(page)
     page.goto(f'{FRONTEND_BASE_URL}/autotasks/')
 
 
