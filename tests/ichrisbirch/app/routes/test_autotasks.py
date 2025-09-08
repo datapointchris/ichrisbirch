@@ -1,24 +1,23 @@
 import pytest
 from fastapi import status
 
-import tests.util
-from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.task import TaskCategory
 from tests.util import show_status_and_response
+from tests.utils.database import delete_test_data
+from tests.utils.database import insert_test_data
 
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    tests.util.insert_test_data('autotasks', 'tasks')
+    insert_test_data('autotasks', 'tasks')
     yield
-    tests.util.delete_test_data('autotasks', 'tasks')
+    delete_test_data('autotasks', 'tasks')
 
 
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/autotasks/')
-    tests.util.log_all_table_items('autotasks', models.AutoTask, 'name')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 
