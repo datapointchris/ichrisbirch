@@ -1,4 +1,4 @@
-from scripts.validate_html import ValidateWebsite
+from tools.validation.validate_html import ValidateWebsite
 
 
 def test_remove_multiple_subpages():
