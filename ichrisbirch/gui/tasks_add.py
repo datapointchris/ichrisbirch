@@ -9,7 +9,7 @@ import httpx
 from ichrisbirch.gui.utils import set_app_geometry
 from ichrisbirch.models.task import TaskCategory
 
-logger = logging.getLogger('gui.tasks_add')
+logger = logging.getLogger(__name__)
 
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
@@ -83,9 +83,7 @@ name_label.grid(row=1, column=0, padx=ui.bigpad, pady=(ui.bigpad, ui.smallpad))
 name_entry.grid(row=2, column=0, padx=ui.bigpad, pady=(0, ui.bigpad))
 
 category_label = ctk.CTkLabel(center_frame, text='Category:', font=ui.font)
-category_combobox = ctk.CTkComboBox(
-    center_frame, font=ui.font, dropdown_font=ui.font, height=45, width=400, values=TASK_CATEGORIES
-)
+category_combobox = ctk.CTkComboBox(center_frame, font=ui.font, dropdown_font=ui.font, height=45, width=400, values=TASK_CATEGORIES)
 category_label.grid(row=3, column=0, padx=ui.bigpad, pady=(ui.bigpad, ui.smallpad))
 category_combobox.grid(row=4, column=0, padx=ui.bigpad, pady=(0, ui.bigpad))
 
