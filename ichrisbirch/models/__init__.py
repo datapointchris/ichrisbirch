@@ -1,4 +1,5 @@
 from ichrisbirch.models.apartment import Apartment
+from ichrisbirch.models.apartment import Feature
 from ichrisbirch.models.article import Article
 from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.book import Book
@@ -29,6 +30,7 @@ __all__ = [
     'ChatMessage',
     'Countdown',
     'Event',
+    'Feature',
     'Habit',
     'HabitCategory',
     'HabitCompleted',
