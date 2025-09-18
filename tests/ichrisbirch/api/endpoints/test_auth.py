@@ -5,11 +5,10 @@ import tests.test_data
 from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
+from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.database.sqlalchemy.session import create_session
-from tests.utils.database import create_jwt_handler
 from tests.utils.database import delete_test_data
-from tests.utils.database import get_test_data_admin_user
-from tests.utils.database import get_test_data_regular_user
+from tests.utils.database import get_test_user
 from tests.utils.database import insert_test_data
 from tests.utils.database import make_internal_service_headers
 from tests.utils.database import make_invalid_internal_service_headers
@@ -28,20 +27,18 @@ def insert_testing_data():
 
 @pytest.fixture()
 def test_user():
-    """Fixture to get regular test user."""
-    return get_test_data_regular_user()
+    return get_test_user('regular_user_1@gmail.com')
 
 
 @pytest.fixture()
 def test_admin_user():
-    """Fixture to get admin test user."""
-    return get_test_data_admin_user()
+    return get_test_user('admin@admin.com')
 
 
 @pytest.fixture()
 def jwt_handler():
-    """Fixture to create JWT token handler."""
-    return create_jwt_handler()
+    with create_session(test_settings) as test_session:
+        return JWTTokenHandler(settings=test_settings, session=test_session)
 
 
 def test_validate_password(test_user):

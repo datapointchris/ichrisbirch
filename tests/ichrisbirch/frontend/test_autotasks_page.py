@@ -17,10 +17,6 @@ def insert_testing_data():
 
 @pytest.fixture(autouse=True)
 def login_homepage(page: Page):
-    """Automatically login with regular user Set the page to the base URL + endpoint.
-
-    autouse=True means it does not need to be called in the test function
-    """
     login_regular_user(page)
     page.goto(f'{FRONTEND_BASE_URL}/autotasks/')
 

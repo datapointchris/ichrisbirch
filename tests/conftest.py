@@ -26,14 +26,10 @@ from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
 from tests.environment import DockerComposeTestEnvironment
 from tests.utils.database import create_session
-from tests.utils.database import get_test_login_admin_user
-from tests.utils.database import get_test_login_regular_user
-
-# from tests.utils.api_client import create_test_api_client
-# from tests.utils.app_client import create_test_app_client
 from tests.utils.database import get_test_login_users
 from tests.utils.database import get_test_runner_settings
 from tests.utils.database import get_test_session
+from tests.utils.database import get_test_user
 from tests.utils.database import test_settings
 
 logger = logging.getLogger(__name__)
@@ -110,7 +106,8 @@ def create_test_api_client(login=False, admin=False):
     api.dependency_overrides[get_settings] = get_test_runner_settings
 
     if login:
-        user = get_test_login_admin_user() if admin else get_test_login_regular_user()
+        email = 'testloginadmin@testadmin.com' if admin else 'testloginregular@testuser.com'
+        user = get_test_user(email)
         api.dependency_overrides[auth.get_current_user] = lambda: user
         api.dependency_overrides[auth.get_current_user_or_none] = lambda: user
         # Only override get_admin_user if the user is actually an admin
@@ -167,7 +164,8 @@ def create_test_app_client(login=False, admin=False):
     app = create_test_app_base()
     if login:
         app.test_client_class = FlaskClientAPIHeaders
-        user = get_test_login_admin_user() if admin else get_test_login_regular_user()
+        email = 'testloginadmin@testadmin.com' if admin else 'testloginregular@testuser.com'
+        user = get_test_user(email)
         api_headers = {'X-Application-ID': test_settings.flask.app_id, 'X-User-ID': user.get_id()}
         with app.test_request_context():
             login_user(user)
