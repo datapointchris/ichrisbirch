@@ -58,10 +58,13 @@ def login():
                     if not http_utils.url_has_allowed_host_and_scheme(next_page, request.host):
                         return abort(status.HTTP_401_UNAUTHORIZED, f'Unauthorized URL: {next_page}')
                     return redirect(next_page)
+                else:
+                    logger.warning(f'failed login attempt for user: {form.email.data} - invalid password')
+            else:
+                logger.warning(f'failed login attempt - no user found for email: {form.email.data}')
 
         logout_user()
         flash('Invalid credentials', 'error')
-        logger.warning(f'invalid login attempt for: {form.email.data}')
         # TODO: [2024/05/21] - add a login attempt counter, possibly using redis or something similar
         return redirect(url_for('auth.login'))
 
