@@ -4,18 +4,18 @@ from fastapi import status
 import tests.test_data
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
+from ichrisbirch.database.sqlalchemy.session import create_session
 from tests.util import show_status_and_response
-from tests.utils.database import create_jwt_handler
 from tests.utils.database import delete_test_data
-from tests.utils.database import get_test_data_admin_user
-from tests.utils.database import get_test_data_regular_user
-from tests.utils.database import get_test_data_regular_user_2
 from tests.utils.database import get_test_login_users
+from tests.utils.database import get_test_user
 from tests.utils.database import insert_test_data
 from tests.utils.database import make_app_headers_for_user
 from tests.utils.database import make_internal_service_headers
 from tests.utils.database import make_invalid_internal_service_headers
 from tests.utils.database import make_jwt_header
+from tests.utils.database import test_settings
 
 from .crud_test import ApiCrudTester
 
@@ -28,27 +28,27 @@ def insert_testing_data():
 
 
 @pytest.fixture()
-def test_user():
+def test_regular_user_2():
     """Fixture to get a regular test user (different from test_regular_user for testing cross-user access)."""
-    return get_test_data_regular_user_2()
+    return get_test_user('regular.user.2@hotmail.com')
 
 
 @pytest.fixture()
 def test_regular_user():
     """Fixture to get the primary regular test user."""
-    return get_test_data_regular_user()
+    return get_test_user('regular_user_1@gmail.com')
 
 
 @pytest.fixture()
 def test_admin_user():
     """Fixture to get admin test user."""
-    return get_test_data_admin_user()
+    return get_test_user('admin@admin.com')
 
 
 @pytest.fixture()
 def jwt_handler():
-    """Fixture to create JWT token handler."""
-    return create_jwt_handler()
+    with create_session(test_settings) as test_session:
+        return JWTTokenHandler(settings=test_settings, session=test_session)
 
 
 DEFAULT_USER_PREFERENCES = models.User.default_preferences()
@@ -97,7 +97,7 @@ def test_create(test_api_logged_in, test_api_logged_in_admin):
     crud_tests._verify_length(all, EXPECTED_LENGTH + 1)
 
 
-def test_delete(test_api_logged_in, test_api_logged_in_admin):
+def test_delete(test_api_logged_in_admin):
     all_before_delete = test_api_logged_in_admin.get(ENDPOINT)
     assert all_before_delete.status_code == status.HTTP_200_OK, show_status_and_response(all_before_delete)
     crud_tests._verify_length(all_before_delete, EXPECTED_LENGTH)
@@ -212,10 +212,10 @@ def test_get_user_me_jwt(test_api_function, test_regular_user):
     assert response.json()['name'] == test_regular_user.name
 
 
-def get_pref_value(preferencces, key):
+def get_pref_value(preferences, key):
     """Get the value of a nested key in a dictionary."""
     keys = key.split('.')
-    value = preferencces
+    value = preferences
     for k in keys:
         value = value.get(k)
     return value
@@ -292,9 +292,9 @@ def test_update_user_preferences_invalid_value(test_api_logged_in):
 # =============================================================================
 
 
-def test_list_users_requires_admin_or_internal_service(test_api_function, test_user):
+def test_list_users_requires_admin_or_internal_service(test_api_function, test_regular_user_2):
     """Test that regular users cannot list all users."""
-    headers = make_app_headers_for_user(test_user)
+    headers = make_app_headers_for_user(test_regular_user_2)
     response = test_api_function.get('/users/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert 'Admin or internal service access required' in response.json()['detail']
@@ -318,10 +318,10 @@ def test_list_users_allows_internal_service(test_api_function):
     assert len(users) > 0
 
 
-def test_read_user_by_id_requires_own_data_or_admin(test_api_function, test_user, test_regular_user):
+def test_read_user_by_id_requires_own_data_or_admin(test_api_function, test_regular_user_2, test_regular_user):
     """Test that users can only read their own data unless they're admin."""
     # Regular user trying to access another user's data
-    headers = make_app_headers_for_user(test_user)
+    headers = make_app_headers_for_user(test_regular_user_2)
     response = test_api_function.get(f'/users/{test_regular_user.id}/', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert 'can only access your own user data' in response.json()['detail']
@@ -355,9 +355,9 @@ def test_read_user_by_id_allows_internal_service(test_api_function, test_regular
     assert user_data['id'] == test_regular_user.id
 
 
-def test_read_user_by_email_requires_admin_or_internal_service(test_api_function, test_user, test_regular_user):
+def test_read_user_by_email_requires_admin_or_internal_service(test_api_function, test_regular_user_2, test_regular_user):
     """Test that regular users cannot look up users by email."""
-    headers = make_app_headers_for_user(test_user)
+    headers = make_app_headers_for_user(test_regular_user_2)
     response = test_api_function.get(f'/users/email/{test_regular_user.email}/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert 'Admin or internal service access required' in response.json()['detail']
@@ -381,9 +381,9 @@ def test_read_user_by_email_allows_internal_service(test_api_function, test_regu
     assert user_data['email'] == test_regular_user.email
 
 
-def test_update_user_requires_own_data_or_admin(test_api_function, test_user, test_regular_user):
+def test_update_user_requires_own_data_or_admin(test_api_function, test_regular_user_2, test_regular_user):
     """Test that users can only update their own data unless they're admin."""
-    headers = make_app_headers_for_user(test_user)
+    headers = make_app_headers_for_user(test_regular_user_2)
     update_data = {'name': 'Updated Name'}
     response = test_api_function.patch(f'/users/{test_regular_user.id}/', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -420,9 +420,9 @@ def test_update_user_allows_internal_service(test_api_function, test_regular_use
     assert user_data['name'] == 'Service Updated Name'
 
 
-def test_delete_user_requires_admin_or_internal_service(test_api_function, test_user, test_regular_user):
+def test_delete_user_requires_admin_or_internal_service(test_api_function, test_regular_user_2, test_regular_user):
     """Test that regular users cannot delete any users."""
-    headers = make_app_headers_for_user(test_user)
+    headers = make_app_headers_for_user(test_regular_user_2)
     response = test_api_function.delete(f'/users/{test_regular_user.id}/', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert 'Admin access required' in response.json()['detail']
@@ -436,9 +436,9 @@ def test_delete_user_prevents_self_deletion(test_api_function, test_admin_user):
     assert 'Cannot delete your own account' in response.json()['detail']
 
 
-def test_update_user_preferences_requires_own_data_or_admin(test_api_function, test_user, test_regular_user):
+def test_update_user_preferences_requires_own_data_or_admin(test_api_function, test_regular_user_2, test_regular_user):
     """Test that users can only update their own preferences unless they're admin."""
-    headers = make_app_headers_for_user(test_user)
+    headers = make_app_headers_for_user(test_regular_user_2)
     update_data = {'dark_mode': True}
     response = test_api_function.patch(f'/users/{test_regular_user.id}/preferences/', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -470,25 +470,25 @@ def test_update_user_preferences_allows_admin(test_api_function, test_admin_user
 # =============================================================================
 
 
-def test_internal_service_auth_invalid_key(test_api_function, test_user):
+def test_internal_service_auth_invalid_key(test_api_function, test_regular_user_2):
     """Test that invalid internal service key returns 401."""
     headers = make_invalid_internal_service_headers()
-    response = test_api_function.get(f'/users/{test_user.id}/', headers=headers)
+    response = test_api_function.get(f'/users/{test_regular_user_2.id}/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert 'Authentication required' in response.json()['detail']
 
 
-def test_no_authentication_returns_401(test_api_function, test_user):
+def test_no_authentication_returns_401(test_api_function, test_regular_user_2):
     """Test that requests without authentication return 401."""
-    response = test_api_function.get(f'/users/{test_user.id}/')
+    response = test_api_function.get(f'/users/{test_regular_user_2.id}/')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-def test_jwt_authentication_works(test_api_function, test_user, jwt_handler):
+def test_jwt_authentication_works(test_api_function, test_regular_user_2, jwt_handler):
     """Test that JWT authentication works for user endpoints."""
-    token = jwt_handler.create_access_token(test_user.get_id())
+    token = jwt_handler.create_access_token(test_regular_user_2.get_id())
     headers = make_jwt_header(token)
-    response = test_api_function.get(f'/users/{test_user.id}/', headers=headers)
+    response = test_api_function.get(f'/users/{test_regular_user_2.id}/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
-    assert user_data['id'] == test_user.id
+    assert user_data['id'] == test_regular_user_2.id

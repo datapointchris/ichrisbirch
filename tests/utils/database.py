@@ -77,8 +77,9 @@ import logging
 from collections.abc import Generator
 from copy import deepcopy
 from typing import Any
+from typing import TypeVar
 
-import pytest
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -89,16 +90,11 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import settings
 from ichrisbirch.database.sqlalchemy.session import create_session
 
+ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
-# TEST CONFIGURATION AND SETTINGS
-# =============================================================================
-
-
 def get_test_runner_settings() -> Settings:
-    """Create test-specific settings configuration."""
     test_settings = copy.deepcopy(settings)
     test_settings.ENVIRONMENT = 'testing'
     test_settings.protocol = 'http'
@@ -126,32 +122,10 @@ def get_test_runner_settings() -> Settings:
 test_settings = get_test_runner_settings()
 
 
-# =============================================================================
-# DATABASE SESSION MANAGEMENT
-# =============================================================================
-
-
-# @contextmanager
-# def create_session(settings: Settings):
-#     """Create test session using external connection for pytest on host."""
-#     # For pytest running on host, connect to localhost:5434
-#     Session = sessionmaker(bind=get_db_engine(settings))
-#     session = Session()
-#     try:
-#         yield session
-#     finally:
-#         session.close()
-
-
 def get_test_session() -> Generator[Session, None, None]:
     """Return a SQLAlchemy session for testing."""
     with create_session(test_settings) as session:
         yield session
-
-
-# =============================================================================
-# LOGIN USERS (Persistent Authentication Users)
-# =============================================================================
 
 
 def get_test_login_users() -> list[dict]:
@@ -179,88 +153,17 @@ def get_test_login_users() -> list[dict]:
             'password': 'adminpassword',
             'is_admin': True,
         },
-        # Service account user removed - now using API key authentication
     ]
 
 
-# Define constants for test users that are used in frontend tests
-TEST_LOGIN_REGULAR_USER = next(u for u in get_test_login_users() if u.get('name') == 'Test Login Regular User')
-TEST_LOGIN_ADMIN_USER = next(u for u in get_test_login_users() if u.get('name') == 'Test Login Admin User')
-
-
-def get_test_login_regular_user():
-    """Get persistent login user for integration tests."""
+def get_test_user(email: str) -> models.User:
     with create_session(test_settings) as session:
-        user_email = 'testloginregular@testuser.com'
-        q = select(models.User).where(models.User.email == user_email)
+        q = select(models.User).where(models.User.email == email)
         try:
             return session.execute(q).scalar_one()
         except Exception as e:
-            message = f'Error retrieving test login regular user {user_email}: {e}'
-            logger.error(message)
-            pytest.exit(message)
-
-
-def get_test_login_admin_user():
-    """Get persistent admin login user for integration tests."""
-    with create_session(test_settings) as session:
-        admin_email = 'testloginadmin@testadmin.com'
-        q = select(models.User).where(models.User.email == admin_email)
-        try:
-            return session.execute(q).scalar_one()
-        except Exception as e:
-            message = f'Error retrieving test login admin user {admin_email}: {e}'
-            logger.error(message)
-            pytest.exit(message)
-
-
-# =============================================================================
-# TEST DATA USERS (Temporary API Test Data)
-# =============================================================================
-
-
-def get_test_data_user(user_dict: dict):
-    """Get user from test data by email.
-
-    Purpose: Temporary test data for API endpoint testing
-    - Inserted/deleted per test module via @pytest.fixture(autouse=True)
-    - Fresh data for each test module to ensure isolation
-    - Used for API business logic testing - authorization, CRUD operations, data validation
-    - Not for authentication - used as data subjects in API tests
-
-    Usage:
-    - test_auth.py and test_users.py fixtures that wrap these functions
-    - API endpoint tests that need specific user data for testing business logic
-    - Tests that verify user-specific authorization and data access patterns
-    """
-    with create_session(test_settings) as session:
-        return session.execute(select(models.User).where(models.User.email == user_dict['email'])).scalar_one()
-
-
-def get_test_data_regular_user():
-    """Get the first regular test data user (regular_user_1@gmail.com)."""
-    with create_session(test_settings) as session:
-        q = select(models.User).where(models.User.email == 'regular_user_1@gmail.com')
-        return session.execute(q).scalar_one()
-
-
-def get_test_data_regular_user_2():
-    """Get the second regular test data user (regular.user.2@hotmail.com)."""
-    with create_session(test_settings) as session:
-        q = select(models.User).where(models.User.email == 'regular.user.2@hotmail.com')
-        return session.execute(q).scalar_one()
-
-
-def get_test_data_admin_user():
-    """Get the admin test data user (admin@admin.com)."""
-    with create_session(test_settings) as session:
-        q = select(models.User).where(models.User.email == 'admin@admin.com')
-        return session.execute(q).scalar_one()
-
-
-# =============================================================================
-# TEST DATA MANAGEMENT
-# =============================================================================
+            logger.error(f'Error retrieving test user {email}: {e}')
+            raise e
 
 
 def get_test_data() -> dict[str, dict[str, Any]]:
@@ -284,11 +187,6 @@ def get_test_data() -> dict[str, dict[str, Any]]:
 
 
 def insert_test_data(*datasets):
-    """Insert testing data for specific datasets.
-
-    Args:
-        *datasets: Names of datasets to insert (e.g., 'tasks', 'users')
-    """
     test_data = get_test_data()
     selected_datasets = [deepcopy(test_data[key]['data']) for key in datasets]
 
@@ -301,11 +199,7 @@ def insert_test_data(*datasets):
 
 
 def delete_test_data(*datasets):
-    """Delete test data except login users.
-
-    Args:
-        *datasets: Names of datasets to delete (e.g., 'tasks', 'users')
-    """
+    """Delete test data except login users."""
     test_data = get_test_data()
 
     with create_session(test_settings) as session:
@@ -335,19 +229,6 @@ def delete_test_data(*datasets):
 
     for d in datasets:
         logger.info(f'deleted testing dataset: {d}')
-
-
-# =============================================================================
-# AUTHENTICATION HELPERS
-# =============================================================================
-
-
-def create_jwt_handler():
-    """Create a JWT token handler for testing."""
-    from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-
-    with create_session(test_settings) as session:
-        return JWTTokenHandler(settings=test_settings, session=session)
 
 
 def make_app_headers_for_user(user):

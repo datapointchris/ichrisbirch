@@ -49,7 +49,7 @@ class TestLogin:
     def test_login_wrong_password(self, test_app_function, caplog):
         login_data = {'email': TEST_USER.email, 'password': 'wrong_password'}
         response = test_app_function.post('/login/', follow_redirects=False, data=login_data)
-        assert f'invalid login attempt for: {TEST_USER.email}' in caplog.text, 'No error log produced'
+        assert 'invalid password' in caplog.text, 'No error log produced'
         assert response.status_code == status.HTTP_302_FOUND, show_status_and_response(response)
         assert 'login' in response.headers['Location']
 
