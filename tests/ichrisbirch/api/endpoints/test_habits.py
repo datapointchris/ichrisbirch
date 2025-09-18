@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 import pytest
 import sqlalchemy
@@ -170,7 +170,7 @@ class TestCompletedHabits:
     NEW_COMPLETED_HABIT = schemas.HabitCompletedCreate(
         name='NEW Completed Habit Category ID 1',
         category_id=1,
-        complete_date=datetime(2024, 3, 15),
+        complete_date=dt.datetime(2024, 3, 15),
     )
     TEST_DATA_COMPLETED_HABITS = tests.test_data.habitscompleted.BASE_DATA
 
@@ -205,8 +205,17 @@ class TestCompletedHabits:
         assert len(response.json()) == 1
         assert response.json()[0]['name'] == self.TEST_DATA_COMPLETED_HABITS[2].name
 
-    def test_read_many_completed_habits_between_dates(self, test_api_logged_in):
-        params = {'start_date': '2024-01-01', 'end_date': '2024-01-02'}
+    # make sure it can handle all formats
+    @pytest.mark.parametrize(
+        'start_date, end_date, expected_count',
+        [
+            (dt.datetime(2024, 1, 1), dt.datetime(2024, 1, 2), 2),
+            (dt.date(2024, 1, 1), dt.date(2024, 1, 2), 2),
+            ('2024-01-01', '2024-01-02', 2),
+        ],
+    )
+    def test_read_many_completed_habits_between_dates(self, test_api_logged_in, start_date, end_date, expected_count):
+        params = {'start_date': start_date, 'end_date': end_date}
         response = test_api_logged_in.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-        assert len(response.json()) == 2
+        assert len(response.json()) == expected_count
