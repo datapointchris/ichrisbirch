@@ -179,21 +179,21 @@ resource "aws_vpc_security_group_egress_rule" "postgres_out_all_vpc" {
 
 # --- NETWORK INTERFACES ---------------------------------------- #
 
-# Network Interface
-resource "aws_network_interface" "ichrisbirch_webserver" {
-  subnet_id       = element(aws_subnet.prod_public, 0).id
-  security_groups = [aws_security_group.ichrisbirch_webserver.id]
-  tags            = { Name = "ichrisbirch-webserver-eni" }
-}
-
-# Elastic IP
-resource "aws_eip" "ichrisbirch_elastic_ip" {
-  domain = "vpc"
-  tags   = { Name = "ichrisbirch.com" }
-}
-
-# Elastic IP Association
-resource "aws_eip_association" "ichrisbirch_elastic_ip_assoc" {
-  allocation_id        = aws_eip.ichrisbirch_elastic_ip.id
-  network_interface_id = aws_network_interface.ichrisbirch_webserver.id
-}
+# # Network Interface
+# resource "aws_network_interface" "ichrisbirch_webserver" {
+#   subnet_id       = element(aws_subnet.prod_public, 0).id
+#   security_groups = [aws_security_group.ichrisbirch_webserver.id]
+#   tags            = { Name = "ichrisbirch-webserver-eni" }
+# }
+#
+# # Elastic IP
+# resource "aws_eip" "ichrisbirch_elastic_ip" {
+#   domain = "vpc"
+#   tags   = { Name = "ichrisbirch.com" }
+# }
+#
+# # Elastic IP Association
+# resource "aws_eip_association" "ichrisbirch_elastic_ip_assoc" {
+#   allocation_id        = aws_eip.ichrisbirch_elastic_ip.id
+#   network_interface_id = aws_network_interface.ichrisbirch_webserver.id
+# }

@@ -51,11 +51,8 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [aws_db_instance.icb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance) | resource |
 | [aws_db_subnet_group.icb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_subnet_group) | resource |
 | [aws_dynamodb_table.ichrisbirch_terraform_state_locking](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table) | resource |
-| [aws_eip.ichrisbirch_elastic_ip](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
-| [aws_eip_association.ichrisbirch_elastic_ip_assoc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip_association) | resource |
 | [aws_iam_group.developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
 | [aws_iam_group.developer_admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
 | [aws_iam_group.security](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
@@ -94,26 +91,8 @@ No modules.
 | [aws_iam_user_login_profile.chris_birch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_login_profile) | resource |
 | [aws_iam_user_policy_attachment.chris_birch_iam_user_change_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy_attachment) | resource |
 | [aws_iam_user_policy_attachment.john_kundycki_iam_user_change_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy_attachment) | resource |
-| [aws_instance.ichrisbirch_webserver](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_internet_gateway.prod](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway) | resource |
 | [aws_main_route_table_association.prod_public](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/main_route_table_association) | resource |
-| [aws_network_interface.ichrisbirch_webserver](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_interface) | resource |
-| [aws_route53_record.api_ichrisbirch_a](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.api_ichrisbirch_ns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.api_ichrisbirch_ns_ns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.chat_ichrisbirch_a](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.chat_ichrisbirch_ns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.chat_ichrisbirch_ns_ns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.docs_ichrisbirch_a](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.docs_ichrisbirch_cname](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.docs_ichrisbirch_ns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.ichrisbirch_a](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.ichrisbirch_ns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_record.www_ichrisbirch_a](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
-| [aws_route53_zone.api_ichrisbirch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_route53_zone.chat_ichrisbirch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_route53_zone.docs_ichrisbirch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
-| [aws_route53_zone.ichrisbirch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_zone) | resource |
 | [aws_route_table.prod_private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table) | resource |
 | [aws_route_table.prod_public](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table) | resource |
 | [aws_route_table_association.prod_private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association) | resource |
@@ -140,7 +119,6 @@ No modules.
 | [aws_vpc_security_group_ingress_rule.allow_all_ssh_ipv4_in](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [aws_vpc_security_group_ingress_rule.allow_all_tls_ipv4_in](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [aws_vpc_security_group_ingress_rule.allow_postgres_from_webserver](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
-| [aws_ami.ichrisbirch_webserver](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy.admin](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy) | data source |
@@ -152,8 +130,6 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| db\_password | The password for the database | `string` | n/a | yes |
-| db\_username | The username for the database | `string` | n/a | yes |
 | gh\_actions\_token\_url | URL for the Github Actions API | `string` | `"https://token.actions.githubusercontent.com"` | no |
 | gh\_org | Name of the Github Organization. | `string` | `"datapointchris"` | no |
 | gh\_repo | Name of the ECR Repository- should match the Github repo name. | `string` | `"ichrisbirch"` | no |
@@ -168,14 +144,6 @@ No modules.
 |------|-------------|
 | aws\_account\_id | n/a |
 | aws\_region | n/a |
-| db\_endpoint | n/a |
-| db\_engine | n/a |
-| db\_engine\_version | n/a |
-| db\_id | n/a |
-| db\_instance\_class | n/a |
-| db\_security\_group\_ids | n/a |
-| db\_subnet\_group\_name | n/a |
-| dynamodb\_terraform\_state\_locking\_table\_id | n/a |
 | iam\_group\_developer\_admin\_arn | n/a |
 | iam\_group\_developer\_arn | n/a |
 | iam\_group\_security\_arn | n/a |
@@ -195,35 +163,12 @@ No modules.
 | iam\_user\_chris\_birch\_arn | n/a |
 | iam\_user\_john\_kundycki\_arn | n/a |
 | internet\_gateway\_id | n/a |
-| network\_interface\_ichrisbirch\_webserver\_id | n/a |
 | prod\_private\_route\_table\_id | n/a |
 | prod\_private\_subnet\_ids | n/a |
 | prod\_public\_route\_table\_id | n/a |
 | prod\_public\_subnet\_ids | n/a |
 | prod\_vpc\_cidr\_block | n/a |
 | prod\_vpc\_id | n/a |
-| route53\_api\_ichrisbirch\_zone\_id | n/a |
-| route53\_api\_ichrisbirch\_zone\_name | n/a |
-| route53\_api\_ichrisbirch\_zone\_name\_servers | n/a |
-| route53\_api\_ichrisbirch\_zone\_primary\_name\_server | n/a |
-| route53\_docs\_ichrisbirch\_zone\_id | n/a |
-| route53\_docs\_ichrisbirch\_zone\_name | n/a |
-| route53\_docs\_ichrisbirch\_zone\_name\_servers | n/a |
-| route53\_docs\_ichrisbirch\_zone\_primary\_name\_server | n/a |
-| route53\_ichrisbirch\_zone\_id | n/a |
-| route53\_ichrisbirch\_zone\_name | n/a |
-| route53\_ichrisbirch\_zone\_name\_servers | n/a |
-| route53\_ichrisbirch\_zone\_primary\_name\_server | n/a |
 | security\_group\_ichrisbirch\_webserver\_id | n/a |
 | user\_chris\_birch\_generated\_password | n/a |
-| webserver\_ami\_id | n/a |
-| webserver\_availability\_zone | n/a |
-| webserver\_elastic\_ip | n/a |
-| webserver\_iam\_instance\_profile | n/a |
-| webserver\_id | n/a |
-| webserver\_instance\_type | n/a |
-| webserver\_key\_name | n/a |
-| webserver\_route\_table\_id | n/a |
-| webserver\_security\_groups | n/a |
-| webserver\_subnet\_id | n/a |
 <!-- END_TF_DOCS -->

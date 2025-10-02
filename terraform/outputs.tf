@@ -15,37 +15,37 @@ output "aws_account_id" {
 # DATABASE
 # ------------------------------------------------------------------ #
 
-output "db_endpoint" {
-  value = aws_db_instance.icb.endpoint
-}
-
-output "db_engine" {
-  value = aws_db_instance.icb.engine
-}
-
-output "db_engine_version" {
-  value = aws_db_instance.icb.engine_version
-}
-
-output "db_id" {
-  value = aws_db_instance.icb.id
-}
-
-output "db_instance_class" {
-  value = aws_db_instance.icb.instance_class
-}
-
-output "db_security_group_ids" {
-  value = join(", ", aws_db_instance.icb.vpc_security_group_ids[*])
-}
-
-output "db_subnet_group_name" {
-  value = aws_db_instance.icb.db_subnet_group_name
-}
-
-output "dynamodb_terraform_state_locking_table_id" {
-  value = aws_dynamodb_table.ichrisbirch_terraform_state_locking.id
-}
+# output "db_endpoint" {
+#   value = aws_db_instance.icb.endpoint
+# }
+#
+# output "db_engine" {
+#   value = aws_db_instance.icb.engine
+# }
+#
+# output "db_engine_version" {
+#   value = aws_db_instance.icb.engine_version
+# }
+#
+# output "db_id" {
+#   value = aws_db_instance.icb.id
+# }
+#
+# output "db_instance_class" {
+#   value = aws_db_instance.icb.instance_class
+# }
+#
+# output "db_security_group_ids" {
+#   value = join(", ", aws_db_instance.icb.vpc_security_group_ids[*])
+# }
+#
+# output "db_subnet_group_name" {
+#   value = aws_db_instance.icb.db_subnet_group_name
+# }
+#
+# output "dynamodb_terraform_state_locking_table_id" {
+#   value = aws_dynamodb_table.ichrisbirch_terraform_state_locking.id
+# }
 
 
 # ------------------------------------------------------------------ #
@@ -56,9 +56,9 @@ output "internet_gateway_id" {
   value = aws_internet_gateway.prod.id
 }
 
-output "network_interface_ichrisbirch_webserver_id" {
-  value = aws_network_interface.ichrisbirch_webserver.id
-}
+# output "network_interface_ichrisbirch_webserver_id" {
+#   value = aws_network_interface.ichrisbirch_webserver.id
+# }
 
 output "prod_private_route_table_id" {
   value = aws_route_table.prod_private.id
@@ -93,45 +93,45 @@ output "security_group_ichrisbirch_webserver_id" {
 # WEBSERVER
 # ------------------------------------------------------------------ #
 
-output "webserver_ami_id" {
-  value = data.aws_ami.ichrisbirch_webserver.id
-}
-
-output "webserver_availability_zone" {
-  value = aws_instance.ichrisbirch_webserver.availability_zone
-}
-
-output "webserver_elastic_ip" {
-  value = aws_eip.ichrisbirch_elastic_ip.public_ip
-}
-
-output "webserver_iam_instance_profile" {
-  value = aws_instance.ichrisbirch_webserver.iam_instance_profile
-}
-
-output "webserver_id" {
-  value = aws_instance.ichrisbirch_webserver.id
-}
-
-output "webserver_instance_type" {
-  value = aws_instance.ichrisbirch_webserver.instance_type
-}
-
-output "webserver_key_name" {
-  value = aws_instance.ichrisbirch_webserver.key_name
-}
-
-output "webserver_route_table_id" {
-  value = aws_route_table.prod_public.id
-}
-
-output "webserver_security_groups" {
-  value = join(", ", aws_instance.ichrisbirch_webserver.vpc_security_group_ids[*])
-}
-
-output "webserver_subnet_id" {
-  value = aws_instance.ichrisbirch_webserver.subnet_id
-}
+# output "webserver_ami_id" {
+#   value = data.aws_ami.ichrisbirch_webserver.id
+# }
+#
+# output "webserver_availability_zone" {
+#   value = aws_instance.ichrisbirch_webserver.availability_zone
+# }
+#
+# output "webserver_elastic_ip" {
+#   value = aws_eip.ichrisbirch_elastic_ip.public_ip
+# }
+#
+# output "webserver_iam_instance_profile" {
+#   value = aws_instance.ichrisbirch_webserver.iam_instance_profile
+# }
+#
+# output "webserver_id" {
+#   value = aws_instance.ichrisbirch_webserver.id
+# }
+#
+# output "webserver_instance_type" {
+#   value = aws_instance.ichrisbirch_webserver.instance_type
+# }
+#
+# output "webserver_key_name" {
+#   value = aws_instance.ichrisbirch_webserver.key_name
+# }
+#
+# output "webserver_route_table_id" {
+#   value = aws_route_table.prod_public.id
+# }
+#
+# output "webserver_security_groups" {
+#   value = join(", ", aws_instance.ichrisbirch_webserver.vpc_security_group_ids[*])
+# }
+#
+# output "webserver_subnet_id" {
+#   value = aws_instance.ichrisbirch_webserver.subnet_id
+# }
 
 
 # ------------------------------------------------------------------ #
@@ -238,54 +238,54 @@ output "user_chris_birch_generated_password" {
 
 # ---------- Main Site ---------- #
 
-output "route53_ichrisbirch_zone_name" {
-  value = aws_route53_zone.ichrisbirch.name
-}
-
-output "route53_ichrisbirch_zone_id" {
-  value = aws_route53_zone.ichrisbirch.zone_id
-}
-
-output "route53_ichrisbirch_zone_name_servers" {
-  value = join(", ", aws_route53_zone.ichrisbirch.name_servers[*])
-}
-
-output "route53_ichrisbirch_zone_primary_name_server" {
-  value = aws_route53_zone.ichrisbirch.primary_name_server
-}
+# output "route53_ichrisbirch_zone_name" {
+#   value = aws_route53_zone.ichrisbirch.name
+# }
+#
+# output "route53_ichrisbirch_zone_id" {
+#   value = aws_route53_zone.ichrisbirch.zone_id
+# }
+#
+# output "route53_ichrisbirch_zone_name_servers" {
+#   value = join(", ", aws_route53_zone.ichrisbirch.name_servers[*])
+# }
+#
+# output "route53_ichrisbirch_zone_primary_name_server" {
+#   value = aws_route53_zone.ichrisbirch.primary_name_server
+# }
 
 # ---------- API Subdomain ---------- #
 
-output "route53_api_ichrisbirch_zone_name" {
-  value = aws_route53_zone.api_ichrisbirch.name
-}
-
-output "route53_api_ichrisbirch_zone_id" {
-  value = aws_route53_zone.api_ichrisbirch.zone_id
-}
-
-output "route53_api_ichrisbirch_zone_name_servers" {
-  value = join(", ", aws_route53_zone.api_ichrisbirch.name_servers[*])
-}
-
-output "route53_api_ichrisbirch_zone_primary_name_server" {
-  value = aws_route53_zone.api_ichrisbirch.primary_name_server
-}
+# output "route53_api_ichrisbirch_zone_name" {
+#   value = aws_route53_zone.api_ichrisbirch.name
+# }
+#
+# output "route53_api_ichrisbirch_zone_id" {
+#   value = aws_route53_zone.api_ichrisbirch.zone_id
+# }
+#
+# output "route53_api_ichrisbirch_zone_name_servers" {
+#   value = join(", ", aws_route53_zone.api_ichrisbirch.name_servers[*])
+# }
+#
+# output "route53_api_ichrisbirch_zone_primary_name_server" {
+#   value = aws_route53_zone.api_ichrisbirch.primary_name_server
+# }
 
 # ---------- Docs Site ---------- #
 
-output "route53_docs_ichrisbirch_zone_name" {
-  value = aws_route53_zone.docs_ichrisbirch.name
-}
-
-output "route53_docs_ichrisbirch_zone_id" {
-  value = aws_route53_zone.docs_ichrisbirch.zone_id
-}
-
-output "route53_docs_ichrisbirch_zone_name_servers" {
-  value = join(", ", aws_route53_zone.docs_ichrisbirch.name_servers[*])
-}
-
-output "route53_docs_ichrisbirch_zone_primary_name_server" {
-  value = aws_route53_zone.docs_ichrisbirch.primary_name_server
-}
+# output "route53_docs_ichrisbirch_zone_name" {
+#   value = aws_route53_zone.docs_ichrisbirch.name
+# }
+#
+# output "route53_docs_ichrisbirch_zone_id" {
+#   value = aws_route53_zone.docs_ichrisbirch.zone_id
+# }
+#
+# output "route53_docs_ichrisbirch_zone_name_servers" {
+#   value = join(", ", aws_route53_zone.docs_ichrisbirch.name_servers[*])
+# }
+#
+# output "route53_docs_ichrisbirch_zone_primary_name_server" {
+#   value = aws_route53_zone.docs_ichrisbirch.primary_name_server
+# }
