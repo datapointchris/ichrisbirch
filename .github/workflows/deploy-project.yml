@@ -79,7 +79,7 @@ jobs:
             git pull &&
             git secret reveal -f &&
             sudo rm -rf .venv &&
-            /etc/poetry/bin/poetry install --without dev,cicd
+            ~/.cargo/bin/uv sync --frozen --no-dev
           '
 
   db-migrations:
