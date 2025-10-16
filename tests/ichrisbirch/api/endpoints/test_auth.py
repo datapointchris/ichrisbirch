@@ -6,7 +6,7 @@ from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 from tests.utils.database import delete_test_data
 from tests.utils.database import get_test_user
 from tests.utils.database import insert_test_data

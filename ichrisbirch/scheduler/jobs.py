@@ -23,7 +23,7 @@ from sqlalchemy import select
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.config import settings
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 from ichrisbirch.util import find_project_root

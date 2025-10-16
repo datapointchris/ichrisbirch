@@ -25,7 +25,7 @@ from ichrisbirch.ai.assistants.openai import OpenAIAssistant
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -131,8 +131,8 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 async def summarize(request: Request, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
-    Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video
-    summary. If article, use html content for summary. Using openai chat to summarize and provide tags.
+    Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video summary. If article,
+    use html content for summary. Using openai chat to summarize and provide tags.
     """
     request_data = await request.json()
     logger.debug(request_data)
@@ -161,8 +161,8 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
 async def insights(request: Request, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
-    Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If
-    article, use html content for summary. Using openai chat to summarize and provide tags.
+    Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If article, use html content
+    for summary. Using openai chat to summarize and provide tags.
     """
     request_data = await request.json()
     logger.debug(request_data)
@@ -178,8 +178,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
             text_content = _get_youtube_video_text_captions(url)
         except Exception as e:
             logger.error(
-                f'error getting youtube video captions for: {url} '
-                f'-- transcripts are disabled or IP is being blocked by YouTube API'
+                f'error getting youtube video captions for: {url} -- transcripts are disabled or IP is being blocked by YouTube API'
             )
             # format error response into html
             lines = []
@@ -193,9 +192,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     else:
         text_content = _get_text_content_from_html(soup)
 
-    assistant = OpenAIAssistant(
-        name='Article Insights', settings=settings, instructions=settings.ai.prompts.article_insights
-    )
+    assistant = OpenAIAssistant(name='Article Insights', settings=settings, instructions=settings.ai.prompts.article_insights)
     mkd = assistant.generate(text_content)
     full_mkd = f'# {title}\n{mkd}'
     html = markdown.markdown(full_mkd)

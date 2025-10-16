@@ -19,9 +19,9 @@ from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.sqlalchemy.base import Base
-from ichrisbirch.database.sqlalchemy.session import get_db_engine
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.base import Base
+from ichrisbirch.database.session import get_db_engine
+from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
 from tests.environment import DockerComposeTestEnvironment

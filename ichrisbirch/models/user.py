@@ -18,7 +18,7 @@ from sqlalchemy_json import mutable_json_type
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 MutableJSONB = mutable_json_type(dbtype=JSONB, nested=True)
 
@@ -102,9 +102,9 @@ class User(UserMixin, Base):
 
     @staticmethod
     def _hash_password(mapper, connection, target):
-        """The mapper and connection parameters are part of SQLAlchemy's event API. This method is being used as a
-        listener function, which is a special kind of function that gets called when a certain event happens. In this
-        case, the event is 'before_insert' on the User model.
+        """The mapper and connection parameters are part of SQLAlchemy's event API. that gets called when a certain event happens. In this
+        This method is being used as a case, the event is 'before_insert' on the User listener function, which is a special kind of function
+        model.
 
         mapper:
             This is the Mapper that is handling the operation.
@@ -143,8 +143,8 @@ class User(UserMixin, Base):
     def validate_preferences(self, key, updated_preferences: dict):
         """Validate preferences before setting them.
 
-        Must use secondary private method to avoid recursively calling the validates decorator, which will reset the
-        preferences and check for sub preferences at top level.
+        Must use secondary private method to avoid recursively calling the validates decorator, which will reset the preferences and check
+        for sub preferences at top level.
         """
         return self._validate_preferences(updated_preferences)
 

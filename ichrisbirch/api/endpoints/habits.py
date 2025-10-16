@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -29,9 +29,7 @@ async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(ge
 
 
 @router.get('/', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
-async def read_many_habits(
-    session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None
-):
+async def read_many_habits(session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None):
     query = select(models.Habit).limit(limit)
     if current is True:
         query = query.filter(models.Habit.is_current.is_(True))
@@ -50,9 +48,7 @@ async def create_category(category: schemas.HabitCategoryCreate, session: Sessio
 
 
 @router.get('/categories/', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
-async def read_many_categories(
-    session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None
-):
+async def read_many_categories(session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None):
     query = select(models.HabitCategory).limit(limit)
     if current is True:
         query = query.filter(models.HabitCategory.is_current.is_(True))

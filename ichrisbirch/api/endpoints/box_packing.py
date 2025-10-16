@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,8 +18,8 @@ router = APIRouter()
 
 @router.get('/search/', response_model=list[tuple[schemas.Box, schemas.BoxItem]], status_code=status.HTTP_200_OK)
 async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
-    """This search is different from the other searches as it joins the Box and BoxItem tables and returns a list of
-    tuples of Box and BoxItem objects instead of only BoxItem objects.
+    """This search is different from the other searches as it joins the Box and BoxItem tables and returns a list of tuples of Box and
+    BoxItem objects instead of only BoxItem objects.
 
     This requires the QueryAPI to use the `get_generic` method instead of the `get_many` method since this search
     returns more than one type of ModelType.

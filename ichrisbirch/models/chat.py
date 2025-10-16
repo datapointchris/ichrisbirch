@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 if TYPE_CHECKING:
     from ichrisbirch.models.chatmessage import ChatMessage
@@ -26,7 +26,7 @@ class Chat(Base):
     messages: Mapped[list['ChatMessage']] = relationship(
         back_populates='chat',
         order_by='ChatMessage.created_at',
-        cascade="all, delete-orphan",  # This ensures child messages are deleted when a chat is deleted
+        cascade='all, delete-orphan',  # This ensures child messages are deleted when a chat is deleted
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now)
 

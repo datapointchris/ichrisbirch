@@ -23,7 +23,7 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

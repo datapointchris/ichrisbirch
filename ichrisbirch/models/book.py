@@ -9,7 +9,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 # from sqlalchemy.orm import relationship
 

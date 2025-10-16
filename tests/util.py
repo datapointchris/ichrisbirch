@@ -7,7 +7,7 @@ import httpx
 from fastapi import status
 from sqlalchemy.sql import select
 
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 
 logger = logging.getLogger(__name__)
 logger.info('testing util loaded')

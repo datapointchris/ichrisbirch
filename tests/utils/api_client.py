@@ -5,7 +5,7 @@
 
 # from ichrisbirch.api.endpoints import auth
 # from ichrisbirch.api.main import create_api
-# from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+# from ichrisbirch.database.models.session import get_sqlalchemy_session
 # from tests.conftest import test_settings
 # from tests.conftest import get_test_session
 # from tests.utils.database import get_test_login_admin_user

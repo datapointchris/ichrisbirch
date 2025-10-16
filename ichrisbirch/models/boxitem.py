@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 
 class BoxItem(Base):
@@ -21,5 +21,5 @@ class BoxItem(Base):
     box = relationship('Box', back_populates='items')
 
     def __repr__(self):
-        return f'''Item(id={self.id}, box_id={self.box_id}, name={self.name}, essential={self.essential},
-            warm={self.warm}, liquid={self.liquid})'''
+        return f"""Item(id={self.id}, box_id={self.box_id}, name={self.name}, essential={self.essential},
+            warm={self.warm}, liquid={self.liquid})"""

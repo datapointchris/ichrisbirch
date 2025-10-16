@@ -6,7 +6,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy.orm import relationship
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 
 class Apartment(Base):
@@ -22,8 +22,8 @@ class Apartment(Base):
     features = relationship('Feature', back_populates='apartment', cascade='all, delete')
 
     def __repr__(self):
-        return f'''Apartment(name={self.name!r}, address={self.address!r},
-            url={self.url!r}, notes={self.notes!r}'''
+        return f"""Apartment(name={self.name!r}, address={self.address!r},
+            url={self.url!r}, notes={self.notes!r}"""
 
 
 class Feature(Base):
@@ -41,6 +41,6 @@ class Feature(Base):
     apartment = relationship('Apartment', back_populates='features')
 
     def __repr__(self):
-        return f'''Feature(name={self.name!r}, apt_id={self.apt_id!r},
+        return f"""Feature(name={self.name!r}, apt_id={self.apt_id!r},
             value_bool={self.value_bool!r}, value_str={self.value_str!r},
-            value_int={self.value_int!r}, value_float={self.value_float!r}, notes={self.notes!r}'''
+            value_int={self.value_int!r}, value_float={self.value_float!r}, notes={self.notes!r}"""

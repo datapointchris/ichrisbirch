@@ -24,7 +24,7 @@ from sqlalchemy.schema import CreateSchema
 from ichrisbirch.config import Settings
 
 # from ichrisbirch.config import settings
-# from ichrisbirch.database.sqlalchemy.session import create_session
+# from ichrisbirch.database.models.session import create_session
 # from tests.utils.docker import create_postgres_docker_container
 # from tests.utils.docker import docker_logs
 # from tests.utils.docker import get_docker_client
