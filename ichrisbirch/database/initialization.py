@@ -19,13 +19,12 @@ Usage:
 import logging
 
 import sqlalchemy
-from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
 
-from ichrisbirch.database.sqlalchemy.base import Base
-from ichrisbirch.database.sqlalchemy.session import create_session
-from ichrisbirch.database.sqlalchemy.session import get_db_engine
+from ichrisbirch.database.base import Base
+from ichrisbirch.database.session import create_session
+from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ def create_schemas(session: Session, settings) -> None:
     session.commit()
 
 
-def create_tables(settings, use_alembic: bool = True) -> None:
+def create_tables(settings, use_alembic: bool = False) -> None:
     """Create database tables."""
     if use_alembic:
         logger.info('Table creation should be handled by Alembic migrations')
@@ -83,20 +82,21 @@ def insert_default_users(session: Session, settings) -> None:
             session.add(user)
             session.commit()
             logger.info(f'Created user: {user.name} ({user.email})')
-        except sqlalchemy_exc.IntegrityError:
+        except Exception as e:
+            logger.error(e)
             logger.info(f'User {user.email} already exists (integrity error)')
             session.rollback()
 
 
-def full_initialization(settings, use_alembic: bool = True) -> None:
+def full_initialization(settings, use_alembic: bool = False) -> None:
     """Perform complete database initialization."""
     logger.info(f'Starting database initialization for environment: {settings.ENVIRONMENT}')
 
     with create_session(settings) as session:
         create_schemas(session, settings)
+        create_tables(settings, use_alembic=use_alembic)
         insert_default_users(session, settings)
 
-    create_tables(settings, use_alembic=use_alembic)
     logger.info('Database initialization completed successfully!')
 
 
@@ -104,8 +104,6 @@ def main():
     """Command line interface for database initialization."""
     import argparse
     import os
-
-    from ichrisbirch.config import get_settings
 
     parser = argparse.ArgumentParser(description='Initialize database with schemas and default users')
     parser.add_argument(
@@ -115,8 +113,15 @@ def main():
         help='Environment to initialize (affects which SSM parameters are loaded)',
     )
     parser.add_argument(
-        '--use-metadata', action='store_true', help='Use Base.metadata.create_all() instead of Alembic migrations to create tables'
+        '--use-alembic', action='store_true', help='Use Base.metadata.create_all() instead of Alembic migrations to create tables'
     )
+
+    # Database connection overrides for external execution
+    parser.add_argument('--db-host', type=str, help='Database host (overrides POSTGRES_HOST)')
+    parser.add_argument('--db-port', type=str, help='Database port (overrides POSTGRES_PORT)')
+    parser.add_argument('--db-user', type=str, help='Database username (overrides POSTGRES_USERNAME)')
+    parser.add_argument('--db-password', type=str, help='Database password (overrides POSTGRES_PASSWORD)')
+    parser.add_argument('--db-name', type=str, help='Database name (overrides POSTGRES_DB)')
 
     args = parser.parse_args()
 
@@ -124,9 +129,33 @@ def main():
         os.environ['ENVIRONMENT'] = args.env
         logger.info(f'Environment set to: {args.env}')
 
+    # Override database connection settings if provided - BEFORE importing settings
+    if args.db_host:
+        os.environ['POSTGRES_HOST'] = args.db_host
+        logger.info(f'Database host overridden to: {args.db_host}')
+    if args.db_port:
+        os.environ['POSTGRES_PORT'] = args.db_port
+        logger.info(f'Database port overridden to: {args.db_port}')
+    if args.db_user:
+        os.environ['POSTGRES_USERNAME'] = args.db_user
+        logger.info(f'Database user overridden to: {args.db_user}')
+    if args.db_password:
+        os.environ['POSTGRES_PASSWORD'] = args.db_password
+        logger.info('Database password overridden')
+    if args.db_name:
+        os.environ['POSTGRES_DB'] = args.db_name
+        logger.info(f'Database name overridden to: {args.db_name}')
+
     try:
-        settings = get_settings()
+        # Create fresh settings after environment variable overrides
+        from ichrisbirch.config import Settings
+
+        settings = Settings()
         logger.info(f'Loaded settings for environment: {getattr(settings, "ENVIRONMENT", "unknown")}')
+        logger.info(
+            f'Database connection: {settings.postgres.username}@{settings.postgres.host}:'
+            f'{settings.postgres.port}/{settings.postgres.database}'
+        )
 
         full_initialization(settings, use_alembic=not args.use_metadata)
 
@@ -136,7 +165,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import logging
-
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     main()
