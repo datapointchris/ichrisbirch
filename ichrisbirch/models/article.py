@@ -9,7 +9,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 
 class Article(Base):
@@ -29,7 +29,7 @@ class Article(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     def __repr__(self):
-        return f'''Article(
+        return f"""Article(
             title={self.title!r},
             tags={self.tags!r},
             summary={self.summary!r},
@@ -41,4 +41,4 @@ class Article(Base):
             is_current={self.is_current!r},
             review_days={self.review_days!r},
             notes={self.notes!r}
-            )'''
+            )"""

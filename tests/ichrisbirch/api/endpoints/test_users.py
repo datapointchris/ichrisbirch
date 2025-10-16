@@ -5,7 +5,7 @@ import tests.test_data
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 from tests.util import show_status_and_response
 from tests.utils.database import delete_test_data
 from tests.utils.database import get_test_login_users

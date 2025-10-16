@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
 
 

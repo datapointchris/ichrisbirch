@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -57,9 +57,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/run/', status_code=status.HTTP_200_OK)
 async def run(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if autotask := session.get(models.AutoTask, id):
-        task = models.Task(
-            name=autotask.name, notes=autotask.notes, priority=autotask.priority, category=autotask.category
-        )
+        task = models.Task(name=autotask.name, notes=autotask.notes, priority=autotask.priority, category=autotask.category)
         session.add(task)
         autotask.last_run_date = datetime.now()
         autotask.run_count += 1

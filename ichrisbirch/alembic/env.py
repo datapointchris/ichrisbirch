@@ -6,8 +6,8 @@ from alembic import context
 from sqlalchemy import pool
 
 from ichrisbirch.config import settings
-from ichrisbirch.database.sqlalchemy.base import Base
-from ichrisbirch.database.sqlalchemy.session import get_db_engine
+from ichrisbirch.database.base import Base
+from ichrisbirch.database.session import get_db_engine
 
 # Need the models imported for Base to find the tables
 from ichrisbirch.models import Apartment  # noqa

@@ -88,7 +88,7 @@ import tests.test_data
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.config import settings
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger(__name__)

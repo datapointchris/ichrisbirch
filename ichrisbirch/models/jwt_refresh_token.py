@@ -6,7 +6,7 @@ from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 
 class JWTRefreshToken(Base):
@@ -17,8 +17,8 @@ class JWTRefreshToken(Base):
     date_stored: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self):
-        return f'''
+        return f"""
                 JWTRefreshToken(user_id={self.user_id},
                 refresh_token={self.refresh_token},
                 date_stored={self.date_stored}
-                '''
+                """

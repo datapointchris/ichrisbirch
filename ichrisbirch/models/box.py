@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 
 
 class BoxSize(enum.Enum):
@@ -36,5 +36,5 @@ class Box(Base):
     items = relationship('BoxItem', back_populates='box')
 
     def __repr__(self):
-        return f'''Box(id={self.id}, name={self.name}, size={self.size}, essential={self.essential},
-            warm={self.warm}, liquid={self.liquid})'''
+        return f"""Box(id={self.id}, name={self.name}, size={self.size}, essential={self.essential},
+            warm={self.warm}, liquid={self.liquid})"""

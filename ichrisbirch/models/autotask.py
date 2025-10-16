@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from ichrisbirch.database.sqlalchemy.base import Base
+from ichrisbirch.database.base import Base
 from ichrisbirch.models.task import TaskCategory
 
 
@@ -28,7 +28,6 @@ class AutoTaskFrequency(enum.Enum):
 
 def frequency_to_duration(frequency: AutoTaskFrequency | str) -> pendulum.Duration:
     """Converts a frequency string or TaskFrequency to a pendulum.Duration object."""
-
     if isinstance(frequency, str):
         frequency = AutoTaskFrequency(frequency.capitalize())
     if not (
@@ -60,10 +59,10 @@ class AutoTask(Base):
     run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     def __repr__(self):
-        return f'''AutoTask(name = {self.name}, priority = {self.priority}, category = {self.category},
+        return f"""AutoTask(name = {self.name}, priority = {self.priority}, category = {self.category},
                     frequency = {self.frequency}, max_concurrent = {self.max_concurrent},
                     first_run_date = {self.first_run_date}, last_run_date = {self.last_run_date},
-                    run_count = {self.run_count})'''
+                    run_count = {self.run_count})"""
 
     @property
     def next_run_date(self) -> date:

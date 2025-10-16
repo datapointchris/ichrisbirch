@@ -6,9 +6,8 @@ Create Date: 2025-04-14 03:26:17.435979
 
 """
 
-from alembic import op
 
-from ichrisbirch.database.sqlalchemy.session import create_session
+from ichrisbirch.database.session import create_session
 from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
 from scripts.update_user_preferences_migration import migrate_preferences
 
@@ -20,13 +19,11 @@ depends_on = None
 
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    with create_session(bind=bind) as session:
+    with create_session() as session:
         migrate_preferences(session, default_preferences=DEFAULT_USER_PREFERENCES)
 
 
 def downgrade() -> None:
     # No real downgrade as this is trying to fix missing preferences
-    bind = op.get_bind()
-    with create_session(bind=bind) as session:
+    with create_session() as session:
         migrate_preferences(session, default_preferences=DEFAULT_USER_PREFERENCES)
