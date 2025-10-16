@@ -6,7 +6,7 @@ from pathlib import Path
 import boto3
 import pendulum
 
-from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
 
 
@@ -20,7 +20,6 @@ class PostgresBackupRestore:
 
     def __init__(
         self,
-        settings: Settings,
         logger: logging.Logger,
         backup_bucket: str | None = None,
         source_host: str | None = None,
@@ -35,7 +34,7 @@ class PostgresBackupRestore:
         show_command_output: bool = False,
     ):
         self.logger = logger
-        self.settings = settings
+        self.settings = get_settings()
         self.show_command_output = show_command_output
 
         self.backup_bucket = backup_bucket or self.settings.aws.s3_backup_bucket
@@ -55,7 +54,8 @@ class PostgresBackupRestore:
         self.local_prefix = Path(f'{self.backup_bucket}/{self.settings.ENVIRONMENT}/postgres')
         self.local_dir = self.base_dir / self.local_prefix
 
-    def _run_command(self, command: list, env: dict = {}):
+    def _run_command(self, command: list, env: dict | None = None):
+        env = env or {}
         local_env = os.environ | env
         try:
             output = subprocess.run(command, env=local_env, capture_output=True, check=True, text=True)  # nosec
@@ -65,7 +65,7 @@ class PostgresBackupRestore:
                 self.logger.info(line)
             for line in e.stderr.split('\n'):
                 self.logger.error(line)
-            raise SystemExit(1)
+            raise SystemExit(1) from e
         if self.show_command_output:
             for line in output.stdout.split('\n'):
                 self.logger.info(line)
