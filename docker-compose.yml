@@ -33,7 +33,7 @@ services:
     environment:
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}  # Use environment variable for security
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # Use environment variable for security
     # Remove ports mapping for security (only accessible within Docker network)
     ports: []
     volumes:
@@ -171,7 +171,7 @@ services:
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
     environment:
       - ENVIRONMENT=production
-      - CONTAINER_LOG_DIR=/app/logs  # Container always uses /app/logs
+      - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -201,7 +201,7 @@ services:
     command: python -m ichrisbirch.wsgi_scheduler
     environment:
       - ENVIRONMENT=production
-      - CONTAINER_LOG_DIR=/app/logs  # Container always uses /app/logs
+      - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
     depends_on:
       postgres:
         condition: service_healthy

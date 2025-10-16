@@ -7,8 +7,8 @@ from ichrisbirch.app.query_api import QueryAPI
 logger = logging.getLogger(__name__)
 
 
-class ChatAPI:
-    def __init__(self, user: models.User):
+class ChatAPIClient:
+    def __init__(self, user: models.User | None = None):
         self.chat_api = QueryAPI(base_endpoint='chat/chats', response_model=schemas.Chat, user=user)
         self.chat_messages_api = QueryAPI(base_endpoint='chat/messages', response_model=schemas.ChatMessage, user=user)
 
