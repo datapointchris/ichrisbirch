@@ -3,7 +3,6 @@ from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
-from typing import Optional
 
 import pendulum
 
@@ -11,7 +10,7 @@ import pendulum
 class EasyDate:
     """Create easy to use python date filters."""
 
-    def __init__(self, today: Optional[date] = None, tz='local'):
+    def __init__(self, today: date | None = None, tz='local'):
         self.today: date = today or pendulum.today(tz).date()
         self.tomorrow: date = self.today + timedelta(days=1)
         self.yesterday: date = self.today - timedelta(days=1)
@@ -40,7 +39,7 @@ class EasyDate:
 class EasyDateTime:
     """Create easy to use python datetime filters."""
 
-    def __init__(self, today: Optional[datetime] = None, tz='local'):
+    def __init__(self, today: datetime | None = None, tz='local'):
         self.today: datetime = today or pendulum.today(tz)
         self.tomorrow: datetime = self.today + timedelta(days=1)
         self.yesterday: datetime = self.today - timedelta(days=1)
@@ -48,9 +47,7 @@ class EasyDateTime:
         self.previous_30: datetime = self.today - timedelta(days=30)
         self._month_days: int = calendar.monthrange(self.today.year, self.today.month)[1]
         self._week_number: int = self.today.isocalendar().week
-        self.week_start: datetime = datetime.combine(
-            date.fromisocalendar(self.today.year, self._week_number, 1), time()
-        )
+        self.week_start: datetime = datetime.combine(date.fromisocalendar(self.today.year, self._week_number, 1), time())
         self.week_end: datetime = self.week_start + timedelta(days=7)
         self.this_month: datetime = datetime(self.today.year, self.today.month, 1)
         self.next_month: datetime = self.this_month + timedelta(days=self._month_days)
