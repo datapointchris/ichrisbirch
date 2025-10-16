@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Any
-from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -20,7 +19,7 @@ class UserCreate(UserConfig):
     @classmethod
     def check_not_empty(cls, v: str) -> str:
         if not v or not v.strip():
-            raise ValueError("Field cannot be empty")
+            raise ValueError('Field cannot be empty')
         return v
 
 
@@ -37,8 +36,8 @@ class User(UserConfig):
 
 
 class UserUpdate(UserConfig):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    password: Optional[str] = None
-    last_login: Optional[datetime] = None
-    preferences: Optional[Any] = None
+    name: str | None = None
+    email: str | None = None
+    password: str | None = None
+    last_login: datetime | None = None
+    preferences: Any | None = None

@@ -27,18 +27,14 @@ def parse_terraform_plan_changes(filename: Path) -> list:
 
 
 def is_webserver_terminated(changes: list) -> bool:
-    for change in changes:
-        if change['type'] == 'aws_instance' and change['name'] == WEBSERVER_NAME:
-            if 'create' in change['change']['actions']:
-                return True
-    return False
+    return any(
+        change['type'] == 'aws_instance' and change['name'] == WEBSERVER_NAME and 'create' in change['change']['actions']
+        for change in changes
+    )
 
 
 def has_additional_changes(changes: list) -> bool:
-    for change in changes:
-        if change['change']['actions'] != ['no-op'] and change['name'] != WEBSERVER_NAME:
-            return True
-    return False
+    return any(change['change']['actions'] != ['no-op'] and change['name'] != WEBSERVER_NAME for change in changes)
 
 
 def apply_terraform_plan(outfile: Path):
