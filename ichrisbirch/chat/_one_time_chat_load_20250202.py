@@ -2,7 +2,7 @@ import json
 import time
 
 from ichrisbirch import models
-from ichrisbirch.database.sqlalchemy.session import get_sqlalchemy_session
+from ichrisbirch.database.session import get_sqlalchemy_session
 
 with open('chat_history.json') as f:
     chat_history = json.load(f)

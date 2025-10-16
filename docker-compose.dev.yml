@@ -78,8 +78,8 @@ services:
       context: .
       target: development
     container_name: ichrisbirch-api-dev
-    # Enable auto-reload for development, disable access logs (handled by middleware)
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --log-level debug --no-access-log
+    # command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --log-level debug --no-access-log
+    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir ichrisbirch/api --reload-dir ichrisbirch/models --reload-dir ichrisbirch/schemas --log-level debug --no-access-log
     environment:
       # Development-specific environment variables
       - ENVIRONMENT=development

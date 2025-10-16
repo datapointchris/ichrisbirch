@@ -62,7 +62,7 @@ services:
       --dir /tmp/redis
       --loglevel warning
       --logfile /var/log/ichrisbirch/testing.log
-    environment: []  # Override production environment
+    environment: [] # Override production environment
     volumes:
       - ichrisbirch_testing_logs:/var/log/ichrisbirch
     restart: unless-stopped
@@ -92,7 +92,7 @@ services:
       --log-level debug
       --no-access-log
     ports:
-      - "8001:8000"  # Map to different external port to avoid conflicts
+      - "8001:8000" # Map to different external port to avoid conflicts
     environment:
       - ENVIRONMENT=testing
       - FASTAPI_TESTING=True
@@ -140,7 +140,7 @@ services:
       --port 5000
       --reload
     ports:
-      - "5001:5000"  # Map to different external port to avoid conflicts
+      - "5001:5000" # Map to different external port to avoid conflicts
     environment:
       - ENVIRONMENT=testing
       - FLASK_TESTING=True
@@ -180,7 +180,7 @@ services:
       target: testing
     container_name: ichrisbirch-chat-testing
     command: >
-      uv run streamlit run ichrisbirch/wsgi_chat.py
+      uv run streamlit run ichrisbirch/chat/app.py
       --server.address=0.0.0.0
       --server.port=8505
       --server.headless=true
@@ -205,7 +205,7 @@ services:
         source: uv_cache
         target: /root/.cache/uv
     ports:
-      - "8507:8505"  # Different port to avoid conflicts
+      - "8507:8505" # Different port to avoid conflicts
     restart: unless-stopped
     depends_on:
       postgres:
