@@ -29,8 +29,6 @@ jobs:
       matrix:
         os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
         python-version: ["3.12"]
-        poetry-version: ["1.3.2"]
-        # Current poetry.lock file incompatible < 1.3.2
 
     steps:
       - name: Checkout repo
@@ -53,21 +51,22 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
-      - name: Cache Poetry Dependencies
+      - name: Cache UV Dependencies
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ matrix.os }}-${{ matrix.python-version }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            ~/.cache/uv
+          key: ${{ matrix.os }}-${{ matrix.python-version }}-uv-${{ hashFiles('**/uv.lock') }}
           restore-keys: |
-            ${{ matrix.os }}-${{ matrix.python-version }}-poetry-
+            ${{ matrix.os }}-${{ matrix.python-version }}-uv-
 
-      - name: Install poetry
-        run: python -m pip install poetry==${{ matrix.poetry-version }}
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
 
-      - name: Poetry install CICD Dependencies
-        run: poetry install --without dev,prod
+      - name: Install CICD Dependencies
+        run: uv sync --frozen --group test
 
       - name: Run black formatter
         uses: psf/black@stable
@@ -75,16 +74,16 @@ jobs:
           options: "--check --verbose --color"
 
       - name: Run mypy
-        run: poetry run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
+        run: uv run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
 
       - name: Run flake8
-        run: poetry run flake8 .
+        run: uv run flake8 .
 
       - name: Run isort action
         uses: isort/isort-action@master
 
       - name: Run bandit
-        run: poetry run bandit -c pyproject.toml -r .
+        run: uv run bandit -c pyproject.toml -r .
 
   test:
     name: Run Tests
@@ -94,8 +93,6 @@ jobs:
       matrix:
         os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
         python-version: ["3.12"]
-        poetry-version: ["1.3.2"]
-        # Current poetry.lock file incompatible < 1.3.2
 
     steps:
       - name: Checkout repo
@@ -122,27 +119,26 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
-        # The poetry dependencies have to be cached by the matrix.os and matrix.python-version instead of only
+        # The UV dependencies have to be cached by the matrix.os and matrix.python-version instead of only
         # the runner.os version since psycopg2-binary gets compiled for one 'Linux' runner.os and then errors on another os
-      - name: Cache Poetry Dependencies
+      - name: Cache UV Dependencies
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ matrix.os }}-${{ matrix.python-version }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            ~/.cache/uv
+          key: ${{ matrix.os }}-${{ matrix.python-version }}-uv-${{ hashFiles('**/uv.lock') }}
           restore-keys: |
-            ${{ matrix.os }}-${{ matrix.python-version }}-poetry-
+            ${{ matrix.os }}-${{ matrix.python-version }}-uv-
 
-      - name: Install poetry
-        run: python -m pip install poetry==${{ matrix.poetry-version }}
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Poetry install CICD Dependencies
-        run: poetry install --without dev,prod
+      - name: Install CICD Dependencies
+        run: uv sync --frozen --group test
 
       - name: Get Playwright Version for Cache
         run: |
-          PLAYWRIGHT_VERSION=$(poetry run playwright --version | grep -oE '[0-9.]+')
+          PLAYWRIGHT_VERSION=$(uv run playwright --version | grep -oE '[0-9.]+')
           echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> "$GITHUB_ENV"
 
       # Cache browser binaries, cache key is based on Playwright version and OS
@@ -156,8 +152,8 @@ jobs:
                   ${{ matrix.os }}-${{ matrix.python-version }}-playwright-
 
       - name: Install Playwright Browsers
-        run: poetry run playwright install
+        run: uv run playwright install
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Run pytest with Coverage
-        run: poetry run pytest --cov=ichrisbirch
+        run: uv run pytest --cov=ichrisbirch
