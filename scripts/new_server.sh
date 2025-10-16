@@ -57,7 +57,9 @@ install_uv() {
   # Install UV for all users
   curl -LsSf https://astral.sh/uv/install.sh | sh
   # Add UV to PATH for ubuntu user
-  echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$UBUNTU_HOME/.bashrc"
+  # shellcheck disable=SC2016
+  echo 'export PATH="$HOME/.cargo/bin:$PATH"' >>"$UBUNTU_HOME/.bashrc"
+  # shellcheck disable=SC1091
   source "$UBUNTU_HOME/.bashrc"
 }
 

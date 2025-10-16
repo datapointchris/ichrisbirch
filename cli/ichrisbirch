@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
+# shellcheck disable=SC2034
 
 if [[ $(uname) == "Darwin" ]]; then
-    # ICHRISBIRCH_HOME="/usr/local/var/www/ichrisbirch"
-    ICHRISBIRCH_HOME="$HOME/code/ichrisbirch"
-    LOG_DIR="/usr/local/var/log/ichrisbirch"
+  # ICHRISBIRCH_HOME="/usr/local/var/www/ichrisbirch"
+  ICHRISBIRCH_HOME="$HOME/code/ichrisbirch"
+  LOG_DIR="/usr/local/var/log/ichrisbirch"
 else
-    ICHRISBIRCH_HOME="/var/www/ichrisbirch"
-    LOG_DIR="/var/log/ichrisbirch"
+  ICHRISBIRCH_HOME="/var/www/ichrisbirch"
+  LOG_DIR="/var/log/ichrisbirch"
 fi
 
 export LOG_DIR
@@ -26,62 +27,62 @@ bright_yellow=$(tput setaf 11)
 bright_blue=$(tput setaf 12)
 bright_magenta=$(tput setaf 13)
 bright_cyan=$(tput setaf 14)
-orange=$(tput setaf 208)  # 256-color orange
+orange=$(tput setaf 208) # 256-color orange
 reset=$(tput sgr0)
 
 function colored-logs() {
-    local RED_ERROR="${red}[ERROR]${reset}"
-    local YELLOW_WARNING="${yellow}[WARNING]${reset}"
-    local BLUE_INFO="${blue}[INFO]${reset}"
-    local GREEN_DEBUG="${green}[DEBUG]${reset}"
-    local MAGENTA_CRITICAL="${magenta}[CRITICAL]${reset}"
+  local RED_ERROR="${red}[ERROR]${reset}"
+  local YELLOW_WARNING="${yellow}[WARNING]${reset}"
+  local BLUE_INFO="${blue}[INFO]${reset}"
+  local GREEN_DEBUG="${green}[DEBUG]${reset}"
+  local MAGENTA_CRITICAL="${magenta}[CRITICAL]${reset}"
 
-    # Service name colors
-    local RED_REDIS="${red}redis${reset}"
-    local GREEN_POSTGRES="${green}postgres${reset}"
-    local CYAN_NGINX="${cyan}nginx${reset}"
-    local BRIGHT_GREEN_API="${bright_green}api${reset}"
-    local BRIGHT_BLUE_APP="${bright_blue}app${reset}"
-    local ORANGE_CHAT="${orange}chat${reset}"
-    local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
+  # Service name colors
+  local RED_REDIS="${red}redis${reset}"
+  local GREEN_POSTGRES="${green}postgres${reset}"
+  local CYAN_NGINX="${cyan}nginx${reset}"
+  local BRIGHT_GREEN_API="${bright_green}api${reset}"
+  local BRIGHT_BLUE_APP="${bright_blue}app${reset}"
+  local ORANGE_CHAT="${orange}chat${reset}"
+  local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
 
-    # Use sed with proper escaping for backslashes
-    sed \
-        -e 's/ichrisbirch-//g' \
-        -e 's/-dev//g' \
-        -e 's/-test//g' \
-        -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
-        -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
-        -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
-        -e 's/^postgres[ ]*|/'"${GREEN_POSTGRES}"' |/' \
-        -e 's/^nginx[ ]*|/'"${CYAN_NGINX}"' |/' \
-        -e 's/^chat[ ]*|/'"${ORANGE_CHAT}"' |/' \
-        -e 's/^scheduler[ ]*|/'"${YELLOW_SCHEDULER}"' |/' \
-        -e 's/\[ERROR\]/'"${RED_ERROR}"'/g' \
-        -e 's/\[WARNING\]/'"${YELLOW_WARNING}"'/g' \
-        -e 's/\[DEBUG\]/'"${GREEN_DEBUG}"'/g' \
-        -e 's/\[INFO\]/'"${BLUE_INFO}"'/g' \
-        -e 's/\[CRITICAL\]/'"${MAGENTA_CRITICAL}"'/g'
+  # Use sed with proper escaping for backslashes
+  sed \
+    -e 's/ichrisbirch-//g' \
+    -e 's/-dev//g' \
+    -e 's/-test//g' \
+    -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
+    -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
+    -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
+    -e 's/^postgres[ ]*|/'"${GREEN_POSTGRES}"' |/' \
+    -e 's/^nginx[ ]*|/'"${CYAN_NGINX}"' |/' \
+    -e 's/^chat[ ]*|/'"${ORANGE_CHAT}"' |/' \
+    -e 's/^scheduler[ ]*|/'"${YELLOW_SCHEDULER}"' |/' \
+    -e 's/\[ERROR\]/'"${RED_ERROR}"'/g' \
+    -e 's/\[WARNING\]/'"${YELLOW_WARNING}"'/g' \
+    -e 's/\[DEBUG\]/'"${GREEN_DEBUG}"'/g' \
+    -e 's/\[INFO\]/'"${BLUE_INFO}"'/g' \
+    -e 's/\[CRITICAL\]/'"${MAGENTA_CRITICAL}"'/g'
 }
 
 function colored-status() {
-    local GREEN_RUNNING="${green}running${reset}"
-    local RED_EXITED="${red}exited${reset}"
-    local YELLOW_RESTARTING="${yellow}restarting${reset}"
-    local BLUE_PAUSED="${blue}paused${reset}"
-    local MAGENTA_DEAD="${magenta}dead${reset}"
-    local CYAN_CREATED="${cyan}created${reset}"
-    local YELLOW_UNHEALTHY="${yellow}unhealthy${reset}"
-    local GREEN_HEALTHY="${green}healthy${reset}"
+  local GREEN_RUNNING="${green}running${reset}"
+  local RED_EXITED="${red}exited${reset}"
+  local YELLOW_RESTARTING="${yellow}restarting${reset}"
+  local BLUE_PAUSED="${blue}paused${reset}"
+  local MAGENTA_DEAD="${magenta}dead${reset}"
+  local CYAN_CREATED="${cyan}created${reset}"
+  local YELLOW_UNHEALTHY="${yellow}unhealthy${reset}"
+  local GREEN_HEALTHY="${green}healthy${reset}"
 
-    awk -v running="$GREEN_RUNNING" \
-        -v exited="$RED_EXITED" \
-        -v restarting="$YELLOW_RESTARTING" \
-        -v paused="$BLUE_PAUSED" \
-        -v dead="$MAGENTA_DEAD" \
-        -v created="$CYAN_CREATED" \
-        -v unhealthy="$YELLOW_UNHEALTHY" \
-        -v healthy="$GREEN_HEALTHY" '
+  awk -v running="$GREEN_RUNNING" \
+    -v exited="$RED_EXITED" \
+    -v restarting="$YELLOW_RESTARTING" \
+    -v paused="$BLUE_PAUSED" \
+    -v dead="$MAGENTA_DEAD" \
+    -v created="$CYAN_CREATED" \
+    -v unhealthy="$YELLOW_UNHEALTHY" \
+    -v healthy="$GREEN_HEALTHY" '
     {
         # Strip ichrisbirch- prefix from service names
         gsub(/ichrisbirch-/, "");
@@ -99,363 +100,365 @@ function colored-status() {
 }
 
 function logs() {
-    cd "$LOG_DIR" || exit
-    ls -lH
-    exec $SHELL
+  cd "$LOG_DIR" || exit
+  ls -lH
+  exec $SHELL
 }
 
 function install() {
-    sudo ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" /usr/local/bin/ichrisbirch
+  sudo ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" /usr/local/bin/ichrisbirch
 }
 
 function open() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Opening ${green}ichrisbirch${reset} project in VS Code"
-    code .
-    echo "Starting tmux session"
-    exec tmux new-session -d -s ichrisbirch || tmux attach-session -t ichrisbirch
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Opening ${green}ichrisbirch${reset} project in VS Code"
+  code .
+  echo "Starting tmux session"
+  exec tmux new-session -d -s ichrisbirch || tmux attach-session -t ichrisbirch
 }
 
 function project-cd() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    if [ -d ".venv" ]; then
-        echo "Activating virtual environment"
-        # shellcheck source=/dev/null
-        source .venv/bin/activate
-    fi
-    exec "$SHELL"
+  cd "$ICHRISBIRCH_HOME" || exit
+  if [ -d ".venv" ]; then
+    echo "Activating virtual environment"
+    # shellcheck source=/dev/null
+    source .venv/bin/activate
+  fi
+  exec "$SHELL"
 }
 
 function dev-start() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Starting ${blue}DEV${reset} environment with ${green}Docker Compose${reset}"
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
-    echo "Development environment started at:"
-    echo "  ${green}APP${reset}: ${cyan}http://localhost:5000${reset}"
-    echo "  ${green}API${reset}: ${cyan}http://localhost:8000${reset}"
-    echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8505${reset}"
-    echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5432${reset}"
-    echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
-    echo ""
-    echo "Use ${blue}ichrisbirch dev logs${reset} to view live container logs"
-    echo "Use ${blue}ichrisbirch dev stop${reset} to stop all services"
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Starting ${blue}DEV${reset} environment with ${green}Docker Compose${reset}"
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
+  echo "Development environment started at:"
+  echo "  ${green}APP${reset}: ${cyan}http://localhost:5000${reset}"
+  echo "  ${green}API${reset}: ${cyan}http://localhost:8000${reset}"
+  echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8505${reset}"
+  echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5432${reset}"
+  echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
+  echo ""
+  echo "Use ${blue}ichrisbirch dev logs${reset} to view live container logs"
+  echo "Use ${blue}ichrisbirch dev stop${reset} to stop all services"
 }
 
 function dev-stop() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Stopping ${blue}DEV${reset} environment"
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Stopping ${blue}DEV${reset} environment"
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
 }
 
 function dev-restart() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Restarting ${blue}DEV${reset} environment"
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml restart
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Restarting ${blue}DEV${reset} environment"
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml restart
 }
 
 function dev-rebuild() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Rebuilding and restarting ${blue}DEV${reset} environment"
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Rebuilding and restarting ${blue}DEV${reset} environment"
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 }
 
 function dev-logs() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "🔍 Viewing ${blue}DEV${reset} Docker container logs..."
-    echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "🔍 Viewing ${blue}DEV${reset} Docker container logs..."
+  echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
-    # Show live Docker Compose logs with color formatting and clean service names
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50 | colored-logs
+  # Show live Docker Compose logs with color formatting and clean service names
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50 | colored-logs
 }
 
 function dev-status() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Checking ${blue}DEV${reset} environment status"
-    docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Checking ${blue}DEV${reset} environment status"
+  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 }
 
 function dev-monitor() {
-    tmuxinator ichrisbirch-dev-monitoring
+  tmuxinator ichrisbirch-dev-monitoring
 }
 
 function test-run() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    mkdir -p "$ICHRISBIRCH_HOME/test-logs"
-    source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-    export ENVIRONMENT=testing
-    uv run pytest
+  cd "$ICHRISBIRCH_HOME" || exit
+  mkdir -p "$ICHRISBIRCH_HOME/test-logs"
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  export ENVIRONMENT=testing
+  uv run pytest
 }
 
 function testing-start() {
-    cd "$ICHRISBIRCH_HOME" || exit
+  cd "$ICHRISBIRCH_HOME" || exit
 
-    # Create test-logs directory if it doesn't exist
-    mkdir -p "$ICHRISBIRCH_HOME/test-logs"
+  # Create test-logs directory if it doesn't exist
+  mkdir -p "$ICHRISBIRCH_HOME/test-logs"
 
-    echo "Starting ${blue}TESTING${reset} environment with ${green}Docker Compose${reset}"
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+  echo "Starting ${blue}TESTING${reset} environment with ${green}Docker Compose${reset}"
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
 
-    echo "Waiting for services to be ready..."
-    sleep 15
+  echo "Waiting for services to be ready..."
+  sleep 15
 
-    echo "Initializing test database..."
-    # Use virtual environment and run database initialization
-    source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  echo "Initializing test database..."
+  # Use virtual environment and run database initialization
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
 
-    # Run test database initialization script
-    if uv run python scripts/init_test_database.py; then
-        echo "${green}✓${reset} Database initialized successfully"
-    else
-        echo "${red}✗${reset} Database initialization failed"
-        echo "Check logs for details. You may need to run:"
-        echo "   ${blue}ichrisbirch testing stop${reset}"
-        echo "   ${blue}ichrisbirch testing start${reset}"
-        return 1
-    fi
+  # Run test database initialization script
+  if uv run python scripts/init_test_database.py; then
+    echo "${green}✓${reset} Database initialized successfully"
+  else
+    echo "${red}✗${reset} Database initialization failed"
+    echo "Check logs for details. You may need to run:"
+    echo "   ${blue}ichrisbirch testing stop${reset}"
+    echo "   ${blue}ichrisbirch testing start${reset}"
+    return 1
+  fi
 
-    echo "Testing environment started at:"
-    echo "  ${green}APP${reset}: ${cyan}http://localhost:5001${reset}"
-    echo "  ${green}API${reset}: ${cyan}http://localhost:8001${reset}"
-    echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8507${reset}"
-    echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
-    echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
-    echo ""
-    echo "📁 Test logs available at: ${cyan}$ICHRISBIRCH_HOME/test-logs/${reset}"
-    echo "Use ${blue}ichrisbirch testing app-logs${reset} to view application logs"
-    echo "Use ${blue}ichrisbirch testing app-logs-follow${reset} to tail logs in real-time"
-    echo "Use ${blue}ichrisbirch testing logs${reset} to view Docker container logs"
-    echo "Use ${blue}ichrisbirch testing stop${reset} to stop all services"
+  echo "Testing environment started at:"
+  echo "  ${green}APP${reset}: ${cyan}http://localhost:5001${reset}"
+  echo "  ${green}API${reset}: ${cyan}http://localhost:8001${reset}"
+  echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8507${reset}"
+  echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
+  echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
+  echo ""
+  echo "📁 Test logs available at: ${cyan}$ICHRISBIRCH_HOME/test-logs/${reset}"
+  echo "Use ${blue}ichrisbirch testing app-logs${reset} to view application logs"
+  echo "Use ${blue}ichrisbirch testing app-logs-follow${reset} to tail logs in real-time"
+  echo "Use ${blue}ichrisbirch testing logs${reset} to view Docker container logs"
+  echo "Use ${blue}ichrisbirch testing stop${reset} to stop all services"
 }
 
 function testing-stop() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Stopping ${blue}TESTING${reset} environment"
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Stopping ${blue}TESTING${reset} environment"
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
 }
 
 function testing-restart() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Restarting ${blue}TESTING${reset} environment"
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml restart
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Restarting ${blue}TESTING${reset} environment"
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml restart
 }
 
 function testing-rebuild() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Rebuilding and restarting ${blue}TESTING${reset} environment"
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Rebuilding and restarting ${blue}TESTING${reset} environment"
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
 }
 
 function testing-logs() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "🔍 Viewing ${blue}TESTING${reset} Docker container logs..."
-    echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "🔍 Viewing ${blue}TESTING${reset} Docker container logs..."
+  echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
-    # Show live Docker Compose logs with color formatting and clean service names
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50 | colored-logs
+  # Show live Docker Compose logs with color formatting and clean service names
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50 | colored-logs
 }
 
 function testing-app-logs() {
-    local lines="${1:-100}"
-    local follow_flag=""
+  local lines="${1:-100}"
+  local follow_flag=""
 
-    # Check if --follow is passed as first or second argument
-    if [[ "$1" == "--follow" ]] || [[ "$2" == "--follow" ]]; then
-        follow_flag="--follow"
-        # Adjust lines if --follow was passed as first argument
-        if [[ "$1" == "--follow" ]]; then
-            lines="${2:-100}"
-        fi
+  # Check if --follow is passed as first or second argument
+  if [[ "$1" == "--follow" ]] || [[ "$2" == "--follow" ]]; then
+    follow_flag="--follow"
+    # Adjust lines if --follow was passed as first argument
+    if [[ "$1" == "--follow" ]]; then
+      lines="${2:-100}"
     fi
+  fi
 
-    cd "$ICHRISBIRCH_HOME" || exit
-    local test_logs_dir="$ICHRISBIRCH_HOME/test-logs"
-    local log_file="$test_logs_dir/testing.log"
+  cd "$ICHRISBIRCH_HOME" || exit
+  local test_logs_dir="$ICHRISBIRCH_HOME/test-logs"
+  local log_file="$test_logs_dir/testing.log"
 
-    # Check if test logs directory exists
-    if [[ ! -d "$test_logs_dir" ]]; then
-        echo "${red}❌ Test logs directory not found: $test_logs_dir${reset}"
-        echo "${cyan}💡 Make sure the test environment has been started at least once:${reset}"
-        echo "   ${blue}ichrisbirch testing start${reset}"
-        return 1
-    fi
+  # Check if test logs directory exists
+  if [[ ! -d "$test_logs_dir" ]]; then
+    echo "${red}❌ Test logs directory not found: $test_logs_dir${reset}"
+    echo "${cyan}💡 Make sure the test environment has been started at least once:${reset}"
+    echo "   ${blue}ichrisbirch testing start${reset}"
+    return 1
+  fi
 
-    # Check if consolidated log file exists
-    if [[ ! -f "$log_file" ]]; then
-        echo "${red}❌ Test log file not found: $log_file${reset}"
-        echo "${cyan}💡 Make sure the test environment is running to generate logs:${reset}"
-        echo "   ${blue}ichrisbirch testing start${reset}"
-        return 1
-    fi
+  # Check if consolidated log file exists
+  if [[ ! -f "$log_file" ]]; then
+    echo "${red}❌ Test log file not found: $log_file${reset}"
+    echo "${cyan}💡 Make sure the test environment is running to generate logs:${reset}"
+    echo "   ${blue}ichrisbirch testing start${reset}"
+    return 1
+  fi
 
-    echo "📖 Viewing ${blue}TESTING${reset} application logs from: ${cyan}$log_file${reset}"
+  echo "📖 Viewing ${blue}TESTING${reset} application logs from: ${cyan}$log_file${reset}"
 
-    if [[ -n "$follow_flag" ]]; then
-        echo "   Mode: ${green}Follow${reset} (press Ctrl+C to exit)"
-        echo ""
-        tail -f "$log_file" | colored-logs
-    else
-        echo "   Lines: $lines"
-        echo ""
-        tail -n "$lines" "$log_file" | colored-logs
-    fi
+  if [[ -n "$follow_flag" ]]; then
+    echo "   Mode: ${green}Follow${reset} (press Ctrl+C to exit)"
+    echo ""
+    tail -f "$log_file" | colored-logs
+  else
+    echo "   Lines: $lines"
+    echo ""
+    tail -n "$lines" "$log_file" | colored-logs
+  fi
 }
 
 function testing-app-logs-follow() {
-    testing-app-logs --follow
+  testing-app-logs --follow
 }
 
 function testing-status() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Checking ${blue}TESTING${reset} environment status"
-    docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Checking ${blue}TESTING${reset} environment status"
+  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 }
 
 function prod-monitor() {
-    tmuxinator ichrisbirch-prod-monitoring
+  tmuxinator ichrisbirch-prod-monitoring
 }
 
 function prod-logs() {
-    echo "🔍 Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
-    echo "Note: Production uses Docker Compose services"
-    cd /var/www/ichrisbirch || exit
+  echo "🔍 Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
+  echo "Note: Production uses Docker Compose services"
+  cd /var/www/ichrisbirch || exit
 
-    # Show live Docker Compose logs with color formatting and clean service names
-    docker-compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
+  # Show live Docker Compose logs with color formatting and clean service names
+  docker-compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
 }
 
 function prod-status() {
-    echo "Checking ${magenta}PRODUCTION${reset} environment status"
-    # Check if this is production environment
-    if [ -f /var/www/ichrisbirch/docker-compose.yml ]; then
-        cd /var/www/ichrisbirch || exit
-        docker-compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
-    else
-        echo "${yellow}Production Docker Compose files not found${reset}"
-        echo "Checking traditional supervisor processes..."
-        sudo supervisorctl status 2>/dev/null || echo "Supervisor not running"
-    fi
+  echo "Checking ${magenta}PRODUCTION${reset} environment status"
+  # Check if this is production environment
+  if [ -f /var/www/ichrisbirch/docker-compose.yml ]; then
+    cd /var/www/ichrisbirch || exit
+    docker-compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  else
+    echo "${yellow}Production Docker Compose files not found${reset}"
+    echo "Checking traditional supervisor processes..."
+    sudo supervisorctl status 2>/dev/null || echo "Supervisor not running"
+  fi
 }
 
 function prod-apihealth() {
-    curl --silent https://api.ichrisbirch.com/health/ | jq
+  curl --silent https://api.ichrisbirch.com/health/ | jq
 }
 
 function prod-reboot-ec2() {
-    instance_name=${1:-ichrisbirch-webserver}
-    echo "Looking for instance with name '$instance_name'"
-    instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$instance_name" --query "Reservations[*].Instances[*].InstanceId" --output text)
-    if [ -z "$instance_id" ]; then
-        echo "${red}No instance found with the name '$instance_name'${reset}"
-        echo "${green}Current running instances:${reset}"
-        aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId,Tags[?Key=='Name'].Value]" --output text
-    fi
-    echo "Rebooting the ec2 instance with the name '$instance_name'"
-    aws ec2 reboot-instances --instance-ids "$instance_id"
+  instance_name=${1:-ichrisbirch-webserver}
+  echo "Looking for instance with name '$instance_name'"
+  instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$instance_name" --query "Reservations[*].Instances[*].InstanceId" --output text)
+  if [ -z "$instance_id" ]; then
+    echo "${red}No instance found with the name '$instance_name'${reset}"
+    echo "${green}Current running instances:${reset}"
+    aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId,Tags[?Key=='Name'].Value]" --output text
+  fi
+  echo "Rebooting the ec2 instance with the name '$instance_name'"
+  aws ec2 reboot-instances --instance-ids "$instance_id"
 }
 
 function usage() {
-    echo "${yellow}           _                  _                  _       ${reset}"
-    echo "${yellow}  (*)     |=|         (*)    |=|   (*)          |=|      ${reset}"
-    echo "${yellow}   _  ____|=| _   ____ _  ___|=| _  _  ____ ____|=| _    ${reset}"
-    echo "${yellow}  |=|/ ___)=|| =\/ ___)=|/___)=|| \|=|/ ___) ___)=|| =\  ${reset}"
-    echo "${yellow}  |=(=(___|=| |=|=|   |=|___ |=|_)=)=|=|  (=(___|=| |=|  ${reset}"
-    echo "${yellow}  |_|\____)_| |_|_|   |_(___/|____/|_|_|   \____)_| |_|  ${reset}"
-    echo
-    echo "${green}Core Commands:${reset}"
-    echo "  ${blue}open${reset}      - Launch VS Code and create tmux session for development"
-    echo "  ${blue}cd${reset}        - Navigate to project directory and activate Python virtual environment"
-    echo "  ${blue}logs${reset}      - List log files in configured log directory"
-    echo "  ${blue}test${reset}      - Execute pytest test suite via Docker Compose test-runner service"
-    echo
-    echo "${green}Development Environment (Docker Compose):${reset}"
-    echo "  ${blue}dev start${reset}     - Start development services (app:5000, api:8000, chat:8505, postgres:5432, redis:6379)"
-    echo "  ${blue}dev stop${reset}      - Stop all development services and remove containers"
-    echo "  ${blue}dev restart${reset}   - Restart existing containers without rebuilding images (quick recovery from crashes)"
-    echo "  ${blue}dev rebuild${reset}   - Stop services, rebuild Docker images, and restart (use after code/dependency changes)"
-    echo "  ${blue}dev logs${reset}      - View live Docker container logs"
-    echo "  ${blue}dev status${reset}    - Display container status via 'docker-compose ps'"
-    echo
-    echo "${green}Test Environment (runs alongside dev):${reset}"
-    echo "  ${blue}testing start${reset}   - Start isolated test services (app:5001, api:8001, chat:8507, postgres:5434, redis:6380)"
-    echo "  ${blue}testing stop${reset}    - Stop test environment services"
-    echo "  ${blue}testing restart${reset} - Restart test containers without rebuilding"
-    echo "  ${blue}testing rebuild${reset} - Rebuild and restart test environment"
-    echo "  ${blue}testing logs${reset}    - View live test container logs (Docker Compose output)"
-    echo "  ${blue}testing app-logs [lines] [--follow]${reset} - View consolidated application logs from testing.log"
-    echo "    • ${yellow}lines${reset}: number of lines to show (default: 100)"
-    echo "    • ${yellow}--follow${reset}: follow logs in real-time"
-    echo "    • Examples: ${cyan}testing app-logs${reset}, ${cyan}testing app-logs 50${reset}, ${cyan}testing app-logs --follow${reset}"
-    echo "  ${blue}testing app-logs-follow${reset} - Follow consolidated application logs in real-time"
-    echo "  ${blue}testing status${reset}  - Display test container status"
-    echo "  ${blue}test run${reset}        - Execute pytest with test environment database/redis"
-    echo
-    echo "${green}Production Environment:${reset}"
-    echo "  ${blue}prod logs${reset}      - View production Docker container logs"
-    echo "  ${blue}prod status${reset}    - Check production service status (Docker Compose or supervisor)"
-    echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
-    echo "  ${blue}prod reboot-ec2${reset} - Restart EC2 instance via AWS CLI (default: ichrisbirch-webserver)"
-    echo
-    echo "${green}Technical Notes:${reset}"
-    echo "  • Development and test environments run simultaneously on different ports"
-    echo "  • Development: docker-compose.yml + docker-compose.dev.yml override pattern"
-    echo "  • Test environment: isolated containers with tmpfs for performance, different ports"
-    echo "  • Test application logs persisted to: ${cyan}\$ICHRISBIRCH_HOME/test-logs/${reset}"
-    echo "  • Development logs written to mounted files: \$LOG_DIR/{app,api,scheduler,chat}.log"
-    echo "  • Use 'testing logs' for Docker container logs, 'testing app-logs' for application logs"
-    echo "  • Install ${yellow}multitail${reset} for enhanced multi-log viewing: ${blue}brew install multitail${reset}"
+  echo "${yellow}           _                  _                  _       ${reset}"
+  echo "${yellow}  (*)     |=|         (*)    |=|   (*)          |=|      ${reset}"
+  echo "${yellow}   _  ____|=| _   ____ _  ___|=| _  _  ____ ____|=| _    ${reset}"
+  echo "${yellow}  |=|/ ___)=|| =\/ ___)=|/___)=|| \|=|/ ___) ___)=|| =\  ${reset}"
+  echo "${yellow}  |=(=(___|=| |=|=|   |=|___ |=|_)=)=|=|  (=(___|=| |=|  ${reset}"
+  echo "${yellow}  |_|\____)_| |_|_|   |_(___/|____/|_|_|   \____)_| |_|  ${reset}"
+  echo
+  echo "${green}Core Commands:${reset}"
+  echo "  ${blue}open${reset}      - Launch VS Code and create tmux session for development"
+  echo "  ${blue}cd${reset}        - Navigate to project directory and activate Python virtual environment"
+  echo "  ${blue}logs${reset}      - List log files in configured log directory"
+  echo "  ${blue}test${reset}      - Execute pytest test suite via Docker Compose test-runner service"
+  echo
+  echo "${green}Development Environment (Docker Compose):${reset}"
+  echo "  ${blue}dev start${reset}     - Start development services (app:5000, api:8000, chat:8505, postgres:5432, redis:6379)"
+  echo "  ${blue}dev stop${reset}      - Stop all development services and remove containers"
+  echo "  ${blue}dev restart${reset}   - Restart existing containers without rebuilding images (quick recovery from crashes)"
+  echo "  ${blue}dev rebuild${reset}   - Stop services, rebuild Docker images, and restart (use after code/dependency changes)"
+  echo "  ${blue}dev logs${reset}      - View live Docker container logs"
+  echo "  ${blue}dev status${reset}    - Display container status via 'docker-compose ps'"
+  echo
+  echo "${green}Test Environment (runs alongside dev):${reset}"
+  echo "  ${blue}testing start${reset}   - Start isolated test services (app:5001, api:8001, chat:8507, postgres:5434, redis:6380)"
+  echo "  ${blue}testing stop${reset}    - Stop test environment services"
+  echo "  ${blue}testing restart${reset} - Restart test containers without rebuilding"
+  echo "  ${blue}testing rebuild${reset} - Rebuild and restart test environment"
+  echo "  ${blue}testing logs${reset}    - View live test container logs (Docker Compose output)"
+  echo "  ${blue}testing app-logs [lines] [--follow]${reset} - View consolidated application logs from testing.log"
+  echo "    • ${yellow}lines${reset}: number of lines to show (default: 100)"
+  echo "    • ${yellow}--follow${reset}: follow logs in real-time"
+  echo "    • Examples: ${cyan}testing app-logs${reset}, ${cyan}testing app-logs 50${reset}, ${cyan}testing app-logs --follow${reset}"
+  echo "  ${blue}testing app-logs-follow${reset} - Follow consolidated application logs in real-time"
+  echo "  ${blue}testing status${reset}  - Display test container status"
+  echo "  ${blue}test run${reset}        - Execute pytest with test environment database/redis"
+  echo
+  echo "${green}Production Environment:${reset}"
+  echo "  ${blue}prod logs${reset}      - View production Docker container logs"
+  echo "  ${blue}prod status${reset}    - Check production service status (Docker Compose or supervisor)"
+  echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
+  echo "  ${blue}prod reboot-ec2${reset} - Restart EC2 instance via AWS CLI (default: ichrisbirch-webserver)"
+  echo
+  echo "${green}Technical Notes:${reset}"
+  echo "  • Development and test environments run simultaneously on different ports"
+  echo "  • Development: docker-compose.yml + docker-compose.dev.yml override pattern"
+  echo "  • Test environment: isolated containers with tmpfs for performance, different ports"
+  echo "  • Test application logs persisted to: ${cyan}\$ICHRISBIRCH_HOME/test-logs/${reset}"
+  echo "  • Development logs written to mounted files: \$LOG_DIR/{app,api,scheduler,chat}.log"
+  echo "  • Use 'testing logs' for Docker container logs, 'testing app-logs' for application logs"
+  echo "  • Install ${yellow}multitail${reset} for enhanced multi-log viewing: ${blue}brew install multitail${reset}"
 }
 # check if the first argument is empty and print usage if so
 if [ -z "$1" ]; then
-    usage
-    exit 0
+  usage
+  exit 0
 fi
 
 case $1 in
 help | -h | --help | -help)
-    usage
-    ;;
+  usage
+  ;;
 install)
-    install
-    ;;
+  install
+  ;;
 open)
-    open
-    ;;
+  open
+  ;;
 cd)
-    project-cd
-    ;;
+  project-cd
+  ;;
 logs)
-    logs
-    ;;
+  logs
+  ;;
 test)
-    test-"$2"
-    ;;
+  test-"$2"
+  ;;
 testing)
-    case "$2" in
-        app-logs)
-            # Handle app-logs with lines and --follow options
-            testing-app-logs "$3" "$4"
-            ;;
-        app-logs-follow)
-            # Simplified follow function
-            testing-app-logs-follow
-            ;;
-        *)
-            # Default testing command pattern
-            testing-"$2"
-            ;;
-    esac
+  case "$2" in
+  app-logs)
+    # Handle app-logs with lines and --follow options
+    testing-app-logs "$3" "$4"
     ;;
+  app-logs-follow)
+    # Simplified follow function
+    testing-app-logs-follow
+    ;;
+  *)
+    # Default testing command pattern
+    testing-"$2"
+    ;;
+  esac
+  ;;
 dev)
-    dev-"$2"
-    ;;
+  dev-"$2"
+  ;;
 prod)
-    prod-"$2"
-    ;;
+  prod-"$2"
+  ;;
 *)
-    echo "${red}!! '$1' is not a valid ichrisbirch command !!${reset}"
-    echo ""
-    usage
-    ;;
+  echo "${red}!! '$1' is not a valid ichrisbirch command !!${reset}"
+  echo ""
+  usage
+  ;;
 esac
