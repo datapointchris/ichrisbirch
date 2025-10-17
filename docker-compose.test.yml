@@ -77,7 +77,6 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "redis-test"
-
   api:
     build:
       context: .
@@ -119,7 +118,13 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s  # Give time for venv setup
+      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -165,7 +170,7 @@ services:
     restart: unless-stopped
     depends_on:
       api:
-        condition: service_started
+        condition: service_started  # Wait for API to initialize shared venv first
     logging:
       driver: "json-file"
       options:
@@ -208,10 +213,12 @@ services:
       - "8507:8505" # Different port to avoid conflicts
     restart: unless-stopped
     depends_on:
+      api:
+        condition: service_started  # Wait for API to initialize shared venv first
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -248,10 +255,12 @@ services:
         target: /root/.cache/uv
     restart: unless-stopped
     depends_on:
+      api:
+        condition: service_started  # Wait for API to initialize shared venv first
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     working_dir: /app
     healthcheck:
       disable: true

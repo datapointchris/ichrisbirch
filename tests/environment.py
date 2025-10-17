@@ -7,6 +7,7 @@ This module handles the setup and teardown of the test environment, including:
 - Docker Compose-based test environment setup
 """
 
+import json
 import logging
 import socket
 import subprocess
@@ -82,15 +83,24 @@ class DockerComposeTestEnvironment:
     def docker_test_services_already_running(self, required_services=None) -> bool:
         """Returns True if all required Docker Compose services are running."""
         if required_services is None:
-            required_services = ['postgres', 'redis', 'api', 'app', 'chat']
+            required_services = {'postgres', 'redis', 'api', 'app', 'chat'}
         try:
-            cmd = self.COMPOSE_COMMAND.split(' ') + ['ps', '--services', '--filter', 'status=running']
+            # Use docker ps with JSON format for clean parsing
+            cmd = ['docker', 'ps', '--filter', 'status=running', '--format', 'json']
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             if result.returncode != 0:
-                logger.warning(f'docker compose ps failed: {result.stderr}')
+                logger.warning(f'docker ps failed: {result.stderr}')
                 return False
-            running_services = set(result.stdout.strip().splitlines())
-            return all(service in running_services for service in required_services)
+
+            # Parse JSON output and extract running test services
+            running_services = {
+                json.loads(line).get('Names', '').removeprefix('ichrisbirch-').removesuffix('-testing')
+                for line in result.stdout.strip().splitlines()
+                if line.strip() and 'ichrisbirch-' in line and '-testing' in line
+            }
+
+            # Check if all required services are running
+            return required_services.issubset(running_services)
         except Exception as e:
             logger.error(f'Error checking Docker Compose services: {e}')
             return False
