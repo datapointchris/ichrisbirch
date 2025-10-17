@@ -165,4 +165,4 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Run pytest with Coverage
-        run: uv run pytest --cov=ichrisbirch
+        run: uv run pytest -s --cov=ichrisbirch
