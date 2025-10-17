@@ -51,26 +51,20 @@ services:
     container_name: ichrisbirch-redis-testing
     ports:
       - "6380:6379"
-    # Use tmpfs for test Redis data for maximum speed
-    tmpfs:
-      - /tmp/redis
-    # Test optimizations: no persistence, save to tmpfs
+    # Test optimizations: no persistence, minimal configuration
     command: >
       redis-server
       --save ""
       --appendonly no
-      --dir /tmp/redis
       --loglevel warning
-      --logfile /var/log/ichrisbirch/testing.log
     environment: [] # Override production environment
-    volumes:
-      - ichrisbirch_testing_logs:/var/log/ichrisbirch
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     logging:
       driver: "json-file"
       options:
