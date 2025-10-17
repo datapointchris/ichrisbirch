@@ -12,18 +12,16 @@ class RequestLoggingMiddleware:
     """Custom request logging middleware for Flask app."""
 
     def __init__(self, app: Flask | None = None):
-        self.app = None
+        # Configuration
+        self.HEALTHCHECK_IPS = {'127.0.0.1', '172.17.0.1', '172.18.0.1'}
+        self.STATIC_EXTENSIONS = {'.css', '.js', '.woff', '.woff2', '.ico', '.png', '.jpg', '.svg'}
+
+        self.app = app
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app: Flask):
         """Initialize the middleware with Flask app."""
-        self.app = app
-
-        # Configuration
-        self.HEALTHCHECK_IPS = {'127.0.0.1', '172.17.0.1', '172.18.0.1'}
-        self.STATIC_EXTENSIONS = {'.css', '.js', '.woff', '.woff2', '.ico', '.png', '.jpg', '.svg'}
-
         # Register hooks
         app.before_request(self.before_request)
         app.after_request(self.after_request)
