@@ -81,7 +81,7 @@ jobs:
         run: uv run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
 
       - name: Run bandit
-        run: uv run bandit -c pyproject.toml -r .
+        run: uv run bandit -c pyproject.toml .
 
   test:
     name: Run Tests

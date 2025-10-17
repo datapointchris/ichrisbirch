@@ -108,7 +108,7 @@ test = [
 
 
 [tool.bandit]
-exclude_dirs = ["tests", "scripts"]
+exclude_dirs = [".git", ".gitsecret", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv", "tests", "scripts"]
 skips = ["B113", "B311"]
 
 
