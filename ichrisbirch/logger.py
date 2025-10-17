@@ -173,7 +173,7 @@ def initialize_logging(config=LOGGING_CONFIG):
             if '_file' in handler:
                 del config['handlers'][handler]
         for logger in config['loggers']:
-            config['loggers'][logger]['handlers'] = ['console']
+            config['loggers'][logger]['handlers'] = ['stdout']
 
     logging.config.dictConfig(config)
     logger = logging.getLogger()
