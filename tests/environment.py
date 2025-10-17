@@ -163,7 +163,7 @@ class DockerComposeTestEnvironment:
         for service_name, url in http_services.items():
             logger.info(f'Checking {service_name} readiness at {url}')
             attempts = 0
-            max_attempts = 6
+            max_attempts = 12  # Increased from 6 to allow 60 seconds total
             service_running = False
             while not service_running and attempts < max_attempts:
                 try:
