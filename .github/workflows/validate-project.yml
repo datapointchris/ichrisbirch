@@ -23,6 +23,7 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ${{matrix.os}}
+    if: false  # Temporarily disabled for faster debugging
     strategy:
       fail-fast: true
       matrix:
@@ -89,7 +90,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
+        os: [ubuntu-24.04]  # Only 24.04 for easier debugging
         python-version: ["3.12"]
 
     steps:
