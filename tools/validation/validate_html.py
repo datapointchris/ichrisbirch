@@ -1,4 +1,4 @@
-import subprocess
+import subprocess  # nosec
 import sys
 import time
 from collections import OrderedDict
@@ -149,7 +149,7 @@ class ValidateWebsite:
     def validate_page(self, html_content: str):
         """Validate html pages using tidy command line."""
         command = 'tidy -q -e'
-        tidy = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        tidy = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec
         stdout, _stderr = tidy.communicate(input=html_content.encode())
         return stdout.decode()
 

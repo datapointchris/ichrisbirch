@@ -130,7 +130,7 @@ function project-cd() {
 function dev-start() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Starting ${blue}DEV${reset} environment with ${green}Docker Compose${reset}"
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
   echo "Development environment started at:"
   echo "  ${green}APP${reset}: ${cyan}http://localhost:5000${reset}"
   echo "  ${green}API${reset}: ${cyan}http://localhost:8000${reset}"
@@ -145,20 +145,20 @@ function dev-start() {
 function dev-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Stopping ${blue}DEV${reset} environment"
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
 }
 
 function dev-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}DEV${reset} environment"
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml restart
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml restart
 }
 
 function dev-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Rebuilding and restarting ${blue}DEV${reset} environment"
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 }
 
 function dev-logs() {
@@ -167,13 +167,13 @@ function dev-logs() {
   echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
   # Show live Docker Compose logs with color formatting and clean service names
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50 | colored-logs
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50 | colored-logs
 }
 
 function dev-status() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Checking ${blue}DEV${reset} environment status"
-  docker-compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 }
 
 function dev-monitor() {
@@ -196,7 +196,7 @@ function testing-start() {
   mkdir -p "$ICHRISBIRCH_HOME/test-logs"
 
   echo "Starting ${blue}TESTING${reset} environment with ${green}Docker Compose${reset}"
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
 
   echo "Waiting for services to be ready..."
   sleep 15
@@ -234,20 +234,20 @@ function testing-start() {
 function testing-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Stopping ${blue}TESTING${reset} environment"
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
 }
 
 function testing-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}TESTING${reset} environment"
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml restart
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml restart
 }
 
 function testing-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Rebuilding and restarting ${blue}TESTING${reset} environment"
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
 }
 
 function testing-logs() {
@@ -256,7 +256,7 @@ function testing-logs() {
   echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
   # Show live Docker Compose logs with color formatting and clean service names
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50 | colored-logs
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50 | colored-logs
 }
 
 function testing-app-logs() {
@@ -312,7 +312,7 @@ function testing-app-logs-follow() {
 function testing-status() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Checking ${blue}TESTING${reset} environment status"
-  docker-compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 }
 
 function prod-monitor() {
@@ -325,7 +325,7 @@ function prod-logs() {
   cd /var/www/ichrisbirch || exit
 
   # Show live Docker Compose logs with color formatting and clean service names
-  docker-compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
 }
 
 function prod-status() {
@@ -333,7 +333,7 @@ function prod-status() {
   # Check if this is production environment
   if [ -f /var/www/ichrisbirch/docker-compose.yml ]; then
     cd /var/www/ichrisbirch || exit
-    docker-compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+    docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   else
     echo "${yellow}Production Docker Compose files not found${reset}"
     echo "Checking traditional supervisor processes..."
