@@ -8,10 +8,10 @@ class RequiredIf(DataRequired):
     Ex:
     ```python
     class TestForm(FlaskForm):
-        name = StringField("Name")
-        has_nickname = BooleanField("Nickname")
-        username = StringField("Username", validators=[RequiredIf("has_nickname")])
-        submit = SubmitField("Submit")
+        name = StringField('Name')
+        has_nickname = BooleanField('Nickname')
+        username = StringField('Username', validators=[RequiredIf('has_nickname')])
+        submit = SubmitField('Submit')
     ```
     """
 
@@ -22,6 +22,6 @@ class RequiredIf(DataRequired):
     def __call__(self, form, field):
         other_field = form._fields.get(self.other_field_name)
         if other_field is None:
-            raise ValidationError(f"{self.other_field_name} does not exist")
+            raise ValidationError(f'{self.other_field_name} does not exist')
         if bool(other_field.data):
             super().__call__(form, field)

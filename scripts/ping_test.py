@@ -67,9 +67,7 @@ if __name__ == '__main__':
         print(f'{Fore.RED}Unrecognized ENVIRONMENT: {env}')
     else:
         pings = []
-        for protocol, host, endpoint, port in itertools.product(
-            env['protocols'], env['host_names'], env['endpoints'], env['ports']
-        ):
+        for protocol, host, endpoint, port in itertools.product(env['protocols'], env['host_names'], env['endpoints'], env['ports']):
             address = f'{protocol}{host}{endpoint}{port}'
             try:
                 res = httpx.get(address, allow_redirects=True)

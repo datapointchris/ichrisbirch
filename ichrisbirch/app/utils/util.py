@@ -14,7 +14,7 @@ def url_builder(base_url: str, *parts) -> str:
     """
     stripped_parts = []
     for part in parts:
-        if isinstance(part, (list, tuple, set)):
+        if isinstance(part, list | tuple | set):
             stripped_parts.extend([str(p).strip('/') for p in part if str(p).strip('/')])
         elif isinstance(part, str) and part.strip('/'):
             stripped_parts.append(part.strip('/'))
