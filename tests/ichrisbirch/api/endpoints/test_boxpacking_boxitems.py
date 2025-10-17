@@ -34,9 +34,7 @@ def test_read_many(test_api_logged_in):
 
 
 def test_create(test_api_logged_in):
-    """Box 3 is originally empty, all details set to false Adding an essential item should update the box essential
-    detail to True.
-    """
+    """Box 3 is originally empty, all details set to false Adding an essential item should update the box essential detail to True."""
     box = schemas.Box(**test_api_logged_in.get('/box-packing/boxes/3/').json())
     assert not box.essential
     crud_tests.test_create(test_api_logged_in)

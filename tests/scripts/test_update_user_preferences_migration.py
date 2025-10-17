@@ -35,7 +35,6 @@ class TestFillMissingDefaultPreferences:
 
 
 class TestUpdatePreferenceKeys:
-
     def test_update_keys(self):
         user_prefs = {'old_key1': 1, 'nested': {'old_key2': 2}}
         default_prefs = {'new_key1': 0, 'nested': {'new_key2': 0}}
@@ -253,9 +252,7 @@ class TestUpdatePreferences:
     def test_update_preferences_complex_transfer_key_missing_from_defaults(self):
         # d key is missing from defaults, should delete even after assigning from transfer
         user_prefs = {'a': {'b': {'old_key': 'value'}, 'c': 'keep_me'}}
-        default_prefs = {
-            'a': {'b': {'default_key': 'was_missing'}, 'c': 'default', 'e': 'value', 'f': {'nested': 'value'}}
-        }
+        default_prefs = {'a': {'b': {'default_key': 'was_missing'}, 'c': 'default', 'e': 'value', 'f': {'nested': 'value'}}}
         transfer_map = {'a.b.old_key': 'c.d.new_key', 'a.f.nested': 'a.g.new_nested'}
         with pytest.raises(KeyError):
             update_preferences(user_prefs, default_prefs, transfer_map)

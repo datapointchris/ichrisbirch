@@ -102,9 +102,9 @@ class User(UserMixin, Base):
 
     @staticmethod
     def _hash_password(mapper, connection, target):
-        """The mapper and connection parameters are part of SQLAlchemy's event API. that gets called when a certain event happens. In this
-        This method is being used as a case, the event is 'before_insert' on the User listener function, which is a special kind of function
-        model.
+        """The mapper and connection parameters are part of SQLAlchemy's event API. a special kind of function that gets called when a
+        certain event happens. In This method is being used as a case, the event is this 'before_insert' on the User listener function,
+        which is model.
 
         mapper:
             This is the Mapper that is handling the operation.

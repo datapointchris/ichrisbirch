@@ -29,7 +29,7 @@ class ValidateWebsite:
         self.total_validation_errors: set[str] = set()
 
     def section_title(self, title: str):
-        return f"\n{'*'*20} {title} {'*'*20}\n"
+        return f'\n{"*" * 20} {title} {"*" * 20}\n'
 
     def log(self, message: str):
         self.logs.append(message)
@@ -149,9 +149,7 @@ class ValidateWebsite:
     def validate_page(self, html_content: str):
         """Validate html pages using tidy command line."""
         command = 'tidy -q -e'
-        tidy = subprocess.Popen(
-            command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        tidy = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, _stderr = tidy.communicate(input=html_content.encode())
         return stdout.decode()
 
