@@ -126,8 +126,24 @@ jobs:
       - name: Install CICD Dependencies
         run: uv sync --frozen --group test
 
+      - name: Get Playwright Version for Cache
+        run: |
+          PLAYWRIGHT_VERSION=$(uv run playwright --version | grep -oE '[0-9.]+')
+          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> "$GITHUB_ENV"
+
+      # Cache browser binaries, cache key is based on Playwright version and OS
+      - name: Cache Playwright Browser Binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: "~/.cache/ms-playwright"
+          key: "${{ matrix.os }}-${{ matrix.python-version }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
+          restore-keys: |
+            ${{ matrix.os }}-${{ matrix.python-version }}-playwright-
+
       - name: Install Playwright Browsers
         run: uv run playwright install
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -139,7 +155,7 @@ jobs:
         run: mkdir -p test-logs
 
       - name: Run pytest with Coverage
-        run: uv run pytest -s --cov=ichrisbirch
+        run: uv run pytest --cov=ichrisbirch
 
       - name: Minimize uv cache
         run: uv cache prune --ci
