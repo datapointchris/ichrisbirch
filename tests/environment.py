@@ -42,7 +42,7 @@ class DockerComposeTestEnvironment:
     - Allows pytest to run locally against containerized services
     """
 
-    COMPOSE_COMMAND = 'docker-compose --project-name ichrisbirch-testing -f docker-compose.yml -f docker-compose.test.yml up -d'
+    COMPOSE_COMMAND = 'docker compose --project-name ichrisbirch-testing -f docker-compose.yml -f docker-compose.test.yml up -d'
 
     def __init__(self, settings: Settings, test_session_generator):
         self.settings = settings
@@ -87,7 +87,7 @@ class DockerComposeTestEnvironment:
             cmd = self.COMPOSE_COMMAND.split(' ') + ['ps', '--services', '--filter', 'status=running']
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             if result.returncode != 0:
-                logger.warning(f'docker-compose ps failed: {result.stderr}')
+                logger.warning(f'docker compose ps failed: {result.stderr}')
                 return False
             running_services = set(result.stdout.strip().splitlines())
             return all(service in running_services for service in required_services)
@@ -194,7 +194,7 @@ class DockerComposeTestEnvironment:
             #         'ENVIRONMENT': 'testing',
             #     }
             # )
-            cmd = 'docker-compose --project-name ichrisbirch-testing -f docker-compose.yml -f docker-compose.test.yml down'
+            cmd = 'docker compose --project-name ichrisbirch-testing -f docker-compose.yml -f docker-compose.test.yml down'
             result = subprocess.run(cmd.split(' '), capture_output=True, text=True, timeout=120)
             # result = subprocess.run(cmd.split(' '), env=test_env, capture_output=True, text=True, timeout=120)
             if result.returncode == 0:
