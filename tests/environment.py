@@ -153,6 +153,7 @@ class DockerComposeTestEnvironment:
                 attempts += 1
                 time.sleep(5)
             if attempts >= max_attempts:
+                self._log_container_debug_info(f'ichrisbirch-{service_name}-testing')
                 raise RuntimeError(f'{service_name} on {host}:{port} did not respond after {max_attempts * 5} seconds')
 
         http_services = {
@@ -178,9 +179,7 @@ class DockerComposeTestEnvironment:
                 attempts += 1
                 time.sleep(5)
             if attempts >= max_attempts:
-                # If API service failed, show container logs for debugging
-                if service_name == 'api':
-                    self._log_container_debug_info('ichrisbirch-api-testing')
+                self._log_container_debug_info(f'ichrisbirch-{service_name}-testing')
                 raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
 
     def create_database_schemas(self):
