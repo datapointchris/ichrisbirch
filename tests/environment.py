@@ -178,6 +178,9 @@ class DockerComposeTestEnvironment:
                 attempts += 1
                 time.sleep(5)
             if attempts >= max_attempts:
+                # If API service failed, show container logs for debugging
+                if service_name == 'api':
+                    self._log_container_debug_info('ichrisbirch-api-testing')
                 raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
 
     def create_database_schemas(self):
@@ -230,6 +233,28 @@ class DockerComposeTestEnvironment:
             # subprocess.run(force_command, env=test_env, capture_output=True, timeout=30)
         except Exception as e:
             logger.warning(f'Error stopping Docker Compose: {e}')
+
+    def _log_container_debug_info(self, container_name: str) -> None:
+        """Log container status and logs for debugging failed services."""
+        try:
+            # Check container status
+            status_cmd = ['docker', 'inspect', container_name, '--format', '{{.State.Status}}']
+            status_result = subprocess.run(status_cmd, capture_output=True, text=True, timeout=10)
+            if status_result.returncode == 0:
+                logger.error(f'Container {container_name} status: {status_result.stdout.strip()}')
+
+            # Get container logs (last 50 lines)
+            logs_cmd = ['docker', 'logs', '--tail', '50', container_name]
+            logs_result = subprocess.run(logs_cmd, capture_output=True, text=True, timeout=10)
+            if logs_result.returncode == 0:
+                logger.error(f'Container {container_name} logs:\n{logs_result.stdout}')
+                if logs_result.stderr:
+                    logger.error(f'Container {container_name} stderr:\n{logs_result.stderr}')
+            else:
+                logger.error(f'Failed to get logs for {container_name}: {logs_result.stderr}')
+
+        except Exception as e:
+            logger.error(f'Error getting debug info for {container_name}: {e}')
 
 
 # class TestEnvironment:
