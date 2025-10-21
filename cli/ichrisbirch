@@ -7,7 +7,7 @@ if [[ $(uname) == "Darwin" ]]; then
   ICHRISBIRCH_HOME="$HOME/code/ichrisbirch"
   LOG_DIR="/usr/local/var/log/ichrisbirch"
 else
-  ICHRISBIRCH_HOME="/var/www/ichrisbirch"
+  ICHRISBIRCH_HOME="/srv/ichrisbirch"
   LOG_DIR="/var/log/ichrisbirch"
 fi
 
@@ -315,6 +315,35 @@ function testing-status() {
   docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 }
 
+function prod-start() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Starting ${magenta}PRODUCTION${reset} environment with ${green}Docker Compose${reset}"
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d
+  echo "Production environment started"
+  echo ""
+  echo "Use ${blue}ichrisbirch prod logs${reset} to view live container logs"
+  echo "Use ${blue}ichrisbirch prod stop${reset} to stop all services"
+}
+
+function prod-stop() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Stopping ${magenta}PRODUCTION${reset} environment"
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
+}
+
+function prod-restart() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Restarting ${magenta}PRODUCTION${reset} environment"
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml restart
+}
+
+function prod-rebuild() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  echo "Rebuilding and restarting ${magenta}PRODUCTION${reset} environment"
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d --build
+}
+
 function prod-monitor() {
   tmuxinator ichrisbirch-prod-monitoring
 }
@@ -322,7 +351,7 @@ function prod-monitor() {
 function prod-logs() {
   echo "🔍 Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
   echo "Note: Production uses Docker Compose services"
-  cd /var/www/ichrisbirch || exit
+  cd "$ICHRISBIRCH_HOME" || exit
 
   # Show live Docker Compose logs with color formatting and clean service names
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
@@ -331,8 +360,8 @@ function prod-logs() {
 function prod-status() {
   echo "Checking ${magenta}PRODUCTION${reset} environment status"
   # Check if this is production environment
-  if [ -f /var/www/ichrisbirch/docker-compose.yml ]; then
-    cd /var/www/ichrisbirch || exit
+  if [ -f "$ICHRISBIRCH_HOME/docker-compose.yml" ]; then
+    cd "$ICHRISBIRCH_HOME" || exit
     docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   else
     echo "${yellow}Production Docker Compose files not found${reset}"
@@ -395,6 +424,10 @@ function usage() {
   echo "  ${blue}test run${reset}        - Execute pytest with test environment database/redis"
   echo
   echo "${green}Production Environment:${reset}"
+  echo "  ${blue}prod start${reset}     - Start production services via Docker Compose"
+  echo "  ${blue}prod stop${reset}      - Stop production services and remove containers"
+  echo "  ${blue}prod restart${reset}   - Restart existing production containers without rebuilding"
+  echo "  ${blue}prod rebuild${reset}   - Stop services, rebuild Docker images, and restart production"
   echo "  ${blue}prod logs${reset}      - View production Docker container logs"
   echo "  ${blue}prod status${reset}    - Check production service status (Docker Compose or supervisor)"
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
