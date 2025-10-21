@@ -118,6 +118,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -147,6 +149,8 @@ services:
     ports: []
     depends_on:
       - api
+    volumes:
+      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
@@ -179,6 +183,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
     restart: always
     # Disable health check for chat (Streamlit doesn't have standard health endpoint)
     healthcheck:
@@ -207,6 +213,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    volumes:
+      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
     restart: always
     # Disable health check for scheduler (no HTTP server)
     healthcheck:
