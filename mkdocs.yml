@@ -42,6 +42,10 @@ markdown_extensions:
       custom_checkbox: true
 plugins:
   - search
+  - code_sync:
+      enabled: true
+  - diagrams:
+      generate_diagrams: true
   - mkdocstrings:
       handlers:
         python:

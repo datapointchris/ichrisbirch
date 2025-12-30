@@ -26,6 +26,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-yaml
+        exclude: mkdocs.yml
       - id: check-toml
       - id: check-json
       - id: end-of-file-fixer
@@ -78,6 +79,7 @@ repos:
     hooks:
       - id: refurb
         additional_dependencies: ["pydantic"]
+        exclude: (plugins/mkdocs-code-sync/setup.py|plugins/mkdocs-diagrams/setup.py|tools/code_sync/.*)
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.20.0
@@ -96,6 +98,7 @@ repos:
             --non-interactive,
           ]
         additional_dependencies: ["pydantic"]
+        exclude: (plugins/mkdocs-code-sync/setup.py|plugins/mkdocs-diagrams/setup.py|tools/code_sync/.*)
 
   - repo: https://github.com/djlint/djLint
     rev: v1.36.4
@@ -106,10 +109,10 @@ repos:
 
   - repo: local
     hooks:
-      - id: ast-code-sync
-        name: AST Code Sync
+      - id: code-sync
+        name: Code Sync
         description: "Synchronize code snippets in documentation using AST parsing"
-        entry: python -m tools.ast-code-sync.code_sync
+        entry: python -m tools.code_sync
         language: python
         pass_filenames: false
         always_run: true
@@ -123,6 +126,7 @@ repos:
         pass_filenames: false
         files: "(tests/conftest.py|tests/utils/.*|tools/docs/diagram_generator/.*\\.py)$"
         always_run: false
+        additional_dependencies: ["graphviz", "pyyaml"]
 
       - id: validate-html
         name: validate html against w3c standards

@@ -257,3 +257,6 @@ terraform.tfstate.*
 *.tfstate
 *.tfstate.*
 *.tfvars
+
+# Diagram generator cache
+.diagram_hash_cache.json
