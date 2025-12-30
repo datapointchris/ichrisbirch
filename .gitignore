@@ -242,6 +242,7 @@ pip-selfcheck.json
 TESTING*
 *pylogger*
 xperiments/
+.planning
 
 # Local copies of backup files
 ichrisbirch-backups/
