@@ -11,7 +11,8 @@ import argparse
 import logging
 import subprocess  # nosec
 import sys
-from pathlib import Path
+
+from .utils import find_project_root
 
 # Set up logging
 logging.basicConfig(
@@ -22,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger('docs_verification')
 
 # Define project paths
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+PROJECT_ROOT = find_project_root()
 
 
 def run_command(command, cwd=None):

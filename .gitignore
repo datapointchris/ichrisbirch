@@ -239,7 +239,7 @@ pip-selfcheck.json
 .prod.env
 
 # local files
-TESTING*
+/TESTING*
 *pylogger*
 xperiments/
 .planning

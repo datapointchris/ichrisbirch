@@ -7,6 +7,8 @@ import ast
 import os
 from pathlib import Path
 
+from ...utils import find_project_root
+
 
 class FixtureVisitor(ast.NodeVisitor):
     """AST visitor that extracts pytest fixture information."""
@@ -25,12 +27,10 @@ class FixtureVisitor(ast.NodeVisitor):
                 autouse = False
 
                 for keyword in decorator.keywords:
-                    if keyword.arg == 'scope':
-                        if isinstance(keyword.value, ast.Constant):
-                            scope = keyword.value.value
-                    elif keyword.arg == 'autouse':
-                        if isinstance(keyword.value, ast.Constant):
-                            autouse = keyword.value.value
+                    if keyword.arg == 'scope' and isinstance(keyword.value, ast.Constant):
+                        scope = keyword.value.value
+                    elif keyword.arg == 'autouse' and isinstance(keyword.value, ast.Constant):
+                        autouse = keyword.value.value
 
                 self.current_fixture = node.name
                 self.fixtures[node.name] = {
@@ -52,7 +52,7 @@ class FixtureVisitor(ast.NodeVisitor):
         self.current_fixture = None
 
 
-def analyze_fixtures_in_file(file_path: str) -> dict:
+def analyze_fixtures_in_file(file_path: str | Path) -> dict:
     """Analyze fixtures in a Python file using AST.
 
     Args:
@@ -62,8 +62,7 @@ def analyze_fixtures_in_file(file_path: str) -> dict:
         Dictionary of fixtures found in the file
     """
     try:
-        with open(file_path) as f:
-            file_content = f.read()
+        file_content = Path(file_path).read_text()
 
         tree = ast.parse(file_content)
         visitor = FixtureVisitor()
@@ -85,10 +84,10 @@ def analyze_fixtures_in_directory(dir_path: str) -> dict:
     """
     all_fixtures = {}
 
-    for root, dirs, files in os.walk(dir_path):
+    for root, _dirs, files in os.walk(dir_path):
         for file in files:
             if file.endswith('.py'):
-                file_path = os.path.join(root, file)
+                file_path = Path(root) / file
                 fixtures = analyze_fixtures_in_file(file_path)
                 all_fixtures.update(fixtures)
 
@@ -104,7 +103,7 @@ def group_fixtures_by_scope(fixtures: dict) -> dict[str, list[str]]:
     Returns:
         Dictionary mapping scopes to lists of fixture names
     """
-    scopes = {}
+    scopes: dict[str, list[str]] = {}
 
     for name, fixture in fixtures.items():
         scope = fixture['scope']
@@ -141,16 +140,16 @@ def analyze_fixture_categories(fixtures: dict) -> dict[str, list[str]]:
     Returns:
         Dictionary mapping categories to lists of fixture names
     """
-    categories = {'api_clients': [], 'app_clients': [], 'database': [], 'test_data': [], 'other': []}
+    categories: dict[str, list[str]] = {'api_clients': [], 'app_clients': [], 'database': [], 'test_data': [], 'other': []}
 
-    for name, fixture in fixtures.items():
+    for name in fixtures:
         if 'api' in name.lower() and 'client' in name.lower():
             categories['api_clients'].append(name)
         elif 'app' in name.lower() and 'client' in name.lower():
             categories['app_clients'].append(name)
-        elif any(db_term in name.lower() for db_term in ['db', 'database', 'table', 'session']):
+        elif any(db_term in name.lower() for db_term in ('db', 'database', 'table', 'session')):
             categories['database'].append(name)
-        elif any(data_term in name.lower() for data_term in ['data', 'test_data', 'insert']):
+        elif any(data_term in name.lower() for data_term in ('data', 'test_data', 'insert')):
             categories['test_data'].append(name)
         else:
             categories['other'].append(name)
@@ -164,7 +163,7 @@ def analyze_fixtures() -> dict:
     Returns:
         Dictionary with fixture analysis results
     """
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = find_project_root()
     tests_dir = project_root / 'tests'
 
     # Get all fixtures

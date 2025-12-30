@@ -100,13 +100,12 @@ def main() -> int:
         print('No corresponding test files found for staged changes')
         return 0
 
-    # Run pytest with fail-fast
-    print('Running affected tests (fail-fast)...')
+    print('Running affected tests...')
     print(flush=True)
 
     test_paths = [str(t.relative_to(project_root)) for t in sorted(test_files)]
     result = subprocess.run(
-        ['uv', 'run', 'pytest', '-x', '--tb=short', *test_paths],
+        ['uv', 'run', 'pytest', '--tb=short', *test_paths],
     )
 
     return result.returncode

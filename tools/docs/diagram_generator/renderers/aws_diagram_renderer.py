@@ -3,17 +3,18 @@
 This module creates Graphviz diagrams for AWS infrastructure documentation.
 """
 
-import os
 from pathlib import Path
 
 from graphviz import Digraph
+
+from ...utils import find_project_root
 
 
 class AWSIAMDiagramRenderer:
     """Renders AWS IAM relationship diagrams."""
 
     def __init__(self):
-        self.project_root = Path(__file__).parent.parent.parent.parent.parent
+        self.project_root = find_project_root()
 
     def _get_output_path(self, path):
         """Convert a relative path to an absolute path based on project root."""
@@ -88,7 +89,7 @@ def generate_aws_diagrams(output_dir: str = 'docs/images/generated'):
     # Use the IAM renderer's path helper to get absolute path
     renderer = AWSIAMDiagramRenderer()
     output_dir = renderer._get_output_path(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     # Generate IAM diagram
     renderer.render_iam_diagram(f'{output_dir}/aws_iam')

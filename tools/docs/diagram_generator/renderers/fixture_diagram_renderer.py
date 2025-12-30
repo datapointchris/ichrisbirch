@@ -3,18 +3,18 @@
 This module uses Graphviz to create visualizations of test fixtures based on analysis data from the fixture analyzer.
 """
 
-import os
 from pathlib import Path
 
 from graphviz import Digraph
 
-from tools.docs.diagram_generator.analyzers.fixture_analyzer import analyze_fixtures
+from ...utils import find_project_root
+from ..analyzers.fixture_analyzer import analyze_fixtures
 
 
 class FixtureDiagramRenderer:
     """Renders fixture diagrams based on analysis data."""
 
-    def __init__(self, analysis_data: dict = None):
+    def __init__(self, analysis_data: dict | None = None):
         """Initialize the renderer with analysis data.
 
         Args:
@@ -29,8 +29,7 @@ class FixtureDiagramRenderer:
             'package': {'color': '#d8bfd8', 'fillcolor': '#f5f0f5'},  # Light purple
             'class': {'color': '#ffdead', 'fillcolor': '#fff5e6'},  # Light orange
         }
-        # Get the project root directory for output paths
-        self.project_root = Path(__file__).parent.parent.parent.parent.parent
+        self.project_root = find_project_root()
 
     def _get_output_path(self, path):
         """Convert a relative path to an absolute path based on project root."""
@@ -72,7 +71,7 @@ class FixtureDiagramRenderer:
         dot.render(output_path, format='svg', cleanup=True)
         return dot
 
-    def render_fixture_dependencies(self, scope: str = None, output_path: str = 'docs/images/generated/fixture_dependencies'):
+    def render_fixture_dependencies(self, scope: str | None = None, output_path: str = 'docs/images/generated/fixture_dependencies'):
         """Render a diagram showing fixture dependencies.
 
         Args:
@@ -105,7 +104,7 @@ class FixtureDiagramRenderer:
                 continue
 
             with dot.subgraph(name=f'cluster_{category}') as c:
-                c.attr(label=f'{category.replace("_", " ").title()}', style='filled', color='lightgrey', fillcolor='white')
+                c.attr(label=category.replace('_', ' ').title(), style='filled', color='lightgrey', fillcolor='white')
 
                 for name in fixture_list:
                     fixture_info = fixtures.get(name, {})
@@ -152,7 +151,7 @@ class FixtureDiagramRenderer:
         dependencies = self.analysis_data['dependencies']
 
         # Create scope clusters
-        for scope in ['session', 'package', 'module', 'class', 'function']:
+        for scope in ('session', 'package', 'module', 'class', 'function'):
             fixture_names = self.analysis_data['by_scope'].get(scope, [])
             if not fixture_names:
                 continue
@@ -288,7 +287,7 @@ class FixtureDiagramRenderer:
             output_dir: Directory for output files
         """
         output_dir = self._get_output_path(output_dir)
-        os.makedirs(output_dir, exist_ok=True)
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         # Generate main fixtures diagram for documentation
         self.render_main_fixtures_diagram(f'{output_dir}/fixtures_diagram')
@@ -297,7 +296,7 @@ class FixtureDiagramRenderer:
         self.render_scope_hierarchy(f'{output_dir}/fixture_scopes')
 
         # Generate dependency diagrams for each scope
-        for scope in ['session', 'module', 'function']:
+        for scope in ('session', 'module', 'function'):
             if scope in self.analysis_data['by_scope']:
                 self.render_fixture_dependencies(scope, f'{output_dir}/fixture_dependencies')
 

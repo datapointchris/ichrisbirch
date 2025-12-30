@@ -1,22 +1,25 @@
 #!/usr/bin/env python
-"""Verification script to test that the diagram generator works correctly after the reorganization. This script:
+"""Verification script to test that the diagram generator works correctly after the reorganization.
 
+This script:
 1. Imports and runs the diagram generation process
 2. Verifies that all expected output files are created
 3. Reports success or any issues encountered
+
+Run as a module from project root: python -m tools.docs.verify_diagram_generator
 """
 
 import logging
 import sys
-from pathlib import Path
 
-# Add the project root to the Python path
-project_root = Path(__file__).parent.parent.parent
-sys.path.append(str(project_root))
+from .diagram_generator.generate_diagrams import generate_all_diagrams
+from .utils import find_project_root
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('verify_diagram_generator')
+
+project_root = find_project_root()
 
 
 def verify_diagram_generator():
@@ -24,9 +27,6 @@ def verify_diagram_generator():
     logger.info('Starting verification of diagram generator...')
 
     try:
-        # Import the diagram generator
-        from tools.docs.diagram_generator.generate_diagrams import generate_all_diagrams
-
         # Run the generator
         logger.info('Running diagram generator...')
         result = generate_all_diagrams()
@@ -69,7 +69,7 @@ def verify_diagram_generator():
         return True
 
     except Exception as e:
-        logger.exception(f'Error during verification: {str(e)}')
+        logger.exception(f'Error during verification: {e}')
         return False
 
 

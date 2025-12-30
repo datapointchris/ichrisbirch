@@ -534,6 +534,30 @@ Bypass only when absolutely necessary:
 git commit --no-verify -m "message"
 ```
 
+### Python Imports and Paths
+
+**NEVER modify `sys.path`**. If you find yourself needing to modify `sys.path`, you're doing something wrong. The codebase is structured as a proper Python package - use standard imports.
+
+**NEVER use multiple `.parent` calls** like `Path(__file__).parent.parent.parent`. This is fragile and breaks when files move. Instead, use the `find_project_root()` function from `ichrisbirch.util`:
+
+```python
+# WRONG - fragile, breaks when files move
+project_root = Path(__file__).parent.parent.parent
+sys.path.append(str(project_root))
+
+# CORRECT - use find_project_root
+from ichrisbirch.util import find_project_root
+project_root = find_project_root()
+```
+
+**Scripts and tools** should either:
+
+1. Be run as modules: `python -m tools.my_script`
+2. Use proper package imports without path manipulation
+3. Use `find_project_root()` if they need the project root path
+
+**NEVER use `# noqa` comments** to bypass linting errors for import order (E402). If imports must be after code, restructure the code instead.
+
 ## Common Workflows
 
 ### Daily Development

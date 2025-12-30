@@ -4,17 +4,11 @@ This plugin hooks into the MkDocs build process to ensure all diagrams are up-to
 """
 
 import logging
-from pathlib import Path
 
 from mkdocs.config.config_options import Type
 from mkdocs.plugins import BasePlugin
 
-# Import the diagram generation script
-project_root = Path(__file__).parent.parent.parent.parent
-import sys
-
-sys.path.append(str(project_root))
-from tools.docs.diagram_generator.generate_diagrams import generate_all_diagrams
+from .diagram_generator.generate_diagrams import generate_all_diagrams
 
 
 class DiagramGeneratorPlugin(BasePlugin):
@@ -40,7 +34,6 @@ class DiagramGeneratorPlugin(BasePlugin):
                 self.logger.info('Diagram generation completed successfully!')
             except Exception as e:
                 self.logger.error(f'Error generating diagrams: {e}')
-                # Don't fail the build if diagram generation fails
                 self.logger.warning('Continuing with build despite diagram generation error.')
         else:
             self.logger.info('Diagram generation is disabled. Skipping.')

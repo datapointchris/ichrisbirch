@@ -1,4 +1,4 @@
-fail_fast: false
+fail_fast: true
 repos:
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.7
@@ -141,7 +141,7 @@ repos:
         always_run: false
 
       - id: pytest-affected
-        name: pytest (affected tests only, fail-fast)
+        name: pytest (affected tests only)
         stages: [pre-commit]
         language: system
         entry: python scripts/pre_commit_validations/pytest_affected.py
