@@ -329,8 +329,7 @@ async def refresh_token(
         raise UnauthorizedException('Invalid refresh token', logger)
 
     logger.debug(f'refreshing token for user: {user_id}')
-    stored_refresh_token = token_handler.retrieve_refresh_token(user_id)
-    if refresh_token != stored_refresh_token:
+    if not token_handler.verify_refresh_token(user_id, refresh_token):
         raise UnauthorizedException('Invalid refresh token', logger)
 
     logger.debug(f'refresh token validated for user: {user_id}')
