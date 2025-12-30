@@ -9,8 +9,9 @@ logger = logging.getLogger(__name__)
 
 class ChatAPIClient:
     def __init__(self, user: models.User | None = None):
-        self.chat_api = QueryAPI(base_endpoint='chat/chats', response_model=schemas.Chat, user=user)
-        self.chat_messages_api = QueryAPI(base_endpoint='chat/messages', response_model=schemas.ChatMessage, user=user)
+        # Use internal service auth since Streamlit doesn't have Flask sessions
+        self.chat_api = QueryAPI(base_endpoint='chat/chats', response_model=schemas.Chat, use_internal_auth=True)
+        self.chat_messages_api = QueryAPI(base_endpoint='chat/messages', response_model=schemas.ChatMessage, use_internal_auth=True)
 
     def _convert_chat_to_model(self, chat: schemas.Chat):
         """The chat messages are not automatically converted to models, so must be done manually.

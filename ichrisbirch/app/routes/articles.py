@@ -116,10 +116,25 @@ def all():
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
 def add():
-    settings = current_app.config['SETTINGS']
     create_form = forms.ArticleCreateForm()
-    summary_endpoint = f'{settings.api_url}/articles/summarize/'
-    return render_template('articles/add.html', create_form=create_form, summary_endpoint=summary_endpoint)
+    return render_template('articles/add.html', create_form=create_form)
+
+
+@blueprint.route('/summarize-proxy/', methods=['POST'])
+def summarize_proxy():
+    """Proxy endpoint for article summarization with internal service auth.
+
+    JavaScript calls this Flask endpoint, which forwards to the API with proper authentication.
+    """
+    data = request.get_json()
+    url = data.get('url') if data else None
+    if not url:
+        return Response('Missing URL', status=400)
+
+    summarize_api = QueryAPI(base_endpoint='articles/summarize', response_model=schemas.ArticleSummary, use_internal_auth=True)
+    if result := summarize_api.post(json={'url': url}):
+        return {'title': result.title, 'summary': result.summary, 'tags': result.tags}
+    return Response('Failed to summarize article', status=500)
 
 
 @blueprint.route('/bulk-add/', methods=['GET', 'POST'])
@@ -135,14 +150,19 @@ def bulk_add_results():
 
 @blueprint.route('/insights/', methods=['GET', 'POST'])
 def insights():
-    settings = current_app.config['SETTINGS']
-    insights_endpoint = f'{settings.api_url}/articles/insights/'
     if request.method.upper() == 'POST':
         url = request.form.get('url')
         start = pendulum.now()
-        response = httpx.post(insights_endpoint, json={'url': url}, timeout=30)
+        insights_api = QueryAPI(base_endpoint='articles/insights', response_model=schemas.Article, use_internal_auth=True)
+        response = insights_api.client.request(
+            'POST',
+            insights_api._get_api_url() + '/articles/insights/',
+            headers=insights_api._get_auth_headers(),
+            json={'url': url},
+            timeout=30,
+        )
         elapsed = (pendulum.now() - start).in_words()
-        article_insights = response.text
+        article_insights = response.text if response else ''
         submitted_url = url
     else:
         article_insights, submitted_url, elapsed = '', '', ''
