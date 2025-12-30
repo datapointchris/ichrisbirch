@@ -2,6 +2,10 @@
 
 Welcome to the iChrisBirch application documentation.
 
+## 🚀 Getting Started
+
+- **[Quick Start Guide](quick-start.md)** - Get running in under 5 minutes with modern Traefik deployment and browser-trusted HTTPS
+
 ## Architecture
 
 - [Project Layout](project_layout.md) - Overall project structure and organization
@@ -20,6 +24,12 @@ Welcome to the iChrisBirch application documentation.
 - [Docker Architecture](docker/docker.md) - Multi-stage Docker builds and container strategy
 - [Docker Compose](docker/docker-compose.md) - Service orchestration across environments
 - [Docker Quick Reference](docker/docker-quick-reference.md) - Common commands and troubleshooting
+
+### Traefik Reverse Proxy (Modern Implementation)
+
+- **[CLI Management Guide](cli-traefik-usage.md)** - Simplified CLI interface with eliminated command duplication
+- **[Traefik Deployment Guide](traefik-deployment.md)** - Modern reverse proxy with mkcert browser-trusted certificates
+- **[Migration Complete Summary](nginx-to-traefik-migration-complete.md)** - nginx→Traefik migration success with CLI simplification
 
 ## DevOps
 

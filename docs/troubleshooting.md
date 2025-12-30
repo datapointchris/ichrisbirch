@@ -1,5 +1,17 @@
 # Troubleshooting
 
+## 🔧 Infrastructure & Deployment
+
+### CLI Commands
+
+- **[CLI Command Troubleshooting](troubleshooting/cli-commands.md)** - Issues with simplified CLI interface and eliminated command duplication
+
+### SSL Certificates  
+
+- **[SSL Certificate Troubleshooting](troubleshooting/ssl-certificates.md)** - Browser warnings, mkcert setup, and certificate validation issues
+
+## 🚨 Application Issues
+
 ## Flask
 
 !!! failure "Error"  
