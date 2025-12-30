@@ -13,6 +13,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
 from flask_login import FlaskLoginClient
 from flask_login import login_user
+from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.api.endpoints import auth
@@ -63,12 +64,15 @@ def create_drop_tables():
 
 @pytest.fixture(scope='module', autouse=True)
 def insert_users_for_login(create_drop_tables):
+    """Ensure login users exist for this module (idempotent)."""
     with create_session(test_settings) as session:
-        for user in get_test_login_users():
-            session.add(models.User(**user))
+        for user_data in get_test_login_users():
+            existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
+            if not existing:
+                session.add(models.User(**user_data))
         session.commit()
         for user in session.query(models.User).all():
-            logger.info(f'Inserted login user: {user.email} with alt ID: {user.alternative_id}')
+            logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
     yield
 
 

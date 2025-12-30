@@ -18,11 +18,14 @@ import time
 # import docker
 import httpx
 import pytest
-
-# from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.schema import CreateSchema
 
+from ichrisbirch import models
 from ichrisbirch.config import Settings
+from ichrisbirch.database.base import Base
+from ichrisbirch.database.session import get_db_engine
+from tests.utils.database import get_test_login_users
 
 # from ichrisbirch.config import settings
 # from ichrisbirch.database.models.session import create_session
@@ -68,9 +71,13 @@ class DockerComposeTestEnvironment:
             if not self.docker_test_services_already_running():
                 logger.info('Docker Compose test services not running, starting them up')
                 self.setup_test_services()
-                self.create_database_schemas()
             else:
-                logger.info('Docker Compose test services already running, skipping setup')
+                logger.info('Docker Compose test services already running')
+
+            # Always ensure database is ready, regardless of whether services were just started
+            # This handles the case where containers are running but DB is in unknown state
+            self.ensure_database_ready()
+
         except Exception as e:
             logger.error(f'Error during setup: {e}')
             self.teardown()
@@ -182,16 +189,48 @@ class DockerComposeTestEnvironment:
                 self._log_container_debug_info(f'ichrisbirch-{service_name}-testing')
                 raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
 
-    def create_database_schemas(self):
+    def create_database_schemas(self) -> None:
+        """Create database schemas (idempotent - uses IF NOT EXISTS)."""
         with self.test_session_generator(self.settings) as session:
             for schema_name in self.settings.postgres.db_schemas:
                 try:
-                    session.execute(CreateSchema(schema_name))
-                    logger.info(f'Created schema: {schema_name}')
+                    session.execute(CreateSchema(schema_name, if_not_exists=True))
+                    logger.info(f'Ensured schema exists: {schema_name}')
                 except Exception as e:
                     logger.error(f'Failed to create schema {schema_name}: {e}')
                     raise
             session.commit()
+
+    def ensure_database_ready(self) -> None:
+        """Ensure database is in a known good state (idempotent).
+
+        This runs whether services were just started or already running.
+        It ensures:
+        1. Schemas exist
+        2. Tables exist
+        3. Login users exist
+
+        All operations are idempotent - safe to run multiple times.
+        """
+        # 1. Create schemas (idempotent via IF NOT EXISTS)
+        self.create_database_schemas()
+
+        # 2. Create tables (idempotent via checkfirst=True)
+        engine = get_db_engine(self.settings)
+        Base.metadata.create_all(engine, checkfirst=True)
+        logger.info('Ensured all tables exist')
+
+        # 3. Ensure login users exist (check before insert)
+        with self.test_session_generator(self.settings) as session:
+            for user_data in get_test_login_users():
+                existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
+                if not existing:
+                    session.add(models.User(**user_data))
+                    logger.info(f'Inserted login user: {user_data["email"]}')
+                else:
+                    logger.debug(f'Login user already exists: {user_data["email"]}')
+            session.commit()
+        logger.info('Database is ready')
 
     def stop_docker_compose(self) -> None:
         try:
