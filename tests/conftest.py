@@ -26,6 +26,8 @@ from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
 from tests.environment import DockerComposeTestEnvironment
+from tests.factories import clear_factory_session
+from tests.factories import set_factory_session
 from tests.utils.database import create_session
 from tests.utils.database import get_test_login_users
 from tests.utils.database import get_test_runner_settings
@@ -238,3 +240,25 @@ def test_api_logged_in_function():
 def test_api_logged_in_admin_function():
     with create_test_api_client(login=True, admin=True) as client:
         yield client
+
+
+@pytest.fixture(scope='function')
+def factory_session(create_drop_tables):
+    """Provide a SQLAlchemy session for factory_boy factories.
+
+    This fixture configures the factories to use a fresh session for each test.
+    Data created with factories is committed and available for the test.
+
+    Usage:
+        def test_with_factories(factory_session, test_api_logged_in):
+            from tests.factories import TaskFactory
+            TaskFactory(name='My Task', priority=10)
+            TaskFactory(name='Another Task', priority=20)
+
+            response = test_api_logged_in.get('/tasks/')
+            assert len(response.json()) >= 2
+    """
+    with create_session(test_settings) as session:
+        set_factory_session(session)
+        yield session
+        clear_factory_session()

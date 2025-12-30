@@ -90,6 +90,7 @@ dev = [
   "jupyterthemes>=0.20.0",
   "docker>=7.1.0",
   "pre-commit>=4.3.0",
+  "factory-boy>=3.3.3",
 ]
 test = [
   # Testing framework and tools
