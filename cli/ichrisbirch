@@ -127,11 +127,45 @@ function project-cd() {
   exec "$SHELL"
 }
 
+# ============================================================================
+# SSL CERTIFICATE MANAGEMENT
+# ============================================================================
+
+function ssl-manager() {
+  local action="${1:-info}"
+  local environment="${2:-all}"
+
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -x "./deploy-containers/traefik/scripts/ssl-manager.sh" ]; then
+    ./deploy-containers/traefik/scripts/ssl-manager.sh "$action" "$environment"
+  else
+    echo "${red}SSL manager script not found${reset}"
+    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/ssl-manager.sh${reset}"
+    return 1
+  fi
+}
+
 function dev-start() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Starting ${blue}DEV${reset} environment with ${green}Docker Compose${reset}"
+
+  # Ensure proxy network exists for Traefik
+  if ! docker network inspect proxy >/dev/null 2>&1; then
+    echo "Creating external proxy network..."
+    docker network create proxy
+  fi
+
+  echo "Starting ${blue}DEV${reset} environment with ${green}Docker Compose + Traefik (HTTPS)${reset}"
   docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
-  echo "Development environment started at:"
+
+  echo ""
+  echo "Development environment started with ${green}HTTPS${reset}:"
+  echo "  ${green}API${reset}:       ${cyan}https://api.docker.localhost/${reset}"
+  echo "  ${green}APP${reset}:       ${cyan}https://app.docker.localhost/${reset}"
+  echo "  ${green}CHAT${reset}:      ${cyan}https://chat.docker.localhost/${reset}"
+  echo "  ${green}DASHBOARD${reset}: ${cyan}https://dashboard.docker.localhost/${reset} (user: dev, pass: devpass)"
+  echo ""
+  echo "Legacy HTTP access also available:"
   echo "  ${green}APP${reset}: ${cyan}http://localhost:5000${reset}"
   echo "  ${green}API${reset}: ${cyan}http://localhost:8000${reset}"
   echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8505${reset}"
@@ -139,7 +173,8 @@ function dev-start() {
   echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
   echo ""
   echo "Use ${blue}ichrisbirch dev logs${reset} to view live container logs"
-  echo "Use ${blue}ichrisbirch dev stop${reset} to stop all services"
+  echo "Use ${blue}ichrisbirch dev status${reset} to check service status"
+  echo "Use ${blue}ichrisbirch dev health${reset} to run health checks"
 }
 
 function dev-stop() {
@@ -172,12 +207,36 @@ function dev-logs() {
 
 function dev-status() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Checking ${blue}DEV${reset} environment status"
+  echo "📊 ${blue}DEV${reset} environment status:"
+  echo ""
+
+  # Show container status with colors
   docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+
+  echo ""
+  echo "🌐 ${blue}Development${reset} URLs:"
+  echo "  • API:       https://api.docker.localhost/"
+  echo "  • App:       https://app.docker.localhost/"
+  echo "  • Chat:      https://chat.docker.localhost/"
+  echo "  • Dashboard: https://dashboard.docker.localhost/ (user: dev, pass: devpass)"
 }
 
 function dev-monitor() {
   tmuxinator ichrisbirch-dev-monitoring
+}
+
+function dev-health() {
+  echo "🏥 Running health check for ${blue}DEV${reset} environment"
+
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -x "./deploy-containers/traefik/scripts/health-check.sh" ]; then
+    ./deploy-containers/traefik/scripts/health-check.sh dev
+  else
+    echo "${red}Health check script not found${reset}"
+    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/health-check.sh${reset}"
+    return 1
+  fi
 }
 
 function test-run() {
@@ -195,7 +254,13 @@ function testing-start() {
   # Create test-logs directory if it doesn't exist
   mkdir -p "$ICHRISBIRCH_HOME/test-logs"
 
-  echo "Starting ${blue}TESTING${reset} environment with ${green}Docker Compose${reset}"
+  # Ensure proxy network exists for Traefik
+  if ! docker network inspect proxy >/dev/null 2>&1; then
+    echo "Creating external proxy network..."
+    docker network create proxy
+  fi
+
+  echo "Starting ${blue}TESTING${reset} environment with ${green}Docker Compose + Traefik (HTTPS)${reset}"
   docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
 
   echo "Waiting for services to be ready..."
@@ -217,7 +282,14 @@ function testing-start() {
     return 1
   fi
 
-  echo "Testing environment started at:"
+  echo ""
+  echo "Testing environment started with ${green}HTTPS${reset}:"
+  echo "  ${green}API${reset}:       ${cyan}https://api.test.localhost:8443/${reset}"
+  echo "  ${green}APP${reset}:       ${cyan}https://app.test.localhost:8443/${reset}"
+  echo "  ${green}CHAT${reset}:      ${cyan}https://chat.test.localhost:8443/${reset}"
+  echo "  ${green}DASHBOARD${reset}: ${cyan}https://dashboard.test.localhost:8443/${reset} (user: test, pass: testpass)"
+  echo ""
+  echo "Legacy HTTP access also available:"
   echo "  ${green}APP${reset}: ${cyan}http://localhost:5001${reset}"
   echo "  ${green}API${reset}: ${cyan}http://localhost:8001${reset}"
   echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8507${reset}"
@@ -226,9 +298,8 @@ function testing-start() {
   echo ""
   echo "📁 Test logs available at: ${cyan}$ICHRISBIRCH_HOME/test-logs/${reset}"
   echo "Use ${blue}ichrisbirch testing app-logs${reset} to view application logs"
-  echo "Use ${blue}ichrisbirch testing app-logs-follow${reset} to tail logs in real-time"
   echo "Use ${blue}ichrisbirch testing logs${reset} to view Docker container logs"
-  echo "Use ${blue}ichrisbirch testing stop${reset} to stop all services"
+  echo "Use ${blue}ichrisbirch testing health${reset} to run health checks"
 }
 
 function testing-stop() {
@@ -311,18 +382,56 @@ function testing-app-logs-follow() {
 
 function testing-status() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Checking ${blue}TESTING${reset} environment status"
+  echo "📊 ${blue}TESTING${reset} environment status:"
+  echo ""
+
+  # Show container status with colors
   docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+
+  echo ""
+  echo "🌐 ${blue}Test${reset} URLs:"
+  echo "  • API:       https://api.test.localhost:8443/"
+  echo "  • App:       https://app.test.localhost:8443/"
+  echo "  • Chat:      https://chat.test.localhost:8443/"
+  echo "  • Dashboard: https://dashboard.test.localhost:8443/ (user: test, pass: testpass)"
+}
+
+function testing-health() {
+  echo "🏥 Running health check for ${blue}TESTING${reset} environment"
+
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -x "./deploy-containers/traefik/scripts/health-check.sh" ]; then
+    ./deploy-containers/traefik/scripts/health-check.sh test
+  else
+    echo "${red}Health check script not found${reset}"
+    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/health-check.sh${reset}"
+    return 1
+  fi
 }
 
 function prod-start() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Starting ${magenta}PRODUCTION${reset} environment with ${green}Docker Compose${reset}"
+
+  # Ensure proxy network exists for Traefik
+  if ! docker network inspect proxy >/dev/null 2>&1; then
+    echo "Creating external proxy network..."
+    docker network create proxy
+  fi
+
+  echo "Starting ${magenta}PRODUCTION${reset} environment with ${green}Docker Compose + Traefik (HTTPS)${reset}"
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d
-  echo "Production environment started"
+
+  echo ""
+  echo "Production environment started with ${green}HTTPS${reset}:"
+  echo "  ${green}API${reset}:       ${cyan}https://api.yourdomain.local/${reset}"
+  echo "  ${green}APP${reset}:       ${cyan}https://app.yourdomain.local/${reset}"
+  echo "  ${green}CHAT${reset}:      ${cyan}https://chat.yourdomain.local/${reset}"
+  echo "  ${yellow}Note${reset}: Update domains in production config as needed"
   echo ""
   echo "Use ${blue}ichrisbirch prod logs${reset} to view live container logs"
-  echo "Use ${blue}ichrisbirch prod stop${reset} to stop all services"
+  echo "Use ${blue}ichrisbirch prod status${reset} to check service status"
+  echo "Use ${blue}ichrisbirch prod health${reset} to run health checks"
 }
 
 function prod-stop() {
@@ -358,15 +467,37 @@ function prod-logs() {
 }
 
 function prod-status() {
-  echo "Checking ${magenta}PRODUCTION${reset} environment status"
+  echo "📊 ${magenta}PRODUCTION${reset} environment status:"
+  echo ""
+
   # Check if this is production environment
   if [ -f "$ICHRISBIRCH_HOME/docker-compose.yml" ]; then
     cd "$ICHRISBIRCH_HOME" || exit
     docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+
+    echo ""
+    echo "🌐 ${magenta}Production${reset} URLs (replace yourdomain.local with your actual domain):"
+    echo "  • API:       https://api.yourdomain.local/"
+    echo "  • App:       https://app.yourdomain.local/"
+    echo "  • Chat:      https://chat.yourdomain.local/"
   else
     echo "${yellow}Production Docker Compose files not found${reset}"
     echo "Checking traditional supervisor processes..."
     sudo supervisorctl status 2>/dev/null || echo "Supervisor not running"
+  fi
+}
+
+function prod-health() {
+  echo "🏥 Running health check for ${magenta}PRODUCTION${reset} environment"
+
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -x "./deploy-containers/traefik/scripts/health-check.sh" ]; then
+    ./deploy-containers/traefik/scripts/health-check.sh prod
+  else
+    echo "${red}Health check script not found${reset}"
+    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/health-check.sh${reset}"
+    return 1
   fi
 }
 
@@ -400,47 +531,57 @@ function usage() {
   echo "  ${blue}cd${reset}        - Navigate to project directory and activate Python virtual environment"
   echo "  ${blue}logs${reset}      - List log files in configured log directory"
   echo "  ${blue}test${reset}      - Execute pytest test suite via Docker Compose test-runner service"
+  echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates for HTTPS"
+  echo "    • ${yellow}Actions${reset}: generate, validate, info"
+  echo "    • ${yellow}Environments${reset}: dev, test, prod, all"
+  echo "    • ${yellow}Examples${reset}: ${cyan}ssl-manager generate dev${reset}, ${cyan}ssl-manager info all${reset}"
   echo
-  echo "${green}Development Environment (Docker Compose):${reset}"
-  echo "  ${blue}dev start${reset}     - Start development services (app:5000, api:8000, chat:8505, postgres:5432, redis:6379)"
+  echo "${green}Development Environment (HTTPS with Traefik):${reset}"
+  echo "  ${blue}dev start${reset}     - Start development services with HTTPS (api.docker.localhost, app.docker.localhost, etc.)"
   echo "  ${blue}dev stop${reset}      - Stop all development services and remove containers"
   echo "  ${blue}dev restart${reset}   - Restart existing containers without rebuilding images (quick recovery from crashes)"
   echo "  ${blue}dev rebuild${reset}   - Stop services, rebuild Docker images, and restart (use after code/dependency changes)"
   echo "  ${blue}dev logs${reset}      - View live Docker container logs"
-  echo "  ${blue}dev status${reset}    - Display container status via 'docker-compose ps'"
+  echo "  ${blue}dev status${reset}    - Display container status and service URLs"
+  echo "  ${blue}dev health${reset}    - Run comprehensive health checks for all services"
   echo
-  echo "${green}Test Environment (runs alongside dev):${reset}"
-  echo "  ${blue}testing start${reset}   - Start isolated test services (app:5001, api:8001, chat:8507, postgres:5434, redis:6380)"
+  echo "${green}Test Environment (HTTPS with Traefik - runs alongside dev):${reset}"
+  echo "  ${blue}testing start${reset}   - Start isolated test services with HTTPS (api.test.localhost:8443, etc.)"
   echo "  ${blue}testing stop${reset}    - Stop test environment services"
   echo "  ${blue}testing restart${reset} - Restart test containers without rebuilding"
   echo "  ${blue}testing rebuild${reset} - Rebuild and restart test environment"
   echo "  ${blue}testing logs${reset}    - View live test container logs (Docker Compose output)"
+  echo "  ${blue}testing status${reset}  - Display test container status and service URLs"
+  echo "  ${blue}testing health${reset}  - Run comprehensive health checks for test services"
   echo "  ${blue}testing app-logs [lines] [--follow]${reset} - View consolidated application logs from testing.log"
   echo "    • ${yellow}lines${reset}: number of lines to show (default: 100)"
   echo "    • ${yellow}--follow${reset}: follow logs in real-time"
   echo "    • Examples: ${cyan}testing app-logs${reset}, ${cyan}testing app-logs 50${reset}, ${cyan}testing app-logs --follow${reset}"
   echo "  ${blue}testing app-logs-follow${reset} - Follow consolidated application logs in real-time"
-  echo "  ${blue}testing status${reset}  - Display test container status"
   echo "  ${blue}test run${reset}        - Execute pytest with test environment database/redis"
   echo
-  echo "${green}Production Environment:${reset}"
-  echo "  ${blue}prod start${reset}     - Start production services via Docker Compose"
+  echo "${green}Production Environment (HTTPS with Traefik):${reset}"
+  echo "  ${blue}prod start${reset}     - Start production services with HTTPS (yourdomain.local)"
   echo "  ${blue}prod stop${reset}      - Stop production services and remove containers"
   echo "  ${blue}prod restart${reset}   - Restart existing production containers without rebuilding"
   echo "  ${blue}prod rebuild${reset}   - Stop services, rebuild Docker images, and restart production"
   echo "  ${blue}prod logs${reset}      - View production Docker container logs"
-  echo "  ${blue}prod status${reset}    - Check production service status (Docker Compose or supervisor)"
+  echo "  ${blue}prod status${reset}    - Check production service status and URLs"
+  echo "  ${blue}prod health${reset}    - Run comprehensive health checks for production services"
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
   echo "  ${blue}prod reboot-ec2${reset} - Restart EC2 instance via AWS CLI (default: ichrisbirch-webserver)"
   echo
+  echo "${green}📱 Service URLs (All environments use HTTPS):${reset}"
+  echo "  ${blue}Development${reset}: api.docker.localhost, app.docker.localhost, chat.docker.localhost"
+  echo "  ${blue}Test${reset}: api.test.localhost:8443, app.test.localhost:8443, chat.test.localhost:8443"
+  echo "  ${blue}Production${reset}: api.yourdomain.local, app.yourdomain.local, chat.yourdomain.local"
+  echo
   echo "${green}Technical Notes:${reset}"
+  echo "  • All environments use modern Traefik reverse proxy with HTTPS and WebSocket support"
   echo "  • Development and test environments run simultaneously on different ports"
-  echo "  • Development: docker-compose.yml + docker-compose.dev.yml override pattern"
-  echo "  • Test environment: isolated containers with tmpfs for performance, different ports"
-  echo "  • Test application logs persisted to: ${cyan}\$ICHRISBIRCH_HOME/test-logs/${reset}"
-  echo "  • Development logs written to mounted files: \$LOG_DIR/{app,api,scheduler,chat}.log"
-  echo "  • Use 'testing logs' for Docker container logs, 'testing app-logs' for application logs"
-  echo "  • Install ${yellow}multitail${reset} for enhanced multi-log viewing: ${blue}brew install multitail${reset}"
+  echo "  • SSL certificates managed automatically via ${blue}ssl-manager${reset} command"
+  echo "  • Use ${blue}<env> health${reset} commands for comprehensive service validation"
+  echo "  • Legacy HTTP access available on original ports (5000, 8000, 8505) alongside HTTPS"
 }
 # check if the first argument is empty and print usage if so
 if [ -z "$1" ]; then
@@ -477,6 +618,9 @@ testing)
     # Simplified follow function
     testing-app-logs-follow
     ;;
+  health)
+    testing-health
+    ;;
   *)
     # Default testing command pattern
     testing-"$2"
@@ -484,10 +628,27 @@ testing)
   esac
   ;;
 dev)
-  dev-"$2"
+  case "$2" in
+  health)
+    dev-health
+    ;;
+  *)
+    dev-"$2"
+    ;;
+  esac
   ;;
 prod)
-  prod-"$2"
+  case "$2" in
+  health)
+    prod-health
+    ;;
+  *)
+    prod-"$2"
+    ;;
+  esac
+  ;;
+ssl-manager)
+  ssl-manager "$2" "$3"
   ;;
 *)
   echo "${red}!! '$1' is not a valid ichrisbirch command !!${reset}"
