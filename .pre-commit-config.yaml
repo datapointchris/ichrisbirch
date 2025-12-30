@@ -35,18 +35,11 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.8-rc1
-    hooks:
-      - id: docformatter
-        args: ["--config", "pyproject.toml"]
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
     rev: v0.12.5
     hooks:
       - id: ruff-check
-        args: [ --fix ]
+        args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/codespell-project/codespell
