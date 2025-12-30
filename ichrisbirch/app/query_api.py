@@ -79,6 +79,7 @@ class QueryAPI[ModelType]:
             return {
                 'X-User-ID': user_id or '',
                 'X-Application-ID': settings.flask.app_id,
+                'X-Service-Key': settings.auth.internal_service_key,
             }
 
     def _get_api_url(self) -> str:

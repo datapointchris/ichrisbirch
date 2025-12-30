@@ -53,7 +53,7 @@ def create_api(settings: Settings) -> FastAPI:
         allow_origins=settings.fastapi.allowed_origins,
         allow_credentials=True,
         allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allow_headers=['Authorization', 'Content-Type', 'Accept', 'X-Application-ID', 'X-User-ID'],
+        allow_headers=['Authorization', 'Content-Type', 'Accept', 'X-Application-ID', 'X-User-ID', 'X-Service-Key'],
     )
     logger.info('cors middleware added')
 

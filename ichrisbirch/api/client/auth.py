@@ -51,9 +51,10 @@ class InternalServiceProvider(CredentialProvider):
 class UserTokenProvider(CredentialProvider):
     """Credentials for user-authenticated requests."""
 
-    def __init__(self, user_id: str, app_id: str):
+    def __init__(self, user_id: str, app_id: str, service_key: str):
         self.user_id = user_id
         self.app_id = app_id
+        self.service_key = service_key
         self._token = None
         self._expires_at = None
 
@@ -62,6 +63,7 @@ class UserTokenProvider(CredentialProvider):
         return {
             'X-User-ID': self.user_id,
             'X-Application-ID': self.app_id,
+            'X-Service-Key': self.service_key,
             'Authorization': f'Bearer {self._token}' if self._token else '',
         }
 
@@ -94,6 +96,7 @@ class FlaskSessionProvider(CredentialProvider):
         return {
             'X-User-ID': user_id,
             'X-Application-ID': settings.flask.app_id,
+            'X-Service-Key': settings.auth.internal_service_key,
         }
 
     def refresh_if_needed(self) -> None:

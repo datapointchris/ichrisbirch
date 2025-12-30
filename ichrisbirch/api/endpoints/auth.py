@@ -113,13 +113,18 @@ def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)],
 def authenticate_with_application_headers(
     x_application_id: str | None = Header(None),
     x_user_id: str | None = Header(None),
+    x_service_key: str | None = Header(None),
     settings: Settings = Depends(get_settings),
 ) -> str | None:
     """FastAPI dependency for application header authentication.
 
-    Used by internal services that authenticate with X-Application-ID and X-User-ID headers.
+    Used by internal services that authenticate with X-Application-ID, X-User-ID,
+    and X-Service-Key headers. The service key is required to prevent impersonation.
     """
-    if x_application_id and x_user_id:
+    if x_application_id and x_user_id and x_service_key:
+        if x_service_key != settings.auth.internal_service_key:
+            logger.warning('invalid X-Service-Key in application headers')
+            return None
         if x_application_id != settings.flask.app_id:
             logger.warning(f'invalid X-Application-ID header: {x_application_id[:-8]}')
             return None

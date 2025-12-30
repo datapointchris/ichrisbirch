@@ -57,15 +57,17 @@ class InternalServiceAuth:
 class UserAuth:
     """Authentication provider for user-based calls."""
 
-    def __init__(self, user_id: str, app_id: str):
+    def __init__(self, user_id: str, app_id: str, service_key: str):
         self.user_id = user_id
         self.app_id = app_id
+        self.service_key = service_key
 
     def get_headers(self) -> dict[str, str]:
         """Get authentication headers for user calls."""
         return {
             'X-User-ID': self.user_id,
             'X-Application-ID': self.app_id,
+            'X-Service-Key': self.service_key,
         }
 
 
@@ -216,7 +218,7 @@ def get_internal_api_client() -> APIClient:
 
 def get_user_api_client(user_id: str) -> APIClient:
     """Get API client with user authentication."""
-    auth = UserAuth(user_id=user_id, app_id=settings.flask.app_id)
+    auth = UserAuth(user_id=user_id, app_id=settings.flask.app_id, service_key=settings.auth.internal_service_key)
     return APIClient(auth_provider=auth)
 
 

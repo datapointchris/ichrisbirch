@@ -259,7 +259,7 @@ def logging_user_client(user_id: str, app_id: str | None = None, base_url: str |
     from .auth import UserTokenProvider
 
     actual_app_id = app_id or settings.flask.app_id
-    provider = UserTokenProvider(user_id, actual_app_id)
+    provider = UserTokenProvider(user_id, actual_app_id, settings.auth.internal_service_key)
     return LoggingAPIClient(provider, base_url)
 
 

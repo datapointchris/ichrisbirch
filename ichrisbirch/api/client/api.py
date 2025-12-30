@@ -54,7 +54,7 @@ def internal_service_client(service_name: str = 'flask-frontend') -> APIClient:
 def user_client(user_id: str, app_id: str | None = None) -> APIClient:
     """Create client with user authentication."""
     app_id = app_id or settings.flask.app_id
-    provider = UserTokenProvider(user_id, app_id)
+    provider = UserTokenProvider(user_id, app_id, settings.auth.internal_service_key)
     return APIClient(credential_provider=provider)
 
 
