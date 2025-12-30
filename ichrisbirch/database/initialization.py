@@ -157,7 +157,7 @@ def main():
             f'{settings.postgres.port}/{settings.postgres.database}'
         )
 
-        full_initialization(settings, use_alembic=not args.use_metadata)
+        full_initialization(settings, use_alembic=args.use_alembic)
 
     except Exception as e:
         logger.error(f'Database initialization failed: {e}')

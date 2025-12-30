@@ -271,8 +271,8 @@ function testing-start() {
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
 
-  # Run test database initialization script
-  if uv run python scripts/init_test_database.py; then
+  # Run test database initialization from host (need to use localhost, not Docker hostname)
+  if ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
     echo "${green}✓${reset} Database initialized successfully"
   else
     echo "${red}✗${reset} Database initialization failed"
