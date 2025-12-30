@@ -88,8 +88,12 @@ class FlaskSettings:
         # For flask-login, use the session to store the `next` value instead of passing as url parameters
         self.USE_SESSION_FOR_NEXT: bool = True
         self.app_id: str = os.environ['FLASK_APP_ID']
-        # CSRF token is valid for life of the session, prevents most errors from leaving a tab open too long
-        self.WTF_CSRF_TIME_LIMIT: int | None = None
+        # CSRF token expires after 1 hour (balances security with usability for long sessions)
+        self.WTF_CSRF_TIME_LIMIT: int = 3600
+        # Session cookie security settings (Traefik handles TLS termination)
+        self.SESSION_COOKIE_SECURE: bool = True
+        self.SESSION_COOKIE_HTTPONLY: bool = True
+        self.SESSION_COOKIE_SAMESITE: str = 'Lax'
 
 
 class FlaskLoginSettings:
