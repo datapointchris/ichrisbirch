@@ -4,6 +4,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
+def should_skip_file(file_path: Path) -> bool:
+    """Check if file should be skipped from validation."""
+    path_parts = file_path.parts
+    return 'test_data' in path_parts or 'tests/test_data' in str(file_path)
+
+
 def find_markdown_links(content: str) -> list[tuple[str, int]]:
     """Find all markdown links in content, returning (url, line_number) tuples."""
     links = []
@@ -64,6 +70,8 @@ def main() -> int:
 
     all_errors = []
     for file_path in file_paths:
+        if should_skip_file(file_path):
+            continue
         errors = validate_file(file_path)
         all_errors.extend(errors)
 
