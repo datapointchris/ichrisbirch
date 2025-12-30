@@ -1,33 +1,19 @@
 # Docker Compose will automatically read from a .env file in the same directory
 
 services:
-  # Traefik reverse proxy - Production configuration
-  traefik:
-    image: traefik:v3.4
-    container_name: ichrisbirch-traefik
+  # Nginx reverse proxy - Production configuration
+  nginx:
+    image: nginx:alpine
+    container_name: ichrisbirch-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
-      - ./deploy-containers/traefik/certs:/etc/ssl/certs:ro
-    command:
-      - --api=false
-      - --providers.docker=true
-      - --providers.docker.exposedByDefault=false
-      - --providers.docker.network=proxy
-      - --providers.file.directory=/etc/traefik/dynamic
-      - --providers.file.watch=true
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
-      - --log.level=INFO
-    networks:
-      - proxy
-      - default
+      - ./deploy/prod/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/prod/nginx/api.conf:/etc/nginx/conf.d/api.conf:ro
+      - ./deploy/prod/nginx/app.conf:/etc/nginx/conf.d/app.conf:ro
+      - ./deploy/prod/nginx/chat.conf:/etc/nginx/conf.d/chat.conf:ro
+      # - ./nginx/ssl:/etc/nginx/ssl:ro  # Uncomment for SSL certificates
     depends_on:
       - api
       - app
@@ -38,7 +24,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-        tag: "traefik"
+        tag: "nginx"
 
   # PostgreSQL Database Service - Production optimized for performance and reliability
   postgres:
@@ -52,8 +38,6 @@ services:
     ports: []
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - default
     # Production database optimizations for high performance
     command: >
       postgres
@@ -86,8 +70,6 @@ services:
     container_name: ichrisbirch-redis
     # Remove external ports for security (only accessible within Docker network)
     ports: []
-    networks:
-      - default
     # Production Redis optimizations for high performance
     command: >
       redis-server
@@ -151,17 +133,6 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "api"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.yourdomain.local`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls=true"
-      - "traefik.http.routers.api.tls.options=default@file"
-      - "traefik.http.routers.api.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
-    networks:
-      - proxy
-      - default
 
   # Flask Frontend Service - Production configuration
   app:
@@ -193,17 +164,6 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "app"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`app.yourdomain.local`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls=true"
-      - "traefik.http.routers.app.tls.options=default@file"
-      - "traefik.http.routers.app.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
-      - "traefik.http.services.app.loadbalancer.server.port=5000"
-    networks:
-      - proxy
-      - default
 
   # Chat Service (Streamlit) - Production configuration
   chat:
@@ -236,20 +196,6 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "chat"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.chat.rule=Host(`chat.yourdomain.local`)"
-      - "traefik.http.routers.chat.entrypoints=websecure"
-      - "traefik.http.routers.chat.tls=true"
-      - "traefik.http.routers.chat.tls.options=default@file"
-      - "traefik.http.routers.chat.middlewares=cors-prod@file,security-headers-prod@file,websocket-prod@file"
-      - "traefik.http.services.chat.loadbalancer.server.port=8505"
-      # Enable sticky sessions for WebSocket connections
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=chat-prod-session"
-    networks:
-      - proxy
-      - default
 
   # Scheduler Service - Production configuration
   scheduler:
@@ -262,8 +208,6 @@ services:
     environment:
       - ENVIRONMENT=production
       - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
-    networks:
-      - default
     depends_on:
       postgres:
         condition: service_healthy
@@ -290,9 +234,7 @@ volumes:
   redis_data:
     driver: local
 
-# Networks for service communication
+# Default network for service communication
 networks:
   default:
     driver: bridge
-  proxy:
-    external: true

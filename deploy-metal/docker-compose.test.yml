@@ -1,61 +1,8 @@
 services:
-  # Traefik service for test environment
-  traefik:
-    image: traefik:v3.4
-    container_name: ichrisbirch-traefik-test
-    command:
-      - "--api.dashboard=true"
-      - "--api.debug=true"
-      - "--log.level=DEBUG"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--providers.file.watch=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.http.tls.domains[0].main=*.test.localhost"
-      - "--certificatesresolvers.myresolver.acme.email=test@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-    ports:
-      - "8080:80"    # HTTP redirect to HTTPS
-      - "8443:443"   # HTTPS traffic
-      - "8082:8080"  # Traefik dashboard
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
-      - ./deploy-containers/traefik/certs:/etc/ssl/certs:ro
-      - traefik_test_letsencrypt:/letsencrypt
-    networks:
-      - proxy
-      - default
-    labels:
-      - "traefik.enable=true"
-      # Dashboard route
-      - "traefik.http.routers.dashboard-test.rule=Host(`dashboard.test.localhost`)"
-      - "traefik.http.routers.dashboard-test.entrypoints=websecure"
-      - "traefik.http.routers.dashboard-test.tls=true"
-      - "traefik.http.routers.dashboard-test.tls.options=test@file"
-      - "traefik.http.routers.dashboard-test.service=api@internal"
-      - "traefik.http.routers.dashboard-test.middlewares=dashboard-auth-test@file"
-    environment:
-      - TRAEFIK_API_DASHBOARD=true
-      - TRAEFIK_API_DEBUG=true
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "traefik", "healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "traefik-test"
+  # Explicitly disable nginx for testing - not needed
+  nginx:
+    deploy:
+      replicas: 0
 
   # Test database - optimized for speed over durability
   postgres:
@@ -85,8 +32,6 @@ services:
       -c logging_collector=off
     volumes:
       - ichrisbirch_testing_logs:/var/log/ichrisbirch
-    networks:
-      - default
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
       interval: 10s
@@ -113,8 +58,6 @@ services:
       --appendonly no
       --loglevel warning
     environment: [] # Override production environment
-    networks:
-      - default
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -170,19 +113,6 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
-    networks:
-      - proxy
-      - default
-    labels:
-      - "traefik.enable=true"
-      # API routes
-      - "traefik.http.routers.api-test.rule=Host(`api.test.localhost`)"
-      - "traefik.http.routers.api-test.entrypoints=websecure"
-      - "traefik.http.routers.api-test.tls=true"
-      - "traefik.http.routers.api-test.tls.options=test@file"
-      - "traefik.http.routers.api-test.service=api-test"
-      - "traefik.http.routers.api-test.middlewares=cors-test@file,security-headers-test@file,rate-limit-test@file"
-      - "traefik.http.services.api-test.loadbalancer.server.port=8000"
     restart: unless-stopped
     depends_on:
       postgres:
@@ -243,19 +173,6 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
-    networks:
-      - proxy
-      - default
-    labels:
-      - "traefik.enable=true"
-      # App routes
-      - "traefik.http.routers.app-test.rule=Host(`app.test.localhost`)"
-      - "traefik.http.routers.app-test.entrypoints=websecure"
-      - "traefik.http.routers.app-test.tls=true"
-      - "traefik.http.routers.app-test.tls.options=test@file"
-      - "traefik.http.routers.app-test.service=app-test"
-      - "traefik.http.routers.app-test.middlewares=cors-test@file,security-headers-test@file,rate-limit-test@file"
-      - "traefik.http.services.app-test.loadbalancer.server.port=5000"
     restart: unless-stopped
     depends_on:
       api:
@@ -306,22 +223,6 @@ services:
         target: /root/.cache/uv
     ports:
       - "8507:8505" # Different port to avoid conflicts
-    networks:
-      - proxy
-      - default
-    labels:
-      - "traefik.enable=true"
-      # Chat routes with WebSocket support
-      - "traefik.http.routers.chat-test.rule=Host(`chat.test.localhost`)"
-      - "traefik.http.routers.chat-test.entrypoints=websecure"
-      - "traefik.http.routers.chat-test.tls=true"
-      - "traefik.http.routers.chat-test.tls.options=test@file"
-      - "traefik.http.routers.chat-test.service=chat-test"
-      - "traefik.http.routers.chat-test.middlewares=cors-test@file,security-headers-test@file,websocket-test@file"
-      - "traefik.http.services.chat-test.loadbalancer.server.port=8505"
-      # Enable sticky sessions for WebSocket connections
-      - "traefik.http.services.chat-test.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.chat-test.loadbalancer.sticky.cookie.name=chat-test-session"
     restart: unless-stopped
     depends_on:
       api:
@@ -370,8 +271,6 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
-    networks:
-      - default
     restart: unless-stopped
     depends_on:
       api:
@@ -390,12 +289,6 @@ services:
         max-file: "3"
         tag: "scheduler-test"
 
-networks:
-  proxy:
-    external: true
-  default:
-    driver: bridge
-
 volumes:
   ichrisbirch_testing_logs:
     driver: local
@@ -406,6 +299,4 @@ volumes:
   uv_cache:
     driver: local
   venv_shared:
-    driver: local
-  traefik_test_letsencrypt:
     driver: local
