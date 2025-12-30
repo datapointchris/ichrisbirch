@@ -30,7 +30,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = User
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test User {n + 1}')
     email = factory.Sequence(lambda n: f'testuser{n + 1}@test.com')

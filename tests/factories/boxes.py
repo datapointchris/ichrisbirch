@@ -15,7 +15,7 @@ class BoxFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Box
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     number = factory.Sequence(lambda n: n + 1)
     name = factory.Sequence(lambda n: f'Test Box {n + 1}')
@@ -43,7 +43,7 @@ class BoxItemFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = BoxItem
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test Item {n + 1}')
     essential = False

@@ -16,7 +16,7 @@ class MoneyWastedFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = MoneyWasted
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     item = factory.Sequence(lambda n: f'Wasted Item {n + 1}')
     amount = factory.Sequence(lambda n: (n + 1) * 10.0)  # 10, 20, 30...

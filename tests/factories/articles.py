@@ -15,7 +15,7 @@ class ArticleFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Article
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     title = factory.Sequence(lambda n: f'Test Article {n + 1}')
     tags = factory.LazyFunction(lambda: ['test', 'article'])

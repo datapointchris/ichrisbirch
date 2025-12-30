@@ -50,7 +50,8 @@ class ApiCrudTester[SchemaType: BaseModel]:
         return None
 
     def test_read_one(self, test_api_client: TestClient):
-        response = test_api_client.get(f'{self.endpoint}1/')
+        first_id = self.item_id_by_position(test_api_client, position=1)
+        response = test_api_client.get(f'{self.endpoint}{first_id}/')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     def test_read_many(self, test_api_client: TestClient):

@@ -15,7 +15,7 @@ class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Book
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     isbn = factory.Sequence(lambda n: f'978-0-{n:06d}-{n % 10}-{n % 10}')
     title = factory.Sequence(lambda n: f'Test Book {n + 1}')

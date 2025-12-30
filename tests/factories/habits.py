@@ -35,7 +35,7 @@ class HabitCategoryFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = HabitCategory
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test Category {n + 1}')
     is_current = True
@@ -53,7 +53,7 @@ class HabitFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Habit
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test Habit {n + 1}')
     is_current = True
@@ -81,7 +81,7 @@ class HabitCompletedFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = HabitCompleted
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Completed Habit {n + 1}')
     complete_date = factory.LazyFunction(datetime.now)

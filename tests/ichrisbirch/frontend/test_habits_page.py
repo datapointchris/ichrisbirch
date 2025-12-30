@@ -16,9 +16,9 @@ from tests.utils.database import insert_test_data
 @pytest.fixture(autouse=True)
 def insert_testing_data():
     """Insert test data before each test and clean up after."""
-    insert_test_data('habitcategories', 'habits')
+    insert_test_data('habitcategories')  # habits inserted via HabitCategory.habits relationship
     yield
-    delete_test_data('habitscompleted', 'habits', 'habitcategories')
+    delete_test_data('habitscompleted', 'habits', 'habitcategories')  # Order matters: children first due to FK
 
 
 @pytest.fixture(autouse=True)

@@ -34,7 +34,7 @@ class TaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Task
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     # Predictable defaults - Sequence ensures unique names
     name = factory.Sequence(lambda n: f'Test Task {n + 1}')

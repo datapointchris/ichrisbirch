@@ -4,6 +4,7 @@ This module provides pytest fixtures for all test modules, centralizing test set
 environment-based configuration rather than overrides.
 """
 
+import contextlib
 import logging
 import threading
 from contextlib import contextmanager
@@ -14,6 +15,7 @@ from fastapi.testclient import TestClient
 from flask_login import FlaskLoginClient
 from flask_login import login_user
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.endpoints import auth
@@ -54,19 +56,32 @@ def setup_test_environment():
     logger.warning('')
 
 
-@pytest.fixture(scope='module')
-def create_drop_tables():
+@pytest.fixture(scope='session')
+def create_drop_tables(setup_test_environment):
+    """Create all tables once at session start, drop at session end.
+
+    This is session-scoped for performance - avoiding ~44 CREATE/DROP cycles.
+    Individual test modules manage their own data via insert_test_data/delete_test_data.
+
+    Note: We drop tables first to ensure a clean slate (removes leftover data
+    from previous test runs when containers persist between sessions).
+    """
     engine = get_db_engine(test_settings)
+    Base.metadata.drop_all(engine)
+    logger.info('dropped all tables (clean slate)')
     Base.metadata.create_all(engine)
-    logger.info('created all tables')
+    logger.info('created all tables (session scope)')
     yield
     Base.metadata.drop_all(engine)
-    logger.info('dropped all tables')
+    logger.info('dropped all tables (session scope)')
 
 
-@pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def insert_users_for_login(create_drop_tables):
-    """Ensure login users exist for this module (idempotent)."""
+    """Ensure login users exist for the session (idempotent).
+
+    Session-scoped for performance - runs once instead of ~44 times.
+    """
     with create_session(test_settings) as session:
         for user_data in get_test_login_users():
             existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
@@ -244,21 +259,69 @@ def test_api_logged_in_admin_function():
 
 @pytest.fixture(scope='function')
 def factory_session(create_drop_tables):
-    """Provide a SQLAlchemy session for factory_boy factories.
+    """Provide a transactional SQLAlchemy session for factory_boy factories.
 
-    This fixture configures the factories to use a fresh session for each test.
-    Data created with factories is committed and available for the test.
+    Uses transaction isolation: all operations are wrapped in a transaction
+    that is rolled back after the test, automatically cleaning up all data.
+    Sequences are also reset to ensure consistent IDs for subsequent tests.
 
     Usage:
-        def test_with_factories(factory_session, test_api_logged_in):
+        def test_with_factories(factory_session):
             from tests.factories import TaskFactory
-            TaskFactory(name='My Task', priority=10)
-            TaskFactory(name='Another Task', priority=20)
-
-            response = test_api_logged_in.get('/tasks/')
-            assert len(response.json()) >= 2
+            task = TaskFactory(name='My Task', priority=10)
+            assert task.id is not None
+            # Data is automatically cleaned up after test via rollback
     """
-    with create_session(test_settings) as session:
-        set_factory_session(session)
-        yield session
-        clear_factory_session()
+    from sqlalchemy import text
+
+    from tests.utils.database import clear_test_connection
+    from tests.utils.database import set_test_connection
+
+    engine = get_db_engine(test_settings)
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    # Configure the test connection for transactional isolation
+    set_test_connection(connection)
+
+    # Create session bound to this connection
+    session = Session(bind=connection)
+
+    # Configure factories to use this session
+    set_factory_session(session)
+
+    yield session
+
+    # Cleanup: rollback transaction (undoes all changes)
+    clear_factory_session()
+    session.close()
+    clear_test_connection()
+    transaction.rollback()
+
+    # Reset sequences to 1 since rollback doesn't affect sequences
+    # This ensures subsequent tests using BASE_DATA get consistent IDs
+    # Note: sequence names are {schema}.{table}_id_seq format
+    # Note: users_id_seq is NOT reset because login users (IDs 1-3) are session-scoped
+    sequences_to_reset = [
+        'public.articles_id_seq',
+        'public.autotasks_id_seq',
+        'public.books_id_seq',
+        'box_packing.boxes_id_seq',
+        'box_packing.items_id_seq',
+        'chat.chats_id_seq',
+        'chat.messages_id_seq',
+        'public.countdowns_id_seq',
+        'public.events_id_seq',
+        'habits.categories_id_seq',
+        'habits.completed_id_seq',
+        'habits.habits_id_seq',
+        'public.money_wasted_id_seq',
+        'public.tasks_id_seq',
+    ]
+    with engine.connect() as reset_conn:
+        for seq in sequences_to_reset:
+            with contextlib.suppress(Exception):
+                reset_conn.execute(text(f'ALTER SEQUENCE {seq} RESTART WITH 1'))
+        reset_conn.commit()
+
+    connection.close()

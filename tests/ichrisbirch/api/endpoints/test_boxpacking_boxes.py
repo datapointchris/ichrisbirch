@@ -12,9 +12,9 @@ from .crud_test import ApiCrudTester
 
 @pytest.fixture(autouse=True)
 def insert_testing_data():
-    insert_test_data('boxes', 'boxitems')
+    insert_test_data('boxes')  # boxitems inserted via Box.items relationship
     yield
-    delete_test_data('boxes', 'boxitems')
+    delete_test_data('boxitems', 'boxes')  # Order matters: children first due to FK
 
 
 NEW_OBJ = schemas.BoxCreate(

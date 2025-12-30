@@ -12,7 +12,7 @@ from ..crud_test import ApiCrudTester
 def insert_testing_data():
     insert_test_data('chats')
     yield
-    delete_test_data('chats')
+    delete_test_data('chatmessages', 'chats')  # Order matters: messages first due to FK
 
 
 ENDPOINT = '/chat/messages/'

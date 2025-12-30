@@ -16,7 +16,7 @@ class ChatFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Chat
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test Chat {n + 1}')
     category = 'General'
@@ -38,7 +38,7 @@ class ChatMessageFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = ChatMessage
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     role = 'user'
     content = factory.Sequence(lambda n: f'Test message {n + 1}')

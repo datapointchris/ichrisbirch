@@ -22,7 +22,7 @@ class EventFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = Event
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test Event {n + 1}')
     date = factory.LazyFunction(lambda: now_utc() + timedelta(days=14))

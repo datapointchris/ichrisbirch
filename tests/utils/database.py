@@ -75,11 +75,13 @@ Different Authentication Patterns:
 import copy
 import logging
 from collections.abc import Generator
+from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any
 from typing import TypeVar
 
 from pydantic import BaseModel
+from sqlalchemy import Connection
 from sqlalchemy import select
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -89,9 +91,83 @@ from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.config import settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.database.session import get_db_engine
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# TRANSACTION-BASED TEST ISOLATION
+# =============================================================================
+# These utilities enable per-test transaction isolation. Each test runs in its
+# own transaction that is rolled back after the test, ensuring:
+# 1. Tests don't pollute each other's data
+# 2. No need for explicit cleanup (delete_test_data)
+# 3. Tests can run in parallel safely
+# =============================================================================
+
+_test_connection: Connection | None = None
+
+
+def set_test_connection(conn: Connection) -> None:
+    """Set the current test connection for transaction isolation."""
+    global _test_connection
+    _test_connection = conn
+
+
+def get_test_connection() -> Connection | None:
+    """Get the current test connection."""
+    return _test_connection
+
+
+def clear_test_connection() -> None:
+    """Clear the current test connection."""
+    global _test_connection
+    _test_connection = None
+
+
+def get_transactional_session() -> Generator[Session, None, None]:
+    """Return a session bound to the current test connection.
+
+    This session participates in the test's transaction and will be
+    rolled back after the test completes.
+    """
+    if _test_connection is None:
+        raise RuntimeError(
+            'No test connection configured. Use the db_transaction fixture or ensure transaction isolation is set up before calling this.'
+        )
+    session = Session(bind=_test_connection)
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@contextmanager
+def transactional_test_context(settings: Settings):
+    """Context manager for transaction-isolated tests.
+
+    Usage:
+        with transactional_test_context(test_settings) as session:
+            # All operations in this block are in a transaction
+            # that will be rolled back when the block exits
+            TaskFactory()
+            result = session.query(Task).all()
+    """
+    engine = get_db_engine(settings)
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    set_test_connection(connection)
+    session = Session(bind=connection)
+
+    try:
+        yield session
+    finally:
+        session.close()
+        clear_test_connection()
+        transaction.rollback()
+        connection.close()
 
 
 def get_test_runner_settings() -> Settings:
@@ -167,19 +243,27 @@ def get_test_user(email: str) -> models.User:
 
 
 def get_test_data() -> dict[str, dict[str, Any]]:
-    """Return mapping of dataset names to their models and data."""
+    """Return mapping of dataset names to their models and data.
+
+    Note: Some child models are inserted via relationships (not directly):
+    - boxitems: inserted via Box.items relationship
+    - habits: inserted via HabitCategory.habits relationship
+    - chatmessages: inserted via Chat.messages relationship
+    These have empty data but are kept for delete_test_data sequence resets.
+    """
     return {
         'articles': {'model': models.Article, 'data': tests.test_data.articles.BASE_DATA},
         'autotasks': {'model': models.AutoTask, 'data': tests.test_data.autotasks.BASE_DATA},
         'books': {'model': models.Book, 'data': tests.test_data.books.BASE_DATA},
         'boxes': {'model': models.Box, 'data': tests.test_data.boxes.BASE_DATA},
-        'boxitems': {'model': models.BoxItem, 'data': tests.test_data.boxitems.BASE_DATA},
+        'boxitems': {'model': models.BoxItem, 'data': []},  # Inserted via Box.items relationship
         'chats': {'model': models.Chat, 'data': tests.test_data.chats.BASE_DATA},
+        'chatmessages': {'model': models.ChatMessage, 'data': []},  # Inserted via Chat.messages relationship
         'countdowns': {'model': models.Countdown, 'data': tests.test_data.countdowns.BASE_DATA},
         'events': {'model': models.Event, 'data': tests.test_data.events.BASE_DATA},
         'habitcategories': {'model': models.HabitCategory, 'data': tests.test_data.habitcategories.BASE_DATA},
-        'habits': {'model': models.Habit, 'data': tests.test_data.habits.BASE_DATA},
-        'habitscompleted': {'model': models.HabitCompleted, 'data': tests.test_data.habitscompleted.BASE_DATA},
+        'habits': {'model': models.Habit, 'data': []},  # Inserted via HabitCategory.habits relationship
+        'habitscompleted': {'model': models.HabitCompleted, 'data': []},  # Inserted via HabitCategory.completed_habits relationship
         'money_wasted': {'model': models.MoneyWasted, 'data': tests.test_data.money_wasted.BASE_DATA},
         'tasks': {'model': models.Task, 'data': tests.test_data.tasks.BASE_DATA},
         'users': {'model': models.User, 'data': tests.test_data.users.BASE_DATA},

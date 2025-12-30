@@ -60,7 +60,8 @@ def test_read_many_tasks_not_completed(test_api_logged_in):
 
 
 def test_complete_task(test_api_logged_in):
-    response = test_api_logged_in.patch(f'{ENDPOINT}1/complete/')
+    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
+    response = test_api_logged_in.patch(f'{ENDPOINT}{first_id}/complete/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
@@ -97,7 +98,8 @@ def test_task_categories(test_api_logged_in, category):
 
 def test_reset_priorities(test_api_logged_in):
     # Priority of first task
-    task_1 = test_api_logged_in.get('/tasks/1/')
+    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
+    task_1 = test_api_logged_in.get(f'/tasks/{first_id}/')
     p1 = task_1.json()['priority']
 
     # Create a task with negative priority
@@ -116,7 +118,7 @@ def test_reset_priorities(test_api_logged_in):
     assert response.json().get('message') == 'Reset priorities for 3 tasks'
 
     # Check that the negative priority task updated other task priorities
-    task_1_updated = test_api_logged_in.get('/tasks/1/')
+    task_1_updated = test_api_logged_in.get(f'/tasks/{first_id}/')
     p1_updated = task_1_updated.json()['priority']
     assert p1_updated == p1 + abs(NEGATIVE_PRIORITY_TASK.priority)
 

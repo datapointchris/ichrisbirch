@@ -18,7 +18,7 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = AutoTask
         sqlalchemy_session_factory = get_factory_session
-        sqlalchemy_session_persistence = 'commit'
+        sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test AutoTask {n + 1}')
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
