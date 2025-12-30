@@ -84,9 +84,11 @@ def validate_jwt_token(token: str, settings: Settings) -> str | None:
     try:
         decoded_token = jwt.decode(jwt=token, key=settings.auth.jwt_secret_key, algorithms=[settings.auth.jwt_signing_algorithm])
         return decoded_token.get('sub')
-    except Exception as e:
-        if 'Invalid token type' not in str(e):
-            logger.warning(f'JWT token validation error: {e}')
+    except jwt.ExpiredSignatureError:
+        logger.debug('JWT token expired')
+        return None
+    except jwt.InvalidTokenError as e:
+        logger.warning(f'JWT token validation error: {e}')
         return None
 
 
