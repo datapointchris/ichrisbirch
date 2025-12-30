@@ -67,7 +67,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 # Final production stage - minimal runtime image
-FROM python:3.12-slim-bookworm AS production
+FROM python:3.13-slim-bookworm AS production
 
 # Install only runtime system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
