@@ -56,8 +56,8 @@ services:
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.tls=true"
 
-      # Dashboard authentication
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$apr1$$pLpaEVuD$$L9Z/4rrtineemX76ylTXW1"
+      # Dashboard authentication (set TRAEFIK_DASHBOARD_AUTH in .env)
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
       - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
     logging:
       driver: "json-file"

@@ -1,6 +1,7 @@
+# Production TLS configuration
+# Certificates are managed by Let's Encrypt via ACME resolver
 tls:
   options:
-    # Production environment TLS configuration
     default:
       minVersion: "VersionTLS12"
       maxVersion: "VersionTLS13"
@@ -14,16 +15,3 @@ tls:
       curvePreferences:
         - "X25519"
         - "secp384r1"
-
-  certificates:
-    # Production environment certificate
-    - certFile: /etc/ssl/certs/prod.crt
-      keyFile: /etc/ssl/certs/prod.key
-      stores:
-        - default
-
-  stores:
-    default:
-      defaultCertificate:
-        certFile: /etc/ssl/certs/prod.crt
-        keyFile: /etc/ssl/certs/prod.key

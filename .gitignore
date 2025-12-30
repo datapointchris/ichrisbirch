@@ -260,3 +260,10 @@ terraform.tfstate.*
 
 # Diagram generator cache
 .diagram_hash_cache.json
+
+# Traefik secrets (certs generated locally via mkcert, credentials from AWS Parameter Store)
+deploy-containers/traefik/certs/*.key
+deploy-containers/traefik/certs/*.crt
+deploy-containers/traefik/config/dashboard-credentials.txt
+deploy-containers/traefik/config/dashboard-credentials-info.txt
+deploy-containers/traefik/acme.json
