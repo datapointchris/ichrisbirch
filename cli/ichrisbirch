@@ -245,7 +245,31 @@ function test-run() {
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
-  uv run pytest
+
+  # If no arguments, run all tests
+  # Otherwise, pass all arguments to pytest
+  if [ $# -eq 0 ]; then
+    uv run pytest
+  else
+    uv run pytest "$@"
+  fi
+}
+
+function test-cov() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  mkdir -p "$ICHRISBIRCH_HOME/test-logs"
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  export ENVIRONMENT=testing
+
+  # Run pytest with coverage
+  if [ $# -eq 0 ]; then
+    uv run pytest --cov=ichrisbirch --cov-report=html
+  else
+    uv run pytest --cov=ichrisbirch --cov-report=html "$@"
+  fi
+  echo ""
+  echo "Coverage report: ${cyan}file://$ICHRISBIRCH_HOME/htmlcov/index.html${reset}"
 }
 
 function testing-start() {
@@ -530,7 +554,7 @@ function usage() {
   echo "  ${blue}open${reset}      - Launch VS Code and create tmux session for development"
   echo "  ${blue}cd${reset}        - Navigate to project directory and activate Python virtual environment"
   echo "  ${blue}logs${reset}      - List log files in configured log directory"
-  echo "  ${blue}test${reset}      - Execute pytest test suite via Docker Compose test-runner service"
+  echo "  ${blue}test run${reset}  - Execute pytest (supports paths and args, see below)"
   echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates for HTTPS"
   echo "    • ${yellow}Actions${reset}: generate, validate, info"
   echo "    • ${yellow}Environments${reset}: dev, test, prod, all"
@@ -558,7 +582,12 @@ function usage() {
   echo "    • ${yellow}--follow${reset}: follow logs in real-time"
   echo "    • Examples: ${cyan}testing app-logs${reset}, ${cyan}testing app-logs 50${reset}, ${cyan}testing app-logs --follow${reset}"
   echo "  ${blue}testing app-logs-follow${reset} - Follow consolidated application logs in real-time"
-  echo "  ${blue}test run${reset}        - Execute pytest with test environment database/redis"
+  echo "  ${blue}test run [path] [args]${reset} - Execute pytest with test environment"
+  echo "    • No args: run all tests"
+  echo "    • With path: run specific test file or directory"
+  echo "    • Examples: ${cyan}test run${reset}, ${cyan}test run tests/ichrisbirch/app/test_login.py -v${reset}"
+  echo "  ${blue}test cov [path] [args]${reset} - Run pytest with coverage report"
+  echo "    • Generates HTML coverage report in htmlcov/"
   echo
   echo "${green}Production Environment (HTTPS with Traefik):${reset}"
   echo "  ${blue}prod start${reset}     - Start production services with HTTPS (yourdomain.local)"
@@ -606,7 +635,10 @@ logs)
   logs
   ;;
 test)
-  test-"$2"
+  # Pass remaining arguments to test function (e.g., test run path/to/test.py -v)
+  subcmd="$2"
+  shift 2  # Remove 'ichrisbirch' and 'test' (note: $1 is 'test', $2 is subcommand)
+  test-"$subcmd" "$@"
   ;;
 testing)
   case "$2" in
