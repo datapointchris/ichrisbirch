@@ -125,7 +125,7 @@ repos:
         name: validate html against w3c standards
         stages: [pre-commit]
         language: system
-        entry: python tools/validation/validate_html.py
+        entry: python scripts/pre_commit_validations/validate_html.py
         types: [html]
         pass_filenames: true
         always_run: false
@@ -135,16 +135,25 @@ repos:
         description: "Check that all markdown links resolve to existing files"
         stages: [pre-commit]
         language: system
-        entry: python tools/validation/validate_markdown_links.py
+        entry: python scripts/pre_commit_validations/validate_markdown_links.py
         types: [markdown]
         pass_filenames: true
         always_run: false
 
-      - id: pytest
-        name: pytest with coverage
+      - id: pytest-affected
+        name: pytest (affected tests only, fail-fast)
         stages: [pre-commit]
         language: system
-        entry: zsh -c 'export ENVIRONMENT=testing && uv run pytest -vv --cov=ichrisbirch'
+        entry: python scripts/pre_commit_validations/pytest_affected.py
+        types: [python]
+        pass_filenames: false
+        always_run: false
+
+      - id: pytest-full
+        name: pytest (full test suite)
+        stages: [pre-commit]
+        language: system
+        entry: zsh -c 'export ENVIRONMENT=testing && uv run pytest'
         types: [python]
         pass_filenames: false
         always_run: false
