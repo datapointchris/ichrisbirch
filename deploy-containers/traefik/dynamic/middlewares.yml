@@ -1,0 +1,55 @@
+http:
+  middlewares:
+    # Security headers for all services
+    security-headers:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+        sslRedirect: true
+
+    # CORS middleware for API
+    api-cors:
+      headers:
+        accessControlAllowOriginList:
+          - "https://app.docker.localhost"
+          - "https://app.test.localhost"
+          - "https://app.ichrisbirch.com"
+        accessControlAllowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+          - "OPTIONS"
+          - "PATCH"
+        accessControlAllowHeaders:
+          - "Content-Type"
+          - "Authorization"
+          - "X-User-ID"
+          - "X-Application-ID"
+          - "X-Internal-Service"
+          - "X-Service-Key"
+        accessControlAllowCredentials: true
+
+    # Rate limiting for API endpoints
+    api-ratelimit:
+      rateLimit:
+        burst: 100
+        average: 50
+
+    # Basic compression
+    compression:
+      compress: {}
+
+    # Error pages
+    error-pages:
+      errors:
+        status:
+          - "404"
+          - "500-599"
+        service: "error-service"
+        query: "/{status}.html"

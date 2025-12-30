@@ -1,0 +1,29 @@
+tls:
+  options:
+    # Test environment TLS configuration
+    test:
+      minVersion: "VersionTLS12"
+      maxVersion: "VersionTLS13"
+      sniStrict: false
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        - "TLS_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_RSA_WITH_AES_128_GCM_SHA256"
+      curvePreferences:
+        - "X25519"
+        - "secp384r1"
+
+  certificates:
+    # Test environment certificate
+    - certFile: /etc/ssl/certs/test.crt
+      keyFile: /etc/ssl/certs/test.key
+      stores:
+        - default
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/ssl/certs/test.crt
+        keyFile: /etc/ssl/certs/test.key

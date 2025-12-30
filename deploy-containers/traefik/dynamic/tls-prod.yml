@@ -1,0 +1,29 @@
+tls:
+  options:
+    # Production environment TLS configuration
+    default:
+      minVersion: "VersionTLS12"
+      maxVersion: "VersionTLS13"
+      sniStrict: true
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        - "TLS_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_RSA_WITH_AES_128_GCM_SHA256"
+      curvePreferences:
+        - "X25519"
+        - "secp384r1"
+
+  certificates:
+    # Production environment certificate
+    - certFile: /etc/ssl/certs/prod.crt
+      keyFile: /etc/ssl/certs/prod.key
+      stores:
+        - default
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/ssl/certs/prod.crt
+        keyFile: /etc/ssl/certs/prod.key

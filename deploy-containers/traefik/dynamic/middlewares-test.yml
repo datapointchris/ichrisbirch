@@ -1,0 +1,95 @@
+http:
+  middlewares:
+    # Security headers middleware for test environment
+    security-headers-test:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+        accessControlAllowOriginList:
+          - "https://api.test.localhost"
+          - "https://app.test.localhost"
+          - "https://chat.test.localhost"
+          - "https://dashboard.test.localhost"
+        accessControlAllowHeaders:
+          - "*"
+        accessControlExposeHeaders:
+          - "*"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 100
+        addVaryHeader: true
+        # Security headers
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          X-Environment: "testing"
+          # Content Security Policy for test environment
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:; font-src 'self' data:;"
+          # Permissions Policy
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+
+    # CORS middleware for test environment
+    cors-test:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+        accessControlAllowOriginList:
+          - "https://api.test.localhost"
+          - "https://app.test.localhost"
+          - "https://chat.test.localhost"
+          - "https://dashboard.test.localhost"
+        accessControlAllowHeaders:
+          - "Accept"
+          - "Accept-Language"
+          - "Content-Language"
+          - "Content-Type"
+          - "Authorization"
+          - "X-Requested-With"
+          - "X-User-ID"
+          - "X-Application-ID"
+          - "X-Internal-Service"
+          - "X-Service-Key"
+        accessControlExposeHeaders:
+          - "Content-Length"
+          - "Content-Type"
+          - "Location"
+          - "X-Total-Count"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 86400
+        addVaryHeader: true
+
+    # WebSocket support for Streamlit chat service
+    websocket-test:
+      headers:
+        customRequestHeaders:
+          Connection: "upgrade"
+          Upgrade: "websocket"
+          Sec-WebSocket-Extensions: ""
+          Sec-WebSocket-Key: ""
+          Sec-WebSocket-Version: ""
+
+    # Rate limiting for test environment (more permissive)
+    rate-limit-test:
+      rateLimit:
+        average: 200  # 200 requests per second
+        burst: 500    # Allow bursts up to 500
+        period: 1s
+
+    # Auth middleware for dashboard access (test environment)
+    dashboard-auth-test:
+      basicAuth:
+        users:
+          - "test:$2y$10$Q7B5K8L2M3N4O5P6Q7R8SeTgUvWxYz0123456789ABCDEFabcdef"  # test:testpass

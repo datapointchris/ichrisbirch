@@ -1,0 +1,109 @@
+http:
+  middlewares:
+    # Security headers middleware for production environment
+    security-headers-prod:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+        accessControlAllowOriginList:
+          - "https://api.ichrisbirch.com"
+          - "https://app.ichrisbirch.com"
+          - "https://chat.ichrisbirch.com"
+        accessControlAllowHeaders:
+          - "Accept"
+          - "Accept-Language"
+          - "Content-Language"
+          - "Content-Type"
+          - "Authorization"
+          - "X-Requested-With"
+          - "X-User-ID"
+          - "X-Application-ID"
+          - "X-Internal-Service"
+          - "X-Service-Key"
+        accessControlExposeHeaders:
+          - "Content-Length"
+          - "Content-Type"
+          - "Location"
+          - "X-Total-Count"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 86400
+        addVaryHeader: true
+        # Security headers
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          X-Environment: "production"
+          # Content Security Policy for production environment
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:; font-src 'self' data:;"
+          # Permissions Policy
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+
+    # CORS middleware for production environment
+    cors-prod:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+        accessControlAllowOriginList:
+          - "https://api.ichrisbirch.com"
+          - "https://app.ichrisbirch.com"
+          - "https://chat.ichrisbirch.com"
+        accessControlAllowHeaders:
+          - "Accept"
+          - "Accept-Language"
+          - "Content-Language"
+          - "Content-Type"
+          - "Authorization"
+          - "X-Requested-With"
+          - "X-User-ID"
+          - "X-Application-ID"
+          - "X-Internal-Service"
+          - "X-Service-Key"
+        accessControlExposeHeaders:
+          - "Content-Length"
+          - "Content-Type"
+          - "Location"
+          - "X-Total-Count"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 86400
+        addVaryHeader: true
+
+    # WebSocket support for Streamlit chat service
+    websocket-prod:
+      headers:
+        customRequestHeaders:
+          Connection: "upgrade"
+          Upgrade: "websocket"
+          Sec-WebSocket-Extensions: ""
+          Sec-WebSocket-Key: ""
+          Sec-WebSocket-Version: ""
+
+    # Rate limiting for production environment (strict)
+    rate-limit-prod:
+      rateLimit:
+        average: 50   # 50 requests per second
+        burst: 100    # Allow bursts up to 100
+        period: 1s
+
+    # IP whitelist for admin endpoints (customize as needed)
+    admin-whitelist:
+      ipAllowList:
+        sourceRange:
+          - "127.0.0.1/32"
+          - "10.0.0.0/8"
+          - "192.168.0.0/16"
+          - "172.16.0.0/12"
