@@ -22,7 +22,7 @@
   <div class="{{ grid_type }}">
     {% with task_class="task task--" ~ view ~ "-layout todo", element_class="task--" ~ view ~ "-layout" %}
       {% for task in tasks %}
-        {% include "tasks/templates/todo-" ~ view ~ ".jinja.html" %}
+        {% include "tasks/_partials/todo-" ~ view ~ ".jinja.html" %}
       {% endfor %}
     {% endwith %}
   </div>

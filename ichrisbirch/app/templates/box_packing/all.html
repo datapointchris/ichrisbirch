@@ -55,7 +55,7 @@
 
   <div class="{{ grid_type }}">
     {% for box in boxes %}
-      {% include "box_packing/templates/box-" ~ view ~ ".jinja.html" %}
+      {% include "box_packing/_partials/box-" ~ view ~ ".jinja.html" %}
     {% endfor %}
   </div>
 

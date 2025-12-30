@@ -20,7 +20,7 @@
       <h2 class="task-layout__title">Priority Tasks</h2>
       {% with task_class="task task--" ~ view ~ "-layout priority", element_class="task--" ~ view ~ "-layout" %}
         {% for task in top_tasks %}
-          {% include "tasks/templates/priority-" ~ view ~ ".jinja.html" %}
+          {% include "tasks/_partials/priority-" ~ view ~ ".jinja.html" %}
         {% endfor %}
       {% endwith %}
     </div>
@@ -28,7 +28,7 @@
       <h2 class="task-layout__title">Completed Today</h2>
       {% with task_class="task task--" ~ view ~ "-layout completed", element_class="task--" ~ view ~ "-layout" %}
         {% for task in completed_today %}
-          {% include "tasks/templates/completed-" ~ view ~ ".jinja.html" %}
+          {% include "tasks/_partials/completed-" ~ view ~ ".jinja.html" %}
         {% endfor %}
       {% endwith %}
     </div>

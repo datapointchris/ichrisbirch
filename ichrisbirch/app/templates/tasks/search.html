@@ -22,13 +22,13 @@
   <div class="{{ grid_type }}">
     {% with task_class="task task--" ~ view ~ "-layout todo", element_class="task--" ~ view ~ "-layout" %}
       {% for task in todo_tasks %}
-        {% include "tasks/templates/todo-" ~ view ~ ".jinja.html" %}
+        {% include "tasks/_partials/todo-" ~ view ~ ".jinja.html" %}
       {% endfor %}
     {% endwith %}
 
     {% with task_class="task task--" ~ view ~ "-layout completed", element_class="task--" ~ view ~ "-layout" %}
       {% for task in completed_tasks %}
-        {% include "tasks/templates/completed-" ~ view ~ ".jinja.html" %}
+        {% include "tasks/_partials/completed-" ~ view ~ ".jinja.html" %}
       {% endfor %}
     {% endwith %}
   </div>
