@@ -105,7 +105,7 @@ repos:
       - id: code-sync
         name: Code Sync
         description: "Synchronize code snippets in documentation using AST parsing"
-        entry: python -m tools.code_sync
+        entry: uv run python -m tools.code_sync
         language: python
         pass_filenames: false
         always_run: true
@@ -114,7 +114,7 @@ repos:
       - id: generate-fixture-diagrams
         name: Generate fixture diagrams
         description: "Generate fixture diagrams when test fixture code changes"
-        entry: python -m tools.docs.diagram_generator.generate_diagrams
+        entry: uv run python -m tools.docs.diagram_generator.generate_diagrams
         language: python
         pass_filenames: false
         files: "(tests/conftest.py|tests/utils/.*|tools/docs/diagram_generator/.*\\.py)$"
@@ -125,7 +125,7 @@ repos:
         name: validate html against w3c standards
         stages: [pre-commit]
         language: system
-        entry: python scripts/pre_commit_validations/validate_html.py
+        entry: uv run python scripts/pre_commit_validations/validate_html.py
         types: [html]
         pass_filenames: true
         always_run: false
@@ -135,7 +135,7 @@ repos:
         description: "Check that all markdown links resolve to existing files"
         stages: [pre-commit]
         language: system
-        entry: python scripts/pre_commit_validations/validate_markdown_links.py
+        entry: uv run python scripts/pre_commit_validations/validate_markdown_links.py
         types: [markdown]
         pass_filenames: true
         always_run: false
@@ -144,7 +144,7 @@ repos:
         name: pytest (affected tests only)
         stages: [pre-commit]
         language: system
-        entry: python scripts/pre_commit_validations/pytest_affected.py
+        entry: uv run python scripts/pre_commit_validations/pytest_affected.py
         types: [python]
         pass_filenames: false
         always_run: false
