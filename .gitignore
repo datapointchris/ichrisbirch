@@ -13,6 +13,12 @@ instance/*
 test-logs/
 logs/
 
+# Project stats (synced via S3, not git)
+/stats/
+
+# Commit session tracking (local only, not synced)
+.tmp/
+
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
 __pycache__/

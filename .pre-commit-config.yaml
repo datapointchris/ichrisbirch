@@ -1,5 +1,16 @@
 fail_fast: true
 repos:
+  # MUST BE FIRST - captures state BEFORE any auto-fixes are applied
+  - repo: local
+    hooks:
+      - id: capture-pre-state
+        name: capture pre-commit state
+        stages: [pre-commit]
+        language: system
+        entry: uv run python scripts/pre_commit_validations/capture_pre_state.py
+        pass_filenames: false
+        always_run: true
+
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.7
     hooks:
@@ -153,7 +164,15 @@ repos:
         name: pytest (full test suite)
         stages: [pre-commit]
         language: system
-        entry: zsh -c 'export ENVIRONMENT=testing && uv run pytest'
+        entry: uv run python scripts/pre_commit_validations/pytest_full.py
         types: [python]
         pass_filenames: false
         always_run: false
+
+      - id: collect-stats
+        name: collect project stats
+        stages: [post-commit]
+        language: system
+        entry: uv run python -m scripts.stats.post_commit
+        pass_filenames: false
+        always_run: true
