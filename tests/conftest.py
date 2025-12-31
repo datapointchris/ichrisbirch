@@ -2,13 +2,21 @@
 
 This module provides pytest fixtures for all test modules, centralizing test setup and teardown. In the containerized approach, we rely on
 environment-based configuration rather than overrides.
+
+Parallel Execution Support (pytest-xdist):
+When running with pytest-xdist, session-scoped fixtures run once per worker, not once globally.
+To coordinate shared setup (Docker containers, database tables), we use file-based locking.
+The first worker to acquire the lock performs setup, and other workers wait for completion.
 """
 
 import contextlib
 import logging
 import threading
+import time
 from contextlib import contextmanager
+from pathlib import Path
 
+import filelock
 import pytest
 from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
@@ -40,56 +48,153 @@ from tests.utils.database import test_settings
 logger = logging.getLogger(__name__)
 logger.warning('<-- file imported')
 
+TEST_LOCK_DIR = Path('/tmp/pytest-ichrisbirch-lock')
+TEST_LOCK_FILE = TEST_LOCK_DIR / 'setup.lock'
+TEST_READY_FILE = TEST_LOCK_DIR / 'ready'
+
 
 @pytest.fixture(scope='session', autouse=True)
-def setup_test_environment():
+def setup_test_environment(request):
+    """Set up the test environment with parallel execution support.
+
+    When running with pytest-xdist, multiple workers start simultaneously.
+    This fixture uses file locking to ensure only one worker performs the
+    actual Docker/database setup, while others wait for completion.
+
+    For normal (non-parallel) execution, this works as before.
+
+    Note: Docker containers are NOT torn down during parallel runs to avoid
+    killing the environment while other workers are still using it.
+    """
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
+
     logger.warning('')
-    logger.warning(f'{"=" * 30}>  STARTING TESTING  <{"=" * 30}')
+    logger.warning(f'{"=" * 30}>  STARTING TESTING [{worker_id}]  <{"=" * 30}')
     logger.warning('')
 
-    with DockerComposeTestEnvironment(test_settings, create_session) as test_env:
-        logger.info('Docker Compose test environment is ready')
-        yield test_env
+    TEST_LOCK_DIR.mkdir(parents=True, exist_ok=True)
+
+    if is_parallel:
+        lock = filelock.FileLock(str(TEST_LOCK_FILE), timeout=300)
+        with lock:
+            if not TEST_READY_FILE.exists():
+                logger.info(f'Worker {worker_id}: Performing environment setup (first to acquire lock)')
+                test_env = DockerComposeTestEnvironment(test_settings, create_session)
+                test_env.setup()
+                TEST_READY_FILE.touch()
+                logger.info(f'Worker {worker_id}: Environment setup complete, marker created')
+            else:
+                logger.info(f'Worker {worker_id}: Environment already set up by another worker')
+
+        # Wait for ready file (in case another worker is still setting up)
+        timeout = 300
+        start = time.time()
+        while not TEST_READY_FILE.exists() and (time.time() - start) < timeout:
+            logger.info(f'Worker {worker_id}: Waiting for environment to be ready...')
+            time.sleep(2)
+
+        if not TEST_READY_FILE.exists():
+            pytest.exit(f'Worker {worker_id}: Timeout waiting for test environment', returncode=1)
+
+        # Yield None - environment is shared
+        yield None
+
+        # Don't teardown in parallel mode - containers are shared across workers
+        logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
+    else:
+        with DockerComposeTestEnvironment(test_settings, create_session) as test_env:
+            logger.info('Docker Compose test environment is ready')
+            yield test_env
+
+    # Cleanup lock files on non-parallel exit
+    if not is_parallel:
+        TEST_READY_FILE.unlink(missing_ok=True)
 
     logger.warning('')
-    logger.warning(f'{"=" * 30}>  TESTING FINISHED  <{"=" * 30}')
+    logger.warning(f'{"=" * 30}>  TESTING FINISHED [{worker_id}]  <{"=" * 30}')
     logger.warning('')
 
 
 @pytest.fixture(scope='session')
-def create_drop_tables(setup_test_environment):
+def create_drop_tables(setup_test_environment, request):
     """Create all tables once at session start, drop at session end.
 
     This is session-scoped for performance - avoiding ~44 CREATE/DROP cycles.
     Individual test modules manage their own data via insert_test_data/delete_test_data.
 
-    Note: We drop tables first to ensure a clean slate (removes leftover data
-    from previous test runs when containers persist between sessions).
+    In parallel mode, uses file locking to coordinate table creation across workers.
+    Tables are NOT dropped in parallel mode to avoid disrupting other workers.
     """
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
     engine = get_db_engine(test_settings)
-    Base.metadata.drop_all(engine)
-    logger.info('dropped all tables (clean slate)')
-    Base.metadata.create_all(engine)
-    logger.info('created all tables (session scope)')
-    yield
-    Base.metadata.drop_all(engine)
-    logger.info('dropped all tables (session scope)')
+
+    if is_parallel:
+        tables_lock = filelock.FileLock(str(TEST_LOCK_DIR / 'tables.lock'), timeout=300)
+        tables_ready = TEST_LOCK_DIR / 'tables_ready'
+        with tables_lock:
+            if not tables_ready.exists():
+                logger.info(f'Worker {worker_id}: Creating tables (first to acquire lock)')
+                Base.metadata.drop_all(engine)
+                logger.info(f'Worker {worker_id}: Dropped all tables (clean slate)')
+                Base.metadata.create_all(engine)
+                logger.info(f'Worker {worker_id}: Created all tables')
+                tables_ready.touch()
+            else:
+                logger.info(f'Worker {worker_id}: Tables already created by another worker')
+        yield
+        # Don't drop tables in parallel mode
+        logger.info(f'Worker {worker_id}: Skipping table drop (parallel mode)')
+    else:
+        Base.metadata.drop_all(engine)
+        logger.info('dropped all tables (clean slate)')
+        Base.metadata.create_all(engine)
+        logger.info('created all tables (session scope)')
+        yield
+        Base.metadata.drop_all(engine)
+        logger.info('dropped all tables (session scope)')
+        # Cleanup table marker
+        (TEST_LOCK_DIR / 'tables_ready').unlink(missing_ok=True)
 
 
 @pytest.fixture(scope='session', autouse=True)
-def insert_users_for_login(create_drop_tables):
+def insert_users_for_login(create_drop_tables, request):
     """Ensure login users exist for the session (idempotent).
 
     Session-scoped for performance - runs once instead of ~44 times.
+    Uses file locking in parallel mode to coordinate across workers.
     """
-    with create_session(test_settings) as session:
-        for user_data in get_test_login_users():
-            existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
-            if not existing:
-                session.add(models.User(**user_data))
-        session.commit()
-        for user in session.query(models.User).all():
-            logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
+
+    if is_parallel:
+        users_lock = filelock.FileLock(str(TEST_LOCK_DIR / 'users.lock'), timeout=300)
+        users_ready = TEST_LOCK_DIR / 'users_ready'
+        with users_lock:
+            if not users_ready.exists():
+                logger.info(f'Worker {worker_id}: Inserting login users (first to acquire lock)')
+                with create_session(test_settings) as session:
+                    for user_data in get_test_login_users():
+                        existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
+                        if not existing:
+                            session.add(models.User(**user_data))
+                    session.commit()
+                    for user in session.query(models.User).all():
+                        logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
+                users_ready.touch()
+            else:
+                logger.info(f'Worker {worker_id}: Login users already inserted by another worker')
+    else:
+        with create_session(test_settings) as session:
+            for user_data in get_test_login_users():
+                existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
+                if not existing:
+                    session.add(models.User(**user_data))
+            session.commit()
+            for user in session.query(models.User).all():
+                logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
+        (TEST_LOCK_DIR / 'users_ready').unlink(missing_ok=True)
     yield
 
 
@@ -290,12 +395,13 @@ def reset_sequences(engine):
 
 
 @pytest.fixture(scope='function')
-def factory_session(create_drop_tables):
+def factory_session(create_drop_tables, request):
     """Provide a transactional SQLAlchemy session for factory_boy factories.
 
     Uses transaction isolation: all operations are wrapped in a transaction
     that is rolled back after the test, automatically cleaning up all data.
-    Sequences are also reset to ensure consistent IDs for subsequent tests.
+    Sequences are also reset to ensure consistent IDs for subsequent tests
+    (in non-parallel mode only).
 
     Usage:
         def test_with_factories(factory_session):
@@ -306,6 +412,9 @@ def factory_session(create_drop_tables):
     """
     from tests.utils.database import clear_test_connection
     from tests.utils.database import set_test_connection
+
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
 
     engine = get_db_engine(test_settings)
     connection = engine.connect()
@@ -328,14 +437,15 @@ def factory_session(create_drop_tables):
     clear_test_connection()
     transaction.rollback()
 
-    # Reset sequences since rollback doesn't affect sequences
-    reset_sequences(engine)
+    # Reset sequences only in non-parallel mode (sequence resets cause race conditions)
+    if not is_parallel:
+        reset_sequences(engine)
 
     connection.close()
 
 
 @contextmanager
-def create_transactional_api_client(login=False, admin=False):
+def create_transactional_api_client(login=False, admin=False, is_parallel=False):
     """Create an API client with transaction-based isolation.
 
     All database operations (both factory data creation and API calls) participate
@@ -344,6 +454,7 @@ def create_transactional_api_client(login=False, admin=False):
     Args:
         login: If True, authenticate as regular user
         admin: If True, authenticate as admin user (requires login=True to work)
+        is_parallel: If True, skip sequence resets (causes race conditions in parallel mode)
 
     Yields:
         tuple: (TestClient, Session) - API client and transactional session
@@ -389,14 +500,15 @@ def create_transactional_api_client(login=False, admin=False):
     clear_test_connection()
     transaction.rollback()
 
-    # Reset sequences since rollback doesn't affect sequences
-    reset_sequences(engine)
+    # Reset sequences only in non-parallel mode (sequence resets cause race conditions)
+    if not is_parallel:
+        reset_sequences(engine)
 
     connection.close()
 
 
 @pytest.fixture(scope='function')
-def txn_api(create_drop_tables):
+def txn_api(create_drop_tables, request):
     """Create transactional API client without authentication.
 
     All operations are rolled back after the test - no cleanup needed.
@@ -409,12 +521,14 @@ def txn_api(create_drop_tables):
             session.flush()  # Make data visible to API calls
             response = client.get('/articles/')
     """
-    with create_transactional_api_client() as (client, session):
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
+    with create_transactional_api_client(is_parallel=is_parallel) as (client, session):
         yield client, session
 
 
 @pytest.fixture(scope='function')
-def txn_api_logged_in(create_drop_tables):
+def txn_api_logged_in(create_drop_tables, request):
     """Create transactional API client with logged-in regular user.
 
     All operations are rolled back after the test - no cleanup needed.
@@ -426,15 +540,19 @@ def txn_api_logged_in(create_drop_tables):
             TaskFactory(name='Test Task')  # Uses transactional session
             response = client.get('/tasks/')
     """
-    with create_transactional_api_client(login=True) as (client, session):
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
+    with create_transactional_api_client(login=True, is_parallel=is_parallel) as (client, session):
         yield client, session
 
 
 @pytest.fixture(scope='function')
-def txn_api_logged_in_admin(create_drop_tables):
+def txn_api_logged_in_admin(create_drop_tables, request):
     """Create transactional API client with logged-in admin user.
 
     All operations are rolled back after the test - no cleanup needed.
     """
-    with create_transactional_api_client(login=True, admin=True) as (client, session):
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
+    is_parallel = worker_id != 'main'
+    with create_transactional_api_client(login=True, admin=True, is_parallel=is_parallel) as (client, session):
         yield client, session

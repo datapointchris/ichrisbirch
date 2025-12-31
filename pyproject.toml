@@ -98,6 +98,8 @@ test = [
   "pytest-asyncio>=0.23.6",
   "pytest-cov>=5.0.0",
   "pytest-md>=0.2.0",
+  "pytest-xdist>=3.5.0",
+  "filelock>=3.13.0",
   # Test data generation and mocking
   "Faker>=25.0.1",
   "freezegun>=1.5.1",

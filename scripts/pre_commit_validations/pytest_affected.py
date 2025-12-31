@@ -47,6 +47,11 @@ def map_source_to_test(source_file: Path, project_root: Path) -> Path | None:
     """
     source_str = str(source_file)
 
+    # Skip conftest.py files - they're fixtures, not tests
+    # Changes to conftest.py affect all tests, handled by full test suite
+    if source_file.name == 'conftest.py':
+        return None
+
     # If this is already a test file, return it directly
     if source_str.startswith('tests/') and source_file.suffix == '.py':
         test_path = project_root / source_file
