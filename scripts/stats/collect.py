@@ -344,53 +344,43 @@ def get_dependency_stats() -> dict[str, Any]:
 
 
 def get_quality_stats() -> dict[str, Any]:
-    """Get code quality statistics from ruff, mypy, bandit."""
-    quality = {}
+    """Get code quality statistics from pre-commit hook outputs.
 
-    # Ruff issues
-    result = subprocess.run(
-        ['uv', 'run', 'ruff', 'check', str(ICHRISBIRCH_DIR), '--output-format', 'json'],
-        capture_output=True,
-        text=True,
-        cwd=PROJECT_ROOT,
-    )
-    if result.stdout:
+    These tools already ran in pre-commit, so we read from cached outputs
+    instead of re-running them (saves ~15 seconds).
+    """
+    quality = {
+        'ruff_issues': 0,
+        'mypy_errors': 0,
+        'bandit_issues': 0,
+    }
+
+    # Read from pre-commit hook outputs if available
+    hook_output_dir = PROJECT_ROOT / '.tmp' / 'hook-outputs'
+
+    # Ruff output
+    ruff_output = hook_output_dir / 'ruff-output.json'
+    if ruff_output.exists():
         try:
-            issues = json.loads(result.stdout)
+            issues = json.loads(ruff_output.read_text())
             quality['ruff_issues'] = len(issues) if isinstance(issues, list) else 0
         except json.JSONDecodeError:
-            quality['ruff_issues'] = 0
-    else:
-        quality['ruff_issues'] = 0
+            pass
 
-    # Mypy errors (quick check)
-    result = subprocess.run(
-        ['uv', 'run', 'mypy', str(ICHRISBIRCH_DIR), '--no-error-summary'],
-        capture_output=True,
-        text=True,
-        cwd=PROJECT_ROOT,
-    )
-    error_count = 0
-    for line in result.stdout.split('\n'):
-        if ': error:' in line:
-            error_count += 1
-    quality['mypy_errors'] = error_count
+    # Mypy output
+    mypy_output = hook_output_dir / 'mypy-output.txt'
+    if mypy_output.exists():
+        content = mypy_output.read_text()
+        quality['mypy_errors'] = content.count(': error:')
 
-    # Bandit issues
-    result = subprocess.run(
-        ['uv', 'run', 'bandit', '-r', str(ICHRISBIRCH_DIR), '-f', 'json', '-c', 'pyproject.toml'],
-        capture_output=True,
-        text=True,
-        cwd=PROJECT_ROOT,
-    )
-    if result.stdout:
+    # Bandit output
+    bandit_output = hook_output_dir / 'bandit-output.json'
+    if bandit_output.exists():
         try:
-            bandit_data = json.loads(result.stdout)
+            bandit_data = json.loads(bandit_output.read_text())
             quality['bandit_issues'] = len(bandit_data.get('results', []))
         except json.JSONDecodeError:
-            quality['bandit_issues'] = 0
-    else:
-        quality['bandit_issues'] = 0
+            pass
 
     return quality
 

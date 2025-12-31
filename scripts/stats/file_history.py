@@ -95,10 +95,15 @@ def get_file_line_stats(filepath: str) -> dict:
     }
 
 
-def get_file_complexity(filepath: str) -> dict:
+def get_file_complexity(filepath: str, cc_cache: dict | None = None, mi_cache: dict | None = None) -> dict:
     """Get complexity metrics using radon (if available).
 
     Returns cyclomatic complexity, maintainability index, etc.
+
+    Args:
+        filepath: Path to the file
+        cc_cache: Pre-computed cyclomatic complexity data (from batch call)
+        mi_cache: Pre-computed maintainability index data (from batch call)
     """
     if not filepath.endswith('.py'):
         return {'supported': False, 'reason': 'not a Python file'}
@@ -107,60 +112,121 @@ def get_file_complexity(filepath: str) -> dict:
     if not path.exists():
         return {'supported': False, 'reason': 'file not found'}
 
-    result = subprocess.run(
-        ['uv', 'run', 'radon', 'cc', '-j', filepath],
-        capture_output=True,
-        text=True,
-    )
-
+    # Use cached data if available, otherwise run radon individually
     cc_data: dict = {}
-    if result.returncode == 0 and result.stdout:
-        try:
-            data = json.loads(result.stdout)
-            if filepath in data:
-                functions = data[filepath]
-                if functions:
-                    complexities = [f.get('complexity', 0) for f in functions]
-                    cc_data = {
-                        'function_count': len(functions),
-                        'total_complexity': sum(complexities),
-                        'avg_complexity': round(sum(complexities) / len(complexities), 2) if complexities else 0,
-                        'max_complexity': max(complexities) if complexities else 0,
-                        'functions': [
-                            {
-                                'name': f.get('name'),
-                                'complexity': f.get('complexity'),
-                                'rank': f.get('rank'),
-                            }
-                            for f in functions[:5]
-                        ],
+    if cc_cache is not None:
+        functions = cc_cache.get(filepath, [])
+        if functions:
+            complexities = [f.get('complexity', 0) for f in functions]
+            cc_data = {
+                'function_count': len(functions),
+                'total_complexity': sum(complexities),
+                'avg_complexity': round(sum(complexities) / len(complexities), 2) if complexities else 0,
+                'max_complexity': max(complexities) if complexities else 0,
+                'functions': [
+                    {
+                        'name': f.get('name'),
+                        'complexity': f.get('complexity'),
+                        'rank': f.get('rank'),
                     }
-        except json.JSONDecodeError:
-            pass
-
-    mi_result = subprocess.run(
-        ['uv', 'run', 'radon', 'mi', '-j', filepath],
-        capture_output=True,
-        text=True,
-    )
+                    for f in functions[:5]
+                ],
+            }
+    else:
+        result = subprocess.run(
+            ['uv', 'run', 'radon', 'cc', '-j', filepath],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and result.stdout:
+            try:
+                data = json.loads(result.stdout)
+                if filepath in data:
+                    functions = data[filepath]
+                    if functions:
+                        complexities = [f.get('complexity', 0) for f in functions]
+                        cc_data = {
+                            'function_count': len(functions),
+                            'total_complexity': sum(complexities),
+                            'avg_complexity': round(sum(complexities) / len(complexities), 2) if complexities else 0,
+                            'max_complexity': max(complexities) if complexities else 0,
+                            'functions': [
+                                {
+                                    'name': f.get('name'),
+                                    'complexity': f.get('complexity'),
+                                    'rank': f.get('rank'),
+                                }
+                                for f in functions[:5]
+                            ],
+                        }
+            except json.JSONDecodeError:
+                pass
 
     mi_data: dict = {}
-    if mi_result.returncode == 0 and mi_result.stdout:
-        try:
-            data = json.loads(mi_result.stdout)
-            if filepath in data:
-                mi_info = data[filepath]
-                mi_data = {
-                    'maintainability_index': round(mi_info.get('mi', 0), 2),
-                    'maintainability_rank': mi_info.get('rank', 'N/A'),
-                }
-        except json.JSONDecodeError:
-            pass
+    if mi_cache is not None:
+        mi_info = mi_cache.get(filepath)
+        if mi_info:
+            mi_data = {
+                'maintainability_index': round(mi_info.get('mi', 0), 2),
+                'maintainability_rank': mi_info.get('rank', 'N/A'),
+            }
+    else:
+        mi_result = subprocess.run(
+            ['uv', 'run', 'radon', 'mi', '-j', filepath],
+            capture_output=True,
+            text=True,
+        )
+        if mi_result.returncode == 0 and mi_result.stdout:
+            try:
+                data = json.loads(mi_result.stdout)
+                if filepath in data:
+                    mi_info = data[filepath]
+                    mi_data = {
+                        'maintainability_index': round(mi_info.get('mi', 0), 2),
+                        'maintainability_rank': mi_info.get('rank', 'N/A'),
+                    }
+            except json.JSONDecodeError:
+                pass
 
     if not cc_data and not mi_data:
         return {'supported': True, 'available': False, 'reason': 'no complexity data'}
 
     return {'supported': True, 'available': True} | cc_data | mi_data
+
+
+def batch_get_complexity(filepaths: list[str]) -> tuple[dict, dict]:
+    """Get complexity metrics for multiple files in batch (much faster).
+
+    Returns (cc_cache, mi_cache) dicts that can be passed to get_file_complexity.
+    """
+    python_files = [f for f in filepaths if f.endswith('.py') and Path(f).exists()]
+
+    if not python_files:
+        return {}, {}
+
+    # Batch cyclomatic complexity
+    cc_cache = {}
+    result = subprocess.run(
+        ['uv', 'run', 'radon', 'cc', '-j', *python_files],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0 and result.stdout:
+        with suppress(json.JSONDecodeError):
+            cc_cache = json.loads(result.stdout)
+
+    # Batch maintainability index
+    mi_cache = {}
+    result = subprocess.run(
+        ['uv', 'run', 'radon', 'mi', '-j', *python_files],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0 and result.stdout:
+        with suppress(json.JSONDecodeError):
+            mi_cache = json.loads(result.stdout)
+
+    return cc_cache, mi_cache
 
 
 def get_file_first_commit(filepath: str) -> dict | None:
@@ -272,7 +338,7 @@ def get_file_churn(filepath: str, since: str = '30 days ago') -> dict:
     }
 
 
-def enrich_file_history(filepath: str) -> dict:
+def enrich_file_history(filepath: str, cc_cache: dict | None = None, mi_cache: dict | None = None) -> dict:
     """Get complete history and metrics for a file.
 
     Returns a dict with:
@@ -280,12 +346,17 @@ def enrich_file_history(filepath: str) -> dict:
     - Filesystem info (creation time, size)
     - Line statistics (total, code, comments, blank)
     - Complexity metrics (cyclomatic complexity, maintainability)
+
+    Args:
+        filepath: Path to the file
+        cc_cache: Pre-computed cyclomatic complexity data (from batch_get_complexity)
+        mi_cache: Pre-computed maintainability index data (from batch_get_complexity)
     """
     first_commit = get_file_first_commit(filepath)
     last_before = get_file_last_commit_before(filepath)
     fs_info = get_file_filesystem_info(filepath)
     line_stats = get_file_line_stats(filepath)
-    complexity = get_file_complexity(filepath)
+    complexity = get_file_complexity(filepath, cc_cache, mi_cache)
 
     first_commit_date = first_commit['date'] if first_commit else None
     total_commits = get_file_commit_count(filepath)
@@ -327,9 +398,13 @@ def enrich_file_history(filepath: str) -> dict:
 def enrich_files(filepaths: list[str]) -> dict[str, dict]:
     """Enrich multiple files with history data.
 
+    Uses batch radon calls for much faster complexity analysis.
     Returns a dict mapping filepath to history data.
     """
-    return {fp: enrich_file_history(fp) for fp in filepaths}
+    # Batch get complexity data first (2 subprocess calls instead of 2*N)
+    cc_cache, mi_cache = batch_get_complexity(filepaths)
+
+    return {fp: enrich_file_history(fp, cc_cache, mi_cache) for fp in filepaths}
 
 
 if __name__ == '__main__':

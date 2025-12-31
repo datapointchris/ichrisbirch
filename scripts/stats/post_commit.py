@@ -23,7 +23,7 @@ from pathlib import Path
 from scripts.stats.collect import collect_all_stats
 from scripts.stats.collect import display_stats
 from scripts.stats.collect import save_stats
-from scripts.stats.file_history import enrich_file_history
+from scripts.stats.file_history import enrich_files
 from scripts.stats.sync import push_stats
 
 SESSION_DIR = Path('.tmp')
@@ -133,15 +133,20 @@ def finalize_session(stats: dict) -> Path | None:
 
     session['commit'] = get_commit_info()
 
-    print('Enriching file history...')
+    # Batch enrich file history (uses batch radon calls - much faster)
+    staged_files = session.get('staged_files', [])
+    filepaths = [f.get('path', '') for f in staged_files if f.get('path')]
+    print(f'Enriching file history for {len(filepaths)} files...')
+
+    enriched = enrich_files(filepaths)
+
     files_with_history = {}
-    for file_info in session.get('staged_files', []):
+    for file_info in staged_files:
         filepath = file_info.get('path', '')
-        if filepath:
-            history = enrich_file_history(filepath)
+        if filepath and filepath in enriched:
             files_with_history[filepath] = {
                 **file_info,
-                'git_history': history,
+                'git_history': enriched[filepath],
             }
     session['files'] = files_with_history
 
