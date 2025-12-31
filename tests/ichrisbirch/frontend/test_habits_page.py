@@ -6,30 +6,51 @@ Tests the habits index page, completed habits page, and habit management functio
 import pytest
 from playwright.sync_api import Page
 from playwright.sync_api import expect
+from sqlalchemy import delete
 
+from ichrisbirch import models
+from tests.factories import HabitCategoryFactory
+from tests.factories import HabitFactory
+from tests.factories import clear_factory_session
+from tests.factories import set_factory_session
 from tests.ichrisbirch.frontend.fixtures import FRONTEND_BASE_URL
 from tests.ichrisbirch.frontend.fixtures import login_regular_user
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.utils.database import create_session
+from tests.utils.database import test_settings
 
 
 @pytest.fixture(autouse=True)
-def insert_testing_data():
-    """Insert test data before each test and clean up after."""
-    insert_test_data('habitcategories')  # habits inserted via HabitCategory.habits relationship
+def setup_test_habits(insert_users_for_login):
+    """Create test habits using factories for this test module."""
+    with create_session(test_settings) as session:
+        set_factory_session(session)
+        # Create categories with habits
+        category1 = HabitCategoryFactory(name='Health')
+        category2 = HabitCategoryFactory(name='Productivity')
+        HabitFactory(name='Exercise', category=category1)
+        HabitFactory(name='Meditate', category=category1)
+        HabitFactory(name='Read', category=category2)
+        session.commit()
+        clear_factory_session()
+
     yield
-    delete_test_data('habitscompleted', 'habits', 'habitcategories')  # Order matters: children first due to FK
+
+    # Cleanup: delete in FK order (children first)
+    with create_session(test_settings) as session:
+        session.execute(delete(models.HabitCompleted))
+        session.execute(delete(models.Habit))
+        session.execute(delete(models.HabitCategory))
+        session.commit()
 
 
 @pytest.fixture(autouse=True)
-def login_homepage(page: Page):
+def login_homepage(setup_test_habits, page: Page):
     login_regular_user(page)
     page.goto(f'{FRONTEND_BASE_URL}/habits/', timeout=10000)
 
 
 FAKE_HABIT = {
     'name': 'Test Habit',
-    'category_id': '1',
     'notes': 'Test habit notes',
 }
 
@@ -67,8 +88,10 @@ def test_add_new_habit(page: Page):
     page.goto(f'{FRONTEND_BASE_URL}/habits/manage/')
     page.locator('input[name="name"]').first.fill(FAKE_HABIT['name'])
 
-    if page.locator('select[name="category_id"]').count() > 0:
-        page.locator('select[name="category_id"]').first.select_option(FAKE_HABIT['category_id'])
+    # Select the first available category (ID is dynamic from factory)
+    category_select = page.locator('select[name="category_id"]')
+    if category_select.count() > 0:
+        category_select.first.select_option(index=0)
 
     if page.locator('textarea[name="notes"]').count() > 0:
         page.locator('textarea[name="notes"]').first.fill(FAKE_HABIT['notes'])

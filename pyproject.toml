@@ -91,6 +91,8 @@ dev = [
   "docker>=7.1.0",
   "pre-commit>=4.3.0",
   "factory-boy>=3.3.3",
+  "pytest-json-report>=1.5.0",
+  "radon>=5.1.0",
 ]
 test = [
   # Testing framework and tools
@@ -190,7 +192,7 @@ testpaths = ["tests"]
 
 [tool.refurb]
 enable_all = true
-ignore = ["FURB184"]
+ignore = ["FURB120", "FURB184"]
 
 
 [tool.ruff]

@@ -1,22 +1,42 @@
+from datetime import datetime
+
 import pytest
 from playwright.sync_api import Page
 from playwright.sync_api import expect
+from sqlalchemy import delete
 
+from ichrisbirch import models
+from tests.factories import EventFactory
+from tests.factories import clear_factory_session
+from tests.factories import set_factory_session
 from tests.ichrisbirch.frontend.fixtures import FRONTEND_BASE_URL
 from tests.ichrisbirch.frontend.fixtures import login_regular_user
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.utils.database import create_session
+from tests.utils.database import test_settings
 
 
 @pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('events')
+def setup_test_events(insert_users_for_login):
+    """Create test events using factories for this test module."""
+    with create_session(test_settings) as session:
+        set_factory_session(session)
+        # Create events with specific attending states for testing
+        EventFactory(name='Event 1', attending=True, date=datetime(2022, 10, 1, 10).isoformat())
+        EventFactory(name='Event 2', attending=False, date=datetime(2022, 10, 2, 14).isoformat())
+        EventFactory(name='Event 3', attending=True, date=datetime(2022, 10, 3, 18).isoformat())
+        session.commit()
+        clear_factory_session()
+
     yield
-    delete_test_data('events')
+
+    # Cleanup: delete all events
+    with create_session(test_settings) as session:
+        session.execute(delete(models.Event))
+        session.commit()
 
 
 @pytest.fixture(autouse=True)
-def login_homepage(page: Page):
+def login_homepage(setup_test_events, page: Page):
     """Automatically login with regular user Set the page to the base URL + endpoint.
 
     autouse=True means it does not need to be called in the test function
