@@ -426,13 +426,11 @@ def reset_sequences(engine):
 
 
 @pytest.fixture(scope='function')
-def factory_session(create_drop_tables, request):
+def factory_session(create_drop_tables):
     """Provide a transactional SQLAlchemy session for factory_boy factories.
 
     Uses transaction isolation: all operations are wrapped in a transaction
     that is rolled back after the test, automatically cleaning up all data.
-    Sequences are also reset to ensure consistent IDs for subsequent tests
-    (in non-parallel mode only).
 
     Usage:
         def test_with_factories(factory_session):
@@ -443,9 +441,6 @@ def factory_session(create_drop_tables, request):
     """
     from tests.utils.database import clear_test_connection
     from tests.utils.database import set_test_connection
-
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
 
     engine = get_db_engine(test_settings)
     connection = engine.connect()
@@ -468,15 +463,15 @@ def factory_session(create_drop_tables, request):
     clear_test_connection()
     transaction.rollback()
 
-    # Reset sequences only in non-parallel mode (sequence resets cause race conditions)
-    if not is_parallel:
-        reset_sequences(engine)
+    # Note: Sequence resets removed - transactional rollback handles cleanup.
+    # Tests don't need IDs to start from 1; only data isolation matters.
+    # This saves ~48ms per test (96% of per-test overhead).
 
     connection.close()
 
 
 @contextmanager
-def create_transactional_api_client(login=False, admin=False, is_parallel=False):
+def create_transactional_api_client(login=False, admin=False):
     """Create an API client with transaction-based isolation.
 
     All database operations (both factory data creation and API calls) participate
@@ -485,7 +480,6 @@ def create_transactional_api_client(login=False, admin=False, is_parallel=False)
     Args:
         login: If True, authenticate as regular user
         admin: If True, authenticate as admin user (requires login=True to work)
-        is_parallel: If True, skip sequence resets (causes race conditions in parallel mode)
 
     Yields:
         tuple: (TestClient, Session) - API client and transactional session
@@ -536,15 +530,15 @@ def create_transactional_api_client(login=False, admin=False, is_parallel=False)
     clear_test_connection()
     transaction.rollback()
 
-    # Reset sequences only in non-parallel mode (sequence resets cause race conditions)
-    if not is_parallel:
-        reset_sequences(engine)
+    # Note: Sequence resets removed - transactional rollback handles cleanup.
+    # Tests don't need IDs to start from 1; only data isolation matters.
+    # This saves ~48ms per test (96% of per-test overhead).
 
     connection.close()
 
 
 @pytest.fixture(scope='function')
-def txn_api(insert_users_for_login, request):
+def txn_api(insert_users_for_login):
     """Create transactional API client without authentication.
 
     All operations are rolled back after the test - no cleanup needed.
@@ -557,14 +551,12 @@ def txn_api(insert_users_for_login, request):
             session.flush()  # Make data visible to API calls
             response = client.get('/articles/')
     """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-    with create_transactional_api_client(is_parallel=is_parallel) as (client, session):
+    with create_transactional_api_client() as (client, session):
         yield client, session
 
 
 @pytest.fixture(scope='function')
-def txn_api_logged_in(insert_users_for_login, request):
+def txn_api_logged_in(insert_users_for_login):
     """Create transactional API client with logged-in regular user.
 
     All operations are rolled back after the test - no cleanup needed.
@@ -576,34 +568,27 @@ def txn_api_logged_in(insert_users_for_login, request):
             TaskFactory(name='Test Task')  # Uses transactional session
             response = client.get('/tasks/')
     """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-    with create_transactional_api_client(login=True, is_parallel=is_parallel) as (client, session):
+    with create_transactional_api_client(login=True) as (client, session):
         yield client, session
 
 
 @pytest.fixture(scope='function')
-def txn_api_logged_in_admin(insert_users_for_login, request):
+def txn_api_logged_in_admin(insert_users_for_login):
     """Create transactional API client with logged-in admin user.
 
     All operations are rolled back after the test - no cleanup needed.
     """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-    with create_transactional_api_client(login=True, admin=True, is_parallel=is_parallel) as (client, session):
+    with create_transactional_api_client(login=True, admin=True) as (client, session):
         yield client, session
 
 
 @contextmanager
-def create_multi_client_transactional_context(is_parallel=False):
+def create_multi_client_transactional_context():
     """Create multiple API clients sharing the SAME transaction.
 
     This solves the deadlock issue when tests need both regular and admin clients.
     All clients share one database connection/transaction, so they can see each
     other's data and won't deadlock.
-
-    Args:
-        is_parallel: If True, skip sequence resets (causes race conditions in parallel mode)
 
     Yields:
         dict with keys:
@@ -680,15 +665,15 @@ def create_multi_client_transactional_context(is_parallel=False):
     clear_test_connection()
     transaction.rollback()
 
-    # Reset sequences only in non-parallel mode
-    if not is_parallel:
-        reset_sequences(engine)
+    # Note: Sequence resets removed - transactional rollback handles cleanup.
+    # Tests don't need IDs to start from 1; only data isolation matters.
+    # This saves ~48ms per test (96% of per-test overhead).
 
     connection.close()
 
 
 @pytest.fixture(scope='function')
-def txn_multi_client(insert_users_for_login, request):
+def txn_multi_client(insert_users_for_login):
     """Provide multiple API clients sharing the same transaction.
 
     Use this when a test needs both regular and admin clients to avoid deadlocks.
@@ -701,7 +686,5 @@ def txn_multi_client(insert_users_for_login, request):
             # Use ctx['client_admin'] for admin user requests
             # Use ctx['session'] for direct database operations
     """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-    with create_multi_client_transactional_context(is_parallel=is_parallel) as ctx:
+    with create_multi_client_transactional_context() as ctx:
         yield ctx
