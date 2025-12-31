@@ -8,18 +8,9 @@ from fastapi import status
 
 from ichrisbirch import schemas
 from tests.util import show_status_and_response
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
-
-
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('articles')
-    yield
-    delete_test_data('articles')
-
 
 NEW_OBJ = schemas.ArticleCreate(
     title='How to Use AI Agents',
@@ -31,46 +22,61 @@ NEW_OBJ = schemas.ArticleCreate(
 
 ENDPOINT = '/articles/'
 
-crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, verify_attr='title')
+
+@pytest.fixture
+def article_crud_tester(txn_api_logged_in):
+    """Provide ApiCrudTester with transactional test data."""
+    client, session = txn_api_logged_in
+    insert_test_data_transactional(session, 'articles')
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, verify_attr='title')
+    return client, crud_tester
 
 
-def test_read_one(test_api_logged_in):
-    crud_tests.test_read_one(test_api_logged_in)
+def test_read_one(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    crud_tester.test_read_one(client)
 
 
-def test_read_many(test_api_logged_in):
-    crud_tests.test_read_many(test_api_logged_in)
+def test_read_many(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    crud_tester.test_read_many(client)
 
 
-def test_create(test_api_logged_in):
-    crud_tests.test_create(test_api_logged_in)
+def test_create(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    crud_tester.test_create(client)
 
 
-def test_delete(test_api_logged_in):
-    crud_tests.test_delete(test_api_logged_in)
+def test_delete(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    crud_tester.test_delete(client)
 
 
-def test_lifecycle(test_api_logged_in):
-    crud_tests.test_lifecycle(test_api_logged_in)
+def test_lifecycle(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    crud_tester.test_lifecycle(client)
 
 
-def test_read_current(test_api_logged_in):
-    response = test_api_logged_in.get(f'{ENDPOINT}current/')
+def test_read_current(article_crud_tester):
+    client, _ = article_crud_tester
+    response = client.get(f'{ENDPOINT}current/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json() is not None
 
 
-def test_read_one_url(test_api_logged_in):
-    response = test_api_logged_in.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+def test_read_one_url(article_crud_tester):
+    client, _ = article_crud_tester
+    response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    response = test_api_logged_in.get(f'{ENDPOINT}url/', params={'url': NEW_OBJ.url})
+    response = client.get(f'{ENDPOINT}url/', params={'url': NEW_OBJ.url})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     article = response.json()
     assert article is not None
     assert article['title'] == NEW_OBJ.title
 
 
-def test_search(test_api_logged_in):
+def test_search(article_crud_tester):
+    client, _ = article_crud_tester
     searchable_article = schemas.ArticleCreate(
         title='Searchable Article',
         url='http://search-test.com',
@@ -78,9 +84,9 @@ def test_search(test_api_logged_in):
         summary='This article should be found by search',
         save_date=datetime.now(),
     )
-    response = test_api_logged_in.post(ENDPOINT, json=searchable_article.model_dump(mode='json'))
+    response = client.post(ENDPOINT, json=searchable_article.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    response = test_api_logged_in.get(f'{ENDPOINT}search/', params={'q': 'test-search'})
+    response = client.get(f'{ENDPOINT}search/', params={'q': 'test-search'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     articles = response.json()
     assert len(articles) > 0
@@ -90,7 +96,8 @@ def test_search(test_api_logged_in):
 @patch('ichrisbirch.api.endpoints.articles.httpx.get')
 @patch('youtube_transcript_api.YouTubeTranscriptApi')
 @patch('youtube_transcript_api.formatters.TextFormatter')
-def test_summarize(mock_text_formatter, mock_yt_api, mock_httpx_get, test_api_logged_in):
+def test_summarize(mock_text_formatter, mock_yt_api, mock_httpx_get, article_crud_tester):
+    client, _ = article_crud_tester
     # Mock httpx.get response
     mock_response = MagicMock()
     mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>Test content</p></body></html>'
@@ -111,7 +118,7 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_httpx_get, test_api_lo
         mock_assistant.generate.return_value = json.dumps({'summary': expected_summary, 'tags': expected_tags})
 
         with patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant):
-            response = test_api_logged_in.post(f'{ENDPOINT}summarize/', json={'url': 'https://ichrisbirch.com/test-article'})
+            response = client.post(f'{ENDPOINT}summarize/', json={'url': 'https://ichrisbirch.com/test-article'})
             assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
             data = response.json()
             assert data['title'] == 'Test Article'
@@ -121,7 +128,8 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_httpx_get, test_api_lo
 
 @patch('ichrisbirch.api.endpoints.articles.httpx.get')
 @patch('youtube_transcript_api.YouTubeTranscriptApi.fetch')
-def test_insights(mock_youtube_transcript_fetch, mock_httpx_get, test_api_logged_in):
+def test_insights(mock_youtube_transcript_fetch, mock_httpx_get, article_crud_tester):
+    client, _ = article_crud_tester
     # Mock httpx.get response
     mock_response = MagicMock()
     mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>Test content</p></body></html>'
@@ -138,41 +146,46 @@ def test_insights(mock_youtube_transcript_fetch, mock_httpx_get, test_api_logged
         mock_assistant_class.return_value = mock_assistant
 
         with patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant):
-            response = test_api_logged_in.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
+            response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
             assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
             content = response.content.decode('utf-8')
             assert '<h1>Test Article</h1>' in content
             assert '<h2>Insights</h2>' in content
 
 
-def test_archive(test_api_logged_in):
-    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
-    response = test_api_logged_in.patch(f'{ENDPOINT}{first_id}/', json={'is_archived': True})
+def test_archive(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_archived': True})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
-def test_unarchive(test_api_logged_in):
-    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
-    response = test_api_logged_in.patch(f'{ENDPOINT}{first_id}/', json={'is_archived': False})
+def test_unarchive(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_archived': False})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
-def test_favorite(test_api_logged_in):
-    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
-    response = test_api_logged_in.patch(f'{ENDPOINT}{first_id}/', json={'is_favorite': True})
+def test_favorite(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_favorite': True})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
-def test_unfavorite(test_api_logged_in):
-    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
-    response = test_api_logged_in.patch(f'{ENDPOINT}{first_id}/', json={'is_favorite': False})
+def test_unfavorite(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_favorite': False})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
-def test_read(test_api_logged_in):
-    first_id = crud_tests.item_id_by_position(test_api_logged_in, position=1)
-    article = test_api_logged_in.get(f'{ENDPOINT}{first_id}/').json()
-    response = test_api_logged_in.patch(
+def test_read(article_crud_tester):
+    client, crud_tester = article_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+    article = client.get(f'{ENDPOINT}{first_id}/').json()
+    response = client.patch(
         f'{ENDPOINT}{first_id}/',
         json={
             'is_current': False,

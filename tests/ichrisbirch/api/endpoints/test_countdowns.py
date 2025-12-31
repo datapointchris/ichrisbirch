@@ -3,18 +3,9 @@ from datetime import date
 import pytest
 
 from ichrisbirch import schemas
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
-
-
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('countdowns')
-    yield
-    delete_test_data('countdowns')
-
 
 ENDPOINT = '/countdowns/'
 NEW_OBJ = schemas.CountdownCreate(
@@ -24,24 +15,35 @@ NEW_OBJ = schemas.CountdownCreate(
 )
 
 
-crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
+@pytest.fixture
+def countdown_crud_tester(txn_api_logged_in):
+    """Provide ApiCrudTester with transactional test data."""
+    client, session = txn_api_logged_in
+    insert_test_data_transactional(session, 'countdowns')
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
+    return client, crud_tester
 
 
-def test_read_one(test_api_logged_in):
-    crud_tests.test_read_one(test_api_logged_in)
+def test_read_one(countdown_crud_tester):
+    client, crud_tester = countdown_crud_tester
+    crud_tester.test_read_one(client)
 
 
-def test_read_many(test_api_logged_in):
-    crud_tests.test_read_many(test_api_logged_in)
+def test_read_many(countdown_crud_tester):
+    client, crud_tester = countdown_crud_tester
+    crud_tester.test_read_many(client)
 
 
-def test_create(test_api_logged_in):
-    crud_tests.test_create(test_api_logged_in)
+def test_create(countdown_crud_tester):
+    client, crud_tester = countdown_crud_tester
+    crud_tester.test_create(client)
 
 
-def test_delete(test_api_logged_in):
-    crud_tests.test_delete(test_api_logged_in)
+def test_delete(countdown_crud_tester):
+    client, crud_tester = countdown_crud_tester
+    crud_tester.test_delete(client)
 
 
-def test_lifecycle(test_api_logged_in):
-    crud_tests.test_lifecycle(test_api_logged_in)
+def test_lifecycle(countdown_crud_tester):
+    client, crud_tester = countdown_crud_tester
+    crud_tester.test_lifecycle(client)

@@ -3,18 +3,9 @@ from datetime import date
 import pytest
 
 from ichrisbirch import schemas
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
-
-
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('money_wasted')
-    yield
-    delete_test_data('money_wasted')
-
 
 NEW_OBJ = schemas.MoneyWastedCreate(
     item='Money Wasted on Junk Food',
@@ -25,24 +16,35 @@ NEW_OBJ = schemas.MoneyWastedCreate(
 ENDPOINT = '/money-wasted/'
 
 
-crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, verify_attr='item')
+@pytest.fixture
+def money_wasted_crud_tester(txn_api_logged_in):
+    """Provide ApiCrudTester with transactional test data."""
+    client, session = txn_api_logged_in
+    insert_test_data_transactional(session, 'money_wasted')
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, verify_attr='item')
+    return client, crud_tester
 
 
-def test_read_one(test_api_logged_in):
-    crud_tests.test_read_one(test_api_logged_in)
+def test_read_one(money_wasted_crud_tester):
+    client, crud_tester = money_wasted_crud_tester
+    crud_tester.test_read_one(client)
 
 
-def test_read_many(test_api_logged_in):
-    crud_tests.test_read_many(test_api_logged_in)
+def test_read_many(money_wasted_crud_tester):
+    client, crud_tester = money_wasted_crud_tester
+    crud_tester.test_read_many(client)
 
 
-def test_create(test_api_logged_in):
-    crud_tests.test_create(test_api_logged_in)
+def test_create(money_wasted_crud_tester):
+    client, crud_tester = money_wasted_crud_tester
+    crud_tester.test_create(client)
 
 
-def test_delete(test_api_logged_in):
-    crud_tests.test_delete(test_api_logged_in)
+def test_delete(money_wasted_crud_tester):
+    client, crud_tester = money_wasted_crud_tester
+    crud_tester.test_delete(client)
 
 
-def test_lifecycle(test_api_logged_in):
-    crud_tests.test_lifecycle(test_api_logged_in)
+def test_lifecycle(money_wasted_crud_tester):
+    client, crud_tester = money_wasted_crud_tester
+    crud_tester.test_lifecycle(client)

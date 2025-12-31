@@ -282,6 +282,33 @@ def insert_test_data(*datasets):
         logger.info(f'inserted testing dataset: {d}')
 
 
+def insert_test_data_transactional(session: Session, *datasets):
+    """Insert test data into a transactional session (no commit).
+
+    Use this with transactional fixtures like txn_api_logged_in:
+
+        def test_something(txn_api_logged_in):
+            client, session = txn_api_logged_in
+            insert_test_data_transactional(session, 'tasks')
+            session.flush()  # Make data visible to API calls
+            response = client.get('/tasks/')
+
+    Unlike insert_test_data(), this:
+    - Uses the provided session instead of creating a new one
+    - Does NOT commit (the test's transaction will be rolled back)
+    - Calls flush() to make data visible within the transaction
+    """
+    test_data = get_test_data()
+    selected_datasets = [deepcopy(test_data[key]['data']) for key in datasets]
+
+    for data in selected_datasets:
+        session.add_all(data)
+    session.flush()  # Make visible within transaction without committing
+
+    for d in datasets:
+        logger.info(f'inserted testing dataset (transactional): {d}')
+
+
 def delete_test_data(*datasets):
     """Delete test data except login users."""
     test_data = get_test_data()

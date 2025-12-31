@@ -6,17 +6,17 @@ from fastapi import status
 
 from ichrisbirch import schemas
 from tests.util import show_status_and_response
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
 
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('habitcategories')  # habits and completed_habits inserted via relationships
-    yield
-    delete_test_data('habitscompleted', 'habits', 'habitcategories')  # Order matters: children first due to FK
+@pytest.fixture
+def habit_test_data(txn_api_logged_in):
+    """Provide transactional test data for habit tests."""
+    client, session = txn_api_logged_in
+    insert_test_data_transactional(session, 'habitcategories')  # habits and completed_habits inserted via relationships
+    return client
 
 
 def get_first_category_id(test_api_client):
@@ -76,58 +76,67 @@ def create_completed_habit_crud_tester(category_id: int):
 class TestHabits:
     ENDPOINT = '/habits/'
 
-    def test_read_one(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_read_one(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_habit_crud_tester(category_id)
-        crud_tester.test_read_one(test_api_logged_in)
+        crud_tester.test_read_one(client)
 
-    def test_read_many(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_read_many(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_habit_crud_tester(category_id)
-        crud_tester.test_read_many(test_api_logged_in)
+        crud_tester.test_read_many(client)
 
-    def test_create(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_create(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_habit_crud_tester(category_id)
-        crud_tester.test_create(test_api_logged_in)
+        crud_tester.test_create(client)
 
-    def test_delete(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_delete(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_habit_crud_tester(category_id)
-        crud_tester.test_delete(test_api_logged_in)
+        crud_tester.test_delete(client)
 
-    def test_lifecycle(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_lifecycle(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_habit_crud_tester(category_id)
-        crud_tester.test_lifecycle(test_api_logged_in)
+        crud_tester.test_lifecycle(client)
 
-    def test_read_many_habits_current(self, test_api_logged_in):
+    def test_read_many_habits_current(self, habit_test_data):
+        client = habit_test_data
         params = {'current': True}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 2
 
-    def test_read_many_habits_not_current(self, test_api_logged_in):
+    def test_read_many_habits_not_current(self, habit_test_data):
+        client = habit_test_data
         params = {'current': False}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
 
-    def test_hibernate_habit(self, test_api_logged_in):
+    def test_hibernate_habit(self, habit_test_data):
+        client = habit_test_data
         # Find a current habit to hibernate
-        habits = test_api_logged_in.get(self.ENDPOINT, params={'current': True})
+        habits = client.get(self.ENDPOINT, params={'current': True})
         current_habit = habits.json()[0]
         habit_id = current_habit['id']
-        habit = test_api_logged_in.patch(f'{self.ENDPOINT}{habit_id}/', json={'is_current': False})
+        habit = client.patch(f'{self.ENDPOINT}{habit_id}/', json={'is_current': False})
         assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
         assert habit.json()['is_current'] is False
 
-    def test_revive_habit(self, test_api_logged_in):
+    def test_revive_habit(self, habit_test_data):
+        client = habit_test_data
         # Find a non-current habit to revive
-        habits = test_api_logged_in.get(self.ENDPOINT, params={'current': False})
+        habits = client.get(self.ENDPOINT, params={'current': False})
         non_current_habit = habits.json()[0]
         habit_id = non_current_habit['id']
-        habit = test_api_logged_in.patch(f'{self.ENDPOINT}{habit_id}/', json={'is_current': True})
+        habit = client.patch(f'{self.ENDPOINT}{habit_id}/', json={'is_current': True})
         assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
         assert habit.json()['is_current'] is True
 
@@ -140,40 +149,48 @@ class TestHabitCategories:
     )
     crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
-    def test_read_one(self, test_api_logged_in):
-        self.crud_tests.test_read_one(test_api_logged_in)
+    def test_read_one(self, habit_test_data):
+        client = habit_test_data
+        self.crud_tests.test_read_one(client)
 
-    def test_read_many(self, test_api_logged_in):
-        self.crud_tests.test_read_many(test_api_logged_in)
+    def test_read_many(self, habit_test_data):
+        client = habit_test_data
+        self.crud_tests.test_read_many(client)
 
-    def test_create(self, test_api_logged_in):
-        self.crud_tests.test_create(test_api_logged_in)
+    def test_create(self, habit_test_data):
+        client = habit_test_data
+        self.crud_tests.test_create(client)
 
-    def test_delete(self, test_api_logged_in):
-        self.crud_tests.test_delete(test_api_logged_in)
+    def test_delete(self, habit_test_data):
+        client = habit_test_data
+        self.crud_tests.test_delete(client)
 
-    def test_lifecycle(self, test_api_logged_in):
-        self.crud_tests.test_lifecycle(test_api_logged_in)
+    def test_lifecycle(self, habit_test_data):
+        client = habit_test_data
+        self.crud_tests.test_lifecycle(client)
 
-    def test_read_many_categories_current(self, test_api_logged_in):
+    def test_read_many_categories_current(self, habit_test_data):
+        client = habit_test_data
         params = {'current': True}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 2
 
-    def test_read_many_categories_not_current(self, test_api_logged_in):
+    def test_read_many_categories_not_current(self, habit_test_data):
+        client = habit_test_data
         params = {'current': False}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
 
-    def test_assign_habit_to_new_category(self, test_api_logged_in):
-        created = test_api_logged_in.post(self.ENDPOINT, json=self.NEW_OBJ.model_dump())
+    def test_assign_habit_to_new_category(self, habit_test_data):
+        client = habit_test_data
+        created = client.post(self.ENDPOINT, json=self.NEW_OBJ.model_dump())
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         assert created.json()['name'] == self.NEW_OBJ.name
 
         # Test category was created
-        all_obj = test_api_logged_in.get(self.ENDPOINT)
+        all_obj = client.get(self.ENDPOINT)
         assert all_obj.status_code == status.HTTP_200_OK, show_status_and_response(all_obj)
         assert len(all_obj.json()) == 4
 
@@ -181,29 +198,31 @@ class TestHabitCategories:
         new_category_id = created.json()['id']
         modified = self.NEW_OBJ.model_dump().copy()
         modified.update(category_id=new_category_id)
-        new_habit = test_api_logged_in.post(TestHabits.ENDPOINT, json=modified)
+        new_habit = client.post(TestHabits.ENDPOINT, json=modified)
         assert new_habit.status_code == status.HTTP_201_CREATED, show_status_and_response(new_habit)
         assert new_habit.json()['category_id'] == new_category_id
 
-    def test_hibernate_category(self, test_api_logged_in):
+    def test_hibernate_category(self, habit_test_data):
+        client = habit_test_data
         # Find a current category to hibernate
-        current_cat = get_current_category(test_api_logged_in)
+        current_cat = get_current_category(client)
         category_id = current_cat['id']
         endpoint = f'{self.ENDPOINT}{category_id}/'
-        category = test_api_logged_in.patch(endpoint, json={'is_current': False})
+        category = client.patch(endpoint, json={'is_current': False})
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         assert category.json()['is_current'] is False
 
-    def test_revive_category(self, test_api_logged_in):
+    def test_revive_category(self, habit_test_data):
+        client = habit_test_data
         # Find a non-current category to revive
-        non_current_cat = get_non_current_category(test_api_logged_in)
+        non_current_cat = get_non_current_category(client)
         category_id = non_current_cat['id']
         endpoint = f'{self.ENDPOINT}{category_id}/'
-        category = test_api_logged_in.patch(endpoint, json={'is_current': True})
+        category = client.patch(endpoint, json={'is_current': True})
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         assert category.json()['is_current'] is True
 
-    def test_delete_category_in_use_gives_error(self, test_api_logged_in):
+    def test_delete_category_in_use_gives_error(self, habit_test_data):
         """Test that a category in use cannot be deleted.
 
         TypeError:
@@ -213,14 +232,15 @@ class TestHabitCategories:
         -> This error will be raised, although in the actual API the NotNullConstraint produces
         an IntegrityError which is caught and a 409 response is returned.
         """
+        client = habit_test_data
         # Find a category that has habits assigned to it
-        cat_with_habits = get_category_with_habits(test_api_logged_in)
+        cat_with_habits = get_category_with_habits(client)
         category_id = cat_with_habits['id']
         endpoint = f'{self.ENDPOINT}{category_id}/'
-        category = test_api_logged_in.get(endpoint)
+        category = client.get(endpoint)
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         with pytest.raises(sqlalchemy.exc.PendingRollbackError):
-            test_api_logged_in.delete(endpoint)
+            client.delete(endpoint)
 
 
 class TestCompletedHabits:
@@ -229,41 +249,48 @@ class TestCompletedHabits:
     FIRST_COMPLETED_HABIT = 'Completed Habit 1 Category 3'  # 2024-01-01 (earliest)
     LAST_COMPLETED_HABIT = 'Completed Habit 3 Category 2'  # 2024-01-03 (latest)
 
-    def test_read_one(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_read_one(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_completed_habit_crud_tester(category_id)
-        crud_tester.test_read_one(test_api_logged_in)
+        crud_tester.test_read_one(client)
 
-    def test_read_many(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_read_many(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_completed_habit_crud_tester(category_id)
-        crud_tester.test_read_many(test_api_logged_in)
+        crud_tester.test_read_many(client)
 
-    def test_create(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_create(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_completed_habit_crud_tester(category_id)
-        crud_tester.test_create(test_api_logged_in)
+        crud_tester.test_create(client)
 
-    def test_delete(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_delete(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_completed_habit_crud_tester(category_id)
-        crud_tester.test_delete(test_api_logged_in)
+        crud_tester.test_delete(client)
 
-    def test_lifecycle(self, test_api_logged_in):
-        category_id = get_first_category_id(test_api_logged_in)
+    def test_lifecycle(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
         crud_tester = create_completed_habit_crud_tester(category_id)
-        crud_tester.test_lifecycle(test_api_logged_in)
+        crud_tester.test_lifecycle(client)
 
-    def test_read_many_completed_habits_first(self, test_api_logged_in):
+    def test_read_many_completed_habits_first(self, habit_test_data):
+        client = habit_test_data
         params = {'first': True}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
         assert response.json()[0]['name'] == self.FIRST_COMPLETED_HABIT
 
-    def test_read_many_completed_habits_last(self, test_api_logged_in):
+    def test_read_many_completed_habits_last(self, habit_test_data):
+        client = habit_test_data
         params = {'last': True}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 1
         assert response.json()[0]['name'] == self.LAST_COMPLETED_HABIT
@@ -276,8 +303,10 @@ class TestCompletedHabits:
             ('2024-01-01', '2024-01-02', 2),
         ],
     )
-    def test_read_many_completed_habits_between_dates(self, test_api_logged_in, start_date, end_date, expected_count):
+    def test_read_many_completed_habits_between_dates(self, txn_api_logged_in, start_date, end_date, expected_count):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'habitcategories')
         params = {'start_date': start_date, 'end_date': end_date}
-        response = test_api_logged_in.get(self.ENDPOINT, params=params)
+        response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == expected_count

@@ -257,6 +257,38 @@ def test_api_logged_in_admin_function():
         yield client
 
 
+SEQUENCES_TO_RESET = [
+    'public.articles_id_seq',
+    'public.autotasks_id_seq',
+    'public.books_id_seq',
+    'box_packing.boxes_id_seq',
+    'box_packing.items_id_seq',
+    'chat.chats_id_seq',
+    'chat.messages_id_seq',
+    'public.countdowns_id_seq',
+    'public.events_id_seq',
+    'habits.categories_id_seq',
+    'habits.completed_id_seq',
+    'habits.habits_id_seq',
+    'public.money_wasted_id_seq',
+    'public.tasks_id_seq',
+]
+
+
+def reset_sequences(engine):
+    """Reset all sequences to 1 for consistent test isolation.
+
+    Note: users_id_seq is NOT reset because login users (IDs 1-3) are session-scoped.
+    """
+    from sqlalchemy import text
+
+    with engine.connect() as reset_conn:
+        for seq in SEQUENCES_TO_RESET:
+            with contextlib.suppress(Exception):
+                reset_conn.execute(text(f'ALTER SEQUENCE {seq} RESTART WITH 1'))
+        reset_conn.commit()
+
+
 @pytest.fixture(scope='function')
 def factory_session(create_drop_tables):
     """Provide a transactional SQLAlchemy session for factory_boy factories.
@@ -272,8 +304,6 @@ def factory_session(create_drop_tables):
             assert task.id is not None
             # Data is automatically cleaned up after test via rollback
     """
-    from sqlalchemy import text
-
     from tests.utils.database import clear_test_connection
     from tests.utils.database import set_test_connection
 
@@ -298,30 +328,113 @@ def factory_session(create_drop_tables):
     clear_test_connection()
     transaction.rollback()
 
-    # Reset sequences to 1 since rollback doesn't affect sequences
-    # This ensures subsequent tests using BASE_DATA get consistent IDs
-    # Note: sequence names are {schema}.{table}_id_seq format
-    # Note: users_id_seq is NOT reset because login users (IDs 1-3) are session-scoped
-    sequences_to_reset = [
-        'public.articles_id_seq',
-        'public.autotasks_id_seq',
-        'public.books_id_seq',
-        'box_packing.boxes_id_seq',
-        'box_packing.items_id_seq',
-        'chat.chats_id_seq',
-        'chat.messages_id_seq',
-        'public.countdowns_id_seq',
-        'public.events_id_seq',
-        'habits.categories_id_seq',
-        'habits.completed_id_seq',
-        'habits.habits_id_seq',
-        'public.money_wasted_id_seq',
-        'public.tasks_id_seq',
-    ]
-    with engine.connect() as reset_conn:
-        for seq in sequences_to_reset:
-            with contextlib.suppress(Exception):
-                reset_conn.execute(text(f'ALTER SEQUENCE {seq} RESTART WITH 1'))
-        reset_conn.commit()
+    # Reset sequences since rollback doesn't affect sequences
+    reset_sequences(engine)
 
     connection.close()
+
+
+@contextmanager
+def create_transactional_api_client(login=False, admin=False):
+    """Create an API client with transaction-based isolation.
+
+    All database operations (both factory data creation and API calls) participate
+    in a single transaction that is rolled back after the test completes.
+
+    Args:
+        login: If True, authenticate as regular user
+        admin: If True, authenticate as admin user (requires login=True to work)
+
+    Yields:
+        tuple: (TestClient, Session) - API client and transactional session
+    """
+    from tests.utils.database import clear_test_connection
+    from tests.utils.database import get_transactional_session
+    from tests.utils.database import set_test_connection
+
+    engine = get_db_engine(test_settings)
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    # Configure the test connection for transactional isolation
+    set_test_connection(connection)
+
+    # Create session bound to this connection
+    session = Session(bind=connection)
+
+    # Configure factories to use this session
+    set_factory_session(session)
+
+    # Create API with session pointing to this connection
+    api = create_api(settings=test_settings)
+    api.dependency_overrides[get_sqlalchemy_session] = get_transactional_session
+    api.dependency_overrides[get_settings] = get_test_runner_settings
+
+    if login:
+        email = 'testloginadmin@testadmin.com' if admin else 'testloginregular@testuser.com'
+        user = get_test_user(email)
+        api.dependency_overrides[auth.get_current_user] = lambda: user
+        api.dependency_overrides[auth.get_current_user_or_none] = lambda: user
+        if admin:
+            api.dependency_overrides[auth.get_admin_user] = lambda: user
+        logger.info(f'Transactional API: Logged in {"admin" if admin else "regular"} user: {user.email}')
+
+    client = TestClient(api)
+
+    yield client, session
+
+    # Cleanup: rollback transaction (undoes all changes)
+    clear_factory_session()
+    session.close()
+    clear_test_connection()
+    transaction.rollback()
+
+    # Reset sequences since rollback doesn't affect sequences
+    reset_sequences(engine)
+
+    connection.close()
+
+
+@pytest.fixture(scope='function')
+def txn_api(create_drop_tables):
+    """Create transactional API client without authentication.
+
+    All operations are rolled back after the test - no cleanup needed.
+
+    Usage:
+        def test_something(txn_api):
+            client, session = txn_api
+            # Insert data directly or use factories
+            session.add(models.Article(title='Test'))
+            session.flush()  # Make data visible to API calls
+            response = client.get('/articles/')
+    """
+    with create_transactional_api_client() as (client, session):
+        yield client, session
+
+
+@pytest.fixture(scope='function')
+def txn_api_logged_in(create_drop_tables):
+    """Create transactional API client with logged-in regular user.
+
+    All operations are rolled back after the test - no cleanup needed.
+
+    Usage:
+        def test_something(txn_api_logged_in):
+            client, session = txn_api_logged_in
+            from tests.factories import TaskFactory
+            TaskFactory(name='Test Task')  # Uses transactional session
+            response = client.get('/tasks/')
+    """
+    with create_transactional_api_client(login=True) as (client, session):
+        yield client, session
+
+
+@pytest.fixture(scope='function')
+def txn_api_logged_in_admin(create_drop_tables):
+    """Create transactional API client with logged-in admin user.
+
+    All operations are rolled back after the test - no cleanup needed.
+    """
+    with create_transactional_api_client(login=True, admin=True) as (client, session):
+        yield client, session
