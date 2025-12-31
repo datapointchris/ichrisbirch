@@ -80,6 +80,29 @@ def get_cached_api_admin():
     return _cached_api_admin
 
 
+def prewarm_caches():
+    """Pre-warm API apps and user cache at session start.
+
+    This avoids the first-test latency (~230ms per API creation, ~104ms for user lookups).
+    Called from insert_users_for_login after tables and users are ready.
+    """
+    import time
+
+    start = time.perf_counter()
+
+    # Pre-warm API apps (~230ms each, but done once)
+    get_cached_api()
+    get_cached_api_regular()
+    get_cached_api_admin()
+
+    # Pre-warm user cache (~52ms each, but done once)
+    get_test_user('testloginregular@testuser.com')
+    get_test_user('testloginadmin@testadmin.com')
+
+    elapsed = (time.perf_counter() - start) * 1000
+    logger.info(f'Pre-warmed caches in {elapsed:.1f}ms')
+
+
 TEST_LOCK_FILE = TEST_LOCK_DIR / 'setup.lock'
 TEST_READY_FILE = TEST_LOCK_DIR / 'ready'
 
@@ -214,8 +237,10 @@ def insert_users_for_login(create_drop_tables, request):
                     for user in session.query(models.User).all():
                         logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
                 users_ready.touch()
+                prewarm_caches()  # Pre-warm after inserting users
             else:
                 logger.info(f'Worker {worker_id}: Login users already inserted by another worker')
+                prewarm_caches()  # Each worker still needs its own cached APIs
     else:
         with create_session(test_settings) as session:
             for user_data in get_test_login_users():
@@ -226,6 +251,9 @@ def insert_users_for_login(create_drop_tables, request):
             for user in session.query(models.User).all():
                 logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
         (TEST_LOCK_DIR / 'users_ready').unlink(missing_ok=True)
+
+    # Pre-warm caches after users are ready (avoids first-test latency)
+    prewarm_caches()
     yield
 
 

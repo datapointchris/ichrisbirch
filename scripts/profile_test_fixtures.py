@@ -231,6 +231,114 @@ def count_tables_and_sequences():
     return table_count, sequence_count
 
 
+def profile_user_lookup():
+    """Profile user lookup operations (get_test_user)."""
+    print('\n' + '=' * 60)
+    print('USER LOOKUP PROFILING')
+    print('=' * 60)
+
+    from tests.utils.database import get_test_user
+
+    engine = get_db_engine(test_settings)
+    Base.metadata.create_all(engine)
+
+    # Insert login users if they don't exist
+    from sqlalchemy import select
+
+    from ichrisbirch import models
+    from tests.utils.database import create_session
+    from tests.utils.database import get_test_login_users
+
+    with create_session(test_settings) as session:
+        for user_data in get_test_login_users():
+            existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
+            if not existing:
+                session.add(models.User(**user_data))
+        session.commit()
+
+    def lookup_regular_user():
+        return get_test_user('testloginregular@testuser.com')
+
+    def lookup_admin_user():
+        return get_test_user('testloginadmin@testadmin.com')
+
+    # Profile uncached lookups
+    regular_result = time_operation(lookup_regular_user, iterations=20)
+    admin_result = time_operation(lookup_admin_user, iterations=20)
+
+    print(f'\nUncached user lookup (regular): {regular_result}')
+    print(f'Uncached user lookup (admin): {admin_result}')
+
+    # Simulate cached lookup
+    cached_users: dict = {}
+
+    def cached_lookup_regular():
+        if 'regular' not in cached_users:
+            cached_users['regular'] = get_test_user('testloginregular@testuser.com')
+        return cached_users['regular']
+
+    def cached_lookup_admin():
+        if 'admin' not in cached_users:
+            cached_users['admin'] = get_test_user('testloginadmin@testadmin.com')
+        return cached_users['admin']
+
+    # Warm the cache
+    cached_lookup_regular()
+    cached_lookup_admin()
+
+    cached_regular_result = time_operation(cached_lookup_regular, iterations=20)
+    cached_admin_result = time_operation(cached_lookup_admin, iterations=20)
+
+    print(f'\nCached user lookup (regular): {cached_regular_result}')
+    print(f'Cached user lookup (admin): {cached_admin_result}')
+
+    print('\nPotential savings per test (2 lookups):')
+    uncached_per_test = regular_result.mean + admin_result.mean
+    cached_per_test = cached_regular_result.mean + cached_admin_result.mean
+    savings = uncached_per_test - cached_per_test
+    print(f'  Uncached: {uncached_per_test * 1000:.2f}ms')
+    print(f'  Cached: {cached_per_test * 1000:.2f}ms')
+    print(f'  Savings: {savings * 1000:.2f}ms ({savings / uncached_per_test * 100:.1f}%)')
+
+    return regular_result, admin_result, cached_regular_result, cached_admin_result
+
+
+def profile_api_creation():
+    """Profile API app creation overhead."""
+    print('\n' + '=' * 60)
+    print('API APP CREATION PROFILING')
+    print('=' * 60)
+
+    from ichrisbirch.api.main import create_api
+
+    def create_fresh_api():
+        return create_api(settings=test_settings)
+
+    # Profile fresh API creation
+    fresh_result = time_operation(create_fresh_api, iterations=5)
+    print(f'\nFresh API creation: {fresh_result}')
+
+    # Simulate cached API access
+    cached_api = None
+
+    def get_cached_api_simulated():
+        nonlocal cached_api
+        if cached_api is None:
+            cached_api = create_api(settings=test_settings)
+        return cached_api
+
+    # Warm the cache
+    get_cached_api_simulated()
+
+    cached_result = time_operation(get_cached_api_simulated, iterations=20)
+    print(f'Cached API access: {cached_result}')
+
+    savings = fresh_result.mean - cached_result.mean
+    print(f'\nSavings per test: {savings * 1000:.2f}ms')
+
+    return fresh_result, cached_result
+
+
 def estimate_optimization_impact():
     """Estimate the impact of various optimizations."""
     print('\n' + '=' * 60)
@@ -301,6 +409,8 @@ def main():
         profile_table_operations()
         profile_sequence_resets()
         profile_connection_overhead()
+        profile_user_lookup()
+        profile_api_creation()
         estimate_optimization_impact()
     except Exception as e:
         print(f'\nError: {e}')
