@@ -1,20 +1,12 @@
 import pytest
 
 from ichrisbirch import schemas
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.factories import ChatFactory
 
 from ..crud_test import ApiCrudTester
 
-
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('chats')
-    yield
-    delete_test_data('chatmessages', 'chats')  # Order matters: messages first due to FK
-
-
 ENDPOINT = '/chat/chats/'
+NUM_TEST_CHATS = 3
 NEW_OBJ = schemas.ChatCreate(
     name='Chat 4 Computer with notes priority 3',
     category='AWS',
@@ -34,24 +26,36 @@ NEW_OBJ = schemas.ChatCreate(
     ],
 )
 
-crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
+
+@pytest.fixture
+def chat_crud_tester(txn_api_logged_in):
+    """Provide ApiCrudTester with transactional test data using factories."""
+    client, session = txn_api_logged_in
+    ChatFactory.create_batch(NUM_TEST_CHATS)
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, expected_length=NUM_TEST_CHATS)
+    return client, crud_tester
 
 
-def test_read_one(test_api_logged_in):
-    crud_tests.test_read_one(test_api_logged_in)
+def test_read_one(chat_crud_tester):
+    client, crud_tester = chat_crud_tester
+    crud_tester.test_read_one(client)
 
 
-def test_read_many(test_api_logged_in):
-    crud_tests.test_read_many(test_api_logged_in)
+def test_read_many(chat_crud_tester):
+    client, crud_tester = chat_crud_tester
+    crud_tester.test_read_many(client)
 
 
-def test_create(test_api_logged_in):
-    crud_tests.test_create(test_api_logged_in)
+def test_create(chat_crud_tester):
+    client, crud_tester = chat_crud_tester
+    crud_tester.test_create(client)
 
 
-def test_delete(test_api_logged_in):
-    crud_tests.test_delete(test_api_logged_in)
+def test_delete(chat_crud_tester):
+    client, crud_tester = chat_crud_tester
+    crud_tester.test_delete(client)
 
 
-def test_lifecycle(test_api_logged_in):
-    crud_tests.test_lifecycle(test_api_logged_in)
+def test_lifecycle(chat_crud_tester):
+    client, crud_tester = chat_crud_tester
+    crud_tester.test_lifecycle(client)

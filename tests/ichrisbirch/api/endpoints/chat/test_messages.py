@@ -1,47 +1,58 @@
 import pytest
 
 from ichrisbirch import schemas
-from tests.test_data.chats import BASE_DATA
-from tests.utils.database import delete_test_data
-from tests.utils.database import insert_test_data
+from tests.factories import ChatFactory
+from tests.factories import ChatMessageFactory
 
 from ..crud_test import ApiCrudTester
 
-
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    insert_test_data('chats')
-    yield
-    delete_test_data('chatmessages', 'chats')  # Order matters: messages first due to FK
-
-
 ENDPOINT = '/chat/messages/'
-NEW_OBJ = schemas.ChatMessageCreate(
-    chat_id=1,
-    role='user',
-    content='Why am I not independently wealthy yet?',
-)
-
-NUM_TEST_CHAT_MESSAGES = sum([len(chat.messages) for chat in BASE_DATA])
-
-crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, verify_attr='content', expected_length=NUM_TEST_CHAT_MESSAGES)
+NUM_TEST_CHATS = 3
+MESSAGES_PER_CHAT = 2
+NUM_TEST_MESSAGES = NUM_TEST_CHATS * MESSAGES_PER_CHAT
 
 
-def test_read_one(test_api_logged_in):
-    crud_tests.test_read_one(test_api_logged_in)
+@pytest.fixture
+def message_crud_tester(txn_api_logged_in):
+    """Provide ApiCrudTester with transactional test data using factories."""
+    client, session = txn_api_logged_in
+
+    # Create chats with messages using factories
+    chats = ChatFactory.create_batch(NUM_TEST_CHATS)
+    for chat in chats:
+        ChatMessageFactory.create_batch(MESSAGES_PER_CHAT, chat=chat)
+
+    # Use first chat for new message creation
+    first_chat = chats[0]
+    new_obj = schemas.ChatMessageCreate(
+        chat_id=first_chat.id,
+        role='user',
+        content='Why am I not independently wealthy yet?',
+    )
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=new_obj, verify_attr='content', expected_length=NUM_TEST_MESSAGES)
+    return client, crud_tester
 
 
-def test_read_many(test_api_logged_in):
-    crud_tests.test_read_many(test_api_logged_in)
+def test_read_one(message_crud_tester):
+    client, crud_tester = message_crud_tester
+    crud_tester.test_read_one(client)
 
 
-def test_create(test_api_logged_in):
-    crud_tests.test_create(test_api_logged_in)
+def test_read_many(message_crud_tester):
+    client, crud_tester = message_crud_tester
+    crud_tester.test_read_many(client)
 
 
-def test_delete(test_api_logged_in):
-    crud_tests.test_delete(test_api_logged_in)
+def test_create(message_crud_tester):
+    client, crud_tester = message_crud_tester
+    crud_tester.test_create(client)
 
 
-def test_lifecycle(test_api_logged_in):
-    crud_tests.test_lifecycle(test_api_logged_in)
+def test_delete(message_crud_tester):
+    client, crud_tester = message_crud_tester
+    crud_tester.test_delete(client)
+
+
+def test_lifecycle(message_crud_tester):
+    client, crud_tester = message_crud_tester
+    crud_tester.test_lifecycle(client)
