@@ -89,7 +89,7 @@ from sqlalchemy.orm import Session
 import tests.test_data
 from ichrisbirch import models
 from ichrisbirch.config import Settings
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 
@@ -171,7 +171,7 @@ def transactional_test_context(settings: Settings):
 
 
 def get_test_runner_settings() -> Settings:
-    test_settings = copy.deepcopy(settings)
+    test_settings = copy.deepcopy(get_settings())
     test_settings.ENVIRONMENT = 'testing'
     test_settings.protocol = 'http'
     test_settings.postgres.host = 'localhost'

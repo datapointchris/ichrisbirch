@@ -22,7 +22,6 @@ from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.config import Settings
-from ichrisbirch.config import settings
 from ichrisbirch.database.session import create_session
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
@@ -117,7 +116,7 @@ def check_and_run_autotasks(settings: Settings) -> None:
 
 
 @job_logger
-def aws_postgres_snapshot_to_s3():
+def aws_postgres_snapshot_to_s3(settings: Settings) -> None:
     """Create a snapshot from RDS postgres and save it to S3, then delete the snapshot.
 
     This function is an alternative to the postgres_backup for testing but it is difficult to restore from a snapshot.
@@ -132,29 +131,31 @@ def postgres_backup(settings: Settings, logger: logging.Logger) -> None:
     pbr.backup()
 
 
-jobs_to_add = [
-    JobToAdd(
-        func=make_logs,
-        args=(settings,),
-        trigger=CronTrigger(second=15),
-        id='make_logs',
-    ),
-    JobToAdd(
-        func=decrease_task_priority,
-        args=(settings,),
-        trigger=daily_1am_trigger,
-        id='decrease_task_priority_daily',
-    ),
-    JobToAdd(
-        func=check_and_run_autotasks,
-        args=(settings,),
-        trigger=daily_115am_trigger,
-        id='check_and_run_autotasks_daily',
-    ),
-    JobToAdd(
-        func=postgres_backup,
-        args=(settings, logger),
-        trigger=daily_130am_trigger,
-        id='postgres_backup_daily',
-    ),
-]
+def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
+    """Get the list of jobs to add to the scheduler."""
+    return [
+        JobToAdd(
+            func=make_logs,
+            args=(settings,),
+            trigger=CronTrigger(second=15),
+            id='make_logs',
+        ),
+        JobToAdd(
+            func=decrease_task_priority,
+            args=(settings,),
+            trigger=daily_1am_trigger,
+            id='decrease_task_priority_daily',
+        ),
+        JobToAdd(
+            func=check_and_run_autotasks,
+            args=(settings,),
+            trigger=daily_115am_trigger,
+            id='check_and_run_autotasks_daily',
+        ),
+        JobToAdd(
+            func=postgres_backup,
+            args=(settings, logger),
+            trigger=daily_130am_trigger,
+            id='postgres_backup_daily',
+        ),
+    ]

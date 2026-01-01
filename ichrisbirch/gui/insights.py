@@ -7,10 +7,12 @@ import httpx
 import pendulum
 from tkhtmlview import HTMLText
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.gui.utils import set_app_geometry
 
 logger = logging.getLogger(__name__)
+
+_settings = get_settings()
 
 
 def submit_form():
@@ -18,7 +20,7 @@ def submit_form():
         messagebox.showwarning('Validation Error', 'Please fill all fields correctly.')
         return
 
-    insights_endpoint = f'{settings.api_url}/articles/insights/'
+    insights_endpoint = f'{_settings.api_url}/articles/insights/'
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_ACCESS_TOKEN',  # Placeholder for authorization header

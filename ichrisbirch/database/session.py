@@ -7,10 +7,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
 from ichrisbirch.config import Settings
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 
 
-# @functools.cache
 def get_db_engine(settings: Settings) -> Engine:
     return create_engine(
         settings.sqlalchemy.db_uri,
@@ -27,10 +26,11 @@ def get_db_engine(settings: Settings) -> Engine:
 
 
 @contextmanager
-def create_session(settings: Settings = settings):
+def create_session(settings: Settings | None = None):
     """Get the SQLAlchemy session factory configured for the application."""
-    Session = sessionmaker(bind=get_db_engine(settings), autoflush=False)
-    session = Session()
+    _settings = settings or get_settings()
+    SessionLocal = sessionmaker(bind=get_db_engine(_settings), autoflush=False)
+    session = SessionLocal()
     try:
         yield session
     finally:

@@ -10,7 +10,7 @@ from ichrisbirch import models
 from ichrisbirch.chat.api import ChatAPIClient
 from ichrisbirch.chat.auth import ChatAuthClient
 from ichrisbirch.config import Settings
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
 
 logger = logging.getLogger(__name__)
@@ -270,12 +270,13 @@ class ChatApp:
 
 
 logger.info('creating chat app')
+_settings = get_settings()
 app = ChatApp(
-    settings=settings,
+    settings=_settings,
     chat_api_client=ChatAPIClient(),
-    auth_client=ChatAuthClient(settings=settings),
+    auth_client=ChatAuthClient(settings=_settings),
     cookie_controller=CookieController(),
-    ai_client=OpenAI(api_key=settings.ai.openai.api_key),
+    ai_client=OpenAI(api_key=_settings.ai.openai.api_key),
 )
 logger.info('chat app created')
 app.run()

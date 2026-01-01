@@ -1,11 +1,26 @@
 from abc import ABC
 from abc import abstractmethod
+from contextlib import suppress
+from typing import TYPE_CHECKING
 
 from flask import current_app
 from flask import has_request_context
 from flask import session
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
+
+if TYPE_CHECKING:
+    from ichrisbirch.config import Settings
+
+
+def _get_settings_with_fallback(explicit_settings: 'Settings | None' = None) -> 'Settings':
+    """Get settings with priority: explicit > Flask context > global."""
+    if explicit_settings:
+        return explicit_settings
+    with suppress(RuntimeError):
+        if current_app and 'SETTINGS' in current_app.config:
+            return current_app.config['SETTINGS']
+    return get_settings()
 
 
 class CredentialProvider(ABC):
@@ -25,17 +40,10 @@ class CredentialProvider(ABC):
 class InternalServiceProvider(CredentialProvider):
     """Credentials for internal service-to-service calls."""
 
-    def __init__(self, service_name: str = 'flask-frontend'):
+    def __init__(self, service_name: str = 'flask-frontend', settings: 'Settings | None' = None):
         self.service_name = service_name
-        # Use Flask app's test-compatible settings if available
-        try:
-            if current_app and 'SETTINGS' in current_app.config:
-                self.service_key = current_app.config['SETTINGS'].auth.internal_service_key
-            else:
-                self.service_key = settings.auth.internal_service_key
-        except (RuntimeError, ImportError):
-            # Outside Flask context or Flask not available - use global settings
-            self.service_key = settings.auth.internal_service_key
+        self._settings = _get_settings_with_fallback(settings)
+        self.service_key = self._settings.auth.internal_service_key
 
     def get_credentials(self) -> dict[str, str]:
         return {
@@ -85,8 +93,9 @@ class UserTokenProvider(CredentialProvider):
 class FlaskSessionProvider(CredentialProvider):
     """Credentials from Flask session (for your current use case)."""
 
-    def __init__(self):
+    def __init__(self, settings: 'Settings | None' = None):
         self.has_context = has_request_context()
+        self._settings = _get_settings_with_fallback(settings)
 
     def get_credentials(self) -> dict[str, str]:
         if not self.has_context:
@@ -95,8 +104,8 @@ class FlaskSessionProvider(CredentialProvider):
         user_id = session.get('_user_id', '')
         return {
             'X-User-ID': user_id,
-            'X-Application-ID': settings.flask.app_id,
-            'X-Service-Key': settings.auth.internal_service_key,
+            'X-Application-ID': self._settings.flask.app_id,
+            'X-Service-Key': self._settings.auth.internal_service_key,
         }
 
     def refresh_if_needed(self) -> None:

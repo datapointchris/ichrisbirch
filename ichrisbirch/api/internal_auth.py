@@ -7,7 +7,8 @@ from fastapi import Header
 from fastapi import HTTPException
 from fastapi import status
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +16,13 @@ logger = logging.getLogger(__name__)
 def verify_internal_service(
     x_internal_service: str | None = Header(None),
     x_service_key: str | None = Header(None),
+    settings: Settings = Depends(get_settings),
 ) -> bool:
     """Verify internal service authentication using service headers."""
     if not x_internal_service or not x_service_key:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Internal service authentication required')
 
-    expected_key = getattr(settings.auth, 'internal_service_key', None)
+    expected_key = settings.auth.internal_service_key
     if not expected_key:
         logger.error('Internal service key not configured')
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Internal authentication not configured')

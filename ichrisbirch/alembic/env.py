@@ -5,7 +5,7 @@ from alembic import context
 # from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from ichrisbirch.config import settings
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import get_db_engine
 
@@ -59,6 +59,7 @@ def run_migrations_offline() -> None:
 
     Calls to context.execute() here emit the given string to the script output.
     """
+    settings = get_settings()
     url = settings.sqlalchemy.db_uri
     context.configure(
         url=url,
@@ -83,6 +84,7 @@ def run_migrations_online() -> None:
     #     prefix="sqlalchemy.",
     #     poolclass=pool.NullPool,
     # )
+    settings = get_settings()
     engine = get_db_engine(settings)
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, include_schemas=True)

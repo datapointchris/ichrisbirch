@@ -5,6 +5,7 @@ patterns.
 """
 
 import logging
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
 
@@ -12,9 +13,12 @@ import httpx
 from pydantic import BaseModel
 
 from ichrisbirch.app import utils
-from ichrisbirch.config import settings
 
 from .auth import CredentialProvider
+from .auth import _get_settings_with_fallback
+
+if TYPE_CHECKING:
+    from ichrisbirch.config import Settings
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -30,12 +34,14 @@ class LoggingResourceClient[ModelType]:
         session: httpx.Client,
         credential_provider: CredentialProvider,
         base_url: str | None = None,
+        settings: 'Settings | None' = None,
     ):
+        self._settings = _get_settings_with_fallback(settings)
         self.endpoint = endpoint
         self.model_class = model_class
         self.session = session
         self.credential_provider = credential_provider
-        self.base_url = base_url or settings.api_url
+        self.base_url = base_url or self._settings.api_url
 
     def _build_url(self, path: Any = None) -> str:
         """Build URL using existing utility function to preserve patterns."""
@@ -65,7 +71,7 @@ class LoggingResourceClient[ModelType]:
 
         kwargs_to_log = {}
         for k, v in kwargs.items():
-            if k in ('data', 'json') and settings.ENVIRONMENT == 'production':
+            if k in ('data', 'json') and self._settings.ENVIRONMENT == 'production':
                 kwargs_to_log[k] = 'XXXXXXXX'  # Mask request body in production
             else:
                 kwargs_to_log[k] = v
@@ -78,7 +84,7 @@ class LoggingResourceClient[ModelType]:
         kwargs_to_log = self._prepare_kwargs_for_logging(kwargs)
 
         # Log environment and database info like QueryAPI
-        logger.debug(f'running in environment: {settings.ENVIRONMENT} ({settings.sqlalchemy.port})')
+        logger.debug(f'running in environment: {self._settings.ENVIRONMENT} ({self._settings.sqlalchemy.port})')
 
         # Log authentication method
         auth_method = 'internal_service' if headers.get('X-Internal-Service') else 'user_auth'
@@ -215,9 +221,15 @@ class LoggingResourceClient[ModelType]:
 class LoggingAPIClient:
     """Main API client with extensive logging, matching QueryAPI patterns."""
 
-    def __init__(self, credential_provider: CredentialProvider, base_url: str | None = None):
+    def __init__(
+        self,
+        credential_provider: CredentialProvider,
+        base_url: str | None = None,
+        settings: 'Settings | None' = None,
+    ):
+        self._settings = _get_settings_with_fallback(settings)
         self.credential_provider = credential_provider
-        self.base_url = base_url or settings.api_url
+        self.base_url = base_url or self._settings.api_url
         self.session = httpx.Client(timeout=30.0)
 
         logger.debug(f'Created LoggingAPIClient with base_url: {self.base_url}')
@@ -232,6 +244,7 @@ class LoggingAPIClient:
             session=self.session,
             credential_provider=self.credential_provider,
             base_url=self.base_url,
+            settings=self._settings,
         )
 
     def close(self):
@@ -246,26 +259,41 @@ class LoggingAPIClient:
 
 
 # Factory functions for LoggingAPIClient
-def logging_internal_service_client(service_name: str = 'flask-frontend', base_url: str | None = None) -> LoggingAPIClient:
+def logging_internal_service_client(
+    service_name: str = 'flask-frontend',
+    base_url: str | None = None,
+    settings: 'Settings | None' = None,
+) -> LoggingAPIClient:
     """Create an internal service client with extensive logging."""
     from .auth import InternalServiceProvider
 
-    provider = InternalServiceProvider(service_name)
-    return LoggingAPIClient(provider, base_url)
+    resolved_settings = _get_settings_with_fallback(settings)
+    provider = InternalServiceProvider(service_name, settings=resolved_settings)
+    return LoggingAPIClient(provider, base_url, settings=resolved_settings)
 
 
-def logging_user_client(user_id: str, app_id: str | None = None, base_url: str | None = None) -> LoggingAPIClient:
+def logging_user_client(
+    user_id: str,
+    app_id: str | None = None,
+    base_url: str | None = None,
+    settings: 'Settings | None' = None,
+) -> LoggingAPIClient:
     """Create a user client with extensive logging."""
     from .auth import UserTokenProvider
 
-    actual_app_id = app_id or settings.flask.app_id
-    provider = UserTokenProvider(user_id, actual_app_id, settings.auth.internal_service_key)
-    return LoggingAPIClient(provider, base_url)
+    resolved_settings = _get_settings_with_fallback(settings)
+    actual_app_id = app_id or resolved_settings.flask.app_id
+    provider = UserTokenProvider(user_id, actual_app_id, resolved_settings.auth.internal_service_key)
+    return LoggingAPIClient(provider, base_url, settings=resolved_settings)
 
 
-def logging_flask_session_client(base_url: str | None = None) -> LoggingAPIClient:
+def logging_flask_session_client(
+    base_url: str | None = None,
+    settings: 'Settings | None' = None,
+) -> LoggingAPIClient:
     """Create a Flask session client with extensive logging."""
     from .auth import FlaskSessionProvider
 
-    provider = FlaskSessionProvider()
-    return LoggingAPIClient(provider, base_url)
+    resolved_settings = _get_settings_with_fallback(settings)
+    provider = FlaskSessionProvider(settings=resolved_settings)
+    return LoggingAPIClient(provider, base_url, settings=resolved_settings)

@@ -4,7 +4,7 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from ichrisbirch.config import Settings
-from ichrisbirch.scheduler.jobs import jobs_to_add
+from ichrisbirch.scheduler.jobs import get_jobs_to_add
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def create_scheduler(settings: Settings) -> BlockingScheduler:
     jobstore = get_jobstore(settings)
     scheduler.add_jobstore(jobstore, alias=settings.sqlalchemy.database, extend_existing=True)
     logger.info(f'jobstore added to scheduler: {jobstore}')
-    for job in jobs_to_add:
+    for job in get_jobs_to_add(settings):
         j = scheduler.add_job(**job.as_dict())
         logger.info(f'job added: {job.id}')
         if j.id == 'make_logs':

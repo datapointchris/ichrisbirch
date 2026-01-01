@@ -1,7 +1,9 @@
 import functools
 import logging
 import os
+import sys
 from datetime import timedelta
+from pathlib import Path
 
 import boto3
 import dotenv
@@ -226,20 +228,40 @@ def _set_environment_variables(env: str):
         os.environ[env_var_name] = param['Value']
 
 
+def _detect_environment() -> str:
+    """Detect environment with sensible defaults for development.
+
+    Priority:
+    1. Explicit ENVIRONMENT env var (highest priority)
+    2. Auto-detect pytest (before .env to ensure tests use 'testing')
+    3. ENVIRONMENT from .env file if it exists
+    4. Default to 'development'
+    """
+    if env := os.environ.get('ENVIRONMENT'):
+        return env
+
+    if 'pytest' in sys.modules:
+        return 'testing'
+
+    if Path('.env').exists():
+        dotenv.load_dotenv()
+        if env := os.environ.get('ENVIRONMENT'):
+            return env
+
+    return 'development'
+
+
 @log_caller
 @functools.cache
 def get_settings():
-    env_before = os.environ['ENVIRONMENT']
+    env = _detect_environment()
+    os.environ['ENVIRONMENT'] = env
+
     if dotenv.load_dotenv():
-        env_after = os.environ['ENVIRONMENT']
-        logger.info(f'{env_after} environment variables loaded from .env file')
-        if env_before != env_after:
-            logger.warning(f'ENVIRONMENT changed from {env_before} to {env_after} after loading .env file')
+        logger.info(f'{env} environment variables loaded from .env file')
     else:
-        logger.info('no .env file found, loading from SSM parameters')
-        _set_environment_variables(env_before)
-        logger.info('environment variables set from SSM parameters')
+        logger.info(f'No .env file found, loading {env} configuration from SSM parameters')
+        _set_environment_variables(env)
+        logger.info('Environment variables set from SSM parameters')
+
     return Settings()
-
-
-settings = get_settings()

@@ -1,14 +1,18 @@
 from contextlib import suppress
+from typing import TYPE_CHECKING
 from typing import Any
 
 import httpx
 
 from ichrisbirch.app import utils
-from ichrisbirch.config import settings
 
 from .auth import CredentialProvider
 from .auth import FlaskSessionProvider
 from .auth import InternalServiceProvider
+from .auth import _get_settings_with_fallback
+
+if TYPE_CHECKING:
+    from ichrisbirch.config import Settings
 
 
 class APISession:
@@ -19,8 +23,10 @@ class APISession:
         base_url: str | None = None,
         credential_provider: CredentialProvider | None = None,
         default_headers: dict[str, str] | None = None,
+        settings: 'Settings | None' = None,
     ):
-        self.base_url = base_url or settings.api_url
+        self._settings = _get_settings_with_fallback(settings)
+        self.base_url = base_url or self._settings.api_url
         self.credential_provider = credential_provider or self._default_provider()
         self.default_headers = default_headers or {}
         self.client = httpx.Client()
@@ -31,9 +37,9 @@ class APISession:
             from flask import has_request_context
 
             if has_request_context():
-                return FlaskSessionProvider()
+                return FlaskSessionProvider(settings=self._settings)
 
-        return InternalServiceProvider()
+        return InternalServiceProvider(settings=self._settings)
 
     def request(self, method: str, endpoint: str, **kwargs) -> Any:
         """Make authenticated request."""
