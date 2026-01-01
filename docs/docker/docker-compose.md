@@ -4,432 +4,427 @@ This document details how Docker Compose orchestrates the ichrisbirch applicatio
 
 ## Overview
 
-The ichrisbirch application uses a **layered Docker Compose approach** where:
+The ichrisbirch application uses a **layered Docker Compose approach** where environment-specific override files customize the base configuration for each deployment context.
 
-1. **Base configuration** (`docker-compose.yml`) defines core services
-2. **Environment-specific overrides** customize behavior for dev/test/prod
-3. **Environment files** (`.dev.env`, `.test.env`, `.prod.env`) inject configuration
+## Environment Comparison
+
+| Aspect | Development | Testing | CI | Production |
+|--------|-------------|---------|-----|------------|
+| **Purpose** | Local development with hot reload | Running pytest suite | GitHub Actions CI | Live deployment |
+| **Compose Files** | base + dev | base + test | base + test + ci | base only |
+| **External Ports** | Standard (8000, 5000, 5432) | Alternate (8001, 5001, 5434) | Alternate (same as test) | Standard |
+| **Hot Reload** | Yes | No | No | No |
+| **AWS Credentials** | `~/.config/aws` mount | `~/.config/aws` mount | Environment variables (OIDC) | IAM role |
+| **Database** | Persistent volume | tmpfs (in-memory) | tmpfs (in-memory) | Persistent volume |
+| **Traefik** | Dashboard enabled | Dashboard enabled | Dashboard disabled | Dashboard disabled |
+| **Network** | External `proxy` | External `proxy` | Internal bridge | External `proxy` |
 
 ## File Structure
 
 ```text
-docker-compose.yml           # Base service definitions
-docker-compose.dev.yml       # Development overrides
-docker-compose.test.yml      # Testing overrides  
-docker-compose.prod.yml      # Production overrides
-.dev.env                     # Development environment variables
-.test.env                    # Testing environment variables
-.prod.env                    # Production environment variables
+docker-compose.yml           # Base/production configuration
+docker-compose.dev.yml       # Development overrides (hot reload, mounts)
+docker-compose.test.yml      # Testing overrides (alternate ports, tmpfs)
+docker-compose.ci.yml        # CI overrides (no local mounts, internal network)
 ```
 
-## Base Configuration (`docker-compose.yml`)
+## How Layering Works
 
-### Core Services
+Docker Compose merges multiple files in order, with later files overriding earlier ones:
 
-```yaml
-services:
-  postgres:    # PostgreSQL database
-  redis:       # Redis cache/session store
-  api:         # FastAPI backend service
-  app:         # Flask frontend service
-  scheduler:   # Background job scheduler
+```bash
+# Development
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Testing (local)
+docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+
+# CI (GitHub Actions)
+docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml up -d
+
+# Production
+docker compose -f docker-compose.yml up -d
 ```
 
-### Service Communication
+### Layering Example
 
-All services communicate via Docker's internal network using **service names**:
-
-- `postgres:5432` - Database server
-- `redis:6379` - Redis server  
-- `api:8000` - FastAPI backend
-- `app:5000` - Flask frontend
-
-### Port Mapping Strategy
-
-**Internal Ports** (container-to-container): Always the same
-**External Ports** (host access): Environment-specific
-
-| Service | Internal Port | Dev External | Test External | Prod External |
-|---------|---------------|--------------|---------------|---------------|
-| API     | 8000          | 8000         | 8001          | 8000          |
-| App     | 5000          | 5000         | 5001          | 5000          |
-| PostgreSQL | 5432       | 5432         | 5434          | 5432          |
-| Redis   | 6379          | 6379         | 6380          | 6379          |
-
-## Environment Overrides
-
-### Development Override (`docker-compose.dev.yml`)
-
-**Purpose**: Enable development features
-
-**Key Features**:
-
-- Volume mounts for live editing
-
-**Example Override**:
-services:
-  api:
-    build:
-      target: development
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --log-level debug
-    volumes:
-      - .:/app
-
-```yaml
-
-
-### Testing Override (`docker-compose.test.yml`)
-
-
-
-
-
-- Test runner service
-
-
-**Example Override**:
-
-```yaml
-
-  postgres:
-    tmpfs:
-      - /var/lib/postgresql/data  # In-memory database
-
-    environment:
-      POSTGRES_DB: ichrisbirch_test
-
-
-  test-runner:
-
-    build: .
-
-    depends_on:
-
-        condition: service_healthy
-
-
-### Production Override (`docker-compose.prod.yml`)
-
-
-**Purpose**: Production-optimized configuration
-
-**Key Features**:
-- Production build target
-- Gunicorn with multiple workers
-- Health checks
-- No volume mounts (security)
-- Nginx reverse proxy
-
-**Example Override**:
+**Base (`docker-compose.yml`):**
 
 ```yaml
 services:
   api:
     build:
       target: production
-    command: gunicorn ichrisbirch.wsgi_api:api --bind 0.0.0.0:8000 --workers 4
-    volumes: []  # No development mounts
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 ```
 
-## Environment Variables
-
-### Environment File Usage
-
-Each environment uses its own `.env` file:
-
-```bash
-# Development
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Testing  
-docker-compose --env-file .test.env -f docker-compose.yml -f docker-compose.test.yml up
-
-# Production
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up
-```
-
-### Variable Precedence
-
-1. **Command line** (`-e` flag)
-2. **Shell environment** (`export VAR=value`)
-3. **Environment file** (`--env-file .env`)
-4. **Compose file** (`environment:` section)
-5. **Dockerfile** (`ENV` instruction)
-
-### Key Configuration Variables
-
-```bash
-# Environment identification
-ENVIRONMENT=development|testing|production
-
-# Database configuration  
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=ichrisbirch_dev
-POSTGRES_USERNAME=postgres
-POSTGRES_PASSWORD=postgres
-
-# Redis configuration
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=""
-
-# Application configuration
-FASTAPI_HOST=api
-FASTAPI_PORT=8000
-FLASK_HOST=app
-FLASK_PORT=5000
-```
-
-## Service Dependencies
-
-### Dependency Chain
-
-```text
-postgres (database)
-├── redis (cache)
-├── api (backend)
-│   └── app (frontend)
-│   └── scheduler (background jobs)
-└── test-runner (testing only)
-```
-
-### Service Health Dependencies
-
-Services wait for dependencies to be healthy:
+**Dev Override (`docker-compose.dev.yml`):**
 
 ```yaml
 services:
   api:
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
+    build:
+      target: development
+    volumes:
+      - .:/app  # Adds source mount for hot reload
+      - ~/.config/aws:/root/.aws:ro  # AWS credentials
 ```
 
-## Build Integration
+**Result:** Dev environment gets development build target AND source mounts.
 
-### How Compose Uses Dockerfile
+## Base Configuration (`docker-compose.yml`)
 
-Docker Compose extends the Dockerfile with:
+The base file defines production-ready services:
 
-1. **Build Context**: Sets working directory
-2. **Target Selection**: Chooses build stage
-3. **Build Arguments**: Passes variables to build
-4. **Image Naming**: Tags built images
+### Core Services
 
-### Build Configuration
+| Service | Purpose | Internal Port |
+|---------|---------|---------------|
+| `traefik` | Reverse proxy with HTTPS | 80, 443, 8080 |
+| `postgres` | PostgreSQL 16 database | 5432 |
+| `redis` | Redis 7 cache | 6379 |
+| `api` | FastAPI backend | 8000 |
+| `app` | Flask frontend | 5000 |
+| `chat` | Streamlit chat interface | 8505 |
+| `scheduler` | APScheduler background jobs | N/A |
+
+### Service Dependencies
+
+```text
+postgres ─────┬───► api ──────► app
+              │       │
+redis ────────┤       ├──────► chat
+              │       │
+              └───────┴──────► scheduler
+```
+
+Services wait for dependencies via health checks:
+
+```yaml
+depends_on:
+  postgres:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+```
+
+## Development Override (`docker-compose.dev.yml`)
+
+**Purpose:** Enable rapid development with hot reload and debugging.
+
+### Development Features
+
+- **Hot reload:** Source code mounted as volume, servers watch for changes
+- **Debug logging:** Verbose log output
+- **Local credentials:** AWS credentials mounted from host
+- **Traefik dashboard:** Enabled for debugging routing
+
+### Volume Mounts
+
+```yaml
+volumes:
+  - type: bind
+    source: .
+    target: /app
+  - type: bind
+    source: ~/.config/aws
+    target: /root/.aws
+    read_only: true
+```
+
+### Usage
+
+```bash
+# Via CLI (recommended)
+./cli/ichrisbirch dev start
+
+# Direct Docker Compose
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+## Testing Override (`docker-compose.test.yml`)
+
+**Purpose:** Run pytest suite with isolated, fast database.
+
+### Testing Features
+
+- **Alternate ports:** Avoids conflicts with running dev environment
+- **tmpfs database:** In-memory PostgreSQL for speed
+- **No persistence:** Each test run starts fresh
+- **Optimized Postgres:** Disabled fsync/durability for performance
+
+### Port Mapping
+
+| Service | Dev Port | Test Port |
+|---------|----------|-----------|
+| API | 8000 | 8001 |
+| App | 5000 | 5001 |
+| Chat | 8505 | 8507 |
+| PostgreSQL | 5432 | 5434 |
+| Redis | 6379 | 6380 |
+| Traefik HTTPS | 443 | 8443 |
+
+### Database Optimizations
+
+```yaml
+postgres:
+  tmpfs:
+    - /tmp/postgres  # In-memory storage
+  command: >
+    postgres
+    -c fsync=off
+    -c synchronous_commit=off
+    -c full_page_writes=off
+```
+
+### Testing Usage
+
+```bash
+# Via CLI (recommended)
+./cli/ichrisbirch testing start
+uv run pytest
+./cli/ichrisbirch testing stop
+
+# Direct Docker Compose
+docker compose -f docker-compose.yml -f docker-compose.test.yml \
+  --project-name ichrisbirch-testing up -d
+```
+
+## CI Override (`docker-compose.ci.yml`)
+
+**Purpose:** Run tests in GitHub Actions where local paths don't exist.
+
+### Why CI Needs Special Handling
+
+The CI environment differs from local development:
+
+| Difference | Local | CI | Solution |
+|------------|-------|-----|----------|
+| AWS credentials | `~/.config/aws` exists | Only env vars via OIDC | Remove bind mount |
+| Proxy network | Pre-created externally | Doesn't exist | Create as bridge |
+| Project files | Full local checkout | GitHub checkout only | Use volumes not binds |
+| Traefik dashboard | Useful for debugging | Not needed | Disable |
+
+### CI-Specific Overrides
 
 ```yaml
 services:
+  api:
+    volumes:
+      # Remove AWS credentials mount, keep other volumes
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
 
-      context: .              # Build context (project root)
-      dockerfile: Dockerfile  # Dockerfile location
-      target: development     # Build stage
-      args:
-        POETRY_VERSION: 1.8.3
+networks:
+  proxy:
+    external: false  # Create internally instead of expecting external
+    driver: bridge
+```
+
+### Container Startup in CI
+
+The CI workflow pre-starts containers before pytest runs:
+
+```yaml
+# Phase 1: Database services
+docker compose ... up -d --build postgres redis
+sleep 10
+
+# Phase 2: Application services
+docker compose ... up -d --build api app chat scheduler
+sleep 30
+```
+
+**Why this order:**
+
+1. `postgres` and `redis` must pass health checks first
+2. `api` initializes the shared virtual environment
+3. `scheduler` creates `apscheduler_jobs` table
+4. Sleep allows health checks to complete
+
+### Test Environment Detection
+
+The test fixtures detect CI and skip container management:
+
+```python
+# In tests/environment.py
+@property
+def is_ci(self) -> bool:
+    return os.environ.get('CI', '').lower() == 'true'
+
+def setup(self):
+    if self.is_ci:
+        # Containers pre-started by workflow
+        logger.info('Running in CI - containers should be pre-started')
+    else:
+        # Start containers ourselves
+        self.setup_test_services()
+```
+
+## Production Configuration
+
+**Purpose:** Production deployment with security and reliability.
+
+### Production Features
+
+- **No source mounts:** Code baked into image
+- **Non-root user:** Security hardening
+- **Gunicorn workers:** Multi-process for performance
+- **Resource limits:** Prevent runaway containers
+- **Health checks:** Automatic recovery
+
+### Production Differences
+
+```yaml
+services:
+  api:
+    build:
+      target: production  # Minimal image, no dev deps
+    user: appuser  # Non-root
+    volumes: []  # No source mounts
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 ```
 
 ## Network Architecture
 
-### Internal Network
+### Traefik Routing
 
-Docker Compose creates an isolated network where:
+All HTTP(S) traffic flows through Traefik:
 
-- Services communicate via service names
-- No external access unless ports are mapped
-- Internal DNS resolution (e.g., `ping postgres`)
-
-### External Access
-
-Only mapped ports are accessible from host:
-
-```yaml
-services:
-  api:
-    ports:
-      - "8000:8000"  # Host:Container
+```text
+Internet ──► Traefik (:443) ──┬──► api.domain.com ──► API (:8000)
+                              ├──► app.domain.com ──► App (:5000)
+                              └──► chat.domain.com ──► Chat (:8505)
 ```
 
-## Volume Management
+### Internal Communication
 
-### Development Volumes
+Services communicate via Docker DNS using service names:
 
-```yaml
-volumes:
-  - .:/app                    # Live code editing
-  - /app/.venv               # Exclude virtual environment
-  - postgres_data:/var/lib/postgresql/data  # Database persistence
+```python
+# Flask app calling FastAPI
+response = httpx.get('http://api:8000/tasks/')
+
+# Scheduler connecting to Postgres
+engine = create_engine('postgresql://postgres:5432/ichrisbirch')
 ```
 
-### Production Volumes
+## Common Operations
 
-```yaml
-volumes:
-  - postgres_data:/var/lib/postgresql/data  # Database only
-  # No source code mounts for security
-```
-
-### Volume Types
-
-- **Bind mounts**: Host directory → Container (`./src:/app/src`)
-- **Named volumes**: Docker-managed storage (`postgres_data:/var/lib/postgresql/data`)
-- **Tmpfs mounts**: In-memory storage (`tmpfs: /tmp`)
-
-## Operational Commands
-
-### Development Workflow
+### Starting Environments
 
 ```bash
-# Start development environment
-./scripts/dev-start.sh
+# Development
+./cli/ichrisbirch dev start
 
-# View logs
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml logs -f
+# Testing
+./cli/ichrisbirch testing start
 
-# Execute commands in running container
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml exec api bash
-
-# Restart specific service
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml restart api
+# Production
+./cli/ichrisbirch prod start
 ```
 
-### Testing Workflow
+### Viewing Logs
 
 ```bash
-# Run tests
-./scripts/test-run.sh
+# All services
+./cli/ichrisbirch dev logs
 
-# Run specific test
-./scripts/test-run.sh tests/ichrisbirch/api/endpoints/test_habits.py
+# Specific service
+docker compose logs -f api
 
-
-# Debug test failures
-docker-compose --env-file .test.env -f docker-compose.yml -f docker-compose.test.yml run --rm test-runner bash
+# With timestamps
+docker compose logs -f --timestamps api
 ```
 
-### Production Workflow
+### Rebuilding Images
 
 ```bash
+# Rebuild and restart
+./cli/ichrisbirch dev rebuild
 
-# Deploy production
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Rebuild specific service
+docker compose build api
+docker compose up -d api
+```
+
+### Accessing Containers
+
+```bash
+# Shell into running container
+docker compose exec api bash
+
+# Run one-off command
+docker compose run --rm api python -c "print('hello')"
+```
+
+## Troubleshooting
+
+### Container Won't Start
+
+```bash
+# Check logs
+docker compose logs api
 
 # Check health
+docker compose ps
 
-# Scale services
-
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up -d --scale api=3
+# Inspect container
+docker inspect ichrisbirch-api-dev
 ```
 
-## Security Considerations
+### Port Conflicts
 
-### Development Security
-
-- Local network isolation
-- Non-root container execution
-- Volume mounts limited to necessary files
-
-- No source code mounts
-
-- Secrets via environment variables
-- Network isolation with reverse proxy
-- Health checks for monitoring
-
-### Environment Isolation
-
-Each environment has:
-
-- Separate databases
-- Isolated networks
-- Environment-specific secrets
-- Different external ports
-
-## Monitoring and Debugging
-
-### Health Checks
-
-```yaml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-  interval: 30s
-  timeout: 10s
-  start_period: 5s
-  retries: 3
-```
-
-### Logging
+If ports are in use:
 
 ```bash
-# View all logs
-docker-compose logs
+# Find what's using the port
+lsof -i :8000
 
-# Follow specific service
-docker-compose logs -f api
-
-# Filter by timestamp
-docker-compose logs --since 2024-01-01T00:00:00 api
+# Use testing ports instead
+./cli/ichrisbirch testing start  # Uses 8001, 5001, etc.
 ```
 
-### Resource Monitoring
+### Database Connection Issues
 
 ```bash
-# Resource usage
-docker-compose exec api top
+# Check postgres is healthy
+docker compose ps postgres
 
-# System stats
-docker stats
+# Test connection
+docker compose exec postgres psql -U postgres -d ichrisbirch -c "SELECT 1"
 
-# Service status
-docker-compose ps
+# Check logs
+docker compose logs postgres
+```
+
+### Network Issues
+
+```bash
+# List networks
+docker network ls
+
+# Inspect network
+docker network inspect ichrisbirch_proxy
+
+# Recreate network
+docker network rm ichrisbirch_proxy
+docker network create proxy
 ```
 
 ## Best Practices
 
-### 1. Environment Consistency
-
-- Use same service names across environments
-- Maintain consistent internal ports
-- Only vary external configuration
-
-### 2. Service Independence
-
-- Each service has its own container
-- Services communicate via well-defined APIs
-- No shared file systems between services
-
-### 3. Configuration Management
-
-- Environment variables for all configuration
-- Separate `.env` files per environment
-- No hardcoded values in compose files
-
-### 4. Development Experience
-
-- Hot-reload for rapid iteration
-- Volume mounts for live editing
-- Comprehensive logging and debugging
-
-### 5. Production Readiness
-
-- Health checks for all services
-- Proper restart policies
-- Resource limits and reservations
-- Security hardening
-
-## Summary
-
-This Docker Compose architecture provides:
-
-- **Environment Parity**: Same services, different configurations
-- **Service Isolation**: Each component in its own container
-- **Configuration Flexibility**: Environment-specific overrides
-- **Development Efficiency**: Hot-reload and live editing
-- **Production Readiness**: Health checks and scaling
-- **Security**: Proper isolation and access controls
-
-The layered approach allows for maximum flexibility while maintaining consistency across all environments.
+1. **Use the CLI:** `./cli/ichrisbirch dev start` handles complexity
+2. **Don't mix environments:** Use testing ports when dev is running
+3. **Check health first:** `./cli/ichrisbirch dev health` before debugging
+4. **Read logs:** Most issues are visible in container logs
+5. **Rebuild after Dockerfile changes:** Images don't auto-update
