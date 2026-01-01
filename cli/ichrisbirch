@@ -198,7 +198,7 @@ function dev-rebuild() {
 
 function dev-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "🔍 Viewing ${blue}DEV${reset} Docker container logs..."
+  echo "Viewing ${blue}DEV${reset} Docker container logs..."
   echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
   # Show live Docker Compose logs with color formatting and clean service names
@@ -207,14 +207,14 @@ function dev-logs() {
 
 function dev-status() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "📊 ${blue}DEV${reset} environment status:"
+  echo "${blue}DEV${reset} environment status:"
   echo ""
 
   # Show container status with colors
   docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 
   echo ""
-  echo "🌐 ${blue}Development${reset} URLs:"
+  echo "${blue}Development${reset} URLs:"
   echo "  • API:       https://api.docker.localhost/"
   echo "  • App:       https://app.docker.localhost/"
   echo "  • Chat:      https://chat.docker.localhost/"
@@ -226,7 +226,7 @@ function dev-monitor() {
 }
 
 function dev-health() {
-  echo "🏥 Running health check for ${blue}DEV${reset} environment"
+  echo "Running health check for ${blue}DEV${reset} environment"
 
   cd "$ICHRISBIRCH_HOME" || exit
 
@@ -297,9 +297,9 @@ function testing-start() {
 
   # Run test database initialization from host (need to use localhost, not Docker hostname)
   if ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
-    echo "${green}✓${reset} Database initialized successfully"
+    echo "${green}Database initialized successfully${reset}"
   else
-    echo "${red}✗${reset} Database initialization failed"
+    echo "${red}Database initialization failed${reset}"
     echo "Check logs for details. You may need to run:"
     echo "   ${blue}ichrisbirch testing stop${reset}"
     echo "   ${blue}ichrisbirch testing start${reset}"
@@ -320,7 +320,7 @@ function testing-start() {
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
   echo ""
-  echo "📁 Test logs available at: ${cyan}$ICHRISBIRCH_HOME/test-logs/${reset}"
+  echo "Test logs available at: ${cyan}$ICHRISBIRCH_HOME/test-logs/${reset}"
   echo "Use ${blue}ichrisbirch testing app-logs${reset} to view application logs"
   echo "Use ${blue}ichrisbirch testing logs${reset} to view Docker container logs"
   echo "Use ${blue}ichrisbirch testing health${reset} to run health checks"
@@ -347,7 +347,7 @@ function testing-rebuild() {
 
 function testing-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "🔍 Viewing ${blue}TESTING${reset} Docker container logs..."
+  echo "Viewing ${blue}TESTING${reset} Docker container logs..."
   echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
   # Show live Docker Compose logs with color formatting and clean service names
@@ -373,21 +373,21 @@ function testing-app-logs() {
 
   # Check if test logs directory exists
   if [[ ! -d "$test_logs_dir" ]]; then
-    echo "${red}❌ Test logs directory not found: $test_logs_dir${reset}"
-    echo "${cyan}💡 Make sure the test environment has been started at least once:${reset}"
+    echo "${red}Test logs directory not found: $test_logs_dir${reset}"
+    echo "${cyan}Make sure the test environment has been started at least once:${reset}"
     echo "   ${blue}ichrisbirch testing start${reset}"
     return 1
   fi
 
   # Check if consolidated log file exists
   if [[ ! -f "$log_file" ]]; then
-    echo "${red}❌ Test log file not found: $log_file${reset}"
-    echo "${cyan}💡 Make sure the test environment is running to generate logs:${reset}"
+    echo "${red}Test log file not found: $log_file${reset}"
+    echo "${cyan}Make sure the test environment is running to generate logs:${reset}"
     echo "   ${blue}ichrisbirch testing start${reset}"
     return 1
   fi
 
-  echo "📖 Viewing ${blue}TESTING${reset} application logs from: ${cyan}$log_file${reset}"
+  echo "Viewing ${blue}TESTING${reset} application logs from: ${cyan}$log_file${reset}"
 
   if [[ -n "$follow_flag" ]]; then
     echo "   Mode: ${green}Follow${reset} (press Ctrl+C to exit)"
@@ -406,14 +406,14 @@ function testing-app-logs-follow() {
 
 function testing-status() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "📊 ${blue}TESTING${reset} environment status:"
+  echo "${blue}TESTING${reset} environment status:"
   echo ""
 
   # Show container status with colors
   docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 
   echo ""
-  echo "🌐 ${blue}Test${reset} URLs:"
+  echo "${blue}Test${reset} URLs:"
   echo "  • API:       https://api.test.localhost:8443/"
   echo "  • App:       https://app.test.localhost:8443/"
   echo "  • Chat:      https://chat.test.localhost:8443/"
@@ -421,7 +421,7 @@ function testing-status() {
 }
 
 function testing-health() {
-  echo "🏥 Running health check for ${blue}TESTING${reset} environment"
+  echo "Running health check for ${blue}TESTING${reset} environment"
 
   cd "$ICHRISBIRCH_HOME" || exit
 
@@ -482,7 +482,7 @@ function prod-monitor() {
 }
 
 function prod-logs() {
-  echo "🔍 Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
+  echo "Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
   echo "Note: Production uses Docker Compose services"
   cd "$ICHRISBIRCH_HOME" || exit
 
@@ -491,7 +491,7 @@ function prod-logs() {
 }
 
 function prod-status() {
-  echo "📊 ${magenta}PRODUCTION${reset} environment status:"
+  echo "${magenta}PRODUCTION${reset} environment status:"
   echo ""
 
   # Check if this is production environment
@@ -500,7 +500,7 @@ function prod-status() {
     docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 
     echo ""
-    echo "🌐 ${magenta}Production${reset} URLs (replace yourdomain.local with your actual domain):"
+    echo "${magenta}Production${reset} URLs (replace yourdomain.local with your actual domain):"
     echo "  • API:       https://api.yourdomain.local/"
     echo "  • App:       https://app.yourdomain.local/"
     echo "  • Chat:      https://chat.yourdomain.local/"
@@ -512,7 +512,7 @@ function prod-status() {
 }
 
 function prod-health() {
-  echo "🏥 Running health check for ${magenta}PRODUCTION${reset} environment"
+  echo "Running health check for ${magenta}PRODUCTION${reset} environment"
 
   cd "$ICHRISBIRCH_HOME" || exit
 
@@ -546,28 +546,286 @@ function prod-reboot-ec2() {
 # PROJECT STATS (Event-Sourced)
 # ============================================================================
 
+function stats-latest-file() {
+  find "$ICHRISBIRCH_HOME/stats" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
+}
+
 function stats-show() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local stats_file
+  stats_file=$(stats-latest-file)
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "${green}Project Stats Summary${reset}"
+  echo ""
+
+  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
+    echo "${yellow}No stats snapshots found.${reset}"
+    echo "Stats are collected automatically on each commit."
+    return
+  fi
+
+  local collected_at
+  collected_at=$(jq -r '.collected_at' "$stats_file" | cut -d'T' -f1)
+  echo "Last collected: ${cyan}$collected_at${reset}"
+  echo ""
+
+  # Code stats
+  local python_loc html_loc total_loc python_files
+  python_loc=$(jq -r '.code.languages.Python.code // 0' "$stats_file")
+  html_loc=$(jq -r '.code.languages.HTML.code // 0' "$stats_file")
+  total_loc=$(jq -r '.code.total.code // 0' "$stats_file")
+  python_files=$(jq -r '.code.languages.Python.files // 0' "$stats_file")
+
+  echo "${blue}Code${reset}"
+  printf "  Python:      %'6d lines (%d files)\n" "$python_loc" "$python_files"
+  printf "  HTML:        %'6d lines\n" "$html_loc"
+  printf "  Total:       %'6d lines\n" "$total_loc"
+  echo ""
+
+  # Tests
+  local tests_total tests_passed tests_failed coverage duration
+  tests_total=$(jq -r '.tests.total // 0' "$stats_file")
+  tests_passed=$(jq -r '.tests.passed // 0' "$stats_file")
+  tests_failed=$(jq -r '.tests.failed // 0' "$stats_file")
+  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
+  duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
+
+  local pass_rate=0
+  if [ "$tests_total" -gt 0 ]; then
+    pass_rate=$((tests_passed * 100 / tests_total))
+  fi
+
+  echo "${blue}Tests${reset}"
+  if [ "$tests_failed" -eq 0 ]; then
+    printf "  Total:       %d tests (${green}%d%% pass${reset})\n" "$tests_total" "$pass_rate"
+  else
+    printf "  Total:       %d tests (${red}%d failed${reset})\n" "$tests_total" "$tests_failed"
+  fi
+  printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
+  printf "  Duration:    %ds\n" "$duration"
+  echo ""
+
+  # Quality
+  local ruff_issues mypy_errors bandit_issues
+  ruff_issues=$(jq -r '.quality.ruff_issues // 0' "$stats_file")
+  mypy_errors=$(jq -r '.quality.mypy_errors // 0' "$stats_file")
+  bandit_issues=$(jq -r '.quality.bandit_issues // 0' "$stats_file")
+
+  echo "${blue}Quality${reset}"
+  if [ "$ruff_issues" -eq 0 ] && [ "$mypy_errors" -eq 0 ] && [ "$bandit_issues" -eq 0 ]; then
+    echo "  ${green}All checks passing${reset}"
+  else
+    [ "$ruff_issues" -gt 0 ] && printf "  Ruff:        ${yellow}%d issues${reset}\n" "$ruff_issues"
+    [ "$mypy_errors" -gt 0 ] && printf "  Mypy:        ${yellow}%d errors${reset}\n" "$mypy_errors"
+    [ "$bandit_issues" -gt 0 ] && printf "  Bandit:      ${yellow}%d issues${reset}\n" "$bandit_issues"
+  fi
+  echo ""
+
+  # Dependencies
+  local deps_direct deps_total
+  deps_direct=$(jq -r '.dependencies.direct // 0' "$stats_file")
+  deps_total=$(jq -r '.dependencies.total // 0' "$stats_file")
+
+  echo "${blue}Dependencies${reset}"
+  printf "  Direct:      %d packages\n" "$deps_direct"
+  printf "  Total:       %d packages\n" "$deps_total"
+  echo ""
+
+  # Commit activity
+  if [ -f "$events_file" ]; then
+    local total_commits today_commits week_commits
+    total_commits=$(grep -c '"type":"commit"' "$events_file" 2>/dev/null || echo 0)
+    today_commits=$(grep '"type":"commit"' "$events_file" | grep -c "$(date +%Y-%m-%d)")
+
+    local week_pattern
+    week_pattern=$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')
+    week_commits=$(grep '"type":"commit"' "$events_file" | grep -cE "$week_pattern")
+
+    echo "${blue}Activity${reset}"
+    printf "  Today:       %d commits\n" "$today_commits"
+    printf "  This week:   %d commits\n" "$week_commits"
+    printf "  All time:    %d commits\n" "$total_commits"
+  fi
+}
+
+function stats-code() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local stats_file
+  stats_file=$(stats-latest-file)
+
+  echo "${green}Code Statistics by Language${reset}"
+  echo ""
+
+  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
+    echo "${yellow}No stats snapshots found.${reset}"
+    return
+  fi
+
+  printf "${cyan}%-15s %10s %10s %10s %8s${reset}\n" "Language" "Code" "Comments" "Blanks" "Files"
+  echo "---------------------------------------------------------------"
+
+  jq -r '.code.languages | to_entries | sort_by(-.value.code) | .[] | select(.key != "Total") | [.key, .value.code, .value.comments, .value.blanks, .value.files] | @tsv' "$stats_file" | \
+    while IFS=$'\t' read -r lang code comments blanks files; do
+      printf "%-15s %'10d %'10d %'10d %8d\n" "$lang" "$code" "$comments" "$blanks" "$files"
+    done
+
+  echo "---------------------------------------------------------------"
+  local total_code total_comments total_blanks
+  total_code=$(jq -r '.code.total.code' "$stats_file")
+  total_comments=$(jq -r '.code.total.comments' "$stats_file")
+  total_blanks=$(jq -r '.code.total.blanks' "$stats_file")
+  printf "${green}%-15s %'10d %'10d %'10d${reset}\n" "Total" "$total_code" "$total_comments" "$total_blanks"
+}
+
+function stats-tests() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local stats_file
+  stats_file=$(stats-latest-file)
+
+  echo "${green}Test Statistics${reset}"
+  echo ""
+
+  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
+    echo "${yellow}No stats snapshots found.${reset}"
+    return
+  fi
+
+  local total passed failed skipped errors duration coverage
+  total=$(jq -r '.tests.total // 0' "$stats_file")
+  passed=$(jq -r '.tests.passed // 0' "$stats_file")
+  failed=$(jq -r '.tests.failed // 0' "$stats_file")
+  skipped=$(jq -r '.tests.skipped // 0' "$stats_file")
+  errors=$(jq -r '.tests.errors // 0' "$stats_file")
+  duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file")
+  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
+
+  echo "${blue}Results${reset}"
+  printf "  Total:     %d\n" "$total"
+  printf "  Passed:    ${green}%d${reset}\n" "$passed"
+  [ "$failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$failed"
+  [ "$skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$skipped"
+  [ "$errors" -gt 0 ] && printf "  Errors:    ${red}%d${reset}\n" "$errors"
+  echo ""
+
+  echo "${blue}Performance${reset}"
+  printf "  Duration:  %.1fs\n" "$duration"
+  printf "  Coverage:  %.1f%%\n" "$coverage"
+  echo ""
+
+  echo "${blue}Slowest Tests${reset}"
+  jq -r '.tests.slowest[:5] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" | \
+    sed 's|tests/ichrisbirch/||g' | sed 's|::test_|: |g'
+}
+
+function stats-quality() {
   cd "$ICHRISBIRCH_HOME" || exit
   local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
-  echo "📊 Project Stats (Event-Sourced)"
+  echo "${green}Code Quality - Issues Caught${reset}"
   echo ""
 
-  if [ -f "$events_file" ]; then
-    local total_events
-    total_events=$(wc -l < "$events_file" | tr -d ' ')
-    local file_size
-    file_size=$(du -h "$events_file" | cut -f1)
-
-    echo "Events file: $events_file"
-    echo "Total events: $total_events"
-    echo "File size: $file_size"
-    echo ""
-    echo "Recent events:"
-    tail -5 "$events_file" | jq -r '.type + " @ " + .timestamp'
-  else
-    echo "No events file found. Stats are collected automatically on each commit."
+  if [ ! -f "$events_file" ]; then
+    echo "${yellow}No events file found.${reset}"
+    return
   fi
+
+  # Date patterns for filtering
+  local today day7 day30
+  today=$(date +%Y-%m-%d)
+  day7=$(date -d "-7 days" +%Y-%m-%d)
+  day30=$(date -d "-30 days" +%Y-%m-%d)
+
+  printf "${cyan}%-12s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
+  echo "----------------------------------------------"
+
+  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell")
+
+  for tool in "${tools[@]}"; do
+    local issues_today issues_7d issues_30d issues_all
+
+    # Count issues for each time period
+    issues_today=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep "$today" | jq -s '[.[].issues | length] | add // 0')
+    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s '[.[].issues | length] | add // 0')
+    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s '[.[].issues | length] | add // 0')
+    issues_all=$(grep "\"type\":\"hook.$tool\"" "$events_file" | jq -s '[.[].issues | length] | add // 0')
+
+    # Format with colors - use fixed width padding after color codes
+    local c_today c_7d c_30d c_all
+    if [ "$issues_today" -eq 0 ]; then
+      c_today="${gray}     0${reset}"
+    else
+      c_today="${yellow}$(printf '%6d' "$issues_today")${reset}"
+    fi
+    if [ "$issues_7d" -eq 0 ]; then
+      c_7d="${gray}     0${reset}"
+    else
+      c_7d="${yellow}$(printf '%6d' "$issues_7d")${reset}"
+    fi
+    if [ "$issues_30d" -eq 0 ]; then
+      c_30d="${gray}     0${reset}"
+    else
+      c_30d="${yellow}$(printf '%6d' "$issues_30d")${reset}"
+    fi
+    if [ "$issues_all" -eq 0 ]; then
+      c_all="${gray}     0${reset}"
+    else
+      c_all="$(printf '%6d' "$issues_all")"
+    fi
+
+    printf "%-12s %s %s %s %s\n" "$tool" "$c_today" "$c_7d" "$c_30d" "$c_all"
+  done
+
+  echo ""
+
+  # Show hook run counts
+  local runs_today runs_7d
+  runs_today=$(grep '"type":"hook\.' "$events_file" | grep -c "$today")
+  runs_7d=$(grep '"type":"hook\.' "$events_file" | grep -cE "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')")
+
+  echo "${blue}Hook Runs${reset}"
+  printf "  Today:     %d runs\n" "$runs_today"
+  printf "  Last 7d:   %d runs\n" "$runs_7d"
+}
+
+function stats-activity() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local days="${1:-7}"
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "${green}Commit Activity (last $days days)${reset}"
+  echo ""
+
+  if [ ! -f "$events_file" ]; then
+    echo "${yellow}No events file found.${reset}"
+    return
+  fi
+
+  for i in $(seq 0 $((days - 1))); do
+    local date_str day_name
+    date_str=$(date -d "-${i} days" +%Y-%m-%d)
+    day_name=$(date -d "-${i} days" +%a)
+
+    local count
+    count=$(grep '"type":"commit"' "$events_file" | grep -c "$date_str")
+
+    local bar=""
+    for ((j = 0; j < count && j < 20; j++)); do
+      bar="${bar}#"
+    done
+    [ "$count" -gt 20 ] && bar="${bar}+"
+
+    if [ "$i" -eq 0 ]; then
+      printf "${cyan}%-10s${reset} %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
+    else
+      printf "%-10s %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
+    fi
+  done
+
+  echo ""
+  local total_week
+  total_week=$(grep -c '"type":"commit"' "$events_file")
+  echo "Total recorded commits: $total_week"
 }
 
 function stats-events() {
@@ -575,13 +833,13 @@ function stats-events() {
   local count="${1:-20}"
   local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
-  echo "📈 Recent events (last $count):"
+  echo "${green}Recent Events (last $count)${reset}"
   echo ""
 
   if [ -f "$events_file" ]; then
-    tail -n "$count" "$events_file" | jq -r '[.type, .timestamp, .branch] | @tsv' | column -t
+    tail -n "$count" "$events_file" | jq -r '[.type, .timestamp[11:19], (.status // "-")] | @tsv' | column -t
   else
-    echo "No events file found."
+    echo "${yellow}No events file found.${reset}"
   fi
 }
 
@@ -590,13 +848,13 @@ function stats-commits() {
   local count="${1:-10}"
   local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
-  echo "📝 Recent commits from events (last $count):"
+  echo "${green}Recent Commits (last $count)${reset}"
   echo ""
 
   if [ -f "$events_file" ]; then
-    grep '"type":"commit"' "$events_file" | tail -n "$count" | jq -r '[.short_hash, .timestamp, .message] | @tsv' | column -t
+    grep '"type":"commit"' "$events_file" | tail -n "$count" | jq -r '[.short_hash, .timestamp[0:10], .message[0:60]] | @tsv' | column -t -s $'\t'
   else
-    echo "No events file found."
+    echo "${yellow}No events file found.${reset}"
   fi
 }
 
@@ -658,13 +916,16 @@ function usage() {
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
   echo "  ${blue}prod reboot-ec2${reset} - Restart EC2 instance via AWS CLI (default: ichrisbirch-webserver)"
   echo
-  echo "${green}Project Stats (Event-Sourced):${reset}"
-  echo "  ${blue}stats${reset}             - Show stats summary (alias: stats show)"
-  echo "  ${blue}stats show${reset}        - Display stats file info and recent events"
-  echo "  ${blue}stats events [n]${reset}  - Show last n events (default: 20)"
-  echo "  ${blue}stats commits [n]${reset} - Show last n commits from events (default: 10)"
+  echo "${green}Project Stats:${reset}"
+  echo "  ${blue}stats${reset}               - Dashboard with code, tests, quality, and activity"
+  echo "  ${blue}stats code${reset}          - Lines of code by language"
+  echo "  ${blue}stats tests${reset}         - Test results, coverage, and slowest tests"
+  echo "  ${blue}stats quality${reset}       - Issues caught by linters over 24h/7d/30d/all time"
+  echo "  ${blue}stats activity [n]${reset}  - Commit activity graph (default: 7 days)"
+  echo "  ${blue}stats events [n]${reset}    - Recent pre-commit hook events (default: 20)"
+  echo "  ${blue}stats commits [n]${reset}   - Recent commits from events (default: 10)"
   echo
-  echo "${green}📱 Service URLs (All environments use HTTPS):${reset}"
+  echo "${green}Service URLs (All environments use HTTPS):${reset}"
   echo "  ${blue}Development${reset}: api.docker.localhost, app.docker.localhost, chat.docker.localhost"
   echo "  ${blue}Test${reset}: api.test.localhost:8443, app.test.localhost:8443, chat.test.localhost:8443"
   echo "  ${blue}Production${reset}: api.yourdomain.local, app.yourdomain.local, chat.yourdomain.local"
@@ -751,6 +1012,18 @@ stats)
   show | "")
     stats-show
     ;;
+  code)
+    stats-code
+    ;;
+  tests)
+    stats-tests
+    ;;
+  quality)
+    stats-quality
+    ;;
+  activity)
+    stats-activity "$3"
+    ;;
   events)
     stats-events "$3"
     ;;
@@ -759,7 +1032,7 @@ stats)
     ;;
   *)
     echo "${red}Unknown stats command: $2${reset}"
-    echo "Usage: ichrisbirch stats [show|events|commits]"
+    echo "Usage: ichrisbirch stats [code|tests|quality|activity|events|commits]"
     ;;
   esac
   ;;

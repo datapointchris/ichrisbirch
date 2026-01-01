@@ -1,0 +1,8 @@
+# Generated files
+**/main.css
+
+# Vendor files
+**/fontawesome/**
+
+# Data files
+**/chat_history.json

@@ -27,7 +27,7 @@ def run(branch: str, project: str) -> TokeiCollectEvent:
     start_time = time.perf_counter()
 
     result = subprocess.run(  # nosec B603 B607
-        ['tokei', '--output', 'json', '.'],
+        ['tokei', '--compact', '--output', 'json', '.'],
         capture_output=True,
         text=True,
     )
