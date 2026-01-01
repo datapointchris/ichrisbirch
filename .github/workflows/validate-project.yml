@@ -154,8 +154,35 @@ jobs:
       - name: Create test logs directory
         run: mkdir -p test-logs
 
+      - name: Create Docker network
+        run: docker network create proxy || true
+
+      - name: Start Docker Compose test environment
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name ichrisbirch-testing up -d --build postgres redis
+          echo "Waiting for services to be healthy..."
+          sleep 10
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name ichrisbirch-testing up -d --build api app chat
+          echo "Waiting for API to be ready..."
+          sleep 30
+
+      - name: Check Docker Compose status
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name ichrisbirch-testing ps
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name ichrisbirch-testing logs --tail=50
+
       - name: Run pytest with Coverage
         run: uv run pytest --cov=ichrisbirch
+
+      - name: Stop Docker Compose
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name ichrisbirch-testing down -v
 
       - name: Minimize uv cache
         run: uv cache prune --ci

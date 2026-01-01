@@ -1,0 +1,85 @@
+# CI-specific overrides for GitHub Actions
+# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml up -d
+
+services:
+  # Override API service for CI
+  api:
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+
+  # Override App service for CI
+  app:
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+
+  # Override Chat service for CI
+  chat:
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+
+  # Override Scheduler service for CI
+  scheduler:
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+      - type: volume
+        source: venv_shared
+        target: /app/.venv
+      - type: volume
+        source: ichrisbirch_testing_logs
+        target: /var/log/ichrisbirch
+      - type: volume
+        source: uv_cache
+        target: /root/.cache/uv
+
+  # Override Traefik for CI - simplified without dashboard auth
+  traefik:
+    command:
+      - "--api.dashboard=false"
+      - "--log.level=WARN"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+networks:
+  proxy:
+    external: false
+    driver: bridge

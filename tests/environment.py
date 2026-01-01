@@ -9,6 +9,7 @@ This module handles the setup and teardown of the test environment, including:
 
 import json
 import logging
+import os
 import socket
 import subprocess
 
@@ -44,9 +45,20 @@ class DockerComposeTestEnvironment:
     - Services use ENVIRONMENT=testing for test-specific configuration
     - Runs on different ports to avoid conflicts with dev environment
     - Allows pytest to run locally against containerized services
+
+    In CI, containers are pre-started by the workflow, so we only verify they're running.
     """
 
-    COMPOSE_COMMAND = 'docker compose --project-name ichrisbirch-testing -f docker-compose.yml -f docker-compose.test.yml up -d'
+    # CI uses an additional override file for CI-specific configuration
+    COMPOSE_FILES = '-f docker-compose.yml -f docker-compose.test.yml'
+    COMPOSE_FILES_CI = '-f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml'
+    COMPOSE_COMMAND = f'docker compose --project-name ichrisbirch-testing {COMPOSE_FILES} up -d'
+    COMPOSE_COMMAND_CI = f'docker compose --project-name ichrisbirch-testing {COMPOSE_FILES_CI} up -d'
+
+    @property
+    def is_ci(self) -> bool:
+        """Detect if running in CI environment."""
+        return os.environ.get('CI', '').lower() == 'true'
 
     def __init__(self, settings: Settings, test_session_generator):
         self.settings = settings
@@ -68,7 +80,16 @@ class DockerComposeTestEnvironment:
     def setup(self):
         """Setup the Docker Compose test environment."""
         try:
-            if not self.docker_test_services_already_running():
+            if self.is_ci:
+                logger.info('Running in CI environment - containers should be pre-started by workflow')
+                # In CI, wait longer for containers that were started by the workflow
+                if not self.docker_test_services_already_running():
+                    logger.warning('CI containers not detected, waiting for them to start...')
+                    time.sleep(10)
+                    if not self.docker_test_services_already_running():
+                        raise RuntimeError('CI containers not running - check workflow configuration')
+                logger.info('CI containers detected and running')
+            elif not self.docker_test_services_already_running():
                 logger.info('Docker Compose test services not running, starting them up')
                 self.setup_test_services()
             else:
@@ -80,10 +101,14 @@ class DockerComposeTestEnvironment:
 
         except Exception as e:
             logger.error(f'Error during setup: {e}')
-            self.teardown()
+            if not self.is_ci:
+                self.teardown()
             pytest.exit(f'Exiting due to setup failure: {e}', returncode=1)
 
     def teardown(self) -> None:
+        if self.is_ci:
+            logger.info('Skipping Docker Compose teardown in CI - handled by workflow')
+            return
         logger.info('Tearing down Docker Compose test environment')
         self.stop_docker_compose()
 
