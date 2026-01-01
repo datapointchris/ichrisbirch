@@ -19,6 +19,7 @@ from stats.schemas.collectors.dependencies import DependenciesCollectEvent
 from stats.schemas.collectors.docker import DockerCollectEvent
 from stats.schemas.collectors.files import FilesCollectEvent
 from stats.schemas.collectors.pytest_collector import PytestCollectEvent
+from stats.schemas.collectors.radon import RadonCollectEvent
 from stats.schemas.collectors.tokei import TokeiCollectEvent
 from stats.schemas.commit import CommitEvent
 from stats.schemas.hooks.bandit import BanditHookEvent
@@ -40,6 +41,7 @@ Event = (
     | DockerCollectEvent
     | DependenciesCollectEvent
     | FilesCollectEvent
+    | RadonCollectEvent
 )
 
 EventAdapter: TypeAdapter[Event] = TypeAdapter(Event)
@@ -105,4 +107,5 @@ __all__ = [
     'DockerCollectEvent',
     'DependenciesCollectEvent',
     'FilesCollectEvent',
+    'RadonCollectEvent',
 ]

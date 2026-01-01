@@ -259,7 +259,7 @@ events_path = "stats/events/events.jsonl"
 hooks = ["ruff", "mypy", "bandit", "shellcheck", "codespell"]
 
 [tool.devstats.collect]
-collectors = ["tokei", "pytest_collector", "coverage", "docker", "dependencies", "files"]
+collectors = ["tokei", "pytest_collector", "coverage", "docker", "dependencies", "files", "radon"]
 pytest_json_path = "/tmp/ichrisbirch-pytest-report.json"
 
 
