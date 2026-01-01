@@ -51,50 +51,52 @@ def test_insights_page(test_app_logged_in):
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
 
-@patch('ichrisbirch.app.routes.articles.QueryAPI')
-def test_insights_post_uses_internal_auth(mock_query_api_class, test_app_logged_in):
+@patch('ichrisbirch.app.routes.articles.logging_internal_service_client')
+def test_insights_post_uses_internal_auth(mock_internal_client, test_app_logged_in):
     """Verify that insights POST uses internal service authentication."""
-    mock_client = MagicMock()
     mock_response = MagicMock()
     mock_response.text = '<h1>Test Insights</h1>'
-    mock_client.request.return_value = mock_response
 
-    mock_query_api = MagicMock()
-    mock_query_api.client = mock_client
-    mock_query_api._get_api_url.return_value = 'http://test-api'
-    mock_query_api._get_auth_headers.return_value = {'X-Internal-Service': 'flask-frontend', 'X-Service-Key': 'test-key'}
-    mock_query_api_class.return_value = mock_query_api
+    mock_resource = MagicMock()
+    mock_resource.post_action.return_value = mock_response
+
+    mock_client = MagicMock()
+    mock_client.resource.return_value = mock_resource
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_internal_client.return_value = mock_client
 
     response = test_app_logged_in.post('/articles/insights/', data={'url': 'https://example.com/test'})
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
-    # Verify QueryAPI was instantiated with use_internal_auth=True
-    mock_query_api_class.assert_called()
-    call_kwargs = mock_query_api_class.call_args
-    assert call_kwargs.kwargs.get('use_internal_auth') is True
+    # Verify logging_internal_service_client was called (indicates internal auth is used)
+    mock_internal_client.assert_called()
 
 
-@patch('ichrisbirch.app.routes.articles.QueryAPI')
-def test_summarize_proxy_uses_internal_auth(mock_query_api_class, test_app_logged_in):
+@patch('ichrisbirch.app.routes.articles.logging_internal_service_client')
+def test_summarize_proxy_uses_internal_auth(mock_internal_client, test_app_logged_in):
     """Verify that summarize-proxy endpoint uses internal service authentication."""
     mock_result = MagicMock()
     mock_result.title = 'Test Article'
     mock_result.summary = 'Test summary'
     mock_result.tags = ['test', 'article']
 
-    mock_query_api = MagicMock()
-    mock_query_api.post.return_value = mock_result
-    mock_query_api_class.return_value = mock_query_api
+    mock_resource = MagicMock()
+    mock_resource.post.return_value = mock_result
+
+    mock_client = MagicMock()
+    mock_client.resource.return_value = mock_resource
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_internal_client.return_value = mock_client
 
     response = test_app_logged_in.post(
         '/articles/summarize-proxy/', data='{"url": "https://example.com/test"}', content_type='application/json'
     )
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
-    # Verify QueryAPI was instantiated with use_internal_auth=True
-    mock_query_api_class.assert_called()
-    call_kwargs = mock_query_api_class.call_args
-    assert call_kwargs.kwargs.get('use_internal_auth') is True
+    # Verify logging_internal_service_client was called (indicates internal auth is used)
+    mock_internal_client.assert_called()
 
     # Verify response contains expected data
     data = response.get_json()

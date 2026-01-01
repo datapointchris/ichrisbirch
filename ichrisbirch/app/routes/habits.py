@@ -16,8 +16,8 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger(__name__)
 
@@ -67,130 +67,135 @@ def sort_habits_by_category(habits: list[schemas.Habit] | list[schemas.HabitComp
 def index():
     settings = current_app.config['SETTINGS']
     TZ = settings.global_timezone
-    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
-    params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
-    completed = habits_completed_api.get_many(params=params)
-    completed_by_category = sort_habits_by_category(completed)
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        habits_api = client.resource('habits', schemas.Habit)
+        habits_completed_api = client.resource('habits/completed', schemas.HabitCompleted)
+        params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
+        completed = habits_completed_api.get_many(params=params)
+        completed_by_category = sort_habits_by_category(completed)
 
-    daily_habits = habits_api.get_many(params={'current': True})
-    todo = [h for h in daily_habits if h.name not in [d.name for d in completed]]
-    todo_by_category = sort_habits_by_category(todo)
+        daily_habits = habits_api.get_many(params={'current': True})
+        todo = [h for h in daily_habits if h.name not in [d.name for d in completed]]
+        todo_by_category = sort_habits_by_category(todo)
 
-    return render_template(
-        'habits/index.html',
-        completed=completed_by_category,
-        todo=todo_by_category,
-        long_date=pendulum.now(TZ).strftime(DATE_FORMAT),
-    )
+        return render_template(
+            'habits/index.html',
+            completed=completed_by_category,
+            todo=todo_by_category,
+            long_date=pendulum.now(TZ).strftime(DATE_FORMAT),
+        )
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
 def completed():
     settings = current_app.config['SETTINGS']
     TZ = settings.global_timezone
-    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
-    DEFAULT_DATE_FILTER = 'this_week'
-    edt = EasyDateTime(tz=TZ)
-    selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
-    start_date, end_date = edt.filters.get(selected_filter, (None, None))
-    logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        habits_api = client.resource('habits', schemas.Habit)
+        habits_completed_api = client.resource('habits/completed', schemas.HabitCompleted)
+        DEFAULT_DATE_FILTER = 'this_week'
+        edt = EasyDateTime(tz=TZ)
+        selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
+        start_date, end_date = edt.filters.get(selected_filter, (None, None))
+        logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
-    if start_date is None or end_date is None:
-        params = {}
-    else:
-        params = {'start_date': str(start_date), 'end_date': str(end_date)}
+        if start_date is None or end_date is None:
+            params = {}
+        else:
+            params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
-    completed_habits = habits_completed_api.get_many(params=params)
-    if completed_habits:
-        completed_count = len(completed_habits)
-        chart_labels, chart_values = create_completed_habit_chart_data(completed_habits)
-    else:
-        completed_count = f'No completed habits for time period: {" ".join(selected_filter.split("_")).capitalize()}'
-        chart_labels, chart_values = None, None
+        completed_habits = habits_completed_api.get_many(params=params)
+        if completed_habits:
+            completed_count = len(completed_habits)
+            chart_labels, chart_values = create_completed_habit_chart_data(completed_habits)
+        else:
+            completed_count = f'No completed habits for time period: {" ".join(selected_filter.split("_")).capitalize()}'
+            chart_labels, chart_values = None, None
 
-    daily = habits_api.get_many()
+        daily = habits_api.get_many()
 
-    return render_template(
-        'habits/completed.html',
-        habits=daily,
-        completed=completed_habits,
-        completed_count=completed_count,
-        filters=list(edt.filters) + ['all'],  # additional 'all' filter to frontend
-        date_filter=selected_filter,
-        chart_labels=chart_labels,
-        chart_values=chart_values,
-        zip=zip,
-        long_date=edt.today.strftime('%A %B %d, %Y'),
-    )
+        return render_template(
+            'habits/completed.html',
+            habits=daily,
+            completed=completed_habits,
+            completed_count=completed_count,
+            filters=list(edt.filters) + ['all'],  # additional 'all' filter to frontend
+            date_filter=selected_filter,
+            chart_labels=chart_labels,
+            chart_values=chart_values,
+            zip=zip,
+            long_date=edt.today.strftime('%A %B %d, %Y'),
+        )
 
 
 @blueprint.route('/manage/', methods=['GET'])
 def manage():
-    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
-    habits_categories_api = QueryAPI(base_endpoint='habits/categories', response_model=schemas.HabitCategory)
-    current_habits = habits_api.get_many(params={'current': True})
-    hibernating_habits = habits_api.get_many(params={'current': False})
-    current_categories = habits_categories_api.get_many(params={'current': True})
-    hibernating_categories = habits_categories_api.get_many(params={'current': False})
-    completed_habits = habits_completed_api.get_many()
-    return render_template(
-        'habits/manage.html',
-        current_habits=current_habits,
-        hibernating_habits=hibernating_habits,
-        current_categories=current_categories,
-        hibernating_categories=hibernating_categories,
-        completed_habits=completed_habits,
-    )
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        habits_api = client.resource('habits', schemas.Habit)
+        habits_completed_api = client.resource('habits/completed', schemas.HabitCompleted)
+        habits_categories_api = client.resource('habits/categories', schemas.HabitCategory)
+        current_habits = habits_api.get_many(params={'current': True})
+        hibernating_habits = habits_api.get_many(params={'current': False})
+        current_categories = habits_categories_api.get_many(params={'current': True})
+        hibernating_categories = habits_categories_api.get_many(params={'current': False})
+        completed_habits = habits_completed_api.get_many()
+        return render_template(
+            'habits/manage.html',
+            current_habits=current_habits,
+            hibernating_habits=hibernating_habits,
+            current_categories=current_categories,
+            hibernating_categories=hibernating_categories,
+            completed_habits=completed_habits,
+        )
 
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
     settings = current_app.config['SETTINGS']
     TZ = settings.global_timezone
-    habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
-    habits_completed_api = QueryAPI(base_endpoint='habits/completed', response_model=schemas.HabitCompleted)
-    habits_categories_api = QueryAPI(base_endpoint='habits/categories', response_model=schemas.HabitCategory)
-    data: dict[str, Any] = request.form.to_dict()
-    action = data.pop('action')
-    logger.debug(f'{request.referrer=} {action=}')
-    logger.debug(f'{data=}')
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        habits_api = client.resource('habits', schemas.Habit)
+        habits_completed_api = client.resource('habits/completed', schemas.HabitCompleted)
+        habits_categories_api = client.resource('habits/categories', schemas.HabitCategory)
+        data: dict[str, Any] = request.form.to_dict()
+        action = data.pop('action')
+        logger.debug(f'{request.referrer=} {action=}')
+        logger.debug(f'{data=}')
 
-    match action:
-        case 'add_habit':
-            habits_api.post(json=data)
+        match action:
+            case 'add_habit':
+                habits_api.post(json=data)
 
-        case 'complete_habit':
-            data.update({'complete_date': str(pendulum.now(TZ))})
-            habits_completed_api.post(json=data)
+            case 'complete_habit':
+                data.update({'complete_date': str(pendulum.now(TZ))})
+                habits_completed_api.post(json=data)
 
-        case 'hibernate_habit':
-            habits_api.patch([data.get('id')], json={'is_current': False})
+            case 'hibernate_habit':
+                habits_api.patch([data.get('id')], json={'is_current': False})
 
-        case 'revive_habit':
-            habits_api.patch([data.get('id')], json={'is_current': True})
+            case 'revive_habit':
+                habits_api.patch([data.get('id')], json={'is_current': True})
 
-        case 'delete_habit':
-            habits_api.delete([data.get('id')])
+            case 'delete_habit':
+                habits_api.delete([data.get('id')])
 
-        case 'delete_completed_habit':
-            habits_completed_api.delete([data.get('id')])
+            case 'delete_completed_habit':
+                habits_completed_api.delete([data.get('id')])
 
-        case 'add_category':
-            habits_categories_api.post(json=data)
+            case 'add_category':
+                habits_categories_api.post(json=data)
 
-        case 'hibernate_category':
-            habits_categories_api.patch([data.get('id')], json={'is_current': False})
+            case 'hibernate_category':
+                habits_categories_api.patch([data.get('id')], json={'is_current': False})
 
-        case 'revive_category':
-            habits_categories_api.patch([data.get('id')], json={'is_current': True})
+            case 'revive_category':
+                habits_categories_api.patch([data.get('id')], json={'is_current': True})
 
-        case 'delete_category':
-            habits_categories_api.delete([data.get('id')])
+            case 'delete_category':
+                habits_categories_api.delete([data.get('id')])
 
-        case _:
-            return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            case _:
+                return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    return redirect(request.referrer or url_for('habits.index'))
+        return redirect(request.referrer or url_for('habits.index'))

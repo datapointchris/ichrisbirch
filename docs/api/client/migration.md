@@ -1,6 +1,8 @@
 # Migration Guide: QueryAPI to API Client
 
-This guide helps you migrate from the existing `QueryAPI` class to the new session-based API client architecture.
+> **✅ MIGRATION COMPLETE** (2026-01-01): All 12 files have been migrated from `QueryAPI` to `LoggingAPIClient`. The `QueryAPI` class has been deleted. This document is preserved for historical reference.
+
+This guide helped migrate from the legacy `QueryAPI` class to the new session-based API client architecture.
 
 ## Overview of Changes
 
@@ -316,7 +318,7 @@ def test_get_tasks():
         pass
 
 # Or mock at HTTP level
-@responses.activate  
+@responses.activate
 def test_get_tasks():
     responses.add(responses.GET,
                  "http://api.test/tasks",

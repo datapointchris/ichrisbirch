@@ -2,7 +2,7 @@ import logging
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.app.query_api import QueryAPI
+from ichrisbirch.api.client.logging_client import logging_internal_service_client
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +10,19 @@ logger = logging.getLogger(__name__)
 class ChatAPIClient:
     def __init__(self, user: models.User | None = None):
         # Use internal service auth since Streamlit doesn't have Flask sessions
-        self.chat_api = QueryAPI(base_endpoint='chat/chats', response_model=schemas.Chat, use_internal_auth=True)
-        self.chat_messages_api = QueryAPI(base_endpoint='chat/messages', response_model=schemas.ChatMessage, use_internal_auth=True)
+        self._client = logging_internal_service_client()
+        self.chat_api = self._client.resource('chat/chats', schemas.Chat)
+        self.chat_messages_api = self._client.resource('chat/messages', schemas.ChatMessage)
+
+    def close(self):
+        """Close the API client connection."""
+        self._client.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def _convert_chat_to_model(self, chat: schemas.Chat):
         """The chat messages are not automatically converted to models, so must be done manually.

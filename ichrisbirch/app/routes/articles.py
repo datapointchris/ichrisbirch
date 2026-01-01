@@ -15,8 +15,9 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
+from ichrisbirch.api.client.logging_client import logging_internal_service_client
 from ichrisbirch.app import forms
-from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -93,25 +94,29 @@ def bulk_add_articles(articles_api, summarize_api, urls: list[str], settings: Se
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
-    if not (article := articles_api.get_one('current')):
-        logger.warning('no current article')
-        # TODO: [2024/06/07] - Get user preference for current articles, whether to filter only unread
-        # or include favorites
-        # unread_only = current_user.preferences.articles.get('only_unread_for_new_current')
-        # include_favorites = current_user.preferences.articles.get('include_favorites_for_new_current')
-        if article := make_random_article_current(articles_api):
-            logger.info(f"made article '{article.title}' current")
-        else:
-            logger.info('no articles')
-    return render_template('articles/index.html', article=article)
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        articles_api = client.resource('articles', schemas.Article)
+        if not (article := articles_api.get_one('current')):
+            logger.warning('no current article')
+            # TODO: [2024/06/07] - Get user preference for current articles, whether to filter only unread
+            # or include favorites
+            # unread_only = current_user.preferences.articles.get('only_unread_for_new_current')
+            # include_favorites = current_user.preferences.articles.get('include_favorites_for_new_current')
+            if article := make_random_article_current(articles_api):
+                logger.info(f"made article '{article.title}' current")
+            else:
+                logger.info('no articles')
+        return render_template('articles/index.html', article=article)
 
 
 @blueprint.route('/all/', methods=['GET'])
 def all():
-    articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
-    articles = articles_api.get_many()
-    return render_template('articles/all.html', articles=articles)
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        articles_api = client.resource('articles', schemas.Article)
+        articles = articles_api.get_many()
+        return render_template('articles/all.html', articles=articles)
 
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
@@ -131,10 +136,12 @@ def summarize_proxy():
     if not url:
         return Response('Missing URL', status=400)
 
-    summarize_api = QueryAPI(base_endpoint='articles/summarize', response_model=schemas.ArticleSummary, use_internal_auth=True)
-    if result := summarize_api.post(json={'url': url}):
-        return {'title': result.title, 'summary': result.summary, 'tags': result.tags}
-    return Response('Failed to summarize article', status=500)
+    settings = current_app.config['SETTINGS']
+    with logging_internal_service_client(base_url=settings.api_url) as client:
+        summarize_api = client.resource('articles/summarize', schemas.ArticleSummary)
+        if result := summarize_api.post(json={'url': url}):
+            return {'title': result.title, 'summary': result.summary, 'tags': result.tags}
+        return Response('Failed to summarize article', status=500)
 
 
 @blueprint.route('/bulk-add/', methods=['GET', 'POST'])
@@ -153,17 +160,13 @@ def insights():
     if request.method.upper() == 'POST':
         url = request.form.get('url')
         start = pendulum.now()
-        insights_api = QueryAPI(base_endpoint='articles/insights', response_model=schemas.Article, use_internal_auth=True)
-        response = insights_api.client.request(
-            'POST',
-            insights_api._get_api_url() + '/articles/insights/',
-            headers=insights_api._get_auth_headers(),
-            json={'url': url},
-            timeout=30,
-        )
-        elapsed = (pendulum.now() - start).in_words()
-        article_insights = response.text if response else ''
-        submitted_url = url
+        settings = current_app.config['SETTINGS']
+        with logging_internal_service_client(base_url=settings.api_url) as client:
+            insights_api = client.resource('articles/insights', schemas.Article)
+            response = insights_api.post_action(json={'url': url}, timeout=30)
+            elapsed = (pendulum.now() - start).in_words()
+            article_insights = response.text if response else ''
+            submitted_url = url
     else:
         article_insights, submitted_url, elapsed = '', '', ''
     return render_template('articles/insights.html', submitted_url=submitted_url, article_insights=article_insights, elapsed=elapsed)
@@ -173,79 +176,82 @@ def insights():
 def search():
     articles = []
     if request.method.upper() == 'POST':
-        articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
-        data = request.form.to_dict()
-        search_text = data.get('search_text')
-        logger.debug(f'{request.referrer=} | {search_text=}')
-        if not search_text:
-            flash('No search terms provided', 'warning')
-        else:
-            articles = articles_api.get_many('search', params={'q': search_text})
+        settings = current_app.config['SETTINGS']
+        with logging_flask_session_client(base_url=settings.api_url) as client:
+            articles_api = client.resource('articles', schemas.Article)
+            data = request.form.to_dict()
+            search_text = data.get('search_text')
+            logger.debug(f'{request.referrer=} | {search_text=}')
+            if not search_text:
+                flash('No search terms provided', 'warning')
+            else:
+                articles = articles_api.get_many('search', params={'q': search_text})
     return render_template('articles/search.html', articles=articles)
 
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
     settings = current_app.config['SETTINGS']
-    articles_api = QueryAPI(base_endpoint='articles', response_model=schemas.Article)
-    summarize_api = QueryAPI(base_endpoint='articles/summarize', response_model=schemas.ArticleSummary)
-    data = request.form.to_dict()
-    action = data.pop('action')
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        articles_api = client.resource('articles', schemas.Article)
+        summarize_api = client.resource('articles/summarize', schemas.ArticleSummary)
+        data = request.form.to_dict()
+        action = data.pop('action')
 
-    match action:
-        case 'add':
-            form = forms.ArticleCreateForm(request.form)
-            if form.validate_on_submit():
-                if articles_api.get_one('url', params={'url': data['url']}):
-                    message = f'already exists: {data["url"]}'
-                    flash(message, 'warning')
-                    logger.warning(message)
+        match action:
+            case 'add':
+                form = forms.ArticleCreateForm(request.form)
+                if form.validate_on_submit():
+                    if articles_api.get_one('url', params={'url': data['url']}):
+                        message = f'already exists: {data["url"]}'
+                        flash(message, 'warning')
+                        logger.warning(message)
+                    else:
+                        # convert string field of tags to list for storing in postgres array
+                        data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
+                        data['save_date'] = str(pendulum.now())
+                        articles_api.post(json=data)
+            case 'bulk_add':
+                if urls := process_bulk_urls(request, data):
+                    succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls, settings)
                 else:
-                    # convert string field of tags to list for storing in postgres array
-                    data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
-                    data['save_date'] = str(pendulum.now())
-                    articles_api.post(json=data)
-        case 'bulk_add':
-            if urls := process_bulk_urls(request, data):
-                succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls, settings)
-            else:
-                flash('No URLs provided', 'warning')
-            succeeded_articles = '\n'.join([article.strip() for article in succeeded])
-            errored_articles = '\n'.join([article[0].strip() for article in errored])
-            errored_debug = '\n\n'.join([f'{article[0].strip()}\n{article[1].strip()}' for article in errored])
-            return render_template(
-                'articles/bulk-add-results.html',
-                succeeded_articles=succeeded_articles,
-                errored_articles=errored_articles,
-                errored_debug=errored_debug,
-            )
-        case 'archive':
-            articles_api.patch(data.get('id'), json={'is_archived': True})
-        case 'unarchive':
-            articles_api.patch(data.get('id'), json={'is_archived': False})
-        case 'make_current':
-            articles_api.patch(data.get('id'), json={'is_current': True})
-        case 'remove_current':
-            articles_api.patch(data.get('id'), json={'is_current': False})
-        case 'make_favorite':
-            articles_api.patch(data.get('id'), json={'is_favorite': True})
-        case 'unfavorite':
-            articles_api.patch(data.get('id'), json={'is_favorite': False})
-        case 'mark_read':
-            if article := articles_api.get_one(data.get('id')):
-                articles_api.patch(
-                    data.get('id'),
-                    json={
-                        'is_current': False,
-                        'is_archived': True,
-                        'last_read_date': str(pendulum.now()),
-                        'read_count': article.read_count + 1,
-                    },
+                    flash('No URLs provided', 'warning')
+                succeeded_articles = '\n'.join([article.strip() for article in succeeded])
+                errored_articles = '\n'.join([article[0].strip() for article in errored])
+                errored_debug = '\n\n'.join([f'{article[0].strip()}\n{article[1].strip()}' for article in errored])
+                return render_template(
+                    'articles/bulk-add-results.html',
+                    succeeded_articles=succeeded_articles,
+                    errored_articles=errored_articles,
+                    errored_debug=errored_debug,
                 )
-        case 'delete':
-            articles_api.delete(data.get('id'))
+            case 'archive':
+                articles_api.patch(data.get('id'), json={'is_archived': True})
+            case 'unarchive':
+                articles_api.patch(data.get('id'), json={'is_archived': False})
+            case 'make_current':
+                articles_api.patch(data.get('id'), json={'is_current': True})
+            case 'remove_current':
+                articles_api.patch(data.get('id'), json={'is_current': False})
+            case 'make_favorite':
+                articles_api.patch(data.get('id'), json={'is_favorite': True})
+            case 'unfavorite':
+                articles_api.patch(data.get('id'), json={'is_favorite': False})
+            case 'mark_read':
+                if article := articles_api.get_one(data.get('id')):
+                    articles_api.patch(
+                        data.get('id'),
+                        json={
+                            'is_current': False,
+                            'is_archived': True,
+                            'last_read_date': str(pendulum.now()),
+                            'read_count': article.read_count + 1,
+                        },
+                    )
+            case 'delete':
+                articles_api.delete(data.get('id'))
 
-        case _:
-            return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            case _:
+                return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    return redirect(request.referrer or url_for('articles.all'))
+        return redirect(request.referrer or url_for('articles.all'))

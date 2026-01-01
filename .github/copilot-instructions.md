@@ -34,7 +34,7 @@
 ### ABSOLUTELY NEVER EVER ADD ENVIRONMENT VARIABLES ANYWHERE UNDER ANY CIRCUMSTANCES
 
 - DO NOT add environment variables to Docker Compose files
-- DO NOT add environment variables to .env files  
+- DO NOT add environment variables to .env files
 - DO NOT add environment variables to any configuration files
 - DO NOT suggest adding environment variables as a solution
 - DO NOT add any new environment variables to SSM Parameters either
@@ -49,7 +49,7 @@
 This is a **containerized dual-application architecture** with strict separation between frontend and backend:
 
 - **Flask App** (`ichrisbirch/app/`): Web frontend with forms, templates, authentication
-- **FastAPI Backend** (`ichrisbirch/api/`): Independent REST API with database access  
+- **FastAPI Backend** (`ichrisbirch/api/`): Independent REST API with database access
 - **PostgreSQL Database**: Containerized database service
 
 ## 🚨 CRITICAL DOCKER & TESTING PORT CONFIGURATION 🚨
@@ -94,7 +94,7 @@ postgres:
 
 - **Nginx**: Reverse proxy and static file serving
 - **All services orchestrated via Docker Compose** with environment-specific compose files
-- **Critical Rule**: Flask NEVER accesses database directly - all data flows through API calls via `QueryAPI`
+- **Critical Rule**: Flask NEVER accesses database directly - all data flows through API calls via `LoggingAPIClient`
 
 ## Settings & Configuration Pattern
 
@@ -110,47 +110,57 @@ postgres:
 
 ```python
 # Standard pattern - import settings directly
-from ichrisbirch.config import settings
-from ichrisbirch.app.query_api import QueryAPI
+from flask import current_app
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
+from ichrisbirch import schemas
 
-habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
-api_url = settings.api_url  # Resolved from environment variables
+settings = current_app.config['SETTINGS']
+with logging_flask_session_client(base_url=settings.api_url) as client:
+    habits_api = client.resource('habits', schemas.Habit)
+    habits = habits_api.get_many(params={'current': True})
 ```
 
 ## Flask-to-API Communication Pattern
 
-**Current Architecture Analysis**:
+**Architecture**:
 
-- **Modern APIClient** (`ichrisbirch/api/client/`): New architecture with proper session management, credential providers, and resource clients
-- **Legacy QueryAPI** (`ichrisbirch/app/query_api.py`): Current Flask implementation with custom methods and extensive logging
-- **Migration Strategy**: Gradually replace QueryAPI usage with modern APIClient while preserving functionality
+- **LoggingAPIClient** (`ichrisbirch/api/client/logging_client.py`): Main client with extensive logging, session management, and resource clients
+- **Factory Functions**: `logging_flask_session_client()` for user auth, `logging_internal_service_client()` for internal service auth
 
 **Authentication Strategy**:
 
-- **User Operations**: Regular users can access their own data, admins can access all user data
-- **Internal Service**: Flask frontend uses internal service auth for system operations (user lookups, etc.)
+- **User Operations**: Use `logging_flask_session_client()` - authenticates as the logged-in Flask user
+- **Internal Service**: Use `logging_internal_service_client()` - for system operations (user lookups, scheduled jobs, etc.)
 - **API Endpoint Security**: Users endpoints require specific auth - regular users get own info, admins/internal service can list all
 
-**Current QueryAPI Usage** (to be migrated):
+**Standard Pattern for Flask Routes**:
 
 ```python
-# Current pattern in Flask routes
-from ichrisbirch.app.query_api import QueryAPI
-
-habits_api = QueryAPI(base_endpoint='habits', response_model=schemas.Habit)
-habits = habits_api.get_many(params={'current': True})
-```
-
-**Target APIClient Pattern**:
-
-```python
-# Target pattern using modern client
-from ichrisbirch.api.client import internal_service_client
+# User-authenticated operations (most common)
+from flask import current_app
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch import schemas
 
-with internal_service_client() as client:
-    habits_client = client.resource('habits', schemas.Habit)
-    habits = habits_client.list(params={'current': True})
+def some_route():
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        habits_api = client.resource('habits', schemas.Habit)
+        habits = habits_api.get_many(params={'current': True})
+```
+
+**Internal Service Authentication Pattern**:
+
+```python
+# For system operations that don't need user context
+from flask import current_app
+from ichrisbirch.api.client.logging_client import logging_internal_service_client
+from ichrisbirch import schemas
+
+def admin_operation():
+    settings = current_app.config['SETTINGS']
+    with logging_internal_service_client(base_url=settings.api_url) as client:
+        users_api = client.resource('users', schemas.User)
+        all_users = users_api.get_many()
 ```
 
 **Preserved Functionality Requirements**:
@@ -237,7 +247,7 @@ docker-compose -f docker-compose.prod.yml up -d
 **Container Services**:
 
 - Flask App: Web frontend service
-- FastAPI Backend: API service  
+- FastAPI Backend: API service
 - PostgreSQL: Database service
 - Nginx: Reverse proxy service
 
@@ -267,19 +277,19 @@ docker-compose -f docker-compose.prod.yml up -d
 ## Critical Gotchas
 
 1. **Virtual Environment Required** - Always activate virtual environment or use `uv run` when running project commands locally
-2. **No database access in Flask** - Always use QueryAPI with appropriate auth method
+2. **No database access in Flask** - Always use `LoggingAPIClient` with appropriate auth method
 3. **Preserve existing patterns** - Use existing utility functions like `utils.url_builder()`, prefer not to replace with stdlib unless there is a compelling reason
-4. **Authentication method choice** - Use `use_internal_auth=True` for system operations, explicit user for user operations
-5. **Docker Compose environments** - Use correct compose file for target environment  
-6. **Custom QueryAPI methods** - `get_generic()`, `post_action()` are intentional patterns, preserve them
+4. **Authentication method choice** - Use `logging_internal_service_client()` for system operations, `logging_flask_session_client()` for user operations
+5. **Docker Compose environments** - Use correct compose file for target environment
+6. **Custom client methods** - `get_generic()`, `post_action()` are intentional patterns, preserve them
 7. **Module-level imports only** - Never use function-level imports; all imports must be at the module level to maintain code clarity and avoid import-related issues
 
 ## Development Principles
 
 **Development Principles**: Always prefer existing utility functions and patterns unless they cause errors or interfere with functionality. Examples:
 
-- Use `utils.url_builder()` instead of `urllib.parse.urljoin`  
-- Keep custom QueryAPI methods like `get_generic()` and `post_action()`
+- Use `utils.url_builder()` instead of `urllib.parse.urljoin`
+- Keep custom client methods like `get_generic()` and `post_action()`
 - Preserve extensive logging patterns for debugging
 - Maintain backwards compatibility when improving architecture
 
@@ -294,7 +304,7 @@ docker-compose -f docker-compose.prod.yml up -d
 **Function Enhancement Strategy**: When improving functionality:
 
 1. Enhance existing classes/functions rather than replacing them
-2. Add optional parameters to maintain backwards compatibility  
+2. Add optional parameters to maintain backwards compatibility
 3. Preserve all custom methods that existing code relies on
 4. Keep detailed logging and debugging capabilities intact
 

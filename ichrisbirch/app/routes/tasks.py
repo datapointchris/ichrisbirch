@@ -16,9 +16,9 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.app.query_api import QueryAPI
 from ichrisbirch.models.task import TaskCategory
 
 logger = logging.getLogger(__name__)
@@ -56,18 +56,20 @@ def inject_task_create_form():
 @blueprint.context_processor
 def inject_task_info_counts():
     """Inject task counts into the request context."""
-    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
-    tasks = tasks_api.get_many('todo')
-    due_soon_count = sum(1 for task in tasks if 2 < task.priority <= 5)
-    critical_count = sum(1 for task in tasks if 0 < task.priority <= 2)
-    overdue_count = sum(1 for task in tasks if task.priority < 1)
+    base_url = current_app.config['SETTINGS'].api_url
+    with logging_flask_session_client(base_url=base_url) as client:
+        tasks_api = client.resource('tasks', schemas.Task)
+        tasks = tasks_api.get_many('todo')
+        due_soon_count = sum(1 for task in tasks if 2 < task.priority <= 5)
+        critical_count = sum(1 for task in tasks if 0 < task.priority <= 2)
+        overdue_count = sum(1 for task in tasks if task.priority < 1)
 
-    return dict(
-        critical_count=critical_count,
-        due_soon_count=due_soon_count,
-        overdue_count=overdue_count,
-        total_count=len(tasks),
-    )
+        return dict(
+            critical_count=critical_count,
+            due_soon_count=due_soon_count,
+            overdue_count=overdue_count,
+            total_count=len(tasks),
+        )
 
 
 def calculate_average_completion_time(tasks: list[schemas.TaskCompleted]) -> str | None:
@@ -98,21 +100,24 @@ def create_completed_task_chart_data(tasks: list[schemas.TaskCompleted]) -> tupl
 def index():
     settings = current_app.config['SETTINGS']
     TZ = settings.global_timezone
-    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
-    tasks = tasks_api.get_many('todo')
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        tasks_api = client.resource('tasks', schemas.Task)
+        tasks = tasks_api.get_many('todo')
 
-    tasks_completed_api = QueryAPI(base_endpoint='tasks/completed', response_model=schemas.TaskCompleted)
-    completed_today_params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
-    completed_today = tasks_completed_api.get_many(params=completed_today_params)
+        tasks_completed_api = client.resource('tasks/completed', schemas.TaskCompleted)
+        completed_today_params = {'start_date': str(pendulum.today(TZ)), 'end_date': str(pendulum.tomorrow(TZ))}
+        completed_today = tasks_completed_api.get_many(params=completed_today_params)
 
-    return render_template('tasks/index.html', top_tasks=tasks[:5], completed_today=completed_today)
+        return render_template('tasks/index.html', top_tasks=tasks[:5], completed_today=completed_today)
 
 
 @blueprint.route('/todo/', methods=['GET', 'POST'])
 def todo():
-    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
-    tasks = tasks_api.get_many('todo')
-    return render_template('tasks/todo.html', tasks=tasks)
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        tasks_api = client.resource('tasks', schemas.Task)
+        tasks = tasks_api.get_many('todo')
+        return render_template('tasks/todo.html', tasks=tasks)
 
 
 @blueprint.route('/completed/', methods=['GET', 'POST'])
@@ -123,36 +128,37 @@ def completed():
     """
     settings = current_app.config['SETTINGS']
     TZ = settings.global_timezone
-    tasks_completed_api = QueryAPI(base_endpoint='tasks/completed', response_model=schemas.TaskCompleted)
-    DEFAULT_DATE_FILTER = 'this_week'
-    edt = EasyDateTime(tz=TZ)
-    selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
-    start_date, end_date = edt.filters.get(selected_filter, (None, None))
-    logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        tasks_completed_api = client.resource('tasks/completed', schemas.TaskCompleted)
+        DEFAULT_DATE_FILTER = 'this_week'
+        edt = EasyDateTime(tz=TZ)
+        selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
+        start_date, end_date = edt.filters.get(selected_filter, (None, None))
+        logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
 
-    if start_date is None or end_date is None:
-        params = {}
-    else:
-        params = {'start_date': str(start_date), 'end_date': str(end_date)}
+        if start_date is None or end_date is None:
+            params = {}
+        else:
+            params = {'start_date': str(start_date), 'end_date': str(end_date)}
 
-    if completed_tasks := tasks_completed_api.get_many(params=params):
-        average_completion = calculate_average_completion_time(completed_tasks)
-        chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
-    else:
-        average_completion = f'No completed tasks for time period: {" ".join(selected_filter.split("_")).capitalize()}'
-        chart_labels, chart_values = None, None
+        if completed_tasks := tasks_completed_api.get_many(params=params):
+            average_completion = calculate_average_completion_time(completed_tasks)
+            chart_labels, chart_values = create_completed_task_chart_data(completed_tasks)
+        else:
+            average_completion = f'No completed tasks for time period: {" ".join(selected_filter.split("_")).capitalize()}'
+            chart_labels, chart_values = None, None
 
-    return render_template(
-        'tasks/completed.html',
-        completed_tasks=completed_tasks,
-        average_completion=average_completion,
-        filters=list(edt.filters) + ['all'],  # additional 'all' filter to frontend
-        date_filter=selected_filter,
-        chart_labels=chart_labels,
-        chart_values=chart_values,
-        total_completed=len(completed_tasks),
-        zip=zip,
-    )
+        return render_template(
+            'tasks/completed.html',
+            completed_tasks=completed_tasks,
+            average_completion=average_completion,
+            filters=list(edt.filters) + ['all'],  # additional 'all' filter to frontend
+            date_filter=selected_filter,
+            chart_labels=chart_labels,
+            chart_values=chart_values,
+            total_completed=len(completed_tasks),
+            zip=zip,
+        )
 
 
 @blueprint.route('/search/', methods=['GET', 'POST'])
@@ -168,10 +174,12 @@ def search():
             flash('No search terms provided', 'warning')
             return render_template('tasks/search.html', tasks=[])
 
-        tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
-        tasks = tasks_api.get_many('search', params={'q': search_terms})
-        todo_tasks = [task for task in tasks if not task.complete_date]
-        completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
+        settings = current_app.config['SETTINGS']
+        with logging_flask_session_client(base_url=settings.api_url) as client:
+            tasks_api = client.resource('tasks', schemas.Task)
+            tasks = tasks_api.get_many('search', params={'q': search_terms})
+            todo_tasks = [task for task in tasks if not task.complete_date]
+            completed_tasks = [schemas.TaskCompleted(**task.model_dump()) for task in tasks if task.complete_date]
 
     return render_template('tasks/search.html', todo_tasks=todo_tasks, completed_tasks=completed_tasks)
 
@@ -183,31 +191,33 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    tasks_api = QueryAPI(base_endpoint='tasks', response_model=schemas.Task)
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        tasks_api = client.resource('tasks', schemas.Task)
 
-    data = request.form.to_dict()
-    action = data.pop('action')
+        data = request.form.to_dict()
+        action = data.pop('action')
 
-    match action:
-        case 'add':
-            tasks_api.post(json=data)
-            return redirect(request.referrer or url_for('tasks.index'))
-        case 'complete':
-            tasks_api.patch([data.get('id'), 'complete'])
-            return redirect(request.referrer or url_for('tasks.index'))
-        case 'extend':
-            tasks_api.patch([data.get('id'), 'extend', data.get('days')])
-            return redirect(request.referrer or url_for('tasks.todo'))
-        case 'delete':
-            tasks_api.delete(data.get('id'))
-            return redirect(request.referrer or url_for('tasks.todo'))
-        case 'reset_priorities':
-            if response := tasks_api.post_action('reset-priorities'):
-                message = response.json().get('message')
-                flash(message, 'success')
-            else:
-                message = 'Failed to reset priorities'
-                flash(message, 'error')
-            return redirect(request.referrer or url_for('tasks.todo'))
+        match action:
+            case 'add':
+                tasks_api.post(json=data)
+                return redirect(request.referrer or url_for('tasks.index'))
+            case 'complete':
+                tasks_api.patch([data.get('id'), 'complete'])
+                return redirect(request.referrer or url_for('tasks.index'))
+            case 'extend':
+                tasks_api.patch([data.get('id'), 'extend', data.get('days')])
+                return redirect(request.referrer or url_for('tasks.todo'))
+            case 'delete':
+                tasks_api.delete(data.get('id'))
+                return redirect(request.referrer or url_for('tasks.todo'))
+            case 'reset_priorities':
+                if response := tasks_api.post_action('reset-priorities'):
+                    message = response.json().get('message')
+                    flash(message, 'success')
+                else:
+                    message = 'Failed to reset priorities'
+                    flash(message, 'error')
+                return redirect(request.referrer or url_for('tasks.todo'))
 
-    return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(f'Method/Action {action} not accepted', status=status.HTTP_405_METHOD_NOT_ALLOWED)

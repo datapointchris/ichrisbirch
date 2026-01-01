@@ -12,8 +12,8 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
-from ichrisbirch.app.query_api import QueryAPI
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +28,14 @@ def enforce_login():
 
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
-    books_api = QueryAPI(base_endpoint='books', response_model=schemas.Book)
-    if search := request.args.get('search'):
-        books = books_api.get_many('search', params={'q': search})
-    else:
-        books = books_api.get_many()
-    return render_template('books/index.html', books=books)
+    base_url = current_app.config['SETTINGS'].api_url
+    with logging_flask_session_client(base_url=base_url) as client:
+        books_api = client.resource('books', schemas.Book)
+        if search := request.args.get('search'):
+            books = books_api.get_many('search', params={'q': search})
+        else:
+            books = books_api.get_many()
+        return render_template('books/index.html', books=books)
 
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
@@ -46,35 +48,37 @@ def add():
 
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
-    books_api = QueryAPI(base_endpoint='books', response_model=schemas.Book)
-    data = request.form.to_dict()
-    action = data.pop('action')
+    base_url = current_app.config['SETTINGS'].api_url
+    with logging_flask_session_client(base_url=base_url) as client:
+        books_api = client.resource('books', schemas.Book)
+        data = request.form.to_dict()
+        action = data.pop('action')
 
-    match action:
-        case 'add':
-            form = forms.BookCreateForm(request.form)
-            if form.validate_on_submit():
-                if books_api.get_one(f'isbn/{data["isbn"]}'):
-                    message = f'already exists: {data["isbn"]}'
-                    flash(message, 'warning')
-                    logger.warning(message)
+        match action:
+            case 'add':
+                form = forms.BookCreateForm(request.form)
+                if form.validate_on_submit():
+                    if books_api.get_one(f'isbn/{data["isbn"]}'):
+                        message = f'already exists: {data["isbn"]}'
+                        flash(message, 'warning')
+                        logger.warning(message)
+                    else:
+                        # convert string field of tags to list for storing in postgres array
+                        data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
+                        books_api.post(json=data)
+                        flash(f'Added: {data["title"]}', 'success')
                 else:
-                    # convert string field of tags to list for storing in postgres array
-                    data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
-                    books_api.post(json=data)
-                    flash(f'Added: {data["title"]}', 'success')
-            else:
-                message = 'Form validation failed'
-                flash(message, 'error')
-                logger.warning(message)
-                for field, errors in form.errors.items():
-                    for error in errors:
-                        flash(f'{field}: {error}', 'error')
-                        logger.warning(f'{field}: {error}')
-        case 'delete':
-            books_api.delete(data.get('id'))
+                    message = 'Form validation failed'
+                    flash(message, 'error')
+                    logger.warning(message)
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            flash(f'{field}: {error}', 'error')
+                            logger.warning(f'{field}: {error}')
+            case 'delete':
+                books_api.delete(data.get('id'))
 
-        case _:
-            return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            case _:
+                return Response(f'Method/Action {action} not allowed', status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    return redirect(request.referrer or url_for('books.index'))
+        return redirect(request.referrer or url_for('books.index'))

@@ -378,7 +378,7 @@ async def admin(user: User = Depends(auth.get_current_admin_user)):
 4. **Create Flask Route** (`ichrisbirch/app/routes/`)
    - Create blueprint
    - Use Flask-Login for auth
-   - Communicate with API via `QueryAPI` with `use_internal_auth=True`
+   - Communicate with API via `logging_flask_session_client()` or `logging_internal_service_client()` from `ichrisbirch.api.client.logging_client`
 
 5. **Create Templates** (`ichrisbirch/app/templates/`)
    - Jinja2 templates
