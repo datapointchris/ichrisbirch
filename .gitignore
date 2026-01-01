@@ -18,6 +18,7 @@ logs/
 /stats/stats_*.json
 /stats/sessions/
 /stats/events/
+/stats/timing/
 
 # Commit session tracking (local only, not synced)
 .tmp/

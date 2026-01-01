@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import subprocess  # nosec B404
 import sys
+import time
+from datetime import UTC
 from datetime import datetime
+from pathlib import Path
 
 from stats.collectors import discover_collectors
 from stats.collectors import get_collector
@@ -13,6 +16,21 @@ from stats.config import load_config
 from stats.emit import emit_event
 from stats.schemas.commit import CommitEvent
 from stats.schemas.commit import StagedFile
+
+TIMING_DIR = Path(__file__).parent / 'timing'
+
+
+def write_timing(collector_name: str, duration: float, total_duration: float | None = None) -> None:
+    """Append timing entry to collect timing log."""
+    TIMING_DIR.mkdir(exist_ok=True)
+    log_file = TIMING_DIR / 'collect.log'
+    timestamp = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
+
+    with log_file.open('a') as f:
+        if total_duration is not None:
+            f.write(f'{timestamp} | TOTAL | {total_duration:.3f}s\n')
+        else:
+            f.write(f'{timestamp} | {collector_name} | {duration:.3f}s\n')
 
 
 def get_branch() -> str:
@@ -115,6 +133,8 @@ def get_staged_files_from_commit() -> list[StagedFile]:
 
 def main() -> int:
     """Run post-commit collection."""
+    total_start = time.perf_counter()
+
     config = load_config()
     project = config['project']
     events_path = config['events_path']
@@ -153,6 +173,7 @@ def main() -> int:
         collector_runner = get_collector(collector_name)
         if collector_runner is not None:
             try:
+                start = time.perf_counter()
                 if collector_name == 'pytest_collector':
                     json_path = collect_config.get('pytest_json_path', '/tmp/ichrisbirch-pytest-report.json')  # nosec B108
                     event = collector_runner(branch, project, json_path)
@@ -160,11 +181,16 @@ def main() -> int:
                     event = collector_runner(branch, project)
                 else:
                     event = collector_runner(branch, project)
+                duration = time.perf_counter() - start
+                write_timing(collector_name, duration)
 
                 if event is not None:
                     emit_event(event, events_path)
             except Exception as e:
                 print(f"Warning: Collector '{collector_name}' failed: {e}")
+
+    total_duration = time.perf_counter() - total_start
+    write_timing('', 0, total_duration)
 
     return 0
 
