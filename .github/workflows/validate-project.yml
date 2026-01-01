@@ -161,11 +161,11 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
             --project-name ichrisbirch-testing up -d --build postgres redis
-          echo "Waiting for services to be healthy..."
+          echo "Waiting for database to be healthy..."
           sleep 10
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name ichrisbirch-testing up -d --build api app chat
-          echo "Waiting for API to be ready..."
+            --project-name ichrisbirch-testing up -d --build api app chat scheduler
+          echo "Waiting for services to be ready..."
           sleep 30
 
       - name: Check Docker Compose status
