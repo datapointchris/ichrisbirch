@@ -13,8 +13,11 @@ instance/*
 test-logs/
 logs/
 
-# Project stats (synced via S3, not git)
-/stats/
+# Project stats data (synced via S3, not git)
+# Ignore data files but keep Python package code
+/stats/stats_*.json
+/stats/sessions/
+/stats/events/
 
 # Commit session tracking (local only, not synced)
 .tmp/

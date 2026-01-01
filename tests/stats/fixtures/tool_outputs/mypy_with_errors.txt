@@ -1,0 +1,6 @@
+/Users/chris/code/ichrisbirch/ichrisbirch/config.py:178: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+/Users/chris/code/ichrisbirch/test_file.py:1: error: Unsupported operand types for + ("str" and "int")  [operator]
+    def foo(x: str) -> int: return x + 1
+                                       ^
+/Users/chris/code/ichrisbirch/test_file.py:5: error: Incompatible return value type (got "str", expected "int")  [return-value]
+Found 2 errors in 1 file (checked 5 source files)

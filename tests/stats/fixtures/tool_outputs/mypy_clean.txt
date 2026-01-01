@@ -1,0 +1,6 @@
+ichrisbirch/config.py:178: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ichrisbirch/config.py:179: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ichrisbirch/app/routes/habits.py:156: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ichrisbirch/app/routes/box_packing.py:86: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ichrisbirch/app/routes/box_packing.py:89: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ichrisbirch/app/routes/box_packing.py:103: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]

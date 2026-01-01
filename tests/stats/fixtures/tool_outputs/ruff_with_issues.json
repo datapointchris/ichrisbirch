@@ -1,0 +1,68 @@
+[
+  {
+    "cell": null,
+    "code": "SIM105",
+    "end_location": {
+      "column": 17,
+      "row": 218
+    },
+    "filename": "/Users/chris/code/ichrisbirch/scripts/stats/file_history.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "from contextlib import suppress",
+          "end_location": {
+            "column": 32,
+            "row": 12
+          },
+          "location": {
+            "column": 1,
+            "row": 12
+          }
+        }
+      ],
+      "message": "Replace `try`-`except`-`pass` with `contextlib.suppress()`"
+    },
+    "location": {
+      "column": 5,
+      "row": 215
+    },
+    "message": "Use `contextlib.suppress(ValueError)` instead of `try`-`except`-`pass`",
+    "noqa_row": 215,
+    "url": "https://docs.astral.sh/ruff/rules/suppressible-exception"
+  },
+  {
+    "cell": null,
+    "code": "SIM105",
+    "end_location": {
+      "column": 17,
+      "row": 228
+    },
+    "filename": "/Users/chris/code/ichrisbirch/scripts/stats/file_history.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "from contextlib import suppress",
+          "end_location": {
+            "column": 32,
+            "row": 12
+          },
+          "location": {
+            "column": 1,
+            "row": 12
+          }
+        }
+      ],
+      "message": "Replace `try`-`except`-`pass` with `contextlib.suppress()`"
+    },
+    "location": {
+      "column": 5,
+      "row": 225
+    },
+    "message": "Use `contextlib.suppress(ValueError)` instead of `try`-`except`-`pass`",
+    "noqa_row": 225,
+    "url": "https://docs.astral.sh/ruff/rules/suppressible-exception"
+  }
+]
