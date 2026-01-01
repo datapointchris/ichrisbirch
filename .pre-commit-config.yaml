@@ -1,16 +1,5 @@
 fail_fast: true
 repos:
-  # MUST BE FIRST - captures state BEFORE any auto-fixes are applied
-  - repo: local
-    hooks:
-      - id: capture-pre-state
-        name: capture pre-commit state
-        stages: [pre-commit]
-        language: system
-        entry: uv run python scripts/pre_commit_validations/capture_pre_state.py
-        pass_filenames: false
-        always_run: true
-
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.7
     hooks:
@@ -178,20 +167,11 @@ repos:
         pass_filenames: false
         always_run: true
 
-      # Event-sourced stats collection (runs first in post-commit)
+      # Event-sourced stats collection
       - id: devstats-collect
         name: devstats collect
         stages: [post-commit]
         language: system
         entry: uv run python -m stats.post_commit_collect
-        pass_filenames: false
-        always_run: true
-
-      # Legacy stats collection (session tracking + S3 sync)
-      - id: collect-stats
-        name: collect project stats
-        stages: [post-commit]
-        language: system
-        entry: uv run python -m scripts.stats.post_commit
         pass_filenames: false
         always_run: true

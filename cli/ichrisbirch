@@ -543,197 +543,61 @@ function prod-reboot-ec2() {
 }
 
 # ============================================================================
-# PROJECT STATS
+# PROJECT STATS (Event-Sourced)
 # ============================================================================
 
 function stats-show() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "📊 Current Project Stats"
-  echo ""
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  uv run python -m scripts.stats.collect
-}
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
-function stats-collect() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  echo "📊 Collecting and saving stats for current commit..."
-  echo ""
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  uv run python -m scripts.stats.collect --commit
-}
-
-function stats-sync() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local action="${1:-}"
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-
-  case "$action" in
-  push)
-    echo "📤 Pushing stats to S3..."
-    uv run python -m scripts.stats.sync push
-    ;;
-  pull)
-    echo "📥 Pulling stats from S3..."
-    uv run python -m scripts.stats.sync pull
-    ;;
-  *)
-    echo "🔄 Syncing stats with S3 (pull then push)..."
-    uv run python -m scripts.stats.sync
-    ;;
-  esac
-}
-
-function stats-history() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local count="${1:-10}"
-  echo "📈 Recent stats history (last $count commits):"
+  echo "📊 Project Stats (Event-Sourced)"
   echo ""
 
-  # List stats files sorted by date
-  if [ -d "$ICHRISBIRCH_HOME/stats" ]; then
-    find "$ICHRISBIRCH_HOME/stats" -maxdepth 1 -name "stats_*.json" -type f -print0 2>/dev/null | xargs -0 ls -t | head -n "$count" | while read -r file; do
-      if [ -f "$file" ]; then
-        # Extract info from JSON
-        commit=$(jq -r '.commit.short' "$file" 2>/dev/null)
-        date=$(jq -r '.commit.date' "$file" 2>/dev/null | cut -d'T' -f1)
-        message=$(jq -r '.commit.message' "$file" 2>/dev/null | head -c 40)
-        tests=$(jq -r '.tests.total' "$file" 2>/dev/null)
-        coverage=$(jq -r '.coverage.line_percent' "$file" 2>/dev/null)
-        code=$(jq -r '.code.total.code' "$file" 2>/dev/null)
+  if [ -f "$events_file" ]; then
+    local total_events
+    total_events=$(wc -l < "$events_file" | tr -d ' ')
+    local file_size
+    file_size=$(du -h "$events_file" | cut -f1)
 
-        printf "${cyan}%s${reset} %s  ${green}%s${reset} tests  ${yellow}%.1f%%${reset} cov  ${blue}%s${reset} LOC  %s\n" \
-          "$commit" "$date" "$tests" "$coverage" "$code" "$message"
-      fi
-    done
-  else
-    echo "No stats directory found. Run ${blue}ichrisbirch stats sync pull${reset} to fetch stats."
-  fi
-}
-
-# ============================================================================
-# DEVELOPER JOURNEY
-# ============================================================================
-
-function journey-current() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  echo "🚀 Current Commit Session"
-  echo ""
-
-  # Get current branch and session file
-  local branch
-  branch=$(git branch --show-current)
-  local safe_branch="${branch//\//-}"
-  local session_file="$ICHRISBIRCH_HOME/.tmp/session-${safe_branch}.json"
-
-  if [ -f "$session_file" ]; then
-    local attempts
-    attempts=$(jq '.attempts | length' "$session_file" 2>/dev/null)
-    local started
-    started=$(jq -r '.started_at' "$session_file" 2>/dev/null | cut -d'T' -f1,2 | tr 'T' ' ' | cut -d'+' -f1)
-    local files
-    files=$(jq '.staged_files | length' "$session_file" 2>/dev/null)
-
-    echo "Branch: ${cyan}$branch${reset}"
-    echo "Started: ${green}$started${reset}"
-    echo "Attempts: ${yellow}$attempts${reset}"
-    echo "Staged files: ${blue}$files${reset}"
+    echo "Events file: $events_file"
+    echo "Total events: $total_events"
+    echo "File size: $file_size"
     echo ""
-
-    echo "Issues by hook (last attempt):"
-    jq -r '.attempts[-1].hooks | to_entries[] | select(.value.issues_before_fix > 0 or .value.errors > 0 or .value.issues > 0) | "  \(.key): \(.value.issues_before_fix // .value.errors // .value.issues // 0)"' "$session_file" 2>/dev/null
+    echo "Recent events:"
+    tail -5 "$events_file" | jq -r '.type + " @ " + .timestamp'
   else
-    echo "No active session for branch ${cyan}$branch${reset}"
-    echo "Start a commit attempt to begin tracking."
+    echo "No events file found. Stats are collected automatically on each commit."
   fi
 }
 
-function journey-history() {
+function stats-events() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local count="${1:-20}"
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "📈 Recent events (last $count):"
+  echo ""
+
+  if [ -f "$events_file" ]; then
+    tail -n "$count" "$events_file" | jq -r '[.type, .timestamp, .branch] | @tsv' | column -t
+  else
+    echo "No events file found."
+  fi
+}
+
+function stats-commits() {
   cd "$ICHRISBIRCH_HOME" || exit
   local count="${1:-10}"
-  echo "🚀 Recent Journey History (last $count commits):"
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "📝 Recent commits from events (last $count):"
   echo ""
 
-  local sessions_dir="$ICHRISBIRCH_HOME/stats/sessions"
-  if [ -d "$sessions_dir" ]; then
-    find "$sessions_dir" -maxdepth 1 -name "session_*.json" -type f -print0 2>/dev/null | xargs -0 ls -t | head -n "$count" | while read -r file; do
-      if [ -f "$file" ]; then
-        local commit
-        commit=$(jq -r '.commit.short' "$file" 2>/dev/null)
-        local date
-        date=$(jq -r '.commit.date' "$file" 2>/dev/null | cut -d'T' -f1)
-        local message
-        message=$(jq -r '.commit.message' "$file" 2>/dev/null | head -c 35)
-        local attempts
-        attempts=$(jq -r '.journey.total_attempts' "$file" 2>/dev/null)
-        local duration
-        duration=$(jq -r '.journey.total_duration_seconds' "$file" 2>/dev/null)
-        local files_count
-        files_count=$(jq '.staged_files | length' "$file" 2>/dev/null)
-
-        # Format duration nicely
-        local duration_fmt
-        if [ "$duration" != "null" ] && [ -n "$duration" ]; then
-          duration_fmt=$(printf "%.0f" "$duration")
-          if [ "$duration_fmt" -gt 60 ]; then
-            duration_fmt="$((duration_fmt / 60))m$((duration_fmt % 60))s"
-          else
-            duration_fmt="${duration_fmt}s"
-          fi
-        else
-          duration_fmt="--"
-        fi
-
-        printf "${cyan}%s${reset} %s  ${yellow}%s${reset} attempts  ${green}%s${reset}  ${blue}%s${reset} files  %s\n" \
-          "$commit" "$date" "$attempts" "$duration_fmt" "$files_count" "$message"
-      fi
-    done
+  if [ -f "$events_file" ]; then
+    grep '"type":"commit"' "$events_file" | tail -n "$count" | jq -r '[.short_hash, .timestamp, .message] | @tsv' | column -t
   else
-    echo "No sessions directory found. Complete a commit to start tracking journeys."
+    echo "No events file found."
   fi
-}
-
-function journey-detail() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local commit="${1:-}"
-
-  if [ -z "$commit" ]; then
-    echo "Usage: ichrisbirch journey detail <commit-hash>"
-    return 1
-  fi
-
-  local sessions_dir="$ICHRISBIRCH_HOME/stats/sessions"
-  local session_file
-  session_file=$(find "$sessions_dir" -maxdepth 1 -name "session_*${commit}*.json" -type f 2>/dev/null | head -1)
-
-  if [ -z "$session_file" ] || [ ! -f "$session_file" ]; then
-    echo "No session found for commit ${cyan}$commit${reset}"
-    return 1
-  fi
-
-  echo "🚀 Journey Details for ${cyan}$commit${reset}"
-  echo ""
-
-  # Commit info
-  echo "${green}Commit:${reset}"
-  jq -r '"  Hash: \(.commit.hash)\n  Message: \(.commit.message)\n  Date: \(.commit.date)\n  Branch: \(.commit.branch)"' "$session_file"
-  echo ""
-
-  # Journey summary
-  echo "${green}Journey:${reset}"
-  jq -r '"  Duration: \(.journey.total_duration_seconds)s\n  Attempts: \(.journey.total_attempts)\n  Hooks that blocked: \(.journey.hooks_that_blocked | join(", "))"' "$session_file"
-  echo ""
-
-  # Files changed
-  echo "${green}Files ($(jq '.staged_files | length' "$session_file")):${reset}"
-  jq -r '.files | to_entries[] | "  \(.value.status): \(.key) (+\(.value.lines_added)/-\(.value.lines_removed))"' "$session_file"
-  echo ""
-
-  # Errors fixed
-  echo "${green}Total errors fixed:${reset}"
-  jq -r '.journey.total_errors_fixed | to_entries[] | "  \(.key): \(.value)"' "$session_file"
 }
 
 function usage() {
@@ -794,20 +658,11 @@ function usage() {
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
   echo "  ${blue}prod reboot-ec2${reset} - Restart EC2 instance via AWS CLI (default: ichrisbirch-webserver)"
   echo
-  echo "${green}Project Stats (synced with S3):${reset}"
-  echo "  ${blue}stats${reset}         - Show current project stats (alias: stats show)"
-  echo "  ${blue}stats show${reset}    - Display current project stats without saving"
-  echo "  ${blue}stats collect${reset} - Collect and save stats for current commit"
-  echo "  ${blue}stats sync${reset}    - Sync stats with S3 (pull then push)"
-  echo "  ${blue}stats sync push${reset}  - Push local stats to S3"
-  echo "  ${blue}stats sync pull${reset}  - Pull stats from S3 to local"
-  echo "  ${blue}stats history [n]${reset} - Show stats history for last n commits (default: 10)"
-  echo ""
-  echo "${green}Developer Journey (commit session tracking):${reset}"
-  echo "  ${blue}journey${reset}           - Show current commit session (alias: journey current)"
-  echo "  ${blue}journey current${reset}   - Show active session for current branch"
-  echo "  ${blue}journey history [n]${reset} - Show journey history for last n commits (default: 10)"
-  echo "  ${blue}journey detail <commit>${reset} - Show detailed journey for a specific commit"
+  echo "${green}Project Stats (Event-Sourced):${reset}"
+  echo "  ${blue}stats${reset}             - Show stats summary (alias: stats show)"
+  echo "  ${blue}stats show${reset}        - Display stats file info and recent events"
+  echo "  ${blue}stats events [n]${reset}  - Show last n events (default: 20)"
+  echo "  ${blue}stats commits [n]${reset} - Show last n commits from events (default: 10)"
   echo
   echo "${green}📱 Service URLs (All environments use HTTPS):${reset}"
   echo "  ${blue}Development${reset}: api.docker.localhost, app.docker.localhost, chat.docker.localhost"
@@ -896,35 +751,15 @@ stats)
   show | "")
     stats-show
     ;;
-  collect)
-    stats-collect
+  events)
+    stats-events "$3"
     ;;
-  sync)
-    stats-sync "$3"
-    ;;
-  history)
-    stats-history "$3"
+  commits)
+    stats-commits "$3"
     ;;
   *)
     echo "${red}Unknown stats command: $2${reset}"
-    echo "Usage: ichrisbirch stats [show|collect|sync|history]"
-    ;;
-  esac
-  ;;
-journey)
-  case "$2" in
-  current | "")
-    journey-current
-    ;;
-  history)
-    journey-history "$3"
-    ;;
-  detail)
-    journey-detail "$3"
-    ;;
-  *)
-    echo "${red}Unknown journey command: $2${reset}"
-    echo "Usage: ichrisbirch journey [current|history|detail]"
+    echo "Usage: ichrisbirch stats [show|events|commits]"
     ;;
   esac
   ;;
