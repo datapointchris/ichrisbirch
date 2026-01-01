@@ -143,6 +143,7 @@ def main() -> int:
 
     enabled_collectors = config.get('collect', {}).get('collectors', [])
     available_collectors = discover_collectors()
+    collect_config = config.get('collect', {})
 
     for collector_name in enabled_collectors:
         if collector_name not in available_collectors:
@@ -151,9 +152,19 @@ def main() -> int:
 
         collector_runner = get_collector(collector_name)
         if collector_runner is not None:
-            event = collector_runner(branch, project)
-            if event is not None:
-                emit_event(event, events_path)
+            try:
+                if collector_name == 'pytest_collector':
+                    json_path = collect_config.get('pytest_json_path', '/tmp/ichrisbirch-pytest-report.json')  # nosec B108
+                    event = collector_runner(branch, project, json_path)
+                elif collector_name == 'coverage':
+                    event = collector_runner(branch, project)
+                else:
+                    event = collector_runner(branch, project)
+
+                if event is not None:
+                    emit_event(event, events_path)
+            except Exception as e:
+                print(f"Warning: Collector '{collector_name}' failed: {e}")
 
     return 0
 
