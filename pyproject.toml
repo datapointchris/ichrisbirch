@@ -262,7 +262,7 @@ hooks = [
     "ruff", "mypy", "bandit", "shellcheck", "codespell", "refurb", "pyupgrade",
     "markdownlint", "djlint", "actionlint",
     "check_yaml", "check_toml", "check_json",
-    "trailing_whitespace", "end_of_file_fixer", "uv_lock", "validate_markdown_links"
+    "uv_lock", "validate_markdown_links", "detect_private_key"
 ]
 
 [tool.devstats.collect]

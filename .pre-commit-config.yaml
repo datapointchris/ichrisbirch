@@ -1,5 +1,16 @@
 fail_fast: true
 repos:
+  # Event-sourced stats capture (MUST run FIRST, before fixers modify files)
+  - repo: local
+    hooks:
+      - id: devstats-capture
+        name: devstats capture
+        stages: [pre-commit]
+        language: system
+        entry: uv run python -m stats.pre_commit_capture
+        pass_filenames: false
+        always_run: true
+
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.7
     hooks:
@@ -158,15 +169,6 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: false
-
-      # Event-sourced stats capture (runs after all linters)
-      - id: devstats-capture
-        name: devstats capture
-        stages: [pre-commit]
-        language: system
-        entry: uv run python -m stats.pre_commit_capture
-        pass_filenames: false
-        always_run: true
 
       # Event-sourced stats collection
       - id: devstats-collect
