@@ -1,4 +1,5 @@
 fail_fast: true
+default_stages: [pre-commit]
 repos:
   # Event-sourced stats capture (MUST run FIRST, before fixers modify files)
   - repo: local
