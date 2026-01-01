@@ -5,10 +5,14 @@ on:
     branches: [master]
     paths:
       - 'docs/**'
+      - 'mkdocs.yml'
+      - 'tools/docs/**'
   pull_request:
     branches: [master]
     paths:
       - 'docs/**'
+      - 'mkdocs.yml'
+      - 'tools/docs/**'
   workflow_dispatch:
 
 permissions:
@@ -19,12 +23,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.x
-      - uses: actions/cache@v4
+          python-version: "3.13"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
         with:
-          key: ${{ github.ref }}
-          path: .cache
-      - run: pip install mkdocs-material
-      - run: mkdocs gh-deploy --force
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Build and deploy docs
+        run: uv run mkdocs gh-deploy --force

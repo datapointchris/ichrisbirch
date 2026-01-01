@@ -55,6 +55,10 @@ Homepage = "https://www.ichrisbirch.com"
 Documentation = "https://docs.ichrisbirch.com"
 Repository = "https://github.com/datapointchris/ichrisbirch"
 
+[project.entry-points."mkdocs.plugins"]
+code_sync = "tools.docs.mkdocs_code_sync_plugin:CodeSyncPlugin"
+diagrams = "tools.docs.mkdocs_diagrams_plugin:DiagramGeneratorPlugin"
+
 [dependency-groups]
 dev = [
   # Development tools and linting
