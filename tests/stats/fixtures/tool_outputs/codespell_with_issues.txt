@@ -1,0 +1,3 @@
+ichrisbirch/app/templates/base.html:42: teh ==> the
+ichrisbirch/models/task.py:15: recieve ==> receive
+docs/readme.md:8: occured ==> occurred

@@ -1,0 +1,58 @@
+{
+  "Python": {
+    "blanks": 2018,
+    "code": 8789,
+    "comments": 239,
+    "reports": [
+      {
+        "stats": {"blanks": 6, "code": 24, "comments": 1, "blobs": {}},
+        "name": "ichrisbirch/api/main.py"
+      },
+      {
+        "stats": {"blanks": 17, "code": 69, "comments": 0, "blobs": {}},
+        "name": "ichrisbirch/app/main.py"
+      }
+    ],
+    "children": {},
+    "inaccurate": false
+  },
+  "JavaScript": {
+    "blanks": 28,
+    "code": 296,
+    "comments": 19,
+    "reports": [
+      {
+        "stats": {"blanks": 1, "code": 16, "comments": 0, "blobs": {}},
+        "name": "ichrisbirch/app/static/js/messages.js"
+      }
+    ],
+    "children": {},
+    "inaccurate": false
+  },
+  "HTML": {
+    "blanks": 277,
+    "code": 2752,
+    "comments": 31,
+    "reports": [
+      {
+        "stats": {"blanks": 3, "code": 27, "comments": 0, "blobs": {}},
+        "name": "ichrisbirch/app/templates/loading.html"
+      }
+    ],
+    "children": {},
+    "inaccurate": false
+  },
+  "CSS": {
+    "blanks": 2621,
+    "code": 10111,
+    "comments": 60,
+    "reports": [
+      {
+        "stats": {"blanks": 2619, "code": 10079, "comments": 60, "blobs": {}},
+        "name": "ichrisbirch/app/static/css/main.css"
+      }
+    ],
+    "children": {},
+    "inaccurate": false
+  }
+}

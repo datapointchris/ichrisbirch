@@ -189,15 +189,22 @@ def get_test_stats(pytest_json_path: str | None = None) -> dict[str, Any]:
     summary = report.get('summary', {})
     tests = report.get('tests', [])
 
+    def get_test_duration(test: dict) -> float:
+        """Get total test duration from setup + call + teardown."""
+        setup = test.get('setup', {}).get('duration', 0)
+        call = test.get('call', {}).get('duration', 0)
+        teardown = test.get('teardown', {}).get('duration', 0)
+        return setup + call + teardown
+
     # Get slowest tests
     slowest = []
     if tests:
-        sorted_tests = sorted(tests, key=lambda t: t.get('duration', 0), reverse=True)
+        sorted_tests = sorted(tests, key=get_test_duration, reverse=True)
         for test in sorted_tests[:10]:
             slowest.append(
                 {
                     'name': test.get('nodeid', 'unknown'),
-                    'duration': round(test.get('duration', 0), 3),
+                    'duration': round(get_test_duration(test), 3),
                     'outcome': test.get('outcome', 'unknown'),
                 }
             )
@@ -343,22 +350,61 @@ def get_dependency_stats() -> dict[str, Any]:
     }
 
 
-def get_quality_stats() -> dict[str, Any]:
-    """Get code quality statistics from pre-commit hook outputs.
+def get_quality_stats(session_file: Path | None = None) -> dict[str, Any]:
+    """Get code quality statistics from the session file's first attempt.
 
-    These tools already ran in pre-commit, so we read from cached outputs
-    instead of re-running them (saves ~15 seconds).
+    The session file captures the INITIAL state before any fixes were applied,
+    which is what we want to track (how many issues needed fixing).
+    Falls back to hook outputs if no session file.
     """
     quality = {
         'ruff_issues': 0,
         'mypy_errors': 0,
         'bandit_issues': 0,
+        'shellcheck_issues': 0,
+        'codespell_issues': 0,
     }
 
-    # Read from pre-commit hook outputs if available
+    # Try to read from session file first (has initial pre-fix state)
+    if session_file is None:
+        # Find session file for current branch
+        import subprocess
+
+        result = subprocess.run(['git', 'branch', '--show-current'], capture_output=True, text=True)
+        branch = result.stdout.strip().replace('/', '-').replace('\\', '-')
+        session_file = PROJECT_ROOT / '.tmp' / f'session-{branch}.json'
+
+    if session_file and session_file.exists():
+        try:
+            session = json.loads(session_file.read_text())
+            attempts = session.get('attempts', [])
+            if attempts:
+                # Get the FIRST attempt (initial state before any fixes)
+                first_attempt = attempts[0]
+                hooks = first_attempt.get('hooks', {})
+
+                ruff = hooks.get('ruff', {})
+                quality['ruff_issues'] = ruff.get('issues_before_fix', 0)
+
+                mypy = hooks.get('mypy', {})
+                quality['mypy_errors'] = mypy.get('errors', 0)
+
+                bandit = hooks.get('bandit', {})
+                quality['bandit_issues'] = bandit.get('issues', 0)
+
+                shellcheck = hooks.get('shellcheck', {})
+                quality['shellcheck_issues'] = shellcheck.get('issues', 0)
+
+                codespell = hooks.get('codespell', {})
+                quality['codespell_issues'] = codespell.get('issues', 0)
+
+                return quality
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Fallback: read from hook outputs (only has last attempt data)
     hook_output_dir = PROJECT_ROOT / '.tmp' / 'hook-outputs'
 
-    # Ruff output
     ruff_output = hook_output_dir / 'ruff-output.json'
     if ruff_output.exists():
         try:
@@ -367,13 +413,11 @@ def get_quality_stats() -> dict[str, Any]:
         except json.JSONDecodeError:
             pass
 
-    # Mypy output
     mypy_output = hook_output_dir / 'mypy-output.txt'
     if mypy_output.exists():
         content = mypy_output.read_text()
         quality['mypy_errors'] = content.count(': error:')
 
-    # Bandit output
     bandit_output = hook_output_dir / 'bandit-output.json'
     if bandit_output.exists():
         try:

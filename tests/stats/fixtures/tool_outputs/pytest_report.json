@@ -1,0 +1,50 @@
+{
+  "created": 1767236490.49828,
+  "duration": 101.95,
+  "exitcode": 0,
+  "root": "/Users/chris/code/ichrisbirch",
+  "environment": {},
+  "summary": {
+    "passed": 548,
+    "skipped": 4,
+    "failed": 0,
+    "total": 552,
+    "collected": 552
+  },
+  "tests": [
+    {
+      "nodeid": "tests/stats/test_schemas.py::TestBaseEvent::test_base_event_has_required_fields",
+      "outcome": "passed",
+      "duration": 0.001,
+      "setup": {"outcome": "passed", "duration": 0.0002},
+      "call": {"outcome": "passed", "duration": 0.0005},
+      "teardown": {"outcome": "passed", "duration": 0.0001}
+    },
+    {
+      "nodeid": "tests/stats/test_hooks/test_ruff.py::TestRuffSchema::test_ruff_issue_schema_parses_real_output",
+      "outcome": "passed",
+      "duration": 0.015,
+      "setup": {"outcome": "passed", "duration": 0.001},
+      "call": {"outcome": "passed", "duration": 0.012},
+      "teardown": {"outcome": "passed", "duration": 0.002}
+    },
+    {
+      "nodeid": "tests/api/test_auth.py::test_login_failure",
+      "outcome": "failed",
+      "duration": 0.5,
+      "setup": {"outcome": "passed", "duration": 0.1},
+      "call": {
+        "outcome": "failed",
+        "duration": 0.35,
+        "longrepr": "AssertionError: Expected 401, got 200"
+      },
+      "teardown": {"outcome": "passed", "duration": 0.05}
+    },
+    {
+      "nodeid": "tests/slow/test_integration.py::test_slow_integration",
+      "outcome": "skipped",
+      "duration": 0.001,
+      "setup": {"outcome": "skipped", "duration": 0.001}
+    }
+  ]
+}
