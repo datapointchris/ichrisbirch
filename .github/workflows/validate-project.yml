@@ -27,7 +27,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        python-version: ["3.12"]
+        python-version: ["3.13"]
 
     steps:
       - name: Checkout repo
@@ -85,7 +85,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        python-version: ["3.12"]
+        python-version: ["3.13"]
 
     steps:
       - name: Checkout repo
