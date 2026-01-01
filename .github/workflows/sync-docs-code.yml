@@ -29,11 +29,11 @@ jobs:
 
       - name: Run Code Sync Check
         run: |
-          python -m tools.code_sync docs --base-path . --check
+          python -m mkdocs_plugins.code_sync docs --base-path . --check
 
       - name: Report Status
         if: failure()
         run: |
           echo "::error::Documentation code snippets are out of sync!"
-          echo "Run 'python -m tools.code_sync docs --base-path .' locally to update them."
+          echo "Run 'python -m mkdocs_plugins.code_sync docs --base-path .' locally to update them."
           exit 1

@@ -85,7 +85,6 @@ repos:
     hooks:
       - id: refurb
         additional_dependencies: ["pydantic"]
-        exclude: (plugins/mkdocs-code-sync/setup.py|plugins/mkdocs-diagrams/setup.py|tools/code_sync/.*)
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.20.0
@@ -104,7 +103,6 @@ repos:
             --non-interactive,
           ]
         additional_dependencies: ["pydantic"]
-        exclude: (plugins/mkdocs-code-sync/setup.py|plugins/mkdocs-diagrams/setup.py|tools/code_sync/.*)
 
   - repo: https://github.com/djlint/djLint
     rev: v1.36.4
@@ -118,7 +116,7 @@ repos:
       - id: code-sync
         name: Code Sync
         description: "Synchronize code snippets in documentation using AST parsing"
-        entry: uv run python -m tools.code_sync
+        entry: uv run python -m mkdocs_plugins.code_sync
         language: python
         pass_filenames: false
         always_run: true
@@ -127,10 +125,10 @@ repos:
       - id: generate-fixture-diagrams
         name: Generate fixture diagrams
         description: "Generate fixture diagrams when test fixture code changes"
-        entry: uv run python -m tools.docs.diagram_generator.generate_diagrams
+        entry: uv run python -m mkdocs_plugins.diagrams
         language: python
         pass_filenames: false
-        files: "(tests/conftest.py|tests/utils/.*|tools/docs/diagram_generator/.*\\.py)$"
+        files: "(tests/conftest.py|tests/utils/.*|mkdocs_plugins/diagrams/.*\\.py)$"
         always_run: false
         additional_dependencies: ["graphviz", "pyyaml"]
 

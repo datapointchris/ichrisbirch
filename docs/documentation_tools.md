@@ -4,7 +4,7 @@ This project includes tools for generating and maintaining documentation that st
 
 ## Code Sync Tool
 
-The code sync tool (`tools/code_sync/`) automatically synchronizes code snippets in documentation with actual source code. This ensures documentation examples are always up-to-date.
+The code sync tool (`mkdocs_plugins/code_sync/`) automatically synchronizes code snippets in documentation with actual source code. This ensures documentation examples are always up-to-date.
 
 ### Features
 
@@ -69,13 +69,13 @@ The tool can be run directly from the command line:
 
 ```bash
 # Sync all docs with source code
-python -m tools.code_sync docs --base-path .
+python -m mkdocs_plugins.code_sync docs --base-path .
 
 # Check if docs are in sync (CI mode - exits 1 if out of sync)
-python -m tools.code_sync docs --base-path . --check
+python -m mkdocs_plugins.code_sync docs --base-path . --check
 
 # Verbose output
-python -m tools.code_sync docs --base-path . -v
+python -m mkdocs_plugins.code_sync docs --base-path . -v
 ```
 
 ### How It Works
@@ -100,7 +100,7 @@ The pre-commit hook runs automatically before each commit:
 # In .pre-commit-config.yaml
 - id: code-sync
   name: Code Sync
-  entry: python -m tools.code_sync
+  entry: python -m mkdocs_plugins.code_sync
   args: ["docs", "--base-path", "."]
 ```
 
@@ -122,7 +122,7 @@ The CI workflow verifies docs are in sync:
 ```yaml
 # In .github/workflows/sync-docs-code.yml
 - name: Run Code Sync Check
-  run: python -m tools.code_sync docs --base-path . --check
+  run: python -m mkdocs_plugins.code_sync docs --base-path . --check
 ```
 
 ### Best Practices
@@ -130,26 +130,26 @@ The CI workflow verifies docs are in sync:
 1. **Prefer AST-based references** for Python code - they survive refactoring
 2. **Use line-based references** only for non-Python files or when you need a specific section
 3. **Keep referenced elements focused** - reference specific functions rather than entire modules
-4. **Run locally before pushing** - use `python -m tools.code_sync docs --base-path . --check` to verify
+4. **Run locally before pushing** - use `python -m mkdocs_plugins.code_sync docs --base-path . --check` to verify
 5. **Use meaningful labels** - helps readers understand what the code shows
 
 ---
 
 ## Diagram Generator
 
-The diagram generator (`tools/docs/diagram_generator/`) creates visual diagrams from code analysis.
+The diagram generator (`mkdocs_plugins/diagrams/`) creates visual diagrams from code analysis.
 
 ### Directory Structure
 
 ```text
-tools/docs/diagram_generator/
+mkdocs_plugins/diagrams/
 ├── analyzers/           # Code that analyzes project structure
 │   └── fixture_analyzer.py
 ├── renderers/           # Code that renders diagrams
 │   ├── aws_diagram_renderer.py
 │   ├── fixture_diagram_renderer.py
 │   └── testing_diagram_renderer.py
-└── generate_diagrams.py # Main generation script
+└── generate.py          # Main generation script
 ```
 
 ### Usage
@@ -157,10 +157,10 @@ tools/docs/diagram_generator/
 Generate all diagrams:
 
 ```bash
-python -m tools.docs.diagram_generator.generate_diagrams
+python -m mkdocs_plugins.diagrams
 
 # Force regeneration (ignore cache)
-python -m tools.docs.diagram_generator.generate_diagrams --force
+python -m mkdocs_plugins.diagrams --force
 ```
 
 Generated diagrams are saved to `docs/images/generated/`.
@@ -182,6 +182,6 @@ The generator caches content hashes to avoid unnecessary regeneration. The cache
 
 ### Adding New Diagrams
 
-1. Create a new renderer in `tools/docs/diagram_generator/renderers/`
-2. Add the renderer call to `generate_diagrams.py`
+1. Create a new renderer in `mkdocs_plugins/diagrams/renderers/`
+2. Add the renderer call to `generate.py`
 3. Reference the generated diagram in your documentation using standard markdown image syntax
