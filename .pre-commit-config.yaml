@@ -169,6 +169,25 @@ repos:
         pass_filenames: false
         always_run: false
 
+      # Event-sourced stats capture (runs after all linters)
+      - id: devstats-capture
+        name: devstats capture
+        stages: [pre-commit]
+        language: system
+        entry: uv run python -m stats.pre_commit_capture
+        pass_filenames: false
+        always_run: true
+
+      # Event-sourced stats collection (runs first in post-commit)
+      - id: devstats-collect
+        name: devstats collect
+        stages: [post-commit]
+        language: system
+        entry: uv run python -m stats.post_commit_collect
+        pass_filenames: false
+        always_run: true
+
+      # Legacy stats collection (session tracking + S3 sync)
       - id: collect-stats
         name: collect project stats
         stages: [post-commit]

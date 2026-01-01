@@ -248,6 +248,21 @@ force-single-line = true
 "__init__.py" = ["F401"]
 "env.py" = ["F401"]
 
+# ---------- DevStats (Event-Sourced Stats Collection) ---------- #
+
+
+[tool.devstats]
+project = "ichrisbirch"
+events_path = "stats/events/events.jsonl"
+
+[tool.devstats.capture]
+hooks = ["ruff", "mypy", "bandit", "shellcheck", "codespell"]
+
+[tool.devstats.collect]
+collectors = ["tokei", "pytest_collector", "coverage", "docker", "dependencies", "files"]
+pytest_json_path = "/tmp/ichrisbirch-pytest-report.json"
+
+
 # ---------- Build System ---------- #
 
 
