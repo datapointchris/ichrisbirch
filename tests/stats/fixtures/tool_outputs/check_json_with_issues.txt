@@ -1,0 +1,2 @@
+package.json: Failed to json decode (Expecting value: line 1 column 13 (char 12))
+config/data.json: Failed to json decode (Expecting property name enclosed in double quotes: line 5 column 3 (char 45))

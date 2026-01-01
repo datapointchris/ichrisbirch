@@ -93,6 +93,8 @@ dev = [
   "factory-boy>=3.3.3",
   "pytest-json-report>=1.5.0",
   "radon>=5.1.0",
+  "refurb>=2.2.0",
+  "pyupgrade>=3.21.2",
 ]
 test = [
   # Testing framework and tools
@@ -256,7 +258,12 @@ project = "ichrisbirch"
 events_path = "stats/events/events.jsonl"
 
 [tool.devstats.capture]
-hooks = ["ruff", "mypy", "bandit", "shellcheck", "codespell"]
+hooks = [
+    "ruff", "mypy", "bandit", "shellcheck", "codespell", "refurb", "pyupgrade",
+    "markdownlint", "djlint", "actionlint",
+    "check_yaml", "check_toml", "check_json",
+    "trailing_whitespace", "end_of_file_fixer", "uv_lock", "validate_markdown_links"
+]
 
 [tool.devstats.collect]
 collectors = ["tokei", "pytest_collector", "coverage", "docker", "dependencies", "files", "radon"]

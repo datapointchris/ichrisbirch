@@ -1,0 +1,60 @@
+[
+  {
+    "fileName": "docs/README.md",
+    "lineNumber": 1,
+    "ruleNames": [
+      "MD041",
+      "first-line-heading",
+      "first-line-h1"
+    ],
+    "ruleDescription": "First line in a file should be a top-level heading",
+    "ruleInformation": "https://github.com/DavidAnson/markdownlint/blob/v0.39.0/doc/md041.md",
+    "errorDetail": null,
+    "errorContext": "#Missing space after hash",
+    "errorRange": null,
+    "fixInfo": null,
+    "severity": "error"
+  },
+  {
+    "fileName": "docs/README.md",
+    "lineNumber": 10,
+    "ruleNames": [
+      "MD009",
+      "no-trailing-spaces"
+    ],
+    "ruleDescription": "Trailing spaces",
+    "ruleInformation": "https://github.com/DavidAnson/markdownlint/blob/v0.39.0/doc/md009.md",
+    "errorDetail": "Expected: 0 or 2; Actual: 3",
+    "errorContext": null,
+    "errorRange": [
+      45,
+      3
+    ],
+    "fixInfo": {
+      "editColumn": 45,
+      "deleteCount": 3
+    },
+    "severity": "error"
+  },
+  {
+    "fileName": "CHANGELOG.md",
+    "lineNumber": 15,
+    "ruleNames": [
+      "MD026",
+      "no-trailing-punctuation"
+    ],
+    "ruleDescription": "Trailing punctuation in heading",
+    "ruleInformation": "https://github.com/DavidAnson/markdownlint/blob/v0.39.0/doc/md026.md",
+    "errorDetail": "Punctuation: ':'",
+    "errorContext": null,
+    "errorRange": [
+      38,
+      1
+    ],
+    "fixInfo": {
+      "editColumn": 38,
+      "deleteCount": 1
+    },
+    "severity": "warning"
+  }
+]

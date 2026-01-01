@@ -1,0 +1,3 @@
+docs/guide.md:15: broken link 'images/screenshot.png'
+docs/api.md:42: broken link '../reference/old-file.md'
+README.md:8: broken link 'docs/missing.md'

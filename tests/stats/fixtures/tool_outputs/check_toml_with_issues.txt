@@ -1,0 +1,2 @@
+pyproject.toml: Expected ']' at the end of a table declaration (at line 1, column 9)
+config/settings.toml: Invalid value (at line 5, column 10)

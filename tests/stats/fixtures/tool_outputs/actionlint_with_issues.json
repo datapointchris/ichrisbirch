@@ -1,0 +1,29 @@
+[
+  {
+    "message": "shellcheck reported issue in this script: SC2086:info:2:28: Double quote to prevent globbing and word splitting",
+    "filepath": ".github/workflows/deploy-project.yml",
+    "line": 34,
+    "column": 9,
+    "kind": "shellcheck",
+    "snippet": "        run: |\\n        ^~~~",
+    "end_column": 12
+  },
+  {
+    "message": "workflow \"build\" is not defined",
+    "filepath": ".github/workflows/ci.yml",
+    "line": 15,
+    "column": 10,
+    "kind": "workflow-call",
+    "snippet": "    uses: ./.github/workflows/build.yml\\n         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "end_column": 45
+  },
+  {
+    "message": "undefined secret \"DEPLOY_KEY\"",
+    "filepath": ".github/workflows/deploy.yml",
+    "line": 22,
+    "column": 15,
+    "kind": "expression",
+    "snippet": "          key: ${{ secrets.DEPLOY_KEY }}\\n              ^~~~~~~~~~~~~~~~~~~~~~~",
+    "end_column": 40
+  }
+]

@@ -1,0 +1,3 @@
+Fixing ichrisbirch/api/main.py
+Fixing ichrisbirch/models/user.py
+Fixing tests/conftest.py

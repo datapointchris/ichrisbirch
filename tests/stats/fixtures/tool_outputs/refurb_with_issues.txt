@@ -1,0 +1,3 @@
+ichrisbirch/api/main.py:6:14 [FURB110]: Replace `x if x else "default"` with `x or "default"`
+ichrisbirch/app/routes/tasks.py:11:12 [FURB146]: Replace `os.path.isfile(x)` with `Path(x).is_file()`
+stats/collectors/radon.py:27:5 [FURB103]: Replace `with open(x, ...) as f: f.write(y)` with `Path(x).write_text(y)`

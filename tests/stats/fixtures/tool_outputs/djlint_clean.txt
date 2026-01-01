@@ -1,0 +1,3 @@
+Linting 1/1 files ━━━━━━━━━━ 00:00
+
+Linted 1 file, found 0 errors.

@@ -1,0 +1,5 @@
+while parsing a flow node
+expected the node content, but found '<stream end>'
+  in "config/settings.yaml", line 2, column 1
+mapping values are not allowed here
+  in ".github/workflows/ci.yml", line 10, column 14

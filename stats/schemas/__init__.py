@@ -22,11 +22,23 @@ from stats.schemas.collectors.pytest_collector import PytestCollectEvent
 from stats.schemas.collectors.radon import RadonCollectEvent
 from stats.schemas.collectors.tokei import TokeiCollectEvent
 from stats.schemas.commit import CommitEvent
+from stats.schemas.hooks.actionlint import ActionlintHookEvent
 from stats.schemas.hooks.bandit import BanditHookEvent
 from stats.schemas.hooks.codespell import CodespellHookEvent
+from stats.schemas.hooks.djlint import DjlintHookEvent
+from stats.schemas.hooks.file_format import CheckJsonHookEvent
+from stats.schemas.hooks.file_format import CheckTomlHookEvent
+from stats.schemas.hooks.file_format import CheckYamlHookEvent
+from stats.schemas.hooks.fixers import EndOfFileFixerHookEvent
+from stats.schemas.hooks.fixers import TrailingWhitespaceHookEvent
+from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
 from stats.schemas.hooks.mypy import MypyHookEvent
+from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
+from stats.schemas.hooks.refurb import RefurbHookEvent
 from stats.schemas.hooks.ruff import RuffHookEvent
 from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
+from stats.schemas.hooks.uv_lock import UvLockHookEvent
+from stats.schemas.hooks.validate_markdown_links import ValidateMarkdownLinksHookEvent
 
 Event = (
     RuffHookEvent
@@ -34,6 +46,18 @@ Event = (
     | BanditHookEvent
     | ShellcheckHookEvent
     | CodespellHookEvent
+    | RefurbHookEvent
+    | PyupgradeHookEvent
+    | MarkdownlintHookEvent
+    | DjlintHookEvent
+    | ActionlintHookEvent
+    | CheckYamlHookEvent
+    | CheckTomlHookEvent
+    | CheckJsonHookEvent
+    | TrailingWhitespaceHookEvent
+    | EndOfFileFixerHookEvent
+    | UvLockHookEvent
+    | ValidateMarkdownLinksHookEvent
     | CommitEvent
     | TokeiCollectEvent
     | PytestCollectEvent
@@ -98,6 +122,18 @@ __all__ = [
     'BanditHookEvent',
     'ShellcheckHookEvent',
     'CodespellHookEvent',
+    'RefurbHookEvent',
+    'PyupgradeHookEvent',
+    'MarkdownlintHookEvent',
+    'DjlintHookEvent',
+    'ActionlintHookEvent',
+    'CheckYamlHookEvent',
+    'CheckTomlHookEvent',
+    'CheckJsonHookEvent',
+    'TrailingWhitespaceHookEvent',
+    'EndOfFileFixerHookEvent',
+    'UvLockHookEvent',
+    'ValidateMarkdownLinksHookEvent',
     # Commit
     'CommitEvent',
     # Collectors

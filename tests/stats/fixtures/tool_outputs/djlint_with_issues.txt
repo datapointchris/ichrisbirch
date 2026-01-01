@@ -1,0 +1,14 @@
+Linting 2/2 files ━━━━━━━━━━ 00:00
+
+ichrisbirch/app/templates/base.html
+───────────────────────────────────────────────────────────────────────────────
+H005 2:0 Html tag should have lang attribute. <html> <head> <title
+H030 2:0 Consider adding a meta description. <html> <head> <title
+
+ichrisbirch/app/templates/tasks/index.html
+───────────────────────────────────────────────────────────────────────────────
+H006 15:0 Img tag should have height and width attributes. <img src="test.jpg">
+H013 15:0 Img tag should have an alt attribute. <img src="test.jpg">
+H021 20:0 Inline styles should be avoided. <div style=
+
+Linted 2 files, found 5 errors.

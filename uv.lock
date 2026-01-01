@@ -1223,7 +1223,9 @@ dev = [
     { name = "pydeps" },
     { name = "pymdown-extensions" },
     { name = "pytest-json-report" },
+    { name = "pyupgrade" },
     { name = "radon" },
+    { name = "refurb" },
     { name = "ruff" },
     { name = "tkhtmlview" },
     { name = "types-beautifulsoup4" },
@@ -1314,7 +1316,9 @@ dev = [
     { name = "pydeps", specifier = ">=1.12.20" },
     { name = "pymdown-extensions", specifier = ">=10.8.1" },
     { name = "pytest-json-report", specifier = ">=1.5.0" },
+    { name = "pyupgrade", specifier = ">=3.21.2" },
     { name = "radon", specifier = ">=5.1.0" },
+    { name = "refurb", specifier = ">=2.2.0" },
     { name = "ruff", specifier = ">=0.7.0" },
     { name = "tkhtmlview", specifier = ">=0.3.1" },
     { name = "types-beautifulsoup4", specifier = ">=4.12.0.20250204" },
@@ -3294,6 +3298,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyupgrade"
+version = "3.21.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tokenize-rt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7f/a1/dc63caaeed232b1c58eae1b7a75f262d64ab8435882f696ffa9b58c0c415/pyupgrade-3.21.2.tar.gz", hash = "sha256:1a361bea39deda78d1460f65d9dd548d3a36ff8171d2482298539b9dc11c9c06", size = 45455, upload-time = "2025-11-19T00:39:48.012Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/8c/433dac11910989a90c40b10149d07ef7224232236971a562d3976790ec53/pyupgrade-3.21.2-py2.py3-none-any.whl", hash = "sha256:2ac7b95cbd176475041e4dfe8ef81298bd4654a244f957167bd68af37d52be9f", size = 62814, upload-time = "2025-11-19T00:39:46.958Z" },
+]
+
+[[package]]
 name = "pyviz-comms"
 version = "3.0.6"
 source = { registry = "https://pypi.org/simple" }
@@ -3432,6 +3448,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2f/db/98b5c277be99dd18bfd91dd04e1b759cad18d1a338188c936e92f921c7e2/referencing-0.36.2.tar.gz", hash = "sha256:df2e89862cd09deabbdba16944cc3f10feb6b3e6f18e902f7cc25609a34775aa", size = 74744, upload-time = "2025-01-25T08:48:16.138Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/b1/3baf80dc6d2b7bc27a95a67752d0208e410351e3feb4eb78de5f77454d8d/referencing-0.36.2-py3-none-any.whl", hash = "sha256:e8699adbbf8b5c7de96d8ffa0eb5c158b3beafce084968e2ea8bb08c6794dcd0", size = 26775, upload-time = "2025-01-25T08:48:14.241Z" },
+]
+
+[[package]]
+name = "refurb"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mypy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/53/c90648f39d7b5d61122b7c6978cdfa29e8bdfd758711306d770c1a339b00/refurb-2.2.0.tar.gz", hash = "sha256:645472793b3af40cca121e37df45dd9b20b525c4df99429d9fd9f6b5c238b9ea", size = 89129, upload-time = "2025-09-17T16:31:10.404Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/44/608465b7217bf5b9eb7484d428e6bb8f21bc19bf8a8ffc992b7f313e1ece/refurb-2.2.0-py3-none-any.whl", hash = "sha256:2d41f728f166b3315fb9e4618881589385666bcdf1f6d9f879981d6d86091b34", size = 140226, upload-time = "2025-09-17T16:31:09.098Z" },
 ]
 
 [[package]]
@@ -3916,6 +3944,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f4/f8/92f9f16d9f4afcd34ece1ab0e21a8276da4b4fc7a7d5fb76ad6ead2809fe/tkhtmlview-0.3.1.tar.gz", hash = "sha256:6db3ce4a24ab27c50edc10ffe07178f69107cf05187aa44195b30adebafeaab4", size = 11189, upload-time = "2024-07-12T13:01:22.501Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/72/7c/acbcd11d3cbc949ce8f7c4b486ff38444c5bb673ca19095c3e8692fb5559/tkhtmlview-0.3.1-py3-none-any.whl", hash = "sha256:73fdbf8824611e06217fd4e171d4676d7f19c8f0d560342658edcb5253a1d5cf", size = 10579, upload-time = "2024-07-12T13:01:20.7Z" },
+]
+
+[[package]]
+name = "tokenize-rt"
+version = "6.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/ed/8f07e893132d5051d86a553e749d5c89b2a4776eb3a579b72ed61f8559ca/tokenize_rt-6.2.0.tar.gz", hash = "sha256:8439c042b330c553fdbe1758e4a05c0ed460dbbbb24a606f11f0dee75da4cad6", size = 5476, upload-time = "2025-05-23T23:48:00.035Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/f0/3fe8c6e69135a845f4106f2ff8b6805638d4e85c264e70114e8126689587/tokenize_rt-6.2.0-py2.py3-none-any.whl", hash = "sha256:a152bf4f249c847a66497a4a95f63376ed68ac6abf092a2f7cfb29d044ecff44", size = 6004, upload-time = "2025-05-23T23:47:58.812Z" },
 ]
 
 [[package]]
