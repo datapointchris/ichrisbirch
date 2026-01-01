@@ -739,7 +739,7 @@ function stats-quality() {
   printf "${cyan}%-12s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
   echo "----------------------------------------------"
 
-  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell")
+  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key")
 
   for tool in "${tools[@]}"; do
     local issues_today issues_7d issues_30d issues_all
