@@ -46,8 +46,8 @@ See [Testing Issues - Recent Critical Issues](testing-issues.md#recent-critical-
 For urgent production issues:
 
 1. **Service Down**: Check [deployment issues](deployment-issues.md#service-recovery)
-2. **Database Connection**: See [database troubleshooting](database-issues.md#connection-failures)
-3. **Test Failures**: Review [testing diagnostics](testing-issues.md#quick-diagnosis)
+2. **Database Connection**: See [database troubleshooting](database-issues.md#connection-issues)
+3. **Test Failures**: Review [testing diagnostics](testing-issues.md#test-failure-diagnosis)
 
 ## How to Use This Guide
 

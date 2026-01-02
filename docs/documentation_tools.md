@@ -21,47 +21,64 @@ The code sync tool (`mkdocs_plugins/code_sync/`) automatically synchronizes code
 
 Reference Python functions, classes, or methods by name. Use this format in your markdown:
 
-    ```python file=path/to/file.py element=function_name
-    # This content is auto-replaced with the actual function code
-    ```
+```text
+`​``python file=path/to/file.py element=function_name
+# This content is auto-replaced with the actual function code
+`​``
+```
 
-For example, to reference a function called `my_function` from `src/utils.py`:
+(Note: The backticks above are escaped for display. Use three regular backticks.)
 
-    ```python file=src/utils.py element=my_function
-    ```
+For example, to reference a function:
+
+```text
+`​``python file=path/to/module.py element=function_name
+`​``
+```
 
 To reference a class method:
 
-    ```python file=src/models.py element=MyClass.my_method
-    ```
+```text
+`​``python file=path/to/module.py element=ClassName.method_name
+`​``
+```
 
 To reference an entire class:
 
-    ```python file=src/models.py element=MyClass
-    ```
+```text
+`​``python file=path/to/module.py element=ClassName
+`​``
+```
 
 #### Line-Based References (For Non-Python Files)
 
 Reference specific line ranges from any file:
 
-    ```bash file=scripts/deploy.sh lines=10-25
-    # This content is auto-replaced with lines 10-25 from the file
-    ```
+```text
+`​``bash file=scripts/deploy.sh lines=10-25
+`​``
+```
 
 Examples:
 
-    ```yaml file=config/settings.yml lines=1-20
-    ```
+```text
+`​``yaml file=config/settings.yml lines=1-20
+`​``
+```
 
-    ```dockerfile file=Dockerfile lines=100-120
-    ```
+```text
+`​``dockerfile file=Dockerfile lines=100-120
+`​``
+```
 
 #### Optional Attributes
 
 Add a label/title to the code block:
 
-    ```python file=src/utils.py element=my_function label="My Utility Function"
-    ```
+```text
+`​``python file=path/to/module.py element=MyClass label="My Example Class"
+`​``
+```
 
 ### CLI Usage
 

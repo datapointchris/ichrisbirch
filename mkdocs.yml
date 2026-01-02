@@ -61,6 +61,7 @@ plugins:
             show_submodules: true
 nav:
   - Home: index.md
+  - Quick Start: quick-start.md
   - Project:
       - Layout: project_layout.md
       - Adding New Apps: add_new_app.md
@@ -83,15 +84,22 @@ nav:
       - Overview: docker/index.md
       - Docker Guide: docker/docker.md
       - Docker Compose: docker/docker-compose.md
+      - Development: docker-development.md
       - Quick Reference: docker/docker-quick-reference.md
   - Architecture:
       - Configuration: configuration.md
+      - Authentication: authentication-architecture.md
+      - Logging: logging-configuration.md
       - Database: alembic.md
       - Scheduler: scheduler.md
   - AWS: AWS.md
   - DevOps:
       - Overview: devops/index.md
       - Domain Names: domain_names.md
+      - Traefik:
+          - Deployment: traefik-deployment.md
+          - CLI Usage: cli-traefik-usage.md
+          - Nginx Migration: nginx-to-traefik-migration-complete.md
       - New Server Setup: devops/new_server.md
       - New Database: devops/new_database.md
       - Nginx: devops/nginx.md
@@ -113,6 +121,7 @@ nav:
       - Fixtures: testing/fixtures.md
       - Test Data: testing/test_data.md
       - Writing Tests: testing/writing_tests.md
+      - Persistent Logging: testing/persistent-logging.md
       - Visualization: testing/visualization_options.md
   - Troubleshooting:
       - Overview: troubleshooting/index.md
@@ -120,6 +129,9 @@ nav:
       - Docker Issues: troubleshooting/docker-issues.md
       - Testing Issues: troubleshooting/testing-issues.md
       - Database Issues: troubleshooting/database-issues.md
+      - API JWT Issues: troubleshooting/api-jwt-wrong-database.md
+      - SSL Certificates: troubleshooting/ssl-certificates.md
+      - CLI Commands: troubleshooting/cli-commands.md
       - Development Setup: troubleshooting/development-issues.md
       - Deployment Issues: troubleshooting/deployment-issues.md
       - Legacy Issues: troubleshooting.md
