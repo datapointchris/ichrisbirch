@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Development stage - includes all dependencies (dev + test + production)
+# Runs as root because we bind-mount source and use uv run at runtime
 FROM base AS development
 
 # Install all dependencies using UV cache mounts
@@ -36,6 +37,7 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
 
 # Testing stage - production dependencies + test dependencies only
+# Runs as root because we bind-mount source and use uv run at runtime
 FROM base AS testing
 
 # Install production + test dependencies only

@@ -19,6 +19,9 @@ services:
       - ./deploy-containers/traefik/certs/dev.key:/certs/tls.key:ro
       - ./deploy-containers/traefik/dynamic-dev:/etc/traefik/dynamic:ro
     command:
+      # Healthcheck support
+      - "--ping=true"
+
       # EntryPoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
@@ -28,7 +31,6 @@ services:
       - "--entrypoints.websecure.http.tls=true"
 
       # TLS configuration
-      - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
 
@@ -59,6 +61,11 @@ services:
       # Dashboard authentication (set TRAEFIK_DASHBOARD_AUTH in .env)
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
       - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -155,7 +162,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv  # Exclude .venv from bind mount for performance
-      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     labels:
       # Enable Traefik
       - "traefik.enable=true"
@@ -202,9 +209,9 @@ services:
       - proxy
       - default
     restart: unless-stopped
-    # Override health check for Flask service
+    # Override health check timing for development (base uses /health)
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       start_period: 5s
@@ -212,7 +219,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     labels:
       # Enable Traefik
       - "traefik.enable=true"
@@ -222,7 +229,6 @@ services:
       - "traefik.http.routers.app-http.entrypoints=web"
       - "traefik.http.routers.app-http.middlewares=redirect-to-https@docker"
 
-      # HTTPS router
       # HTTPS router
       - "traefik.http.routers.app.rule=Host(`app.docker.localhost`)"
       - "traefik.http.routers.app.entrypoints=websecure"
@@ -257,11 +263,15 @@ services:
       - default
     restart: unless-stopped
     healthcheck:
-      disable: false  # Override disable, enable for development
+      test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     volumes:
       - .:/app
       - /app/.venv
-      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     labels:
       # Enable Traefik
       - "traefik.enable=true"
@@ -309,7 +319,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - ~/.config/aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     logging:
       driver: "json-file"
       options:

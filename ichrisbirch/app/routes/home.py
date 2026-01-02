@@ -23,6 +23,12 @@ def index():
     return render_template('index.html', api_url=settings.api_url, chat_url=settings.chat_url)
 
 
+@blueprint.route('/health', methods=['GET'])
+def health():
+    """Health check endpoint for container health monitoring."""
+    return {'status': 'healthy'}
+
+
 @blueprint.route('/loading/', methods=['GET'])
 def loading():
     return render_template('loading.html')

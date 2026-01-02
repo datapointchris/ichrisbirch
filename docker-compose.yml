@@ -13,6 +13,7 @@ services:
       - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
       - ./deploy-containers/traefik/acme.json:/acme.json
     command:
+      - --ping=true
       - --api=false
       - --providers.docker=true
       - --providers.docker.exposedByDefault=false
@@ -37,6 +38,11 @@ services:
       - app
       - chat
     restart: always
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -139,7 +145,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
     restart: always
@@ -147,6 +153,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
+      start_period: 30s
       retries: 3
     working_dir: /app
     logging:
@@ -189,6 +196,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
+      start_period: 30s
       retries: 3
     working_dir: /app
     logging:

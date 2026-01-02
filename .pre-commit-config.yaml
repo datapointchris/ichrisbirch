@@ -38,7 +38,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-yaml
-        exclude: mkdocs.yml
+        exclude: ^(mkdocs\.yml|docker-compose.*\.yml)$
       - id: check-toml
       - id: check-json
       - id: end-of-file-fixer

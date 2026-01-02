@@ -2,7 +2,7 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml up -d
 
 services:
-  # Override API service for CI
+  # Override API service for CI (no AWS credentials mount needed)
   api:
     volumes:
       - type: bind
@@ -69,6 +69,7 @@ services:
   # Override Traefik for CI - simplified without dashboard auth
   traefik:
     command:
+      - "--ping=true"
       - "--api.dashboard=false"
       - "--log.level=WARN"
       - "--providers.docker=true"
@@ -78,6 +79,8 @@ services:
       - "--providers.file.watch=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
 
 networks:
   proxy:

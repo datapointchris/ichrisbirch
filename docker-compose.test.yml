@@ -4,6 +4,7 @@ services:
     image: traefik:v3.4
     container_name: ichrisbirch-traefik-test
     command:
+      - "--ping=true"
       - "--api.dashboard=true"
       - "--api.debug=true"
       - "--log.level=DEBUG"
@@ -20,10 +21,10 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=test@example.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-    ports:
-      - "8080:80"    # HTTP redirect to HTTPS
+    ports: !override
+      - "9080:80"    # HTTP redirect to HTTPS
       - "8443:443"   # HTTPS traffic
-      - "8082:8080"  # Traefik dashboard
+      - "9082:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
@@ -46,7 +47,7 @@ services:
       - TRAEFIK_API_DEBUG=true
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "traefik", "healthcheck"]
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -83,8 +84,6 @@ services:
       -c checkpoint_completion_target=0.9
       -c log_destination=stderr
       -c logging_collector=off
-    volumes:
-      - ichrisbirch_testing_logs:/var/log/ichrisbirch
     networks:
       - default
     healthcheck:
@@ -138,7 +137,6 @@ services:
       uv run uvicorn ichrisbirch.wsgi_api:api
       --host 0.0.0.0
       --port 8000
-      --reload
       --log-level debug
       --no-access-log
     ports:
@@ -161,7 +159,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
@@ -208,12 +206,12 @@ services:
       context: .
       target: testing
     container_name: ichrisbirch-app-testing
+    # Run without reload for consistent test environment
     command: >
       uv run flask
       --app ichrisbirch.wsgi_app:app run
       --host 0.0.0.0
       --port 5000
-      --reload
     ports:
       - "5001:5000" # Map to different external port to avoid conflicts
     environment:
@@ -234,7 +232,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
@@ -295,7 +293,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
@@ -309,6 +307,12 @@ services:
     networks:
       - proxy
       - default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     labels:
       - "traefik.enable=true"
       # Chat routes with WebSocket support
@@ -361,7 +365,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume

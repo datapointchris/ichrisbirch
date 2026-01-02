@@ -30,8 +30,6 @@ services:
       -c checkpoint_completion_target=0.9
       -c log_destination=stderr
       -c logging_collector=off
-    volumes:
-      - ichrisbirch_testing_logs:/var/log/ichrisbirch
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
       interval: 10s
@@ -81,7 +79,6 @@ services:
       uv run uvicorn ichrisbirch.wsgi_api:api
       --host 0.0.0.0
       --port 8000
-      --reload
       --log-level debug
       --no-access-log
     ports:
@@ -104,7 +101,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
@@ -138,12 +135,12 @@ services:
       context: .
       target: testing
     container_name: ichrisbirch-app-testing
+    # Run without reload for consistent test environment
     command: >
       uv run flask
       --app ichrisbirch.wsgi_app:app run
       --host 0.0.0.0
       --port 5000
-      --reload
     ports:
       - "5001:5000" # Map to different external port to avoid conflicts
     environment:
@@ -164,7 +161,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
@@ -212,7 +209,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
@@ -223,6 +220,12 @@ services:
         target: /root/.cache/uv
     ports:
       - "8507:8505" # Different port to avoid conflicts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     restart: unless-stopped
     depends_on:
       api:
@@ -262,7 +265,7 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: bind
-        source: ~/.config/aws
+        source: ~/.aws
         target: /root/.aws
         read_only: true
       - type: volume
