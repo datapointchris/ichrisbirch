@@ -21,64 +21,62 @@ The code sync tool (`mkdocs_plugins/code_sync/`) automatically synchronizes code
 
 Reference Python functions, classes, or methods by name. Use this format in your markdown:
 
-```text
-`​``python file=path/to/file.py element=function_name
+````text
+```python file=path/to/file.py element=function_name
 # This content is auto-replaced with the actual function code
-`​``
 ```
-
-(Note: The backticks above are escaped for display. Use three regular backticks.)
+````
 
 For example, to reference a function:
 
-```text
-`​``python file=path/to/module.py element=function_name
-`​``
+````text
+```python file=path/to/module.py element=function_name
 ```
+````
 
 To reference a class method:
 
-```text
-`​``python file=path/to/module.py element=ClassName.method_name
-`​``
+````text
+```python file=path/to/module.py element=ClassName.method_name
 ```
+````
 
 To reference an entire class:
 
-```text
-`​``python file=path/to/module.py element=ClassName
-`​``
+````text
+```python file=path/to/module.py element=ClassName
 ```
+````
 
 #### Line-Based References (For Non-Python Files)
 
 Reference specific line ranges from any file:
 
-```text
-`​``bash file=scripts/deploy.sh lines=10-25
-`​``
+````text
+```bash file=scripts/deploy.sh lines=10-25
 ```
+````
 
 Examples:
 
-```text
-`​``yaml file=config/settings.yml lines=1-20
-`​``
+````text
+```yaml file=config/settings.yml lines=1-20
 ```
+````
 
-```text
-`​``dockerfile file=Dockerfile lines=100-120
-`​``
+````text
+```dockerfile file=Dockerfile lines=100-120
 ```
+````
 
 #### Optional Attributes
 
 Add a label/title to the code block:
 
-```text
-`​``python file=path/to/module.py element=MyClass label="My Example Class"
-`​``
+````text
+```python file=path/to/module.py element=MyClass label="My Example Class"
 ```
+````
 
 ### CLI Usage
 

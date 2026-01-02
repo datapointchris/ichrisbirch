@@ -98,6 +98,13 @@ class CodeSyncTool:
             r'(?::([^\]]*))?\]'
         )
 
+        # Pattern to find ALL code fences (for detecting nested blocks)
+        # Matches ``` or ~~~ with optional language, then content, then closing fence
+        self._all_code_fences_pattern = re.compile(
+            r'^(`{3,}|~{3,})(\w*)\s*\n(.*?)\n\1\s*$',
+            re.MULTILINE | re.DOTALL,
+        )
+
     def find_markdown_files(self, directory: str | Path) -> list[Path]:
         """Find all markdown files in a directory (recursively).
 
@@ -116,8 +123,99 @@ class CodeSyncTool:
         logger.info(f'Found {len(markdown_files)} markdown files in {directory}')
         return markdown_files
 
+    def _find_protected_regions(self, markdown_content: str) -> list[tuple[int, int]]:
+        """Find regions inside code fences that should NOT be processed.
+
+        These are code blocks that don't have file= attributes - their content
+        should be treated as literal text and not scanned for code references.
+
+        This is critical for documentation that shows the plugin's own syntax:
+            ```text
+            ```python file=path/to/file.py element=function_name
+            ```
+            ```
+
+        The inner code block is just an example and should not be processed.
+
+        Args:
+            markdown_content: The markdown content to analyze
+
+        Returns:
+            List of (start, end) tuples representing protected regions
+        """
+        protected_regions: list[tuple[int, int]] = []
+
+        # Find all code fences by scanning line by line
+        # We need to track opening/closing fences and their positions
+        lines = markdown_content.split('\n')
+        pos = 0
+        in_fence = False
+        fence_char = ''
+        fence_len = 0
+        fence_start = 0
+        fence_has_file_attr = False
+
+        for line in lines:
+            line_start = pos
+            stripped = line.lstrip()
+
+            # Check if this line starts a code fence
+            if not in_fence:
+                if stripped.startswith(('```', '~~~')):
+                    fence_char = stripped[0]
+                    # Count the number of fence characters
+                    fence_len = 0
+                    for c in stripped:
+                        if c == fence_char:
+                            fence_len += 1
+                        else:
+                            break
+
+                    in_fence = True
+                    fence_start = line_start
+                    # Check if this fence has file= attribute (our pattern)
+                    fence_has_file_attr = 'file=' in line or 'code=' in line
+            else:
+                # Check if this line closes the current fence
+                if stripped.startswith(fence_char * fence_len):
+                    # Check the rest is just whitespace or the same fence char
+                    rest = stripped[fence_len:].strip()
+                    if rest == '' or all(c == fence_char for c in rest):
+                        # This closes the fence
+                        # If this fence does NOT have file= attribute, protect its content
+                        if not fence_has_file_attr:
+                            # The protected region is the content between opening and closing
+                            # (exclusive of the fence lines themselves)
+                            content_start = fence_start + len(lines[markdown_content[:fence_start].count('\n')]) + 1
+                            content_end = line_start
+                            if content_start < content_end:
+                                protected_regions.append((content_start, content_end))
+
+                        in_fence = False
+                        fence_char = ''
+                        fence_len = 0
+
+            pos += len(line) + 1  # +1 for the newline
+
+        return protected_regions
+
+    def _is_in_protected_region(self, pos: int, protected_regions: list[tuple[int, int]]) -> bool:
+        """Check if a position falls inside any protected region.
+
+        Args:
+            pos: The position to check
+            protected_regions: List of (start, end) tuples
+
+        Returns:
+            True if the position is inside a protected region
+        """
+        return any(start <= pos < end for start, end in protected_regions)
+
     def extract_code_references(self, markdown_content: str) -> list[MarkdownCodeReference]:
         """Extract code references from markdown content.
+
+        Skips code references that are nested inside other code blocks (e.g., examples
+        showing the plugin's own syntax inside a ```text block).
 
         Args:
             markdown_content: Markdown content to parse
@@ -127,7 +225,15 @@ class CodeSyncTool:
         """
         references = []
 
+        # Find regions that are inside code blocks without file= attributes
+        # These should be protected from processing (they're examples/documentation)
+        protected_regions = self._find_protected_regions(markdown_content)
+
         for match in self._code_block_element_pattern.finditer(markdown_content):
+            # Skip if this match is inside a protected region (nested code block)
+            if self._is_in_protected_region(match.start(), protected_regions):
+                continue
+
             language = match.group(1) or 'python'
             file_path = match.group(2)
             element_name = match.group(3)
@@ -147,6 +253,10 @@ class CodeSyncTool:
             references.append(ref)
 
         for match in self._code_block_lines_pattern.finditer(markdown_content):
+            # Skip if this match is inside a protected region (nested code block)
+            if self._is_in_protected_region(match.start(), protected_regions):
+                continue
+
             language = match.group(1) or ''
             file_path = match.group(2)
             start_line = int(match.group(3))
@@ -167,6 +277,10 @@ class CodeSyncTool:
             references.append(ref)
 
         for match in self._inline_code_pattern.finditer(markdown_content):
+            # Skip if this match is inside a protected region (nested code block)
+            if self._is_in_protected_region(match.start(), protected_regions):
+                continue
+
             file_path = match.group(1)
             element_name = match.group(2)
             attrs_text = match.group(3) or ''
@@ -185,6 +299,10 @@ class CodeSyncTool:
             references.append(ref)
 
         for match in self._inline_lines_pattern.finditer(markdown_content):
+            # Skip if this match is inside a protected region (nested code block)
+            if self._is_in_protected_region(match.start(), protected_regions):
+                continue
+
             file_path = match.group(1)
             start_line = int(match.group(2))
             end_line = int(match.group(3))
