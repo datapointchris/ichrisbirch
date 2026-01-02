@@ -570,17 +570,18 @@ function stats-show() {
   echo "Last collected: ${cyan}$collected_at${reset}"
   echo ""
 
-  # Code stats
-  local python_loc html_loc total_loc python_files
-  python_loc=$(jq -r '.code.languages.Python.code // 0' "$stats_file")
-  html_loc=$(jq -r '.code.languages.HTML.code // 0' "$stats_file")
-  total_loc=$(jq -r '.code.total.code // 0' "$stats_file")
-  python_files=$(jq -r '.code.languages.Python.files // 0' "$stats_file")
+  # Code stats (live from tokei) - show top 5 languages
+  # Use max(code, comments) to handle prose languages (Markdown counts content as comments)
+  local tokei_json total_loc
+  tokei_json=$(tokei . --compact --output json 2>/dev/null)
+  total_loc=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map([.code, .comments] | max) | add // 0')
 
   echo "${blue}Code${reset}"
-  printf "  Python:      %'6d lines (%d files)\n" "$python_loc" "$python_files"
-  printf "  HTML:        %'6d lines\n" "$html_loc"
-  printf "  Total:       %'6d lines\n" "$total_loc"
+  echo "$tokei_json" | jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[0:5] | .[] | "\(.key)\t\([.value.code, .value.comments] | max)\t\(.value.reports | length)"' | \
+    while IFS=$'\t' read -r lang content files; do
+      printf "  %-10s %'6d lines (%d files)\n" "$lang:" "$content" "$files"
+    done
+  printf "  ${cyan}%-10s %'6d lines${reset}\n" "Total:" "$total_loc"
   echo ""
 
   # Tests
@@ -604,22 +605,6 @@ function stats-show() {
   fi
   printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
   printf "  Duration:    %ds\n" "$duration"
-  echo ""
-
-  # Quality
-  local ruff_issues mypy_errors bandit_issues
-  ruff_issues=$(jq -r '.quality.ruff_issues // 0' "$stats_file")
-  mypy_errors=$(jq -r '.quality.mypy_errors // 0' "$stats_file")
-  bandit_issues=$(jq -r '.quality.bandit_issues // 0' "$stats_file")
-
-  echo "${blue}Quality${reset}"
-  if [ "$ruff_issues" -eq 0 ] && [ "$mypy_errors" -eq 0 ] && [ "$bandit_issues" -eq 0 ]; then
-    echo "  ${green}All checks passing${reset}"
-  else
-    [ "$ruff_issues" -gt 0 ] && printf "  Ruff:        ${yellow}%d issues${reset}\n" "$ruff_issues"
-    [ "$mypy_errors" -gt 0 ] && printf "  Mypy:        ${yellow}%d errors${reset}\n" "$mypy_errors"
-    [ "$bandit_issues" -gt 0 ] && printf "  Bandit:      ${yellow}%d issues${reset}\n" "$bandit_issues"
-  fi
   echo ""
 
   # Dependencies
@@ -651,31 +636,30 @@ function stats-show() {
 
 function stats-code() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file
-  stats_file=$(stats-latest-file)
 
   echo "${green}Code Statistics by Language${reset}"
   echo ""
 
-  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
-    echo "${yellow}No stats snapshots found.${reset}"
-    return
-  fi
+  printf "${cyan}%-15s %10s %10s %8s${reset}\n" "Language" "Content" "Blanks" "Files"
+  echo "---------------------------------------------------"
 
-  printf "${cyan}%-15s %10s %10s %10s %8s${reset}\n" "Language" "Code" "Comments" "Blanks" "Files"
-  echo "---------------------------------------------------------------"
+  # Run tokei directly for real-time stats
+  # For code: content = code, for prose (Markdown): content = comments
+  # We use max(code, comments) as content to handle both properly
+  local tokei_json
+  tokei_json=$(tokei . --compact --output json 2>/dev/null)
 
-  jq -r '.code.languages | to_entries | sort_by(-.value.code) | .[] | select(.key != "Total") | [.key, .value.code, .value.comments, .value.blanks, .value.files] | @tsv' "$stats_file" | \
-    while IFS=$'\t' read -r lang code comments blanks files; do
-      printf "%-15s %'10d %'10d %'10d %8d\n" "$lang" "$code" "$comments" "$blanks" "$files"
+  echo "$tokei_json" | \
+    jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[] | [.key, ([.value.code, .value.comments] | max), .value.blanks, (.value.reports | length)] | @tsv' | \
+    while IFS=$'\t' read -r lang content blanks files; do
+      printf "%-15s %'10d %'10d %8d\n" "$lang" "$content" "$blanks" "$files"
     done
 
-  echo "---------------------------------------------------------------"
-  local total_code total_comments total_blanks
-  total_code=$(jq -r '.code.total.code' "$stats_file")
-  total_comments=$(jq -r '.code.total.comments' "$stats_file")
-  total_blanks=$(jq -r '.code.total.blanks' "$stats_file")
-  printf "${green}%-15s %'10d %'10d %'10d${reset}\n" "Total" "$total_code" "$total_comments" "$total_blanks"
+  echo "---------------------------------------------------"
+  local total_content total_blanks
+  total_content=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map([.code, .comments] | max) | add')
+  total_blanks=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map(.blanks) | add')
+  printf "${green}%-15s %'10d %'10d${reset}\n" "Total" "$total_content" "$total_blanks"
 }
 
 function stats-tests() {
@@ -843,19 +827,134 @@ function stats-events() {
   fi
 }
 
-function stats-commits() {
+function stats-trends() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local count="${1:-10}"
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
-  echo "${green}Recent Commits (last $count)${reset}"
+  echo "${green}Project Trends${reset}"
   echo ""
 
-  if [ -f "$events_file" ]; then
-    grep '"type":"commit"' "$events_file" | tail -n "$count" | jq -r '[.short_hash, .timestamp[0:10], .message[0:60]] | @tsv' | column -t -s $'\t'
+  # Helper to format percent change with color
+  format_change() {
+    local current=$1 previous=$2 label=$3 invert=${4:-false}
+    if [ "$previous" -eq 0 ] || [ "$current" -eq 0 ]; then
+      printf "  %-14s %s\n" "$label:" "${gray}--${reset}"
+      return
+    fi
+    local change=$(( (current - previous) * 100 / previous ))
+    local arrow color
+    if [ "$change" -gt 0 ]; then
+      arrow="↑"
+      [ "$invert" = "true" ] && color="$red" || color="$green"
+    elif [ "$change" -lt 0 ]; then
+      arrow="↓"
+      [ "$invert" = "true" ] && color="$green" || color="$red"
+      change=$((-change))
+    else
+      arrow="→"
+      color="$gray"
+    fi
+    printf "  %-14s ${color}%s%d%%${reset} (%d → %d)\n" "$label:" "$arrow" "$change" "$previous" "$current"
+  }
+
+  # Get commit counts for different periods
+  echo "${blue}Commit Velocity${reset}"
+  local today_commits week_commits month_commits prev_week prev_month
+  today_commits=$(git log --oneline --since="24 hours ago" 2>/dev/null | wc -l | tr -d ' ')
+  week_commits=$(git log --oneline --since="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
+  month_commits=$(git log --oneline --since="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
+  prev_week=$(git log --oneline --since="14 days ago" --until="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
+  prev_month=$(git log --oneline --since="60 days ago" --until="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
+
+  printf "  %-14s %d\n" "Today:" "$today_commits"
+  format_change "$week_commits" "$prev_week" "7d vs prev 7d"
+  format_change "$month_commits" "$prev_month" "30d vs prev 30d"
+  echo ""
+
+  # Code changes from git
+  echo "${blue}Code Churn (lines changed)${reset}"
+  local week_added week_deleted month_added month_deleted
+  week_added=$(git log --since="7 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  week_deleted=$(git log --since="7 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$2} END {print s+0}')
+  month_added=$(git log --since="30 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  month_deleted=$(git log --since="30 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$2} END {print s+0}')
+
+  printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 7 days:" "$week_added" "$week_deleted"
+  printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 30 days:" "$month_added" "$month_deleted"
+  echo ""
+
+  # Test and coverage trends from stats snapshots
+  echo "${blue}Test Suite${reset}"
+  local stats_dir="$ICHRISBIRCH_HOME/stats"
+  local latest_stats oldest_stats
+  latest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+  oldest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | head -1 | cut -d' ' -f2-)
+
+  if [ -n "$latest_stats" ] && [ -n "$oldest_stats" ]; then
+    local curr_tests prev_tests curr_cov prev_cov curr_dur prev_dur
+    curr_tests=$(jq -r '.tests.total // 0' "$latest_stats")
+    prev_tests=$(jq -r '.tests.total // 0' "$oldest_stats")
+    curr_cov=$(jq -r '.coverage.line_percent // 0' "$latest_stats" | cut -d'.' -f1)
+    prev_cov=$(jq -r '.coverage.line_percent // 0' "$oldest_stats" | cut -d'.' -f1)
+    curr_dur=$(jq -r '.tests.duration_seconds // 0' "$latest_stats" | cut -d'.' -f1)
+    prev_dur=$(jq -r '.tests.duration_seconds // 0' "$oldest_stats" | cut -d'.' -f1)
+
+    format_change "$curr_tests" "$prev_tests" "Test count"
+    format_change "$curr_cov" "$prev_cov" "Coverage %"
+    format_change "$curr_dur" "$prev_dur" "Duration (s)" true
   else
-    echo "${yellow}No events file found.${reset}"
+    printf "  %sNo historical snapshots for comparison%s\n" "$gray" "$reset"
   fi
+  echo ""
+
+  # Python LOC trend
+  echo "${blue}Python LOC (from git)${reset}"
+  local py_week_added py_week_deleted py_month_added py_month_deleted
+  py_week_added=$(git log --since="7 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  py_week_deleted=$(git log --since="7 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$2} END {print s+0}')
+  py_month_added=$(git log --since="30 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  py_month_deleted=$(git log --since="30 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$2} END {print s+0}')
+
+  local py_week_net=$((py_week_added - py_week_deleted))
+  local py_month_net=$((py_month_added - py_month_deleted))
+
+  if [ "$py_week_net" -ge 0 ]; then
+    printf "  %-14s ${green}+%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 7 days:" "$py_week_net" "$py_week_added" "$py_week_deleted"
+  else
+    printf "  %-14s ${red}%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 7 days:" "$py_week_net" "$py_week_added" "$py_week_deleted"
+  fi
+  if [ "$py_month_net" -ge 0 ]; then
+    printf "  %-14s ${green}+%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 30 days:" "$py_month_net" "$py_month_added" "$py_month_deleted"
+  else
+    printf "  %-14s ${red}%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 30 days:" "$py_month_net" "$py_month_added" "$py_month_deleted"
+  fi
+  echo ""
+
+  # Sparkline of activity
+  echo "${blue}Activity Sparkline (30 days)${reset}"
+  printf "  "
+  local max_day=0
+  declare -a day_counts
+  for i in $(seq 29 -1 0); do
+    local d
+    d=$(date -d "-${i} days" +%Y-%m-%d)
+    local cnt
+    cnt=$(git log --oneline --since="$d 00:00:00" --until="$d 23:59:59" 2>/dev/null | wc -l | tr -d ' ')
+    day_counts[i]=$cnt
+    [ "$cnt" -gt "$max_day" ] && max_day=$cnt
+  done
+  local bars=("▁" "▂" "▃" "▄" "▅" "▆" "▇" "█")
+  for i in $(seq 29 -1 0); do
+    local cnt=${day_counts[i]}
+    if [ "$max_day" -eq 0 ]; then
+      printf "%s▁%s" "$gray" "$reset"
+    elif [ "$cnt" -eq 0 ]; then
+      printf "%s▁%s" "$gray" "$reset"
+    else
+      local idx=$(( (cnt * 7) / max_day ))
+      printf "%s%s%s" "$green" "${bars[$idx]}" "$reset"
+    fi
+  done
+  printf "\n  %s30d ago                        today%s\n" "$gray" "$reset"
 }
 
 function usage() {
@@ -923,7 +1022,7 @@ function usage() {
   echo "  ${blue}stats quality${reset}       - Issues caught by linters over 24h/7d/30d/all time"
   echo "  ${blue}stats activity [n]${reset}  - Commit activity graph (default: 7 days)"
   echo "  ${blue}stats events [n]${reset}    - Recent pre-commit hook events (default: 20)"
-  echo "  ${blue}stats commits [n]${reset}   - Recent commits from events (default: 10)"
+  echo "  ${blue}stats trends${reset}        - Velocity, code churn, test suite trends, and sparkline"
   echo
   echo "${green}Service URLs (All environments use HTTPS):${reset}"
   echo "  ${blue}Development${reset}: api.docker.localhost, app.docker.localhost, chat.docker.localhost"
@@ -1027,12 +1126,12 @@ stats)
   events)
     stats-events "$3"
     ;;
-  commits)
-    stats-commits "$3"
+  trends)
+    stats-trends
     ;;
   *)
     echo "${red}Unknown stats command: $2${reset}"
-    echo "Usage: ichrisbirch stats [code|tests|quality|activity|events|commits]"
+    echo "Usage: ichrisbirch stats [code|tests|quality|activity|events|trends]"
     ;;
   esac
   ;;

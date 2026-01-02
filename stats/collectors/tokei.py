@@ -27,7 +27,17 @@ def run(branch: str, project: str) -> TokeiCollectEvent:
     start_time = time.perf_counter()
 
     result = subprocess.run(  # nosec B603 B607
-        ['tokei', '--compact', '--output', 'json', '.'],
+        [
+            'tokei',
+            '--compact',
+            '--output',
+            'json',
+            '--exclude',
+            'ichrisbirch/app/static/css/main.css',
+            '--exclude',
+            'ichrisbirch/app/static/fontawesome/*',
+            '.',
+        ],
         capture_output=True,
         text=True,
     )
