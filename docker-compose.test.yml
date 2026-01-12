@@ -1,7 +1,8 @@
 services:
   # Traefik service for test environment
+  # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
-    image: traefik:v3.4
+    image: traefik:v3.6
     container_name: ichrisbirch-traefik-test
     command:
       - "--ping=true"
