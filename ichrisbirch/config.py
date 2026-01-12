@@ -183,6 +183,7 @@ class Settings:
         self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
         self.global_timezone = 'US/Eastern'
         self.protocol = os.environ['PROTOCOL']
+        self.domain: str = os.environ.get('DOMAIN', 'ichrisbirch.com')
         self.mac_safari_request_headers = {
             'User-Agent': (
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.4 Safari/605.1.15'
@@ -205,13 +206,25 @@ class Settings:
 
     @property
     def api_url(self) -> str:
+        """Internal API URL for service-to-service communication."""
         port = f':{self.fastapi.port}' if self.fastapi.port else ''
         return f'{self.protocol}://{self.fastapi.host}{port}'
 
     @property
     def chat_url(self) -> str:
+        """Internal chat URL for service-to-service communication."""
         port = f':{self.chat.port}' if self.chat.port else ''
         return f'{self.protocol}://{self.chat.host}{port}'
+
+    @property
+    def api_url_external(self) -> str:
+        """External API URL for user-facing links."""
+        return f'https://api.{self.domain}'
+
+    @property
+    def chat_url_external(self) -> str:
+        """External chat URL for user-facing links."""
+        return f'https://chat.{self.domain}'
 
 
 def _set_environment_variables(env: str):

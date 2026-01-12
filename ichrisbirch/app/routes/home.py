@@ -20,7 +20,7 @@ blueprint = Blueprint('home', __name__, template_folder='templates', static_fold
 @blueprint.route('/', methods=['GET'])
 def index():
     settings = current_app.config['SETTINGS']
-    return render_template('index.html', api_url=settings.api_url, chat_url=settings.chat_url)
+    return render_template('index.html', api_url=settings.api_url_external, chat_url=settings.chat_url_external)
 
 
 @blueprint.route('/health', methods=['GET'])
