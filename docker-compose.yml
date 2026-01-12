@@ -201,7 +201,7 @@ services:
         tag: "app"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`app.${DOMAIN}`)"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
       - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.routers.app.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
       - "traefik.http.services.app.loadbalancer.server.port=5000"
