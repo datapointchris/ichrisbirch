@@ -16,7 +16,6 @@ from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
-from ichrisbirch.api.client.logging_client import logging_internal_service_client
 from ichrisbirch.app import forms
 from ichrisbirch.config import Settings
 
@@ -127,9 +126,9 @@ def add():
 
 @blueprint.route('/summarize-proxy/', methods=['POST'])
 def summarize_proxy():
-    """Proxy endpoint for article summarization with internal service auth.
+    """Proxy endpoint for article summarization.
 
-    JavaScript calls this Flask endpoint, which forwards to the API with proper authentication.
+    JavaScript calls this Flask endpoint, which forwards to the API with user's session credentials.
     """
     data = request.get_json()
     url = data.get('url') if data else None
@@ -137,7 +136,7 @@ def summarize_proxy():
         return Response('Missing URL', status=400)
 
     settings = current_app.config['SETTINGS']
-    with logging_internal_service_client(base_url=settings.api_url) as client:
+    with logging_flask_session_client(base_url=settings.api_url) as client:
         summarize_api = client.resource('articles/summarize', schemas.ArticleSummary)
         if result := summarize_api.post(json={'url': url}):
             return {'title': result.title, 'summary': result.summary, 'tags': result.tags}
@@ -161,7 +160,7 @@ def insights():
         url = request.form.get('url')
         start = pendulum.now()
         settings = current_app.config['SETTINGS']
-        with logging_internal_service_client(base_url=settings.api_url) as client:
+        with logging_flask_session_client(base_url=settings.api_url) as client:
             insights_api = client.resource('articles/insights', schemas.Article)
             response = insights_api.post_action(json={'url': url}, timeout=30)
             elapsed = (pendulum.now() - start).in_words()

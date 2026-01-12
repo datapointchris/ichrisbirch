@@ -1,6 +1,6 @@
 """Tests for Flask articles routes.
 
-These tests verify that the Flask app routes properly authenticate with the API using internal service authentication.
+These tests verify that the Flask app routes properly authenticate with the API using user session authentication.
 """
 
 from unittest.mock import MagicMock
@@ -51,9 +51,9 @@ def test_insights_page(test_app_logged_in):
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
 
-@patch('ichrisbirch.app.routes.articles.logging_internal_service_client')
-def test_insights_post_uses_internal_auth(mock_internal_client, test_app_logged_in):
-    """Verify that insights POST uses internal service authentication."""
+@patch('ichrisbirch.app.routes.articles.logging_flask_session_client')
+def test_insights_post_uses_session_auth(mock_session_client, test_app_logged_in):
+    """Verify that insights POST uses user session authentication."""
     mock_response = MagicMock()
     mock_response.text = '<h1>Test Insights</h1>'
 
@@ -64,18 +64,18 @@ def test_insights_post_uses_internal_auth(mock_internal_client, test_app_logged_
     mock_client.resource.return_value = mock_resource
     mock_client.__enter__ = MagicMock(return_value=mock_client)
     mock_client.__exit__ = MagicMock(return_value=False)
-    mock_internal_client.return_value = mock_client
+    mock_session_client.return_value = mock_client
 
     response = test_app_logged_in.post('/articles/insights/', data={'url': 'https://example.com/test'})
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
-    # Verify logging_internal_service_client was called (indicates internal auth is used)
-    mock_internal_client.assert_called()
+    # Verify logging_flask_session_client was called (indicates user session auth is used)
+    mock_session_client.assert_called()
 
 
-@patch('ichrisbirch.app.routes.articles.logging_internal_service_client')
-def test_summarize_proxy_uses_internal_auth(mock_internal_client, test_app_logged_in):
-    """Verify that summarize-proxy endpoint uses internal service authentication."""
+@patch('ichrisbirch.app.routes.articles.logging_flask_session_client')
+def test_summarize_proxy_uses_session_auth(mock_session_client, test_app_logged_in):
+    """Verify that summarize-proxy endpoint uses user session authentication."""
     mock_result = MagicMock()
     mock_result.title = 'Test Article'
     mock_result.summary = 'Test summary'
@@ -88,15 +88,15 @@ def test_summarize_proxy_uses_internal_auth(mock_internal_client, test_app_logge
     mock_client.resource.return_value = mock_resource
     mock_client.__enter__ = MagicMock(return_value=mock_client)
     mock_client.__exit__ = MagicMock(return_value=False)
-    mock_internal_client.return_value = mock_client
+    mock_session_client.return_value = mock_client
 
     response = test_app_logged_in.post(
         '/articles/summarize-proxy/', data='{"url": "https://example.com/test"}', content_type='application/json'
     )
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
-    # Verify logging_internal_service_client was called (indicates internal auth is used)
-    mock_internal_client.assert_called()
+    # Verify logging_flask_session_client was called (indicates user session auth is used)
+    mock_session_client.assert_called()
 
     # Verify response contains expected data
     data = response.get_json()
