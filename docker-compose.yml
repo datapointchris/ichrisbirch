@@ -174,8 +174,8 @@ services:
       context: .
       target: production
     container_name: ichrisbirch-app
-    # Production WSGI server
-    command: gunicorn --bind 0.0.0.0:5000 --workers 4 ichrisbirch.wsgi_app:app
+    # Production WSGI server (timeout allows for long OpenAI requests)
+    command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
     environment:
       - ENVIRONMENT=production
       - FLASK_DEBUG=False
