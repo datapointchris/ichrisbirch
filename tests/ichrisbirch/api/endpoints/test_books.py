@@ -94,11 +94,10 @@ def test_get_book_by_isbn(book_crud_tester):
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['title'] == '1984'
 
-    # Test getting a book by ISBN that doesn't exist
+    # Test getting a book by ISBN that doesn't exist returns 404
     isbn = '9999999999999'
     response = client.get(f'/books/isbn/{isbn}/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert response.json() is None
+    assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
 def test_update_book(book_crud_tester):

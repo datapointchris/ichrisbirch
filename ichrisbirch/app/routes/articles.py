@@ -15,6 +15,7 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.api.client.exceptions import APIHTTPError
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
 from ichrisbirch.config import Settings
@@ -55,8 +56,12 @@ def process_bulk_urls(request, data):
 def add_bulk_article(articles_api, summarize_api, url: str, settings: Settings):
     """Add article using summarize endpoint to auto generate summary and tags for the bulk endpoint."""
     logger.info(f'processing: {url}')
-    if articles_api.get_one('url', params={'url': url}):
-        raise ValueError(f'already exists: {url}')
+    try:
+        if articles_api.get_one('url', params={'url': url}):
+            raise ValueError(f'already exists: {url}')
+    except APIHTTPError as e:
+        if e.status_code != 404:
+            raise
     httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     openai_summary = summarize_api.post(json={'url': url}, timeout=20)
     article = dict(
@@ -201,7 +206,14 @@ def crud():
             case 'add':
                 form = forms.ArticleCreateForm(request.form)
                 if form.validate_on_submit():
-                    if articles_api.get_one('url', params={'url': data['url']}):
+                    try:
+                        existing = articles_api.get_one('url', params={'url': data['url']})
+                    except APIHTTPError as e:
+                        if e.status_code == 404:
+                            existing = None
+                        else:
+                            raise
+                    if existing:
                         message = f'already exists: {data["url"]}'
                         flash(message, 'warning')
                         logger.warning(message)

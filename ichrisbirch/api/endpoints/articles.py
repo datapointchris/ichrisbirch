@@ -1,7 +1,5 @@
 import json
 import logging
-from datetime import datetime
-from datetime import timedelta
 
 import httpx
 import markdown
@@ -12,6 +10,7 @@ from fastapi import Request
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import cast
+from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
@@ -66,8 +65,9 @@ async def read_many(
 ):
     query = select(models.Article).order_by(models.Article.title.asc())
     if favorites is True:
+        # Use PostgreSQL's make_interval for proper SQL date arithmetic
         is_due_for_review = (models.Article.last_read_date.is_not(None)) & (
-            models.Article.last_read_date + timedelta(days=float(models.Article.review_days)) <= datetime.now()
+            models.Article.last_read_date + func.make_interval(0, 0, 0, models.Article.review_days) <= func.now()
         )
         query = query.where(models.Article.is_favorite.is_(True))
         query = query.where((models.Article.last_read_date.is_(None)) | is_due_for_review)
@@ -90,11 +90,11 @@ async def current(session: Session = Depends(get_sqlalchemy_session)):
     return session.scalars(query).first()
 
 
-@router.get('/url/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
+@router.get('/url/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 async def read_one_url(url: str, session: Session = Depends(get_sqlalchemy_session)):
     if article := session.scalar(select(models.Article).where(models.Article.url == url)):
         return article
-    return None  # no error if not exists, this is only used to check for url existence
+    raise NotFoundException('article', f'url={url}', logger)
 
 
 @router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)

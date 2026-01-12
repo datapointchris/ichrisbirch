@@ -195,3 +195,119 @@ def test_read(article_crud_tester):
         },
     )
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+
+class TestArticleQueryParameters:
+    """Test query parameter filtering on /articles/ endpoint.
+
+    Test data (from tests/test_data/articles.py):
+    - Article 1: is_favorite=False, is_archived=False, last_read_date=None
+    - Article 2: is_favorite=True, is_archived=False, last_read_date=None
+    - Article 3: is_favorite=False, is_archived=True, last_read_date=None
+    """
+
+    def test_filter_archived_true(self, article_crud_tester):
+        """archived=True returns only archived articles."""
+        client, _ = article_crud_tester
+        response = client.get(ENDPOINT, params={'archived': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 1
+        assert articles[0]['is_archived'] is True
+        assert articles[0]['title'] == 'Article 3'
+
+    def test_filter_archived_false(self, article_crud_tester):
+        """archived=False returns only non-archived articles."""
+        client, _ = article_crud_tester
+        response = client.get(ENDPOINT, params={'archived': False})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 2
+        assert all(not a['is_archived'] for a in articles)
+
+    def test_filter_unread_true(self, article_crud_tester):
+        """unread=True returns articles with NULL last_read_date."""
+        client, _ = article_crud_tester
+        response = client.get(ENDPOINT, params={'unread': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        # All 3 test articles have last_read_date=None
+        assert len(articles) == 3
+        assert all(a['last_read_date'] is None for a in articles)
+
+    def test_filter_unread_false(self, article_crud_tester):
+        """unread=False returns articles that HAVE been read."""
+        client, crud_tester = article_crud_tester
+        # First mark one article as read
+        first_id = crud_tester.item_id_by_position(client, position=1)
+        client.patch(f'{ENDPOINT}{first_id}/', json={'last_read_date': str(datetime.now())})
+
+        response = client.get(ENDPOINT, params={'unread': False})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 1
+        assert all(a['last_read_date'] is not None for a in articles)
+
+    def test_filter_favorites_false(self, article_crud_tester):
+        """favorites=False returns only non-favorite articles."""
+        client, _ = article_crud_tester
+        response = client.get(ENDPOINT, params={'favorites': False})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 2  # Articles 1 and 3 are not favorites
+        assert all(not a['is_favorite'] for a in articles)
+
+    def test_filter_favorites_true_returns_unread_favorites(self, article_crud_tester):
+        """favorites=True returns favorite articles that haven't been read yet."""
+        client, _ = article_crud_tester
+        # Article 2 is favorite and unread
+        response = client.get(ENDPOINT, params={'favorites': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 1
+        assert articles[0]['is_favorite'] is True
+        assert articles[0]['title'] == 'Article 2'
+
+    def test_filter_favorites_true_excludes_recently_read(self, article_crud_tester):
+        """favorites=True excludes favorites that were recently read (not due for review)."""
+        client, crud_tester = article_crud_tester
+        # Get the favorite article (Article 2) and mark it as recently read
+        response = client.get(ENDPOINT, params={'favorites': True})
+        favorite_article = response.json()[0]
+
+        # Mark as read with review_days set
+        client.patch(
+            f'{ENDPOINT}{favorite_article["id"]}/',
+            json={'last_read_date': str(datetime.now()), 'review_days': 30},
+        )
+
+        # Now favorites=True should return empty (recently read, not due for review)
+        response = client.get(ENDPOINT, params={'favorites': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 0
+
+    def test_combined_filters(self, article_crud_tester):
+        """Multiple filters can be combined."""
+        client, _ = article_crud_tester
+        # unread=True AND archived=False should return Articles 1 and 2
+        response = client.get(ENDPOINT, params={'unread': True, 'archived': False})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 2
+        assert all(a['last_read_date'] is None for a in articles)
+        assert all(not a['is_archived'] for a in articles)
+
+    def test_no_filters_returns_all(self, article_crud_tester):
+        """No query parameters returns all articles."""
+        client, _ = article_crud_tester
+        response = client.get(ENDPOINT)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        articles = response.json()
+        assert len(articles) == 3
+
+    def test_url_not_found_returns_404(self, article_crud_tester):
+        """Getting article by non-existent URL returns 404."""
+        client, _ = article_crud_tester
+        response = client.get(f'{ENDPOINT}url/', params={'url': 'http://nonexistent.com'})
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

@@ -18,6 +18,13 @@ Authentication:
     - internal_service_client(): Service-to-service authentication
     - user_client(): User token authentication
     - flask_session_client(): Flask session authentication
+
+Error Handling:
+    The client raises exceptions on errors (never silently returns None/[]):
+    - APIClientError: Base class for all API client errors
+    - APIHTTPError: HTTP 4xx/5xx responses
+    - APIConnectionError: Network/connection failures
+    - APIParseError: Response parsing failures
 """
 
 from .api import APIClient
@@ -29,6 +36,10 @@ from .auth import CredentialProvider
 from .auth import FlaskSessionProvider
 from .auth import InternalServiceProvider
 from .auth import UserTokenProvider
+from .exceptions import APIClientError
+from .exceptions import APIConnectionError
+from .exceptions import APIHTTPError
+from .exceptions import APIParseError
 from .resource import ResourceClient
 from .session import APISession
 
@@ -47,4 +58,9 @@ __all__ = [
     'InternalServiceProvider',
     'UserTokenProvider',
     'FlaskSessionProvider',
+    # Exceptions
+    'APIClientError',
+    'APIHTTPError',
+    'APIConnectionError',
+    'APIParseError',
 ]

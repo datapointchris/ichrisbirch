@@ -12,6 +12,7 @@ from flask import url_for
 from flask_login import login_required
 
 from ichrisbirch import schemas
+from ichrisbirch.api.client.exceptions import APIHTTPError
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
 
@@ -58,7 +59,14 @@ def crud():
             case 'add':
                 form = forms.BookCreateForm(request.form)
                 if form.validate_on_submit():
-                    if books_api.get_one(f'isbn/{data["isbn"]}'):
+                    try:
+                        existing = books_api.get_one(f'isbn/{data["isbn"]}')
+                    except APIHTTPError as e:
+                        if e.status_code == 404:
+                            existing = None
+                        else:
+                            raise
+                    if existing:
                         message = f'already exists: {data["isbn"]}'
                         flash(message, 'warning')
                         logger.warning(message)

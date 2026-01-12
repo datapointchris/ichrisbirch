@@ -2,6 +2,14 @@
 
 This client preserves all the debugging capabilities and logging detail that exists in QueryAPI while providing modern architecture
 patterns.
+
+Error Handling:
+    This client raises exceptions on errors instead of returning None/[].
+    This allows callers to distinguish between "no data" and "API error".
+
+    - APIHTTPError: Raised for HTTP 4xx/5xx responses
+    - APIConnectionError: Raised for network/connection failures
+    - APIParseError: Raised when response cannot be parsed
 """
 
 import logging
@@ -16,6 +24,9 @@ from ichrisbirch.app import utils
 
 from .auth import CredentialProvider
 from .auth import _get_settings_with_fallback
+from .exceptions import APIConnectionError
+from .exceptions import APIHTTPError
+from .exceptions import APIParseError
 
 if TYPE_CHECKING:
     from ichrisbirch.config import Settings
@@ -97,8 +108,13 @@ class LoggingResourceClient[ModelType]:
         # Log request details
         logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log if kwargs_to_log else ""}')
 
-    def _handle_request(self, method: str, path: Any = None, **kwargs) -> httpx.Response | None:
-        """Make HTTP request with extensive logging and error handling."""
+    def _handle_request(self, method: str, path: Any = None, **kwargs) -> httpx.Response:
+        """Make HTTP request with extensive logging. Raises exceptions on error.
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+        """
         url = self._build_url(path)
 
         # Get authentication headers
@@ -118,84 +134,142 @@ class LoggingResourceClient[ModelType]:
 
         except httpx.HTTPStatusError as e:
             logger.error(f'HTTP {e.response.status_code} error: {e.response.text}')
-            return None
+            raise APIHTTPError(
+                f'API returned HTTP {e.response.status_code}',
+                status_code=e.response.status_code,
+                response_text=e.response.text,
+            ) from e
         except httpx.RequestError as e:
             logger.error(f'Request error: {e}')
-            return None
-        except Exception as e:
-            logger.error(f'Unexpected error: {e}')
-            return None
+            raise APIConnectionError(f'Failed to connect to API: {e}') from e
 
     # Core CRUD methods matching QueryAPI interface
     def get_one(self, path: Any = None, **kwargs) -> ModelType | None:
-        """Get a single resource, matching QueryAPI.get_one()."""
+        """Get a single resource, matching QueryAPI.get_one().
+
+        Returns:
+            The parsed model instance, or None if response is empty.
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses (including 404 for not found)
+            APIConnectionError: For network/connection failures
+            APIParseError: If response cannot be parsed
+        """
         response = self._handle_request('GET', path, **kwargs)
-        if response and response.content:
-            try:
-                data = response.json()
-                return self.model_class(**data)
-            except Exception as e:
-                logger.error(f'Failed to parse response as {self.model_class.__name__}: {e}')
-                return None
-        return None
+        if not response.content:
+            return None
+        try:
+            data = response.json()
+            return self.model_class(**data)
+        except Exception as e:
+            logger.error(f'Failed to parse response as {self.model_class.__name__}: {e}')
+            raise APIParseError(f'Failed to parse response as {self.model_class.__name__}: {e}') from e
 
     def get_many(self, path: Any = None, **kwargs) -> list[ModelType]:
-        """Get multiple resources, matching QueryAPI.get_many()."""
+        """Get multiple resources, matching QueryAPI.get_many().
+
+        Returns:
+            List of parsed model instances (empty list if response is empty).
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+            APIParseError: If response cannot be parsed
+        """
         response = self._handle_request('GET', path, **kwargs)
-        if response and response.content:
-            try:
-                data = response.json()
-                if isinstance(data, list):
-                    return [self.model_class(**item) for item in data]
-                else:
-                    logger.warning(f'Expected list response, got {type(data)}')
-                    return []
-            except Exception as e:
-                logger.error(f'Failed to parse response as list of {self.model_class.__name__}: {e}')
-                return []
-        return []
+        if not response.content:
+            return []
+        try:
+            data = response.json()
+            if isinstance(data, list):
+                return [self.model_class(**item) for item in data]
+            else:
+                logger.warning(f'Expected list response, got {type(data)}')
+                raise APIParseError(f'Expected list response, got {type(data).__name__}')
+        except APIParseError:
+            raise
+        except Exception as e:
+            logger.error(f'Failed to parse response as list of {self.model_class.__name__}: {e}')
+            raise APIParseError(f'Failed to parse response as list of {self.model_class.__name__}: {e}') from e
 
     def get_generic(self, path: Any = None, **kwargs) -> Any | None:
-        """Get generic response data, matching QueryAPI.get_generic()."""
+        """Get generic response data, matching QueryAPI.get_generic().
+
+        Returns:
+            The parsed JSON response, or None if response is empty.
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+            APIParseError: If response cannot be parsed as JSON
+        """
         response = self._handle_request('GET', path, **kwargs)
-        if response and response.content:
-            try:
-                return response.json()
-            except Exception as e:
-                logger.error(f'Failed to parse generic response: {e}')
-                return None
-        return None
+        if not response.content:
+            return None
+        try:
+            return response.json()
+        except Exception as e:
+            logger.error(f'Failed to parse generic response: {e}')
+            raise APIParseError(f'Failed to parse response as JSON: {e}') from e
 
     def post(self, path: Any = None, **kwargs) -> ModelType | None:
-        """Create a resource, matching QueryAPI.post()."""
-        response = self._handle_request('POST', path, **kwargs)
-        if response and response.content:
-            try:
-                data = response.json()
-                return self.model_class(**data)
-            except Exception as e:
-                logger.error(f'Failed to parse POST response as {self.model_class.__name__}: {e}')
-                return None
-        return None
+        """Create a resource, matching QueryAPI.post().
 
-    def post_action(self, path: Any = None, **kwargs) -> httpx.Response | None:
-        """Post action request, matching QueryAPI.post_action()."""
+        Returns:
+            The created model instance, or None if response is empty.
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+            APIParseError: If response cannot be parsed
+        """
+        response = self._handle_request('POST', path, **kwargs)
+        if not response.content:
+            return None
+        try:
+            data = response.json()
+            return self.model_class(**data)
+        except Exception as e:
+            logger.error(f'Failed to parse POST response as {self.model_class.__name__}: {e}')
+            raise APIParseError(f'Failed to parse POST response as {self.model_class.__name__}: {e}') from e
+
+    def post_action(self, path: Any = None, **kwargs) -> httpx.Response:
+        """Post action request, matching QueryAPI.post_action().
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+        """
         return self._handle_request('POST', path, **kwargs)
 
     def patch(self, path: Any = None, **kwargs) -> ModelType | None:
-        """Update a resource, matching QueryAPI.patch()."""
-        response = self._handle_request('PATCH', path, **kwargs)
-        if response and response.content:
-            try:
-                data = response.json()
-                return self.model_class(**data)
-            except Exception as e:
-                logger.error(f'Failed to parse PATCH response as {self.model_class.__name__}: {e}')
-                return None
-        return None
+        """Update a resource, matching QueryAPI.patch().
 
-    def delete(self, path: Any = None, **kwargs) -> httpx.Response | None:
-        """Delete a resource, matching QueryAPI.delete()."""
+        Returns:
+            The updated model instance, or None if response is empty.
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+            APIParseError: If response cannot be parsed
+        """
+        response = self._handle_request('PATCH', path, **kwargs)
+        if not response.content:
+            return None
+        try:
+            data = response.json()
+            return self.model_class(**data)
+        except Exception as e:
+            logger.error(f'Failed to parse PATCH response as {self.model_class.__name__}: {e}')
+            raise APIParseError(f'Failed to parse PATCH response as {self.model_class.__name__}: {e}') from e
+
+    def delete(self, path: Any = None, **kwargs) -> httpx.Response:
+        """Delete a resource, matching QueryAPI.delete().
+
+        Raises:
+            APIHTTPError: For HTTP 4xx/5xx responses
+            APIConnectionError: For network/connection failures
+        """
         return self._handle_request('DELETE', path, **kwargs)
 
     # Additional convenience methods

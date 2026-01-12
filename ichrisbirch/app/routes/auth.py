@@ -18,6 +18,7 @@ from flask_login import logout_user
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.client.exceptions import APIHTTPError
 from ichrisbirch.api.client.logging_client import logging_internal_service_client
 from ichrisbirch.app import forms
 from ichrisbirch.app.utils import http as http_utils
@@ -38,7 +39,14 @@ def login():
         # Use new internal service client instead of service account
         with logging_internal_service_client(base_url=api_url) as client:
             users = client.resource('users', schemas.User)
-            if user_data := users.get_generic(['email', form.email.data]):
+            try:
+                user_data = users.get_generic(['email', form.email.data])
+            except APIHTTPError as e:
+                if e.status_code == 404:
+                    user_data = None
+                else:
+                    raise
+            if user_data:
                 user = models.User(**user_data)
                 if user and user.check_password(password=form.password.data):
                     login_user(user, remember=form.remember_me.data)
@@ -87,7 +95,14 @@ def signup():
         if form.validate_on_submit():
             logger.debug('signup form validated')
             logger.debug('checking for existing user')
-            if not (existing_user := users.get_generic(['email', form.email.data])):
+            try:
+                existing_user = users.get_generic(['email', form.email.data])
+            except APIHTTPError as e:
+                if e.status_code == 404:
+                    existing_user = None
+                else:
+                    raise
+            if not existing_user:
                 logger.info(f'creating a new user with email: {form.email.data}')
                 data = {
                     'name': form.name.data,

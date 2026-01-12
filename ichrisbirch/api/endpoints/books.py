@@ -25,9 +25,8 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def read_many(search: bool | None = None, session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.Book).order_by(models.Book.priority.asc())
-
     return list(session.scalars(query).all())
 
 
@@ -102,11 +101,11 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     raise NotFoundException('book', id, logger)
 
 
-@router.get('/isbn/{isbn}/', response_model=schemas.Book | None, status_code=status.HTTP_200_OK)
+@router.get('/isbn/{isbn}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 async def get_book_by_isbn(isbn: str, session: Session = Depends(get_sqlalchemy_session)):
     if book := session.scalar(select(models.Book).where(models.Book.isbn == isbn)):
         return book
-    return None  # Do not return an error since this is used for checking for duplicates
+    raise NotFoundException('book', f'isbn={isbn}', logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
