@@ -16,6 +16,7 @@ from stats.config import load_config
 from stats.emit import emit_event
 from stats.schemas.commit import CommitEvent
 from stats.schemas.commit import StagedFile
+from stats.snapshot import generate_snapshot
 
 TIMING_DIR = Path(__file__).parent / 'timing'
 
@@ -191,6 +192,8 @@ def main() -> int:
 
     total_duration = time.perf_counter() - total_start
     write_timing('', 0, total_duration)
+
+    generate_snapshot(events_path)
 
     return 0
 

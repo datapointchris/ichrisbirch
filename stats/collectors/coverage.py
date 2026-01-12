@@ -12,7 +12,7 @@ from stats.schemas.collectors.coverage import CoverageFileSummary
 from stats.schemas.collectors.coverage import CoverageSummary
 
 
-def run(branch: str, project: str, json_path: str = 'coverage.json') -> CoverageCollectEvent | None:
+def run(branch: str, project: str, json_path: str = '.coverage.json') -> CoverageCollectEvent | None:
     """Read coverage JSON report and return fully-typed event.
 
     Args:
