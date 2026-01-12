@@ -51,7 +51,7 @@ The CI environment uses a special Docker Compose configuration that differs from
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-  --project-name ichrisbirch-testing up -d
+  --project-name ichrisbirch-test up -d
 ```
 
 **Three compose files are layered:**

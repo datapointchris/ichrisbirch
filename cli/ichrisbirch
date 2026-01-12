@@ -246,13 +246,66 @@ function test-run() {
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
 
-  # If no arguments, run all tests
-  # Otherwise, pass all arguments to pytest
-  if [ $# -eq 0 ]; then
-    uv run pytest
-  else
-    uv run pytest "$@"
+  # Parse --keep flag (preserves containers after tests)
+  local keep_containers=false
+  local pytest_args=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--keep" ]]; then
+      keep_containers=true
+    else
+      pytest_args+=("$arg")
+    fi
+  done
+
+  # Ensure clean state - stop any existing test containers
+  echo "${blue}Stopping any existing test containers...${reset}"
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes 2>/dev/null || true
+
+  # Ensure proxy network exists
+  if ! docker network inspect proxy >/dev/null 2>&1; then
+    docker network create proxy
   fi
+
+  # Start fresh containers
+  echo "${blue}Starting test containers...${reset}"
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+
+  echo "Waiting for services to be ready..."
+  sleep 15
+
+  # Initialize test database
+  echo "${blue}Initializing test database...${reset}"
+  if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
+    echo "${red}Database initialization failed${reset}"
+    if [[ "$keep_containers" == false ]]; then
+      docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
+    fi
+    return 1
+  fi
+
+  # Run pytest
+  echo ""
+  echo "${green}Running tests...${reset}"
+  echo ""
+  local test_exit_code=0
+  if [ ${#pytest_args[@]} -eq 0 ]; then
+    uv run pytest || test_exit_code=$?
+  else
+    uv run pytest "${pytest_args[@]}" || test_exit_code=$?
+  fi
+
+  # Stop containers unless --keep was specified
+  if [[ "$keep_containers" == true ]]; then
+    echo ""
+    echo "${yellow}Containers kept running (--keep flag).${reset}"
+    echo "Stop them later with: ${cyan}ichrisbirch testing stop${reset}"
+  else
+    echo ""
+    echo "${blue}Stopping test containers...${reset}"
+    docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
+  fi
+
+  return $test_exit_code
 }
 
 function test-cov() {
@@ -262,14 +315,69 @@ function test-cov() {
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
 
-  # Run pytest with coverage
-  if [ $# -eq 0 ]; then
-    uv run pytest --cov=ichrisbirch --cov-report=html
-  else
-    uv run pytest --cov=ichrisbirch --cov-report=html "$@"
+  # Parse --keep flag (preserves containers after tests)
+  local keep_containers=false
+  local pytest_args=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--keep" ]]; then
+      keep_containers=true
+    else
+      pytest_args+=("$arg")
+    fi
+  done
+
+  # Ensure clean state - stop any existing test containers
+  echo "${blue}Stopping any existing test containers...${reset}"
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes 2>/dev/null || true
+
+  # Ensure proxy network exists
+  if ! docker network inspect proxy >/dev/null 2>&1; then
+    docker network create proxy
   fi
+
+  # Start fresh containers
+  echo "${blue}Starting test containers...${reset}"
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+
+  echo "Waiting for services to be ready..."
+  sleep 15
+
+  # Initialize test database
+  echo "${blue}Initializing test database...${reset}"
+  if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
+    echo "${red}Database initialization failed${reset}"
+    if [[ "$keep_containers" == false ]]; then
+      docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
+    fi
+    return 1
+  fi
+
+  # Run pytest with coverage
+  echo ""
+  echo "${green}Running tests with coverage...${reset}"
+  echo ""
+  local test_exit_code=0
+  if [ ${#pytest_args[@]} -eq 0 ]; then
+    uv run pytest --cov=ichrisbirch --cov-report=html || test_exit_code=$?
+  else
+    uv run pytest --cov=ichrisbirch --cov-report=html "${pytest_args[@]}" || test_exit_code=$?
+  fi
+
   echo ""
   echo "Coverage report: ${cyan}file://$ICHRISBIRCH_HOME/htmlcov/index.html${reset}"
+
+  # Stop containers unless --keep was specified
+  if [[ "$keep_containers" == true ]]; then
+    echo ""
+    echo "${yellow}Containers kept running (--keep flag).${reset}"
+    echo "Stop them later with: ${cyan}ichrisbirch testing stop${reset}"
+  else
+    echo ""
+    echo "${blue}Stopping test containers...${reset}"
+    docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
+  fi
+
+  return $test_exit_code
 }
 
 function testing-start() {

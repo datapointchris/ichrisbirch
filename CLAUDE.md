@@ -35,13 +35,21 @@ Access at:
 
 ### Testing Environment
 
-Testing runs simultaneously with dev (different ports):
+Tests run in ephemeral containers (start fresh, run, stop automatically):
 
 ```bash
-./cli/ichrisbirch testing start   # Start isolated test environment
-./cli/ichrisbirch test run        # Run pytest suite
-./cli/ichrisbirch testing health  # Test environment health checks
-./cli/ichrisbirch testing app-logs [lines] [--follow]  # View application logs
+./cli/ichrisbirch test run              # Ephemeral: start → test → stop
+./cli/ichrisbirch test run --keep       # Keep containers after tests for debugging
+./cli/ichrisbirch test cov              # Run with coverage (also ephemeral)
+```
+
+For manual container management (extended debugging):
+
+```bash
+./cli/ichrisbirch testing start         # Start containers (stays running)
+./cli/ichrisbirch testing stop          # Stop containers
+./cli/ichrisbirch testing health        # Health checks
+./cli/ichrisbirch testing app-logs      # View application logs
 ```
 
 Access at: <https://api.test.localhost:8443/>
@@ -70,17 +78,20 @@ python -m ichrisbirch.database.initialization --env development|testing|producti
 ### Testing
 
 ```bash
-# Run all tests
-uv run pytest
+# Run all tests (ephemeral containers)
+./cli/ichrisbirch test run
 
 # Run specific test file
-uv run pytest tests/ichrisbirch/api/test_tasks.py
+./cli/ichrisbirch test run tests/ichrisbirch/api/test_tasks.py
 
 # Run with coverage
-uv run pytest --cov=ichrisbirch --cov-report=html
+./cli/ichrisbirch test cov
 
-# Run specific test
-uv run pytest tests/ichrisbirch/api/test_tasks.py::test_create_task -v
+# Run specific test with verbose output
+./cli/ichrisbirch test run tests/ichrisbirch/api/test_tasks.py::test_create_task -v
+
+# Keep containers running after tests (for debugging)
+./cli/ichrisbirch test run --keep
 ```
 
 ### Code Quality
@@ -578,17 +589,21 @@ project_root = find_project_root()
 ### Testing Workflow
 
 ```bash
-# Start test environment
-./cli/ichrisbirch testing start
+# Run all tests (ephemeral: starts fresh containers, runs tests, stops containers)
+./cli/ichrisbirch test run
 
 # Run specific test
-uv run pytest tests/ichrisbirch/api/test_tasks.py -v
+./cli/ichrisbirch test run tests/ichrisbirch/api/test_tasks.py -v
 
 # Run with coverage
-uv run pytest --cov=ichrisbirch --cov-report=html
+./cli/ichrisbirch test cov
 
 # View coverage report
 open htmlcov/index.html
+
+# Keep containers for debugging
+./cli/ichrisbirch test run --keep
+./cli/ichrisbirch testing stop  # Stop when done debugging
 ```
 
 ### Database Migration Workflow

@@ -160,20 +160,20 @@ jobs:
       - name: Start Docker Compose test environment
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name ichrisbirch-testing up -d --build postgres redis
+            --project-name ichrisbirch-test up -d --build postgres redis
           echo "Waiting for database to be healthy..."
           sleep 10
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name ichrisbirch-testing up -d --build api app chat scheduler
+            --project-name ichrisbirch-test up -d --build api app chat scheduler
           echo "Waiting for services to be ready..."
           sleep 30
 
       - name: Check Docker Compose status
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name ichrisbirch-testing ps
+            --project-name ichrisbirch-test ps
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name ichrisbirch-testing logs --tail=50
+            --project-name ichrisbirch-test logs --tail=50
 
       - name: Run pytest with Coverage
         run: uv run pytest --cov=ichrisbirch
@@ -182,7 +182,7 @@ jobs:
         if: always()
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name ichrisbirch-testing down -v
+            --project-name ichrisbirch-test down -v
 
       - name: Minimize uv cache
         run: uv cache prune --ci

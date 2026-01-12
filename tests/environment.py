@@ -52,8 +52,8 @@ class DockerComposeTestEnvironment:
     # CI uses an additional override file for CI-specific configuration
     COMPOSE_FILES = '-f docker-compose.yml -f docker-compose.test.yml'
     COMPOSE_FILES_CI = '-f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml'
-    COMPOSE_COMMAND = f'docker compose --project-name ichrisbirch-testing {COMPOSE_FILES} up -d'
-    COMPOSE_COMMAND_CI = f'docker compose --project-name ichrisbirch-testing {COMPOSE_FILES_CI} up -d'
+    COMPOSE_COMMAND = f'docker compose --project-name ichrisbirch-test {COMPOSE_FILES} up -d'
+    COMPOSE_COMMAND_CI = f'docker compose --project-name ichrisbirch-test {COMPOSE_FILES_CI} up -d'
 
     @property
     def is_ci(self) -> bool:
@@ -270,7 +270,7 @@ class DockerComposeTestEnvironment:
             #         'ENVIRONMENT': 'testing',
             #     }
             # )
-            cmd = 'docker compose --project-name ichrisbirch-testing -f docker-compose.yml -f docker-compose.test.yml down'
+            cmd = 'docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down'
             result = subprocess.run(cmd.split(' '), capture_output=True, text=True, timeout=120)
             # result = subprocess.run(cmd.split(' '), env=test_env, capture_output=True, text=True, timeout=120)
             if result.returncode == 0:
@@ -281,9 +281,10 @@ class DockerComposeTestEnvironment:
         except subprocess.TimeoutExpired:
             logger.warning('Docker Compose down timed out, forcing cleanup')
             force_command = [
-                'docker-compose',
+                'docker',
+                'compose',
                 '--project-name',
-                'ichrisbirch-testing',
+                'ichrisbirch-test',
                 '-f',
                 'docker-compose.yml',
                 '-f',

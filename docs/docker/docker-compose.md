@@ -181,14 +181,23 @@ postgres:
 ### Testing Usage
 
 ```bash
-# Via CLI (recommended)
+# Recommended: Ephemeral test run (starts fresh, runs tests, stops)
+./cli/ichrisbirch test run
+
+# With coverage
+./cli/ichrisbirch test cov
+
+# Keep containers for debugging
+./cli/ichrisbirch test run --keep
+
+# Manual management (for extended debugging)
 ./cli/ichrisbirch testing start
 uv run pytest
 ./cli/ichrisbirch testing stop
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-testing up -d
+  --project-name ichrisbirch-test up -d
 ```
 
 ## CI Override (`docker-compose.ci.yml`)

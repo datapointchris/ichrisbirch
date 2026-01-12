@@ -95,41 +95,63 @@ def teardown(self):
 
 ## Running Tests Locally
 
-### Starting the Test Environment
+### Ephemeral Test Runs (Recommended)
+
+The `test run` command manages the complete test lifecycle automatically:
 
 ```bash
-# Recommended: Use the CLI
-./cli/ichrisbirch testing start
+# Run all tests (containers start fresh, run tests, stop containers)
+./cli/ichrisbirch test run
 
-# Or let pytest start it automatically
-uv run pytest  # DockerComposeTestEnvironment.setup() handles it
-```
+# Run specific tests
+./cli/ichrisbirch test run tests/ichrisbirch/api/endpoints/test_tasks.py
 
-### Running Tests
-
-```bash
-# All tests
-uv run pytest
-
-# Specific file
-uv run pytest tests/ichrisbirch/api/endpoints/test_tasks.py
-
-# Specific test
-uv run pytest tests/ichrisbirch/api/endpoints/test_tasks.py::test_create -v
+# Run with verbose output
+./cli/ichrisbirch test run -v
 
 # With coverage
-uv run pytest --cov=ichrisbirch
+./cli/ichrisbirch test cov
 ```
 
-### Stopping the Test Environment
+This ephemeral approach ensures:
+
+- **Clean state:** Containers are stopped and restarted fresh each run
+- **No stale state:** Database and services always start from known state
+- **Automatic cleanup:** Containers are stopped when tests complete
+
+### Keeping Containers for Debugging
+
+Use `--keep` to preserve containers after tests finish:
 
 ```bash
-# Via CLI
-./cli/ichrisbirch testing stop
+# Run tests but keep containers running for debugging
+./cli/ichrisbirch test run --keep
 
-# Or directly
+# Stop containers later when done debugging
+./cli/ichrisbirch testing stop
+```
+
+### Manual Environment Management
+
+For extended debugging sessions, you can manage the environment manually:
+
+```bash
+# Start containers manually (stays running)
+./cli/ichrisbirch testing start
+
+# Run pytest directly (uses existing containers)
+uv run pytest tests/ichrisbirch/api/endpoints/test_tasks.py::test_create -v
+
+# Stop when done
+./cli/ichrisbirch testing stop
+```
+
+### Direct Docker Compose Commands
+
+```bash
+# Stop containers
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-testing down -v
+  --project-name ichrisbirch-test down -v
 ```
 
 ## Test Environment vs Development Environment
@@ -243,11 +265,11 @@ def ensure_database_ready(self):
 ```bash
 # Check container status
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-testing ps
+  --project-name ichrisbirch-test ps
 
 # View logs
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-testing logs
+  --project-name ichrisbirch-test logs
 ```
 
 ### Database Connection Issues
