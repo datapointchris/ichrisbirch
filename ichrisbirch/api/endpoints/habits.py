@@ -4,8 +4,10 @@ import logging
 import pendulum
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
+from pendulum.parsing.exceptions import ParserError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -86,9 +88,17 @@ async def read_many_completed(
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 
     else:  # filtered by start and end date
+        try:
+            parsed_start = pendulum.parse(str(start_date))
+            parsed_end = pendulum.parse(str(end_date))
+        except ParserError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f'Invalid date format: {e}',
+            ) from e
         query = query.filter(
-            models.HabitCompleted.complete_date >= pendulum.parse(str(start_date)),
-            models.HabitCompleted.complete_date <= pendulum.parse(str(end_date)),
+            models.HabitCompleted.complete_date >= parsed_start,
+            models.HabitCompleted.complete_date <= parsed_end,
         )
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 

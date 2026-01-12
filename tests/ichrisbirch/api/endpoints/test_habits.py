@@ -310,3 +310,103 @@ class TestCompletedHabits:
         response = client.get(self.ENDPOINT, params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == expected_count
+
+
+class TestHabitsQueryParameters:
+    """Test query parameter filtering on habits endpoints.
+
+    Test data (from tests/test_data/habitcategories.py):
+    - 3 categories: 2 current (Category 1, 2), 1 not current (Category 3)
+    - 3 habits: 2 current (in Cat 2 and Cat 3), 1 not current (in Cat 2)
+    - 3 completed habits with dates: 2024-01-01, 2024-01-02, 2024-01-03
+    """
+
+    HABITS_ENDPOINT = '/habits/'
+    CATEGORIES_ENDPOINT = '/habits/categories/'
+    COMPLETED_ENDPOINT = '/habits/completed/'
+
+    def test_habits_limit_parameter(self, habit_test_data):
+        """Test that limit parameter works correctly."""
+        client = habit_test_data
+        # Get all habits first to know the total count
+        all_response = client.get(self.HABITS_ENDPOINT)
+        assert all_response.status_code == status.HTTP_200_OK
+        total_habits = len(all_response.json())
+        assert total_habits >= 2, 'Need at least 2 habits for limit test'
+
+        # Test limit=1
+        response = client.get(self.HABITS_ENDPOINT, params={'limit': 1})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 1
+
+    def test_habits_limit_with_current_filter(self, habit_test_data):
+        """Test limit combined with current filter.
+
+        BUG: If limit is applied before filter, we may get fewer results than expected.
+        With test data: 2 current habits, 1 not current.
+        Requesting limit=2&current=True should return 2 habits.
+        """
+        client = habit_test_data
+        # First verify we have 2 current habits
+        current_response = client.get(self.HABITS_ENDPOINT, params={'current': True})
+        assert len(current_response.json()) == 2, 'Test data should have 2 current habits'
+
+        # Now test limit=2 with current=True - should still get 2
+        response = client.get(self.HABITS_ENDPOINT, params={'limit': 2, 'current': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        # If bug exists (limit before filter), this might return < 2
+        assert len(response.json()) == 2, 'limit should be applied AFTER filtering'
+
+    def test_categories_limit_parameter(self, habit_test_data):
+        """Test that limit parameter works on categories."""
+        client = habit_test_data
+        response = client.get(self.CATEGORIES_ENDPOINT, params={'limit': 1})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 1
+
+    def test_categories_limit_with_current_filter(self, habit_test_data):
+        """Test limit combined with current filter on categories.
+
+        BUG: Same issue as habits - limit before filter.
+        With test data: 2 current categories, 1 not current.
+        """
+        client = habit_test_data
+        # First verify we have 2 current categories
+        current_response = client.get(self.CATEGORIES_ENDPOINT, params={'current': True})
+        assert len(current_response.json()) == 2, 'Test data should have 2 current categories'
+
+        # Now test limit=2 with current=True - should still get 2
+        response = client.get(self.CATEGORIES_ENDPOINT, params={'limit': 2, 'current': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == 2, 'limit should be applied AFTER filtering'
+
+    def test_completed_invalid_date_format(self, habit_test_data):
+        """Test that invalid date formats return 422 Unprocessable Entity."""
+        client = habit_test_data
+        response = client.get(
+            self.COMPLETED_ENDPOINT,
+            params={
+                'start_date': 'not-a-date',
+                'end_date': '2024-01-02',
+            },
+        )
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert 'Invalid date format' in response.json()['detail']
+
+    def test_habits_not_found_returns_404(self, habit_test_data):
+        """Test that non-existent habit returns 404."""
+        client = habit_test_data
+        response = client.get(f'{self.HABITS_ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_categories_not_found_returns_404(self, habit_test_data):
+        """Test that non-existent category returns 404."""
+        client = habit_test_data
+        response = client.get(f'{self.CATEGORIES_ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_completed_not_found_returns_404(self, habit_test_data):
+        """Test that non-existent completed habit returns 404."""
+        client = habit_test_data
+        response = client.get(f'{self.COMPLETED_ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
