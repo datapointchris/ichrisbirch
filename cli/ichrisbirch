@@ -185,7 +185,8 @@ function dev-stop() {
 function dev-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}DEV${reset} environment"
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml restart
+  # Use 'up -d' instead of 'restart' to pick up any configuration changes
+  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
 }
 
 function dev-rebuild() {
@@ -334,7 +335,8 @@ function testing-stop() {
 function testing-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}TESTING${reset} environment"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml restart
+  # Use 'up -d' instead of 'restart' to pick up any configuration changes
+  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
 }
 
 function testing-rebuild() {
@@ -501,7 +503,8 @@ function prod-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
   echo "Restarting ${magenta}PRODUCTION${reset} environment"
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml restart
+  # Use 'up -d' instead of 'restart' to pick up any configuration changes
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d
 }
 
 function prod-rebuild() {
