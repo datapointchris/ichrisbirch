@@ -99,6 +99,7 @@ dev = [
   "radon>=5.1.0",
   "refurb>=2.2.0",
   "pyupgrade>=3.21.2",
+  "tree-sitter>=0.25.2",
 ]
 test = [
   # Testing framework and tools
