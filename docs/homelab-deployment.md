@@ -20,7 +20,24 @@ Internet → Cloudflare (SSL/CDN) → Cloudflare Tunnel → Traefik (port 80) �
 - **Containers**: All services running (postgres, redis, api, app, chat, scheduler, traefik)
 - **External Access**: Via Cloudflare Tunnel
 
-## Prerequisites
+## Quick Start (Bootstrap Script)
+
+For a fresh LXC container, use the bootstrap script:
+
+```bash
+# As root on the LXC container
+curl -fsSL https://raw.githubusercontent.com/datapointchris/ichrisbirch/master/scripts/bootstrap-homelab.sh | bash
+```
+
+Or if you've already cloned the repo:
+
+```bash
+sudo ./scripts/bootstrap-homelab.sh
+```
+
+The script handles Docker, AWS CLI, cloudflared, repository setup, and database initialization interactively.
+
+## Manual Setup
 
 ### 1. Proxmox LXC Configuration
 
@@ -107,12 +124,12 @@ In Cloudflare dashboard, configure **Public Hostnames** for your tunnel.
 
 All routes point to Traefik on port 80, which handles internal routing:
 
-| Subdomain | Domain | Service |
-|-----------|--------|---------|
-| app | ichrisbirch.com | <http://localhost:80> |
-| api | ichrisbirch.com | <http://localhost:80> |
-| chat | ichrisbirch.com | <http://localhost:80> |
-| _(empty)_ | ichrisbirch.com | <http://localhost:80> |
+| Hostname | Service | Notes |
+|----------|---------|-------|
+| ichrisbirch.com | <http://localhost:80> | Flask app (root domain) |
+| <www.ichrisbirch.com> | <http://localhost:80> | Flask app (www redirect) |
+| api.ichrisbirch.com | <http://localhost:80> | FastAPI backend |
+| chat.ichrisbirch.com | <http://localhost:80> | Streamlit chat (enable WebSockets!) |
 
 Traefik routes based on the `Host` header to the appropriate service.
 
@@ -158,10 +175,9 @@ sudo systemctl status cloudflared
 
 Once tunnel is configured:
 
-- **App**: <https://app.ichrisbirch.com>
+- **App**: <https://ichrisbirch.com> (also <www.ichrisbirch.com>)
 - **API**: <https://api.ichrisbirch.com>
 - **Chat**: <https://chat.ichrisbirch.com>
-- **Root**: <https://ichrisbirch.com> (routes to app)
 
 ## SSM Parameters
 
@@ -218,6 +234,75 @@ docker logs ichrisbirch-traefik
 ### WebSocket Issues (Chat)
 
 Ensure WebSockets are enabled in the tunnel route settings for chat.ichrisbirch.com.
+
+### Database Role Does Not Exist
+
+If you see `FATAL: role "ichrisbirch" does not exist`:
+
+```bash
+# Create the role (get password from SSM first)
+PG_PASS=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
+
+docker exec ichrisbirch-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$PG_PASS';"
+docker exec ichrisbirch-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
+docker exec ichrisbirch-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
+```
+
+### Database Restore from Backup
+
+If you need to restore from a `.dump` file:
+
+```bash
+# Stop app services first
+docker stop ichrisbirch-api ichrisbirch-app ichrisbirch-chat ichrisbirch-scheduler
+
+# Terminate existing connections and recreate database
+docker exec ichrisbirch-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
+docker exec ichrisbirch-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
+docker exec ichrisbirch-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
+
+# Restore from dump
+cat /path/to/backup.dump | docker exec -i ichrisbirch-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner
+
+# Start services
+docker start ichrisbirch-api ichrisbirch-app ichrisbirch-chat ichrisbirch-scheduler
+```
+
+### SSL/Protocol Errors
+
+If you see `[SSL: WRONG_VERSION_NUMBER]` errors in logs:
+
+The internal services are trying to use HTTPS to communicate, but with Cloudflare Tunnel,
+internal communication should be HTTP (Cloudflare handles TLS externally).
+
+Check SSM parameter:
+
+```bash
+aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/protocol" --query 'Parameter.Value' --output text
+```
+
+Should be `http`. If it's `https`, fix it:
+
+```bash
+aws ssm put-parameter --region us-east-2 --name "/ichrisbirch/production/protocol" --value "http" --type String --overwrite
+```
+
+Then restart services: `ichrisbirch prod restart`
+
+### Volume Naming Issues
+
+Docker Compose prefixes volumes with the project name. If you rebuild with a different project name,
+you may get new empty volumes.
+
+The CLI uses `--project-name ichrisbirch-prod`, creating volumes like `ichrisbirch-prod_postgres_data`.
+
+If your data is in differently-named volumes, check:
+
+```bash
+docker volume ls | grep postgres
+```
+
+You may need to copy data between volumes or update the project name.
 
 ## Container Info
 

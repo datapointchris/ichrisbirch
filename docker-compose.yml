@@ -285,11 +285,13 @@ services:
         max-file: "3"
         tag: "scheduler"
 
-# Production volumes using standard names
+# Production volumes with explicit names (prevents project-name prefix issues)
 volumes:
   postgres_data:
+    name: ichrisbirch-postgres-data
     driver: local
   redis_data:
+    name: ichrisbirch-redis-data
     driver: local
 
 # Networks for service communication
