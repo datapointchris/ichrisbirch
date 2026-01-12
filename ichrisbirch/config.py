@@ -93,7 +93,8 @@ class FlaskSettings:
         # CSRF token expires after 1 hour (balances security with usability for long sessions)
         self.WTF_CSRF_TIME_LIMIT: int = 3600
         # Session cookie security settings (Traefik handles TLS termination)
-        self.SESSION_COOKIE_SECURE: bool = True
+        # SESSION_COOKIE_SECURE: True when using HTTPS, False for HTTP (e.g., local testing)
+        self.SESSION_COOKIE_SECURE: bool = os.environ.get('PROTOCOL', 'https') == 'https'
         self.SESSION_COOKIE_HTTPONLY: bool = True
         self.SESSION_COOKIE_SAMESITE: str = 'Lax'
 
@@ -104,7 +105,8 @@ class FlaskLoginSettings:
         self.login_message: str = 'Please log in to access this page.'
         self.login_message_category: str = 'info'
         self.REMEMBER_COOKIE_DURATION: timedelta = timedelta(days=1)
-        self.REMEMBER_COOKIE_DOMAIN: str = 'ichrisbirch.com'
+        # REMEMBER_COOKIE_DOMAIN: Set via SSM for production, None allows any domain
+        self.REMEMBER_COOKIE_DOMAIN: str | None = os.environ.get('FLASK_COOKIE_DOMAIN') or None
         self.SESSION_PROTECTION: str = 'strong'
 
 
