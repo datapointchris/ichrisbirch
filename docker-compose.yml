@@ -15,7 +15,7 @@ services:
       - "80:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./deploy-containers/traefik/dynamic/prod:/etc/traefik/dynamic:ro
     command:
       - --ping=true
       - --api=false

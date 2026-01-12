@@ -28,7 +28,7 @@ services:
       - "9082:8080"  # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./deploy-containers/traefik/dynamic/test:/etc/traefik/dynamic:ro
       - ./deploy-containers/traefik/certs:/etc/ssl/certs:ro
       - traefik_test_letsencrypt:/letsencrypt
     networks:

@@ -18,7 +18,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/certs/dev.crt:/certs/tls.crt:ro
       - ./deploy-containers/traefik/certs/dev.key:/certs/tls.key:ro
-      - ./deploy-containers/traefik/dynamic-dev:/etc/traefik/dynamic:ro
+      - ./deploy-containers/traefik/dynamic/dev:/etc/traefik/dynamic:ro
     command:
       # Healthcheck support
       - "--ping=true"
