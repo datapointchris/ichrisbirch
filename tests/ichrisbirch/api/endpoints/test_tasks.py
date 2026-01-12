@@ -140,3 +140,79 @@ def test_reset_priorities_no_negative_priorities(task_crud_tester):
     response = client.post('/tasks/reset-priorities/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json().get('message') == 'No negative priorities to reset'
+
+
+def test_completed_with_date_filter(task_crud_tester):
+    """Test /tasks/completed/ endpoint with date filtering.
+
+    The test data has one completed task with complete_date=2020-04-20.
+    This test verifies:
+    1. Date range including 2020-04-20 returns the task
+    2. Date range excluding 2020-04-20 returns empty list
+
+    This test should FAIL if date strings are not properly parsed to datetime.
+    """
+    client, _ = task_crud_tester
+
+    # Date range that INCLUDES the completed task (2020-04-20)
+    response_with_match = client.get(
+        '/tasks/completed/',
+        params={
+            'start_date': '2020-04-01T00:00:00',
+            'end_date': '2020-04-30T23:59:59',
+        },
+    )
+    assert response_with_match.status_code == status.HTTP_200_OK, show_status_and_response(response_with_match)
+    assert len(response_with_match.json()) == 1, 'Expected 1 completed task in April 2020 date range'
+
+    # Date range that EXCLUDES the completed task (2020-04-20)
+    response_no_match = client.get(
+        '/tasks/completed/',
+        params={
+            'start_date': '2025-01-01T00:00:00',
+            'end_date': '2025-12-31T23:59:59',
+        },
+    )
+    assert response_no_match.status_code == status.HTTP_200_OK, show_status_and_response(response_no_match)
+    assert len(response_no_match.json()) == 0, 'Expected 0 completed tasks in 2025 date range'
+
+
+def test_completed_with_invalid_dates(task_crud_tester):
+    """Test /tasks/completed/ endpoint with invalid date formats.
+
+    API should return 422 Unprocessable Entity for malformed dates.
+    """
+    client, _ = task_crud_tester
+
+    # Invalid date format
+    response = client.get(
+        '/tasks/completed/',
+        params={
+            'start_date': 'not-a-date',
+            'end_date': '2020-04-30T23:59:59',
+        },
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+
+
+def test_todo_with_limit(task_crud_tester):
+    """Test /tasks/todo/ endpoint with limit parameter.
+
+    Test data has 2 uncompleted tasks (priority 5 and 10).
+    Limit should restrict the number of results.
+    """
+    client, _ = task_crud_tester
+
+    # Without limit - should get all 2 uncompleted tasks
+    response_all = client.get('/tasks/todo/')
+    assert response_all.status_code == status.HTTP_200_OK, show_status_and_response(response_all)
+    assert len(response_all.json()) == 2, 'Expected 2 uncompleted tasks without limit'
+
+    # With limit=1 - should get only 1 task (lowest priority first)
+    response_limited = client.get('/tasks/todo/', params={'limit': 1})
+    assert response_limited.status_code == status.HTTP_200_OK, show_status_and_response(response_limited)
+    assert len(response_limited.json()) == 1, 'Expected 1 task with limit=1'
+
+    # The returned task should be the one with lowest priority (5)
+    tasks = response_limited.json()
+    assert tasks[0]['priority'] == 5, 'Expected task with priority 5 (lowest) to be returned first'

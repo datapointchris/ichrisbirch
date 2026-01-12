@@ -7,7 +7,7 @@
 {% block scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
 
 {% block content %}
-  {% set view = current_user.preferences.tasks.pages.completed.view_type %}
+  {% set view = get_user_pref('tasks.pages.completed.view_type') %}
   {% set preference = "tasks.pages.completed.view_type" %}
 
   {% if view == "compact" %}

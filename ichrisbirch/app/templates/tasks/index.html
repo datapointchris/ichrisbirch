@@ -5,7 +5,7 @@
 {% endblock title %}
 
 {% block content %}
-  {% set view = current_user.preferences.tasks.pages.index.view_type %}
+  {% set view = get_user_pref('tasks.pages.index.view_type') %}
   {% set preference = "tasks.pages.index.view_type" %}
 
   {% if view == "compact" %}

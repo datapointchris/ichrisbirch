@@ -176,6 +176,52 @@ class User(UserMixin, Base):
             nested_dict = {key: nested_dict}
         return nested_dict
 
+    def get_preference(self, dot_key: str, default: Any = None) -> Any:
+        """Get a preference value with automatic fallback to DEFAULT_USER_PREFERENCES.
+
+        Args:
+            dot_key: Dot-separated path like 'tasks.pages.todo.view_type'
+            default: Override default (uses DEFAULT_USER_PREFERENCES if None)
+
+        Returns:
+            User's preference value, or default from DEFAULT_USER_PREFERENCES
+
+        Example:
+            # User has custom theme_color but not tasks preferences
+            user.preferences = {'theme_color': 'red'}
+
+            user.get_preference('theme_color')  # Returns 'red' (user's value)
+            user.get_preference('tasks.pages.todo.view_type')  # Returns 'compact' (from defaults)
+            user.get_preference('unknown.key')  # Returns None
+            user.get_preference('unknown.key', default='fallback')  # Returns 'fallback'
+        """
+        keys = dot_key.split('.')
+
+        # Try user's preferences first
+        value = self.preferences
+        for key in keys:
+            if isinstance(value, dict) and key in value:
+                value = value[key]
+            else:
+                value = None
+                break
+
+        if value is not None:
+            return value
+
+        # Use explicit default if provided
+        if default is not None:
+            return default
+
+        # Fall back to DEFAULT_USER_PREFERENCES
+        default_value: Any = DEFAULT_USER_PREFERENCES
+        for key in keys:
+            if isinstance(default_value, dict) and key in default_value:
+                default_value = default_value[key]
+            else:
+                return None
+        return default_value
+
     @property
     def is_active(self):
         return True

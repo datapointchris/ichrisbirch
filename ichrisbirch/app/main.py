@@ -107,5 +107,25 @@ def create_app(settings: Settings) -> Flask:
                 'accepting_new_signups': settings.auth.accepting_new_signups,
             }
 
+        @app.context_processor
+        def inject_preference_helper():
+            """Inject get_user_pref() function into all templates.
+
+            Usage in templates:
+                {% set view = get_user_pref('tasks.pages.todo.view_type') %}
+
+            Automatically falls back to DEFAULT_USER_PREFERENCES if key is missing
+            from user's preferences. This prevents template crashes when new preference
+            keys are added and avoids the need for database migrations.
+            """
+            from flask_login import current_user
+
+            def get_user_pref(dot_key: str, default=None):
+                if current_user.is_authenticated:
+                    return current_user.get_preference(dot_key, default)
+                return default
+
+            return {'get_user_pref': get_user_pref}
+
     logger.info('initialized app successfully')
     return app

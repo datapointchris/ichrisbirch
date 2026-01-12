@@ -165,3 +165,35 @@ def test_task_categories(test_app_logged_in, category):
     assert len(response.history) == 1
     assert response.request.path == '/tasks/'
     tests.util.verify_page_title(response, 'Priority Tasks')
+
+
+def test_completed_shows_data_not_error(test_app_logged_in):
+    """Verify completed tasks page shows actual data, not silenced error.
+
+    Test data has one completed task (2020-04-20). When using 'all' filter
+    (no date params), the page should show:
+    - Average Completion Time (indicates data was found)
+    - NOT 'No completed tasks for time period' (indicates error or empty)
+
+    This test catches the bug where API errors are silently swallowed and
+    users see 'No completed tasks' instead of helpful error feedback.
+    """
+    # POST with 'all' filter to bypass date filtering entirely
+    response = test_app_logged_in.post('/tasks/completed/', data={'filter': 'all'})
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    tests.util.verify_page_title(response, 'Completed Tasks')
+
+    # Verify we got actual data, not an error message
+    response_text = response.data.decode('utf-8')
+
+    # Should see completion time stats (indicates data was found and processed)
+    assert 'Average Completion Time' in response_text, (
+        'Expected "Average Completion Time" in response - indicates data was found. '
+        'If missing, API may have returned error that was silently swallowed.'
+    )
+
+    # Should NOT see the "no completed tasks" error message
+    assert 'No completed tasks for time period' not in response_text, (
+        'Found "No completed tasks for time period" error message. '
+        'Test data has a completed task, so this indicates API error was silently swallowed.'
+    )

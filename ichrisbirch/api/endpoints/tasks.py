@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -59,7 +60,16 @@ async def completed(
         query = query.order_by(models.Task.complete_date.desc())
 
     else:  # filtered by start and end date
-        query = query.filter(models.Task.complete_date >= start_date, models.Task.complete_date <= end_date)
+        # Explicit parsing - dates come as strings from query params
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            end_dt = datetime.fromisoformat(end_date)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f'Invalid date format: {e}. Expected ISO format (e.g., 2020-04-01T00:00:00)',
+            ) from e
+        query = query.filter(models.Task.complete_date >= start_dt, models.Task.complete_date <= end_dt)
         query = query.order_by(models.Task.complete_date.desc())
 
     return list(session.scalars(query).all())
