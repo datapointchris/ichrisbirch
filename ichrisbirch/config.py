@@ -92,9 +92,11 @@ class FlaskSettings:
         self.app_id: str = os.environ['FLASK_APP_ID']
         # CSRF token expires after 1 hour (balances security with usability for long sessions)
         self.WTF_CSRF_TIME_LIMIT: int = 3600
-        # Session cookie security settings (Traefik handles TLS termination)
-        # SESSION_COOKIE_SECURE: True when using HTTPS, False for HTTP (e.g., local testing)
-        self.SESSION_COOKIE_SECURE: bool = os.environ.get('PROTOCOL', 'https') == 'https'
+        # Session cookie security settings
+        # Production always uses secure cookies (Cloudflare handles HTTPS externally)
+        # Dev/testing use secure cookies when protocol is HTTPS
+        env = os.environ.get('ENVIRONMENT', 'development')
+        self.SESSION_COOKIE_SECURE: bool = env == 'production' or os.environ.get('PROTOCOL', 'https') == 'https'
         self.SESSION_COOKIE_HTTPONLY: bool = True
         self.SESSION_COOKIE_SAMESITE: str = 'Lax'
 
