@@ -148,9 +148,9 @@ def main():
 
     try:
         # Create fresh settings after environment variable overrides
-        from ichrisbirch.config import Settings
+        from ichrisbirch.config import get_settings
 
-        settings = Settings()
+        settings = get_settings()
         logger.info(f'Loaded settings for environment: {getattr(settings, "ENVIRONMENT", "unknown")}')
         logger.info(
             f'Database connection: {settings.postgres.username}@{settings.postgres.host}:'
