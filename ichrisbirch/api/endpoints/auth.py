@@ -265,8 +265,33 @@ def get_admin_or_internal_service_access(
     raise UnauthorizedException('Admin or internal service access required', logger) from None
 
 
+def require_user_or_internal_service(
+    current_user: models.User | None = Depends(get_current_user_or_none),
+    x_internal_service: str | None = Header(None),
+    x_service_key: str | None = Header(None),
+    settings: Settings = Depends(get_settings),
+) -> models.User | None:
+    """Dependency that requires either a valid user OR valid internal service auth.
+
+    Returns the user if authenticated via user auth, None if authenticated via internal service.
+    Raises UnauthorizedException if neither auth method is valid.
+    """
+    if current_user:
+        return current_user
+
+    if x_internal_service and x_service_key:
+        if x_service_key == settings.auth.internal_service_key:
+            logger.debug(f'access granted for internal service: {x_internal_service}')
+            return None
+        else:
+            logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+
+    raise UnauthorizedException('User or internal service authentication required', logger) from None
+
+
 # Type aliases for cleaner endpoint signatures
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
+CurrentUserOrInternalService = Annotated[models.User | None, Depends(require_user_or_internal_service)]
 AdminUser = Annotated[models.User, Depends(get_admin_user)]
 AdminOrInternalServiceAccess = Annotated[bool, Depends(get_admin_or_internal_service_access)]
 

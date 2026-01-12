@@ -67,8 +67,12 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.books.router, prefix='/books', dependencies=deps)
     api.include_router(endpoints.box_packing.router, prefix='/box-packing', dependencies=deps)
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', dependencies=deps)
-    api.include_router(endpoints.chat.chats.router, prefix='/chat/chats', dependencies=deps)
-    api.include_router(endpoints.chat.messages.router, prefix='/chat/messages', dependencies=deps)
+    # Chat routes accept both user auth and internal service auth (for Streamlit chat app)
+    from ichrisbirch.api.endpoints.auth import require_user_or_internal_service
+
+    chat_deps = [Depends(require_user_or_internal_service)]
+    api.include_router(endpoints.chat.chats.router, prefix='/chat/chats', dependencies=chat_deps)
+    api.include_router(endpoints.chat.messages.router, prefix='/chat/messages', dependencies=chat_deps)
     api.include_router(endpoints.events.router, prefix='/events', dependencies=deps)
     api.include_router(endpoints.habits.router, prefix='/habits', dependencies=deps)
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
