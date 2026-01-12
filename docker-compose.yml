@@ -1,17 +1,21 @@
 # Docker Compose will automatically read from a .env file in the same directory
+#
+# Production configuration for Cloudflare Tunnel deployment:
+# - Cloudflare handles TLS termination and routes traffic to Traefik on port 80
+# - Traefik provides reverse proxy, middleware (CORS, security headers, rate limiting)
+# - No certificates needed locally - Cloudflare manages SSL
 
 services:
-  # Traefik reverse proxy - Production configuration with Let's Encrypt
+  # Traefik reverse proxy - receives HTTP from Cloudflare Tunnel
+  # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
-    image: traefik:v3.4
+    image: traefik:v3.6
     container_name: ichrisbirch-traefik
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/dynamic:/etc/traefik/dynamic:ro
-      - ./deploy-containers/traefik/acme.json:/acme.json
     command:
       - --ping=true
       - --api=false
@@ -21,14 +25,6 @@ services:
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
       - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
-      # Let's Encrypt ACME configuration
-      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
-      - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --log.level=INFO
     networks:
       - proxy
@@ -165,9 +161,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls=true"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.routers.api.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
     networks:
@@ -208,9 +202,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`app.${DOMAIN}`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls=true"
-      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.routers.app.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
       - "traefik.http.services.app.loadbalancer.server.port=5000"
     networks:
@@ -251,9 +243,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.chat.rule=Host(`chat.${DOMAIN}`)"
-      - "traefik.http.routers.chat.entrypoints=websecure"
-      - "traefik.http.routers.chat.tls=true"
-      - "traefik.http.routers.chat.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.chat.entrypoints=web"
       - "traefik.http.routers.chat.middlewares=cors-prod@file,security-headers-prod@file,websocket-prod@file"
       - "traefik.http.services.chat.loadbalancer.server.port=8505"
       # Enable sticky sessions for WebSocket connections
