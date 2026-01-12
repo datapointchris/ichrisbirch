@@ -56,7 +56,7 @@ Documentation = "https://docs.ichrisbirch.com"
 Repository = "https://github.com/datapointchris/ichrisbirch"
 
 [project.entry-points."mkdocs.plugins"]
-code_sync = "mkdocs_plugins.code_sync:CodeSyncPlugin"
+code_sync = "mkdocs_plugins.code_sync.plugin:CodeSyncPlugin"
 diagrams = "mkdocs_plugins.diagrams:DiagramGeneratorPlugin"
 
 [dependency-groups]
