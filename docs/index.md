@@ -34,7 +34,8 @@ Welcome to the iChrisBirch application documentation.
 ## DevOps
 
 - [CI/CD](cicd.md) - Continuous integration and deployment
-- [AWS](AWS.md) - Cloud infrastructure and services
+- [Homelab Deployment](homelab-deployment.md) - Production deployment with Cloudflare Tunnel
+- [AWS](AWS.md) - Cloud infrastructure and services (legacy)
 - [Terraform](terraform.md) - Infrastructure as code
 - [Backups](backups.md) - Data backup and recovery
 

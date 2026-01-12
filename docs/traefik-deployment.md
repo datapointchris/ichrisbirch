@@ -47,8 +47,8 @@ The CLI has been **completely refactored** to provide a clean, professional inte
 ### Environment Separation
 
 - **Development**: `*.docker.localhost` with mkcert browser-trusted certificates
-- **Testing**: `*.test.localhost:8443` with isolated testing certificates  
-- **Production**: `*.yourdomain.local` with production certificates
+- **Testing**: `*.test.localhost:8443` with isolated testing certificates
+- **Production**: `*.ichrisbirch.com` via Cloudflare Tunnel (see [Homelab Deployment](homelab-deployment.md))
 
 ## 📁 Directory Structure
 
@@ -142,11 +142,15 @@ graph TB
 
 ### Production Environment
 
-- **API**: <https://api.yourdomain.local/>
-- **App**: <https://app.yourdomain.local/>
-- **Chat**: <https://chat.yourdomain.local/>
+Production uses **Cloudflare Tunnel** for secure external access without exposing ports:
 
-> **Note**: Replace `yourdomain.local` with your actual production domain
+- **API**: <https://api.ichrisbirch.com/>
+- **App**: <https://app.ichrisbirch.com/>
+- **Chat**: <https://chat.ichrisbirch.com/>
+
+Cloudflare handles TLS termination; Traefik receives HTTP internally and provides routing, CORS, security headers, and rate limiting.
+
+> **Note**: See [Homelab Deployment Guide](homelab-deployment.md) for complete production setup
 
 ## 🚀 Simplified Deployment Commands
 

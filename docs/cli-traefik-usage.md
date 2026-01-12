@@ -136,15 +136,23 @@ ichrisbirch dev stop
 
 **Characteristics:**
 
-- **Domain**: `*.yourdomain.local` (customize as needed)
-- **Port**: 443 (standard HTTPS)
-- **Dashboard**: Available but access restricted
+- **Domain**: `*.ichrisbirch.com` via Cloudflare Tunnel
+- **TLS**: Handled by Cloudflare (Traefik receives HTTP internally)
+- **Secrets**: Fetched from AWS SSM Parameter Store
 
 **Services:**
 
-- **API**: `https://api.yourdomain.local/`
-- **App**: `https://app.yourdomain.local/`
-- **Chat**: `https://chat.yourdomain.local/`
+- **API**: `https://api.ichrisbirch.com/`
+- **App**: `https://app.ichrisbirch.com/`
+- **Chat**: `https://chat.ichrisbirch.com/`
+
+**Production Start:**
+
+```bash
+ichrisbirch prod start   # Fetches SSM secrets, then starts services
+```
+
+> **Note**: See [Homelab Deployment Guide](homelab-deployment.md) for complete production setup including Cloudflare Tunnel configuration
 
 ## 🔒 SSL Certificate Management with mkcert
 

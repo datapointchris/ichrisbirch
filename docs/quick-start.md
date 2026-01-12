@@ -260,10 +260,13 @@ grep docker.localhost /etc/hosts
 ./cli/ichrisbirch testing start
 # Access at: https://api.test.localhost:8443/
 
-# Production environment
-./cli/ichrisbirch prod start  
-# Access at: https://api.yourdomain.local/
+# Production environment (requires Cloudflare Tunnel setup)
+./cli/ichrisbirch prod start
+# Fetches secrets from AWS SSM, starts services
+# Access at: https://api.ichrisbirch.com/ (via Cloudflare Tunnel)
 ```
+
+> **Note**: Production requires additional setup. See [Homelab Deployment Guide](homelab-deployment.md)
 
 ## 🌟 Benefits of Modern Setup
 
