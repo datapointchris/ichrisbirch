@@ -433,13 +433,10 @@ function testing-health() {
   fi
 }
 
-function prod-start() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
+# Helper to load production environment variables from AWS SSM
+function load-prod-env() {
   local aws_region="${AWS_REGION:-us-east-2}"
   local environment="production"
-
-  echo "Fetching secrets from AWS SSM..."
 
   get_ssm_param() {
     aws ssm get-parameter \
@@ -450,7 +447,6 @@ function prod-start() {
       --output text
   }
 
-  # Export secrets for Docker Compose
   export POSTGRES_PASSWORD
   POSTGRES_PASSWORD=$(get_ssm_param "postgres/password") || {
     echo "${red}Failed to fetch POSTGRES_PASSWORD from SSM${reset}"
@@ -464,8 +460,14 @@ function prod-start() {
   }
 
   export DOMAIN="${DOMAIN:-ichrisbirch.com}"
+}
 
-  echo "Secrets loaded for ${magenta}$environment${reset}"
+function prod-start() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  echo "Fetching secrets from AWS SSM..."
+  load-prod-env || return 1
+  echo "Secrets loaded for ${magenta}production${reset}"
 
   # Ensure proxy network exists for Traefik
   if ! docker network inspect proxy >/dev/null 2>&1; then
@@ -479,8 +481,8 @@ function prod-start() {
 
   echo ""
   echo "Production environment started:"
+  echo "  ${green}APP${reset}:  ${cyan}https://${DOMAIN}/${reset}"
   echo "  ${green}API${reset}:  ${cyan}https://api.${DOMAIN}/${reset}"
-  echo "  ${green}APP${reset}:  ${cyan}https://app.${DOMAIN}/${reset}"
   echo "  ${green}CHAT${reset}: ${cyan}https://chat.${DOMAIN}/${reset}"
   echo ""
   echo "Use ${blue}ichrisbirch prod logs${reset} to view live container logs"
@@ -490,12 +492,14 @@ function prod-start() {
 
 function prod-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
+  load-prod-env || return 1
   echo "Stopping ${magenta}PRODUCTION${reset} environment"
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
 }
 
 function prod-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
+  load-prod-env || return 1
   echo "Restarting ${magenta}PRODUCTION${reset} environment"
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml restart
 }
@@ -503,33 +507,8 @@ function prod-restart() {
 function prod-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
 
-  local aws_region="${AWS_REGION:-us-east-2}"
-  local environment="production"
-
   echo "Fetching secrets from AWS SSM..."
-
-  get_ssm_param() {
-    aws ssm get-parameter \
-      --region "$aws_region" \
-      --name "/ichrisbirch/$environment/$1" \
-      --with-decryption \
-      --query 'Parameter.Value' \
-      --output text
-  }
-
-  export POSTGRES_PASSWORD
-  POSTGRES_PASSWORD=$(get_ssm_param "postgres/password") || {
-    echo "${red}Failed to fetch POSTGRES_PASSWORD from SSM${reset}"
-    return 1
-  }
-
-  export REDIS_PASSWORD
-  REDIS_PASSWORD=$(get_ssm_param "redis/password") || {
-    echo "${red}Failed to fetch REDIS_PASSWORD from SSM${reset}"
-    return 1
-  }
-
-  export DOMAIN="${DOMAIN:-ichrisbirch.com}"
+  load-prod-env || return 1
 
   echo "Rebuilding and restarting ${magenta}PRODUCTION${reset} environment"
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
@@ -541,27 +520,26 @@ function prod-monitor() {
 }
 
 function prod-logs() {
-  echo "Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
-  echo "Note: Production uses Docker Compose services"
   cd "$ICHRISBIRCH_HOME" || exit
+  load-prod-env || return 1
 
-  # Show live Docker Compose logs with color formatting and clean service names
+  echo "Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
 }
 
 function prod-status() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  load-prod-env || return 1
+
   echo "${magenta}PRODUCTION${reset} environment status:"
   echo ""
-
-  cd "$ICHRISBIRCH_HOME" || exit
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 
-  local domain="${DOMAIN:-ichrisbirch.com}"
   echo ""
   echo "${magenta}Production${reset} URLs (via Cloudflare Tunnel):"
-  echo "  • API:  https://api.${domain}/"
-  echo "  • App:  https://app.${domain}/"
-  echo "  • Chat: https://chat.${domain}/"
+  echo "  • App:  https://${DOMAIN}/"
+  echo "  • API:  https://api.${DOMAIN}/"
+  echo "  • Chat: https://chat.${DOMAIN}/"
 }
 
 function prod-health() {

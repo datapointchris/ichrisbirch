@@ -39,18 +39,30 @@ get_urls() {
             APP_URL="https://app.docker.localhost"
             CHAT_URL="https://chat.docker.localhost"
             DASHBOARD_URL="https://dashboard.docker.localhost"
+            API_HOST=""
+            APP_HOST=""
+            CHAT_HOST=""
             ;;
         test)
             API_URL="https://api.test.localhost:8443"
             APP_URL="https://app.test.localhost:8443"
             CHAT_URL="https://chat.test.localhost:8443"
             DASHBOARD_URL="https://dashboard.test.localhost:8443"
+            API_HOST=""
+            APP_HOST=""
+            CHAT_HOST=""
             ;;
         prod)
-            API_URL="https://api.yourdomain.local"
-            APP_URL="https://app.yourdomain.local"
-            CHAT_URL="https://chat.yourdomain.local"
-            DASHBOARD_URL="https://dashboard.yourdomain.local"
+            # Production: hit Traefik locally with Host headers
+            # Cloudflare Tunnel routes external traffic, but we can test via localhost
+            local domain="${DOMAIN:-ichrisbirch.com}"
+            API_URL="http://localhost:80"
+            APP_URL="http://localhost:80"
+            CHAT_URL="http://localhost:80"
+            DASHBOARD_URL=""
+            API_HOST="api.${domain}"
+            APP_HOST="${domain}"
+            CHAT_HOST="chat.${domain}"
             ;;
         *)
             print_error "Invalid environment: $ENVIRONMENT"
@@ -61,16 +73,26 @@ get_urls() {
 }
 
 # Check URL health
+# Args: name, url, auth, expected_code, host_header
 check_url() {
     local name="$1"
     local url="$2"
     local auth="$3"
     local expected_code="${4:-200}"
+    local host_header="$5"
 
-    print_info "Checking $name at $url"
+    if [ -n "$host_header" ]; then
+        print_info "Checking $name at $url (Host: $host_header)"
+    else
+        print_info "Checking $name at $url"
+    fi
 
     local status_code
     local curl_cmd="curl -k -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30"
+
+    if [ -n "$host_header" ]; then
+        curl_cmd="$curl_cmd -H 'Host: $host_header'"
+    fi
 
     if [ -n "$auth" ]; then
         curl_cmd="$curl_cmd -u '$auth'"
@@ -237,17 +259,18 @@ main() {
         echo ""
     fi
 
-    # Check service endpoints
-    check_url "API Health" "$API_URL/health"
-    check_url "App Frontend" "$APP_URL/"
-    check_url "Chat Service" "$CHAT_URL/"
+    # Check service endpoints (pass host header for production)
+    check_url "API Health" "$API_URL/health" "" "200" "$API_HOST"
+    check_url "App Frontend" "$APP_URL/" "" "200" "$APP_HOST"
+    check_url "Chat Service" "$CHAT_URL/" "" "200" "$CHAT_HOST"
 
     echo ""
 
-    # Check WebSocket functionality for chat
-    check_websocket "Chat Service" "$CHAT_URL"
-
-    echo ""
+    # Check WebSocket functionality for chat (skip for prod - requires more complex setup)
+    if [ "$ENVIRONMENT" != "prod" ]; then
+        check_websocket "Chat Service" "$CHAT_URL"
+        echo ""
+    fi
 
     # Check dashboard with authentication
     case "$ENVIRONMENT" in
@@ -258,7 +281,7 @@ main() {
             check_url "Dashboard" "$DASHBOARD_URL/api/overview" "test:testpass" "200"
             ;;
         prod)
-            print_warning "Dashboard: Not enabled in production"
+            print_info "Dashboard: Not exposed in production (security)"
             ;;
     esac
 
