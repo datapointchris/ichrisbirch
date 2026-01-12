@@ -11,8 +11,9 @@ http:
           - DELETE
           - PATCH
         accessControlAllowOriginList:
+          - "https://ichrisbirch.com"
+          - "https://www.ichrisbirch.com"
           - "https://api.ichrisbirch.com"
-          - "https://app.ichrisbirch.com"
           - "https://chat.ichrisbirch.com"
         accessControlAllowHeaders:
           - "Accept"
@@ -44,7 +45,8 @@ http:
           Referrer-Policy: "strict-origin-when-cross-origin"
           X-Environment: "production"
           # Content Security Policy for production environment
-          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:; font-src 'self' data:;"
+          # Allows: cdn.jsdelivr.net (Swagger UI), fastapi.tiangolo.com (favicon), fonts.googleapis.com/gstatic.com (fonts)
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' wss: ws: https://*.ichrisbirch.com; font-src 'self' data: https://fonts.gstatic.com;"
           # Permissions Policy
           Permissions-Policy: "geolocation=(), microphone=(), camera=()"
 
@@ -59,8 +61,9 @@ http:
           - DELETE
           - PATCH
         accessControlAllowOriginList:
+          - "https://ichrisbirch.com"
+          - "https://www.ichrisbirch.com"
           - "https://api.ichrisbirch.com"
-          - "https://app.ichrisbirch.com"
           - "https://chat.ichrisbirch.com"
         accessControlAllowHeaders:
           - "Accept"
