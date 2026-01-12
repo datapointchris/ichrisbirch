@@ -162,7 +162,7 @@ def insights():
         settings = current_app.config['SETTINGS']
         with logging_flask_session_client(base_url=settings.api_url) as client:
             insights_api = client.resource('articles/insights', schemas.Article)
-            response = insights_api.post_action(json={'url': url}, timeout=30)
+            response = insights_api.post_action(json={'url': url}, timeout=120)
             elapsed = (pendulum.now() - start).in_words()
             article_insights = response.text if response else ''
             submitted_url = url
