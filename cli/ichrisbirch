@@ -571,7 +571,27 @@ function stats-latest-file() {
   find "$ICHRISBIRCH_HOME/stats" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
 }
 
-function stats-show() {
+function stats-usage() {
+  echo "${green}Stats Commands${reset}"
+  echo ""
+  echo "  ${blue}stats summary${reset}       Dashboard with code, tests, quality, and activity"
+  echo "  ${blue}stats code${reset}          Lines of code by language (live from tokei)"
+  echo "  ${blue}stats tests${reset}         Test results, coverage, and slowest tests"
+  echo "  ${blue}stats quality${reset}       Linter issues over 24h/7d/30d/all time"
+  echo "  ${blue}stats activity [n]${reset}  Commit activity graph (default: 7 days)"
+  echo "  ${blue}stats events [n]${reset}    Recent pre-commit hook events (default: 20)"
+  echo "  ${blue}stats trends${reset}        Velocity, code churn, and test suite trends"
+  echo "  ${blue}stats churn [n|all]${reset} File churn analysis (default: 30 days, 'all' for entire history)"
+  echo "  ${blue}stats snapshot${reset}      Regenerate stats snapshot from events.jsonl"
+  echo ""
+  echo "Data sources:"
+  echo "  • Code stats: Live from tokei"
+  echo "  • Test/coverage: From last snapshot (updated on commit)"
+  echo "  • Quality: From events.jsonl (pre-commit hook results)"
+  echo "  • Activity: From events.jsonl commit events"
+}
+
+function stats-summary() {
   cd "$ICHRISBIRCH_HOME" || exit
   local stats_file
   stats_file=$(stats-latest-file)
@@ -655,6 +675,11 @@ function stats-show() {
   fi
 }
 
+function stats-snapshot() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  uv run python -m stats.snapshot
+}
+
 function stats-code() {
   cd "$ICHRISBIRCH_HOME" || exit
 
@@ -727,7 +752,7 @@ function stats-quality() {
   cd "$ICHRISBIRCH_HOME" || exit
   local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
-  echo "${green}Code Quality - Issues Caught${reset}"
+  echo "${green}Code Quality - Pre-commit Hook Results${reset}"
   echo ""
 
   if [ ! -f "$events_file" ]; then
@@ -736,24 +761,33 @@ function stats-quality() {
   fi
 
   # Date patterns for filtering
-  local today day7 day30
+  local today
   today=$(date +%Y-%m-%d)
-  day7=$(date -d "-7 days" +%Y-%m-%d)
-  day30=$(date -d "-30 days" +%Y-%m-%d)
 
-  printf "${cyan}%-12s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
-  echo "----------------------------------------------"
+  printf "${cyan}%-18s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
+  echo "----------------------------------------------------"
 
   local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key")
 
+  # Map tools to their issue field names (different hooks use different fields)
+  get_issue_field() {
+    case "$1" in
+      mypy) echo ".errors" ;;
+      shellcheck) echo ".comments" ;;
+      *) echo ".issues" ;;
+    esac
+  }
+
   for tool in "${tools[@]}"; do
     local issues_today issues_7d issues_30d issues_all
+    local field
+    field=$(get_issue_field "$tool")
 
     # Count issues for each time period
-    issues_today=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep "$today" | jq -s '[.[].issues | length] | add // 0')
-    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s '[.[].issues | length] | add // 0')
-    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s '[.[].issues | length] | add // 0')
-    issues_all=$(grep "\"type\":\"hook.$tool\"" "$events_file" | jq -s '[.[].issues | length] | add // 0')
+    issues_today=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep "$today" | jq -s "[.[]$field | length] | add // 0")
+    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
+    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
+    issues_all=$(grep "\"type\":\"hook.$tool\"" "$events_file" | jq -s "[.[]$field | length] | add // 0")
 
     # Format with colors - use fixed width padding after color codes
     local c_today c_7d c_30d c_all
@@ -778,19 +812,82 @@ function stats-quality() {
       c_all="$(printf '%6d' "$issues_all")"
     fi
 
-    printf "%-12s %s %s %s %s\n" "$tool" "$c_today" "$c_7d" "$c_30d" "$c_all"
+    printf "%-18s %s %s %s %s\n" "$tool" "$c_today" "$c_7d" "$c_30d" "$c_all"
   done
 
   echo ""
 
-  # Show hook run counts
-  local runs_today runs_7d
-  runs_today=$(grep '"type":"hook\.' "$events_file" | grep -c "$today")
-  runs_7d=$(grep '"type":"hook\.' "$events_file" | grep -cE "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')")
-
+  # Show hook run counts with fail percentages across time periods
   echo "${blue}Hook Runs${reset}"
-  printf "  Today:     %d runs\n" "$runs_today"
-  printf "  Last 7d:   %d runs\n" "$runs_7d"
+  printf "${cyan}%-10s %7s %7s %12s${reset}\n" "Period" "Runs" "Fail%" "vs Today"
+  echo "----------------------------------------"
+
+  # Helper function to get date pattern for a range
+  get_date_pattern() {
+    local days=$1
+    for i in $(seq 0 $((days - 1))); do
+      date -d "-${i} days" +%Y-%m-%d
+    done | paste -sd'|'
+  }
+
+  # Calculate stats for each period
+  local periods=("1" "7" "14" "30" "60" "90")
+  local labels=("Today" "Last 7d" "Last 14d" "Last 30d" "Last 60d" "Last 90d")
+  local today_pct=""
+
+  for i in "${!periods[@]}"; do
+    local days=${periods[$i]}
+    local label=${labels[$i]}
+    local pattern runs failed pct
+
+    if [ "$days" -eq 1 ]; then
+      pattern="$today"
+    else
+      pattern=$(get_date_pattern "$days")
+    fi
+
+    runs=$(grep '"type":"hook\.' "$events_file" | grep -cE "$pattern" || echo 0)
+    failed=$(grep '"type":"hook\.' "$events_file" | grep -E "$pattern" | grep -c '"status":"failed"' || echo 0)
+
+    if [ "$runs" -gt 0 ]; then
+      pct=$(echo "scale=1; $failed * 100 / $runs" | bc)
+    else
+      pct="0"
+    fi
+
+    # Store today's percentage for comparison
+    if [ "$days" -eq 1 ]; then
+      today_pct="$pct"
+      printf "%-10s %7d %6s%%\n" "$label" "$runs" "$pct"
+    else
+      # Calculate percentage change: how that period compares to today
+      # Positive = that period was worse (higher fail rate) than today
+      # Negative = that period was better (lower fail rate) than today
+      local change_str=""
+      if [ "$runs" -gt 0 ] && [ "$(echo "$today_pct > 0" | bc)" -eq 1 ]; then
+        local change
+        change=$(echo "scale=1; ($pct - $today_pct) * 100 / $today_pct" | bc)
+        if [ "$(echo "$change > 0" | bc)" -eq 1 ]; then
+          # Period was worse than today (higher fail rate)
+          change_str="${red}$(printf '↑%6.1f%%' "$change")${reset}"
+        elif [ "$(echo "$change < 0" | bc)" -eq 1 ]; then
+          # Period was better than today (lower fail rate)
+          change_str="${green}$(printf '↓%6.1f%%' "${change#-}")${reset}"
+        else
+          change_str="${gray}     --  ${reset}"
+        fi
+      elif [ "$(echo "$pct > 0" | bc)" -eq 1 ]; then
+        # Period had failures but today has 0%
+        change_str="${red}$(printf '↑%6.1f%%' "$pct")${reset}"
+      else
+        change_str="${gray}     --  ${reset}"
+      fi
+      printf "%-10s %7d %6s%% %b\n" "$label" "$runs" "$pct" "$change_str"
+    fi
+  done
+
+  echo ""
+  echo "${gray}Note: Issues shown are from all pre-commit runs (including failed commits)${reset}"
 }
 
 function stats-activity() {
@@ -842,10 +939,131 @@ function stats-events() {
   echo ""
 
   if [ -f "$events_file" ]; then
-    tail -n "$count" "$events_file" | jq -r '[.type, .timestamp[11:19], (.status // "-")] | @tsv' | column -t
+    tail -n "$count" "$events_file" | jq -r '
+      def info:
+        if .type == "commit" then [.short_hash, ""]
+        elif .type == "collect.tokei" then [(.total_files | tostring), "files"]
+        elif .type == "collect.pytest" then [(.summary.total | tostring), "tests"]
+        elif .type == "collect.coverage" then ["\(.summary.percent_covered | floor)%", "coverage"]
+        elif .type == "collect.docker" then [(.containers | length | tostring), "containers"]
+        elif .type == "collect.dependencies" then [(.total_count | tostring), "pkgs"]
+        elif .type == "collect.files" then [(.total_files | tostring), "files"]
+        elif .type == "collect.radon" then [(.avg_complexity | floor | tostring), "avg_complexity"]
+        elif .status then [.status, ""]
+        else ["-", ""]
+        end;
+      "\(.type)\t\(.timestamp[11:19])\t\(info[0])\t\(info[1])"
+    ' | while IFS=$'\t' read -r type time value label; do
+      printf "%-30s  %s  %6s  %s\n" "$type" "$time" "$value" "$label"
+    done
   else
     echo "${yellow}No events file found.${reset}"
   fi
+}
+
+function stats-churn() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local arg="${1:-30}"
+
+  if [ "$arg" = "all" ]; then
+    stats-churn-all
+    return
+  fi
+
+  local days="$arg"
+  echo "${green}Code Churn Analysis (last $days days)${reset}"
+  echo ""
+
+  # Most frequently modified files (exclude .lock files)
+  echo "${blue}Most Modified Files${reset}"
+  git log --since="$days days ago" --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | grep -v '\.lock$' | sort | uniq -c | sort -rn | head -10 | \
+    while read -r count file; do
+      printf "  %4d changes  %s\n" "$count" "$file"
+    done
+  echo ""
+
+  # Files with most lines changed (exclude .lock files)
+  echo "${blue}Most Lines Changed${reset}"
+  git log --since="$days days ago" --numstat --pretty=format: 2>/dev/null | \
+    awk 'NF==3 && $1 != "-" && $3 !~ /\.lock$/ {adds[$3]+=$1; dels[$3]+=$2} END {for(f in adds) print adds[f]+dels[f], adds[f], dels[f], f}' | \
+    sort -rn | head -10 | \
+    while read -r total added deleted file; do
+      printf "  %5d lines  ${green}+%-5d${reset} ${red}-%-5d${reset}  %s\n" "$total" "$added" "$deleted" "$file"
+    done
+  echo ""
+
+  # Recently created files (exclude .lock files)
+  echo "${blue}Recently Created Files${reset}"
+  git log --since="$days days ago" --diff-filter=A --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | grep -v '\.lock$' | sort -u | tail -10 | \
+    while read -r file; do
+      if [ -f "$file" ]; then
+        printf "  ${green}+${reset} %s\n" "$file"
+      fi
+    done
+  echo ""
+
+  # Recently deleted files (exclude .lock files)
+  echo "${blue}Recently Deleted Files${reset}"
+  git log --since="$days days ago" --diff-filter=D --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | grep -v '\.lock$' | sort -u | tail -10 | \
+    while read -r file; do
+      printf "  ${red}-${reset} %s\n" "$file"
+    done
+  echo ""
+
+  # Churn by directory (2 levels deep, only include actual directories)
+  echo "${blue}Churn by Directory${reset}"
+  git log --since="$days days ago" --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | grep '/' | \
+    awk -F'/' 'NF>=3 {print $1"/"$2}' | \
+    sort | uniq -c | sort -rn | head -10 | \
+    while read -r count dir; do
+      printf "  %4d changes  %s/\n" "$count" "$dir"
+    done
+}
+
+function stats-churn-all() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  local total_commits
+  total_commits=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+  local first_commit_date
+  first_commit_date=$(git log --reverse --format="%cs" | head -1)
+
+  echo "${green}Code Churn Analysis (all time - $total_commits commits since $first_commit_date)${reset}"
+  echo ""
+
+  # Most frequently modified files (exclude .lock files)
+  echo "${blue}Most Modified Files${reset}"
+  git log --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | grep -v '\.lock$' | sort | uniq -c | sort -rn | head -15 | \
+    while read -r count file; do
+      printf "  %5d changes  %s\n" "$count" "$file"
+    done
+  echo ""
+
+  # Files with most lines changed (exclude .lock files)
+  echo "${blue}Most Lines Changed${reset}"
+  git log --numstat --pretty=format: 2>/dev/null | \
+    awk 'NF==3 && $1 != "-" && $3 !~ /\.lock$/ {adds[$3]+=$1; dels[$3]+=$2} END {for(f in adds) print adds[f]+dels[f], adds[f], dels[f], f}' | \
+    sort -rn | head -15 | \
+    while read -r total added deleted file; do
+      printf "  %6d lines  ${green}+%-6d${reset} ${red}-%-6d${reset}  %s\n" "$total" "$added" "$deleted" "$file"
+    done
+  echo ""
+
+  # Churn by directory (2 levels deep, only include actual directories)
+  echo "${blue}Churn by Directory${reset}"
+  git log --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | grep '/' | \
+    awk -F'/' 'NF>=3 {print $1"/"$2}' | \
+    sort | uniq -c | sort -rn | head -15 | \
+    while read -r count dir; do
+      printf "  %5d changes  %s/\n" "$count" "$dir"
+    done
+
 }
 
 function stats-trends() {
@@ -853,29 +1071,6 @@ function stats-trends() {
 
   echo "${green}Project Trends${reset}"
   echo ""
-
-  # Helper to format percent change with color
-  format_change() {
-    local current=$1 previous=$2 label=$3 invert=${4:-false}
-    if [ "$previous" -eq 0 ] || [ "$current" -eq 0 ]; then
-      printf "  %-14s %s\n" "$label:" "${gray}--${reset}"
-      return
-    fi
-    local change=$(( (current - previous) * 100 / previous ))
-    local arrow color
-    if [ "$change" -gt 0 ]; then
-      arrow="↑"
-      [ "$invert" = "true" ] && color="$red" || color="$green"
-    elif [ "$change" -lt 0 ]; then
-      arrow="↓"
-      [ "$invert" = "true" ] && color="$green" || color="$red"
-      change=$((-change))
-    else
-      arrow="→"
-      color="$gray"
-    fi
-    printf "  %-14s ${color}%s%d%%${reset} (%d → %d)\n" "$label:" "$arrow" "$change" "$previous" "$current"
-  }
 
   # Get commit counts for different periods
   echo "${blue}Commit Velocity${reset}"
@@ -886,9 +1081,21 @@ function stats-trends() {
   prev_week=$(git log --oneline --since="14 days ago" --until="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
   prev_month=$(git log --oneline --since="60 days ago" --until="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
 
-  printf "  %-14s %d\n" "Today:" "$today_commits"
-  format_change "$week_commits" "$prev_week" "7d vs prev 7d"
-  format_change "$month_commits" "$prev_month" "30d vs prev 30d"
+  printf "  %-14s %d commits\n" "Today:" "$today_commits"
+  printf "  %-14s %d commits" "Last 7 days:" "$week_commits"
+  if [ "$prev_week" -gt 0 ]; then
+    local change=$(( (week_commits - prev_week) * 100 / prev_week ))
+    if [ "$change" -gt 0 ]; then
+      printf " (${green}↑%d%%${reset} vs prev week's %d)\n" "$change" "$prev_week"
+    elif [ "$change" -lt 0 ]; then
+      printf " (${red}↓%d%%${reset} vs prev week's %d)\n" "$((-change))" "$prev_week"
+    else
+      printf " (same as prev week)\n"
+    fi
+  else
+    printf "\n"
+  fi
+  printf "  %-14s %d commits\n" "Last 30 days:" "$month_commits"
   echo ""
 
   # Code changes from git
@@ -903,27 +1110,34 @@ function stats-trends() {
   printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 30 days:" "$month_added" "$month_deleted"
   echo ""
 
-  # Test and coverage trends from stats snapshots
-  echo "${blue}Test Suite${reset}"
+  # Test and coverage from latest stats snapshot
+  echo "${blue}Test Suite (from latest snapshot)${reset}"
   local stats_dir="$ICHRISBIRCH_HOME/stats"
-  local latest_stats oldest_stats
+  local latest_stats
   latest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-  oldest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | head -1 | cut -d' ' -f2-)
 
-  if [ -n "$latest_stats" ] && [ -n "$oldest_stats" ]; then
-    local curr_tests prev_tests curr_cov prev_cov curr_dur prev_dur
+  if [ -n "$latest_stats" ]; then
+    local curr_tests curr_passed curr_failed curr_cov curr_dur
     curr_tests=$(jq -r '.tests.total // 0' "$latest_stats")
-    prev_tests=$(jq -r '.tests.total // 0' "$oldest_stats")
-    curr_cov=$(jq -r '.coverage.line_percent // 0' "$latest_stats" | cut -d'.' -f1)
-    prev_cov=$(jq -r '.coverage.line_percent // 0' "$oldest_stats" | cut -d'.' -f1)
-    curr_dur=$(jq -r '.tests.duration_seconds // 0' "$latest_stats" | cut -d'.' -f1)
-    prev_dur=$(jq -r '.tests.duration_seconds // 0' "$oldest_stats" | cut -d'.' -f1)
+    curr_passed=$(jq -r '.tests.passed // 0' "$latest_stats")
+    curr_failed=$(jq -r '.tests.failed // 0' "$latest_stats")
+    curr_cov=$(jq -r '.coverage.line_percent // 0' "$latest_stats")
+    curr_dur=$(jq -r '.tests.duration_seconds // 0' "$latest_stats")
 
-    format_change "$curr_tests" "$prev_tests" "Test count"
-    format_change "$curr_cov" "$prev_cov" "Coverage %"
-    format_change "$curr_dur" "$prev_dur" "Duration (s)" true
+    printf "  %-14s %d tests" "Total:" "$curr_tests"
+    if [ "$curr_failed" -gt 0 ]; then
+      printf " (%s%d failed%s)\n" "$red" "$curr_failed" "$reset"
+    else
+      printf " (%sall passing%s)\n" "$green" "$reset"
+    fi
+    if [ "$(echo "$curr_cov > 0" | bc)" -eq 1 ]; then
+      printf "  %-14s %.1f%%\n" "Coverage:" "$curr_cov"
+    else
+      printf "  %-14s %snot collected%s\n" "Coverage:" "$gray" "$reset"
+    fi
+    printf "  %-14s %.0fs\n" "Duration:" "$curr_dur"
   else
-    printf "  %sNo historical snapshots for comparison%s\n" "$gray" "$reset"
+    printf "  %sNo stats snapshots found%s\n" "$gray" "$reset"
   fi
   echo ""
 
@@ -950,9 +1164,19 @@ function stats-trends() {
   fi
   echo ""
 
-  # Sparkline of activity
-  echo "${blue}Activity Sparkline (30 days)${reset}"
-  printf "  "
+  # Hot files (modified multiple times in last 7 days)
+  echo "${blue}Hot Files (7 days)${reset}"
+  git log --since="7 days ago" --name-only --pretty=format: 2>/dev/null | \
+    grep -v '^$' | sort | uniq -c | sort -rn | head -5 | \
+    while read -r count file; do
+      if [ "$count" -gt 1 ]; then
+        printf "  %2dx  %s\n" "$count" "$file"
+      fi
+    done
+  echo ""
+
+  # Activity chart (30 days) - vertical bar chart
+  echo "${blue}Daily Commits (30 days)${reset}"
   local max_day=0
   declare -a day_counts
   for i in $(seq 29 -1 0); do
@@ -963,19 +1187,62 @@ function stats-trends() {
     day_counts[i]=$cnt
     [ "$cnt" -gt "$max_day" ] && max_day=$cnt
   done
-  local bars=("▁" "▂" "▃" "▄" "▅" "▆" "▇" "█")
-  for i in $(seq 29 -1 0); do
-    local cnt=${day_counts[i]}
-    if [ "$max_day" -eq 0 ]; then
-      printf "%s▁%s" "$gray" "$reset"
-    elif [ "$cnt" -eq 0 ]; then
-      printf "%s▁%s" "$gray" "$reset"
-    else
-      local idx=$(( (cnt * 7) / max_day ))
-      printf "%s%s%s" "$green" "${bars[$idx]}" "$reset"
-    fi
+
+  # Print 10 rows (top to bottom)
+  for row in $(seq 10 -1 1); do
+    printf "  "
+    local threshold=$(( (row * max_day) / 10 ))
+    for i in $(seq 29 -1 0); do
+      local cnt=${day_counts[i]}
+      if [ "$cnt" -ge "$threshold" ]; then
+        printf "%s███%s" "$green" "$reset"
+      else
+        printf "   "
+      fi
+    done
+    printf "\n"
   done
-  printf "\n  %s30d ago                        today%s\n" "$gray" "$reset"
+  # Print day-of-week labels
+  printf "  %s" "$green"
+  for i in $(seq 29 -1 0); do
+    local dow
+    dow=$(date -d "-${i} days" +%a | cut -c1)
+    printf " %s " "$dow"
+  done
+  printf "%s\n" "$reset"
+  echo ""
+
+  # Commit time distribution (hour of day) - vertical bar chart
+  echo "${blue}Commit Time of Day (30 days)${reset}"
+  local hour_counts=()
+  for h in $(seq 0 23); do
+    hour_counts[h]=0
+  done
+  local max_hour=1
+  while read -r hour; do
+    [ -n "$hour" ] && ((hour_counts[10#$hour]++))
+    [ "${hour_counts[10#$hour]}" -gt "$max_hour" ] && max_hour=${hour_counts[10#$hour]}
+  done < <(git log --since="30 days ago" --date=format:%H --format="%ad" 2>/dev/null)
+
+  # Print 10 rows (top to bottom)
+  for row in $(seq 10 -1 1); do
+    printf "  "
+    local threshold=$(( (row * max_hour) / 10 ))
+    for h in $(seq 0 23); do
+      local cnt=${hour_counts[$h]:-0}
+      if [ "$cnt" -ge "$threshold" ]; then
+        printf "%s███%s" "$cyan" "$reset"
+      else
+        printf "   "
+      fi
+    done
+    printf "\n"
+  done
+  printf "  %s" "$cyan"
+  for h in $(seq 0 23); do
+    printf "%-3d" "$h"
+  done
+  printf "%s\n" "$reset"
 }
 
 function usage() {
@@ -1036,13 +1303,8 @@ function usage() {
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
   echo
   echo "${green}Project Stats:${reset}"
-  echo "  ${blue}stats${reset}               - Dashboard with code, tests, quality, and activity"
-  echo "  ${blue}stats code${reset}          - Lines of code by language"
-  echo "  ${blue}stats tests${reset}         - Test results, coverage, and slowest tests"
-  echo "  ${blue}stats quality${reset}       - Issues caught by linters over 24h/7d/30d/all time"
-  echo "  ${blue}stats activity [n]${reset}  - Commit activity graph (default: 7 days)"
-  echo "  ${blue}stats events [n]${reset}    - Recent pre-commit hook events (default: 20)"
-  echo "  ${blue}stats trends${reset}        - Velocity, code churn, test suite trends, and sparkline"
+  echo "  ${blue}stats${reset}               - Show stats submenu"
+  echo "  ${blue}stats summary${reset}       - Dashboard with code, tests, quality, and activity"
   echo
   echo "${green}Service URLs:${reset}"
   echo "  ${blue}Development${reset}: https://api.docker.localhost, https://app.docker.localhost, https://chat.docker.localhost"
@@ -1128,8 +1390,11 @@ ssl-manager)
   ;;
 stats)
   case "$2" in
-  show | "")
-    stats-show
+  "")
+    stats-usage
+    ;;
+  summary)
+    stats-summary
     ;;
   code)
     stats-code
@@ -1149,9 +1414,16 @@ stats)
   trends)
     stats-trends
     ;;
+  churn)
+    stats-churn "$3"
+    ;;
+  snapshot)
+    stats-snapshot
+    ;;
   *)
     echo "${red}Unknown stats command: $2${reset}"
-    echo "Usage: ichrisbirch stats [code|tests|quality|activity|events|trends]"
+    echo ""
+    stats-usage
     ;;
   esac
   ;;
