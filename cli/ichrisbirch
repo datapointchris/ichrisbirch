@@ -2,12 +2,11 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034
 
+ICHRISBIRCH_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && git rev-parse --show-toplevel)"
+
 if [[ $(uname) == "Darwin" ]]; then
-  # ICHRISBIRCH_HOME="/usr/local/var/www/ichrisbirch"
-  ICHRISBIRCH_HOME="$HOME/code/ichrisbirch"
   LOG_DIR="/usr/local/var/log/ichrisbirch"
 else
-  ICHRISBIRCH_HOME="/srv/ichrisbirch"
   LOG_DIR="/var/log/ichrisbirch"
 fi
 
@@ -437,21 +436,52 @@ function testing-health() {
 function prod-start() {
   cd "$ICHRISBIRCH_HOME" || exit
 
+  local aws_region="${AWS_REGION:-us-east-2}"
+  local environment="production"
+
+  echo "Fetching secrets from AWS SSM..."
+
+  get_ssm_param() {
+    aws ssm get-parameter \
+      --region "$aws_region" \
+      --name "/ichrisbirch/$environment/$1" \
+      --with-decryption \
+      --query 'Parameter.Value' \
+      --output text
+  }
+
+  # Export secrets for Docker Compose
+  export POSTGRES_PASSWORD
+  POSTGRES_PASSWORD=$(get_ssm_param "postgres/password") || {
+    echo "${red}Failed to fetch POSTGRES_PASSWORD from SSM${reset}"
+    return 1
+  }
+
+  export REDIS_PASSWORD
+  REDIS_PASSWORD=$(get_ssm_param "redis/password") || {
+    echo "${red}Failed to fetch REDIS_PASSWORD from SSM${reset}"
+    return 1
+  }
+
+  export DOMAIN="${DOMAIN:-ichrisbirch.com}"
+
+  echo "Secrets loaded for ${magenta}$environment${reset}"
+
   # Ensure proxy network exists for Traefik
   if ! docker network inspect proxy >/dev/null 2>&1; then
     echo "Creating external proxy network..."
     docker network create proxy
   fi
 
-  echo "Starting ${magenta}PRODUCTION${reset} environment with ${green}Docker Compose + Traefik (HTTPS)${reset}"
+  echo "Starting ${magenta}PRODUCTION${reset} environment with ${green}Docker Compose + Traefik${reset}"
+  echo "  (Cloudflare Tunnel handles external HTTPS)"
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d
 
   echo ""
-  echo "Production environment started with ${green}HTTPS${reset}:"
-  echo "  ${green}API${reset}:       ${cyan}https://api.yourdomain.local/${reset}"
-  echo "  ${green}APP${reset}:       ${cyan}https://app.yourdomain.local/${reset}"
-  echo "  ${green}CHAT${reset}:      ${cyan}https://chat.yourdomain.local/${reset}"
-  echo "  ${yellow}Note${reset}: Update domains in production config as needed"
+  echo "Production environment started:"
+  echo "  ${green}API${reset}:  ${cyan}https://api.${DOMAIN}/${reset}"
+  echo "  ${green}APP${reset}:  ${cyan}https://app.${DOMAIN}/${reset}"
+  echo "  ${green}CHAT${reset}: ${cyan}https://chat.${DOMAIN}/${reset}"
   echo ""
   echo "Use ${blue}ichrisbirch prod logs${reset} to view live container logs"
   echo "Use ${blue}ichrisbirch prod status${reset} to check service status"
@@ -472,6 +502,35 @@ function prod-restart() {
 
 function prod-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
+
+  local aws_region="${AWS_REGION:-us-east-2}"
+  local environment="production"
+
+  echo "Fetching secrets from AWS SSM..."
+
+  get_ssm_param() {
+    aws ssm get-parameter \
+      --region "$aws_region" \
+      --name "/ichrisbirch/$environment/$1" \
+      --with-decryption \
+      --query 'Parameter.Value' \
+      --output text
+  }
+
+  export POSTGRES_PASSWORD
+  POSTGRES_PASSWORD=$(get_ssm_param "postgres/password") || {
+    echo "${red}Failed to fetch POSTGRES_PASSWORD from SSM${reset}"
+    return 1
+  }
+
+  export REDIS_PASSWORD
+  REDIS_PASSWORD=$(get_ssm_param "redis/password") || {
+    echo "${red}Failed to fetch REDIS_PASSWORD from SSM${reset}"
+    return 1
+  }
+
+  export DOMAIN="${DOMAIN:-ichrisbirch.com}"
+
   echo "Rebuilding and restarting ${magenta}PRODUCTION${reset} environment"
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
   docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d --build
@@ -494,21 +553,15 @@ function prod-status() {
   echo "${magenta}PRODUCTION${reset} environment status:"
   echo ""
 
-  # Check if this is production environment
-  if [ -f "$ICHRISBIRCH_HOME/docker-compose.yml" ]; then
-    cd "$ICHRISBIRCH_HOME" || exit
-    docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  cd "$ICHRISBIRCH_HOME" || exit
+  docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
 
-    echo ""
-    echo "${magenta}Production${reset} URLs (replace yourdomain.local with your actual domain):"
-    echo "  • API:       https://api.yourdomain.local/"
-    echo "  • App:       https://app.yourdomain.local/"
-    echo "  • Chat:      https://chat.yourdomain.local/"
-  else
-    echo "${yellow}Production Docker Compose files not found${reset}"
-    echo "Checking traditional supervisor processes..."
-    sudo supervisorctl status 2>/dev/null || echo "Supervisor not running"
-  fi
+  local domain="${DOMAIN:-ichrisbirch.com}"
+  echo ""
+  echo "${magenta}Production${reset} URLs (via Cloudflare Tunnel):"
+  echo "  • API:  https://api.${domain}/"
+  echo "  • App:  https://app.${domain}/"
+  echo "  • Chat: https://chat.${domain}/"
 }
 
 function prod-health() {
@@ -527,19 +580,6 @@ function prod-health() {
 
 function prod-apihealth() {
   curl --silent https://api.ichrisbirch.com/health/ | jq
-}
-
-function prod-reboot-ec2() {
-  instance_name=${1:-ichrisbirch-webserver}
-  echo "Looking for instance with name '$instance_name'"
-  instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$instance_name" --query "Reservations[*].Instances[*].InstanceId" --output text)
-  if [ -z "$instance_id" ]; then
-    echo "${red}No instance found with the name '$instance_name'${reset}"
-    echo "${green}Current running instances:${reset}"
-    aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId,Tags[?Key=='Name'].Value]" --output text
-  fi
-  echo "Rebooting the ec2 instance with the name '$instance_name'"
-  aws ec2 reboot-instances --instance-ids "$instance_id"
 }
 
 # ============================================================================
@@ -1004,16 +1044,15 @@ function usage() {
   echo "  ${blue}test cov [path] [args]${reset} - Run pytest with coverage report"
   echo "    • Generates HTML coverage report in htmlcov/"
   echo
-  echo "${green}Production Environment (HTTPS with Traefik):${reset}"
-  echo "  ${blue}prod start${reset}     - Start production services with HTTPS (yourdomain.local)"
+  echo "${green}Production Environment (Cloudflare Tunnel + Traefik):${reset}"
+  echo "  ${blue}prod start${reset}     - Fetch SSM secrets and start production services"
   echo "  ${blue}prod stop${reset}      - Stop production services and remove containers"
   echo "  ${blue}prod restart${reset}   - Restart existing production containers without rebuilding"
-  echo "  ${blue}prod rebuild${reset}   - Stop services, rebuild Docker images, and restart production"
+  echo "  ${blue}prod rebuild${reset}   - Fetch SSM secrets, rebuild Docker images, and restart"
   echo "  ${blue}prod logs${reset}      - View production Docker container logs"
   echo "  ${blue}prod status${reset}    - Check production service status and URLs"
   echo "  ${blue}prod health${reset}    - Run comprehensive health checks for production services"
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
-  echo "  ${blue}prod reboot-ec2${reset} - Restart EC2 instance via AWS CLI (default: ichrisbirch-webserver)"
   echo
   echo "${green}Project Stats:${reset}"
   echo "  ${blue}stats${reset}               - Dashboard with code, tests, quality, and activity"
@@ -1024,17 +1063,17 @@ function usage() {
   echo "  ${blue}stats events [n]${reset}    - Recent pre-commit hook events (default: 20)"
   echo "  ${blue}stats trends${reset}        - Velocity, code churn, test suite trends, and sparkline"
   echo
-  echo "${green}Service URLs (All environments use HTTPS):${reset}"
-  echo "  ${blue}Development${reset}: api.docker.localhost, app.docker.localhost, chat.docker.localhost"
-  echo "  ${blue}Test${reset}: api.test.localhost:8443, app.test.localhost:8443, chat.test.localhost:8443"
-  echo "  ${blue}Production${reset}: api.yourdomain.local, app.yourdomain.local, chat.yourdomain.local"
+  echo "${green}Service URLs:${reset}"
+  echo "  ${blue}Development${reset}: https://api.docker.localhost, https://app.docker.localhost, https://chat.docker.localhost"
+  echo "  ${blue}Test${reset}:        https://api.test.localhost:8443, https://app.test.localhost:8443"
+  echo "  ${blue}Production${reset}:  https://api.ichrisbirch.com, https://app.ichrisbirch.com (via Cloudflare Tunnel)"
   echo
   echo "${green}Technical Notes:${reset}"
-  echo "  • All environments use modern Traefik reverse proxy with HTTPS and WebSocket support"
+  echo "  • Development/test use Traefik with local certificates for HTTPS"
+  echo "  • Production uses Cloudflare Tunnel for HTTPS (Traefik receives HTTP internally)"
   echo "  • Development and test environments run simultaneously on different ports"
-  echo "  • SSL certificates managed automatically via ${blue}ssl-manager${reset} command"
+  echo "  • Production secrets fetched from AWS SSM Parameter Store"
   echo "  • Use ${blue}<env> health${reset} commands for comprehensive service validation"
-  echo "  • Legacy HTTP access available on original ports (5000, 8000, 8505) alongside HTTPS"
 }
 # check if the first argument is empty and print usage if so
 if [ -z "$1" ]; then
