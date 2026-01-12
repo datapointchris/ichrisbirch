@@ -244,7 +244,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.chat.rule=Host(`chat.${DOMAIN}`)"
       - "traefik.http.routers.chat.entrypoints=web"
-      - "traefik.http.routers.chat.middlewares=cors-prod@file,security-headers-prod@file"
+      - "traefik.http.routers.chat.middlewares=cors-prod@file"
       - "traefik.http.services.chat.loadbalancer.server.port=8505"
       # Enable sticky sessions for WebSocket connections
       - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
