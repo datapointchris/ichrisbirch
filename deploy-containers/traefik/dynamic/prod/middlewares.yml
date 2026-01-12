@@ -85,16 +85,6 @@ http:
         accessControlMaxAge: 86400
         addVaryHeader: true
 
-    # WebSocket support for Streamlit chat service
-    websocket-prod:
-      headers:
-        customRequestHeaders:
-          Connection: "upgrade"
-          Upgrade: "websocket"
-          Sec-WebSocket-Extensions: ""
-          Sec-WebSocket-Key: ""
-          Sec-WebSocket-Version: ""
-
     # Rate limiting for production environment (strict)
     rate-limit-prod:
       rateLimit:
