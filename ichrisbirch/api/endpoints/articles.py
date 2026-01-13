@@ -1,8 +1,8 @@
 import json
-import logging
 
 import httpx
 import markdown
+import structlog
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
@@ -26,7 +26,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -44,7 +44,7 @@ def _get_formatted_title(soup: BeautifulSoup) -> str:
         title = soup.title.string.split('|')[0].replace('...', '')
         title = title.removesuffix(' - YouTube').strip()
     else:
-        logger.warning('could not parse title')
+        logger.warning('article_title_parse_failed')
         title = 'Could not parse title'
     return title
 
@@ -116,14 +116,13 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
     NOTE: Converting the tags array to text cannot use the GIN index that is set in postgres on the tags column.
     This is a limitation of the array type in that it can't match partial results and use the index.
     """
-    logger.debug(f'searching for {q=}')
+    logger.debug('article_search', query=q)
     search_terms = [f'%{term.strip()}%' for term in q.split(',')]
-    logger.debug(f'search terms: {search_terms}')
+    logger.debug('article_search_terms', terms=search_terms)
     conditions = [cast((models.Article.tags), postgresql.TEXT).ilike(term) for term in search_terms]
     articles = select(models.Article).filter(or_(*conditions)).order_by(models.Article.title.asc())
-    logger.debug(articles)
     results = session.scalars(articles).all()
-    logger.debug(f'search found {len(results)} results')
+    logger.debug('article_search_results', count=len(results))
     return list(results)
 
 
@@ -135,12 +134,12 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     use html content for summary. Using openai chat to summarize and provide tags.
     """
     request_data = await request.json()
-    logger.debug(request_data)
+    logger.debug('article_summarize_request', data=request_data)
     url = request_data.get('url')
     url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
-    logger.debug(f'retrieved title: {title}')
+    logger.debug('article_title_retrieved', title=title)
 
     if 'youtube.com' in url or 'youtu.be' in url:
         text_content = _get_youtube_video_text_captions(url)
@@ -165,21 +164,19 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     for summary. Using openai chat to summarize and provide tags.
     """
     request_data = await request.json()
-    logger.debug(request_data)
+    logger.debug('article_insights_request', data=request_data)
     url = request_data.get('url')
-    logger.debug(f'summarizing with insights url: {url}')
+    logger.debug('article_insights_processing', url=url)
     url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
 
     if 'youtube.com' in url or 'youtu.be' in url:
         try:
-            logger.debug('getting youtube video captions')
+            logger.debug('youtube_captions_fetching')
             text_content = _get_youtube_video_text_captions(url)
         except Exception as e:
-            logger.error(
-                f'error getting youtube video captions for: {url} -- transcripts are disabled or IP is being blocked by YouTube API'
-            )
+            logger.error('youtube_captions_error', url=url, error=str(e))
             # format error response into html
             lines = []
             for i, line in enumerate(str(e).strip().split('\n')):
@@ -219,7 +216,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.ArticleUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: article {id} {update_data}')
+    logger.debug('article_update', article_id=id, update_data=update_data)
     if article := session.get(models.Article, id):
         for attr, value in update_data.items():
             setattr(article, attr, value)

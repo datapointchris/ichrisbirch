@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -12,7 +11,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -61,7 +60,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.ChatUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update by PATCH: chat {id} {update_data}')
+    logger.debug('chat_update_patch', chat_id=id, update_data=update_data)
 
     if chat := session.get(models.Chat, id):
         for attr, value in update_data.items():
@@ -79,15 +78,15 @@ async def update_messages(id: int, update: schemas.ChatUpdate, session: Session 
 
     if chat := session.get(models.Chat, id):
         chat_message_ids = [message.id for message in chat.messages]
-        logger.debug(f'{chat.id} has message ids: {chat_message_ids}')
+        logger.debug('chat_messages', chat_id=chat.id, message_ids=chat_message_ids)
         for message in messages:
             if (not message.chat_id) or (message.id not in chat_message_ids):
                 message.chat_id = chat.id
                 session.add(message)
-                logger.warning(f'Added message {message.id}: {message.content[:20]} to chat {chat.id}')
+                logger.debug('chat_message_added', message_id=message.id, chat_id=chat.id)
         session.commit()
         session.refresh(chat)
-        logger.debug(f'update by PUT: chat {id}')
+        logger.debug('chat_update_put', chat_id=id)
         return chat
 
     raise NotFoundException('chat', id, logger)

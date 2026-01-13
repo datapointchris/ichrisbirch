@@ -48,17 +48,16 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
     NOTE: Converting the tags array to text cannot use the GIN index that is set in postgres on the tags column.
     This is a limitation of the array type in that it can't match partial results and use the index.
     """
-    logger.debug(f'searching for {q=}')
+    logger.debug('book_search', query=q)
     search_terms = [f'%{term.strip()}%' for term in q.split(',')]
-    logger.debug(f'search terms: {search_terms}')
+    logger.debug('book_search_terms', terms=search_terms)
     title_matches = [models.Book.title.ilike(term) for term in search_terms]
     author_matches = [models.Book.author.ilike(term) for term in search_terms]
     tag_matches = [cast((models.Book.tags), postgresql.TEXT).ilike(term) for term in search_terms]
     all_matches = set(title_matches + author_matches + tag_matches)
     books = select(models.Book).filter(or_(*all_matches)).order_by(models.Book.title.asc())
-    logger.debug(books)
     results = session.scalars(books).all()
-    logger.debug(f'search found {len(results)} results')
+    logger.debug('book_search_results', count=len(results))
     return list(results)
 
 
@@ -66,29 +65,29 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 async def goodreads(request: Request, settings: Settings = Depends(get_settings)):
     """Get book information from Goodreads using the ISBN."""
     request_data = await request.json()
-    logger.debug(request_data)
+    logger.debug('goodreads_request', data=request_data)
     isbn = request_data.get('isbn')
     url = f'https://www.goodreads.com/search?q={isbn}'
     response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
-    logger.debug(f'retrieved info from goodreads for isbn: {isbn}')
+    logger.debug('goodreads_retrieved', isbn=isbn)
     # TODO: Fix the typing errors for this POS
     soup = BeautifulSoup(response.content, 'html.parser')
     if title := soup.find('h1', class_='Text Text__title1'):
         title = title.text.strip()  # type: ignore
     else:
         title = 'Not found'  # type: ignore
-        logger.error('Title not found')
+        logger.error('goodreads_title_not_found')
     if author := soup.find('span', class_='ContributorLink__name'):
         author = author.text.strip()  # type: ignore
     else:
         author = 'Not found'  # type: ignore
-        logger.error('Author not found')
+        logger.error('goodreads_author_not_found')
     if genre_section := soup.find('div', class_='BookPageMetadataSection__genres'):
         genres = [g.text for g in genre_section.find_all('span', class_='Button__labelItem')][:-1]  # type: ignore
         tags = ', '.join(genres)
     else:
         tags = 'None found'
-        logger.error('Genres not found')
+        logger.error('goodreads_genres_not_found')
 
     return schemas.BookGoodreadsInfo(title=title, author=author, tags=tags, goodreads_url=str(response.url))
 
@@ -120,7 +119,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 async def update(id: int, book_update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = book_update.model_dump(exclude_unset=True)
-    logger.debug(f'update: book {id} {update_data}')
+    logger.debug('book_update', book_id=id, update_data=update_data)
 
     if book := session.get(models.Book, id):
         for attr, value in update_data.items():

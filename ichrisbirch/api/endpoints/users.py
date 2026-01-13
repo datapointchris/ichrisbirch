@@ -90,10 +90,10 @@ async def require_user_access_or_admin_or_internal_service(
     # First check if this is an internal service request
     if x_internal_service and x_service_key:
         if x_service_key == settings.auth.internal_service_key:
-            logger.debug(f'access granted for internal service: {x_internal_service}')
+            logger.debug('access_granted_internal_service', service=x_internal_service)
             return True
         else:
-            logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+            logger.warning('internal_service_key_invalid', service=x_internal_service)
 
     # If not internal service, check user authentication
     if current_user:
@@ -154,10 +154,10 @@ async def _update_user_preferences_helper(db_user: models.User, update_data: dic
     try:
         db_user.preferences = deep_merge(db_user.preferences, update_data)
     except ValueError as e:
-        logger.error(f'failed to update preferences: {e}')
+        logger.error('preferences_update_failed', error=str(e))
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
     except Exception as e:
-        logger.error(f'unexpected error updating preferences: {e}')
+        logger.error('preferences_update_error', error=str(e), error_type=type(e).__name__)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='An unexpected error occurred') from e
 
     session.commit()
@@ -169,7 +169,7 @@ async def _update_user_preferences_helper(db_user: models.User, update_data: dic
 async def update_my_preferences(request: Request, user: CurrentUser, session: Session = Depends(get_sqlalchemy_session)):
     """Update the current user's preferences."""
     update_data = await request.json()
-    logger.debug(f'update: user preferences {update_data}')
+    logger.debug('user_preferences_update', update_data=update_data)
 
     # The session attached to the CurrentUser has gone out of scope, must re-attach to the new session
     db_user = session.merge(user)
@@ -190,7 +190,7 @@ async def update_user_preferences(
     require_own_data_or_admin(user, target_user_id=id, operation='update your own preferences')
 
     update_data = await request.json()
-    logger.debug(f'update: user {id} preferences {update_data}')
+    logger.debug('user_preferences_update', user_id=id, update_data=update_data)
 
     if not (db_user := session.get(models.User, id)):
         raise NotFoundException('user', id, logger)
@@ -232,10 +232,10 @@ async def require_update_access(
     # First check if this is an internal service request
     if x_internal_service and x_service_key:
         if x_service_key == settings.auth.internal_service_key:
-            logger.debug(f'access granted for internal service: {x_internal_service}')
+            logger.debug('access_granted_internal_service', service=x_internal_service)
             return True
         else:
-            logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+            logger.warning('internal_service_key_invalid', service=x_internal_service)
 
     # If not internal service, check user authentication
     if current_user:
@@ -259,7 +259,7 @@ async def update(
     Users can only update their own data unless they are admin or internal service.
     """
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: user {id} {update_data}')
+    logger.debug('user_update', user_id=id, update_data=update_data)
 
     if db_user := session.get(models.User, id):
         for attr, value in update_data.items():
@@ -289,10 +289,10 @@ async def read_by_alternative_id(
         # Check if this is an internal service request
         if x_internal_service and x_service_key:
             if x_service_key == settings.auth.internal_service_key:
-                logger.debug(f'access granted for internal service: {x_internal_service}')
+                logger.debug('access_granted_internal_service', service=x_internal_service)
                 return db_user
             else:
-                logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+                logger.warning('internal_service_key_invalid', service=x_internal_service)
                 raise UnauthorizedException('Invalid internal service credentials', logger)
 
         # If not internal service, require user authentication

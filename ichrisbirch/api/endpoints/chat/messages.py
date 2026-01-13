@@ -1,6 +1,6 @@
-import logging
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -13,7 +13,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -55,7 +55,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.ChatMessage, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.ChatMessageUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: message {id} {update_data}')
+    logger.debug('chat_message_update', message_id=id, update_data=update_data)
 
     if message := session.get(models.ChatMessage, id):
         for attr, value in update_data.items():
