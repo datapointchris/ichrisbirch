@@ -1,8 +1,8 @@
 import http
-import logging
 from contextlib import suppress
 from functools import partial
 
+import structlog
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -15,7 +15,7 @@ from ichrisbirch.app.middleware import RequestLoggingMiddleware
 from ichrisbirch.config import Settings
 from ichrisbirch.util import log_caller
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 csrf = CSRFProtect()
 request_logger = RequestLoggingMiddleware()
 
@@ -36,9 +36,9 @@ def handle_errors(e, error_code):
     user_id = _get_user_id()
     description = getattr(e, 'description', str(e))
     if error_code >= 500:
-        logger.error(f'HTTP {error_code}: {request.method} {request.path} user={user_id} error={description}')
+        logger.error('http_error', status=error_code, method=request.method, path=request.path, user_id=user_id, error=description)
     else:
-        logger.warning(f'HTTP {error_code}: {request.method} {request.path} user={user_id} error={description}')
+        logger.warning('http_error', status=error_code, method=request.method, path=request.path, user_id=user_id, error=description)
     error_title = f'{error_code} {http.HTTPStatus(error_code).phrase}'
     return render_template('error.html', error_title=error_title, error_message=description), error_code
 
@@ -46,7 +46,14 @@ def handle_errors(e, error_code):
 def handle_exception(e):
     """Handle unhandled exceptions with logging."""
     user_id = _get_user_id()
-    logger.error(f'Unhandled exception: {request.method} {request.path} user={user_id} error={type(e).__name__}: {e}')
+    logger.error(
+        'unhandled_exception',
+        method=request.method,
+        path=request.path,
+        user_id=user_id,
+        error=str(e),
+        error_type=type(e).__name__,
+    )
     error_title = '500 Internal Server Error'
     return render_template('error.html', error_title=error_title, error_message='An unexpected error occurred'), 500
 
@@ -54,36 +61,34 @@ def handle_exception(e):
 @log_caller
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
-    logger.info('initializing app')
-    logger.debug(f'api url: {settings.api_url}')
-    logger.debug(f'postgres port: {settings.postgres.port}')
-    logger.debug(f'postgres uri: {settings.postgres.db_uri}')
-    logger.debug(f'sqlalchemy port: {settings.sqlalchemy.port}')
-    logger.debug(f'sqlalchemy uri: {settings.sqlalchemy.db_uri}')
+    logger.info('app_initializing')
+    logger.debug('api_config', api_url=settings.api_url)
+    logger.debug('postgres_config', port=settings.postgres.port, uri=settings.postgres.db_uri)
+    logger.debug('sqlalchemy_config', port=settings.sqlalchemy.port, uri=settings.sqlalchemy.db_uri)
 
     with app.app_context():
         app.config.from_object(settings.flask)
-        logger.info(f'configured from: {type(settings.flask)}')
+        logger.info('config_loaded', settings_type=type(settings.flask).__name__)
 
         cfg = app.config
-        logger.debug(f'DEBUG={cfg.get("DEBUG")}, TESTING={cfg.get("TESTING")}, ENV={cfg.get("ENV")}')
+        logger.debug('flask_config', debug=cfg.get('DEBUG'), testing=cfg.get('TESTING'), env=cfg.get('ENV'))
 
         cfg['SETTINGS'] = settings
-        logger.info(f'loaded settings: {type(settings)}')
+        logger.info('settings_loaded', settings_type=type(settings).__name__)
 
         login_manager.init_app(app)
-        logger.info('login manager initialized')
+        logger.info('login_manager_initialized')
 
         csrf.init_app(app)
-        logger.info('csrf protection initialized')
+        logger.info('csrf_initialized')
 
         request_logger.init_app(app)
-        logger.info('request logging middleware initialized')
+        logger.info('request_logging_initialized')
 
         for error_code in error_codes:
             app.register_error_handler(error_code, partial(handle_errors, error_code=error_code))
         app.register_error_handler(Exception, handle_exception)
-        logger.info('error handlers registered')
+        logger.info('error_handlers_registered')
 
         @app.template_filter()
         def pretty_date(dttm, format='%B %d, %Y'):
@@ -101,7 +106,7 @@ def create_app(settings: Settings) -> Flask:
         def currency_filter(value):
             return f'$ {value:,.2f}'
 
-        logger.info('template filters registered')
+        logger.info('template_filters_registered')
 
         app.register_blueprint(routes.home.blueprint)
         app.register_blueprint(routes.auth.blueprint)
@@ -119,7 +124,7 @@ def create_app(settings: Settings) -> Flask:
         app.register_blueprint(routes.portfolio.blueprint, url_prefix='/portfolio')
         app.register_blueprint(routes.tasks.blueprint, url_prefix='/tasks')
         app.register_blueprint(routes.users.blueprint, url_prefix='/users')
-        logger.info('blueprints registered')
+        logger.info('blueprints_registered')
 
         @app.context_processor
         def insert_variables():
@@ -154,5 +159,5 @@ def create_app(settings: Settings) -> Flask:
 
             return {'get_user_pref': get_user_pref}
 
-    logger.info('initialized app successfully')
+    logger.info('app_initialized')
     return app

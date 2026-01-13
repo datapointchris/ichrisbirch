@@ -1,6 +1,5 @@
-import logging
-
 import pendulum
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import abort
@@ -23,7 +22,7 @@ from ichrisbirch.api.client.logging_client import logging_internal_service_clien
 from ichrisbirch.app import forms
 from ichrisbirch.app.utils import http as http_utils
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('auth', __name__, template_folder='templates/auth', static_folder='static')
 
 
@@ -50,28 +49,28 @@ def login():
                 user = models.User(**user_data)
                 if user and user.check_password(password=form.password.data):
                     login_user(user, remember=form.remember_me.data)
-                    logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
+                    logger.debug('user_login_success', name=user.name, last_login=str(user.last_login))
                     try:
                         users.patch([user.id], json={'last_login': pendulum.now().for_json()})
-                        logger.debug(f'updated last login for user: {user.name}')
+                        logger.debug('user_last_login_updated', name=user.name)
                     except Exception as e:
                         # Silent failure: last_login update is non-critical
                         # User cannot act on this, don't block login or show error
                         # System log captures issue for debugging
-                        logger.error(f'error updating last login for user {user.name}: {e}')
+                        logger.error('user_last_login_update_error', name=user.name, error=str(e))
                     if next_page := session.get('next'):
-                        logger.debug(f'next page stored in session: {next_page}')
+                        logger.debug('login_redirect_from_session', next_page=next_page)
                     else:
-                        logger.debug('session["next"] was not set')
+                        logger.debug('login_redirect_default')
                         next_page = url_for('users.profile')
-                    logger.debug(f'login will redirect to: {next_page}')
+                    logger.debug('login_redirecting', next_page=next_page)
                     if not http_utils.url_has_allowed_host_and_scheme(next_page, request.host):
                         return abort(status.HTTP_401_UNAUTHORIZED, f'Unauthorized URL: {next_page}')
                     return redirect(next_page)
                 else:
-                    logger.warning(f'failed login attempt for user: {form.email.data} - invalid password')
+                    logger.warning('login_failed_invalid_password', email=form.email.data)
             else:
-                logger.warning(f'failed login attempt - no user found for email: {form.email.data}')
+                logger.warning('login_failed_user_not_found', email=form.email.data)
 
         logout_user()
         flash('Invalid credentials', 'error')
@@ -95,8 +94,8 @@ def signup():
         users = client.resource('users', schemas.User)
         form = forms.SignupForm()
         if form.validate_on_submit():
-            logger.debug('signup form validated')
-            logger.debug('checking for existing user')
+            logger.debug('signup_form_validated')
+            logger.debug('signup_checking_existing_user')
             try:
                 existing_user = users.get_generic(['email', form.email.data])
             except APIHTTPError as e:
@@ -105,7 +104,7 @@ def signup():
                 else:
                     raise
             if not existing_user:
-                logger.info(f'creating a new user with email: {form.email.data}')
+                logger.info('user_creating', email=form.email.data)
                 data = {
                     'name': form.name.data,
                     'email': form.email.data,
@@ -117,13 +116,11 @@ def signup():
                     return redirect(url_for('users.profile'))
                 return redirect(url_for('auth.signup'))
             else:
-                logger.warning(
-                    f'duplicate email registration attempt: {form.email.data} - last login: {existing_user.get("last_login", "unknown")}'
-                )
+                logger.warning('signup_duplicate_email', email=form.email.data, last_login=existing_user.get('last_login', 'unknown'))
                 flash('email address already registered', 'error')
         else:
             if request.method.upper() == 'POST':
-                logger.warning(f'form validation failed: {form.errors}')
+                logger.warning('signup_form_validation_failed', errors=form.errors)
 
         return render_template(
             'auth/signup.html',

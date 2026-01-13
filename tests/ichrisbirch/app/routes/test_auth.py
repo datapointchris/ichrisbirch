@@ -72,7 +72,7 @@ class TestLogin:
     def test_login_wrong_password(self, test_app_function, caplog):
         login_data = {'email': TEST_USER_EMAIL, 'password': 'wrong_password'}
         response = test_app_function.post('/login/', follow_redirects=False, data=login_data)
-        assert 'invalid password' in caplog.text, 'No error log produced'
+        assert 'login_failed_invalid_password' in caplog.text, 'No error log produced'
         assert response.status_code == status.HTTP_302_FOUND, show_status_and_response(response)
         assert 'login' in response.headers['Location']
 
@@ -99,4 +99,4 @@ class TestSignup:
                 'confirm_password': TEST_USER_PASSWORD,
             },
         )
-        assert 'duplicate email registration attempt' in caplog.text
+        assert 'signup_duplicate_email' in caplog.text

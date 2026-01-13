@@ -1,6 +1,6 @@
-import logging
 from functools import wraps
 
+import structlog
 from flask import current_app
 from flask import request
 from flask_login import LoginManager
@@ -11,22 +11,20 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_internal_service_client
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 def get_users_api():
     """Get users API client using modern internal service authentication."""
     try:
         if current_app and 'SETTINGS' in current_app.config:
-            logger.warning('IMPORTANT: Using Flask current_app for settings to get api_url to configure logging_internal_service_client')
+            logger.warning('using_flask_current_app_for_api_url')
             # Use Flask app's test-compatible settings
             api_url = current_app.config['SETTINGS'].api_url
             return logging_internal_service_client(base_url=api_url)
     except RuntimeError:
         # Outside Flask context - use global settings
-        logger.warning(
-            'IMPORTANT: Tried to load Flask current_app to get api_url for logging_internal_service_client but it is not available'
-        )
+        logger.warning('flask_current_app_unavailable')
         pass
     return logging_internal_service_client()
 
@@ -48,7 +46,7 @@ def load_user(alternative_id):
         users = client.resource('users', schemas.User)
         if user_data := users.get_generic(['alt', alternative_id]):
             user = models.User(**user_data)
-            logger.debug(f'logged in user: {user.alternative_id} - {user.email}')
+            logger.debug('user_loaded', alternative_id=user.alternative_id, email=user.email)
             return user
     return None
 
