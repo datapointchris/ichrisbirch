@@ -46,9 +46,11 @@ function colored-logs() {
   local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
 
   # Use sed with proper escaping for backslashes
+  # Note: -testing must come before -test to avoid leaving "ing" suffix
   sed \
     -e 's/ichrisbirch-//g' \
     -e 's/-dev//g' \
+    -e 's/-testing//g' \
     -e 's/-test//g' \
     -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
     -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
