@@ -2,17 +2,17 @@ name: Deploy MkDocs to Github Pages
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'tools/docs/**'
+      - "docs/**"
+      - "mkdocs.yml"
+      - "tools/docs/**"
   pull_request:
-    branches: [master]
+    branches: [main]
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'tools/docs/**'
+      - "docs/**"
+      - "mkdocs.yml"
+      - "tools/docs/**"
   workflow_dispatch:
 
 permissions:

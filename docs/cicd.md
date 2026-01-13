@@ -144,7 +144,7 @@ Builds and deploys documentation to GitHub Pages.
 ```yaml
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - 'docs/**'
       - 'mkdocs.yml'

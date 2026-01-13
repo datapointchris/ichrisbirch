@@ -2,9 +2,9 @@ name: Validate Project
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 # These permissions are needed to interact with GitHub's OIDC Token endpoint.
