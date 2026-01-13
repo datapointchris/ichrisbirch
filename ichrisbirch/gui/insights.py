@@ -1,16 +1,16 @@
-import logging
 from dataclasses import dataclass
 from tkinter import messagebox
 
 import customtkinter as ctk
 import httpx
 import pendulum
+import structlog
 from tkhtmlview import HTMLText
 
 from ichrisbirch.config import get_settings
 from ichrisbirch.gui.utils import set_app_geometry
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 _settings = get_settings()
 
@@ -37,11 +37,11 @@ def submit_form():
 
     except httpx.HTTPStatusError as e:
         message = f'Failed to submit task: {e}'
-        logger.error(message)
+        logger.error('gui_insights_http_error', error=str(e))
         messagebox.showerror('Error', message)
     except httpx.RequestError as e:
         message = f'An error occurred while making the request: {e}'
-        logger.error(message)
+        logger.error('gui_insights_request_error', error=str(e))
         messagebox.showerror('Error', message)
 
 

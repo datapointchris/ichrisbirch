@@ -1,11 +1,11 @@
-import logging
 import time
 
+import structlog
 from openai import OpenAI
 
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class OpenAIAssistant:
@@ -30,7 +30,7 @@ class OpenAIAssistant:
             time.sleep(3)
         messages = self.client.beta.threads.messages.list(thread_id=thread.id)
         data = messages.data[0].content[0].text.value  # type: ignore
-        logger.debug(f'openai generated: {data[:100]}...')
+        logger.debug('openai_generated', data_preview=data[:100])
         tokens_used = run.usage.total_tokens  # type: ignore
-        logger.info(f'tokens used: {tokens_used}')  # type: ignore
+        logger.info('openai_tokens_used', tokens=tokens_used)  # type: ignore
         return data

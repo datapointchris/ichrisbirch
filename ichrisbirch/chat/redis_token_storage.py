@@ -1,9 +1,9 @@
-import logging
 from typing import Protocol
 
 import redis
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class TokenStorage(Protocol):
@@ -42,19 +42,19 @@ class RedisTokenStorage:
         """Store token in Redis with user_id as key."""
         key = f'{user_id}:{token_type}'
         self.redis.set(key, token, ex=self.token_expiry)
-        logger.info(f'Saved {token_type} token for user {user_id} in Redis')
+        logger.info('redis_token_saved', user_id=user_id, token_type=token_type)
 
     def get_token(self, user_id: str, token_type: str) -> str | None:
         """Retrieve token from Redis."""
         key = f'{user_id}:{token_type}'
         if token := self.redis.get(key):
-            logger.info(f'Retrieved {token_type} token for user {user_id} from Redis')
+            logger.info('redis_token_retrieved', user_id=user_id, token_type=token_type)
             return str(token)
-        logger.warning(f'No {token_type} token found for user {user_id}')
+        logger.warning('redis_token_not_found', user_id=user_id, token_type=token_type)
         return None
 
     def delete_token(self, user_id: str, token_type: str):
         """Delete token from Redis."""
         key = f'{user_id}:{token_type}'
         self.redis.delete(key)
-        logger.info(f'Deleted {token_type} token for user {user_id} from Redis')
+        logger.info('redis_token_deleted', user_id=user_id, token_type=token_type)

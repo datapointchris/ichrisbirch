@@ -1,9 +1,9 @@
-import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 
 import httpx
 import pendulum
+import structlog
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -11,7 +11,7 @@ from ichrisbirch.api.client.logging_client import logging_internal_service_clien
 from ichrisbirch.app.utils import url_builder
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class ChatAuthClient:
@@ -31,10 +31,10 @@ class ChatAuthClient:
         try:
             yield client
         except httpx.HTTPStatusError as e:
-            logger.warning(f'HTTP error occurred: {e.response.status_code} - {e.response.text}')
+            logger.warning('http_status_error', status_code=e.response.status_code, response_text=e.response.text)
             raise
         except httpx.RequestError as e:
-            logger.error(f'Request error occurred: {e}')
+            logger.error('http_request_error', error=str(e))
             raise
         finally:
             client.close()
@@ -45,16 +45,16 @@ class ChatAuthClient:
             return client.post(self.token_url, data=request_data).raise_for_status().json()
 
     def validate_jwt_token(self, token: str):
-        logger.debug(f'validating access token: {token[-10:]}')
+        logger.debug('validating_access_token', token_suffix=token[-10:])
         validate_url = url_builder(self.token_url, 'validate')
         headers = {'Authorization': f'Bearer {token}'}
         with self.safe_request_client() as client:
             sc = client.get(validate_url, headers=headers).raise_for_status().status_code
-            logger.warning(f'status code: {sc}')
+            logger.warning('jwt_validation_status', status_code=sc)
             return sc == 200
 
     def refresh_access_token(self, token: str):
-        logger.debug(f'getting access token with refresh token: {token[-10:]}')
+        logger.debug('refreshing_access_token', token_suffix=token[-10:])
         headers = {'Authorization': f'Bearer {token}'}
         refresh_url = url_builder(self.token_url, 'refresh')
         with self.safe_request_client() as client:
@@ -71,20 +71,20 @@ class ChatAuthClient:
             if user_data := users.get_generic(['email', username]):
                 user = models.User(**user_data)
                 if user.check_password(password):
-                    logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
+                    logger.debug('user_login_success', user_name=user.name, last_login=str(user.last_login))
                     try:
                         users.patch([user.id], json={'last_login': pendulum.now().for_json()})
-                        logger.debug(f'updated last login for user: {user.name}')
+                        logger.debug('user_last_login_updated', user_name=user.name)
                     except Exception as e:
                         # Silent failure: last_login update is non-critical
                         # User cannot act on this, don't block login or show error
                         # System log captures issue for debugging
-                        logger.error(f'error updating last login for user {user.name}: {e}')
+                        logger.error('user_last_login_update_error', user_name=user.name, error=str(e))
                     return user
                 else:
-                    logger.warning(f'incorrect password for user: {user.email}')
+                    logger.warning('incorrect_password', email=user.email)
             else:
-                logger.warning(f'user with email {username} not found')
+                logger.warning('user_not_found', email=username)
         return None
 
     def login_token(self, token: str):
@@ -93,16 +93,16 @@ class ChatAuthClient:
         with self.safe_request_client() as client:
             user_data = client.get(user_login_url, headers=headers).raise_for_status().json()
             if user := models.User(**user_data):
-                logger.debug(f'logged in user: {user.email} - last previous login: {user.last_login}')
+                logger.debug('user_token_login_success', email=user.email, last_login=str(user.last_login))
                 client.patch(url_builder(self.users_url, user.id), json={'last_login': pendulum.now().for_json()})
                 return user
             else:
-                logger.warning('invalid token login attempt')
+                logger.warning('invalid_token_login_attempt')
         return None
 
     def logout_user(self, user: models.User, token: str):
         headers = {'X-User-ID': user.get_id()}
-        logger.debug(f'logging out user: {user.email} with token {token[-10:]}')
+        logger.debug('logging_out_user', email=user.email, token_suffix=token[-10:])
         user_logout_url = url_builder(self.api_url, 'auth', 'logout')
         with self.safe_request_client() as client:
             client.get(user_logout_url, headers=headers).raise_for_status()

@@ -1,15 +1,15 @@
-import logging
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import messagebox
 
 import customtkinter as ctk
 import httpx
+import structlog
 
 from ichrisbirch.gui.utils import set_app_geometry
 from ichrisbirch.models.task import TaskCategory
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
@@ -39,11 +39,11 @@ def submit_form():
         app.destroy()
     except httpx.HTTPStatusError as e:
         message = f'Failed to submit task: {e}'
-        logger.error(message)
+        logger.error('gui_task_submit_http_error', error=str(e))
         messagebox.showerror('Error', message)
     except httpx.RequestError as e:
         message = f'An error occurred while making the request: {e}'
-        logger.error(message)
+        logger.error('gui_task_submit_request_error', error=str(e))
         messagebox.showerror('Error', message)
 
 

@@ -1,10 +1,10 @@
-import logging
 from datetime import datetime
 
+import structlog
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class JournalEntryConfig(BaseModel):

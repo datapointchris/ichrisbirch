@@ -7,7 +7,6 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 """
 
 import functools
-import logging
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import asdict
@@ -17,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import pendulum
+import structlog
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
 
@@ -27,7 +27,7 @@ from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 from ichrisbirch.util import find_project_root
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
@@ -62,27 +62,27 @@ def job_logger(func: Callable) -> Callable:
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        logger.info(f'started: {func.__name__}')
+        logger.info('job_started', job_name=func.__name__)
         start = pendulum.now()
         try:
             func(*args, **kwargs)
             elapsed = (pendulum.now() - start).in_words()
-            logger.info(f'completed: {func.__name__} - {elapsed}')
+            logger.info('job_completed', job_name=func.__name__, elapsed=elapsed)
         except Exception as e:
             elapsed = (pendulum.now() - start).in_words()
-            logger.error(f'failed: {func.__name__} - {elapsed} - {type(e).__name__}: {e}')
+            logger.error('job_failed', job_name=func.__name__, elapsed=elapsed, error_type=type(e).__name__, error=str(e))
 
     return wrapper
 
 
 @job_logger
 def make_logs(settings: Settings) -> None:
-    logger.debug(f'time: {pendulum.now()}')
-    logger.info(f'cwd: {Path.cwd()}')
-    logger.info(f'project root: {find_project_root()}')
-    logger.debug(f"environment: '{settings.ENVIRONMENT}'")
-    logger.warning('this is a warning')
-    logger.error('PAUSE this job to stop the logs')
+    logger.debug('scheduler_test_log', time=str(pendulum.now()))
+    logger.info('scheduler_test_log', cwd=str(Path.cwd()))
+    logger.info('scheduler_test_log', project_root=str(find_project_root()))
+    logger.debug('scheduler_test_log', environment=settings.ENVIRONMENT)
+    logger.warning('scheduler_test_warning')
+    logger.error('scheduler_test_error_pause_job_to_stop')
 
 
 @job_logger
@@ -106,9 +106,14 @@ def check_and_run_autotasks(settings: Settings) -> None:
             if not autotask.should_run_today:
                 continue
             concurrent = tasks_count_by_name.get(autotask.name, 0)
-            logger.info(f'{autotask.name} concurrent tasks: {concurrent}')
+            logger.info('autotask_concurrent_count', autotask_name=autotask.name, concurrent=concurrent)
             if concurrent >= autotask.max_concurrent:
-                logger.info(f'skipping {autotask.name} with {concurrent} of max {autotask.max_concurrent}')
+                logger.info(
+                    'autotask_skipped_max_concurrent',
+                    autotask_name=autotask.name,
+                    concurrent=concurrent,
+                    max_concurrent=autotask.max_concurrent,
+                )
             else:
                 session.add(
                     models.Task(
@@ -134,7 +139,7 @@ def aws_postgres_snapshot_to_s3(settings: Settings) -> None:
 
 
 @job_logger
-def postgres_backup(settings: Settings, logger: logging.Logger) -> None:
+def postgres_backup(settings: Settings) -> None:
     pbr = PostgresBackupRestore(logger=logger)
     pbr.backup()
 
@@ -162,7 +167,7 @@ def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
         ),
         JobToAdd(
             func=postgres_backup,
-            args=(settings, logger),
+            args=(settings,),
             trigger=daily_130am_trigger,
             id='postgres_backup_daily',
         ),

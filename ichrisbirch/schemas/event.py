@@ -1,12 +1,12 @@
-import logging
 from datetime import datetime
 
 import pendulum
+import structlog
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_validator
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class EventConfig(BaseModel):
@@ -28,7 +28,7 @@ class EventCreate(EventConfig):
         """Require string or datetime Datetime from form comes in a string without timezone Pendulum will parse a string without a timezone,
         but will assign UTC Pendulum default includes timezone, datetime does not.
         """
-        logger.debug(f'date validator in: {v}, {type(v)}')
+        logger.debug('event_date_validator_in', value=str(v), value_type=type(v).__name__)
         if isinstance(v, datetime):
             dt = pendulum.instance(v)
         else:  # assume string, try to parse anything
@@ -38,7 +38,7 @@ class EventCreate(EventConfig):
         if dt.timezone_name != 'UTC':
             dt = dt.in_timezone('UTC')
 
-        logger.debug(f'date validator out: {dt}, {type(dt)}')
+        logger.debug('event_date_validator_out', value=str(dt), value_type=type(dt).__name__)
         return dt
 
 

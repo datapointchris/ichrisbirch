@@ -1,10 +1,10 @@
-import logging
+import structlog
 
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_internal_service_client
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class ChatAPIClient:
@@ -59,9 +59,9 @@ class ChatAPIClient:
                 'role': message.role,
                 'content': message.content[:20],
             }
-            logger.info(f'found new message: {msg_info}')
+            logger.info('found_new_chat_message', msg_info=msg_info)
             # NOTE: ChatMessageCreate DOES NOT WORK, it erases the chat_id
             json_model = dict(chat_id=message.chat_id or current_chat.id, role=message.role, content=message.content)
             if new_message := self.chat_messages_api.post(json=json_model):
-                logger.info(f'created new message: {new_message.content[:20]}')
+                logger.info('chat_message_created', content_preview=new_message.content[:20])
         return self.get_chat(current_chat.name)
