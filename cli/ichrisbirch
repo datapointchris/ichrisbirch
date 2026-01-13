@@ -64,6 +64,18 @@ function colored-logs() {
     -e 's/\[CRITICAL\]/'"${MAGENTA_CRITICAL}"'/g'
 }
 
+function parse-json-logs() {
+  # Parse JSON structlog output and format for console display
+  # Falls back to raw output if not valid JSON (e.g., non-JSON log lines)
+  jq -r '
+    # Extract timestamp, level, and event
+    "\(.timestamp // .asctime // "unknown") [\(.level // "INFO" | ascii_upcase)] \(.event // "unknown") " +
+    # Add all other fields as key=value pairs
+    (to_entries | map(select(.key | IN("timestamp", "asctime", "level", "event", "filename", "func_name", "lineno") | not)) |
+     map("\(.key)=\(.value)") | join(" "))
+  ' 2>/dev/null || cat
+}
+
 function colored-status() {
   local GREEN_RUNNING="${green}running${reset}"
   local RED_EXITED="${red}exited${reset}"
@@ -198,11 +210,36 @@ function dev-rebuild() {
 
 function dev-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Viewing ${blue}DEV${reset} Docker container logs..."
-  echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
-  # Show live Docker Compose logs with color formatting and clean service names
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50 | colored-logs
+  # Check for --json flag
+  local json_mode=false
+  local services=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--json" ]]; then
+      json_mode=true
+    else
+      services+=("$arg")
+    fi
+  done
+
+  echo "Viewing ${blue}DEV${reset} Docker container logs..."
+  if [[ "$json_mode" == true ]]; then
+    echo "Mode: ${cyan}JSON parsing${reset} (use without --json for console format)"
+  fi
+  echo ""
+
+  # Build docker compose command
+  local compose_cmd="docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50"
+  if [[ ${#services[@]} -gt 0 ]]; then
+    compose_cmd="$compose_cmd ${services[*]}"
+  fi
+
+  # Show live Docker Compose logs with appropriate formatting
+  if [[ "$json_mode" == true ]]; then
+    $compose_cmd | parse-json-logs | colored-logs
+  else
+    $compose_cmd | colored-logs
+  fi
 }
 
 function dev-status() {
@@ -456,11 +493,36 @@ function testing-rebuild() {
 
 function testing-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Viewing ${blue}TESTING${reset} Docker container logs..."
-  echo "Note: Application logs are in ${cyan}$LOG_DIR/{app,api,scheduler,chat}.log${reset}"
 
-  # Show live Docker Compose logs with color formatting and clean service names
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50 | colored-logs
+  # Check for --json flag
+  local json_mode=false
+  local services=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--json" ]]; then
+      json_mode=true
+    else
+      services+=("$arg")
+    fi
+  done
+
+  echo "Viewing ${blue}TESTING${reset} Docker container logs..."
+  if [[ "$json_mode" == true ]]; then
+    echo "Mode: ${cyan}JSON parsing${reset} (use without --json for console format)"
+  fi
+  echo ""
+
+  # Build docker compose command
+  local compose_cmd="docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50"
+  if [[ ${#services[@]} -gt 0 ]]; then
+    compose_cmd="$compose_cmd ${services[*]}"
+  fi
+
+  # Show live Docker Compose logs with appropriate formatting
+  if [[ "$json_mode" == true ]]; then
+    $compose_cmd | parse-json-logs | colored-logs
+  else
+    $compose_cmd | colored-logs
+  fi
 }
 
 function testing-app-logs() {
@@ -634,8 +696,35 @@ function prod-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
 
+  # Check for --json flag
+  local json_mode=false
+  local services=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--json" ]]; then
+      json_mode=true
+    else
+      services+=("$arg")
+    fi
+  done
+
   echo "Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50 | colored-logs
+  if [[ "$json_mode" == true ]]; then
+    echo "Mode: ${cyan}JSON parsing${reset} (use without --json for console format)"
+  fi
+  echo ""
+
+  # Build docker compose command
+  local compose_cmd="docker compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50"
+  if [[ ${#services[@]} -gt 0 ]]; then
+    compose_cmd="$compose_cmd ${services[*]}"
+  fi
+
+  # Show live Docker Compose logs with appropriate formatting
+  if [[ "$json_mode" == true ]]; then
+    $compose_cmd | parse-json-logs | colored-logs
+  else
+    $compose_cmd | colored-logs
+  fi
 }
 
 function prod-status() {
@@ -1376,7 +1465,9 @@ function usage() {
   echo "  ${blue}dev stop${reset}      - Stop all development services and remove containers"
   echo "  ${blue}dev restart${reset}   - Restart existing containers without rebuilding images (quick recovery from crashes)"
   echo "  ${blue}dev rebuild${reset}   - Stop services, rebuild Docker images, and restart (use after code/dependency changes)"
-  echo "  ${blue}dev logs${reset}      - View live Docker container logs"
+  echo "  ${blue}dev logs [--json] [service]${reset} - View live Docker container logs"
+  echo "    • ${yellow}--json${reset}: Parse JSON structlog output for human-readable display"
+  echo "    • ${yellow}service${reset}: Optional service name to filter (api, app, chat, scheduler)"
   echo "  ${blue}dev status${reset}    - Display container status and service URLs"
   echo "  ${blue}dev health${reset}    - Run comprehensive health checks for all services"
   echo
@@ -1385,7 +1476,8 @@ function usage() {
   echo "  ${blue}testing stop${reset}    - Stop test environment services"
   echo "  ${blue}testing restart${reset} - Restart test containers without rebuilding"
   echo "  ${blue}testing rebuild${reset} - Rebuild and restart test environment"
-  echo "  ${blue}testing logs${reset}    - View live test container logs (Docker Compose output)"
+  echo "  ${blue}testing logs [--json] [service]${reset} - View live test container logs"
+  echo "    • ${yellow}--json${reset}: Parse JSON structlog output for human-readable display"
   echo "  ${blue}testing status${reset}  - Display test container status and service URLs"
   echo "  ${blue}testing health${reset}  - Run comprehensive health checks for test services"
   echo "  ${blue}testing app-logs [lines] [--follow]${reset} - View consolidated application logs from testing.log"
@@ -1405,7 +1497,8 @@ function usage() {
   echo "  ${blue}prod stop${reset}      - Stop production services and remove containers"
   echo "  ${blue}prod restart${reset}   - Restart existing production containers without rebuilding"
   echo "  ${blue}prod rebuild${reset}   - Fetch SSM secrets, rebuild Docker images, and restart"
-  echo "  ${blue}prod logs${reset}      - View production Docker container logs"
+  echo "  ${blue}prod logs [--json] [service]${reset} - View production Docker container logs"
+  echo "    • ${yellow}--json${reset}: Parse JSON structlog output for human-readable display"
   echo "  ${blue}prod status${reset}    - Check production service status and URLs"
   echo "  ${blue}prod health${reset}    - Run comprehensive health checks for production services"
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
@@ -1467,6 +1560,10 @@ testing)
   health)
     testing-health
     ;;
+  logs)
+    shift 2
+    testing-logs "$@"
+    ;;
   *)
     # Default testing command pattern
     testing-"$2"
@@ -1478,6 +1575,10 @@ dev)
   health)
     dev-health
     ;;
+  logs)
+    shift 2
+    dev-logs "$@"
+    ;;
   *)
     dev-"$2"
     ;;
@@ -1487,6 +1588,10 @@ prod)
   case "$2" in
   health)
     prod-health
+    ;;
+  logs)
+    shift 2
+    prod-logs "$@"
     ;;
   *)
     prod-"$2"

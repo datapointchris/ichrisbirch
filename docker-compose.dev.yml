@@ -146,6 +146,8 @@ services:
       # Development-specific environment variables
       - ENVIRONMENT=development
       - FASTAPI_DEBUG=True
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
     ports:
       - "8000:8000"  # Keep direct port access for development debugging
     networks:
@@ -204,6 +206,8 @@ services:
     environment:
       - ENVIRONMENT=development
       - FLASK_DEBUG=True
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
     ports:
       - "5000:5000"  # Keep direct port access for development debugging
     networks:
@@ -256,6 +260,8 @@ services:
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
     environment:
       - ENVIRONMENT=development
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
     # Standard development port
     ports:
       - "8505:8505"  # Keep direct port access for development debugging
@@ -311,6 +317,8 @@ services:
     # command: /bin/sh -c "echo 'Scheduler disabled in development' && sleep infinity"
     environment:
       - ENVIRONMENT=development
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
     networks:
       - default
     restart: unless-stopped

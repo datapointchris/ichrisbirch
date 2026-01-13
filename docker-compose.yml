@@ -135,6 +135,8 @@ services:
     environment:
       - ENVIRONMENT=production
       - FASTAPI_DEBUG=False
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -179,6 +181,8 @@ services:
     environment:
       - ENVIRONMENT=production
       - FLASK_DEBUG=False
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -220,6 +224,8 @@ services:
     environment:
       - ENVIRONMENT=production
       - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -264,6 +270,8 @@ services:
     environment:
       - ENVIRONMENT=production
       - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     networks:
       - default
     depends_on:

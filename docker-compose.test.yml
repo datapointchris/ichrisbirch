@@ -146,6 +146,8 @@ services:
       - ENVIRONMENT=testing
       - FASTAPI_TESTING=True
       - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -219,6 +221,8 @@ services:
       - ENVIRONMENT=testing
       - FLASK_TESTING=True
       - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -280,6 +284,8 @@ services:
     environment:
       - ENVIRONMENT=testing
       - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -352,6 +358,8 @@ services:
     environment:
       - ENVIRONMENT=testing
       - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
