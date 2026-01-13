@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -12,7 +11,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -51,7 +50,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.CountdownUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: countdown {id} {update_data}')
+    logger.debug('countdown_update', countdown_id=id, update_data=update_data)
 
     if countdown := session.get(models.Countdown, id):
         for attr, value in update_data.items():

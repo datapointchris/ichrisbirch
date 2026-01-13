@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -12,7 +11,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -24,10 +23,10 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
     This requires the QueryAPI to use the `get_generic` method instead of the `get_many` method since this search
     returns more than one type of ModelType.
     """
-    logger.debug(f'searching for {q=}')
+    logger.debug('box_search', query=q)
     items = select(models.Box, models.BoxItem).join(models.Box).filter(models.BoxItem.name.ilike('%' + q + '%'))
     results = session.execute(items).all()
-    logger.debug(f'search found {len(results)} results')
+    logger.debug('box_search_results', count=len(results))
     return list(results)
 
 
@@ -61,7 +60,7 @@ async def delete_box(id: int, session: Session = Depends(get_sqlalchemy_session)
         # orphan items in box
         for item in box.items:
             item.box_id = None
-            logger.debug(f'{item.name} orphaned from box {id}: {box.name}')
+            logger.debug('box_item_orphaned', item_name=item.name, box_id=id, box_name=box.name)
         session.delete(box)
         session.commit()
         return {'message': 'Item deleted'}
@@ -71,7 +70,7 @@ async def delete_box(id: int, session: Session = Depends(get_sqlalchemy_session)
 @router.patch('/boxes/{id}/', response_model=schemas.Box, status_code=status.HTTP_200_OK)
 async def update_box(id: int, update: schemas.BoxUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: box {id} {update_data}')
+    logger.debug('box_update', box_id=id, update_data=update_data)
     if obj := session.get(models.Box, id):
         for attr, value in update_data.items():
             setattr(obj, attr, value)
@@ -97,7 +96,7 @@ def _update_box_details_based_on_contents(box: models.Box, session: Session):
         value = any(getattr(item, attr) for item in box.items)
         if value != getattr(box, attr):
             setattr(box, attr, value)
-            logger.debug(f'Box {box.id} {attr} changed from {value} to {getattr(box, attr)}')
+            logger.debug('box_attr_changed', box_id=box.id, attr=attr, new_value=getattr(box, attr))
     session.commit()
 
 
@@ -139,7 +138,7 @@ async def delete_item(id: int, session: Session = Depends(get_sqlalchemy_session
 @router.patch('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
 async def update_item(id: int, update: schemas.BoxItemUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: box item {id} {update_data}')
+    logger.debug('box_item_update', item_id=id, update_data=update_data)
     if obj := session.get(models.BoxItem, id):
         for attr, value in update_data.items():
             setattr(obj, attr, value)

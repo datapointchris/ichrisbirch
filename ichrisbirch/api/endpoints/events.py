@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -12,7 +11,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -24,12 +23,12 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
 async def create(event: schemas.EventCreate, session: Session = Depends(get_sqlalchemy_session)):
-    logger.debug(f'event date from app: {event.date}')
+    logger.debug('event_create', date_from_app=str(event.date))
     db_obj = models.Event(**event.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
-    logger.debug(f'event date from db: {db_obj.date}')
+    logger.debug('event_created', date_from_db=str(db_obj.date))
     return db_obj
 
 
@@ -53,7 +52,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.EventUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: event {id} {update_data}')
+    logger.debug('event_update', event_id=id, update_data=update_data)
 
     if event := session.get(models.Event, id):
         for attr, value in update_data.items():

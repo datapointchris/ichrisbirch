@@ -1,6 +1,6 @@
-import logging
 from copy import deepcopy
 
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Header
@@ -25,7 +25,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 

@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -12,7 +11,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -36,9 +35,8 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if countdown := session.get(models.MoneyWasted, id):
         return countdown
     else:
-        message = f'MoneyWasted {id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        logger.warning('money_wasted_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'MoneyWasted {id} not found')
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -48,6 +46,5 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
-        message = f'MoneyWasted {id} not found'
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        logger.warning('money_wasted_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'MoneyWasted {id} not found')
