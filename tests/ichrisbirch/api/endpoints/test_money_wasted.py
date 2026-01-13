@@ -1,8 +1,10 @@
 from datetime import date
 
 import pytest
+from fastapi import status
 
 from ichrisbirch import schemas
+from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
@@ -48,3 +50,19 @@ def test_delete(money_wasted_crud_tester):
 def test_lifecycle(money_wasted_crud_tester):
     client, crud_tester = money_wasted_crud_tester
     crud_tester.test_lifecycle(client)
+
+
+class TestMoneyWastedNotFound:
+    """Test 404 responses for non-existent money_wasted entries."""
+
+    def test_read_one_not_found(self, money_wasted_crud_tester):
+        """GET /{id}/ returns 404 for non-existent entry."""
+        client, _ = money_wasted_crud_tester
+        response = client.get(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_delete_not_found(self, money_wasted_crud_tester):
+        """DELETE /{id}/ returns 404 for non-existent entry."""
+        client, _ = money_wasted_crud_tester
+        response = client.delete(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
