@@ -54,15 +54,23 @@ class JobToAdd:
 
 
 def job_logger(func: Callable) -> Callable:
-    """Decorator to log job start and completion."""
+    """Decorator to log job start, completion, and failures.
+
+    Exceptions are logged but swallowed to prevent one failing job
+    from crashing the entire scheduler.
+    """
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         logger.info(f'started: {func.__name__}')
         start = pendulum.now()
-        func(*args, **kwargs)
-        elapsed = (pendulum.now() - start).in_words()
-        logger.info(f'completed: {func.__name__} - {elapsed}')
+        try:
+            func(*args, **kwargs)
+            elapsed = (pendulum.now() - start).in_words()
+            logger.info(f'completed: {func.__name__} - {elapsed}')
+        except Exception as e:
+            elapsed = (pendulum.now() - start).in_words()
+            logger.error(f'failed: {func.__name__} - {elapsed} - {type(e).__name__}: {e}')
 
     return wrapper
 

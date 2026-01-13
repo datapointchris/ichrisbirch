@@ -19,6 +19,7 @@ Usage:
 import logging
 
 import sqlalchemy
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
 
@@ -82,10 +83,13 @@ def insert_default_users(session: Session, settings) -> None:
             session.add(user)
             session.commit()
             logger.info(f'Created user: {user.name} ({user.email})')
-        except Exception as e:
-            logger.error(e)
-            logger.info(f'User {user.email} already exists (integrity error)')
+        except IntegrityError:
+            logger.info(f'User {user.email} already exists (integrity constraint)')
             session.rollback()
+        except Exception as e:
+            logger.error(f'Unexpected error creating user {user.email}: {type(e).__name__}: {e}')
+            session.rollback()
+            raise
 
 
 def full_initialization(settings, use_alembic: bool = False) -> None:

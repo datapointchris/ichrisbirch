@@ -1,9 +1,12 @@
 import http
 import logging
+from contextlib import suppress
 from functools import partial
 
 from flask import Flask
 from flask import render_template
+from flask import request
+from flask_login import current_user
 from flask_wtf.csrf import CSRFProtect
 
 from ichrisbirch.app import routes
@@ -20,9 +23,32 @@ request_logger = RequestLoggingMiddleware()
 error_codes = [400, 404, 405, 409, 422, 500, 502]
 
 
+def _get_user_id() -> str:
+    """Get current user ID for logging, handling unauthenticated users."""
+    with suppress(RuntimeError):
+        if current_user.is_authenticated:
+            return str(current_user.id)
+    return 'anonymous'
+
+
 def handle_errors(e, error_code):
+    """Handle HTTP errors with logging."""
+    user_id = _get_user_id()
+    description = getattr(e, 'description', str(e))
+    if error_code >= 500:
+        logger.error(f'HTTP {error_code}: {request.method} {request.path} user={user_id} error={description}')
+    else:
+        logger.warning(f'HTTP {error_code}: {request.method} {request.path} user={user_id} error={description}')
     error_title = f'{error_code} {http.HTTPStatus(error_code).phrase}'
-    return render_template('error.html', error_title=error_title, error_message=e.description), error_code
+    return render_template('error.html', error_title=error_title, error_message=description), error_code
+
+
+def handle_exception(e):
+    """Handle unhandled exceptions with logging."""
+    user_id = _get_user_id()
+    logger.error(f'Unhandled exception: {request.method} {request.path} user={user_id} error={type(e).__name__}: {e}')
+    error_title = '500 Internal Server Error'
+    return render_template('error.html', error_title=error_title, error_message='An unexpected error occurred'), 500
 
 
 @log_caller
@@ -56,6 +82,7 @@ def create_app(settings: Settings) -> Flask:
 
         for error_code in error_codes:
             app.register_error_handler(error_code, partial(handle_errors, error_code=error_code))
+        app.register_error_handler(Exception, handle_exception)
         logger.info('error handlers registered')
 
         @app.template_filter()

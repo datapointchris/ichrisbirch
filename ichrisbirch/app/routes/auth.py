@@ -52,10 +52,12 @@ def login():
                     login_user(user, remember=form.remember_me.data)
                     logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
                     try:
-                        # Update last login using the same client
                         users.patch([user.id], json={'last_login': pendulum.now().for_json()})
                         logger.debug(f'updated last login for user: {user.name}')
                     except Exception as e:
+                        # Silent failure: last_login update is non-critical
+                        # User cannot act on this, don't block login or show error
+                        # System log captures issue for debugging
                         logger.error(f'error updating last login for user {user.name}: {e}')
                     if next_page := session.get('next'):
                         logger.debug(f'next page stored in session: {next_page}')

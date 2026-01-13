@@ -141,6 +141,9 @@ class ChatApp:
         try:
             self.auth.logout_user(ss.user, ss.access_token)
         except Exception as e:
+            # Silent failure: logout API call is non-critical
+            # Local session cleanup still proceeds
+            # User gets logged out regardless of API success
             logger.error(f'error logging out user: {e}')
         self.cookies.remove('access_token')
         self.cookies.remove('refresh_token')

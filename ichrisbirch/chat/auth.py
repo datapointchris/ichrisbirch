@@ -22,18 +22,20 @@ class ChatAuthClient:
 
     @contextmanager
     def safe_request_client(self) -> Generator[httpx.Client, None, None]:
+        """Provide an HTTP client with automatic cleanup.
+
+        Exceptions are logged and propagated to callers.
+        Callers must handle exceptions appropriately.
+        """
         client = httpx.Client(follow_redirects=True)
         try:
             yield client
         except httpx.HTTPStatusError as e:
             logger.warning(f'HTTP error occurred: {e.response.status_code} - {e.response.text}')
-            return None
+            raise
         except httpx.RequestError as e:
             logger.error(f'Request error occurred: {e}')
-            return None
-        except Exception as e:
-            logger.error(f'An unexpected error occurred: {e}')
-            return None
+            raise
         finally:
             client.close()
 
@@ -71,10 +73,12 @@ class ChatAuthClient:
                 if user.check_password(password):
                     logger.debug(f'logged in user: {user.name} - last previous login: {user.last_login}')
                     try:
-                        # Update last login using the same client
                         users.patch([user.id], json={'last_login': pendulum.now().for_json()})
                         logger.debug(f'updated last login for user: {user.name}')
                     except Exception as e:
+                        # Silent failure: last_login update is non-critical
+                        # User cannot act on this, don't block login or show error
+                        # System log captures issue for debugging
                         logger.error(f'error updating last login for user {user.name}: {e}')
                     return user
                 else:

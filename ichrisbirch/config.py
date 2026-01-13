@@ -9,7 +9,6 @@ import boto3
 import dotenv
 
 from ichrisbirch.util import find_project_root
-from ichrisbirch.util import log_caller
 
 logger = logging.getLogger(__name__)
 
@@ -268,7 +267,7 @@ def _detect_environment() -> str:
     return 'development'
 
 
-@log_caller
+# @log_caller
 @functools.cache
 def get_settings():
     env = _detect_environment()
