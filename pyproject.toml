@@ -43,6 +43,7 @@ dependencies = [
   "streamlit-cookies-controller>=0.0.4",
   "streamlit>=1.41.1",
   "strenum>=0.4.15",
+  "structlog>=24.0.0",
   "uvicorn>=0.29.0",
   "youtube-transcript-api>=0.6.2",
   "typer>=0.16.0",
