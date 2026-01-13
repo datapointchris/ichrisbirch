@@ -12,12 +12,13 @@ Error Handling:
     - APIParseError: Raised when response cannot be parsed
 """
 
-import logging
+from contextlib import suppress
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
 
 import httpx
+import structlog
 from pydantic import BaseModel
 
 from ichrisbirch.app import utils
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from ichrisbirch.config import Settings
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class LoggingResourceClient[ModelType]:
@@ -121,6 +122,14 @@ class LoggingResourceClient[ModelType]:
         headers = self.credential_provider.get_credentials()
         if additional_headers := kwargs.pop('headers', None):
             headers.update(additional_headers)
+
+        # Propagate request ID for cross-service tracing
+        with suppress(ImportError):
+            from flask import g
+            from flask import has_request_context
+
+            if has_request_context() and hasattr(g, 'request_id'):
+                headers['X-Request-ID'] = g.request_id
 
         # Log request details
         self._log_request_details(method, url, headers, **kwargs)

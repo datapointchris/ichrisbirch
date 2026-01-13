@@ -1,7 +1,8 @@
-import logging
 import re
+import uuid
 
 import streamlit as st
+import structlog
 from openai import OpenAI
 from streamlit import session_state as ss
 from streamlit_cookies_controller import CookieController
@@ -13,7 +14,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 st.set_page_config(page_title='Chatter', page_icon='🤖', layout='wide')
 
 
@@ -217,6 +218,9 @@ class ChatApp:
 
             prompt = st.chat_input('How can I help?')
             if prompt:
+                structlog.contextvars.clear_contextvars()
+                structlog.contextvars.bind_contextvars(request_id=str(uuid.uuid4())[:8])
+
                 current_chat.messages.append(models.ChatMessage(chat_id=current_chat.id, role='user', content=prompt))
 
                 # set session name automatically after first question
@@ -240,6 +244,8 @@ class ChatApp:
                         message_placeholder.markdown(full_response + '|')
                     message_placeholder.markdown(full_response)
                 current_chat.messages.append(models.ChatMessage(chat_id=current_chat.id, role='assistant', content=full_response))
+
+                structlog.contextvars.clear_contextvars()
 
             if not ss.anon_chat and current_chat.name:  # Don't save anonymous chat sessions
                 # Save chat sessions after each interaction
