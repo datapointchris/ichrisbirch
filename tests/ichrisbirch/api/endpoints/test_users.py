@@ -590,3 +590,66 @@ def test_jwt_authentication_works(users_test_context, test_regular_user_2, jwt_h
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['id'] == test_regular_user_2.id
+
+
+def test_read_many_with_limit(users_test_context):
+    """Test limit parameter on GET /users/."""
+    client, _, _ = users_test_context
+    headers = make_internal_service_headers()
+
+    # Get all users first
+    all_users = client.get(ENDPOINT, headers=headers)
+    assert all_users.status_code == status.HTTP_200_OK
+    total = len(all_users.json())
+    assert total >= 2, 'Need at least 2 users for limit test'
+
+    # Test with limit=1
+    response = client.get(ENDPOINT, params={'limit': 1}, headers=headers)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert len(response.json()) == 1
+
+
+class TestUsersNotFound:
+    """Test 404 responses for non-existent users."""
+
+    def test_read_one_not_found(self, users_test_context):
+        """GET /{id}/ returns 404 for non-existent user."""
+        client, _, _ = users_test_context
+        headers = make_internal_service_headers()
+        response = client.get(f'{ENDPOINT}99999/', headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_delete_not_found(self, users_test_context, test_admin_user):
+        """DELETE /{id}/ returns 404 for non-existent user."""
+        client, _, _ = users_test_context
+        headers = make_app_headers_for_user(test_admin_user)
+        response = client.delete(f'{ENDPOINT}99999/', headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_update_not_found(self, users_test_context):
+        """PATCH /{id}/ returns 404 for non-existent user."""
+        client, _, _ = users_test_context
+        headers = make_internal_service_headers()
+        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'}, headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_read_by_alt_id_not_found(self, users_test_context):
+        """GET /alt/{alternative_id}/ returns 404 for non-existent user."""
+        client, _, _ = users_test_context
+        headers = make_internal_service_headers()
+        response = client.get(f'{ENDPOINT}alt/99999/', headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_read_by_email_not_found(self, users_test_context):
+        """GET /email/{email}/ returns 404 for non-existent user."""
+        client, _, _ = users_test_context
+        headers = make_internal_service_headers()
+        response = client.get(f'{ENDPOINT}email/nonexistent@test.com/', headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_update_preferences_not_found(self, users_test_context, test_admin_user):
+        """PATCH /{id}/preferences/ returns 404 for non-existent user."""
+        client, _, _ = users_test_context
+        headers = make_app_headers_for_user(test_admin_user)
+        response = client.patch(f'{ENDPOINT}99999/preferences/', json={'dark_mode': True}, headers=headers)
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
