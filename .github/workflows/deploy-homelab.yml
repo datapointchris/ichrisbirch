@@ -1,4 +1,4 @@
-name: Deploy Project
+name: Deploy to Homelab
 
 on:
   workflow_run:
@@ -16,7 +16,7 @@ jobs:
       - run: echo "Validations Passed"
 
   trigger-deploy-to-homelab:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     name: Trigger Deploy to Homelab
     runs-on: ubuntu-latest
     steps:
