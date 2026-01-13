@@ -85,3 +85,62 @@ def test_create_event_date_formats(txn_api_logged_in, event_date, output):
     event = client.get(f'{ENDPOINT}{response.json()["id"]}/')
     assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert event.json()['date'] == output
+
+
+def test_attend_event(event_crud_tester):
+    """Test marking an event as attending."""
+    client, crud_tester = event_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+
+    # Mark as attending
+    response = client.patch(f'{ENDPOINT}{first_id}/attend/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json()['attending'] is True
+
+    # Verify persistence
+    response = client.get(f'{ENDPOINT}{first_id}/')
+    assert response.json()['attending'] is True
+
+
+def test_partial_update(event_crud_tester):
+    """Test partial update with only some fields."""
+    client, crud_tester = event_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+
+    # Get original event
+    original = client.get(f'{ENDPOINT}{first_id}/').json()
+
+    # Update only venue
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'venue': 'Updated Venue'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    updated = response.json()
+    assert updated['venue'] == 'Updated Venue'
+    assert updated['name'] == original['name']  # Other fields unchanged
+
+
+class TestEventsNotFound:
+    """Test 404 responses for non-existent events."""
+
+    def test_read_one_not_found(self, event_crud_tester):
+        """GET /{id}/ returns 404 for non-existent event."""
+        client, _ = event_crud_tester
+        response = client.get(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_delete_not_found(self, event_crud_tester):
+        """DELETE /{id}/ returns 404 for non-existent event."""
+        client, _ = event_crud_tester
+        response = client.delete(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_update_not_found(self, event_crud_tester):
+        """PATCH /{id}/ returns 404 for non-existent event."""
+        client, _ = event_crud_tester
+        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_attend_not_found(self, event_crud_tester):
+        """PATCH /{id}/attend/ returns 404 for non-existent event."""
+        client, _ = event_crud_tester
+        response = client.patch(f'{ENDPOINT}99999/attend/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
