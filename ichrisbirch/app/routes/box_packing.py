@@ -145,7 +145,7 @@ def crud():
                 if box_number is not None and any(box.number == int(box_number) for box in boxes) and int(box_number) != current_box.number:
                     flash(f'Box {box_number} already exists', 'error')
                     return redirect(url_for('box_packing.edit', box_id=box_id))
-                update = dict(id=box_id, number=box_number, name=box_name, size=box_size)
+                update = dict(number=box_number, name=box_name, size=box_size)
                 if boxes_api.patch(box_id, json=update):
                     flash(f'Box {box_number}: {box_name} updated', 'success')
 
@@ -164,11 +164,11 @@ def crud():
                     flash(f'{item_name} deleted from Box {box_number}: {box_name}', 'success')
 
             case 'orphan_item':
-                if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': None}):
+                if boxitems_api.patch(item_id, json={'box_id': None}):
                     flash(f'{item_name} orphaned from Box {box_number}: {box_name}', 'success')
 
             case 'add_orphan_to_box':
-                if boxitems_api.patch(item_id, json={'id': item_id, 'box_id': box_id}):
+                if boxitems_api.patch(item_id, json={'box_id': box_id}):
                     flash(f'{item_name} added to Box {box_number}: {box_name}', 'success')
 
             case 'delete_orphan':
