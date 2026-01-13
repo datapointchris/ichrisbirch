@@ -1,7 +1,7 @@
 import datetime as dt
-import logging
 
 import pendulum
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -17,7 +17,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -115,7 +115,7 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.HabitUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: habit {id} {update_data}')
+    logger.debug('habit_update', habit_id=id, update_data=update_data)
 
     if habit := session.get(models.Habit, id):
         for attr, value in update_data.items():
@@ -167,10 +167,9 @@ async def delete_category(category_id: int, session: Session = Depends(get_sqlal
             session.commit()
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         except IntegrityError as e:
-            message = f"Habit category '{category.name}' cannot be deleted because it is in use"
-            logger.warning(message)
-            logger.warning(str(e).split('\n')[0])
-            return Response(message, status_code=status.HTTP_409_CONFLICT)
+            logger.warning('habit_category_in_use', category=category.name, error=str(e).split('\n')[0])
+            msg = f"Habit category '{category.name}' cannot be deleted because it is in use"
+            return Response(msg, status_code=status.HTTP_409_CONFLICT)
 
     raise NotFoundException('habit category', category_id, logger)
 

@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import Depends
 from fastapi import FastAPI
 from fastapi.exception_handlers import http_exception_handler
@@ -16,37 +15,35 @@ from ichrisbirch.api.middleware import ResponseLoggerMiddleware
 from ichrisbirch.config import Settings
 from ichrisbirch.util import log_caller
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 async def http_exception_handler_logger(request, exc):
-    logger.error(f'api error: {request.url.path} - {exc}')
+    logger.error('api_http_error', path=request.url.path, error=str(exc))
     return await http_exception_handler(request, exc)
 
 
 async def request_validation_exception_handler_logger(request, exc):
-    logger.error(f'api validation error: {request.url.path} - {exc}')
+    logger.error('api_validation_error', path=request.url.path, error=str(exc))
     return await request_validation_exception_handler(request, exc)
 
 
 async def api_exception_handler(request, exc):
-    logger.error(f'api unhandled error: {request.url.path} - {exc}')
+    logger.error('api_unhandled_error', path=request.url.path, error=str(exc), error_type=type(exc).__name__)
     return JSONResponse(status_code=500, content={'message': f'Internal server error: {type(exc).__name__}'})
 
 
 @log_caller
 def create_api(settings: Settings) -> FastAPI:
     api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
-    logger.info('initializing api')
-    logger.info(f'loaded settings: {type(settings)}')
-    logger.debug(f'api url: {settings.api_url}')
-    logger.debug(f'postgres port: {settings.postgres.port}')
-    logger.debug(f'postgres uri: {settings.postgres.db_uri}')
-    logger.debug(f'sqlalchemy port: {settings.sqlalchemy.port}')
-    logger.debug(f'sqlalchemy uri: {settings.sqlalchemy.db_uri}')
+    logger.info('api_initializing')
+    logger.info('settings_loaded', settings_type=type(settings).__name__)
+    logger.debug('api_config', api_url=settings.api_url)
+    logger.debug('postgres_config', port=settings.postgres.port, uri=settings.postgres.db_uri)
+    logger.debug('sqlalchemy_config', port=settings.sqlalchemy.port, uri=settings.sqlalchemy.db_uri)
 
     api.add_middleware(ResponseLoggerMiddleware)
-    logger.info('response logger middleware added')
+    logger.info('middleware_added', middleware='ResponseLoggerMiddleware')
 
     api.add_middleware(
         CORSMiddleware,
@@ -55,7 +52,7 @@ def create_api(settings: Settings) -> FastAPI:
         allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allow_headers=['Authorization', 'Content-Type', 'Accept', 'X-Application-ID', 'X-User-ID', 'X-Service-Key'],
     )
-    logger.info('cors middleware added')
+    logger.info('middleware_added', middleware='CORSMiddleware')
 
     deps = [Depends(get_current_user)]
 
@@ -79,12 +76,12 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
     api.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
     api.include_router(endpoints.users.router, prefix='/users')
-    logger.info('routers registered')
+    logger.info('routers_registered')
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
     api.add_exception_handler(RequestValidationError, request_validation_exception_handler_logger)
     api.add_exception_handler(Exception, api_exception_handler)
-    logger.info('exception handlers registered')
+    logger.info('exception_handlers_registered')
 
-    logger.info('initialized api successfully')
+    logger.info('api_initialized')
     return api

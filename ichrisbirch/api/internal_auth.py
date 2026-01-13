@@ -1,7 +1,6 @@
 """Internal service authentication for Flask-to-FastAPI communication."""
 
-import logging
-
+import structlog
 from fastapi import Depends
 from fastapi import Header
 from fastapi import HTTPException
@@ -10,7 +9,7 @@ from fastapi import status
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 def verify_internal_service(
@@ -24,14 +23,14 @@ def verify_internal_service(
 
     expected_key = settings.auth.internal_service_key
     if not expected_key:
-        logger.error('Internal service key not configured')
+        logger.error('internal_service_key_not_configured')
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Internal authentication not configured')
 
     if x_service_key != expected_key:
-        logger.warning(f'Invalid internal service key from {x_internal_service}')
+        logger.warning('internal_service_key_invalid', service=x_internal_service)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid service credentials')
 
-    logger.debug(f'Authenticated internal service: {x_internal_service}')
+    logger.debug('internal_service_authenticated', service=x_internal_service)
     return True
 
 

@@ -1,7 +1,7 @@
-import logging
 from typing import Annotated
 
 import jwt
+import structlog
 from fastapi import APIRouter
 from fastapi import Cookie
 from fastapi import Depends
@@ -22,7 +22,7 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -35,7 +35,7 @@ def validate_user_email(email: str, session: Session) -> models.User | None:
     """Validate and retrieve user by email address."""
     query = select(models.User).where(models.User.email == email)
     if not (user := session.execute(query).scalars().first()):
-        logger.warning(f'user with email {email} not found')
+        logger.warning('user_not_found_by_email', email=email)
     return user
 
 
@@ -43,14 +43,14 @@ def validate_user_id(user_id: str, session: Session) -> models.User | None:
     """Validate and retrieve user by alternative ID."""
     query = select(models.User).where(models.User.alternative_id == int(user_id))
     if not (user := session.execute(query).scalars().first()):
-        logger.warning(f'user with id {user_id} not found')
+        logger.warning('user_not_found_by_id', user_id=user_id)
     return user
 
 
 def validate_password(user: models.User, password: str) -> bool:
     """Validate user password."""
     if not user.check_password(password):
-        logger.warning(f'incorrect password for user: {user.email}')
+        logger.warning('password_incorrect', email=user.email)
         return False
     return True
 
@@ -85,10 +85,10 @@ def validate_jwt_token(token: str, settings: Settings) -> str | None:
         decoded_token = jwt.decode(jwt=token, key=settings.auth.jwt_secret_key, algorithms=[settings.auth.jwt_signing_algorithm])
         return decoded_token.get('sub')
     except jwt.ExpiredSignatureError:
-        logger.debug('JWT token expired')
+        logger.debug('jwt_token_expired')
         return None
     except jwt.InvalidTokenError as e:
-        logger.warning(f'JWT token validation error: {e}')
+        logger.warning('jwt_token_invalid', error=str(e))
         return None
 
 
@@ -123,10 +123,10 @@ def authenticate_with_application_headers(
     """
     if x_application_id and x_user_id and x_service_key:
         if x_service_key != settings.auth.internal_service_key:
-            logger.warning('invalid X-Service-Key in application headers')
+            logger.warning('app_headers_invalid_service_key')
             return None
         if x_application_id != settings.flask.app_id:
-            logger.warning(f'invalid X-Application-ID header: {x_application_id[:-8]}')
+            logger.warning('app_headers_invalid_app_id', app_id=x_application_id[:-8])
             return None
         return x_user_id
     return None
@@ -143,10 +143,10 @@ def authenticate_with_internal_service_headers(
     """
     if x_internal_service and x_service_key:
         if x_service_key == settings.auth.internal_service_key:
-            logger.debug(f'authenticated internal service: {x_internal_service}')
+            logger.debug('internal_service_authenticated', service=x_internal_service)
             return True
         else:
-            logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+            logger.warning('internal_service_key_invalid', service=x_internal_service)
     return False
 
 
@@ -189,11 +189,11 @@ def get_current_user(
     Returns the authenticated user or raises UnauthorizedException.
     """
     if app_headers:
-        logger.debug('using app headers for login')
+        logger.debug('auth_method_app_headers')
     if auth_jwt:
-        logger.debug('using jwt token for login')
+        logger.debug('auth_method_jwt')
     if auth_oauth2:
-        logger.debug('using oauth form for login')
+        logger.debug('auth_method_oauth2')
 
     if not (user_id := app_headers or auth_jwt or auth_oauth2):
         raise UnauthorizedException('Invalid credentials', logger)
@@ -201,7 +201,7 @@ def get_current_user(
     if not (user := validate_user_id(user_id, session)):
         raise UnauthorizedException('Invalid credentials', logger)
 
-    logger.debug(f'validated credentials for user: {user.email}')
+    logger.debug('credentials_validated', email=user.email)
     return user
 
 
@@ -247,19 +247,19 @@ def get_admin_or_internal_service_access(
     # First check if this is an internal service request
     if x_internal_service and x_service_key:
         if x_service_key == settings.auth.internal_service_key:
-            logger.debug(f'access granted for internal service: {x_internal_service}')
+            logger.debug('access_granted_internal_service', service=x_internal_service)
             return True
         else:
-            logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+            logger.warning('internal_service_key_invalid', service=x_internal_service)
 
     # If not internal service, try admin user authentication
     if current_user:
         try:
             admin_user = get_admin_user(current_user)
-            logger.debug(f'access granted for admin user: {admin_user.email}')
+            logger.debug('access_granted_admin_user', email=admin_user.email)
             return True
         except (UnauthorizedException, ForbiddenException) as exc:
-            logger.debug(f'admin user auth failed: {exc}')
+            logger.debug('admin_auth_failed', error=str(exc))
 
     # Neither internal service nor valid admin user
     raise UnauthorizedException('Admin or internal service access required', logger) from None
@@ -281,10 +281,10 @@ def require_user_or_internal_service(
 
     if x_internal_service and x_service_key:
         if x_service_key == settings.auth.internal_service_key:
-            logger.debug(f'access granted for internal service: {x_internal_service}')
+            logger.debug('access_granted_internal_service', service=x_internal_service)
             return None
         else:
-            logger.warning(f'invalid X-Service-Key for service: {x_internal_service}')
+            logger.warning('internal_service_key_invalid', service=x_internal_service)
 
     raise UnauthorizedException('User or internal service authentication required', logger) from None
 
@@ -327,8 +327,7 @@ async def validate_token(
 
     Returns 200 if valid, raises UnauthorizedException if invalid.
     """
-    logger.debug(f'token validation - header: {bool(jwt_token)}')
-    logger.debug(f'token validation - cookie: {bool(access_token)}')
+    logger.debug('token_validation', has_header=bool(jwt_token), has_cookie=bool(access_token))
     token = jwt_token or access_token
 
     if not token:
@@ -351,20 +350,19 @@ async def refresh_token(
 
     Validates the refresh token and creates a new access token.
     """
-    logger.debug(f'token refresh - header: {bool(jwt_token)}')
-    logger.debug(f'token refresh - cookie: {bool(refresh_token)}')
+    logger.debug('token_refresh', has_header=bool(jwt_token), has_cookie=bool(refresh_token))
     refresh_token = jwt_token or refresh_token
 
     if not (user_id := validate_jwt_token(refresh_token, settings)):
         raise UnauthorizedException('Invalid refresh token', logger)
 
-    logger.debug(f'refreshing token for user: {user_id}')
+    logger.debug('token_refresh_validating', user_id=user_id)
     if not token_handler.verify_refresh_token(user_id, refresh_token):
         raise UnauthorizedException('Invalid refresh token', logger)
 
-    logger.debug(f'refresh token validated for user: {user_id}')
+    logger.debug('token_refresh_validated', user_id=user_id)
     new_access_token = token_handler.create_access_token(user_id)
-    logger.debug(f'new access token created for user {user_id}: {new_access_token[-10:]}')
+    logger.debug('access_token_created', user_id=user_id)
 
     response = JSONResponse(status_code=status.HTTP_201_CREATED, content={'access_token': new_access_token})
     response.set_cookie(key='access_token', value=f'Bearer {new_access_token}', httponly=True)

@@ -1,5 +1,4 @@
 import functools
-import logging
 import os
 import sys
 from datetime import timedelta
@@ -7,10 +6,11 @@ from pathlib import Path
 
 import boto3
 import dotenv
+import structlog
 
 from ichrisbirch.util import find_project_root
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class AISettings:
@@ -274,10 +274,10 @@ def get_settings():
     os.environ['ENVIRONMENT'] = env
 
     if dotenv.load_dotenv():
-        logger.info(f'{env} environment variables loaded from .env file')
+        logger.info('config_loaded_from_dotenv', environment=env)
     else:
-        logger.info(f'No .env file found, loading {env} configuration from SSM parameters')
+        logger.info('config_loading_from_ssm', environment=env)
         _set_environment_variables(env)
-        logger.info('Environment variables set from SSM parameters')
+        logger.info('config_loaded_from_ssm')
 
     return Settings()

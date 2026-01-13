@@ -1,9 +1,9 @@
 import hashlib
-import logging
 from datetime import timedelta
 
 import jwt
 import pendulum
+import structlog
 from sqlalchemy import delete
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch.config import Settings
 from ichrisbirch.models import JWTRefreshToken
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 def _hash_token(token: str) -> str:
@@ -47,11 +47,11 @@ class JWTTokenHandler:
         return token
 
     def create_access_token(self, user_id: str):
-        logger.debug(f'creating access token for user: {user_id}')
+        logger.debug('access_token_creating', user_id=user_id)
         return self._generate_jwt(user_id, expires_delta=self.access_token_expire_delta)
 
     def create_refresh_token(self, user_id: str):
-        logger.debug(f'creating refresh token for user: {user_id}')
+        logger.debug('refresh_token_creating', user_id=user_id)
         return self._generate_jwt(user_id, expires_delta=self.refresh_token_expire_delta)
 
     def store_refresh_token(self, user_id: str, refresh_token: str):
@@ -61,11 +61,11 @@ class JWTTokenHandler:
         if existing_token := self.session.scalar(stmt):
             existing_token.refresh_token = token_hash
             existing_token.date_stored = pendulum.now()
-            logger.debug(f'updating refresh token for user: {user_id}')
+            logger.debug('refresh_token_updated', user_id=user_id)
         else:
             token = JWTRefreshToken(user_id=user_id, refresh_token=token_hash, date_stored=pendulum.now())
             self.session.add(token)
-            logger.debug(f'storing refresh token for user: {user_id}')
+            logger.debug('refresh_token_stored', user_id=user_id)
         self.session.commit()
 
     def verify_refresh_token(self, user_id: str, refresh_token: str) -> bool:
@@ -74,14 +74,14 @@ class JWTTokenHandler:
         if stored := self.session.scalar(stmt):
             token_hash = _hash_token(refresh_token)
             if stored.refresh_token == token_hash:
-                logger.debug(f'refresh token verified for user: {user_id}')
+                logger.debug('refresh_token_verified', user_id=user_id)
                 return True
-            logger.warning(f'refresh token mismatch for user: {user_id}')
+            logger.warning('refresh_token_mismatch', user_id=user_id)
             return False
-        logger.debug(f'no refresh token found for user: {user_id}')
+        logger.debug('refresh_token_not_found', user_id=user_id)
         return False
 
     def delete_refresh_token(self, user_id: str):
         self.session.execute(delete(JWTRefreshToken).where(JWTRefreshToken.user_id == user_id))
         self.session.commit()
-        logger.debug(f'deleted refresh token for user: {user_id}')
+        logger.debug('refresh_token_deleted', user_id=user_id)

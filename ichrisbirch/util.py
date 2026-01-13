@@ -3,7 +3,9 @@ import inspect
 import logging
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger()
 
 
 def find_project_root(
@@ -36,7 +38,7 @@ def log_caller(func):
         caller_name = caller_frame.f_code.co_name
         caller_file = caller_frame.f_code.co_filename
         truncated_file = '/'.join(caller_file.split('/')[5:])
-        logger.info(f"function '{func.__name__}' was called by '{caller_name}' in {truncated_file}")
+        logger.info('function_called', function=func.__name__, caller=caller_name, file=truncated_file)
         return func(*args, **kwargs)
 
     return log_calling_function

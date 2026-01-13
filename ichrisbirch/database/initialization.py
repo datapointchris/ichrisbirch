@@ -16,9 +16,8 @@ Usage:
         insert_default_users(session, settings)
 """
 
-import logging
-
 import sqlalchemy
+import structlog
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
@@ -28,7 +27,7 @@ from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 def create_schemas(session: Session, settings) -> None:
@@ -39,9 +38,9 @@ def create_schemas(session: Session, settings) -> None:
     for schema_name in settings.postgres.db_schemas:
         if schema_name not in existing_schemas:
             session.execute(CreateSchema(schema_name))
-            logger.info(f'Created schema: {schema_name}')
+            logger.info('schema_created', schema_name=schema_name)
         else:
-            logger.info(f'Schema {schema_name} already exists')
+            logger.info('schema_exists', schema_name=schema_name)
 
     session.commit()
 
@@ -49,14 +48,13 @@ def create_schemas(session: Session, settings) -> None:
 def create_tables(settings, use_alembic: bool = False) -> None:
     """Create database tables."""
     if use_alembic:
-        logger.info('Table creation should be handled by Alembic migrations')
-        logger.info('Run: alembic upgrade head')
+        logger.info('tables_use_alembic', message='Run: alembic upgrade head')
         return
 
-    logger.info('Creating tables using Base.metadata.create_all()')
+    logger.info('tables_creating')
     engine = get_db_engine(settings)
     Base.metadata.create_all(engine)
-    logger.info('Successfully created all tables')
+    logger.info('tables_created')
 
 
 def insert_default_users(session: Session, settings) -> None:
@@ -77,31 +75,31 @@ def insert_default_users(session: Session, settings) -> None:
         try:
             existing_user = session.query(User).filter(User.email == user.email).first()
             if existing_user:
-                logger.info(f'User {user.email} already exists')
+                logger.info('user_exists', email=user.email)
                 continue
 
             session.add(user)
             session.commit()
-            logger.info(f'Created user: {user.name} ({user.email})')
+            logger.info('user_created', name=user.name, email=user.email)
         except IntegrityError:
-            logger.info(f'User {user.email} already exists (integrity constraint)')
+            logger.info('user_exists_integrity', email=user.email)
             session.rollback()
         except Exception as e:
-            logger.error(f'Unexpected error creating user {user.email}: {type(e).__name__}: {e}')
+            logger.error('user_creation_failed', email=user.email, error_type=type(e).__name__, error=str(e))
             session.rollback()
             raise
 
 
 def full_initialization(settings, use_alembic: bool = False) -> None:
     """Perform complete database initialization."""
-    logger.info(f'Starting database initialization for environment: {settings.ENVIRONMENT}')
+    logger.info('db_init_starting', environment=settings.ENVIRONMENT)
 
     with create_session(settings) as session:
         create_schemas(session, settings)
         create_tables(settings, use_alembic=use_alembic)
         insert_default_users(session, settings)
 
-    logger.info('Database initialization completed successfully!')
+    logger.info('db_init_completed')
 
 
 def main():
@@ -131,40 +129,43 @@ def main():
 
     if args.env:
         os.environ['ENVIRONMENT'] = args.env
-        logger.info(f'Environment set to: {args.env}')
+        logger.info('environment_set', environment=args.env)
 
     # Override database connection settings if provided - BEFORE importing settings
     if args.db_host:
         os.environ['POSTGRES_HOST'] = args.db_host
-        logger.info(f'Database host overridden to: {args.db_host}')
+        logger.info('db_host_override', host=args.db_host)
     if args.db_port:
         os.environ['POSTGRES_PORT'] = args.db_port
-        logger.info(f'Database port overridden to: {args.db_port}')
+        logger.info('db_port_override', port=args.db_port)
     if args.db_user:
         os.environ['POSTGRES_USERNAME'] = args.db_user
-        logger.info(f'Database user overridden to: {args.db_user}')
+        logger.info('db_user_override', user=args.db_user)
     if args.db_password:
         os.environ['POSTGRES_PASSWORD'] = args.db_password
-        logger.info('Database password overridden')
+        logger.info('db_password_override')
     if args.db_name:
         os.environ['POSTGRES_DB'] = args.db_name
-        logger.info(f'Database name overridden to: {args.db_name}')
+        logger.info('db_name_override', name=args.db_name)
 
     try:
         # Create fresh settings after environment variable overrides
         from ichrisbirch.config import get_settings
 
         settings = get_settings()
-        logger.info(f'Loaded settings for environment: {getattr(settings, "ENVIRONMENT", "unknown")}')
+        logger.info('settings_loaded', environment=getattr(settings, 'ENVIRONMENT', 'unknown'))
         logger.info(
-            f'Database connection: {settings.postgres.username}@{settings.postgres.host}:'
-            f'{settings.postgres.port}/{settings.postgres.database}'
+            'db_connection',
+            user=settings.postgres.username,
+            host=settings.postgres.host,
+            port=settings.postgres.port,
+            database=settings.postgres.database,
         )
 
         full_initialization(settings, use_alembic=args.use_alembic)
 
     except Exception as e:
-        logger.error(f'Database initialization failed: {e}')
+        logger.error('db_init_failed', error=str(e), error_type=type(e).__name__)
         raise
 
 

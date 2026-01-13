@@ -1,7 +1,7 @@
-import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -15,7 +15,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.database.session import get_sqlalchemy_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter()
 
 
@@ -77,14 +77,14 @@ async def completed(
 
 @router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
-    logger.debug(f'searching for {q=}')
+    logger.debug('task_search', query=q)
     tasks = (
         select(models.Task)
         .filter(models.Task.name.ilike('%' + q + '%') | models.Task.notes.ilike('%' + q + '%'))
         .order_by(models.Task.complete_date.desc(), models.Task.add_date.asc())
     )
     results = session.scalars(tasks).all()
-    logger.debug(f'search found {len(results)} results')
+    logger.debug('task_search_results', count=len(results))
     return results
 
 
@@ -104,18 +104,16 @@ async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
     tasks = session.scalars(query).all()
     min_val = min(task.priority for task in tasks)
     if min_val >= 0:
-        message = 'No negative priorities to reset'
-        logger.info(message)
-        return {'message': message}
+        logger.info('task_priorities_no_reset')
+        return {'message': 'No negative priorities to reset'}
 
     for task in tasks:
         task.priority += abs(min_val)
         session.add(task)
     session.commit()
-    message = f'Reset priorities for {len(tasks)} tasks'
-    logger.info(message)
+    logger.info('task_priorities_reset', count=len(tasks))
 
-    return {'message': message}
+    return {'message': f'Reset priorities for {len(tasks)} tasks'}
 
 
 @router.get('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
@@ -138,7 +136,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 @router.patch('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def update(id: int, update: schemas.TaskUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug(f'update: task {id} {update_data}')
+    logger.debug('task_update', task_id=id, update_data=update_data)
 
     if task := session.get(models.Task, id):
         for attr, value in update_data.items():

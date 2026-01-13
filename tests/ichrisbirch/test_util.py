@@ -61,7 +61,7 @@ class TestGetLoggerFilename:
 
 class TestLogCaller:
     def test_log_caller_decorator(self):
-        with patch('logging.Logger.info') as mock_log:
+        with patch('ichrisbirch.util.logger') as mock_logger:
 
             @log_caller
             def test_function():
@@ -69,6 +69,7 @@ class TestLogCaller:
 
             result = test_function()
             assert result == 'test result'
-            mock_log.assert_called_once()
-            log_message = mock_log.call_args[0][0]
-            assert "function 'test_function' was called by" in log_message
+            mock_logger.info.assert_called_once()
+            call_kwargs = mock_logger.info.call_args[1]
+            assert call_kwargs['function'] == 'test_function'
+            assert call_kwargs['caller'] == 'test_log_caller_decorator'
