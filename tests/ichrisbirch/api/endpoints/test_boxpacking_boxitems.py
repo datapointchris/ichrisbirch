@@ -1,6 +1,8 @@
 import pytest
+from fastapi import status
 
 from ichrisbirch import schemas
+from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
@@ -100,3 +102,76 @@ def test_lifecycle(boxitem_test_data):
     first_box_id = boxes.json()[0]['id']
     crud_tester = create_crud_tester(first_box_id)
     crud_tester.test_lifecycle(client)
+
+
+def test_read_many_items_with_limit(boxitem_test_data):
+    """Test limit parameter on GET /items/."""
+    client = boxitem_test_data
+    # Get all items first
+    all_items = client.get(ENDPOINT)
+    assert all_items.status_code == status.HTTP_200_OK
+    total = len(all_items.json())
+    assert total >= 2, 'Need at least 2 items for limit test'
+
+    # Test with limit=1
+    response = client.get(ENDPOINT, params={'limit': 1})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert len(response.json()) == 1
+
+
+def test_read_orphan_items(boxitem_test_data):
+    """Test GET /items/orphans/ returns items without a box."""
+    client = boxitem_test_data
+    # Get an item and remove it from its box
+    items = client.get(ENDPOINT).json()
+    first_item = items[0]
+    item_id = first_item['id']
+
+    # Update item to have no box (orphan it) - BoxItemUpdate requires id in body
+    response = client.patch(f'{ENDPOINT}{item_id}/', json={'id': item_id, 'box_id': None})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+    # Check orphans endpoint
+    orphans = client.get(f'{ENDPOINT}orphans/')
+    assert orphans.status_code == status.HTTP_200_OK, show_status_and_response(orphans)
+    orphan_ids = [o['id'] for o in orphans.json()]
+    assert item_id in orphan_ids
+
+
+def test_partial_update_item(boxitem_test_data):
+    """Test partial update preserves other fields."""
+    client = boxitem_test_data
+    items = client.get(ENDPOINT).json()
+    first_item = items[0]
+    item_id = first_item['id']
+
+    original = client.get(f'{ENDPOINT}{item_id}/').json()
+    # BoxItemUpdate requires id in body
+    response = client.patch(f'{ENDPOINT}{item_id}/', json={'id': item_id, 'name': 'Updated Item Name'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    updated = response.json()
+    assert updated['name'] == 'Updated Item Name'
+    assert updated['essential'] == original['essential']
+
+
+class TestBoxItemsNotFound:
+    """Test 404 responses for non-existent box items."""
+
+    def test_read_one_not_found(self, boxitem_test_data):
+        """GET /items/{id}/ returns 404 for non-existent item."""
+        client = boxitem_test_data
+        response = client.get(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_delete_not_found(self, boxitem_test_data):
+        """DELETE /items/{id}/ returns 404 for non-existent item."""
+        client = boxitem_test_data
+        response = client.delete(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_update_not_found(self, boxitem_test_data):
+        """PATCH /items/{id}/ returns 404 for non-existent item."""
+        client = boxitem_test_data
+        # BoxItemUpdate requires id in body
+        response = client.patch(f'{ENDPOINT}99999/', json={'id': 99999, 'name': 'Does Not Exist'})
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

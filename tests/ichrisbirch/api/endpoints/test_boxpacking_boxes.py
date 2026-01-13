@@ -101,3 +101,55 @@ def test_create_box_options_combinations(txn_api_logged_in, essential, warm, liq
     response = client.post(ENDPOINT, json=test_box.model_dump())
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
     assert dict(response.json())['name'] == test_box.name
+
+
+def test_read_many_boxes_with_limit(box_crud_tester):
+    """Test limit parameter on GET /boxes/."""
+    client, _ = box_crud_tester
+    # Get all boxes first
+    all_boxes = client.get(ENDPOINT)
+    assert all_boxes.status_code == status.HTTP_200_OK
+    total = len(all_boxes.json())
+    assert total >= 2, 'Need at least 2 boxes for limit test'
+
+    # Test with limit=1
+    response = client.get(ENDPOINT, params={'limit': 1})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert len(response.json()) == 1
+
+
+def test_partial_update_box(box_crud_tester):
+    """Test partial update preserves other fields."""
+    client, crud_tester = box_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+
+    original = client.get(f'{ENDPOINT}{first_id}/').json()
+    # BoxUpdate schema requires id in body
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'id': first_id, 'name': 'Updated Box Name'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    updated = response.json()
+    assert updated['name'] == 'Updated Box Name'
+    assert updated['number'] == original['number']
+
+
+class TestBoxesNotFound:
+    """Test 404 responses for non-existent boxes."""
+
+    def test_read_one_not_found(self, box_crud_tester):
+        """GET /boxes/{id}/ returns 404 for non-existent box."""
+        client, _ = box_crud_tester
+        response = client.get(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_delete_not_found(self, box_crud_tester):
+        """DELETE /boxes/{id}/ returns 404 for non-existent box."""
+        client, _ = box_crud_tester
+        response = client.delete(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_update_not_found(self, box_crud_tester):
+        """PATCH /boxes/{id}/ returns 404 for non-existent box."""
+        client, _ = box_crud_tester
+        # BoxUpdate schema requires id in body
+        response = client.patch(f'{ENDPOINT}99999/', json={'id': 99999, 'name': 'Does Not Exist'})
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
