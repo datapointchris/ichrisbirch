@@ -1,11 +1,10 @@
-import logging
-
+import structlog
 from flask import Blueprint
 from flask import current_app
 from flask import render_template
 from flask_login import login_required
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 blueprint = Blueprint('chat', __name__, template_folder='templates/chat', static_folder='static')
 

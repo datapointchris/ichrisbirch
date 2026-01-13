@@ -1,6 +1,5 @@
-import logging
-
 import httpx
+import structlog
 from flask import Blueprint
 from flask import current_app
 from flask import redirect
@@ -12,7 +11,7 @@ from flask_login import login_required
 from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.apartment import Feature
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('apartments', __name__, template_folder='templates/apartments', static_folder='static')
 
 

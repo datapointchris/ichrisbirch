@@ -1,9 +1,9 @@
-import logging
 from collections import Counter
 from datetime import datetime
 from datetime import timedelta
 
 import pendulum
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -21,7 +21,7 @@ from ichrisbirch.app import forms
 from ichrisbirch.app.easy_dates import EasyDateTime
 from ichrisbirch.models.task import TaskCategory
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
 
 
@@ -134,7 +134,7 @@ def completed():
         edt = EasyDateTime(tz=TZ)
         selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
         start_date, end_date = edt.filters.get(selected_filter, (None, None))
-        logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
+        logger.debug('date_filter_applied', filter=selected_filter, start_date=str(start_date), end_date=str(end_date))
 
         if start_date is None or end_date is None:
             params = {}
@@ -168,7 +168,7 @@ def search():
     else:
         data = request.form.to_dict()
         search_terms = data.get('terms')
-        logger.debug(f'{request.referrer=}, {search_terms=}')
+        logger.debug('task_search', referrer=request.referrer, search_terms=search_terms)
 
         if not search_terms:
             flash('No search terms provided', 'warning')

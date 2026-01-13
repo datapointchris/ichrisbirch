@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -11,7 +10,7 @@ from flask_login import login_required
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('money_wasted', __name__, template_folder='templates/money_wasted', static_folder='static')
 
 

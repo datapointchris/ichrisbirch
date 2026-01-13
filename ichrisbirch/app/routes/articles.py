@@ -1,8 +1,8 @@
-import logging
 import random
 
 import httpx
 import pendulum
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -20,7 +20,7 @@ from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
 from ichrisbirch.config import Settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 blueprint = Blueprint('articles', __name__, template_folder='templates/articles', static_folder='static')
 
@@ -43,19 +43,19 @@ def make_random_article_current(articles_api, unread=True, favorites=False):
 def process_bulk_urls(request, data):
     urls = []
     if 'text' in data:
-        logger.info('found text data')
+        logger.info('bulk_urls_text_data_found')
         urls.extend(line.strip() for line in data['text'].splitlines())
     if 'file' in request.files:
         file = request.files['file']
         if file.filename != '':
-            logger.info('found file data')
+            logger.info('bulk_urls_file_data_found', filename=file.filename)
             urls.extend(line.decode('utf-8').strip() for line in file)
     return urls
 
 
 def add_bulk_article(articles_api, summarize_api, url: str, settings: Settings):
     """Add article using summarize endpoint to auto generate summary and tags for the bulk endpoint."""
-    logger.info(f'processing: {url}')
+    logger.info('bulk_article_processing', url=url)
     try:
         if articles_api.get_one('url', params={'url': url}):
             raise ValueError(f'already exists: {url}')
@@ -72,7 +72,7 @@ def add_bulk_article(articles_api, summarize_api, url: str, settings: Settings):
         save_date=str(pendulum.now()),
     )
     articles_api.post(json=article)
-    logger.info(f'created: {url}')
+    logger.info('bulk_article_created', url=url)
 
 
 def bulk_add_articles(articles_api, summarize_api, urls: list[str], settings: Settings):
@@ -87,11 +87,10 @@ def bulk_add_articles(articles_api, summarize_api, urls: list[str], settings: Se
             add_bulk_article(articles_api, summarize_api, url, settings)
             added.append(url)
         except ValueError as e:
-            logger.warning(e)
+            logger.warning('bulk_article_value_error', url=url, error=str(e))
             errors.append((url, str(e)))
         except Exception as e:
-            logger.warning(f'error processing: {url}')
-            logger.warning(e)
+            logger.warning('bulk_article_error', url=url, error=str(e))
             errors.append((url, str(e)))
     return added, errors
 
@@ -102,15 +101,15 @@ def index():
     with logging_flask_session_client(base_url=settings.api_url) as client:
         articles_api = client.resource('articles', schemas.Article)
         if not (article := articles_api.get_one('current')):
-            logger.warning('no current article')
+            logger.warning('no_current_article')
             # TODO: [2024/06/07] - Get user preference for current articles, whether to filter only unread
             # or include favorites
             # unread_only = current_user.preferences.articles.get('only_unread_for_new_current')
             # include_favorites = current_user.preferences.articles.get('include_favorites_for_new_current')
             if article := make_random_article_current(articles_api):
-                logger.info(f"made article '{article.title}' current")
+                logger.info('article_made_current', title=article.title)
             else:
-                logger.info('no articles')
+                logger.info('no_articles_available')
         return render_template('articles/index.html', article=article)
 
 
@@ -185,7 +184,7 @@ def search():
             articles_api = client.resource('articles', schemas.Article)
             data = request.form.to_dict()
             search_text = data.get('search_text')
-            logger.debug(f'{request.referrer=} | {search_text=}')
+            logger.debug('article_search', referrer=request.referrer, search_text=search_text)
             if not search_text:
                 flash('No search terms provided', 'warning')
             else:
@@ -214,9 +213,8 @@ def crud():
                         else:
                             raise
                     if existing:
-                        message = f'already exists: {data["url"]}'
-                        flash(message, 'warning')
-                        logger.warning(message)
+                        flash(f'already exists: {data["url"]}', 'warning')
+                        logger.warning('article_already_exists', url=data['url'])
                     else:
                         # convert string field of tags to list for storing in postgres array
                         data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]

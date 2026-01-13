@@ -1,6 +1,6 @@
-import logging
 from typing import Any
 
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -18,7 +18,7 @@ from ichrisbirch.models.box import BoxSize
 
 BOX_SIZES = [s.value for s in BoxSize]
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_packing', static_folder='static')
 
 
@@ -37,13 +37,12 @@ def index(box_id):
         boxes = boxes_api.get_many()
         selected_box = None
         if box_id:
-            logger.debug(f'{box_id=}')
+            logger.debug('box_id_requested', box_id=box_id)
             if selected_box := next((box for box in boxes if str(box.id) == box_id), None):
-                logger.debug(f'{selected_box.name=}')
+                logger.debug('box_selected', box_name=selected_box.name)
             else:
-                msg = f'Box {box_id} not found'
-                flash(msg, 'error')
-                logger.warning(msg.lower())
+                flash(f'Box {box_id} not found', 'error')
+                logger.warning('box_not_found', box_id=box_id)
         return render_template('box_packing/index.html', selected_box=selected_box, boxes=boxes, box_sizes=BOX_SIZES)
 
 
@@ -63,7 +62,7 @@ def all():
         boxes_api = client.resource('box-packing/boxes', schemas.Box)
         sort_1 = request.form.get('sort_1')
         sort_2 = request.form.get('sort_2')
-        logger.debug(f'{sort_1=} {sort_2=}')
+        logger.debug('box_sort_params', sort_1=sort_1, sort_2=sort_2)
 
         boxes = boxes_api.get_many()
         if sort_1:
@@ -81,7 +80,7 @@ def orphans():
         boxes_api = client.resource('box-packing/boxes', schemas.Box)
         boxitem_orphans_api = client.resource('box-packing/items/orphans', schemas.BoxItem)
         sort = request.form.get('sort', 'name')
-        logger.debug(f'{sort=}')
+        logger.debug('orphans_sort_param', sort=sort)
 
         orphans = boxitem_orphans_api.get_many()
         orphans = sorted(orphans, key=lambda boxitem: getattr(boxitem, sort))
@@ -99,7 +98,7 @@ def search():
             box_search_api = client.resource('box-packing/search', schemas.Box)
             data: dict[str, Any] = request.form.to_dict()
             if search_text := data.get('search_text'):
-                logger.debug(f'{request.referrer=} | {search_text=}')
+                logger.debug('box_search', referrer=request.referrer, search_text=search_text)
                 if rows := box_search_api.get_generic(params={'q': search_text}):
                     results = [(schemas.Box(**row[0]), schemas.BoxItem(**row[1])) for row in rows]
             else:
@@ -115,7 +114,7 @@ def crud():
         boxitems_api = client.resource('box-packing/items', schemas.BoxItem)
         data: dict = request.form.to_dict()
         action = data.pop('action')
-        logger.debug(f'{request.referrer=} {action=}')
+        logger.debug('box_crud', referrer=request.referrer, action=action)
 
         # some of these will be None for different actions, which is okay
         box_id = data.get('box_id')

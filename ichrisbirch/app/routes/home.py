@@ -1,9 +1,9 @@
 import json
-import logging
 import re
 
 import httpx
 import pendulum
+import structlog
 from flask import Blueprint
 from flask import current_app
 from flask import flash
@@ -13,7 +13,7 @@ from flask import request
 from flask import url_for
 from flask_login import login_required
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('home', __name__, template_folder='templates', static_folder='static')
 
 
@@ -43,8 +43,8 @@ def issue():
 
     issue = request.form.to_dict()
     labels = [k for k, v in issue.items() if v == 'on']
-    logger.debug(f'Issue submitted from page: {request.referrer}')
-    logger.debug(f'Issue details: {issue}')
+    logger.debug('issue_submitted', referrer=request.referrer)
+    logger.debug('issue_details', issue=issue)
     body_template = f"""
         {issue['description']}
 
@@ -69,11 +69,10 @@ def issue():
         response.raise_for_status()
         flash('Issue submitted successfully', 'success')
     except httpx.HTTPError as e:
-        error_message = f'Request Error: {e}'
-        logger.error(error_message)
-        flash(error_message, 'error')
+        logger.error('github_issue_request_error', error=str(e))
+        flash(f'Request Error: {e}', 'error')
         if response:
-            logger.error(response.text)
+            logger.error('github_issue_response_error', response_text=response.text)
             if settings.ENVIRONMENT == 'development':
                 flash(response.text, 'error')
 

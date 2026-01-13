@@ -1,4 +1,3 @@
-import logging
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
@@ -6,6 +5,7 @@ from datetime import datetime
 import boto3
 import pendulum
 import polars as pl
+import structlog
 from apscheduler.job import Job
 from fastapi import status
 from flask import Blueprint
@@ -19,7 +19,7 @@ from ichrisbirch.app.login import admin_login_required
 from ichrisbirch.scheduler.main import get_jobstore
 from ichrisbirch.util import get_logger_filename_from_handlername
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
 
 
@@ -113,13 +113,11 @@ def scheduler():
                     jobstore.remove_job(job_id)
                     flash(f'Job: {job_id} deleted', 'success')
                 case _:
-                    message = f"{status.HTTP_405_METHOD_NOT_ALLOWED}: Method/Action '{action}' not allowed"
-                    flash(message, 'error')
-                    logger.error(message)
+                    flash(f"{status.HTTP_405_METHOD_NOT_ALLOWED}: Method/Action '{action}' not allowed", 'error')
+                    logger.error('scheduler_action_not_allowed', action=action)
         else:
-            message = f'Job: {job_id} not found'
-            flash(message, 'error')
-            logger.error(message)
+            flash(f'Job: {job_id} not found', 'error')
+            logger.error('scheduler_job_not_found', job_id=job_id)
 
     jobs = jobstore.get_all_jobs()
     time_until_next_runs = calculate_time_until_next_runs(jobs)
@@ -189,8 +187,8 @@ def log_file_to_polars_df(filename: str, debug=False) -> pl.DataFrame:
     df = pl.DataFrame(log_lines)
     converted = _cast_columns(df, schema)
     num_logs = len(log_lines)
-    logger.info(f'processed {num_logs} logs from {filename}')
-    logger.info(f'total errors while processing: {num_errors}/{num_logs} - {round(num_errors / num_logs, 4)}%')
+    logger.info('log_file_processed', filename=filename, num_logs=num_logs)
+    logger.info('log_processing_errors', num_errors=num_errors, num_logs=num_logs, error_rate=round(num_errors / num_logs, 4))
     if debug:
         print()
         for error in errors:
@@ -228,9 +226,8 @@ def log_graphs():
     if log_filename := get_logger_filename_from_handlername(handler):
         log_df = log_file_to_polars_df(log_filename)
     else:
-        msg = f'log file: {log_filename} not found for handler: {handler}'
-        flash(msg, 'error')
-        logger.error(msg)
+        flash(f'log file: {log_filename} not found for handler: {handler}', 'error')
+        logger.error('log_file_not_found', filename=log_filename, handler=handler)
 
     log_count_by_level = create_log_chart(
         title='Log Count by Level',

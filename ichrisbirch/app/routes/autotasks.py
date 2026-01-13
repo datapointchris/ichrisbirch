@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -16,7 +15,7 @@ from ichrisbirch.models.task import TaskCategory
 AUTOTASK_FREQUENCIES = [t.value for t in AutoTaskFrequency]
 TASK_CATEGORIES = [t.value for t in TaskCategory]
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotasks', static_folder='static')
 
 

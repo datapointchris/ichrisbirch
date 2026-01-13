@@ -1,10 +1,10 @@
-import logging
 from collections import Counter
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
 
 import pendulum
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -19,7 +19,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app.easy_dates import EasyDateTime
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 blueprint = Blueprint('habits', __name__, template_folder='templates/habits', static_folder='static')
 
@@ -97,7 +97,7 @@ def completed():
         edt = EasyDateTime(tz=TZ)
         selected_filter = request.form.get('filter', '') if request.method.upper() == 'POST' else DEFAULT_DATE_FILTER
         start_date, end_date = edt.filters.get(selected_filter, (None, None))
-        logger.debug(f'date filter: {selected_filter} = {start_date} - {end_date}')
+        logger.debug('date_filter_applied', filter=selected_filter, start_date=str(start_date), end_date=str(end_date))
 
         if start_date is None or end_date is None:
             params = {}
@@ -160,8 +160,8 @@ def crud():
         habits_categories_api = client.resource('habits/categories', schemas.HabitCategory)
         data: dict[str, Any] = request.form.to_dict()
         action = data.pop('action')
-        logger.debug(f'{request.referrer=} {action=}')
-        logger.debug(f'{data=}')
+        logger.debug('habit_crud', referrer=request.referrer, action=action)
+        logger.debug('habit_crud_data', data=data)
 
         match action:
             case 'add_habit':

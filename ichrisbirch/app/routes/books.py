@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from fastapi import status
 from flask import Blueprint
 from flask import Response
@@ -16,7 +15,7 @@ from ichrisbirch.api.client.exceptions import APIHTTPError
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 blueprint = Blueprint('books', __name__, template_folder='templates/books', static_folder='static')
 
@@ -67,22 +66,19 @@ def crud():
                         else:
                             raise
                     if existing:
-                        message = f'already exists: {data["isbn"]}'
-                        flash(message, 'warning')
-                        logger.warning(message)
+                        flash(f'already exists: {data["isbn"]}', 'warning')
+                        logger.warning('book_already_exists', isbn=data['isbn'])
                     else:
                         # convert string field of tags to list for storing in postgres array
                         data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
                         books_api.post(json=data)
                         flash(f'Added: {data["title"]}', 'success')
                 else:
-                    message = 'Form validation failed'
-                    flash(message, 'error')
-                    logger.warning(message)
+                    flash('Form validation failed', 'error')
+                    logger.warning('book_form_validation_failed', errors=form.errors)
                     for field, errors in form.errors.items():
                         for error in errors:
                             flash(f'{field}: {error}', 'error')
-                            logger.warning(f'{field}: {error}')
             case 'delete':
                 books_api.delete(data.get('id'))
 

@@ -1,5 +1,4 @@
-import logging
-
+import structlog
 from flask import Blueprint
 from flask import current_app
 from flask import redirect
@@ -12,7 +11,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 blueprint = Blueprint('journal', __name__, template_folder='templates/journal', static_folder='static')
 
 
