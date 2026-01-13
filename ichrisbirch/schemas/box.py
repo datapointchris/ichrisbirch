@@ -34,7 +34,6 @@ class Box(BoxConfig):
 
 
 class BoxUpdate(BoxConfig):
-    id: int
     name: str | None = None
     number: int | None = None
     size: BoxSize | None = None

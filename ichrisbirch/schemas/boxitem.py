@@ -37,7 +37,6 @@ class BoxItem(BoxItemConfig):
 class BoxItemUpdate(BoxItemConfig):
     """Pydantic model for updating a box item."""
 
-    id: int
     box_id: int | None = None
     name: str | None = None
     essential: bool | None = None

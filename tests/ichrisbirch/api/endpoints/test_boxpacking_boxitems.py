@@ -127,8 +127,8 @@ def test_read_orphan_items(boxitem_test_data):
     first_item = items[0]
     item_id = first_item['id']
 
-    # Update item to have no box (orphan it) - BoxItemUpdate requires id in body
-    response = client.patch(f'{ENDPOINT}{item_id}/', json={'id': item_id, 'box_id': None})
+    # Update item to have no box (orphan it)
+    response = client.patch(f'{ENDPOINT}{item_id}/', json={'box_id': None})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     # Check orphans endpoint
@@ -146,8 +146,7 @@ def test_partial_update_item(boxitem_test_data):
     item_id = first_item['id']
 
     original = client.get(f'{ENDPOINT}{item_id}/').json()
-    # BoxItemUpdate requires id in body
-    response = client.patch(f'{ENDPOINT}{item_id}/', json={'id': item_id, 'name': 'Updated Item Name'})
+    response = client.patch(f'{ENDPOINT}{item_id}/', json={'name': 'Updated Item Name'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     updated = response.json()
     assert updated['name'] == 'Updated Item Name'
@@ -172,6 +171,5 @@ class TestBoxItemsNotFound:
     def test_update_not_found(self, boxitem_test_data):
         """PATCH /items/{id}/ returns 404 for non-existent item."""
         client = boxitem_test_data
-        # BoxItemUpdate requires id in body
-        response = client.patch(f'{ENDPOINT}99999/', json={'id': 99999, 'name': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

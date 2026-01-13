@@ -124,8 +124,7 @@ def test_partial_update_box(box_crud_tester):
     first_id = crud_tester.item_id_by_position(client, position=1)
 
     original = client.get(f'{ENDPOINT}{first_id}/').json()
-    # BoxUpdate schema requires id in body
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'id': first_id, 'name': 'Updated Box Name'})
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated Box Name'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     updated = response.json()
     assert updated['name'] == 'Updated Box Name'
@@ -150,6 +149,5 @@ class TestBoxesNotFound:
     def test_update_not_found(self, box_crud_tester):
         """PATCH /boxes/{id}/ returns 404 for non-existent box."""
         client, _ = box_crud_tester
-        # BoxUpdate schema requires id in body
-        response = client.patch(f'{ENDPOINT}99999/', json={'id': 99999, 'name': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
