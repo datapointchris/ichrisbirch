@@ -16,6 +16,7 @@ jobs:
       - run: echo "Validations Passed"
 
   trigger-deploy-to-homelab:
+    needs: check-validations
     if: github.ref == 'refs/heads/main'
     name: Trigger Deploy to Homelab
     runs-on: ubuntu-latest
