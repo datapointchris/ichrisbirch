@@ -50,7 +50,7 @@ class ChatAuthClient:
         headers = {'Authorization': f'Bearer {token}'}
         with self.safe_request_client() as client:
             sc = client.get(validate_url, headers=headers).raise_for_status().status_code
-            logger.warning('jwt_validation_status', status_code=sc)
+            logger.debug('jwt_validation_status', status_code=sc)
             return sc == 200
 
     def refresh_access_token(self, token: str):
@@ -71,7 +71,7 @@ class ChatAuthClient:
             if user_data := users.get_generic(['email', username]):
                 user = models.User(**user_data)
                 if user.check_password(password):
-                    logger.debug('user_login_success', user_name=user.name, last_login=str(user.last_login))
+                    logger.info('user_login_success', user_name=user.name, last_login=str(user.last_login))
                     try:
                         users.patch([user.id], json={'last_login': pendulum.now().for_json()})
                         logger.debug('user_last_login_updated', user_name=user.name)
@@ -93,7 +93,7 @@ class ChatAuthClient:
         with self.safe_request_client() as client:
             user_data = client.get(user_login_url, headers=headers).raise_for_status().json()
             if user := models.User(**user_data):
-                logger.debug('user_token_login_success', email=user.email, last_login=str(user.last_login))
+                logger.info('user_token_login_success', email=user.email, last_login=str(user.last_login))
                 client.patch(url_builder(self.users_url, user.id), json={'last_login': pendulum.now().for_json()})
                 return user
             else:

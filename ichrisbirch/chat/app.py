@@ -38,37 +38,37 @@ class ChatApp:
     STYLESHEET = find_project_root() / 'ichrisbirch' / 'chat' / 'styles.css'
 
     def _initialize_session(self):
-        logger.info('initializing chat app session')
+        logger.info('chat_session_initializing')
 
         if 'logged_in' not in ss:
             ss.logged_in = False
         else:
-            logger.debug(f'logged_in: {ss.logged_in}')
+            logger.debug('session_state_logged_in', value=ss.logged_in)
 
         if 'user' not in ss:
             ss.user = None
         else:
-            logger.debug(f'user: {ss.user}')
+            logger.debug('session_state_user', value=str(ss.user))
 
         if 'access_token' not in ss or ss.access_token is None:
             ss.access_token = None
         else:
-            logger.debug(f'access_token: {ss.access_token[-10:]}')
+            logger.debug('session_state_access_token', token_suffix=ss.access_token[-10:])
 
         if 'refresh_token' not in ss or ss.refresh_token is None:
             ss.refresh_token = None
         else:
-            logger.debug(f'refresh_token: {ss.refresh_token[-10:]}')
+            logger.debug('session_state_refresh_token', token_suffix=ss.refresh_token[-10:])
 
         if 'current_chat_index' not in ss:
             ss.current_chat_index = None
         else:
-            logger.debug(f'current_chat_index: {ss.current_chat_index}')
+            logger.debug('session_state_chat_index', value=ss.current_chat_index)
 
         if 'anon_chat' not in ss:
             ss.anon_chat = False
         else:
-            logger.debug(f'anon_chat: {ss.anon_chat}')
+            logger.debug('session_state_anon_chat', value=ss.anon_chat)
 
     def display_login_form(self):
         with st.form('LoginForm', clear_on_submit=True):
@@ -79,20 +79,20 @@ class ChatApp:
     def login_flow(self):
         if user := self.auth.login_username(ss.get('username', ''), ss.get('password', '')):
             if tokens := self.auth.request_jwt_tokens(user, ss['password']):
-                logger.info(f'jwt tokens received for user: {user.email}')
+                logger.info('jwt_tokens_received', email=user.email)
                 ss.access_token = tokens.get('access_token')
                 ss.refresh_token = tokens.get('refresh_token')
                 self.cookies.set('access_token', ss.access_token)
                 self.cookies.set('refresh_token', ss.refresh_token)
                 ss.logged_in = True
                 ss.user = user
-                logger.debug(f'session user: {ss.user.email}')
+                logger.debug('session_user_set', email=ss.user.email)
             else:
-                logger.error('failed to obtain jwt tokens')
+                logger.error('jwt_tokens_failed')
                 st.error('Failed to obtain JWT tokens')
         else:
             st.error('Login Error')
-            logger.warning(f'error trying to log in user: {ss["username"]}')
+            logger.warning('login_error', username=ss.get('username', ''))
         ss.pop('password', None)
 
     def user_must_be_logged_in(self):
@@ -102,23 +102,22 @@ class ChatApp:
             return True
 
         if access_token := self.cookies.get('access_token'):
-            logger.info('found access token in cookie')
+            logger.debug('access_token_found_in_cookie')
         if refresh_token := self.cookies.get('refresh_token'):
-            logger.info('found refresh token in cookie')
+            logger.debug('refresh_token_found_in_cookie')
 
         if access_token and self.auth.validate_jwt_token(access_token):
-            logger.info(f'access token is: {access_token[-10:]}')
-            logger.info('validated access token')
+            logger.debug('access_token_validated', token_suffix=access_token[-10:])
             ss.access_token = access_token
             if user := self.auth.login_token(access_token):
                 ss.user = user
                 ss.logged_in = True
                 return True
-            logger.info('failed to log in user with access token')
+            logger.warning('access_token_login_failed')
 
         if refresh_token:
             if new_access_token := self.auth.refresh_access_token(refresh_token):
-                logger.info('refreshed access token')
+                logger.debug('access_token_refreshed')
                 self.cookies.set('access_token', new_access_token)
                 ss.access_token = new_access_token
                 if user := self.auth.login_token(new_access_token):
@@ -126,9 +125,9 @@ class ChatApp:
                     ss.logged_in = True
                     return True
                 else:
-                    logger.info('failed to log in user with refreshed access token')
+                    logger.warning('refreshed_token_login_failed')
             else:
-                logger.info('failed to refresh access token')
+                logger.warning('access_token_refresh_failed')
             ss.access_token = None
             ss.refresh_token = None
             self.cookies.remove('access_token')
@@ -138,14 +137,14 @@ class ChatApp:
         return ss.logged_in
 
     def logout_user(self):
-        logger.debug(f'logging out user: {ss.user.email}')
+        logger.debug('user_logging_out', email=ss.user.email)
         try:
             self.auth.logout_user(ss.user, ss.access_token)
         except Exception as e:
             # Silent failure: logout API call is non-critical
             # Local session cleanup still proceeds
             # User gets logged out regardless of API success
-            logger.error(f'error logging out user: {e}')
+            logger.error('logout_api_error', error=str(e))
         self.cookies.remove('access_token')
         self.cookies.remove('refresh_token')
         ss.logged_in = False
@@ -153,7 +152,7 @@ class ChatApp:
         ss.access_token = None
         ss.refresh_token = None
         ss.current_chat_index = None
-        logger.info('user logged out')
+        logger.info('user_logged_out')
 
     def generate_chat_session_name(self, prompt):
         attempts = 0
@@ -173,12 +172,12 @@ class ChatApp:
                 max_completion_tokens=10,
             )
             if name := response.choices[0].message.content:
-                logger.info(f'generated name for chat session: {name}')
+                logger.info('chat_session_name_generated', name=name)
                 # Remove any characters not allowed in a URL path segment
                 safe_name = re.sub(r'[^A-Za-z0-9\-_.~]', '', name.strip())
                 return safe_name
             else:
-                logger.warning('failed to generate a summary for the chat session')
+                logger.warning('chat_session_name_generation_failed')
             attempts += 1
         return f'Chat Session - {prompt[:20]}...'
 
@@ -251,16 +250,16 @@ class ChatApp:
                 # Save chat sessions after each interaction
                 # but only after the first prompt and response to generate a name from
                 if existing_chat := self.api.get_chat(current_chat.name):
-                    logger.info(f'found chat session: {current_chat.name}')
+                    logger.debug('chat_session_found', name=current_chat.name)
                     updated_chat = self.api.update_chat(existing_chat, current_chat)
                 else:
-                    logger.info(f'chat session not found: {current_chat.name}, creating...')
+                    logger.debug('chat_session_creating', name=current_chat.name)
                     if updated_chat := self.api.create_new_chat(current_chat):
-                        logger.info(f'created new chat session: {current_chat.name}')
+                        logger.info('chat_session_created', name=current_chat.name)
                         ss.chats[ss.current_chat_index] = updated_chat
 
     def run(self):
-        logger.info('running app')
+        logger.info('chat_app_running')
         if not self.user_must_be_logged_in():
             st.stop()
 
@@ -269,7 +268,7 @@ class ChatApp:
             ss.current_chat_index = None
 
         with self.STYLESHEET.open() as f:
-            logger.debug(f'Loading custom stylesheet: {self.STYLESHEET.resolve()}')
+            logger.debug('stylesheet_loading', path=str(self.STYLESHEET.resolve()))
             styles = f.read()
 
         st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
@@ -278,7 +277,7 @@ class ChatApp:
         self.display_chat()
 
 
-logger.info('creating chat app')
+logger.info('chat_app_creating')
 _settings = get_settings()
 app = ChatApp(
     settings=_settings,
@@ -287,5 +286,5 @@ app = ChatApp(
     cookie_controller=CookieController(),
     ai_client=OpenAI(api_key=_settings.ai.openai.api_key),
 )
-logger.info('chat app created')
+logger.info('chat_app_created')
 app.run()

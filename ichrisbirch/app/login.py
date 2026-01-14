@@ -1,3 +1,4 @@
+from contextlib import suppress
 from functools import wraps
 
 import structlog
@@ -16,16 +17,10 @@ logger = structlog.get_logger()
 
 def get_users_api():
     """Get users API client using modern internal service authentication."""
-    try:
+    with suppress(RuntimeError):
         if current_app and 'SETTINGS' in current_app.config:
-            logger.warning('using_flask_current_app_for_api_url')
-            # Use Flask app's test-compatible settings
             api_url = current_app.config['SETTINGS'].api_url
             return logging_internal_service_client(base_url=api_url)
-    except RuntimeError:
-        # Outside Flask context - use global settings
-        logger.warning('flask_current_app_unavailable')
-        pass
     return logging_internal_service_client()
 
 

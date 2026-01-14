@@ -27,13 +27,19 @@ class ResponseLoggerMiddleware(BaseHTTPMiddleware):
             structlog.contextvars.clear_contextvars()
             return response
 
-        logger.debug(
-            'request_completed',
-            method=request.method,
-            path=request.url.path,
-            status=response.status_code,
-            duration_ms=process_time,
-        )
+        log_data = {
+            'method': request.method,
+            'path': request.url.path,
+            'status': response.status_code,
+            'duration_ms': process_time,
+        }
+
+        if response.status_code >= 500:
+            logger.error('request_completed', **log_data)
+        elif response.status_code >= 400:
+            logger.warning('request_completed', **log_data)
+        else:
+            logger.info('request_completed', **log_data)
 
         structlog.contextvars.clear_contextvars()
         return response

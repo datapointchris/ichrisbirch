@@ -61,7 +61,7 @@ async def run(id: int, session: Session = Depends(get_sqlalchemy_session)):
         autotask.run_count += 1
         session.commit()
         session.refresh(autotask)
-        logger.debug('autotask_ran', autotask_id=id, task_id=task.id)
+        logger.info('autotask_ran', autotask_id=id, task_id=task.id)
         return autotask
     else:
         logger.warning('autotask_not_found', id=id)

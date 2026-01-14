@@ -93,21 +93,21 @@ class LoggingResourceClient[ModelType]:
     def _log_request_details(self, method: str, url: str, headers: dict[str, str], **kwargs):
         """Log comprehensive request details matching QueryAPI patterns."""
         headers_to_log = self._get_headers_for_logging(headers)
-        kwargs_to_log = self._prepare_kwargs_for_logging(kwargs)
 
-        # Log environment and database info like QueryAPI
-        logger.debug(f'running in environment: {self._settings.ENVIRONMENT} ({self._settings.sqlalchemy.port})')
-
-        # Log authentication method
         auth_method = 'internal_service' if headers.get('X-Internal-Service') else 'user_auth'
-        logger.debug(f'auth method: {auth_method}')
-
-        # Log user info if available
         user_info = 'internal_service' if auth_method == 'internal_service' else 'user_session'
-        logger.debug(f'current user in app: {user_info}')
 
-        # Log request details
-        logger.debug(f'{method} {url} headers={headers_to_log}{", " + kwargs_to_log if kwargs_to_log else ""}')
+        logger.debug(
+            'api_request_outgoing',
+            environment=self._settings.ENVIRONMENT,
+            db_port=self._settings.sqlalchemy.port,
+            auth_method=auth_method,
+            current_user=user_info,
+            method=method,
+            url=url,
+            headers=headers_to_log,
+            **({k: v for k, v in kwargs.items() if k in ('json', 'data', 'params')} if kwargs else {}),
+        )
 
     def _handle_request(self, method: str, path: Any = None, **kwargs) -> httpx.Response:
         """Make HTTP request with extensive logging. Raises exceptions on error.
@@ -138,18 +138,18 @@ class LoggingResourceClient[ModelType]:
             response = self.session.request(method, url, headers=headers, follow_redirects=True, **kwargs)
             response.raise_for_status()
 
-            logger.debug(f'Response status: {response.status_code}')
+            logger.debug('api_response_received', status=response.status_code)
             return response
 
         except httpx.HTTPStatusError as e:
-            logger.error(f'HTTP {e.response.status_code} error: {e.response.text}')
+            logger.error('api_http_error', status=e.response.status_code, response_text=e.response.text)
             raise APIHTTPError(
                 f'API returned HTTP {e.response.status_code}',
                 status_code=e.response.status_code,
                 response_text=e.response.text,
             ) from e
         except httpx.RequestError as e:
-            logger.error(f'Request error: {e}')
+            logger.error('api_connection_error', error=str(e))
             raise APIConnectionError(f'Failed to connect to API: {e}') from e
 
     # Core CRUD methods matching QueryAPI interface
@@ -171,7 +171,7 @@ class LoggingResourceClient[ModelType]:
             data = response.json()
             return self.model_class(**data)
         except Exception as e:
-            logger.error(f'Failed to parse response as {self.model_class.__name__}: {e}')
+            logger.error('api_parse_error', model=self.model_class.__name__, error=str(e))
             raise APIParseError(f'Failed to parse response as {self.model_class.__name__}: {e}') from e
 
     def get_many(self, path: Any = None, **kwargs) -> list[ModelType]:
@@ -193,12 +193,12 @@ class LoggingResourceClient[ModelType]:
             if isinstance(data, list):
                 return [self.model_class(**item) for item in data]
             else:
-                logger.warning(f'Expected list response, got {type(data)}')
+                logger.warning('api_unexpected_response_type', expected='list', got=type(data).__name__)
                 raise APIParseError(f'Expected list response, got {type(data).__name__}')
         except APIParseError:
             raise
         except Exception as e:
-            logger.error(f'Failed to parse response as list of {self.model_class.__name__}: {e}')
+            logger.error('api_parse_error_list', model=self.model_class.__name__, error=str(e))
             raise APIParseError(f'Failed to parse response as list of {self.model_class.__name__}: {e}') from e
 
     def get_generic(self, path: Any = None, **kwargs) -> Any | None:
@@ -218,7 +218,7 @@ class LoggingResourceClient[ModelType]:
         try:
             return response.json()
         except Exception as e:
-            logger.error(f'Failed to parse generic response: {e}')
+            logger.error('api_parse_error_generic', error=str(e))
             raise APIParseError(f'Failed to parse response as JSON: {e}') from e
 
     def post(self, path: Any = None, **kwargs) -> ModelType | None:
@@ -239,7 +239,7 @@ class LoggingResourceClient[ModelType]:
             data = response.json()
             return self.model_class(**data)
         except Exception as e:
-            logger.error(f'Failed to parse POST response as {self.model_class.__name__}: {e}')
+            logger.error('api_parse_error_post', model=self.model_class.__name__, error=str(e))
             raise APIParseError(f'Failed to parse POST response as {self.model_class.__name__}: {e}') from e
 
     def post_action(self, path: Any = None, **kwargs) -> httpx.Response:
@@ -269,7 +269,7 @@ class LoggingResourceClient[ModelType]:
             data = response.json()
             return self.model_class(**data)
         except Exception as e:
-            logger.error(f'Failed to parse PATCH response as {self.model_class.__name__}: {e}')
+            logger.error('api_parse_error_patch', model=self.model_class.__name__, error=str(e))
             raise APIParseError(f'Failed to parse PATCH response as {self.model_class.__name__}: {e}') from e
 
     def delete(self, path: Any = None, **kwargs) -> httpx.Response:
@@ -315,12 +315,11 @@ class LoggingAPIClient:
         self.base_url = base_url or self._settings.api_url
         self.session = httpx.Client(timeout=30.0)
 
-        logger.debug(f'Created LoggingAPIClient with base_url: {self.base_url}')
-        logger.debug(f'Authentication provider: {type(credential_provider).__name__}')
+        logger.debug('api_client_created', base_url=self.base_url, auth_provider=type(credential_provider).__name__)
 
     def resource(self, endpoint: str, model_class: type[ModelType]) -> LoggingResourceClient[ModelType]:
         """Get a resource client for the specified endpoint and model."""
-        logger.debug(f'Creating resource client for endpoint: {endpoint}, model: {model_class.__name__}')
+        logger.debug('api_resource_client_created', endpoint=endpoint, model=model_class.__name__)
         return LoggingResourceClient(
             endpoint=endpoint,
             model_class=model_class,

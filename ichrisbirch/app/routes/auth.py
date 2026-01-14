@@ -49,7 +49,7 @@ def login():
                 user = models.User(**user_data)
                 if user and user.check_password(password=form.password.data):
                     login_user(user, remember=form.remember_me.data)
-                    logger.debug('user_login_success', name=user.name, last_login=str(user.last_login))
+                    logger.info('user_login_success', name=user.name, last_login=str(user.last_login))
                     try:
                         users.patch([user.id], json={'last_login': pendulum.now().for_json()})
                         logger.debug('user_last_login_updated', name=user.name)
