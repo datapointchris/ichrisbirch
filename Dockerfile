@@ -5,13 +5,18 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS base
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
 # Install system dependencies needed for all environments
+# PostgreSQL 16 client from official repo (Debian 12 only has v15)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     libpq5 \
-    postgresql-client \
     curl \
     ca-certificates \
+    gnupg \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -72,11 +77,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM python:3.13-slim-bookworm AS production
 
 # Install only runtime system dependencies
+# PostgreSQL 16 client from official repo (Debian 12 only has v15)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libpq5 \
-    postgresql-client \
     curl \
+    gnupg \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-16 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
