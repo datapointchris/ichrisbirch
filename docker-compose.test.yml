@@ -145,9 +145,9 @@ services:
     environment:
       - ENVIRONMENT=testing
       - FASTAPI_TESTING=True
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -165,9 +165,6 @@ services:
         source: ~/.aws
         target: /root/.aws
         read_only: true
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -220,9 +217,9 @@ services:
     environment:
       - ENVIRONMENT=testing
       - FLASK_TESTING=True
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -240,9 +237,6 @@ services:
         source: ~/.aws
         target: /root/.aws
         read_only: true
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -283,9 +277,9 @@ services:
       --server.headless=true
     environment:
       - ENVIRONMENT=testing
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -303,9 +297,6 @@ services:
         source: ~/.aws
         target: /root/.aws
         read_only: true
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -357,9 +348,9 @@ services:
     command: uv run python -m ichrisbirch.wsgi_scheduler
     environment:
       - ENVIRONMENT=testing
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -377,9 +368,6 @@ services:
         source: ~/.aws
         target: /root/.aws
         read_only: true
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -410,12 +398,6 @@ networks:
     driver: bridge
 
 volumes:
-  ichrisbirch_testing_logs:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ICHRISBIRCH_HOME:-${PWD}}/test-logs
   uv_cache:
     driver: local
   venv_shared:

@@ -4,14 +4,6 @@
 
 ICHRISBIRCH_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && git rev-parse --show-toplevel)"
 
-if [[ $(uname) == "Darwin" ]]; then
-  LOG_DIR="/usr/local/var/log/ichrisbirch"
-else
-  LOG_DIR="/var/log/ichrisbirch"
-fi
-
-export LOG_DIR
-
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
@@ -30,22 +22,21 @@ orange=$(tput setaf 208) # 256-color orange
 reset=$(tput sgr0)
 
 function colored-logs() {
-  local RED_ERROR="${red}[ERROR]${reset}"
-  local YELLOW_WARNING="${yellow}[WARNING]${reset}"
-  local BLUE_INFO="${blue}[INFO]${reset}"
-  local GREEN_DEBUG="${green}[DEBUG]${reset}"
-  local MAGENTA_CRITICAL="${magenta}[CRITICAL]${reset}"
+  # Structlog handles log level coloring via ConsoleRenderer with LOG_COLORS=true
+  # This function only handles:
+  # 1. Stripping container name prefixes (ichrisbirch-, -dev, -testing)
+  # 2. Coloring Docker service names in the log output
 
   # Service name colors
   local RED_REDIS="${red}redis${reset}"
   local GREEN_POSTGRES="${green}postgres${reset}"
-  local CYAN_NGINX="${cyan}nginx${reset}"
   local BRIGHT_GREEN_API="${bright_green}api${reset}"
   local BRIGHT_BLUE_APP="${bright_blue}app${reset}"
   local ORANGE_CHAT="${orange}chat${reset}"
   local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
+  local CYAN_TRAEFIK="${cyan}traefik${reset}"
 
-  # Use sed with proper escaping for backslashes
+  # Strip container prefixes and color service names
   # Note: -testing must come before -test to avoid leaving "ing" suffix
   sed \
     -e 's/ichrisbirch-//g' \
@@ -56,26 +47,9 @@ function colored-logs() {
     -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
     -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
     -e 's/^postgres[ ]*|/'"${GREEN_POSTGRES}"' |/' \
-    -e 's/^nginx[ ]*|/'"${CYAN_NGINX}"' |/' \
     -e 's/^chat[ ]*|/'"${ORANGE_CHAT}"' |/' \
     -e 's/^scheduler[ ]*|/'"${YELLOW_SCHEDULER}"' |/' \
-    -e 's/\[ERROR\]/'"${RED_ERROR}"'/g' \
-    -e 's/\[WARNING\]/'"${YELLOW_WARNING}"'/g' \
-    -e 's/\[DEBUG\]/'"${GREEN_DEBUG}"'/g' \
-    -e 's/\[INFO\]/'"${BLUE_INFO}"'/g' \
-    -e 's/\[CRITICAL\]/'"${MAGENTA_CRITICAL}"'/g'
-}
-
-function parse-json-logs() {
-  # Parse JSON structlog output and format for console display
-  # Falls back to raw output if not valid JSON (e.g., non-JSON log lines)
-  jq -r '
-    # Extract timestamp, level, and event
-    "\(.timestamp // .asctime // "unknown") [\(.level // "INFO" | ascii_upcase)] \(.event // "unknown") " +
-    # Add all other fields as key=value pairs
-    (to_entries | map(select(.key | IN("timestamp", "asctime", "level", "event", "filename", "func_name", "lineno") | not)) |
-     map("\(.key)=\(.value)") | join(" "))
-  ' 2>/dev/null || cat
+    -e 's/^traefik[ ]*|/'"${CYAN_TRAEFIK}"' |/'
 }
 
 function colored-status() {
@@ -110,12 +84,6 @@ function colored-status() {
         gsub(/healthy/, healthy);
         print $0;
     }'
-}
-
-function logs() {
-  cd "$LOG_DIR" || exit
-  ls -lH
-  exec $SHELL
 }
 
 function install() {
@@ -212,36 +180,14 @@ function dev-rebuild() {
 
 function dev-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-
-  # Check for --json flag
-  local json_mode=false
-  local services=()
-  for arg in "$@"; do
-    if [[ "$arg" == "--json" ]]; then
-      json_mode=true
-    else
-      services+=("$arg")
-    fi
-  done
-
-  echo "Viewing ${blue}DEV${reset} Docker container logs..."
-  if [[ "$json_mode" == true ]]; then
-    echo "Mode: ${cyan}JSON parsing${reset} (use without --json for console format)"
-  fi
+  echo "Viewing ${blue}DEV${reset} logs (Ctrl+C to exit)"
   echo ""
 
-  # Build docker compose command
-  local compose_cmd="docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml logs --follow --tail=50"
-  if [[ ${#services[@]} -gt 0 ]]; then
-    compose_cmd="$compose_cmd ${services[*]}"
-  fi
-
-  # Show live Docker Compose logs with appropriate formatting
-  if [[ "$json_mode" == true ]]; then
-    $compose_cmd | parse-json-logs | colored-logs
-  else
-    $compose_cmd | colored-logs
-  fi
+  while true; do
+    docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml \
+      logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+        sleep 2
+  done
 }
 
 function dev-status() {
@@ -280,7 +226,6 @@ function dev-health() {
 
 function test-run() {
   cd "$ICHRISBIRCH_HOME" || exit
-  mkdir -p "$ICHRISBIRCH_HOME/test-logs"
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
@@ -349,7 +294,6 @@ function test-run() {
 
 function test-cov() {
   cd "$ICHRISBIRCH_HOME" || exit
-  mkdir -p "$ICHRISBIRCH_HOME/test-logs"
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
@@ -422,9 +366,6 @@ function test-cov() {
 function testing-start() {
   cd "$ICHRISBIRCH_HOME" || exit
 
-  # Create test-logs directory if it doesn't exist
-  mkdir -p "$ICHRISBIRCH_HOME/test-logs"
-
   # Ensure proxy network exists for Traefik
   if ! docker network inspect proxy >/dev/null 2>&1; then
     echo "Creating external proxy network..."
@@ -467,8 +408,6 @@ function testing-start() {
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
   echo ""
-  echo "Test logs available at: ${cyan}$ICHRISBIRCH_HOME/test-logs/${reset}"
-  echo "Use ${blue}ichrisbirch testing app-logs${reset} to view application logs"
   echo "Use ${blue}ichrisbirch testing logs${reset} to view Docker container logs"
   echo "Use ${blue}ichrisbirch testing health${reset} to run health checks"
 }
@@ -495,86 +434,14 @@ function testing-rebuild() {
 
 function testing-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-
-  # Check for --json flag
-  local json_mode=false
-  local services=()
-  for arg in "$@"; do
-    if [[ "$arg" == "--json" ]]; then
-      json_mode=true
-    else
-      services+=("$arg")
-    fi
-  done
-
-  echo "Viewing ${blue}TESTING${reset} Docker container logs..."
-  if [[ "$json_mode" == true ]]; then
-    echo "Mode: ${cyan}JSON parsing${reset} (use without --json for console format)"
-  fi
+  echo "Viewing ${blue}TESTING${reset} logs (Ctrl+C to exit)"
   echo ""
 
-  # Build docker compose command
-  local compose_cmd="docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml logs --follow --tail=50"
-  if [[ ${#services[@]} -gt 0 ]]; then
-    compose_cmd="$compose_cmd ${services[*]}"
-  fi
-
-  # Show live Docker Compose logs with appropriate formatting
-  if [[ "$json_mode" == true ]]; then
-    $compose_cmd | parse-json-logs | colored-logs
-  else
-    $compose_cmd | colored-logs
-  fi
-}
-
-function testing-app-logs() {
-  local lines="${1:-100}"
-  local follow_flag=""
-
-  # Check if --follow is passed as first or second argument
-  if [[ "$1" == "--follow" ]] || [[ "$2" == "--follow" ]]; then
-    follow_flag="--follow"
-    # Adjust lines if --follow was passed as first argument
-    if [[ "$1" == "--follow" ]]; then
-      lines="${2:-100}"
-    fi
-  fi
-
-  cd "$ICHRISBIRCH_HOME" || exit
-  local test_logs_dir="$ICHRISBIRCH_HOME/test-logs"
-  local log_file="$test_logs_dir/testing.log"
-
-  # Check if test logs directory exists
-  if [[ ! -d "$test_logs_dir" ]]; then
-    echo "${red}Test logs directory not found: $test_logs_dir${reset}"
-    echo "${cyan}Make sure the test environment has been started at least once:${reset}"
-    echo "   ${blue}ichrisbirch testing start${reset}"
-    return 1
-  fi
-
-  # Check if consolidated log file exists
-  if [[ ! -f "$log_file" ]]; then
-    echo "${red}Test log file not found: $log_file${reset}"
-    echo "${cyan}Make sure the test environment is running to generate logs:${reset}"
-    echo "   ${blue}ichrisbirch testing start${reset}"
-    return 1
-  fi
-
-  echo "Viewing ${blue}TESTING${reset} application logs from: ${cyan}$log_file${reset}"
-
-  if [[ -n "$follow_flag" ]]; then
-    echo "   Mode: ${green}Follow${reset} (press Ctrl+C to exit)"
-    echo ""
-    tail -f "$log_file" | colored-logs
-  else
-    echo "   Lines: $lines"
-    echo ""
-    tail -n "$lines" "$log_file" | colored-logs
-  fi
-}
-
-function testing-app-logs-follow() {
-  testing-app-logs --follow
+  while true; do
+    docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml \
+      logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+        sleep 2
+  done
 }
 
 function testing-status() {
@@ -697,36 +564,14 @@ function prod-monitor() {
 function prod-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
-
-  # Check for --json flag
-  local json_mode=false
-  local services=()
-  for arg in "$@"; do
-    if [[ "$arg" == "--json" ]]; then
-      json_mode=true
-    else
-      services+=("$arg")
-    fi
-  done
-
-  echo "Viewing ${magenta}PRODUCTION${reset} Docker container logs..."
-  if [[ "$json_mode" == true ]]; then
-    echo "Mode: ${cyan}JSON parsing${reset} (use without --json for console format)"
-  fi
+  echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
   echo ""
 
-  # Build docker compose command
-  local compose_cmd="docker compose --project-name ichrisbirch-prod -f docker-compose.yml logs --follow --tail=50"
-  if [[ ${#services[@]} -gt 0 ]]; then
-    compose_cmd="$compose_cmd ${services[*]}"
-  fi
-
-  # Show live Docker Compose logs with appropriate formatting
-  if [[ "$json_mode" == true ]]; then
-    $compose_cmd | parse-json-logs | colored-logs
-  else
-    $compose_cmd | colored-logs
-  fi
+  while true; do
+    docker compose --project-name ichrisbirch-prod -f docker-compose.yml \
+      logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+        sleep 2
+  done
 }
 
 function prod-status() {
@@ -1455,7 +1300,6 @@ function usage() {
   echo "${green}Core Commands:${reset}"
   echo "  ${blue}open${reset}      - Launch VS Code and create tmux session for development"
   echo "  ${blue}cd${reset}        - Navigate to project directory and activate Python virtual environment"
-  echo "  ${blue}logs${reset}      - List log files in configured log directory"
   echo "  ${blue}test run${reset}  - Execute pytest (supports paths and args, see below)"
   echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates for HTTPS"
   echo "    • ${yellow}Actions${reset}: generate, validate, info"
@@ -1467,9 +1311,7 @@ function usage() {
   echo "  ${blue}dev stop${reset}      - Stop all development services and remove containers"
   echo "  ${blue}dev restart${reset}   - Restart existing containers without rebuilding images (quick recovery from crashes)"
   echo "  ${blue}dev rebuild${reset}   - Stop services, rebuild Docker images, and restart (use after code/dependency changes)"
-  echo "  ${blue}dev logs [--json] [service]${reset} - View live Docker container logs"
-  echo "    • ${yellow}--json${reset}: Parse JSON structlog output for human-readable display"
-  echo "    • ${yellow}service${reset}: Optional service name to filter (api, app, chat, scheduler)"
+  echo "  ${blue}dev logs [service]${reset} - View live Docker container logs (persists across restarts)"
   echo "  ${blue}dev status${reset}    - Display container status and service URLs"
   echo "  ${blue}dev health${reset}    - Run comprehensive health checks for all services"
   echo
@@ -1478,15 +1320,9 @@ function usage() {
   echo "  ${blue}testing stop${reset}    - Stop test environment services"
   echo "  ${blue}testing restart${reset} - Restart test containers without rebuilding"
   echo "  ${blue}testing rebuild${reset} - Rebuild and restart test environment"
-  echo "  ${blue}testing logs [--json] [service]${reset} - View live test container logs"
-  echo "    • ${yellow}--json${reset}: Parse JSON structlog output for human-readable display"
+  echo "  ${blue}testing logs [service]${reset} - View live test container logs (persists across restarts)"
   echo "  ${blue}testing status${reset}  - Display test container status and service URLs"
   echo "  ${blue}testing health${reset}  - Run comprehensive health checks for test services"
-  echo "  ${blue}testing app-logs [lines] [--follow]${reset} - View consolidated application logs from testing.log"
-  echo "    • ${yellow}lines${reset}: number of lines to show (default: 100)"
-  echo "    • ${yellow}--follow${reset}: follow logs in real-time"
-  echo "    • Examples: ${cyan}testing app-logs${reset}, ${cyan}testing app-logs 50${reset}, ${cyan}testing app-logs --follow${reset}"
-  echo "  ${blue}testing app-logs-follow${reset} - Follow consolidated application logs in real-time"
   echo "  ${blue}test run [path] [args]${reset} - Execute pytest with test environment"
   echo "    • No args: run all tests"
   echo "    • With path: run specific test file or directory"
@@ -1499,8 +1335,7 @@ function usage() {
   echo "  ${blue}prod stop${reset}      - Stop production services and remove containers"
   echo "  ${blue}prod restart${reset}   - Restart existing production containers without rebuilding"
   echo "  ${blue}prod rebuild${reset}   - Fetch SSM secrets, rebuild Docker images, and restart"
-  echo "  ${blue}prod logs [--json] [service]${reset} - View production Docker container logs"
-  echo "    • ${yellow}--json${reset}: Parse JSON structlog output for human-readable display"
+  echo "  ${blue}prod logs [service]${reset} - View production Docker container logs (persists across restarts)"
   echo "  ${blue}prod status${reset}    - Check production service status and URLs"
   echo "  ${blue}prod health${reset}    - Run comprehensive health checks for production services"
   echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
@@ -1540,9 +1375,6 @@ open)
 cd)
   project-cd
   ;;
-logs)
-  logs
-  ;;
 test)
   # Pass remaining arguments to test function (e.g., test run path/to/test.py -v)
   subcmd="$2"
@@ -1551,14 +1383,6 @@ test)
   ;;
 testing)
   case "$2" in
-  app-logs)
-    # Handle app-logs with lines and --follow options
-    testing-app-logs "$3" "$4"
-    ;;
-  app-logs-follow)
-    # Simplified follow function
-    testing-app-logs-follow
-    ;;
   health)
     testing-health
     ;;

@@ -69,12 +69,11 @@ class TestLogin:
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert f'<title>Welcome, {TEST_USER_NAME}</title>' in response.text
 
-    def test_login_wrong_password(self, test_app_function, caplog):
+    def test_login_wrong_password(self, test_app_function):
         login_data = {'email': TEST_USER_EMAIL, 'password': 'wrong_password'}
-        response = test_app_function.post('/login/', follow_redirects=False, data=login_data)
-        assert 'login_failed_invalid_password' in caplog.text, 'No error log produced'
-        assert response.status_code == status.HTTP_302_FOUND, show_status_and_response(response)
-        assert 'login' in response.headers['Location']
+        response = test_app_function.post('/login/', follow_redirects=True, data=login_data)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert b'Invalid credentials' in response.data
 
 
 class TestSignup:
@@ -88,8 +87,8 @@ class TestSignup:
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert f'<title>Welcome, {SIGNUP_USER["name"]}</title>' in response.text
 
-    def test_duplicate_signup_error(self, test_app_function, caplog):
-        test_app_function.post(
+    def test_duplicate_signup_error(self, test_app_function):
+        response = test_app_function.post(
             '/signup/',
             follow_redirects=True,
             data={
@@ -99,4 +98,5 @@ class TestSignup:
                 'confirm_password': TEST_USER_PASSWORD,
             },
         )
-        assert 'signup_duplicate_email' in caplog.text
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert b'email address already registered' in response.data

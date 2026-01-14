@@ -1,8 +1,10 @@
-"""Structlog configuration for the entire project.
+"""Structlog configuration - simple, consistent, stdout only.
 
-Loggers are set up for: app, api, scheduler, and third-party libraries.
-File logging is enabled when LOG_FILE_PATH environment variable is set.
-GitHub Actions environment skips file logging (files don't exist in CI).
+All logs go to stdout. Docker handles persistence via its logging driver.
+Configuration is controlled by three environment variables:
+- LOG_FORMAT: 'console' (default) or 'json'
+- LOG_LEVEL: 'DEBUG' (default), 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+- LOG_COLORS: 'auto' (default), 'true', 'false'
 
 Note: 304 redirect filtering is handled by app.middleware.RequestLoggingMiddleware,
 not by the logging configuration.
@@ -10,7 +12,6 @@ not by the logging configuration.
 
 import functools
 import logging
-import logging.handlers
 import os
 import sys
 
@@ -20,19 +21,27 @@ from structlog.processors import CallsiteParameterAdder
 
 LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
-LOG_FILE_PATH = os.environ.get('LOG_FILE_PATH')
-ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')
-GITHUB_ACTIONS = os.environ.get('GITHUB_ACTIONS') == 'true'
+LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
+
+
+def _use_colors() -> bool:
+    """Determine if colors should be used in console output.
+
+    LOG_COLORS env var controls this:
+    - 'true': Force colors on (useful in Docker where TTY detection fails)
+    - 'false': Force colors off
+    - 'auto': Use TTY detection
+    """
+    if LOG_COLORS == 'true':
+        return True
+    if LOG_COLORS == 'false':
+        return False
+    return sys.stdout.isatty()
 
 
 def configure_structlog():
-    """Configure structlog with appropriate processors.
-
-    In testing mode, uses stdlib logging to integrate with pytest's caplog.
-    When LOG_FILE_PATH is set (and not in GitHub Actions), also logs to a rotating file.
-    In other environments, uses PrintLoggerFactory for direct output.
-    """
-    shared_processors = [
+    """Configure structlog - all output goes to stdout."""
+    processors = [
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt='%Y-%m-%dT%H:%M:%SZ'),
@@ -47,82 +56,27 @@ def configure_structlog():
         structlog.processors.format_exc_info,
     ]
 
-    # Determine if we should use file logging
-    use_file_logging = LOG_FILE_PATH and not GITHUB_ACTIONS
-
-    if ENVIRONMENT == 'testing' or use_file_logging:
-        # Use stdlib logging for pytest caplog integration and/or file logging
-        processors = shared_processors + [
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-        ]
-        structlog.configure(
-            processors=processors,
-            wrapper_class=structlog.stdlib.BoundLogger,
-            context_class=dict,
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            cache_logger_on_first_use=True,
-        )
-
-        # Create formatters based on LOG_FORMAT
-        if LOG_FORMAT == 'json':
-            formatter = structlog.stdlib.ProcessorFormatter(
-                processor=structlog.processors.JSONRenderer(),
-            )
-        else:
-            formatter = structlog.stdlib.ProcessorFormatter(
-                processor=structlog.dev.ConsoleRenderer(
-                    colors=sys.stdout.isatty() and ENVIRONMENT != 'testing',
-                    pad_level=True,
-                ),
-            )
-
-        # Configure stdlib root logger
-        root_logger = logging.getLogger()
-        root_logger.setLevel(getattr(logging, LOG_LEVEL))
-
-        # Console handler
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
-        root_logger.addHandler(console_handler)
-
-        # File handler with rotation (if configured and not in GitHub Actions)
-        if use_file_logging:
-            file_formatter = structlog.stdlib.ProcessorFormatter(
-                processor=structlog.processors.JSONRenderer()
-                if LOG_FORMAT == 'json'
-                else structlog.dev.ConsoleRenderer(colors=False, pad_level=True),
-            )
-            file_handler = logging.handlers.RotatingFileHandler(
-                filename=LOG_FILE_PATH,
-                maxBytes=10_000_000,  # 10 MB
-                backupCount=3,
-            )
-            file_handler.setFormatter(file_formatter)
-            root_logger.addHandler(file_handler)
+    if LOG_FORMAT == 'json':
+        processors.append(structlog.processors.JSONRenderer())
     else:
-        # Use PrintLoggerFactory for non-test environments without file logging
-        if LOG_FORMAT == 'json':
-            processors = shared_processors + [structlog.processors.JSONRenderer()]
-        else:
-            processors = shared_processors + [
-                structlog.dev.ConsoleRenderer(
-                    colors=sys.stdout.isatty(),
-                    pad_level=True,
-                )
-            ]
-
-        structlog.configure(
-            processors=processors,
-            wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, LOG_LEVEL)),
-            context_class=dict,
-            logger_factory=structlog.PrintLoggerFactory(),
-            cache_logger_on_first_use=True,
+        processors.append(
+            structlog.dev.ConsoleRenderer(
+                colors=_use_colors(),
+                pad_level=True,
+            )
         )
+
+    structlog.configure(
+        processors=processors,
+        wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, LOG_LEVEL)),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
 
 
 def configure_stdlib_logging():
-    """Suppress noisy third-party loggers and configure test loggers."""
-    # Third-party loggers to quiet down when debug is on
+    """Suppress noisy third-party loggers."""
     third_party_levels = {
         'apscheduler': logging.WARNING,
         'asyncio': logging.INFO,
@@ -145,9 +99,6 @@ def configure_stdlib_logging():
     }
     for name, level in third_party_levels.items():
         logging.getLogger(name).setLevel(level)
-
-    # Set tests.conftest to INFO to reduce noise during test runs
-    logging.getLogger('tests.conftest').setLevel(logging.INFO)
 
 
 @functools.lru_cache(maxsize=1)

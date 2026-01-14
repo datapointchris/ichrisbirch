@@ -137,6 +137,7 @@ services:
       - FASTAPI_DEBUG=False
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -183,6 +184,7 @@ services:
       - FLASK_DEBUG=False
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -223,9 +225,9 @@ services:
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
     environment:
       - ENVIRONMENT=production
-      - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     depends_on:
@@ -269,9 +271,9 @@ services:
     command: python -m ichrisbirch.wsgi_scheduler
     environment:
       - ENVIRONMENT=production
-      - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
     networks:
       - default
     depends_on:

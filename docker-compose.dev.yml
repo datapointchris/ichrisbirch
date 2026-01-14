@@ -148,6 +148,7 @@ services:
       - FASTAPI_DEBUG=True
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
     ports:
       - "8000:8000"  # Keep direct port access for development debugging
     networks:
@@ -208,6 +209,7 @@ services:
       - FLASK_DEBUG=True
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
     ports:
       - "5000:5000"  # Keep direct port access for development debugging
     networks:
@@ -262,6 +264,7 @@ services:
       - ENVIRONMENT=development
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
     # Standard development port
     ports:
       - "8505:8505"  # Keep direct port access for development debugging
@@ -319,6 +322,7 @@ services:
       - ENVIRONMENT=development
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - LOG_COLORS=${LOG_COLORS:-true}
     networks:
       - default
     restart: unless-stopped
