@@ -1,124 +1,265 @@
-# LOG_DIR Configuration Guide
+# Logging Configuration
 
 ## Overview
 
-The logging system now seamlessly handles log directory configuration across different environments using an environment variable approach with intelligent fallbacks.
+The ichrisbirch application uses **structlog** with a stdout-only architecture. All logs go to stdout, and Docker handles persistence via its logging driver. This is the industry-standard approach for containerized applications.
 
-## How It Works
-
-### 1. Python Logger (ichrisbirch/logger.py)
-
-The logger now uses a `get_log_base_location()` function with this priority order:
+**Configuration**: `ichrisbirch/logger.py:22-24`
 
 ```python
-def get_log_base_location():
-    # 1. Check for explicit LOG_DIR environment variable (Docker/manual override)
-    if log_dir := os.environ.get('LOG_DIR'):
-        return log_dir
-
-    # 2. Fall back to platform detection for bare metal deployments
-    if platform.system() == 'Darwin':
-        return '/usr/local/var/log/ichrisbirch'
-
-    # 3. Default Linux location
-    return '/var/log/ichrisbirch'
+LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
+LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
 ```
 
-### 2. Docker Compose Configuration
+## Environment Variables
 
-All services now pass `LOG_DIR` as an environment variable to containers:
+### LOG_FORMAT
 
-```yaml
-environment:
-  - LOG_DIR=${LOG_DIR:-/var/log/ichrisbirch}
+Controls the output format for log messages.
+
+| Value | Description | Use Case |
+|-------|-------------|----------|
+| `console` (default) | Human-readable colored output | Development, debugging |
+| `json` | Structured JSON output | Production, log aggregation (ELK, Datadog) |
+
+**Console format example:**
+
+```text
+2026-01-13T15:30:45Z [info     ] user_login_success    filename=auth.py func_name=login lineno=45 request_id=abc12345 user_id=123
 ```
 
-Volume mounts use the same variable:
+**JSON format example:**
 
-```yaml
-volumes:
-  - ${LOG_DIR:-/var/log/ichrisbirch}:/var/log/ichrisbirch
+```json
+{"timestamp": "2026-01-13T15:30:45Z", "level": "info", "event": "user_login_success", "filename": "auth.py", "func_name": "login", "lineno": 45, "request_id": "abc12345", "user_id": 123}
 ```
 
-### 3. CLI Integration
+### LOG_LEVEL
 
-The CLI already sets `LOG_DIR` based on platform:
+Controls which log messages are output.
+
+| Value | Description |
+|-------|-------------|
+| `DEBUG` (default) | All messages including detailed diagnostics |
+| `INFO` | Normal operations (user login, task created, job completed) |
+| `WARNING` | Recoverable issues (invalid input, retry attempts) |
+| `ERROR` | Failures requiring attention (API errors, DB errors) |
+| `CRITICAL` | System-level failures (can't connect to DB) |
+
+### LOG_COLORS
+
+Controls whether colored output is used in console format.
+
+| Value | Description |
+|-------|-------------|
+| `auto` (default) | Use TTY detection (colors if terminal, no colors if piped) |
+| `true` | Force colors on (useful in Docker where TTY detection fails) |
+| `false` | Force colors off |
+
+## Request Tracing
+
+All services support request tracing via the `X-Request-ID` header. When a request arrives, middleware generates or extracts a request ID and binds it to structlog's context variables. All subsequent log messages include this ID, enabling correlation across services.
+
+### Request ID Flow
+
+```text
+Flask Process                          FastAPI Process
+─────────────────                      ─────────────────
+1. Request arrives
+2. Middleware generates/extracts:
+   X-Request-ID: abc12345
+3. bind_contextvars(request_id)
+4. All Flask logs include request_id
+5. API client adds header to request
+              │
+              └──── HTTP Request ────► 6. Request arrives with header
+                                       7. Middleware extracts request_id
+                                       8. bind_contextvars(request_id)
+                                       9. All FastAPI logs include request_id
+```
+
+### Middleware Implementation
+
+**Flask**: `ichrisbirch/app/middleware.py`
+
+```python
+class RequestTracingMiddleware:
+    def _before_request(self):
+        structlog.contextvars.clear_contextvars()
+        request_id = request.headers.get('X-Request-ID', str(uuid.uuid4())[:8])
+        g.request_id = request_id
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+```
+
+**FastAPI**: `ichrisbirch/api/middleware.py`
+
+```python
+class RequestTracingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        structlog.contextvars.clear_contextvars()
+        request_id = request.headers.get('X-Request-ID', str(uuid.uuid4())[:8])
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        # ...
+```
+
+## Viewing Logs
+
+### Development
+
+Use the CLI to view colored logs that persist across container restarts:
 
 ```bash
-if [[ $(uname) == "Darwin" ]]; then
-    LOG_DIR="/usr/local/var/log/ichrisbirch"
-else
-    LOG_DIR="/var/log/ichrisbirch"
-fi
+# All services
+./cli/ichrisbirch dev logs
+
+# Specific service
+./cli/ichrisbirch dev logs api
+./cli/ichrisbirch dev logs app
 ```
 
-## Environment Files
+The logs command uses a watch loop that automatically reconnects when containers restart.
 
-### Development (.dev.env.example)
+### Testing
 
 ```bash
-# Development on macOS (host directory)
-LOG_DIR=/usr/local/var/log/ichrisbirch
+# View test environment logs
+./cli/ichrisbirch testing logs
+
+# Specific service
+./cli/ichrisbirch testing logs api
 ```
 
-### Production (.prod.env.example)
+### Production
 
 ```bash
-# Production (standard Linux location)
-LOG_DIR=/var/log/ichrisbirch
+# View production logs
+./cli/ichrisbirch prod logs
+
+# Specific service
+./cli/ichrisbirch prod logs api
 ```
 
-## Usage Scenarios
-
-### 1. Development on macOS with Docker
+### Direct Docker Commands
 
 ```bash
-# CLI automatically sets LOG_DIR=/usr/local/var/log/ichrisbirch
-ichrisbirch dev start
-# ✅ Logs go to /usr/local/var/log/ichrisbirch on host
-# ✅ Python logger detects LOG_DIR env var and uses it
+# Follow logs for a specific container
+docker logs -f ichrisbirch-api-dev
+
+# View recent logs
+docker logs --tail 100 ichrisbirch-api-dev
 ```
 
-### 2. Production Linux with Docker
+## Log Persistence
+
+Docker handles log persistence via its logging driver. By default, Docker uses the `json-file` driver which stores logs on disk. These logs persist across container restarts.
+
+### Accessing Docker Log Files
 
 ```bash
-# CLI automatically sets LOG_DIR=/var/log/ichrisbirch
-ichrisbirch prod start  
-# ✅ Logs go to /var/log/ichrisbirch on host
-# ✅ Python logger detects LOG_DIR env var and uses it
+# Find log file location
+docker inspect ichrisbirch-api-dev --format='{{.LogPath}}'
+
+# View raw log file (requires sudo)
+sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
 ```
 
-### 3. Bare Metal Development (no Docker)
+### Log Rotation
 
-```bash
-# Python logger falls back to platform detection
-# ✅ macOS: /usr/local/var/log/ichrisbirch
-# ✅ Linux: /var/log/ichrisbirch
+Docker manages log rotation. Configure in Docker daemon settings if needed:
+
+```json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
 ```
 
-### 4. Custom Override
+## Structlog Configuration
 
-```bash
-export LOG_DIR=/custom/log/path
-ichrisbirch dev start
-# ✅ Logs go to /custom/log/path
+**Configuration file**: `ichrisbirch/logger.py:42-75`
+
+The structlog configuration includes:
+
+1. **Context variable merging**: Includes request_id and other bound context
+2. **Log level filtering**: Based on LOG_LEVEL environment variable
+3. **Timestamp**: ISO 8601 format (UTC)
+4. **Call site tracking**: Automatic filename, function name, and line number
+5. **Stack info rendering**: For exception tracebacks
+6. **Format rendering**: Console or JSON based on LOG_FORMAT
+
+### Processor Chain
+
+```python
+processors = [
+    structlog.contextvars.merge_contextvars,      # Include request_id, etc.
+    structlog.processors.add_log_level,           # Add level field
+    structlog.processors.TimeStamper(...),        # Add timestamp
+    CallsiteParameterAdder({...}),                # Add filename, func, line
+    structlog.processors.StackInfoRenderer(),     # Render stack traces
+    structlog.processors.format_exc_info,         # Format exceptions
+    # Final renderer: ConsoleRenderer or JSONRenderer
+]
 ```
+
+## Third-Party Logger Suppression
+
+Noisy third-party loggers are suppressed to reduce log noise:
+
+**Configuration**: `ichrisbirch/logger.py:78-101`
+
+| Logger | Level | Reason |
+|--------|-------|--------|
+| `apscheduler` | WARNING | Verbose job scheduling messages |
+| `httpx` | WARNING | HTTP client request details |
+| `werkzeug` | WARNING | Flask development server messages |
+| `boto3`, `botocore` | INFO | AWS SDK details |
+| `sqlalchemy_json` | INFO | JSON field operations |
+
+## Usage Pattern
+
+Every module uses the same simple pattern:
+
+```python
+import structlog
+
+logger = structlog.get_logger()
+
+# Log with structured data
+logger.info('user_login_success', user_id=user.id, email=user.email)
+logger.error('database_error', error=str(e), operation='create_user')
+```
+
+### Event Naming Convention
+
+Use snake_case event names that describe what happened:
+
+| Good | Bad |
+|------|-----|
+| `user_login_success` | `logged in user` |
+| `task_created` | `Created new task` |
+| `api_request_failed` | `HTTP error` |
+| `job_started` | `Starting job...` |
+
+## Migration from Standard Logging
+
+The project migrated from Python's standard logging module to structlog. Key differences:
+
+| Standard Logging | Structlog |
+|------------------|-----------|
+| `logger = logging.getLogger(__name__)` | `logger = structlog.get_logger()` |
+| `logger.info(f'User {user_id} logged in')` | `logger.info('user_login', user_id=user_id)` |
+| String interpolation | Keyword arguments |
+| `__name__` for logger identification | CallsiteParameterAdder for location |
 
 ## Benefits
 
-1. **Seamless**: No manual configuration needed
-2. **Consistent**: Same log location on host and in container
-3. **Flexible**: Easy to override for testing or custom deployments
-4. **Backward Compatible**: Works with existing bare metal deployments
-5. **Industry Standard**: Environment variable approach is widely used
-
-## Migration
-
-No migration needed! The new system:
-
-- ✅ Automatically works with existing CLI usage
-- ✅ Maintains platform detection for bare metal
-- ✅ Adds Docker environment variable support
-- ✅ Preserves all existing log file locations
-
-Your existing setup will work unchanged, with improved Docker integration.
+1. **Structured data**: All log data is structured, enabling filtering and analysis
+2. **Request tracing**: Correlate logs across services with request_id
+3. **Consistent format**: Same output format across all services
+4. **Environment flexibility**: Switch between console and JSON with one variable
+5. **No file management**: Docker handles persistence and rotation
+6. **Industry standard**: Follows 12-factor app logging principles

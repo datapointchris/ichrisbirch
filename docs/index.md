@@ -10,6 +10,7 @@ Welcome to the iChrisBirch application documentation.
 
 - [Project Layout](project_layout.md) - Overall project structure and organization
 - [Configuration](configuration.md) - Environment and settings management
+- [Logging Configuration](logging-configuration.md) - Structlog setup, request tracing, and log viewing
 
 ## Development
 

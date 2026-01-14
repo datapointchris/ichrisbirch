@@ -33,64 +33,71 @@ This silently suppressed cleanup errors, so failed cleanup operations went unnot
 - Checking for specific container names only - missed containers with dynamic names  
 - Using docker-compose down without additional cleanup - didn't handle edge cases where compose cleanup failed
 
-**Resolution:** Implemented comprehensive cleanup function with multiple fallback strategies:
+**Resolution:** Implemented container reuse strategy with database reset:
 
-**Enhanced CLI script** (`cli/ichrisbirch`):
+**Test run command** (`cli/ichrisbirch:208-259`):
 
 ```bash
-function test() {
-    cd "$ICHRISBIRCH_HOME" || exit
-    echo "Running ${yellow}TEST${reset} suite with Docker Compose"
+function test-run() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  export ENVIRONMENT=testing
 
-    # Ensure clean environment before starting tests
-    cleanup-test-environment
-
-    # Start test environment and run pytest
-    docker-compose -f docker-compose.yml -f docker-compose.test.yml up --abort-on-container-exit --remove-orphans test-runner
-    local test_exit_code=$?
-
-    # Clean up test environment with full cleanup
-    cleanup-test-environment
-
-    if [ $test_exit_code -eq 0 ]; then
-        echo "${green}✓ Tests passed${reset}"
+  # Check if containers are already running and healthy
+  local containers_ready=false
+  if $COMPOSE_TEST ps --status running -q 2>/dev/null | grep -q .; then
+    echo "Test containers already running, checking health..."
+    if $COMPOSE_TEST ps | grep -q "healthy"; then
+      containers_ready=true
+      echo "Containers healthy, reusing them"
     else
-        echo "${red}✗ Tests failed (exit code: $test_exit_code)${reset}"
+      echo "Containers unhealthy, restarting..."
+      $COMPOSE_TEST down --volumes 2>/dev/null || true
     fi
+  fi
 
-    return $test_exit_code
-}
+  if [ "$containers_ready" = false ]; then
+    ensure-proxy-network
+    echo "Starting test containers..."
+    $COMPOSE_TEST up -d
+    sleep 15
+  fi
 
-function cleanup-test-environment() {
-    echo "🧹 Cleaning up test environment..."
+  # Always reset database to ensure clean state
+  echo "Initializing test database..."
+  ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization \
+    --env testing --db-host localhost --db-port 5434
 
-    # Stop and remove all test containers
-    docker-compose -f docker-compose.yml -f docker-compose.test.yml down -v --remove-orphans 2>/dev/null || true
+  # Run pytest
+  uv run pytest "$@"
 
-    # Force remove any remaining ichrisbirch test containers
-    docker ps -aq --filter "name=ichrisbirch-.*-test" | xargs -r docker rm -f 2>/dev/null || true
-    docker ps -aq --filter "name=ichrisbirch-test-runner" | xargs -r docker rm -f 2>/dev/null || true
-
-    # Remove any dangling networks that might conflict
-    docker network ls --filter "name=ichrisbirch" --format "{{.ID}}" | xargs -r docker network rm 2>/dev/null || true
-
-    # Remove test-specific volumes if they exist
-    docker volume ls --filter "name=ichrisbirch" --format "{{.Name}}" | grep -E "(test|_data)" | xargs -r docker volume rm 2>/dev/null || true
-
-    echo "✓ Test environment cleanup completed"
+  # Leave containers running for fast iteration
+  echo "Containers left running for fast iteration."
+  echo "Stop them with: icb testing stop"
 }
 ```
 
-1. **Key improvements:**
-   - **Pre-cleanup**: Ensures clean environment before starting tests
-   - **Post-cleanup**: Comprehensive cleanup after test completion
-   - **Multiple cleanup strategies**: Docker Compose, force container removal, network cleanup, volume cleanup
-   - **Graceful error handling**: Uses `|| true` to continue cleanup even if individual commands fail
-   - **Visible feedback**: Shows cleanup progress to user instead of hiding errors
+**Key improvements:**
 
-**Prevention:** The new `cleanup-test-environment` function runs both before and after tests, ensuring consistent cleanup and preventing resource conflicts. The cleanup is now visible to users, making debugging easier if cleanup issues occur.
+1. **Container reuse**: Reuses healthy containers instead of recreating them each run
+2. **Health checking**: Verifies container health before reusing
+3. **Database reset**: Always reinitializes database for clean test state
+4. **Fast iteration**: Leaves containers running after tests for quick re-runs
+5. **Unhealthy recovery**: Restarts containers if they're unhealthy
 
-**Validation:** Successfully tested multiple consecutive test runs without any network conflicts. The solution handles edge cases where containers have non-standard names or when Docker Compose cleanup partially fails.
+**Prevention:** The container reuse approach prevents network conflicts because containers are not constantly being created and destroyed. The database reset ensures clean state without the overhead of container recreation.
+
+**Manual cleanup when needed:**
+
+```bash
+# Stop and remove all test containers and volumes
+./cli/ichrisbirch testing stop
+
+# Full Docker cleanup if issues persist
+docker compose -f docker-compose.yml -f docker-compose.test.yml \
+  --project-name ichrisbirch-test down -v --remove-orphans
+docker network prune -f
+```
 
 ## Test Database Setup Issues
 

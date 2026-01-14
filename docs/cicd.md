@@ -33,7 +33,6 @@ The main CI workflow that validates code quality and runs tests.
 3. Docker Environment Setup
    ├── Set up Docker Compose
    ├── Configure AWS credentials (OIDC)
-   ├── Create test-logs directory
    ├── Create Docker network (proxy)
    └── Start Docker Compose containers
 

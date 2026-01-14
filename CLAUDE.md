@@ -35,21 +35,21 @@ Access at:
 
 ### Testing Environment
 
-Tests run in ephemeral containers (start fresh, run, stop automatically):
+Tests reuse containers for fast iteration (database reset ensures clean state):
 
 ```bash
-./cli/ichrisbirch test run              # Ephemeral: start → test → stop
-./cli/ichrisbirch test run --keep       # Keep containers after tests for debugging
-./cli/ichrisbirch test cov              # Run with coverage (also ephemeral)
+./cli/ichrisbirch test run              # Reuses containers, resets database
+./cli/ichrisbirch test run -v           # With verbose output
+./cli/ichrisbirch test cov              # Run with coverage
 ```
 
-For manual container management (extended debugging):
+Containers stay running after tests for quick re-runs:
 
 ```bash
-./cli/ichrisbirch testing start         # Start containers (stays running)
-./cli/ichrisbirch testing stop          # Stop containers
+./cli/ichrisbirch testing start         # Start containers manually
+./cli/ichrisbirch testing stop          # Stop containers (clears volumes)
 ./cli/ichrisbirch testing health        # Health checks
-./cli/ichrisbirch testing app-logs      # View application logs
+./cli/ichrisbirch testing logs          # View logs (auto-reconnect)
 ```
 
 Access at: <https://api.test.localhost:8443/>
@@ -78,7 +78,7 @@ python -m ichrisbirch.database.initialization --env development|testing|producti
 ### Testing
 
 ```bash
-# Run all tests (ephemeral containers)
+# Run all tests (reuses containers, resets database)
 ./cli/ichrisbirch test run
 
 # Run specific test file
@@ -90,8 +90,8 @@ python -m ichrisbirch.database.initialization --env development|testing|producti
 # Run specific test with verbose output
 ./cli/ichrisbirch test run tests/ichrisbirch/api/test_tasks.py::test_create_task -v
 
-# Keep containers running after tests (for debugging)
-./cli/ichrisbirch test run --keep
+# Stop containers when done (optional - they persist for fast re-runs)
+./cli/ichrisbirch testing stop
 ```
 
 ### Code Quality
@@ -511,24 +511,33 @@ Use emojis sparingly:
 
 ### Logging Strategy
 
-**Module-based loggers**:
+The project uses **structlog** with stdout-only output. All logs go to stdout, Docker handles persistence.
+
+**Logger pattern** (every module):
 
 ```python
-import logging
-logger = logging.getLogger(__name__)
+import structlog
+logger = structlog.get_logger()
+
+# Log with structured data
+logger.info('user_login_success', user_id=user.id, email=user.email)
 ```
 
-**Log Locations**:
+**Configuration** (environment variables):
 
-- Development: `logs/` directory
-- Testing: `test-logs/` directory
-- Container logs: `docker logs {container_name}`
+- `LOG_FORMAT`: `console` (default) or `json`
+- `LOG_LEVEL`: `DEBUG` (default), `INFO`, `WARNING`, `ERROR`
+- `LOG_COLORS`: `auto` (default), `true`, `false`
 
-**Colored logs**:
+**Viewing logs** (CLI commands with auto-reconnect):
 
 ```bash
-./cli/ichrisbirch dev logs | # automatically colored
+./cli/ichrisbirch dev logs       # All services, colored
+./cli/ichrisbirch dev logs api   # Specific service
+./cli/ichrisbirch testing logs   # Test environment
 ```
+
+**Request tracing**: All services include `request_id` in logs via `X-Request-ID` header propagation.
 
 ### Pre-commit Hooks
 
@@ -589,7 +598,7 @@ project_root = find_project_root()
 ### Testing Workflow
 
 ```bash
-# Run all tests (ephemeral: starts fresh containers, runs tests, stops containers)
+# Run all tests (reuses containers, resets database each run)
 ./cli/ichrisbirch test run
 
 # Run specific test
@@ -601,9 +610,11 @@ project_root = find_project_root()
 # View coverage report
 open htmlcov/index.html
 
-# Keep containers for debugging
-./cli/ichrisbirch test run --keep
-./cli/ichrisbirch testing stop  # Stop when done debugging
+# View test logs while debugging
+./cli/ichrisbirch testing logs api
+
+# Stop containers when done (they persist for fast re-runs)
+./cli/ichrisbirch testing stop
 ```
 
 ### Database Migration Workflow

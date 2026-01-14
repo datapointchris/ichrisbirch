@@ -95,12 +95,12 @@ def teardown(self):
 
 ## Running Tests Locally
 
-### Ephemeral Test Runs (Recommended)
+### Container Reuse Strategy (Default)
 
-The `test run` command manages the complete test lifecycle automatically:
+The `test run` command reuses containers for fast iteration:
 
 ```bash
-# Run all tests (containers start fresh, run tests, stop containers)
+# Run all tests (reuses healthy containers, resets database)
 ./cli/ichrisbirch test run
 
 # Run specific tests
@@ -113,21 +113,26 @@ The `test run` command manages the complete test lifecycle automatically:
 ./cli/ichrisbirch test cov
 ```
 
-This ephemeral approach ensures:
+This approach provides:
 
-- **Clean state:** Containers are stopped and restarted fresh each run
-- **No stale state:** Database and services always start from known state
-- **Automatic cleanup:** Containers are stopped when tests complete
+- **Fast iteration:** Containers stay running between test runs
+- **Clean state:** Database is reset before each test run via initialization script
+- **Health checking:** Unhealthy containers are automatically restarted
+- **Developer friendly:** No waiting for container startup on subsequent runs
 
-### Keeping Containers for Debugging
+### How Container Reuse Works
 
-Use `--keep` to preserve containers after tests finish:
+1. **First run:** Containers are started and database is initialized
+2. **Subsequent runs:** Health check passes → reuse containers, reset database only
+3. **Unhealthy containers:** Automatically stopped and restarted
+4. **After tests:** Containers left running for the next test run
+
+### Stopping Test Containers
+
+Containers remain running after tests for fast re-runs. Stop them manually when done:
 
 ```bash
-# Run tests but keep containers running for debugging
-./cli/ichrisbirch test run --keep
-
-# Stop containers later when done debugging
+# Stop test containers (removes volumes for clean state next time)
 ./cli/ichrisbirch testing stop
 ```
 

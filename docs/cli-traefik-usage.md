@@ -56,12 +56,23 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `testing start` | Start testing with HTTPS | `ichrisbirch testing start` |
+| `test run` | Run tests (reuses containers) | `ichrisbirch test run [path] [args]` |
+| `test cov` | Run tests with coverage | `ichrisbirch test cov` |
+| `testing start` | Start testing environment | `ichrisbirch testing start` |
 | `testing stop` | Stop testing environment | `ichrisbirch testing stop` |
 | `testing restart` | Restart testing environment | `ichrisbirch testing restart` |
 | `testing status` | Show service status and HTTPS URLs | `ichrisbirch testing status` |
 | `testing logs` | View service logs | `ichrisbirch testing logs [service]` |
 | `testing health` | Run comprehensive health checks | `ichrisbirch testing health` |
+
+**Test Run Behavior:**
+
+The `test run` command is optimized for fast iteration:
+
+1. **Reuses healthy containers** - No startup delay on subsequent runs
+2. **Resets database** - Clean state via initialization script each run
+3. **Leaves containers running** - Ready for the next test run
+4. **Auto-recovers** - Restarts unhealthy containers automatically
 
 ### Production Environment
 
@@ -327,9 +338,11 @@ ichrisbirch dev logs traefik  # Traefik logs
 
 **Features:**
 
+- **Persistent viewing:** Watch loop automatically reconnects when containers restart
 - Real-time log following (Ctrl+C to exit)
 - Service-specific filtering
-- Colored output for better readability
+- Colored output for better readability (service names colorized)
+- Uses structlog format (timestamp, level, event, context)
 
 ### `ichrisbirch ssl-manager generate <env|all>`
 
