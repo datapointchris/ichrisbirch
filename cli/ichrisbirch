@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034
 
-ICHRISBIRCH_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && git rev-parse --show-toplevel)"
+ICHRISBIRCH_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # URLs for each environment
 DEV_API_URL="https://api.docker.localhost"
