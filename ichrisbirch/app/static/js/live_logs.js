@@ -1,30 +1,36 @@
 function formatAndColorizeLog(logLine) {
+    // Match structlog's ConsoleRenderer format: [level    ] (lowercase, padded to 9 chars)
     const logLevels = {
-        '[DEBUG]': { color: 'green', length: 7 },
-        '[INFO]': { color: 'lightblue', length: 6 },
-        '[WARNING]': { color: 'yellow', length: 9 },
-        '[ERROR]': { color: 'red', length: 7 },
-        '[CRITICAL]': { color: 'magenta', length: 10 } // longest length including brackets
+        'debug': 'green',
+        'info': 'lightblue',
+        'warning': 'yellow',
+        'error': 'red',
+        'critical': 'magenta'
     };
 
     let formattedLog = logLine;
-    let maxLevelLength = Math.max(...Object.values(logLevels).map(level => level.length));
 
-    for (const [level, { color, length }] of Object.entries(logLevels)) {
-        if (logLine.includes(level)) {
-            const paddingNeeded = '&nbsp;'.repeat(maxLevelLength - length);
-            const coloredLevel = `<span style="color: ${color};">${level}${paddingNeeded}</span>`;
-            formattedLog = logLine.replace(level, coloredLevel);
-            break; // Assume only one log level per line and stop searching once found
+    // Match pattern like [info     ] or [warning  ] (level in brackets with optional padding)
+    const levelRegex = /\[(debug|info|warning|error|critical)(\s*)\]/i;
+    const match = logLine.match(levelRegex);
+
+    if (match) {
+        const level = match[1].toLowerCase();
+        const padding = match[2].replace(/ /g, '&nbsp;'); // Preserve spaces in HTML
+        const color = logLevels[level];
+        if (color) {
+            const coloredLevel = `<span style="color: ${color};">[${match[1]}${padding}]</span>`;
+            formattedLog = logLine.replace(match[0], coloredLevel);
         }
     }
 
     return formattedLog;
 }
 // WEBSOCKETS
-const apiHost = document.getElementById('apiHost').textContent;
-const apiPort = document.getElementById('apiPort').textContent;
-var ws_log = new WebSocket(`ws://${apiHost}:${apiPort}/admin/log-stream/`);
+// Use the current page's protocol (wss for https, ws for http) and derive API host from app host
+const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const apiHost = window.location.hostname.replace('app.', 'api.');
+var ws_log = new WebSocket(`${wsProtocol}//${apiHost}/admin/log-stream/`);
 
 ws_log.onmessage = function (event) {
     const newElement = document.createElement("div");

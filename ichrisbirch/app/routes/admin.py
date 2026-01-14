@@ -1,6 +1,7 @@
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 import boto3
 import pendulum
@@ -16,8 +17,8 @@ from flask import request
 
 from ichrisbirch.app import utils
 from ichrisbirch.app.login import admin_login_required
+from ichrisbirch.logger import LOG_DIR
 from ichrisbirch.scheduler.main import get_jobstore
-from ichrisbirch.util import get_logger_filename_from_handlername
 
 logger = structlog.get_logger()
 blueprint = Blueprint('admin', __name__, template_folder='templates/admin', static_folder='static')
@@ -130,7 +131,8 @@ def logs():
     return render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port)
 
 
-def log_file_to_polars_df(filename: str, debug=False) -> pl.DataFrame:
+def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> pl.DataFrame:
+    """Read all *.log files from a directory and combine into a single DataFrame."""
     schema = {
         'log_level': pl.Categorical,
         'timestamp': pl.Datetime,
@@ -138,15 +140,15 @@ def log_file_to_polars_df(filename: str, debug=False) -> pl.DataFrame:
         'func_name': pl.String,
         'lineno': pl.Int16,
         'message': pl.String,
+        'source': pl.String,
     }
     num_errors = 0
     previous_line = ''
     errors = []
     was_error = False
-    last_error = None
 
     def _process_log_line(line: str):
-        nonlocal num_errors, previous_line, was_error, last_error
+        nonlocal num_errors, previous_line, was_error
         try:
             part, message = line.strip().split('|')
             log_level, timestamp, part = part.strip().rsplit(' ', maxsplit=2)
@@ -155,7 +157,6 @@ def log_file_to_polars_df(filename: str, debug=False) -> pl.DataFrame:
             if was_error:
                 errors.append(f'NXT LINE: {line.strip()}\n')
             was_error = False
-            last_error = None
         except Exception:
             num_errors += 1
             errors.extend([traceback.format_exc(), f'PRE LINE: {previous_line.strip()}', f'ERR LINE: {line.strip()}'])
@@ -175,20 +176,38 @@ def log_file_to_polars_df(filename: str, debug=False) -> pl.DataFrame:
         casts = [pl.col(k).cast(v) for k, v in schema.items()]
         return df.select(*casts)
 
-    def _process_log_file(filename):
-        with open(filename) as f:
-            lines = []
-            for line in f:
-                if processed := _process_log_line(line):
-                    lines.append(processed)
+    def _process_log_file(filepath: Path):
+        lines = []
+        try:
+            with filepath.open() as f:
+                for line in f:
+                    if processed := _process_log_line(line):
+                        processed['source'] = filepath.stem
+                        lines.append(processed)
+        except Exception as e:
+            logger.error('log_file_read_error', file=str(filepath), error=str(e))
         return lines
 
-    log_lines = _process_log_file(filename)
-    df = pl.DataFrame(log_lines)
+    log_path = Path(log_dir)
+    if not log_path.exists():
+        logger.warning('log_dir_not_found', log_dir=log_dir)
+        return pl.DataFrame(schema=schema)
+
+    all_lines = []
+    log_files = sorted(log_path.glob('*.log'))
+    for log_file in log_files:
+        all_lines.extend(_process_log_file(log_file))
+
+    if not all_lines:
+        logger.warning('no_log_lines_found', log_dir=log_dir)
+        return pl.DataFrame(schema=schema)
+
+    df = pl.DataFrame(all_lines)
     converted = _cast_columns(df, schema)
-    num_logs = len(log_lines)
-    logger.info('log_file_processed', filename=filename, num_logs=num_logs)
-    logger.info('log_processing_errors', num_errors=num_errors, num_logs=num_logs, error_rate=round(num_errors / num_logs, 4))
+    num_logs = len(all_lines)
+    logger.info('log_dir_processed', log_dir=log_dir, files=[f.name for f in log_files], num_logs=num_logs)
+    if num_logs > 0:
+        logger.info('log_processing_errors', num_errors=num_errors, num_logs=num_logs, error_rate=round(num_errors / num_logs, 4))
     if debug:
         print()
         for error in errors:
@@ -222,12 +241,10 @@ def create_log_chart(title: str, data: pl.DataFrame, x_axis_key: str, y_axis_key
 
 @blueprint.route('/log-graphs/', methods=['GET', 'POST'])
 def log_graphs():
-    handler = 'ichrisbirch_file'
-    if log_filename := get_logger_filename_from_handlername(handler):
-        log_df = log_file_to_polars_df(log_filename)
-    else:
-        flash(f'log file: {log_filename} not found for handler: {handler}', 'error')
-        logger.error('log_file_not_found', filename=log_filename, handler=handler)
+    log_df = log_dir_to_polars_df()
+    if log_df.is_empty():
+        flash(f'No log files found in {LOG_DIR}', 'error')
+        logger.error('log_dir_empty', log_dir=LOG_DIR)
 
     log_count_by_level = create_log_chart(
         title='Log Count by Level',
