@@ -1,9 +1,6 @@
 import argparse
-import logging
 
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
-
-ops_logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     description='Restore rds postgres database from S3 or local file.', formatter_class=argparse.RawTextHelpFormatter
@@ -43,7 +40,6 @@ args_dict = {
     'target_port': args.target_port,
     'target_username': args.target_username,
     'target_password': args.target_password,
-    'logger': ops_logger,
     'show_command_output': True,
 }
 

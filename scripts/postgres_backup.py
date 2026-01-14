@@ -5,11 +5,8 @@ for particular events. Events are usually before a database migration or any cha
 """
 
 import argparse
-import logging
 
 from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
-
-ops_logger = logging.getLogger(__name__)
 
 help_msg = """Backup the rds postgres database to S3.
 \n
@@ -54,7 +51,6 @@ args_dict = {
     'source_port': args.source_port,
     'source_username': args.source_username,
     'source_password': args.source_password,
-    'logger': ops_logger,
     'show_command_output': True,
 }
 

@@ -140,7 +140,7 @@ def aws_postgres_snapshot_to_s3(settings: Settings) -> None:
 
 @job_logger
 def postgres_backup(settings: Settings) -> None:
-    pbr = PostgresBackupRestore(logger=logger)
+    pbr = PostgresBackupRestore()
     pbr.backup()
 
 

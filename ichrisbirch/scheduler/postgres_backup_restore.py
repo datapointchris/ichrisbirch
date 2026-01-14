@@ -1,13 +1,15 @@
-import logging
 import os
 import subprocess  # nosec
 from pathlib import Path
 
 import boto3
 import pendulum
+import structlog
 
 from ichrisbirch.config import get_settings
 from ichrisbirch.util import find_project_root
+
+logger = structlog.get_logger()
 
 
 class PostgresBackupRestore:
@@ -20,7 +22,6 @@ class PostgresBackupRestore:
 
     def __init__(
         self,
-        logger: logging.Logger,
         backup_bucket: str | None = None,
         source_host: str | None = None,
         source_port: str | None = None,
@@ -33,7 +34,6 @@ class PostgresBackupRestore:
         base_dir: Path | None = None,
         show_command_output: bool = False,
     ):
-        self.logger = logger
         self.settings = get_settings()
         self.show_command_output = show_command_output
 
@@ -60,33 +60,33 @@ class PostgresBackupRestore:
         try:
             output = subprocess.run(command, env=local_env, capture_output=True, check=True, text=True)  # nosec
         except subprocess.CalledProcessError as e:
-            self.logger.error(f'COMMAND FAILED: {e}')
+            logger.error(f'COMMAND FAILED: {e}')
             for line in e.stdout.split('\n'):
-                self.logger.info(line)
+                logger.info(line)
             for line in e.stderr.split('\n'):
-                self.logger.error(line)
+                logger.error(line)
             raise SystemExit(1) from e
         if self.show_command_output:
             for line in output.stdout.split('\n'):
-                self.logger.info(line)
+                logger.info(line)
             for line in output.stderr.split('\n'):
-                self.logger.warning(line)
+                logger.warning(line)
 
     def _delete_file(self, file: Path):
-        self.logger.info(f'deleting: {file}')
+        logger.info(f'deleting: {file}')
         file.unlink()
-        self.logger.info(f'deleted: {file.name}')
-        self.logger.info(f'deleting: ./{self.local_prefix}')
+        logger.info(f'deleted: {file.name}')
+        logger.info(f'deleting: ./{self.local_prefix}')
         dir = file.parent
         while dir != self.base_dir:
             try:
                 dir.rmdir()
             except OSError:
-                self.logger.warning(f'{dir} not empty, leaving in place')
+                logger.warning(f'{dir} not empty, leaving in place')
                 break
             dir = dir.parent
         else:
-            self.logger.info(f'deleted: ./{self.local_prefix}')
+            logger.info(f'deleted: ./{self.local_prefix}')
 
     def _backup_database(
         self,
@@ -122,21 +122,21 @@ class PostgresBackupRestore:
         if verbose:
             command.append('--verbose')
 
-        self.logger.info(f'creating backup directory: {backup_fullpath.parent}')
+        logger.info(f'creating backup directory: {backup_fullpath.parent}')
         backup_fullpath.parent.mkdir(parents=True, exist_ok=True)
 
-        self.logger.info(f'connecting to database: {host}:{port}')
-        self.logger.info('starting: database dump')
+        logger.info(f'connecting to database: {host}:{port}')
+        logger.info('starting: database dump')
         self._run_command(command, env={'PGPASSWORD': password})
-        self.logger.info(f'postgres data dumped: {backup_fullpath}')
+        logger.info(f'postgres data dumped: {backup_fullpath}')
         return backup_fullpath
 
     def _upload_to_s3(self, file: Path):
         s3 = boto3.resource('s3').Bucket(self.backup_bucket)
         key = f'{self.bucket_prefix}/{file.name}'
-        self.logger.info(f'uploading to s3: {self.backup_bucket}/{key}')
+        logger.info(f'uploading to s3: {self.backup_bucket}/{key}')
         s3.upload_fileobj(file.open('rb'), Key=key)
-        self.logger.info('upload completed')
+        logger.info('upload completed')
 
     def backup(
         self,
@@ -145,7 +145,7 @@ class PostgresBackupRestore:
         backup_description: str = 'scheduled',
     ):
         start = pendulum.now()
-        self.logger.info(f'started: postgres backup to s3 - {self.settings.ENVIRONMENT}')
+        logger.info(f'started: postgres backup to s3 - {self.settings.ENVIRONMENT}')
         backup = self._backup_database(
             host=self.source_host,
             port=self.source_port,
@@ -159,7 +159,7 @@ class PostgresBackupRestore:
         if not save_local:
             self._delete_file(backup)
         elapsed = (pendulum.now() - start).in_words()
-        self.logger.info(f'postgres backup to s3 completed - {elapsed}')
+        logger.info(f'postgres backup to s3 completed - {elapsed}')
 
     def _download_from_s3(self, filename: Path | str):
         """Either a dump file name of a specific backup, or 'latest' which will get the latest backup."""
@@ -172,12 +172,12 @@ class PostgresBackupRestore:
             key = f'{self.bucket_prefix}/{filename}'
 
         download_path = self.local_dir / Path(key).name
-        self.logger.info(f'creating download directory: {download_path.parent}')
+        logger.info(f'creating download directory: {download_path.parent}')
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        self.logger.info(f'downloading from s3: {self.backup_bucket}/{key}')
+        logger.info(f'downloading from s3: {self.backup_bucket}/{key}')
         s3.download_fileobj(key, download_path.open('wb'))
-        self.logger.info(f'download location: {download_path}')
+        logger.info(f'download location: {download_path}')
         return download_path
 
     def _restore(self, host, port, username, password, file: Path | str, verbose=False):
@@ -209,14 +209,14 @@ class PostgresBackupRestore:
         if verbose:
             command.append('--echo-all')
 
-        self.logger.info(f'connecting to database: {host}:{port}')
-        self.logger.info('starting: database restore')
+        logger.info(f'connecting to database: {host}:{port}')
+        logger.info('starting: database restore')
         self._run_command(command, env={'PGPASSWORD': password})
-        self.logger.info(f'restored to: {host}:{port}')
+        logger.info(f'restored to: {host}:{port}')
 
     def restore(self, filename: str | Path, skip_download=False, delete_local=False):
         start = pendulum.now()
-        self.logger.info(f'started: postgres restore from s3 - {self.settings.ENVIRONMENT}')
+        logger.info(f'started: postgres restore from s3 - {self.settings.ENVIRONMENT}')
         if skip_download:
             download_file = filename
         else:
@@ -231,4 +231,4 @@ class PostgresBackupRestore:
         if not skip_download and delete_local:
             self._delete_file(Path(download_file))
         elapsed = (pendulum.now() - start).in_words()
-        self.logger.info(f'postgres restore to s3 completed - {elapsed}')
+        logger.info(f'postgres restore to s3 completed - {elapsed}')
