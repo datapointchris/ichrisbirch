@@ -11,7 +11,8 @@ services:
       - "--log.level=DEBUG"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
+      - "--providers.docker.network=proxy-test"
+      - "--providers.docker.constraints=Label(`traefik.environment`,`testing`)"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
@@ -35,6 +36,8 @@ services:
       - proxy
       - default
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=testing"
       - "traefik.enable=true"
       # Dashboard route
       - "traefik.http.routers.dashboard-test.rule=Host(`dashboard.test.localhost`)"
@@ -148,6 +151,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/api.log
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -168,12 +172,21 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
+      - type: volume
+        source: ichrisbirch_logs
+        target: /var/log/ichrisbirch
     networks:
       - proxy
       - default
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=testing"
       - "traefik.enable=true"
-      # API routes
+      # Disable inherited base labels (prevent collision with dev)
+      - "traefik.http.routers.api.rule=Host(`api.test.localhost`)"
+      - "traefik.http.routers.api.service=api-test"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+      # API routes for test
       - "traefik.http.routers.api-test.rule=Host(`api.test.localhost`)"
       - "traefik.http.routers.api-test.entrypoints=websecure"
       - "traefik.http.routers.api-test.tls=true"
@@ -220,6 +233,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/app.log
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -240,12 +254,21 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
+      - type: volume
+        source: ichrisbirch_logs
+        target: /var/log/ichrisbirch
     networks:
       - proxy
       - default
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=testing"
       - "traefik.enable=true"
-      # App routes
+      # Disable inherited base labels (prevent collision with dev)
+      - "traefik.http.routers.app.rule=Host(`app.test.localhost`)"
+      - "traefik.http.routers.app.service=app-test"
+      - "traefik.http.services.app.loadbalancer.server.port=5000"
+      # App routes for test
       - "traefik.http.routers.app-test.rule=Host(`app.test.localhost`)"
       - "traefik.http.routers.app-test.entrypoints=websecure"
       - "traefik.http.routers.app-test.tls=true"
@@ -280,6 +303,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/chat.log
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -300,6 +324,9 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
+      - type: volume
+        source: ichrisbirch_logs
+        target: /var/log/ichrisbirch
     ports:
       - "8507:8505" # Different port to avoid conflicts
     networks:
@@ -312,7 +339,13 @@ services:
       start_period: 30s
       retries: 3
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=testing"
       - "traefik.enable=true"
+      # Disable inherited base labels (prevent collision with dev)
+      - "traefik.http.routers.chat.rule=Host(`chat.test.localhost`)"
+      - "traefik.http.routers.chat.service=chat-test"
+      - "traefik.http.services.chat.loadbalancer.server.port=8505"
       # Chat routes with WebSocket support
       - "traefik.http.routers.chat-test.rule=Host(`chat.test.localhost`)"
       - "traefik.http.routers.chat-test.entrypoints=websecure"
@@ -351,6 +384,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/scheduler.log
       # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -371,6 +405,9 @@ services:
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
+      - type: volume
+        source: ichrisbirch_logs
+        target: /var/log/ichrisbirch
     networks:
       - default
     restart: unless-stopped
@@ -391,16 +428,31 @@ services:
         max-file: "3"
         tag: "scheduler-test"
 
+# Networks - test uses its own proxy network to avoid conflicts with dev
 networks:
   proxy:
-    external: true
+    name: proxy-test
+    external: false
+    driver: bridge
   default:
     driver: bridge
 
 volumes:
+  postgres_data:
+    name: ichrisbirch-test-postgres-data
+    driver: local
+  redis_data:
+    name: ichrisbirch-test-redis-data
+    driver: local
+  ichrisbirch_logs:
+    name: ichrisbirch-test-logs
+    driver: local
   uv_cache:
+    name: ichrisbirch-test-uv-cache
     driver: local
   venv_shared:
+    name: ichrisbirch-test-venv-shared
     driver: local
   traefik_test_letsencrypt:
+    name: ichrisbirch-test-letsencrypt
     driver: local

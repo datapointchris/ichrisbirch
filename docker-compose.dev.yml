@@ -35,10 +35,11 @@ services:
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
 
-      # Docker provider
+      # Docker provider - only discover dev containers
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
+      - "--providers.docker.network=proxy-dev"
+      - "--providers.docker.constraints=Label(`traefik.environment`,`development`)"
 
       # API & Dashboard
       - "--api.dashboard=true"
@@ -50,6 +51,8 @@ services:
       - "--accesslog.format=json"
       - "--metrics.prometheus=true"
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=development"
       # Enable Traefik for itself (dashboard)
       - "traefik.enable=true"
 
@@ -149,6 +152,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/api.log
     ports:
       - "8000:8000"  # Keep direct port access for development debugging
     networks:
@@ -167,7 +171,10 @@ services:
       - .:/app
       - /app/.venv  # Exclude .venv from bind mount for performance
       - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ichrisbirch_logs:/var/log/ichrisbirch
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=development"
       # Enable Traefik
       - "traefik.enable=true"
 
@@ -210,6 +217,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/app.log
     ports:
       - "5000:5000"  # Keep direct port access for development debugging
     networks:
@@ -227,7 +235,10 @@ services:
       - .:/app
       - /app/.venv
       - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ichrisbirch_logs:/var/log/ichrisbirch
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=development"
       # Enable Traefik
       - "traefik.enable=true"
 
@@ -265,6 +276,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/chat.log
     # Standard development port
     ports:
       - "8505:8505"  # Keep direct port access for development debugging
@@ -282,7 +294,10 @@ services:
       - .:/app
       - /app/.venv
       - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ichrisbirch_logs:/var/log/ichrisbirch
     labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=development"
       # Enable Traefik
       - "traefik.enable=true"
 
@@ -323,6 +338,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
+      - LOG_FILE=/var/log/ichrisbirch/scheduler.log
     networks:
       - default
     restart: unless-stopped
@@ -333,6 +349,7 @@ services:
       - .:/app
       - /app/.venv
       - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ichrisbirch_logs:/var/log/ichrisbirch
     logging:
       driver: "json-file"
       options:
@@ -340,17 +357,23 @@ services:
         max-file: "3"
         tag: "scheduler-dev"
 
-# Development volumes using standard names
+# Development volumes with explicit names to avoid conflicts
 volumes:
   postgres_data:
+    name: ichrisbirch-dev-postgres-data
     driver: local
   redis_data:
+    name: ichrisbirch-dev-redis-data
+    driver: local
+  ichrisbirch_logs:
+    name: ichrisbirch-dev-logs
     driver: local
 
-# Networks for Traefik
+# Networks - dev uses its own proxy network to avoid conflicts with test
 networks:
   proxy:
-    name: proxy
-    external: true
+    name: proxy-dev
+    external: false
+    driver: bridge
   default:
     driver: bridge

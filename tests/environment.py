@@ -78,25 +78,29 @@ class DockerComposeTestEnvironment:
         return False  # Don't suppress exceptions
 
     def setup(self):
-        """Setup the Docker Compose test environment."""
+        """Setup the Docker Compose test environment.
+
+        In CI: containers are pre-started by workflow, just wait for them.
+        Locally: always do full cleanup and start fresh to avoid race conditions.
+        """
         try:
             if self.is_ci:
                 logger.info('Running in CI environment - containers should be pre-started by workflow')
-                # In CI, wait longer for containers that were started by the workflow
                 if not self.docker_test_services_already_running():
                     logger.warning('CI containers not detected, waiting for them to start...')
                     time.sleep(10)
                     if not self.docker_test_services_already_running():
                         raise RuntimeError('CI containers not running - check workflow configuration')
                 logger.info('CI containers detected and running')
-            elif not self.docker_test_services_already_running():
-                logger.info('Docker Compose test services not running, starting them up')
-                self.setup_test_services()
             else:
-                logger.info('Docker Compose test services already running')
+                # Always do full cleanup first (handles race conditions from back-to-back runs)
+                logger.info('Cleaning up any existing test containers...')
+                self.stop_docker_compose()
+                time.sleep(3)  # Wait for volumes/networks to be fully released
+                logger.info('Starting fresh Docker Compose test services')
+                self.setup_test_services()
 
-            # Always ensure database is ready, regardless of whether services were just started
-            # This handles the case where containers are running but DB is in unknown state
+            # Ensure database is ready
             self.ensure_database_ready()
 
         except Exception as e:
@@ -138,10 +142,10 @@ class DockerComposeTestEnvironment:
             return False
 
     def setup_test_services(self) -> None:
-        # self.stop_docker_compose()
+        """Start Docker Compose test services."""
         logger.info('Starting Docker Compose test services')
         try:
-            result = subprocess.run(self.COMPOSE_COMMAND.split(' '), capture_output=True, text=True, timeout=60)
+            result = subprocess.run(self.COMPOSE_COMMAND.split(' '), capture_output=True, text=True, timeout=120)
 
             if result.returncode != 0:
                 logger.error(f'Docker Compose failed with return code {result.returncode}')
@@ -157,10 +161,6 @@ class DockerComposeTestEnvironment:
         except subprocess.TimeoutExpired as e:
             logger.error('Docker Compose startup timed out')
             raise RuntimeError('Docker Compose test environment startup timed out') from e
-        except Exception as e:
-            logger.error(f'Error setting up Docker Compose test environment: {e}')
-            # self.stop_docker_compose()
-            raise
 
     def verify_test_services(self) -> None:
         """Verify that test services are responding on their test ports."""
@@ -258,29 +258,13 @@ class DockerComposeTestEnvironment:
         logger.info('Database is ready')
 
     def stop_docker_compose(self) -> None:
-        try:
-            # test_env = os.environ.copy()
-            # test_env.update(
-            #     {
-            #         'POSTGRES_PORT': '5434',
-            #         'REDIS_PORT': '6380',
-            #         'FASTAPI_PORT': '8001',
-            #         'FLASK_PORT': '5001',
-            #         'CHAT_PORT': '8507',
-            #         'ENVIRONMENT': 'testing',
-            #     }
-            # )
-            cmd = 'docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down'
-            result = subprocess.run(cmd.split(' '), capture_output=True, text=True, timeout=120)
-            # result = subprocess.run(cmd.split(' '), env=test_env, capture_output=True, text=True, timeout=120)
-            if result.returncode == 0:
-                logger.info('Docker Compose test services stopped successfully')
-            else:
-                logger.warning(f'Docker Compose down had issues: {result.stderr}')
+        """Stop Docker Compose test services completely.
 
-        except subprocess.TimeoutExpired:
-            logger.warning('Docker Compose down timed out, forcing cleanup')
-            force_command = [
+        Always uses --volumes --remove-orphans to ensure clean state for next run.
+        """
+        logger.info('Stopping Docker Compose test services (with volumes cleanup)...')
+        try:
+            cmd = [
                 'docker',
                 'compose',
                 '--project-name',
@@ -293,8 +277,18 @@ class DockerComposeTestEnvironment:
                 '--volumes',
                 '--remove-orphans',
             ]
-            subprocess.run(force_command, capture_output=True, timeout=30)
-            # subprocess.run(force_command, env=test_env, capture_output=True, timeout=30)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode == 0:
+                logger.info('Docker Compose test services stopped successfully')
+            else:
+                logger.warning(f'Docker Compose down had issues: {result.stderr}')
+
+        except subprocess.TimeoutExpired:
+            logger.warning('Docker Compose down timed out, forcing container removal')
+            # Force kill any remaining containers
+            services = ['postgres', 'redis', 'api', 'app', 'chat', 'scheduler', 'traefik']
+            containers = [f'ichrisbirch-{s}-testing' for s in services]
+            subprocess.run(['docker', 'rm', '-f'] + containers, capture_output=True, timeout=30)
         except Exception as e:
             logger.warning(f'Error stopping Docker Compose: {e}')
 

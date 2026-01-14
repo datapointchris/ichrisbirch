@@ -1,3 +1,4 @@
+import httpx
 import pendulum
 import structlog
 from fastapi import status
@@ -5,6 +6,7 @@ from flask import Blueprint
 from flask import abort
 from flask import current_app
 from flask import flash
+from flask import make_response
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -58,6 +60,19 @@ def login():
                         # User cannot act on this, don't block login or show error
                         # System log captures issue for debugging
                         logger.error('user_last_login_update_error', name=user.name, error=str(e))
+
+                    # Request JWT tokens from API for WebSocket auth (admin logs)
+                    access_token = None
+                    try:
+                        token_data = {'username': form.email.data, 'password': form.password.data}
+                        with httpx.Client(base_url=api_url, verify=False) as token_client:  # nosec B501
+                            resp = token_client.post('/auth/token/', data=token_data)
+                            if resp.status_code == 201:
+                                access_token = resp.json().get('access_token')
+                                logger.debug('jwt_token_obtained_for_cookie')
+                    except Exception as e:
+                        logger.warning('jwt_token_request_failed', error=str(e))
+
                     if next_page := session.get('next'):
                         logger.debug('login_redirect_from_session', next_page=next_page)
                     else:
@@ -66,7 +81,28 @@ def login():
                     logger.debug('login_redirecting', next_page=next_page)
                     if not http_utils.url_has_allowed_host_and_scheme(next_page, request.host):
                         return abort(status.HTTP_401_UNAUTHORIZED, f'Unauthorized URL: {next_page}')
-                    return redirect(next_page)
+
+                    # Create response and set JWT cookie for cross-subdomain WebSocket auth
+                    response = make_response(redirect(next_page))
+                    if access_token:
+                        # Get parent domain for cross-subdomain cookie
+                        # e.g., "app.docker.localhost" -> "docker.localhost"
+                        host = request.host.split(':')[0]  # Remove port if present
+                        parts = host.split('.')
+                        if len(parts) > 2:
+                            parent_domain = '.'.join(parts[-2:])  # e.g., "docker.localhost"
+                        else:
+                            parent_domain = host
+                        response.set_cookie(
+                            'access_token',
+                            f'Bearer {access_token}',
+                            httponly=True,
+                            secure=request.is_secure,
+                            samesite='Lax',
+                            domain=parent_domain,
+                        )
+                        logger.debug('jwt_cookie_set', domain=parent_domain)
+                    return response
                 else:
                     logger.warning('login_failed_invalid_password', email=form.email.data)
             else:
@@ -135,4 +171,13 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('home.index'))
+    response = make_response(redirect(url_for('home.index')))
+    # Clear JWT cookie on parent domain
+    host = request.host.split(':')[0]
+    parts = host.split('.')
+    if len(parts) > 2:
+        parent_domain = '.'.join(parts[-2:])
+    else:
+        parent_domain = host
+    response.delete_cookie('access_token', domain=parent_domain)
+    return response
