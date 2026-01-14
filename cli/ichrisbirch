@@ -4,6 +4,38 @@
 
 ICHRISBIRCH_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && git rev-parse --show-toplevel)"
 
+# URLs for each environment
+DEV_API_URL="https://api.docker.localhost"
+DEV_APP_URL="https://app.docker.localhost"
+DEV_CHAT_URL="https://chat.docker.localhost"
+DEV_DASHBOARD_URL="https://dashboard.docker.localhost"
+DEV_API_PORT="http://localhost:8000"
+DEV_APP_PORT="http://localhost:5000"
+DEV_CHAT_PORT="http://localhost:8505"
+
+TEST_API_URL="https://api.test.localhost:8443"
+TEST_APP_URL="https://app.test.localhost:8443"
+TEST_CHAT_URL="https://chat.test.localhost:8443"
+TEST_DASHBOARD_URL="https://dashboard.test.localhost:8443"
+TEST_API_PORT="http://localhost:8001"
+TEST_APP_PORT="http://localhost:5001"
+TEST_CHAT_PORT="http://localhost:8507"
+
+PROD_DOMAIN="${DOMAIN:-ichrisbirch.com}"
+PROD_API_URL="https://api.${PROD_DOMAIN}"
+PROD_APP_URL="https://${PROD_DOMAIN}"
+PROD_CHAT_URL="https://chat.${PROD_DOMAIN}"
+
+# Docker compose commands
+COMPOSE_DEV="docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml"
+COMPOSE_TEST="docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml"
+COMPOSE_PROD="docker compose --project-name ichrisbirch-prod -f docker-compose.yml"
+
+# Script paths
+HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/cli/health-check.sh"
+SSL_MANAGER_SCRIPT="$ICHRISBIRCH_HOME/deploy-containers/traefik/scripts/ssl-manager.sh"
+
+# Colors
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
@@ -18,16 +50,14 @@ bright_yellow=$(tput setaf 11)
 bright_blue=$(tput setaf 12)
 bright_magenta=$(tput setaf 13)
 bright_cyan=$(tput setaf 14)
-orange=$(tput setaf 208) # 256-color orange
+orange=$(tput setaf 208)
 reset=$(tput sgr0)
 
-function colored-logs() {
-  # Structlog handles log level coloring via ConsoleRenderer with LOG_COLORS=true
-  # This function only handles:
-  # 1. Stripping container name prefixes (ichrisbirch-, -dev, -testing)
-  # 2. Coloring Docker service names in the log output
+# Source stats commands
+# shellcheck source=cli/stats
+source "$ICHRISBIRCH_HOME/cli/stats"
 
-  # Service name colors
+function colored-logs() {
   local RED_REDIS="${red}redis${reset}"
   local GREEN_POSTGRES="${green}postgres${reset}"
   local BRIGHT_GREEN_API="${bright_green}api${reset}"
@@ -36,8 +66,6 @@ function colored-logs() {
   local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
   local CYAN_TRAEFIK="${cyan}traefik${reset}"
 
-  # Strip container prefixes and color service names
-  # Note: -testing must come before -test to avoid leaving "ing" suffix
   sed \
     -e 's/ichrisbirch-//g' \
     -e 's/-dev//g' \
@@ -71,9 +99,7 @@ function colored-status() {
     -v unhealthy="$YELLOW_UNHEALTHY" \
     -v healthy="$GREEN_HEALTHY" '
     {
-        # Strip ichrisbirch- prefix from service names
         gsub(/ichrisbirch-/, "");
-        # Color container states using gsub for all matches
         gsub(/running/, running);
         gsub(/exited/, exited);
         gsub(/restarting/, restarting);
@@ -86,96 +112,70 @@ function colored-status() {
     }'
 }
 
-function install() {
-  sudo ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" /usr/local/bin/ichrisbirch
-}
-
-function open() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  echo "Opening ${green}ichrisbirch${reset} project in VS Code"
-  code .
-  echo "Starting tmux session"
-  exec tmux new-session -d -s ichrisbirch || tmux attach-session -t ichrisbirch
-}
-
-function project-cd() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  if [ -d ".venv" ]; then
-    echo "Activating virtual environment"
-    # shellcheck source=/dev/null
-    source .venv/bin/activate
-  fi
-  exec "$SHELL"
-}
-
-# ============================================================================
-# SSL CERTIFICATE MANAGEMENT
-# ============================================================================
-
-function ssl-manager() {
-  local action="${1:-info}"
-  local environment="${2:-all}"
-
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -x "./deploy-containers/traefik/scripts/ssl-manager.sh" ]; then
-    ./deploy-containers/traefik/scripts/ssl-manager.sh "$action" "$environment"
-  else
-    echo "${red}SSL manager script not found${reset}"
-    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/ssl-manager.sh${reset}"
-    return 1
-  fi
-}
-
-function dev-start() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  # Ensure proxy network exists for Traefik
+function ensure-proxy-network() {
   if ! docker network inspect proxy >/dev/null 2>&1; then
     echo "Creating external proxy network..."
     docker network create proxy
   fi
+}
 
-  echo "Starting ${blue}DEV${reset} environment with ${green}Docker Compose + Traefik (HTTPS)${reset}"
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
+function install() {
+  ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" "$HOME/.local/bin/icb"
+}
+
+function ssl-manager() {
+  local action="${1:-info}"
+  local environment="${2:-all}"
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -x "$SSL_MANAGER_SCRIPT" ]; then
+    "$SSL_MANAGER_SCRIPT" "$action" "$environment"
+  else
+    echo "${red}SSL manager script not found: $SSL_MANAGER_SCRIPT${reset}"
+    return 1
+  fi
+}
+
+# Development environment
+function dev-start() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  ensure-proxy-network
+
+  echo "Starting ${blue}DEV${reset} environment"
+  $COMPOSE_DEV up -d
 
   echo ""
-  echo "Development environment started with ${green}HTTPS${reset}:"
-  echo "  ${green}API${reset}:       ${cyan}https://api.docker.localhost/${reset}"
-  echo "  ${green}APP${reset}:       ${cyan}https://app.docker.localhost/${reset}"
-  echo "  ${green}CHAT${reset}:      ${cyan}https://chat.docker.localhost/${reset}"
-  echo "  ${green}DASHBOARD${reset}: ${cyan}https://dashboard.docker.localhost/${reset} (user: dev, pass: devpass)"
+  echo "Development environment started:"
+  echo "  ${green}API${reset}:       ${cyan}${DEV_API_URL}${reset}"
+  echo "  ${green}APP${reset}:       ${cyan}${DEV_APP_URL}${reset}"
+  echo "  ${green}CHAT${reset}:      ${cyan}${DEV_CHAT_URL}${reset}"
+  echo "  ${green}DASHBOARD${reset}: ${cyan}${DEV_DASHBOARD_URL}${reset} (user: dev, pass: devpass)"
   echo ""
-  echo "Legacy HTTP access also available:"
-  echo "  ${green}APP${reset}: ${cyan}http://localhost:5000${reset}"
-  echo "  ${green}API${reset}: ${cyan}http://localhost:8000${reset}"
-  echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8505${reset}"
+  echo "Direct ports (bypass Traefik):"
+  echo "  ${green}API${reset}:  ${cyan}${DEV_API_PORT}${reset}"
+  echo "  ${green}APP${reset}:  ${cyan}${DEV_APP_PORT}${reset}"
+  echo "  ${green}CHAT${reset}: ${cyan}${DEV_CHAT_PORT}${reset}"
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5432${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
-  echo ""
-  echo "Use ${blue}ichrisbirch dev logs${reset} to view live container logs"
-  echo "Use ${blue}ichrisbirch dev status${reset} to check service status"
-  echo "Use ${blue}ichrisbirch dev health${reset} to run health checks"
 }
 
 function dev-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Stopping ${blue}DEV${reset} environment"
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
+  $COMPOSE_DEV down
 }
 
 function dev-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}DEV${reset} environment"
-  # Use 'up -d' instead of 'restart' to pick up any configuration changes
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d
+  $COMPOSE_DEV up -d
 }
 
 function dev-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Rebuilding and restarting ${blue}DEV${reset} environment"
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml down
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+  echo "Rebuilding ${blue}DEV${reset} environment"
+  $COMPOSE_DEV down
+  $COMPOSE_DEV up -d --build
 }
 
 function dev-logs() {
@@ -184,9 +184,8 @@ function dev-logs() {
   echo ""
 
   while true; do
-    docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml \
-      logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-        sleep 2
+    $COMPOSE_DEV logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+    sleep 2
   done
 }
 
@@ -194,76 +193,49 @@ function dev-status() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "${blue}DEV${reset} environment status:"
   echo ""
-
-  # Show container status with colors
-  docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
-
+  $COMPOSE_DEV ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   echo ""
-  echo "${blue}Development${reset} URLs:"
-  echo "  • API:       https://api.docker.localhost/"
-  echo "  • App:       https://app.docker.localhost/"
-  echo "  • Chat:      https://chat.docker.localhost/"
-  echo "  • Dashboard: https://dashboard.docker.localhost/ (user: dev, pass: devpass)"
-}
-
-function dev-monitor() {
-  tmuxinator ichrisbirch-dev-monitoring
+  echo "${blue}URLs${reset}: $DEV_API_URL | $DEV_APP_URL | $DEV_CHAT_URL"
 }
 
 function dev-health() {
   echo "Running health check for ${blue}DEV${reset} environment"
-
   cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -x "./deploy-containers/traefik/scripts/health-check.sh" ]; then
-    ./deploy-containers/traefik/scripts/health-check.sh dev
-  else
-    echo "${red}Health check script not found${reset}"
-    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/health-check.sh${reset}"
-    return 1
-  fi
+  "$HEALTH_CHECK_SCRIPT" dev
 }
 
+# Test environment
 function test-run() {
   cd "$ICHRISBIRCH_HOME" || exit
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
 
-  # Parse --keep flag (preserves containers after tests)
-  local keep_containers=false
-  local pytest_args=()
-  for arg in "$@"; do
-    if [[ "$arg" == "--keep" ]]; then
-      keep_containers=true
+  # Check if containers are already running and healthy
+  local containers_ready=false
+  if $COMPOSE_TEST ps --status running -q 2>/dev/null | grep -q .; then
+    echo "${blue}Test containers already running, checking health...${reset}"
+    if $COMPOSE_TEST ps | grep -q "healthy"; then
+      containers_ready=true
+      echo "${green}Containers healthy, reusing them${reset}"
     else
-      pytest_args+=("$arg")
+      echo "${yellow}Containers unhealthy, restarting...${reset}"
+      $COMPOSE_TEST down --volumes 2>/dev/null || true
     fi
-  done
-
-  # Ensure clean state - stop any existing test containers
-  echo "${blue}Stopping any existing test containers...${reset}"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes 2>/dev/null || true
-
-  # Ensure proxy network exists
-  if ! docker network inspect proxy >/dev/null 2>&1; then
-    docker network create proxy
   fi
 
-  # Start fresh containers
-  echo "${blue}Starting test containers...${reset}"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+  if [ "$containers_ready" = false ]; then
+    ensure-proxy-network
+    echo "${blue}Starting test containers...${reset}"
+    $COMPOSE_TEST up -d
+    echo "Waiting for services to be ready..."
+    sleep 15
+  fi
 
-  echo "Waiting for services to be ready..."
-  sleep 15
-
-  # Initialize test database
+  # Always reset database to ensure clean state
   echo "${blue}Initializing test database...${reset}"
   if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
     echo "${red}Database initialization failed${reset}"
-    if [[ "$keep_containers" == false ]]; then
-      docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
-    fi
     return 1
   fi
 
@@ -272,164 +244,73 @@ function test-run() {
   echo "${green}Running tests...${reset}"
   echo ""
   local test_exit_code=0
-  if [ ${#pytest_args[@]} -eq 0 ]; then
+  if [ $# -eq 0 ]; then
     uv run pytest || test_exit_code=$?
   else
-    uv run pytest "${pytest_args[@]}" || test_exit_code=$?
+    uv run pytest "$@" || test_exit_code=$?
   fi
 
-  # Stop containers unless --keep was specified
-  if [[ "$keep_containers" == true ]]; then
-    echo ""
-    echo "${yellow}Containers kept running (--keep flag).${reset}"
-    echo "Stop them later with: ${cyan}ichrisbirch testing stop${reset}"
-  else
-    echo ""
-    echo "${blue}Stopping test containers...${reset}"
-    docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
-  fi
-
-  return $test_exit_code
-}
-
-function test-cov() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  export ENVIRONMENT=testing
-
-  # Parse --keep flag (preserves containers after tests)
-  local keep_containers=false
-  local pytest_args=()
-  for arg in "$@"; do
-    if [[ "$arg" == "--keep" ]]; then
-      keep_containers=true
-    else
-      pytest_args+=("$arg")
-    fi
-  done
-
-  # Ensure clean state - stop any existing test containers
-  echo "${blue}Stopping any existing test containers...${reset}"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes 2>/dev/null || true
-
-  # Ensure proxy network exists
-  if ! docker network inspect proxy >/dev/null 2>&1; then
-    docker network create proxy
-  fi
-
-  # Start fresh containers
-  echo "${blue}Starting test containers...${reset}"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
-
-  echo "Waiting for services to be ready..."
-  sleep 15
-
-  # Initialize test database
-  echo "${blue}Initializing test database...${reset}"
-  if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
-    echo "${red}Database initialization failed${reset}"
-    if [[ "$keep_containers" == false ]]; then
-      docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
-    fi
-    return 1
-  fi
-
-  # Run pytest with coverage
+  # Always leave containers running for fast iteration
   echo ""
-  echo "${green}Running tests with coverage...${reset}"
-  echo ""
-  local test_exit_code=0
-  if [ ${#pytest_args[@]} -eq 0 ]; then
-    uv run pytest --cov=ichrisbirch --cov-report=html || test_exit_code=$?
-  else
-    uv run pytest --cov=ichrisbirch --cov-report=html "${pytest_args[@]}" || test_exit_code=$?
-  fi
-
-  echo ""
-  echo "Coverage report: ${cyan}file://$ICHRISBIRCH_HOME/htmlcov/index.html${reset}"
-
-  # Stop containers unless --keep was specified
-  if [[ "$keep_containers" == true ]]; then
-    echo ""
-    echo "${yellow}Containers kept running (--keep flag).${reset}"
-    echo "Stop them later with: ${cyan}ichrisbirch testing stop${reset}"
-  else
-    echo ""
-    echo "${blue}Stopping test containers...${reset}"
-    docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down --volumes
-  fi
+  echo "${cyan}Containers left running for fast iteration.${reset}"
+  echo "Stop them with: ${blue}icb testing stop${reset}"
 
   return $test_exit_code
 }
 
 function testing-start() {
   cd "$ICHRISBIRCH_HOME" || exit
+  ensure-proxy-network
 
-  # Ensure proxy network exists for Traefik
-  if ! docker network inspect proxy >/dev/null 2>&1; then
-    echo "Creating external proxy network..."
-    docker network create proxy
-  fi
-
-  echo "Starting ${blue}TESTING${reset} environment with ${green}Docker Compose + Traefik (HTTPS)${reset}"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+  echo "Starting ${blue}TESTING${reset} environment"
+  $COMPOSE_TEST up -d
 
   echo "Waiting for services to be ready..."
   sleep 15
 
   echo "Initializing test database..."
-  # Use virtual environment and run database initialization
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
 
-  # Run test database initialization from host (need to use localhost, not Docker hostname)
   if ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
     echo "${green}Database initialized successfully${reset}"
   else
     echo "${red}Database initialization failed${reset}"
-    echo "Check logs for details. You may need to run:"
-    echo "   ${blue}ichrisbirch testing stop${reset}"
-    echo "   ${blue}ichrisbirch testing start${reset}"
     return 1
   fi
 
   echo ""
-  echo "Testing environment started with ${green}HTTPS${reset}:"
-  echo "  ${green}API${reset}:       ${cyan}https://api.test.localhost:8443/${reset}"
-  echo "  ${green}APP${reset}:       ${cyan}https://app.test.localhost:8443/${reset}"
-  echo "  ${green}CHAT${reset}:      ${cyan}https://chat.test.localhost:8443/${reset}"
-  echo "  ${green}DASHBOARD${reset}: ${cyan}https://dashboard.test.localhost:8443/${reset} (user: test, pass: testpass)"
+  echo "Testing environment started:"
+  echo "  ${green}API${reset}:       ${cyan}${TEST_API_URL}${reset}"
+  echo "  ${green}APP${reset}:       ${cyan}${TEST_APP_URL}${reset}"
+  echo "  ${green}CHAT${reset}:      ${cyan}${TEST_CHAT_URL}${reset}"
+  echo "  ${green}DASHBOARD${reset}: ${cyan}${TEST_DASHBOARD_URL}${reset} (user: test, pass: testpass)"
   echo ""
-  echo "Legacy HTTP access also available:"
-  echo "  ${green}APP${reset}: ${cyan}http://localhost:5001${reset}"
-  echo "  ${green}API${reset}: ${cyan}http://localhost:8001${reset}"
-  echo "  ${green}CHAT${reset}: ${cyan}http://localhost:8507${reset}"
+  echo "Direct ports (bypass Traefik):"
+  echo "  ${green}API${reset}:  ${cyan}${TEST_API_PORT}${reset}"
+  echo "  ${green}APP${reset}:  ${cyan}${TEST_APP_PORT}${reset}"
+  echo "  ${green}CHAT${reset}: ${cyan}${TEST_CHAT_PORT}${reset}"
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
-  echo ""
-  echo "Use ${blue}ichrisbirch testing logs${reset} to view Docker container logs"
-  echo "Use ${blue}ichrisbirch testing health${reset} to run health checks"
 }
 
 function testing-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Stopping ${blue}TESTING${reset} environment"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
+  $COMPOSE_TEST down --volumes
 }
 
 function testing-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}TESTING${reset} environment"
-  # Use 'up -d' instead of 'restart' to pick up any configuration changes
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d
+  $COMPOSE_TEST up -d
 }
 
 function testing-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Rebuilding and restarting ${blue}TESTING${reset} environment"
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml down
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml up -d --build
+  echo "Rebuilding ${blue}TESTING${reset} environment"
+  $COMPOSE_TEST down
+  $COMPOSE_TEST up -d --build
 }
 
 function testing-logs() {
@@ -438,9 +319,8 @@ function testing-logs() {
   echo ""
 
   while true; do
-    docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml \
-      logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-        sleep 2
+    $COMPOSE_TEST logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+    sleep 2
   done
 }
 
@@ -448,41 +328,25 @@ function testing-status() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "${blue}TESTING${reset} environment status:"
   echo ""
-
-  # Show container status with colors
-  docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
-
+  $COMPOSE_TEST ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   echo ""
-  echo "${blue}Test${reset} URLs:"
-  echo "  • API:       https://api.test.localhost:8443/"
-  echo "  • App:       https://app.test.localhost:8443/"
-  echo "  • Chat:      https://chat.test.localhost:8443/"
-  echo "  • Dashboard: https://dashboard.test.localhost:8443/ (user: test, pass: testpass)"
+  echo "${blue}URLs${reset}: $TEST_API_URL | $TEST_APP_URL | $TEST_CHAT_URL"
 }
 
 function testing-health() {
   echo "Running health check for ${blue}TESTING${reset} environment"
-
   cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -x "./deploy-containers/traefik/scripts/health-check.sh" ]; then
-    ./deploy-containers/traefik/scripts/health-check.sh test
-  else
-    echo "${red}Health check script not found${reset}"
-    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/health-check.sh${reset}"
-    return 1
-  fi
+  "$HEALTH_CHECK_SCRIPT" test
 }
 
-# Helper to load production environment variables from AWS SSM
+# Production environment
 function load-prod-env() {
   local aws_region="${AWS_REGION:-us-east-2}"
-  local environment="production"
 
   get_ssm_param() {
     aws ssm get-parameter \
       --region "$aws_region" \
-      --name "/ichrisbirch/$environment/$1" \
+      --name "/ichrisbirch/production/$1" \
       --with-decryption \
       --query 'Parameter.Value' \
       --output text
@@ -510,55 +374,39 @@ function prod-start() {
   load-prod-env || return 1
   echo "Secrets loaded for ${magenta}production${reset}"
 
-  # Ensure proxy network exists for Traefik
-  if ! docker network inspect proxy >/dev/null 2>&1; then
-    echo "Creating external proxy network..."
-    docker network create proxy
-  fi
+  ensure-proxy-network
 
-  echo "Starting ${magenta}PRODUCTION${reset} environment with ${green}Docker Compose + Traefik${reset}"
-  echo "  (Cloudflare Tunnel handles external HTTPS)"
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d
+  echo "Starting ${magenta}PRODUCTION${reset} environment"
+  $COMPOSE_PROD up -d
 
   echo ""
   echo "Production environment started:"
-  echo "  ${green}APP${reset}:  ${cyan}https://${DOMAIN}/${reset}"
-  echo "  ${green}API${reset}:  ${cyan}https://api.${DOMAIN}/${reset}"
-  echo "  ${green}CHAT${reset}: ${cyan}https://chat.${DOMAIN}/${reset}"
-  echo ""
-  echo "Use ${blue}ichrisbirch prod logs${reset} to view live container logs"
-  echo "Use ${blue}ichrisbirch prod status${reset} to check service status"
-  echo "Use ${blue}ichrisbirch prod health${reset} to run health checks"
+  echo "  ${green}APP${reset}:  ${cyan}${PROD_APP_URL}${reset}"
+  echo "  ${green}API${reset}:  ${cyan}${PROD_API_URL}${reset}"
+  echo "  ${green}CHAT${reset}: ${cyan}${PROD_CHAT_URL}${reset}"
 }
 
 function prod-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
   echo "Stopping ${magenta}PRODUCTION${reset} environment"
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
+  $COMPOSE_PROD down
 }
 
 function prod-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
   echo "Restarting ${magenta}PRODUCTION${reset} environment"
-  # Use 'up -d' instead of 'restart' to pick up any configuration changes
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d
+  $COMPOSE_PROD up -d
 }
 
 function prod-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
-
   echo "Fetching secrets from AWS SSM..."
   load-prod-env || return 1
-
-  echo "Rebuilding and restarting ${magenta}PRODUCTION${reset} environment"
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml down
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml up -d --build
-}
-
-function prod-monitor() {
-  tmuxinator ichrisbirch-prod-monitoring
+  echo "Rebuilding ${magenta}PRODUCTION${reset} environment"
+  $COMPOSE_PROD down
+  $COMPOSE_PROD up -d --build
 }
 
 function prod-logs() {
@@ -568,725 +416,29 @@ function prod-logs() {
   echo ""
 
   while true; do
-    docker compose --project-name ichrisbirch-prod -f docker-compose.yml \
-      logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-        sleep 2
+    $COMPOSE_PROD logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+    sleep 2
   done
 }
 
 function prod-status() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
-
   echo "${magenta}PRODUCTION${reset} environment status:"
   echo ""
-  docker compose --project-name ichrisbirch-prod -f docker-compose.yml ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
-
+  $COMPOSE_PROD ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   echo ""
-  echo "${magenta}Production${reset} URLs (via Cloudflare Tunnel):"
-  echo "  • App:  https://${DOMAIN}/"
-  echo "  • API:  https://api.${DOMAIN}/"
-  echo "  • Chat: https://chat.${DOMAIN}/"
+  echo "${magenta}URLs${reset}: $PROD_APP_URL | $PROD_API_URL | $PROD_CHAT_URL"
 }
 
 function prod-health() {
   echo "Running health check for ${magenta}PRODUCTION${reset} environment"
-
   cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -x "./deploy-containers/traefik/scripts/health-check.sh" ]; then
-    ./deploy-containers/traefik/scripts/health-check.sh prod
-  else
-    echo "${red}Health check script not found${reset}"
-    echo "Expected: ${cyan}./deploy-containers/traefik/scripts/health-check.sh${reset}"
-    return 1
-  fi
+  "$HEALTH_CHECK_SCRIPT" prod
 }
 
 function prod-apihealth() {
-  curl --silent https://api.ichrisbirch.com/health/ | jq
-}
-
-# ============================================================================
-# PROJECT STATS (Event-Sourced)
-# ============================================================================
-
-function stats-latest-file() {
-  find "$ICHRISBIRCH_HOME/stats" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
-}
-
-function stats-usage() {
-  echo "${green}Stats Commands${reset}"
-  echo ""
-  echo "  ${blue}stats summary${reset}       Dashboard with code, tests, quality, and activity"
-  echo "  ${blue}stats code${reset}          Lines of code by language (live from tokei)"
-  echo "  ${blue}stats tests${reset}         Test results, coverage, and slowest tests"
-  echo "  ${blue}stats quality${reset}       Linter issues over 24h/7d/30d/all time"
-  echo "  ${blue}stats activity [n]${reset}  Commit activity graph (default: 7 days)"
-  echo "  ${blue}stats events [n]${reset}    Recent pre-commit hook events (default: 20)"
-  echo "  ${blue}stats trends${reset}        Velocity, code churn, and test suite trends"
-  echo "  ${blue}stats churn [n|all]${reset} File churn analysis (default: 30 days, 'all' for entire history)"
-  echo "  ${blue}stats snapshot${reset}      Regenerate stats snapshot from events.jsonl"
-  echo ""
-  echo "Data sources:"
-  echo "  • Code stats: Live from tokei"
-  echo "  • Test/coverage: From last snapshot (updated on commit)"
-  echo "  • Quality: From events.jsonl (pre-commit hook results)"
-  echo "  • Activity: From events.jsonl commit events"
-}
-
-function stats-summary() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file
-  stats_file=$(stats-latest-file)
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
-
-  echo "${green}Project Stats Summary${reset}"
-  echo ""
-
-  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
-    echo "${yellow}No stats snapshots found.${reset}"
-    echo "Stats are collected automatically on each commit."
-    return
-  fi
-
-  local collected_at
-  collected_at=$(jq -r '.collected_at' "$stats_file" | cut -d'T' -f1)
-  echo "Last collected: ${cyan}$collected_at${reset}"
-  echo ""
-
-  # Code stats (live from tokei) - show top 5 languages
-  # Use max(code, comments) to handle prose languages (Markdown counts content as comments)
-  local tokei_json total_loc
-  tokei_json=$(tokei . --compact --output json 2>/dev/null)
-  total_loc=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map([.code, .comments] | max) | add // 0')
-
-  echo "${blue}Code${reset}"
-  echo "$tokei_json" | jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[0:5] | .[] | "\(.key)\t\([.value.code, .value.comments] | max)\t\(.value.reports | length)"' | \
-    while IFS=$'\t' read -r lang content files; do
-      printf "  %-10s %'6d lines (%d files)\n" "$lang:" "$content" "$files"
-    done
-  printf "  ${cyan}%-10s %'6d lines${reset}\n" "Total:" "$total_loc"
-  echo ""
-
-  # Tests
-  local tests_total tests_passed tests_failed coverage duration
-  tests_total=$(jq -r '.tests.total // 0' "$stats_file")
-  tests_passed=$(jq -r '.tests.passed // 0' "$stats_file")
-  tests_failed=$(jq -r '.tests.failed // 0' "$stats_file")
-  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
-  duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
-
-  local pass_rate=0
-  if [ "$tests_total" -gt 0 ]; then
-    pass_rate=$((tests_passed * 100 / tests_total))
-  fi
-
-  echo "${blue}Tests${reset}"
-  if [ "$tests_failed" -eq 0 ]; then
-    printf "  Total:       %d tests (${green}%d%% pass${reset})\n" "$tests_total" "$pass_rate"
-  else
-    printf "  Total:       %d tests (${red}%d failed${reset})\n" "$tests_total" "$tests_failed"
-  fi
-  printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
-  printf "  Duration:    %ds\n" "$duration"
-  echo ""
-
-  # Dependencies
-  local deps_direct deps_total
-  deps_direct=$(jq -r '.dependencies.direct // 0' "$stats_file")
-  deps_total=$(jq -r '.dependencies.total // 0' "$stats_file")
-
-  echo "${blue}Dependencies${reset}"
-  printf "  Direct:      %d packages\n" "$deps_direct"
-  printf "  Total:       %d packages\n" "$deps_total"
-  echo ""
-
-  # Commit activity
-  if [ -f "$events_file" ]; then
-    local total_commits today_commits week_commits
-    total_commits=$(grep -c '"type":"commit"' "$events_file" 2>/dev/null || echo 0)
-    today_commits=$(grep '"type":"commit"' "$events_file" | grep -c "$(date +%Y-%m-%d)")
-
-    local week_pattern
-    week_pattern=$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')
-    week_commits=$(grep '"type":"commit"' "$events_file" | grep -cE "$week_pattern")
-
-    echo "${blue}Activity${reset}"
-    printf "  Today:       %d commits\n" "$today_commits"
-    printf "  This week:   %d commits\n" "$week_commits"
-    printf "  All time:    %d commits\n" "$total_commits"
-  fi
-}
-
-function stats-snapshot() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  uv run python -m stats.snapshot
-}
-
-function stats-code() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  echo "${green}Code Statistics by Language${reset}"
-  echo ""
-
-  printf "${cyan}%-15s %10s %10s %8s${reset}\n" "Language" "Content" "Blanks" "Files"
-  echo "---------------------------------------------------"
-
-  # Run tokei directly for real-time stats
-  # For code: content = code, for prose (Markdown): content = comments
-  # We use max(code, comments) as content to handle both properly
-  local tokei_json
-  tokei_json=$(tokei . --compact --output json 2>/dev/null)
-
-  echo "$tokei_json" | \
-    jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[] | [.key, ([.value.code, .value.comments] | max), .value.blanks, (.value.reports | length)] | @tsv' | \
-    while IFS=$'\t' read -r lang content blanks files; do
-      printf "%-15s %'10d %'10d %8d\n" "$lang" "$content" "$blanks" "$files"
-    done
-
-  echo "---------------------------------------------------"
-  local total_content total_blanks
-  total_content=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map([.code, .comments] | max) | add')
-  total_blanks=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map(.blanks) | add')
-  printf "${green}%-15s %'10d %'10d${reset}\n" "Total" "$total_content" "$total_blanks"
-}
-
-function stats-tests() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file
-  stats_file=$(stats-latest-file)
-
-  echo "${green}Test Statistics${reset}"
-  echo ""
-
-  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
-    echo "${yellow}No stats snapshots found.${reset}"
-    return
-  fi
-
-  local total passed failed skipped errors duration coverage
-  total=$(jq -r '.tests.total // 0' "$stats_file")
-  passed=$(jq -r '.tests.passed // 0' "$stats_file")
-  failed=$(jq -r '.tests.failed // 0' "$stats_file")
-  skipped=$(jq -r '.tests.skipped // 0' "$stats_file")
-  errors=$(jq -r '.tests.errors // 0' "$stats_file")
-  duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file")
-  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
-
-  echo "${blue}Results${reset}"
-  printf "  Total:     %d\n" "$total"
-  printf "  Passed:    ${green}%d${reset}\n" "$passed"
-  [ "$failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$failed"
-  [ "$skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$skipped"
-  [ "$errors" -gt 0 ] && printf "  Errors:    ${red}%d${reset}\n" "$errors"
-  echo ""
-
-  echo "${blue}Performance${reset}"
-  printf "  Duration:  %.1fs\n" "$duration"
-  printf "  Coverage:  %.1f%%\n" "$coverage"
-  echo ""
-
-  echo "${blue}Slowest Tests${reset}"
-  jq -r '.tests.slowest[:5] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" | \
-    sed 's|tests/ichrisbirch/||g' | sed 's|::test_|: |g'
-}
-
-function stats-quality() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
-
-  echo "${green}Code Quality - Pre-commit Hook Results${reset}"
-  echo ""
-
-  if [ ! -f "$events_file" ]; then
-    echo "${yellow}No events file found.${reset}"
-    return
-  fi
-
-  # Date patterns for filtering
-  local today
-  today=$(date +%Y-%m-%d)
-
-  printf "${cyan}%-18s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
-  echo "----------------------------------------------------"
-
-  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key")
-
-  # Map tools to their issue field names (different hooks use different fields)
-  get_issue_field() {
-    case "$1" in
-      mypy) echo ".errors" ;;
-      shellcheck) echo ".comments" ;;
-      *) echo ".issues" ;;
-    esac
-  }
-
-  for tool in "${tools[@]}"; do
-    local issues_today issues_7d issues_30d issues_all
-    local field
-    field=$(get_issue_field "$tool")
-
-    # Count issues for each time period
-    issues_today=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep "$today" | jq -s "[.[]$field | length] | add // 0")
-    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
-    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
-    issues_all=$(grep "\"type\":\"hook.$tool\"" "$events_file" | jq -s "[.[]$field | length] | add // 0")
-
-    # Format with colors - use fixed width padding after color codes
-    local c_today c_7d c_30d c_all
-    if [ "$issues_today" -eq 0 ]; then
-      c_today="${gray}     0${reset}"
-    else
-      c_today="${yellow}$(printf '%6d' "$issues_today")${reset}"
-    fi
-    if [ "$issues_7d" -eq 0 ]; then
-      c_7d="${gray}     0${reset}"
-    else
-      c_7d="${yellow}$(printf '%6d' "$issues_7d")${reset}"
-    fi
-    if [ "$issues_30d" -eq 0 ]; then
-      c_30d="${gray}     0${reset}"
-    else
-      c_30d="${yellow}$(printf '%6d' "$issues_30d")${reset}"
-    fi
-    if [ "$issues_all" -eq 0 ]; then
-      c_all="${gray}     0${reset}"
-    else
-      c_all="$(printf '%6d' "$issues_all")"
-    fi
-
-    printf "%-18s %s %s %s %s\n" "$tool" "$c_today" "$c_7d" "$c_30d" "$c_all"
-  done
-
-  echo ""
-
-  # Show hook run counts with fail percentages across time periods
-  echo "${blue}Hook Runs${reset}"
-  printf "${cyan}%-10s %7s %7s %12s${reset}\n" "Period" "Runs" "Fail%" "vs Today"
-  echo "----------------------------------------"
-
-  # Helper function to get date pattern for a range
-  get_date_pattern() {
-    local days=$1
-    for i in $(seq 0 $((days - 1))); do
-      date -d "-${i} days" +%Y-%m-%d
-    done | paste -sd'|'
-  }
-
-  # Calculate stats for each period
-  local periods=("1" "7" "14" "30" "60" "90")
-  local labels=("Today" "Last 7d" "Last 14d" "Last 30d" "Last 60d" "Last 90d")
-  local today_pct=""
-
-  for i in "${!periods[@]}"; do
-    local days=${periods[$i]}
-    local label=${labels[$i]}
-    local pattern runs failed pct
-
-    if [ "$days" -eq 1 ]; then
-      pattern="$today"
-    else
-      pattern=$(get_date_pattern "$days")
-    fi
-
-    runs=$(grep '"type":"hook\.' "$events_file" | grep -cE "$pattern" || echo 0)
-    failed=$(grep '"type":"hook\.' "$events_file" | grep -E "$pattern" | grep -c '"status":"failed"' || echo 0)
-
-    if [ "$runs" -gt 0 ]; then
-      pct=$(echo "scale=1; $failed * 100 / $runs" | bc)
-    else
-      pct="0"
-    fi
-
-    # Store today's percentage for comparison
-    if [ "$days" -eq 1 ]; then
-      today_pct="$pct"
-      printf "%-10s %7d %6s%%\n" "$label" "$runs" "$pct"
-    else
-      # Calculate percentage change: how that period compares to today
-      # Positive = that period was worse (higher fail rate) than today
-      # Negative = that period was better (lower fail rate) than today
-      local change_str=""
-      if [ "$runs" -gt 0 ] && [ "$(echo "$today_pct > 0" | bc)" -eq 1 ]; then
-        local change
-        change=$(echo "scale=1; ($pct - $today_pct) * 100 / $today_pct" | bc)
-        if [ "$(echo "$change > 0" | bc)" -eq 1 ]; then
-          # Period was worse than today (higher fail rate)
-          change_str="${red}$(printf '↑%6.1f%%' "$change")${reset}"
-        elif [ "$(echo "$change < 0" | bc)" -eq 1 ]; then
-          # Period was better than today (lower fail rate)
-          change_str="${green}$(printf '↓%6.1f%%' "${change#-}")${reset}"
-        else
-          change_str="${gray}     --  ${reset}"
-        fi
-      elif [ "$(echo "$pct > 0" | bc)" -eq 1 ]; then
-        # Period had failures but today has 0%
-        change_str="${red}$(printf '↑%6.1f%%' "$pct")${reset}"
-      else
-        change_str="${gray}     --  ${reset}"
-      fi
-      printf "%-10s %7d %6s%% %b\n" "$label" "$runs" "$pct" "$change_str"
-    fi
-  done
-
-  echo ""
-  echo "${gray}Note: Issues shown are from all pre-commit runs (including failed commits)${reset}"
-}
-
-function stats-activity() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local days="${1:-7}"
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
-
-  echo "${green}Commit Activity (last $days days)${reset}"
-  echo ""
-
-  if [ ! -f "$events_file" ]; then
-    echo "${yellow}No events file found.${reset}"
-    return
-  fi
-
-  for i in $(seq 0 $((days - 1))); do
-    local date_str day_name
-    date_str=$(date -d "-${i} days" +%Y-%m-%d)
-    day_name=$(date -d "-${i} days" +%a)
-
-    local count
-    count=$(grep '"type":"commit"' "$events_file" | grep -c "$date_str")
-
-    local bar=""
-    for ((j = 0; j < count && j < 20; j++)); do
-      bar="${bar}#"
-    done
-    [ "$count" -gt 20 ] && bar="${bar}+"
-
-    if [ "$i" -eq 0 ]; then
-      printf "${cyan}%-10s${reset} %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
-    else
-      printf "%-10s %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
-    fi
-  done
-
-  echo ""
-  local total_week
-  total_week=$(grep -c '"type":"commit"' "$events_file")
-  echo "Total recorded commits: $total_week"
-}
-
-function stats-events() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local count="${1:-20}"
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
-
-  echo "${green}Recent Events (last $count)${reset}"
-  echo ""
-
-  if [ -f "$events_file" ]; then
-    tail -n "$count" "$events_file" | jq -r '
-      def info:
-        if .type == "commit" then [.short_hash, ""]
-        elif .type == "collect.tokei" then [(.total_files | tostring), "files"]
-        elif .type == "collect.pytest" then [(.summary.total | tostring), "tests"]
-        elif .type == "collect.coverage" then ["\(.summary.percent_covered | floor)%", "coverage"]
-        elif .type == "collect.docker" then [(.containers | length | tostring), "containers"]
-        elif .type == "collect.dependencies" then [(.total_count | tostring), "pkgs"]
-        elif .type == "collect.files" then [(.total_files | tostring), "files"]
-        elif .type == "collect.radon" then [(.avg_complexity | floor | tostring), "avg_complexity"]
-        elif .status then [.status, ""]
-        else ["-", ""]
-        end;
-      "\(.type)\t\(.timestamp[11:19])\t\(info[0])\t\(info[1])"
-    ' | while IFS=$'\t' read -r type time value label; do
-      printf "%-30s  %s  %6s  %s\n" "$type" "$time" "$value" "$label"
-    done
-  else
-    echo "${yellow}No events file found.${reset}"
-  fi
-}
-
-function stats-churn() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local arg="${1:-30}"
-
-  if [ "$arg" = "all" ]; then
-    stats-churn-all
-    return
-  fi
-
-  local days="$arg"
-  echo "${green}Code Churn Analysis (last $days days)${reset}"
-  echo ""
-
-  # Most frequently modified files (exclude .lock files)
-  echo "${blue}Most Modified Files${reset}"
-  git log --since="$days days ago" --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | grep -v '\.lock$' | sort | uniq -c | sort -rn | head -10 | \
-    while read -r count file; do
-      printf "  %4d changes  %s\n" "$count" "$file"
-    done
-  echo ""
-
-  # Files with most lines changed (exclude .lock files)
-  echo "${blue}Most Lines Changed${reset}"
-  git log --since="$days days ago" --numstat --pretty=format: 2>/dev/null | \
-    awk 'NF==3 && $1 != "-" && $3 !~ /\.lock$/ {adds[$3]+=$1; dels[$3]+=$2} END {for(f in adds) print adds[f]+dels[f], adds[f], dels[f], f}' | \
-    sort -rn | head -10 | \
-    while read -r total added deleted file; do
-      printf "  %5d lines  ${green}+%-5d${reset} ${red}-%-5d${reset}  %s\n" "$total" "$added" "$deleted" "$file"
-    done
-  echo ""
-
-  # Recently created files (exclude .lock files)
-  echo "${blue}Recently Created Files${reset}"
-  git log --since="$days days ago" --diff-filter=A --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | grep -v '\.lock$' | sort -u | tail -10 | \
-    while read -r file; do
-      if [ -f "$file" ]; then
-        printf "  ${green}+${reset} %s\n" "$file"
-      fi
-    done
-  echo ""
-
-  # Recently deleted files (exclude .lock files)
-  echo "${blue}Recently Deleted Files${reset}"
-  git log --since="$days days ago" --diff-filter=D --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | grep -v '\.lock$' | sort -u | tail -10 | \
-    while read -r file; do
-      printf "  ${red}-${reset} %s\n" "$file"
-    done
-  echo ""
-
-  # Churn by directory (2 levels deep, only include actual directories)
-  echo "${blue}Churn by Directory${reset}"
-  git log --since="$days days ago" --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | grep '/' | \
-    awk -F'/' 'NF>=3 {print $1"/"$2}' | \
-    sort | uniq -c | sort -rn | head -10 | \
-    while read -r count dir; do
-      printf "  %4d changes  %s/\n" "$count" "$dir"
-    done
-}
-
-function stats-churn-all() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  local total_commits
-  total_commits=$(git rev-list --count HEAD 2>/dev/null || echo "0")
-  local first_commit_date
-  first_commit_date=$(git log --reverse --format="%cs" | head -1)
-
-  echo "${green}Code Churn Analysis (all time - $total_commits commits since $first_commit_date)${reset}"
-  echo ""
-
-  # Most frequently modified files (exclude .lock files)
-  echo "${blue}Most Modified Files${reset}"
-  git log --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | grep -v '\.lock$' | sort | uniq -c | sort -rn | head -15 | \
-    while read -r count file; do
-      printf "  %5d changes  %s\n" "$count" "$file"
-    done
-  echo ""
-
-  # Files with most lines changed (exclude .lock files)
-  echo "${blue}Most Lines Changed${reset}"
-  git log --numstat --pretty=format: 2>/dev/null | \
-    awk 'NF==3 && $1 != "-" && $3 !~ /\.lock$/ {adds[$3]+=$1; dels[$3]+=$2} END {for(f in adds) print adds[f]+dels[f], adds[f], dels[f], f}' | \
-    sort -rn | head -15 | \
-    while read -r total added deleted file; do
-      printf "  %6d lines  ${green}+%-6d${reset} ${red}-%-6d${reset}  %s\n" "$total" "$added" "$deleted" "$file"
-    done
-  echo ""
-
-  # Churn by directory (2 levels deep, only include actual directories)
-  echo "${blue}Churn by Directory${reset}"
-  git log --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | grep '/' | \
-    awk -F'/' 'NF>=3 {print $1"/"$2}' | \
-    sort | uniq -c | sort -rn | head -15 | \
-    while read -r count dir; do
-      printf "  %5d changes  %s/\n" "$count" "$dir"
-    done
-
-}
-
-function stats-trends() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  echo "${green}Project Trends${reset}"
-  echo ""
-
-  # Get commit counts for different periods
-  echo "${blue}Commit Velocity${reset}"
-  local today_commits week_commits month_commits prev_week prev_month
-  today_commits=$(git log --oneline --since="24 hours ago" 2>/dev/null | wc -l | tr -d ' ')
-  week_commits=$(git log --oneline --since="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
-  month_commits=$(git log --oneline --since="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
-  prev_week=$(git log --oneline --since="14 days ago" --until="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
-  prev_month=$(git log --oneline --since="60 days ago" --until="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
-
-  printf "  %-14s %d commits\n" "Today:" "$today_commits"
-  printf "  %-14s %d commits" "Last 7 days:" "$week_commits"
-  if [ "$prev_week" -gt 0 ]; then
-    local change=$(( (week_commits - prev_week) * 100 / prev_week ))
-    if [ "$change" -gt 0 ]; then
-      printf " (${green}↑%d%%${reset} vs prev week's %d)\n" "$change" "$prev_week"
-    elif [ "$change" -lt 0 ]; then
-      printf " (${red}↓%d%%${reset} vs prev week's %d)\n" "$((-change))" "$prev_week"
-    else
-      printf " (same as prev week)\n"
-    fi
-  else
-    printf "\n"
-  fi
-  printf "  %-14s %d commits\n" "Last 30 days:" "$month_commits"
-  echo ""
-
-  # Code changes from git
-  echo "${blue}Code Churn (lines changed)${reset}"
-  local week_added week_deleted month_added month_deleted
-  week_added=$(git log --since="7 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$1} END {print s+0}')
-  week_deleted=$(git log --since="7 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$2} END {print s+0}')
-  month_added=$(git log --since="30 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$1} END {print s+0}')
-  month_deleted=$(git log --since="30 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$2} END {print s+0}')
-
-  printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 7 days:" "$week_added" "$week_deleted"
-  printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 30 days:" "$month_added" "$month_deleted"
-  echo ""
-
-  # Test and coverage from latest stats snapshot
-  echo "${blue}Test Suite (from latest snapshot)${reset}"
-  local stats_dir="$ICHRISBIRCH_HOME/stats"
-  local latest_stats
-  latest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-
-  if [ -n "$latest_stats" ]; then
-    local curr_tests curr_passed curr_failed curr_cov curr_dur
-    curr_tests=$(jq -r '.tests.total // 0' "$latest_stats")
-    curr_passed=$(jq -r '.tests.passed // 0' "$latest_stats")
-    curr_failed=$(jq -r '.tests.failed // 0' "$latest_stats")
-    curr_cov=$(jq -r '.coverage.line_percent // 0' "$latest_stats")
-    curr_dur=$(jq -r '.tests.duration_seconds // 0' "$latest_stats")
-
-    printf "  %-14s %d tests" "Total:" "$curr_tests"
-    if [ "$curr_failed" -gt 0 ]; then
-      printf " (%s%d failed%s)\n" "$red" "$curr_failed" "$reset"
-    else
-      printf " (%sall passing%s)\n" "$green" "$reset"
-    fi
-    if [ "$(echo "$curr_cov > 0" | bc)" -eq 1 ]; then
-      printf "  %-14s %.1f%%\n" "Coverage:" "$curr_cov"
-    else
-      printf "  %-14s %snot collected%s\n" "Coverage:" "$gray" "$reset"
-    fi
-    printf "  %-14s %.0fs\n" "Duration:" "$curr_dur"
-  else
-    printf "  %sNo stats snapshots found%s\n" "$gray" "$reset"
-  fi
-  echo ""
-
-  # Python LOC trend
-  echo "${blue}Python LOC (from git)${reset}"
-  local py_week_added py_week_deleted py_month_added py_month_deleted
-  py_week_added=$(git log --since="7 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$1} END {print s+0}')
-  py_week_deleted=$(git log --since="7 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$2} END {print s+0}')
-  py_month_added=$(git log --since="30 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$1} END {print s+0}')
-  py_month_deleted=$(git log --since="30 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$2} END {print s+0}')
-
-  local py_week_net=$((py_week_added - py_week_deleted))
-  local py_month_net=$((py_month_added - py_month_deleted))
-
-  if [ "$py_week_net" -ge 0 ]; then
-    printf "  %-14s ${green}+%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 7 days:" "$py_week_net" "$py_week_added" "$py_week_deleted"
-  else
-    printf "  %-14s ${red}%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 7 days:" "$py_week_net" "$py_week_added" "$py_week_deleted"
-  fi
-  if [ "$py_month_net" -ge 0 ]; then
-    printf "  %-14s ${green}+%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 30 days:" "$py_month_net" "$py_month_added" "$py_month_deleted"
-  else
-    printf "  %-14s ${red}%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 30 days:" "$py_month_net" "$py_month_added" "$py_month_deleted"
-  fi
-  echo ""
-
-  # Hot files (modified multiple times in last 7 days)
-  echo "${blue}Hot Files (7 days)${reset}"
-  git log --since="7 days ago" --name-only --pretty=format: 2>/dev/null | \
-    grep -v '^$' | sort | uniq -c | sort -rn | head -5 | \
-    while read -r count file; do
-      if [ "$count" -gt 1 ]; then
-        printf "  %2dx  %s\n" "$count" "$file"
-      fi
-    done
-  echo ""
-
-  # Activity chart (30 days) - vertical bar chart
-  echo "${blue}Daily Commits (30 days)${reset}"
-  local max_day=0
-  declare -a day_counts
-  for i in $(seq 29 -1 0); do
-    local d
-    d=$(date -d "-${i} days" +%Y-%m-%d)
-    local cnt
-    cnt=$(git log --oneline --since="$d 00:00:00" --until="$d 23:59:59" 2>/dev/null | wc -l | tr -d ' ')
-    day_counts[i]=$cnt
-    [ "$cnt" -gt "$max_day" ] && max_day=$cnt
-  done
-
-  # Print 10 rows (top to bottom)
-  for row in $(seq 10 -1 1); do
-    printf "  "
-    local threshold=$(( (row * max_day) / 10 ))
-    for i in $(seq 29 -1 0); do
-      local cnt=${day_counts[i]}
-      if [ "$cnt" -ge "$threshold" ]; then
-        printf "%s███%s" "$green" "$reset"
-      else
-        printf "   "
-      fi
-    done
-    printf "\n"
-  done
-  # Print day-of-week labels
-  printf "  %s" "$green"
-  for i in $(seq 29 -1 0); do
-    local dow
-    dow=$(date -d "-${i} days" +%a | cut -c1)
-    printf " %s " "$dow"
-  done
-  printf "%s\n" "$reset"
-  echo ""
-
-  # Commit time distribution (hour of day) - vertical bar chart
-  echo "${blue}Commit Time of Day (30 days)${reset}"
-  local hour_counts=()
-  for h in $(seq 0 23); do
-    hour_counts[h]=0
-  done
-  local max_hour=1
-  while read -r hour; do
-    [ -n "$hour" ] && ((hour_counts[10#$hour]++))
-    [ "${hour_counts[10#$hour]}" -gt "$max_hour" ] && max_hour=${hour_counts[10#$hour]}
-  done < <(git log --since="30 days ago" --date=format:%H --format="%ad" 2>/dev/null)
-
-  # Print 10 rows (top to bottom)
-  for row in $(seq 10 -1 1); do
-    printf "  "
-    local threshold=$(( (row * max_hour) / 10 ))
-    for h in $(seq 0 23); do
-      local cnt=${hour_counts[$h]:-0}
-      if [ "$cnt" -ge "$threshold" ]; then
-        printf "%s███%s" "$cyan" "$reset"
-      else
-        printf "   "
-      fi
-    done
-    printf "\n"
-  done
-  printf "  %s" "$cyan"
-  for h in $(seq 0 23); do
-    printf "%-3d" "$h"
-  done
-  printf "%s\n" "$reset"
+  curl --silent "$PROD_API_URL/health/" | jq
 }
 
 function usage() {
@@ -1298,130 +450,86 @@ function usage() {
   echo "${yellow}  |_|\____)_| |_|_|   |_(___/|____/|_|_|   \____)_| |_|  ${reset}"
   echo
   echo "${green}Core Commands:${reset}"
-  echo "  ${blue}open${reset}      - Launch VS Code and create tmux session for development"
-  echo "  ${blue}cd${reset}        - Navigate to project directory and activate Python virtual environment"
-  echo "  ${blue}test run${reset}  - Execute pytest (supports paths and args, see below)"
-  echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates for HTTPS"
-  echo "    • ${yellow}Actions${reset}: generate, validate, info"
-  echo "    • ${yellow}Environments${reset}: dev, test, prod, all"
-  echo "    • ${yellow}Examples${reset}: ${cyan}ssl-manager generate dev${reset}, ${cyan}ssl-manager info all${reset}"
+  echo "  ${blue}test run${reset}  - Run tests (containers reused for speed)"
+  echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates"
   echo
-  echo "${green}Development Environment (HTTPS with Traefik):${reset}"
-  echo "  ${blue}dev start${reset}     - Start development services with HTTPS (api.docker.localhost, app.docker.localhost, etc.)"
-  echo "  ${blue}dev stop${reset}      - Stop all development services and remove containers"
-  echo "  ${blue}dev restart${reset}   - Restart existing containers without rebuilding images (quick recovery from crashes)"
-  echo "  ${blue}dev rebuild${reset}   - Stop services, rebuild Docker images, and restart (use after code/dependency changes)"
-  echo "  ${blue}dev logs [service]${reset} - View live Docker container logs (persists across restarts)"
-  echo "  ${blue}dev status${reset}    - Display container status and service URLs"
-  echo "  ${blue}dev health${reset}    - Run comprehensive health checks for all services"
+  echo "${green}Development:${reset}"
+  echo "  ${blue}dev start|stop|restart|rebuild${reset} - Manage dev environment"
+  echo "  ${blue}dev logs [service]${reset} - View logs (persists across restarts)"
+  echo "  ${blue}dev status|health${reset} - Check environment"
   echo
-  echo "${green}Test Environment (HTTPS with Traefik - runs alongside dev):${reset}"
-  echo "  ${blue}testing start${reset}   - Start isolated test services with HTTPS (api.test.localhost:8443, etc.)"
-  echo "  ${blue}testing stop${reset}    - Stop test environment services"
-  echo "  ${blue}testing restart${reset} - Restart test containers without rebuilding"
-  echo "  ${blue}testing rebuild${reset} - Rebuild and restart test environment"
-  echo "  ${blue}testing logs [service]${reset} - View live test container logs (persists across restarts)"
-  echo "  ${blue}testing status${reset}  - Display test container status and service URLs"
-  echo "  ${blue}testing health${reset}  - Run comprehensive health checks for test services"
-  echo "  ${blue}test run [path] [args]${reset} - Execute pytest with test environment"
-  echo "    • No args: run all tests"
-  echo "    • With path: run specific test file or directory"
-  echo "    • Examples: ${cyan}test run${reset}, ${cyan}test run tests/ichrisbirch/app/test_login.py -v${reset}"
-  echo "  ${blue}test cov [path] [args]${reset} - Run pytest with coverage report"
-  echo "    • Generates HTML coverage report in htmlcov/"
+  echo "${green}Testing:${reset}"
+  echo "  ${blue}testing start|stop|restart|rebuild${reset} - Manage test environment"
+  echo "  ${blue}testing logs [service]${reset} - View logs"
+  echo "  ${blue}testing status|health${reset} - Check environment"
+  echo "  ${blue}test run [path] [args]${reset} - Run pytest (fast iteration)"
+  echo "  ${blue}test cov${reset} - Run with coverage"
   echo
-  echo "${green}Production Environment (Cloudflare Tunnel + Traefik):${reset}"
-  echo "  ${blue}prod start${reset}     - Fetch SSM secrets and start production services"
-  echo "  ${blue}prod stop${reset}      - Stop production services and remove containers"
-  echo "  ${blue}prod restart${reset}   - Restart existing production containers without rebuilding"
-  echo "  ${blue}prod rebuild${reset}   - Fetch SSM secrets, rebuild Docker images, and restart"
-  echo "  ${blue}prod logs [service]${reset} - View production Docker container logs (persists across restarts)"
-  echo "  ${blue}prod status${reset}    - Check production service status and URLs"
-  echo "  ${blue}prod health${reset}    - Run comprehensive health checks for production services"
-  echo "  ${blue}prod apihealth${reset} - HTTP health check against production API endpoint"
+  echo "${green}Production:${reset}"
+  echo "  ${blue}prod start|stop|restart|rebuild${reset} - Manage production"
+  echo "  ${blue}prod logs [service]${reset} - View logs"
+  echo "  ${blue}prod status|health|apihealth${reset} - Check environment"
   echo
-  echo "${green}Project Stats:${reset}"
-  echo "  ${blue}stats${reset}               - Show stats submenu"
-  echo "  ${blue}stats summary${reset}       - Dashboard with code, tests, quality, and activity"
+  echo "${green}Stats:${reset}"
+  echo "  ${blue}stats${reset} - Show stats submenu"
+  echo "  ${blue}stats summary${reset} - Dashboard overview"
   echo
-  echo "${green}Service URLs:${reset}"
-  echo "  ${blue}Development${reset}: https://api.docker.localhost, https://app.docker.localhost, https://chat.docker.localhost"
-  echo "  ${blue}Test${reset}:        https://api.test.localhost:8443, https://app.test.localhost:8443"
-  echo "  ${blue}Production${reset}:  https://api.ichrisbirch.com, https://app.ichrisbirch.com (via Cloudflare Tunnel)"
-  echo
-  echo "${green}Technical Notes:${reset}"
-  echo "  • Development/test use Traefik with local certificates for HTTPS"
-  echo "  • Production uses Cloudflare Tunnel for HTTPS (Traefik receives HTTP internally)"
-  echo "  • Development and test environments run simultaneously on different ports"
-  echo "  • Production secrets fetched from AWS SSM Parameter Store"
-  echo "  • Use ${blue}<env> health${reset} commands for comprehensive service validation"
+  echo "${green}URLs:${reset}"
+  echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
+  echo "  ${blue}Test${reset}: $TEST_API_URL | $TEST_APP_URL"
+  echo "  ${blue}Prod${reset}: $PROD_API_URL | $PROD_APP_URL"
 }
-# check if the first argument is empty and print usage if so
+
 if [ -z "$1" ]; then
   usage
   exit 0
 fi
 
 case $1 in
-help | -h | --help | -help)
+help | -h | --help)
   usage
   ;;
 install)
   install
   ;;
-open)
-  open
-  ;;
 cd)
-  project-cd
+  cd "$ICHRISBIRCH_HOME" || exit
+  [ -d ".venv" ] && source .venv/bin/activate
+  exec "$SHELL"
   ;;
 test)
-  # Pass remaining arguments to test function (e.g., test run path/to/test.py -v)
   subcmd="$2"
-  shift 2  # Remove 'ichrisbirch' and 'test' (note: $1 is 'test', $2 is subcommand)
+  shift 2
   test-"$subcmd" "$@"
   ;;
 testing)
   case "$2" in
-  health)
-    testing-health
-    ;;
+  health) testing-health ;;
   logs)
     shift 2
     testing-logs "$@"
     ;;
-  *)
-    # Default testing command pattern
-    testing-"$2"
-    ;;
+  *) testing-"$2" ;;
   esac
   ;;
 dev)
   case "$2" in
-  health)
-    dev-health
-    ;;
+  health) dev-health ;;
   logs)
     shift 2
     dev-logs "$@"
     ;;
-  *)
-    dev-"$2"
-    ;;
+  *) dev-"$2" ;;
   esac
   ;;
 prod)
   case "$2" in
-  health)
-    prod-health
-    ;;
+  health) prod-health ;;
   logs)
     shift 2
     prod-logs "$@"
     ;;
-  *)
-    prod-"$2"
-    ;;
+  *) prod-"$2" ;;
   esac
   ;;
 ssl-manager)
@@ -1429,45 +537,24 @@ ssl-manager)
   ;;
 stats)
   case "$2" in
-  "")
-    stats-usage
-    ;;
-  summary)
-    stats-summary
-    ;;
-  code)
-    stats-code
-    ;;
-  tests)
-    stats-tests
-    ;;
-  quality)
-    stats-quality
-    ;;
-  activity)
-    stats-activity "$3"
-    ;;
-  events)
-    stats-events "$3"
-    ;;
-  trends)
-    stats-trends
-    ;;
-  churn)
-    stats-churn "$3"
-    ;;
-  snapshot)
-    stats-snapshot
-    ;;
+  "") stats-usage ;;
+  summary) stats-summary ;;
+  code) stats-code ;;
+  tests) stats-tests ;;
+  quality) stats-quality ;;
+  activity) stats-activity "$3" ;;
+  events) stats-events "$3" ;;
+  trends) stats-trends ;;
+  churn) stats-churn "$3" ;;
+  snapshot) stats-snapshot ;;
   *)
     echo "${red}Unknown stats command: $2${reset}"
-    echo ""
     stats-usage
     ;;
   esac
   ;;
 *)
-  echo "${red}!! '$1' is not a valid ichrisbirch command !!${reset}"
+  echo "${red}Unknown command: $1${reset}"
   echo ""
   usage
   ;;

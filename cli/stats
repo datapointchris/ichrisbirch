@@ -1,0 +1,621 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# shellcheck disable=SC2034
+# shellcheck disable=SC2154
+# Stats commands for ichrisbirch CLI
+# Sourced by main CLI - do not run directly
+# SC2034: Variables may appear unused but are used by sourcing script
+# SC2154: Color variables are defined in main CLI before sourcing
+
+function stats-latest-file() {
+  find "$ICHRISBIRCH_HOME/stats" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
+}
+
+function stats-usage() {
+  echo "${green}Stats Commands${reset}"
+  echo ""
+  echo "  ${blue}stats summary${reset}       Dashboard with code, tests, quality, and activity"
+  echo "  ${blue}stats code${reset}          Lines of code by language (live from tokei)"
+  echo "  ${blue}stats tests${reset}         Test results, coverage, and slowest tests"
+  echo "  ${blue}stats quality${reset}       Linter issues over 24h/7d/30d/all time"
+  echo "  ${blue}stats activity [n]${reset}  Commit activity graph (default: 7 days)"
+  echo "  ${blue}stats events [n]${reset}    Recent pre-commit hook events (default: 20)"
+  echo "  ${blue}stats trends${reset}        Velocity, code churn, and test suite trends"
+  echo "  ${blue}stats churn [n|all]${reset} File churn analysis (default: 30 days, 'all' for entire history)"
+  echo "  ${blue}stats snapshot${reset}      Regenerate stats snapshot from events.jsonl"
+  echo ""
+  echo "Data sources:"
+  echo "  • Code stats: Live from tokei"
+  echo "  • Test/coverage: From last snapshot (updated on commit)"
+  echo "  • Quality: From events.jsonl (pre-commit hook results)"
+  echo "  • Activity: From events.jsonl commit events"
+}
+
+function stats-summary() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local stats_file events_file
+  stats_file=$(stats-latest-file)
+  events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "${green}Project Stats Summary${reset}"
+  echo ""
+
+  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
+    echo "${yellow}No stats snapshots found.${reset}"
+    echo "Stats are collected automatically on each commit."
+    return
+  fi
+
+  local collected_at
+  collected_at=$(jq -r '.collected_at' "$stats_file" | cut -d'T' -f1)
+  echo "Last collected: ${cyan}$collected_at${reset}"
+  echo ""
+
+  # Code stats (live from tokei) - show top 5 languages
+  local tokei_json total_loc
+  tokei_json=$(tokei . --compact --output json 2>/dev/null)
+  total_loc=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map([.code, .comments] | max) | add // 0')
+
+  echo "${blue}Code${reset}"
+  echo "$tokei_json" | jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[0:5] | .[] | "\(.key)\t\([.value.code, .value.comments] | max)\t\(.value.reports | length)"' |
+    while IFS=$'\t' read -r lang content files; do
+      printf "  %-10s %'6d lines (%d files)\n" "$lang:" "$content" "$files"
+    done
+  printf "  ${cyan}%-10s %'6d lines${reset}\n" "Total:" "$total_loc"
+  echo ""
+
+  # Tests
+  local tests_total tests_passed tests_failed coverage duration pass_rate
+  tests_total=$(jq -r '.tests.total // 0' "$stats_file")
+  tests_passed=$(jq -r '.tests.passed // 0' "$stats_file")
+  tests_failed=$(jq -r '.tests.failed // 0' "$stats_file")
+  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
+  duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
+  pass_rate=0
+  if [ "$tests_total" -gt 0 ]; then
+    pass_rate=$((tests_passed * 100 / tests_total))
+  fi
+
+  echo "${blue}Tests${reset}"
+  if [ "$tests_failed" -eq 0 ]; then
+    printf "  Total:       %d tests (${green}%d%% pass${reset})\n" "$tests_total" "$pass_rate"
+  else
+    printf "  Total:       %d tests (${red}%d failed${reset})\n" "$tests_total" "$tests_failed"
+  fi
+  printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
+  printf "  Duration:    %ds\n" "$duration"
+  echo ""
+
+  # Dependencies
+  local deps_direct deps_total
+  deps_direct=$(jq -r '.dependencies.direct // 0' "$stats_file")
+  deps_total=$(jq -r '.dependencies.total // 0' "$stats_file")
+
+  echo "${blue}Dependencies${reset}"
+  printf "  Direct:      %d packages\n" "$deps_direct"
+  printf "  Total:       %d packages\n" "$deps_total"
+  echo ""
+
+  # Commit activity
+  if [ -f "$events_file" ]; then
+    local total_commits today_commits week_commits week_pattern
+    total_commits=$(grep -c '"type":"commit"' "$events_file" 2>/dev/null || echo 0)
+    today_commits=$(grep '"type":"commit"' "$events_file" | grep -c "$(date +%Y-%m-%d)")
+    week_pattern=$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')
+    week_commits=$(grep '"type":"commit"' "$events_file" | grep -cE "$week_pattern")
+
+    echo "${blue}Activity${reset}"
+    printf "  Today:       %d commits\n" "$today_commits"
+    printf "  This week:   %d commits\n" "$week_commits"
+    printf "  All time:    %d commits\n" "$total_commits"
+  fi
+}
+
+function stats-snapshot() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  uv run python -m stats.snapshot
+}
+
+function stats-code() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  echo "${green}Code Statistics by Language${reset}"
+  echo ""
+
+  printf "${cyan}%-15s %10s %10s %8s${reset}\n" "Language" "Content" "Blanks" "Files"
+  echo "---------------------------------------------------"
+
+  local tokei_json
+  tokei_json=$(tokei . --compact --output json 2>/dev/null)
+
+  echo "$tokei_json" |
+    jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[] | [.key, ([.value.code, .value.comments] | max), .value.blanks, (.value.reports | length)] | @tsv' |
+    while IFS=$'\t' read -r lang content blanks files; do
+      printf "%-15s %'10d %'10d %8d\n" "$lang" "$content" "$blanks" "$files"
+    done
+
+  echo "---------------------------------------------------"
+  local total_content total_blanks
+  total_content=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map([.code, .comments] | max) | add')
+  total_blanks=$(echo "$tokei_json" | jq -r '[.[] | select(.code != null)] | map(.blanks) | add')
+  printf "${green}%-15s %'10d %'10d${reset}\n" "Total" "$total_content" "$total_blanks"
+}
+
+function stats-tests() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local stats_file
+  stats_file=$(stats-latest-file)
+
+  echo "${green}Test Statistics${reset}"
+  echo ""
+
+  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
+    echo "${yellow}No stats snapshots found.${reset}"
+    return
+  fi
+
+  local total passed failed skipped errors duration coverage
+  total=$(jq -r '.tests.total // 0' "$stats_file")
+  passed=$(jq -r '.tests.passed // 0' "$stats_file")
+  failed=$(jq -r '.tests.failed // 0' "$stats_file")
+  skipped=$(jq -r '.tests.skipped // 0' "$stats_file")
+  errors=$(jq -r '.tests.errors // 0' "$stats_file")
+  duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file")
+  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
+
+  echo "${blue}Results${reset}"
+  printf "  Total:     %d\n" "$total"
+  printf "  Passed:    ${green}%d${reset}\n" "$passed"
+  [ "$failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$failed"
+  [ "$skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$skipped"
+  [ "$errors" -gt 0 ] && printf "  Errors:    ${red}%d${reset}\n" "$errors"
+  echo ""
+
+  echo "${blue}Performance${reset}"
+  printf "  Duration:  %.1fs\n" "$duration"
+  printf "  Coverage:  %.1f%%\n" "$coverage"
+  echo ""
+
+  echo "${blue}Slowest Tests${reset}"
+  jq -r '.tests.slowest[:5] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" |
+    sed 's|tests/ichrisbirch/||g' | sed 's|::test_|: |g'
+}
+
+function stats-quality() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "${green}Code Quality - Pre-commit Hook Results${reset}"
+  echo ""
+
+  if [ ! -f "$events_file" ]; then
+    echo "${yellow}No events file found.${reset}"
+    return
+  fi
+
+  local today
+  today=$(date +%Y-%m-%d)
+
+  printf "${cyan}%-18s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
+  echo "----------------------------------------------------"
+
+  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key")
+
+  get_issue_field() {
+    case "$1" in
+    mypy) echo ".errors" ;;
+    shellcheck) echo ".comments" ;;
+    *) echo ".issues" ;;
+    esac
+  }
+
+  for tool in "${tools[@]}"; do
+    local issues_today issues_7d issues_30d issues_all field
+    field=$(get_issue_field "$tool")
+
+    issues_today=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep "$today" | jq -s "[.[]$field | length] | add // 0")
+    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
+    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
+    issues_all=$(grep "\"type\":\"hook.$tool\"" "$events_file" | jq -s "[.[]$field | length] | add // 0")
+
+    local c_today c_7d c_30d c_all
+    if [ "$issues_today" -eq 0 ]; then c_today="${gray}     0${reset}"; else c_today="${yellow}$(printf '%6d' "$issues_today")${reset}"; fi
+    if [ "$issues_7d" -eq 0 ]; then c_7d="${gray}     0${reset}"; else c_7d="${yellow}$(printf '%6d' "$issues_7d")${reset}"; fi
+    if [ "$issues_30d" -eq 0 ]; then c_30d="${gray}     0${reset}"; else c_30d="${yellow}$(printf '%6d' "$issues_30d")${reset}"; fi
+    if [ "$issues_all" -eq 0 ]; then c_all="${gray}     0${reset}"; else c_all="$(printf '%6d' "$issues_all")"; fi
+
+    printf "%-18s %s %s %s %s\n" "$tool" "$c_today" "$c_7d" "$c_30d" "$c_all"
+  done
+
+  echo ""
+
+  echo "${blue}Hook Runs${reset}"
+  printf "${cyan}%-10s %7s %7s %12s${reset}\n" "Period" "Runs" "Fail%" "vs Today"
+  echo "----------------------------------------"
+
+  get_date_pattern() {
+    local days=$1
+    for i in $(seq 0 $((days - 1))); do
+      date -d "-${i} days" +%Y-%m-%d
+    done | paste -sd'|'
+  }
+
+  local periods=("1" "7" "14" "30" "60" "90")
+  local labels=("Today" "Last 7d" "Last 14d" "Last 30d" "Last 60d" "Last 90d")
+  local today_pct=""
+
+  for i in "${!periods[@]}"; do
+    local days=${periods[$i]}
+    local label=${labels[$i]}
+    local pattern runs failed pct
+
+    if [ "$days" -eq 1 ]; then
+      pattern="$today"
+    else
+      pattern=$(get_date_pattern "$days")
+    fi
+
+    runs=$(grep '"type":"hook\.' "$events_file" | grep -cE "$pattern" || echo 0)
+    failed=$(grep '"type":"hook\.' "$events_file" | grep -E "$pattern" | grep -c '"status":"failed"' || echo 0)
+
+    if [ "$runs" -gt 0 ]; then
+      pct=$(echo "scale=1; $failed * 100 / $runs" | bc)
+    else
+      pct="0"
+    fi
+
+    if [ "$days" -eq 1 ]; then
+      today_pct="$pct"
+      printf "%-10s %7d %6s%%\n" "$label" "$runs" "$pct"
+    else
+      local change_str=""
+      if [ "$runs" -gt 0 ] && [ "$(echo "$today_pct > 0" | bc)" -eq 1 ]; then
+        local change
+        change=$(echo "scale=1; ($pct - $today_pct) * 100 / $today_pct" | bc)
+        if [ "$(echo "$change > 0" | bc)" -eq 1 ]; then
+          change_str="${red}$(printf '↑%6.1f%%' "$change")${reset}"
+        elif [ "$(echo "$change < 0" | bc)" -eq 1 ]; then
+          change_str="${green}$(printf '↓%6.1f%%' "${change#-}")${reset}"
+        else
+          change_str="${gray}     --  ${reset}"
+        fi
+      elif [ "$(echo "$pct > 0" | bc)" -eq 1 ]; then
+        change_str="${red}$(printf '↑%6.1f%%' "$pct")${reset}"
+      else
+        change_str="${gray}     --  ${reset}"
+      fi
+      printf "%-10s %7d %6s%% %b\n" "$label" "$runs" "$pct" "$change_str"
+    fi
+  done
+
+  echo ""
+  echo "${gray}Note: Issues shown are from all pre-commit runs (including failed commits)${reset}"
+}
+
+function stats-activity() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local days="${1:-7}"
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "${green}Commit Activity (last $days days)${reset}"
+  echo ""
+
+  if [ ! -f "$events_file" ]; then
+    echo "${yellow}No events file found.${reset}"
+    return
+  fi
+
+  for i in $(seq 0 $((days - 1))); do
+    local date_str day_name count bar
+    date_str=$(date -d "-${i} days" +%Y-%m-%d)
+    day_name=$(date -d "-${i} days" +%a)
+    count=$(grep '"type":"commit"' "$events_file" | grep -c "$date_str")
+
+    bar=""
+    for ((j = 0; j < count && j < 20; j++)); do
+      bar="${bar}#"
+    done
+    [ "$count" -gt 20 ] && bar="${bar}+"
+
+    if [ "$i" -eq 0 ]; then
+      printf "${cyan}%-10s${reset} %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
+    else
+      printf "%-10s %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
+    fi
+  done
+
+  echo ""
+  local total_week
+  total_week=$(grep -c '"type":"commit"' "$events_file")
+  echo "Total recorded commits: $total_week"
+}
+
+function stats-events() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local count="${1:-20}"
+  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
+  echo "${green}Recent Events (last $count)${reset}"
+  echo ""
+
+  if [ -f "$events_file" ]; then
+    tail -n "$count" "$events_file" | jq -r '
+      def info:
+        if .type == "commit" then [.short_hash, ""]
+        elif .type == "collect.tokei" then [(.total_files | tostring), "files"]
+        elif .type == "collect.pytest" then [(.summary.total | tostring), "tests"]
+        elif .type == "collect.coverage" then ["\(.summary.percent_covered | floor)%", "coverage"]
+        elif .type == "collect.docker" then [(.containers | length | tostring), "containers"]
+        elif .type == "collect.dependencies" then [(.total_count | tostring), "pkgs"]
+        elif .type == "collect.files" then [(.total_files | tostring), "files"]
+        elif .type == "collect.radon" then [(.avg_complexity | floor | tostring), "avg_complexity"]
+        elif .status then [.status, ""]
+        else ["-", ""]
+        end;
+      "\(.type)\t\(.timestamp[11:19])\t\(info[0])\t\(info[1])"
+    ' | while IFS=$'\t' read -r type time value label; do
+      printf "%-30s  %s  %6s  %s\n" "$type" "$time" "$value" "$label"
+    done
+  else
+    echo "${yellow}No events file found.${reset}"
+  fi
+}
+
+function stats-churn() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local arg="${1:-30}"
+
+  if [ "$arg" = "all" ]; then
+    stats-churn-all
+    return
+  fi
+
+  local days="$arg"
+  echo "${green}Code Churn Analysis (last $days days)${reset}"
+  echo ""
+
+  echo "${blue}Most Modified Files${reset}"
+  git log --since="$days days ago" --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | grep -v '\.lock$' | sort | uniq -c | sort -rn | head -10 |
+    while read -r count file; do
+      printf "  %4d changes  %s\n" "$count" "$file"
+    done
+  echo ""
+
+  echo "${blue}Most Lines Changed${reset}"
+  git log --since="$days days ago" --numstat --pretty=format: 2>/dev/null |
+    awk 'NF==3 && $1 != "-" && $3 !~ /\.lock$/ {adds[$3]+=$1; dels[$3]+=$2} END {for(f in adds) print adds[f]+dels[f], adds[f], dels[f], f}' |
+    sort -rn | head -10 |
+    while read -r total added deleted file; do
+      printf "  %5d lines  ${green}+%-5d${reset} ${red}-%-5d${reset}  %s\n" "$total" "$added" "$deleted" "$file"
+    done
+  echo ""
+
+  echo "${blue}Recently Created Files${reset}"
+  git log --since="$days days ago" --diff-filter=A --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | grep -v '\.lock$' | sort -u | tail -10 |
+    while read -r file; do
+      [ -f "$file" ] && printf "  ${green}+${reset} %s\n" "$file"
+    done
+  echo ""
+
+  echo "${blue}Recently Deleted Files${reset}"
+  git log --since="$days days ago" --diff-filter=D --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | grep -v '\.lock$' | sort -u | tail -10 |
+    while read -r file; do
+      printf "  ${red}-${reset} %s\n" "$file"
+    done
+  echo ""
+
+  echo "${blue}Churn by Directory${reset}"
+  git log --since="$days days ago" --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | grep '/' |
+    awk -F'/' 'NF>=3 {print $1"/"$2}' |
+    sort | uniq -c | sort -rn | head -10 |
+    while read -r count dir; do
+      printf "  %4d changes  %s/\n" "$count" "$dir"
+    done
+}
+
+function stats-churn-all() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  local total_commits first_commit_date
+  total_commits=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+  first_commit_date=$(git log --reverse --format="%cs" | head -1)
+
+  echo "${green}Code Churn Analysis (all time - $total_commits commits since $first_commit_date)${reset}"
+  echo ""
+
+  echo "${blue}Most Modified Files${reset}"
+  git log --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | grep -v '\.lock$' | sort | uniq -c | sort -rn | head -15 |
+    while read -r count file; do
+      printf "  %5d changes  %s\n" "$count" "$file"
+    done
+  echo ""
+
+  echo "${blue}Most Lines Changed${reset}"
+  git log --numstat --pretty=format: 2>/dev/null |
+    awk 'NF==3 && $1 != "-" && $3 !~ /\.lock$/ {adds[$3]+=$1; dels[$3]+=$2} END {for(f in adds) print adds[f]+dels[f], adds[f], dels[f], f}' |
+    sort -rn | head -15 |
+    while read -r total added deleted file; do
+      printf "  %6d lines  ${green}+%-6d${reset} ${red}-%-6d${reset}  %s\n" "$total" "$added" "$deleted" "$file"
+    done
+  echo ""
+
+  echo "${blue}Churn by Directory${reset}"
+  git log --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | grep '/' |
+    awk -F'/' 'NF>=3 {print $1"/"$2}' |
+    sort | uniq -c | sort -rn | head -15 |
+    while read -r count dir; do
+      printf "  %5d changes  %s/\n" "$count" "$dir"
+    done
+}
+
+function stats-trends() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  echo "${green}Project Trends${reset}"
+  echo ""
+
+  echo "${blue}Commit Velocity${reset}"
+  local today_commits week_commits month_commits prev_week prev_month
+  today_commits=$(git log --oneline --since="24 hours ago" 2>/dev/null | wc -l | tr -d ' ')
+  week_commits=$(git log --oneline --since="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
+  month_commits=$(git log --oneline --since="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
+  prev_week=$(git log --oneline --since="14 days ago" --until="7 days ago" 2>/dev/null | wc -l | tr -d ' ')
+  prev_month=$(git log --oneline --since="60 days ago" --until="30 days ago" 2>/dev/null | wc -l | tr -d ' ')
+
+  printf "  %-14s %d commits\n" "Today:" "$today_commits"
+  printf "  %-14s %d commits" "Last 7 days:" "$week_commits"
+  if [ "$prev_week" -gt 0 ]; then
+    local change=$(((week_commits - prev_week) * 100 / prev_week))
+    if [ "$change" -gt 0 ]; then
+      printf " (${green}↑%d%%${reset} vs prev week's %d)\n" "$change" "$prev_week"
+    elif [ "$change" -lt 0 ]; then
+      printf " (${red}↓%d%%${reset} vs prev week's %d)\n" "$((-change))" "$prev_week"
+    else
+      printf " (same as prev week)\n"
+    fi
+  else
+    printf "\n"
+  fi
+  printf "  %-14s %d commits\n" "Last 30 days:" "$month_commits"
+  echo ""
+
+  echo "${blue}Code Churn (lines changed)${reset}"
+  local week_added week_deleted month_added month_deleted
+  week_added=$(git log --since="7 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  week_deleted=$(git log --since="7 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$2} END {print s+0}')
+  month_added=$(git log --since="30 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  month_deleted=$(git log --since="30 days ago" --numstat --pretty="" 2>/dev/null | awk '{s+=$2} END {print s+0}')
+
+  printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 7 days:" "$week_added" "$week_deleted"
+  printf "  %-14s ${green}+%'d${reset} / ${red}-%'d${reset}\n" "Last 30 days:" "$month_added" "$month_deleted"
+  echo ""
+
+  echo "${blue}Test Suite (from latest snapshot)${reset}"
+  local stats_dir="$ICHRISBIRCH_HOME/stats"
+  local latest_stats
+  latest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+
+  if [ -n "$latest_stats" ]; then
+    local curr_tests curr_passed curr_failed curr_cov curr_dur
+    curr_tests=$(jq -r '.tests.total // 0' "$latest_stats")
+    curr_passed=$(jq -r '.tests.passed // 0' "$latest_stats")
+    curr_failed=$(jq -r '.tests.failed // 0' "$latest_stats")
+    curr_cov=$(jq -r '.coverage.line_percent // 0' "$latest_stats")
+    curr_dur=$(jq -r '.tests.duration_seconds // 0' "$latest_stats")
+
+    printf "  %-14s %d tests" "Total:" "$curr_tests"
+    if [ "$curr_failed" -gt 0 ]; then
+      printf " (%s%d failed%s)\n" "$red" "$curr_failed" "$reset"
+    else
+      printf " (%sall passing%s)\n" "$green" "$reset"
+    fi
+    if [ "$(echo "$curr_cov > 0" | bc)" -eq 1 ]; then
+      printf "  %-14s %.1f%%\n" "Coverage:" "$curr_cov"
+    else
+      printf "  %-14s %snot collected%s\n" "Coverage:" "$gray" "$reset"
+    fi
+    printf "  %-14s %.0fs\n" "Duration:" "$curr_dur"
+  else
+    printf "  %sNo stats snapshots found%s\n" "$gray" "$reset"
+  fi
+  echo ""
+
+  echo "${blue}Python LOC (from git)${reset}"
+  local py_week_added py_week_deleted py_month_added py_month_deleted
+  py_week_added=$(git log --since="7 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  py_week_deleted=$(git log --since="7 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$2} END {print s+0}')
+  py_month_added=$(git log --since="30 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$1} END {print s+0}')
+  py_month_deleted=$(git log --since="30 days ago" --numstat --pretty="" -- '*.py' 2>/dev/null | awk '{s+=$2} END {print s+0}')
+
+  local py_week_net=$((py_week_added - py_week_deleted))
+  local py_month_net=$((py_month_added - py_month_deleted))
+
+  if [ "$py_week_net" -ge 0 ]; then
+    printf "  %-14s ${green}+%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 7 days:" "$py_week_net" "$py_week_added" "$py_week_deleted"
+  else
+    printf "  %-14s ${red}%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 7 days:" "$py_week_net" "$py_week_added" "$py_week_deleted"
+  fi
+  if [ "$py_month_net" -ge 0 ]; then
+    printf "  %-14s ${green}+%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 30 days:" "$py_month_net" "$py_month_added" "$py_month_deleted"
+  else
+    printf "  %-14s ${red}%'d${reset} net (${green}+%'d${reset}/${red}-%'d${reset})\n" "Last 30 days:" "$py_month_net" "$py_month_added" "$py_month_deleted"
+  fi
+  echo ""
+
+  echo "${blue}Hot Files (7 days)${reset}"
+  git log --since="7 days ago" --name-only --pretty=format: 2>/dev/null |
+    grep -v '^$' | sort | uniq -c | sort -rn | head -5 |
+    while read -r count file; do
+      [ "$count" -gt 1 ] && printf "  %2dx  %s\n" "$count" "$file"
+    done
+  echo ""
+
+  echo "${blue}Daily Commits (30 days)${reset}"
+  local max_day=0
+  declare -a day_counts
+  for i in $(seq 29 -1 0); do
+    local d cnt
+    d=$(date -d "-${i} days" +%Y-%m-%d)
+    cnt=$(git log --oneline --since="$d 00:00:00" --until="$d 23:59:59" 2>/dev/null | wc -l | tr -d ' ')
+    day_counts[i]=$cnt
+    [ "$cnt" -gt "$max_day" ] && max_day=$cnt
+  done
+
+  for row in $(seq 10 -1 1); do
+    printf "  "
+    local threshold=$(((row * max_day) / 10))
+    for i in $(seq 29 -1 0); do
+      local cnt=${day_counts[i]}
+      if [ "$cnt" -ge "$threshold" ]; then
+        printf "%s███%s" "$green" "$reset"
+      else
+        printf "   "
+      fi
+    done
+    printf "\n"
+  done
+  printf "  %s" "$green"
+  for i in $(seq 29 -1 0); do
+    local dow
+    dow=$(date -d "-${i} days" +%a | cut -c1)
+    printf " %s " "$dow"
+  done
+  printf "%s\n" "$reset"
+  echo ""
+
+  echo "${blue}Commit Time of Day (30 days)${reset}"
+  local hour_counts=()
+  for h in $(seq 0 23); do
+    hour_counts[h]=0
+  done
+  local max_hour=1
+  while read -r hour; do
+    [ -n "$hour" ] && ((hour_counts[10#$hour]++))
+    [ "${hour_counts[10#$hour]}" -gt "$max_hour" ] && max_hour=${hour_counts[10#$hour]}
+  done < <(git log --since="30 days ago" --date=format:%H --format="%ad" 2>/dev/null)
+
+  for row in $(seq 10 -1 1); do
+    printf "  "
+    local threshold=$(((row * max_hour) / 10))
+    for h in $(seq 0 23); do
+      local cnt=${hour_counts[$h]:-0}
+      if [ "$cnt" -ge "$threshold" ]; then
+        printf "%s███%s" "$cyan" "$reset"
+      else
+        printf "   "
+      fi
+    done
+    printf "\n"
+  done
+  printf "  %s" "$cyan"
+  for h in $(seq 0 23); do
+    printf "%-3d" "$h"
+  done
+  printf "%s\n" "$reset"
+}
