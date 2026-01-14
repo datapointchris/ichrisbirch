@@ -494,6 +494,7 @@ install)
   ;;
 cd)
   cd "$ICHRISBIRCH_HOME" || exit
+  # shellcheck source=/dev/null
   [ -d ".venv" ] && source .venv/bin/activate
   exec "$SHELL"
   ;;
