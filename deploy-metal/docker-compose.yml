@@ -229,11 +229,13 @@ services:
         max-file: "3"
         tag: "scheduler"
 
-# Production volumes using standard names
+# Production volumes with explicit names
 volumes:
   postgres_data:
+    name: ichrisbirch-metal-postgres-data
     driver: local
   redis_data:
+    name: ichrisbirch-metal-redis-data
     driver: local
 
 # Default network for service communication

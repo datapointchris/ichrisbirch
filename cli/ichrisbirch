@@ -58,6 +58,25 @@ reset=$(tput sgr0)
 # shellcheck source=cli/stats
 source "$ICHRISBIRCH_HOME/cli/stats"
 
+function dev-credentials() {
+  local env_file="$ICHRISBIRCH_HOME/.env"
+  if [ -f "$env_file" ]; then
+    local admin_email admin_pass regular_email regular_pass
+    admin_email=$(grep -E '^USERS_DEFAULT_ADMIN_USER_EMAIL=' "$env_file" | cut -d= -f2 | tr -d '"')
+    admin_pass=$(grep -E '^USERS_DEFAULT_ADMIN_USER_PASSWORD=' "$env_file" | cut -d= -f2 | tr -d '"')
+    regular_email=$(grep -E '^USERS_DEFAULT_REGULAR_USER_EMAIL=' "$env_file" | cut -d= -f2 | tr -d '"')
+    regular_pass=$(grep -E '^USERS_DEFAULT_REGULAR_USER_PASSWORD=' "$env_file" | cut -d= -f2 | tr -d '"')
+
+    echo ""
+    echo "${yellow}Dev Credentials:${reset}"
+    echo "  ${cyan}Regular${reset}: ${regular_email} / ${regular_pass}"
+    echo "  ${green}Admin${reset}:   ${admin_email} / ${admin_pass}"
+  else
+    echo ""
+    echo "${yellow}Dev Credentials:${reset} ${red}.env file not found${reset}"
+  fi
+}
+
 function colored-logs() {
   local RED_REDIS="${red}redis${reset}"
   local GREEN_POSTGRES="${green}postgres${reset}"
@@ -113,13 +132,6 @@ function colored-status() {
     }'
 }
 
-function ensure-proxy-network() {
-  if ! docker network inspect proxy >/dev/null 2>&1; then
-    echo "Creating external proxy network..."
-    docker network create proxy
-  fi
-}
-
 function install() {
   ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" "$HOME/.local/bin/icb"
 }
@@ -140,10 +152,12 @@ function ssl-manager() {
 # Development environment
 function dev-start() {
   cd "$ICHRISBIRCH_HOME" || exit
-  ensure-proxy-network
-
   echo "Starting ${blue}DEV${reset} environment"
   $COMPOSE_DEV up -d
+
+  echo "Ensuring database is initialized..."
+  sleep 3
+  docker exec ichrisbirch-api-dev python -m ichrisbirch.database.initialization --env development 2>/dev/null || true
 
   echo ""
   echo "Development environment started:"
@@ -158,6 +172,7 @@ function dev-start() {
   echo "  ${green}CHAT${reset}: ${cyan}${DEV_CHAT_PORT}${reset}"
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5432${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
+  dev-credentials
 }
 
 function dev-stop() {
@@ -170,6 +185,7 @@ function dev-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}DEV${reset} environment"
   $COMPOSE_DEV up -d
+  dev-credentials
 }
 
 function dev-rebuild() {
@@ -177,6 +193,12 @@ function dev-rebuild() {
   echo "Rebuilding ${blue}DEV${reset} environment"
   $COMPOSE_DEV down
   $COMPOSE_DEV up -d --build
+  echo "Waiting for postgres to be ready..."
+  sleep 5
+  echo "Initializing database..."
+  docker exec ichrisbirch-api-dev python -m ichrisbirch.database.initialization --env development
+  echo "${green}DEV environment rebuilt and initialized${reset}"
+  dev-credentials
 }
 
 function dev-logs() {
@@ -197,6 +219,7 @@ function dev-status() {
   $COMPOSE_DEV ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   echo ""
   echo "${blue}URLs${reset}: $DEV_API_URL | $DEV_APP_URL | $DEV_CHAT_URL"
+  dev-credentials
 }
 
 function dev-health() {
@@ -226,7 +249,6 @@ function test-run() {
   fi
 
   if [ "$containers_ready" = false ]; then
-    ensure-proxy-network
     echo "${blue}Starting test containers...${reset}"
     $COMPOSE_TEST up -d
     echo "Waiting for services to be ready..."
@@ -261,8 +283,6 @@ function test-run() {
 
 function testing-start() {
   cd "$ICHRISBIRCH_HOME" || exit
-  ensure-proxy-network
-
   echo "Starting ${blue}TESTING${reset} environment"
   $COMPOSE_TEST up -d
 
@@ -375,8 +395,6 @@ function prod-start() {
   load-prod-env || return 1
   echo "Secrets loaded for ${magenta}production${reset}"
 
-  ensure-proxy-network
-
   echo "Starting ${magenta}PRODUCTION${reset} environment"
   $COMPOSE_PROD up -d
 
@@ -464,7 +482,6 @@ function usage() {
   echo "  ${blue}testing logs [service]${reset} - View logs"
   echo "  ${blue}testing status|health${reset} - Check environment"
   echo "  ${blue}test run [path] [args]${reset} - Run pytest (fast iteration)"
-  echo "  ${blue}test cov${reset} - Run with coverage"
   echo
   echo "${green}Production:${reset}"
   echo "  ${blue}prod start|stop|restart|rebuild${reset} - Manage production"

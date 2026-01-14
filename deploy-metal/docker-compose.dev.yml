@@ -195,9 +195,11 @@ services:
         max-file: "3"
         tag: "scheduler-dev"
 
-# Development volumes using standard names
+# Development volumes with explicit names
 volumes:
   postgres_data:
+    name: ichrisbirch-metal-dev-postgres-data
     driver: local
   redis_data:
+    name: ichrisbirch-metal-dev-redis-data
     driver: local

@@ -294,12 +294,15 @@ services:
 
 volumes:
   ichrisbirch_testing_logs:
+    name: ichrisbirch-metal-test-logs
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ${ICHRISBIRCH_HOME:-${PWD}}/test-logs
   uv_cache:
+    name: ichrisbirch-metal-test-uv-cache
     driver: local
   venv_shared:
+    name: ichrisbirch-metal-test-venv-shared
     driver: local
