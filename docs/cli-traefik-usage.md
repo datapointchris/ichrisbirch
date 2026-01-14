@@ -48,9 +48,20 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 | `dev start` | Start development with HTTPS | `ichrisbirch dev start` |
 | `dev stop` | Stop development environment | `ichrisbirch dev stop` |
 | `dev restart` | Restart development environment | `ichrisbirch dev restart` |
-| `dev status` | Show service status and HTTPS URLs | `ichrisbirch dev status` |
+| `dev rebuild` | Rebuild images, restart, and initialize database | `ichrisbirch dev rebuild` |
+| `dev status` | Show service status, URLs, and credentials | `ichrisbirch dev status` |
 | `dev logs` | View service logs | `ichrisbirch dev logs [service]` |
 | `dev health` | Run comprehensive health checks | `ichrisbirch dev health` |
+
+**Dev Credentials Display:**
+
+The `dev start`, `dev status`, and `dev rebuild` commands now display development credentials from the `.env` file:
+
+```text
+Dev Credentials:
+  Regular: user@example.com / password123
+  Admin:   admin@example.com / adminpass123
+```
 
 ### Testing Environment
 
@@ -67,12 +78,14 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 
 **Test Run Behavior:**
 
-The `test run` command is optimized for fast iteration:
+The `test run` command uses a clean start strategy for reliability:
 
-1. **Reuses healthy containers** - No startup delay on subsequent runs
-2. **Resets database** - Clean state via initialization script each run
-3. **Leaves containers running** - Ready for the next test run
-4. **Auto-recovers** - Restarts unhealthy containers automatically
+1. **Full cleanup** - Stops any existing containers before starting
+2. **Fresh start** - New containers with clean database each run
+3. **No race conditions** - Handles back-to-back runs reliably (e.g., pre-commit hooks)
+4. **Time trade-off** - ~50s startup time accepted for reliability
+
+> **Note:** Test and dev environments use separate proxy networks (`proxy-test` and `proxy-dev`) to avoid Traefik routing conflicts when running simultaneously.
 
 ### Production Environment
 
@@ -226,17 +239,17 @@ Starts the development environment with full Traefik + HTTPS setup.
 **What it does:**
 
 - Generates SSL certificates if missing (using mkcert when available)
-- Creates Docker networks (proxy, default)
+- Creates Docker networks (`proxy-dev` for development, separate from `proxy-test`)
 - Starts all services with Docker Compose
 - Waits for services to become healthy
-- Displays HTTPS access URLs
+- Displays HTTPS access URLs and dev credentials
 
 **Example Output:**
 
 ```text
 Starting DEV environment with Docker Compose + Traefik (HTTPS)
 [+] Running 8/8
- ✔ Network ichrisbirch-dev_default      Created
+ ✔ Network proxy-dev                    Created
  ✔ Container ichrisbirch-postgres-dev   Healthy
  ✔ Container ichrisbirch-redis-dev      Started
  ✔ Container ichrisbirch-api-dev        Started
@@ -249,6 +262,10 @@ Development environment started with HTTPS:
   APP:       https://app.docker.localhost/
   CHAT:      https://chat.docker.localhost/
   DASHBOARD: https://dashboard.docker.localhost/ (user: dev, pass: devpass)
+
+Dev Credentials:
+  Regular: user@example.com / password123
+  Admin:   admin@example.com / adminpass123
 
 Use ichrisbirch dev logs to view live container logs
 Use ichrisbirch dev status to check service status

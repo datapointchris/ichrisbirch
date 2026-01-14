@@ -50,6 +50,18 @@ The CLI has been **completely refactored** to provide a clean, professional inte
 - **Testing**: `*.test.localhost:8443` with isolated testing certificates
 - **Production**: `*.ichrisbirch.com` via Cloudflare Tunnel (see [Homelab Deployment](homelab-deployment.md))
 
+### Proxy Network Isolation
+
+Each environment uses its own proxy network to avoid routing conflicts:
+
+| Environment | Proxy Network | Traefik Constraint |
+|-------------|---------------|-------------------|
+| Development | `proxy-dev` | `traefik.environment=development` |
+| Testing | `proxy-test` | `traefik.environment=testing` |
+| Production | `proxy` | (no constraint needed) |
+
+This allows all environments to run simultaneously. Traefik only discovers containers with matching environment labels.
+
 ## 📁 Directory Structure
 
 ```text

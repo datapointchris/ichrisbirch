@@ -4,12 +4,14 @@
 
 The ichrisbirch application uses **structlog** with a stdout-only architecture. All logs go to stdout, and Docker handles persistence via its logging driver. This is the industry-standard approach for containerized applications.
 
-**Configuration**: `ichrisbirch/logger.py:22-24`
+**Configuration**: `ichrisbirch/logger.py`
 
 ```python
 LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
 LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
+LOG_FILE = os.environ.get('LOG_FILE', '')
+LOG_DIR = os.environ.get('LOG_DIR', '/var/log/ichrisbirch')
 ```
 
 ## Environment Variables
@@ -56,6 +58,37 @@ Controls whether colored output is used in console format.
 | `auto` (default) | Use TTY detection (colors if terminal, no colors if piped) |
 | `true` | Force colors on (useful in Docker where TTY detection fails) |
 | `false` | Force colors off |
+
+### LOG_FILE
+
+Optional path to a log file for persistence. When set and the directory exists, logs are written to both stdout and the specified file.
+
+| Value | Description |
+|-------|-------------|
+| Empty (default) | No file logging, stdout only |
+| `/var/log/ichrisbirch/api.log` | Write logs to file (and stdout) |
+
+**File logging features:**
+
+- Uses `RotatingFileHandler` to prevent unbounded growth
+- Max 25MB per file with 5 backup files (~150MB total per service)
+- Plain text format (no ANSI color codes) for easy parsing
+- Enables the Admin UI live logs feature
+
+### LOG_DIR
+
+Directory where log files are stored (used by admin UI for log aggregation).
+
+| Value | Description |
+|-------|-------------|
+| `/var/log/ichrisbirch` (default) | Standard log directory |
+
+**Docker volume mount:**
+
+```yaml
+volumes:
+  - ichrisbirch_logs:/var/log/ichrisbirch
+```
 
 ## Request Tracing
 
@@ -263,3 +296,46 @@ The project migrated from Python's standard logging module to structlog. Key dif
 4. **Environment flexibility**: Switch between console and JSON with one variable
 5. **No file management**: Docker handles persistence and rotation
 6. **Industry standard**: Follows 12-factor app logging principles
+
+## Admin UI Integration
+
+When `LOG_FILE` is configured, the admin dashboard provides live log viewing capabilities.
+
+### Live Logs Feature
+
+The admin UI at `/admin/logs/` provides real-time log streaming via WebSocket:
+
+- **WebSocket endpoint**: `wss://api.docker.localhost/admin/log-stream/`
+- **Authentication**: JWT cookie-based (set automatically on Flask login)
+- **Admin-only**: Requires admin user privileges
+- **ANSI stripping**: Color codes removed for clean browser display
+- **Client-side colorization**: JavaScript re-applies colors based on log level
+
+### Log Graphs Feature
+
+The admin UI at `/admin/log-graphs/` provides log analytics:
+
+- Reads all `*.log` files from `LOG_DIR`
+- Parses structlog format into structured data
+- Generates charts for log levels, timestamps, and sources
+- Useful for identifying patterns and issues
+
+### Docker Configuration
+
+To enable file logging in Docker Compose:
+
+```yaml
+api:
+  environment:
+    - LOG_FILE=/var/log/ichrisbirch/api.log
+  volumes:
+    - ichrisbirch_logs:/var/log/ichrisbirch
+
+app:
+  environment:
+    - LOG_FILE=/var/log/ichrisbirch/app.log
+  volumes:
+    - ichrisbirch_logs:/var/log/ichrisbirch
+```
+
+All services share the same log volume, allowing the admin UI to aggregate logs from all services.

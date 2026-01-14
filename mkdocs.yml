@@ -90,6 +90,7 @@ nav:
       - Configuration: configuration.md
       - Authentication: authentication-architecture.md
       - Logging: logging-configuration.md
+      - Admin Dashboard: admin.md
       - Database: alembic.md
       - Scheduler: scheduler.md
   - AWS: AWS.md

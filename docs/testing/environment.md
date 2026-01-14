@@ -64,7 +64,7 @@ class DockerComposeTestEnvironment:
 Called at the start of the test session:
 
 1. **CI check:** If in CI, verify containers are already running
-2. **Local check:** If containers not running, start them
+2. **Local:** Always do full cleanup and start fresh (handles back-to-back runs)
 3. **Database init:** Create tables and insert test users
 
 ```python
@@ -73,12 +73,16 @@ def setup(self):
         # CI: Containers pre-started by workflow
         if not self.docker_test_services_already_running():
             raise RuntimeError('CI containers not running')
-    elif not self.docker_test_services_already_running():
-        # Local: Start containers ourselves
+    else:
+        # Local: Always do full cleanup first (handles race conditions from back-to-back runs)
+        self.stop_docker_compose()
+        time.sleep(3)  # Wait for volumes/networks to be fully released
         self.setup_test_services()
 
     self.ensure_database_ready()
 ```
+
+> **Note:** The local environment always does a full cleanup before starting. This ensures reliable behavior when running tests back-to-back (e.g., pre-commit hooks running affected tests then full suite). The time penalty (~50s for container restart) is accepted for reliability.
 
 #### `teardown()`
 
@@ -95,12 +99,12 @@ def teardown(self):
 
 ## Running Tests Locally
 
-### Container Reuse Strategy (Default)
+### Clean Start Strategy
 
-The `test run` command reuses containers for fast iteration:
+The test environment uses a "clean start" strategy for reliability:
 
 ```bash
-# Run all tests (reuses healthy containers, resets database)
+# Run all tests (starts fresh containers each time)
 ./cli/ichrisbirch test run
 
 # Run specific tests
@@ -115,26 +119,28 @@ The `test run` command reuses containers for fast iteration:
 
 This approach provides:
 
-- **Fast iteration:** Containers stay running between test runs
-- **Clean state:** Database is reset before each test run via initialization script
-- **Health checking:** Unhealthy containers are automatically restarted
-- **Developer friendly:** No waiting for container startup on subsequent runs
+- **Reliability:** Each test run gets a fresh environment
+- **Clean state:** Database initialized from scratch each run
+- **No race conditions:** Handles back-to-back runs (e.g., pre-commit hooks)
+- **Predictable behavior:** Same behavior every time
 
-### How Container Reuse Works
+### How Clean Start Works
 
-1. **First run:** Containers are started and database is initialized
-2. **Subsequent runs:** Health check passes → reuse containers, reset database only
-3. **Unhealthy containers:** Automatically stopped and restarted
-4. **After tests:** Containers left running for the next test run
+1. **Every run:** Full cleanup of any existing containers
+2. **Wait:** 3 seconds for volumes/networks to be released
+3. **Start fresh:** New containers with clean database
+4. **After tests:** Containers are stopped and cleaned up
 
-### Stopping Test Containers
+> **Trade-off:** Each test run takes ~50 seconds for container startup. This time penalty is accepted for reliability, especially when running pre-commit hooks that execute multiple pytest sessions back-to-back.
 
-Containers remain running after tests for fast re-runs. Stop them manually when done:
+### Network Isolation
 
-```bash
-# Stop test containers (removes volumes for clean state next time)
-./cli/ichrisbirch testing stop
-```
+Test and dev environments use separate proxy networks to avoid conflicts:
+
+- **Development:** `proxy-dev` network
+- **Testing:** `proxy-test` network
+
+This allows both environments to run simultaneously without Traefik routing conflicts.
 
 ### Manual Environment Management
 
