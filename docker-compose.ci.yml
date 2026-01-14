@@ -12,9 +12,6 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
-      - type: volume
         source: uv_cache
         target: /root/.cache/uv
 
@@ -27,9 +24,6 @@ services:
       - type: volume
         source: venv_shared
         target: /app/.venv
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -44,9 +38,6 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
-      - type: volume
         source: uv_cache
         target: /root/.cache/uv
 
@@ -59,9 +50,6 @@ services:
       - type: volume
         source: venv_shared
         target: /app/.venv
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
