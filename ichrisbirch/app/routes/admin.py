@@ -12,9 +12,13 @@ from fastapi import status
 from flask import Blueprint
 from flask import current_app
 from flask import flash
+from flask import redirect
 from flask import render_template
 from flask import request
+from flask import url_for
 
+from ichrisbirch import schemas
+from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import utils
 from ichrisbirch.app.login import admin_login_required
 from ichrisbirch.logger import LOG_DIR
@@ -37,7 +41,9 @@ def index():
 
 
 @dataclass
-class Backup:
+class S3Backup:
+    """Dataclass for displaying S3 backup objects in the UI."""
+
     filename: str
     prefix: str
     last_modified: datetime
@@ -51,14 +57,52 @@ class Backup:
 @blueprint.route('/backups/', methods=['GET', 'POST'])
 def backups():
     settings = current_app.config['SETTINGS']
+
+    if request.method == 'POST':
+        description = request.form.get('description', '').strip()
+        upload_to_s3 = request.form.get('upload_to_s3') == 'on'
+        save_local = request.form.get('save_local') == 'on'
+
+        if not description:
+            flash('Description is required', 'error')
+            return redirect(url_for('admin.backups'))
+
+        if not upload_to_s3 and not save_local:
+            flash('Select at least one destination (S3 or Local)', 'error')
+            return redirect(url_for('admin.backups'))
+
+        try:
+            with logging_flask_session_client(base_url=settings.api_url) as client:
+                backup_api = client.resource('/admin/backups', schemas.Backup)
+                result = backup_api.post(
+                    json={
+                        'description': description,
+                        'upload_to_s3': upload_to_s3,
+                        'save_local': save_local,
+                    },
+                    timeout=300.0,
+                )
+
+            if result and result.success:
+                size_str = utils.convert_bytes(result.size_bytes) if result.size_bytes else 'unknown size'
+                flash(f'Backup created: {result.filename} ({size_str})', 'success')
+            else:
+                error_msg = result.error_message if result else 'Unknown error'
+                flash(f'Backup failed: {error_msg}', 'error')
+        except Exception as e:
+            logger.error('backup_create_error', error=str(e))
+            flash(f'Error creating backup: {e}', 'error')
+
+        return redirect(url_for('admin.backups'))
+
     s3 = boto3.client('s3')
     prefix = request.args.get('prefix', '')
     up_one_level = prefix.rsplit('/', 2)[0] + '/'
     up_one_level = '' if up_one_level == prefix else up_one_level
     response = s3.list_objects_v2(Bucket=settings.aws.s3_backup_bucket, Prefix=prefix, Delimiter='/')
     contents = response.get('Contents', [])
-    backups = [
-        Backup(
+    s3_backups = [
+        S3Backup(
             filename=content['Key'].split('/')[-1],
             prefix=content['Key'].split('/')[:-1],
             last_modified=content['LastModified'],
@@ -66,7 +110,7 @@ def backups():
         )
         for content in contents
     ]
-    backups = sorted(backups, key=lambda backup: backup.last_modified, reverse=True)
+    s3_backups = sorted(s3_backups, key=lambda backup: backup.last_modified, reverse=True)
 
     common_prefixes = response.get('CommonPrefixes', [])
     folders = [prefix.get('Prefix') for prefix in common_prefixes]
@@ -75,7 +119,7 @@ def backups():
         'admin/backups.html',
         backup_bucket=settings.aws.s3_backup_bucket,
         folders=folders,
-        backups=backups,
+        backups=s3_backups,
         prefix=prefix,
         up_one_level=up_one_level,
     )
