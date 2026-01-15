@@ -460,6 +460,60 @@ function prod-apihealth() {
   curl --silent "$PROD_API_URL/health/" | jq
 }
 
+# Database commands
+function db-backup() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+
+  if [ -z "$1" ]; then
+    echo "${red}Description required: icb db backup <description>${reset}"
+    echo "Example: icb db backup pre-migration"
+    return 1
+  fi
+
+  local description="$1"
+  shift
+
+  echo "${blue}Creating backup: ${description}${reset}"
+  uv run python -c "
+from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
+pbr = PostgresBackupRestore()
+result = pbr.backup(upload=True, save_local=False, backup_description='${description}')
+print()
+if result['success']:
+    print('Backup successful!')
+    print(f\"  Filename: {result['filename']}\")
+    print(f\"  Size: {result['size_bytes']} bytes\")
+    print(f\"  Duration: {result['duration_seconds']:.2f} seconds\")
+    print(f\"  S3 Key: {result['s3_key']}\")
+    print(f\"  Checksum: {result['checksum'][:16]}...\")
+else:
+    print('Backup failed!')
+    print(f\"  Error: {result['error_message']}\")
+"
+}
+
+function db-list() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  local env="${ENVIRONMENT:-development}"
+  local bucket
+  bucket=$(grep -E '^AWS_S3_BACKUP_BUCKET=' "$ICHRISBIRCH_HOME/.env" | cut -d= -f2 | tr -d '"')
+
+  echo "${blue}Recent backups in ${env}:${reset}"
+  aws s3 ls "s3://${bucket}/${env}/postgres/" --human-readable | sort -k1,2 -r | head -20
+}
+
+function db-usage() {
+  echo "${green}Database Commands:${reset}"
+  echo "  ${blue}db backup <description>${reset} - Create manual backup to S3"
+  echo "  ${blue}db list${reset}                 - List recent backups"
+  echo ""
+  echo "${yellow}Examples:${reset}"
+  echo "  icb db backup pre-migration"
+  echo "  icb db list"
+}
+
 function usage() {
   echo "${yellow}           _                  _                  _       ${reset}"
   echo "${yellow}  (*)     |=|         (*)    |=|   (*)          |=|      ${reset}"
@@ -487,6 +541,10 @@ function usage() {
   echo "  ${blue}prod start|stop|restart|rebuild${reset} - Manage production"
   echo "  ${blue}prod logs [service]${reset} - View logs"
   echo "  ${blue}prod status|health|apihealth${reset} - Check environment"
+  echo
+  echo "${green}Database:${reset}"
+  echo "  ${blue}db backup <description>${reset} - Create manual backup"
+  echo "  ${blue}db list${reset} - List recent backups"
   echo
   echo "${green}Stats:${reset}"
   echo "  ${blue}stats${reset} - Show stats submenu"
@@ -553,6 +611,20 @@ prod)
   ;;
 ssl-manager)
   ssl-manager "$2" "$3"
+  ;;
+db)
+  case "$2" in
+  backup)
+    shift 2
+    db-backup "$@"
+    ;;
+  list) db-list ;;
+  "") db-usage ;;
+  *)
+    echo "${red}Unknown db command: $2${reset}"
+    db-usage
+    ;;
+  esac
   ;;
 stats)
   case "$2" in

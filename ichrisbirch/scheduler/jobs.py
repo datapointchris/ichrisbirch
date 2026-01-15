@@ -140,8 +140,32 @@ def aws_postgres_snapshot_to_s3(settings: Settings) -> None:
 
 @job_logger
 def postgres_backup(settings: Settings) -> None:
+    """Create a postgres backup and save metadata to backup_history table."""
     pbr = PostgresBackupRestore()
-    pbr.backup()
+    result = pbr.backup()
+
+    with create_session(settings) as session:
+        backup_record = models.BackupHistory(
+            filename=result['filename'],
+            description='scheduled',
+            backup_type='scheduled',
+            environment=settings.ENVIRONMENT,
+            created_at=result['created_at'],
+            size_bytes=result['size_bytes'],
+            duration_seconds=result['duration_seconds'],
+            s3_key=result['s3_key'],
+            local_path=result['local_path'],
+            success=result['success'],
+            error_message=result['error_message'],
+            table_snapshot=result['table_snapshot'],
+            postgres_version=result['postgres_version'],
+            database_size_bytes=result['database_size_bytes'],
+            checksum=result['checksum'],
+            triggered_by_user_id=None,
+        )
+        session.add(backup_record)
+        session.commit()
+        logger.info('backup_history_saved', backup_id=backup_record.id, success=result['success'])
 
 
 def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
