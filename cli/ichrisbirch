@@ -256,8 +256,8 @@ function test-run() {
   fi
 
   # Always reset database to ensure clean state
-  echo "${blue}Initializing test database...${reset}"
-  if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
+  echo "${blue}Resetting test database...${reset}"
+  if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.reset_test_database; then
     echo "${red}Database initialization failed${reset}"
     return 1
   fi
@@ -289,11 +289,11 @@ function testing-start() {
   echo "Waiting for services to be ready..."
   sleep 15
 
-  echo "Initializing test database..."
+  echo "Resetting test database..."
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
 
-  if ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
+  if ENVIRONMENT=testing uv run python -m ichrisbirch.database.reset_test_database; then
     echo "${green}Database initialized successfully${reset}"
   else
     echo "${red}Database initialization failed${reset}"

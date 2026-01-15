@@ -25,6 +25,9 @@ from sqlalchemy.schema import CreateSchema
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.database.base import Base
+from ichrisbirch.database.initialization import create_schemas
+from ichrisbirch.database.initialization import create_tables
+from ichrisbirch.database.initialization import insert_default_users
 from ichrisbirch.database.session import get_db_engine
 from tests.utils.database import get_test_login_users
 
@@ -81,7 +84,8 @@ class DockerComposeTestEnvironment:
         """Setup the Docker Compose test environment.
 
         In CI: containers are pre-started by workflow, just wait for them.
-        Locally: always do full cleanup and start fresh to avoid race conditions.
+        Locally: reuse running containers for fast iteration, start if needed.
+        Always reset database to ensure clean state.
         """
         try:
             if self.is_ci:
@@ -93,28 +97,25 @@ class DockerComposeTestEnvironment:
                         raise RuntimeError('CI containers not running - check workflow configuration')
                 logger.info('CI containers detected and running')
             else:
-                # Always do full cleanup first (handles race conditions from back-to-back runs)
-                logger.info('Cleaning up any existing test containers...')
-                self.stop_docker_compose()
-                time.sleep(3)  # Wait for volumes/networks to be fully released
-                logger.info('Starting fresh Docker Compose test services')
-                self.setup_test_services()
+                # Check if containers are already running
+                if self.docker_test_services_already_running():
+                    logger.info('Test containers already running, reusing them')
+                    self.verify_test_services()
+                else:
+                    logger.info('Starting Docker Compose test services')
+                    self.setup_test_services()
 
-            # Ensure database is ready
-            self.ensure_database_ready()
+            # Always reset database to ensure clean state
+            self.reset_test_database()
 
         except Exception as e:
             logger.error(f'Error during setup: {e}')
-            if not self.is_ci:
-                self.teardown()
             pytest.exit(f'Exiting due to setup failure: {e}', returncode=1)
 
     def teardown(self) -> None:
-        if self.is_ci:
-            logger.info('Skipping Docker Compose teardown in CI - handled by workflow')
-            return
-        logger.info('Tearing down Docker Compose test environment')
-        self.stop_docker_compose()
+        """Leave containers running for fast iteration."""
+        logger.info('Leaving test containers running for fast iteration')
+        logger.info('Stop manually with: icb testing stop')
 
     def docker_test_services_already_running(self, required_services=None) -> bool:
         """Returns True if all required Docker Compose services are running."""
@@ -225,6 +226,27 @@ class DockerComposeTestEnvironment:
                     logger.error(f'Failed to create schema {schema_name}: {e}')
                     raise
             session.commit()
+
+    def reset_test_database(self) -> None:
+        """Reset test database to clean state by dropping and recreating all tables.
+
+        This guarantees a clean slate for each test run, regardless of what
+        previous tests may have left behind.
+        """
+        logger.info('Resetting test database to clean state')
+        engine = get_db_engine(self.settings)
+
+        # Drop all tables
+        logger.warning('Dropping all tables')
+        Base.metadata.drop_all(engine)
+
+        # Recreate everything fresh
+        with self.test_session_generator(self.settings) as session:
+            create_schemas(session, self.settings)
+            create_tables(self.settings)
+            insert_default_users(session, self.settings)
+
+        logger.info('Test database reset complete')
 
     def ensure_database_ready(self) -> None:
         """Ensure database is in a known good state (idempotent).

@@ -43,8 +43,9 @@ class DatabaseRestore:
         target_password: str | None = None,
         base_dir: Path | None = None,
         show_command_output: bool = False,
+        settings: Any | None = None,
     ):
-        self.settings = get_settings()
+        self.settings = settings or get_settings()
         self.show_command_output = show_command_output
 
         self.backup_bucket = backup_bucket or self.settings.aws.s3_backup_bucket
@@ -70,7 +71,7 @@ class DatabaseRestore:
                 logger.info(line)
             for line in e.stderr.split('\n'):
                 logger.error(line)
-            raise SystemExit(1) from e
+            raise RuntimeError(f'Command failed: {e.stderr.strip()}') from e
         if self.show_command_output:
             for line in output.stdout.split('\n'):
                 logger.info(line)
@@ -172,22 +173,27 @@ class DatabaseRestore:
         start = pendulum.now()
         logger.info(f'started: postgres restore - {self.settings.ENVIRONMENT}')
 
+        # Determine filename upfront so we can save error records even if restore fails early
+        if skip_download:
+            actual_filename = Path(filename).name
+        else:
+            actual_filename = filename if filename != 'latest' else f'latest-{start.format("YYYY-MM-DDTHHmm")}'
+
         result: dict[str, Any] = {
             'success': False,
             'duration_seconds': None,
             'error_message': None,
             'restored_at': start,
             'backup_id': None,
-            'actual_filename': None,
+            'actual_filename': actual_filename,
         }
 
         try:
             if skip_download:
                 restore_file = Path(filename)
-                result['actual_filename'] = restore_file.name
             else:
                 restore_file = self._download_from_s3(filename)
-                result['actual_filename'] = restore_file.name
+                result['actual_filename'] = restore_file.name  # Update with actual downloaded filename
 
             backup_record = self._find_backup_record(result['actual_filename'])
             if backup_record:

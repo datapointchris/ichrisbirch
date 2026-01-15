@@ -40,8 +40,9 @@ class DatabaseBackup:
         source_password: str | None = None,
         base_dir: Path | None = None,
         show_command_output: bool = False,
+        settings: Any | None = None,
     ):
-        self.settings = get_settings()
+        self.settings = settings or get_settings()
         self.show_command_output = show_command_output
 
         self.backup_bucket = backup_bucket or self.settings.aws.s3_backup_bucket
@@ -182,11 +183,9 @@ class DatabaseBackup:
         username,
         password,
         out_dir: Path,
-        backup_description: str,
+        backup_filename: str,
         verbose=False,
     ) -> Path:
-        timestamp = pendulum.now().format('YYYY-MM-DDTHHmm')
-        backup_filename = f'backup-{timestamp}-{backup_description}.dump'
         backup_fullpath = out_dir / backup_filename
         command = [
             'pg_dump',
@@ -242,9 +241,13 @@ class DatabaseBackup:
         start = pendulum.now()
         logger.info(f'started: postgres backup - {self.settings.ENVIRONMENT}')
 
+        # Generate filename upfront so we can save error records even if backup fails early
+        timestamp = start.format('YYYY-MM-DDTHHmm')
+        backup_filename = f'backup-{timestamp}-{description}.dump'
+
         result: dict[str, Any] = {
             'success': False,
-            'filename': None,
+            'filename': backup_filename,
             'size_bytes': None,
             'duration_seconds': None,
             's3_key': None,
@@ -268,7 +271,7 @@ class DatabaseBackup:
                 username=self.source_username,
                 password=self.source_password,
                 out_dir=self.local_dir,
-                backup_description=description,
+                backup_filename=backup_filename,
             )
 
             result['filename'] = backup_file.name

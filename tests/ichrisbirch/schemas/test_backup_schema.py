@@ -142,17 +142,25 @@ class TestBackup:
 
 
 class TestBackupResult:
-    """Test BackupResult schema."""
+    """Test BackupResult schema.
+
+    BackupResult is identical to Backup but excludes the 'restores' relationship
+    to avoid lazy-load issues when serializing detached SQLAlchemy instances.
+    """
 
     def test_successful_result(self):
         """Test a successful backup result."""
         result = schemas.BackupResult(
-            success=True,
+            id=1,
             filename='backup.dump',
+            description='test',
+            backup_type='manual',
+            environment='testing',
+            created_at=datetime.now(UTC),
+            success=True,
             size_bytes=1024000,
             duration_seconds=30.5,
             s3_key='dev/postgres/backup.dump',
-            created_at=datetime.now(UTC),
             checksum='abc123',
         )
         assert result.success is True
@@ -162,13 +170,30 @@ class TestBackupResult:
     def test_failed_result(self):
         """Test a failed backup result."""
         result = schemas.BackupResult(
+            id=1,
+            filename='backup-failed.dump',
+            description='failed-test',
+            backup_type='manual',
+            environment='testing',
+            created_at=datetime.now(UTC),
             success=False,
             error_message='Connection refused',
-            created_at=datetime.now(UTC),
         )
         assert result.success is False
         assert result.error_message == 'Connection refused'
-        assert result.filename is None
+
+    def test_result_excludes_restores(self):
+        """BackupResult should not have restores field (unlike Backup)."""
+        result = schemas.BackupResult(
+            id=1,
+            filename='backup.dump',
+            description='test',
+            backup_type='manual',
+            environment='testing',
+            created_at=datetime.now(UTC),
+            success=True,
+        )
+        assert not hasattr(result, 'restores') or 'restores' not in result.model_fields
 
 
 class TestBackupRestoreSchema:

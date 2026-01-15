@@ -82,17 +82,23 @@ class Backup(BackupConfig):
 
 
 class BackupResult(BackupConfig):
-    """Schema for immediate backup response (before DB save)."""
+    """Schema for backup create response - excludes restores to avoid lazy load issues."""
 
-    success: bool
-    filename: str | None = None
+    id: int
+    filename: str
+    description: str
+    backup_type: str
+    environment: str
+    created_at: datetime
+    deleted_at: datetime | None = None
     size_bytes: int | None = None
     duration_seconds: float | None = None
     s3_key: str | None = None
     local_path: str | None = None
+    success: bool
     error_message: str | None = None
     table_snapshot: dict | None = None
     postgres_version: str | None = None
     database_size_bytes: int | None = None
     checksum: str | None = None
-    created_at: datetime
+    triggered_by_user_id: int | None = None

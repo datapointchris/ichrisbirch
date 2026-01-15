@@ -116,7 +116,7 @@ async def websocket_endpoint_log(
         await websocket.close()
 
 
-@router.post('/backups/', response_model=schemas.Backup, status_code=status.HTTP_201_CREATED)
+@router.post('/backups/', response_model=schemas.BackupResult, status_code=status.HTTP_201_CREATED)
 async def create_backup(
     backup_request: schemas.BackupCreate,
     user: models.User = Depends(get_admin_user),

@@ -114,6 +114,7 @@ test = [
   "Faker>=25.0.1",
   "freezegun>=1.5.1",
   "pytest>=8.4.1",
+  "moto[s3]>=5.0.0",
 ]
 
 

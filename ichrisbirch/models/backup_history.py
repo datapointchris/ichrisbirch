@@ -53,7 +53,7 @@ class BackupHistory(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     table_snapshot: Mapped[dict | None] = mapped_column(MutableJSONB, nullable=True)
-    postgres_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    postgres_version: Mapped[str | None] = mapped_column(Text, nullable=True)
     database_size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
