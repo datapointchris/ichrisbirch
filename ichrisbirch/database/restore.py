@@ -16,6 +16,7 @@ Can be run as a module:
 import os
 import subprocess  # nosec
 from pathlib import Path
+from typing import Any
 
 import boto3
 import pendulum
@@ -171,7 +172,7 @@ class DatabaseRestore:
         start = pendulum.now()
         logger.info(f'started: postgres restore - {self.settings.ENVIRONMENT}')
 
-        result = {
+        result: dict[str, Any] = {
             'success': False,
             'duration_seconds': None,
             'error_message': None,

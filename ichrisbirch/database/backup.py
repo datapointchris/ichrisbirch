@@ -13,6 +13,7 @@ import hashlib
 import os
 import subprocess  # nosec
 from pathlib import Path
+from typing import Any
 
 import boto3
 import pendulum
@@ -101,7 +102,8 @@ class DatabaseBackup:
             for schema_name, table_name in table_list:
                 try:
                     cur.execute(f'SELECT COUNT(*) FROM "{schema_name}"."{table_name}"')  # nosec
-                    row_count = cur.fetchone()[0]
+                    result_row = cur.fetchone()
+                    row_count = result_row[0] if result_row else 0
                     tables.append(
                         {
                             'schema_name': schema_name,
@@ -132,7 +134,8 @@ class DatabaseBackup:
         """Get total database size in bytes."""
         with self._get_db_connection() as conn, conn.cursor() as cur:
             cur.execute("SELECT pg_database_size('ichrisbirch')")
-            size = cur.fetchone()[0]
+            result = cur.fetchone()
+            size = result[0] if result else 0
         logger.info('database size collected', size_bytes=size)
         return size
 
@@ -140,7 +143,8 @@ class DatabaseBackup:
         """Get PostgreSQL version string."""
         with self._get_db_connection() as conn, conn.cursor() as cur:
             cur.execute('SELECT version()')
-            version = cur.fetchone()[0]
+            result = cur.fetchone()
+            version = result[0] if result else 'unknown'
         logger.info('postgres version collected', version=version)
         return version
 
@@ -238,7 +242,7 @@ class DatabaseBackup:
         start = pendulum.now()
         logger.info(f'started: postgres backup - {self.settings.ENVIRONMENT}')
 
-        result = {
+        result: dict[str, Any] = {
             'success': False,
             'filename': None,
             'size_bytes': None,
@@ -349,7 +353,8 @@ if __name__ == '__main__':
             print(f'  S3 Key: {record.s3_key}')
         if record.local_path:
             print(f'  Local Path: {record.local_path}')
-        print(f'  Checksum: {record.checksum[:16]}...')
+        if record.checksum:
+            print(f'  Checksum: {record.checksum[:16]}...')
         print(f'  Saved to backup_history (id={record.id})')
     else:
         print('Backup failed!')

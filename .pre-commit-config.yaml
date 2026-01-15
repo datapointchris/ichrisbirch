@@ -91,18 +91,15 @@ repos:
     hooks:
       - id: pyupgrade
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.17.0
+  - repo: local
     hooks:
       - id: mypy
-        args:
-          [
-            "--config-file",
-            "pyproject.toml",
-            --install-types,
-            --non-interactive,
-          ]
-        additional_dependencies: ["pydantic"]
+        name: mypy
+        entry: uv run mypy ichrisbirch --install-types --non-interactive --config-file pyproject.toml
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
 
   - repo: https://github.com/djlint/djLint
     rev: v1.36.4
