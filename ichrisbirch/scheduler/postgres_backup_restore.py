@@ -1,9 +1,11 @@
+import hashlib
 import os
 import subprocess  # nosec
 from pathlib import Path
 
 import boto3
 import pendulum
+import psycopg
 import structlog
 
 from ichrisbirch.config import get_settings
@@ -72,6 +74,88 @@ class PostgresBackupRestore:
             for line in output.stderr.split('\n'):
                 logger.warning(line)
 
+    def _get_db_connection(self) -> psycopg.Connection:
+        """Get a database connection for metadata queries."""
+        return psycopg.connect(
+            host=self.source_host,
+            port=self.source_port,
+            user=self.source_username,
+            password=self.source_password,
+            dbname='ichrisbirch',
+        )
+
+    def _get_table_snapshot(self) -> dict:
+        """Get all tables with row counts across all schemas."""
+        logger.info('collecting table snapshot')
+        tables = []
+        total_rows = 0
+
+        with self._get_db_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT schemaname, tablename
+                FROM pg_tables
+                WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+                ORDER BY schemaname, tablename
+            """)
+            table_list = cur.fetchall()
+
+            for schema_name, table_name in table_list:
+                try:
+                    cur.execute(f'SELECT COUNT(*) FROM "{schema_name}"."{table_name}"')  # nosec
+                    row_count = cur.fetchone()[0]
+                    tables.append(
+                        {
+                            'schema_name': schema_name,
+                            'table_name': table_name,
+                            'row_count': row_count,
+                        }
+                    )
+                    total_rows += row_count
+                except Exception as e:
+                    logger.warning(f'could not count rows in {schema_name}.{table_name}: {e}')
+                    tables.append(
+                        {
+                            'schema_name': schema_name,
+                            'table_name': table_name,
+                            'row_count': -1,
+                        }
+                    )
+
+        snapshot = {
+            'tables': tables,
+            'total_tables': len(tables),
+            'total_rows': total_rows,
+        }
+        logger.info('table snapshot collected', total_tables=len(tables), total_rows=total_rows)
+        return snapshot
+
+    def _get_database_size(self) -> int:
+        """Get total database size in bytes."""
+        with self._get_db_connection() as conn, conn.cursor() as cur:
+            cur.execute("SELECT pg_database_size('ichrisbirch')")
+            size = cur.fetchone()[0]
+        logger.info('database size collected', size_bytes=size)
+        return size
+
+    def _get_postgres_version(self) -> str:
+        """Get PostgreSQL version string."""
+        with self._get_db_connection() as conn, conn.cursor() as cur:
+            cur.execute('SELECT version()')
+            version = cur.fetchone()[0]
+        logger.info('postgres version collected', version=version)
+        return version
+
+    def _compute_checksum(self, file_path: Path) -> str:
+        """Compute SHA256 checksum of file."""
+        logger.info('computing checksum', file=str(file_path))
+        sha256_hash = hashlib.sha256()
+        with file_path.open('rb') as f:
+            for chunk in iter(lambda: f.read(8192), b''):
+                sha256_hash.update(chunk)
+        checksum = sha256_hash.hexdigest()
+        logger.info('checksum computed', checksum=checksum[:16] + '...')
+        return checksum
+
     def _delete_file(self, file: Path):
         logger.info(f'deleting: {file}')
         file.unlink()
@@ -131,35 +215,85 @@ class PostgresBackupRestore:
         logger.info(f'postgres data dumped: {backup_fullpath}')
         return backup_fullpath
 
-    def _upload_to_s3(self, file: Path):
+    def _upload_to_s3(self, file: Path) -> str:
+        """Upload file to S3 and return the S3 key."""
         s3 = boto3.resource('s3').Bucket(self.backup_bucket)
         key = f'{self.bucket_prefix}/{file.name}'
         logger.info(f'uploading to s3: {self.backup_bucket}/{key}')
         s3.upload_fileobj(file.open('rb'), Key=key)
         logger.info('upload completed')
+        return key
 
     def backup(
         self,
         upload=True,
         save_local=False,
         backup_description: str = 'scheduled',
-    ):
+    ) -> dict:
+        """Create a database backup with comprehensive metadata.
+
+        Returns a dict with backup results and metadata for saving to backup_history.
+        """
         start = pendulum.now()
+        created_at = start.to_iso8601_string()
         logger.info(f'started: postgres backup to s3 - {self.settings.ENVIRONMENT}')
-        backup = self._backup_database(
-            host=self.source_host,
-            port=self.source_port,
-            username=self.source_username,
-            password=self.source_password,
-            out_dir=self.local_dir,
-            backup_description=backup_description,
-        )
-        if upload:
-            self._upload_to_s3(file=backup)
-        if not save_local:
-            self._delete_file(backup)
-        elapsed = (pendulum.now() - start).in_words()
-        logger.info(f'postgres backup to s3 completed - {elapsed}')
+
+        result = {
+            'success': False,
+            'filename': None,
+            'size_bytes': None,
+            'duration_seconds': None,
+            's3_key': None,
+            'local_path': None,
+            'error_message': None,
+            'table_snapshot': None,
+            'postgres_version': None,
+            'database_size_bytes': None,
+            'checksum': None,
+            'created_at': created_at,
+        }
+
+        try:
+            # Collect metadata before backup
+            result['table_snapshot'] = self._get_table_snapshot()
+            result['postgres_version'] = self._get_postgres_version()
+            result['database_size_bytes'] = self._get_database_size()
+
+            # Create the backup
+            backup_file = self._backup_database(
+                host=self.source_host,
+                port=self.source_port,
+                username=self.source_username,
+                password=self.source_password,
+                out_dir=self.local_dir,
+                backup_description=backup_description,
+            )
+
+            result['filename'] = backup_file.name
+            result['size_bytes'] = backup_file.stat().st_size
+            result['checksum'] = self._compute_checksum(backup_file)
+
+            # Upload to S3 if requested
+            if upload:
+                result['s3_key'] = self._upload_to_s3(file=backup_file)
+
+            # Handle local file
+            if save_local:
+                result['local_path'] = str(backup_file)
+            else:
+                self._delete_file(backup_file)
+
+            result['success'] = True
+            elapsed = pendulum.now() - start
+            result['duration_seconds'] = elapsed.total_seconds()
+            logger.info(f'postgres backup completed - {elapsed.in_words()}')
+
+        except Exception as e:
+            logger.error(f'backup failed: {e}')
+            result['error_message'] = str(e)
+            result['duration_seconds'] = (pendulum.now() - start).total_seconds()
+
+        return result
 
     def _download_from_s3(self, filename: Path | str):
         """Either a dump file name of a specific backup, or 'latest' which will get the latest backup."""
