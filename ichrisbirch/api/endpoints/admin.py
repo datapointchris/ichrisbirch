@@ -6,17 +6,24 @@ import structlog
 from fastapi import APIRouter
 from fastapi import Cookie
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from fastapi import status
 from pygtail import Pygtail
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from ichrisbirch import models
+from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import validate_jwt_token
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.logger import LOG_DIR
+from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -107,3 +114,77 @@ async def websocket_endpoint_log(
     finally:
         logger.debug('websocket_closed')
         await websocket.close()
+
+
+@router.post('/backups/', response_model=schemas.Backup, status_code=status.HTTP_201_CREATED)
+async def create_backup(
+    backup_request: schemas.BackupCreate,
+    session: Session = Depends(get_sqlalchemy_session),
+    user: models.User = Depends(get_admin_user),
+):
+    """Create a new database backup."""
+    settings = get_settings()
+    logger.info('backup_create_request', description=backup_request.description, user_id=user.id)
+
+    if not backup_request.upload_to_s3 and not backup_request.save_local:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='At least one of upload_to_s3 or save_local must be True',
+        )
+
+    pbr = PostgresBackupRestore()
+    result = pbr.backup(
+        upload=backup_request.upload_to_s3,
+        save_local=backup_request.save_local,
+        backup_description=backup_request.description,
+    )
+
+    backup_record = models.BackupHistory(
+        filename=result['filename'],
+        description=backup_request.description,
+        backup_type='manual',
+        environment=settings.ENVIRONMENT,
+        created_at=result['created_at'],
+        size_bytes=result['size_bytes'],
+        duration_seconds=result['duration_seconds'],
+        s3_key=result['s3_key'],
+        local_path=result['local_path'],
+        success=result['success'],
+        error_message=result['error_message'],
+        table_snapshot=result['table_snapshot'],
+        postgres_version=result['postgres_version'],
+        database_size_bytes=result['database_size_bytes'],
+        checksum=result['checksum'],
+        triggered_by_user_id=user.id,
+    )
+    session.add(backup_record)
+    session.commit()
+    session.refresh(backup_record)
+
+    logger.info('backup_created', success=result['success'], filename=result['filename'], backup_id=backup_record.id)
+
+    if not result['success']:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f'Backup failed: {result["error_message"]}',
+        )
+
+    return backup_record
+
+
+@router.get('/backups/', response_model=list[schemas.Backup], status_code=status.HTTP_200_OK)
+async def read_backups(
+    session: Session = Depends(get_sqlalchemy_session),
+    limit: int = 50,
+):
+    """Get backup history."""
+    query = select(models.BackupHistory).order_by(models.BackupHistory.created_at.desc()).limit(limit)
+    return list(session.scalars(query).all())
+
+
+@router.get('/backups/{id}/', response_model=schemas.Backup, status_code=status.HTTP_200_OK)
+async def read_backup(id: int, session: Session = Depends(get_sqlalchemy_session)):
+    """Get a single backup record."""
+    if backup := session.get(models.BackupHistory, id):
+        return backup
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Backup {id} not found')
