@@ -42,7 +42,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CodespellHookEven
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['codespell', *staged_files],
+        ['codespell', '--toml', 'pyproject.toml', *staged_files],
         capture_output=True,
         text=True,
     )

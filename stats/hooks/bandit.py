@@ -44,7 +44,7 @@ def run(staged_files: list[str], branch: str, project: str) -> BanditHookEvent:
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['bandit', '-f', 'json', '-q', *python_files],
+        ['bandit', '-c', 'pyproject.toml', '-f', 'json', '-q', *python_files],
         capture_output=True,
         text=True,
     )

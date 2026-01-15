@@ -6,6 +6,8 @@ from __future__ import annotations
 import subprocess  # nosec B404
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 from datetime import UTC
 from datetime import datetime
 from pathlib import Path
@@ -67,18 +69,35 @@ def main() -> int:
     enabled_hooks = config.get('capture', {}).get('hooks', [])
     available_hooks = discover_hooks()
 
+    # Build list of valid hooks to run
+    hooks_to_run: list[tuple[str, object]] = []
     for hook_name in enabled_hooks:
         if hook_name not in available_hooks:
             print(f"Warning: Unknown hook '{hook_name}', skipping")
             continue
-
         hook_runner = get_hook(hook_name)
         if hook_runner is not None:
+            hooks_to_run.append((hook_name, hook_runner))
+
+    # Run hooks in parallel
+    events: list[tuple[str, float, object]] = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {}
+        for hook_name, hook_runner in hooks_to_run:
             start = time.perf_counter()
-            event = hook_runner(staged_files, branch, project)
+            future = executor.submit(hook_runner, staged_files, branch, project)
+            futures[future] = (hook_name, start)
+
+        for future in as_completed(futures):
+            hook_name, start = futures[future]
+            event = future.result()
             duration = time.perf_counter() - start
-            write_timing(hook_name, duration)
-            emit_event(event, events_path)
+            events.append((hook_name, duration, event))
+
+    # Emit events and write timing after all hooks complete
+    for hook_name, duration, event in events:
+        write_timing(hook_name, duration)
+        emit_event(event, events_path)
 
     total_duration = time.perf_counter() - total_start
     write_timing('', 0, total_duration)

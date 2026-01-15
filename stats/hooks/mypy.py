@@ -50,7 +50,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MypyHookEvent:
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['mypy', '--show-error-codes', '--no-error-summary', *python_files],
+        ['uv', 'run', 'mypy', '--config-file', 'pyproject.toml', '--show-error-codes', '--no-error-summary', *python_files],
         capture_output=True,
         text=True,
     )
