@@ -21,5 +21,5 @@ docker run --name "$CONTAINER_NAME" \
 sleep 2
 
 echo ""
-echo "Running Postgres Backup and Restore Test"
-python ../ichrisbirch/scheduler/postgres_backup_restore.py
+echo "Running Postgres Backup Test"
+python -m ichrisbirch.database.backup --description "backup-restore-loop-test"

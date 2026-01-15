@@ -463,8 +463,6 @@ function prod-apihealth() {
 # Database commands
 function db-backup() {
   cd "$ICHRISBIRCH_HOME" || exit
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
 
   if [ -z "$1" ]; then
     echo "${red}Description required: icb db backup <description>${reset}"
@@ -472,26 +470,30 @@ function db-backup() {
     return 1
   fi
 
-  local description="$1"
-  shift
+  echo "${blue}Creating backup: $1${reset}"
+  uv run python -m ichrisbirch.database.backup --description "$1" "${@:2}"
+}
 
-  echo "${blue}Creating backup: ${description}${reset}"
-  uv run python -c "
-from ichrisbirch.scheduler.postgres_backup_restore import PostgresBackupRestore
-pbr = PostgresBackupRestore()
-result = pbr.backup(upload=True, save_local=False, backup_description='${description}')
-print()
-if result['success']:
-    print('Backup successful!')
-    print(f\"  Filename: {result['filename']}\")
-    print(f\"  Size: {result['size_bytes']} bytes\")
-    print(f\"  Duration: {result['duration_seconds']:.2f} seconds\")
-    print(f\"  S3 Key: {result['s3_key']}\")
-    print(f\"  Checksum: {result['checksum'][:16]}...\")
-else:
-    print('Backup failed!')
-    print(f\"  Error: {result['error_message']}\")
-"
+function db-restore() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -z "$1" ]; then
+    echo "${red}Filename required: icb db restore <filename> --target-host ...${reset}"
+    echo ""
+    echo "Usage: icb db restore <filename> --target-host HOST --target-port PORT --target-username USER --target-password PASS"
+    echo ""
+    echo "Options:"
+    echo "  --skip-download    Use local file instead of downloading from S3"
+    echo "  --delete-local     Delete file after restore"
+    echo ""
+    echo "Examples:"
+    echo "  icb db restore latest --target-host localhost --target-port 5432 --target-username postgres --target-password secret"
+    echo "  icb db restore backup-2024-01-15.dump --target-host db.example.com ..."
+    return 1
+  fi
+
+  echo "${yellow}Restoring from: $1${reset}"
+  uv run python -m ichrisbirch.database.restore --filename "$1" "${@:2}"
 }
 
 function db-list() {
@@ -506,12 +508,27 @@ function db-list() {
 
 function db-usage() {
   echo "${green}Database Commands:${reset}"
-  echo "  ${blue}db backup <description>${reset} - Create manual backup to S3"
-  echo "  ${blue}db list${reset}                 - List recent backups"
+  echo "  ${blue}db backup <description> [options]${reset} - Create manual backup to S3"
+  echo "  ${blue}db restore <filename> <target-options>${reset} - Restore database from backup"
+  echo "  ${blue}db list${reset}                               - List recent backups in S3"
+  echo ""
+  echo "${yellow}Backup Options:${reset}"
+  echo "  --skip-upload    Skip S3 upload (local only)"
+  echo "  --save-local     Save backup locally"
+  echo ""
+  echo "${yellow}Restore Options:${reset}"
+  echo "  --target-host HOST       Target database host (required)"
+  echo "  --target-port PORT       Target database port (required)"
+  echo "  --target-username USER   Target database user (required)"
+  echo "  --target-password PASS   Target database password (required)"
+  echo "  --skip-download          Use local file instead of S3"
+  echo "  --delete-local           Delete file after restore"
   echo ""
   echo "${yellow}Examples:${reset}"
   echo "  icb db backup pre-migration"
+  echo "  icb db backup pre-migration --save-local"
   echo "  icb db list"
+  echo "  icb db restore latest --target-host localhost --target-port 5432 --target-username postgres --target-password secret"
 }
 
 function usage() {
@@ -617,6 +634,10 @@ db)
   backup)
     shift 2
     db-backup "$@"
+    ;;
+  restore)
+    shift 2
+    db-restore "$@"
     ;;
   list) db-list ;;
   "") db-usage ;;

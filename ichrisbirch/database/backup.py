@@ -1,3 +1,14 @@
+"""Database backup operations.
+
+Creates PostgreSQL backups with metadata tracking, S3 upload, and automatic
+persistence to backup_history table.
+
+Can be run as a module:
+    python -m ichrisbirch.database.backup --description "pre-migration"
+    python -m ichrisbirch.database.backup --description "pre-migration" --save-local
+    python -m ichrisbirch.database.backup --description "pre-migration" --skip-upload --save-local
+"""
+
 import hashlib
 import os
 import subprocess  # nosec
@@ -8,19 +19,16 @@ import pendulum
 import psycopg
 import structlog
 
+from ichrisbirch import models
 from ichrisbirch.config import get_settings
+from ichrisbirch.database.session import create_session
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
 
 
-class PostgresBackupRestore:
-    """Backing up or Restoring a Postgres Database in AWS.
-
-    backup_description:
-        used when calling the backup function for a specific purpose
-        Default: 'scheduled'
-    """
+class DatabaseBackup:
+    """Create PostgreSQL database backups with comprehensive metadata tracking."""
 
     def __init__(
         self,
@@ -29,10 +37,6 @@ class PostgresBackupRestore:
         source_port: str | None = None,
         source_username: str | None = None,
         source_password: str | None = None,
-        target_host: str | None = None,
-        target_port: str | None = None,
-        target_username: str | None = None,
-        target_password: str | None = None,
         base_dir: Path | None = None,
         show_command_output: bool = False,
     ):
@@ -46,11 +50,6 @@ class PostgresBackupRestore:
         self.source_port = source_port or self.settings.postgres.port
         self.source_username = source_username or self.settings.postgres.username
         self.source_password = source_password or self.settings.postgres.password
-
-        self.target_host = target_host
-        self.target_port = target_port
-        self.target_username = target_username
-        self.target_password = target_password
 
         self.base_dir = base_dir or find_project_root()
         self.local_prefix = Path(f'{self.backup_bucket}/{self.settings.ENVIRONMENT}/postgres')
@@ -186,14 +185,6 @@ class PostgresBackupRestore:
         backup_filename = f'backup-{timestamp}-{backup_description}.dump'
         backup_fullpath = out_dir / backup_filename
         command = [
-            'pg_dumpall',
-            f'--host={host}',
-            f'--port={port}',
-            f'--username={username}',
-            '--no-password',
-            f'--file={backup_fullpath}',
-        ]
-        command = [
             'pg_dump',
             f'--host={host}',
             f'--port={port}',
@@ -226,17 +217,26 @@ class PostgresBackupRestore:
 
     def backup(
         self,
-        upload=True,
-        save_local=False,
-        backup_description: str = 'scheduled',
-    ) -> dict:
-        """Create a database backup with comprehensive metadata.
+        description: str,
+        upload: bool = True,
+        save_local: bool = False,
+        backup_type: str = 'manual',
+        user_id: int | None = None,
+    ) -> models.BackupHistory:
+        """Create a database backup and save to backup_history.
 
-        Returns a dict with backup results and metadata for saving to backup_history.
+        Args:
+            description: Short description of the backup reason
+            upload: Upload to S3 (default True)
+            save_local: Keep local copy (default False)
+            backup_type: 'manual' or 'scheduled'
+            user_id: ID of user who triggered backup (None for scheduled/CLI)
+
+        Returns:
+            BackupHistory record with all metadata
         """
         start = pendulum.now()
-        created_at = start.to_iso8601_string()
-        logger.info(f'started: postgres backup to s3 - {self.settings.ENVIRONMENT}')
+        logger.info(f'started: postgres backup - {self.settings.ENVIRONMENT}')
 
         result = {
             'success': False,
@@ -250,34 +250,30 @@ class PostgresBackupRestore:
             'postgres_version': None,
             'database_size_bytes': None,
             'checksum': None,
-            'created_at': created_at,
+            'created_at': start,
         }
 
         try:
-            # Collect metadata before backup
             result['table_snapshot'] = self._get_table_snapshot()
             result['postgres_version'] = self._get_postgres_version()
             result['database_size_bytes'] = self._get_database_size()
 
-            # Create the backup
             backup_file = self._backup_database(
                 host=self.source_host,
                 port=self.source_port,
                 username=self.source_username,
                 password=self.source_password,
                 out_dir=self.local_dir,
-                backup_description=backup_description,
+                backup_description=description,
             )
 
             result['filename'] = backup_file.name
             result['size_bytes'] = backup_file.stat().st_size
             result['checksum'] = self._compute_checksum(backup_file)
 
-            # Upload to S3 if requested
             if upload:
                 result['s3_key'] = self._upload_to_s3(file=backup_file)
 
-            # Handle local file
             if save_local:
                 result['local_path'] = str(backup_file)
             else:
@@ -293,76 +289,68 @@ class PostgresBackupRestore:
             result['error_message'] = str(e)
             result['duration_seconds'] = (pendulum.now() - start).total_seconds()
 
-        return result
+        with create_session(self.settings) as session:
+            record = models.BackupHistory(
+                filename=result['filename'],
+                description=description,
+                backup_type=backup_type,
+                environment=self.settings.ENVIRONMENT,
+                created_at=result['created_at'],
+                size_bytes=result['size_bytes'],
+                duration_seconds=result['duration_seconds'],
+                s3_key=result['s3_key'],
+                local_path=result['local_path'],
+                success=result['success'],
+                error_message=result['error_message'],
+                table_snapshot=result['table_snapshot'],
+                postgres_version=result['postgres_version'],
+                database_size_bytes=result['database_size_bytes'],
+                checksum=result['checksum'],
+                triggered_by_user_id=user_id,
+            )
+            session.add(record)
+            session.commit()
+            session.refresh(record)
+            logger.info('backup_history saved', backup_id=record.id, success=result['success'])
 
-    def _download_from_s3(self, filename: Path | str):
-        """Either a dump file name of a specific backup, or 'latest' which will get the latest backup."""
-        s3 = boto3.resource('s3').Bucket(self.backup_bucket)
-        if filename == 'latest':
-            objects = s3.objects.filter(Prefix=f'{self.bucket_prefix}/')
-            latest = max(objects, key=lambda obj: obj.last_modified)
-            key = latest.key
-        else:
-            key = f'{self.bucket_prefix}/{filename}'
+        return record
 
-        download_path = self.local_dir / Path(key).name
-        logger.info(f'creating download directory: {download_path.parent}')
-        download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f'downloading from s3: {self.backup_bucket}/{key}')
-        s3.download_fileobj(key, download_path.open('wb'))
-        logger.info(f'download location: {download_path}')
-        return download_path
+if __name__ == '__main__':
+    import argparse
 
-    def _restore(self, host, port, username, password, file: Path | str, verbose=False):
-        """Restore the database in the dump file.
+    parser = argparse.ArgumentParser(
+        description='Create a PostgreSQL database backup.',
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument('--description', required=True, help='Description of the backup')
+    parser.add_argument('--skip-upload', action='store_true', help='Skip uploading to S3')
+    parser.add_argument('--save-local', action='store_true', help='Save the backup locally')
 
-        NOTE: the --dbname used to connect is 'postgres' because it is used as the base database
-        to issue the CREATE DATABASE command.  The database name to create is embedded in the dump file.
-        --no-privileges because rdsadmin privilege GRANT and REVOKE will cause errors.
-        """
-        command = [
-            'psql',
-            f'--host={host}',
-            f'--port={port}',
-            f'--username={username}',
-            '--no-password',
-            f'--file={file}',
-        ]
-        command = [
-            'pg_restore',
-            f'--host={host}',
-            f'--port={port}',
-            f'--username={username}',
-            '--no-password',
-            '--create',
-            '--no-privileges',
-            '--dbname=postgres',
-            str(file),
-        ]
-        if verbose:
-            command.append('--echo-all')
+    args = parser.parse_args()
 
-        logger.info(f'connecting to database: {host}:{port}')
-        logger.info('starting: database restore')
-        self._run_command(command, env={'PGPASSWORD': password})
-        logger.info(f'restored to: {host}:{port}')
+    description = ''.join([d.lower() for d in args.description]).replace(' ', '-')
 
-    def restore(self, filename: str | Path, skip_download=False, delete_local=False):
-        start = pendulum.now()
-        logger.info(f'started: postgres restore from s3 - {self.settings.ENVIRONMENT}')
-        if skip_download:
-            download_file = filename
-        else:
-            download_file = self._download_from_s3(filename)
-        self._restore(
-            host=self.target_host,
-            port=self.target_port,
-            username=self.target_username,
-            password=self.target_password,
-            file=download_file,
-        )
-        if not skip_download and delete_local:
-            self._delete_file(Path(download_file))
-        elapsed = (pendulum.now() - start).in_words()
-        logger.info(f'postgres restore to s3 completed - {elapsed}')
+    db_backup = DatabaseBackup(show_command_output=True)
+    record = db_backup.backup(
+        description=description,
+        upload=not args.skip_upload,
+        save_local=args.save_local,
+        backup_type='manual',
+    )
+
+    print()
+    if record.success:
+        print('Backup successful!')
+        print(f'  Filename: {record.filename}')
+        print(f'  Size: {record.size_bytes} bytes')
+        print(f'  Duration: {record.duration_seconds:.2f} seconds')
+        if record.s3_key:
+            print(f'  S3 Key: {record.s3_key}')
+        if record.local_path:
+            print(f'  Local Path: {record.local_path}')
+        print(f'  Checksum: {record.checksum[:16]}...')
+        print(f'  Saved to backup_history (id={record.id})')
+    else:
+        print('Backup failed!')
+        print(f'  Error: {record.error_message}')
