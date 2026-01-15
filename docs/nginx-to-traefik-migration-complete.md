@@ -323,8 +323,8 @@ echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 ichrisbirch dev health
 
 # Example output:
-# [✓] Container: ichrisbirch-traefik-dev (Up 2 hours)
-# [✓] Container: ichrisbirch-api-dev (Up 2 hours (healthy))
+# [✓] Container: icb-dev-traefik (Up 2 hours)
+# [✓] Container: icb-dev-api (Up 2 hours (healthy))
 # [✓] DNS: api.docker.localhost found in /etc/hosts
 # [✓] API Health: HTTP 200 (OK)
 # [✓] App Frontend: HTTP 200 (OK)

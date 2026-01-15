@@ -129,11 +129,11 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 # Example output:
 # Container Status:
-# [✓] ichrisbirch-traefik-dev    (Up 2 minutes)
-# [✓] ichrisbirch-postgres-dev   (Up 2 minutes (healthy))
-# [✓] ichrisbirch-api-dev        (Up 2 minutes (healthy))
-# [✓] ichrisbirch-app-dev        (Up 2 minutes (healthy))
-# [✓] ichrisbirch-chat-dev       (Up 2 minutes)
+# [✓] icb-dev-traefik    (Up 2 minutes)
+# [✓] icb-dev-postgres   (Up 2 minutes (healthy))
+# [✓] icb-dev-api        (Up 2 minutes (healthy))
+# [✓] icb-dev-app        (Up 2 minutes (healthy))
+# [✓] icb-dev-chat       (Up 2 minutes)
 #
 # Development environment URLs:
 #   API:       https://api.docker.localhost/

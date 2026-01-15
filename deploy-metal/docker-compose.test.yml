@@ -7,7 +7,7 @@ services:
   # Test database - optimized for speed over durability
   postgres:
     image: postgres:16-alpine
-    container_name: ichrisbirch-postgres-testing
+    container_name: icb-metal-test-postgres
     ports:
       - "5434:5432"
     environment:
@@ -46,7 +46,7 @@ services:
   # Test Redis - optimized for speed, no persistence
   redis:
     image: redis:7-alpine
-    container_name: ichrisbirch-redis-testing
+    container_name: icb-metal-test-redis
     ports:
       - "6380:6379"
     # Test optimizations: no persistence, minimal configuration
@@ -73,7 +73,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-api-testing
+    container_name: icb-metal-test-api
     # Run without reload for consistent test environment
     command: >
       uv run uvicorn ichrisbirch.wsgi_api:api
@@ -134,7 +134,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-app-testing
+    container_name: icb-metal-test-app
     # Run without reload for consistent test environment
     command: >
       uv run flask
@@ -186,7 +186,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-chat-testing
+    container_name: icb-metal-test-chat
     command: >
       uv run streamlit run ichrisbirch/chat/app.py
       --server.address=0.0.0.0
@@ -246,7 +246,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-scheduler-testing
+    container_name: icb-metal-test-scheduler
     command: uv run python -m ichrisbirch.wsgi_scheduler
     environment:
       - ENVIRONMENT=testing
@@ -294,15 +294,15 @@ services:
 
 volumes:
   ichrisbirch_testing_logs:
-    name: ichrisbirch-metal-test-logs
+    name: icb-metal-test-logs
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ${ICHRISBIRCH_HOME:-${PWD}}/test-logs
   uv_cache:
-    name: ichrisbirch-metal-test-uv-cache
+    name: icb-metal-test-uv-cache
     driver: local
   venv_shared:
-    name: ichrisbirch-metal-test-venv-shared
+    name: icb-metal-test-venv-shared
     driver: local

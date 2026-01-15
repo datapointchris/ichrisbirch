@@ -177,35 +177,35 @@ check_containers() {
     case "$ENVIRONMENT" in
         dev)
             containers=(
-                "ichrisbirch-traefik-dev"
-                "ichrisbirch-api-dev"
-                "ichrisbirch-app-dev"
-                "ichrisbirch-chat-dev"
-                "ichrisbirch-postgres-dev"
-                "ichrisbirch-redis-dev"
-                "ichrisbirch-scheduler-dev"
+                "icb-dev-traefik"
+                "icb-dev-api"
+                "icb-dev-app"
+                "icb-dev-chat"
+                "icb-dev-postgres"
+                "icb-dev-redis"
+                "icb-dev-scheduler"
             )
             ;;
         test)
             containers=(
-                "ichrisbirch-traefik-test"
-                "ichrisbirch-api-testing"
-                "ichrisbirch-app-testing"
-                "ichrisbirch-chat-testing"
-                "ichrisbirch-postgres-testing"
-                "ichrisbirch-redis-testing"
-                "ichrisbirch-scheduler-testing"
+                "icb-test-traefik"
+                "icb-test-api"
+                "icb-test-app"
+                "icb-test-chat"
+                "icb-test-postgres"
+                "icb-test-redis"
+                "icb-test-scheduler"
             )
             ;;
         prod)
             containers=(
-                "ichrisbirch-traefik"
-                "ichrisbirch-api"
-                "ichrisbirch-app"
-                "ichrisbirch-chat"
-                "ichrisbirch-postgres"
-                "ichrisbirch-redis"
-                "ichrisbirch-scheduler"
+                "icb-prod-traefik"
+                "icb-prod-api"
+                "icb-prod-app"
+                "icb-prod-chat"
+                "icb-prod-postgres"
+                "icb-prod-redis"
+                "icb-prod-scheduler"
             )
             ;;
     esac

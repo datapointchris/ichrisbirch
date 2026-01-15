@@ -192,7 +192,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs api
 
 # Execute commands in running containers
-docker exec -it ichrisbirch-api-dev /bin/bash
+docker exec -it icb-dev-api /bin/bash
 ```
 
 ## Production Deployment

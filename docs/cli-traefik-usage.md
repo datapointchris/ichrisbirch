@@ -249,13 +249,13 @@ Starts the development environment with full Traefik + HTTPS setup.
 ```text
 Starting DEV environment with Docker Compose + Traefik (HTTPS)
 [+] Running 8/8
- ✔ Network proxy-dev                    Created
- ✔ Container ichrisbirch-postgres-dev   Healthy
- ✔ Container ichrisbirch-redis-dev      Started
- ✔ Container ichrisbirch-api-dev        Started
- ✔ Container ichrisbirch-app-dev        Started
- ✔ Container ichrisbirch-chat-dev       Started
- ✔ Container ichrisbirch-traefik-dev    Started
+ ✔ Network icb-dev-proxy                Created
+ ✔ Container icb-dev-postgres   Healthy
+ ✔ Container icb-dev-redis      Started
+ ✔ Container icb-dev-api        Started
+ ✔ Container icb-dev-app        Started
+ ✔ Container icb-dev-chat       Started
+ ✔ Container icb-dev-traefik    Started
 
 Development environment started with HTTPS:
   API:       https://api.docker.localhost/
@@ -282,13 +282,13 @@ Shows detailed status of all services with HTTPS URLs and health information.
 Checking DEV environment status...
 
 Container Status:
-[✓] ichrisbirch-traefik-dev    (Up 2 minutes)
-[✓] ichrisbirch-postgres-dev   (Up 2 minutes (healthy))
-[✓] ichrisbirch-redis-dev      (Up 2 minutes (healthy))
-[✓] ichrisbirch-api-dev        (Up 2 minutes (healthy))
-[✓] ichrisbirch-app-dev        (Up 2 minutes (healthy))
-[✓] ichrisbirch-chat-dev       (Up 2 minutes)
-[✓] ichrisbirch-scheduler-dev  (Up 2 minutes)
+[✓] icb-dev-traefik    (Up 2 minutes)
+[✓] icb-dev-postgres   (Up 2 minutes (healthy))
+[✓] icb-dev-redis      (Up 2 minutes (healthy))
+[✓] icb-dev-api        (Up 2 minutes (healthy))
+[✓] icb-dev-app        (Up 2 minutes (healthy))
+[✓] icb-dev-chat       (Up 2 minutes)
+[✓] icb-dev-scheduler  (Up 2 minutes)
 
 Development environment URLs:
   API:       https://api.docker.localhost/
@@ -322,10 +322,10 @@ Health Check for dev Environment
 ========================================
 
 [INFO] Checking Docker containers for dev environment
-[✓] Container: ichrisbirch-traefik-dev (Up 2 minutes)
-[✓] Container: ichrisbirch-api-dev (Up 2 minutes (healthy))
-[✓] Container: ichrisbirch-app-dev (Up 2 minutes (healthy))
-[✓] Container: ichrisbirch-chat-dev (Up 2 minutes)
+[✓] Container: icb-dev-traefik (Up 2 minutes)
+[✓] Container: icb-dev-api (Up 2 minutes (healthy))
+[✓] Container: icb-dev-app (Up 2 minutes (healthy))
+[✓] Container: icb-dev-chat (Up 2 minutes)
 
 [INFO] Checking DNS resolution for api.docker.localhost
 [✓] DNS: api.docker.localhost found in /etc/hosts (127.0.0.1)

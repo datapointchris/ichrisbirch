@@ -28,9 +28,9 @@ PROD_APP_URL="https://${PROD_DOMAIN}"
 PROD_CHAT_URL="https://chat.${PROD_DOMAIN}"
 
 # Docker compose commands
-COMPOSE_DEV="docker compose --project-name ichrisbirch-dev -f docker-compose.yml -f docker-compose.dev.yml"
-COMPOSE_TEST="docker compose --project-name ichrisbirch-test -f docker-compose.yml -f docker-compose.test.yml"
-COMPOSE_PROD="docker compose --project-name ichrisbirch-prod -f docker-compose.yml"
+COMPOSE_DEV="docker compose --project-name icb-dev -f docker-compose.yml -f docker-compose.dev.yml"
+COMPOSE_TEST="docker compose --project-name icb-test -f docker-compose.yml -f docker-compose.test.yml"
+COMPOSE_PROD="docker compose --project-name icb-prod -f docker-compose.yml"
 
 # Script paths
 HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/cli/health-check.sh"
@@ -87,10 +87,10 @@ function colored-logs() {
   local CYAN_TRAEFIK="${cyan}traefik${reset}"
 
   sed \
-    -e 's/ichrisbirch-//g' \
-    -e 's/-dev//g' \
-    -e 's/-testing//g' \
-    -e 's/-test//g' \
+    -e 's/icb-//g' \
+    -e 's/dev-//g' \
+    -e 's/test-//g' \
+    -e 's/prod-//g' \
     -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
     -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
     -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
@@ -119,7 +119,7 @@ function colored-status() {
     -v unhealthy="$YELLOW_UNHEALTHY" \
     -v healthy="$GREEN_HEALTHY" '
     {
-        gsub(/ichrisbirch-/, "");
+        gsub(/icb-/, "");
         gsub(/running/, running);
         gsub(/exited/, exited);
         gsub(/restarting/, restarting);
@@ -157,7 +157,7 @@ function dev-start() {
 
   echo "Ensuring database is initialized..."
   sleep 3
-  docker exec ichrisbirch-api-dev python -m ichrisbirch.database.initialization --env development 2>/dev/null || true
+  docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development 2>/dev/null || true
 
   echo ""
   echo "Development environment started:"
@@ -196,7 +196,7 @@ function dev-rebuild() {
   echo "Waiting for postgres to be ready..."
   sleep 5
   echo "Initializing database..."
-  docker exec ichrisbirch-api-dev python -m ichrisbirch.database.initialization --env development
+  docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development
   echo "${green}DEV environment rebuilt and initialized${reset}"
   dev-credentials
 }

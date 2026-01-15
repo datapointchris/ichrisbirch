@@ -296,8 +296,8 @@ $ ichrisbirch traefik health dev
 Health Check for dev Environment
 ========================================
 
-[✓] Container: ichrisbirch-traefik-dev (Up 5 minutes)
-[✓] Container: ichrisbirch-api-dev (Up 5 minutes (healthy))
+[✓] Container: icb-dev-traefik (Up 5 minutes)
+[✓] Container: icb-dev-api (Up 5 minutes (healthy))
 [✓] DNS: api.docker.localhost found in /etc/hosts (127.0.0.1)
 [✓] API Health: HTTP 200 (OK)
 [✓] Chat Service WebSocket: HTTP 426 (WebSocket upgrade supported)

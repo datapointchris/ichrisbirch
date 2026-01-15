@@ -228,7 +228,7 @@ curl -I http://localhost:80
 ichrisbirch prod status
 
 # View Traefik logs
-docker logs ichrisbirch-traefik
+docker logs icb-prod-traefik
 ```
 
 ### WebSocket Issues (Chat)
@@ -243,9 +243,9 @@ If you see `FATAL: role "ichrisbirch" does not exist`:
 # Create the role (get password from SSM first)
 PG_PASS=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
 
-docker exec ichrisbirch-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$PG_PASS';"
-docker exec ichrisbirch-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
-docker exec ichrisbirch-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
+docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$PG_PASS';"
+docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
+docker exec icb-prod-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
 ```
 
 ### Database Restore from Backup
@@ -254,18 +254,18 @@ If you need to restore from a `.dump` file:
 
 ```bash
 # Stop app services first
-docker stop ichrisbirch-api ichrisbirch-app ichrisbirch-chat ichrisbirch-scheduler
+docker stop icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
 
 # Terminate existing connections and recreate database
-docker exec ichrisbirch-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
-docker exec ichrisbirch-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
-docker exec ichrisbirch-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
+docker exec icb-prod-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
+docker exec icb-prod-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
+docker exec icb-prod-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
 
 # Restore from dump
-cat /path/to/backup.dump | docker exec -i ichrisbirch-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner
+cat /path/to/backup.dump | docker exec -i icb-prod-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner
 
 # Start services
-docker start ichrisbirch-api ichrisbirch-app ichrisbirch-chat ichrisbirch-scheduler
+docker start icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
 ```
 
 ### SSL/Protocol Errors
@@ -294,7 +294,7 @@ Then restart services: `ichrisbirch prod restart`
 Docker Compose prefixes volumes with the project name. If you rebuild with a different project name,
 you may get new empty volumes.
 
-The CLI uses `--project-name ichrisbirch-prod`, creating volumes like `ichrisbirch-prod_postgres_data`.
+The CLI uses `--project-name icb-prod`, creating volumes like `icb-prod-postgres-data`.
 
 If your data is in differently-named volumes, check:
 

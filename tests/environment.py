@@ -52,8 +52,8 @@ class DockerComposeTestEnvironment:
     # CI uses an additional override file for CI-specific configuration
     COMPOSE_FILES = '-f docker-compose.yml -f docker-compose.test.yml'
     COMPOSE_FILES_CI = '-f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml'
-    COMPOSE_COMMAND = f'docker compose --project-name ichrisbirch-test {COMPOSE_FILES} up -d'
-    COMPOSE_COMMAND_CI = f'docker compose --project-name ichrisbirch-test {COMPOSE_FILES_CI} up -d'
+    COMPOSE_COMMAND = f'docker compose --project-name icb-test {COMPOSE_FILES} up -d'
+    COMPOSE_COMMAND_CI = f'docker compose --project-name icb-test {COMPOSE_FILES_CI} up -d'
 
     @property
     def is_ci(self) -> bool:
@@ -130,9 +130,9 @@ class DockerComposeTestEnvironment:
 
             # Parse JSON output and extract running test services
             running_services = {
-                json.loads(line).get('Names', '').removeprefix('ichrisbirch-').removesuffix('-testing')
+                json.loads(line).get('Names', '').removeprefix('icb-test-')
                 for line in result.stdout.strip().splitlines()
-                if line.strip() and 'ichrisbirch-' in line and '-testing' in line
+                if line.strip() and 'icb-test-' in line
             }
 
             # Check if all required services are running
@@ -185,7 +185,7 @@ class DockerComposeTestEnvironment:
                 attempts += 1
                 time.sleep(5)
             if attempts >= max_attempts:
-                self._log_container_debug_info(f'ichrisbirch-{service_name}-testing')
+                self._log_container_debug_info(f'icb-test-{service_name}')
                 raise RuntimeError(f'{service_name} on {host}:{port} did not respond after {max_attempts * 5} seconds')
 
         http_services = {
@@ -211,7 +211,7 @@ class DockerComposeTestEnvironment:
                 attempts += 1
                 time.sleep(5)
             if attempts >= max_attempts:
-                self._log_container_debug_info(f'ichrisbirch-{service_name}-testing')
+                self._log_container_debug_info(f'icb-test-{service_name}')
                 raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
 
     def create_database_schemas(self) -> None:
@@ -268,7 +268,7 @@ class DockerComposeTestEnvironment:
                 'docker',
                 'compose',
                 '--project-name',
-                'ichrisbirch-test',
+                'icb-test',
                 '-f',
                 'docker-compose.yml',
                 '-f',
@@ -287,7 +287,7 @@ class DockerComposeTestEnvironment:
             logger.warning('Docker Compose down timed out, forcing container removal')
             # Force kill any remaining containers
             services = ['postgres', 'redis', 'api', 'app', 'chat', 'scheduler', 'traefik']
-            containers = [f'ichrisbirch-{s}-testing' for s in services]
+            containers = [f'icb-test-{s}' for s in services]
             subprocess.run(['docker', 'rm', '-f'] + containers, capture_output=True, timeout=30)
         except Exception as e:
             logger.warning(f'Error stopping Docker Compose: {e}')

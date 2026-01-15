@@ -493,7 +493,7 @@ Use `python`, not `python3` (as per project standards).
 ### Naming Conventions
 
 - **Documentation files**: Use lowercase (e.g., `quick-start.md`, not `Quick-Start.md`)
-- **Docker containers**: Prefixed with `ichrisbirch-{service}-{env}` (e.g., `ichrisbirch-api-dev`)
+- **Docker containers**: Prefixed with `icb-{env}-{service}` (e.g., `icb-dev-api`)
 - **Database naming**: Snake_case for tables and columns
 
 ### Error Handling

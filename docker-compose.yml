@@ -10,7 +10,7 @@ services:
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
     image: traefik:v3.6
-    container_name: ichrisbirch-traefik
+    container_name: icb-prod-traefik
     ports:
       - "80:80"
     volumes:
@@ -49,7 +49,7 @@ services:
   # PostgreSQL Database Service - Production optimized for performance and reliability
   postgres:
     image: postgres:16-alpine
-    container_name: ichrisbirch-postgres
+    container_name: icb-prod-postgres
     environment:
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
@@ -89,7 +89,7 @@ services:
   # Redis Cache Service - Production optimized for performance and persistence
   redis:
     image: redis:7-alpine
-    container_name: ichrisbirch-redis
+    container_name: icb-prod-redis
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     networks:
@@ -129,7 +129,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-api
+    container_name: icb-prod-api
     # Production command without reload, disable access logs (handled by middleware)
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     environment:
@@ -178,7 +178,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-app
+    container_name: icb-prod-app
     # Production WSGI server (timeout allows for long OpenAI requests)
     command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
     environment:
@@ -224,7 +224,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-chat
+    container_name: icb-prod-chat
     # Production chat command
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
     environment:
@@ -272,7 +272,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-scheduler
+    container_name: icb-prod-scheduler
     # Production scheduler command
     command: python -m ichrisbirch.wsgi_scheduler
     environment:
@@ -306,13 +306,13 @@ services:
 # Production volumes with explicit names (prevents project-name prefix issues)
 volumes:
   postgres_data:
-    name: ichrisbirch-postgres-data
+    name: icb-prod-postgres-data
     driver: local
   redis_data:
-    name: ichrisbirch-redis-data
+    name: icb-prod-redis-data
     driver: local
   ichrisbirch_logs:
-    name: ichrisbirch-logs
+    name: icb-prod-logs
     driver: local
 
 # Networks for service communication

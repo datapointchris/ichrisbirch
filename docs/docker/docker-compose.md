@@ -197,7 +197,7 @@ uv run pytest
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-test up -d
+  --project-name icb-test up -d
 ```
 
 ## CI Override (`docker-compose.ci.yml`)
@@ -388,7 +388,7 @@ docker compose logs api
 docker compose ps
 
 # Inspect container
-docker inspect ichrisbirch-api-dev
+docker inspect icb-dev-api
 ```
 
 ### Port Conflicts

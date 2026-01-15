@@ -162,7 +162,7 @@ uv run pytest tests/ichrisbirch/api/endpoints/test_tasks.py::test_create -v
 ```bash
 # Stop containers
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-test down -v
+  --project-name icb-test down -v
 ```
 
 ## Test Environment vs Development Environment
@@ -276,11 +276,11 @@ def ensure_database_ready(self):
 ```bash
 # Check container status
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-test ps
+  --project-name icb-test ps
 
 # View logs
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-test logs
+  --project-name icb-test logs
 ```
 
 ### Database Connection Issues

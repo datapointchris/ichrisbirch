@@ -219,9 +219,9 @@ post_start_database() {
     local pg_password
     pg_password=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
 
-    docker exec ichrisbirch-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';"
-    docker exec ichrisbirch-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
-    docker exec ichrisbirch-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
+    docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';"
+    docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
+    docker exec icb-prod-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
 
     log_success "Database role created"
     rm /tmp/ichrisbirch_db_init
@@ -235,25 +235,25 @@ post_start_database() {
     sleep 10
 
     # Stop app services during restore
-    docker stop ichrisbirch-api ichrisbirch-app ichrisbirch-chat ichrisbirch-scheduler 2>/dev/null || true
+    docker stop icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler 2>/dev/null || true
 
     # Create role if needed
     local pg_password
     pg_password=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
 
-    docker exec ichrisbirch-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
-    docker exec ichrisbirch-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;" 2>/dev/null || true
+    docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
+    docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;" 2>/dev/null || true
 
     # Drop and recreate database
-    docker exec ichrisbirch-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();" 2>/dev/null || true
-    docker exec ichrisbirch-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
-    docker exec ichrisbirch-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
+    docker exec icb-prod-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();" 2>/dev/null || true
+    docker exec icb-prod-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
+    docker exec icb-prod-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
 
     # Restore
-    docker exec -i ichrisbirch-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner <"$backup_path" || true
+    docker exec -i icb-prod-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner <"$backup_path" || true
 
     # Start services back up
-    docker start ichrisbirch-api ichrisbirch-app ichrisbirch-chat ichrisbirch-scheduler
+    docker start icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
 
     log_success "Database restored"
     rm /tmp/ichrisbirch_db_restore

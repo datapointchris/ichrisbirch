@@ -4,7 +4,7 @@ services:
   # Nginx reverse proxy - Production configuration
   nginx:
     image: nginx:alpine
-    container_name: ichrisbirch-nginx
+    container_name: icb-metal-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -29,7 +29,7 @@ services:
   # PostgreSQL Database Service - Production optimized for performance and reliability
   postgres:
     image: postgres:16-alpine
-    container_name: ichrisbirch-postgres
+    container_name: icb-metal-postgres
     environment:
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
@@ -67,7 +67,7 @@ services:
   # Redis Cache Service - Production optimized for performance and persistence
   redis:
     image: redis:7-alpine
-    container_name: ichrisbirch-redis
+    container_name: icb-metal-redis
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     # Production Redis optimizations for high performance
@@ -105,7 +105,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-api
+    container_name: icb-metal-api
     # Production command without reload, disable access logs (handled by middleware)
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     environment:
@@ -140,7 +140,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-app
+    container_name: icb-metal-app
     # Production WSGI server
     command: gunicorn --bind 0.0.0.0:5000 --workers 4 ichrisbirch.wsgi_app:app
     environment:
@@ -172,7 +172,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-chat
+    container_name: icb-metal-chat
     # Production chat command
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
     environment:
@@ -204,7 +204,7 @@ services:
     build:
       context: .
       target: production
-    container_name: ichrisbirch-scheduler
+    container_name: icb-metal-scheduler
     # Production scheduler command
     command: python -m ichrisbirch.wsgi_scheduler
     environment:
@@ -232,10 +232,10 @@ services:
 # Production volumes with explicit names
 volumes:
   postgres_data:
-    name: ichrisbirch-metal-postgres-data
+    name: icb-metal-postgres-data
     driver: local
   redis_data:
-    name: ichrisbirch-metal-redis-data
+    name: icb-metal-redis-data
     driver: local
 
 # Default network for service communication

@@ -32,13 +32,13 @@ The logs command uses a watch loop (`cli/ichrisbirch:316-324`) that:
 
 ```bash
 # Follow logs for a specific container
-docker logs -f ichrisbirch-api-test
+docker logs -f icb-test-api
 
 # View recent logs
-docker logs --tail 100 ichrisbirch-api-test
+docker logs --tail 100 icb-test-api
 
 # View logs since a specific time
-docker logs --since 5m ichrisbirch-api-test
+docker logs --since 5m icb-test-api
 ```
 
 ## Log Format
@@ -81,7 +81,7 @@ Docker persists logs to disk via the json-file driver. Logs survive container re
 
 ```bash
 # Find log file location for a container
-docker inspect ichrisbirch-api-test --format='{{.LogPath}}'
+docker inspect icb-test-api --format='{{.LogPath}}'
 
 # View raw log file (requires sudo on Linux)
 sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
@@ -121,7 +121,7 @@ When using `test run`, containers stay running after tests complete. View logs i
 2. View logs around the failure time:
 
    ```bash
-   docker logs --since 1m ichrisbirch-api-test
+   docker logs --since 1m icb-test-api
    ```
 
 3. Search for error events:

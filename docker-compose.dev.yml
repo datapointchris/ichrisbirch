@@ -3,7 +3,7 @@ services:
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
     image: traefik:v3.6
-    container_name: ichrisbirch-traefik-dev
+    container_name: icb-dev-traefik
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -38,7 +38,7 @@ services:
       # Docker provider - only discover dev containers
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy-dev"
+      - "--providers.docker.network=icb-dev-proxy"
       - "--providers.docker.constraints=Label(`traefik.environment`,`development`)"
 
       # API & Dashboard
@@ -80,7 +80,7 @@ services:
   # Development database - optimized for debugging and development
   postgres:
     image: postgres:16-alpine
-    container_name: ichrisbirch-postgres-dev
+    container_name: icb-dev-postgres
     environment:
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
@@ -114,7 +114,7 @@ services:
   # Development Redis - with debugging capabilities
   redis:
     image: redis:7-alpine
-    container_name: ichrisbirch-redis-dev
+    container_name: icb-dev-redis
     ports:
       - "6379:6379"  # Keep direct port access for development tools
     networks:
@@ -142,7 +142,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-api-dev
+    container_name: icb-dev-api
     # command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --log-level debug --no-access-log
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir ichrisbirch/api --reload-dir ichrisbirch/models --reload-dir ichrisbirch/schemas --log-level debug --no-access-log
     environment:
@@ -208,7 +208,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-app-dev
+    container_name: icb-dev-app
     # Enable debug mode and auto-reload for development
     command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000 --debug --reload
     environment:
@@ -268,7 +268,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-chat-dev
+    container_name: icb-dev-chat
     # Enable hot reloading for Streamlit in development
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
     environment:
@@ -329,7 +329,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-scheduler-dev
+    container_name: icb-dev-scheduler
     # In development, you might want to disable or modify the scheduler
     # Uncomment to disable scheduler in development
     # command: /bin/sh -c "echo 'Scheduler disabled in development' && sleep infinity"
@@ -360,19 +360,19 @@ services:
 # Development volumes with explicit names to avoid conflicts
 volumes:
   postgres_data:
-    name: ichrisbirch-dev-postgres-data
+    name: icb-dev-postgres-data
     driver: local
   redis_data:
-    name: ichrisbirch-dev-redis-data
+    name: icb-dev-redis-data
     driver: local
   ichrisbirch_logs:
-    name: ichrisbirch-dev-logs
+    name: icb-dev-logs
     driver: local
 
 # Networks - dev uses its own proxy network to avoid conflicts with test
 networks:
   proxy:
-    name: proxy-dev
+    name: icb-dev-proxy
     external: false
     driver: bridge
   default:

@@ -95,7 +95,7 @@ function test-run() {
 
 # Full Docker cleanup if issues persist
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name ichrisbirch-test down -v --remove-orphans
+  --project-name icb-test down -v --remove-orphans
 docker network prune -f
 ```
 

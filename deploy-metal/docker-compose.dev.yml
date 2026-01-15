@@ -1,7 +1,7 @@
 services:
   # Development nginx with local configuration
   nginx:
-    container_name: ichrisbirch-nginx-dev
+    container_name: icb-metal-dev-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -20,7 +20,7 @@ services:
 
   # Development database - optimized for debugging and development
   postgres:
-    container_name: ichrisbirch-postgres-dev
+    container_name: icb-metal-dev-postgres
     environment:
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
@@ -51,7 +51,7 @@ services:
 
   # Development Redis - with debugging capabilities
   redis:
-    container_name: ichrisbirch-redis-dev
+    container_name: icb-metal-dev-redis
     ports:
       - "6379:6379"
     # Development Redis with some persistence and debugging
@@ -77,7 +77,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-api-dev
+    container_name: icb-metal-dev-api
     # command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --log-level debug --no-access-log
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir ichrisbirch/api --reload-dir ichrisbirch/models --reload-dir ichrisbirch/schemas --log-level debug --no-access-log
     environment:
@@ -111,7 +111,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-app-dev
+    container_name: icb-metal-dev-app
     # Enable debug mode and auto-reload for development
     command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000 --debug --reload
     environment:
@@ -143,7 +143,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-chat-dev
+    container_name: icb-metal-dev-chat
     # Enable hot reloading for Streamlit in development
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
     environment:
@@ -174,7 +174,7 @@ services:
     build:
       context: .
       target: development
-    container_name: ichrisbirch-scheduler-dev
+    container_name: icb-metal-dev-scheduler
     # In development, you might want to disable or modify the scheduler
     # Uncomment to disable scheduler in development
     # command: /bin/sh -c "echo 'Scheduler disabled in development' && sleep infinity"
@@ -198,8 +198,8 @@ services:
 # Development volumes with explicit names
 volumes:
   postgres_data:
-    name: ichrisbirch-metal-dev-postgres-data
+    name: icb-metal-dev-postgres-data
     driver: local
   redis_data:
-    name: ichrisbirch-metal-dev-redis-data
+    name: icb-metal-dev-redis-data
     driver: local

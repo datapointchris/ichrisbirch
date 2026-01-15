@@ -3,7 +3,7 @@ services:
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
     image: traefik:v3.6
-    container_name: ichrisbirch-traefik-test
+    container_name: icb-test-traefik
     command:
       - "--ping=true"
       - "--api.dashboard=true"
@@ -11,7 +11,7 @@ services:
       - "--log.level=DEBUG"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy-test"
+      - "--providers.docker.network=icb-test-proxy"
       - "--providers.docker.constraints=Label(`traefik.environment`,`testing`)"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
@@ -65,7 +65,7 @@ services:
   # Test database - optimized for speed over durability
   postgres:
     image: postgres:16-alpine
-    container_name: ichrisbirch-postgres-testing
+    container_name: icb-test-postgres
     ports:
       - "5434:5432"
     environment:
@@ -106,7 +106,7 @@ services:
   # Test Redis - optimized for speed, no persistence
   redis:
     image: redis:7-alpine
-    container_name: ichrisbirch-redis-testing
+    container_name: icb-test-redis
     ports:
       - "6380:6379"
     # Test optimizations: no persistence, minimal configuration
@@ -135,7 +135,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-api-testing
+    container_name: icb-test-api
     # Run without reload for consistent test environment
     command: >
       uv run uvicorn ichrisbirch.wsgi_api:api
@@ -218,7 +218,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-app-testing
+    container_name: icb-test-app
     # Run without reload for consistent test environment
     command: >
       uv run flask
@@ -292,7 +292,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-chat-testing
+    container_name: icb-test-chat
     command: >
       uv run streamlit run ichrisbirch/chat/app.py
       --server.address=0.0.0.0
@@ -377,7 +377,7 @@ services:
     build:
       context: .
       target: testing
-    container_name: ichrisbirch-scheduler-testing
+    container_name: icb-test-scheduler
     command: uv run python -m ichrisbirch.wsgi_scheduler
     environment:
       - ENVIRONMENT=testing
@@ -431,7 +431,7 @@ services:
 # Networks - test uses its own proxy network to avoid conflicts with dev
 networks:
   proxy:
-    name: proxy-test
+    name: icb-test-proxy
     external: false
     driver: bridge
   default:
@@ -439,20 +439,20 @@ networks:
 
 volumes:
   postgres_data:
-    name: ichrisbirch-test-postgres-data
+    name: icb-test-postgres-data
     driver: local
   redis_data:
-    name: ichrisbirch-test-redis-data
+    name: icb-test-redis-data
     driver: local
   ichrisbirch_logs:
-    name: ichrisbirch-test-logs
+    name: icb-test-logs
     driver: local
   uv_cache:
-    name: ichrisbirch-test-uv-cache
+    name: icb-test-uv-cache
     driver: local
   venv_shared:
-    name: ichrisbirch-test-venv-shared
+    name: icb-test-venv-shared
     driver: local
   traefik_test_letsencrypt:
-    name: ichrisbirch-test-letsencrypt
+    name: icb-test-letsencrypt
     driver: local

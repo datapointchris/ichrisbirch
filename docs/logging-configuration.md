@@ -177,10 +177,10 @@ The logs command uses a watch loop that automatically reconnects when containers
 
 ```bash
 # Follow logs for a specific container
-docker logs -f ichrisbirch-api-dev
+docker logs -f icb-dev-api
 
 # View recent logs
-docker logs --tail 100 ichrisbirch-api-dev
+docker logs --tail 100 icb-dev-api
 ```
 
 ## Log Persistence
@@ -191,7 +191,7 @@ Docker handles log persistence via its logging driver. By default, Docker uses t
 
 ```bash
 # Find log file location
-docker inspect ichrisbirch-api-dev --format='{{.LogPath}}'
+docker inspect icb-dev-api --format='{{.LogPath}}'
 
 # View raw log file (requires sudo)
 sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
