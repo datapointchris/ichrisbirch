@@ -2,6 +2,8 @@ from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.apartment import Feature
 from ichrisbirch.models.article import Article
 from ichrisbirch.models.autotask import AutoTask
+from ichrisbirch.models.backup_history import BackupHistory
+from ichrisbirch.models.backup_restore import BackupRestore
 from ichrisbirch.models.book import Book
 from ichrisbirch.models.box import Box
 from ichrisbirch.models.boxitem import BoxItem
@@ -23,6 +25,8 @@ __all__ = [
     'Apartment',
     'Article',
     'AutoTask',
+    'BackupHistory',
+    'BackupRestore',
     'Book',
     'Box',
     'BoxItem',

@@ -13,6 +13,8 @@ from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import Apartment  # noqa
 from ichrisbirch.models import Article  # noqa
 from ichrisbirch.models import AutoTask  # noqa
+from ichrisbirch.models import BackupHistory  # noqa
+from ichrisbirch.models import BackupRestore  # noqa
 from ichrisbirch.models import Book  # noqa
 from ichrisbirch.models import Box  # noqa
 from ichrisbirch.models import BoxItem  # noqa
