@@ -5,6 +5,12 @@ from ichrisbirch.schemas.article import ArticleUpdate
 from ichrisbirch.schemas.autotask import AutoTask
 from ichrisbirch.schemas.autotask import AutoTaskCreate
 from ichrisbirch.schemas.autotask import AutoTaskUpdate
+from ichrisbirch.schemas.backup import Backup
+from ichrisbirch.schemas.backup import BackupCreate
+from ichrisbirch.schemas.backup import BackupRestoreSchema
+from ichrisbirch.schemas.backup import BackupResult
+from ichrisbirch.schemas.backup import TableSnapshot
+from ichrisbirch.schemas.backup import TableSnapshotSummary
 from ichrisbirch.schemas.book import Book
 from ichrisbirch.schemas.book import BookCreate
 from ichrisbirch.schemas.book import BookGoodreadsInfo
@@ -55,6 +61,12 @@ __all__ = [
     'ArticleCreate',
     'ArticleSummary',
     'ArticleUpdate',
+    'Backup',
+    'BackupCreate',
+    'BackupRestoreSchema',
+    'BackupResult',
+    'TableSnapshot',
+    'TableSnapshotSummary',
     'AutoTask',
     'AutoTaskCreate',
     'AutoTaskUpdate',
