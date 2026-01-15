@@ -10,6 +10,7 @@ from flask_login.config import EXEMPT_METHODS
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.client.exceptions import APIClientError
 from ichrisbirch.api.client.logging_client import logging_internal_service_client
 
 logger = structlog.get_logger()
@@ -34,15 +35,22 @@ login_manager.login_message_category = 'warning'
 def load_user(alternative_id):
     """Reload the user object from the user ID stored in the session.
 
-    Must return the User object or None Using the user ID as the value of the remember token means you must change the user ID to invalidate
-    their login sessions. One way to improve this is to use an alternative user id instead of the user ID.
+    Must return the User object or None. Using the user ID as the value of the remember token means you must change
+    the user ID to invalidate their login sessions. One way to improve this is to use an alternative user id instead
+    of the user ID.
+
+    Returns None if user not found or API unreachable, which triggers Flask-Login to treat the session as invalid
+    and redirect to login.
     """
-    with get_users_api() as client:
-        users = client.resource('users', schemas.User)
-        if user_data := users.get_generic(['alt', alternative_id]):
-            user = models.User(**user_data)
-            logger.debug('user_loaded', alternative_id=user.alternative_id, email=user.email)
-            return user
+    try:
+        with get_users_api() as client:
+            users = client.resource('users', schemas.User)
+            if user_data := users.get_generic(['alt', alternative_id]):
+                user = models.User(**user_data)
+                logger.debug('user_loaded', alternative_id=user.alternative_id, email=user.email)
+                return user
+    except APIClientError as e:
+        logger.warning('user_load_failed', alternative_id=alternative_id, error=str(e))
     return None
 
 
