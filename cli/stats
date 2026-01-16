@@ -143,8 +143,9 @@ function stats-code() {
 
 function stats-tests() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file
+  local stats_file events_file
   stats_file=$(stats-latest-file)
+  events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
 
   echo "${green}Test Statistics${reset}"
   echo ""
@@ -163,21 +164,178 @@ function stats-tests() {
   duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file")
   coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
 
-  echo "${blue}Results${reset}"
+  echo "${blue}Current Results${reset}"
   printf "  Total:     %d\n" "$total"
   printf "  Passed:    ${green}%d${reset}\n" "$passed"
   [ "$failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$failed"
   [ "$skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$skipped"
   [ "$errors" -gt 0 ] && printf "  Errors:    ${red}%d${reset}\n" "$errors"
-  echo ""
-
-  echo "${blue}Performance${reset}"
-  printf "  Duration:  %.1fs\n" "$duration"
+  printf "  Duration:  %.0fs\n" "$duration"
   printf "  Coverage:  %.1f%%\n" "$coverage"
   echo ""
 
-  echo "${blue}Slowest Tests${reset}"
-  jq -r '.tests.slowest[:5] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" |
+  # Test Suite Trends from events.jsonl
+  if [ -f "$events_file" ]; then
+    echo "${blue}Test Suite Trends (by day)${reset}"
+    printf "${cyan}%-12s %6s %8s %6s %8s${reset}\n" "Date" "Tests" "Duration" "Failed" "Pass %"
+    echo "----------------------------------------------"
+    grep '"type":"collect.pytest"' "$events_file" | jq -s '
+      group_by(.timestamp[0:10]) |
+      map({
+        date: .[0].timestamp[0:10],
+        runs: length,
+        avg_tests: ([.[].summary.total] | add / length | floor),
+        avg_duration: ([.[].duration_seconds] | add / length | floor),
+        total_failed: ([.[].summary.failed] | add),
+        avg_passed: ([.[].summary.passed] | add / length | floor)
+      }) |
+      .[-7:] | reverse | .[] |
+      "\(.date)\t\(.avg_tests)\t\(.avg_duration)s\t\(.total_failed)\t\(((.avg_passed * 100) / .avg_tests) | floor)%"
+    ' -r 2>/dev/null | while IFS=$'\t' read -r date tests dur failed pct; do
+      if [ "$failed" -gt 0 ]; then
+        printf "%-12s %6s %8s ${red}%6s${reset} %8s\n" "$date" "$tests" "$dur" "$failed" "$pct"
+      else
+        printf "%-12s %6s %8s ${green}%6s${reset} %8s\n" "$date" "$tests" "$dur" "$failed" "$pct"
+      fi
+    done
+    echo ""
+
+    # Test Suite History (last 25 runs) - vertical bar chart
+    echo "${blue}Test Suite History (last 25 runs)${reset}"
+
+    local test_history max_dur=1 max_tests=1
+    # Filter out bad data (runs with 0 tests)
+    test_history=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '[.[] | select(.summary.total > 0)] | .[-25:] | .[] | {dur: (.duration_seconds | floor), tests: .summary.total}' | jq -s '.' 2>/dev/null)
+    max_dur=$(echo "$test_history" | jq '[.[].dur] | max // 1')
+    max_tests=$(echo "$test_history" | jq '[.[].tests] | max // 1')
+
+    # Legend with max values
+    echo "  ${yellow}██${reset} Duration (max ${max_dur}s)   ${green}██${reset} Tests (max ${max_tests})"
+    echo ""
+
+    # Store data in arrays for vertical rendering
+    local -a durs tests_arr dur_heights test_heights
+    local i=0
+    while IFS=$'\t' read -r dur tests; do
+      durs[i]=$dur
+      tests_arr[i]=$tests
+      dur_heights[i]=$(( (dur * 8) / max_dur ))
+      test_heights[i]=$(( (tests * 8) / max_tests ))
+      ((i++))
+    done < <(echo "$test_history" | jq -r '.[] | "\(.dur)\t\(.tests)"')
+
+    local num_runs=$i
+
+    # Draw vertical bars (8 rows) - 5 chars per run: ████ (yellow+green+space)
+    for row in $(seq 8 -1 1); do
+      printf "  "
+      for ((r=0; r<num_runs; r++)); do
+        if [ "${dur_heights[r]}" -ge "$row" ]; then
+          printf "%s" "${yellow}██${reset}"
+        else
+          printf "  "
+        fi
+        if [ "${test_heights[r]}" -ge "$row" ]; then
+          printf "%s" "${green}██${reset}"
+        else
+          printf "  "
+        fi
+        printf " "
+      done
+      printf "\n"
+    done
+
+    # Duration labels (yellow, left-aligned in 5-char slot)
+    printf "  "
+    for ((r=0; r<num_runs; r++)); do
+      printf "${yellow}%-4d${reset} " "${durs[r]}"
+    done
+    printf "\n"
+    # Test count labels (green, right-aligned in 5-char slot)
+    printf "  "
+    for ((r=0; r<num_runs; r++)); do
+      printf "${green}%4d${reset} " "${tests_arr[r]}"
+    done
+    printf "\n"
+    echo ""
+
+    # Slowest Test Files
+    echo "${blue}Slowest Test Files${reset}"
+    local latest_pytest
+    latest_pytest=$(grep '"type":"collect.pytest"' "$events_file" | tail -1)
+    echo "$latest_pytest" | jq -r '
+      [.tests[] | {
+        path: (
+          (.nodeid | split("::")[0]) as $file |
+          $file | split("/") |
+          if .[1] == "ichrisbirch" and (.[2] == "api" or .[2] == "app" or .[2] == "frontend") then
+            . | join("/")
+          else
+            .[0:3] | join("/")
+          end
+        ),
+        duration: ((.setup.duration // 0) + (.call.duration // 0) + (.teardown.duration // 0))
+      }] |
+      group_by(.path) |
+      map({path: .[0].path, total: ([.[].duration] | add), count: length}) |
+      sort_by(-.total) |
+      ([.[].total] | add) as $grand_total |
+      map(select(.total > ($grand_total * 0.008))) |
+      .[0:12] |
+      (.[0].total) as $max |
+      .[] |
+      {path: .path, total: .total, count: .count, bar_len: ((.total / $max * 30) | floor)}
+    ' 2>/dev/null | jq -rs '.[] | "\(.path)\t\(.total)\t\(.count)\t\(.bar_len)"' | while IFS=$'\t' read -r path total count bar_len; do
+      local bar=""
+      for ((i=0; i<bar_len; i++)); do bar="${bar}█"; done
+      # Shorten path for display
+      local short_path="${path#tests/ichrisbirch/}"
+      short_path="${short_path#tests/}"
+      printf "  %-38s %5.1fs (%3d) %s\n" "${short_path:0:38}" "$total" "$count" "$bar"
+    done
+    echo ""
+
+    # Tests per Directory
+    echo "${blue}Tests per Directory${reset}"
+    echo "$latest_pytest" | jq -r '
+      [.tests[] | .nodeid | split("/") |
+        if .[1] == "ichrisbirch" and (.[2] == "api" or .[2] == "app") then
+          .[0:4] | join("/")
+        else
+          .[0:3] | join("/")
+        end
+      ] |
+      group_by(.) |
+      map({dir: .[0], count: length}) |
+      sort_by(-.count) |
+      .[0:10] |
+      .[] |
+      "\(.dir)\t\(.count)"
+    ' 2>/dev/null | while IFS=$'\t' read -r dir count; do
+      printf "  %-40s %4d tests\n" "${dir:0:40}" "$count"
+    done
+    echo ""
+
+    # Flaky Tests (tests that sometimes fail)
+    echo "${blue}Flaky Tests (failed in some runs)${reset}"
+    local flaky_tests
+    flaky_tests=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '
+      [.[].tests[] | select(.outcome == "failed")] |
+      group_by(.nodeid) |
+      map({test: .[0].nodeid, failures: length}) |
+      sort_by(-.failures) |
+      .[0:5]
+    ' 2>/dev/null)
+    if [ "$(echo "$flaky_tests" | jq 'length')" -gt 0 ]; then
+      echo "$flaky_tests" | jq -r '.[] | "  \(.failures)x  \(.test | split("::") | .[-1])"'
+    else
+      echo "  ${green}No flaky tests detected${reset}"
+    fi
+    echo ""
+  fi
+
+  echo "${blue}Slowest Tests (latest run)${reset}"
+  jq -r '.tests.slowest[:8] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" 2>/dev/null |
     sed 's|tests/ichrisbirch/||g' | sed 's|::test_|: |g'
 }
 
