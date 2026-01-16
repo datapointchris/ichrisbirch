@@ -165,3 +165,27 @@ def test_crud_mark_read(test_app_logged_in):
 def test_crud_delete(test_app_logged_in):
     response = test_app_logged_in.post('/articles/crud/', data={'id': 1, 'action': 'delete'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_index_with_no_articles(test_app_logged_in):
+    """Verify articles index page works when no articles exist.
+
+    This tests the fix for the bug where the API client would crash with TypeError
+    when parsing a null JSON response from /articles/current/.
+    """
+    # Delete all test articles first
+    delete_test_data('articles')
+
+    response = test_app_logged_in.get('/articles/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    # Verify the "No articles" message is shown
+    assert b'No articles' in response.data
+
+
+def test_all_with_no_articles(test_app_logged_in):
+    """Verify articles all page works when no articles exist."""
+    delete_test_data('articles')
+
+    response = test_app_logged_in.get('/articles/all/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    assert b'No Articles' in response.data

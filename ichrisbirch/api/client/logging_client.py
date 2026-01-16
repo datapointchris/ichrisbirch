@@ -169,6 +169,8 @@ class LoggingResourceClient[ModelType]:
             return None
         try:
             data = response.json()
+            if data is None:
+                return None
             return self.model_class(**data)
         except Exception as e:
             logger.error('api_parse_error', model=self.model_class.__name__, error=str(e))
@@ -190,6 +192,8 @@ class LoggingResourceClient[ModelType]:
             return []
         try:
             data = response.json()
+            if data is None:
+                return []
             if isinstance(data, list):
                 return [self.model_class(**item) for item in data]
             else:
@@ -237,6 +241,8 @@ class LoggingResourceClient[ModelType]:
             return None
         try:
             data = response.json()
+            if data is None:
+                return None
             return self.model_class(**data)
         except Exception as e:
             logger.error('api_parse_error_post', model=self.model_class.__name__, error=str(e))
@@ -267,6 +273,8 @@ class LoggingResourceClient[ModelType]:
             return None
         try:
             data = response.json()
+            if data is None:
+                return None
             return self.model_class(**data)
         except Exception as e:
             logger.error('api_parse_error_patch', model=self.model_class.__name__, error=str(e))

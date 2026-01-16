@@ -311,3 +311,19 @@ class TestArticleQueryParameters:
         client, _ = article_crud_tester
         response = client.get(f'{ENDPOINT}url/', params={'url': 'http://nonexistent.com'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+
+def test_read_current_returns_null_when_no_articles(txn_api_logged_in):
+    """Verify /current/ returns null (not error) when no articles exist."""
+    client, _ = txn_api_logged_in
+    response = client.get(f'{ENDPOINT}current/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json() is None
+
+
+def test_read_many_returns_empty_list_when_no_articles(txn_api_logged_in):
+    """Verify / returns empty list (not error) when no articles exist."""
+    client, _ = txn_api_logged_in
+    response = client.get(ENDPOINT)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json() == []
