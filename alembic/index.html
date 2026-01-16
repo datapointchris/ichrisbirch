@@ -1,0 +1,3267 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../admin/">
+      
+      
+        <link rel="next" href="../scheduler/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+    
+    
+      
+        <title>Database - iChrisBirch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#alembic-revision" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="iChrisBirch" class="md-header__button md-logo" aria-label="iChrisBirch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            iChrisBirch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Database
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/datapointchris/ichrisbirch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    datapointchris/ichrisbirch
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quick-start/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quick Start
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../project_layout/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Project
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../developer_setup/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Developer Setup
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../docker/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Docker
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../AWS/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  AWS
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../devops/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  DevOps
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../css/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Frontend
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../testing/overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Testing
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../troubleshooting/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="iChrisBirch" class="md-nav__button md-logo" aria-label="iChrisBirch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    iChrisBirch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/datapointchris/ichrisbirch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    datapointchris/ichrisbirch
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Project
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Project
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../project_layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Layout
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_new_app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding New Apps
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Documentation Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    API
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/authentication_strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authentication Strategies
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../api/client/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Client
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Client
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/client/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/client/session/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Session Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/client/resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Resource Clients
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/client/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/client/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Migration Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/client/summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Implementation Summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../docker/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Docker
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Docker
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker/docker-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker Compose
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker/docker-quick-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Architecture
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logging-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Admin Dashboard
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Database
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Database
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#first-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      First Run
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subsequent-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subsequent Runs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqlalchemy-create_all-vs-alembic-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      sqlalchemy create_all vs alembic upgrade
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sqlalchemy create_all vs alembic upgrade">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlalchemycreate_all" class="md-nav__link">
+    <span class="md-ellipsis">
+      SQLAlchemy.create_all
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alembicupgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alembic.upgrade
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-differences" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Differences
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-deal-with-database-that-has-got-out-of-sync-with-alembic-revisions-and-alembic-report-target-database-is-not-up-to-date-how-to-find-what-version-of-the-revision-the-database-matches" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to deal with database that has got out of sync with alembic revisions and alembic report Target database is not up to date. How to find what version of the revision the database matches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-identify-current-database-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Identify Current Database Version
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-compare-with-alembic-revision-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Compare with Alembic Revision History
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-identify-divergences-or-missing-revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Identify Divergences or Missing Revisions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-resolving-divergences" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Resolving Divergences
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Resolving Divergences">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-a-manually-adjust-the-databaseschema" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option A: Manually adjust the database/schema
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-generate-a-new-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option B: Generate a new migration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-c-revert-to-a-known-good-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option C: Revert to a known good state
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-apply-missing-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Apply Missing Migrations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Caution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#continue" class="md-nav__link">
+    <span class="md-ellipsis">
+      continue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-validate-schema-after-adjustments" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Validate Schema After Adjustments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-consider-future-prevention-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Consider Future Prevention Strategies
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-additional-tools-and-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. Additional Tools and Practices
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-alembic-determine-the-order-of-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Does Alembic Determine the Order of Migrations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How Does Alembic Determine the Order of Migrations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#revision-identifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Revision Identifiers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#down-revision-attribute" class="md-nav__link">
+    <span class="md-ellipsis">
+      Down Revision Attribute
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-and-downgrade-sequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      Upgrade and Downgrade Sequences
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handling-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Handling Branches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version Table
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#removing-a-revision-that-has-not-been-applied-to-the-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      Removing a Revision That Has Not Been Applied to the Database
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Removing a Revision That Has Not Been Applied to the Database">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#steps-to-remove-an-unapplied-alembic-revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      Steps to Remove an Unapplied Alembic Revision
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-caution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Caution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Scheduler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AWS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../devops/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    DevOps
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            DevOps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../domain_names/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Domain Names
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_3" id="__nav_9_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Traefik
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_3">
+            <span class="md-nav__icon md-icon"></span>
+            Traefik
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traefik-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-traefik-usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nginx-to-traefik-migration-complete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Nginx Migration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devops/new_server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    New Server Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devops/new_database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    New Database
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devops/nginx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Nginx
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devops/supervisor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Supervisor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devops/pg_cron/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PG Cron
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Backups
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cicd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CI/CD
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terraform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Terraform
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git_secret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Git Secret
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Frontend
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Frontend
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../css/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CSS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../css_bem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CSS BEM
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../html5_semantic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HTML5 Semantic
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Testing
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Environment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/test_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/fixtures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fixtures
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/test_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Test Data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/writing_tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Writing Tests
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/persistent-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Persistent Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/visualization_options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visualization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../troubleshooting/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12" id="__nav_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Troubleshooting
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/poetry-uv-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Poetry to UV Migration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/docker-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker Issues
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/testing-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing Issues
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/database-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Database Issues
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/api-jwt-wrong-database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API JWT Issues
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/ssl-certificates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SSL Certificates
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/cli-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/development-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/deployment-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deployment Issues
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Legacy Issues
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="alembic-revision">Alembic Revision</h1>
+<p>Run in <code>ichrisbirch/ichrisbirch</code> (where <code>alembic.ini</code> is located)</p>
+<h2 id="first-run">First Run</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ENVIRONMENT</span><span class="o">=</span><span class="s1">&#39;development&#39;</span><span class="w"> </span><span class="c1"># or &#39;production&#39;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>alembic<span class="w"> </span>revision<span class="w"> </span>--autogenerate<span class="w"> </span>-m<span class="w"> </span><span class="s1">&#39;Create initial tables&#39;</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
+</span></code></pre></div>
+<h2 id="subsequent-runs">Subsequent Runs</h2>
+<ol>
+<li>
+<p>Make the changes to the models and schemas</p>
+</li>
+<li>
+<p>Run a revision to pickup changes in code
+<code>alembic revision --autogenerate -m 'Add notes field to tasks table'</code></p>
+<blockquote>
+<p><strong>Note</strong><br />
+If this doesn't work perfectly, you must edit the revision file</p>
+</blockquote>
+</li>
+<li>
+<p>Run the upgrade in the environments</p>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Locally</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ENVIRONMENT</span><span class="o">=</span><span class="s1">&#39;development&#39;</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
+</span></code></pre></div>
+</div>
+<div class="admonition info">
+<p class="admonition-title">EC2</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ENVIRONMENT</span><span class="o">=</span><span class="s1">&#39;production&#39;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
+</span></code></pre></div>
+</div>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><strong><em>Error</em></strong><br />
+Alembic is not able to upgrade to the latest because the revisions got out of sync.  </p>
+<p><strong><em>Solution</em></strong><br />
+Find the last revision that was successfully run (manually by inspecting the database) and then run:
+<code>alembic stamp &lt;revision&gt;</code> to set the current revision to the last successful one.
+Then run the upgrade again:
+<code>alembic upgrade head</code></p>
+<h2 id="sqlalchemy-create_all-vs-alembic-upgrade">sqlalchemy create_all vs alembic upgrade</h2>
+<p><code>SQLAlchemy</code> and <code>Alembic</code> are two powerful tools in the Python ecosystem used for database handling and migrations, respectively. They are often used together in projects to manage database schemas and perform database operations. Understanding the difference between <code>SQLAlchemy</code>'s <code>create_all</code> method and <code>Alembic</code>'s <code>upgrade</code> function is crucial for effectively managing database schema changes and migrations.</p>
+<h3 id="sqlalchemycreate_all"><code>SQLAlchemy.create_all</code></h3>
+<p><code>SQLAlchemy</code> is an SQL toolkit and Object-Relational Mapping (ORM) library for Python. It provides a full suite of well known enterprise-level persistence patterns, designed for efficient and high-performing database access.</p>
+<ul>
+<li><strong>What it does</strong>: The <code>create_all</code> method in <code>SQLAlchemy</code> is used to create all tables that have been defined in your SQLAlchemy models but don't yet exist in the database. It doesn't consider the current state of the database schema. Instead, it blindly attempts to create all the tables (and associated schema elements like indexes) based on the models you've defined. If a table already exists, it simply skips the creation for that table.</li>
+<li><strong>Usage scenario</strong>: <code>create_all</code> is particularly useful in simple projects or during the initial setup of a project's database where you are starting with an empty database and want to construct the schema based on your models' definitions.</li>
+</ul>
+<h3 id="alembicupgrade"><code>Alembic.upgrade</code></h3>
+<p><code>Alembic</code> is a lightweight database migration tool for usage with <code>SQLAlchemy</code>. It allows you to manage changes to your database schema over time, enabling versioning of your database similarly to how you version your source code.</p>
+<ul>
+<li><strong>What it does</strong>: The <code>upgrade</code> function in Alembic applies one or more migrations (changes) to the database schema, moving it to a new version. These migrations are written as scripts which define how to apply a change (e.g., add a table, alter a column) and how to revert it. The <code>upgrade</code> command considers the current version of your database and applies all new migrations in sequence up to the latest version or to a specified version.</li>
+<li><strong>Usage scenario</strong>: <code>Alembic.upgrade</code> is used in iterative development and production environments where the state of the database schema evolves over time. It ensures that schema changes are applied in a controlled and versioned manner, allowing for smooth transitions across different versions of your schema as your application grows and changes.</li>
+</ul>
+<h3 id="key-differences">Key Differences</h3>
+<ul>
+<li><strong>Version control</strong>: Alembic allows for version-controlled schema changes, making it possible to migrate your database schema forwards or backwards as needed. <code>SQLAlchemy.create_all</code> does not consider versions of your schema.</li>
+<li><strong>Sensitivity to existing schema</strong>: <code>create_all</code> essentially ignores the current schema state (it won't modify or delete existing tables), while Alembic <code>upgrade</code> scripts can be tailored to alter the current schema precisely and incrementally.</li>
+<li><strong>Purpose and scope</strong>: <code>create_all</code> is a more blunt instrument, best suited for initial schema creation. Alembic, with its <code>upgrade</code> (and corresponding <code>downgrade</code>) commands, supports a more nuanced and controlled approach to database schema evolution.</li>
+</ul>
+<p>In summary, while <code>SQLAlchemy.create_all</code> is useful for initial schema creation in simple scenarios, <code>Alembic.upgrade</code> provides a robust framework for managing schema changes over time in a version-controlled, incremental, and reversible manner. For complex projects and in production environments, integrating Alembic for migration management alongside SQLAlchemy for ORM capabilities is considered best practice.</p>
+<h3 id="how-to-deal-with-database-that-has-got-out-of-sync-with-alembic-revisions-and-alembic-report-target-database-is-not-up-to-date-how-to-find-what-version-of-the-revision-the-database-matches">How to deal with database that has got out of sync with alembic revisions and alembic report Target database is not up to date.  How to find what version of the revision the database matches</h3>
+<p>When your database schema has gotten out of sync with Alembic revisions, the message "Target database is not up to date" typically indicates Alembic detects mismatches between the expected schema version (from your migration scripts) and the current state of your database. Handling this scenario involves a few steps to identify the disparity and resolve it. Here's how you can approach this situation:</p>
+<h3 id="1-identify-current-database-version">1. Identify Current Database Version</h3>
+<p>First, check the current schema version of your database. Alembic uses a table (<code>alembic_version</code> by default) to track the current revision of the schema in your database.</p>
+<p>You can manually check this table:</p>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">alembic_version</span><span class="p">;</span>
+</span></code></pre></div>
+<p>Or use Alembic's <code>current</code> command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>alembic<span class="w"> </span>current
+</span></code></pre></div>
+<p>This command displays the current revision that the database is on.</p>
+<h3 id="2-compare-with-alembic-revision-history">2. Compare with Alembic Revision History</h3>
+<p>Next, list all the revisions known to Alembic to see where the current database version stands in relation to the migration history.</p>
+<p>Run the following command to show your migrations history:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>alembic<span class="w"> </span><span class="nb">history</span>
+</span></code></pre></div>
+<p>This command will print a list of revisions. Find where the revision from your database fits within this list. This will inform you whether the database is ahead, behind, or has diverged (if the current revision doesn't exist in your migration chain).</p>
+<h3 id="3-identify-divergences-or-missing-revisions">3. Identify Divergences or Missing Revisions</h3>
+<p>If the database's current revision doesn't exist in the migration history from <code>alembic history</code>, it suggests that the database might have applied a revision that has since been deleted or was created from a different branch of your code.</p>
+<p>In cases where the database is behind, and simply applying newer migrations is required, you can proceed to use <code>alembic upgrade</code> with the target revision you want to apply.</p>
+<p>However, if the database is ahead or has diverged, you need to assess how to reconcile the differences.</p>
+<h3 id="4-resolving-divergences">4. Resolving Divergences</h3>
+<h4 id="option-a-manually-adjust-the-databaseschema">Option A: Manually adjust the database/schema</h4>
+<p>If possible, manually adjust the database schema to match a specific version in your Alembic history, and use <code>alembic stamp</code> to mark it as such, without applying migrations. This can be necessary if the database was manually altered.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>alembic<span class="w"> </span>stamp<span class="w"> </span>&lt;revision_id&gt;
+</span></code></pre></div>
+<h4 id="option-b-generate-a-new-migration">Option B: Generate a new migration</h4>
+<p>You can attempt to autogenerate a new migration that takes into account the current state of the database and the desired state as per your models.</p>
+<p>Run:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>alembic<span class="w"> </span>revision<span class="w"> </span>--autogenerate<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Fixing divergence&quot;</span>
+</span></code></pre></div>
+<p>Review the generated script closely, as it may not be perfect and could require manual adjustments.</p>
+<h4 id="option-c-revert-to-a-known-good-state">Option C: Revert to a known good state</h4>
+<p>If all else fails and you have the ability to reset your database to a known good state (usually viable only in development or with available backups), you can revert the database back to a specific revision and reapply migrations from there.</p>
+<h3 id="5-apply-missing-migrations">5. Apply Missing Migrations</h3>
+<p>After resolving discrepancies, ensure that your database is at the correct revision and that all necessary migrations are applied.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
+</span></code></pre></div>
+<h3 id="caution">Caution</h3>
+<p>Dealing with schema mismatches can lead to data loss or corruption if not handled carefully. Always back up your database before attempting to resolve discrepancies and thoroughly test any changes in a safe environment prior to application in production.</p>
+<p>Navigating database schema issues can be challenging, but by systematically checking the current state, comparing it with your migration history, and carefully applying corrections, you can resolve discrepancies and get your project back on track.</p>
+<h3 id="continue">continue</h3>
+<h3 id="6-validate-schema-after-adjustments">6. Validate Schema After Adjustments</h3>
+<p>After applying the necessary adjustments and migrations, it’s essential to validate that the database schema now matches the expectations of your application and Alembic migrations. Conduct thorough testing to ensure that:</p>
+<ul>
+<li>All expected tables, columns, indexes, and other database objects are correctly defined.</li>
+<li>The application can successfully interact with the database without encountering schema-related errors.</li>
+<li>Running <code>alembic current</code> reports the correct and expected revision.</li>
+</ul>
+<h3 id="7-consider-future-prevention-strategies">7. Consider Future Prevention Strategies</h3>
+<p>To avoid future discrepancies between your database schema and Alembic revisions, consider implementing strategies that ensure better synchronization and tracking:</p>
+<ul>
+<li><strong>Continuous Integration (CI) Checks</strong>: Implement CI pipelines that run tests against a database that is always migrated from scratch using current Alembic migrations. This helps catch issues where migrations do not match the application models or are missing.</li>
+<li><strong>Code Review Processes</strong>: Incorporate migration script reviews as part of your development process to catch potential issues early on.</li>
+<li><strong>Restricted Database Access</strong>: Limit who can manually alter the database schema. Ideally, all changes should go through Alembic migrations to ensure that the schema evolution is recorded and versioned.</li>
+<li><strong>Documenting Manual Changes</strong>: In the unavoidable scenario where manual database changes are made, document these changes meticulously. Consider creating corresponding Alembic migrations, even if they are marked as already applied, to ensure the migration history remains an accurate record of the schema's evolution.</li>
+</ul>
+<h3 id="8-additional-tools-and-practices">8. Additional Tools and Practices</h3>
+<ul>
+<li><strong>Alembic Autogenerate Revisions</strong>: While the <code>--autogenerate</code> feature is powerful, it should not be blindly trusted. Always review the generated migration scripts to ensure they accurately represent the desired schema changes and do not inadvertently drop or alter objects.</li>
+<li><strong>Model Comparison Extensions</strong>: For complex projects, consider using or developing tools that help compare the SQLAlchemy models directly against the actual database schema, identifying discrepancies without relying solely on Alembic's version history.</li>
+<li><strong>Regular Audits</strong>: Schedule regular audits of your database schema versus your models and migrations. This proactive approach can help identify issues before they become problematic.</li>
+<li><strong>Environment Parity</strong>: Aim for parity between your development, staging, and production environments in terms of how migrations are applied and managed, reducing the risk of discrepancies arising from differences in how environments are handled.</li>
+</ul>
+<h3 id="conclusion">Conclusion</h3>
+<p>Getting a database schema back in sync with Alembic revisions involves careful diagnosis, proper tool usage, and strategic resolution of discrepancies. It requires a clear understanding of your current schema state, how it deviates from the expected state, and the steps needed to safely reconcile these differences. Implementing preventative strategies and maintaining meticulous records of changes are key to minimizing future synchronization issues, ensuring that your database schema evolution remains manageable, trackable, and aligned with your application's requirements.</p>
+<h2 id="how-does-alembic-determine-the-order-of-migrations">How Does Alembic Determine the Order of Migrations</h2>
+<p>Alembic determines the order in which to apply migrations using a couple of key concepts: <strong>revision identifiers</strong> and <strong>down_revision attributes</strong> within the migration scripts. These elements create a directed acyclic graph (DAG) of migrations, establishing a clear lineage or path through your migration history. Here's how these components work together to manage migration order:</p>
+<h3 id="revision-identifiers">Revision Identifiers</h3>
+<p>Each Alembic migration script is assigned a unique revision identifier (often a hash) when the migration is generated. This identifier uniquely distinguishes each migration in the series of changes made over time.</p>
+<h3 id="down-revision-attribute">Down Revision Attribute</h3>
+<p>Within each migration script, there's an attribute named <code>down_revision</code>. This attribute specifies the identifier of the migration that directly precedes the current one in the migration history. The <code>down_revision</code> effectively points back to the migration's parent in the version history tree.</p>
+<p>For the very first migration in a project, <code>down_revision</code> will be <code>None</code>, indicating that there is no parent migration (i.e., it's the root of the migration tree).</p>
+<h3 id="upgrade-and-downgrade-sequences">Upgrade and Downgrade Sequences</h3>
+<p>Given these two components, Alembic constructs a sequence of migrations:</p>
+<ul>
+<li>
+<p><strong>Upgrade</strong>: To migrate forward, Alembic starts from the earliest migration whose <code>down_revision</code> is <code>None</code> and follows the chain of <code>revision</code> to <code>down_revision</code> links, applying each migration in turn until it reaches the specified target migration or the latest migration if no target is specified.</p>
+</li>
+<li>
+<p><strong>Downgrade</strong>: For migrating backward, Alembic reverses the process, using the current revision as a starting point and following the chain of <code>down_revision</code> values in reverse to apply the <code>downgrade()</code> operations defined in each migration script, until it reaches the specified target revision.</p>
+</li>
+</ul>
+<h3 id="handling-branches">Handling Branches</h3>
+<p>Alembic also supports branching in migrations. When branches are present, there may be multiple migration scripts with the same <code>down_revision</code>. In this scenario, Alembic uses a "merge" migration to bring the divergent branches back into a single linear path. The merge migration specifies multiple <code>down_revision</code> values, identifying each of the branch tips that it reconciles.</p>
+<p>When applying migrations:</p>
+<ol>
+<li>
+<p><strong>Linear Migrations</strong>: In simple, linear migrations, Alembic applies migrations in the straightforward sequence dictated by the single parent-child (<code>down_revision</code> to <code>revision</code>) relationships.</p>
+</li>
+<li>
+<p><strong>Branched Migrations</strong>: In branched scenarios, Alembic will apply migrations from each branch as required, until it encounters a merge point. At the merge point, it ensures that all required branches are up to date before applying the merge migration, thus reconciling the branches and continuing forward in a linear fashion from there.</p>
+</li>
+</ol>
+<h3 id="version-table">Version Table</h3>
+<p>Alembic tracks the current version of the database schema in the <code>alembic_version</code> table, recording which migrations have been applied. This table is crucial for determining the starting point for any migration operation, be it an upgrade or downgrade.</p>
+<p>In summary, Alembic determines the order of migrations through a combination of unique revision identifiers, parent-child (down_revision) relationships creating a logical sequence, and support for merging branched histories. This structure allows Alembic to manage complex migrations histories with precision and ensure the database schema evolves coherently with the application's requirements.</p>
+<h2 id="removing-a-revision-that-has-not-been-applied-to-the-database">Removing a Revision That Has Not Been Applied to the Database</h2>
+<p>If you have an Alembic revision that hasn't been applied to any database yet and you wish to remove it, the process is fairly straightforward since you only need to deal with the revision script(s) in your migrations folder. Here's how you can do it:</p>
+<h3 id="steps-to-remove-an-unapplied-alembic-revision">Steps to Remove an Unapplied Alembic Revision</h3>
+<ol>
+<li>
+<p><strong>Locate the Revision File</strong>: In your project, navigate to the <code>versions</code> directory within your Alembic migrations folder. This folder contains all the revision scripts generated by Alembic.</p>
+</li>
+<li>
+<p><strong>Identify the Revision Script</strong>: Each file in the <code>versions</code> directory corresponds to a specific revision. The filename usually starts with the revision ID (a sequence of letters and numbers generated by Alembic) followed by an underscore and a brief description of the migration, e.g., <code>ae1027a6acf_migration_description.py</code>. Identify the script file for the revision you wish to remove. Make sure this is the correct revision by opening the file and verifying its contents, including the revision ID, the <code>down_revision</code>, and the changes it introduces.</p>
+</li>
+<li>
+<p><strong>Delete the Revision File</strong>: Simply delete the identified Python script file from the <code>versions</code> directory. This removes the revision from your migrations history, as far as Alembic is concerned.</p>
+</li>
+<li>
+<p><strong>Check if Downstream Revisions Exist</strong>: If the revision you're removing has "child" revisions (i.e., revisions that list it as their <code>down_revision</code>), you will need to decide how to handle those. You cannot simply delete a revision if later revisions depend on it without risking inconsistencies in your migration path. If such downstream revisions exist, consider the following options:</p>
+</li>
+<li><strong>Delete the Downstream Revisions Too</strong>: If the downstream revisions also haven't been applied and aren't necessary, you can delete them as well.</li>
+<li>
+<p><strong>Rebase the Downstream Revisions</strong>: If the downstream revisions need to be kept, you may need to edit their <code>down_revision</code> attributes to reflect the removal of the parent revision. This might involve setting their <code>down_revision</code> to the removed revision's parent or to a new merge revision if the history is more complex.</p>
+</li>
+<li>
+<p><strong>Regenerate Dependency Graph (Optional)</strong>: If you modified the <code>down_revision</code> of any subsequent migrations, or if you're not sure about the consistency of your migration scripts, you might want to regenerate the Alembic dependency graph. However, this is more about verifying that your revisions are consistent and there are no “orphaned” migrations. Alembic doesn't automatically generate a visual graph, but you can check consistency by running <code>alembic history</code> to make sure it outputs a coherent history from your base revision to the head, without any missing links.</p>
+</li>
+<li>
+<p><strong>Update Database Schema Manually if Necessary</strong>: If the deleted migration or any of its downstream migrations had been applied to any other environment's database (development, staging, etc.), you'll need to manually adjust those database schemas and possibly the <code>alembic_version</code> table to ensure consistency. This step applies only if the migration was mistakenly said to be unapplied when, in fact, it had been applied somewhere.</p>
+</li>
+</ol>
+<h3 id="delete-caution">Delete Caution</h3>
+<ul>
+<li>Be extra careful to ensure that the migration has indeed not been applied to any environment. Removing applied migrations can lead to inconsistencies and errors.</li>
+<li>Always have a backup of your database and current migration scripts before deleting or modifying them.</li>
+<li>Remember to communicate with your team about any changes to the migration scripts, especially if other developers might have applied the deleted migration in their local environment.</li>
+</ul>
+<p>In summary, removing an unapplied Alembic revision is as simple as deleting its script file from the <code>versions</code> directory, but care should be taken to handle dependency and consistency issues that might arise from doing so.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.indexes", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.50899def.min.js"></script>
+      
+    
+  </body>
+</html>
