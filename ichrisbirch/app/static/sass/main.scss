@@ -48,7 +48,8 @@
 
 // @use 'themes/turquoise';
 
-// FontAwesome v7
+// FontAwesome v7 - configure font path before importing
+@use "../fontawesome/scss/variables" with ($font-path: "../fontawesome/webfonts");
 @use "../fontawesome/scss/fontawesome";
 @use "../fontawesome/scss/solid";
 @use "../fontawesome/scss/brands";
