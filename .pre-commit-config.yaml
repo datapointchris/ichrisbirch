@@ -166,6 +166,16 @@ repos:
         pass_filenames: false
         always_run: false
 
+      - id: sass-compile
+        name: sass compile check
+        description: "Ensure SCSS is compiled to CSS before commit"
+        stages: [pre-commit]
+        language: system
+        entry: bash -c 'sass ichrisbirch/app/static/sass/main.scss ichrisbirch/app/static/css/main.css.tmp && if ! diff -q ichrisbirch/app/static/css/main.css ichrisbirch/app/static/css/main.css.tmp > /dev/null 2>&1; then rm ichrisbirch/app/static/css/main.css.tmp; echo "SCSS not compiled! Run - icb sass build"; exit 1; fi; rm ichrisbirch/app/static/css/main.css.tmp'
+        files: "\\.(scss)$"
+        pass_filenames: false
+        always_run: false
+
       # Event-sourced stats collection
       - id: devstats-collect
         name: devstats collect

@@ -567,6 +567,10 @@ function usage() {
   echo "  ${blue}stats${reset} - Show stats submenu"
   echo "  ${blue}stats summary${reset} - Dashboard overview"
   echo
+  echo "${green}SASS:${reset}"
+  echo "  ${blue}sass watch${reset} - Watch and compile SCSS on changes"
+  echo "  ${blue}sass build${reset} - Compile SCSS once"
+  echo
   echo "${green}URLs:${reset}"
   echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
   echo "  ${blue}Test${reset}: $TEST_API_URL | $TEST_APP_URL"
@@ -662,6 +666,29 @@ stats)
   *)
     echo "${red}Unknown stats command: $2${reset}"
     stats-usage
+    ;;
+  esac
+  ;;
+sass)
+  SASS_INPUT="$ICHRISBIRCH_HOME/ichrisbirch/app/static/sass/main.scss"
+  SASS_OUTPUT="$ICHRISBIRCH_HOME/ichrisbirch/app/static/css/main.css"
+  case "$2" in
+  watch)
+    echo "${blue}Watching SCSS for changes...${reset}"
+    echo "  Input:  ${cyan}$SASS_INPUT${reset}"
+    echo "  Output: ${cyan}$SASS_OUTPUT${reset}"
+    echo ""
+    sass --watch "$SASS_INPUT":"$SASS_OUTPUT"
+    ;;
+  build)
+    echo "${blue}Compiling SCSS...${reset}"
+    sass "$SASS_INPUT":"$SASS_OUTPUT"
+    echo "${green}Done${reset}"
+    ;;
+  *)
+    echo "${green}SASS Commands:${reset}"
+    echo "  ${blue}sass watch${reset} - Watch and compile on changes"
+    echo "  ${blue}sass build${reset} - Compile once"
     ;;
   esac
   ;;
