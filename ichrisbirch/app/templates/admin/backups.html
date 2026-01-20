@@ -6,34 +6,6 @@
 <div class="backups">
   <h1 class="backups__title">Backups</h1>
 
-  <div class="backup-create">
-    <h3 class="backup-create__title">Create Manual Backup</h3>
-    <form method="post" action="{{ url_for('admin.backups') }}" class="backup-create__form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-      <div class="backup-create__field">
-        <label for="description">Description</label>
-        <input type="text" id="description" name="description"
-               placeholder="e.g., pre-migration" required
-               pattern="[a-zA-Z0-9\s\-]+" maxlength="50">
-        <small>Letters, numbers, spaces, hyphens only</small>
-      </div>
-
-      <div class="backup-create__options">
-        <label class="backup-create__checkbox">
-          <input type="checkbox" name="upload_to_s3" checked>
-          Upload to S3
-        </label>
-        <label class="backup-create__checkbox">
-          <input type="checkbox" name="save_local">
-          Save Locally
-        </label>
-      </div>
-
-      <button type="submit" class="button backup-create__submit">Create Backup Now</button>
-    </form>
-  </div>
-
   <h2 class="backups__subtitle"><span class="fa-regular fa-folder-open">&nbsp;&nbsp;</span>
     {{ backup_bucket }} / {{ ' / '.join(prefix.split('/')) }}
   </h2>
@@ -63,6 +35,37 @@
     <div class="bucket-contents__item">{{ backup.last_modified }}</div>
     <div class="bucket-contents__item">{{ backup.size }}</div>
     {% endfor %}
+  </div>
+
+  <div class="add-item-wrapper">
+    <h2>Create Manual Backup</h2>
+    <form method="post" action="{{ url_for('admin.backups') }}" class="add-item-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <label for="description">Description</label>
+        <input type="text" id="description" name="description" class="textbox"
+               placeholder="e.g., pre-migration" required
+               pattern="[a-zA-Z0-9\s\-]+" maxlength="50">
+        <small>Letters, numbers, spaces, hyphens only</small>
+      </div>
+
+      <div class="add-item-form__item">
+        <input type="checkbox" name="upload_to_s3" id="upload_to_s3" checked>
+        <label for="upload_to_s3">Upload to S3</label>
+      </div>
+
+      <div class="add-item-form__item">
+        <input type="checkbox" name="save_local" id="save_local">
+        <label for="save_local">Save Locally</label>
+      </div>
+
+      <div class="add-item-form__item add-item-form__item--full-width">
+        <button type="submit" class="button">
+          <span class="button__text">Create Backup Now</span>
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock content %}
