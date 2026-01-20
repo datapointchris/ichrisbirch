@@ -568,8 +568,8 @@ function usage() {
   echo "  ${blue}stats summary${reset} - Dashboard overview"
   echo
   echo "${green}SASS:${reset}"
+  echo "  ${blue}sass compile${reset} - Compile SCSS once"
   echo "  ${blue}sass watch${reset} - Watch and compile SCSS on changes"
-  echo "  ${blue}sass build${reset} - Compile SCSS once"
   echo
   echo "${green}URLs:${reset}"
   echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
@@ -680,15 +680,15 @@ sass)
     echo ""
     sass --watch "$SASS_INPUT":"$SASS_OUTPUT"
     ;;
-  build)
+  compile)
     echo "${blue}Compiling SCSS...${reset}"
     sass "$SASS_INPUT":"$SASS_OUTPUT"
     echo "${green}Done${reset}"
     ;;
   *)
     echo "${green}SASS Commands:${reset}"
+    echo "  ${blue}sass compile${reset} - Compile SCSS once"
     echo "  ${blue}sass watch${reset} - Watch and compile on changes"
-    echo "  ${blue}sass build${reset} - Compile once"
     ;;
   esac
   ;;
