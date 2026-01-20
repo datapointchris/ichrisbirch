@@ -92,9 +92,7 @@
 
 html {
   box-sizing: border-box;
-  -webkit-text-size-adjust: none;
-     -moz-text-size-adjust: none;
-          text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 *,
@@ -8472,8 +8470,8 @@ readers do not read off random characters that represent icons */
  */
 /* this is relative to main.scss */
 :root, :host {
-  --fa-style-family-classic: "Font Awesome 6 Free";
-  --fa-font-solid: normal 900 1em/1 "Font Awesome 6 Free";
+  --fa-style-family-classic: 'Font Awesome 6 Free';
+  --fa-font-solid: normal 900 1em/1 'Font Awesome 6 Free';
 }
 
 @font-face {
@@ -8495,8 +8493,8 @@ readers do not read off random characters that represent icons */
  */
 /* this is relative to main.scss */
 :root, :host {
-  --fa-style-family-brands: "Font Awesome 6 Brands";
-  --fa-font-brands: normal 400 1em/1 "Font Awesome 6 Brands";
+  --fa-style-family-brands: 'Font Awesome 6 Brands';
+  --fa-font-brands: normal 400 1em/1 'Font Awesome 6 Brands';
 }
 
 @font-face {
@@ -11264,9 +11262,7 @@ input[type=checkbox] {
   padding: 0;
   border: 3px solid var(--clr-gray-300);
   border-radius: 6px;
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+  appearance: none;
   background-color: transparent;
   transition: all 0.1s;
   box-shadow: 1px 0 0 var(--clr-gray-050), 1px 1px 0 var(--clr-gray-200), 2px 1px 0 var(--clr-gray-050), 2px 2px 0 var(--clr-gray-200), 3px 2px 0 var(--clr-gray-050), 3px 3px 0 var(--clr-gray-200), 4px 3px 0 var(--clr-gray-050), 4px 4px 0 var(--clr-gray-200);
@@ -11634,9 +11630,7 @@ input[type=checkbox]:focus-visible {
   justify-content: space-evenly;
   margin-inline: auto;
   gap: var(--space-s);
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  user-select: none;
   padding: var(--space-m);
 }
 .github-issue-labels__input {
@@ -12023,7 +12017,6 @@ span[data-tooltip][data-position=right]:after {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
-  font-size: var(--fs-600);
 }
 .packed-box__details--essential {
   color: var(--clr-accent--orange);
@@ -12033,6 +12026,9 @@ span[data-tooltip][data-position=right]:after {
 }
 .packed-box__details--liquid {
   color: var(--clr-accent--blue);
+}
+.packed-box__details {
+  font-size: var(--fs-600);
 }
 
 .packed-box-compact {
@@ -12084,7 +12080,6 @@ span[data-tooltip][data-position=right]:after {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
-  margin-bottom: var(--space-s);
 }
 .packed-box-item__details--essential {
   color: var(--clr-accent--orange);
@@ -12094,6 +12089,9 @@ span[data-tooltip][data-position=right]:after {
 }
 .packed-box-item__details--liquid {
   color: var(--clr-accent--blue);
+}
+.packed-box-item__details {
+  margin-bottom: var(--space-s);
 }
 
 .box-listing-sort {
@@ -12118,7 +12116,6 @@ span[data-tooltip][data-position=right]:after {
   text-align: center;
   padding: var(--space-s) 0;
   margin: var(--space-xs) 0;
-  grid-template-columns: 1fr 4fr 1fr 3fr 1fr 1fr 1fr;
 }
 .search-results-boxes__header {
   font-size: var(--fs-500);
@@ -12135,6 +12132,9 @@ span[data-tooltip][data-position=right]:after {
   text-decoration: underline;
   color: var(--clr-accent-light);
 }
+.search-results-boxes {
+  grid-template-columns: 1fr 4fr 1fr 3fr 1fr 1fr 1fr;
+}
 
 .search-results-orphans {
   display: grid;
@@ -12142,7 +12142,6 @@ span[data-tooltip][data-position=right]:after {
   text-align: center;
   padding: var(--space-s) 0;
   margin: var(--space-xs) 0;
-  grid-template-columns: 4fr 1fr 1fr 1fr 4fr 1fr;
 }
 .search-results-orphans__header {
   font-size: var(--fs-500);
@@ -12158,6 +12157,9 @@ span[data-tooltip][data-position=right]:after {
 .search-results-orphans__link {
   text-decoration: underline;
   color: var(--clr-accent-light);
+}
+.search-results-orphans {
+  grid-template-columns: 4fr 1fr 1fr 1fr 4fr 1fr;
 }
 
 .daysleft {
@@ -12815,4 +12817,6 @@ span[data-tooltip][data-position=right]:after {
 
 .task-search-form {
   display: flex;
-}/*# sourceMappingURL=main.css.map */
+}
+
+/*# sourceMappingURL=main.css.map */

@@ -1,7 +1,9 @@
 fail_fast: true
 default_stages: [pre-commit]
 repos:
-  # Event-sourced stats capture (MUST run FIRST, before fixers modify files)
+  # ============================================================
+  # PHASE 1: Stats capture (MUST be first)
+  # ============================================================
   - repo: local
     hooks:
       - id: devstats-capture
@@ -12,28 +14,9 @@ repos:
         pass_filenames: false
         always_run: true
 
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
-    hooks:
-      - id: actionlint
-        args: ["-color", "-shellcheck="]
-
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.99.5
-    hooks:
-      - id: terraform_validate
-      - id: terraform_tflint
-      - id: terraform_fmt
-      - id: terraform_docs
-        args:
-          - --args=--anchor=false
-          - --args=--html=false
-
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.3
-    hooks:
-      - id: uv-lock
-
+  # ============================================================
+  # PHASE 2: File format & basic checks
+  # ============================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -48,6 +31,15 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: detect-private-key
 
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.8.3
+    hooks:
+      - id: uv-lock
+
+  # ============================================================
+  # PHASE 3: Language-specific linters & formatters
+  # ============================================================
+  # Python
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.5
     hooks:
@@ -67,18 +59,6 @@ repos:
       - id: bandit
         args: ["-c", "pyproject.toml", "-r", "."]
         additional_dependencies: ["bandit[toml]"]
-
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
-    hooks:
-      - id: markdownlint
-        args: ["--fix"]
-
-  - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.10.0
-    hooks:
-      - id: shellcheck
-      #       args: ["--severity=warning"]  # Optionally only show errors and warnings
 
   - repo: https://github.com/dosisod/refurb
     rev: v2.1.0
@@ -101,6 +81,20 @@ repos:
         pass_filenames: false
         always_run: true
 
+  # Shell
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+
+  # Markdown
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
+    hooks:
+      - id: markdownlint
+        args: ["--fix"]
+
+  # HTML/Jinja templates
   - repo: https://github.com/djlint/djLint
     rev: v1.36.4
     hooks:
@@ -108,6 +102,41 @@ repos:
         args: ["--reformat"]
       - id: djlint
 
+  # SCSS/CSS
+  - repo: local
+    hooks:
+      - id: sass-compile
+        name: sass compile
+        description: "Compile SCSS to CSS"
+        stages: [pre-commit]
+        language: system
+        entry: sass ichrisbirch/app/static/sass/main.scss:ichrisbirch/app/static/css/main.css
+        files: "\\.(scss)$"
+        pass_filenames: false
+        always_run: false
+
+  # Terraform
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.99.5
+    hooks:
+      - id: terraform_validate
+      - id: terraform_tflint
+      - id: terraform_fmt
+      - id: terraform_docs
+        args:
+          - --args=--anchor=false
+          - --args=--html=false
+
+  # GitHub Actions
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+        args: ["-color", "-shellcheck="]
+
+  # ============================================================
+  # PHASE 4: Project-specific validations
+  # ============================================================
   - repo: local
     hooks:
       - id: code-sync
@@ -148,6 +177,11 @@ repos:
         pass_filenames: true
         always_run: false
 
+  # ============================================================
+  # PHASE 5: Tests & stats collection (MUST be last)
+  # ============================================================
+  - repo: local
+    hooks:
       - id: pytest-affected
         name: pytest (affected tests only)
         stages: [pre-commit]
@@ -166,17 +200,6 @@ repos:
         pass_filenames: false
         always_run: false
 
-      - id: sass-compile
-        name: sass compile check
-        description: "Ensure SCSS is compiled to CSS before commit"
-        stages: [pre-commit]
-        language: system
-        entry: bash -c 'sass ichrisbirch/app/static/sass/main.scss ichrisbirch/app/static/css/main.css.tmp && if ! diff -q ichrisbirch/app/static/css/main.css ichrisbirch/app/static/css/main.css.tmp > /dev/null 2>&1; then rm ichrisbirch/app/static/css/main.css.tmp; echo "SCSS not compiled! Run - icb sass build"; exit 1; fi; rm ichrisbirch/app/static/css/main.css.tmp'
-        files: "\\.(scss)$"
-        pass_filenames: false
-        always_run: false
-
-      # Event-sourced stats collection
       - id: devstats-collect
         name: devstats collect
         stages: [post-commit]
