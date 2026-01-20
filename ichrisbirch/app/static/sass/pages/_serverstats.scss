@@ -1,3 +1,6 @@
+@use "../abstracts/effects";
+@use "../base/typography";
+
 .perspective-wrapper {
     perspective: 1000px;
     transform-style: preserve-3d;
@@ -11,7 +14,7 @@
     border: 2px solid var(--clr-accent);
     border-radius: 25px;
     transform: rotateX(25deg) rotateY(-10deg) rotateZ(15deg);
-    @include deep-3d-box;
+    @include effects.deep-3d-box;
 }
 
 .serverstats {
@@ -19,13 +22,13 @@
     list-style: none;
     font-size: var(--font-size);
     line-height: 3em;
-    @include deep-3d-text;
+    @include typography.deep-3d-text;
 
     &__item {
         margin: 40px;
         border: 1px solid var(--clr-gray-800);
         border-radius: 25px;
-        @include deep-3d-box;
+        @include effects.deep-3d-box;
     }
 
     &__item::before {

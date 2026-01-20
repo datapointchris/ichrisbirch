@@ -1,7 +1,7 @@
-@import "../components/buttons";
+@use "../components/buttons";
 
 .textbox {
-    @include button-textbox;
+    @include buttons.button-textbox;
     width: 90%; // no need to specify columns or size with this
     border: none;
     border-radius: var(--button-border-radius);

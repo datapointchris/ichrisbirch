@@ -1,3 +1,5 @@
+@use "../components/buttons";
+
 .main-index-content {
     --border-radius: 200px;
     --border-thickness: 30px;
@@ -79,5 +81,5 @@
 .home-link-button {
     position: relative;
     margin: var(--space-3xl);
-    @include double-bevel-button(200px, 0px);
+    @include buttons.double-bevel-button(200px, 0px);
 }

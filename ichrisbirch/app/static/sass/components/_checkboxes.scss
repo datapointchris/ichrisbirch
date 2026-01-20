@@ -1,3 +1,5 @@
+@use "buttons";
+
 $checkbox-border-color: var(--clr-gray-300);
 $checkbox-checked-color: var(--clr-accent);
 $checkbox-disabled-bg-color: var(--clr-gray-400);
@@ -13,7 +15,7 @@ input[type="checkbox"] {
     appearance: none;
     background-color: transparent;
     transition: all 0.1s;
-    @include button-boxy;
+    @include buttons.button-boxy;
 
     &:checked {
         &::after {

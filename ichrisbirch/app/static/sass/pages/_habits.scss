@@ -1,3 +1,5 @@
+@use "../components/buttons";
+
 .habit {
     margin: 20px;
     padding: 10px;
@@ -20,7 +22,7 @@
 .habit-check {
     position: relative;
     margin: var(--space-m);
-    @include double-bevel-button(
+    @include buttons.double-bevel-button(
         $button-size: 50px,
         $button-step-blend: 2px,
         $selected-color: var(--clr-accent--green-bright)

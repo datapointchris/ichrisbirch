@@ -1,3 +1,5 @@
+@use "../components/search_results";
+
 @mixin details-styles {
     display: flex;
     justify-content: space-evenly;
@@ -104,11 +106,11 @@
 }
 
 .search-results-boxes {
-    @include search-results;
+    @include search_results.search-results;
     grid-template-columns: 1fr 4fr 1fr 3fr 1fr 1fr 1fr;
 }
 
 .search-results-orphans {
-    @include search-results;
+    @include search_results.search-results;
     grid-template-columns: 4fr 1fr 1fr 1fr 4fr 1fr;
 }

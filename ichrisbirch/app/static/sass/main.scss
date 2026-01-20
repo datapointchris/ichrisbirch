@@ -1,53 +1,54 @@
-@import "abstracts/colors";
-@import "abstracts/spacing";
-@import "abstracts/effects";
-// @import 'abstracts/mixins';
-// @import 'abstracts/functions';
-// @import 'abstracts/placeholders';
+// All @use rules must come before @import rules
+@use "abstracts/colors";
+@use "abstracts/spacing";
+@use "abstracts/effects";
+// @use 'abstracts/mixins';
+// @use 'abstracts/functions';
+// @use 'abstracts/placeholders';
 
-@import "base/reset";
-@import "base/typography";
+@use "base/reset";
+@use "base/typography";
+@use "base/base";
 
+@use "layout/navigation";
+@use "layout/grid";
+// @use 'layout/header';
+// @use 'layout/footer';
+// @use 'layout/sidebar';
+@use "layout/forms";
+
+// @use 'components/carousel';
+@use "components/buttons";
+@use "components/checkboxes";
+@use "components/flash_messages";
+@use "components/errors";
+@use "components/loading";
+@use "components/radio_scale_selector";
+@use "components/search_results";
+@use "components/submit_issue";
+@use "components/tooltips";
+// @use 'components/dropdown';
+
+// @use 'pages/apartments';
+@use "pages/articles";
+@use "pages/autotasks";
+@use "pages/backups";
+@use "pages/books";
+@use "pages/box_packing";
+@use "pages/countdowns";
+@use "pages/events";
+@use "pages/habits";
+@use "pages/home";
+// @use 'pages/journal';
+@use "pages/money_wasted";
+@use "pages/logs";
+// @use 'pages/portfolio';
+@use "pages/serverstats";
+@use "pages/tasks";
+
+// @use 'themes/turquoise';
+
+// FontAwesome (third-party, uses deprecated syntax internally)
 @import "../fontawesome/scss/fontawesome.scss";
 @import "../fontawesome/scss/solid.scss";
 @import "../fontawesome/scss/brands.scss";
-
-@import "base/base";
-
-@import "layout/navigation";
-@import "layout/grid";
-// @import 'layout/header';
-// @import 'layout/footer';
-// @import 'layout/sidebar';
-@import "layout/forms";
-
-// @import 'components/carousel';
-@import "components/buttons";
-@import "components/checkboxes";
-@import "components/flash_messages";
-@import "components/errors";
-@import "components/loading";
-@import "components/radio_scale_selector";
-@import "components/search_results";
-@import "components/submit_issue";
-@import "components/tooltips";
-// @import 'components/dropdown';
-
-// @import 'pages/apartments';
-@import "pages/articles";
-@import "pages/autotasks";
-@import "pages/backups";
-@import "pages/books";
-@import "pages/box_packing";
-@import "pages/countdowns";
-@import "pages/events";
-@import "pages/habits";
-@import "pages/home";
-// @import 'pages/journal';
-@import "pages/money_wasted";
-@import "pages/logs";
-// @import 'pages/portfolio';
-@import "pages/serverstats";
-@import "pages/tasks";
-
-// @import 'themes/turquoise';

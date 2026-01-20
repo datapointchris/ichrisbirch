@@ -1,3 +1,5 @@
+@use "../abstracts/effects";
+
 #github-issue-background-overlay {
     position: fixed;
     display: none;
@@ -49,7 +51,7 @@
     right: 50%;
     transform: translate(50%, -50%);
     background: var(--clr-gray-900);
-    @include deep-3d-box;
+    @include effects.deep-3d-box;
     padding: var(--space-3xl);
     border-top: 2px solid var(--clr-gray-500);
     border-left: 2px solid var(--clr-gray-500);
@@ -79,7 +81,7 @@
             right: 50%;
             transform: translate(50%, -50%);
             filter: brightness(1);
-            @include deep-3d-box;
+            @include effects.deep-3d-box;
         }
 
         75% {
