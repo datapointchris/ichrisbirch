@@ -15,7 +15,11 @@
 set -euo pipefail
 
 INSTALL_DIR="/srv/ichrisbirch"
-LOG_FILE="/var/log/ichrisbirch-deploy.log"
+LOG_DIR="${INSTALL_DIR}/logs"
+LOG_FILE="${LOG_DIR}/deploy.log"
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
