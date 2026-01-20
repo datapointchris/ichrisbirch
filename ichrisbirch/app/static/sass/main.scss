@@ -48,7 +48,7 @@
 
 // @use 'themes/turquoise';
 
-// FontAwesome (third-party, uses deprecated syntax internally)
-@import "../fontawesome/scss/fontawesome.scss";
-@import "../fontawesome/scss/solid.scss";
-@import "../fontawesome/scss/brands.scss";
+// FontAwesome v7
+@use "../fontawesome/scss/fontawesome";
+@use "../fontawesome/scss/solid";
+@use "../fontawesome/scss/brands";
