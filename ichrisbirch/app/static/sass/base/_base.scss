@@ -1,4 +1,11 @@
+html {
+    height: 100%;
+    background-color: var(--clr-primary--darker);
+}
+
 body {
+    min-height: 100%;
+    min-width: fit-content;
     background-color: var(--clr-primary--darker);
     color: var(--clr-text);
     font-family: var(--ff-base);
