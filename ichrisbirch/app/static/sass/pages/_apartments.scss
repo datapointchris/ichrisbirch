@@ -228,9 +228,6 @@ input[type="submit"].manage-box {
   display: block;
   position: relative;
   cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
 
   > h2 {
