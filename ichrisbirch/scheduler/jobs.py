@@ -7,6 +7,7 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 """
 
 import functools
+import subprocess  # nosec B404
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import asdict
@@ -34,6 +35,7 @@ daily_1am_trigger = CronTrigger(day='*', hour=1)
 daily_115am_trigger = CronTrigger(day='*', hour=1, minute=15)
 daily_130am_trigger = CronTrigger(day='*', hour=1, minute=30)
 daily_3pm_trigger = CronTrigger(day='*', hour=15)
+weekly_sunday_3am_trigger = CronTrigger(day_of_week='sun', hour=3, minute=0)
 
 
 @dataclass
@@ -145,6 +147,37 @@ def postgres_backup(settings: Settings) -> None:
     db_backup.backup(description='scheduled', backup_type='scheduled')
 
 
+@job_logger
+def docker_prune(settings: Settings) -> None:
+    """Weekly cleanup of old Docker images.
+
+    Prunes images older than 7 days (168 hours) to free disk space while
+    preserving recent build cache for faster rebuilds.
+
+    Note: Requires Docker socket to be mounted to the scheduler container.
+    Add to docker-compose.yml scheduler service:
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+    """
+    result = subprocess.run(  # nosec B603, B607
+        ['docker', 'image', 'prune', '-af', '--filter', 'until=168h'],
+        capture_output=True,
+        text=True,
+    )
+    logger.info(
+        'docker_prune_completed',
+        stdout=result.stdout.strip() if result.stdout else '',
+        stderr=result.stderr.strip() if result.stderr else '',
+        return_code=result.returncode,
+    )
+    if result.returncode != 0:
+        logger.error(
+            'docker_prune_failed',
+            return_code=result.returncode,
+            stderr=result.stderr.strip() if result.stderr else '',
+        )
+
+
 def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
     """Get the list of jobs to add to the scheduler."""
     return [
@@ -171,5 +204,11 @@ def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
             args=(settings,),
             trigger=daily_130am_trigger,
             id='postgres_backup_daily',
+        ),
+        JobToAdd(
+            func=docker_prune,
+            args=(settings,),
+            trigger=weekly_sunday_3am_trigger,
+            id='docker_prune_weekly',
         ),
     ]
