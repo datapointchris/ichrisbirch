@@ -539,6 +539,42 @@ logger.info('user_login_success', user_id=user.id, email=user.email)
 
 **Request tracing**: All services include `request_id` in logs via `X-Request-ID` header propagation.
 
+### Production Deployment Logs
+
+When production deployments fail, logs are in multiple locations:
+
+| Log Type | Location | Command |
+|----------|----------|---------|
+| Deployment events | `/srv/ichrisbirch/logs/deploy.log` | `icb prod logs deploy` |
+| Build output | `/srv/ichrisbirch/logs/build-*.log` | `icb prod logs build` |
+| Container logs | Docker | `icb prod logs` or `docker logs icb-prod-<service>` |
+| Webhook execution | `/opt/webhooks/logs/` on 10.0.20.15 | SSH to webhook server |
+
+**Troubleshooting deployment failures:**
+
+```bash
+# SSH to production server
+ssh chris@10.0.20.11
+
+# Check deployment log
+icb prod logs deploy
+
+# Check build output (if rebuild failed)
+icb prod logs build
+
+# Check container logs
+icb prod logs api
+docker logs icb-prod-api --tail=100
+```
+
+**If containers don't exist** (never started), check the webhook server:
+
+```bash
+ssh chris@10.0.20.15
+ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5
+tail -200 /opt/webhooks/logs/ichrisbirch-<latest>.log
+```
+
 ### Pre-commit Hooks
 
 Project uses pre-commit for code quality:

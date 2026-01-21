@@ -34,37 +34,66 @@ DEPLOY_STARTED=false
 DEPLOY_SUCCESS=false
 CURRENT_SHA=""
 NEW_SHA=""
+DEPLOY_START_TIME=""
+FAILURE_STEP=""
+FAILURE_OUTPUT=""
 
 cleanup() {
     local exit_code=$?
     if [[ "$DEPLOY_STARTED" == "true" && "$DEPLOY_SUCCESS" != "true" ]]; then
+        local commit_msg
+        commit_msg=$(cd "$INSTALL_DIR" && git log -1 --pretty=format:'%h - %s' 2>/dev/null || echo "unknown")
+
         log_error "deployment_failed" \
             "exit_code" "$exit_code" \
+            "step" "${FAILURE_STEP:-unknown}" \
             "current_sha" "${CURRENT_SHA:-unknown}" \
             "target_sha" "${NEW_SHA:-unknown}" | tee -a "$LOG_FILE"
-        notify_slack "failure" "ichrisbirch deployment FAILED (exit code: $exit_code)"
+
+        # Build detailed failure message for Slack
+        local message="*Commit:* \`${NEW_SHA:0:7}\`"
+        message+="\n*Step Failed:* ${FAILURE_STEP:-unknown}"
+        message+="\n*Exit Code:* $exit_code"
+        message+="\n\n*Commit:* $commit_msg"
+
+        local context=""
+        if [[ -n "$FAILURE_OUTPUT" ]]; then
+            # Truncate to last 500 chars to avoid Slack limits
+            local truncated_output="${FAILURE_OUTPUT: -500}"
+            context="*Error Output:*\n\`\`\`${truncated_output}\`\`\`"
+        fi
+        context+="\n\n*Logs:* \`/srv/ichrisbirch/logs/\`"
+
+        notify_slack "failure" "$message" "$context"
     fi
 }
 trap cleanup EXIT
 
 check_prerequisites() {
+    FAILURE_STEP="prerequisites"
     if [[ ! -d "$INSTALL_DIR" ]]; then
+        FAILURE_OUTPUT="Install directory not found: $INSTALL_DIR"
         log_error "prerequisite_failed" "reason" "install_dir_not_found" "path" "$INSTALL_DIR" | tee -a "$LOG_FILE"
         exit 1
     fi
 
     if ! command -v docker &>/dev/null; then
+        FAILURE_OUTPUT="Docker command not found"
         log_error "prerequisite_failed" "reason" "docker_not_found" | tee -a "$LOG_FILE"
         exit 1
     fi
 }
 
 pull_latest_code() {
+    FAILURE_STEP="git_pull"
     log_info "git_fetch_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
     # Fetch and show what's coming
-    git fetch origin main
+    if ! git fetch origin main 2>&1; then
+        FAILURE_OUTPUT="Failed to fetch from origin"
+        exit 1
+    fi
 
     CURRENT_SHA=$(git rev-parse HEAD)
     NEW_SHA=$(git rev-parse origin/main)
@@ -75,12 +104,16 @@ pull_latest_code() {
         log_info "git_pull_started" \
             "current_sha" "${CURRENT_SHA:0:7}" \
             "target_sha" "${NEW_SHA:0:7}" | tee -a "$LOG_FILE"
-        git pull origin main
+        if ! git pull origin main 2>&1; then
+            FAILURE_OUTPUT="Failed to pull from origin/main"
+            exit 1
+        fi
         log_info "git_pull_completed" "sha" "${NEW_SHA:0:7}" | tee -a "$LOG_FILE"
     fi
 }
 
 run_migrations() {
+    FAILURE_STEP="migrations"
     log_info "migrations_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
@@ -97,25 +130,36 @@ run_migrations() {
     if migration_output=$(docker exec -w /app/ichrisbirch icb-prod-api alembic upgrade head 2>&1); then
         log_info "migrations_completed" | tee -a "$LOG_FILE"
     else
+        FAILURE_OUTPUT="$migration_output"
         log_error "migrations_failed" "output" "$migration_output" | tee -a "$LOG_FILE"
         exit 1
     fi
 }
 
 restart_services() {
+    FAILURE_STEP="rebuild"
     log_info "services_restart_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
+    # Capture rebuild output to a log file for debugging
+    local build_log="${LOG_DIR}/build-$(date +%Y%m%d-%H%M%S).log"
+
     # Rebuild images to pick up code changes and restart
-    if ! ./cli/ichrisbirch prod rebuild 2>&1; then
-        log_error "services_restart_failed" "step" "rebuild" | tee -a "$LOG_FILE"
+    if ! ./cli/ichrisbirch prod rebuild 2>&1 | tee "$build_log"; then
+        FAILURE_OUTPUT=$(tail -30 "$build_log")
+        log_error "services_restart_failed" "step" "rebuild" "log" "$build_log" | tee -a "$LOG_FILE"
         exit 1
     fi
+
+    # Keep only last 5 build logs
+    # shellcheck disable=SC2012
+    ls -t "${LOG_DIR}"/build-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
 
     log_info "services_restart_completed" | tee -a "$LOG_FILE"
 }
 
 verify_deployment() {
+    FAILURE_STEP="health_check"
     log_info "health_check_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
@@ -123,9 +167,11 @@ verify_deployment() {
     sleep 5
 
     # Check health - failures should BLOCK deployment
-    if ./cli/ichrisbirch prod health 2>&1; then
+    local health_output
+    if health_output=$(./cli/ichrisbirch prod health 2>&1); then
         log_info "health_check_passed" | tee -a "$LOG_FILE"
     else
+        FAILURE_OUTPUT="$health_output"
         log_error "health_check_failed" "action" "deployment_blocked" | tee -a "$LOG_FILE"
         exit 1
     fi
@@ -137,6 +183,7 @@ main() {
     fetch_slack_webhook_from_ssm || log_warn "slack_webhook_not_configured" | tee -a "$LOG_FILE"
 
     DEPLOY_STARTED=true
+    DEPLOY_START_TIME=$(date +%s)
     log_info "deployment_started" "install_dir" "$INSTALL_DIR" | tee -a "$LOG_FILE"
 
     check_prerequisites
@@ -146,13 +193,27 @@ main() {
     verify_deployment
 
     DEPLOY_SUCCESS=true
+
+    # Calculate duration
+    local end_time duration_secs duration_str
+    end_time=$(date +%s)
+    duration_secs=$((end_time - DEPLOY_START_TIME))
+    duration_str="$((duration_secs / 60))m $((duration_secs % 60))s"
+
     log_info "deployment_completed" \
-        "sha" "${NEW_SHA:0:7}" | tee -a "$LOG_FILE"
+        "sha" "${NEW_SHA:0:7}" \
+        "duration_seconds" "$duration_secs" | tee -a "$LOG_FILE"
 
     # Get commit message for notification
     local commit_msg
     commit_msg=$(cd "$INSTALL_DIR" && git log -1 --pretty=format:'%s' 2>/dev/null || echo "unknown")
-    notify_slack "success" "ichrisbirch deployed successfully: ${NEW_SHA:0:7} - $commit_msg"
+
+    # Build success message
+    local message="*Commit:* \`${NEW_SHA:0:7}\` - $commit_msg"
+    message+="\n*Duration:* ${duration_str}"
+    message+="\n*URL:* https://ichrisbirch.com"
+
+    notify_slack "success" "$message"
 }
 
 main "$@"

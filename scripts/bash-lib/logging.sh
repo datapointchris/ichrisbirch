@@ -49,26 +49,54 @@ log_info()  { log_json "info"  "$@"; }
 log_warn()  { log_json "warn"  "$@"; }
 log_error() { log_json "error" "$@"; }
 
-# Send Slack notification
-# Args: status message
+# Send Slack notification with rich formatting
+# Args: status message [context]
 # status: "success" or "failure"
+# message: Main message content (supports Slack mrkdwn)
+# context: Optional additional context (supports Slack mrkdwn)
 notify_slack() {
     local status="$1"
     local message="$2"
-    local icon
-
-    if [[ "$status" == "success" ]]; then
-        icon="✅"
-    else
-        icon="🔴"
-    fi
+    local context="${3:-}"
 
     # SLACK_WEBHOOK_URL should be set by the calling script (from AWS SSM)
-    if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
-        curl -s -X POST "$SLACK_WEBHOOK_URL" \
-            -H "Content-Type: application/json" \
-            -d "{\"text\": \"$icon $message\"}" >/dev/null 2>&1 || true
+    if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
+        return 0
     fi
+
+    local color icon title
+    if [[ "$status" == "success" ]]; then
+        color="good"
+        icon="✅"
+        title="ichrisbirch deployment succeeded"
+    else
+        color="danger"
+        icon="🔴"
+        title="ichrisbirch deployment failed"
+    fi
+
+    # Escape special characters for JSON
+    message="${message//\\/\\\\}"
+    message="${message//\"/\\\"}"
+    context="${context//\\/\\\\}"
+    context="${context//\"/\\\"}"
+
+    # Build payload - use attachments for colored sidebar
+    local payload
+    payload="{\"attachments\":[{\"color\":\"$color\",\"blocks\":["
+    payload+="{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"$icon $title\",\"emoji\":true}},"
+    payload+="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"$message\"}}"
+
+    # Add context block if provided
+    if [[ -n "$context" ]]; then
+        payload+=",{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"$context\"}}"
+    fi
+
+    payload+="]}]}"
+
+    curl -s -X POST "$SLACK_WEBHOOK_URL" \
+        -H "Content-Type: application/json" \
+        -d "$payload" >/dev/null 2>&1 || true
 }
 
 # Fetch Slack webhook URL from AWS SSM Parameter Store

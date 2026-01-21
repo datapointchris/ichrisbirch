@@ -439,14 +439,46 @@ function prod-rebuild() {
 
 function prod-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-  load-prod-env || return 1
-  echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
-  echo ""
+  local log_dir="/srv/ichrisbirch/logs"
 
-  while true; do
-    $COMPOSE_PROD logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-    sleep 2
-  done
+  case "$1" in
+  deploy)
+    echo "${magenta}PRODUCTION${reset} deployment logs:"
+    echo ""
+    echo "${cyan}Log directory:${reset} $log_dir"
+    echo ""
+    if [ -f "$log_dir/deploy.log" ]; then
+      echo "${yellow}=== Recent deployment events (deploy.log) ===${reset}"
+      tail -50 "$log_dir/deploy.log"
+    else
+      echo "${red}deploy.log not found${reset}"
+    fi
+    ;;
+  build)
+    echo "${magenta}PRODUCTION${reset} build logs:"
+    echo ""
+    echo "${cyan}Available build logs:${reset}"
+    # shellcheck disable=SC2012
+    ls -lt "$log_dir"/build-*.log 2>/dev/null | head -5 || echo "  No build logs found"
+    echo ""
+    local latest_log
+    # shellcheck disable=SC2012
+    latest_log=$(ls -t "$log_dir"/build-*.log 2>/dev/null | head -1)
+    if [ -n "$latest_log" ]; then
+      echo "${yellow}=== Most recent build log: $(basename "$latest_log") ===${reset}"
+      tail -100 "$latest_log"
+    fi
+    ;;
+  *)
+    load-prod-env || return 1
+    echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
+    echo ""
+    while true; do
+      $COMPOSE_PROD logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+      sleep 2
+    done
+    ;;
+  esac
 }
 
 function prod-status() {
