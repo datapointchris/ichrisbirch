@@ -11,7 +11,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     'project': 'ichrisbirch',
     'events_path': 'stats/events/events.jsonl',
     'capture': {
-        'hooks': ['ruff', 'mypy', 'bandit', 'shellcheck', 'codespell', 'detect_private_key'],
+        'hooks': ['ruff', 'mypy', 'bandit', 'shellcheck', 'codespell', 'detect_private_key', 'sass'],
     },
     'collect': {
         'collectors': ['tokei', 'pytest_collector', 'coverage', 'docker', 'dependencies', 'files'],

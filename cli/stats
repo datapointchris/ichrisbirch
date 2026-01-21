@@ -357,7 +357,7 @@ function stats-quality() {
   printf "${cyan}%-18s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
   echo "----------------------------------------------------"
 
-  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key")
+  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key" "sass")
 
   get_issue_field() {
     case "$1" in
