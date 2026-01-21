@@ -56,12 +56,12 @@ Access at: <https://api.test.localhost:8443/>
 
 ### Production Environment
 
-```bash
-./cli/ichrisbirch prod start      # Start production environment
-./cli/ichrisbirch prod status     # Container status
-./cli/ichrisbirch prod health     # Health checks
-./cli/ichrisbirch prod apihealth  # HTTP health endpoint check
-```
+**Production runs on the homelab, NOT locally.**
+
+- **Production server**: `ssh chris@10.0.20.11`
+- **Application path**: `/srv/ichrisbirch/`
+- **Webhook server**: `ssh chris@10.0.20.15`
+- **Webhook code**: Lives locally at `~/homelab`
 
 ### Database Operations
 
