@@ -214,6 +214,9 @@ jobs:
           echo "Verifying production images were created..."
           docker images | grep -E "ichrisbirch|REPOSITORY"
 
+      - name: Create Docker network
+        run: docker network create proxy || true
+
       - name: Test production containers can start
         run: |
           echo "Testing production containers can start..."
