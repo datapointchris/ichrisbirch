@@ -192,7 +192,10 @@ function dev-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Rebuilding ${blue}DEV${reset} environment"
   $COMPOSE_DEV down
-  $COMPOSE_DEV up -d --build
+  echo "Building images..."
+  $COMPOSE_DEV build
+  echo "Starting services..."
+  $COMPOSE_DEV up -d
   echo "Waiting for postgres to be ready..."
   sleep 5
   echo "Initializing database..."
@@ -331,7 +334,10 @@ function testing-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Rebuilding ${blue}TESTING${reset} environment"
   $COMPOSE_TEST down
-  $COMPOSE_TEST up -d --build
+  echo "Building images..."
+  $COMPOSE_TEST build
+  echo "Starting services..."
+  $COMPOSE_TEST up -d
 }
 
 function testing-logs() {
@@ -425,7 +431,10 @@ function prod-rebuild() {
   load-prod-env || return 1
   echo "Rebuilding ${magenta}PRODUCTION${reset} environment"
   $COMPOSE_PROD down
-  $COMPOSE_PROD up -d --build
+  echo "Building images..."
+  $COMPOSE_PROD build
+  echo "Starting services..."
+  $COMPOSE_PROD up -d
 }
 
 function prod-logs() {
