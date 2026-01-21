@@ -158,15 +158,56 @@ restart_services() {
     log_info "services_restart_completed" | tee -a "$LOG_FILE"
 }
 
+wait_for_containers_healthy() {
+    local max_wait=90
+    local interval=5
+    local waited=0
+    local services="icb-prod-api icb-prod-app icb-prod-traefik icb-prod-postgres icb-prod-redis"
+
+    log_info "waiting_for_healthy" "max_wait" "$max_wait" | tee -a "$LOG_FILE"
+
+    while [[ $waited -lt $max_wait ]]; do
+        local all_healthy=true
+
+        for service in $services; do
+            local health
+            health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "missing")
+
+            if [[ "$health" != "healthy" ]]; then
+                all_healthy=false
+                break
+            fi
+        done
+
+        if [[ "$all_healthy" == "true" ]]; then
+            log_info "containers_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
+            return 0
+        fi
+
+        sleep $interval
+        waited=$((waited + interval))
+    done
+
+    log_warn "containers_not_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
+    return 1
+}
+
 verify_deployment() {
     FAILURE_STEP="health_check"
     log_info "health_check_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
-    # Wait for services to be ready
-    sleep 5
+    # Wait for Docker healthchecks to pass
+    if ! wait_for_containers_healthy; then
+        # Log container statuses for debugging
+        local container_statuses
+        container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep icb-prod || echo "no containers")
+        FAILURE_OUTPUT="Containers not healthy after 90s. Status: $container_statuses"
+        log_error "health_check_failed" "action" "deployment_blocked" "reason" "containers_not_healthy" | tee -a "$LOG_FILE"
+        exit 1
+    fi
 
-    # Check health - failures should BLOCK deployment
+    # Run application-level health check
     local health_output
     if health_output=$(./cli/ichrisbirch prod health 2>&1); then
         log_info "health_check_passed" | tee -a "$LOG_FILE"
