@@ -1,3 +1,11 @@
+# Shared image build configuration - all app services use the same image
+# This reduces disk space from ~3.4GB (4 images) to ~850MB (1 image)
+x-app-build: &app-build
+  image: ichrisbirch:development
+  build:
+    context: .
+    target: development
+
 services:
   # Traefik reverse proxy for development
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
@@ -139,9 +147,7 @@ services:
 
   # Development overrides for FastAPI service
   api:
-    build:
-      context: .
-      target: development
+    <<: *app-build
     container_name: icb-dev-api
     # command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --log-level debug --no-access-log
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir ichrisbirch/api --reload-dir ichrisbirch/models --reload-dir ichrisbirch/schemas --log-level debug --no-access-log
@@ -205,9 +211,7 @@ services:
 
   # Development overrides for Flask service
   app:
-    build:
-      context: .
-      target: development
+    <<: *app-build
     container_name: icb-dev-app
     # Enable debug mode and auto-reload for development
     command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000 --debug --reload
@@ -265,9 +269,7 @@ services:
 
   # Development overrides for chat service
   chat:
-    build:
-      context: .
-      target: development
+    <<: *app-build
     container_name: icb-dev-chat
     # Enable hot reloading for Streamlit in development
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
@@ -326,9 +328,7 @@ services:
 
   # Development overrides for scheduler
   scheduler:
-    build:
-      context: .
-      target: development
+    <<: *app-build
     container_name: icb-dev-scheduler
     # In development, you might want to disable or modify the scheduler
     # Uncomment to disable scheduler in development

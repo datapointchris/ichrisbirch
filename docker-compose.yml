@@ -5,6 +5,14 @@
 # - Traefik provides reverse proxy, middleware (CORS, security headers, rate limiting)
 # - No certificates needed locally - Cloudflare manages SSL
 
+# Shared image build configuration - all app services use the same image
+# This reduces disk space from ~3.4GB (4 images) to ~850MB (1 image)
+x-app-build: &app-build
+  image: ichrisbirch:production
+  build:
+    context: .
+    target: production
+
 services:
   # Traefik reverse proxy - receives HTTP from Cloudflare Tunnel
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
@@ -126,9 +134,7 @@ services:
 
   # FastAPI Backend Service - Production configuration
   api:
-    build:
-      context: .
-      target: production
+    <<: *app-build
     container_name: icb-prod-api
     # Production command without reload, disable access logs (handled by middleware)
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
@@ -175,9 +181,7 @@ services:
 
   # Flask Frontend Service - Production configuration
   app:
-    build:
-      context: .
-      target: production
+    <<: *app-build
     container_name: icb-prod-app
     # Production WSGI server (timeout allows for long OpenAI requests)
     command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
@@ -221,9 +225,7 @@ services:
 
   # Chat Service (Streamlit) - Production configuration
   chat:
-    build:
-      context: .
-      target: production
+    <<: *app-build
     container_name: icb-prod-chat
     # Production chat command
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
@@ -269,9 +271,7 @@ services:
 
   # Scheduler Service - Production configuration
   scheduler:
-    build:
-      context: .
-      target: production
+    <<: *app-build
     container_name: icb-prod-scheduler
     # Production scheduler command
     command: python -m ichrisbirch.wsgi_scheduler
@@ -291,6 +291,7 @@ services:
     volumes:
       - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
       - ichrisbirch_logs:/var/log/ichrisbirch
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # For docker_prune scheduled job
     restart: always
     # Disable health check for scheduler (no HTTP server)
     healthcheck:

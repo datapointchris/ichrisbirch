@@ -1,3 +1,11 @@
+# Shared image build configuration - all app services use the same image
+# This reduces disk space from ~3.4GB (4 images) to ~850MB (1 image)
+x-app-build: &app-build
+  image: ichrisbirch:testing
+  build:
+    context: .
+    target: testing
+
 services:
   # Traefik service for test environment
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
@@ -132,9 +140,7 @@ services:
         max-file: "3"
         tag: "redis-test"
   api:
-    build:
-      context: .
-      target: testing
+    <<: *app-build
     container_name: icb-test-api
     # Run without reload for consistent test environment
     command: >
@@ -215,9 +221,7 @@ services:
 
   # Test Flask app
   app:
-    build:
-      context: .
-      target: testing
+    <<: *app-build
     container_name: icb-test-app
     # Run without reload for consistent test environment
     command: >
@@ -289,9 +293,7 @@ services:
 
   # Test chat service - needed for API tests
   chat:
-    build:
-      context: .
-      target: testing
+    <<: *app-build
     container_name: icb-test-chat
     command: >
       uv run streamlit run ichrisbirch/chat/app.py
@@ -374,9 +376,7 @@ services:
 
   # Test scheduler - enabled for scheduler tests
   scheduler:
-    build:
-      context: .
-      target: testing
+    <<: *app-build
     container_name: icb-test-scheduler
     command: uv run python -m ichrisbirch.wsgi_scheduler
     environment:
