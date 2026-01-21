@@ -6,132 +6,138 @@
 #   1. Pulls latest code from git
 #   2. Runs Alembic database migrations
 #   3. Rebuilds and restarts containers
+#   4. Verifies deployment health
+#   5. Sends Slack notification on success/failure
 #
 # Usage:
 #   ./scripts/deploy-homelab.sh
 #
 # The webhook receiver should call this script after receiving the deployment signal.
+# Logs are output as JSON for structured parsing.
 
 set -euo pipefail
 
 INSTALL_DIR="/srv/ichrisbirch"
 LOG_DIR="${INSTALL_DIR}/logs"
 LOG_FILE="${LOG_DIR}/deploy.log"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure log directory exists
 mkdir -p "$LOG_DIR"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Source structured logging library
+# shellcheck source=bash-lib/logging.sh
+source "${SCRIPT_DIR}/bash-lib/logging.sh"
 
-log() {
-    local level=$1
-    shift
-    local message="$*"
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo -e "${timestamp} [${level}] ${message}" | tee -a "$LOG_FILE"
-}
-
-log_info() { log "${BLUE}INFO${NC}" "$@"; }
-log_success() { log "${GREEN}OK${NC}" "$@"; }
-log_warn() { log "${YELLOW}WARN${NC}" "$@"; }
-log_error() { log "${RED}ERROR${NC}" "$@"; }
+# Track deployment state for cleanup
+DEPLOY_STARTED=false
+DEPLOY_SUCCESS=false
+CURRENT_SHA=""
+NEW_SHA=""
 
 cleanup() {
     local exit_code=$?
-    if [[ $exit_code -ne 0 ]]; then
-        log_error "Deployment failed with exit code $exit_code"
+    if [[ "$DEPLOY_STARTED" == "true" && "$DEPLOY_SUCCESS" != "true" ]]; then
+        log_error "deployment_failed" \
+            "exit_code" "$exit_code" \
+            "current_sha" "${CURRENT_SHA:-unknown}" \
+            "target_sha" "${NEW_SHA:-unknown}" | tee -a "$LOG_FILE"
+        notify_slack "failure" "ichrisbirch deployment FAILED (exit code: $exit_code)"
     fi
 }
 trap cleanup EXIT
 
 check_prerequisites() {
     if [[ ! -d "$INSTALL_DIR" ]]; then
-        log_error "Installation directory not found: $INSTALL_DIR"
+        log_error "prerequisite_failed" "reason" "install_dir_not_found" "path" "$INSTALL_DIR" | tee -a "$LOG_FILE"
         exit 1
     fi
 
     if ! command -v docker &>/dev/null; then
-        log_error "Docker not found"
+        log_error "prerequisite_failed" "reason" "docker_not_found" | tee -a "$LOG_FILE"
         exit 1
     fi
 }
 
 pull_latest_code() {
-    log_info "Pulling latest code..."
+    log_info "git_fetch_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
     # Fetch and show what's coming
     git fetch origin main
 
-    local current_sha new_sha
-    current_sha=$(git rev-parse HEAD)
-    new_sha=$(git rev-parse origin/main)
+    CURRENT_SHA=$(git rev-parse HEAD)
+    NEW_SHA=$(git rev-parse origin/main)
 
-    if [[ "$current_sha" == "$new_sha" ]]; then
-        log_info "Already up to date at ${current_sha:0:7}"
+    if [[ "$CURRENT_SHA" == "$NEW_SHA" ]]; then
+        log_info "git_already_up_to_date" "sha" "${CURRENT_SHA:0:7}" | tee -a "$LOG_FILE"
     else
-        log_info "Updating ${current_sha:0:7} -> ${new_sha:0:7}"
+        log_info "git_pull_started" \
+            "current_sha" "${CURRENT_SHA:0:7}" \
+            "target_sha" "${NEW_SHA:0:7}" | tee -a "$LOG_FILE"
         git pull origin main
+        log_info "git_pull_completed" "sha" "${NEW_SHA:0:7}" | tee -a "$LOG_FILE"
     fi
-
-    log_success "Code updated"
 }
 
 run_migrations() {
-    log_info "Running database migrations..."
+    log_info "migrations_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
     # Check if postgres is running
     if ! docker ps --format '{{.Names}}' | grep -q 'icb-prod-postgres'; then
-        log_warn "Postgres container not running, starting services first..."
+        log_warn "postgres_not_running" "action" "starting_services" | tee -a "$LOG_FILE"
         ./cli/ichrisbirch prod start
         sleep 10
     fi
 
     # Run migrations via the api container (has alembic installed)
     # alembic.ini is in /app/ichrisbirch/
-    if docker exec -w /app/ichrisbirch icb-prod-api alembic upgrade head; then
-        log_success "Migrations complete"
+    local migration_output
+    if migration_output=$(docker exec -w /app/ichrisbirch icb-prod-api alembic upgrade head 2>&1); then
+        log_info "migrations_completed" | tee -a "$LOG_FILE"
     else
-        log_error "Migration failed"
+        log_error "migrations_failed" "output" "$migration_output" | tee -a "$LOG_FILE"
         exit 1
     fi
 }
 
 restart_services() {
-    log_info "Restarting services..."
+    log_info "services_restart_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
     # Rebuild images to pick up code changes and restart
-    ./cli/ichrisbirch prod rebuild
+    if ! ./cli/ichrisbirch prod rebuild 2>&1; then
+        log_error "services_restart_failed" "step" "rebuild" | tee -a "$LOG_FILE"
+        exit 1
+    fi
 
-    log_success "Services restarted"
+    log_info "services_restart_completed" | tee -a "$LOG_FILE"
 }
 
 verify_deployment() {
-    log_info "Verifying deployment..."
+    log_info "health_check_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
     # Wait for services to be ready
     sleep 5
 
-    # Check health
-    if ./cli/ichrisbirch prod health; then
-        log_success "Health check passed"
+    # Check health - failures should BLOCK deployment
+    if ./cli/ichrisbirch prod health 2>&1; then
+        log_info "health_check_passed" | tee -a "$LOG_FILE"
     else
-        log_warn "Health check reported issues - check logs"
+        log_error "health_check_failed" "action" "deployment_blocked" | tee -a "$LOG_FILE"
+        exit 1
     fi
 }
 
 main() {
-    log_info "=========================================="
-    log_info "Starting homelab deployment"
-    log_info "=========================================="
+    # Try to fetch Slack webhook URL from SSM (non-fatal if it fails)
+    # shellcheck disable=SC2119
+    fetch_slack_webhook_from_ssm || log_warn "slack_webhook_not_configured" | tee -a "$LOG_FILE"
+
+    DEPLOY_STARTED=true
+    log_info "deployment_started" "install_dir" "$INSTALL_DIR" | tee -a "$LOG_FILE"
 
     check_prerequisites
     pull_latest_code
@@ -139,9 +145,14 @@ main() {
     restart_services
     verify_deployment
 
-    log_success "=========================================="
-    log_success "Deployment complete"
-    log_success "=========================================="
+    DEPLOY_SUCCESS=true
+    log_info "deployment_completed" \
+        "sha" "${NEW_SHA:0:7}" | tee -a "$LOG_FILE"
+
+    # Get commit message for notification
+    local commit_msg
+    commit_msg=$(cd "$INSTALL_DIR" && git log -1 --pretty=format:'%s' 2>/dev/null || echo "unknown")
+    notify_slack "success" "ichrisbirch deployed successfully: ${NEW_SHA:0:7} - $commit_msg"
 }
 
 main "$@"
