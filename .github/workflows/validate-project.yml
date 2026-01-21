@@ -186,3 +186,69 @@ jobs:
 
       - name: Minimize uv cache
         run: uv cache prune --ci
+
+  test-production-build:
+    name: Test Production Build
+    runs-on: ubuntu-24.04
+    # This job tests that the production Docker build works correctly.
+    # It catches issues like the shared image race condition that only
+    # manifest in production builds (not dev/test which use bind mounts).
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@v1
+        with:
+          version: "latest"
+
+      - name: Build production images
+        run: |
+          echo "Building production images (same as prod rebuild)..."
+          docker compose -f docker-compose.yml build
+          echo "Production build completed successfully"
+
+      - name: Verify images exist
+        run: |
+          echo "Verifying production images were created..."
+          docker images | grep -E "ichrisbirch|REPOSITORY"
+
+      - name: Test production containers can start
+        run: |
+          echo "Testing production containers can start..."
+          # Create minimal .env for production (services need these vars)
+          cat > .env << 'EOF'
+          POSTGRES_PASSWORD=testpass
+          REDIS_PASSWORD=testpass
+          DOMAIN=localhost
+          EOF
+
+          # Start just postgres and redis first (required by app services)
+          docker compose -f docker-compose.yml up -d postgres redis
+          echo "Waiting for database..."
+          sleep 10
+
+          # Start app services
+          docker compose -f docker-compose.yml up -d api app chat scheduler
+          echo "Waiting for services to initialize..."
+          sleep 15
+
+          # Check all services are running
+          echo "Checking container status..."
+          docker compose -f docker-compose.yml ps
+
+          # Verify no containers exited
+          EXITED=$(docker compose -f docker-compose.yml ps --status exited -q | wc -l)
+          if [ "$EXITED" -gt 0 ]; then
+            echo "ERROR: Some containers exited unexpectedly"
+            docker compose -f docker-compose.yml logs
+            exit 1
+          fi
+
+          echo "All production containers started successfully"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml down -v 2>/dev/null || true

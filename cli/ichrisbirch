@@ -501,6 +501,34 @@ function prod-apihealth() {
   curl --silent "$PROD_API_URL/health/" | jq
 }
 
+function prod-build-test() {
+  # Test that production Docker build works correctly.
+  # This catches issues that only manifest in production builds
+  # (not dev/test which use bind mounts).
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  echo "${magenta}Testing PRODUCTION build${reset}"
+  echo "This tests the actual production Docker build (no bind mounts)"
+  echo ""
+
+  echo "${cyan}Step 1: Building production images...${reset}"
+  if ! $COMPOSE_PROD build; then
+    echo "${red}Production build FAILED${reset}"
+    return 1
+  fi
+  echo "${green}Build completed${reset}"
+  echo ""
+
+  echo "${cyan}Step 2: Verifying images...${reset}"
+  docker images | grep -E "ichrisbirch|REPOSITORY"
+  echo ""
+
+  echo "${green}Production build test PASSED${reset}"
+  echo ""
+  echo "${yellow}Note:${reset} This only tests the build, not container startup."
+  echo "To test startup, run: ${cyan}icb prod start${reset} (requires AWS SSM access)"
+}
+
 # Database commands
 function db-backup() {
   cd "$ICHRISBIRCH_HOME" || exit

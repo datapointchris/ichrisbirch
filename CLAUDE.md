@@ -345,6 +345,29 @@ async def admin(user: User = Depends(auth.get_current_admin_user)):
 - Resource limits and health checks
 - AWS credentials mounted as read-only volume
 
+### Critical: Dev/Test vs Production Builds
+
+**Dev and Test environments use bind mounts** - the code comes from the local filesystem, not the Docker image. This means Docker build issues may NOT be caught in dev/test.
+
+| Environment | Code Source | Tests Docker Build? |
+|-------------|-------------|---------------------|
+| Development | Bind mount `.:/app` | NO |
+| Testing | Bind mount `.:/app` | NO |
+| CI | Bind mount `.:/app` | NO (but CI has separate prod build test) |
+| **Production** | `COPY . /app` in Dockerfile | **YES** |
+
+**Always test production builds before deploying Docker/Compose changes:**
+
+```bash
+# Test that production build works
+icb prod build-test
+
+# This runs: docker compose -f docker-compose.yml build
+# If it fails, the same failure will happen in production
+```
+
+The CI pipeline includes a `test-production-build` job that catches these issues automatically.
+
 ### Traefik Configuration
 
 **Dynamic Config**: `deploy-containers/traefik/dynamic/`
