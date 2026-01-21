@@ -12,6 +12,7 @@ from fastapi import status
 from flask import Blueprint
 from flask import current_app
 from flask import flash
+from flask import make_response
 from flask import redirect
 from flask import render_template
 from flask import request
@@ -171,12 +172,40 @@ def scheduler():
 
 @blueprint.route('/logs/', methods=['GET'])
 def logs():
+    import hashlib
+    import hmac
+    import time
+
+    from flask_login import current_user
+
     settings = current_app.config['SETTINGS']
-    return render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port)
+    response = make_response(render_template('admin/logs.html', api_host=settings.fastapi.host, api_port=settings.fastapi.port))
+
+    # Create signed token for WebSocket authentication
+    # Token format: user_id:timestamp:signature (HMAC-SHA256 using internal_service_key)
+    if current_user.is_authenticated:
+        user_id = current_user.get_id()
+        timestamp = str(int(time.time()))
+        message = f'{user_id}:{timestamp}'
+        signature = hmac.new(settings.auth.internal_service_key.encode(), message.encode(), hashlib.sha256).hexdigest()
+        ws_token = f'{user_id}:{timestamp}:{signature}'
+
+        # Set cross-subdomain cookie (e.g., "app.docker.localhost" -> "docker.localhost")
+        host = request.host.split(':')[0]
+        parts = host.split('.')
+        parent_domain = '.'.join(parts[-2:]) if len(parts) > 2 else host
+        response.set_cookie('ws_auth', ws_token, httponly=True, secure=request.is_secure, samesite='Lax', domain=parent_domain)
+        logger.debug('ws_auth_cookie_set', domain=parent_domain)
+
+    return response
 
 
-def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> pl.DataFrame:
-    """Read all *.log files from a directory and combine into a single DataFrame."""
+def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> tuple[pl.DataFrame, str]:
+    """Read all *.log files from a directory and combine into a single DataFrame.
+
+    Returns:
+        Tuple of (DataFrame, status_message). Status message describes any issues encountered.
+    """
     schema = {
         'log_level': pl.Categorical,
         'timestamp': pl.Datetime,
@@ -192,11 +221,41 @@ def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> pl.DataFrame:
     was_error = False
 
     def _process_log_line(line: str):
+        """Parse structlog ConsoleRenderer format.
+
+        Format: 2026-01-15T20:06:21Z [info     ] logging_initialized  filename=logger.py func_name=initialize_logging lineno=200
+        """
         nonlocal num_errors, previous_line, was_error
         try:
-            part, message = line.strip().split('|')
-            log_level, timestamp, part = part.strip().rsplit(' ', maxsplit=2)
-            logger_name, func_name, lineno = part.strip().split(':')
+            import re
+
+            line = line.strip()
+            if not line:
+                return None
+
+            # Match: timestamp [level] message key=value pairs
+            # Timestamp: ISO format at start
+            # Level: in brackets with padding
+            # Message: first token after level (before key=value pairs)
+            match = re.match(
+                r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)\s+'  # timestamp
+                r'\[(\w+)\s*\]\s+'  # level in brackets
+                r'(\S+)\s*'  # message (first word)
+                r'(.*)$',  # rest (key=value pairs)
+                line,
+            )
+            if not match:
+                raise ValueError(f'Line does not match expected format: {line[:50]}')
+
+            timestamp, log_level, message, rest = match.groups()
+
+            # Parse key=value pairs
+            kv_pairs = dict(re.findall(r'(\w+)=(\S+)', rest))
+
+            filename = kv_pairs.get('filename', '')
+            func_name = kv_pairs.get('func_name', '')
+            lineno = kv_pairs.get('lineno', '0')
+
             previous_line = line
             if was_error:
                 errors.append(f'NXT LINE: {line.strip()}\n')
@@ -208,12 +267,12 @@ def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> pl.DataFrame:
             was_error = True
             return None
         return {
-            'log_level': log_level.strip('[] ').strip(),
-            'timestamp': timestamp.strip(),
-            'logger_name': logger_name.strip(),
-            'func_name': func_name.strip(),
-            'lineno': lineno.strip(),
-            'message': message.strip(),
+            'log_level': log_level.upper(),
+            'timestamp': timestamp,
+            'logger_name': filename.replace('.py', '') if filename else 'unknown',
+            'func_name': func_name,
+            'lineno': lineno,
+            'message': message,
         }
 
     def _cast_columns(df, schema: dict):
@@ -235,16 +294,21 @@ def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> pl.DataFrame:
     log_path = Path(log_dir)
     if not log_path.exists():
         logger.warning('log_dir_not_found', log_dir=log_dir)
-        return pl.DataFrame(schema=schema)
+        return pl.DataFrame(schema=schema), 'Log directory does not exist'
 
     all_lines = []
     log_files = sorted(log_path.glob('*.log'))
+
+    if not log_files:
+        logger.warning('no_log_files_found', log_dir=log_dir)
+        return pl.DataFrame(schema=schema), 'No .log files found in directory'
+
     for log_file in log_files:
         all_lines.extend(_process_log_file(log_file))
 
     if not all_lines:
-        logger.warning('no_log_lines_found', log_dir=log_dir)
-        return pl.DataFrame(schema=schema)
+        logger.warning('no_log_lines_parsed', log_dir=log_dir, files=[f.name for f in log_files], num_errors=num_errors)
+        return pl.DataFrame(schema=schema), f'Could not parse any lines from {len(log_files)} log file(s) - format may have changed'
 
     df = pl.DataFrame(all_lines)
     converted = _cast_columns(df, schema)
@@ -256,7 +320,7 @@ def log_dir_to_polars_df(log_dir: str = LOG_DIR, debug=False) -> pl.DataFrame:
         print()
         for error in errors:
             print(error)
-    return converted
+    return converted, 'OK'
 
 
 @dataclass
@@ -285,10 +349,10 @@ def create_log_chart(title: str, data: pl.DataFrame, x_axis_key: str, y_axis_key
 
 @blueprint.route('/log-graphs/', methods=['GET', 'POST'])
 def log_graphs():
-    log_df = log_dir_to_polars_df()
+    log_df, log_status = log_dir_to_polars_df()
     if log_df.is_empty():
-        flash(f'No log files found in {LOG_DIR}', 'error')
-        logger.error('log_dir_empty', log_dir=LOG_DIR)
+        flash(f'{log_status} ({LOG_DIR})', 'error')
+        logger.error('log_graphs_empty', log_dir=LOG_DIR, status=log_status)
 
     log_count_by_level = create_log_chart(
         title='Log Count by Level',

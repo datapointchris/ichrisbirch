@@ -1,6 +1,9 @@
 """Tests for admin API endpoints including WebSocket log streaming."""
 
+import hashlib
+import hmac
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -9,6 +12,15 @@ from starlette.websockets import WebSocketDisconnect
 from ichrisbirch.api.endpoints import admin
 from ichrisbirch.api.endpoints.admin import ANSI_ESCAPE_PATTERN
 from ichrisbirch.api.endpoints.admin import LogReader
+
+
+def create_ws_auth_token(user_id: str, secret_key: str) -> str:
+    """Create HMAC-signed WebSocket auth token for testing."""
+    timestamp = str(int(time.time()))
+    message = f'{user_id}:{timestamp}'
+    signature = hmac.new(secret_key.encode(), message.encode(), hashlib.sha256).hexdigest()
+    return f'{user_id}:{timestamp}:{signature}'
+
 
 # =============================================================================
 # LogReader Unit Tests
@@ -153,8 +165,8 @@ class TestWebSocketLogStreamAuth:
 
         client.app.dependency_overrides[admin.get_log_reader] = MockLogReader
 
-        # Set invalid token cookie
-        client.cookies.set('access_token', 'Bearer invalid_token_here')
+        # Set invalid ws_auth token cookie
+        client.cookies.set('ws_auth', 'invalid_token_here')
 
         with pytest.raises(WebSocketDisconnect):  # noqa: SIM117
             with client.websocket_connect('/admin/log-stream/') as websocket:
@@ -170,29 +182,18 @@ class TestWebSocketLogStreamAuth:
 
         client.app.dependency_overrides[admin.get_log_reader] = MockLogReader
 
-        # Get a valid token for regular (non-admin) user
-        # The txn_api_logged_in fixture authenticates as regular user
-        # We need to get a JWT token for this user
-        from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-        from ichrisbirch.config import get_settings
-
-        settings = get_settings()
-        # Create a mock token handler without database session (just for token creation)
-        # We'll mock the session in the token handler
-
         # Get the regular user from the database
         from sqlalchemy import select
 
+        from ichrisbirch.config import get_settings
         from ichrisbirch.models import User
 
+        settings = get_settings()
         regular_user = session.execute(select(User).where(User.email == 'testloginregular@testuser.com')).scalar_one()
 
-        # Create token handler with session
-        token_handler = JWTTokenHandler(settings=settings, session=session)
-        access_token = token_handler.create_access_token(str(regular_user.alternative_id))
-
-        # Set the token as cookie
-        client.cookies.set('access_token', f'Bearer {access_token}')
+        # Create valid HMAC token for non-admin user - should still be rejected
+        ws_token = create_ws_auth_token(str(regular_user.alternative_id), settings.auth.internal_service_key)
+        client.cookies.set('ws_auth', ws_token)
 
         with pytest.raises(WebSocketDisconnect):  # noqa: SIM117
             with client.websocket_connect('/admin/log-stream/') as websocket:
@@ -214,21 +215,18 @@ class TestWebSocketLogStreamFunctionality:
 
         client.app.dependency_overrides[admin.get_log_reader] = MockLogReader
 
-        # Get the admin user and create a valid JWT token
+        # Get the admin user and create a valid HMAC-signed token
         from sqlalchemy import select
 
-        from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
         from ichrisbirch.config import get_settings
         from ichrisbirch.models import User
 
         settings = get_settings()
         admin_user = session.execute(select(User).where(User.email == 'testloginadmin@testadmin.com')).scalar_one()
 
-        token_handler = JWTTokenHandler(settings=settings, session=session)
-        access_token = token_handler.create_access_token(str(admin_user.alternative_id))
-
-        # Set the token as cookie
-        client.cookies.set('access_token', f'Bearer {access_token}')
+        # Create HMAC-signed WebSocket auth token
+        ws_token = create_ws_auth_token(str(admin_user.alternative_id), settings.auth.internal_service_key)
+        client.cookies.set('ws_auth', ws_token)
 
         with client.websocket_connect('/admin/log-stream/') as websocket:
             received_logs = [websocket.receive_text() for _ in range(len(test_logs))]
@@ -252,17 +250,15 @@ class TestWebSocketLogStreamFunctionality:
 
         from sqlalchemy import select
 
-        from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
         from ichrisbirch.config import get_settings
         from ichrisbirch.models import User
 
         settings = get_settings()
         admin_user = session.execute(select(User).where(User.email == 'testloginadmin@testadmin.com')).scalar_one()
 
-        token_handler = JWTTokenHandler(settings=settings, session=session)
-        access_token = token_handler.create_access_token(str(admin_user.alternative_id))
-
-        client.cookies.set('access_token', f'Bearer {access_token}')
+        # Create HMAC-signed WebSocket auth token
+        ws_token = create_ws_auth_token(str(admin_user.alternative_id), settings.auth.internal_service_key)
+        client.cookies.set('ws_auth', ws_token)
 
         with client.websocket_connect('/admin/log-stream/') as websocket:
             received_logs = [websocket.receive_text() for _ in range(len(expected_logs))]
