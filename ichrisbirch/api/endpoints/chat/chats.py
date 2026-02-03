@@ -16,8 +16,10 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Chat], status_code=status.HTTP_200_OK)
-async def read_many(search: bool | None = None, session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(name: str | None = None, session: Session = Depends(get_sqlalchemy_session)):
     query = select(models.Chat).order_by(models.Chat.created_at.desc())
+    if name is not None:
+        query = query.where(models.Chat.name == name)
     return list(session.scalars(query).all())
 
 
@@ -31,13 +33,6 @@ async def create(obj_in: schemas.ChatCreate, session: Session = Depends(get_sqla
     session.commit()
     session.refresh(obj)
     return obj
-
-
-@router.get('/name/{name}/', response_model=schemas.Chat | None, status_code=status.HTTP_200_OK)
-async def check_chat_exists_by_name(name: str, session: Session = Depends(get_sqlalchemy_session)):
-    if not name:
-        return None
-    return session.scalars(select(models.Chat).where(models.Chat.name == name)).first()
 
 
 @router.get('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)

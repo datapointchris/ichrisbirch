@@ -61,23 +61,23 @@ def test_lifecycle(chat_crud_tester):
     crud_tester.test_lifecycle(client)
 
 
-def test_check_chat_by_name_returns_null_when_not_found(txn_api_logged_in):
-    """Verify /name/{name}/ returns null (not error) when chat doesn't exist."""
+def test_check_chat_by_name_returns_empty_list_when_not_found(txn_api_logged_in):
+    """Verify ?name= filter returns empty list when chat doesn't exist."""
     client, _ = txn_api_logged_in
-    response = client.get(f'{ENDPOINT}name/nonexistent-chat/')
+    response = client.get(ENDPOINT, params={'name': 'nonexistent-chat'})
     assert response.status_code == 200
-    assert response.json() is None
+    assert response.json() == []
 
 
 def test_check_chat_by_name_returns_chat_when_found(chat_crud_tester):
-    """Verify /name/{name}/ returns the chat when it exists."""
+    """Verify ?name= filter returns single-item list when chat exists."""
     client, _ = chat_crud_tester
     # Get an existing chat name from the list
     chats_response = client.get(ENDPOINT)
     existing_chat = chats_response.json()[0]
 
-    response = client.get(f'{ENDPOINT}name/{existing_chat["name"]}/')
+    response = client.get(ENDPOINT, params={'name': existing_chat['name']})
     assert response.status_code == 200
     result = response.json()
-    assert result is not None
-    assert result['name'] == existing_chat['name']
+    assert len(result) == 1
+    assert result[0]['name'] == existing_chat['name']

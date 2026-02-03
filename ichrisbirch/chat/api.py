@@ -34,8 +34,8 @@ class ChatAPIClient:
         return models.Chat(**(chat.model_dump() | {'messages': messages}))
 
     def get_chat(self, name: str):
-        if chat := self.chat_api.get_one(name):
-            return self._convert_chat_to_model(chat)
+        if chats := self.chat_api.get_many(params={'name': name}):
+            return self._convert_chat_to_model(chats[0])
         return None
 
     def get_all_chats(self):
