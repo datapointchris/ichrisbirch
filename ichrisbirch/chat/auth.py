@@ -49,17 +49,19 @@ class ChatAuthClient:
         validate_url = url_builder(self.token_url, 'validate')
         headers = {'Authorization': f'Bearer {token}'}
         with self.safe_request_client() as client:
-            sc = client.get(validate_url, headers=headers).raise_for_status().status_code
-            logger.debug('jwt_validation_status', status_code=sc)
-            return sc == 200
+            response = client.get(validate_url, headers=headers)
+            logger.debug('jwt_validation_status', status_code=response.status_code)
+            return response.status_code == 200
 
     def refresh_access_token(self, token: str):
         logger.debug('refreshing_access_token', token_suffix=token[-10:])
         headers = {'Authorization': f'Bearer {token}'}
         refresh_url = url_builder(self.token_url, 'refresh')
         with self.safe_request_client() as client:
-            response = client.post(refresh_url, headers=headers).raise_for_status()
-            return response.json().get('access_token')
+            response = client.post(refresh_url, headers=headers)
+            if response.status_code == 200:
+                return response.json().get('access_token')
+            return None
 
     def login_username(self, username: str, password: str):
         """Login user with username/password using modern internal service client."""
