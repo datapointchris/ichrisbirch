@@ -96,7 +96,7 @@ class ChatAuthClient:
             user_data = client.get(user_login_url, headers=headers).raise_for_status().json()
             if user := models.User(**user_data):
                 logger.info('user_token_login_success', email=user.email, last_login=str(user.last_login))
-                client.patch(url_builder(self.users_url, user.id), json={'last_login': pendulum.now().for_json()})
+                client.patch(url_builder(self.users_url, user.id), headers=headers, json={'last_login': pendulum.now().for_json()})
                 return user
             else:
                 logger.warning('invalid_token_login_attempt')
