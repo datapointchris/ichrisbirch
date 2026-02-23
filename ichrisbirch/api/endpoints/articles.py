@@ -33,6 +33,8 @@ router = APIRouter()
 def _get_youtube_video_text_captions(url: str) -> str:
     yt_trans = YouTubeTranscriptApi()
     formatter = TextFormatter()
+    # remove playlist
+    url = url.split('&list=')[0]
     video_id = url.split('v=')[1]
     transcript = yt_trans.fetch(video_id)
     formatted = formatter.format_transcript(transcript)
