@@ -99,10 +99,13 @@
     const tagsField = document.querySelector('.add-item-form input[name="tags"]');
     const goodreadsUrlField = document.querySelector('.add-item-form input[name="goodreads_url"]');
 
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
     fetch('{{ url_for("books.goodreads_info") }}', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
       },
       body: JSON.stringify({
         isbn: isbnField.value

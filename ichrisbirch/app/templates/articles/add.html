@@ -58,10 +58,13 @@
     const summaryField = document.querySelector('.add-item-form textarea[name="summary"]');
     const tagsField = document.querySelector('.add-item-form input[name="tags"]');
 
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
     fetch('{{ url_for("articles.summarize_proxy") }}', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
       },
       body: JSON.stringify({
         url: urlField.value
