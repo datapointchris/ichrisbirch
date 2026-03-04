@@ -28,6 +28,7 @@ from ichrisbirch.models import HabitCompleted  # noqa
 from ichrisbirch.models import JournalEntry  # noqa
 from ichrisbirch.models import JWTRefreshToken  # noqa
 from ichrisbirch.models import MoneyWasted  # noqa
+from ichrisbirch.models import PersonalAPIKey  # noqa
 from ichrisbirch.models import PortfolioProject  # noqa
 from ichrisbirch.models import Task  # noqa
 from ichrisbirch.models import User  # noqa

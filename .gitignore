@@ -257,6 +257,9 @@ xperiments/
 # Local copies of backup files
 ichrisbirch-backups/
 
+# MCP configuration (contains API keys)
+.mcp.json
+
 # css map files
 *.css.map
 

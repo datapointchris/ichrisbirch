@@ -47,6 +47,9 @@ from ichrisbirch.schemas.journal import JournalEntryUpdate
 from ichrisbirch.schemas.money_wasted import MoneyWasted
 from ichrisbirch.schemas.money_wasted import MoneyWastedCreate
 from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
+from ichrisbirch.schemas.personal_api_key import PersonalAPIKey
+from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreate
+from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreated
 from ichrisbirch.schemas.server import ServerStats
 from ichrisbirch.schemas.task import Task
 from ichrisbirch.schemas.task import TaskCompleted
@@ -106,6 +109,9 @@ __all__ = [
     'MoneyWasted',
     'MoneyWastedCreate',
     'MoneyWastedUpdate',
+    'PersonalAPIKey',
+    'PersonalAPIKeyCreate',
+    'PersonalAPIKeyCreated',
     'ServerStats',
     'Task',
     'TaskCompleted',

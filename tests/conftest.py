@@ -340,7 +340,7 @@ class FlaskClientAPIHeaders(FlaskLoginClient):
 def create_test_app_base():
     """This is used for the test client and also for tests/wsgi_app.py for Gunicorn."""
     app = create_app(settings=test_settings)
-    app.config.update({'TESTING': True, 'WTF_CSRF_ENABLED': False})
+    app.config.update({'TESTING': True, 'WTF_CSRF_ENABLED': False, 'SESSION_PROTECTION': None})
     return app
 
 

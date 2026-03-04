@@ -10,6 +10,7 @@ from ichrisbirch.api.endpoints import events
 from ichrisbirch.api.endpoints import habits
 from ichrisbirch.api.endpoints import home
 from ichrisbirch.api.endpoints import money_wasted
+from ichrisbirch.api.endpoints import personal_api_keys
 from ichrisbirch.api.endpoints import server
 from ichrisbirch.api.endpoints import tasks
 from ichrisbirch.api.endpoints import users
@@ -27,6 +28,7 @@ __all__ = [
     'habits',
     'home',
     'money_wasted',
+    'personal_api_keys',
     'server',
     'tasks',
     'users',

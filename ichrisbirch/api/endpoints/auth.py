@@ -21,6 +21,8 @@ from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
+from ichrisbirch.models.personal_api_key import KEY_PREFIX
+from ichrisbirch.models.personal_api_key import hash_api_key
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -168,6 +170,44 @@ async def authenticate_with_oauth2(request: Request, session: Session = Depends(
     return user.get_id()
 
 
+def authenticate_with_personal_api_key(
+    token: Annotated[str | None, Depends(get_token_from_header)],
+    session: Session = Depends(get_sqlalchemy_session),
+) -> str | None:
+    """FastAPI dependency for personal API key authentication.
+
+    If the Bearer token starts with 'icb_', look up by hashed key.
+    Returns the user's alternative_id (as string) if valid, None otherwise.
+    """
+    if not token or not token.startswith(KEY_PREFIX):
+        return None
+
+    hashed = hash_api_key(token)
+    query = select(models.PersonalAPIKey).where(
+        models.PersonalAPIKey.hashed_key == hashed,
+        models.PersonalAPIKey.revoked_at.is_(None),
+    )
+    api_key = session.execute(query).scalars().first()
+    if not api_key:
+        logger.warning('personal_api_key_invalid')
+        return None
+
+    # Update last_used_at
+    from datetime import datetime
+
+    api_key.last_used_at = datetime.now()
+    session.commit()
+
+    # Return the user's alternative_id (what get_id() returns) for validate_user_id
+    user = session.get(models.User, api_key.user_id)
+    if not user:
+        logger.warning('personal_api_key_user_not_found', user_id=api_key.user_id)
+        return None
+
+    logger.debug('auth_method_personal_api_key', key_id=api_key.id, user_id=user.id)
+    return user.get_id()
+
+
 # =============================================================================
 # CURRENT USER DEPENDENCIES
 # =============================================================================
@@ -175,6 +215,7 @@ async def authenticate_with_oauth2(request: Request, session: Session = Depends(
 
 def get_current_user(
     app_headers=Depends(authenticate_with_application_headers),
+    api_key_user_id=Depends(authenticate_with_personal_api_key),
     auth_jwt=Depends(authenticate_with_jwt),
     auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
@@ -183,19 +224,22 @@ def get_current_user(
 
     Priority order:
     1. Application headers (internal services)
-    2. JWT token (API clients)
-    3. OAuth2 form data (web forms)
+    2. Personal API key (MCP / external tools)
+    3. JWT token (API clients)
+    4. OAuth2 form data (web forms)
 
     Returns the authenticated user or raises UnauthorizedException.
     """
     if app_headers:
         logger.debug('auth_method_app_headers')
+    if api_key_user_id:
+        logger.debug('auth_method_personal_api_key')
     if auth_jwt:
         logger.debug('auth_method_jwt')
     if auth_oauth2:
         logger.debug('auth_method_oauth2')
 
-    if not (user_id := app_headers or auth_jwt or auth_oauth2):
+    if not (user_id := app_headers or api_key_user_id or auth_jwt or auth_oauth2):
         raise UnauthorizedException('Invalid credentials', logger)
 
     if not (user := validate_user_id(user_id, session)):
@@ -217,6 +261,7 @@ def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> m
 
 def get_current_user_or_none(
     app_headers=Depends(authenticate_with_application_headers),
+    api_key_user_id=Depends(authenticate_with_personal_api_key),
     auth_jwt=Depends(authenticate_with_jwt),
     auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
@@ -225,7 +270,7 @@ def get_current_user_or_none(
 
     Used for dependencies that support multiple auth methods.
     """
-    if not (user_id := app_headers or auth_jwt or auth_oauth2):
+    if not (user_id := app_headers or api_key_user_id or auth_jwt or auth_oauth2):
         return None
 
     if not (user := validate_user_id(user_id, session)):

@@ -74,6 +74,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.events.router, prefix='/events', dependencies=deps)
     api.include_router(endpoints.habits.router, prefix='/habits', dependencies=deps)
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
+    api.include_router(endpoints.personal_api_keys.router, prefix='/api-keys', dependencies=deps)
     api.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
     api.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
     api.include_router(endpoints.users.router, prefix='/users')
