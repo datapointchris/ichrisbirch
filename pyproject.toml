@@ -277,6 +277,10 @@ collectors = ["tokei", "pytest_collector", "coverage", "docker", "dependencies",
 pytest_json_path = "/tmp/ichrisbirch-pytest-report.json"
 
 
+[tool.uv]
+default-groups = ["dev", "test"]
+
+
 # ---------- Build System ---------- #
 
 
