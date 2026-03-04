@@ -1,0 +1,76 @@
+// Test Fixtures
+digraph {
+	rankdir=TB
+	subgraph cluster_hierarchy {
+		color=lightgrey fillcolor="#f5f5f5" label="Fixture Scope Hierarchy" style=filled
+		SessionScope [label="Session Scope" shape=box]
+		ModuleScope [label="Module Scope" shape=box]
+		FunctionScope [label="Function Scope" shape=box]
+		SessionScope -> ModuleScope
+		ModuleScope -> FunctionScope
+	}
+	subgraph cluster_session {
+		color="#add8e6" fillcolor="#e6f7ff" label="Session Fixtures" style=filled
+		setup_test_env [label=setup_test_environment shape=box]
+		test_env [label=TestEnvironment shape=box]
+		setup_test_env -> test_env
+	}
+	subgraph cluster_module {
+		color="#90ee90" fillcolor="#f0fff0" label="Module Fixtures" style=filled
+		create_drop_tables [label=create_drop_tables shape=box]
+		insert_users_for_login [label=insert_users_for_login shape=box]
+		create_drop_tables -> insert_users_for_login
+		api_clients [label="API Client Fixtures" shape=box style=rounded]
+		test_api [label=test_api shape=box]
+		test_api_logged_in [label=test_api_logged_in shape=box]
+		test_api_logged_in_admin [label=test_api_logged_in_admin shape=box]
+		api_clients -> test_api [style=dotted]
+		api_clients -> test_api_logged_in [style=dotted]
+		api_clients -> test_api_logged_in_admin [style=dotted]
+		app_clients [label="App Client Fixtures" shape=box style=rounded]
+		test_app [label=test_app shape=box]
+		test_app_logged_in [label=test_app_logged_in shape=box]
+		test_app_logged_in_admin [label=test_app_logged_in_admin shape=box]
+		app_clients -> test_app [style=dotted]
+		app_clients -> test_app_logged_in [style=dotted]
+		app_clients -> test_app_logged_in_admin [style=dotted]
+		other_mod [label="Other Module Fixtures" shape=box style=rounded]
+		test_jobstore [label=test_jobstore shape=box]
+		other_mod -> test_jobstore [style=dotted]
+	}
+	subgraph cluster_function {
+		color="#ffb6c1" fillcolor="#fff0f5" label="Function Fixtures" style=filled
+		func_api [label="API Function Clients" shape=box style=rounded]
+		test_api_function [label=test_api_function shape=box]
+		test_api_logged_in_function [label=test_api_logged_in_function shape=box]
+		test_api_logged_in_admin_function [label=test_api_logged_in_admin_function shape=box]
+		func_api -> test_api_function [style=dotted]
+		func_api -> test_api_logged_in_function [style=dotted]
+		func_api -> test_api_logged_in_admin_function [style=dotted]
+		func_app [label="App Function Clients" shape=box style=rounded]
+		test_app_function [label=test_app_function shape=box]
+		test_app_logged_in_function [label=test_app_logged_in_function shape=box]
+		test_app_logged_in_admin_function [label=test_app_logged_in_admin_function shape=box]
+		func_app -> test_app_function [style=dotted]
+		func_app -> test_app_logged_in_function [style=dotted]
+		func_app -> test_app_logged_in_admin_function [style=dotted]
+	}
+	subgraph cluster_test_data {
+		color="#ffa500" fillcolor="#fff8dc" label="Test Data Fixtures" style=filled
+		insert_testing_data [label=insert_testing_data shape=box]
+		insert_jobs_in_test_scheduler [label=insert_jobs_in_test_scheduler shape=box]
+		test_user [label=test_user shape=box]
+		test_admin_user [label=test_admin_user shape=box]
+	}
+	SessionScope -> setup_test_env [constraint=false style=dashed]
+	ModuleScope -> create_drop_tables [constraint=false style=dashed]
+	ModuleScope -> api_clients [constraint=false style=dashed]
+	ModuleScope -> app_clients [constraint=false style=dashed]
+	ModuleScope -> other_mod [constraint=false style=dashed]
+	FunctionScope -> func_api [constraint=false style=dashed]
+	FunctionScope -> func_app [constraint=false style=dashed]
+	insert_users_for_login -> test_api_logged_in
+	insert_users_for_login -> test_api_logged_in_admin
+	insert_users_for_login -> test_app_logged_in
+	insert_users_for_login -> test_app_logged_in_admin
+}
