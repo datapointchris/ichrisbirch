@@ -40,10 +40,27 @@ def index():
 
 @blueprint.route('/add/', methods=['GET', 'POST'])
 def add():
-    settings = current_app.config['SETTINGS']
     create_form = forms.BookCreateForm()
-    goodreads_info_endpoint = f'{settings.api_url}/books/goodreads/'
-    return render_template('books/add.html', create_form=create_form, goodreads_info_endpoint=goodreads_info_endpoint)
+    return render_template('books/add.html', create_form=create_form)
+
+
+@blueprint.route('/goodreads-info/', methods=['POST'])
+def goodreads_info():
+    """Proxy endpoint for Goodreads book info lookup.
+
+    JavaScript calls this Flask endpoint, which forwards to the API with user's session credentials.
+    """
+    data = request.get_json()
+    isbn = data.get('isbn') if data else None
+    if not isbn:
+        return Response('Missing ISBN', status=400)
+
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        goodreads_api = client.resource('books/goodreads', schemas.BookGoodreadsInfo)
+        if result := goodreads_api.post(json={'isbn': isbn}):
+            return {'title': result.title, 'author': result.author, 'tags': result.tags, 'goodreads_url': result.goodreads_url}
+        return Response('Failed to get Goodreads info', status=500)
 
 
 @blueprint.route('/crud/', methods=['POST'])

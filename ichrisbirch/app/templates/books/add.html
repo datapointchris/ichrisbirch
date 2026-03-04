@@ -89,7 +89,6 @@
   </div>
 </div>
 
-<div id="goodreadsInfoEndpoint" class="hidden-data">{{ goodreads_info_endpoint }}</div>
 <script>
   document.querySelector('#populateButton').addEventListener('click', function (event) {
     event.preventDefault();
@@ -99,9 +98,8 @@
     const authorField = document.querySelector('.add-item-form input[name="author"]');
     const tagsField = document.querySelector('.add-item-form input[name="tags"]');
     const goodreadsUrlField = document.querySelector('.add-item-form input[name="goodreads_url"]');
-    const goodreadsInfoEndpoint = document.getElementById('goodreadsInfoEndpoint').textContent;
 
-    fetch(goodreadsInfoEndpoint, {
+    fetch('{{ url_for("books.goodreads_info") }}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
