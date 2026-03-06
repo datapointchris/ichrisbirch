@@ -109,6 +109,8 @@ def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)],
 
     Extracts token from Authorization header and validates it. Returns user ID if valid, None otherwise.
     """
+    if token and token.startswith(KEY_PREFIX):
+        return None
     return validate_jwt_token(token, settings)
 
 
