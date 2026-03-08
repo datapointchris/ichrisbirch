@@ -139,6 +139,38 @@ def test_crud_edit(test_app_logged_in, test_api_logged_in):
     assert updated.json()['notes'] == 'Updated notes'
 
 
+def test_crud_edit_with_empty_optional_fields(test_app_logged_in, test_api_logged_in):
+    """Verify editing works when optional fields are submitted as empty strings (as HTML forms do)."""
+    books = test_api_logged_in.get('/books/')
+    book = books.json()[0]
+    response = test_app_logged_in.post(
+        '/books/crud/',
+        data=dict(
+            id=book['id'],
+            isbn=book['isbn'],
+            title='Updated Title',
+            author=book['author'],
+            tags='Classic',
+            goodreads_url='',
+            priority='',
+            purchase_date='',
+            purchase_price='',
+            sell_date='',
+            sell_price='',
+            read_start_date='',
+            read_finish_date='',
+            rating='',
+            location='',
+            notes='',
+            action='edit',
+        ),
+        follow_redirects=True,
+    )
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    updated = test_api_logged_in.get(f'/books/{book["id"]}/')
+    assert updated.json()['title'] == 'Updated Title'
+
+
 def test_crud_delete(test_app_logged_in, test_api_logged_in):
     books = test_api_logged_in.get('/books/')
     first_id = books.json()[0]['id']

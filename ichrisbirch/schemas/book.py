@@ -73,6 +73,13 @@ class BookUpdate(BookConfig):
     location: str | None = None
     notes: str | None = None
 
+    @model_validator(mode='before')
+    @classmethod
+    def empty_field_to_none(cls, data):
+        if isinstance(data, dict):
+            return {k: (v or None) for k, v in data.items()}
+        return data
+
 
 class BookGoodreadsInfo(BookConfig):
     title: str
