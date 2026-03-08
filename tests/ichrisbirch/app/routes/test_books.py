@@ -103,6 +103,42 @@ def test_crud_add_duplicate(test_app_logged_in):
     assert b'already exists' in response.data
 
 
+def test_edit_page(test_app_logged_in, test_api_logged_in):
+    books = test_api_logged_in.get('/books/')
+    first_id = books.json()[0]['id']
+    response = test_app_logged_in.get(f'/books/edit/{first_id}/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    assert b'Editing:' in response.data
+
+
+def test_crud_edit(test_app_logged_in, test_api_logged_in):
+    books = test_api_logged_in.get('/books/')
+    book = books.json()[0]
+    response = test_app_logged_in.post(
+        '/books/crud/',
+        data=dict(
+            id=book['id'],
+            isbn=book['isbn'],
+            title=book['title'],
+            author=book['author'],
+            tags='Dystopian, Classic, Political',
+            goodreads_url=book.get('goodreads_url', ''),
+            priority=book.get('priority', ''),
+            rating=8,
+            location='Office',
+            notes='Updated notes',
+            action='edit',
+        ),
+        follow_redirects=True,
+    )
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    # Verify the update persisted
+    updated = test_api_logged_in.get(f'/books/{book["id"]}/')
+    assert updated.json()['rating'] == 8
+    assert updated.json()['location'] == 'Office'
+    assert updated.json()['notes'] == 'Updated notes'
+
+
 def test_crud_delete(test_app_logged_in, test_api_logged_in):
     books = test_api_logged_in.get('/books/')
     first_id = books.json()[0]['id']

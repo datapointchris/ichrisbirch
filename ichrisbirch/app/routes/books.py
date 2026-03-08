@@ -63,6 +63,16 @@ def goodreads_info():
         return Response('Failed to get Goodreads info', status=500)
 
 
+@blueprint.route('/edit/<int:book_id>/', methods=['GET'])
+def edit(book_id):
+    base_url = current_app.config['SETTINGS'].api_url
+    with logging_flask_session_client(base_url=base_url) as client:
+        books_api = client.resource('books', schemas.Book)
+        book = books_api.get_one(book_id)
+        update_form = forms.BookUpdateForm(obj=book, data={'tags': ', '.join(book.tags)})
+        return render_template('books/edit.html', book=book, update_form=update_form)
+
+
 @blueprint.route('/crud/', methods=['POST'])
 def crud():
     base_url = current_app.config['SETTINGS'].api_url
@@ -96,6 +106,24 @@ def crud():
                     for field, errors in form.errors.items():
                         for error in errors:
                             flash(f'{field}: {error}', 'error')
+            case 'edit':
+                book_id = data.pop('id')
+                form = forms.BookUpdateForm(request.form)
+                if form.validate_on_submit():
+                    if data.get('tags'):
+                        data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
+                    else:
+                        data['tags'] = []
+                    books_api.patch(book_id, json=data)
+                    flash(f'Updated: {data.get("title", "")}', 'success')
+                else:
+                    flash('Form validation failed', 'error')
+                    logger.warning('book_edit_form_validation_failed', errors=form.errors)
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            flash(f'{field}: {error}', 'error')
+                    return redirect(url_for('books.edit', book_id=book_id))
+
             case 'delete':
                 books_api.delete(data.get('id'))
 

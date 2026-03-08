@@ -22,6 +22,7 @@
       <li class="books__column">Abandoned</li>
       <li class="books__column">Location</li>
       <li class="books__column">Notes</li>
+      <li class="books__column">Edit</li>
       <li class="books__column">Delete</li>
     </ul>
     {% for book in books %}
@@ -48,6 +49,11 @@
       <li class="books__column">{{ 'Yes' if book.abandoned else 'No' }}</li>
       <li class="books__column">{{ book.location if book.location else '' }}</li>
       <li class="books__column">{{ book.notes if book.notes else '' }}</li>
+      <li class="books__column">
+        <a href="{{ url_for('books.edit', book_id=book.id) }}">
+          <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+        </a>
+      </li>
       <li class="books__column">
         <form method="post" action="{{ url_for('books.crud') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
