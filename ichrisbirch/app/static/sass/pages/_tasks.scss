@@ -224,10 +224,11 @@
 }
 
 .task-footer-spacer {
-    /* not sure how else to get the padding for the fixed footer without messing up other layout elements */
-    margin: 0px;
-    padding: 0px;
-    margin-top: calc(var(--space-xl) * 2.5);
+    /* Reserve space so the fixed footer doesn't overlap task cards */
+    margin: 0;
+    padding: 0;
+    padding-top: calc(var(--space-xl) * 2.5);
+    padding-bottom: 6rem;
 }
 
 .task-footer {
