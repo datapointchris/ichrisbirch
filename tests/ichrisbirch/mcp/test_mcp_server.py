@@ -87,6 +87,188 @@ def test_revoked_key_rejected(mcp_with_api_key):
     assert revoked_key['revoked_at'] is not None
 
 
+def test_api_key_create_book_without_isbn(mcp_with_api_key):
+    """Test creating a book without ISBN via API key auth (simulates MCP flow)."""
+    client, session, api_key = mcp_with_api_key
+    headers = {'Authorization': f'Bearer {api_key}'}
+
+    book_data = {
+        'title': 'The Iliad',
+        'author': 'Homer',
+        'isbn': None,
+        'tags': ['Classic', 'Poetry', 'Ancient'],
+    }
+    response = client.post('/books/', json=book_data, headers=headers)
+    assert response.status_code == 201, show_status_and_response(response)
+    data = response.json()
+    assert data['isbn'] is None
+    assert data['tags'] == ['Classic', 'Poetry', 'Ancient']
+
+    # Clean up
+    client.delete(f'/books/{data["id"]}/', headers=headers)
+
+
+def test_api_key_create_book_with_isbn(mcp_with_api_key):
+    """Test creating a book with ISBN via API key auth (simulates MCP flow)."""
+    client, session, api_key = mcp_with_api_key
+    headers = {'Authorization': f'Bearer {api_key}'}
+
+    book_data = {
+        'title': 'The Odyssey',
+        'author': 'Homer',
+        'isbn': '9780140449136',
+        'tags': ['Classic', 'Poetry'],
+        'goodreads_url': 'https://www.goodreads.com/book/show/1381.The_Odyssey',
+    }
+    response = client.post('/books/', json=book_data, headers=headers)
+    assert response.status_code == 201, show_status_and_response(response)
+    data = response.json()
+    assert data['isbn'] == '9780140449136'
+    assert data['goodreads_url'] == 'https://www.goodreads.com/book/show/1381.The_Odyssey'
+
+    # Clean up
+    client.delete(f'/books/{data["id"]}/', headers=headers)
+
+
+class TestMcpBookTagsParsing:
+    """Test that the MCP create_book and update_book functions parse tags correctly.
+
+    MCP tools receive tags as comma-separated strings from LLMs, but the API
+    expects list[str]. The MCP server must convert between these formats.
+    """
+
+    def test_create_book_tags_parsing(self):
+        """create_book should split comma-separated tags into a list."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        mock_response = MagicMock()
+        mock_response.is_success = True
+        mock_response.status_code = 201
+        mock_response.json.return_value = {'id': 1, 'title': 'Test', 'tags': ['Fiction', 'Classic']}
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.post.return_value = mock_response
+
+        with patch.object(mcp_server, '_client', return_value=mock_client):
+            mcp_server.create_book(title='Test', author='Author', tags='Fiction, Classic')
+
+        # Verify the tags were converted from string to list
+        call_args = mock_client.post.call_args
+        payload = call_args.kwargs.get('json') or call_args[1].get('json')
+        assert payload['tags'] == ['Fiction', 'Classic']
+        assert payload['isbn'] is None
+
+    def test_create_book_tags_strips_whitespace(self):
+        """Tags with extra whitespace should be stripped."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        mock_response = MagicMock()
+        mock_response.is_success = True
+        mock_response.status_code = 201
+        mock_response.json.return_value = {'id': 1}
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.post.return_value = mock_response
+
+        with patch.object(mcp_server, '_client', return_value=mock_client):
+            mcp_server.create_book(title='Test', author='Author', tags='  Fiction ,  Classic , Adventure  ')
+
+        payload = mock_client.post.call_args.kwargs.get('json') or mock_client.post.call_args[1].get('json')
+        assert payload['tags'] == ['Fiction', 'Classic', 'Adventure']
+
+    def test_create_book_includes_isbn_in_payload(self):
+        """isbn should always be in the payload, even when None."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        mock_response = MagicMock()
+        mock_response.is_success = True
+        mock_response.status_code = 201
+        mock_response.json.return_value = {'id': 1}
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.post.return_value = mock_response
+
+        with patch.object(mcp_server, '_client', return_value=mock_client):
+            mcp_server.create_book(title='Test', author='Author', tags='Fiction')
+
+        payload = mock_client.post.call_args.kwargs.get('json') or mock_client.post.call_args[1].get('json')
+        assert 'isbn' in payload
+        assert payload['isbn'] is None
+
+    def test_create_book_includes_goodreads_url(self):
+        """goodreads_url parameter should be sent when provided."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        mock_response = MagicMock()
+        mock_response.is_success = True
+        mock_response.status_code = 201
+        mock_response.json.return_value = {'id': 1}
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.post.return_value = mock_response
+
+        with patch.object(mcp_server, '_client', return_value=mock_client):
+            mcp_server.create_book(title='Test', author='Author', tags='Fiction', goodreads_url='https://www.goodreads.com/book/show/123')
+
+        payload = mock_client.post.call_args.kwargs.get('json') or mock_client.post.call_args[1].get('json')
+        assert payload['goodreads_url'] == 'https://www.goodreads.com/book/show/123'
+
+    def test_update_book_tags_parsing(self):
+        """update_book should split comma-separated tags into a list."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        mock_response = MagicMock()
+        mock_response.is_success = True
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'id': 1, 'tags': ['New', 'Tags']}
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.patch.return_value = mock_response
+
+        with patch.object(mcp_server, '_client', return_value=mock_client):
+            mcp_server.update_book(id=1, tags='New, Tags')
+
+        payload = mock_client.patch.call_args.kwargs.get('json') or mock_client.patch.call_args[1].get('json')
+        assert payload['tags'] == ['New', 'Tags']
+
+    def test_update_book_without_tags_omits_tags(self):
+        """When tags is not provided to update_book, it shouldn't be in the payload."""
+        from unittest.mock import MagicMock
+        from unittest.mock import patch
+
+        mock_response = MagicMock()
+        mock_response.is_success = True
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'id': 1}
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.patch.return_value = mock_response
+
+        with patch.object(mcp_server, '_client', return_value=mock_client):
+            mcp_server.update_book(id=1, title='New Title')
+
+        payload = mock_client.patch.call_args.kwargs.get('json') or mock_client.patch.call_args[1].get('json')
+        assert 'tags' not in payload
+        assert payload['title'] == 'New Title'
+
+
 def test_mcp_json_response_helper():
     """Test the _json_response helper function."""
     from unittest.mock import MagicMock

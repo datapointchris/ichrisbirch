@@ -85,19 +85,23 @@ def crud():
             case 'add':
                 form = forms.BookCreateForm(request.form)
                 if form.validate_on_submit():
-                    try:
-                        existing = books_api.get_one(f'isbn/{data["isbn"]}')
-                    except APIHTTPError as e:
-                        if e.status_code == 404:
-                            existing = None
-                        else:
-                            raise
+                    existing = None
+                    if data.get('isbn'):
+                        try:
+                            existing = books_api.get_one(f'isbn/{data["isbn"]}')
+                        except APIHTTPError as e:
+                            if e.status_code == 404:
+                                existing = None
+                            else:
+                                raise
                     if existing:
                         flash(f'already exists: {data["isbn"]}', 'warning')
                         logger.warning('book_already_exists', isbn=data['isbn'])
                     else:
                         # convert string field of tags to list for storing in postgres array
                         data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
+                        if not data.get('isbn'):
+                            data['isbn'] = None
                         books_api.post(json=data)
                         flash(f'Added: {data["title"]}', 'success')
                 else:

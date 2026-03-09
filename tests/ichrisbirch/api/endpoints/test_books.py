@@ -161,6 +161,92 @@ def test_goodreads_info(mock_get, book_crud_tester):
     mock_get.assert_called_once()
 
 
+class TestBookWithoutISBN:
+    """Test creating and managing books without ISBN."""
+
+    def test_create_book_without_isbn(self, book_crud_tester):
+        """Books without ISBN (e.g. pre-1970, Easton Press editions) should be creatable."""
+        client, _ = book_crud_tester
+        book_data = {
+            'title': 'The Iliad',
+            'author': 'Homer',
+            'tags': ['Classic', 'Poetry', 'Ancient'],
+            'notes': 'Pre-ISBN era book',
+        }
+        response = client.post(ENDPOINT, json=book_data)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['title'] == 'The Iliad'
+        assert data['isbn'] is None
+        assert data['tags'] == ['Classic', 'Poetry', 'Ancient']
+
+    def test_create_book_with_explicit_null_isbn(self, book_crud_tester):
+        """Explicitly passing isbn=None should work."""
+        client, _ = book_crud_tester
+        book_data = {
+            'isbn': None,
+            'title': 'Beowulf',
+            'author': 'Unknown',
+            'tags': ['Classic', 'Poetry'],
+        }
+        response = client.post(ENDPOINT, json=book_data)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        assert response.json()['isbn'] is None
+
+    def test_create_book_with_isbn_still_works(self, book_crud_tester):
+        """Books with ISBN should continue to work as before."""
+        client, _ = book_crud_tester
+        book_data = {
+            'isbn': '9780140449136',
+            'title': 'The Odyssey',
+            'author': 'Homer',
+            'tags': ['Classic', 'Poetry'],
+        }
+        response = client.post(ENDPOINT, json=book_data)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        assert response.json()['isbn'] == '9780140449136'
+
+    def test_update_book_isbn_to_none(self, book_crud_tester):
+        """Should be able to clear a book's ISBN."""
+        client, crud_tester = book_crud_tester
+        book_id = crud_tester.item_id_by_position(client, position=1)
+        # Verify the book currently has an ISBN
+        book = client.get(f'{ENDPOINT}{book_id}/')
+        assert book.json()['isbn'] is not None
+
+        # Clear the ISBN
+        response = client.patch(f'{ENDPOINT}{book_id}/', json={'isbn': None})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['isbn'] is None
+
+
+class TestBookTagsValidation:
+    """Test tags validation — at least one tag is required."""
+
+    def test_create_book_with_empty_tags_rejected(self, book_crud_tester):
+        """Creating a book with empty tags list should fail validation."""
+        client, _ = book_crud_tester
+        book_data = {
+            'title': 'No Tags Book',
+            'author': 'Test Author',
+            'tags': [],
+        }
+        response = client.post(ENDPOINT, json=book_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+
+    def test_create_book_with_one_tag(self, book_crud_tester):
+        """A single tag should be valid."""
+        client, _ = book_crud_tester
+        book_data = {
+            'title': 'One Tag Book',
+            'author': 'Test Author',
+            'tags': ['Fiction'],
+        }
+        response = client.post(ENDPOINT, json=book_data)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        assert response.json()['tags'] == ['Fiction']
+
+
 class TestBooksNotFound:
     """Test 404 responses for non-existent books."""
 

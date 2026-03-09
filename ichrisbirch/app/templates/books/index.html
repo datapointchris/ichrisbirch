@@ -27,13 +27,13 @@
     </ul>
     {% for book in books %}
     <ul class="books books__item">
-      <li class="books__column">{{ book.isbn }}</li>
+      <li class="books__column">{{ book.isbn if book.isbn else '' }}</li>
       <li class="books__column">{{ book.title }}</li>
       <li class="books__column">{{ book.author }}</li>
       <li class="books__column">{{ book.tags | join(', ') }}</li>
       <li class="books__column">
         {% if book.goodreads_url %}
-        <a href="{{ book.goodreads_url }}" target="_blank">{{ book.isbn }}</a>
+        <a href="{{ book.goodreads_url }}" target="_blank">{{ book.isbn if book.isbn else 'Link' }}</a>
         {% else %}
         N/A
         {% endif %}

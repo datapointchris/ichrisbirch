@@ -17,7 +17,7 @@ from ichrisbirch.database.base import Base
 class Book(Base):
     __tablename__ = 'books'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    isbn: Mapped[str] = mapped_column(Text, nullable=False)
+    isbn: Mapped[str | None] = mapped_column(Text, nullable=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     author: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)

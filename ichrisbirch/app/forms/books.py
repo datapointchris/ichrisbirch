@@ -11,7 +11,7 @@ from wtforms.validators import Optional
 
 
 class BookCreateForm(FlaskForm):
-    isbn = StringField('ISBN', validators=[DataRequired()])
+    isbn = StringField('ISBN', validators=[Optional()])
     title = StringField('Title', validators=[DataRequired()])
     author = StringField('Author', validators=[DataRequired()])
     tags = StringField('Tags', validators=[DataRequired()])

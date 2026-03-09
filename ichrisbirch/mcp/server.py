@@ -240,18 +240,22 @@ def search_books(query: str) -> str:
 def create_book(
     title: str,
     author: str,
+    tags: str,
     isbn: str | None = None,
-    tags: str | None = None,
+    goodreads_url: str | None = None,
     rating: int | None = None,
     priority: int | None = None,
     notes: str | None = None,
 ) -> str:
-    """Create a new book entry."""
-    payload: dict = {'title': title, 'author': author}
-    if isbn:
-        payload['isbn'] = isbn
-    if tags:
-        payload['tags'] = tags
+    """Create a new book entry.
+
+    Tags is a comma-separated string (e.g. "Fiction, Classic, Adventure").
+    At least one tag is required.
+    """
+    payload: dict = {'title': title, 'author': author, 'isbn': isbn}
+    payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    if goodreads_url:
+        payload['goodreads_url'] = goodreads_url
     if rating is not None:
         payload['rating'] = rating
     if priority is not None:
@@ -269,21 +273,27 @@ def update_book(
     author: str | None = None,
     isbn: str | None = None,
     tags: str | None = None,
+    goodreads_url: str | None = None,
     rating: int | None = None,
     priority: int | None = None,
     notes: str | None = None,
 ) -> str:
-    """Update a book by ID. Only provided fields are changed."""
-    fields = {
+    """Update a book by ID. Only provided fields are changed.
+
+    Tags is a comma-separated string (e.g. "Fiction, Classic, Adventure").
+    """
+    fields: dict = {
         'title': title,
         'author': author,
         'isbn': isbn,
-        'tags': tags,
+        'goodreads_url': goodreads_url,
         'rating': rating,
         'priority': priority,
         'notes': notes,
     }
     payload = {k: v for k, v in fields.items() if v is not None}
+    if tags is not None:
+        payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
     with _client() as c:
         return _json_response(c.patch(f'/books/{id}/', json=payload))
 

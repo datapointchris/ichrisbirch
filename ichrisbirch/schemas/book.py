@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic import field_validator
 from pydantic import model_validator
 
 
@@ -10,7 +11,7 @@ class BookConfig(BaseModel):
 
 
 class BookCreate(BookConfig):
-    isbn: str
+    isbn: str | None = None
     title: str
     author: str
     tags: list[str]
@@ -31,13 +32,21 @@ class BookCreate(BookConfig):
     @classmethod
     def empty_field_to_none(cls, data):
         if isinstance(data, dict):
-            return {k: (v or None) for k, v in data.items()}
+            # preserve lists so the tags field_validator can provide a clear error for []
+            return {k: (v if isinstance(v, list) else (v or None)) for k, v in data.items()}
         return data
+
+    @field_validator('tags')
+    @classmethod
+    def tags_must_not_be_empty(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError('at least one tag is required')
+        return v
 
 
 class Book(BookConfig):
     id: int
-    isbn: str
+    isbn: str | None = None
     title: str
     author: str
     tags: list[str]
