@@ -101,24 +101,48 @@ def test_get_book_by_isbn(book_crud_tester):
 
 
 def test_update_book(book_crud_tester):
+    """Test multiple rounds of updates to a book, covering various field types.
+
+    Exercises the real update flow: change fields, verify they persist, change more,
+    verify previous changes weren't clobbered and new ones stuck.
+    """
     client, crud_tester = book_crud_tester
-    # Get the first book dynamically
     book_id = crud_tester.item_id_by_position(client, position=1)
-    book = client.get(f'/books/{book_id}/')
-    assert book.status_code == status.HTTP_200_OK, show_status_and_response(book)
+    original = client.get(f'/books/{book_id}/').json()
 
-    # Update the book's rating
-    update_data = {'rating': 3}
-    updated = client.patch(f'/books/{book_id}/', json=update_data)
-    assert updated.status_code == status.HTTP_200_OK, show_status_and_response(updated)
-    assert updated.json()['rating'] == 3
+    # Round 1: Update simple fields
+    response = client.patch(f'/books/{book_id}/', json={'rating': 3, 'notes': 'Updated notes', 'location': 'Office'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    book = response.json()
+    assert book['rating'] == 3
+    assert book['notes'] == 'Updated notes'
+    assert book['location'] == 'Office'
+    assert book['tags'] == original['tags'], 'Tags should not change when not sent'
 
-    # Update multiple fields
-    update_data = {'notes': 'Updated notes', 'location': 'Office'}
-    updated = client.patch(f'/books/{book_id}/', json=update_data)
-    assert updated.status_code == status.HTTP_200_OK, show_status_and_response(updated)
-    assert updated.json()['notes'] == 'Updated notes'
-    assert updated.json()['location'] == 'Office'
+    # Round 2: Update tags and set abandoned
+    response = client.patch(f'/books/{book_id}/', json={'tags': ['NewTag1', 'NewTag2'], 'abandoned': True})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    book = response.json()
+    assert book['tags'] == ['NewTag1', 'NewTag2']
+    assert book['abandoned'] is True
+    assert book['rating'] == 3, 'Previous update should persist'
+    assert book['notes'] == 'Updated notes', 'Previous update should persist'
+
+    # Round 3: Clear abandoned by setting to False
+    response = client.patch(f'/books/{book_id}/', json={'abandoned': False})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    book = response.json()
+    assert book['abandoned'] is False, 'Should be able to explicitly set abandoned=False'
+    assert book['tags'] == ['NewTag1', 'NewTag2'], 'Tags should not change when not sent'
+
+    # Final verification: read fresh and check all accumulated changes
+    final = client.get(f'/books/{book_id}/').json()
+    assert final['rating'] == 3
+    assert final['notes'] == 'Updated notes'
+    assert final['location'] == 'Office'
+    assert final['tags'] == ['NewTag1', 'NewTag2']
+    assert final['abandoned'] is False
+    assert final['title'] == original['title'], 'Untouched fields should be unchanged'
 
 
 @patch('httpx.get')

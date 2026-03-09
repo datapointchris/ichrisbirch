@@ -3,6 +3,8 @@
 These tests verify that the Flask app routes properly authenticate with the API using user session authentication.
 """
 
+import re
+from html import unescape
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -19,6 +21,40 @@ def insert_testing_data():
     insert_test_data('books')
     yield
     delete_test_data('books')
+
+
+def _extract_form_values(html: str) -> dict:
+    """Extract form field values from rendered HTML, simulating what a browser sees.
+
+    Parses <input> and <textarea> elements to get the pre-filled values,
+    exactly as a browser would when the user loads the edit page.
+    """
+    values = {}
+    # Match input fields: name="field" ... value="val" (in either order)
+    for match in re.finditer(r'<input[^>]*>', html):
+        tag = match.group(0)
+        name_match = re.search(r'name="([^"]*)"', tag)
+        if not name_match:
+            continue
+        name = name_match.group(1)
+        # Skip hidden/submit fields
+        if name == 'csrf_token':
+            continue
+        type_match = re.search(r'type="([^"]*)"', tag)
+        field_type = type_match.group(1) if type_match else 'text'
+        if field_type == 'hidden' and name != 'id':
+            continue
+        if field_type == 'submit':
+            continue
+        if field_type == 'checkbox':
+            values[name] = 'y' if 'checked' in tag else None
+            continue
+        value_match = re.search(r'value="([^"]*)"', tag)
+        values[name] = unescape(value_match.group(1)) if value_match else ''
+    # Match textarea fields
+    for match in re.finditer(r'<textarea[^>]*name="([^"]*)"[^>]*>(.*?)</textarea>', html, re.DOTALL):
+        values[match.group(1)] = unescape(match.group(2).strip())
+    return values
 
 
 def test_index(test_app_logged_in):
@@ -111,32 +147,64 @@ def test_edit_page(test_app_logged_in, test_api_logged_in):
     assert b'Editing:' in response.data
 
 
-def test_crud_edit(test_app_logged_in, test_api_logged_in):
+def test_book_edit_round_trip(test_app_logged_in, test_api_logged_in):
+    """Full integration test: load edit page, submit, re-edit, verify everything persists.
+
+    This simulates what a real browser does: load the edit page, get the pre-filled
+    form values, modify some, submit, then load the edit page again and re-submit.
+    This catches bugs like:
+    - WTForms rendering Python list repr instead of comma-separated string (tag nesting)
+    - HTML checkboxes not sending data when unchecked (abandoned can't be cleared)
+    - Form field values being corrupted through the render→submit round-trip
+    """
     books = test_api_logged_in.get('/books/')
     book = books.json()[0]
-    response = test_app_logged_in.post(
-        '/books/crud/',
-        data=dict(
-            id=book['id'],
-            isbn=book['isbn'],
-            title=book['title'],
-            author=book['author'],
-            tags='Dystopian, Classic, Political',
-            goodreads_url=book.get('goodreads_url', ''),
-            priority=book.get('priority', ''),
-            rating=8,
-            location='Office',
-            notes='Updated notes',
-            action='edit',
-        ),
-        follow_redirects=True,
-    )
-    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
-    # Verify the update persisted
-    updated = test_api_logged_in.get(f'/books/{book["id"]}/')
-    assert updated.json()['rating'] == 8
-    assert updated.json()['location'] == 'Office'
-    assert updated.json()['notes'] == 'Updated notes'
+    book_id = book['id']
+    original_tags = book['tags']
+
+    # === Edit 1: Load edit page, change rating and mark as abandoned ===
+    edit_page = test_app_logged_in.get(f'/books/edit/{book_id}/')
+    assert edit_page.status_code == 200
+    form_data = _extract_form_values(edit_page.data.decode())
+    form_data['action'] = 'edit'
+    form_data['rating'] = '8'
+    form_data['abandoned'] = 'y'
+    form_data['notes'] = 'Great book, but giving up for now'
+    test_app_logged_in.post('/books/crud/', data=form_data, follow_redirects=True)
+
+    result = test_api_logged_in.get(f'/books/{book_id}/').json()
+    assert result['rating'] == 8
+    assert result['abandoned'] is True
+    assert result['notes'] == 'Great book, but giving up for now'
+    assert result['tags'] == [t.lower() for t in original_tags], 'Tags should survive the round-trip unchanged'
+
+    # === Edit 2: Load edit page again, uncheck abandoned, change tags ===
+    edit_page = test_app_logged_in.get(f'/books/edit/{book_id}/')
+    form_data = _extract_form_values(edit_page.data.decode())
+    form_data['action'] = 'edit'
+    form_data['tags'] = 'Updated Tag, Another Tag'
+    del form_data['abandoned']  # unchecked checkbox — browser doesn't send it
+    test_app_logged_in.post('/books/crud/', data=form_data, follow_redirects=True)
+
+    result = test_api_logged_in.get(f'/books/{book_id}/').json()
+    assert result['tags'] == ['updated tag', 'another tag']
+    assert result['abandoned'] is not True, 'Unchecking abandoned should clear it'
+    assert result['rating'] == 8, 'Previous changes should persist'
+
+    # === Edit 3: Load edit page one more time, submit without changes ===
+    # This catches any corruption that accumulates through round-trips
+    edit_page = test_app_logged_in.get(f'/books/edit/{book_id}/')
+    form_data = _extract_form_values(edit_page.data.decode())
+    form_data['action'] = 'edit'
+    if form_data.get('abandoned') is None:
+        del form_data['abandoned']
+    test_app_logged_in.post('/books/crud/', data=form_data, follow_redirects=True)
+
+    final = test_api_logged_in.get(f'/books/{book_id}/').json()
+    assert final['tags'] == ['updated tag', 'another tag'], 'Tags should not change on no-op edit'
+    assert final['rating'] == 8
+    assert final['notes'] == 'Great book, but giving up for now'
+    assert final['title'] == book['title'], 'Untouched fields should be unchanged'
 
 
 def test_crud_edit_with_empty_optional_fields(test_app_logged_in, test_api_logged_in):

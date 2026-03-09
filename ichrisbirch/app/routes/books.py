@@ -97,7 +97,11 @@ def edit(book_id):
     with logging_flask_session_client(base_url=base_url) as client:
         books_api = client.resource('books', schemas.Book)
         book = books_api.get_one(book_id)
-        update_form = forms.BookUpdateForm(obj=book, data={'tags': ', '.join(book.tags)})
+        update_form = forms.BookUpdateForm(obj=book)
+        # Override tags: WTForms obj gives the raw list['str'] from the schema,
+        # but the form field is a StringField that needs a comma-separated string.
+        # Setting data after construction avoids the obj-takes-priority-over-data issue.
+        update_form.tags.data = ', '.join(book.tags) if book.tags else ''
         return render_template('books/edit.html', book=book, update_form=update_form)
 
 
@@ -146,6 +150,9 @@ def crud():
                         data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
                     else:
                         data['tags'] = []
+                    # HTML checkboxes don't send data when unchecked, so explicitly
+                    # set abandoned based on whether the field was in the form data
+                    data['abandoned'] = 'abandoned' in request.form
                     books_api.patch(book_id, json=data)
                     flash(f'Updated: {data.get("title", "")}', 'success')
                 else:

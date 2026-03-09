@@ -86,7 +86,7 @@ class BookUpdate(BookConfig):
     @classmethod
     def empty_field_to_none(cls, data):
         if isinstance(data, dict):
-            return {k: (v or None) for k, v in data.items()}
+            return {k: (None if v == '' else v) for k, v in data.items()}
         return data
 
 
