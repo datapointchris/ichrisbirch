@@ -1,6 +1,6 @@
 """Structlog configuration with optional file logging.
 
-All logs go to stdout. Optionally also writes to a file for admin UI and persistence.
+All logs go to stderr. Optionally also writes to a file for admin UI and persistence.
 Configuration is controlled by environment variables:
 - LOG_FORMAT: 'console' (default) or 'json'
 - LOG_LEVEL: 'DEBUG' (default), 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
@@ -40,7 +40,7 @@ def _use_colors() -> bool:
         return True
     if LOG_COLORS == 'false':
         return False
-    return sys.stdout.isatty()
+    return sys.stderr.isatty()
 
 
 def _setup_file_handler() -> logging.Handler | None:
@@ -75,7 +75,7 @@ def _setup_file_handler() -> logging.Handler | None:
 
 
 def configure_structlog():
-    """Configure structlog - stdout always, file optionally."""
+    """Configure structlog - stderr always, file optionally."""
     # Shared processors for both stdlib and structlog
     shared_processors = [
         structlog.contextvars.merge_contextvars,
@@ -96,11 +96,11 @@ def configure_structlog():
     file_handler = _setup_file_handler()
 
     if file_handler:
-        # Use stdlib logging backend to support both stdout and file
+        # Use stdlib logging backend to support both stderr and file
         logging.basicConfig(
             format='%(message)s',
             level=getattr(logging, LOG_LEVEL),
-            stream=sys.stdout,
+            stream=sys.stderr,
             force=True,
         )
         logging.root.addHandler(file_handler)
@@ -160,7 +160,7 @@ def configure_structlog():
             processors=processors,
             wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, LOG_LEVEL)),
             context_class=dict,
-            logger_factory=structlog.PrintLoggerFactory(),
+            logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
             cache_logger_on_first_use=True,
         )
 
