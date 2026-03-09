@@ -14,6 +14,7 @@
   --clr-accent--blue: hsl(207, 48%, 45%);
   --clr-accent--green: hsl(120 100% 18%);
   --clr-accent--green-bright: hsl(120, 100%, 45%);
+  --clr-accent--purple: hsl(270, 60%, 55%);
   --clr-success: hsl(120 100% 18% / 0.8);
   --clr-warning: hsla(60, 100%, 28%, 0.8);
   --clr-error: hsla(3, 100%, 30%, 0.8);
@@ -1345,6 +1346,7 @@ span[data-tooltip][data-position=right]:after {
   --book-reading-box-shadow: inset 0 0 8px 2px var(--clr-accent--blue);
   --book-to-read-box-shadow: inset 0 0 8px 2px var(--clr-warning);
   --book-abandoned-box-shadow: inset 0 0 8px 2px var(--clr-accent--red);
+  --book-sold-box-shadow: inset 0 0 8px 2px var(--clr-accent--purple);
   --book-total-box-shadow: inset 0 0 8px 2px var(--clr-gray-400);
 }
 
@@ -1360,41 +1362,186 @@ span[data-tooltip][data-position=right]:after {
 .book--abandoned {
   box-shadow: var(--book-abandoned-box-shadow), var(--floating-box);
 }
+.book--sold {
+  box-shadow: var(--book-sold-box-shadow), var(--floating-box);
+}
 .book--total {
   box-shadow: var(--book-total-box-shadow), var(--floating-box);
 }
 
-.books {
-  display: flex;
-  margin: 0;
-  list-style: none;
-  text-align: center;
-  justify-content: center;
-}
-.books__header, .books__item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-inline: var(--space-s);
-}
 .books__header {
+  display: grid;
+  grid-template-columns: 5fr 4fr 2fr 1fr 3fr 2fr;
+  align-items: center;
   padding-block: var(--space-s);
+  padding-inline: var(--space-m);
   font-size: var(--fs-500);
   border-top: 3px solid var(--clr-accent);
   border-bottom: 3px solid var(--clr-accent);
+  margin-bottom: var(--space-xs);
 }
-.books__item {
+.books__header span:nth-child(3),
+.books__header span:nth-child(4) {
+  text-align: center;
+}
+.books__header span:last-child {
+  text-align: center;
+}
+.books__sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.books__sortable:hover {
+  color: var(--clr-accent-light);
+}
+.books__sort-indicator {
+  font-size: var(--fs-300);
+  margin-left: var(--space-3xs);
+}
+.books__row {
+  display: grid;
+  grid-template-columns: 5fr 4fr 2fr 1fr 3fr 2fr;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+  padding-block: var(--space-xs);
+  padding-inline: var(--space-m);
+  background-color: var(--clr-primary);
+  border-radius: var(--button-border-radius);
   font-size: var(--fs-400);
-  line-height: 1.5em;
-  border-bottom: 1px solid var(--clr-accent);
-}
-.books__column {
-  flex: 1 1 16.66%; /* Adjust the percentage based on the number of columns */
   text-align: left;
+  transition: transform 0.3s ease-in-out;
+}
+.books__row > span:nth-child(3),
+.books__row > span:nth-child(4) {
+  text-align: center;
+}
+.books__row:hover {
+  box-shadow: var(--bubble-box);
+  transform: scale(1.01) translateY(calc(var(--space-3xs) * -0.4));
+  transition: transform 0.3s ease-in-out;
+}
+.books__row.book--read {
+  box-shadow: var(--book-read-box-shadow), var(--floating-box);
+}
+.books__row.book--read:hover {
+  box-shadow: var(--book-read-box-shadow), var(--bubble-box);
+}
+.books__row.book--reading {
+  box-shadow: var(--book-reading-box-shadow), var(--floating-box);
+}
+.books__row.book--reading:hover {
+  box-shadow: var(--book-reading-box-shadow), var(--bubble-box);
+}
+.books__row.book--to-read {
+  box-shadow: var(--book-to-read-box-shadow), var(--floating-box);
+}
+.books__row.book--to-read:hover {
+  box-shadow: var(--book-to-read-box-shadow), var(--bubble-box);
+}
+.books__row.book--abandoned {
+  box-shadow: var(--book-abandoned-box-shadow), var(--floating-box);
+}
+.books__row.book--abandoned:hover {
+  box-shadow: var(--book-abandoned-box-shadow), var(--bubble-box);
+}
+.books__row.book--sold {
+  box-shadow: var(--book-sold-box-shadow), var(--floating-box);
+}
+.books__row.book--sold:hover {
+  box-shadow: var(--book-sold-box-shadow), var(--bubble-box);
+}
+.books__title {
+  margin: 0;
+  font-size: var(--fs-500);
+  font-weight: var(--fs-400);
+  color: var(--clr-accent-light);
+  text-shadow: var(--deep-3d-text-shadow);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.books__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: var(--space-xs);
+}
+.books__delete-form {
+  display: inline;
+}
+.books__chevron {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.books__chevron--open {
+  transform: rotate(180deg);
+}
+.books__status-badge {
+  padding-block: var(--space-3xs);
+  padding-inline: var(--space-xs);
+  border-radius: var(--button-border-radius);
+  font-size: var(--fs-300);
+  text-align: center;
+  display: inline-block;
+}
+.books__detail {
+  display: none;
+  margin-bottom: var(--space-s);
+  margin-top: calc(var(--space-xs) * -1);
+  padding: var(--space-m);
+  padding-top: var(--space-s);
+  background-color: var(--clr-primary);
+  border-radius: 0 0 var(--button-border-radius) var(--button-border-radius);
+  border-top: 1px solid var(--clr-gray-600);
+}
+.books__detail--open {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-s) var(--space-l);
+}
+.books__detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+.books__detail-field-label {
+  font-size: var(--fs-300);
+  color: var(--clr-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.books__detail-field-value {
+  font-size: var(--fs-400);
+}
+.books__detail-notes {
+  grid-column: 1/-1;
 }
 .books__link {
   text-decoration: underline;
   color: var(--clr-accent-light);
+}
+.books__empty-message {
+  text-align: center;
+  padding: var(--space-l);
+  font-size: var(--fs-500);
+  color: var(--clr-gray-400);
+  display: none;
+}
+.books__hidden {
+  display: none !important;
+}
+
+.book-filter {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+.book-filter:hover {
+  transform: scale(1.05);
+}
+.book-filter--active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.15);
+  transform: scale(1.08);
 }
 
 .packed-box__title {

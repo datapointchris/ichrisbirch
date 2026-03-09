@@ -3,7 +3,9 @@
 {% block meta %}
 {% endblock meta %}
 
-{% block scripts %}{% endblock scripts %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/books.js') }}" defer></script>
+{% endblock scripts %}
 
 {% block app_navigation %}
 <ul data-secondary>

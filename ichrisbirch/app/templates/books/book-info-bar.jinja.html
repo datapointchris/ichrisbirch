@@ -1,7 +1,8 @@
 <div class="task-layout__info">
-  <span class="task-layout__count book--read">Read: {{ book_read_count }}</span>
-  <span class="task-layout__count book--reading">Reading: {{ book_reading_count }}</span>
-  <span class="task-layout__count book--to-read">To Read: {{ book_to_read_count }}</span>
-  <span class="task-layout__count book--abandoned">Abandoned: {{ book_abandoned_count }}</span>
-  <span class="task-layout__count book--total">Total: {{ book_total_count }}</span>
+  <span class="task-layout__count book--read book-filter" data-filter="read">Read: {{ book_read_count }}</span>
+  <span class="task-layout__count book--reading book-filter" data-filter="reading">Reading: {{ book_reading_count }}</span>
+  <span class="task-layout__count book--to-read book-filter" data-filter="to-read">To Read: {{ book_to_read_count }}</span>
+  <span class="task-layout__count book--abandoned book-filter" data-filter="abandoned">Abandoned: {{ book_abandoned_count }}</span>
+  <span class="task-layout__count book--sold book-filter" data-filter="sold">Sold: {{ book_sold_count }}</span>
+  <span class="task-layout__count book--total book-filter" data-filter="all">Total: {{ book_total_count }}</span>
 </div>
