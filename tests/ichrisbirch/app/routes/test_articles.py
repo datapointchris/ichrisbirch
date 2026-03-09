@@ -1,9 +1,6 @@
-"""Tests for Flask articles routes that require mocking or test edge cases.
+"""Tests for Flask articles routes.
 
-User-facing flows (add, status transitions, search, delete) are tested
-via Playwright in tests/ichrisbirch/frontend/test_articles_page.py.
-These tests cover things that need mocking (external API proxies) or
-edge cases that are simpler to test server-side (empty state pages).
+These tests verify that the Flask app routes properly authenticate with the API using user session authentication.
 """
 
 from unittest.mock import MagicMock
@@ -24,6 +21,36 @@ def insert_testing_data():
     delete_test_data('articles')
 
 
+def test_index(test_app_logged_in):
+    response = test_app_logged_in.get('/articles/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_all(test_app_logged_in):
+    response = test_app_logged_in.get('/articles/all/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_add_page(test_app_logged_in):
+    response = test_app_logged_in.get('/articles/add/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_search_page(test_app_logged_in):
+    response = test_app_logged_in.get('/articles/search/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_search_post(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/search/', data={'search_text': 'one'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_insights_page(test_app_logged_in):
+    response = test_app_logged_in.get('/articles/insights/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
 @patch('ichrisbirch.app.routes.articles.logging_flask_session_client')
 def test_insights_post_uses_session_auth(mock_session_client, test_app_logged_in):
     """Verify that insights POST uses user session authentication."""
@@ -42,6 +69,7 @@ def test_insights_post_uses_session_auth(mock_session_client, test_app_logged_in
     response = test_app_logged_in.post('/articles/insights/', data={'url': 'https://example.com/test'})
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
+    # Verify logging_flask_session_client was called (indicates user session auth is used)
     mock_session_client.assert_called()
 
 
@@ -67,8 +95,10 @@ def test_summarize_proxy_uses_session_auth(mock_session_client, test_app_logged_
     )
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
+    # Verify logging_flask_session_client was called (indicates user session auth is used)
     mock_session_client.assert_called()
 
+    # Verify response contains expected data
     data = response.get_json()
     assert data['title'] == 'Test Article'
     assert data['summary'] == 'Test summary'
@@ -81,12 +111,74 @@ def test_summarize_proxy_missing_url(test_app_logged_in):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+def test_crud_add(test_app_logged_in):
+    response = test_app_logged_in.post(
+        '/articles/crud/',
+        data=dict(
+            title='New Test Article',
+            url='http://example.com/new-article',
+            tags='test, new',
+            summary='New article summary',
+            notes='',
+            action='add',
+        ),
+        follow_redirects=True,
+    )
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_archive(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 1, 'action': 'archive'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_unarchive(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 3, 'action': 'unarchive'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_make_favorite(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 1, 'action': 'make_favorite'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_unfavorite(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 2, 'action': 'unfavorite'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_make_current(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 2, 'action': 'make_current'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_remove_current(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 1, 'action': 'remove_current'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_mark_read(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 1, 'action': 'mark_read'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
+def test_crud_delete(test_app_logged_in):
+    response = test_app_logged_in.post('/articles/crud/', data={'id': 1, 'action': 'delete'}, follow_redirects=True)
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
 def test_index_with_no_articles(test_app_logged_in):
-    """Verify articles index page works when no articles exist."""
+    """Verify articles index page works when no articles exist.
+
+    This tests the fix for the bug where the API client would crash with TypeError
+    when parsing a null JSON response from /articles/current/.
+    """
+    # Delete all test articles first
     delete_test_data('articles')
 
     response = test_app_logged_in.get('/articles/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    # Verify the "No articles" message is shown
     assert b'No articles' in response.data
 
 
