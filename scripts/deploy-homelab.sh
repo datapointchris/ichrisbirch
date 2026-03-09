@@ -229,8 +229,8 @@ main() {
 
     check_prerequisites
     pull_latest_code
-    run_migrations
     restart_services
+    run_migrations
     verify_deployment
 
     DEPLOY_SUCCESS=true
