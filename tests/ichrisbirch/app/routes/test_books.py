@@ -21,6 +21,11 @@ def insert_testing_data():
     delete_test_data('books')
 
 
+def test_index(test_app_logged_in):
+    response = test_app_logged_in.get('/books/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+
+
 def test_add_page(test_app_logged_in):
     response = test_app_logged_in.get('/books/add/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
@@ -96,6 +101,14 @@ def test_crud_add_duplicate(test_app_logged_in):
     )
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     assert b'already exists' in response.data
+
+
+def test_edit_page(test_app_logged_in, test_api_logged_in):
+    books = test_api_logged_in.get('/books/')
+    first_id = books.json()[0]['id']
+    response = test_app_logged_in.get(f'/books/edit/{first_id}/')
+    assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
+    assert b'Editing:' in response.data
 
 
 def test_crud_edit_with_empty_optional_fields(test_app_logged_in, test_api_logged_in):
