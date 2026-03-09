@@ -26,6 +26,27 @@ def enforce_login():
     pass
 
 
+@blueprint.context_processor
+def inject_book_counts():
+    """Inject book summary counts into the request context."""
+    base_url = current_app.config['SETTINGS'].api_url
+    with logging_flask_session_client(base_url=base_url) as client:
+        books_api = client.resource('books', schemas.Book)
+        books = books_api.get_many()
+        total_count = len(books)
+        read_count = sum(1 for b in books if b.read_finish_date)
+        reading_count = sum(1 for b in books if b.read_start_date and not b.read_finish_date and not b.abandoned)
+        abandoned_count = sum(1 for b in books if b.abandoned)
+        to_read_count = sum(1 for b in books if not b.read_start_date and not b.abandoned)
+        return dict(
+            book_total_count=total_count,
+            book_read_count=read_count,
+            book_reading_count=reading_count,
+            book_abandoned_count=abandoned_count,
+            book_to_read_count=to_read_count,
+        )
+
+
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
     base_url = current_app.config['SETTINGS'].api_url

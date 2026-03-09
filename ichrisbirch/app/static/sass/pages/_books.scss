@@ -1,3 +1,33 @@
+:root {
+    --book-read-box-shadow: inset 0 0 8px 2px var(--clr-success);
+    --book-reading-box-shadow: inset 0 0 8px 2px var(--clr-accent--blue);
+    --book-to-read-box-shadow: inset 0 0 8px 2px var(--clr-warning);
+    --book-abandoned-box-shadow: inset 0 0 8px 2px var(--clr-accent--red);
+    --book-total-box-shadow: inset 0 0 8px 2px var(--clr-gray-400);
+}
+
+.book {
+    &--read {
+        box-shadow: var(--book-read-box-shadow), var(--floating-box);
+    }
+
+    &--reading {
+        box-shadow: var(--book-reading-box-shadow), var(--floating-box);
+    }
+
+    &--to-read {
+        box-shadow: var(--book-to-read-box-shadow), var(--floating-box);
+    }
+
+    &--abandoned {
+        box-shadow: var(--book-abandoned-box-shadow), var(--floating-box);
+    }
+
+    &--total {
+        box-shadow: var(--book-total-box-shadow), var(--floating-box);
+    }
+}
+
 .books {
     display: flex;
     margin: 0;
