@@ -6,6 +6,7 @@ Authenticates via Bearer token (personal API key).
 
 import json
 import os
+from typing import Any
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -332,15 +333,37 @@ def search_articles(query: str) -> str:
 
 
 @mcp.tool()
-def create_article(title: str, url: str, tags: str | None = None, notes: str | None = None) -> str:
-    """Create a new article."""
-    payload: dict = {'title': title, 'url': url}
-    if tags:
-        payload['tags'] = tags
+def create_article(url: str, notes: str | None = None) -> str:
+    """Create a new article from a URL. Auto-summarizes using AI."""
+    payload: dict = {'url': url}
     if notes:
         payload['notes'] = notes
     with _client() as c:
-        return _json_response(c.post('/articles/', json=payload))
+        return _json_response(c.post('/articles/create-from-url/', json=payload))
+
+
+@mcp.tool()
+def bulk_import_articles(urls: str) -> str:
+    """Import multiple articles from URLs (newline or comma separated). Returns a batch_id for status polling."""
+    url_list = [u.strip() for u in urls.replace(',', '\n').split('\n') if u.strip()]
+    if not url_list:
+        return json.dumps({'error': 'No URLs provided'})
+    with _client() as c:
+        return _json_response(c.post('/articles/bulk-import/', json={'urls': url_list}))
+
+
+@mcp.tool()
+def check_bulk_import_status(batch_id: str) -> str:
+    """Check status of a bulk article import batch."""
+    with _client() as c:
+        return _json_response(c.get(f'/articles/bulk-import/{batch_id}/'))
+
+
+@mcp.tool()
+def list_failed_article_imports() -> str:
+    """List all permanently failed article imports."""
+    with _client() as c:
+        return _json_response(c.get('/articles/failed-imports/'))
 
 
 @mcp.tool()
@@ -351,8 +374,13 @@ def update_article(
     tags: str | None = None,
     notes: str | None = None,
 ) -> str:
-    """Update an article by ID. Only provided fields are changed."""
-    payload = {k: v for k, v in {'title': title, 'url': url, 'tags': tags, 'notes': notes}.items() if v is not None}
+    """Update an article by ID. Only provided fields are changed.
+
+    Tags is an optional comma-separated string (e.g. "python, databases, sql").
+    """
+    payload: dict[str, Any] = {k: v for k, v in {'title': title, 'url': url, 'notes': notes}.items() if v is not None}
+    if tags is not None:
+        payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
     with _client() as c:
         return _json_response(c.patch(f'/articles/{id}/', json=payload))
 

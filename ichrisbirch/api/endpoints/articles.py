@@ -2,10 +2,12 @@ import json
 
 import httpx
 import markdown
+import pendulum
 import structlog
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
@@ -106,6 +108,96 @@ async def create(article: schemas.ArticleCreate, session: Session = Depends(get_
     session.commit()
     session.refresh(obj)
     return obj
+
+
+def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
+    """Fetch URL, summarize via OpenAI, create article.
+
+    Used by create-from-url endpoint and bulk import worker.
+    """
+    existing = session.scalar(select(models.Article).where(models.Article.url == url))
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Article already exists: {url}')
+
+    url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers)
+    url_response.raise_for_status()
+    soup = BeautifulSoup(url_response.content, 'html.parser')
+    title = _get_formatted_title(soup)
+
+    if 'youtube.com' in url or 'youtu.be' in url:
+        text_content = _get_youtube_video_text_captions(url)
+    else:
+        text_content = _get_text_content_from_html(soup)
+
+    assistant = OpenAIAssistant(
+        name='Article Summary with Tags',
+        instructions=settings.ai.prompts.article_summary_tags,
+        response_format={'type': 'json_object'},
+        settings=settings,
+    )
+    data = json.loads(assistant.generate(text_content))
+
+    article = models.Article(
+        title=title,
+        url=url,
+        tags=data.get('tags', []),
+        summary=data.get('summary', ''),
+        notes=notes,
+        save_date=pendulum.now(),
+        read_count=0,
+        is_favorite=False,
+        is_current=False,
+        is_archived=False,
+    )
+    session.add(article)
+    session.commit()
+    session.refresh(article)
+    logger.info('article_created_from_url', url=url, title=title)
+    return article
+
+
+@router.post('/create-from-url/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
+async def create_from_url(
+    body: schemas.ArticleCreateFromUrl,
+    session: Session = Depends(get_sqlalchemy_session),
+    settings: Settings = Depends(get_settings),
+):
+    """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
+    return _summarize_and_create_article(body.url, body.notes, session, settings)
+
+
+@router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
+async def bulk_import(request: Request):
+    """Enqueue URLs for bulk import. Returns batch_id for status polling."""
+    from ichrisbirch.api.article_import_worker import enqueue_bulk_import
+
+    body = await request.json()
+    urls = body.get('urls', [])
+    notes_map = body.get('notes', {})
+    if not urls:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No URLs provided')
+    redis_client = request.app.state.redis_client
+    batch_id = enqueue_bulk_import(redis_client, urls, notes_map)
+    return {'batch_id': batch_id, 'total': len(urls), 'status': 'queued'}
+
+
+@router.get('/bulk-import/{batch_id}/', status_code=status.HTTP_200_OK)
+async def bulk_import_status(batch_id: str, request: Request):
+    """Check status of a bulk article import batch."""
+    from ichrisbirch.api.article_import_worker import get_batch_status
+
+    redis_client = request.app.state.redis_client
+    batch = get_batch_status(redis_client, batch_id)
+    if batch is None:
+        raise NotFoundException('batch', batch_id, logger)
+    return batch
+
+
+@router.get('/failed-imports/', response_model=list[schemas.ArticleFailedImport], status_code=status.HTTP_200_OK)
+async def list_failed_imports(session: Session = Depends(get_sqlalchemy_session)):
+    """List all failed article imports."""
+    query = select(models.ArticleFailedImport).order_by(models.ArticleFailedImport.failed_at.desc())
+    return list(session.scalars(query).all())
 
 
 @router.get('/search/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)

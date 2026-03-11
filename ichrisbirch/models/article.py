@@ -42,3 +42,15 @@ class Article(Base):
             review_days={self.review_days!r},
             notes={self.notes!r}
             )"""
+
+
+class ArticleFailedImport(Base):
+    __tablename__ = 'article_failed_imports'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    batch_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    error_message: Mapped[str] = mapped_column(Text, nullable=False)
+    failed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    def __repr__(self):
+        return f'ArticleFailedImport(url={self.url!r}, batch_id={self.batch_id!r})'

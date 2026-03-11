@@ -1,8 +1,7 @@
 {% extends"articles/base.html" %}
 
-{% block title %}Articles{% endblock title %}
+{% block title %}Articles - Bulk Import Progress{% endblock title %}
 
-<!-- Suppress flash messages on this page, as failed articles may produce many messages -->
 {% block flash_messages %}
 {% with messages = get_flashed_messages(with_categories=true) %}{% endwith %}
 {% endblock flash_messages %}
@@ -10,34 +9,24 @@
 {% block content %}
 <div class="grid grid--one-column-wide">
   <div class="add-item-wrapper">
+    <h2>Bulk Import Progress</h2>
     <form class="add-item-form">
 
-      {% if succeeded_articles %}
       <div class="add-item-form__item add-item-form__item--full-width">
-        <h2><label for="succeeded">Succeeded</label></h2>
-        <textarea rows="12" class="textbox" name="succeeded" id="succeeded" disabled>
-          {{- succeeded_articles -}}
-          </textarea>
+        <p id="statusText">Queued... waiting for processing to begin.</p>
+        <p>Processed: <span id="processed">0</span> / <span id="total">0</span></p>
+        <p>Succeeded: <span id="succeeded">0</span> | Failed: <span id="failed">0</span></p>
       </div>
-      {% endif %}
 
-      {% if errored_articles %}
-      <div class="add-item-form__item add-item-form__item--full-width">
-        <h2><label for="failed">Failed</label></h2>
-        <textarea rows="12" class="textbox" name="failed" id="failed" disabled>
-              {{- errored_articles -}}
-              </textarea>
+      <div id="resultsSection" class="add-item-form__item add-item-form__item--full-width" hidden>
+        <h2><label for="succeeded_list">Succeeded</label></h2>
+        <textarea rows="12" class="textbox" id="succeeded_list" disabled></textarea>
       </div>
-      {% endif %}
 
-      {% if errored_debug %}
-      <div class="add-item-form__item add-item-form__item--full-width">
-        <h2><label for="failed">Debug Errors for Failed</label></h2>
-        <textarea rows="12" class="textbox" name="failed" id="failed" disabled>
-            {{- errored_debug -}}
-            </textarea>
+      <div id="errorsSection" class="add-item-form__item add-item-form__item--full-width" hidden>
+        <h2><label for="errors_list">Failed</label></h2>
+        <textarea rows="12" class="textbox" id="errors_list" disabled></textarea>
       </div>
-      {% endif %}
 
       <div class="add-item-form__item">
         <button type="button" class="button">
@@ -53,4 +42,44 @@
     </form>
   </div>
 </div>
+<script>
+  const batchId = "{{ batch_id }}";
+  let pollInterval = null;
+
+  function updateStatus() {
+    if (!batchId) return;
+    fetch(`{{ url_for('articles.bulk_import_status') }}?batch_id=${batchId}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('total').textContent = data.total;
+        document.getElementById('processed').textContent = data.processed;
+        document.getElementById('succeeded').textContent = data.succeeded;
+        document.getElementById('failed').textContent = data.failed_count;
+        document.getElementById('statusText').textContent =
+          data.status === 'completed' ? 'Import complete.' :
+          data.status === 'processing' ? 'Processing...' : 'Queued...';
+
+        if (data.results && data.results.length > 0) {
+          document.getElementById('resultsSection').removeAttribute('hidden');
+          document.getElementById('succeeded_list').value =
+            data.results.map(r => r.url).join('\n');
+        }
+        if (data.errors && data.errors.length > 0) {
+          document.getElementById('errorsSection').removeAttribute('hidden');
+          document.getElementById('errors_list').value =
+            data.errors.map(e => `${e.url}\n  ${e.error}`).join('\n\n');
+        }
+        if (data.status === 'completed' && pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      })
+      .catch(err => console.error('Poll error:', err));
+  }
+
+  if (batchId) {
+    updateStatus();
+    pollInterval = setInterval(updateStatus, 2000);
+  }
+</script>
 {% endblock content %}

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
+import redis
 from fastapi import status
 
 from ichrisbirch import schemas
@@ -327,3 +328,155 @@ def test_read_many_returns_empty_list_when_no_articles(txn_api_logged_in):
     response = client.get(ENDPOINT)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json() == []
+
+
+# ---------------------------------------------------------------------------
+# Schema validation tests
+# ---------------------------------------------------------------------------
+
+
+def test_create_article_without_summary_returns_422(txn_api_logged_in):
+    """POST /articles/ without summary returns 422 (summary is required)."""
+    client, _ = txn_api_logged_in
+    payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(datetime.now())}
+    response = client.post(ENDPOINT, json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+
+
+def test_create_article_without_save_date_returns_422(txn_api_logged_in):
+    """POST /articles/ without save_date returns 422 (save_date is required)."""
+    client, _ = txn_api_logged_in
+    payload = {'title': 'No Date', 'url': 'http://nodate.com', 'summary': 'Some summary'}
+    response = client.post(ENDPOINT, json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+
+
+# ---------------------------------------------------------------------------
+# create-from-url endpoint tests
+# ---------------------------------------------------------------------------
+
+
+class TestCreateFromUrl:
+    """Tests for POST /articles/create-from-url/ endpoint."""
+
+    def _mock_externals(self):
+        """Return httpx and OpenAI patch context managers."""
+        mock_response = MagicMock()
+        mock_response.content = b'<html><head><title>Test Article | Website</title></head><body><p>Content here.</p></body></html>'
+        mock_response.raise_for_status.return_value = mock_response
+
+        mock_assistant = MagicMock()
+        mock_assistant.generate.return_value = json.dumps(
+            {
+                'summary': 'A test summary.',
+                'tags': ['python', 'testing'],
+            }
+        )
+
+        httpx_patch = patch('ichrisbirch.api.endpoints.articles.httpx.get', return_value=mock_response)
+        openai_patch = patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant)
+        return httpx_patch, openai_patch
+
+    def test_create_from_url(self, txn_api_logged_in):
+        """Create article from URL: fetches, summarizes, persists."""
+        client, _ = txn_api_logged_in
+        httpx_patch, openai_patch = self._mock_externals()
+        with httpx_patch, openai_patch:
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/test'})
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['title'] == 'Test Article'
+        assert data['summary'] == 'A test summary.'
+        assert data['tags'] == ['python', 'testing']
+        assert data['save_date'] is not None
+
+    def test_create_from_url_duplicate_returns_409(self, txn_api_logged_in):
+        """Duplicate URL returns 409 Conflict."""
+        client, _ = txn_api_logged_in
+        httpx_patch, openai_patch = self._mock_externals()
+        with httpx_patch, openai_patch:
+            response1 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
+            assert response1.status_code == status.HTTP_201_CREATED
+            response2 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
+            assert response2.status_code == status.HTTP_409_CONFLICT
+
+    def test_create_from_url_with_notes(self, txn_api_logged_in):
+        """Notes are persisted alongside the auto-summary."""
+        client, _ = txn_api_logged_in
+        httpx_patch, openai_patch = self._mock_externals()
+        with httpx_patch, openai_patch:
+            response = client.post(
+                f'{ENDPOINT}create-from-url/',
+                json={'url': 'https://example.com/noted', 'notes': 'Read later'},
+            )
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        assert response.json()['notes'] == 'Read later'
+
+
+# ---------------------------------------------------------------------------
+# Bulk import endpoint tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def test_redis():
+    """Connect to test Redis on port 6380, flush article_import keys after test."""
+    client = redis.Redis(host='localhost', port=6380, db=0, decode_responses=True)
+    yield client
+    # Cleanup: delete all article_import keys
+    for key in client.keys('article_import:*'):
+        client.delete(key)
+    client.close()
+
+
+@pytest.fixture
+def api_with_redis(txn_api_logged_in, test_redis):
+    """API client with Redis configured on app.state."""
+    client, session = txn_api_logged_in
+    client.app.state.redis_client = test_redis
+    yield client, session
+
+
+class TestBulkImport:
+    """Tests for bulk import API endpoints."""
+
+    def test_bulk_import_submit(self, api_with_redis):
+        """POST /articles/bulk-import/ returns 202 with batch_id."""
+        client, _ = api_with_redis
+        response = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://a.com', 'https://b.com']})
+        assert response.status_code == status.HTTP_202_ACCEPTED, show_status_and_response(response)
+        data = response.json()
+        assert 'batch_id' in data
+        assert data['total'] == 2
+        assert data['status'] == 'queued'
+
+    def test_bulk_import_no_urls_returns_400(self, api_with_redis):
+        """POST /articles/bulk-import/ with empty urls returns 400."""
+        client, _ = api_with_redis
+        response = client.post(f'{ENDPOINT}bulk-import/', json={'urls': []})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_bulk_import_status(self, api_with_redis):
+        """GET /articles/bulk-import/{batch_id}/ returns batch status."""
+        client, _ = api_with_redis
+        submit = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://c.com']})
+        batch_id = submit.json()['batch_id']
+        response = client.get(f'{ENDPOINT}bulk-import/{batch_id}/')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        data = response.json()
+        assert data['batch_id'] == batch_id
+        assert data['total'] == 1
+        assert data['status'] == 'queued'
+
+    def test_bulk_import_nonexistent_batch_returns_404(self, api_with_redis):
+        """GET /articles/bulk-import/{bad_id}/ returns 404."""
+        client, _ = api_with_redis
+        response = client.get(f'{ENDPOINT}bulk-import/nonexistent-id/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_failed_imports_empty(self, api_with_redis):
+        """GET /articles/failed-imports/ returns empty list when none exist."""
+        client, _ = api_with_redis
+        response = client.get(f'{ENDPOINT}failed-imports/')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json() == []

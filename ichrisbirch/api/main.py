@@ -1,3 +1,6 @@
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 import structlog
 from fastapi import Depends
 from fastapi import FastAPI
@@ -9,9 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from ichrisbirch.api import endpoints
+from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
+from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
 from ichrisbirch.util import log_caller
 
@@ -35,7 +40,19 @@ async def api_exception_handler(request, exc):
 
 @log_caller
 def create_api(settings: Settings) -> FastAPI:
-    api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description)
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        redis_client = get_redis_client(settings)
+        worker = ArticleImportWorker(redis_client, settings)
+        worker.start()
+        app.state.settings = settings
+        app.state.redis_client = redis_client
+        app.state.article_import_worker = worker
+        yield
+        worker.stop()
+        redis_client.close()
+
+    api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description, lifespan=lifespan)
     logger.info('api_initializing')
     logger.info('settings_loaded', settings_type=type(settings).__name__)
     logger.debug('api_config', api_url=settings.api_url)

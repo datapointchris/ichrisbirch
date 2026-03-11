@@ -1,6 +1,7 @@
 from ichrisbirch.models.apartment import Apartment
 from ichrisbirch.models.apartment import Feature
 from ichrisbirch.models.article import Article
+from ichrisbirch.models.article import ArticleFailedImport
 from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.backup_history import BackupHistory
 from ichrisbirch.models.backup_restore import BackupRestore
@@ -25,6 +26,7 @@ from ichrisbirch.models.user import User
 __all__ = [
     'Apartment',
     'Article',
+    'ArticleFailedImport',
     'AutoTask',
     'BackupHistory',
     'BackupRestore',

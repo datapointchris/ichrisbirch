@@ -1,5 +1,7 @@
 from ichrisbirch.schemas.article import Article
 from ichrisbirch.schemas.article import ArticleCreate
+from ichrisbirch.schemas.article import ArticleCreateFromUrl
+from ichrisbirch.schemas.article import ArticleFailedImport
 from ichrisbirch.schemas.article import ArticleSummary
 from ichrisbirch.schemas.article import ArticleUpdate
 from ichrisbirch.schemas.autotask import AutoTask
@@ -62,8 +64,10 @@ from ichrisbirch.schemas.user import UserUpdate
 __all__ = [
     'Article',
     'ArticleCreate',
+    'ArticleCreateFromUrl',
     'ArticleSummary',
     'ArticleUpdate',
+    'ArticleFailedImport',
     'Backup',
     'BackupCreate',
     'BackupRestoreSchema',

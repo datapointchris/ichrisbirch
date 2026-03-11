@@ -11,8 +11,8 @@ class ArticleConfig(BaseModel):
 class ArticleCreate(ArticleConfig):
     title: str
     url: str
-    tags: list[str]
-    summary: str | None = None
+    tags: list[str] = []
+    summary: str
     notes: str | None = None
     save_date: datetime
     read_count: int = 0
@@ -22,12 +22,17 @@ class ArticleCreate(ArticleConfig):
     review_days: int | None = None
 
 
+class ArticleCreateFromUrl(ArticleConfig):
+    url: str
+    notes: str | None = None
+
+
 class Article(ArticleConfig):
     id: int
     title: str
     url: str
     tags: list[str]
-    summary: str | None = None
+    summary: str
     notes: str | None = None
     save_date: datetime
     last_read_date: datetime | None = None
@@ -55,3 +60,11 @@ class ArticleSummary(ArticleConfig):
     title: str
     summary: str
     tags: list[str]
+
+
+class ArticleFailedImport(ArticleConfig):
+    id: int
+    url: str
+    batch_id: str | None
+    error_message: str
+    failed_at: datetime

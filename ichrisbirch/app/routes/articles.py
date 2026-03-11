@@ -1,6 +1,5 @@
 import random
 
-import httpx
 import pendulum
 import structlog
 from fastapi import status
@@ -18,7 +17,6 @@ from ichrisbirch import schemas
 from ichrisbirch.api.client.exceptions import APIHTTPError
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
-from ichrisbirch.config import Settings
 
 logger = structlog.get_logger()
 
@@ -51,48 +49,6 @@ def process_bulk_urls(request, data):
             logger.info('bulk_urls_file_data_found', filename=file.filename)
             urls.extend(line.decode('utf-8').strip() for line in file)
     return urls
-
-
-def add_bulk_article(articles_api, summarize_api, url: str, settings: Settings):
-    """Add article using summarize endpoint to auto generate summary and tags for the bulk endpoint."""
-    logger.info('bulk_article_processing', url=url)
-    try:
-        if articles_api.get_one('url', params={'url': url}):
-            raise ValueError(f'already exists: {url}')
-    except APIHTTPError as e:
-        if e.status_code != 404:
-            raise
-    httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
-    openai_summary = summarize_api.post(json={'url': url}, timeout=20)
-    article = dict(
-        title=openai_summary.title,
-        url=url,
-        tags=openai_summary.tags,
-        summary=openai_summary.summary,
-        save_date=str(pendulum.now()),
-    )
-    articles_api.post(json=article)
-    logger.info('bulk_article_created', url=url)
-
-
-def bulk_add_articles(articles_api, summarize_api, urls: list[str], settings: Settings):
-    """Add all articles in url list.
-
-    Each url is tried twice, sometimes a delayed response from openai causes a failure.
-    """
-    added: list[str] = []
-    errors: list[tuple[str, str]] = []
-    for url in urls:
-        try:
-            add_bulk_article(articles_api, summarize_api, url, settings)
-            added.append(url)
-        except ValueError as e:
-            logger.warning('bulk_article_value_error', url=url, error=str(e))
-            errors.append((url, str(e)))
-        except Exception as e:
-            logger.warning('bulk_article_error', url=url, error=str(e))
-            errors.append((url, str(e)))
-    return added, errors
 
 
 @blueprint.route('/', methods=['GET', 'POST'])
@@ -153,9 +109,25 @@ def bulk_add():
     return render_template('articles/bulk-add.html', settings=settings)
 
 
-@blueprint.route('/bulk-add-results/', methods=['GET', 'POST'])
+@blueprint.route('/bulk-add-results/', methods=['GET'])
 def bulk_add_results():
-    return render_template('articles/bulk-add-results.html')
+    batch_id = request.args.get('batch_id')
+    return render_template('articles/bulk-add-results.html', batch_id=batch_id)
+
+
+@blueprint.route('/bulk-import-status/', methods=['GET'])
+def bulk_import_status():
+    """Proxy endpoint for polling bulk import status from JavaScript."""
+    batch_id = request.args.get('batch_id')
+    if not batch_id:
+        return Response('Missing batch_id', status=400)
+    settings = current_app.config['SETTINGS']
+    with logging_flask_session_client(base_url=settings.api_url) as client:
+        status_api = client.resource(f'articles/bulk-import/{batch_id}', None)
+        result = status_api.get_generic()
+        if result:
+            return result
+        return Response('Batch not found', status=404)
 
 
 @blueprint.route('/insights/', methods=['GET', 'POST'])
@@ -197,7 +169,6 @@ def crud():
     settings = current_app.config['SETTINGS']
     with logging_flask_session_client(base_url=settings.api_url) as client:
         articles_api = client.resource('articles', schemas.Article)
-        summarize_api = client.resource('articles/summarize', schemas.ArticleSummary)
         data = request.form.to_dict()
         action = data.pop('action')
 
@@ -222,18 +193,15 @@ def crud():
                         articles_api.post(json=data)
             case 'bulk_add':
                 if urls := process_bulk_urls(request, data):
-                    succeeded, errored = bulk_add_articles(articles_api, summarize_api, urls, settings)
+                    bulk_api = client.resource('articles/bulk-import', None)
+                    result = bulk_api.post_action(json={'urls': urls})
+                    if result and result.status_code == 202:
+                        batch_id = result.json().get('batch_id')
+                        return redirect(url_for('articles.bulk_add_results', batch_id=batch_id))
+                    flash('Failed to submit bulk import', 'danger')
                 else:
                     flash('No URLs provided', 'warning')
-                succeeded_articles = '\n'.join([article.strip() for article in succeeded])
-                errored_articles = '\n'.join([article[0].strip() for article in errored])
-                errored_debug = '\n\n'.join([f'{article[0].strip()}\n{article[1].strip()}' for article in errored])
-                return render_template(
-                    'articles/bulk-add-results.html',
-                    succeeded_articles=succeeded_articles,
-                    errored_articles=errored_articles,
-                    errored_debug=errored_debug,
-                )
+                return redirect(url_for('articles.bulk_add'))
             case 'archive':
                 articles_api.patch(data.get('id'), json={'is_archived': True})
             case 'unarchive':

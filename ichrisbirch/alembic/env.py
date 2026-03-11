@@ -12,6 +12,7 @@ from ichrisbirch.database.session import get_db_engine
 # Need the models imported for Base to find the tables
 from ichrisbirch.models import Apartment  # noqa
 from ichrisbirch.models import Article  # noqa
+from ichrisbirch.models import ArticleFailedImport  # noqa
 from ichrisbirch.models import AutoTask  # noqa
 from ichrisbirch.models import BackupHistory  # noqa
 from ichrisbirch.models import BackupRestore  # noqa
