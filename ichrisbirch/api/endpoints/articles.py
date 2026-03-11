@@ -27,6 +27,7 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
+from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -96,6 +97,7 @@ async def current(session: Session = Depends(get_sqlalchemy_session)):
 
 @router.get('/url/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 async def read_one_url(url: str, session: Session = Depends(get_sqlalchemy_session)):
+    url = clean_url(url)
     if article := session.scalar(select(models.Article).where(models.Article.url == url)):
         return article
     raise NotFoundException('article', f'url={url}', logger)
@@ -115,6 +117,7 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
 
     Used by create-from-url endpoint and bulk import worker.
     """
+    url = clean_url(url)
     existing = session.scalar(select(models.Article).where(models.Article.url == url))
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Article already exists: {url}')
@@ -229,7 +232,7 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     """
     request_data = await request.json()
     logger.debug('article_summarize_request', data=request_data)
-    url = request_data.get('url')
+    url = clean_url(request_data.get('url'))
     url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
@@ -259,7 +262,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     """
     request_data = await request.json()
     logger.debug('article_insights_request', data=request_data)
-    url = request_data.get('url')
+    url = clean_url(request_data.get('url'))
     logger.debug('article_insights_processing', url=url)
     url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')

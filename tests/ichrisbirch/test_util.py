@@ -4,9 +4,46 @@ import logging
 from pathlib import Path
 from unittest.mock import patch
 
+from ichrisbirch.util import clean_url
 from ichrisbirch.util import find_project_root
 from ichrisbirch.util import get_logger_filename_from_handlername
 from ichrisbirch.util import log_caller
+
+
+class TestCleanUrl:
+    def test_strips_utm_params(self):
+        url = 'https://example.com/article?utm_source=substack&utm_medium=email&utm_campaign=post'
+        assert clean_url(url) == 'https://example.com/article'
+
+    def test_strips_mixed_tracking_params(self):
+        url = 'https://laszlo.substack.com/p/async-python?utm_source=post-email-title&publication_id=61101&post_id=158726975&isFreemail=true&r=8hnll&triedRedirect=true'
+        assert clean_url(url) == 'https://laszlo.substack.com/p/async-python'
+
+    def test_preserves_non_tracking_params(self):
+        url = 'https://example.com/search?q=python&page=2&utm_source=google'
+        assert clean_url(url) == 'https://example.com/search?q=python&page=2'
+
+    def test_no_params_unchanged(self):
+        url = 'https://example.com/article'
+        assert clean_url(url) == 'https://example.com/article'
+
+    def test_strips_facebook_click_id(self):
+        url = 'https://example.com/page?fbclid=abc123'
+        assert clean_url(url) == 'https://example.com/page'
+
+    def test_strips_fragment(self):
+        url = 'https://example.com/page?utm_source=x#section'
+        assert clean_url(url) == 'https://example.com/page'
+
+    def test_case_insensitive_param_matching(self):
+        url = 'https://example.com/page?UTM_SOURCE=test&title=hello'
+        assert clean_url(url) == 'https://example.com/page?title=hello'
+
+    def test_all_params_stripped_no_trailing_question_mark(self):
+        url = 'https://example.com/page?utm_source=x&utm_medium=y'
+        result = clean_url(url)
+        assert result == 'https://example.com/page'
+        assert not result.endswith('?')
 
 
 class TestFindProjectRoot:

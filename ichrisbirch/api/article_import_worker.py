@@ -20,6 +20,7 @@ import structlog
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 
@@ -39,7 +40,7 @@ def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: d
         item = json.dumps(
             {
                 'batch_id': batch_id,
-                'url': url.strip(),
+                'url': clean_url(url.strip()),
                 'notes': notes_map.get(url),
                 'attempt': 1,
             }

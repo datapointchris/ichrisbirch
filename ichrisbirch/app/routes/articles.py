@@ -17,6 +17,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.client.exceptions import APIHTTPError
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
+from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 
@@ -42,12 +43,12 @@ def process_bulk_urls(request, data):
     urls = []
     if 'text' in data:
         logger.info('bulk_urls_text_data_found')
-        urls.extend(line.strip() for line in data['text'].splitlines())
+        urls.extend(clean_url(line.strip()) for line in data['text'].splitlines())
     if 'file' in request.files:
         file = request.files['file']
         if file.filename != '':
             logger.info('bulk_urls_file_data_found', filename=file.filename)
-            urls.extend(line.decode('utf-8').strip() for line in file)
+            urls.extend(clean_url(line.decode('utf-8').strip()) for line in file)
     return urls
 
 
@@ -176,6 +177,7 @@ def crud():
             case 'add':
                 form = forms.ArticleCreateForm(request.form)
                 if form.validate_on_submit():
+                    data['url'] = clean_url(data['url'])
                     try:
                         existing = articles_api.get_one('url', params={'url': data['url']})
                     except APIHTTPError as e:
