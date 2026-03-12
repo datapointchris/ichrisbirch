@@ -222,7 +222,7 @@ cleanup_docker() {
     log_info "docker_cleanup_started" | tee -a "$LOG_FILE"
     docker builder prune --force 2>&1 | tail -1 | tee -a "$LOG_FILE" || true
     docker image prune -f 2>&1 | tail -1 | tee -a "$LOG_FILE" || true
-    sudo fstrim -av / 2>&1 | tee -a "$LOG_FILE" || true
+    sudo fstrim -v / 2>&1 | tee -a "$LOG_FILE" || true
     log_info "docker_cleanup_completed" | tee -a "$LOG_FILE"
 }
 
