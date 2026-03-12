@@ -91,7 +91,7 @@ class UserTokenProvider(CredentialProvider):
 
 
 class FlaskSessionProvider(CredentialProvider):
-    """Credentials from Flask session (for your current use case)."""
+    """Credentials from Flask session or Authelia-authenticated current_user."""
 
     def __init__(self, settings: 'Settings | None' = None):
         self.has_context = has_request_context()
@@ -102,6 +102,13 @@ class FlaskSessionProvider(CredentialProvider):
             return {}
 
         user_id = session.get('_user_id', '')
+        # Fallback: when Authelia authenticates the user via request_loader,
+        # there's no Flask session cookie — get user ID from current_user instead.
+        if not user_id:
+            from flask_login import current_user
+
+            if current_user.is_authenticated:
+                user_id = current_user.get_id()
         return {
             'X-User-ID': user_id,
             'X-Application-ID': self._settings.flask.app_id,

@@ -104,6 +104,32 @@ def get_token_handler(settings: Settings = Depends(get_settings), session: Sessi
 # =============================================================================
 
 
+def authenticate_with_authelia_headers(
+    request: Request,
+    session: Session = Depends(get_sqlalchemy_session),
+) -> str | None:
+    """FastAPI dependency for Authelia ForwardAuth header authentication.
+
+    When Traefik's ForwardAuth validates a session with Authelia, it injects Remote-User
+    and Remote-Email headers into the proxied request. This reads those headers and
+    resolves to a local user.
+
+    Returns the user's alternative_id (as string) if valid, None otherwise.
+    """
+    remote_user = request.headers.get('Remote-User')
+    remote_email = request.headers.get('Remote-Email')
+    if not remote_user or not remote_email:
+        return None
+
+    user = validate_user_email(remote_email, session)
+    if not user:
+        logger.warning('authelia_user_not_found', remote_user=remote_user, remote_email=remote_email)
+        return None
+
+    logger.debug('auth_method_authelia', remote_user=remote_user, email=user.email)
+    return user.get_id()
+
+
 def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)], settings: Settings = Depends(get_settings)) -> str | None:
     """FastAPI dependency function for JWT authentication.
 
@@ -216,6 +242,7 @@ def authenticate_with_personal_api_key(
 
 
 def get_current_user(
+    authelia_user_id=Depends(authenticate_with_authelia_headers),
     app_headers=Depends(authenticate_with_application_headers),
     api_key_user_id=Depends(authenticate_with_personal_api_key),
     auth_jwt=Depends(authenticate_with_jwt),
@@ -225,6 +252,7 @@ def get_current_user(
     """Main authentication dependency that tries multiple auth methods.
 
     Priority order:
+    0. Authelia ForwardAuth headers (browser SSO via Remote-User/Remote-Email)
     1. Application headers (internal services)
     2. Personal API key (MCP / external tools)
     3. JWT token (API clients)
@@ -232,6 +260,8 @@ def get_current_user(
 
     Returns the authenticated user or raises UnauthorizedException.
     """
+    if authelia_user_id:
+        logger.debug('auth_method_authelia')
     if app_headers:
         logger.debug('auth_method_app_headers')
     if api_key_user_id:
@@ -241,7 +271,7 @@ def get_current_user(
     if auth_oauth2:
         logger.debug('auth_method_oauth2')
 
-    if not (user_id := app_headers or api_key_user_id or auth_jwt or auth_oauth2):
+    if not (user_id := authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
         raise UnauthorizedException('Invalid credentials', logger)
 
     if not (user := validate_user_id(user_id, session)):
@@ -262,6 +292,7 @@ def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> m
 
 
 def get_current_user_or_none(
+    authelia_user_id=Depends(authenticate_with_authelia_headers),
     app_headers=Depends(authenticate_with_application_headers),
     api_key_user_id=Depends(authenticate_with_personal_api_key),
     auth_jwt=Depends(authenticate_with_jwt),
@@ -272,7 +303,7 @@ def get_current_user_or_none(
 
     Used for dependencies that support multiple auth methods.
     """
-    if not (user_id := app_headers or api_key_user_id or auth_jwt or auth_oauth2):
+    if not (user_id := authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
         return None
 
     if not (user := validate_user_id(user_id, session)):

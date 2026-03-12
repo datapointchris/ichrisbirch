@@ -54,6 +54,30 @@ def load_user(alternative_id):
     return None
 
 
+@login_manager.request_loader
+def load_user_from_authelia(req):
+    """Load user from Authelia ForwardAuth headers.
+
+    When Traefik's ForwardAuth validates a session with Authelia, it injects
+    Remote-User and Remote-Email headers. This callback is tried by Flask-Login
+    when the session-based user_loader returns None (no Flask session cookie).
+    """
+    remote_email = req.headers.get('Remote-Email')
+    if not remote_email:
+        return None
+
+    try:
+        with get_users_api() as client:
+            users = client.resource('users', schemas.User)
+            if user_data := users.get_generic(['email', remote_email]):
+                user = models.User(**user_data)
+                logger.debug('user_loaded_from_authelia', email=user.email)
+                return user
+    except APIClientError as e:
+        logger.warning('authelia_user_load_failed', remote_email=remote_email, error=str(e))
+    return None
+
+
 def admin_login_required(func):
     """A version of `login_required` from `flask-login`
     https://github.com/maxcountryman/flask-login/blob/529be4b5f49075500010811d6c739e85e02b9c2e/src/flask_login/utils.py#L246
