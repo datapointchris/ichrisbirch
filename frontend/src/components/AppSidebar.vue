@@ -5,36 +5,60 @@
       class="sidebar"
     >
       <div class="sidebar__header">
-        <RouterLink
-          to="/"
+        <a
+          href="/"
           class="sidebar__title"
         >
           iChrisBirch
-        </RouterLink>
+        </a>
       </div>
       <nav class="sidebar__nav">
-        <RouterLink
+        <template
           v-for="link in mainLinks"
           :key="link.to"
-          :to="link.to"
-          class="nav-link"
-          :class="{ 'nav-link--active': isActive(link) }"
         >
-          <i :class="link.icon"></i>
-          <span class="nav-link__label">{{ link.label }}</span>
-        </RouterLink>
+          <RouterLink
+            v-if="link.migrated"
+            :to="link.to"
+            class="nav-link"
+            :class="{ 'nav-link--active': isActive(link) }"
+          >
+            <i :class="link.icon"></i>
+            <span class="nav-link__label">{{ link.label }}</span>
+          </RouterLink>
+          <a
+            v-else
+            :href="link.to"
+            class="nav-link"
+          >
+            <i :class="link.icon"></i>
+            <span class="nav-link__label">{{ link.label }}</span>
+          </a>
+        </template>
       </nav>
       <div class="sidebar__footer">
-        <RouterLink
+        <template
           v-for="link in footerLinks"
           :key="link.to"
-          :to="link.to"
-          class="nav-link"
-          :class="{ 'nav-link--active': isActive(link) }"
         >
-          <i :class="link.icon"></i>
-          <span class="nav-link__label">{{ link.label }}</span>
-        </RouterLink>
+          <RouterLink
+            v-if="link.migrated"
+            :to="link.to"
+            class="nav-link"
+            :class="{ 'nav-link--active': isActive(link) }"
+          >
+            <i :class="link.icon"></i>
+            <span class="nav-link__label">{{ link.label }}</span>
+          </RouterLink>
+          <a
+            v-else
+            :href="link.to"
+            class="nav-link"
+          >
+            <i :class="link.icon"></i>
+            <span class="nav-link__label">{{ link.label }}</span>
+          </a>
+        </template>
       </div>
     </aside>
   </Transition>
@@ -51,26 +75,27 @@ interface NavLink {
   to: string
   label: string
   icon: string
+  migrated: boolean
   activeNames?: string[]
 }
 
 const route = useRoute()
 
 const mainLinks: NavLink[] = [
-  { to: '/', label: 'Home', icon: 'fa-solid fa-house' },
-  { to: '/articles', label: 'Articles', icon: 'fa-solid fa-newspaper' },
-  { to: '/autotasks', label: 'AutoTasks', icon: 'fa-solid fa-robot' },
-  { to: '/books', label: 'Books', icon: 'fa-solid fa-book' },
-  { to: '/box-packing', label: 'Box Packing', icon: 'fa-solid fa-box' },
-  { to: '/countdowns', label: 'Countdowns', icon: 'fa-solid fa-hourglass-half' },
-  { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar' },
-  { to: '/habits', label: 'Habits', icon: 'fa-solid fa-repeat' },
-  { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave' },
-  { to: '/tasks', label: 'Tasks', icon: 'fa-solid fa-list-check', activeNames: ['tasks', 'tasks-priority', 'tasks-completed'] },
+  { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: false },
+  { to: '/articles', label: 'Articles', icon: 'fa-solid fa-newspaper', migrated: false },
+  { to: '/autotasks', label: 'AutoTasks', icon: 'fa-solid fa-robot', migrated: false },
+  { to: '/books', label: 'Books', icon: 'fa-solid fa-book', migrated: false },
+  { to: '/box-packing', label: 'Box Packing', icon: 'fa-solid fa-box', migrated: false },
+  { to: '/countdowns', label: 'Countdowns', icon: 'fa-solid fa-hourglass-half', migrated: true },
+  { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: false },
+  { to: '/habits', label: 'Habits', icon: 'fa-solid fa-repeat', migrated: false },
+  { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: false },
+  { to: '/tasks', label: 'Tasks', icon: 'fa-solid fa-list-check', migrated: false, activeNames: ['tasks', 'tasks-priority', 'tasks-completed'] },
 ]
 
 const footerLinks: NavLink[] = [
-  { to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear' },
+  { to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear', migrated: false },
 ]
 
 function isActive(link: NavLink): boolean {

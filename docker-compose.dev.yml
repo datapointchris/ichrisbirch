@@ -251,11 +251,12 @@ services:
       - "traefik.http.routers.app-http.entrypoints=web"
       - "traefik.http.routers.app-http.middlewares=redirect-to-https@docker"
 
-      # HTTPS router
+      # HTTPS router (lower priority — Vue paths take precedence for migrated pages)
       - "traefik.http.routers.app.rule=Host(`app.docker.localhost`)"
       - "traefik.http.routers.app.entrypoints=websecure"
       - "traefik.http.routers.app.tls=true"
       - "traefik.http.routers.app.tls.options="  # Override to disable TLS options
+      - "traefik.http.routers.app.priority=50"
       - "traefik.http.routers.app.middlewares=dev-security@file"
 
       # Service configuration
@@ -360,14 +361,23 @@ services:
       - "traefik.http.routers.vue-http.entrypoints=web"
       - "traefik.http.routers.vue-http.middlewares=redirect-to-https@docker"
 
-      # HTTPS router
+      # HTTPS router — full Vue app at vue.docker.localhost (development)
       - "traefik.http.routers.vue.rule=Host(`vue.docker.localhost`)"
       - "traefik.http.routers.vue.entrypoints=websecure"
       - "traefik.http.routers.vue.tls=true"
       - "traefik.http.routers.vue.tls.options="  # Override to disable TLS options
       - "traefik.http.routers.vue.middlewares=dev-cors@file,dev-security@file"
 
-      # Service configuration
+      # Path-based routing — migrated pages served from Vue on app.docker.localhost
+      # Includes Vite dev server paths (/@vite, /src, etc.) needed for JS/CSS/HMR
+      - "traefik.http.routers.vue-paths.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
+      - "traefik.http.routers.vue-paths.entrypoints=websecure"
+      - "traefik.http.routers.vue-paths.tls=true"
+      - "traefik.http.routers.vue-paths.tls.options="
+      - "traefik.http.routers.vue-paths.priority=100"
+      - "traefik.http.routers.vue-paths.middlewares=dev-cors@file,dev-security@file"
+
+      # Service configuration (shared by both routers)
       - "traefik.http.services.vue.loadbalancer.server.port=5173"
     logging:
       driver: "json-file"
