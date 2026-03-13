@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 import redis
+import sqlalchemy as sa
 from fastapi import status
 
 from ichrisbirch import schemas
@@ -476,7 +477,10 @@ class TestBulkImport:
 
     def test_failed_imports_empty(self, api_with_redis):
         """GET /articles/failed-imports/ returns empty list when none exist."""
-        client, _ = api_with_redis
+        client, session = api_with_redis
+        # Clear any failed imports left by prior tests in this class
+        session.execute(sa.text('DELETE FROM article_failed_imports'))
+        session.commit()
         response = client.get(f'{ENDPOINT}failed-imports/')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json() == []

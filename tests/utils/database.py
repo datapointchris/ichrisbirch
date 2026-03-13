@@ -292,6 +292,8 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'chats': {'model': models.Chat, 'data': tests.test_data.chats.BASE_DATA},
         'chatmessages': {'model': models.ChatMessage, 'data': []},  # Inserted via Chat.messages relationship
         'countdowns': {'model': models.Countdown, 'data': tests.test_data.countdowns.BASE_DATA},
+        'durations': {'model': models.Duration, 'data': tests.test_data.durations.BASE_DATA},
+        'duration_notes': {'model': models.DurationNote, 'data': []},  # Inserted via Duration.duration_notes relationship
         'events': {'model': models.Event, 'data': tests.test_data.events.BASE_DATA},
         'habitcategories': {'model': models.HabitCategory, 'data': tests.test_data.habitcategories.BASE_DATA},
         'habits': {'model': models.Habit, 'data': []},  # Inserted via HabitCategory.habits relationship

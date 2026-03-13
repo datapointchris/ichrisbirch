@@ -14,6 +14,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Countdowns' },
   },
   {
+    path: '/durations',
+    name: 'durations',
+    component: () => import('@/views/DurationsView.vue'),
+    meta: { title: 'Durations' },
+  },
+  {
     path: '/events',
     name: 'events',
     component: () => import('@/views/EventsView.vue'),

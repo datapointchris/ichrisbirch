@@ -11,6 +11,8 @@ from ichrisbirch.models.boxitem import BoxItem
 from ichrisbirch.models.chat import Chat
 from ichrisbirch.models.chatmessage import ChatMessage
 from ichrisbirch.models.countdown import Countdown
+from ichrisbirch.models.duration import Duration
+from ichrisbirch.models.duration_note import DurationNote
 from ichrisbirch.models.event import Event
 from ichrisbirch.models.habit import Habit
 from ichrisbirch.models.habitcategory import HabitCategory
@@ -36,6 +38,8 @@ __all__ = [
     'Chat',
     'ChatMessage',
     'Countdown',
+    'Duration',
+    'DurationNote',
     'Event',
     'Feature',
     'Habit',

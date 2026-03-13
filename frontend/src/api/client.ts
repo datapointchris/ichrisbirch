@@ -134,6 +134,51 @@ export interface CountdownUpdate {
   due_date?: string
 }
 
+// --- Duration ---
+
+export interface DurationNote {
+  id: number
+  duration_id: number
+  date: string
+  content: string
+}
+
+export interface DurationNoteCreate {
+  date: string
+  content: string
+}
+
+export interface DurationNoteUpdate {
+  date?: string
+  content?: string
+}
+
+export interface Duration {
+  id: number
+  name: string
+  start_date: string
+  end_date?: string
+  notes?: string
+  color?: string
+  duration_notes: DurationNote[]
+}
+
+export interface DurationCreate {
+  name: string
+  start_date: string
+  end_date?: string
+  notes?: string
+  color?: string
+}
+
+export interface DurationUpdate {
+  name?: string
+  start_date?: string
+  end_date?: string | null
+  notes?: string
+  color?: string
+}
+
 // --- Event ---
 
 export interface Event {

@@ -32,6 +32,12 @@ from ichrisbirch.schemas.chatmessage import ChatMessageUpdate
 from ichrisbirch.schemas.countdown import Countdown
 from ichrisbirch.schemas.countdown import CountdownCreate
 from ichrisbirch.schemas.countdown import CountdownUpdate
+from ichrisbirch.schemas.duration import Duration
+from ichrisbirch.schemas.duration import DurationCreate
+from ichrisbirch.schemas.duration import DurationNote
+from ichrisbirch.schemas.duration import DurationNoteCreate
+from ichrisbirch.schemas.duration import DurationNoteUpdate
+from ichrisbirch.schemas.duration import DurationUpdate
 from ichrisbirch.schemas.event import Event
 from ichrisbirch.schemas.event import EventCreate
 from ichrisbirch.schemas.event import EventUpdate
@@ -96,6 +102,12 @@ __all__ = [
     'Countdown',
     'CountdownCreate',
     'CountdownUpdate',
+    'Duration',
+    'DurationCreate',
+    'DurationNote',
+    'DurationNoteCreate',
+    'DurationNoteUpdate',
+    'DurationUpdate',
     'Event',
     'EventCreate',
     'EventUpdate',

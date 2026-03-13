@@ -4,6 +4,7 @@ from tests.test_data import books
 from tests.test_data import boxes
 from tests.test_data import chats
 from tests.test_data import countdowns
+from tests.test_data import durations
 from tests.test_data import events
 from tests.test_data import habitcategories
 from tests.test_data import money_wasted
@@ -19,6 +20,8 @@ __all__ = [
     # 'boxitems' - now inserted via Box.items relationship
     'chats',
     'countdowns',
+    'durations',
+    # 'duration_notes' - inserted via Duration.duration_notes relationship
     'events',
     'habitcategories',
     # 'habits' - now inserted via HabitCategory.habits relationship

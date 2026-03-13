@@ -22,6 +22,8 @@ from ichrisbirch.models import BoxItem  # noqa
 from ichrisbirch.models import Chat  # noqa
 from ichrisbirch.models import ChatMessage  # noqa
 from ichrisbirch.models import Countdown  # noqa
+from ichrisbirch.models import Duration  # noqa
+from ichrisbirch.models import DurationNote  # noqa
 from ichrisbirch.models import Event  # noqa
 from ichrisbirch.models import Habit  # noqa
 from ichrisbirch.models import HabitCategory  # noqa
