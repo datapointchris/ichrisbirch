@@ -198,7 +198,7 @@ services:
       - "traefik.http.routers.api-test.tls=true"
       - "traefik.http.routers.api-test.tls.options=test@file"
       - "traefik.http.routers.api-test.service=api-test"
-      - "traefik.http.routers.api-test.middlewares=cors-test@file,security-headers-test@file,rate-limit-test@file"
+      - "traefik.http.routers.api-test.middlewares=cors-test@file,security-headers-test@file,test-authelia-sim@file,rate-limit-test@file"
       - "traefik.http.services.api-test.loadbalancer.server.port=8000"
     restart: unless-stopped
     depends_on:
@@ -272,11 +272,12 @@ services:
       - "traefik.http.routers.app.rule=Host(`app.test.localhost`)"
       - "traefik.http.routers.app.service=app-test"
       - "traefik.http.services.app.loadbalancer.server.port=5000"
-      # App routes for test
+      # App routes for test (lower priority — Vue paths take precedence for migrated pages)
       - "traefik.http.routers.app-test.rule=Host(`app.test.localhost`)"
       - "traefik.http.routers.app-test.entrypoints=websecure"
       - "traefik.http.routers.app-test.tls=true"
       - "traefik.http.routers.app-test.tls.options=test@file"
+      - "traefik.http.routers.app-test.priority=50"
       - "traefik.http.routers.app-test.service=app-test"
       - "traefik.http.routers.app-test.middlewares=cors-test@file,security-headers-test@file,rate-limit-test@file"
       - "traefik.http.services.app-test.loadbalancer.server.port=5000"
@@ -428,6 +429,77 @@ services:
         max-file: "3"
         tag: "scheduler-test"
 
+  # Vue 3 frontend development server for test environment
+  # Overrides the production Caddy-based vue service with a Vite dev server
+  vue:
+    image: node:20-alpine
+    container_name: icb-test-vue
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      - VITE_API_URL=https://api.test.localhost:8443
+    ports:
+      - "5174:5173"
+    networks:
+      - proxy
+      - default
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    volumes:
+      - ./frontend:/app
+      - vue_test_node_modules:/app/node_modules
+      - ./ichrisbirch/app/static:/ichrisbirch/app/static:ro
+    labels:
+      # Environment label for Traefik constraint filtering
+      - "traefik.environment=testing"
+      - "traefik.enable=true"
+
+      # Override inherited production labels to prevent service collision
+      # (production defines "vue" service at port 80; test needs "vue-test" at 5173)
+      - "traefik.http.services.vue.loadbalancer.server.port=5173"
+
+      # Disable inherited production routers (different domains/entrypoints in test)
+      - "traefik.http.routers.vue-paths.rule=Host(`disabled.test.localhost`)"
+      - "traefik.http.routers.vue-paths.entrypoints=websecure"
+      - "traefik.http.routers.vue-paths.priority=1"
+      - "traefik.http.routers.vue-paths.service=vue-test"
+      - "traefik.http.routers.vue-paths-www.rule=Host(`disabled.test.localhost`)"
+      - "traefik.http.routers.vue-paths-www.entrypoints=websecure"
+      - "traefik.http.routers.vue-paths-www.priority=1"
+      - "traefik.http.routers.vue-paths-www.service=vue-test"
+
+      # HTTPS router — full Vue app at vue.test.localhost (testing)
+      - "traefik.http.routers.vue-test.rule=Host(`vue.test.localhost`)"
+      - "traefik.http.routers.vue-test.entrypoints=websecure"
+      - "traefik.http.routers.vue-test.tls=true"
+      - "traefik.http.routers.vue-test.tls.options=test@file"
+      - "traefik.http.routers.vue-test.service=vue-test"
+      - "traefik.http.routers.vue-test.middlewares=cors-test@file,security-headers-test@file"
+
+      # Path-based routing — migrated pages served from Vue on app.test.localhost
+      # Includes Vite dev server paths (/@vite, /src, etc.) needed for JS/CSS/HMR
+      - "traefik.http.routers.vue-test-paths.rule=Host(`app.test.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
+      - "traefik.http.routers.vue-test-paths.entrypoints=websecure"
+      - "traefik.http.routers.vue-test-paths.tls=true"
+      - "traefik.http.routers.vue-test-paths.tls.options=test@file"
+      - "traefik.http.routers.vue-test-paths.priority=100"
+      - "traefik.http.routers.vue-test-paths.service=vue-test"
+      - "traefik.http.routers.vue-test-paths.middlewares=cors-test@file,security-headers-test@file"
+
+      # Service configuration for test routers
+      - "traefik.http.services.vue-test.loadbalancer.server.port=5173"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "vue-test"
+
 # Networks - test uses its own proxy network to avoid conflicts with dev
 networks:
   proxy:
@@ -452,6 +524,9 @@ volumes:
     driver: local
   venv_shared:
     name: icb-test-venv-shared
+    driver: local
+  vue_test_node_modules:
+    name: icb-test-vue-node-modules
     driver: local
   traefik_test_letsencrypt:
     name: icb-test-letsencrypt

@@ -1,6 +1,8 @@
 http:
   middlewares:
     # Security headers middleware for test environment
+    # Origins include :8443 because test Traefik maps 8443:443 (non-standard port),
+    # so browsers send Origin with the port included.
     security-headers-test:
       headers:
         accessControlAllowMethods:
@@ -11,10 +13,10 @@ http:
           - DELETE
           - PATCH
         accessControlAllowOriginList:
-          - "https://api.test.localhost"
-          - "https://app.test.localhost"
-          - "https://chat.test.localhost"
-          - "https://dashboard.test.localhost"
+          - "https://api.test.localhost:8443"
+          - "https://app.test.localhost:8443"
+          - "https://chat.test.localhost:8443"
+          - "https://dashboard.test.localhost:8443"
         accessControlAllowHeaders:
           - "*"
         accessControlExposeHeaders:
@@ -32,11 +34,14 @@ http:
           Referrer-Policy: "strict-origin-when-cross-origin"
           X-Environment: "testing"
           # Content Security Policy for test environment
-          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: ws:; font-src 'self' data:;"
+          # connect-src includes api.test.localhost:8443 for cross-origin Vue→API calls
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.test.localhost:8443 wss: ws:; font-src 'self' data:;"
           # Permissions Policy
           Permissions-Policy: "geolocation=(), microphone=(), camera=()"
 
     # CORS middleware for test environment
+    # Origins include :8443 because test Traefik maps 8443:443 (non-standard port),
+    # so browsers send Origin with the port included.
     cors-test:
       headers:
         accessControlAllowMethods:
@@ -47,10 +52,10 @@ http:
           - DELETE
           - PATCH
         accessControlAllowOriginList:
-          - "https://api.test.localhost"
-          - "https://app.test.localhost"
-          - "https://chat.test.localhost"
-          - "https://dashboard.test.localhost"
+          - "https://api.test.localhost:8443"
+          - "https://app.test.localhost:8443"
+          - "https://chat.test.localhost:8443"
+          - "https://dashboard.test.localhost:8443"
         accessControlAllowHeaders:
           - "Accept"
           - "Accept-Language"
@@ -58,6 +63,7 @@ http:
           - "Content-Type"
           - "Authorization"
           - "X-Requested-With"
+          - "X-Request-ID"
           - "X-User-ID"
           - "X-Application-ID"
           - "X-Internal-Service"
@@ -87,6 +93,16 @@ http:
         average: 200  # 200 requests per second
         burst: 500    # Allow bursts up to 500
         period: 1s
+
+    # Simulate Authelia ForwardAuth headers for test
+    # In production, Authelia injects Remote-User/Remote-Email via ForwardAuth.
+    # In test, this middleware fakes those headers so Vue can call the API without
+    # running a full Authelia instance (mirrors dev-authelia-sim).
+    test-authelia-sim:
+      headers:
+        customRequestHeaders:
+          Remote-User: "user@icb.com"
+          Remote-Email: "user@icb.com"
 
     # Auth middleware for dashboard access (test environment)
     dashboard-auth-test:
