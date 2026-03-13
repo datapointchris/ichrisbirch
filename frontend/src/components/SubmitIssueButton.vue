@@ -20,8 +20,6 @@ defineEmits<{
 <style scoped>
 .button-submit-issue {
   position: fixed;
-  top: 50px;
-  right: 50px;
   z-index: 90;
 }
 </style>
