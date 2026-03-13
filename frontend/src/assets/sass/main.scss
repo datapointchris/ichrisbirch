@@ -2,38 +2,38 @@
 // Resolves partials from ichrisbirch/app/static/sass/ via Vite loadPaths config
 // FontAwesome is loaded as CSS imports in main.ts (avoids font-path config issues)
 
-@use "abstracts/colors";
-@use "abstracts/spacing";
-@use "abstracts/effects";
+@use 'abstracts/colors';
+@use 'abstracts/spacing';
+@use 'abstracts/effects';
 
-@use "base/reset";
-@use "base/typography";
-@use "base/base";
+@use 'base/reset';
+@use 'base/typography';
+@use 'base/base';
 
-@use "layout/navigation";
-@use "layout/grid";
-@use "layout/forms";
+@use 'layout/navigation';
+@use 'layout/grid';
+@use 'layout/forms';
 
-@use "components/buttons";
-@use "components/checkboxes";
-@use "components/flash_messages";
-@use "components/errors";
-@use "components/loading";
-@use "components/radio_scale_selector";
-@use "components/search_results";
-@use "components/submit_issue";
-@use "components/tooltips";
+@use 'components/buttons';
+@use 'components/checkboxes';
+@use 'components/flash_messages';
+@use 'components/errors';
+@use 'components/loading';
+@use 'components/radio_scale_selector';
+@use 'components/search_results';
+@use 'components/submit_issue';
+@use 'components/tooltips';
 
-@use "pages/articles";
-@use "pages/autotasks";
-@use "pages/backups";
-@use "pages/books";
-@use "pages/box_packing";
-@use "pages/countdowns";
-@use "pages/events";
-@use "pages/habits";
-@use "pages/home";
-@use "pages/money_wasted";
-@use "pages/logs";
-@use "pages/serverstats";
-@use "pages/tasks";
+@use 'pages/articles';
+@use 'pages/autotasks';
+@use 'pages/backups';
+@use 'pages/books';
+@use 'pages/box_packing';
+@use 'pages/countdowns';
+@use 'pages/events';
+@use 'pages/habits';
+@use 'pages/home';
+@use 'pages/money_wasted';
+@use 'pages/logs';
+@use 'pages/serverstats';
+@use 'pages/tasks';

@@ -16,7 +16,13 @@ http:
           - "OPTIONS"
           - "PATCH"
         accessControlAllowHeaders:
-          - "*"
+          - "Content-Type"
+          - "Authorization"
+          - "Accept"
+          - "X-Request-ID"
+          - "X-Application-ID"
+          - "X-User-ID"
+          - "X-Service-Key"
         accessControlAllowCredentials: true
 
     # Aliased middlewares for compatibility with base compose file
@@ -35,7 +41,13 @@ http:
           - "OPTIONS"
           - "PATCH"
         accessControlAllowHeaders:
-          - "*"
+          - "Content-Type"
+          - "Authorization"
+          - "Accept"
+          - "X-Request-ID"
+          - "X-Application-ID"
+          - "X-User-ID"
+          - "X-Service-Key"
         accessControlAllowCredentials: true
 
     security-headers-prod:
@@ -74,6 +86,16 @@ http:
         customResponseHeaders:
           X-Debug-Mode: "true"
           X-Environment: "development"
+
+    # Simulate Authelia ForwardAuth headers for dev
+    # In production, Authelia injects Remote-User/Remote-Email via ForwardAuth.
+    # In dev, this middleware fakes those headers so Vue can call the API without
+    # running a full Authelia instance.
+    dev-authelia-sim:
+      headers:
+        customRequestHeaders:
+          Remote-User: "user@icb.com"
+          Remote-Email: "user@icb.com"
 
     # WebSocket support for Streamlit
     websocket-headers:

@@ -91,12 +91,16 @@ const mainLinks: NavLink[] = [
   { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: false },
   { to: '/habits', label: 'Habits', icon: 'fa-solid fa-repeat', migrated: false },
   { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: false },
-  { to: '/tasks', label: 'Tasks', icon: 'fa-solid fa-list-check', migrated: false, activeNames: ['tasks', 'tasks-priority', 'tasks-completed'] },
+  {
+    to: '/tasks',
+    label: 'Tasks',
+    icon: 'fa-solid fa-list-check',
+    migrated: false,
+    activeNames: ['tasks', 'tasks-priority', 'tasks-completed'],
+  },
 ]
 
-const footerLinks: NavLink[] = [
-  { to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear', migrated: false },
-]
+const footerLinks: NavLink[] = [{ to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear', migrated: false }]
 
 function isActive(link: NavLink): boolean {
   if (link.activeNames) {

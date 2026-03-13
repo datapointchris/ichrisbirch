@@ -12,10 +12,7 @@
           v-for="notification in notifications"
           :key="notification.id"
           class="flash-messages__message"
-          :class="[
-            `flash-messages__message--${notification.category}`,
-            { 'flash-messages__message--closing': notification.closing },
-          ]"
+          :class="[`flash-messages__message--${notification.category}`, { 'flash-messages__message--closing': notification.closing }]"
         >
           {{ notification.message }}
           <button

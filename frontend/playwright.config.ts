@@ -16,7 +16,10 @@ export default defineConfig({
   timeout: 30000,
 
   use: {
-    baseURL: 'https://vue.docker.localhost',
+    // Must use app.docker.localhost (not vue.docker.localhost) to test through
+    // Traefik path-based routing — this is what users actually hit, and it's
+    // the only way to catch cross-origin CORS issues with api.docker.localhost.
+    baseURL: 'https://app.docker.localhost',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

@@ -98,6 +98,7 @@ import { reactive, onMounted } from 'vue'
 import { useCountdownsStore } from '@/stores/countdowns'
 import { useNotifications } from '@/composables/useNotifications'
 import { computeDaysLeft, formatDate } from '@/composables/useDaysLeft'
+import { ApiError } from '@/api/errors'
 
 const store = useCountdownsStore()
 const { show: notify } = useNotifications()
@@ -136,8 +137,9 @@ async function handleAdd() {
     form.name = ''
     form.due_date = ''
     form.notes = ''
-  } catch {
-    notify('Failed to add countdown', 'error')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to add countdown: ${detail}`, 'error')
   }
 }
 
@@ -145,8 +147,9 @@ async function handleDelete(id: number) {
   try {
     await store.remove(id)
     notify('Countdown deleted', 'success')
-  } catch {
-    notify('Failed to delete countdown', 'error')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to delete countdown: ${detail}`, 'error')
   }
 }
 </script>

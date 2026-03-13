@@ -1,31 +1,85 @@
 import axios from 'axios'
+import { createLogger } from '@/utils/logger'
+import { extractApiError } from './errors'
+
+const logger = createLogger('ApiClient')
 
 const apiUrl = import.meta.env.VITE_API_URL || 'https://api.docker.localhost'
+
+// Track request metadata (start time, request ID) outside Axios's config object.
+// WeakMap avoids type augmentation issues and cleans up automatically.
+interface RequestMeta {
+  startTime: number
+  requestId: string
+}
+const requestMeta = new WeakMap<object, RequestMeta>()
 
 export const api = axios.create({
   baseURL: apiUrl,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
   withCredentials: true,
 })
 
+// Request interceptor: inject X-Request-ID and log outgoing request
+api.interceptors.request.use((config) => {
+  const requestId = crypto.randomUUID().slice(0, 8)
+  config.headers.set('X-Request-ID', requestId)
+
+  requestMeta.set(config, { startTime: Date.now(), requestId })
+
+  logger.debug('request_outgoing', {
+    method: config.method?.toUpperCase(),
+    url: `${config.baseURL}${config.url}`,
+    request_id: requestId,
+  })
+
+  return config
+})
+
+// Response interceptor: log response and convert errors to ApiError
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const meta = requestMeta.get(response.config)
+    const duration = meta ? Date.now() - meta.startTime : 0
+
+    logger.info('request_completed', {
+      method: response.config.method?.toUpperCase(),
+      url: `${response.config.baseURL}${response.config.url}`,
+      status: response.status,
+      duration_ms: duration,
+      request_id: meta?.requestId,
+    })
+
+    return response
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      const lastReload = sessionStorage.getItem('lastAuthReload')
-      const now = Date.now()
-      if (!lastReload || now - Number(lastReload) > 60000) {
-        sessionStorage.setItem('lastAuthReload', String(now))
-        window.location.reload()
-        return new Promise(() => {})
-      }
+    const meta = error.config ? requestMeta.get(error.config) : undefined
+    const duration = meta ? Date.now() - meta.startTime : 0
+    const apiError = extractApiError(error)
+
+    if (apiError.isNetworkError) {
+      logger.error('request_network_error', {
+        method: error.config?.method?.toUpperCase(),
+        url: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
+        error: apiError.detail,
+        duration_ms: duration,
+        request_id: meta?.requestId,
+      })
+    } else {
+      logger.error('request_failed', {
+        method: error.config?.method?.toUpperCase(),
+        url: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
+        status: apiError.status,
+        detail: apiError.detail,
+        duration_ms: duration,
+        request_id: apiError.requestId || meta?.requestId,
+      })
     }
 
-    const message = error.response?.data?.detail || error.message || 'An error occurred'
-    console.error('API Error:', message)
-    return Promise.reject(error)
+    return Promise.reject(apiError)
   }
 )
 
