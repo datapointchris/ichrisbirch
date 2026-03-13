@@ -263,6 +263,12 @@ ichrisbirch-backups/
 # css map files
 *.css.map
 
+# Vue frontend
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
 # terraform
 .terraform/
 terraform.tfstate

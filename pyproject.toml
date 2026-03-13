@@ -137,7 +137,7 @@ skips = ["B113", "B311"]
 
 
 [tool.codespell]
-skip = '*.css.map,*chat_history.json,tests/stats/fixtures/tool_outputs/codespell_with_issues.txt,ichrisbirch/app/static/fontawesome/*'
+skip = '*.css.map,*chat_history.json,tests/stats/fixtures/tool_outputs/codespell_with_issues.txt,ichrisbirch/app/static/fontawesome/*,frontend/package-lock.json'
 ignore-words-list = "astroid,aNULL,ANULL,anull,iterm,te"
 exclude-file = "uv.lock"
 check-filenames = true
