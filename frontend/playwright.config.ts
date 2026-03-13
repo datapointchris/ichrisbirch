@@ -5,7 +5,14 @@ import { defineConfig, devices } from '@playwright/test'
  *
  * Tests run against the real frontend + API + database (Docker-based).
  * Sequential execution to maintain consistent database state.
+ *
+ * By default, tests run against test containers (app.test.localhost:8443).
+ * Set E2E_ENV=dev to run against dev containers (app.docker.localhost).
  */
+
+const isDevEnv = process.env.E2E_ENV === 'dev'
+const baseURL = isDevEnv ? 'https://app.docker.localhost' : 'https://app.test.localhost:8443'
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -16,10 +23,10 @@ export default defineConfig({
   timeout: 30000,
 
   use: {
-    // Must use app.docker.localhost (not vue.docker.localhost) to test through
+    // Must use app.*.localhost (not vue.*.localhost) to test through
     // Traefik path-based routing — this is what users actually hit, and it's
-    // the only way to catch cross-origin CORS issues with api.docker.localhost.
-    baseURL: 'https://app.docker.localhost',
+    // the only way to catch cross-origin CORS issues with api.*.localhost.
+    baseURL,
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

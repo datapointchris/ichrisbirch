@@ -207,13 +207,13 @@ services:
     labels:
       - "traefik.enable=true"
       # Path-based routing — migrated pages served from Vue at higher priority
-      - "traefik.http.routers.vue-paths.rule=Host(`${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/assets`))"
+      - "traefik.http.routers.vue-paths.rule=Host(`${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/assets`))"
       - "traefik.http.routers.vue-paths.entrypoints=web"
       - "traefik.http.routers.vue-paths.priority=100"
       - "traefik.http.routers.vue-paths.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
       - "traefik.http.services.vue.loadbalancer.server.port=80"
       # www subdomain also routes to Vue for migrated paths
-      - "traefik.http.routers.vue-paths-www.rule=Host(`www.${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/assets`))"
+      - "traefik.http.routers.vue-paths-www.rule=Host(`www.${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/assets`))"
       - "traefik.http.routers.vue-paths-www.entrypoints=web"
       - "traefik.http.routers.vue-paths-www.priority=100"
       - "traefik.http.routers.vue-paths-www.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"

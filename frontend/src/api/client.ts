@@ -300,6 +300,13 @@ export interface BookUpdate {
   notes?: string
 }
 
+export interface BookGoodreadsInfo {
+  title: string
+  author: string
+  tags: string
+  goodreads_url: string
+}
+
 // --- Article ---
 
 export interface Article {
