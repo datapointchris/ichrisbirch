@@ -243,16 +243,25 @@ class Settings:
 
 **Authelia (Production)**:
 
-- Deployed via Traefik ForwardAuth middleware
+- Deployed via Traefik ForwardAuth middleware on homelab Traefik (`~/homelab`)
 - Injects `Remote-User` and `Remote-Email` headers after authentication
-- All app routes protected by Authelia; API bypasses ForwardAuth (uses PATs/JWTs)
-- See `~/homelab` for Authelia configuration
+- All routes on `ichrisbirch.com` protected by Authelia ForwardAuth
+- `api.ichrisbirch.com` bypasses ForwardAuth (for JWT/API key clients like MCP tools)
+- See `~/homelab/containers/app-ops-lxc/traefik/dynamic.yml` for route config
+- See `~/homelab/containers/auth-lxc/config/configuration.yml` for access policies
+
+**Vue Frontend (Production)**:
+
+- API calls use **same-origin proxy**: Vue calls `/api/...` (not `api.ichrisbirch.com`)
+- Traefik `api-proxy` router (priority 200) strips `/api` prefix and forwards to FastAPI
+- Auth is automatic: requests to `ichrisbirch.com/api/*` go through Authelia ForwardAuth, which injects `Remote-User` headers
+- No CORS needed (same origin)
 
 **Vue Frontend (Dev)**:
 
-- Traefik `dev-authelia-sim` middleware injects `Remote-User: user@icb.com` header
+- API calls use **cross-origin**: Vue calls `https://api.docker.localhost` directly
+- Traefik `dev-authelia-sim` middleware injects `Remote-User: user@icb.com` header on the API router
 - No login page or token management needed — auth is transparent via Traefik
-- Cross-origin API calls use `withCredentials: true` (Axios)
 
 **Flask (App Service)**:
 
@@ -643,6 +652,30 @@ Both produce identical log formats for Loki aggregation. Vue uses JSON reporter 
 ```
 
 **Request tracing**: All services include `request_id` in logs via `X-Request-ID` header propagation.
+
+### Production Logs (Direct Access)
+
+**Claude Code can SSH directly to production servers to check logs.** Use this to verify changes work before committing more fixes.
+
+```bash
+# View recent API logs (from local machine)
+ssh chris@10.0.20.11 "docker logs icb-prod-api --tail=50 2>&1"
+
+# View Vue container logs
+ssh chris@10.0.20.11 "docker logs icb-prod-vue --tail=50 2>&1"
+
+# View Flask app logs
+ssh chris@10.0.20.11 "docker logs icb-prod-app --tail=50 2>&1"
+
+# View Traefik logs (routing issues)
+ssh chris@10.0.20.11 "docker logs icb-prod-traefik --tail=50 2>&1"
+
+# Check running containers
+ssh chris@10.0.20.11 "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+
+# Check homelab Traefik logs (Authelia/ForwardAuth issues)
+ssh chris@10.0.20.15 "journalctl -u traefik --no-pager -n 50"
+```
 
 ### Production Deployment Logs
 
