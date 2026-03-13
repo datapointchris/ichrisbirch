@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 import redis
-import sqlalchemy as sa
 from fastapi import status
 
 from ichrisbirch import schemas
@@ -421,8 +420,8 @@ class TestCreateFromUrl:
 
 @pytest.fixture
 def test_redis():
-    """Connect to test Redis on port 6380, flush article_import keys after test."""
-    client = redis.Redis(host='localhost', port=6380, db=0, decode_responses=True)
+    """Connect to test Redis on port 6380 db=1, isolated from container worker on db=0."""
+    client = redis.Redis(host='localhost', port=6380, db=1, decode_responses=True)
     yield client
     # Cleanup: delete all article_import keys
     for key in client.keys('article_import:*'):
@@ -432,7 +431,12 @@ def test_redis():
 
 @pytest.fixture
 def api_with_redis(txn_api_logged_in, test_redis):
-    """API client with Redis configured on app.state."""
+    """API client with Redis on db=1, isolated from the container's worker.
+
+    The test Docker container runs an ArticleImportWorker on db=0. By using db=1
+    for the in-process TestClient, queued URLs are invisible to the container's
+    worker, preventing it from writing failed imports outside the test transaction.
+    """
     client, session = txn_api_logged_in
     client.app.state.redis_client = test_redis
     yield client, session
@@ -477,10 +481,7 @@ class TestBulkImport:
 
     def test_failed_imports_empty(self, api_with_redis):
         """GET /articles/failed-imports/ returns empty list when none exist."""
-        client, session = api_with_redis
-        # Clear any failed imports left by prior tests in this class
-        session.execute(sa.text('DELETE FROM article_failed_imports'))
-        session.commit()
+        client, _ = api_with_redis
         response = client.get(f'{ENDPOINT}failed-imports/')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json() == []
