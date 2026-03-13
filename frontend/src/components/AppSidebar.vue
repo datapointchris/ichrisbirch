@@ -88,7 +88,7 @@ const mainLinks: NavLink[] = [
   { to: '/books', label: 'Books', icon: 'fa-solid fa-book', migrated: false },
   { to: '/box-packing', label: 'Box Packing', icon: 'fa-solid fa-box', migrated: false },
   { to: '/countdowns', label: 'Countdowns', icon: 'fa-solid fa-hourglass-half', migrated: true },
-  { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: false },
+  { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: true },
   { to: '/habits', label: 'Habits', icon: 'fa-solid fa-repeat', migrated: false },
   { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: false },
   {
