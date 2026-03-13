@@ -19,11 +19,11 @@ def upgrade() -> None:
     op.create_table(
         'durations',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=128), nullable=False),
+        sa.Column('name', sa.Text(), nullable=False),
         sa.Column('start_date', sa.Date(), nullable=False),
         sa.Column('end_date', sa.Date(), nullable=True),
         sa.Column('notes', sa.Text(), nullable=True),
-        sa.Column('color', sa.String(length=7), nullable=True),
+        sa.Column('color', sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
     )
     op.create_table(
