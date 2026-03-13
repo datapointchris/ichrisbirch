@@ -638,6 +638,153 @@ nav a:hover {
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
 }
 
+.button-sidebar-toggle {
+  position: relative;
+  margin: var(--space-xs) auto;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50px;
+  color: var(--clr-accent-light);
+  transition: all 0.4s ease-in-out;
+}
+.button-sidebar-toggle__text {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  font-size: calc(var(--fs-400) * 1.5);
+  text-align: center;
+}
+.button-sidebar-toggle__icon {
+  /* This works with svg but not fontawesome ie (fa-solid fa-code)
+  must use class names for sizing */
+  width: 16.5px;
+  height: 16.5px;
+}
+.button-sidebar-toggle:hover {
+  color: var(--clr-accent);
+  transition: all 0.4s ease-in-out;
+}
+.button-sidebar-toggle::before {
+  /* GRAY BUTTON ON TOP */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 50px;
+  height: 50px;
+  content: "";
+  border-radius: 50px;
+  background-color: var(--clr-gray-800);
+  filter: blur(0.5px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.button-sidebar-toggle:hover::before {
+  background-color: var(--clr-gray-900);
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.button-sidebar-toggle::after {
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
+  position: absolute;
+  translate: transform(-50%, -50%);
+  display: block;
+  width: 75px;
+  height: 75px;
+  content: "";
+  cursor: pointer;
+  border-radius: 75px;
+  filter: blur(1px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.button-sidebar-toggle:hover::after {
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+
+.button-sidebar-tab {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 40px;
+  color: var(--clr-accent-light);
+  transition: all 0.4s ease-in-out;
+}
+.button-sidebar-tab__text {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  font-size: calc(var(--fs-400) * 1.5);
+  text-align: center;
+}
+.button-sidebar-tab__icon {
+  /* This works with svg but not fontawesome ie (fa-solid fa-code)
+  must use class names for sizing */
+  width: 13.2px;
+  height: 13.2px;
+}
+.button-sidebar-tab:hover {
+  color: var(--clr-accent);
+  transition: all 0.4s ease-in-out;
+}
+.button-sidebar-tab::before {
+  /* GRAY BUTTON ON TOP */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 40px;
+  height: 40px;
+  content: "";
+  border-radius: 40px;
+  background-color: var(--clr-gray-800);
+  filter: blur(0.5px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.button-sidebar-tab:hover::before {
+  background-color: var(--clr-gray-900);
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.button-sidebar-tab::after {
+  /* OUTER RING
+  The outer ring has a delay for the press animation to make it appear
+  that it is being depressed by the inner button.
+  */
+  position: absolute;
+  translate: transform(-50%, -50%);
+  display: block;
+  width: 60px;
+  height: 60px;
+  content: "";
+  cursor: pointer;
+  border-radius: 60px;
+  filter: blur(1px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+}
+.button-sidebar-tab:hover::after {
+  transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
+  filter: blur(3px);
+  transition: all 0.4s ease-in-out 0.12s;
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+
 .textbox {
   margin: var(--space-2xs);
   padding: var(--space-2xs) var(--space-m);

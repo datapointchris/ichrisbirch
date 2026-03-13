@@ -1,4 +1,24 @@
 <template>
+  <!-- Collapsed tab — visible when sidebar is closed -->
+  <Transition name="tab">
+    <div
+      v-if="!open"
+      class="sidebar-tab"
+    >
+      <div
+        class="button-sidebar-tab"
+        tabindex="0"
+        @click="$emit('toggle')"
+        @keydown.enter="$emit('toggle')"
+      >
+        <div class="button-sidebar-tab__text">
+          <span class="fa-solid fa-chevron-right"></span>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- Sidebar -->
   <Transition name="sidebar">
     <aside
       v-show="open"
@@ -11,6 +31,16 @@
         >
           iChrisBirch
         </a>
+      </div>
+      <div
+        class="button-sidebar-toggle"
+        tabindex="0"
+        @click="$emit('toggle')"
+        @keydown.enter="$emit('toggle')"
+      >
+        <div class="button-sidebar-toggle__text">
+          <span class="fa-solid fa-chevron-left"></span>
+        </div>
       </div>
       <nav class="sidebar__nav">
         <template
@@ -71,6 +101,10 @@ defineProps<{
   open: boolean
 }>()
 
+defineEmits<{
+  toggle: []
+}>()
+
 interface NavLink {
   to: string
   label: string
@@ -88,6 +122,7 @@ const mainLinks: NavLink[] = [
   { to: '/books', label: 'Books', icon: 'fa-solid fa-book', migrated: false },
   { to: '/box-packing', label: 'Box Packing', icon: 'fa-solid fa-box', migrated: false },
   { to: '/countdowns', label: 'Countdowns', icon: 'fa-solid fa-hourglass-half', migrated: true },
+  { to: '/durations', label: 'Durations', icon: 'fa-solid fa-clock-rotate-left', migrated: true },
   { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: true },
   { to: '/habits', label: 'Habits', icon: 'fa-solid fa-repeat', migrated: false },
   { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: false },
@@ -126,7 +161,6 @@ function isActive(link: NavLink): boolean {
 
 .sidebar__header {
   padding: var(--space-m) var(--space-s);
-  border-bottom: 1px solid var(--clr-gray-800);
 }
 
 .sidebar__title {
@@ -180,7 +214,15 @@ function isActive(link: NavLink): boolean {
   color: var(--clr-accent);
 }
 
-/* Slide transition */
+/* Collapsed tab — bevel button on the left edge */
+.sidebar-tab {
+  position: fixed;
+  top: var(--space-m);
+  left: var(--space-xs);
+  z-index: 100;
+}
+
+/* Sidebar slide transition */
 .sidebar-enter-active,
 .sidebar-leave-active {
   transition: transform 0.25s ease;
@@ -189,5 +231,16 @@ function isActive(link: NavLink): boolean {
 .sidebar-enter-from,
 .sidebar-leave-to {
   transform: translateX(-100%);
+}
+
+/* Tab fade transition */
+.tab-enter-active,
+.tab-leave-active {
+  transition: opacity 0.2s ease 0.15s;
+}
+
+.tab-enter-from,
+.tab-leave-to {
+  opacity: 0;
 }
 </style>

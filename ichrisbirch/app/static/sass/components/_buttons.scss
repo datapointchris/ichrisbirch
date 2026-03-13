@@ -289,3 +289,16 @@
     right: calc($button-size / 2);
     @include double-bevel-button($button-size);
 }
+
+.button-sidebar-toggle {
+    $button-size: 50px;
+    position: relative;
+    margin: var(--space-xs) auto;
+    @include double-bevel-button($button-size);
+}
+
+.button-sidebar-tab {
+    $button-size: 40px;
+    position: relative;
+    @include double-bevel-button($button-size);
+}
