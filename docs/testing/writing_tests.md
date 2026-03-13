@@ -130,6 +130,8 @@ def test_form_submission(test_app_logged_in):
 
 ## Testing Frontend with Playwright
 
+### Flask Pages (Python Playwright)
+
 ```python
 def test_ui_interaction(page: Page):
     page.get_by_label('name').fill('Test Event')
@@ -138,6 +140,78 @@ def test_ui_interaction(page: Page):
 
     # Verify the result
     expect(page).to_have_title('Events')
+```
+
+### Vue Pages (TypeScript Playwright)
+
+Vue E2E tests live in `frontend/e2e/` and run through real Traefik routing at `https://app.docker.localhost`:
+
+```typescript
+import { test, expect } from '@playwright/test'
+
+test('creates a new countdown', async ({ page }) => {
+  await page.goto('/countdowns')
+  const name = `E2E Test ${Date.now()}`  // unique per run
+
+  await page.fill('#name', name)
+  await page.fill('#due_date', '2028-06-15')
+  await page.click('button[type="submit"]')
+
+  // Verify success notification
+  await expect(page.locator('.flash-messages__message--success').first()).toBeVisible()
+  // Verify item appears in grid
+  await expect(page.locator('.grid__item', { hasText: name })).toBeVisible()
+})
+```
+
+Run Vue E2E tests:
+
+```bash
+cd frontend
+npm run test:e2e        # Headless
+npm run test:e2e:ui     # Interactive UI
+```
+
+### Vue Unit Tests (Vitest)
+
+Vue unit tests live in `frontend/src/**/__tests__/` and use mocked API calls:
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { useCountdownsStore } from '../countdowns'
+import { api } from '@/api/client'
+
+vi.mock('@/api/client', () => ({
+  api: { get: vi.fn(), post: vi.fn(), delete: vi.fn() }
+}))
+
+describe('CountdownsStore', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('fetches all countdowns', async () => {
+    const mockData = [{ id: 1, name: 'Test', due_date: '2028-01-01' }]
+    vi.mocked(api.get).mockResolvedValue({ data: mockData })
+
+    const store = useCountdownsStore()
+    await store.fetchAll()
+
+    expect(store.countdowns).toEqual(mockData)
+    expect(store.error).toBeNull()
+  })
+})
+```
+
+Run Vue unit tests:
+
+```bash
+cd frontend
+npm run test:unit       # One-shot
+npm run test:watch      # Watch mode
+npm run test:ui         # Interactive Vitest UI
 ```
 
 ## Testing Model Functions

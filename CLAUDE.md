@@ -135,8 +135,23 @@ mkdocs build
 - **Framework**: Flask 3.0.3+
 - **Port**: 5000 (dev), 5001 (test)
 - **Entry Point**: `ichrisbirch.wsgi_app:app`
-- **Purpose**: Server-side rendered frontend with Flask-Login sessions
+- **Purpose**: Server-side rendered frontend with Flask-Login sessions (being incrementally replaced by Vue)
 - **Routes**: Blueprints for auth, admin, tasks, habits, events, chat, etc.
+
+**Vue Frontend Service** (`frontend/`)
+
+- **Framework**: Vue 3.5+ with TypeScript strict mode
+- **Port**: 5173 (Vite dev server)
+- **Build**: Vite 7.x with SCSS support
+- **Purpose**: Modern SPA frontend, incrementally replacing Flask pages
+- **State**: Pinia stores with structured error handling (ApiError)
+- **Logging**: consola with structured reporters (key=value dev, JSON for Loki)
+- **Testing**: Vitest (unit, 55 tests) + Playwright (E2E, 7 tests through Traefik)
+- **Routing**: Traefik path-based routing — Vue at priority 100 for migrated paths, Flask at priority 50 catchall
+- **Auth (dev)**: Traefik `dev-authelia-sim` middleware injects `Remote-User` headers
+- **Auth (prod)**: Authelia ForwardAuth on app routes
+- **Migrated pages**: Countdowns
+- **Migration order**: Countdowns (done) → Events → Books → simple pages → complex pages → Admin (last)
 
 **Chat Service** (`ichrisbirch/chat/`)
 
@@ -226,6 +241,19 @@ class Settings:
 
 ### Authentication Flow
 
+**Authelia (Production)**:
+
+- Deployed via Traefik ForwardAuth middleware
+- Injects `Remote-User` and `Remote-Email` headers after authentication
+- All app routes protected by Authelia; API bypasses ForwardAuth (uses PATs/JWTs)
+- See `~/homelab` for Authelia configuration
+
+**Vue Frontend (Dev)**:
+
+- Traefik `dev-authelia-sim` middleware injects `Remote-User: user@icb.com` header
+- No login page or token management needed — auth is transparent via Traefik
+- Cross-origin API calls use `withCredentials: true` (Axios)
+
 **Flask (App Service)**:
 
 - Flask-Login for session management
@@ -239,6 +267,7 @@ class Settings:
 - Refresh tokens stored in database
 - Access token expiration: 15 minutes
 - Refresh token expiration: 7 days
+- Authelia `Remote-User` header auth (highest priority in auth chain)
 
 **Streamlit (Chat Service)**:
 
@@ -304,6 +333,28 @@ async def admin(user: User = Depends(auth.get_current_admin_user)):
 - Reusable across test modules
 
 **Coverage**: 77+ test files covering API endpoints, app routes, models, schemas, authentication, scheduler jobs
+
+### Vue Frontend Testing
+
+**Three-layer strategy** — catches TypeScript errors, logic bugs, and integration issues:
+
+| Layer | Tool | What it catches | Command |
+|-------|------|-----------------|---------|
+| Build verification | `vue-tsc` + `vite build` | TypeScript errors, missing imports, broken modules | `npm run test:build` |
+| Unit tests | Vitest + Vue Test Utils | Store logic, error handling, API mocking | `npm run test:unit` |
+| E2E tests | Playwright | CORS, auth headers, Traefik routing, real CRUD | `npm run test:e2e` |
+
+```bash
+# Run build check + unit tests (55 tests)
+cd frontend && npm test
+
+# Run E2E tests through real Traefik routing (7 tests, requires dev containers running)
+cd frontend && npm run test:e2e
+```
+
+**Key files**: `frontend/e2e/countdowns.spec.ts`, `frontend/src/stores/__tests__/`, `frontend/src/api/__tests__/`, `frontend/src/utils/__tests__/`
+
+**E2E tests run through `app.docker.localhost`** (not `vue.docker.localhost`) to catch cross-origin CORS issues with `api.docker.localhost`.
 
 ## Deployment
 
@@ -393,6 +444,8 @@ The CI pipeline includes a `test-production-build` job that catches these issues
 
 ### Adding a New Feature
 
+#### Backend (unchanged for all features)
+
 1. **Create Model** (`ichrisbirch/models/`)
    - Inherit from `Base`
    - Use `Mapped[type]` for type hints
@@ -409,28 +462,51 @@ The CI pipeline includes a `test-production-build` job that catches these issues
    - Dependency inject `Session` and `User`
    - Return Pydantic schemas
 
-4. **Create Flask Route** (`ichrisbirch/app/routes/`)
-   - Create blueprint
-   - Use Flask-Login for auth
-   - Communicate with API via `logging_flask_session_client()` or `logging_internal_service_client()` from `ichrisbirch.api.client.logging_client`
-
-5. **Create Templates** (`ichrisbirch/app/templates/`)
-   - Jinja2 templates
-   - Extend base template
-   - Use WTForms for forms (CSRF protection)
-
-6. **Write Tests** (`tests/ichrisbirch/`)
-   - Mirror source structure
-   - Test API endpoints (CRUD)
-   - Test app routes (rendering)
-   - Use fixtures for authenticated clients
-
-7. **Create Migration**
+4. **Create Migration**
 
    ```bash
    alembic revision --autogenerate -m "add feature"
    alembic upgrade head
    ```
+
+#### Vue Frontend (for migrated pages)
+
+1. **Create Pinia Store** (`frontend/src/stores/`)
+   - TypeScript interfaces for API types
+   - Use `createLogger('StoreName')` for structured logging
+   - Use `ApiError` and `extractApiError` for error handling
+   - Expose `error` ref as `ApiError | null`
+
+2. **Create Vue View** (`frontend/src/views/`)
+   - Use store for data and actions
+   - Use `ApiError.userMessage` for user-facing error display
+   - Add route in `frontend/src/router.ts`
+
+3. **Write Tests** (`frontend/src/stores/__tests__/`, `frontend/e2e/`)
+   - Unit tests: Mock API with `vi.mock`, test store CRUD + error paths
+   - E2E tests: Playwright through `app.docker.localhost` (catches CORS, auth, routing)
+
+4. **Update Traefik Routing** (`docker-compose.dev.yml`)
+   - Add path to Vue router rule at priority 100
+   - Flask catchall at priority 50 handles unmigrated pages
+
+#### Flask Frontend (legacy, for unmigrated pages)
+
+1. **Create Flask Route** (`ichrisbirch/app/routes/`)
+   - Create blueprint
+   - Use Flask-Login for auth
+   - Communicate with API via `logging_flask_session_client()` or `logging_internal_service_client()` from `ichrisbirch.api.client.logging_client`
+
+2. **Create Templates** (`ichrisbirch/app/templates/`)
+   - Jinja2 templates
+   - Extend base template
+   - Use WTForms for forms (CSRF protection)
+
+3. **Write Tests** (`tests/ichrisbirch/`)
+   - Mirror source structure
+   - Test API endpoints (CRUD)
+   - Test app routes (rendering)
+   - Use fixtures for authenticated clients
 
 ### Factory Pattern for App Creation
 
@@ -534,17 +610,23 @@ Use emojis sparingly:
 
 ### Logging Strategy
 
-The project uses **structlog** with stdout-only output. All logs go to stdout, Docker handles persistence.
-
-**Logger pattern** (every module):
+**Python (API, Flask, Scheduler)**: structlog with stdout-only output. Docker handles persistence.
 
 ```python
 import structlog
 logger = structlog.get_logger()
-
-# Log with structured data
 logger.info('user_login_success', user_id=user.id, email=user.email)
 ```
+
+**Vue Frontend**: consola with structured reporters matching structlog's key=value format.
+
+```typescript
+import { createLogger } from '@/utils/logger'
+const logger = createLogger('ModuleName')
+logger.info('countdown_created', { id: data.id, name: data.name })
+```
+
+Both produce identical log formats for Loki aggregation. Vue uses JSON reporter in production.
 
 **Configuration** (environment variables):
 
@@ -600,14 +682,15 @@ tail -200 /opt/webhooks/logs/ichrisbirch-<latest>.log
 
 ### Pre-commit Hooks
 
-Project uses pre-commit for code quality:
+Project uses pre-commit for code quality across both Python and Vue:
 
-- Ruff formatting and linting
-- djlint for Jinja templates
-- mypy type checking
-- Runs automatically on commit
+**Python**: Ruff (check + format), codespell, bandit, refurb, pyupgrade, mypy, shellcheck, markdownlint, djlint (Jinja), sass compile
 
-Bypass only when absolutely necessary:
+**Vue/Frontend**: ESLint, Prettier, TypeScript type checking (only triggered by changes to `frontend/**/*.{vue,ts,tsx,js,jsx}`)
+
+**Other**: Terraform validation/linting, GitHub Actions linting, project-specific validations
+
+Runs automatically on commit. Bypass only when absolutely necessary:
 
 ```bash
 git commit --no-verify -m "message"
@@ -712,11 +795,11 @@ alembic upgrade head
 
 ```text
 ichrisbirch/
-├── ichrisbirch/              # Main application code
+├── ichrisbirch/              # Main application code (Python)
 │   ├── api/                  # FastAPI backend
 │   │   ├── endpoints/        # API route definitions
 │   │   └── main.py          # FastAPI factory
-│   ├── app/                  # Flask frontend
+│   ├── app/                  # Flask frontend (being replaced by Vue)
 │   │   ├── routes/          # Flask blueprints
 │   │   ├── forms/           # WTForms
 │   │   ├── templates/       # Jinja2 templates
@@ -737,7 +820,23 @@ ichrisbirch/
 │   ├── wsgi_api.py          # API entry point
 │   ├── wsgi_app.py          # App entry point
 │   └── wsgi_scheduler.py    # Scheduler entry point
-├── tests/                    # Test suite (77+ files)
+├── frontend/                 # Vue 3 frontend (TypeScript, Vite)
+│   ├── src/
+│   │   ├── api/             # Axios client, ApiError, TypeScript interfaces
+│   │   ├── assets/sass/     # SCSS (shared with Flask via Vite loadPaths)
+│   │   ├── components/      # Vue components (sidebar, notifications, modals)
+│   │   ├── composables/     # Vue composables (useDaysLeft, useNotifications)
+│   │   ├── stores/          # Pinia stores with structured error handling
+│   │   ├── utils/           # consola logger, helpers
+│   │   ├── views/           # Page-level components
+│   │   ├── router.ts        # Vue Router with lazy-loaded routes
+│   │   └── main.ts          # App entry point
+│   ├── e2e/                 # Playwright E2E tests (through Traefik)
+│   ├── package.json         # npm dependencies and scripts
+│   ├── vite.config.ts       # Vite build config with SCSS loadPaths
+│   ├── playwright.config.ts # E2E config (baseURL: app.docker.localhost)
+│   └── Dockerfile           # Node multi-stage build
+├── tests/                    # Python test suite (77+ files)
 │   ├── conftest.py          # Pytest fixtures
 │   ├── ichrisbirch/         # Tests mirror src structure
 │   └── test_data/           # Test data generation
@@ -747,15 +846,15 @@ ichrisbirch/
 ├── deploy-containers/        # Docker deployment
 │   └── traefik/             # Traefik configuration
 │       ├── certs/           # SSL certificates
-│       ├── dynamic/         # Dynamic config
+│       ├── dynamic/         # Dynamic config (CORS, auth sim, security)
 │       └── scripts/         # SSL management
 ├── docs/                     # MkDocs documentation
 ├── cli/ichrisbirch          # Main CLI tool
 ├── docker-compose.yml        # Production config
-├── docker-compose.dev.yml    # Development overrides
+├── docker-compose.dev.yml    # Development overrides (incl. Vue service)
 ├── docker-compose.test.yml   # Testing overrides
-├── Dockerfile                # Multi-stage build
-├── pyproject.toml            # Project dependencies
+├── Dockerfile                # Multi-stage build (Python services)
+├── pyproject.toml            # Python dependencies
 └── .env                      # Environment variables
 ```
 

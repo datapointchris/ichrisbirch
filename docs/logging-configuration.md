@@ -288,11 +288,56 @@ The project migrated from Python's standard logging module to structlog. Key dif
 | String interpolation | Keyword arguments |
 | `__name__` for logger identification | CallsiteParameterAdder for location |
 
+## Vue Frontend Logging
+
+The Vue 3 frontend uses **consola** with custom structured reporters that match structlog's output format. This ensures consistent log format across Python and JavaScript services for Loki aggregation.
+
+**Configuration**: `frontend/src/utils/logger.ts`
+
+### Vue Logger Usage
+
+```typescript
+import { createLogger } from '@/utils/logger'
+
+const logger = createLogger('CountdownsStore')
+
+// Log with structured data (matches structlog's keyword arguments)
+logger.info('countdown_created', { id: data.id, name: data.name })
+logger.error('countdown_create_failed', { detail: error.detail, status: error.status })
+```
+
+### Output Formats
+
+**Dev (key=value, matching structlog console format)**:
+
+```text
+2026-03-13T15:30:45.123Z [info   ] countdown_created              module=CountdownsStore id=42 name="Summer Trip"
+```
+
+**Production (JSON, for Loki)**:
+
+```json
+{"timestamp":"2026-03-13T15:30:45.123Z","level":"info","event":"countdown_created","module":"CountdownsStore","id":42,"name":"Summer Trip"}
+```
+
+### Vue Request Tracing
+
+The Vue API client (`frontend/src/api/client.ts`) adds `X-Request-ID` headers to every outgoing request via an Axios interceptor. This ID is logged on both the client (consola) and server (structlog), enabling end-to-end request correlation.
+
+### Log Level Control
+
+In development, you can change the log level at runtime via the browser console:
+
+```javascript
+window.__setLogLevel('debug')  // Show all logs
+window.__setLogLevel('error')  // Errors only
+```
+
 ## Benefits
 
 1. **Structured data**: All log data is structured, enabling filtering and analysis
 2. **Request tracing**: Correlate logs across services with request_id
-3. **Consistent format**: Same output format across all services
+3. **Consistent format**: Same output format across all services (Python + Vue)
 4. **Environment flexibility**: Switch between console and JSON with one variable
 5. **No file management**: Docker handles persistence and rotation
 6. **Industry standard**: Follows 12-factor app logging principles

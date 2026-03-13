@@ -73,7 +73,7 @@ cd ichrisbirch
 Open these URLs in your browser (**no security warnings with mkcert**):
 
 - **API**: <https://api.docker.localhost/>
-- **App**: <https://app.docker.localhost/>
+- **App**: <https://app.docker.localhost/> (Vue + Flask behind same URL)
 - **Chat**: <https://chat.docker.localhost/>
 - **Dashboard**: <https://dashboard.docker.localhost/> (dev/devpass)
 
@@ -117,9 +117,11 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 **Services**:
 
 - **FastAPI Backend**: `https://api.docker.localhost/`
-- **Flask Frontend**: `https://app.docker.localhost/`  
+- **App Frontend**: `https://app.docker.localhost/` (Vue for migrated pages, Flask for the rest)
 - **Streamlit Chat**: `https://chat.docker.localhost/`
 - **Traefik Dashboard**: `https://dashboard.docker.localhost/` (dev/devpass)
+
+> **Note**: The frontend is being incrementally migrated from Flask to Vue 3. Both run behind `app.docker.localhost` — Traefik routes migrated paths (e.g., `/countdowns`) to Vue at higher priority, with Flask as the catchall for unmigrated pages.
 
 ### What's Running
 
@@ -133,6 +135,7 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 # [✓] icb-dev-postgres   (Up 2 minutes (healthy))
 # [✓] icb-dev-api        (Up 2 minutes (healthy))
 # [✓] icb-dev-app        (Up 2 minutes (healthy))
+# [✓] icb-dev-vue        (Up 2 minutes (healthy))
 # [✓] icb-dev-chat       (Up 2 minutes)
 #
 # Development environment URLs:

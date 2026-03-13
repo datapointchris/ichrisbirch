@@ -85,19 +85,34 @@ The base file defines production-ready services:
 | `postgres` | PostgreSQL 16 database | 5432 |
 | `redis` | Redis 7 cache | 6379 |
 | `api` | FastAPI backend | 8000 |
-| `app` | Flask frontend | 5000 |
+| `app` | Flask frontend (unmigrated pages) | 5000 |
+| `vue` | Vue 3 frontend (migrated pages) | 5173 |
 | `chat` | Streamlit chat interface | 8505 |
 | `scheduler` | APScheduler background jobs | N/A |
 
 ### Service Dependencies
 
 ```text
-postgres ─────┬───► api ──────► app
+postgres ─────┬───► api ──────► app (Flask, unmigrated pages)
               │       │
-redis ────────┤       ├──────► chat
+redis ────────┤       ├──────► vue (Vue 3, migrated pages)
               │       │
-              └───────┴──────► scheduler
+              └───────┤──────► chat
+                      │
+                      └──────► scheduler
 ```
+
+### Path-Based Routing (Vue Migration)
+
+During the incremental migration, Traefik routes requests to Vue or Flask based on the URL path:
+
+```text
+app.docker.localhost/countdowns  → Vue (priority 100, migrated)
+app.docker.localhost/events      → Flask (priority 50, not yet migrated)
+app.docker.localhost/tasks       → Flask (priority 50, not yet migrated)
+```
+
+As each page is migrated, its path is added to the Vue router rule in `docker-compose.dev.yml`. Flask's catchall handles everything not yet migrated.
 
 Services wait for dependencies via health checks:
 
@@ -311,7 +326,8 @@ All HTTP(S) traffic flows through Traefik:
 
 ```text
 Internet ──► Traefik (:443) ──┬──► api.domain.com ──► API (:8000)
-                              ├──► app.domain.com ──► App (:5000)
+                              ├──► app.domain.com/migrated-path ──► Vue (:5173)  [priority 100]
+                              ├──► app.domain.com/* ──► Flask (:5000)  [priority 50, catchall]
                               └──► chat.domain.com ──► Chat (:8505)
 ```
 

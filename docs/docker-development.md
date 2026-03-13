@@ -10,9 +10,10 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 
 **Development Environment (`docker-compose.dev.yml`)**:
 
-- **Nginx**: Port 80/443 (reverse proxy)
-- **Flask App**: Port 8000 (internal), auto-reload enabled
-- **FastAPI Backend**: Port 8000 (internal), auto-reload enabled  
+- **Traefik**: Port 443 (reverse proxy with HTTPS, `*.docker.localhost`)
+- **FastAPI Backend**: Port 8000 (internal), auto-reload enabled
+- **Flask App**: Port 5000 (internal), serves unmigrated pages at priority 50
+- **Vue Frontend**: Port 5173 (Vite dev server), serves migrated pages at priority 100
 - **PostgreSQL**: Port 5432 (internal/external), persistent volumes
 - **Redis**: Port 6379 (internal/external), persistent volumes
 - **Chat Service**: Port 8505 (internal), auto-reload enabled
@@ -112,10 +113,9 @@ Each environment uses corresponding environment files:
 
 ### Application Logging
 
-- **Python loggers**: Write directly to application log files
-- **Log locations**: `$LOG_DIR` environment variable (defaults to `./logs`)
-- **Log files**: `ichrisbirch.log`, `app.log`, `api.log`, `scheduler.log`
-- **Colored output**: CLI provides colored log viewing with `ichrisbirch logs`
+- **Python services (API, Flask, Scheduler)**: structlog with stdout-only output. Key=value format for dev, JSON for production/Loki.
+- **Vue frontend**: consola with structured reporters matching structlog's format. Includes request tracing via X-Request-ID headers.
+- **Colored output**: CLI provides colored log viewing with `ichrisbirch dev logs`
 
 ### Container Logging
 
@@ -130,10 +130,10 @@ Each environment uses corresponding environment files:
 
 **Development** (accessible from host):
 
-- Nginx: localhost:80, localhost:443
+- Traefik: localhost:443 (HTTPS reverse proxy)
 - PostgreSQL: localhost:5432
 - Redis: localhost:6379
-- API/App: Through Nginx reverse proxy
+- API/Flask/Vue: Through Traefik reverse proxy at `*.docker.localhost`
 
 **Testing** (isolated ports):
 

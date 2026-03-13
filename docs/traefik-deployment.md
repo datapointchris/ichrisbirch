@@ -118,9 +118,11 @@ Each environment includes:
 ```mermaid
 graph TB
     Client[Client Browser] --> Traefik[Traefik Reverse Proxy]
+    Traefik -->|"migrated paths (priority 100)"| VUE[Vue 3 Frontend]
+    Traefik -->|"catchall (priority 50)"| APP[Flask Frontend]
     Traefik --> API[FastAPI Backend]
-    Traefik --> APP[Flask Frontend]
     Traefik --> CHAT[Streamlit Chat]
+    VUE -->|"cross-origin API calls"| API
     API --> DB[(PostgreSQL)]
     API --> CACHE[(Redis)]
     APP --> API
@@ -130,11 +132,47 @@ graph TB
         Traefik -.-> PROXY[proxy network]
         API -.-> DEFAULT[default network]
         APP -.-> DEFAULT
+        VUE -.-> DEFAULT
         CHAT -.-> DEFAULT
         DB -.-> DEFAULT
         CACHE -.-> DEFAULT
     end
 ```
+
+### Path-Based Routing for Vue Migration
+
+During the incremental Flask-to-Vue migration, Traefik uses priority-based path routing so both frontends share `app.docker.localhost`:
+
+```yaml
+# Vue gets specific migrated paths (higher priority)
+vue:
+  labels:
+    - "traefik.http.routers.vue.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || ...)"
+    - "traefik.http.routers.vue.priority=100"
+
+# Flask gets everything else (lower priority, catchall)
+app:
+  labels:
+    - "traefik.http.routers.app.rule=Host(`app.docker.localhost`)"
+    - "traefik.http.routers.app.priority=50"
+```
+
+As each page is migrated, its `PathPrefix` is added to the Vue router rule. Users never see the migration — the URL stays `app.docker.localhost`.
+
+### Dev Auth Simulation
+
+In production, Authelia ForwardAuth injects `Remote-User` and `Remote-Email` headers after authentication. In dev, a Traefik middleware simulates this:
+
+```yaml
+# deploy-containers/traefik/dynamic/dev/middlewares.yml
+dev-authelia-sim:
+  headers:
+    customRequestHeaders:
+      Remote-User: "user@icb.com"
+      Remote-Email: "user@icb.com"
+```
+
+This middleware is applied to the API router so Vue's cross-origin API calls are authenticated without running Authelia locally.
 
 ## 🌐 Environment URLs
 

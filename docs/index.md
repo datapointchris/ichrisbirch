@@ -48,7 +48,10 @@ Welcome to the iChrisBirch application documentation.
 
 ## Frontend
 
-- [CSS](css.md) - Styling guidelines and architecture
+The frontend is being incrementally migrated from Flask (Jinja2) to Vue 3 (TypeScript). Both run behind `app.docker.localhost` via Traefik path-based routing.
+
+- [Vue Frontend](vue-frontend.md) - Vue 3 architecture, testing, and migration patterns
+- [CSS](css.md) - Styling guidelines and SCSS architecture (ITCSS)
 - [CSS BEM](css_bem.md) - BEM methodology for CSS
 - [HTML5 Semantic](html5_semantic.md) - Semantic HTML structure
 

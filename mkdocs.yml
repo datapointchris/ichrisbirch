@@ -111,6 +111,7 @@ nav:
       - Terraform: terraform.md
       - Git Secret: git_secret.md
   - Frontend:
+      - Vue Frontend: vue-frontend.md
       - CSS: css.md
       - CSS BEM: css_bem.md
       - HTML5 Semantic: html5_semantic.md

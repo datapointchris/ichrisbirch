@@ -1,6 +1,6 @@
 # Testing Infrastructure Overview
 
-This document provides a comprehensive overview of the testing infrastructure in the ichrisbirch project. The testing infrastructure is designed to support automated testing of both the FastAPI-based backend API and the Flask-based frontend application.
+This document provides a comprehensive overview of the testing infrastructure in the ichrisbirch project. The testing infrastructure supports the FastAPI backend API, Flask frontend, and Vue 3 frontend.
 
 ## Table of Contents
 
@@ -10,7 +10,8 @@ This document provides a comprehensive overview of the testing infrastructure in
 4. [Test Clients](#test-clients)
 5. [Fixtures](#fixtures)
 6. [Writing Tests](#writing-tests)
-7. [Related Documentation](#related-documentation)
+7. [Vue Frontend Testing](#vue-frontend-testing)
+8. [Related Documentation](#related-documentation)
 
 ## Testing Architecture
 
@@ -67,6 +68,62 @@ See the [fixtures documentation](fixtures.md) for more details.
 ## Writing Tests
 
 See the [writing tests guide](writing_tests.md) for information on how to write effective tests using this infrastructure.
+
+## Vue Frontend Testing
+
+The Vue frontend uses a three-layer testing strategy:
+
+### Build Verification (`npm run test:build`)
+
+Runs `vue-tsc` (TypeScript checking) and `vite build` to catch:
+
+- TypeScript errors and missing type declarations
+- Missing imports and broken module resolution
+- Dependencies installed on host but missing in Docker container
+
+### Unit Tests (`npm run test:unit`)
+
+Vitest with Vue Test Utils. Tests Pinia stores, composables, and utility functions with mocked API calls.
+
+- **55 tests** across stores, API error handling, and logger formatting
+- Located in `frontend/src/**/__tests__/`
+- API mocked via `vi.mock('@/api/client')`
+
+### E2E Tests (`npm run test:e2e`)
+
+Playwright tests running through real Traefik routing at `https://app.docker.localhost`. These catch issues that unit tests cannot:
+
+- CORS preflight failures between `app.docker.localhost` and `api.docker.localhost`
+- Auth header forwarding through Traefik middleware
+- Path-based routing delivering Vue vs Flask pages
+- Real CRUD operations against the live API and database
+
+- **7 tests** in `frontend/e2e/countdowns.spec.ts`
+- Requires dev containers running (`./cli/ichrisbirch dev start`)
+- Sequential execution (`workers: 1`) to maintain consistent database state
+
+### Running Vue Tests
+
+```bash
+cd frontend
+
+# Build check + unit tests (fast, no containers needed)
+npm test
+
+# E2E tests (requires dev containers)
+npm run test:e2e
+
+# E2E with interactive UI
+npm run test:e2e:ui
+```
+
+### Pre-commit Integration
+
+Three pre-commit hooks gate Vue code quality on every commit:
+
+- **vue-eslint**: Linting with auto-fix
+- **vue-prettier**: Code formatting
+- **vue-typecheck**: TypeScript type checking
 
 ## Related Documentation
 
