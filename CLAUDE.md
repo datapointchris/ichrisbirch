@@ -233,9 +233,17 @@ class Settings:
 
 **Environment Loading**:
 
-- Development/Testing: `.env` file
-- Production: AWS Systems Manager Parameter Store
+- All environments use `.env` files (loaded via `python-dotenv`)
+- Production: `.env` is decrypted from `secrets/secrets.prod.enc.env` by the deploy script using SOPS + age
 - Set `ENVIRONMENT=development|testing|production`
+
+**Secrets Management** (SOPS + age):
+
+- Encrypted secrets committed to `secrets/secrets.prod.enc.env`
+- SOPS config in `.sops.yaml` (repo root)
+- age private key at `~/.config/sops/age/keys.txt` (laptop + production server)
+- Edit secrets: `sops secrets/secrets.prod.enc.env`
+- AWS is still used for S3 backups (boto3), but no longer for config/secrets loading
 
 **Database URI Format**: `postgresql+psycopg://{user}:{pass}@{host}:{port}/{db}`
 

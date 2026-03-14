@@ -4,7 +4,6 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
-import boto3
 import dotenv
 import structlog
 
@@ -46,7 +45,6 @@ class AWSSettings:
     def __init__(self) -> None:
         self.region: str = os.environ['AWS_REGION']
         self.account_id: str = os.environ['AWS_ACCOUNT_ID']
-        self.kms_key: str = os.environ['AWS_KMS_KEY']
         self.postgres_backup_role: str = os.environ['AWS_POSTGRES_BACKUP_ROLE'] or 'role/S3DatabaseBackups'
         self.s3_backup_bucket: str = os.environ['AWS_S3_BACKUP_BUCKET']
 
@@ -106,7 +104,7 @@ class FlaskLoginSettings:
         self.login_message: str = 'Please log in to access this page.'
         self.login_message_category: str = 'info'
         self.REMEMBER_COOKIE_DURATION: timedelta = timedelta(days=1)
-        # REMEMBER_COOKIE_DOMAIN: Set via SSM for production, None allows any domain
+        # REMEMBER_COOKIE_DOMAIN: Set via .env for all environments, None allows any domain
         self.REMEMBER_COOKIE_DOMAIN: str | None = os.environ.get('FLASK_COOKIE_DOMAIN') or None
         self.SESSION_PROTECTION: str = 'strong'
 
@@ -228,22 +226,6 @@ class Settings:
         return f'https://chat.{self.domain}'
 
 
-def _set_environment_variables(env: str):
-    ssm = boto3.client('ssm', region_name='us-east-2')
-    all_params = []
-    response = ssm.get_parameters_by_path(Path=f'/ichrisbirch/{env}/', Recursive=True, WithDecryption=True)
-    all_params.extend(response['Parameters'])
-    while 'NextToken' in response:
-        response = ssm.get_parameters_by_path(
-            Path=f'/ichrisbirch/{env}/', Recursive=True, WithDecryption=True, NextToken=response['NextToken']
-        )
-        all_params.extend(response['Parameters'])
-    for param in all_params:
-        trimmed = param['Name'].replace(f'/ichrisbirch/{env}/', '')
-        env_var_name = '_'.join(trimmed.split('/')).upper()
-        os.environ[env_var_name] = param['Value']
-
-
 def _detect_environment() -> str:
     """Detect environment with sensible defaults for development.
 
@@ -276,8 +258,8 @@ def get_settings():
     if dotenv.load_dotenv():
         logger.info('config_loaded_from_dotenv', environment=env)
     else:
-        logger.info('config_loading_from_ssm', environment=env)
-        _set_environment_variables(env)
-        logger.info('config_loaded_from_ssm')
+        raise FileNotFoundError(
+            f'.env file not found for environment={env}. For production, decrypt secrets: sops decrypt secrets/secrets.prod.enc.env > .env'
+        )
 
     return Settings()

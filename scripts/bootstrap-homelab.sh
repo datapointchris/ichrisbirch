@@ -64,13 +64,33 @@ install_aws_cli() {
     return
   fi
 
-  log_info "Installing AWS CLI..."
+  log_info "Installing AWS CLI (needed for S3 backups)..."
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
   cd /tmp
   unzip -q awscliv2.zip
   ./aws/install
   rm -rf aws awscliv2.zip
   log_success "AWS CLI installed"
+}
+
+install_sops_age() {
+  if command -v age &>/dev/null; then
+    log_success "age already installed: $(age --version)"
+  else
+    log_info "Installing age..."
+    apt-get install -y age
+    log_success "age installed"
+  fi
+
+  if command -v sops &>/dev/null; then
+    log_success "sops already installed: $(sops --version)"
+  else
+    log_info "Installing sops..."
+    local sops_version="v3.9.4"
+    curl -fsSL "https://github.com/getsops/sops/releases/download/${sops_version}/sops-${sops_version}.linux.amd64" -o /usr/local/bin/sops
+    chmod +x /usr/local/bin/sops
+    log_success "sops installed"
+  fi
 }
 
 install_cloudflared() {
@@ -107,13 +127,13 @@ install_cli() {
 
 setup_aws_credentials() {
   if [[ -f ~/.aws/credentials ]]; then
-    log_success "AWS credentials already configured"
+    log_success "AWS credentials already configured (needed for S3 backups)"
     return
   fi
 
   log_warn "AWS credentials not found"
   echo ""
-  echo "You need to configure AWS credentials for SSM parameter access."
+  echo "AWS credentials are needed for S3 database backups."
   echo "Options:"
   echo "  1. Run 'aws configure' manually"
   echo "  2. Copy ~/.aws from another machine"
@@ -123,7 +143,56 @@ setup_aws_credentials() {
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     aws configure
   else
-    log_warn "Skipping AWS configuration - you'll need to do this before running prod commands"
+    log_warn "Skipping AWS configuration - needed for S3 backups"
+  fi
+}
+
+setup_age_key() {
+  local key_dir="$HOME/.config/sops/age"
+  if [[ -f "$key_dir/keys.txt" ]]; then
+    log_success "age key already configured"
+    return
+  fi
+
+  log_warn "age key not found at $key_dir/keys.txt"
+  echo ""
+  echo "The age private key is needed to decrypt production secrets."
+  echo "Copy it from your laptop: scp ~/.config/sops/age/keys.txt $(hostname):$key_dir/keys.txt"
+  echo ""
+  read -p "Generate a new key instead? [y/N] " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    mkdir -p "$key_dir"
+    age-keygen -o "$key_dir/keys.txt"
+    log_success "age key generated - update .sops.yaml with the public key shown above"
+  else
+    mkdir -p "$key_dir"
+    log_warn "Skipping age key setup - copy keys.txt before deploying"
+  fi
+}
+
+decrypt_production_secrets() {
+  cd "$INSTALL_DIR"
+  if [[ -f ".env" ]]; then
+    log_success ".env file already exists"
+    return
+  fi
+
+  if [[ ! -f "secrets/secrets.prod.enc.env" ]]; then
+    log_warn "No encrypted secrets file found - create .env manually"
+    return
+  fi
+
+  if ! command -v sops &>/dev/null; then
+    log_warn "sops not installed - cannot decrypt secrets"
+    return
+  fi
+
+  log_info "Decrypting production secrets..."
+  if sops decrypt secrets/secrets.prod.enc.env > .env 2>/dev/null; then
+    log_success "Production secrets decrypted to .env"
+  else
+    log_error "Failed to decrypt secrets - check age key"
   fi
 }
 
@@ -217,7 +286,7 @@ post_start_database() {
 
     # Create role and database
     local pg_password
-    pg_password=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
+    pg_password=$(grep '^POSTGRES_PASSWORD=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
 
     docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';"
     docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
@@ -239,7 +308,7 @@ post_start_database() {
 
     # Create role if needed
     local pg_password
-    pg_password=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
+    pg_password=$(grep '^POSTGRES_PASSWORD=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
 
     docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
     docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;" 2>/dev/null || true
@@ -269,9 +338,10 @@ print_summary() {
   echo "Installation directory: $INSTALL_DIR"
   echo ""
   echo "Next steps:"
-  echo "  1. Verify AWS credentials: aws sts get-caller-identity"
-  echo "  2. Check services: ichrisbirch prod status"
-  echo "  3. View logs: ichrisbirch prod logs"
+  echo "  1. Verify age key: sops decrypt secrets/secrets.prod.enc.env > /dev/null"
+  echo "  2. Verify AWS credentials (for S3 backups): aws sts get-caller-identity"
+  echo "  3. Check services: ichrisbirch prod status"
+  echo "  4. View logs: ichrisbirch prod logs"
   echo ""
   if ! systemctl is-active --quiet cloudflared 2>/dev/null; then
     echo -e "${YELLOW}Cloudflare tunnel not configured!${NC}"
@@ -299,10 +369,13 @@ main() {
   install_prerequisites
   install_docker
   install_aws_cli
+  install_sops_age
   install_cloudflared
   clone_repository
   install_cli
   setup_aws_credentials
+  setup_age_key
+  decrypt_production_secrets
   create_docker_network
   setup_cloudflare_tunnel
   initialize_database

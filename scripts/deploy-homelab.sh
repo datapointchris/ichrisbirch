@@ -84,6 +84,32 @@ check_prerequisites() {
     fi
 }
 
+decrypt_secrets() {
+    FAILURE_STEP="decrypt_secrets"
+    log_info "secrets_decrypt_started" | tee -a "$LOG_FILE"
+    cd "$INSTALL_DIR"
+
+    if ! command -v sops &>/dev/null; then
+        FAILURE_OUTPUT="sops not found - install from https://github.com/getsops/sops/releases"
+        log_error "sops_not_found" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    if [[ ! -f "secrets/secrets.prod.enc.env" ]]; then
+        FAILURE_OUTPUT="Encrypted secrets file not found: secrets/secrets.prod.enc.env"
+        log_error "secrets_file_missing" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    if ! sops decrypt secrets/secrets.prod.enc.env > .env 2>&1; then
+        FAILURE_OUTPUT="Failed to decrypt - check age key at ~/.config/sops/age/keys.txt"
+        log_error "secrets_decrypt_failed" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    log_info "secrets_decrypt_completed" | tee -a "$LOG_FILE"
+}
+
 pull_latest_code() {
     FAILURE_STEP="git_pull"
     log_info "git_fetch_started" | tee -a "$LOG_FILE"
@@ -227,16 +253,20 @@ cleanup_docker() {
 }
 
 main() {
-    # Try to fetch Slack webhook URL from SSM (non-fatal if it fails)
-    # shellcheck disable=SC2119
-    fetch_slack_webhook_from_ssm || log_warn "slack_webhook_not_configured" | tee -a "$LOG_FILE"
-
     DEPLOY_STARTED=true
     DEPLOY_START_TIME=$(date +%s)
     log_info "deployment_started" "install_dir" "$INSTALL_DIR" | tee -a "$LOG_FILE"
 
     check_prerequisites
     pull_latest_code
+    decrypt_secrets
+
+    # Source Slack webhook URL from decrypted .env
+    if [[ -f "$INSTALL_DIR/.env" ]]; then
+        SLACK_WEBHOOK_URL=$(grep '^SLACK_WEBHOOK_URL=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
+        export SLACK_WEBHOOK_URL
+    fi
+
     restart_services
     run_migrations
     verify_deployment

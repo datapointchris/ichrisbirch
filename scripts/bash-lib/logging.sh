@@ -59,7 +59,7 @@ notify_slack() {
     local message="$2"
     local context="${3:-}"
 
-    # SLACK_WEBHOOK_URL should be set by the calling script (from AWS SSM)
+    # SLACK_WEBHOOK_URL should be set by the calling script (from .env file)
     if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
         return 0
     fi
@@ -97,29 +97,4 @@ notify_slack() {
     curl -s -X POST "$SLACK_WEBHOOK_URL" \
         -H "Content-Type: application/json" \
         -d "$payload" >/dev/null 2>&1 || true
-}
-
-# Fetch Slack webhook URL from AWS SSM Parameter Store
-# Returns 0 on success, 1 on failure
-fetch_slack_webhook_from_ssm() {
-    local param_name="${1:-/ichrisbirch/production/slack/webhook_url}"
-
-    if ! command -v aws &>/dev/null; then
-        log_warn "aws_cli_not_found" "message" "Cannot fetch Slack webhook URL"
-        return 1
-    fi
-
-    local webhook_url
-    webhook_url=$(aws ssm get-parameter \
-        --name "$param_name" \
-        --with-decryption \
-        --query 'Parameter.Value' \
-        --output text \
-        --region us-east-2 2>/dev/null) || return 1
-
-    if [[ -n "$webhook_url" && "$webhook_url" != "None" ]]; then
-        export SLACK_WEBHOOK_URL="$webhook_url"
-        return 0
-    fi
-    return 1
 }
