@@ -5,7 +5,6 @@ from sqlalchemy import delete
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch.models.box import BoxSize
 from tests.factories import BoxFactory
 from tests.factories import BoxItemFactory
 from tests.factories import clear_factory_session
@@ -21,12 +20,12 @@ def setup_test_boxes(insert_users_for_login):
     """Create test boxes with items using factories."""
     with create_session(test_settings) as session:
         set_factory_session(session)
-        box1 = BoxFactory(name='Kitchen Stuff', number=1, size=BoxSize.Large, essential=True)
+        box1 = BoxFactory(name='Kitchen Stuff', number=1, size='Large', essential=True)
         BoxItemFactory(name='Plates', box=box1, essential=True)
         BoxItemFactory(name='Cups', box=box1)
-        box2 = BoxFactory(name='Books', number=2, size=BoxSize.Book)
+        box2 = BoxFactory(name='Books', number=2, size='Book')
         BoxItemFactory(name='Python Cookbook', box=box2)
-        BoxFactory(name='Empty Box', number=3, size=BoxSize.Small)
+        BoxFactory(name='Empty Box', number=3, size='Small')
         session.commit()
         clear_factory_session()
 
@@ -100,7 +99,7 @@ def test_add_box(page: Page):
 
     box = _get_box_from_db('Playwright Box')
     assert box.number == 99
-    assert box.size == BoxSize.Medium
+    assert box.size == 'Medium'
     assert box.essential is True
     assert box.warm is not True
     assert box.liquid is not True
@@ -121,7 +120,7 @@ def test_edit_box(page: Page):
 
     result = _get_box_by_id_from_db(box_id)
     assert result.name == 'Updated Kitchen'
-    assert result.size == BoxSize.Small
+    assert result.size == 'Small'
     assert result.number == 1, 'Number should survive edit'
 
 
@@ -202,7 +201,7 @@ def test_box_create_add_items_edit_lifecycle(page: Page):
 
     result = _get_box_by_id_from_db(box_id)
     assert result.name == 'Lifecycle Box Renamed'
-    assert result.size == BoxSize.Small
+    assert result.size == 'Small'
     assert result.number == 50, 'Number should survive edit'
 
     # Verify item still belongs to the box

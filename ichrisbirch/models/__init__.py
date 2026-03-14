@@ -7,6 +7,7 @@ from ichrisbirch.models.backup_history import BackupHistory
 from ichrisbirch.models.backup_restore import BackupRestore
 from ichrisbirch.models.book import Book
 from ichrisbirch.models.box import Box
+from ichrisbirch.models.box import BoxSize
 from ichrisbirch.models.boxitem import BoxItem
 from ichrisbirch.models.chat import Chat
 from ichrisbirch.models.chatmessage import ChatMessage
@@ -36,6 +37,7 @@ __all__ = [
     'Book',
     'Box',
     'BoxItem',
+    'BoxSize',
     'Chat',
     'ChatMessage',
     'Countdown',

@@ -2,7 +2,6 @@ import pytest
 from fastapi import status
 
 import tests.util
-from ichrisbirch.models.box import BoxSize
 from tests.utils.database import delete_test_data
 from tests.utils.database import insert_test_data
 
@@ -70,7 +69,7 @@ def test_crud_add_box(test_app_logged_in):
             'action': 'add_box',
             'box_name': 'Test Box',
             'box_number': 99,
-            'box_size': BoxSize.Medium.value,
+            'box_size': 'Medium',
             'essential': '1',
         },
         follow_redirects=True,

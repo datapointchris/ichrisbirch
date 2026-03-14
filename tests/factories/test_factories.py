@@ -8,7 +8,6 @@ from datetime import date
 from datetime import datetime
 
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.box import BoxSize
 
 from . import ArticleFactory
 from . import AutoTaskFactory
@@ -287,7 +286,7 @@ class TestBoxFactory:
         box = BoxFactory()
         assert box.id is not None
         assert box.name.startswith('Test Box')
-        assert box.size == BoxSize.Medium
+        assert box.size == 'Medium'
         assert box.essential is False
 
     def test_essential_box(self, factory_session):
@@ -298,7 +297,7 @@ class TestBoxFactory:
     def test_small_box(self, factory_session):
         """Test creating a small box."""
         box = BoxFactory(small=True)
-        assert box.size == BoxSize.Small
+        assert box.size == 'Small'
 
 
 class TestBoxItemFactory:

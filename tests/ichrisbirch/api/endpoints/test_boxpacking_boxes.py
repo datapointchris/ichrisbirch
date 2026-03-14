@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 
 from ichrisbirch import schemas
-from ichrisbirch.models.box import BoxSize
+from ichrisbirch.models.box import BOX_SIZES
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -11,7 +11,7 @@ from .crud_test import ApiCrudTester
 NEW_OBJ = schemas.BoxCreate(
     name='Box 4 - Bag of clothes',
     number=4,
-    size=BoxSize.Bag,
+    size='Bag',
     essential=True,
     warm=False,
     liquid=False,
@@ -66,8 +66,7 @@ def test_search_box_items(box_crud_tester):
     assert len(search_results.json()) == 0
 
 
-# must explicitly use values because Sixteen = '16x16x16', where '16x16x16' is not valid Enum member name
-@pytest.mark.parametrize('box_size', list(BoxSize))
+@pytest.mark.parametrize('box_size', BOX_SIZES)
 def test_create_box_all_sizes(txn_api_logged_in, box_size):
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'boxes')
@@ -93,7 +92,7 @@ def test_create_box_options_combinations(txn_api_logged_in, essential, warm, liq
     test_box = schemas.BoxCreate(
         name='Box X',
         number=5,
-        size=BoxSize.Large,
+        size='Large',
         essential=essential,
         warm=warm,
         liquid=liquid,

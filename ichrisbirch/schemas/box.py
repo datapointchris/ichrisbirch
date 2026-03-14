@@ -1,18 +1,17 @@
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
-from ichrisbirch.models.box import BoxSize
 from ichrisbirch.schemas.boxitem import BoxItem
 
 
 class BoxConfig(BaseModel):
-    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BoxCreate(BoxConfig):
     name: str
     number: int | None
-    size: BoxSize
+    size: str
     essential: bool
     warm: bool
     liquid: bool
@@ -22,7 +21,7 @@ class Box(BoxConfig):
     id: int
     number: int | None
     name: str
-    size: BoxSize
+    size: str
     essential: bool
     warm: bool
     liquid: bool
@@ -36,7 +35,7 @@ class Box(BoxConfig):
 class BoxUpdate(BoxConfig):
     name: str | None = None
     number: int | None = None
-    size: BoxSize | None = None
+    size: str | None = None
     essential: bool | None = None
     warm: bool | None = None
     liquid: bool | None = None

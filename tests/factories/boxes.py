@@ -3,7 +3,6 @@
 import factory
 
 from ichrisbirch.models.box import Box
-from ichrisbirch.models.box import BoxSize
 from ichrisbirch.models.boxitem import BoxItem
 
 from .base import get_factory_session
@@ -19,7 +18,7 @@ class BoxFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     number = factory.Sequence(lambda n: n + 1)
     name = factory.Sequence(lambda n: f'Test Box {n + 1}')
-    size = BoxSize.Medium
+    size = 'Medium'
     essential = False
     warm = False
     liquid = False
@@ -28,9 +27,9 @@ class BoxFactory(factory.alchemy.SQLAlchemyModelFactory):
         # Usage: BoxFactory(essential_box=True)
         essential_box = factory.Trait(essential=True)
         # Usage: BoxFactory(small=True)
-        small = factory.Trait(size=BoxSize.Small)
+        small = factory.Trait(size='Small')
         # Usage: BoxFactory(large=True)
-        large = factory.Trait(size=BoxSize.Large)
+        large = factory.Trait(size='Large')
 
 
 class BoxItemFactory(factory.alchemy.SQLAlchemyModelFactory):

@@ -1,26 +1,33 @@
-import enum
-
 from sqlalchemy import Boolean
-from sqlalchemy import Enum
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.base import Base
 
+BOX_SIZES = [
+    'Bag',
+    'Book',
+    'Large',
+    'Medium',
+    'Misc',
+    'Monitor',
+    'Sixteen',
+    'Small',
+    'UhaulSmall',
+]
 
-class BoxSize(enum.Enum):
-    Book = 'Book'
-    Small = 'Small'
-    Medium = 'Medium'
-    Large = 'Large'
-    Bag = 'Bag'
-    Monitor = 'Monitor'
-    Misc = 'Misc'
-    Sixteen = 'Sixteen'
-    UhaulSmall = 'UhaulSmall'
+
+class BoxSize(Base):
+    """Lookup table for valid box sizes, replacing PostgreSQL ENUM type."""
+
+    __table_args__ = {'schema': 'box_packing'}
+    __tablename__ = 'box_sizes'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
 
 
 class Box(Base):
@@ -29,7 +36,7 @@ class Box(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     number: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    size: Mapped[BoxSize] = mapped_column(Enum(BoxSize), nullable=False)
+    size: Mapped[str] = mapped_column(Text, ForeignKey('box_packing.box_sizes.name'), nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean)
     warm: Mapped[bool] = mapped_column(Boolean)
     liquid: Mapped[bool] = mapped_column(Boolean)

@@ -14,9 +14,7 @@ from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
-from ichrisbirch.models.box import BoxSize
-
-BOX_SIZES = [s.value for s in BoxSize]
+from ichrisbirch.models.box import BOX_SIZES
 
 logger = structlog.get_logger()
 blueprint = Blueprint('box_packing', __name__, template_folder='templates/box_packing', static_folder='static')
