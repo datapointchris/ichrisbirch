@@ -50,6 +50,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Articles' },
   },
   {
+    path: '/articles/insights',
+    name: 'article-insights',
+    component: () => import('@/views/ArticleInsightsView.vue'),
+    meta: { title: 'Article Insights' },
+  },
+  {
+    path: '/articles/bulk-import',
+    name: 'article-bulk-import',
+    component: () => import('@/views/ArticleBulkImportView.vue'),
+    meta: { title: 'Bulk Import Articles' },
+  },
+  {
     path: '/tasks',
     name: 'tasks',
     component: () => import('@/views/TasksView.vue'),

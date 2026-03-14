@@ -117,7 +117,13 @@ const route = useRoute()
 
 const mainLinks: NavLink[] = [
   { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: false },
-  { to: '/articles', label: 'Articles', icon: 'fa-solid fa-newspaper', migrated: false },
+  {
+    to: '/articles',
+    label: 'Articles',
+    icon: 'fa-solid fa-newspaper',
+    migrated: true,
+    activeNames: ['articles', 'article-insights', 'article-bulk-import'],
+  },
   { to: '/autotasks', label: 'AutoTasks', icon: 'fa-solid fa-robot', migrated: true },
   { to: '/books', label: 'Books', icon: 'fa-solid fa-book', migrated: true },
   { to: '/box-packing', label: 'Box Packing', icon: 'fa-solid fa-box', migrated: false },

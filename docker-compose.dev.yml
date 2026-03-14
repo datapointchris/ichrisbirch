@@ -375,7 +375,7 @@ services:
 
       # Path-based routing — migrated pages served from Vue on app.docker.localhost
       # Includes Vite dev server paths (/@vite, /src, etc.) needed for JS/CSS/HMR
-      - "traefik.http.routers.vue-paths.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
+      - "traefik.http.routers.vue-paths.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
       - "traefik.http.routers.vue-paths.entrypoints=websecure"
       - "traefik.http.routers.vue-paths.tls=true"
       - "traefik.http.routers.vue-paths.tls.options="

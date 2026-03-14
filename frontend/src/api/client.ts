@@ -352,6 +352,31 @@ export interface ArticleUpdate {
   review_days?: number
 }
 
+export interface ArticleSummary {
+  title: string
+  summary: string
+  tags: string[]
+}
+
+export interface BulkImportResponse {
+  batch_id: string
+  total: number
+  status: string
+}
+
+export interface BulkImportStatus {
+  batch_id: string
+  status: 'queued' | 'processing' | 'completed'
+  total: number
+  processed: number
+  succeeded: number
+  failed_count: number
+  errors: { url: string; error: string }[]
+  results: { url: string }[]
+  created_at: string
+  updated_at: string
+}
+
 // --- Habit ---
 
 export interface HabitCategory {
