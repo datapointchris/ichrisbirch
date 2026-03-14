@@ -455,19 +455,8 @@ services:
       - "traefik.environment=testing"
       - "traefik.enable=true"
 
-      # Override inherited production labels to prevent service collision
-      # (production defines "vue" service at port 80; test needs "vue-test" at 5173)
+      # Override default service port (production uses port 80/Caddy; test uses 5173/Vite)
       - "traefik.http.services.vue.loadbalancer.server.port=5173"
-
-      # Disable inherited production routers (different domains/entrypoints in test)
-      - "traefik.http.routers.vue-paths.rule=Host(`disabled.test.localhost`)"
-      - "traefik.http.routers.vue-paths.entrypoints=websecure"
-      - "traefik.http.routers.vue-paths.priority=1"
-      - "traefik.http.routers.vue-paths.service=vue-test"
-      - "traefik.http.routers.vue-paths-www.rule=Host(`disabled.test.localhost`)"
-      - "traefik.http.routers.vue-paths-www.entrypoints=websecure"
-      - "traefik.http.routers.vue-paths-www.priority=1"
-      - "traefik.http.routers.vue-paths-www.service=vue-test"
 
       # HTTPS router — full Vue app at vue.test.localhost (testing)
       - "traefik.http.routers.vue-test.rule=Host(`vue.test.localhost`)"
