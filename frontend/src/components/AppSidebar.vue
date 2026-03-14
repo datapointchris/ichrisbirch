@@ -130,7 +130,13 @@ const mainLinks: NavLink[] = [
   { to: '/countdowns', label: 'Countdowns', icon: 'fa-solid fa-hourglass-half', migrated: true },
   { to: '/durations', label: 'Durations', icon: 'fa-solid fa-clock-rotate-left', migrated: true },
   { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: true },
-  { to: '/habits', label: 'Habits', icon: 'fa-solid fa-repeat', migrated: false },
+  {
+    to: '/habits',
+    label: 'Habits',
+    icon: 'fa-solid fa-repeat',
+    migrated: true,
+    activeNames: ['habits', 'habits-completed', 'habits-manage'],
+  },
   { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: true },
   {
     to: '/tasks',

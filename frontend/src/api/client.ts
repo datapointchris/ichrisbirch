@@ -413,6 +413,22 @@ export interface HabitCompleted {
   complete_date: string
 }
 
+export interface HabitCategoryCreate {
+  name: string
+  is_current?: boolean
+}
+
+export interface HabitCategoryUpdate {
+  name?: string
+  is_current?: boolean
+}
+
+export interface HabitCompletedCreate {
+  name: string
+  category_id: number
+  complete_date: string
+}
+
 // --- AutoTask ---
 
 export interface AutoTask {
