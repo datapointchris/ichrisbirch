@@ -51,6 +51,15 @@ if alembic_config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
+# Tables managed by external libraries (not our models) that autogenerate should ignore
+EXCLUDED_TABLES = {'apscheduler_jobs'}
+
+
+def include_name(name, type_, parent_names):
+    if type_ == 'table' and name in EXCLUDED_TABLES:
+        return False
+    return True
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
@@ -73,6 +82,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         include_schemas=True,
+        include_name=include_name,
     )
 
     with context.begin_transaction():
@@ -93,7 +103,12 @@ def run_migrations_online() -> None:
     settings = get_settings()
     engine = get_db_engine(settings)
     with engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata, include_schemas=True)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_schemas=True,
+            include_name=include_name,
+        )
 
         with context.begin_transaction():
             context.run_migrations()
