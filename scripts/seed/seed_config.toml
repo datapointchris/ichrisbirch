@@ -1,0 +1,337 @@
+[seed]
+scale = 1
+faker_seed = 42
+skip_models = ["Apartment", "Feature", "PortfolioProject", "JournalEntry", "ArticleFailedImport"]
+
+# --- Task names by category ---
+
+[overrides.Task.name]
+pool = [
+    "Change oil in car",
+    "Replace windshield wipers",
+    "Get car inspected",
+    "Clean bathroom",
+    "Vacuum living room",
+    "Organize closet",
+    "Backup external drive",
+    "Update operating system",
+    "Clean keyboard",
+    "Walk Dingo",
+    "Dingo vet appointment",
+    "Buy Dingo food",
+    "File quarterly taxes",
+    "Review investment portfolio",
+    "Update budget spreadsheet",
+    "Fix leaky faucet",
+    "Replace air filter",
+    "Touch up paint in hallway",
+    "Deep clean oven",
+    "Sharpen knives",
+    "Organize spice rack",
+    "Complete Python course chapter",
+    "Read database internals article",
+    "Practice vim keybindings",
+    "Schedule dentist appointment",
+    "Renew passport",
+    "Update emergency contacts",
+    "Buy new running shoes",
+    "Order replacement light bulbs",
+    "Get new bath towels",
+    "Compare VPN services",
+    "Research standing desk options",
+    "Look into meal prep services",
+    "Update resume",
+    "Prepare quarterly presentation",
+    "Review project timeline",
+]
+
+[overrides.Task.notes]
+pool = [
+    "Need to finish this before the weekend",
+    "Been putting this off for too long",
+    "Should take about an hour",
+    "Check YouTube for tutorial first",
+    "Ask neighbor for recommendations",
+]
+
+# --- Habit Categories ---
+
+[overrides.HabitCategory.name]
+pool = [
+    "Exercise",
+    "Reading",
+    "Meditation",
+    "Coding",
+    "Music",
+    "Nutrition",
+    "Journaling",
+    "Drawing",
+]
+
+# --- Habits ---
+
+[overrides.Habit.name]
+pool = [
+    "Morning run",
+    "Strength training",
+    "Read 30 minutes",
+    "Review saved articles",
+    "10 minute meditation",
+    "Breathing exercises",
+    "LeetCode problem",
+    "Open source contribution",
+    "Practice guitar",
+    "Music theory study",
+    "Track calories",
+    "Meal prep",
+    "Morning pages",
+    "Gratitude list",
+    "Daily sketch",
+    "Perspective study",
+]
+
+# --- Events ---
+
+[overrides.Event.name]
+pool = [
+    "Portland Jazz Festival",
+    "Python Portland Meetup",
+    "Comedy Show at Helium",
+    "Neighborhood Block Party",
+    "Wine Tasting Tour",
+    "Tech Talk on Kubernetes",
+    "Art Gallery Opening",
+    "Board Game Night",
+    "PyCon US 2026",
+    "Local Food Market",
+    "Concert at Doug Fir",
+    "Dentist Checkup",
+    "Trail Run 10K",
+    "Friends Wedding",
+    "AWS re:Invent",
+    "Thanksgiving Dinner",
+    "New Years Eve Party",
+    "Home Improvement Expo",
+    "Volunteering at Food Bank",
+    "Book Club Meeting",
+]
+
+[overrides.Event.venue]
+pool = [
+    "Pioneer Courthouse Square",
+    "Puppet Labs",
+    "Helium Comedy Club",
+    "SE Division Street",
+    "Willamette Valley",
+    "New Relic HQ",
+    "Portland Art Museum",
+    "Guardian Games",
+    "Pittsburgh Convention Center",
+    "PSU Farmers Market",
+    "Doug Fir Lounge",
+    "Pearl District Dental",
+    "Forest Park",
+    "McMenamins Edgefield",
+    "Las Vegas Convention Center",
+    "Mom's House",
+    "TBD Downtown",
+    "Portland Expo Center",
+    "Oregon Food Bank",
+    "Powell's Books",
+]
+
+# --- Books ---
+
+[overrides.Book.title]
+pool = [
+    "Designing Data-Intensive Applications",
+    "The Art of PostgreSQL",
+    "Atomic Habits",
+    "The Pragmatic Programmer",
+    "Deep Work",
+    "Clean Code",
+    "Project Hail Mary",
+    "The DevOps Handbook",
+    "Godel Escher Bach",
+    "Introduction to Algorithms",
+    "Fluent Python",
+    "Staff Engineer",
+    "Dune",
+    "The Phoenix Project",
+    "Database Internals",
+    "Thinking Fast and Slow",
+    "The Rust Programming Language",
+    "Sapiens",
+]
+
+[overrides.Book.author]
+pool = [
+    "Martin Kleppmann",
+    "Dimitri Fontaine",
+    "James Clear",
+    "David Thomas and Andrew Hunt",
+    "Cal Newport",
+    "Robert C. Martin",
+    "Andy Weir",
+    "Gene Kim",
+    "Douglas Hofstadter",
+    "Thomas Cormen",
+    "Luciano Ramalho",
+    "Will Larson",
+    "Frank Herbert",
+    "Alex Petrov",
+    "Daniel Kahneman",
+    "Steve Klabnik",
+    "Yuval Noah Harari",
+]
+
+[overrides.Book.tags]
+pool = [
+    ["programming", "databases", "distributed-systems"],
+    ["databases", "postgresql", "sql"],
+    ["productivity", "self-help", "habits"],
+    ["programming", "software-engineering"],
+    ["productivity", "focus"],
+    ["programming", "code-quality"],
+    ["fiction", "science-fiction"],
+    ["devops", "operations", "software-engineering"],
+    ["mathematics", "philosophy", "computer-science"],
+    ["algorithms", "computer-science", "textbook"],
+    ["python", "programming"],
+    ["career", "engineering-leadership"],
+    ["fiction", "science-fiction", "classic"],
+    ["devops", "fiction", "business"],
+    ["databases", "internals", "programming"],
+    ["psychology", "behavioral-economics"],
+    ["rust", "programming", "systems"],
+    ["history", "anthropology", "non-fiction"],
+]
+
+# --- Articles ---
+
+[overrides.Article.title]
+pool = [
+    "Understanding Python Asyncio",
+    "PostgreSQL Performance Tuning",
+    "The Twelve-Factor App",
+    "Kubernetes Best Practices",
+    "SQLAlchemy 2.0 Migration Guide",
+    "Git Internals - How Git Works",
+    "Docker Networking Deep Dive",
+    "FastAPI vs Flask: A Comparison",
+    "Redis Caching Strategies",
+    "Terraform Best Practices",
+]
+
+[overrides.Article.tags]
+pool = [
+    ["python", "async", "concurrency"],
+    ["databases", "postgresql", "performance"],
+    ["architecture", "devops", "best-practices"],
+    ["kubernetes", "devops", "containers"],
+    ["python", "databases", "sqlalchemy"],
+    ["git", "internals", "devops"],
+    ["docker", "networking", "devops"],
+    ["python", "web-frameworks"],
+    ["redis", "caching", "performance"],
+    ["terraform", "infrastructure", "devops"],
+]
+
+# --- Countdowns ---
+
+[overrides.Countdown.name]
+pool = [
+    "PyCon US 2026",
+    "Vacation to Japan",
+    "Lease Renewal",
+    "Project Launch",
+    "Birthday Party",
+    "Tax Deadline",
+    "Concert Tickets",
+]
+
+# --- AutoTasks ---
+
+[overrides.AutoTask.name]
+pool = [
+    "Vacuum house",
+    "Clean kitchen",
+    "Water plants",
+    "Take out trash",
+    "Do laundry",
+    "Clean bathroom",
+    "Mop floors",
+    "Dust furniture",
+    "Clean fridge",
+    "Change bed sheets",
+    "Check smoke detectors",
+    "Clean gutters",
+    "Service HVAC",
+    "Rotate tires",
+]
+
+# --- Money Wasted ---
+
+[overrides.MoneyWasted.item]
+pool = [
+    "Gym membership never used",
+    "Impulse Amazon purchase",
+    "Expired groceries thrown out",
+    "Uber instead of biking",
+    "Premium app subscription forgot to cancel",
+    "Takeout when fridge was full",
+    "Movie ticket for terrible film",
+]
+
+# --- Durations ---
+
+[overrides.Duration.name]
+pool = [
+    "Portland apartment lease",
+    "Python learning journey",
+    "Home renovation project",
+    "Job search period",
+    "Training for half marathon",
+    "Reading challenge 2025",
+]
+
+# --- Boxes ---
+
+[overrides.Box.name]
+pool = [
+    "Kitchen Essentials",
+    "Books and Media",
+    "Winter Clothes",
+    "Electronics",
+    "Bathroom Supplies",
+    "Office Supplies",
+    "Tools and Hardware",
+    "Seasonal Decorations",
+    "Miscellaneous",
+]
+
+# --- Box Items ---
+
+[overrides.BoxItem.name]
+pool = [
+    "Cast iron skillet",
+    "Coffee maker",
+    "Cutting board set",
+    "Winter jacket",
+    "Snow boots",
+    "Laptop charger",
+    "HDMI cable",
+    "Desk lamp",
+    "Bath towels",
+    "First aid kit",
+    "Drill",
+    "Hammer",
+    "Picture frames",
+    "Board games",
+    "Yoga mat",
+    "Blankets",
+    "Spice rack",
+    "Blender",
+    "Christmas lights",
+    "Camping gear",
+]

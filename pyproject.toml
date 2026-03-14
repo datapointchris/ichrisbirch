@@ -198,6 +198,7 @@ reportUnusedCallResult = false
 addopts = "-vv"
 minversion = "6.0"
 testpaths = ["tests"]
+markers = ["seed: seed system tests (not run by default)", "integration: integration tests requiring running services"]
 
 
 [tool.refurb]
