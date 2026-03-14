@@ -28,9 +28,6 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.http.tls.domains[0].main=*.test.localhost"
-      - "--certificatesresolvers.myresolver.acme.email=test@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
     ports: !override
       - "9080:80"    # HTTP redirect to HTTPS
       - "8443:443"   # HTTPS traffic
@@ -39,7 +36,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/dynamic/test:/etc/traefik/dynamic:ro
       - ./deploy-containers/traefik/certs:/etc/ssl/certs:ro
-      - traefik_test_letsencrypt:/letsencrypt
     networks:
       - proxy
       - default
@@ -527,7 +523,4 @@ volumes:
     driver: local
   vue_test_node_modules:
     name: icb-test-vue-node-modules
-    driver: local
-  traefik_test_letsencrypt:
-    name: icb-test-letsencrypt
     driver: local
