@@ -138,6 +138,7 @@ services:
     container_name: icb-prod-api
     # Production command without reload, disable access logs (handled by middleware)
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
+    env_file: .env
     environment:
       - ENVIRONMENT=production
       - FASTAPI_DEBUG=False
@@ -234,6 +235,7 @@ services:
     container_name: icb-prod-app
     # Production WSGI server (timeout allows for long OpenAI requests)
     command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
+    env_file: .env
     environment:
       - ENVIRONMENT=production
       - FLASK_DEBUG=False
@@ -279,6 +281,7 @@ services:
     container_name: icb-prod-chat
     # Production chat command
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
+    env_file: .env
     environment:
       - ENVIRONMENT=production
       - LOG_FORMAT=${LOG_FORMAT:-json}
@@ -325,6 +328,7 @@ services:
     container_name: icb-prod-scheduler
     # Production scheduler command
     command: python -m ichrisbirch.wsgi_scheduler
+    env_file: .env
     environment:
       - ENVIRONMENT=production
       - LOG_FORMAT=${LOG_FORMAT:-json}
