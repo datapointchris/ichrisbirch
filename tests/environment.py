@@ -24,11 +24,11 @@ from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch import models
 from ichrisbirch.config import Settings
-from ichrisbirch.database.base import Base
 from ichrisbirch.database.initialization import create_schemas
 from ichrisbirch.database.initialization import create_tables
+from ichrisbirch.database.initialization import drop_all_tables
 from ichrisbirch.database.initialization import insert_default_users
-from ichrisbirch.database.session import get_db_engine
+from ichrisbirch.database.initialization import run_alembic_migrations
 from tests.utils.database import get_test_login_users
 
 # from ichrisbirch.config import settings
@@ -230,17 +230,12 @@ class DockerComposeTestEnvironment:
     def reset_test_database(self) -> None:
         """Reset test database to clean state by dropping and recreating all tables.
 
-        This guarantees a clean slate for each test run, regardless of what
-        previous tests may have left behind.
+        Uses alembic migrations to recreate tables, matching the production code path.
         """
         logger.info('Resetting test database to clean state')
-        engine = get_db_engine(self.settings)
 
-        # Drop all tables
-        logger.warning('Dropping all tables')
-        Base.metadata.drop_all(engine)
+        drop_all_tables(self.settings)
 
-        # Recreate everything fresh
         with self.test_session_generator(self.settings) as session:
             create_schemas(session, self.settings)
             create_tables(self.settings)
@@ -254,7 +249,7 @@ class DockerComposeTestEnvironment:
         This runs whether services were just started or already running.
         It ensures:
         1. Schemas exist
-        2. Tables exist
+        2. Tables exist (via alembic migrations)
         3. Login users exist
 
         All operations are idempotent - safe to run multiple times.
@@ -262,10 +257,9 @@ class DockerComposeTestEnvironment:
         # 1. Create schemas (idempotent via IF NOT EXISTS)
         self.create_database_schemas()
 
-        # 2. Create tables (idempotent via checkfirst=True)
-        engine = get_db_engine(self.settings)
-        Base.metadata.create_all(engine, checkfirst=True)
-        logger.info('Ensured all tables exist')
+        # 2. Run alembic migrations (idempotent — skips already-applied migrations)
+        run_alembic_migrations(self.settings)
+        logger.info('Ensured all tables exist via alembic')
 
         # 3. Ensure login users exist (check before insert)
         with self.test_session_generator(self.settings) as session:

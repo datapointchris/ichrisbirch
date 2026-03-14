@@ -30,7 +30,8 @@ from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.base import Base
+from ichrisbirch.database.initialization import drop_all_tables
+from ichrisbirch.database.initialization import run_alembic_migrations
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
@@ -182,18 +183,17 @@ def create_drop_tables(setup_test_environment, request):
     """
     worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
     is_parallel = worker_id != 'main'
-    engine = get_db_engine(test_settings)
 
     if is_parallel:
         tables_lock = filelock.FileLock(str(TEST_LOCK_DIR / 'tables.lock'), timeout=300)
         tables_ready = TEST_LOCK_DIR / 'tables_ready'
         with tables_lock:
             if not tables_ready.exists():
-                logger.info(f'Worker {worker_id}: Creating tables (first to acquire lock)')
-                Base.metadata.drop_all(engine)
+                logger.info(f'Worker {worker_id}: Creating tables via alembic (first to acquire lock)')
+                drop_all_tables(test_settings)
                 logger.info(f'Worker {worker_id}: Dropped all tables (clean slate)')
-                Base.metadata.create_all(engine)
-                logger.info(f'Worker {worker_id}: Created all tables')
+                run_alembic_migrations(test_settings)
+                logger.info(f'Worker {worker_id}: Created all tables via alembic')
                 tables_ready.touch()
             else:
                 logger.info(f'Worker {worker_id}: Tables already created by another worker')
@@ -201,12 +201,12 @@ def create_drop_tables(setup_test_environment, request):
         # Don't drop tables in parallel mode
         logger.info(f'Worker {worker_id}: Skipping table drop (parallel mode)')
     else:
-        Base.metadata.drop_all(engine)
+        drop_all_tables(test_settings)
         logger.info('dropped all tables (clean slate)')
-        Base.metadata.create_all(engine)
-        logger.info('created all tables (session scope)')
+        run_alembic_migrations(test_settings)
+        logger.info('created all tables via alembic (session scope)')
         yield
-        Base.metadata.drop_all(engine)
+        drop_all_tables(test_settings)
         logger.info('dropped all tables (session scope)')
         # Cleanup table marker
         (TEST_LOCK_DIR / 'tables_ready').unlink(missing_ok=True)

@@ -29,12 +29,11 @@ def main():
     import structlog
 
     from ichrisbirch.config import get_settings
-    from ichrisbirch.database.base import Base
     from ichrisbirch.database.initialization import create_schemas
     from ichrisbirch.database.initialization import create_tables
+    from ichrisbirch.database.initialization import drop_all_tables
     from ichrisbirch.database.initialization import insert_default_users
     from ichrisbirch.database.session import create_session
-    from ichrisbirch.database.session import get_db_engine
 
     logger = structlog.get_logger()
 
@@ -53,13 +52,9 @@ def main():
 
     logger.warning('test_db_reset_starting', environment=settings.ENVIRONMENT, host=settings.postgres.host, port=settings.postgres.port)
 
-    # Drop all tables
-    logger.warning('dropping_all_tables')
-    engine = get_db_engine(settings)
-    Base.metadata.drop_all(engine)
-    logger.warning('tables_dropped')
+    drop_all_tables(settings)
 
-    # Recreate fresh
+    # Recreate fresh using alembic migrations
     with create_session(settings) as session:
         create_schemas(session, settings)
         create_tables(settings)

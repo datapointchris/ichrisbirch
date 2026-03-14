@@ -18,6 +18,9 @@ Usage:
 
 import sqlalchemy
 import structlog
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
@@ -26,8 +29,46 @@ from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
+from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
+
+
+def _get_alembic_config(settings) -> Config:
+    """Create an Alembic Config with correct paths resolved."""
+    project_root = find_project_root()
+    alembic_ini = project_root / 'ichrisbirch' / 'alembic.ini'
+    cfg = Config(str(alembic_ini))
+    cfg.set_main_option('script_location', str(project_root / 'ichrisbirch' / 'alembic'))
+    cfg.set_main_option('sqlalchemy.url', settings.sqlalchemy.db_uri)
+    return cfg
+
+
+def run_alembic_migrations(settings) -> None:
+    """Run alembic upgrade head to apply all migrations."""
+    logger.info('alembic_upgrade_starting')
+    cfg = _get_alembic_config(settings)
+    command.upgrade(cfg, 'head')
+    logger.info('alembic_upgrade_completed')
+
+
+def stamp_alembic_head(settings) -> None:
+    """Stamp the database with the current head revision without running migrations."""
+    logger.info('alembic_stamp_starting')
+    cfg = _get_alembic_config(settings)
+    command.stamp(cfg, 'head')
+    logger.info('alembic_stamp_completed')
+
+
+def drop_all_tables(settings) -> None:
+    """Drop all tables including alembic_version."""
+    engine = get_db_engine(settings)
+    logger.warning('dropping_all_tables')
+    Base.metadata.drop_all(engine)
+    with engine.connect() as conn:
+        conn.execute(text('DROP TABLE IF EXISTS alembic_version'))
+        conn.commit()
+    logger.warning('all_tables_dropped')
 
 
 def create_schemas(session: Session, settings) -> None:
@@ -45,13 +86,13 @@ def create_schemas(session: Session, settings) -> None:
     session.commit()
 
 
-def create_tables(settings, use_alembic: bool = False) -> None:
-    """Create database tables."""
+def create_tables(settings, use_alembic: bool = True) -> None:
+    """Create database tables using alembic migrations (default) or create_all."""
     if use_alembic:
-        logger.info('tables_use_alembic', message='Run: alembic upgrade head')
+        run_alembic_migrations(settings)
         return
 
-    logger.info('tables_creating')
+    logger.info('tables_creating_with_create_all')
     engine = get_db_engine(settings)
     Base.metadata.create_all(engine)
     logger.info('tables_created')
@@ -90,9 +131,9 @@ def insert_default_users(session: Session, settings) -> None:
             raise
 
 
-def full_initialization(settings, use_alembic: bool = False) -> None:
+def full_initialization(settings, use_alembic: bool = True) -> None:
     """Perform complete database initialization."""
-    logger.info('db_init_starting', environment=settings.ENVIRONMENT)
+    logger.info('db_init_starting', environment=settings.ENVIRONMENT, use_alembic=use_alembic)
 
     with create_session(settings) as session:
         create_schemas(session, settings)
@@ -115,7 +156,7 @@ def main():
         help='Environment to initialize (affects which SSM parameters are loaded)',
     )
     parser.add_argument(
-        '--use-alembic', action='store_true', help='Use Base.metadata.create_all() instead of Alembic migrations to create tables'
+        '--no-alembic', action='store_true', help='Use Base.metadata.create_all() instead of Alembic migrations to create tables'
     )
 
     # Database connection overrides for external execution
@@ -162,7 +203,7 @@ def main():
             database=settings.postgres.database,
         )
 
-        full_initialization(settings, use_alembic=args.use_alembic)
+        full_initialization(settings, use_alembic=not args.no_alembic)
 
     except Exception as e:
         logger.error('db_init_failed', error=str(e), error_type=type(e).__name__)
