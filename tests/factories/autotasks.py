@@ -7,7 +7,6 @@ import factory
 
 from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.task import TaskCategory
 
 from .base import get_factory_session
 
@@ -22,7 +21,7 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     name = factory.Sequence(lambda n: f'Test AutoTask {n + 1}')
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
-    category = TaskCategory.Chore
+    category = 'Chore'
     priority = factory.Sequence(lambda n: (n + 1) * 5)
     max_concurrent = 2
     frequency = AutoTaskFrequency.Weekly

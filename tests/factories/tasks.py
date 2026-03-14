@@ -5,7 +5,7 @@ Examples:
     task = TaskFactory()
 
     # Override fields for specific test scenarios
-    task = TaskFactory(name='Searchable Home Task', category=TaskCategory.Home)
+    task = TaskFactory(name='Searchable Home Task', category='Home')
 
     # Create completed task for testing filters
     completed = TaskFactory(completed=True)
@@ -23,7 +23,6 @@ from datetime import datetime
 import factory
 
 from ichrisbirch.models.task import Task
-from ichrisbirch.models.task import TaskCategory
 
 from .base import get_factory_session
 
@@ -39,7 +38,7 @@ class TaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     # Predictable defaults - Sequence ensures unique names
     name = factory.Sequence(lambda n: f'Test Task {n + 1}')
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
-    category = TaskCategory.Chore
+    category = 'Chore'
     priority = factory.Sequence(lambda n: (n + 1) * 5)  # 5, 10, 15, 20...
     add_date = factory.LazyFunction(datetime.now)
     complete_date = None

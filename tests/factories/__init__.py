@@ -8,12 +8,11 @@ They support both:
 Quick Start:
     def test_search_finds_matching_tasks(factory_session, test_api_logged_in):
         from tests.factories import TaskFactory
-        from ichrisbirch.models.task import TaskCategory
 
         # Create specific data for this test
-        TaskFactory(name='Home cleaning', category=TaskCategory.Home)
-        TaskFactory(name='Home repairs', category=TaskCategory.Home)
-        TaskFactory(name='Work project', category=TaskCategory.Work)
+        TaskFactory(name='Home cleaning', category='Home')
+        TaskFactory(name='Home repairs', category='Home')
+        TaskFactory(name='Work project', category='Work')
 
         # Test behavior
         response = test_api_logged_in.get('/tasks/search/', params={'q': 'home'})

@@ -9,7 +9,6 @@ from datetime import timedelta
 import pytest
 from pydantic import ValidationError
 
-from ichrisbirch.models.task import TaskCategory
 from ichrisbirch.schemas.task import Task
 from ichrisbirch.schemas.task import TaskCompleted
 from ichrisbirch.schemas.task import TaskCreate
@@ -19,7 +18,7 @@ from ichrisbirch.schemas.task import TaskUpdate
 class TestTaskSchema:
     def test_task_create_valid(self):
         """Test creating a valid TaskCreate model."""
-        task_data = {'name': 'Test Task', 'notes': 'These are test notes', 'category': TaskCategory.Home, 'priority': 1}
+        task_data = {'name': 'Test Task', 'notes': 'These are test notes', 'category': 'Home', 'priority': 1}
         task = TaskCreate(**task_data)
         assert task.name == 'Test Task'
         assert task.notes == 'These are test notes'
@@ -28,7 +27,7 @@ class TestTaskSchema:
 
     def test_task_create_without_notes(self):
         """Test creating a task without notes."""
-        task_data = {'name': 'Test Task', 'category': TaskCategory.Home, 'priority': 1}
+        task_data = {'name': 'Test Task', 'category': 'Home', 'priority': 1}
         task = TaskCreate(**task_data)
         assert task.name == 'Test Task'
         assert task.notes is None
@@ -38,15 +37,10 @@ class TestTaskSchema:
     def test_task_create_invalid_missing_fields(self):
         """Test TaskCreate fails with missing required fields."""
         with pytest.raises(ValidationError) as exc_info:
-            TaskCreate(name='Test Task', category=TaskCategory.Home)
+            TaskCreate(name='Test Task', category='Home')
 
         errors = exc_info.value.errors()
         assert any(err['type'] == 'missing' and err['loc'][0] == 'priority' for err in errors)
-
-    def test_task_create_invalid_category(self):
-        """Test TaskCreate fails with invalid category."""
-        with pytest.raises(ValidationError):
-            TaskCreate(name='Test Task', notes='Test notes', category='InvalidCategory', priority=1)
 
     def test_task_model_valid(self):
         """Test creating a valid Task model."""
@@ -55,7 +49,7 @@ class TestTaskSchema:
             'id': 1,
             'name': 'Test Task',
             'notes': 'These are test notes',
-            'category': TaskCategory.Home,
+            'category': 'Home',
             'priority': 1,
             'add_date': now,
             'complete_date': None,
@@ -77,7 +71,7 @@ class TestTaskSchema:
             'id': 1,
             'name': 'Test Task',
             'notes': 'These are test notes',
-            'category': TaskCategory.Home,
+            'category': 'Home',
             'priority': 1,
             'add_date': now,
             'complete_date': completed,
@@ -89,7 +83,7 @@ class TestTaskSchema:
     def test_task_model_missing_fields(self):
         """Test Task model fails with missing required fields."""
         now = datetime.datetime.now()
-        incomplete_data = {'name': 'Test Task', 'category': TaskCategory.Home, 'priority': 1, 'add_date': now}
+        incomplete_data = {'name': 'Test Task', 'category': 'Home', 'priority': 1, 'add_date': now}
 
         with pytest.raises(ValidationError):
             Task(**incomplete_data)
@@ -123,7 +117,7 @@ class TestTaskSchema:
             'id': 1,
             'name': 'Test Task',
             'notes': 'These are test notes',
-            'category': TaskCategory.Home,
+            'category': 'Home',
             'priority': 1,
             'add_date': now,
             'complete_date': completed,
@@ -143,7 +137,7 @@ class TestTaskSchema:
             'id': 1,
             'name': 'Test Task',
             'notes': 'These are test notes',
-            'category': TaskCategory.Home,
+            'category': 'Home',
             'priority': 1,
             'add_date': now,
             'complete_date': now,

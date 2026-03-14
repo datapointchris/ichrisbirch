@@ -5,7 +5,7 @@ from fastapi import status
 
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.task import TaskCategory
+from ichrisbirch.models.task import TASK_CATEGORIES
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 NEW_OBJ = schemas.AutoTaskCreate(
     name='AutoTask 4 Computer with notes priority 3',
     notes='Notes task 4',
-    category=TaskCategory.Computer,
+    category='Computer',
     priority=3,
     frequency=AutoTaskFrequency.Biweekly,
 )
@@ -58,7 +58,7 @@ def test_lifecycle(autotask_crud_tester):
     crud_tester.test_lifecycle(client)
 
 
-@pytest.mark.parametrize('category', list(TaskCategory))
+@pytest.mark.parametrize('category', TASK_CATEGORIES)
 def test_task_categories(txn_api_logged_in, category):
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'autotasks')
@@ -81,7 +81,7 @@ def test_task_frequencies(txn_api_logged_in, frequency):
     test_obj = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
-        category=TaskCategory.Personal,
+        category='Personal',
         priority=3,
         frequency=frequency,
     )

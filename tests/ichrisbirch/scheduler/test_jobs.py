@@ -3,7 +3,6 @@ from freezegun import freeze_time
 
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.task import TaskCategory
 from ichrisbirch.scheduler import jobs
 from tests.util import show_status_and_response
 from tests.utils.database import delete_test_data
@@ -36,7 +35,7 @@ def test_decrease_task_priority(test_api_logged_in):
 NEW_AUTOTASK = schemas.AutoTaskCreate(
     name='Autotask with too many concurrent tasks',
     notes='Notes for concurrent task',
-    category=TaskCategory.Computer,
+    category='Computer',
     priority=3,
     frequency=AutoTaskFrequency.Biweekly,
     max_concurrent=2,

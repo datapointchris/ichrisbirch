@@ -58,17 +58,6 @@ class TestAPIErrorHandling:
         errors = error_data['detail']
         assert any(error['loc'][1] == 'name' for error in errors)
 
-    def test_invalid_enum_value(self, test_api_logged_in):
-        """Test validation errors with invalid enum values."""
-        # Try to create a task with invalid category
-        invalid_task = {'name': 'Test Task', 'category': 'InvalidCategory', 'priority': 1}  # Invalid enum value
-        response = test_api_logged_in.post('/tasks/', json=invalid_task)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-        # Check error details for enum validation error
-        error_data = response.json()
-        assert 'detail' in error_data
-
     def test_method_not_allowed(self, test_api_logged_in):
         """Test handling of unsupported HTTP methods."""
         # Try to use PATCH on an endpoint that doesn't support it

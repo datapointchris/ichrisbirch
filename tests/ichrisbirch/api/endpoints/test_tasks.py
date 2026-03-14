@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 
 from ichrisbirch import schemas
-from ichrisbirch.models.task import TaskCategory
+from ichrisbirch.models.task import TASK_CATEGORIES
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -12,7 +12,7 @@ ENDPOINT = '/tasks/'
 NEW_OBJ = schemas.TaskCreate(
     name='Task 4 Computer with notes priority 3',
     notes='Notes task 4',
-    category=TaskCategory.Computer,
+    category='Computer',
     priority=3,
 )
 
@@ -92,7 +92,7 @@ def test_search_task(task_crud_tester):
     assert len(search_results.json()) == 2
 
 
-@pytest.mark.parametrize('category', list(TaskCategory))
+@pytest.mark.parametrize('category', TASK_CATEGORIES)
 def test_task_categories(txn_api_logged_in, category):
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'tasks')
@@ -118,7 +118,7 @@ def test_reset_priorities(task_crud_tester):
     NEGATIVE_PRIORITY_TASK = schemas.TaskCreate(
         name='Task Negative priority',
         notes='Notes task negative',
-        category=TaskCategory.Home,
+        category='Home',
         priority=-5,
     )
     client.post(ENDPOINT, json=NEGATIVE_PRIORITY_TASK.model_dump())

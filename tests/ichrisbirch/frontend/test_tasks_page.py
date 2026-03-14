@@ -5,7 +5,6 @@ from sqlalchemy import delete
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch.models.task import TaskCategory
 from tests.factories import TaskFactory
 from tests.factories import clear_factory_session
 from tests.factories import set_factory_session
@@ -20,9 +19,9 @@ def setup_test_tasks(insert_users_for_login):
     """Create test tasks using factories for this test module."""
     with create_session(test_settings) as session:
         set_factory_session(session)
-        TaskFactory(name='Fix the sink', category=TaskCategory.Home, priority=10, notes='Kitchen sink leaking')
-        TaskFactory(name='Write tests', category=TaskCategory.Computer, priority=5, notes='Playwright tests')
-        TaskFactory(name='Buy groceries', category=TaskCategory.Purchase, priority=15)
+        TaskFactory(name='Fix the sink', category='Home', priority=10, notes='Kitchen sink leaking')
+        TaskFactory(name='Write tests', category='Computer', priority=5, notes='Playwright tests')
+        TaskFactory(name='Buy groceries', category='Purchase', priority=15)
         session.commit()
         clear_factory_session()
 
@@ -75,7 +74,7 @@ def test_create_task(page: Page):
     form.locator('button[value="add"]').click()
 
     task = _get_task_from_db('Playwright Task')
-    assert task.category == TaskCategory.Computer
+    assert task.category == 'Computer'
     assert task.priority == 25
     assert task.notes == 'Created by Playwright'
     assert task.complete_date is None
@@ -93,7 +92,7 @@ def test_create_task_via_footer(page: Page):
     footer.locator('button[value="add"]').click()
 
     task = _get_task_from_db('Footer Task')
-    assert task.category == TaskCategory.Chore
+    assert task.category == 'Chore'
     assert task.priority == 20
     assert task.notes == 'Created via footer'
 
@@ -157,7 +156,7 @@ def test_task_create_extend_complete_lifecycle(page: Page):
     task = _get_task_from_db('Lifecycle Task')
     task_id = task.id
     assert task.priority == 10
-    assert task.category == TaskCategory.Home
+    assert task.category == 'Home'
 
     # Extend by 7 days on the todo page
     page.goto(f'{FRONTEND_BASE_URL}/tasks/todo/')

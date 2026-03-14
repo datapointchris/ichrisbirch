@@ -31,6 +31,7 @@ from ichrisbirch.models import MoneyWasted  # noqa
 from ichrisbirch.models import PersonalAPIKey  # noqa
 from ichrisbirch.models import PortfolioProject  # noqa
 from ichrisbirch.models import Task  # noqa
+from ichrisbirch.models import TaskCategory  # noqa
 from ichrisbirch.models import User  # noqa
 
 # settings from ichrisbirch/config.py

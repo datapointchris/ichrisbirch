@@ -19,7 +19,7 @@ from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
 from ichrisbirch.app import forms
 from ichrisbirch.app.easy_dates import EasyDateTime
-from ichrisbirch.models.task import TaskCategory
+from ichrisbirch.models.task import TASK_CATEGORIES
 
 logger = structlog.get_logger()
 blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', static_folder='static')
@@ -27,7 +27,6 @@ blueprint = Blueprint('tasks', __name__, template_folder='templates/tasks', stat
 
 # Ex: Friday, January 01, 2001
 DATE_FORMAT = '%A, %B %d, %Y'
-TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 
 @blueprint.before_request

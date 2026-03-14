@@ -9,7 +9,6 @@ from datetime import datetime
 
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.box import BoxSize
-from ichrisbirch.models.task import TaskCategory
 
 from . import ArticleFactory
 from . import AutoTaskFactory
@@ -36,18 +35,18 @@ class TestTaskFactory:
         task = TaskFactory()
         assert task.id is not None
         assert task.name.startswith('Test Task')
-        assert task.category == TaskCategory.Chore
+        assert task.category == 'Chore'
         assert task.complete_date is None
 
     def test_create_task_with_overrides(self, factory_session):
         """Test creating a task with specific values."""
         task = TaskFactory(
             name='Custom Task Name',
-            category=TaskCategory.Home,
+            category='Home',
             priority=42,
         )
         assert task.name == 'Custom Task Name'
-        assert task.category == TaskCategory.Home
+        assert task.category == 'Home'
         assert task.priority == 42
 
     def test_create_completed_task_with_trait(self, factory_session):
@@ -405,17 +404,15 @@ class TestFactoryIntegration:
 
     def test_behavior_testing_pattern(self, factory_session):
         """Demonstrate behavior testing with explicit data."""
-        home1 = TaskFactory(name='Integration Home Task 1', category=TaskCategory.Home)
-        home2 = TaskFactory(name='Integration Home Task 2', category=TaskCategory.Home)
-        TaskFactory(name='Integration Work Task', category=TaskCategory.Work)  # Creates non-Home task
+        home1 = TaskFactory(name='Integration Home Task 1', category='Home')
+        home2 = TaskFactory(name='Integration Home Task 2', category='Home')
+        TaskFactory(name='Integration Work Task', category='Work')  # Creates non-Home task
 
         from sqlalchemy import select
 
         from ichrisbirch.models import Task
 
-        home_tasks = (
-            factory_session.execute(select(Task).where(Task.category == TaskCategory.Home, Task.name.like('Integration%'))).scalars().all()
-        )
+        home_tasks = factory_session.execute(select(Task).where(Task.category == 'Home', Task.name.like('Integration%'))).scalars().all()
 
         assert len(home_tasks) == 2
         assert {t.id for t in home_tasks} == {home1.id, home2.id}

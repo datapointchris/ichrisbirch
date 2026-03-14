@@ -6,7 +6,6 @@ from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.task import TaskCategory
 from tests.factories import AutoTaskFactory
 from tests.factories import clear_factory_session
 from tests.factories import set_factory_session
@@ -21,9 +20,9 @@ def setup_test_autotasks(insert_users_for_login):
     """Create test autotasks using factories for this test module."""
     with create_session(test_settings) as session:
         set_factory_session(session)
-        AutoTaskFactory(name='Daily Cleanup', category=TaskCategory.Chore, frequency=AutoTaskFrequency.Daily, priority=5)
-        AutoTaskFactory(name='Weekly Review', category=TaskCategory.Computer, frequency=AutoTaskFrequency.Weekly, priority=10)
-        AutoTaskFactory(name='Monthly Budget', category=TaskCategory.Financial, frequency=AutoTaskFrequency.Monthly, priority=15)
+        AutoTaskFactory(name='Daily Cleanup', category='Chore', frequency=AutoTaskFrequency.Daily, priority=5)
+        AutoTaskFactory(name='Weekly Review', category='Computer', frequency=AutoTaskFrequency.Weekly, priority=10)
+        AutoTaskFactory(name='Monthly Budget', category='Financial', frequency=AutoTaskFrequency.Monthly, priority=15)
         session.commit()
         clear_factory_session()
 
@@ -80,7 +79,7 @@ def test_create_autotask(page: Page):
     form.locator('button[value="add"]').click()
 
     autotask = _get_autotask_from_db('Playwright AutoTask')
-    assert autotask.category == TaskCategory.Home
+    assert autotask.category == 'Home'
     assert autotask.priority == 25
     assert autotask.frequency == AutoTaskFrequency.Biweekly
     assert autotask.notes == 'Created by Playwright'
@@ -89,7 +88,7 @@ def test_create_autotask(page: Page):
     # Verify the side-effect: a Task should have been created
     task = _get_task_from_db('Playwright AutoTask')
     assert task is not None, 'Running an autotask should create a Task'
-    assert task.category == TaskCategory.Home
+    assert task.category == 'Home'
     assert task.priority == 25
 
 
@@ -108,7 +107,7 @@ def test_run_autotask(page: Page):
     # Verify a Task was created
     task = _get_task_from_db('Weekly Review')
     assert task is not None, 'Running should create a Task'
-    assert task.category == TaskCategory.Computer
+    assert task.category == 'Computer'
 
 
 def test_delete_autotask(page: Page):

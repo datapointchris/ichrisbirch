@@ -3,17 +3,15 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
-from ichrisbirch.models.task import TaskCategory
-
 
 class TaskConfig(BaseModel):
-    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskCreate(TaskConfig):
     name: str
     notes: str | None = None
-    category: TaskCategory
+    category: str
     priority: int
 
 
@@ -21,7 +19,7 @@ class Task(TaskConfig):
     id: int
     name: str
     notes: str | None = None
-    category: TaskCategory
+    category: str
     priority: int
     add_date: datetime
     complete_date: datetime | None = None
@@ -30,7 +28,7 @@ class Task(TaskConfig):
 class TaskUpdate(TaskConfig):
     name: str | None = None
     notes: str | None = None
-    category: TaskCategory | None = None
+    category: str | None = None
     priority: int | None = None
     add_date: datetime | None = None
     complete_date: datetime | None = None
@@ -40,7 +38,7 @@ class TaskCompleted(TaskConfig):
     id: int
     name: str
     notes: str | None = None
-    category: TaskCategory
+    category: str
     priority: int
     add_date: datetime
     complete_date: datetime

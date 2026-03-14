@@ -7,11 +7,9 @@ import httpx
 import structlog
 
 from ichrisbirch.gui.utils import set_app_geometry
-from ichrisbirch.models.task import TaskCategory
+from ichrisbirch.models.task import TASK_CATEGORIES
 
 logger = structlog.get_logger()
-
-TASK_CATEGORIES = [t.value for t in TaskCategory]
 
 
 def submit_form():

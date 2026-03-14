@@ -3,7 +3,7 @@ from fastapi import status
 
 from ichrisbirch import schemas
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.task import TaskCategory
+from ichrisbirch.models.task import TASK_CATEGORIES
 from tests.util import show_status_and_response
 from tests.utils.database import delete_test_data
 from tests.utils.database import insert_test_data
@@ -30,7 +30,7 @@ def test_add_autotask(test_app_logged_in, test_api_logged_in):
     data = dict(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
-        category=TaskCategory.Computer.value,
+        category='Computer',
         priority=3,
         frequency=AutoTaskFrequency.Biweekly.value,
     )
@@ -50,7 +50,7 @@ def test_delete_autotask(test_app_logged_in):
     assert b'<title>AutoTasks</title>' in response.data
 
 
-@pytest.mark.parametrize('category', list(TaskCategory))
+@pytest.mark.parametrize('category', TASK_CATEGORIES)
 def test_task_categories(test_api_logged_in, category):
     test_autotask = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
@@ -69,7 +69,7 @@ def test_autotask_frequency(test_api_logged_in, frequency):
     test_autotask = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',
         notes='Notes task 4',
-        category=TaskCategory.Personal,
+        category='Personal',
         priority=3,
         frequency=frequency,
     )

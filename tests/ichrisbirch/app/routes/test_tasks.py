@@ -3,7 +3,7 @@ from fastapi import status
 
 import tests.util
 from ichrisbirch import schemas
-from ichrisbirch.models.task import TaskCategory
+from ichrisbirch.models.task import TASK_CATEGORIES
 from tests.utils.database import delete_test_data
 from tests.utils.database import insert_test_data
 
@@ -45,7 +45,7 @@ def test_crud_add(test_app_logged_in):
         data=dict(
             name='Task 4 Computer with notes priority 3',
             notes='Notes task 4',
-            category=TaskCategory.Computer.value,
+            category='Computer',
             priority=3,
             action='add',
         ),
@@ -110,7 +110,7 @@ def test_crud_reset_priorities(test_app_logged_in, test_api_logged_in):
     NEGATIVE_PRIORITY_TASK = schemas.TaskCreate(
         name='Task Negative priority',
         notes='Notes task negative',
-        category=TaskCategory.Home,
+        category='Home',
         priority=-5,
     )
     test_app_logged_in.post('/tasks/crud/', data=NEGATIVE_PRIORITY_TASK.model_dump() | {'action': 'add'})
@@ -148,7 +148,7 @@ def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_a
     assert p1 == p1_updated
 
 
-@pytest.mark.parametrize('category', [t.value for t in TaskCategory])
+@pytest.mark.parametrize('category', TASK_CATEGORIES)
 def test_task_categories(test_app_logged_in, category):
     response = test_app_logged_in.post(
         '/tasks/crud/',
