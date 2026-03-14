@@ -31,11 +31,15 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: detect-private-key
 
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.0
+  - repo: local
     hooks:
-      - id: check-compose-spec
+      - id: docker-compose-validate
+        name: validate docker compose files
+        description: "Validate compose files using the actual Docker Compose parser"
+        entry: bash -c 'docker compose -f docker-compose.yml config --quiet && docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet && docker compose -f docker-compose.test.yml config --quiet'
+        language: system
         files: ^docker-compose.*\.yml$
+        pass_filenames: false
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.8.3

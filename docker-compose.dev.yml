@@ -328,8 +328,12 @@ services:
         tag: "chat-dev"
 
   # Vue 3 frontend development server
+  # !reset clears the inherited build: key from docker-compose.yml (prod Vue builds
+  # a Caddy image from frontend/Dockerfile). Without this, `docker compose build`
+  # tags the Caddy build output as node:20-alpine, corrupting the base image.
   vue:
     image: node:20-alpine
+    build: !reset null
     container_name: icb-dev-vue
     working_dir: /app
     command: sh -c "npm install && npm run dev"
