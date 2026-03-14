@@ -1,6 +1,6 @@
 """baseline schema
 
-Revision ID: 322f23065c61
+Revision ID: e010f859f025
 Revises:
 Create Date: 2026-03-14 00:18:59.900959
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '322f23065c61'
+revision = 'e010f859f025'
 down_revision = None
 branch_labels = None
 depends_on = None

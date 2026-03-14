@@ -893,6 +893,8 @@ ichrisbirch/
 
 ## Documentation
 
+**Check docs first**: Before making changes to infrastructure, deployment, database migrations, or any area with established patterns, **read the relevant docs/** files first. These contain hard-won lessons and specific procedures that prevent repeating past mistakes.
+
 **Serve locally**: `mkdocs serve` (<http://127.0.0.1:8000>)
 
 **Key docs**:
@@ -900,6 +902,7 @@ ichrisbirch/
 - [Quick Start](docs/quick-start.md) - Get running in under 5 minutes
 - [CLI Usage](docs/cli-traefik-usage.md) - Complete CLI reference
 - [Traefik Deployment](docs/traefik-deployment.md) - Reverse proxy configuration
+- [Alembic Migrations](docs/alembic.md) - Migration workflows, squashing, lookup tables
 - [Testing Guide](docs/testing/overview.md) - Testing strategy
 - [API Documentation](docs/api/index.md) - API reference
 - [Troubleshooting](docs/troubleshooting.md) - Common issues
