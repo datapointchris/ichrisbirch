@@ -9,10 +9,8 @@ from flask_login import login_required
 
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_flask_session_client
-from ichrisbirch.models.autotask import AutoTaskFrequency
+from ichrisbirch.models.autotask import AUTOTASK_FREQUENCIES
 from ichrisbirch.models.task import TASK_CATEGORIES
-
-AUTOTASK_FREQUENCIES = [t.value for t in AutoTaskFrequency]
 
 logger = structlog.get_logger()
 blueprint = Blueprint('autotasks', __name__, template_folder='templates/autotasks', static_folder='static')

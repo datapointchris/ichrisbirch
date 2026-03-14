@@ -5,7 +5,6 @@ from sqlalchemy import delete
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch.models.autotask import AutoTaskFrequency
 from tests.factories import AutoTaskFactory
 from tests.factories import clear_factory_session
 from tests.factories import set_factory_session
@@ -20,9 +19,9 @@ def setup_test_autotasks(insert_users_for_login):
     """Create test autotasks using factories for this test module."""
     with create_session(test_settings) as session:
         set_factory_session(session)
-        AutoTaskFactory(name='Daily Cleanup', category='Chore', frequency=AutoTaskFrequency.Daily, priority=5)
-        AutoTaskFactory(name='Weekly Review', category='Computer', frequency=AutoTaskFrequency.Weekly, priority=10)
-        AutoTaskFactory(name='Monthly Budget', category='Financial', frequency=AutoTaskFrequency.Monthly, priority=15)
+        AutoTaskFactory(name='Daily Cleanup', category='Chore', frequency='Daily', priority=5)
+        AutoTaskFactory(name='Weekly Review', category='Computer', frequency='Weekly', priority=10)
+        AutoTaskFactory(name='Monthly Budget', category='Financial', frequency='Monthly', priority=15)
         session.commit()
         clear_factory_session()
 
@@ -81,7 +80,7 @@ def test_create_autotask(page: Page):
     autotask = _get_autotask_from_db('Playwright AutoTask')
     assert autotask.category == 'Home'
     assert autotask.priority == 25
-    assert autotask.frequency == AutoTaskFrequency.Biweekly
+    assert autotask.frequency == 'Biweekly'
     assert autotask.notes == 'Created by Playwright'
     assert autotask.run_count == 1, 'Add should immediately run the autotask'
 

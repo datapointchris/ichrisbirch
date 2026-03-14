@@ -2,7 +2,6 @@ from copy import deepcopy
 from datetime import datetime
 from datetime import timedelta
 
-from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.autotask import frequency_to_duration
 from tests.test_data.autotasks import BASE_DATA
 
@@ -18,24 +17,14 @@ for i, record in enumerate(deepcopy(BASE_DATA), start=1):
     print(record)
 
 
-def test_frequency_to_duration_enums():
-    assert frequency_to_duration(AutoTaskFrequency.Daily.value).days == 1
-    assert frequency_to_duration(AutoTaskFrequency.Weekly.value).days == 7
-    assert frequency_to_duration(AutoTaskFrequency.Biweekly.value).days == 14
-    assert frequency_to_duration(AutoTaskFrequency.Monthly.value).days == 30
-    assert frequency_to_duration(AutoTaskFrequency.Quarterly.value).days == 90
-    assert frequency_to_duration(AutoTaskFrequency.Semiannually.value).days == 180
-    assert frequency_to_duration(AutoTaskFrequency.Yearly.value).days == 365
-
-
-def test_frequency_to_duration_values():
-    assert frequency_to_duration(AutoTaskFrequency.Daily.value).days == 1
-    assert frequency_to_duration(AutoTaskFrequency.Weekly.value).days == 7
-    assert frequency_to_duration(AutoTaskFrequency.Biweekly.value).days == 14
-    assert frequency_to_duration(AutoTaskFrequency.Monthly.value).days == 30
-    assert frequency_to_duration(AutoTaskFrequency.Quarterly.value).days == 90
-    assert frequency_to_duration(AutoTaskFrequency.Semiannually.value).days == 180
-    assert frequency_to_duration(AutoTaskFrequency.Yearly.value).days == 365
+def test_frequency_to_duration_all():
+    assert frequency_to_duration('Daily').days == 1
+    assert frequency_to_duration('Weekly').days == 7
+    assert frequency_to_duration('Biweekly').days == 14
+    assert frequency_to_duration('Monthly').days == 30
+    assert frequency_to_duration('Quarterly').days == 90
+    assert frequency_to_duration('Semiannually').days == 180
+    assert frequency_to_duration('Yearly').days == 365
 
 
 def test_frequency_to_duration_strings():
@@ -50,11 +39,11 @@ def test_frequency_to_duration_strings():
 
 def test_autotask_frequency_is_correct():
     autotask = autotasks_with_ids[0]
-    assert autotask.frequency == AutoTaskFrequency.Daily.value
+    assert autotask.frequency == 'Daily'
     autotask = autotasks_with_ids[1]
-    assert autotask.frequency == AutoTaskFrequency.Weekly.value
+    assert autotask.frequency == 'Weekly'
     autotask = autotasks_with_ids[2]
-    assert autotask.frequency == AutoTaskFrequency.Quarterly.value
+    assert autotask.frequency == 'Quarterly'
 
 
 def test_autotask_frequency_is_correct_timedelta():

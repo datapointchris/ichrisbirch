@@ -6,7 +6,6 @@ from datetime import timedelta
 import factory
 
 from ichrisbirch.models.autotask import AutoTask
-from ichrisbirch.models.autotask import AutoTaskFrequency
 
 from .base import get_factory_session
 
@@ -24,16 +23,16 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     category = 'Chore'
     priority = factory.Sequence(lambda n: (n + 1) * 5)
     max_concurrent = 2
-    frequency = AutoTaskFrequency.Weekly
+    frequency = 'Weekly'
     first_run_date = factory.LazyFunction(datetime.now)
     last_run_date = factory.LazyFunction(datetime.now)
     run_count = 0
 
     class Params:
         # Usage: AutoTaskFactory(daily=True)
-        daily = factory.Trait(frequency=AutoTaskFrequency.Daily)
+        daily = factory.Trait(frequency='Daily')
         # Usage: AutoTaskFactory(monthly=True)
-        monthly = factory.Trait(frequency=AutoTaskFrequency.Monthly)
+        monthly = factory.Trait(frequency='Monthly')
         # Usage: AutoTaskFactory(should_run=True) - last run was long ago
         should_run = factory.Trait(last_run_date=factory.LazyFunction(lambda: datetime.now() - timedelta(days=30)))
         # Usage: AutoTaskFactory(ran_today=True)

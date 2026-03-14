@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from ichrisbirch.models import AutoTask
-from ichrisbirch.models.autotask import AutoTaskFrequency
 
 BASE_DATA: list[AutoTask] = [
     AutoTask(
@@ -9,7 +8,7 @@ BASE_DATA: list[AutoTask] = [
         notes='Notes for task 1',
         category='Chore',
         priority=5,
-        frequency=AutoTaskFrequency.Daily.value,
+        frequency='Daily',
         first_run_date=datetime(2020, 4, 20, 3, 3, 39, 50648).isoformat(),
         last_run_date=datetime(2020, 4, 24, 3, 3, 39, 50648).isoformat(),
         run_count=5,
@@ -19,7 +18,7 @@ BASE_DATA: list[AutoTask] = [
         notes=None,
         category='Home',
         priority=10,
-        frequency=AutoTaskFrequency.Weekly.value,
+        frequency='Weekly',
         first_run_date=datetime(2020, 3, 20, 3, 3, 39, 50648).isoformat(),
         last_run_date=datetime(2020, 3, 24, 3, 3, 39, 50648).isoformat(),
         run_count=1,
@@ -29,7 +28,7 @@ BASE_DATA: list[AutoTask] = [
         notes='Notes for task 3',
         category='Home',
         priority=15,
-        frequency=AutoTaskFrequency.Quarterly.value,
+        frequency='Quarterly',
         first_run_date=datetime(2020, 1, 20, 3, 3, 39, 50648).isoformat(),
         last_run_date=datetime(2020, 1, 24, 3, 3, 39, 50648).isoformat(),
         run_count=2,

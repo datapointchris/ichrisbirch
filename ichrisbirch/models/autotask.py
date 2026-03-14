@@ -1,10 +1,8 @@
-import enum
 from datetime import date
 from datetime import datetime
 
 import pendulum
 from sqlalchemy import DateTime
-from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -15,32 +13,38 @@ from sqlalchemy.orm import mapped_column
 
 from ichrisbirch.database.base import Base
 
+AUTOTASK_FREQUENCIES = [
+    'Biweekly',
+    'Daily',
+    'Monthly',
+    'Quarterly',
+    'Semiannually',
+    'Weekly',
+    'Yearly',
+]
 
-class AutoTaskFrequency(enum.Enum):
-    Daily = 'Daily'
-    Weekly = 'Weekly'
-    Biweekly = 'Biweekly'
-    Monthly = 'Monthly'
-    Quarterly = 'Quarterly'
-    Semiannually = 'Semiannually'
-    Yearly = 'Yearly'
+
+class AutoTaskFrequency(Base):
+    """Lookup table for valid autotask frequencies, replacing PostgreSQL ENUM type."""
+
+    __tablename__ = 'autotask_frequencies'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
 
 
-def frequency_to_duration(frequency: AutoTaskFrequency | str) -> pendulum.Duration:
-    """Converts a frequency string or TaskFrequency to a pendulum.Duration object."""
-    if isinstance(frequency, str):
-        frequency = AutoTaskFrequency(frequency.capitalize())
-    if not (
-        delta := {
-            AutoTaskFrequency.Daily: pendulum.duration(days=1),
-            AutoTaskFrequency.Weekly: pendulum.duration(weeks=1),
-            AutoTaskFrequency.Biweekly: pendulum.duration(weeks=2),
-            AutoTaskFrequency.Monthly: pendulum.duration(months=1),
-            AutoTaskFrequency.Quarterly: pendulum.duration(months=3),
-            AutoTaskFrequency.Semiannually: pendulum.duration(months=6),
-            AutoTaskFrequency.Yearly: pendulum.duration(years=1),
-        }.get(frequency)
-    ):
+FREQUENCY_DURATIONS = {
+    'Daily': pendulum.duration(days=1),
+    'Weekly': pendulum.duration(weeks=1),
+    'Biweekly': pendulum.duration(weeks=2),
+    'Monthly': pendulum.duration(months=1),
+    'Quarterly': pendulum.duration(months=3),
+    'Semiannually': pendulum.duration(months=6),
+    'Yearly': pendulum.duration(years=1),
+}
+
+
+def frequency_to_duration(frequency: str) -> pendulum.Duration:
+    """Converts a frequency string to a pendulum.Duration object."""
+    if not (delta := FREQUENCY_DURATIONS.get(frequency)):
         raise ValueError(f'Invalid frequency: {frequency}')
     return delta
 
@@ -53,7 +57,7 @@ class AutoTask(Base):
     category: Mapped[str] = mapped_column(Text, ForeignKey('task_categories.name'), nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
     max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
-    frequency: Mapped[AutoTaskFrequency] = mapped_column(Enum(AutoTaskFrequency), nullable=False)
+    frequency: Mapped[str] = mapped_column(Text, ForeignKey('autotask_frequencies.name'), nullable=False)
     first_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

@@ -2,7 +2,6 @@ import pytest
 from freezegun import freeze_time
 
 from ichrisbirch import schemas
-from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.scheduler import jobs
 from tests.util import show_status_and_response
 from tests.utils.database import delete_test_data
@@ -37,7 +36,7 @@ NEW_AUTOTASK = schemas.AutoTaskCreate(
     notes='Notes for concurrent task',
     category='Computer',
     priority=3,
-    frequency=AutoTaskFrequency.Biweekly,
+    frequency='Biweekly',
     max_concurrent=2,
 )
 

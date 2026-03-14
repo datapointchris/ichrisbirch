@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 
 from ichrisbirch import schemas
-from ichrisbirch.models.autotask import AutoTaskFrequency
+from ichrisbirch.models.autotask import AUTOTASK_FREQUENCIES
 from ichrisbirch.models.task import TASK_CATEGORIES
 from tests.util import show_status_and_response
 from tests.utils.database import delete_test_data
@@ -32,7 +32,7 @@ def test_add_autotask(test_app_logged_in, test_api_logged_in):
         notes='Notes task 4',
         category='Computer',
         priority=3,
-        frequency=AutoTaskFrequency.Biweekly.value,
+        frequency='Biweekly',
     )
     response = test_app_logged_in.post('/autotasks/', data=data | {'action': 'add'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -57,14 +57,14 @@ def test_task_categories(test_api_logged_in, category):
         notes='Notes task 4',
         category=category,
         priority=3,
-        frequency=AutoTaskFrequency.Biweekly,
+        frequency='Biweekly',
     )
     created_autotask = test_api_logged_in.post('/autotasks/', json=test_autotask.model_dump())
     assert created_autotask.status_code == status.HTTP_201_CREATED, show_status_and_response(created_autotask)
     assert created_autotask.json()['name'] == test_autotask.name
 
 
-@pytest.mark.parametrize('frequency', list(AutoTaskFrequency))
+@pytest.mark.parametrize('frequency', AUTOTASK_FREQUENCIES)
 def test_autotask_frequency(test_api_logged_in, frequency):
     test_autotask = schemas.AutoTaskCreate(
         name='AutoTask 4 Computer with notes priority 3',

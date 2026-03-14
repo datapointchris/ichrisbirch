@@ -7,8 +7,6 @@ from datetime import UTC
 from datetime import date
 from datetime import datetime
 
-from ichrisbirch.models.autotask import AutoTaskFrequency
-
 from . import ArticleFactory
 from . import AutoTaskFactory
 from . import BookFactory
@@ -207,12 +205,12 @@ class TestAutoTaskFactory:
         autotask = AutoTaskFactory()
         assert autotask.id is not None
         assert autotask.name.startswith('Test AutoTask')
-        assert autotask.frequency == AutoTaskFrequency.Weekly
+        assert autotask.frequency == 'Weekly'
 
     def test_daily_autotask(self, factory_session):
         """Test creating a daily autotask."""
         autotask = AutoTaskFactory(daily=True)
-        assert autotask.frequency == AutoTaskFrequency.Daily
+        assert autotask.frequency == 'Daily'
 
     def test_should_run_autotask(self, factory_session):
         """Test creating an autotask that should run."""
