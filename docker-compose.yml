@@ -190,6 +190,7 @@ services:
 
   # Vue Frontend Service - Production (Caddy serves built SPA assets)
   vue:
+    image: ichrisbirch-vue:production
     build:
       context: .
       dockerfile: frontend/Dockerfile
