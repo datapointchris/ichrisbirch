@@ -236,10 +236,6 @@ pip-selfcheck.json
 # local database files
 *.db
 
-# git-secret
-.gitsecret/keys/random_seed
-!*.secret
-
 # environment files
 .env.dev
 .env.prod

@@ -6,7 +6,7 @@
 sudo apt update && sudo apt upgrade -y
 
 # base installs
-sudo apt install curl git git-secret -y
+sudo apt install curl git -y
 
 # NOTE: Install the postgresql-client version that matches the database, this is for pg_dump backups with the scheduler.
 sudo apt install postgresql-client-16 tmux tldr supervisor nginx neovim pipx -y
@@ -44,7 +44,7 @@ sudo chown ubuntu /var/www
 git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
 cd /var/www/ichrisbirch
 
-# REFER to https://docs.ichrisbirch.com/git_secret/ to get gpg key for git-secret
+# Decrypt secrets: sops decrypt secrets/secrets.prod.enc.env > .env
 
 # Install project
 poetry config virtualenvs.in-project true

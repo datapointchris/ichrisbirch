@@ -55,10 +55,9 @@ ichrisbirch/
 
 | File | Purpose |
 |------|---------|
-| `.env` | Shared environment variables |
-| `.dev.env.secret` | Development secrets (Git Secret encrypted) |
-| `.test.env.secret` | Testing secrets (Git Secret encrypted) |
-| `.prod.env.secret` | Production secrets (Git Secret encrypted) |
+| `.env` | Environment variables (from `.env.example` for dev, SOPS-decrypted for prod) |
+| `secrets/secrets.prod.enc.env` | Production secrets (SOPS + age encrypted) |
+| `secrets/secrets.test.enc.env` | Testing secrets (SOPS + age encrypted) |
 
 ## Configuration
 

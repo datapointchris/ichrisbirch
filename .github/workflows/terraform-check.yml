@@ -20,17 +20,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Ubuntu Installs
-        run: |
-          sudo apt update
-          sudo apt install git-secret gpg -y
-
-      - name: "git-secret Reveal .env files"
-        run: |
-          # Import private key and avoid the "Inappropriate ioctl for device" error
-          echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
-          git secret reveal
-
       - name: Set Up Python
         uses: actions/setup-python@v5
         with:

@@ -1,72 +1,47 @@
 # Developer Setup
 
-- [1. Programs to install](#1-programs-to-install)
-- [2. Set up git-secret](#2-set-up-git-secret)
-- [3. Setup the project](#3-setup-the-project)
-- [4. Run the project](#4-run-the-project)
-- [5. Connecting to the Running Project](#5-connecting-to-the-running-project)
-  - [5.1. App](#51-app)
-  - [5.2. API](#52-api)
-- [6. Links and Notes](#6-links-and-notes)
+## Prerequisites
 
-## 1. Programs to install
+- Docker Desktop
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
+- [mkcert](https://github.com/FiloSottile/mkcert) (for local HTTPS certificates)
 
-poetry
-git-secret
-Docker Desktop
-
-## 2. Set up git-secret
-
-## 3. Setup the project
+## Setup
 
 ```bash
 git clone https://github.com/datapointchris/ichrisbirch.git
-
 cd ichrisbirch/
 
-git secret reveal
+# Install dependencies
+uv sync
 
-poetry install
+# Copy and fill in environment variables
+cp .env.example .env
+# Edit .env with your values
 
-source .venv/bin/activate
-
-export ENVIRONMENT=development
-
+# Install pre-commit hooks
 pre-commit install
 
-# Make sure Docker is running
+# Generate SSL certificates for local development
+./cli/ichrisbirch ssl-manager generate dev
 
-pytest
+# Start development environment
+./cli/ichrisbirch dev start
 ```
 
-## 4. Run the project
+## Access
 
-!!! todo "TODO"
+- App: <https://app.docker.localhost/>
+- API: <https://api.docker.localhost/>
+- Chat: <https://chat.docker.localhost/>
 
-  This doesn't work!  I need to figure out another way to run it locally.
-  Right now it is relying on using local NGINX and Supervisor.
+## Secrets management
+
+Production secrets are managed with SOPS + age. See `secrets/README.md` for details.
+
+To edit production secrets:
 
 ```bash
-# App and API are separate applications.
-# App is a flask app that runs the frontend
-# API is FastAPI running the API backend that the frontend connects to
-
-# Run these in separate shells for log separation
-# poetry run python ichrisbirch/runapidev.py
-# poetry run python ichrisbirch/runappdev.py
-
+# Requires age private key at ~/.config/sops/age/keys.txt
+sops secrets/secrets.prod.enc.env
 ```
-
-## 5. Connecting to the Running Project
-
-### 5.1. App
-
-<http://127.0.0.1:6000>
-
-### 5.2. API
-
-<http://127.0.0.1:6200>
-
-## 6. Links and Notes
-
-[GitHub - github/scripts-to-rule-them-all: Set of boilerplate scripts describing the normalized script pattern that GitHub uses in its projects.](https://github.com/github/scripts-to-rule-them-all)

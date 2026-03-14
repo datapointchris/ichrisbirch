@@ -2,9 +2,6 @@
 
 set_global_vars() {
   UBUNTU_HOME=/home/ubuntu
-  KEY_BUCKET=ichrisbirch-webserver-keys
-  PUBLIC_KEY=ec2-public.key
-  PRIVATE_KEY=ec2-private.key
   AWS_CLI_ZIP="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
   TMUX_CONFIG_GIST="https://gist.github.com/2054319eca6c91523355590fed6135d6.git"
   TMUX_CONFIG_DIR="$UBUNTU_HOME/.config/tmux"
@@ -17,7 +14,7 @@ update_machine() {
 base_installs() {
   # NOTE: Install the postgresql-client version that matches the database
   # this is for pg_dump backups with the scheduler.
-  apt install curl git git-secret postgresql-client-16 unzip make -y
+  apt install curl git postgresql-client-16 unzip make -y
   apt install tmux tldr tree supervisor nginx neovim -y
 }
 
@@ -32,19 +29,11 @@ install_aws_cli() {
   ./aws/install >/dev/null 2>&1
 }
 
-import_gpg_keys() {
-  # Get public and private gpg keys from S3 for unlocking git-secret .env files
-  aws s3 cp "s3://$KEY_BUCKET/$PUBLIC_KEY" "$UBUNTU_HOME/$PUBLIC_KEY"
-  aws s3 cp "s3://$KEY_BUCKET/$PRIVATE_KEY" "$UBUNTU_HOME/$PRIVATE_KEY"
-
-  gpg --import "$UBUNTU_HOME/$PUBLIC_KEY"
-  gpg --import "$UBUNTU_HOME/$PRIVATE_KEY"
-
-  sudo -u ubuntu gpg --import "$UBUNTU_HOME/$PUBLIC_KEY"
-  sudo -u ubuntu gpg --import "$UBUNTU_HOME/$PRIVATE_KEY"
-
-  rm "$UBUNTU_HOME/$PUBLIC_KEY"
-  rm "$UBUNTU_HOME/$PRIVATE_KEY"
+install_sops_age() {
+  apt install -y age
+  local sops_version="v3.9.4"
+  curl -fsSL "https://github.com/getsops/sops/releases/download/${sops_version}/sops-${sops_version}.linux.amd64" -o /usr/local/bin/sops
+  chmod +x /usr/local/bin/sops
 }
 
 setup_tmux() {
@@ -71,8 +60,8 @@ install_project() {
   cd /var/www/ichrisbirch && ~/.cargo/bin/uv sync --frozen --no-dev
 }
 
-unlock_secret_files() {
-  cd /var/www/ichrisbirch && git secret reveal -f
+decrypt_secrets() {
+  cd /var/www/ichrisbirch && sops decrypt secrets/secrets.prod.enc.env > .env
 }
 
 make_log_files() {
@@ -122,7 +111,7 @@ setup_supervisor() {
 }
 
 set_permissions() {
-  # Set permissions - ubuntu must own the directory for subsequent UV install and git secret reveal
+  # Set permissions - ubuntu must own the directory for subsequent UV install
   # Since startup script runs as root, change permissions at the end
   chown -R ubuntu /var/www
   chown redis:redis /var/lib/redis
@@ -135,12 +124,12 @@ main() {
   base_installs
   installs_for_building_psycopg2_from_source
   install_aws_cli
-  import_gpg_keys
+  install_sops_age
   setup_tmux
   install_uv
   clone_repo
   install_project
-  unlock_secret_files
+  decrypt_secrets
   make_log_files
   install_certbot
   # This may be a manual step of copying certs from old to new

@@ -109,7 +109,6 @@ nav:
       - Backups: backups.md
       - CI/CD: cicd.md
       - Terraform: terraform.md
-      - Git Secret: git_secret.md
   - Frontend:
       - Vue Frontend: vue-frontend.md
       - CSS: css.md

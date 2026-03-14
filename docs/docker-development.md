@@ -83,11 +83,10 @@ ichrisbirch prod logs      # View production application logs
 
 ### Environment Variables
 
-Each environment uses corresponding environment files:
+Each environment uses `.env` files:
 
-- Development: `.dev.env.secret` (Git Secret encrypted)
-- Testing: `.test.env.secret` (Git Secret encrypted)  
-- Production: `.prod.env.secret` (Git Secret encrypted)
+- Development/Testing: `.env` (from `.env.example`)
+- Production: Decrypted from `secrets/secrets.prod.enc.env` (SOPS + age encrypted)
 
 ### Volume Mounts
 
@@ -160,7 +159,7 @@ Each environment uses corresponding environment files:
 # Clone and setup
 git clone <repository>
 cd ichrisbirch
-git secret reveal  # Decrypt environment files
+cp .env.example .env  # Configure environment variables
 
 # Start development environment  
 ichrisbirch dev start

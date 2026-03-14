@@ -77,7 +77,6 @@ jobs:
           ${{ needs.set-ssh-command.outputs.ssh-cmd }} '
             cd /var/www/ichrisbirch &&
             git pull &&
-            git secret reveal -f &&
             sudo rm -rf .venv &&
             ~/.cargo/bin/uv sync --frozen --no-dev
           '

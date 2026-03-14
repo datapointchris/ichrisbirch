@@ -64,8 +64,8 @@
     ```
 
 !!! success "Solution"
-The environment file has not been loaded. **Most likely** you need to run `git secret reveal`
-This happens when the project has been cloned for the first time or directory has been deleted or the env files might have changed.
+The `.env` file is missing. For development, copy `.env.example` to `.env` and fill in values.
+For production, decrypt secrets: `sops decrypt secrets/secrets.prod.enc.env > .env`
 
 ## NGINX
 
