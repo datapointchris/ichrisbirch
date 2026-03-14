@@ -27,6 +27,8 @@ class BookCreate(BookConfig):
     abandoned: bool | None = None
     location: str | None = None
     notes: str | None = None
+    status: str = 'owned'
+    skip_reason: str | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -62,6 +64,8 @@ class Book(BookConfig):
     abandoned: bool | None = None
     location: str | None = None
     notes: str | None = None
+    status: str = 'owned'
+    skip_reason: str | None = None
 
 
 class BookUpdate(BookConfig):
@@ -81,6 +85,8 @@ class BookUpdate(BookConfig):
     abandoned: bool | None = None
     location: str | None = None
     notes: str | None = None
+    status: str | None = None
+    skip_reason: str | None = None
 
     @model_validator(mode='before')
     @classmethod

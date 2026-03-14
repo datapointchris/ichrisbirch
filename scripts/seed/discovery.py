@@ -29,6 +29,7 @@ LOOKUP_MODELS = frozenset(
     {
         'TaskCategory',
         'AutoTaskFrequency',
+        'BookStatus',
         'BoxSize',
     }
 )

@@ -15,6 +15,7 @@ from ichrisbirch.models import AutoTaskFrequency  # noqa
 from ichrisbirch.models import BackupHistory  # noqa
 from ichrisbirch.models import BackupRestore  # noqa
 from ichrisbirch.models import Book  # noqa
+from ichrisbirch.models import BookStatus  # noqa
 from ichrisbirch.models import Box  # noqa
 from ichrisbirch.models import BoxItem  # noqa
 from ichrisbirch.models import BoxSize  # noqa

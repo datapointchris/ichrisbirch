@@ -41,6 +41,7 @@ def _build_fk_cache_from_models(models: dict[str, ModelInfo]) -> dict[str, list]
     For non-lookup FKs (like box_id, chat_id), use placeholder IDs.
     """
     from ichrisbirch.models.autotask import AUTOTASK_FREQUENCIES
+    from ichrisbirch.models.book import BOOK_STATUSES
     from ichrisbirch.models.box import BOX_SIZES
     from ichrisbirch.models.task import TASK_CATEGORIES
 
@@ -48,6 +49,7 @@ def _build_fk_cache_from_models(models: dict[str, ModelInfo]) -> dict[str, list]
     known_lookups = {
         'task_categories.name': TASK_CATEGORIES,
         'autotask_frequencies.name': AUTOTASK_FREQUENCIES,
+        'book_statuses.name': BOOK_STATUSES,
         'box_packing.box_sizes.name': BOX_SIZES,
     }
 

@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Float
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
@@ -12,6 +13,21 @@ from sqlalchemy.orm import mapped_column
 from ichrisbirch.database.base import Base
 
 # from sqlalchemy.orm import relationship
+
+BOOK_STATUSES = [
+    'donated',
+    'owned',
+    'skipped',
+    'sold',
+    'to_purchase',
+]
+
+
+class BookStatus(Base):
+    """Lookup table for valid book statuses, replacing PostgreSQL ENUM type."""
+
+    __tablename__ = 'book_statuses'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
 
 
 class Book(Base):
@@ -33,6 +49,8 @@ class Book(Base):
     abandoned: Mapped[bool] = mapped_column(Boolean, nullable=True)
     location: Mapped[str] = mapped_column(Text, nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(Text, ForeignKey('book_statuses.name'), server_default='owned', nullable=False)
+    skip_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     # book_box = relationship('Box', back_populates='items')
 
     def __repr__(self) -> str:
@@ -51,6 +69,8 @@ class Book(Base):
         read_finish_date={self.read_finish_date!r},
         rating={self.rating!r},
         abandoned={self.abandoned!r},
-        location={self.location!r}
-        notes={self.notes!r}
+        location={self.location!r},
+        notes={self.notes!r},
+        status={self.status!r},
+        skip_reason={self.skip_reason!r}
         )"""
