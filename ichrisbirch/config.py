@@ -257,6 +257,8 @@ def get_settings():
 
     if dotenv.load_dotenv():
         logger.info('config_loaded_from_dotenv', environment=env)
+    elif os.environ.get('POSTGRES_HOST'):
+        logger.info('config_loaded_from_environment', environment=env)
     else:
         raise FileNotFoundError(
             f'.env file not found for environment={env}. For production, decrypt secrets: sops decrypt secrets/secrets.prod.enc.env > .env'

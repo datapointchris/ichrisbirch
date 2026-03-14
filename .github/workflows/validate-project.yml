@@ -107,6 +107,9 @@ jobs:
           # Import private key and avoid the "Inappropriate ioctl for device" error
           echo ${{ secrets.CICD_GPG_KEY }} | tr ',' '\n' | gpg --batch --yes --pinentry-mode loopback --import
           git secret reveal
+          # Copy .test.env to .env so dotenv.load_dotenv() finds it
+          # (previously CI fell through to SSM, which has been removed)
+          cp .test.env .env
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
