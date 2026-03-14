@@ -1,8 +1,8 @@
 """baseline schema
 
-Revision ID: 8e4ce2fcf9cd
+Revision ID: 322f23065c61
 Revises:
-Create Date: 2026-03-13 22:21:10.664215
+Create Date: 2026-03-14 00:18:59.900959
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '8e4ce2fcf9cd'
+revision = '322f23065c61'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -54,18 +54,14 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_articles')),
     sa.UniqueConstraint('url', name=op.f('uq_articles_url'))
     )
-    op.create_table('autotasks',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=64), nullable=False),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('category', sa.Enum('Automotive', 'Chore', 'Computer', 'Dingo', 'Financial', 'Home', 'Kitchen', 'Learn', 'Personal', 'Purchase', 'Research', 'Work', name='taskcategory'), nullable=False),
-    sa.Column('priority', sa.Integer(), nullable=False),
-    sa.Column('max_concurrent', sa.Integer(), nullable=False),
-    sa.Column('frequency', sa.Enum('Daily', 'Weekly', 'Biweekly', 'Monthly', 'Quarterly', 'Semiannually', 'Yearly', name='autotaskfrequency'), nullable=False),
-    sa.Column('first_run_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('last_run_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('run_count', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_autotasks'))
+    op.create_table('autotask_frequencies',
+    sa.Column('name', sa.Text(), nullable=False),
+    sa.PrimaryKeyConstraint('name', name=op.f('pk_autotask_frequencies'))
+    )
+    op.execute(
+        "INSERT INTO autotask_frequencies (name) VALUES "
+        "('Biweekly'), ('Daily'), ('Monthly'), ('Quarterly'), "
+        "('Semiannually'), ('Weekly'), ('Yearly')"
     )
     op.create_table('books',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -88,17 +84,15 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_books')),
     sa.UniqueConstraint('goodreads_url', name=op.f('uq_books_goodreads_url'))
     )
-    op.create_table('boxes',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('number', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.Column('size', sa.Enum('Book', 'Small', 'Medium', 'Large', 'Bag', 'Monitor', 'Misc', 'Sixteen', 'UhaulSmall', name='boxsize'), nullable=False),
-    sa.Column('essential', sa.Boolean(), nullable=False),
-    sa.Column('warm', sa.Boolean(), nullable=False),
-    sa.Column('liquid', sa.Boolean(), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_boxes')),
-    sa.UniqueConstraint('number', name=op.f('uq_boxes_number')),
+    op.create_table('box_sizes',
+    sa.Column('name', sa.Text(), nullable=False),
+    sa.PrimaryKeyConstraint('name', name=op.f('pk_box_sizes')),
     schema='box_packing'
+    )
+    op.execute(
+        "INSERT INTO box_packing.box_sizes (name) VALUES "
+        "('Bag'), ('Book'), ('Large'), ('Medium'), ('Misc'), "
+        "('Monitor'), ('Sixteen'), ('Small'), ('UhaulSmall')"
     )
     op.create_table('chats',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -176,15 +170,15 @@ def upgrade() -> None:
     sa.Column('content', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_portfolio'))
     )
-    op.create_table('tasks',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=64), nullable=False),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('category', sa.Enum('Automotive', 'Chore', 'Computer', 'Dingo', 'Financial', 'Home', 'Kitchen', 'Learn', 'Personal', 'Purchase', 'Research', 'Work', name='taskcategory'), nullable=False),
-    sa.Column('priority', sa.Integer(), nullable=False),
-    sa.Column('add_date', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('complete_date', sa.DateTime(timezone=True), nullable=True),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_tasks'))
+    op.create_table('task_categories',
+    sa.Column('name', sa.Text(), nullable=False),
+    sa.PrimaryKeyConstraint('name', name=op.f('pk_task_categories'))
+    )
+    op.execute(
+        "INSERT INTO task_categories (name) VALUES "
+        "('Automotive'), ('Chore'), ('Computer'), ('Dingo'), ('Financial'), "
+        "('Home'), ('Kitchen'), ('Learn'), ('Personal'), ('Purchase'), "
+        "('Research'), ('Work')"
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -237,15 +231,32 @@ def upgrade() -> None:
     schema='apartments'
     )
     op.create_index(op.f('ix_apartments_features_id'), 'features', ['id'], unique=False, schema='apartments')
-    op.create_table('items',
+    op.create_table('autotasks',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('box_id', sa.Integer(), nullable=True),
+    sa.Column('name', sa.String(length=64), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('category', sa.Text(), nullable=False),
+    sa.Column('priority', sa.Integer(), nullable=False),
+    sa.Column('max_concurrent', sa.Integer(), nullable=False),
+    sa.Column('frequency', sa.Text(), nullable=False),
+    sa.Column('first_run_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('last_run_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('run_count', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['category'], ['task_categories.name'], name=op.f('fk_autotasks_category_task_categories')),
+    sa.ForeignKeyConstraint(['frequency'], ['autotask_frequencies.name'], name=op.f('fk_autotasks_frequency_autotask_frequencies')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_autotasks'))
+    )
+    op.create_table('boxes',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('number', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
+    sa.Column('size', sa.Text(), nullable=False),
     sa.Column('essential', sa.Boolean(), nullable=False),
     sa.Column('warm', sa.Boolean(), nullable=False),
     sa.Column('liquid', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['box_id'], ['box_packing.boxes.id'], name=op.f('fk_items_box_id_boxes'), ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_items')),
+    sa.ForeignKeyConstraint(['size'], ['box_packing.box_sizes.name'], name=op.f('fk_boxes_size_box_sizes')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_boxes')),
+    sa.UniqueConstraint('number', name=op.f('uq_boxes_number')),
     schema='box_packing'
     )
     op.create_table('messages',
@@ -297,6 +308,17 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_personal_api_keys')),
     sa.UniqueConstraint('hashed_key', name=op.f('uq_personal_api_keys_hashed_key'))
     )
+    op.create_table('tasks',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=64), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('category', sa.Text(), nullable=False),
+    sa.Column('priority', sa.Integer(), nullable=False),
+    sa.Column('add_date', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('complete_date', sa.DateTime(timezone=True), nullable=True),
+    sa.ForeignKeyConstraint(['category'], ['task_categories.name'], name=op.f('fk_tasks_category_task_categories')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_tasks'))
+    )
     op.create_table('backup_restores',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('backup_id', sa.Integer(), nullable=False),
@@ -311,23 +333,37 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_backup_restores')),
     schema='admin'
     )
+    op.create_table('items',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('box_id', sa.Integer(), nullable=True),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('essential', sa.Boolean(), nullable=False),
+    sa.Column('warm', sa.Boolean(), nullable=False),
+    sa.Column('liquid', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['box_id'], ['box_packing.boxes.id'], name=op.f('fk_items_box_id_boxes'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_items')),
+    schema='box_packing'
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('items', schema='box_packing')
     op.drop_table('backup_restores', schema='admin')
+    op.drop_table('tasks')
     op.drop_table('personal_api_keys')
     op.drop_table('habits', schema='habits')
     op.drop_table('completed', schema='habits')
     op.drop_table('duration_notes')
     op.drop_table('messages', schema='chat')
-    op.drop_table('items', schema='box_packing')
+    op.drop_table('boxes', schema='box_packing')
+    op.drop_table('autotasks')
     op.drop_index(op.f('ix_apartments_features_id'), table_name='features', schema='apartments')
     op.drop_table('features', schema='apartments')
     op.drop_table('backup_history', schema='admin')
     op.drop_table('users')
-    op.drop_table('tasks')
+    op.drop_table('task_categories')
     op.drop_table('portfolio')
     op.drop_table('money_wasted')
     op.drop_table('jwt_refresh_tokens')
@@ -337,9 +373,9 @@ def downgrade() -> None:
     op.drop_table('durations')
     op.drop_table('countdowns')
     op.drop_table('chats', schema='chat')
-    op.drop_table('boxes', schema='box_packing')
+    op.drop_table('box_sizes', schema='box_packing')
     op.drop_table('books')
-    op.drop_table('autotasks')
+    op.drop_table('autotask_frequencies')
     op.drop_table('articles')
     op.drop_table('article_failed_imports')
     op.drop_index(op.f('ix_apartments_apartments_name'), table_name='apartments', schema='apartments')
