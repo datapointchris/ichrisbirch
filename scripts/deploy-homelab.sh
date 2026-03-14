@@ -129,6 +129,27 @@ run_migrations() {
     local migration_output
     if migration_output=$(docker exec -w /app/ichrisbirch icb-prod-api alembic upgrade head 2>&1); then
         log_info "migrations_completed" | tee -a "$LOG_FILE"
+    elif echo "$migration_output" | grep -q "Can't locate revision"; then
+        # Migration squash detected: the current alembic_version points to a
+        # revision that no longer exists. Stamp to the new head with --purge
+        # (clears old version) then retry.
+        log_warn "migration_squash_detected" "action" "stamp_and_retry" | tee -a "$LOG_FILE"
+        local stamp_output
+        if stamp_output=$(docker exec -w /app/ichrisbirch icb-prod-api alembic stamp --purge head 2>&1); then
+            log_info "migration_stamp_completed" | tee -a "$LOG_FILE"
+            # Retry upgrade in case there are new migrations after the baseline
+            if migration_output=$(docker exec -w /app/ichrisbirch icb-prod-api alembic upgrade head 2>&1); then
+                log_info "migrations_completed" "note" "after_squash_stamp" | tee -a "$LOG_FILE"
+            else
+                FAILURE_OUTPUT="$migration_output"
+                log_error "migrations_failed" "output" "$migration_output" "note" "after_squash_stamp" | tee -a "$LOG_FILE"
+                exit 1
+            fi
+        else
+            FAILURE_OUTPUT="$stamp_output"
+            log_error "migration_stamp_failed" "output" "$stamp_output" | tee -a "$LOG_FILE"
+            exit 1
+        fi
     else
         FAILURE_OUTPUT="$migration_output"
         log_error "migrations_failed" "output" "$migration_output" | tee -a "$LOG_FILE"
