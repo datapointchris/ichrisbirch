@@ -13,6 +13,7 @@ from fastapi import APIRouter
 from fastapi import Cookie
 from fastapi import Depends
 from fastapi import HTTPException
+from fastapi import Request
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from fastapi import status
@@ -23,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api import smoke_tests
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.api.middleware import recent_errors
@@ -308,6 +310,20 @@ async def get_scheduler_history(
         query = query.where(models.SchedulerJobRun.job_id == job_id)
     query = query.limit(limit)
     return list(session.scalars(query).all())
+
+
+# --- Smoke tests ---
+
+
+@router.post('/smoke-tests/', response_model=schemas.admin.SmokeTestReport)
+async def run_smoke_tests_endpoint(
+    request: Request,
+    user: models.User = Depends(get_admin_user),
+    settings: Settings = Depends(get_settings),
+):
+    """Run smoke tests against all GET endpoints."""
+    logger.info('smoke_tests_requested', user_id=user.id)
+    return await smoke_tests.run_smoke_tests(request.app, settings, user.email)
 
 
 # --- System health endpoints ---

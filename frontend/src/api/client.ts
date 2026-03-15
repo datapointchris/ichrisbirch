@@ -666,3 +666,25 @@ export interface EnvironmentConfigSection {
   name: string
   settings: Record<string, unknown>
 }
+
+export interface SmokeTestResult {
+  path: string
+  name: string
+  category: string
+  auth_level: string
+  status_code: number | null
+  response_time_ms: number
+  passed: boolean
+  error: string | null
+}
+
+export interface SmokeTestReport {
+  run_at: string
+  environment: string
+  total: number
+  passed: number
+  failed: number
+  duration_ms: number
+  all_critical_passed: boolean
+  results: SmokeTestResult[]
+}

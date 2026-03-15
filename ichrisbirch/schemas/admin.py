@@ -67,3 +67,25 @@ class RecentError(AdminConfig):
 class EnvironmentConfigSection(AdminConfig):
     name: str
     settings: dict[str, Any]
+
+
+class SmokeTestResult(AdminConfig):
+    path: str
+    name: str
+    category: str
+    auth_level: str
+    status_code: int | None = None
+    response_time_ms: float
+    passed: bool
+    error: str | None = None
+
+
+class SmokeTestReport(AdminConfig):
+    run_at: str
+    environment: str
+    total: int
+    passed: int
+    failed: int
+    duration_ms: float
+    all_critical_passed: bool
+    results: list[SmokeTestResult]

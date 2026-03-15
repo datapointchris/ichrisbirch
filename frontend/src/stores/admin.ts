@@ -3,7 +3,15 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import type { SchedulerJob, SchedulerJobRun, SystemHealth, RecentError, User, EnvironmentConfigSection } from '@/api/client'
+import type {
+  SchedulerJob,
+  SchedulerJobRun,
+  SystemHealth,
+  RecentError,
+  User,
+  EnvironmentConfigSection,
+  SmokeTestReport,
+} from '@/api/client'
 
 const logger = createLogger('AdminStore')
 
@@ -27,6 +35,10 @@ export const useAdminStore = defineStore('admin', () => {
   // Users
   const users = ref<User[]>([])
   const usersLoading = ref(false)
+
+  // Smoke tests
+  const smokeReport = ref<SmokeTestReport | null>(null)
+  const smokeTestsRunning = ref(false)
 
   // Config
   const config = ref<EnvironmentConfigSection[]>([])
@@ -189,6 +201,28 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  // --- Smoke tests ---
+
+  async function runSmokeTests() {
+    smokeTestsRunning.value = true
+    error.value = null
+    try {
+      const response = await api.post('/admin/smoke-tests/')
+      smokeReport.value = response.data
+      logger.info('smoke_tests_completed', {
+        total: smokeReport.value!.total,
+        passed: smokeReport.value!.passed,
+        failed: smokeReport.value!.failed,
+      })
+    } catch (e) {
+      error.value =
+        e instanceof ApiError ? e : new ApiError({ message: 'Failed to run smoke tests', detail: 'Failed to run smoke tests', status: 500 })
+      logger.error('smoke_tests_failed', { error: error.value.detail })
+    } finally {
+      smokeTestsRunning.value = false
+    }
+  }
+
   return {
     error,
     systemHealth,
@@ -213,5 +247,8 @@ export const useAdminStore = defineStore('admin', () => {
     fetchUsers,
     updateUserAdmin,
     fetchConfig,
+    smokeReport,
+    smokeTestsRunning,
+    runSmokeTests,
   }
 })

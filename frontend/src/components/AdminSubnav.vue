@@ -30,6 +30,13 @@
         Config
       </RouterLink>
       <RouterLink
+        to="/admin/smoke"
+        class="admin-subnav__link"
+        :class="{ 'admin-subnav__link--active': active === 'smoke' }"
+      >
+        Smoke Tests
+      </RouterLink>
+      <RouterLink
         to="/autotasks"
         class="admin-subnav__link"
         :class="{ 'admin-subnav__link--active': active === 'autotasks' }"
@@ -42,7 +49,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  active: 'system' | 'scheduler' | 'users' | 'config' | 'autotasks'
+  active: 'system' | 'scheduler' | 'users' | 'config' | 'smoke' | 'autotasks'
 }>()
 </script>
 
