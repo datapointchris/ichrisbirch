@@ -26,6 +26,7 @@ from ichrisbirch.models.jwt_refresh_token import JWTRefreshToken
 from ichrisbirch.models.money_wasted import MoneyWasted
 from ichrisbirch.models.personal_api_key import PersonalAPIKey
 from ichrisbirch.models.portfolio import PortfolioProject
+from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
 from ichrisbirch.models.task import Task
 from ichrisbirch.models.task import TaskCategory
 from ichrisbirch.models.user import User
@@ -59,6 +60,7 @@ __all__ = [
     'MoneyWasted',
     'PersonalAPIKey',
     'PortfolioProject',
+    'SchedulerJobRun',
     'Task',
     'TaskCategory',
     'User',

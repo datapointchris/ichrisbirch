@@ -55,24 +55,76 @@ class JobToAdd:
         return asdict(self)
 
 
+def _persist_job_run(
+    settings: Settings,
+    job_id: str,
+    started_at: datetime,
+    finished_at: datetime,
+    duration_seconds: float,
+    success: bool,
+    error_type: str | None = None,
+    error_message: str | None = None,
+) -> None:
+    """Write a SchedulerJobRun record to the database."""
+    try:
+        with create_session(settings) as session:
+            session.add(
+                models.SchedulerJobRun(
+                    job_id=job_id,
+                    started_at=started_at,
+                    finished_at=finished_at,
+                    duration_seconds=duration_seconds,
+                    success=success,
+                    error_type=error_type,
+                    error_message=error_message,
+                )
+            )
+            session.commit()
+    except Exception as e:
+        logger.error('job_run_persist_failed', job_id=job_id, error=str(e))
+
+
 def job_logger(func: Callable) -> Callable:
     """Decorator to log job start, completion, and failures.
 
     Exceptions are logged but swallowed to prevent one failing job
-    from crashing the entire scheduler.
+    from crashing the entire scheduler. Also persists a SchedulerJobRun
+    record for each execution.
     """
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         logger.info('job_started', job_name=func.__name__)
-        start = pendulum.now()
+        started_at = pendulum.now()
+        success = False
+        error_type = None
+        error_message = None
         try:
             func(*args, **kwargs)
-            elapsed = (pendulum.now() - start).in_words()
+            success = True
+            elapsed = (pendulum.now() - started_at).in_words()
             logger.info('job_completed', job_name=func.__name__, elapsed=elapsed)
         except Exception as e:
-            elapsed = (pendulum.now() - start).in_words()
-            logger.error('job_failed', job_name=func.__name__, elapsed=elapsed, error_type=type(e).__name__, error=str(e))
+            elapsed = (pendulum.now() - started_at).in_words()
+            error_type = type(e).__name__
+            error_message = str(e)
+            logger.error('job_failed', job_name=func.__name__, elapsed=elapsed, error_type=error_type, error=error_message)
+        finally:
+            finished_at = pendulum.now()
+            duration_seconds = (finished_at - started_at).total_seconds()
+            # settings is always the first positional arg to every job function
+            settings = args[0] if args else kwargs.get('settings')
+            if settings:
+                _persist_job_run(
+                    settings=settings,
+                    job_id=func.__name__,
+                    started_at=started_at,
+                    finished_at=finished_at,
+                    duration_seconds=duration_seconds,
+                    success=success,
+                    error_type=error_type,
+                    error_message=error_message,
+                )
 
     return wrapper
 
