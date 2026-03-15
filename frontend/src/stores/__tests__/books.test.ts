@@ -28,6 +28,7 @@ const testBooks: Book[] = [
     read_start_date: '2025-01-01T00:00:00',
     read_finish_date: '2025-02-15T00:00:00',
     rating: 5,
+    review: 'Essential reading for any developer',
   },
   {
     id: 2,

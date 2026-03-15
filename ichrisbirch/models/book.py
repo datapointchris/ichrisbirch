@@ -64,6 +64,7 @@ class Book(Base):
     ownership: Mapped[str] = mapped_column(Text, ForeignKey('book_ownership.name'), server_default='owned', nullable=False)
     progress: Mapped[str] = mapped_column(Text, ForeignKey('book_progress.name'), server_default='unread', nullable=False)
     reject_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review: Mapped[str | None] = mapped_column(Text, nullable=True)
     # book_box = relationship('Box', back_populates='items')
 
     def __repr__(self) -> str:
@@ -85,5 +86,6 @@ class Book(Base):
         notes={self.notes!r},
         ownership={self.ownership!r},
         progress={self.progress!r},
-        reject_reason={self.reject_reason!r}
+        reject_reason={self.reject_reason!r},
+        review={self.review!r}
         )"""

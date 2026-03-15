@@ -32,6 +32,7 @@ class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
     rating = None
     location = 'Shelf'
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.title}')
+    review = None
     ownership = 'owned'
     progress = 'unread'
 

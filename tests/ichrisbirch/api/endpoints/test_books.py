@@ -111,12 +111,14 @@ def test_update_book(book_crud_tester):
     original = client.get(f'/books/{book_id}/').json()
 
     # Round 1: Update simple fields
-    response = client.patch(f'/books/{book_id}/', json={'rating': 3, 'notes': 'Updated notes', 'location': 'Office'})
+    update_data = {'rating': 3, 'notes': 'Updated notes', 'location': 'Office', 'review': 'Great book'}
+    response = client.patch(f'/books/{book_id}/', json=update_data)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     book = response.json()
     assert book['rating'] == 3
     assert book['notes'] == 'Updated notes'
     assert book['location'] == 'Office'
+    assert book['review'] == 'Great book'
     assert book['tags'] == original['tags'], 'Tags should not change when not sent'
 
     # Round 2: Update tags and set progress to abandoned
@@ -127,6 +129,7 @@ def test_update_book(book_crud_tester):
     assert book['progress'] == 'abandoned'
     assert book['rating'] == 3, 'Previous update should persist'
     assert book['notes'] == 'Updated notes', 'Previous update should persist'
+    assert book['review'] == 'Great book', 'Previous update should persist'
 
     # Round 3: Set progress back to unread
     response = client.patch(f'/books/{book_id}/', json={'progress': 'unread'})
@@ -139,6 +142,7 @@ def test_update_book(book_crud_tester):
     final = client.get(f'/books/{book_id}/').json()
     assert final['rating'] == 3
     assert final['notes'] == 'Updated notes'
+    assert final['review'] == 'Great book'
     assert final['location'] == 'Office'
     assert final['tags'] == ['NewTag1', 'NewTag2']
     assert final['progress'] == 'unread'

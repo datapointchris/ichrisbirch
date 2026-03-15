@@ -11,6 +11,7 @@ BASE_DATA: list[Book] = [
         rating=5,
         location='Bookshelf',
         notes='A classic dystopian novel',
+        review='Masterful portrayal of totalitarianism that remains chillingly relevant',
     ),
     Book(
         isbn='9780060935467',

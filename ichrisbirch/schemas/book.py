@@ -29,6 +29,7 @@ class BookCreate(BookConfig):
     ownership: str = 'owned'
     progress: str = 'unread'
     reject_reason: str | None = None
+    review: str | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -66,6 +67,7 @@ class Book(BookConfig):
     ownership: str = 'owned'
     progress: str = 'unread'
     reject_reason: str | None = None
+    review: str | None = None
 
 
 class BookUpdate(BookConfig):
@@ -87,6 +89,7 @@ class BookUpdate(BookConfig):
     ownership: str | None = None
     progress: str | None = None
     reject_reason: str | None = None
+    review: str | None = None
 
     @model_validator(mode='before')
     @classmethod

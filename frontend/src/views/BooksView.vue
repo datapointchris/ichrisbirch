@@ -243,6 +243,13 @@
                 <span class="books__detail-field-label">Notes</span>
                 <span class="books__detail-field-value">{{ book.notes }}</span>
               </div>
+              <div
+                v-if="book.review"
+                class="books__detail-field books__detail-notes"
+              >
+                <span class="books__detail-field-label">Review</span>
+                <span class="books__detail-field-value">{{ book.review }}</span>
+              </div>
             </div>
           </template>
         </template>
@@ -441,6 +448,16 @@
           ></textarea>
         </div>
         <div class="add-item-form__item add-item-form__item--full-width">
+          <label for="review">Review:</label>
+          <textarea
+            id="review"
+            v-model="form.review"
+            rows="3"
+            class="textbox"
+            name="review"
+          ></textarea>
+        </div>
+        <div class="add-item-form__item add-item-form__item--full-width">
           <button
             type="submit"
             class="button"
@@ -500,6 +517,7 @@ const form = reactive({
   progress: 'unread' as BookProgress,
   location: '',
   notes: '',
+  review: '',
 })
 
 onMounted(() => {
@@ -545,6 +563,7 @@ function resetForm() {
   form.progress = 'unread'
   form.location = ''
   form.notes = ''
+  form.review = ''
   editingBook.value = null
 }
 
@@ -566,6 +585,7 @@ function startEdit(book: Book) {
   form.progress = (book.progress ?? 'unread') as BookProgress
   form.location = book.location ?? ''
   form.notes = book.notes ?? ''
+  form.review = book.review ?? ''
 }
 
 function cancelEdit() {
@@ -594,6 +614,7 @@ function buildPayload() {
     progress: form.progress,
     location: form.location.trim() || undefined,
     notes: form.notes.trim() || undefined,
+    review: form.review.trim() || undefined,
   }
 }
 

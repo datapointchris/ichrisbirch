@@ -291,6 +291,7 @@ export interface Book {
   ownership: string
   progress: string
   reject_reason?: string
+  review?: string
 }
 
 export interface BookCreate {
@@ -310,6 +311,7 @@ export interface BookCreate {
   abandoned?: boolean
   location?: string
   notes?: string
+  review?: string
 }
 
 export interface BookUpdate {
@@ -329,6 +331,7 @@ export interface BookUpdate {
   abandoned?: boolean
   location?: string
   notes?: string
+  review?: string
 }
 
 export interface BookGoodreadsInfo {

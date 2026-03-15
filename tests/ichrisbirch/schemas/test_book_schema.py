@@ -90,6 +90,25 @@ class TestBookCreateSchema:
                 tags=['Fiction'],
             )
 
+    def test_create_review_defaults_to_none(self):
+        """Review should be optional and default to None."""
+        book = BookCreate(
+            title='Test Book',
+            author='Test Author',
+            tags=['Fiction'],
+        )
+        assert book.review is None
+
+    def test_create_with_review(self):
+        """Review can be set to a string value."""
+        book = BookCreate(
+            title='Test Book',
+            author='Test Author',
+            tags=['Fiction'],
+            review='A compelling read',
+        )
+        assert book.review == 'A compelling read'
+
 
 class TestBookSchema:
     def test_book_with_none_isbn(self):
@@ -141,3 +160,13 @@ class TestBookUpdateSchema:
         """Tags can be updated."""
         update = BookUpdate(tags=['New Tag', 'Another Tag'])
         assert update.tags == ['New Tag', 'Another Tag']
+
+    def test_update_review(self):
+        """Review can be set in an update."""
+        update = BookUpdate(review='Great book')
+        assert update.review == 'Great book'
+
+    def test_update_empty_review_becomes_none(self):
+        """Empty string review should be converted to None by the validator."""
+        update = BookUpdate(review='')
+        assert update.review is None
