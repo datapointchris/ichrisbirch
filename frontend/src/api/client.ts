@@ -509,7 +509,7 @@ export interface BoxItemCreate {
 }
 
 export interface BoxItemUpdate {
-  box_id?: number
+  box_id?: number | null
   name?: string
   essential?: boolean
   warm?: boolean
@@ -543,4 +543,9 @@ export interface BoxUpdate {
   essential?: boolean
   warm?: boolean
   liquid?: boolean
+}
+
+export interface BoxSearchResult {
+  box: Box
+  item: BoxItem
 }
