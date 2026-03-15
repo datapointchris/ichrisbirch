@@ -893,7 +893,7 @@ input[type=checkbox]:focus-visible {
   margin: var(--space-2xs);
   padding: var(--space-2xs) var(--space-s);
   border-radius: var(--button-border-radius);
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
+  box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
   font-size: var(--fs-400);
   line-height: 2em;
   color: var(--clr-text);
@@ -928,7 +928,7 @@ input[type=checkbox]:focus-visible {
   width: 75%;
   padding: 25px;
   background-color: var(--clr-gray-600);
-  border: 5px red dotted;
+  border: 5px var(--clr-accent--red) dotted;
   border-radius: 25px;
   text-align: center;
 }
@@ -1056,13 +1056,13 @@ input[type=checkbox]:focus-visible {
   color: var(--clr-success);
   font-weight: bold;
   background-color: var(--clr-gray-800);
-  box-shadow: inset 5px 5px 5px 0px black, inset -3px -3px 5px 0px var(--clr-black-trans-800);
+  box-shadow: inset 5px 5px 5px 0px var(--clr-black-trans-1000), inset -3px -3px 5px 0px var(--clr-black-trans-800);
 }
 .radio-scale-selector label {
   display: inline-block;
   padding: 15px 20px;
   border-radius: var(--button-border-radius);
-  box-shadow: 5px 5px 5px 0px black, inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
+  box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
 }
 
 .searchbox {
@@ -1077,16 +1077,16 @@ input[type=checkbox]:focus-visible {
   right: 0;
   bottom: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0);
+  background: transparent;
   z-index: 5;
   animation: darken-background 2s forwards;
 }
 @keyframes darken-background {
   0% {
-    background: rgba(0, 0, 0, 0);
+    background: transparent;
   }
   100% {
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--clr-black-trans-800);
   }
 }
 #github-issue-background-overlay.visible {
@@ -1097,13 +1097,13 @@ input[type=checkbox]:focus-visible {
 }
 @keyframes fade-out {
   0% {
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--clr-black-trans-800);
   }
   75% {
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--clr-black-trans-800);
   }
   100% {
-    background: rgba(0, 0, 0, 0);
+    background: transparent;
   }
 }
 
@@ -1687,7 +1687,7 @@ span[data-tooltip][data-position=right]:after {
   transform: scale(1.05);
 }
 .book-filter--active {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 2px 4px var(--clr-black-trans-400), 0 0 12px var(--clr-gray-trans-875);
   transform: scale(1.08);
 }
 

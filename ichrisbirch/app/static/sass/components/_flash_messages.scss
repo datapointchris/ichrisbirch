@@ -12,7 +12,7 @@
         padding: var(--space-2xs) var(--space-s);
         border-radius: var(--button-border-radius);
         box-shadow:
-            5px 5px 5px 0px black,
+            5px 5px 5px 0px var(--clr-black-trans-1000),
             inset 0px 0px 5px 0px var(--clr-gray-400),
             inset -5px -5px 4px -2px var(--clr-gray-400);
         font-size: var(--fs-400);

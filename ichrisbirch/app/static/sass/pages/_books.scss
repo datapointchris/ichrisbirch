@@ -241,7 +241,7 @@
     }
 
     &--active {
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.15);
+        box-shadow: inset 0 2px 4px var(--clr-black-trans-400), 0 0 12px var(--clr-gray-trans-875);
         transform: scale(1.08);
     }
 }
