@@ -41,12 +41,13 @@ def upgrade() -> None:
         END
     """)
 
-    # 4. Rename book_statuses table to book_ownership
-    op.rename_table('book_statuses', 'book_ownership')
-
-    # 5. Update 'skipped' to 'rejected' in lookup data
-    op.execute("UPDATE book_ownership SET name = 'rejected' WHERE name = 'skipped'")
+    # 4. Rename 'skipped' to 'rejected': add new value, migrate data, remove old value
+    op.execute("INSERT INTO book_statuses (name) VALUES ('rejected') ON CONFLICT DO NOTHING")
     op.execute("UPDATE books SET status = 'rejected' WHERE status = 'skipped'")
+    op.execute("DELETE FROM book_statuses WHERE name = 'skipped'")
+
+    # 5. Rename book_statuses table to book_ownership
+    op.rename_table('book_statuses', 'book_ownership')
 
     # 6. Rename status column to ownership
     op.alter_column('books', 'status', new_column_name='ownership')
@@ -71,12 +72,13 @@ def downgrade() -> None:
     # 4. Rename ownership back to status
     op.alter_column('books', 'ownership', new_column_name='status')
 
-    # 5. Update 'rejected' back to 'skipped'
-    op.execute("UPDATE books SET status = 'skipped' WHERE status = 'rejected'")
-    op.execute("UPDATE book_ownership SET name = 'skipped' WHERE name = 'rejected'")
-
-    # 6. Rename book_ownership back to book_statuses
+    # 5. Rename book_ownership back to book_statuses
     op.rename_table('book_ownership', 'book_statuses')
+
+    # 6. Rename 'rejected' back to 'skipped': add old value, migrate data, remove new value
+    op.execute("INSERT INTO book_statuses (name) VALUES ('skipped') ON CONFLICT DO NOTHING")
+    op.execute("UPDATE books SET status = 'skipped' WHERE status = 'rejected'")
+    op.execute("DELETE FROM book_statuses WHERE name = 'rejected'")
 
     # 7. Drop progress FK and column
     op.drop_constraint('fk_books_progress', 'books', type_='foreignkey')
