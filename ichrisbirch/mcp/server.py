@@ -224,10 +224,13 @@ def delete_event(id: int) -> str:
 
 
 @mcp.tool()
-def list_books() -> str:
-    """List all books."""
+def list_books(status: str | None = None) -> str:
+    """List all books, optionally filtered by status (owned, to_purchase, skipped, sold, donated)."""
+    params = {}
+    if status:
+        params['status'] = status
     with _client() as c:
-        return _json_response(c.get('/books/'))
+        return _json_response(c.get('/books/', params=params))
 
 
 @mcp.tool()
@@ -247,22 +250,43 @@ def create_book(
     rating: int | None = None,
     priority: int | None = None,
     notes: str | None = None,
+    status: str | None = None,
+    skip_reason: str | None = None,
+    purchase_date: str | None = None,
+    purchase_price: float | None = None,
+    sell_date: str | None = None,
+    sell_price: float | None = None,
+    read_start_date: str | None = None,
+    read_finish_date: str | None = None,
+    abandoned: bool | None = None,
+    location: str | None = None,
 ) -> str:
     """Create a new book entry.
 
     Tags is a comma-separated string (e.g. "Fiction, Classic, Adventure").
     At least one tag is required.
+    Status values: owned (default), to_purchase, skipped, sold, donated.
+    Date fields accept ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS).
     """
     payload: dict = {'title': title, 'author': author, 'isbn': isbn}
     payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
-    if goodreads_url:
-        payload['goodreads_url'] = goodreads_url
-    if rating is not None:
-        payload['rating'] = rating
-    if priority is not None:
-        payload['priority'] = priority
-    if notes:
-        payload['notes'] = notes
+    optional_fields = {
+        'goodreads_url': goodreads_url,
+        'rating': rating,
+        'priority': priority,
+        'notes': notes,
+        'status': status,
+        'skip_reason': skip_reason,
+        'purchase_date': purchase_date,
+        'purchase_price': purchase_price,
+        'sell_date': sell_date,
+        'sell_price': sell_price,
+        'read_start_date': read_start_date,
+        'read_finish_date': read_finish_date,
+        'abandoned': abandoned,
+        'location': location,
+    }
+    payload.update({k: v for k, v in optional_fields.items() if v is not None})
     with _client() as c:
         return _json_response(c.post('/books/', json=payload))
 
@@ -278,10 +302,22 @@ def update_book(
     rating: int | None = None,
     priority: int | None = None,
     notes: str | None = None,
+    status: str | None = None,
+    skip_reason: str | None = None,
+    purchase_date: str | None = None,
+    purchase_price: float | None = None,
+    sell_date: str | None = None,
+    sell_price: float | None = None,
+    read_start_date: str | None = None,
+    read_finish_date: str | None = None,
+    abandoned: bool | None = None,
+    location: str | None = None,
 ) -> str:
     """Update a book by ID. Only provided fields are changed.
 
     Tags is a comma-separated string (e.g. "Fiction, Classic, Adventure").
+    Status values: owned, to_purchase, skipped, sold, donated.
+    Date fields accept ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS).
     """
     fields: dict = {
         'title': title,
@@ -291,6 +327,16 @@ def update_book(
         'rating': rating,
         'priority': priority,
         'notes': notes,
+        'status': status,
+        'skip_reason': skip_reason,
+        'purchase_date': purchase_date,
+        'purchase_price': purchase_price,
+        'sell_date': sell_date,
+        'sell_price': sell_price,
+        'read_start_date': read_start_date,
+        'read_finish_date': read_finish_date,
+        'abandoned': abandoned,
+        'location': location,
     }
     payload = {k: v for k, v in fields.items() if v is not None}
     if tags is not None:

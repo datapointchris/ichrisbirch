@@ -3,6 +3,7 @@ import structlog
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import Query
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
@@ -24,8 +25,13 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def read_many(session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(
+    session: Session = Depends(get_sqlalchemy_session),
+    book_status: str | None = Query(None, alias='status'),
+):
     query = select(models.Book).order_by(models.Book.priority.asc())
+    if book_status:
+        query = query.filter(models.Book.status == book_status)
     return list(session.scalars(query).all())
 
 
