@@ -28,7 +28,7 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.http.tls.domains[0].main=*.test.localhost"
-    ports:
+    ports: !override
       - "9080:80"    # HTTP redirect to HTTPS
       - "8443:443"   # HTTPS traffic
       - "9082:8080"  # Traefik dashboard
@@ -199,6 +199,14 @@ services:
       - "traefik.http.routers.api-test.tls.options=test@file"
       - "traefik.http.routers.api-test.service=api-test"
       - "traefik.http.routers.api-test.middlewares=cors-test@file,security-headers-test@file,test-authelia-sim@file,rate-limit-test@file"
+      # Admin API routes — higher priority, uses admin user sim so admin endpoints return data
+      - "traefik.http.routers.api-test-admin.rule=Host(`api.test.localhost`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.api-test-admin.entrypoints=websecure"
+      - "traefik.http.routers.api-test-admin.tls=true"
+      - "traefik.http.routers.api-test-admin.tls.options=test@file"
+      - "traefik.http.routers.api-test-admin.priority=200"
+      - "traefik.http.routers.api-test-admin.service=api-test"
+      - "traefik.http.routers.api-test-admin.middlewares=cors-test@file,security-headers-test@file,test-authelia-sim-admin@file,rate-limit-test@file"
       - "traefik.http.services.api-test.loadbalancer.server.port=8000"
     restart: unless-stopped
     depends_on:

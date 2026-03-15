@@ -104,6 +104,15 @@ http:
           Remote-User: "user@icb.com"
           Remote-Email: "user@icb.com"
 
+    # Simulate Authelia ForwardAuth headers for admin routes in test
+    # Uses admin@icb.com so admin API endpoints return data instead of 403.
+    # Applied to a separate higher-priority router matching /admin/* paths.
+    test-authelia-sim-admin:
+      headers:
+        customRequestHeaders:
+          Remote-User: "admin@icb.com"
+          Remote-Email: "admin@icb.com"
+
     # Auth middleware for dashboard access (test environment)
     dashboard-auth-test:
       basicAuth:
