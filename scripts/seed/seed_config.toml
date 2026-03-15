@@ -207,6 +207,24 @@ pool = [
     ["history", "anthropology", "non-fiction"],
 ]
 
+[overrides.Book.reject_reason]
+pool = [
+    "Superseded by author's later work",
+    "Reviews indicate shallow treatment of the topic",
+    "Too introductory for current knowledge level",
+    "Available as blog posts by the same author",
+    "Outdated edition, no modern revision available",
+]
+
+[overrides.Book.location]
+pool = [
+    "Living room bookshelf",
+    "Office shelf",
+    "Nightstand",
+    "Storage box",
+    "Kindle",
+]
+
 # --- Articles ---
 
 [overrides.Article.title]

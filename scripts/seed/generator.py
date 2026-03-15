@@ -144,6 +144,87 @@ def _generate_base_record(
     return record
 
 
+def _apply_book_consistency(record: dict, config: SeedConfig) -> None:
+    """Enforce realistic field combinations for Book records.
+
+    Ownership controls which fields are allowed:
+      owned/donated — no sell_date/sell_price, no reject_reason
+      sold          — must have sell_date, no reject_reason
+      to_purchase   — no purchase/sell/read dates, progress must be unread
+      rejected      — no purchase/sell/read dates, must have reject_reason, progress must be unread
+
+    Progress controls read date and rating consistency:
+      unread    — no read dates, no rating
+      reading   — must have read_start_date, no read_finish_date, no rating
+      read      — must have both read dates (start < finish), rating allowed
+      abandoned — must have read_start_date, no read_finish_date, no rating
+    """
+    ownership = record.get('ownership', 'owned')
+    progress = record.get('progress', 'unread')
+
+    # --- Ownership constraints ---
+    if ownership in ('to_purchase', 'rejected'):
+        # Never owned: no purchase, sell, or reading activity
+        for field in ('purchase_date', 'purchase_price', 'sell_date', 'sell_price', 'read_start_date', 'read_finish_date', 'rating'):
+            record[field] = None
+        record['progress'] = 'unread'
+        progress = 'unread'
+
+        if ownership == 'rejected':
+            if not record.get('reject_reason'):
+                pool = config.get_pool('Book', 'reject_reason')
+                record['reject_reason'] = random.choice(pool) if pool else 'Superseded by a better alternative'
+        else:
+            record['reject_reason'] = None
+        return
+
+    # owned, sold, donated — no reject_reason
+    record['reject_reason'] = None
+
+    if ownership == 'sold':
+        # Must have sell_date
+        if not record.get('sell_date'):
+            record['sell_date'] = fake.date_time_between('-1y', 'now', tzinfo=UTC)
+    else:
+        # owned and donated: no sell info
+        record['sell_date'] = None
+        record['sell_price'] = None
+
+    # --- Progress constraints ---
+    if progress == 'unread':
+        record['read_start_date'] = None
+        record['read_finish_date'] = None
+        record['rating'] = None
+    elif progress == 'reading':
+        if not record.get('read_start_date'):
+            record['read_start_date'] = fake.date_time_between('-6m', 'now', tzinfo=UTC)
+        record['read_finish_date'] = None
+        record['rating'] = None
+    elif progress == 'read':
+        start = record.get('read_start_date') or fake.date_time_between('-2y', '-2m', tzinfo=UTC)
+        finish = record.get('read_finish_date') or fake.date_time_between('-2m', 'now', tzinfo=UTC)
+        if start > finish:
+            start, finish = finish, start
+        record['read_start_date'] = start
+        record['read_finish_date'] = finish
+        # Rating 1-10 for finished books
+        record['rating'] = record.get('rating') or random.randint(1, 10)
+        if record['rating'] > 10:
+            record['rating'] = random.randint(1, 10)
+    elif progress == 'abandoned':
+        if not record.get('read_start_date'):
+            record['read_start_date'] = fake.date_time_between('-1y', 'now', tzinfo=UTC)
+        record['read_finish_date'] = None
+        record['rating'] = None
+
+    # Pair purchase fields: price without date doesn't make sense
+    if record.get('purchase_price') and not record.get('purchase_date'):
+        record['purchase_date'] = fake.date_time_between('-3y', '-6m', tzinfo=UTC)
+    # Similarly for sell
+    if record.get('sell_price') and not record.get('sell_date'):
+        record['sell_price'] = None
+
+
 def _apply_special_rules(record: dict, model_name: str, config: SeedConfig, fk_cache: dict[str, list], counters: dict[str, int]) -> dict:
     """Apply model-specific rules that can't be handled generically."""
     if model_name == 'Book':
@@ -155,6 +236,15 @@ def _apply_special_rules(record: dict, model_name: str, config: SeedConfig, fk_c
                 record['tags'] = random.choice(pool)
             else:
                 record['tags'] = [fake.word() for _ in range(random.randint(1, 4))]
+
+        _apply_book_consistency(record, config)
+
+    elif model_name == 'Duration':
+        # end_date must be after start_date when both exist
+        start = record.get('start_date')
+        end = record.get('end_date')
+        if start and end and end < start:
+            record['start_date'], record['end_date'] = end, start
 
     elif model_name == 'Article':
         # tags should be a list of strings

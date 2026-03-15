@@ -58,6 +58,11 @@ BOX_FK_CACHE = {
     ],
 }
 
+BOOK_FK_CACHE = {
+    'book_ownership.name': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
+    'book_progress.name': ['abandoned', 'read', 'reading', 'unread'],
+}
+
 
 class TestGenerateValue:
     def test_config_pool_override(self, all_models, seed_config):
@@ -114,7 +119,7 @@ class TestSchemaValidation:
         self._validate_model('Event', all_models, seed_config, {})
 
     def test_book_records_valid(self, all_models, seed_config):
-        self._validate_model('Book', all_models, seed_config, {})
+        self._validate_model('Book', all_models, seed_config, BOOK_FK_CACHE)
 
     def test_article_records_valid(self, all_models, seed_config):
         self._validate_model('Article', all_models, seed_config, {})
@@ -180,9 +185,55 @@ class TestCoverageProperties:
 
     def test_book_tags_non_empty(self, all_models, seed_config):
         info = all_models['Book']
-        records = generate_coverage_set(info, 1, seed_config, {})
+        records = generate_coverage_set(info, 1, seed_config, BOOK_FK_CACHE)
         for r in records:
             assert r.get('tags'), f'Book record has empty tags: {r}'
+
+    def test_book_field_consistency(self, all_models, seed_config):
+        """Book records must have realistic field combinations based on ownership/progress."""
+        info = all_models['Book']
+        records = generate_coverage_set(info, 2, seed_config, BOOK_FK_CACHE)
+        for i, r in enumerate(records):
+            ownership = r.get('ownership', 'owned')
+            progress = r.get('progress', 'unread')
+
+            # Ownership constraints
+            if ownership in ('to_purchase', 'rejected'):
+                assert r.get('purchase_date') is None, f'Record {i}: {ownership} has purchase_date'
+                assert r.get('sell_date') is None, f'Record {i}: {ownership} has sell_date'
+                assert r.get('read_start_date') is None, f'Record {i}: {ownership} has read_start_date'
+                assert progress == 'unread', f'Record {i}: {ownership} has progress={progress}'
+            if ownership == 'rejected':
+                assert r.get('reject_reason'), f'Record {i}: rejected book missing reject_reason'
+            else:
+                assert r.get('reject_reason') is None, f'Record {i}: {ownership} has reject_reason'
+            if ownership != 'sold':
+                assert r.get('sell_date') is None, f'Record {i}: {ownership} has sell_date'
+            else:
+                assert r.get('sell_date') is not None, f'Record {i}: sold book missing sell_date'
+
+            # Progress constraints
+            if progress == 'unread':
+                assert r.get('read_start_date') is None, f'Record {i}: unread has read_start_date'
+                assert r.get('read_finish_date') is None, f'Record {i}: unread has read_finish_date'
+            elif progress == 'reading':
+                assert r.get('read_start_date') is not None, f'Record {i}: reading missing read_start_date'
+                assert r.get('read_finish_date') is None, f'Record {i}: reading has read_finish_date'
+            elif progress == 'read':
+                assert r.get('read_start_date') is not None, f'Record {i}: read missing read_start_date'
+                assert r.get('read_finish_date') is not None, f'Record {i}: read missing read_finish_date'
+                assert r['read_start_date'] <= r['read_finish_date'], f'Record {i}: start after finish'
+                assert 1 <= r.get('rating', 0) <= 10, f'Record {i}: rating {r.get("rating")} outside 1-10'
+            elif progress == 'abandoned':
+                assert r.get('read_start_date') is not None, f'Record {i}: abandoned missing read_start_date'
+                assert r.get('read_finish_date') is None, f'Record {i}: abandoned has read_finish_date'
+
+    def test_book_ownership_variety(self, all_models, seed_config):
+        """Generated books should include multiple ownership values, not just 'owned'."""
+        info = all_models['Book']
+        records = generate_coverage_set(info, 1, seed_config, BOOK_FK_CACHE)
+        ownerships = {r.get('ownership') for r in records}
+        assert len(ownerships) >= 3, f'Expected variety in ownership, got: {ownerships}'
 
     def test_chat_has_messages(self, all_models, seed_config):
         info = all_models['Chat']
