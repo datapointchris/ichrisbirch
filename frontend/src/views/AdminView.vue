@@ -1,8 +1,23 @@
 <template>
-  <div>
+  <div class="grid grid--one-column">
     <h1>Admin</h1>
-    <p>Not yet migrated from Flask.</p>
+    <AdminSubnav :active="activeTab" />
+    <router-view />
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AdminSubnav from '@/components/AdminSubnav.vue'
+
+const route = useRoute()
+
+const activeTab = computed(() => {
+  const name = route.name as string
+  if (name === 'admin-scheduler') return 'scheduler'
+  if (name === 'admin-users') return 'users'
+  if (name === 'admin-config') return 'config'
+  return 'system'
+})
+</script>

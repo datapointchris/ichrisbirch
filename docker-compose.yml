@@ -218,7 +218,7 @@ services:
     labels:
       - "traefik.enable=true"
       # Path-based routing — migrated pages served from Vue at higher priority
-      - "traefik.http.routers.vue-paths.rule=Host(`${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/profile`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
+      - "traefik.http.routers.vue-paths.rule=Host(`${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
       - "traefik.http.routers.vue-paths.entrypoints=web"
       - "traefik.http.routers.vue-paths.priority=100"
       - "traefik.http.routers.vue-paths.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"

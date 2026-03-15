@@ -143,9 +143,34 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin',
-    name: 'admin',
     component: () => import('@/views/AdminView.vue'),
     meta: { title: 'Admin' },
+    children: [
+      {
+        path: '',
+        name: 'admin',
+        component: () => import('@/views/AdminSystemView.vue'),
+        meta: { title: 'Admin — System' },
+      },
+      {
+        path: 'scheduler',
+        name: 'admin-scheduler',
+        component: () => import('@/views/AdminSchedulerView.vue'),
+        meta: { title: 'Admin — Scheduler' },
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('@/views/AdminUsersView.vue'),
+        meta: { title: 'Admin — Users' },
+      },
+      {
+        path: 'config',
+        name: 'admin-config',
+        component: () => import('@/views/AdminConfigView.vue'),
+        meta: { title: 'Admin — Config' },
+      },
+    ],
   },
 ]
 

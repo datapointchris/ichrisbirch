@@ -162,7 +162,13 @@ const footerLinks: NavLink[] = [
     migrated: true,
     activeNames: ['profile', 'profile-settings'],
   },
-  { to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear', migrated: false },
+  {
+    to: '/admin',
+    label: 'Admin',
+    icon: 'fa-solid fa-gear',
+    migrated: true,
+    activeNames: ['admin', 'admin-scheduler', 'admin-users', 'admin-config'],
+  },
 ]
 
 function isActive(link: NavLink): boolean {

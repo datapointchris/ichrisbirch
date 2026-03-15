@@ -583,3 +583,86 @@ export interface BoxSearchResult {
   box: Box
   item: BoxItem
 }
+
+// --- Admin ---
+
+export interface SchedulerJob {
+  id: string
+  name: string
+  trigger: string
+  next_run_time: string | null
+  time_until_next_run: string
+  is_paused: boolean
+}
+
+export interface SchedulerJobRun {
+  id: number
+  job_id: string
+  started_at: string
+  finished_at: string
+  duration_seconds: number
+  success: boolean
+  error_type: string | null
+  error_message: string | null
+}
+
+export interface DockerContainerStatus {
+  name: string
+  status: string
+  started_at: string | null
+  image: string
+}
+
+export interface TableRowCount {
+  schema_name: string
+  table_name: string
+  row_count: number
+}
+
+export interface DatabaseStats {
+  tables: TableRowCount[]
+  total_size_mb: number
+  active_connections: number
+}
+
+export interface RedisStats {
+  key_count: number
+  memory_used_human: string
+  connected_clients: number
+  uptime_seconds: number
+}
+
+export interface DiskUsage {
+  total_gb: number
+  used_gb: number
+  free_gb: number
+  percent_used: number
+}
+
+export interface ServerInfo {
+  environment: string
+  api_url: string
+  server_time: string
+}
+
+export interface SystemHealth {
+  server: ServerInfo
+  docker: DockerContainerStatus[]
+  database: DatabaseStats
+  redis: RedisStats
+  disk: DiskUsage
+}
+
+export interface RecentError {
+  timestamp: string
+  method: string
+  path: string
+  status: number
+  duration_ms: number
+  request_id: string
+}
+
+export interface EnvironmentConfigSection {
+  name: string
+  settings: Record<string, unknown>
+}
