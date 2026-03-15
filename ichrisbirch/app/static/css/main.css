@@ -578,6 +578,7 @@ nav a:hover {
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
+  line-height: 1;
   text-align: center;
 }
 .button-submit-issue__icon {
@@ -652,6 +653,7 @@ nav a:hover {
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
+  line-height: 1;
   text-align: center;
 }
 .button-sidebar-toggle__icon {
@@ -725,6 +727,7 @@ nav a:hover {
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
+  line-height: 1;
   text-align: center;
 }
 .button-sidebar-tab__icon {
@@ -2203,6 +2206,7 @@ span[data-tooltip][data-position=right]:after {
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
+  line-height: 1;
   text-align: center;
 }
 .habit-check__icon {
@@ -2334,7 +2338,7 @@ span[data-tooltip][data-position=right]:after {
   position: relative;
   z-index: 0;
   margin: var(--space-3xl);
-  padding: var(--space-2xl);
+  padding: var(--space-2xl) var(--space-l) var(--space-l);
   background-color: var(--clr-gray-900);
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -2368,7 +2372,7 @@ span[data-tooltip][data-position=right]:after {
   width: calc(100% - var(--border-thickness));
   height: calc(100% - var(--border-thickness));
   background: var(--clr-gray-900);
-  border-radius: var(--border-radius);
+  border-radius: calc(var(--border-radius) - var(--border-thickness) / 2);
 }
 .main-index-content > h1 {
   color: var(--clr-accent-light);
@@ -2393,20 +2397,23 @@ span[data-tooltip][data-position=right]:after {
 
 .home-links {
   display: flex;
-  margin: var(--space-3xl);
-  gap: var(--space-3xl);
-  justify-content: space-evenly;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: var(--space-xl);
+  gap: var(--space-xl);
 }
 
 .home-link-button {
+  --_btn-size: clamp(100px, 18vw, 160px);
+  --_btn-ring-size: calc(var(--_btn-size) * 1.5);
   position: relative;
-  margin: var(--space-3xl);
-  width: 200px;
-  height: 200px;
+  margin: var(--space-m);
+  width: 160px;
+  height: 160px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 200px;
+  border-radius: 160px;
   color: var(--clr-accent-light);
   transition: all 0.4s ease-in-out;
 }
@@ -2415,13 +2422,14 @@ span[data-tooltip][data-position=right]:after {
   z-index: 2;
   cursor: pointer;
   font-size: calc(var(--fs-400) * 1.5);
+  line-height: 1;
   text-align: center;
 }
 .home-link-button__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
-  width: 66px;
-  height: 66px;
+  width: 52.8px;
+  height: 52.8px;
 }
 .home-link-button:hover {
   color: var(--clr-accent);
@@ -2433,10 +2441,10 @@ span[data-tooltip][data-position=right]:after {
   top: 0;
   left: 0;
   display: block;
-  width: 200px;
-  height: 200px;
+  width: 160px;
+  height: 160px;
   content: "";
-  border-radius: 200px;
+  border-radius: 160px;
   background-color: var(--clr-gray-800);
   filter: blur(0px);
   transition: all 0.4s ease-in-out;
@@ -2456,11 +2464,11 @@ span[data-tooltip][data-position=right]:after {
   position: absolute;
   translate: transform(-50%, -50%);
   display: block;
-  width: 300px;
-  height: 300px;
+  width: 240px;
+  height: 240px;
   content: "";
   cursor: pointer;
-  border-radius: 300px;
+  border-radius: 240px;
   filter: blur(0px);
   transition: all 0.4s ease-in-out 0.12s;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
@@ -2470,6 +2478,36 @@ span[data-tooltip][data-position=right]:after {
   filter: blur(0px);
   transition: all 0.4s ease-in-out 0.12s;
   box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+}
+.home-link-button {
+  width: var(--_btn-size);
+  height: var(--_btn-size);
+  border-radius: var(--_btn-size);
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.home-link-button::before {
+  width: var(--_btn-size);
+  height: var(--_btn-size);
+  border-radius: var(--_btn-size);
+}
+.home-link-button::after {
+  width: var(--_btn-ring-size);
+  height: var(--_btn-ring-size);
+  border-radius: var(--_btn-ring-size);
+}
+
+.home-link-label,
+.home-link-icon {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.home-link-label {
+  font-size: calc(var(--fs-400) * 1.2);
+  text-align: center;
 }
 
 .money-wasted--total {

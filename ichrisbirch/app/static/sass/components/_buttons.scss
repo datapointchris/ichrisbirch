@@ -201,6 +201,7 @@
         z-index: 2;
         cursor: pointer;
         font-size: calc(var(--fs-400) * $font-size-ratio);
+        line-height: 1;
         text-align: center;
     }
 

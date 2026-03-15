@@ -22,18 +22,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SubmitIssueButton from '@/components/SubmitIssueButton.vue'
 import SubmitIssueModal from '@/components/SubmitIssueModal.vue'
 import NotificationToast from '@/components/NotificationToast.vue'
 import { useTheme } from '@/composables/useTheme'
+import { useAuthStore } from '@/stores/auth'
 
 useTheme()
 
+const auth = useAuthStore()
 const sidebarOpen = ref(true)
 const issueModalOpen = ref(false)
+
+onMounted(async () => {
+  try {
+    await auth.fetchCurrentUser()
+  } catch {
+    // Auth failure is non-fatal — user just won't see admin features
+  }
+})
 </script>
 
 <style scoped>

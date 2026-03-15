@@ -94,8 +94,8 @@ http:
     dev-authelia-sim:
       headers:
         customRequestHeaders:
-          Remote-User: "user@icb.com"
-          Remote-Email: "user@icb.com"
+          Remote-User: "admin@icb.com"
+          Remote-Email: "admin@icb.com"
 
     # WebSocket support for Streamlit
     websocket-headers:
