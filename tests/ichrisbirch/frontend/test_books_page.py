@@ -32,7 +32,6 @@ def setup_test_books(insert_users_for_login):
             author='J.R.R. Tolkien',
             tags=['fantasy', 'adventure'],
             rating=None,
-            abandoned=False,
         )
         session.commit()
         clear_factory_session()
@@ -72,8 +71,7 @@ def test_book_edit_round_trip(page: Page):
     This catches the three bugs that originally motivated this test approach:
     1. Tag nesting: WTForms rendering tags as Python list repr "['dystopian', 'classic']"
        instead of "dystopian, classic" — causing tags to nest on each edit.
-    2. Abandoned checkbox: Unchecking a checkbox means the browser doesn't send the field.
-       If the backend doesn't handle this, abandoned can never be cleared.
+    2. Progress select: Changing progress via dropdown and verifying it persists.
     3. Data corruption through render→submit cycles: fields silently changing type or value
        when the form is loaded and re-submitted without user changes.
     """
@@ -85,46 +83,44 @@ def test_book_edit_round_trip(page: Page):
     expect(page).to_have_title('Edit Book')
 
     # Verify the tags field shows comma-separated text, NOT Python list repr.
-    # This is the exact bug: WTForms would render ['dystopian', 'classic', 'political']
-    # as the string "['dystopian', 'classic', 'political']" in the input field.
     tags_field = page.locator('input[name="tags"]')
     tags_value = tags_field.input_value()
     assert '[' not in tags_value, f'Tags should be comma-separated, not Python list repr: {tags_value}'
     assert 'dystopian' in tags_value
 
-    # === Edit 1: Change rating, check abandoned, add notes ===
+    # === Edit 1: Change rating, set progress to abandoned, add notes ===
     page.locator('input[name="rating"]').fill('8')
-    page.locator('input[name="abandoned"]').check()
+    page.locator('select[name="progress"]').select_option('abandoned')
     page.locator('textarea[name="notes"]').fill('Giving up for now')
     page.locator('button[value="edit"]').click()
 
     # Verify in DB that all changes persisted
     result = _get_book_by_id_from_db(book_id)
     assert result.rating == 8
-    assert result.abandoned is True
+    assert result.progress == 'abandoned'
     assert result.notes == 'Giving up for now'
     assert result.tags == ['dystopian', 'classic', 'political'], 'Tags should survive edit unchanged'
 
-    # === Edit 2: Uncheck abandoned, change tags ===
+    # === Edit 2: Change progress back to unread, change tags ===
     page.goto(f'{FRONTEND_BASE_URL}/books/edit/{book_id}/')
     expect(page).to_have_title('Edit Book')
 
     # Verify previous changes are shown in the form
     assert page.locator('input[name="rating"]').input_value() == '8'
-    expect(page.locator('input[name="abandoned"]')).to_be_checked()
+    assert page.locator('select[name="progress"]').input_value() == 'abandoned'
 
     # Verify tags are STILL comma-separated after the round-trip (not nested)
     tags_value = page.locator('input[name="tags"]').input_value()
     assert '[' not in tags_value, f'Tags got nested through round-trip: {tags_value}'
 
-    # Uncheck abandoned and change tags
-    page.locator('input[name="abandoned"]').uncheck()
+    # Change progress and tags
+    page.locator('select[name="progress"]').select_option('unread')
     page.locator('input[name="tags"]').fill('updated tag, another tag')
     page.locator('button[value="edit"]').click()
 
     result = _get_book_by_id_from_db(book_id)
     assert result.tags == ['updated tag', 'another tag']
-    assert result.abandoned is not True, 'Unchecking abandoned should clear it'
+    assert result.progress == 'unread'
     assert result.rating == 8, 'Rating from previous edit should persist'
 
     # === Edit 3: No-op — load and submit without changes ===

@@ -24,11 +24,11 @@ class BookCreate(BookConfig):
     read_start_date: datetime | None = None
     read_finish_date: datetime | None = None
     rating: int | None = None
-    abandoned: bool | None = None
     location: str | None = None
     notes: str | None = None
-    status: str = 'owned'
-    skip_reason: str | None = None
+    ownership: str = 'owned'
+    progress: str = 'unread'
+    reject_reason: str | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -61,11 +61,11 @@ class Book(BookConfig):
     read_start_date: datetime | None = None
     read_finish_date: datetime | None = None
     rating: int | None = None
-    abandoned: bool | None = None
     location: str | None = None
     notes: str | None = None
-    status: str = 'owned'
-    skip_reason: str | None = None
+    ownership: str = 'owned'
+    progress: str = 'unread'
+    reject_reason: str | None = None
 
 
 class BookUpdate(BookConfig):
@@ -82,11 +82,11 @@ class BookUpdate(BookConfig):
     read_start_date: datetime | None = None
     read_finish_date: datetime | None = None
     rating: int | None = None
-    abandoned: bool | None = None
     location: str | None = None
     notes: str | None = None
-    status: str | None = None
-    skip_reason: str | None = None
+    ownership: str | None = None
+    progress: str | None = None
+    reject_reason: str | None = None
 
     @model_validator(mode='before')
     @classmethod

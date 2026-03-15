@@ -7,16 +7,8 @@ import type { Book, BookCreate, BookUpdate, BookGoodreadsInfo } from '@/api/clie
 
 const logger = createLogger('BooksStore')
 
-export type BookStatus = 'sold' | 'abandoned' | 'read' | 'reading' | 'to-read'
-
-export function deriveStatus(book: Book): BookStatus {
-  // Use ownership status field for sold (not sell_date which seed data fills randomly)
-  if (book.status === 'sold') return 'sold'
-  if (book.abandoned) return 'abandoned'
-  if (book.read_finish_date) return 'read'
-  if (book.read_start_date) return 'reading'
-  return 'to-read'
-}
+export type BookProgress = 'unread' | 'reading' | 'read' | 'abandoned'
+export type BookOwnership = 'owned' | 'to_purchase' | 'rejected' | 'sold' | 'donated'
 
 export const useBooksStore = defineStore('books', () => {
   const books = ref<Book[]>([])
@@ -29,14 +21,12 @@ export const useBooksStore = defineStore('books', () => {
   const isSearchActive = ref(false)
 
   const statusCounts = computed(() => {
-    const counts = { read: 0, reading: 0, toRead: 0, abandoned: 0, sold: 0, total: 0 }
+    const counts = { read: 0, reading: 0, unread: 0, abandoned: 0, total: 0 }
     for (const book of books.value) {
-      const status = deriveStatus(book)
-      if (status === 'read') counts.read++
-      else if (status === 'reading') counts.reading++
-      else if (status === 'to-read') counts.toRead++
-      else if (status === 'abandoned') counts.abandoned++
-      else if (status === 'sold') counts.sold++
+      if (book.progress === 'read') counts.read++
+      else if (book.progress === 'reading') counts.reading++
+      else if (book.progress === 'unread') counts.unread++
+      else if (book.progress === 'abandoned') counts.abandoned++
       counts.total++
     }
     return counts
@@ -44,7 +34,7 @@ export const useBooksStore = defineStore('books', () => {
 
   const filteredBooks = computed(() => {
     if (activeFilter.value === 'all') return books.value
-    return books.value.filter((book) => deriveStatus(book) === activeFilter.value)
+    return books.value.filter((book) => book.progress === activeFilter.value)
   })
 
   const sortedBooks = computed(() => {

@@ -89,9 +89,18 @@ def update_task(
     category: str | None = None,
     priority: int | None = None,
     notes: str | None = None,
+    null_fields: str | None = None,
 ) -> str:
-    """Update an existing task by ID. Only provided fields are changed."""
-    payload = {k: v for k, v in {'name': name, 'category': category, 'priority': priority, 'notes': notes}.items() if v is not None}
+    """Update an existing task by ID. Only provided fields are changed.
+
+    To set a field to null, include it in null_fields (comma-separated).
+    Example: null_fields="notes" sets notes to null.
+    """
+    fields = {'name': name, 'category': category, 'priority': priority, 'notes': notes}
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
     with _client() as c:
         return _json_response(c.patch(f'/tasks/{id}/', json=payload))
 
@@ -200,13 +209,21 @@ def update_event(
     attending: bool | None = None,
     url: str | None = None,
     notes: str | None = None,
+    null_fields: str | None = None,
 ) -> str:
-    """Update an event by ID. Only provided fields are changed."""
-    payload = {
+    """Update an event by ID. Only provided fields are changed.
+
+    To set a field to null, include it in null_fields (comma-separated).
+    Example: null_fields="url,notes" sets both to null.
+    """
+    payload: dict[str, Any] = {
         k: v
         for k, v in {'name': name, 'date': date, 'venue': venue, 'cost': cost, 'attending': attending, 'url': url, 'notes': notes}.items()
         if v is not None
     }
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
     with _client() as c:
         return _json_response(c.patch(f'/events/{id}/', json=payload))
 
@@ -224,11 +241,11 @@ def delete_event(id: int) -> str:
 
 
 @mcp.tool()
-def list_books(status: str | None = None) -> str:
-    """List all books, optionally filtered by status (owned, to_purchase, skipped, sold, donated)."""
+def list_books(ownership: str | None = None) -> str:
+    """List all books, optionally filtered by ownership (owned, to_purchase, rejected, sold, donated)."""
     params = {}
-    if status:
-        params['status'] = status
+    if ownership:
+        params['ownership'] = ownership
     with _client() as c:
         return _json_response(c.get('/books/', params=params))
 
@@ -250,22 +267,23 @@ def create_book(
     rating: int | None = None,
     priority: int | None = None,
     notes: str | None = None,
-    status: str | None = None,
-    skip_reason: str | None = None,
+    ownership: str | None = None,
+    progress: str | None = None,
+    reject_reason: str | None = None,
     purchase_date: str | None = None,
     purchase_price: float | None = None,
     sell_date: str | None = None,
     sell_price: float | None = None,
     read_start_date: str | None = None,
     read_finish_date: str | None = None,
-    abandoned: bool | None = None,
     location: str | None = None,
 ) -> str:
     """Create a new book entry.
 
     Tags is a comma-separated string (e.g. "Fiction, Classic, Adventure").
     At least one tag is required.
-    Status values: owned (default), to_purchase, skipped, sold, donated.
+    Ownership values: owned (default), to_purchase, rejected, sold, donated.
+    Progress values: unread (default), reading, read, abandoned.
     Date fields accept ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS).
     """
     payload: dict = {'title': title, 'author': author, 'isbn': isbn}
@@ -275,15 +293,15 @@ def create_book(
         'rating': rating,
         'priority': priority,
         'notes': notes,
-        'status': status,
-        'skip_reason': skip_reason,
+        'ownership': ownership,
+        'progress': progress,
+        'reject_reason': reject_reason,
         'purchase_date': purchase_date,
         'purchase_price': purchase_price,
         'sell_date': sell_date,
         'sell_price': sell_price,
         'read_start_date': read_start_date,
         'read_finish_date': read_finish_date,
-        'abandoned': abandoned,
         'location': location,
     }
     payload.update({k: v for k, v in optional_fields.items() if v is not None})
@@ -302,22 +320,26 @@ def update_book(
     rating: int | None = None,
     priority: int | None = None,
     notes: str | None = None,
-    status: str | None = None,
-    skip_reason: str | None = None,
+    ownership: str | None = None,
+    progress: str | None = None,
+    reject_reason: str | None = None,
     purchase_date: str | None = None,
     purchase_price: float | None = None,
     sell_date: str | None = None,
     sell_price: float | None = None,
     read_start_date: str | None = None,
     read_finish_date: str | None = None,
-    abandoned: bool | None = None,
     location: str | None = None,
+    null_fields: str | None = None,
 ) -> str:
     """Update a book by ID. Only provided fields are changed.
 
     Tags is a comma-separated string (e.g. "Fiction, Classic, Adventure").
-    Status values: owned, to_purchase, skipped, sold, donated.
+    Ownership values: owned, to_purchase, rejected, sold, donated.
+    Progress values: unread, reading, read, abandoned.
     Date fields accept ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS).
+    To set a field to null, include it in null_fields (comma-separated).
+    Example: null_fields="priority,notes" sets both to null.
     """
     fields: dict = {
         'title': title,
@@ -327,20 +349,23 @@ def update_book(
         'rating': rating,
         'priority': priority,
         'notes': notes,
-        'status': status,
-        'skip_reason': skip_reason,
+        'ownership': ownership,
+        'progress': progress,
+        'reject_reason': reject_reason,
         'purchase_date': purchase_date,
         'purchase_price': purchase_price,
         'sell_date': sell_date,
         'sell_price': sell_price,
         'read_start_date': read_start_date,
         'read_finish_date': read_finish_date,
-        'abandoned': abandoned,
         'location': location,
     }
-    payload = {k: v for k, v in fields.items() if v is not None}
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
     if tags is not None:
         payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
     with _client() as c:
         return _json_response(c.patch(f'/books/{id}/', json=payload))
 
@@ -419,14 +444,20 @@ def update_article(
     url: str | None = None,
     tags: str | None = None,
     notes: str | None = None,
+    null_fields: str | None = None,
 ) -> str:
     """Update an article by ID. Only provided fields are changed.
 
     Tags is an optional comma-separated string (e.g. "python, databases, sql").
+    To set a field to null, include it in null_fields (comma-separated).
+    Example: null_fields="notes" sets notes to null.
     """
     payload: dict[str, Any] = {k: v for k, v in {'title': title, 'url': url, 'notes': notes}.items() if v is not None}
     if tags is not None:
         payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
     with _client() as c:
         return _json_response(c.patch(f'/articles/{id}/', json=payload))
 

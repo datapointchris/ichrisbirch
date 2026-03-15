@@ -30,18 +30,29 @@ class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
     read_start_date = None
     read_finish_date = None
     rating = None
-    abandoned = False
     location = 'Shelf'
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.title}')
+    ownership = 'owned'
+    progress = 'unread'
 
     class Params:
         # Usage: BookFactory(reading=True)
-        reading = factory.Trait(read_start_date=factory.LazyFunction(datetime.now), read_finish_date=None)
+        reading = factory.Trait(
+            read_start_date=factory.LazyFunction(datetime.now),
+            read_finish_date=None,
+            progress='reading',
+        )
         # Usage: BookFactory(finished=True)
         finished = factory.Trait(
-            read_start_date=factory.LazyFunction(datetime.now), read_finish_date=factory.LazyFunction(datetime.now), rating=4
+            read_start_date=factory.LazyFunction(datetime.now),
+            read_finish_date=factory.LazyFunction(datetime.now),
+            rating=4,
+            progress='read',
         )
         # Usage: BookFactory(abandoned_book=True)
-        abandoned_book = factory.Trait(read_start_date=factory.LazyFunction(datetime.now), abandoned=True)
+        abandoned_book = factory.Trait(
+            read_start_date=factory.LazyFunction(datetime.now),
+            progress='abandoned',
+        )
         # Usage: BookFactory(purchased=True)
         purchased = factory.Trait(purchase_date=factory.LazyFunction(datetime.now), purchase_price=15.99)

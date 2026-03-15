@@ -119,20 +119,20 @@ def test_update_book(book_crud_tester):
     assert book['location'] == 'Office'
     assert book['tags'] == original['tags'], 'Tags should not change when not sent'
 
-    # Round 2: Update tags and set abandoned
-    response = client.patch(f'/books/{book_id}/', json={'tags': ['NewTag1', 'NewTag2'], 'abandoned': True})
+    # Round 2: Update tags and set progress to abandoned
+    response = client.patch(f'/books/{book_id}/', json={'tags': ['NewTag1', 'NewTag2'], 'progress': 'abandoned'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     book = response.json()
     assert book['tags'] == ['NewTag1', 'NewTag2']
-    assert book['abandoned'] is True
+    assert book['progress'] == 'abandoned'
     assert book['rating'] == 3, 'Previous update should persist'
     assert book['notes'] == 'Updated notes', 'Previous update should persist'
 
-    # Round 3: Clear abandoned by setting to False
-    response = client.patch(f'/books/{book_id}/', json={'abandoned': False})
+    # Round 3: Set progress back to unread
+    response = client.patch(f'/books/{book_id}/', json={'progress': 'unread'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     book = response.json()
-    assert book['abandoned'] is False, 'Should be able to explicitly set abandoned=False'
+    assert book['progress'] == 'unread'
     assert book['tags'] == ['NewTag1', 'NewTag2'], 'Tags should not change when not sent'
 
     # Final verification: read fresh and check all accumulated changes
@@ -141,7 +141,7 @@ def test_update_book(book_crud_tester):
     assert final['notes'] == 'Updated notes'
     assert final['location'] == 'Office'
     assert final['tags'] == ['NewTag1', 'NewTag2']
-    assert final['abandoned'] is False
+    assert final['progress'] == 'unread'
     assert final['title'] == original['title'], 'Untouched fields should be unchanged'
 
 

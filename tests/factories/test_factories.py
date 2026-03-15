@@ -228,13 +228,14 @@ class TestBookFactory:
         assert book.id is not None
         assert book.title.startswith('Test Book')
         assert book.isbn is not None
-        assert book.abandoned is False
+        assert book.progress == 'unread'
 
     def test_reading_book(self, factory_session):
         """Test creating a book currently being read."""
         book = BookFactory(reading=True)
         assert book.read_start_date is not None
         assert book.read_finish_date is None
+        assert book.progress == 'reading'
 
     def test_finished_book(self, factory_session):
         """Test creating a finished book."""
@@ -242,11 +243,12 @@ class TestBookFactory:
         assert book.read_start_date is not None
         assert book.read_finish_date is not None
         assert book.rating is not None
+        assert book.progress == 'read'
 
     def test_abandoned_book(self, factory_session):
         """Test creating an abandoned book."""
         book = BookFactory(abandoned_book=True)
-        assert book.abandoned is True
+        assert book.progress == 'abandoned'
 
 
 class TestEventFactory:

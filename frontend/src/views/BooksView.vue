@@ -16,22 +16,16 @@
           >Reading: {{ store.statusCounts.reading }}</span
         >
         <span
-          class="task-layout__count book--to-read book-filter"
-          :class="{ 'book-filter--active': store.activeFilter === 'to-read' }"
-          @click="store.setFilter('to-read')"
-          >To Read: {{ store.statusCounts.toRead }}</span
+          class="task-layout__count book--unread book-filter"
+          :class="{ 'book-filter--active': store.activeFilter === 'unread' }"
+          @click="store.setFilter('unread')"
+          >Unread: {{ store.statusCounts.unread }}</span
         >
         <span
           class="task-layout__count book--abandoned book-filter"
           :class="{ 'book-filter--active': store.activeFilter === 'abandoned' }"
           @click="store.setFilter('abandoned')"
           >Abandoned: {{ store.statusCounts.abandoned }}</span
-        >
-        <span
-          class="task-layout__count book--sold book-filter"
-          :class="{ 'book-filter--active': store.activeFilter === 'sold' }"
-          @click="store.setFilter('sold')"
-          >Sold: {{ store.statusCounts.sold }}</span
         >
         <span
           class="task-layout__count book--total book-filter"
@@ -130,7 +124,7 @@
           >
             <div
               class="books__row"
-              :class="`book--${deriveStatus(book)}`"
+              :class="`book--${book.progress}`"
             >
               <span
                 class="books__title"
@@ -139,8 +133,8 @@
               >
               <span>{{ book.author }}</span>
               <span
-                ><span :class="`books__status-badge task-layout__count book--${deriveStatus(book)}`">{{
-                  statusLabels[deriveStatus(book)]
+                ><span :class="`books__status-badge task-layout__count book--${book.progress}`">{{
+                  statusLabels[book.progress as BookProgress]
                 }}</span></span
               >
               <span>{{ book.rating ?? '' }}</span>
@@ -410,15 +404,21 @@
           />
         </div>
         <div class="add-item-form__item">
-          <label for="abandoned">
-            <input
-              id="abandoned"
-              v-model="form.abandoned"
-              type="checkbox"
-              name="abandoned"
-            />
-            Abandoned
-          </label>
+          <label for="progress">Progress:</label>
+          <select
+            id="progress"
+            v-model="form.progress"
+            class="textbox"
+            name="progress"
+          >
+            <option
+              v-for="(label, value) in statusLabels"
+              :key="value"
+              :value="value"
+            >
+              {{ label }}
+            </option>
+          </select>
         </div>
         <div class="add-item-form__item">
           <label for="location">Location:</label>
@@ -463,8 +463,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useBooksStore, deriveStatus } from '@/stores/books'
-import type { BookStatus } from '@/stores/books'
+import { useBooksStore } from '@/stores/books'
+import type { BookProgress } from '@/stores/books'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
@@ -476,12 +476,11 @@ const expandedBookId = ref<number | null>(null)
 const editingBook = ref<Book | null>(null)
 const searchInput = ref('')
 
-const statusLabels: Record<BookStatus, string> = {
-  sold: 'Sold',
-  abandoned: 'Abandoned',
-  read: 'Read',
+const statusLabels: Record<BookProgress, string> = {
+  unread: 'Unread',
   reading: 'Reading',
-  'to-read': 'To Read',
+  read: 'Read',
+  abandoned: 'Abandoned',
 }
 
 const form = reactive({
@@ -498,7 +497,7 @@ const form = reactive({
   sell_price: '',
   read_start_date: '',
   read_finish_date: '',
-  abandoned: false,
+  progress: 'unread' as BookProgress,
   location: '',
   notes: '',
 })
@@ -543,7 +542,7 @@ function resetForm() {
   form.sell_price = ''
   form.read_start_date = ''
   form.read_finish_date = ''
-  form.abandoned = false
+  form.progress = 'unread'
   form.location = ''
   form.notes = ''
   editingBook.value = null
@@ -564,7 +563,7 @@ function startEdit(book: Book) {
   form.sell_price = book.sell_price != null ? String(book.sell_price) : ''
   form.read_start_date = book.read_start_date ? book.read_start_date.split('T')[0]! : ''
   form.read_finish_date = book.read_finish_date ? book.read_finish_date.split('T')[0]! : ''
-  form.abandoned = book.abandoned ?? false
+  form.progress = (book.progress ?? 'unread') as BookProgress
   form.location = book.location ?? ''
   form.notes = book.notes ?? ''
 }
@@ -592,7 +591,7 @@ function buildPayload() {
     sell_price: form.sell_price ? Number(form.sell_price) : undefined,
     read_start_date: form.read_start_date || undefined,
     read_finish_date: form.read_finish_date || undefined,
-    abandoned: form.abandoned || undefined,
+    progress: form.progress,
     location: form.location.trim() || undefined,
     notes: form.notes.trim() || undefined,
   }

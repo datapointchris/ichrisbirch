@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useBooksStore, deriveStatus } from '../books'
+import { useBooksStore } from '../books'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
 
@@ -16,14 +16,15 @@ vi.mock('@/api/client', () => ({
 import { api } from '@/api/client'
 const mockApi = vi.mocked(api)
 
-// Test data covering all 5 statuses
+// Test data covering all 4 progress values
 const testBooks: Book[] = [
   {
     id: 1,
     title: 'Clean Code',
     author: 'Robert Martin',
     tags: ['programming', 'software'],
-    status: 'owned',
+    ownership: 'owned',
+    progress: 'read',
     read_start_date: '2025-01-01T00:00:00',
     read_finish_date: '2025-02-15T00:00:00',
     rating: 5,
@@ -33,7 +34,8 @@ const testBooks: Book[] = [
     title: 'Dune',
     author: 'Frank Herbert',
     tags: ['sci-fi', 'fiction'],
-    status: 'owned',
+    ownership: 'owned',
+    progress: 'reading',
     read_start_date: '2025-06-01T00:00:00',
   },
   {
@@ -41,50 +43,30 @@ const testBooks: Book[] = [
     title: 'The Pragmatic Programmer',
     author: 'David Thomas',
     tags: ['programming'],
-    status: 'owned',
+    ownership: 'owned',
+    progress: 'unread',
   },
   {
     id: 4,
     title: 'Old Man and the Sea',
     author: 'Ernest Hemingway',
     tags: ['fiction', 'classic'],
-    status: 'owned',
-    abandoned: true,
+    ownership: 'owned',
+    progress: 'abandoned',
   },
   {
     id: 5,
     title: 'JavaScript: The Good Parts',
     author: 'Douglas Crockford',
     tags: ['programming', 'javascript'],
-    status: 'sold',
+    ownership: 'sold',
+    progress: 'read',
     sell_date: '2025-03-01T00:00:00',
     sell_price: 12.0,
     read_finish_date: '2024-12-01T00:00:00',
     rating: 3,
   },
 ]
-
-describe('deriveStatus', () => {
-  it('returns sold when status field is sold', () => {
-    expect(deriveStatus(testBooks[4])).toBe('sold')
-  })
-
-  it('returns abandoned when abandoned is true', () => {
-    expect(deriveStatus(testBooks[3])).toBe('abandoned')
-  })
-
-  it('returns read when read_finish_date is set', () => {
-    expect(deriveStatus(testBooks[0])).toBe('read')
-  })
-
-  it('returns reading when read_start_date is set', () => {
-    expect(deriveStatus(testBooks[1])).toBe('reading')
-  })
-
-  it('returns to-read when no dates or flags set', () => {
-    expect(deriveStatus(testBooks[2])).toBe('to-read')
-  })
-})
 
 describe('useBooksStore', () => {
   beforeEach(() => {
@@ -265,16 +247,15 @@ describe('useBooksStore', () => {
 
   // --- statusCounts ---
 
-  it('computes status counts for all statuses', () => {
+  it('computes status counts for all progress values', () => {
     const store = useBooksStore()
     store.books = [...testBooks]
 
     expect(store.statusCounts).toEqual({
-      read: 1,
+      read: 2,
       reading: 1,
-      toRead: 1,
+      unread: 1,
       abandoned: 1,
-      sold: 1,
       total: 5,
     })
   })
@@ -289,16 +270,15 @@ describe('useBooksStore', () => {
     expect(store.filteredBooks).toHaveLength(5)
   })
 
-  it('filters by read status', () => {
+  it('filters by read progress', () => {
     const store = useBooksStore()
     store.books = [...testBooks]
     store.setFilter('read')
 
-    expect(store.filteredBooks).toHaveLength(1)
-    expect(store.filteredBooks[0].title).toBe('Clean Code')
+    expect(store.filteredBooks).toHaveLength(2)
   })
 
-  it('filters by reading status', () => {
+  it('filters by reading progress', () => {
     const store = useBooksStore()
     store.books = [...testBooks]
     store.setFilter('reading')
@@ -307,31 +287,22 @@ describe('useBooksStore', () => {
     expect(store.filteredBooks[0].title).toBe('Dune')
   })
 
-  it('filters by to-read status', () => {
+  it('filters by unread progress', () => {
     const store = useBooksStore()
     store.books = [...testBooks]
-    store.setFilter('to-read')
+    store.setFilter('unread')
 
     expect(store.filteredBooks).toHaveLength(1)
     expect(store.filteredBooks[0].title).toBe('The Pragmatic Programmer')
   })
 
-  it('filters by abandoned status', () => {
+  it('filters by abandoned progress', () => {
     const store = useBooksStore()
     store.books = [...testBooks]
     store.setFilter('abandoned')
 
     expect(store.filteredBooks).toHaveLength(1)
     expect(store.filteredBooks[0].title).toBe('Old Man and the Sea')
-  })
-
-  it('filters by sold status', () => {
-    const store = useBooksStore()
-    store.books = [...testBooks]
-    store.setFilter('sold')
-
-    expect(store.filteredBooks).toHaveLength(1)
-    expect(store.filteredBooks[0].title).toBe('JavaScript: The Good Parts')
   })
 
   // --- sortedBooks ---

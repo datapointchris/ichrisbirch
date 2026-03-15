@@ -9,7 +9,7 @@
     <template v-else>
       <div class="widget-stats">
         <span>{{ store.statusCounts.reading }} reading</span>
-        <span>{{ store.statusCounts.toRead }} to read</span>
+        <span>{{ store.statusCounts.unread }} unread</span>
         <span>{{ store.statusCounts.read }} read</span>
       </div>
       <div
@@ -36,7 +36,7 @@ import { useBooksStore } from '@/stores/books'
 
 const store = useBooksStore()
 
-const currentlyReading = computed(() => store.books.filter((b) => b.read_start_date && !b.read_finish_date && !b.abandoned).slice(0, 6))
+const currentlyReading = computed(() => store.books.filter((b) => b.progress === 'reading').slice(0, 6))
 
 onMounted(() => {
   if (store.books.length === 0) store.fetchAll()

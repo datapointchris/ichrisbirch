@@ -286,11 +286,11 @@ export interface Book {
   read_start_date?: string
   read_finish_date?: string
   rating?: number
-  abandoned?: boolean
   location?: string
   notes?: string
-  status: string
-  skip_reason?: string
+  ownership: string
+  progress: string
+  reject_reason?: string
 }
 
 export interface BookCreate {

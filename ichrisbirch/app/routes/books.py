@@ -30,24 +30,24 @@ def enforce_login():
 def inject_book_counts():
     """Inject book summary counts into the request context.
 
-    Books are split by ownership status first, then by reading progress.
+    Books are split by ownership first, then by reading progress.
     Active books (owned + to_purchase) are counted for reading progress.
-    Skipped, sold, and donated books are excluded from reading progress counts.
+    Rejected, sold, and donated books are excluded from reading progress counts.
     """
     base_url = current_app.config['SETTINGS'].api_url
     with logging_flask_session_client(base_url=base_url) as client:
         books_api = client.resource('books', schemas.Book)
         books = books_api.get_many()
         total_count = len(books)
-        skipped_count = sum(1 for b in books if b.status == 'skipped')
-        donated_count = sum(1 for b in books if b.status == 'donated')
-        sold_count = sum(1 for b in books if b.status == 'sold' or b.sell_date)
-        to_purchase_count = sum(1 for b in books if b.status == 'to_purchase')
-        active = [b for b in books if b.status in ('owned', 'to_purchase') and not b.sell_date]
-        abandoned_count = sum(1 for b in active if b.abandoned)
-        read_count = sum(1 for b in active if b.read_finish_date and not b.abandoned)
-        reading_count = sum(1 for b in active if b.read_start_date and not b.read_finish_date and not b.abandoned)
-        to_read_count = sum(1 for b in active if not b.read_start_date and not b.abandoned)
+        rejected_count = sum(1 for b in books if b.ownership == 'rejected')
+        donated_count = sum(1 for b in books if b.ownership == 'donated')
+        sold_count = sum(1 for b in books if b.ownership == 'sold' or b.sell_date)
+        to_purchase_count = sum(1 for b in books if b.ownership == 'to_purchase')
+        active = [b for b in books if b.ownership in ('owned', 'to_purchase') and not b.sell_date]
+        abandoned_count = sum(1 for b in active if b.progress == 'abandoned')
+        read_count = sum(1 for b in active if b.progress == 'read')
+        reading_count = sum(1 for b in active if b.progress == 'reading')
+        to_read_count = sum(1 for b in active if b.progress == 'unread')
         return dict(
             book_total_count=total_count,
             book_read_count=read_count,
@@ -57,7 +57,7 @@ def inject_book_counts():
             book_donated_count=donated_count,
             book_to_read_count=to_read_count,
             book_to_purchase_count=to_purchase_count,
-            book_skipped_count=skipped_count,
+            book_rejected_count=rejected_count,
         )
 
 
@@ -157,9 +157,6 @@ def crud():
                         data['tags'] = [tag.strip().lower() for tag in data['tags'].split(',')]
                     else:
                         data['tags'] = []
-                    # HTML checkboxes don't send data when unchecked, so explicitly
-                    # set abandoned based on whether the field was in the form data
-                    data['abandoned'] = 'abandoned' in request.form
                     books_api.patch(book_id, json=data)
                     flash(f'Updated: {data.get("title", "")}', 'success')
                 else:

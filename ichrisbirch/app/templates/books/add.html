@@ -69,20 +69,20 @@
         {{ create_form.rating(class_="textbox", placeholder="1-10") }}
       </div>
       <div class="add-item-form__item">
-        {{ create_form.abandoned.label }}
-        {{ create_form.abandoned(class_="checkbox") }}
-      </div>
-      <div class="add-item-form__item">
         {{ create_form.location.label }}
         {{ create_form.location(class_="textbox") }}
       </div>
       <div class="add-item-form__item">
-        {{ create_form.status.label }}
-        {{ create_form.status(class_="textbox") }}
+        {{ create_form.ownership.label }}
+        {{ create_form.ownership(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item">
+        {{ create_form.progress.label }}
+        {{ create_form.progress(class_="textbox") }}
       </div>
       <div class="add-item-form__item add-item-form__item--full-width">
-        {{ create_form.skip_reason.label }}
-        {{ create_form.skip_reason(class_="textbox") }}
+        {{ create_form.reject_reason.label }}
+        {{ create_form.reject_reason(class_="textbox") }}
       </div>
       <div class="add-item-form__item add-item-form__item--full-width">
         {{ create_form.notes.label }}

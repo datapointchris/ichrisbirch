@@ -1,5 +1,4 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField
 from wtforms import DateField
 from wtforms import FloatField
 from wtforms import IntegerField
@@ -10,9 +9,8 @@ from wtforms.validators import URL
 from wtforms.validators import DataRequired
 from wtforms.validators import Optional
 
-from ichrisbirch.models.book import BOOK_STATUSES
-
-status_choices = [(s, s) for s in BOOK_STATUSES]
+OWNERSHIP_CHOICES = [(s, s) for s in ('owned', 'to_purchase', 'rejected', 'sold', 'donated')]
+PROGRESS_CHOICES = [(s, s) for s in ('unread', 'reading', 'read', 'abandoned')]
 
 
 class BookCreateForm(FlaskForm):
@@ -29,11 +27,11 @@ class BookCreateForm(FlaskForm):
     read_start_date = DateField('Read Start Date', validators=[Optional()], render_kw={'type': 'date'})
     read_finish_date = DateField('Read Finish Date', validators=[Optional()], render_kw={'type': 'date'})
     rating = IntegerField('Rating', validators=[Optional()])
-    abandoned = BooleanField('Abandoned', validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
     notes = TextAreaField('Notes', render_kw={'rows': 3}, validators=[Optional()])
-    status = SelectField('Status', choices=status_choices, default='owned', validators=[DataRequired()])
-    skip_reason = TextAreaField('Skip Reason', render_kw={'rows': 2}, validators=[Optional()])
+    ownership = SelectField('Ownership', choices=OWNERSHIP_CHOICES, default='owned', validators=[DataRequired()])
+    progress = SelectField('Progress', choices=PROGRESS_CHOICES, default='unread', validators=[DataRequired()])
+    reject_reason = TextAreaField('Reject Reason', render_kw={'rows': 2}, validators=[Optional()])
 
 
 class BookUpdateForm(FlaskForm):
@@ -50,8 +48,8 @@ class BookUpdateForm(FlaskForm):
     read_start_date = DateField('Read Start Date', validators=[Optional()], render_kw={'type': 'date'})
     read_finish_date = DateField('Read Finish Date', validators=[Optional()], render_kw={'type': 'date'})
     rating = IntegerField('Rating', validators=[Optional()])
-    abandoned = BooleanField('Abandoned', validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
     notes = TextAreaField('Notes', render_kw={'rows': 3}, validators=[Optional()])
-    status = SelectField('Status', choices=status_choices, validators=[Optional()])
-    skip_reason = TextAreaField('Skip Reason', render_kw={'rows': 2}, validators=[Optional()])
+    ownership = SelectField('Ownership', choices=OWNERSHIP_CHOICES, validators=[Optional()])
+    progress = SelectField('Progress', choices=PROGRESS_CHOICES, validators=[Optional()])
+    reject_reason = TextAreaField('Reject Reason', render_kw={'rows': 2}, validators=[Optional()])

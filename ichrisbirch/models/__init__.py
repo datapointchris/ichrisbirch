@@ -7,7 +7,8 @@ from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.backup_history import BackupHistory
 from ichrisbirch.models.backup_restore import BackupRestore
 from ichrisbirch.models.book import Book
-from ichrisbirch.models.book import BookStatus
+from ichrisbirch.models.book import BookOwnership
+from ichrisbirch.models.book import BookProgress
 from ichrisbirch.models.box import Box
 from ichrisbirch.models.box import BoxSize
 from ichrisbirch.models.boxitem import BoxItem
@@ -38,7 +39,8 @@ __all__ = [
     'BackupHistory',
     'BackupRestore',
     'Book',
-    'BookStatus',
+    'BookOwnership',
+    'BookProgress',
     'Box',
     'BoxItem',
     'BoxSize',

@@ -27,11 +27,11 @@ router = APIRouter()
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
 async def read_many(
     session: Session = Depends(get_sqlalchemy_session),
-    book_status: str | None = Query(None, alias='status'),
+    ownership: str | None = Query(None),
 ):
     query = select(models.Book).order_by(models.Book.priority.asc())
-    if book_status:
-        query = query.filter(models.Book.status == book_status)
+    if ownership:
+        query = query.filter(models.Book.ownership == ownership)
     return list(session.scalars(query).all())
 
 

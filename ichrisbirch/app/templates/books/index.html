@@ -16,17 +16,14 @@
     </div>
 
     {% for book in books %}
-    {# Status derivation: Sold is exclusive, then Abandoned, Read, Reading, To Read #}
-    {% if book.sell_date %}{% set status = 'sold' %}
-    {% elif book.abandoned %}{% set status = 'abandoned' %}
-    {% elif book.read_finish_date %}{% set status = 'read' %}
-    {% elif book.read_start_date %}{% set status = 'reading' %}
-    {% else %}{% set status = 'to-read' %}{% endif %}
+    {# Progress derivation from the progress field #}
+    {% set progress = book.progress %}
+    {% set progress_display = progress if progress != 'unread' else 'to-read' %}
 
-    {% set status_labels = {'sold': 'Sold', 'abandoned': 'Abandoned', 'read': 'Read', 'reading': 'Reading', 'to-read': 'To Read'} %}
+    {% set progress_labels = {'to-read': 'To Read', 'reading': 'Reading', 'read': 'Read', 'abandoned': 'Abandoned'} %}
 
-    <div class="books__row book--{{ status }}"
-         data-status="{{ status }}"
+    <div class="books__row book--{{ progress_display }}"
+         data-status="{{ progress_display }}"
          data-title="{{ book.title | lower }}"
          data-author="{{ book.author | lower }}"
          data-rating="{{ book.rating if book.rating else '0' }}"
@@ -38,7 +35,7 @@
          data-read-start="{{ book.read_start_date.strftime('%Y-%m-%d') if book.read_start_date else '' }}">
       <span class="books__title" title="{{ book.title }}">{{ book.title }}</span>
       <span>{{ book.author }}</span>
-      <span><span class="books__status-badge task-layout__count book--{{ status }}">{{ status_labels[status] }}</span></span>
+      <span><span class="books__status-badge task-layout__count book--{{ progress_display }}">{{ progress_labels[progress_display] }}</span></span>
       <span>{{ book.rating if book.rating else '' }}</span>
       <span>{{ book.read_finish_date.strftime('%b %d, %Y') if book.read_finish_date else '' }}</span>
       <span class="books__actions">
