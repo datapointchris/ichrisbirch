@@ -5,6 +5,7 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 
+import pendulum
 import structlog
 from fastapi import APIRouter
 from fastapi import Cookie
@@ -26,6 +27,7 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.database.backup import DatabaseBackup
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.logger import LOG_DIR
+from ichrisbirch.scheduler.main import get_jobstore
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -208,3 +210,96 @@ async def read_backup(id: int, session: Session = Depends(get_sqlalchemy_session
     if backup := session.get(models.BackupHistory, id):
         return backup
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Backup {id} not found')
+
+
+# --- Scheduler endpoints ---
+
+
+def _format_time_until(next_run_time) -> str:
+    """Format the time until next run as a human-readable string."""
+    if next_run_time is None:
+        return 'Paused'
+    return pendulum.interval(pendulum.now(next_run_time.tzinfo), next_run_time).in_words()
+
+
+@router.get('/scheduler/jobs/', response_model=list[schemas.SchedulerJob])
+async def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
+    """List all APScheduler jobs with their status."""
+    jobstore = get_jobstore(settings=settings)
+    jobs = jobstore.get_all_jobs()
+    return [
+        schemas.SchedulerJob(
+            id=job.id,
+            name=job.name,
+            trigger=str(job.trigger),
+            next_run_time=job.next_run_time,
+            time_until_next_run=_format_time_until(job.next_run_time),
+            is_paused=job.next_run_time is None,
+        )
+        for job in jobs
+    ]
+
+
+@router.post('/scheduler/jobs/{job_id}/pause/', response_model=schemas.SchedulerJob)
+async def pause_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
+    """Pause a scheduler job by setting next_run_time to None."""
+    jobstore = get_jobstore(settings=settings)
+    job = jobstore.lookup_job(job_id)
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Job {job_id} not found')
+    job.next_run_time = None
+    jobstore.update_job(job)
+    logger.info('scheduler_job_paused', job_id=job_id)
+    return schemas.SchedulerJob(
+        id=job.id,
+        name=job.name,
+        trigger=str(job.trigger),
+        next_run_time=None,
+        time_until_next_run='Paused',
+        is_paused=True,
+    )
+
+
+@router.post('/scheduler/jobs/{job_id}/resume/', response_model=schemas.SchedulerJob)
+async def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
+    """Resume a paused scheduler job by recalculating next_run_time."""
+    jobstore = get_jobstore(settings=settings)
+    job = jobstore.lookup_job(job_id)
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Job {job_id} not found')
+    job.next_run_time = job.trigger.get_next_fire_time(None, pendulum.now())
+    jobstore.update_job(job)
+    logger.info('scheduler_job_resumed', job_id=job_id, next_run_time=str(job.next_run_time))
+    return schemas.SchedulerJob(
+        id=job.id,
+        name=job.name,
+        trigger=str(job.trigger),
+        next_run_time=job.next_run_time,
+        time_until_next_run=_format_time_until(job.next_run_time),
+        is_paused=False,
+    )
+
+
+@router.delete('/scheduler/jobs/{job_id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
+    """Delete a scheduler job from the jobstore."""
+    jobstore = get_jobstore(settings=settings)
+    job = jobstore.lookup_job(job_id)
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Job {job_id} not found')
+    jobstore.remove_job(job_id)
+    logger.info('scheduler_job_deleted', job_id=job_id)
+
+
+@router.get('/scheduler/history/', response_model=list[schemas.SchedulerJobRun])
+async def get_scheduler_history(
+    job_id: str | None = None,
+    limit: int = 50,
+    session: Session = Depends(get_sqlalchemy_session),
+):
+    """Get scheduler job run history, optionally filtered by job_id."""
+    query = select(models.SchedulerJobRun).order_by(models.SchedulerJobRun.started_at.desc())
+    if job_id:
+        query = query.where(models.SchedulerJobRun.job_id == job_id)
+    query = query.limit(limit)
+    return list(session.scalars(query).all())

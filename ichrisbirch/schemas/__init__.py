@@ -58,6 +58,7 @@ from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
 from ichrisbirch.schemas.personal_api_key import PersonalAPIKey
 from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreate
 from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreated
+from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
 from ichrisbirch.schemas.server import ServerStats
@@ -130,6 +131,7 @@ __all__ = [
     'PersonalAPIKey',
     'PersonalAPIKeyCreate',
     'PersonalAPIKeyCreated',
+    'SchedulerJob',
     'SchedulerJobRun',
     'SchedulerJobRunCreate',
     'ServerStats',

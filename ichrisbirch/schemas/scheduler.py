@@ -8,6 +8,17 @@ class SchedulerConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SchedulerJob(SchedulerConfig):
+    """Schema for an APScheduler job as returned by the admin API."""
+
+    id: str
+    name: str
+    trigger: str
+    next_run_time: datetime | None = None
+    time_until_next_run: str
+    is_paused: bool
+
+
 class SchedulerJobRunCreate(SchedulerConfig):
     job_id: str
     started_at: datetime
