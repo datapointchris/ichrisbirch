@@ -30,6 +30,7 @@ class AppView(enum.StrEnum):
 
 
 class ThemeColor(enum.StrEnum):
+    # Simple color themes (OKLCH hue rotation)
     TURQUOISE = 'turquoise'
     BLUE = 'blue'
     GREEN = 'green'
@@ -39,6 +40,19 @@ class ThemeColor(enum.StrEnum):
     YELLOW = 'yellow'
     PINK = 'pink'
     RANDOM = 'random'
+    # Named themes (bespoke palettes from theme.yml)
+    CHARCOAL_EMBER = 'charcoal-ember'
+    KANAGAWA = 'kanagawa'
+    ROSE_PINE = 'rose-pine'
+    GRUVBOX = 'gruvbox'
+    NORD = 'nord'
+    NIGHTFOX = 'nightfox'
+    EVERFOREST = 'everforest'
+    SOLARIZED_OSAKA = 'solarized-osaka'
+    TERAFOX = 'terafox'
+    OCEANIC_NEXT = 'oceanic-next'
+    FLEXOKI = 'flexoki'
+    RETROBOX = 'retrobox'
 
 
 PREFERENCE_VALUE_CHECKS = {'view_type': AppView, 'theme_color': ThemeColor}
