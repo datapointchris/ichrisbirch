@@ -1,9 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { getThemeHue, applyTheme, applyFont, getFontById, fonts } from '../useTheme'
+import { getThemeHue, applyTheme, applyFont, getFontById, fonts, themes, getThemeById } from '../useTheme'
+
+const NAMED_VARS = ['--clr-primary--darker', '--clr-primary', '--clr-primary--lighter', '--clr-text', '--clr-accent', '--clr-accent-light']
+
+function clearAllThemeVars() {
+  const el = document.documentElement
+  el.style.removeProperty('--base-hue')
+  for (const v of NAMED_VARS) {
+    el.style.removeProperty(v)
+  }
+}
 
 describe('applyTheme', () => {
   beforeEach(() => {
-    document.documentElement.style.removeProperty('--base-hue')
+    clearAllThemeVars()
   })
 
   it('sets --base-hue for turquoise theme', () => {
@@ -41,6 +51,81 @@ describe('applyTheme', () => {
   it('does not set hue for unknown theme', () => {
     applyTheme('nonexistent')
     expect(document.documentElement.style.getPropertyValue('--base-hue')).toBe('')
+  })
+
+  it('applies named theme by setting color CSS variables', () => {
+    applyTheme('kanagawa')
+    const el = document.documentElement
+    expect(el.style.getPropertyValue('--clr-primary--darker')).toBe('#1f1f28')
+    expect(el.style.getPropertyValue('--clr-primary')).toBe('#16161d')
+    expect(el.style.getPropertyValue('--clr-text')).toBe('#dcd7ba')
+    expect(el.style.getPropertyValue('--clr-accent')).toBe('#7e9cd8')
+  })
+
+  it('applies rose-pine named theme', () => {
+    applyTheme('rose-pine')
+    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('#191724')
+    expect(document.documentElement.style.getPropertyValue('--clr-accent')).toBe('#c4a7e7')
+  })
+
+  it('clears named theme overrides when switching to color theme', () => {
+    applyTheme('kanagawa')
+    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('#1f1f28')
+    applyTheme('turquoise')
+    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('')
+    expect(document.documentElement.style.getPropertyValue('--base-hue')).toBe('224')
+  })
+
+  it('clears named theme overrides when switching to random', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    applyTheme('gruvbox')
+    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('#1d2021')
+    applyTheme('random')
+    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('')
+    vi.restoreAllMocks()
+  })
+})
+
+describe('getThemeById', () => {
+  it('returns theme definition for color theme', () => {
+    const theme = getThemeById('turquoise')
+    expect(theme).toBeDefined()
+    expect(theme!.type).toBe('color')
+    expect(theme!.hue).toBe(224)
+  })
+
+  it('returns theme definition for named theme', () => {
+    const theme = getThemeById('kanagawa')
+    expect(theme).toBeDefined()
+    expect(theme!.type).toBe('named')
+    expect(theme!.colors).toBeDefined()
+  })
+
+  it('returns undefined for unknown theme', () => {
+    expect(getThemeById('nonexistent')).toBeUndefined()
+  })
+})
+
+describe('themes list', () => {
+  it('contains both color and named themes', () => {
+    const color = themes.filter((t) => t.type === 'color')
+    const named = themes.filter((t) => t.type === 'named')
+    expect(color.length).toBeGreaterThan(0)
+    expect(named.length).toBeGreaterThan(0)
+  })
+
+  it('has unique ids', () => {
+    const ids = themes.map((t) => t.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('all named themes have colors defined', () => {
+    const named = themes.filter((t) => t.type === 'named')
+    for (const theme of named) {
+      expect(theme.colors).toBeDefined()
+      expect(theme.colors!.primaryDarker).toBeTruthy()
+      expect(theme.colors!.accent).toBeTruthy()
+    }
   })
 })
 

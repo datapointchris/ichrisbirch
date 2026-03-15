@@ -24,20 +24,41 @@
       <div class="grid__item">
         <h3>Appearance</h3>
 
-        <div class="setting-row">
-          <label class="setting-row__label">Theme Color</label>
-          <div class="theme-colors">
-            <button
-              v-for="color in themeColors"
-              :key="color"
-              class="theme-colors__swatch"
-              :class="{ 'theme-colors__swatch--selected': selectedThemeColor === color }"
-              :style="{ background: colorMap[color] }"
-              :title="color"
-              @click="selectThemeColor(color)"
-            >
-              <span class="theme-colors__label">{{ color }}</span>
-            </button>
+        <div class="setting-row setting-row--top">
+          <label class="setting-row__label">Theme</label>
+          <div class="theme-selector">
+            <div class="theme-selector__group">
+              <span class="theme-selector__group-label">Colors</span>
+              <div class="theme-colors">
+                <button
+                  v-for="theme in colorThemes"
+                  :key="theme.id"
+                  class="theme-colors__swatch"
+                  :class="{ 'theme-colors__swatch--selected': selectedThemeColor === theme.id }"
+                  :style="{ background: theme.swatch }"
+                  :title="theme.name"
+                  @click="selectThemeColor(theme.id)"
+                >
+                  <span class="theme-colors__label">{{ theme.name }}</span>
+                </button>
+              </div>
+            </div>
+            <div class="theme-selector__group">
+              <span class="theme-selector__group-label">Named Themes</span>
+              <div class="theme-colors">
+                <button
+                  v-for="theme in namedThemes"
+                  :key="theme.id"
+                  class="theme-colors__swatch theme-colors__swatch--named"
+                  :class="{ 'theme-colors__swatch--selected': selectedThemeColor === theme.id }"
+                  :style="{ background: theme.swatch }"
+                  :title="theme.name"
+                  @click="selectThemeColor(theme.id)"
+                >
+                  <span class="theme-colors__label">{{ theme.name }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -187,26 +208,15 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
-import { applyTheme, applyFont, fonts } from '@/composables/useTheme'
+import { applyTheme, applyFont, fonts, themes } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
 
 const auth = useAuthStore()
 const { show: notify } = useNotifications()
 
-const themeColors = ['turquoise', 'blue', 'green', 'orange', 'red', 'purple', 'yellow', 'pink', 'random'] as const
-
-const colorMap: Record<string, string> = {
-  turquoise: '#1abc9c',
-  blue: '#2980b9',
-  green: '#27ae60',
-  orange: '#e67e22',
-  red: '#e74c3c',
-  purple: '#8e44ad',
-  yellow: '#f1c40f',
-  pink: '#e91e63',
-  random: 'linear-gradient(135deg, #e74c3c, #f1c40f, #27ae60, #2980b9, #8e44ad)',
-}
+const colorThemes = themes.filter((t) => t.type === 'color')
+const namedThemes = themes.filter((t) => t.type === 'named')
 
 const selectedThemeColor = ref(auth.preferences?.theme_color ?? 'turquoise')
 const darkMode = ref(auth.preferences?.dark_mode ?? true)
@@ -225,12 +235,13 @@ function formatDate(dateStr: string): string {
   return dateFormatter.format(new Date(dateStr))
 }
 
-async function selectThemeColor(color: string) {
-  selectedThemeColor.value = color
-  applyTheme(color)
+async function selectThemeColor(themeId: string) {
+  selectedThemeColor.value = themeId
+  applyTheme(themeId)
   try {
-    await auth.updatePreferences({ theme_color: color })
-    notify(`Theme color set to ${color}`, 'success')
+    await auth.updatePreferences({ theme_color: themeId })
+    const theme = themes.find((t) => t.id === themeId)
+    notify(`Theme set to ${theme?.name ?? themeId}`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update theme: ${detail}`, 'error')
@@ -373,6 +384,28 @@ onMounted(async () => {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   padding-bottom: 0.15rem;
   text-transform: capitalize;
+}
+
+.theme-colors__swatch--named {
+  width: auto;
+  min-width: 5rem;
+  padding: 0 var(--space-2xs);
+}
+
+/* Theme selector layout */
+.theme-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.theme-selector__group-label {
+  font-size: var(--fs-200);
+  color: var(--clr-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3xs);
+  display: block;
 }
 
 /* API key banner */
