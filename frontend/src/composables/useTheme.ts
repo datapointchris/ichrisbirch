@@ -288,7 +288,7 @@ export const fonts: FontDefinition[] = [
   { id: 'space-grotesk', name: 'Space Grotesk', family: '"Space Grotesk", sans-serif', category: 'sans-serif', source: 'google' },
   // Self-hosted — monospace
   { id: 'hack', name: 'Hack', family: '"Hack", monospace', category: 'monospace', source: 'self-hosted' },
-  { id: 'commit-mono', name: 'Commit Mono', family: '"Commit Mono", monospace', category: 'monospace', source: 'self-hosted' },
+  { id: 'commit-mono', name: 'Commit Mono', family: '"CommitMono", monospace', category: 'monospace', source: 'self-hosted' },
   { id: 'comic-mono', name: 'Comic Mono', family: '"Comic Mono", monospace', category: 'monospace', source: 'self-hosted' },
   { id: 'iosevka', name: 'Iosevka', family: '"Iosevka", monospace', category: 'monospace', source: 'self-hosted' },
   { id: 'meslo', name: 'Meslo LG M', family: '"Meslo LG M", monospace', category: 'monospace', source: 'self-hosted' },
