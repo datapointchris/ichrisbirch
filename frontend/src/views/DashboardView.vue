@@ -101,6 +101,11 @@ import WidgetTasksPriority from '@/components/dashboard/WidgetTasksPriority.vue'
 import WidgetCountdowns from '@/components/dashboard/WidgetCountdowns.vue'
 import WidgetEvents from '@/components/dashboard/WidgetEvents.vue'
 import WidgetHabits from '@/components/dashboard/WidgetHabits.vue'
+import WidgetBooks from '@/components/dashboard/WidgetBooks.vue'
+import WidgetArticles from '@/components/dashboard/WidgetArticles.vue'
+import WidgetMoneyWasted from '@/components/dashboard/WidgetMoneyWasted.vue'
+import WidgetAutoTasks from '@/components/dashboard/WidgetAutoTasks.vue'
+import WidgetDurations from '@/components/dashboard/WidgetDurations.vue'
 
 const logger = createLogger('DashboardView')
 
@@ -116,6 +121,11 @@ const widgetComponents: Record<string, Component> = {
   countdowns: markRaw(WidgetCountdowns),
   events: markRaw(WidgetEvents),
   habits: markRaw(WidgetHabits),
+  books: markRaw(WidgetBooks),
+  articles: markRaw(WidgetArticles),
+  'money-wasted': markRaw(WidgetMoneyWasted),
+  autotasks: markRaw(WidgetAutoTasks),
+  durations: markRaw(WidgetDurations),
 }
 
 const linkMap: Record<string, string> = {

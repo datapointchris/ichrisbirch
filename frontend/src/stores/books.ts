@@ -10,7 +10,8 @@ const logger = createLogger('BooksStore')
 export type BookStatus = 'sold' | 'abandoned' | 'read' | 'reading' | 'to-read'
 
 export function deriveStatus(book: Book): BookStatus {
-  if (book.sell_date) return 'sold'
+  // Use ownership status field for sold (not sell_date which seed data fills randomly)
+  if (book.status === 'sold') return 'sold'
   if (book.abandoned) return 'abandoned'
   if (book.read_finish_date) return 'read'
   if (book.read_start_date) return 'reading'

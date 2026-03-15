@@ -23,6 +23,7 @@ const testBooks: Book[] = [
     title: 'Clean Code',
     author: 'Robert Martin',
     tags: ['programming', 'software'],
+    status: 'owned',
     read_start_date: '2025-01-01T00:00:00',
     read_finish_date: '2025-02-15T00:00:00',
     rating: 5,
@@ -32,6 +33,7 @@ const testBooks: Book[] = [
     title: 'Dune',
     author: 'Frank Herbert',
     tags: ['sci-fi', 'fiction'],
+    status: 'owned',
     read_start_date: '2025-06-01T00:00:00',
   },
   {
@@ -39,12 +41,14 @@ const testBooks: Book[] = [
     title: 'The Pragmatic Programmer',
     author: 'David Thomas',
     tags: ['programming'],
+    status: 'owned',
   },
   {
     id: 4,
     title: 'Old Man and the Sea',
     author: 'Ernest Hemingway',
     tags: ['fiction', 'classic'],
+    status: 'owned',
     abandoned: true,
   },
   {
@@ -52,6 +56,7 @@ const testBooks: Book[] = [
     title: 'JavaScript: The Good Parts',
     author: 'Douglas Crockford',
     tags: ['programming', 'javascript'],
+    status: 'sold',
     sell_date: '2025-03-01T00:00:00',
     sell_price: 12.0,
     read_finish_date: '2024-12-01T00:00:00',
@@ -60,7 +65,7 @@ const testBooks: Book[] = [
 ]
 
 describe('deriveStatus', () => {
-  it('returns sold when sell_date is set (highest priority)', () => {
+  it('returns sold when status field is sold', () => {
     expect(deriveStatus(testBooks[4])).toBe('sold')
   })
 

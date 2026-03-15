@@ -289,6 +289,8 @@ export interface Book {
   abandoned?: boolean
   location?: string
   notes?: string
+  status: string
+  skip_reason?: string
 }
 
 export interface BookCreate {
