@@ -17,6 +17,7 @@ export const useBooksStore = defineStore('books', () => {
   const sortField = ref<string>('title')
   const sortDirection = ref<'asc' | 'desc'>('asc')
   const activeFilter = ref<string>('all')
+  const ownershipFilter = ref<string>('all')
   const searchQuery = ref('')
   const isSearchActive = ref(false)
 
@@ -33,8 +34,14 @@ export const useBooksStore = defineStore('books', () => {
   })
 
   const filteredBooks = computed(() => {
-    if (activeFilter.value === 'all') return books.value
-    return books.value.filter((book) => book.progress === activeFilter.value)
+    let result = books.value
+    if (activeFilter.value !== 'all') {
+      result = result.filter((book) => book.progress === activeFilter.value)
+    }
+    if (ownershipFilter.value !== 'all') {
+      result = result.filter((book) => book.ownership === ownershipFilter.value)
+    }
+    return result
   })
 
   const sortedBooks = computed(() => {
@@ -47,6 +54,11 @@ export const useBooksStore = defineStore('books', () => {
           return dir * a.title.localeCompare(b.title)
         case 'author':
           return dir * a.author.localeCompare(b.author)
+        case 'priority': {
+          const pa = a.priority ?? Number.MAX_SAFE_INTEGER
+          const pb = b.priority ?? Number.MAX_SAFE_INTEGER
+          return dir * (pa - pb)
+        }
         case 'rating': {
           const ra = a.rating ?? 0
           const rb = b.rating ?? 0
@@ -70,6 +82,10 @@ export const useBooksStore = defineStore('books', () => {
 
   function setFilter(filter: string) {
     activeFilter.value = filter
+  }
+
+  function setOwnershipFilter(filter: string) {
+    ownershipFilter.value = filter
   }
 
   function setSort(field: string) {
@@ -191,6 +207,7 @@ export const useBooksStore = defineStore('books', () => {
     sortField,
     sortDirection,
     activeFilter,
+    ownershipFilter,
     searchQuery,
     isSearchActive,
     statusCounts,
@@ -198,6 +215,7 @@ export const useBooksStore = defineStore('books', () => {
     sortedBooks,
     clearError,
     setFilter,
+    setOwnershipFilter,
     setSort,
     fetchAll,
     create,

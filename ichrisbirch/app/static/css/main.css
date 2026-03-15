@@ -1514,7 +1514,8 @@ span[data-tooltip][data-position=right]:after {
 
 .books__header {
   display: grid;
-  grid-template-columns: 5fr 4fr 2fr 1fr 3fr 2fr;
+  grid-template-columns: 5fr 4fr 1fr 2fr 2fr 3fr 2fr;
+  gap: 0 var(--space-xs);
   align-items: center;
   padding-block: var(--space-s);
   padding-inline: var(--space-m);
@@ -1524,7 +1525,8 @@ span[data-tooltip][data-position=right]:after {
   margin-bottom: var(--space-xs);
 }
 .books__header span:nth-child(3),
-.books__header span:nth-child(4) {
+.books__header span:nth-child(4),
+.books__header span:nth-child(5) {
   text-align: center;
 }
 .books__header span:last-child {
@@ -1543,7 +1545,8 @@ span[data-tooltip][data-position=right]:after {
 }
 .books__row {
   display: grid;
-  grid-template-columns: 5fr 4fr 2fr 1fr 3fr 2fr;
+  grid-template-columns: 5fr 4fr 1fr 2fr 2fr 3fr 2fr;
+  gap: 0 var(--space-xs);
   align-items: center;
   margin-bottom: var(--space-xs);
   padding-block: var(--space-xs);
@@ -1555,7 +1558,8 @@ span[data-tooltip][data-position=right]:after {
   transition: transform 0.3s ease-in-out;
 }
 .books__row > span:nth-child(3),
-.books__row > span:nth-child(4) {
+.books__row > span:nth-child(4),
+.books__row > span:nth-child(5) {
   text-align: center;
 }
 .books__row:hover {

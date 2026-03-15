@@ -31,14 +31,16 @@
 .books {
     $title: 5fr;
     $author: 4fr;
-    $status: 2fr;
-    $rating: 1fr;
+    $priority: 1fr;
+    $progress: 2fr;
+    $rating: 2fr;
     $finished: 3fr;
     $actions: 2fr;
 
     &__header {
         display: grid;
-        grid-template-columns: $title $author $status $rating $finished $actions;
+        grid-template-columns: $title $author $priority $progress $rating $finished $actions;
+        gap: 0 var(--space-xs);
         align-items: center;
         padding-block: var(--space-s);
         padding-inline: var(--space-m);
@@ -49,7 +51,8 @@
 
         // Center-align columns that have short content
         span:nth-child(3),
-        span:nth-child(4) {
+        span:nth-child(4),
+        span:nth-child(5) {
             text-align: center;
         }
 
@@ -74,7 +77,8 @@
 
     &__row {
         display: grid;
-        grid-template-columns: $title $author $status $rating $finished $actions;
+        grid-template-columns: $title $author $priority $progress $rating $finished $actions;
+        gap: 0 var(--space-xs);
         align-items: center;
         margin-bottom: var(--space-xs);
         padding-block: var(--space-xs);
@@ -85,9 +89,10 @@
         text-align: left;
         transition: transform 0.3s ease-in-out;
 
-        // Center-align status and rating columns to match header
+        // Center-align priority, progress, and rating columns to match header
         > span:nth-child(3),
-        > span:nth-child(4) {
+        > span:nth-child(4),
+        > span:nth-child(5) {
             text-align: center;
         }
 

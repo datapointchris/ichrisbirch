@@ -33,6 +33,34 @@
           @click="store.setFilter('all')"
           >Total: {{ store.statusCounts.total }}</span
         >
+        <select
+          class="textbox books__filter-select"
+          :value="store.activeFilter"
+          @change="store.setFilter(($event.target as HTMLSelectElement).value)"
+        >
+          <option value="all">All Progress</option>
+          <option
+            v-for="(label, value) in statusLabels"
+            :key="value"
+            :value="value"
+          >
+            {{ label }}
+          </option>
+        </select>
+        <select
+          class="textbox books__filter-select"
+          :value="store.ownershipFilter"
+          @change="store.setOwnershipFilter(($event.target as HTMLSelectElement).value)"
+        >
+          <option value="all">All Ownership</option>
+          <option
+            v-for="(label, value) in ownershipLabels"
+            :key="value"
+            :value="value"
+          >
+            {{ label }}
+          </option>
+        </select>
       </div>
     </div>
 
@@ -95,7 +123,12 @@
               @click="store.setSort('author')"
               >Author<span class="books__sort-indicator">{{ sortIndicator('author') }}</span></span
             >
-            <span>Status</span>
+            <span
+              class="books__sortable"
+              @click="store.setSort('priority')"
+              >Priority<span class="books__sort-indicator">{{ sortIndicator('priority') }}</span></span
+            >
+            <span>Progress</span>
             <span
               class="books__sortable"
               @click="store.setSort('rating')"
@@ -132,6 +165,7 @@
                 >{{ book.title }}</span
               >
               <span>{{ book.author }}</span>
+              <span>{{ book.priority ?? '' }}</span>
               <span
                 ><span :class="`books__status-badge task-layout__count book--${book.progress}`">{{
                   statusLabels[book.progress as BookProgress]
@@ -228,6 +262,10 @@
               >
                 <span class="books__detail-field-label">Read Start Date</span>
                 <span class="books__detail-field-value">{{ formatDate(book.read_start_date) }}</span>
+              </div>
+              <div class="books__detail-field">
+                <span class="books__detail-field-label">Ownership</span>
+                <span class="books__detail-field-value">{{ ownershipLabels[book.ownership as BookOwnership] ?? book.ownership }}</span>
               </div>
               <div
                 v-if="book.location"
@@ -428,6 +466,23 @@
           </select>
         </div>
         <div class="add-item-form__item">
+          <label for="ownership">Ownership:</label>
+          <select
+            id="ownership"
+            v-model="form.ownership"
+            class="textbox"
+            name="ownership"
+          >
+            <option
+              v-for="(label, value) in ownershipLabels"
+              :key="value"
+              :value="value"
+            >
+              {{ label }}
+            </option>
+          </select>
+        </div>
+        <div class="add-item-form__item">
           <label for="location">Location:</label>
           <input
             id="location"
@@ -481,7 +536,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useBooksStore } from '@/stores/books'
-import type { BookProgress } from '@/stores/books'
+import type { BookProgress, BookOwnership } from '@/stores/books'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
@@ -500,6 +555,14 @@ const statusLabels: Record<BookProgress, string> = {
   abandoned: 'Abandoned',
 }
 
+const ownershipLabels: Record<BookOwnership, string> = {
+  owned: 'Owned',
+  to_purchase: 'To Purchase',
+  rejected: 'Rejected',
+  sold: 'Sold',
+  donated: 'Donated',
+}
+
 const form = reactive({
   isbn: '',
   title: '',
@@ -515,6 +578,7 @@ const form = reactive({
   read_start_date: '',
   read_finish_date: '',
   progress: 'unread' as BookProgress,
+  ownership: 'owned' as BookOwnership,
   location: '',
   notes: '',
   review: '',
@@ -561,6 +625,7 @@ function resetForm() {
   form.read_start_date = ''
   form.read_finish_date = ''
   form.progress = 'unread'
+  form.ownership = 'owned'
   form.location = ''
   form.notes = ''
   form.review = ''
@@ -583,6 +648,7 @@ function startEdit(book: Book) {
   form.read_start_date = book.read_start_date ? book.read_start_date.split('T')[0]! : ''
   form.read_finish_date = book.read_finish_date ? book.read_finish_date.split('T')[0]! : ''
   form.progress = (book.progress ?? 'unread') as BookProgress
+  form.ownership = (book.ownership ?? 'owned') as BookOwnership
   form.location = book.location ?? ''
   form.notes = book.notes ?? ''
   form.review = book.review ?? ''
@@ -612,6 +678,7 @@ function buildPayload() {
     read_start_date: form.read_start_date || undefined,
     read_finish_date: form.read_finish_date || undefined,
     progress: form.progress,
+    ownership: form.ownership,
     location: form.location.trim() || undefined,
     notes: form.notes.trim() || undefined,
     review: form.review.trim() || undefined,
@@ -697,5 +764,11 @@ async function handleClearSearch() {
   font-size: var(--fs-300);
   color: var(--clr-gray-400);
   font-style: italic;
+}
+
+.books__filter-select {
+  width: auto;
+  padding: var(--space-3xs) var(--space-xs);
+  font-size: var(--fs-300);
 }
 </style>
