@@ -173,6 +173,14 @@ onMounted(async () => {
     content: renderWidgetContent(getWidgetType(w)),
   }))
 
+  // v12 no longer renders content as HTML by default (XSS prevention)
+  // We control all content so innerHTML is safe here
+  GridStack.renderCB = (el: HTMLElement, w: { content?: string }) => {
+    if (w.content) {
+      el.innerHTML = w.content
+    }
+  }
+
   grid = GridStack.init(
     {
       cellHeight: 80,
