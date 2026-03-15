@@ -1,0 +1,14 @@
+{
+  "issues": [
+    {
+      "rule": {"name": "terraform_naming_convention", "severity": "warning"},
+      "message": "resource name should be snake_case",
+      "range": {"filename": "main.tf", "start": {"line": 10}}
+    },
+    {
+      "rule": {"name": "terraform_unused_declarations", "severity": "error"},
+      "message": "variable 'unused_var' is declared but not used",
+      "range": {"filename": "variables.tf", "start": {"line": 5}}
+    }
+  ]
+}

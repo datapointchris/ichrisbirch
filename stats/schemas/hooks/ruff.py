@@ -55,3 +55,14 @@ class RuffHookEvent(BaseEvent):
     issues: list[RuffIssue]
     files_checked: list[str]
     duration_seconds: float
+
+
+class RuffFormatHookEvent(BaseEvent):
+    """Ruff format hook event — tracks files reformatted."""
+
+    type: Literal['hook.ruff-format'] = 'hook.ruff-format'
+    status: Literal['passed', 'failed']
+    exit_code: int
+    files_reformatted: list[str]
+    files_checked: list[str]
+    duration_seconds: float

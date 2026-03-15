@@ -1,0 +1,13 @@
+[
+  {
+    "filePath": "/frontend/src/App.vue",
+    "messages": [
+      {"ruleId": "no-unused-vars", "severity": 2, "message": "'x' is defined but never used", "line": 10, "column": 5},
+      {"ruleId": "vue/no-unused-components", "severity": 1, "message": "Component 'Foo' is registered but not used", "line": 3, "column": 1}
+    ],
+    "errorCount": 1,
+    "warningCount": 1,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0
+  }
+]

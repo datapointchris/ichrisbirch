@@ -86,14 +86,45 @@ function stats-summary() {
   printf "  Duration:    %ds\n" "$duration"
   echo ""
 
+  # Frontend Tests
+  local fe_total fe_passed fe_failed fe_duration fe_pass_rate
+  fe_total=$(jq -r '.frontend_tests.total // 0' "$stats_file")
+  fe_passed=$(jq -r '.frontend_tests.passed // 0' "$stats_file")
+  fe_failed=$(jq -r '.frontend_tests.failed // 0' "$stats_file")
+  fe_duration=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
+  fe_pass_rate=0
+  if [ "$fe_total" -gt 0 ]; then
+    fe_pass_rate=$((fe_passed * 100 / fe_total))
+  fi
+
+  echo "${blue}Frontend Tests${reset}"
+  if [ "$fe_total" -eq 0 ]; then
+    printf "  %sNo vitest results collected%s\n" "$gray" "$reset"
+  elif [ "$fe_failed" -eq 0 ]; then
+    printf "  Total:       %d tests (${green}%d%% pass${reset})\n" "$fe_total" "$fe_pass_rate"
+  else
+    printf "  Total:       %d tests (${red}%d failed${reset})\n" "$fe_total" "$fe_failed"
+  fi
+  if [ "$fe_total" -gt 0 ]; then
+    printf "  Duration:    %ds\n" "$fe_duration"
+  fi
+  echo ""
+
   # Dependencies
   local deps_direct deps_total
   deps_direct=$(jq -r '.dependencies.direct // 0' "$stats_file")
   deps_total=$(jq -r '.dependencies.total // 0' "$stats_file")
 
+  local npm_prod npm_dev npm_total
+  npm_prod=$(jq -r '.npm_dependencies.production // 0' "$stats_file")
+  npm_dev=$(jq -r '.npm_dependencies.dev // 0' "$stats_file")
+  npm_total=$(jq -r '.npm_dependencies.total // 0' "$stats_file")
+
   echo "${blue}Dependencies${reset}"
-  printf "  Direct:      %d packages\n" "$deps_direct"
-  printf "  Total:       %d packages\n" "$deps_total"
+  printf "  Python:      %d direct / %d total\n" "$deps_direct" "$deps_total"
+  if [ "$npm_total" -gt 0 ]; then
+    printf "  npm:         %d prod / %d dev / %d total\n" "$npm_prod" "$npm_dev" "$npm_total"
+  fi
   echo ""
 
   # Commit activity
@@ -337,6 +368,30 @@ function stats-tests() {
   echo "${blue}Slowest Tests (latest run)${reset}"
   jq -r '.tests.slowest[:8] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" 2>/dev/null |
     sed 's|tests/ichrisbirch/||g' | sed 's|::test_|: |g'
+  echo ""
+
+  # Frontend Tests (Vitest)
+  local fe_total fe_passed fe_failed fe_skipped fe_duration
+  fe_total=$(jq -r '.frontend_tests.total // 0' "$stats_file")
+  fe_passed=$(jq -r '.frontend_tests.passed // 0' "$stats_file")
+  fe_failed=$(jq -r '.frontend_tests.failed // 0' "$stats_file")
+  fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
+  fe_duration=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file")
+
+  echo "${blue}Frontend Tests (Vitest)${reset}"
+  if [ "$fe_total" -eq 0 ]; then
+    printf "  %sNo vitest results collected%s\n" "$gray" "$reset"
+  else
+    printf "  Total:     %d\n" "$fe_total"
+    printf "  Passed:    ${green}%d${reset}\n" "$fe_passed"
+    [ "$fe_failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$fe_failed"
+    [ "$fe_skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$fe_skipped"
+    printf "  Duration:  %.1fs\n" "$fe_duration"
+    echo ""
+
+    echo "${blue}Slowest Frontend Tests${reset}"
+    jq -r '.frontend_tests.slowest[:8] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" 2>/dev/null
+  fi
 }
 
 function stats-quality() {
@@ -357,12 +412,14 @@ function stats-quality() {
   printf "${cyan}%-18s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
   echo "----------------------------------------------------"
 
-  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key" "sass")
+  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key" "sass" "hadolint" "vue-eslint" "vue-typecheck")
 
   get_issue_field() {
     case "$1" in
     mypy) echo ".errors" ;;
     shellcheck) echo ".comments" ;;
+    vue-eslint) echo ".messages" ;;
+    vue-typecheck) echo ".errors" ;;
     *) echo ".issues" ;;
     esac
   }
@@ -507,6 +564,8 @@ function stats-events() {
         elif .type == "collect.dependencies" then [(.total_count | tostring), "pkgs"]
         elif .type == "collect.files" then [(.total_files | tostring), "files"]
         elif .type == "collect.radon" then [(.avg_complexity | floor | tostring), "avg_complexity"]
+        elif .type == "collect.vitest" then [(.summary.total | tostring), "fe_tests"]
+        elif .type == "collect.npm_dependencies" then [(.total_count | tostring), "npm_pkgs"]
         elif .status then [.status, ""]
         else ["-", ""]
         end;
@@ -679,6 +738,31 @@ function stats-trends() {
       printf "  %-14s %snot collected%s\n" "Coverage:" "$gray" "$reset"
     fi
     printf "  %-14s %.0fs\n" "Duration:" "$curr_dur"
+  else
+    printf "  %sNo stats snapshots found%s\n" "$gray" "$reset"
+  fi
+  echo ""
+
+  # Frontend Test Suite
+  echo "${blue}Frontend Test Suite (from latest snapshot)${reset}"
+  if [ -n "$latest_stats" ]; then
+    local fe_tests fe_passed fe_failed fe_dur
+    fe_tests=$(jq -r '.frontend_tests.total // 0' "$latest_stats")
+    fe_passed=$(jq -r '.frontend_tests.passed // 0' "$latest_stats")
+    fe_failed=$(jq -r '.frontend_tests.failed // 0' "$latest_stats")
+    fe_dur=$(jq -r '.frontend_tests.duration_seconds // 0' "$latest_stats")
+
+    if [ "$fe_tests" -eq 0 ]; then
+      printf "  %sNo vitest results collected%s\n" "$gray" "$reset"
+    else
+      printf "  %-14s %d tests" "Total:" "$fe_tests"
+      if [ "$fe_failed" -gt 0 ]; then
+        printf " (%s%d failed%s)\n" "$red" "$fe_failed" "$reset"
+      else
+        printf " (%sall passing%s)\n" "$green" "$reset"
+      fi
+      printf "  %-14s %.1fs\n" "Duration:" "$fe_dur"
+    fi
   else
     printf "  %sNo stats snapshots found%s\n" "$gray" "$reset"
   fi

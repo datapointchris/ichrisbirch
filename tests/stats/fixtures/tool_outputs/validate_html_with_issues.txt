@@ -1,0 +1,2 @@
+ERROR: ichrisbirch/app/templates/books/index.html:15: Element "div" not allowed as child of element "span"
+WARNING: ichrisbirch/app/templates/books/add.html:8: Consider using "button" instead of "input type=submit"

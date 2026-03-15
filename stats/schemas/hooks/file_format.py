@@ -49,3 +49,25 @@ class CheckJsonHookEvent(BaseEvent):
     issues: list[FileFormatIssue]
     files_checked: list[str]
     duration_seconds: float
+
+
+class CheckExecutablesShebangsHookEvent(BaseEvent):
+    """Event for check-executables-have-shebangs hook."""
+
+    type: Literal['hook.check-executables-have-shebangs'] = 'hook.check-executables-have-shebangs'
+    status: Literal['passed', 'failed']
+    exit_code: int
+    files_without_shebangs: list[str]
+    files_checked: list[str]
+    duration_seconds: float
+
+
+class CheckShebangExecutableHookEvent(BaseEvent):
+    """Event for check-shebang-scripts-are-executable hook."""
+
+    type: Literal['hook.check-shebang-scripts-are-executable'] = 'hook.check-shebang-scripts-are-executable'
+    status: Literal['passed', 'failed']
+    exit_code: int
+    files_not_executable: list[str]
+    files_checked: list[str]
+    duration_seconds: float

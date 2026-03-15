@@ -1,0 +1,24 @@
+{
+  "numTotalTests": 5,
+  "numPassedTests": 4,
+  "numFailedTests": 1,
+  "numSkippedTests": 0,
+  "success": false,
+  "testResults": [
+    {
+      "name": "/frontend/src/stores/__tests__/books.test.ts",
+      "assertionResults": [
+        {"fullName": "BookStore > should load books", "status": "passed", "duration": 45},
+        {"fullName": "BookStore > should handle errors", "status": "passed", "duration": 12},
+        {"fullName": "BookStore > should update book", "status": "failed", "duration": 89}
+      ]
+    },
+    {
+      "name": "/frontend/src/stores/__tests__/tasks.test.ts",
+      "assertionResults": [
+        {"fullName": "TaskStore > should load tasks", "status": "passed", "duration": 23},
+        {"fullName": "TaskStore > should complete task", "status": "passed", "duration": 34}
+      ]
+    }
+  ]
+}

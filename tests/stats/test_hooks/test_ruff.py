@@ -156,3 +156,101 @@ class TestRuffRunner:
             event = run(['test.py'], 'master', 'ichrisbirch')
 
             assert event.duration_seconds >= 0
+
+
+class TestRuffFormatSchema:
+    """Tests for RuffFormatHookEvent schema."""
+
+    def test_ruff_format_hook_event_with_changes(self) -> None:
+        """Test RuffFormatHookEvent with files needing reformatting."""
+        from stats.schemas.hooks.ruff import RuffFormatHookEvent
+
+        event = RuffFormatHookEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            status='failed',
+            exit_code=1,
+            files_reformatted=['ichrisbirch/api/main.py', 'ichrisbirch/models/book.py'],
+            files_checked=['ichrisbirch/api/main.py', 'ichrisbirch/models/book.py'],
+            duration_seconds=0.5,
+        )
+
+        assert event.type == 'hook.ruff-format'
+        assert event.status == 'failed'
+        assert len(event.files_reformatted) == 2
+
+    def test_ruff_format_hook_event_clean(self) -> None:
+        """Test RuffFormatHookEvent with no files needing reformatting."""
+        from stats.schemas.hooks.ruff import RuffFormatHookEvent
+
+        event = RuffFormatHookEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            status='passed',
+            exit_code=0,
+            files_reformatted=[],
+            files_checked=['test.py'],
+            duration_seconds=0.5,
+        )
+
+        assert event.type == 'hook.ruff-format'
+        assert event.status == 'passed'
+        assert not event.files_reformatted
+
+
+class TestRuffFormatRunner:
+    """Tests for ruff_format hook runner."""
+
+    def test_ruff_format_runner_returns_typed_event_clean(self) -> None:
+        """Test runner returns RuffFormatHookEvent for clean output."""
+        from stats.hooks.ruff_format import run
+        from stats.schemas.hooks.ruff import RuffFormatHookEvent
+
+        clean_output = (FIXTURES_DIR / 'ruff_format_clean.txt').read_text()
+
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout=clean_output,
+                stderr='',
+            )
+
+            event = run(['test.py'], 'master', 'ichrisbirch')
+
+            assert isinstance(event, RuffFormatHookEvent)
+            assert event.status == 'passed'
+            assert event.exit_code == 0
+            assert not event.files_reformatted
+
+    def test_ruff_format_runner_parses_changes(self) -> None:
+        """Test runner parses files that would be reformatted."""
+        from stats.hooks.ruff_format import run
+        from stats.schemas.hooks.ruff import RuffFormatHookEvent
+
+        changes_output = (FIXTURES_DIR / 'ruff_format_with_changes.txt').read_text()
+
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=1,
+                stdout=changes_output,
+                stderr='',
+            )
+
+            event = run(['ichrisbirch/api/main.py', 'ichrisbirch/models/book.py'], 'master', 'ichrisbirch')
+
+            assert isinstance(event, RuffFormatHookEvent)
+            assert event.status == 'failed'
+            assert len(event.files_reformatted) == 2
+            assert 'ichrisbirch/api/main.py' in event.files_reformatted
+            assert 'ichrisbirch/models/book.py' in event.files_reformatted
+
+    def test_ruff_format_runner_skips_non_python_files(self) -> None:
+        """Test runner skips non-Python files."""
+        from stats.hooks.ruff_format import run
+
+        event = run(['config.yaml', 'README.md'], 'master', 'ichrisbirch')
+
+        assert event.status == 'passed'
+        assert not event.files_checked

@@ -252,14 +252,67 @@ def build_dependencies_section(deps_event: dict | None) -> dict:
     }
 
 
+def build_frontend_tests_section(vitest_event: dict | None) -> dict:
+    """Build the 'frontend_tests' section from a vitest collector event."""
+    if not vitest_event:
+        return {
+            'total': 0,
+            'passed': 0,
+            'failed': 0,
+            'skipped': 0,
+            'duration_seconds': 0,
+            'slowest': [],
+            'source': 'vitest',
+        }
+
+    summary = vitest_event.get('summary', {})
+    tests = vitest_event.get('tests', [])
+
+    sorted_tests = sorted(tests, key=lambda t: t.get('duration', 0), reverse=True)
+    slowest = [
+        {
+            'name': f'{t.get("suite", "")}::{t.get("name", "")}',
+            'duration': round(t.get('duration', 0), 3),
+            'outcome': t.get('outcome', 'unknown'),
+        }
+        for t in sorted_tests[:10]
+    ]
+
+    return {
+        'total': summary.get('total', 0),
+        'passed': summary.get('passed', 0),
+        'failed': summary.get('failed', 0),
+        'skipped': summary.get('skipped', 0),
+        'duration_seconds': round(vitest_event.get('duration_seconds', 0), 2),
+        'slowest': slowest,
+        'source': 'vitest',
+    }
+
+
+def build_npm_dependencies_section(npm_event: dict | None) -> dict:
+    """Build the 'npm_dependencies' section from an npm dependencies collector event."""
+    if not npm_event:
+        return {'production': 0, 'dev': 0, 'total': 0}
+
+    return {
+        'production': npm_event.get('production_count', 0),
+        'dev': npm_event.get('dev_count', 0),
+        'total': npm_event.get('total_count', 0),
+    }
+
+
 def build_quality_section(hook_events: list[dict]) -> dict:
     """Build the 'quality' section from hook events."""
-    quality = {
+    quality: dict[str, Any] = {
         'ruff_issues': 0,
         'mypy_errors': 0,
         'bandit_issues': 0,
         'shellcheck_issues': 0,
         'codespell_issues': 0,
+        'eslint_errors': 0,
+        'eslint_warnings': 0,
+        'typecheck_errors': 0,
+        'hadolint_issues': 0,
     }
 
     for event in hook_events:
@@ -278,6 +331,13 @@ def build_quality_section(hook_events: list[dict]) -> dict:
             quality['shellcheck_issues'] = len(comments)
         elif event_type == 'hook.codespell':
             quality['codespell_issues'] = len(issues)
+        elif event_type == 'hook.vue-eslint':
+            quality['eslint_errors'] = event.get('error_count', 0)
+            quality['eslint_warnings'] = event.get('warning_count', 0)
+        elif event_type == 'hook.vue-typecheck':
+            quality['typecheck_errors'] = event.get('error_count', 0)
+        elif event_type == 'hook.hadolint':
+            quality['hadolint_issues'] = len(issues)
 
     return quality
 
@@ -311,9 +371,11 @@ def build_snapshot(
         'commit': build_commit_section(commit_event),
         'code': build_code_section(collectors_by_type.get('collect.tokei')),
         'tests': build_tests_section(collectors_by_type.get('collect.pytest')),
+        'frontend_tests': build_frontend_tests_section(collectors_by_type.get('collect.vitest')),
         'coverage': build_coverage_section(collectors_by_type.get('collect.coverage')),
         'docker': build_docker_section(collectors_by_type.get('collect.docker')),
         'dependencies': build_dependencies_section(collectors_by_type.get('collect.dependencies')),
+        'npm_dependencies': build_npm_dependencies_section(collectors_by_type.get('collect.npm_dependencies')),
         'quality': build_quality_section(hook_events),
     }
 

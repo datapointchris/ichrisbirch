@@ -1,0 +1,2 @@
+scripts/deploy.sh: does not have a shebang
+scripts/backup.sh: does not have a shebang

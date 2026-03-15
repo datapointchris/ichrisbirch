@@ -252,3 +252,189 @@ class TestCheckJsonRunner:
             event = run(['package.json', 'main.py', 'data.json'], 'master', 'ichrisbirch')
 
             assert set(event.files_checked) == {'package.json', 'data.json'}
+
+
+class TestCheckExecutablesShebangsSchema:
+    """Tests for CheckExecutablesShebangsHookEvent schema."""
+
+    def test_check_executables_shebangs_hook_event_with_issues(self) -> None:
+        """Test CheckExecutablesShebangsHookEvent with files missing shebangs."""
+        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
+
+        event = CheckExecutablesShebangsHookEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            status='failed',
+            exit_code=1,
+            files_without_shebangs=['scripts/deploy.sh', 'scripts/backup.sh'],
+            files_checked=['scripts/deploy.sh', 'scripts/backup.sh', 'scripts/run.sh'],
+            duration_seconds=0.5,
+        )
+
+        assert event.type == 'hook.check-executables-have-shebangs'
+        assert event.status == 'failed'
+        assert len(event.files_without_shebangs) == 2
+
+    def test_check_executables_shebangs_hook_event_clean(self) -> None:
+        """Test CheckExecutablesShebangsHookEvent with no issues."""
+        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
+
+        event = CheckExecutablesShebangsHookEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            status='passed',
+            exit_code=0,
+            files_without_shebangs=[],
+            files_checked=['scripts/deploy.sh'],
+            duration_seconds=0.5,
+        )
+
+        assert event.type == 'hook.check-executables-have-shebangs'
+        assert event.status == 'passed'
+        assert not event.files_without_shebangs
+
+
+class TestCheckExecutablesShebangsRunner:
+    """Tests for check-executables-have-shebangs hook runner."""
+
+    def test_check_executables_shebangs_runner_clean(self) -> None:
+        """Test runner returns passed event for files with shebangs."""
+        from stats.hooks.check_executables_have_shebangs import run
+        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
+
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='',
+                stderr='',
+            )
+
+            event = run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+
+            assert isinstance(event, CheckExecutablesShebangsHookEvent)
+            assert event.status == 'passed'
+            assert not event.files_without_shebangs
+
+    def test_check_executables_shebangs_runner_parses_issues(self) -> None:
+        """Test runner parses files missing shebangs from output."""
+        from stats.hooks.check_executables_have_shebangs import run
+        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
+
+        issues_output = (FIXTURES_DIR / 'check_executables_shebangs_with_issues.txt').read_text()
+
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=1,
+                stdout=issues_output,
+                stderr='',
+            )
+
+            event = run(['scripts/deploy.sh', 'scripts/backup.sh'], 'master', 'ichrisbirch')
+
+            assert isinstance(event, CheckExecutablesShebangsHookEvent)
+            assert event.status == 'failed'
+            assert len(event.files_without_shebangs) == 2
+
+    def test_check_executables_shebangs_runner_empty_staged(self) -> None:
+        """Test runner returns passed event when no files are staged."""
+        from stats.hooks.check_executables_have_shebangs import run
+
+        event = run([], 'master', 'ichrisbirch')
+
+        assert event.status == 'passed'
+        assert not event.files_checked
+
+
+class TestCheckShebangExecutableSchema:
+    """Tests for CheckShebangExecutableHookEvent schema."""
+
+    def test_check_shebang_executable_hook_event_with_issues(self) -> None:
+        """Test CheckShebangExecutableHookEvent with files not executable."""
+        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
+
+        event = CheckShebangExecutableHookEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            status='failed',
+            exit_code=1,
+            files_not_executable=['scripts/deploy.sh'],
+            files_checked=['scripts/deploy.sh', 'scripts/run.sh'],
+            duration_seconds=0.5,
+        )
+
+        assert event.type == 'hook.check-shebang-scripts-are-executable'
+        assert event.status == 'failed'
+        assert len(event.files_not_executable) == 1
+
+    def test_check_shebang_executable_hook_event_clean(self) -> None:
+        """Test CheckShebangExecutableHookEvent with no issues."""
+        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
+
+        event = CheckShebangExecutableHookEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            status='passed',
+            exit_code=0,
+            files_not_executable=[],
+            files_checked=['scripts/deploy.sh'],
+            duration_seconds=0.5,
+        )
+
+        assert event.type == 'hook.check-shebang-scripts-are-executable'
+        assert event.status == 'passed'
+        assert not event.files_not_executable
+
+
+class TestCheckShebangExecutableRunner:
+    """Tests for check-shebang-scripts-are-executable hook runner."""
+
+    def test_check_shebang_executable_runner_clean(self) -> None:
+        """Test runner returns passed event for executable scripts."""
+        from stats.hooks.check_shebang_scripts_are_executable import run
+        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
+
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='',
+                stderr='',
+            )
+
+            event = run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+
+            assert isinstance(event, CheckShebangExecutableHookEvent)
+            assert event.status == 'passed'
+            assert not event.files_not_executable
+
+    def test_check_shebang_executable_runner_parses_issues(self) -> None:
+        """Test runner parses files not executable from output."""
+        from stats.hooks.check_shebang_scripts_are_executable import run
+        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
+
+        issues_output = (FIXTURES_DIR / 'check_shebang_executable_with_issues.txt').read_text()
+
+        with patch('subprocess.run') as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=1,
+                stdout=issues_output,
+                stderr='',
+            )
+
+            event = run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+
+            assert isinstance(event, CheckShebangExecutableHookEvent)
+            assert event.status == 'failed'
+            assert len(event.files_not_executable) == 1
+
+    def test_check_shebang_executable_runner_empty_staged(self) -> None:
+        """Test runner returns passed event when no files are staged."""
+        from stats.hooks.check_shebang_scripts_are_executable import run
+
+        event = run([], 'master', 'ichrisbirch')
+
+        assert event.status == 'passed'
+        assert not event.files_checked

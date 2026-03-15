@@ -1,0 +1,18 @@
+[
+  {
+    "code": "DL3008",
+    "message": "Pin versions in apt get install",
+    "level": "warning",
+    "file": "Dockerfile",
+    "line": 5,
+    "column": 1
+  },
+  {
+    "code": "DL4006",
+    "message": "Set the SHELL option -o pipefail before RUN with a pipe in it",
+    "level": "warning",
+    "file": "Dockerfile",
+    "line": 10,
+    "column": 1
+  }
+]

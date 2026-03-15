@@ -13,5 +13,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,ts,vue}'],
+    reporters: ['default', 'json'],
+    outputFile: { json: '/tmp/ichrisbirch-vitest-report.json' },
   },
 })

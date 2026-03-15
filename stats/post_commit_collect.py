@@ -178,6 +178,9 @@ def main() -> int:
                 if collector_name == 'pytest_collector':
                     json_path = collect_config.get('pytest_json_path', '/tmp/ichrisbirch-pytest-report.json')  # nosec B108
                     event = collector_runner(branch, project, json_path)
+                elif collector_name == 'vitest_collector':
+                    json_path = collect_config.get('vitest_json_path', '/tmp/ichrisbirch-vitest-report.json')  # nosec B108
+                    event = collector_runner(branch, project, json_path)
                 elif collector_name == 'coverage':
                     event = collector_runner(branch, project)
                 else:
