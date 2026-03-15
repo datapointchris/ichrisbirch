@@ -1,7 +1,13 @@
 :root {
-    --clr-primary--darker: hsl(194, 100%, 10%);
-    --clr-primary: hsl(194 100% 11%);
-    --clr-primary--lighter: hsl(194, 100%, 13%);
+    // Theme hue — change this single value to shift the entire primary palette
+    // Default: 224 (turquoise in OKLCH space, equivalent to HSL 194)
+    --base-hue: 224;
+
+    // Primary colors generated from --base-hue using OKLCH
+    // Lightness and chroma are fixed; hue rotates with the theme
+    --clr-primary--darker: oklch(0.254 0.05 var(--base-hue));
+    --clr-primary: oklch(0.269 0.05 var(--base-hue));
+    --clr-primary--lighter: oklch(0.298 0.05 var(--base-hue));
 
     --clr-accent: hsl(31 90% 57%);
     --clr-accent-light: hsl(34 100% 90%);
@@ -9,7 +15,6 @@
 
     --clr-text: hsl(0 0% 87%);
 
-    // Not sure how to set specific colors up globally otherwise
     --clr-accent--orange: hsl(31 90% 57%);
     --clr-accent--yellow: hsl(55, 80%, 55%);
     --clr-accent--red: hsl(0, 100%, 60%);
@@ -50,11 +55,4 @@
     --clr-black-trans-600: hsl(0 0% 5% / 0.6);
     --clr-black-trans-800: hsl(0 0% 5% / 0.8);
     --clr-black-trans-1000: hsl(0 0% 5% / 1);
-}
-
-// TODO: Update this to be actual dark and the regular to be light
-@media (prefers-color-scheme: light) {
-    :root {
-        --text: hsl(0 0% 87%);
-    }
 }

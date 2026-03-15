@@ -28,6 +28,9 @@ import AppSidebar from '@/components/AppSidebar.vue'
 import SubmitIssueButton from '@/components/SubmitIssueButton.vue'
 import SubmitIssueModal from '@/components/SubmitIssueModal.vue'
 import NotificationToast from '@/components/NotificationToast.vue'
+import { useTheme } from '@/composables/useTheme'
+
+useTheme()
 
 const sidebarOpen = ref(true)
 const issueModalOpen = ref(false)

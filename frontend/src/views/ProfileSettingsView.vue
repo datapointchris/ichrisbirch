@@ -165,6 +165,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
+import { applyTheme } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
 
@@ -202,6 +203,7 @@ function formatDate(dateStr: string): string {
 
 async function selectThemeColor(color: string) {
   selectedThemeColor.value = color
+  applyTheme(color)
   try {
     await auth.updatePreferences({ theme_color: color })
     notify(`Theme color set to ${color}`, 'success')

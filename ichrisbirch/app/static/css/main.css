@@ -1,9 +1,10 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 :root {
-  --clr-primary--darker: hsl(194, 100%, 10%);
-  --clr-primary: hsl(194 100% 11%);
-  --clr-primary--lighter: hsl(194, 100%, 13%);
+  --base-hue: 224;
+  --clr-primary--darker: oklch(0.254 0.05 var(--base-hue));
+  --clr-primary: oklch(0.269 0.05 var(--base-hue));
+  --clr-primary--lighter: oklch(0.298 0.05 var(--base-hue));
   --clr-accent: hsl(31 90% 57%);
   --clr-accent-light: hsl(34 100% 90%);
   --clr-accent-dark: hsl(34 100% 16%);
@@ -46,11 +47,6 @@
   --clr-black-trans-1000: hsl(0 0% 5% / 1);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --text: hsl(0 0% 87%);
-  }
-}
 /* @link https://utopia.fyi/space/calculator?c=320,18,1.2,1240,20,1.25,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
 :root {
   --space-3xs: clamp(0.3125rem, 0.3125rem + 0vi, 0.3125rem);
