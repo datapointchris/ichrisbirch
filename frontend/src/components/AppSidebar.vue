@@ -117,6 +117,7 @@ const route = useRoute()
 
 const mainLinks: NavLink[] = [
   { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: false },
+  { to: '/dashboard', label: 'Dashboard', icon: 'fa-solid fa-grip', migrated: true },
   {
     to: '/articles',
     label: 'Articles',

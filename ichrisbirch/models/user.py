@@ -61,6 +61,12 @@ DEFAULT_USER_PREFERENCES = {
     'theme_color': ThemeColor.TURQUOISE,
     'font_family': 'ubuntu-mono',
     'custom_accent_hue': 62,
+    'dashboard_widgets': [
+        {'id': 'w-tasks-priority', 'x': 0, 'y': 0, 'w': 4, 'h': 3, 'minW': 3, 'minH': 2, 'content': 'tasks-priority'},
+        {'id': 'w-countdowns', 'x': 4, 'y': 0, 'w': 4, 'h': 2, 'minW': 2, 'minH': 2, 'content': 'countdowns'},
+        {'id': 'w-events', 'x': 8, 'y': 0, 'w': 4, 'h': 3, 'minW': 3, 'minH': 2, 'content': 'events'},
+        {'id': 'w-habits', 'x': 4, 'y': 2, 'w': 4, 'h': 3, 'minW': 3, 'minH': 2, 'content': 'habits'},
+    ],
     'dark_mode': True,
     'notifications': False,
     'dashboard_layout': [
