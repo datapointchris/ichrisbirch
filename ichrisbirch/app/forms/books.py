@@ -3,11 +3,16 @@ from wtforms import BooleanField
 from wtforms import DateField
 from wtforms import FloatField
 from wtforms import IntegerField
+from wtforms import SelectField
 from wtforms import StringField
 from wtforms import TextAreaField
 from wtforms.validators import URL
 from wtforms.validators import DataRequired
 from wtforms.validators import Optional
+
+from ichrisbirch.models.book import BOOK_STATUSES
+
+status_choices = [(s, s) for s in BOOK_STATUSES]
 
 
 class BookCreateForm(FlaskForm):
@@ -27,6 +32,8 @@ class BookCreateForm(FlaskForm):
     abandoned = BooleanField('Abandoned', validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
     notes = TextAreaField('Notes', render_kw={'rows': 3}, validators=[Optional()])
+    status = SelectField('Status', choices=status_choices, default='owned', validators=[DataRequired()])
+    skip_reason = TextAreaField('Skip Reason', render_kw={'rows': 2}, validators=[Optional()])
 
 
 class BookUpdateForm(FlaskForm):
@@ -46,3 +53,5 @@ class BookUpdateForm(FlaskForm):
     abandoned = BooleanField('Abandoned', validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
     notes = TextAreaField('Notes', render_kw={'rows': 3}, validators=[Optional()])
+    status = SelectField('Status', choices=status_choices, validators=[Optional()])
+    skip_reason = TextAreaField('Skip Reason', render_kw={'rows': 2}, validators=[Optional()])

@@ -70,6 +70,14 @@
         {{ update_form.location.label }}
         {{ update_form.location(class_="textbox") }}
       </div>
+      <div class="add-item-form__item">
+        {{ update_form.status.label }}
+        {{ update_form.status(class_="textbox") }}
+      </div>
+      <div class="add-item-form__item add-item-form__item--full-width">
+        {{ update_form.skip_reason.label }}
+        {{ update_form.skip_reason(class_="textbox") }}
+      </div>
       <div class="add-item-form__item add-item-form__item--full-width">
         {{ update_form.notes.label }}
         {{ update_form.notes(class_="textbox") }}
