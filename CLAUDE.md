@@ -138,6 +138,7 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 - **Database columns**: Always use `Text`, never `String(n)` or `varchar`.
 - **Categorical fields**: Use lookup tables with `TEXT PRIMARY KEY` + FK, never PostgreSQL enums.
 - **Docker containers**: Prefixed `icb-{env}-{service}` (e.g., `icb-dev-api`).
+- **Docker Compose overrides**: List fields (`ports`, `volumes`, `environment`) **merge by default** across compose files. When a test/dev compose redefines a list that exists in the base compose, use `!override` to replace instead of append (e.g., `ports: !override`). Without this, both port mappings apply and cause "port already allocated" errors.
 - **File naming**: Lowercase with hyphens for docs (except README.md, CLAUDE.md, LICENSE.md). Snake_case for DB tables/columns.
 
 ### Adding a Vue Page
