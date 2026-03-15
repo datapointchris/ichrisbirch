@@ -30,7 +30,32 @@
     <div
       ref="gridRef"
       class="grid-stack"
-    ></div>
+    >
+      <div
+        v-for="widget in widgets"
+        :key="widget.id"
+        class="grid-stack-item"
+        :gs-id="widget.id"
+        :gs-x="widget.x"
+        :gs-y="widget.y"
+        :gs-w="widget.w"
+        :gs-h="widget.h"
+        :gs-min-w="widget.minW"
+        :gs-min-h="widget.minH"
+      >
+        <div class="grid-stack-item-content">
+          <DashboardWidget
+            :title="getWidgetTitle(widget)"
+            :icon="getWidgetIcon(widget)"
+            :link-to="getWidgetLink(widget)"
+            :editing="editing"
+            @remove="removeWidget(widget.id!)"
+          >
+            <component :is="getWidgetComponent(widget)" />
+          </DashboardWidget>
+        </div>
+      </div>
+    </div>
 
     <!-- Widget picker modal -->
     <Teleport to="body">
@@ -65,12 +90,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, type Component, markRaw } from 'vue'
 import { GridStack } from 'gridstack'
 import 'gridstack/dist/gridstack.min.css'
 import { useDashboard, widgetRegistry, getWidgetType, getWidgetDef } from '@/composables/useDashboard'
 import type { DashboardWidgetData } from '@/composables/useDashboard'
 import { createLogger } from '@/utils/logger'
+import DashboardWidget from '@/components/dashboard/DashboardWidget.vue'
+import WidgetTasksPriority from '@/components/dashboard/WidgetTasksPriority.vue'
+import WidgetCountdowns from '@/components/dashboard/WidgetCountdowns.vue'
+import WidgetEvents from '@/components/dashboard/WidgetEvents.vue'
+import WidgetHabits from '@/components/dashboard/WidgetHabits.vue'
 
 const logger = createLogger('DashboardView')
 
@@ -78,57 +108,72 @@ const { editing, loadWidgets, saveWidgets, newWidget, startAutoRefresh, stopAuto
 const gridRef = ref<HTMLElement>()
 const showWidgetPicker = ref(false)
 let grid: GridStack | null = null
-const activeWidgetTypes = ref<Set<string>>(new Set())
+const widgets = ref<DashboardWidgetData[]>([])
 
-// Widgets not yet on the dashboard
-const availableWidgets = computed(() => widgetRegistry.filter((def) => !activeWidgetTypes.value.has(def.type)))
-
-function renderWidgetContent(type: string): string {
-  const def = getWidgetDef(type)
-  if (!def) return '<div>Unknown widget</div>'
-
-  const linkMap: Record<string, string> = {
-    'tasks-priority': '/tasks',
-    countdowns: '/countdowns',
-    events: '/events',
-    habits: '/habits',
-    books: '/books',
-    articles: '/articles',
-    'money-wasted': '/money-wasted',
-    autotasks: '/autotasks',
-    durations: '/durations',
-  }
-  const link = linkMap[type] ?? '/'
-
-  return `
-    <div class="dashboard-widget">
-      <div class="dashboard-widget__header">
-        <div class="dashboard-widget__title">
-          <i class="${def.icon}"></i>
-          <a href="${link}" class="dashboard-widget__link">${def.name}</a>
-        </div>
-      </div>
-      <div class="dashboard-widget__content" data-widget-type="${type}">
-        <div class="widget-placeholder">
-          <i class="${def.icon} widget-placeholder__icon"></i>
-          <span>${def.name}</span>
-        </div>
-      </div>
-    </div>
-  `
+// Component map for dynamic rendering
+const widgetComponents: Record<string, Component> = {
+  'tasks-priority': markRaw(WidgetTasksPriority),
+  countdowns: markRaw(WidgetCountdowns),
+  events: markRaw(WidgetEvents),
+  habits: markRaw(WidgetHabits),
 }
 
-function syncActiveTypes() {
-  if (!grid) return
-  const items = grid.save(false) as DashboardWidgetData[]
-  activeWidgetTypes.value = new Set(items.map((item) => getWidgetType(item)))
+const linkMap: Record<string, string> = {
+  'tasks-priority': '/tasks',
+  countdowns: '/countdowns',
+  events: '/events',
+  habits: '/habits',
+  books: '/books',
+  articles: '/articles',
+  'money-wasted': '/money-wasted',
+  autotasks: '/autotasks',
+  durations: '/durations',
+}
+
+// Widgets not yet on the dashboard
+const activeWidgetTypes = computed(() => new Set(widgets.value.map((w) => getWidgetType(w))))
+const availableWidgets = computed(() => widgetRegistry.filter((def) => !activeWidgetTypes.value.has(def.type)))
+
+function getWidgetTitle(w: DashboardWidgetData): string {
+  const def = getWidgetDef(getWidgetType(w))
+  return def?.name ?? 'Unknown'
+}
+
+function getWidgetIcon(w: DashboardWidgetData): string {
+  const def = getWidgetDef(getWidgetType(w))
+  return def?.icon ?? 'fa-solid fa-question'
+}
+
+function getWidgetLink(w: DashboardWidgetData): string {
+  return linkMap[getWidgetType(w)] ?? '/'
+}
+
+function getWidgetComponent(w: DashboardWidgetData): Component | null {
+  return widgetComponents[getWidgetType(w)] ?? null
 }
 
 function persistLayout() {
   if (!grid) return
-  const items = grid.save(false) as DashboardWidgetData[]
-  saveWidgets(items)
-  syncActiveTypes()
+  // Read positions from gridstack, merge with our widgetType data
+  const gsItems = grid.getGridItems()
+  const updated: DashboardWidgetData[] = []
+  for (const el of gsItems) {
+    const node = el.gridstackNode
+    if (!node) continue
+    const existing = widgets.value.find((w) => w.id === node.id)
+    updated.push({
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      w: node.w,
+      h: node.h,
+      minW: node.minW,
+      minH: node.minH,
+      widgetType: existing?.widgetType ?? getWidgetType(existing ?? {}),
+    })
+  }
+  widgets.value = updated
+  saveWidgets(updated)
 }
 
 function startEditing() {
@@ -144,35 +189,47 @@ function stopEditing() {
   persistLayout()
 }
 
-function addWidget(type: string) {
+async function addWidget(type: string) {
   if (!grid) return
   const widget = newWidget(type)
   if (!widget) return
 
-  // content holds the type string; renderCB generates HTML
-  grid.addWidget(widget)
-  syncActiveTypes()
+  widgets.value.push(widget)
+  await nextTick()
+
+  // Tell gridstack about the new DOM element
+  const el = gridRef.value?.querySelector(`[gs-id="${widget.id}"]`) as HTMLElement
+  if (el) {
+    grid.makeWidget(el)
+  }
+
   showWidgetPicker.value = false
+  persistLayout()
   logger.info('widget_added', { type })
 }
 
+function removeWidget(id: string) {
+  if (!grid) return
+  const el = gridRef.value?.querySelector(`[gs-id="${id}"]`) as HTMLElement
+  if (el) {
+    grid.removeWidget(el, true, false)
+  }
+  widgets.value = widgets.value.filter((w) => w.id !== id)
+  persistLayout()
+  logger.info('widget_removed', { id })
+}
+
 function refreshAllWidgets() {
-  // Phase 2 will wire this to store.fetchAll() calls
   logger.info('widgets_refreshed')
+  // Each widget component handles its own data fetching via onMounted
+  // Force re-fetch by... TODO in Phase 3 if needed
 }
 
 onMounted(async () => {
+  widgets.value = loadWidgets()
+
   await nextTick()
   if (!gridRef.value) return
-
-  const savedWidgets = loadWidgets()
-
-  // v12 no longer renders content as innerHTML (XSS prevention)
-  // renderCB generates HTML from our custom widgetType property
-  GridStack.renderCB = (el: HTMLElement, w: DashboardWidgetData) => {
-    const type = w.widgetType ?? ''
-    el.innerHTML = renderWidgetContent(type)
-  }
 
   grid = GridStack.init(
     {
@@ -195,21 +252,14 @@ onMounted(async () => {
     gridRef.value
   )
 
-  // content field holds the widget type string (e.g., 'tasks-priority')
-  // renderCB generates the HTML from it
-  grid.load(savedWidgets)
-  syncActiveTypes()
-
   grid.on('change', () => {
     if (editing.value) {
       persistLayout()
     }
   })
 
-  // Auto-refresh every 3 minutes
   startAutoRefresh(refreshAllWidgets, 180_000)
-
-  logger.info('dashboard_initialized', { widgetCount: savedWidgets.length })
+  logger.info('dashboard_initialized', { widgetCount: widgets.value.length })
 })
 
 onUnmounted(() => {
@@ -305,71 +355,88 @@ onUnmounted(() => {
 </style>
 
 <style>
-/* Unscoped styles for gridstack widget content (injected via innerHTML) */
+/* Unscoped: gridstack item content and widget list styles */
 .grid-stack-item-content {
   border-radius: 0.5rem;
   overflow: hidden;
 }
 
-.dashboard-widget {
-  height: 100%;
+.widget-list {
   display: flex;
   flex-direction: column;
-  background: var(--clr-primary);
-  border-radius: 0.5rem;
+  gap: 1px;
 }
 
-.dashboard-widget__header {
+.widget-list__item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3xs) var(--space-xs);
-  background: var(--clr-primary--lighter);
-  border-bottom: 1px solid var(--clr-gray-700);
-  min-height: 2rem;
+  padding: var(--space-3xs) 0;
+  border-bottom: 1px solid var(--clr-gray-800);
 }
 
-.dashboard-widget__title {
+.widget-list__item--done {
+  opacity: 0.5;
+}
+
+.widget-list__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widget-list__meta {
   display: flex;
   align-items: center;
   gap: var(--space-2xs);
+  color: var(--clr-gray-400);
   font-size: var(--fs-200);
-  color: var(--clr-gray-300);
+  flex-shrink: 0;
 }
 
-.dashboard-widget__title i {
-  color: var(--clr-accent);
+.widget-list__tag {
+  font-size: 0.6rem;
+  color: var(--clr-gray-500);
+  text-transform: uppercase;
 }
 
-.dashboard-widget__link {
-  color: var(--clr-gray-200);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.dashboard-widget__link:hover {
-  color: var(--clr-accent);
-}
-
-.dashboard-widget__content {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-2xs) var(--space-xs);
-  font-size: var(--fs-200);
-}
-
-.widget-placeholder {
+.widget-action-btn {
+  background: none;
+  border: 1px solid var(--clr-gray-600);
+  color: var(--clr-gray-400);
+  cursor: pointer;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  gap: var(--space-xs);
-  color: var(--clr-gray-500);
+  font-size: 0.7rem;
+  padding: 0;
+  line-height: 1;
 }
 
-.widget-placeholder__icon {
-  font-size: var(--fs-700);
-  opacity: 0.3;
+.widget-action-btn:hover {
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+}
+
+.widget-action-btn--active {
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+}
+
+.widget-loading {
+  color: var(--clr-gray-500);
+  text-align: center;
+  padding: var(--space-m);
+}
+
+.widget-empty {
+  color: var(--clr-gray-500);
+  text-align: center;
+  padding: var(--space-s);
+  font-style: italic;
 }
 </style>
