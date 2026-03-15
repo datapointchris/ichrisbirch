@@ -69,7 +69,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { GridStack } from 'gridstack'
 import 'gridstack/dist/gridstack.min.css'
 import { useDashboard, widgetRegistry, getWidgetType, getWidgetDef } from '@/composables/useDashboard'
-import type { GridStackWidget } from 'gridstack'
+import type { DashboardWidgetData } from '@/composables/useDashboard'
 import { createLogger } from '@/utils/logger'
 
 const logger = createLogger('DashboardView')
@@ -120,13 +120,13 @@ function renderWidgetContent(type: string): string {
 
 function syncActiveTypes() {
   if (!grid) return
-  const items = grid.save(false) as GridStackWidget[]
+  const items = grid.save(false) as DashboardWidgetData[]
   activeWidgetTypes.value = new Set(items.map((item) => getWidgetType(item)))
 }
 
 function persistLayout() {
   if (!grid) return
-  const items = grid.save(false) as GridStackWidget[]
+  const items = grid.save(false) as DashboardWidgetData[]
   saveWidgets(items)
   syncActiveTypes()
 }
@@ -149,7 +149,7 @@ function addWidget(type: string) {
   const widget = newWidget(type)
   if (!widget) return
 
-  widget.content = renderWidgetContent(type)
+  // content holds the type string; renderCB generates HTML
   grid.addWidget(widget)
   syncActiveTypes()
   showWidgetPicker.value = false
@@ -167,18 +167,11 @@ onMounted(async () => {
 
   const savedWidgets = loadWidgets()
 
-  // Generate HTML content for each widget
-  const widgetsWithContent = savedWidgets.map((w) => ({
-    ...w,
-    content: renderWidgetContent(getWidgetType(w)),
-  }))
-
-  // v12 no longer renders content as HTML by default (XSS prevention)
-  // We control all content so innerHTML is safe here
-  GridStack.renderCB = (el: HTMLElement, w: { content?: string }) => {
-    if (w.content) {
-      el.innerHTML = w.content
-    }
+  // v12 no longer renders content as innerHTML (XSS prevention)
+  // renderCB generates HTML from our custom widgetType property
+  GridStack.renderCB = (el: HTMLElement, w: DashboardWidgetData) => {
+    const type = w.widgetType ?? ''
+    el.innerHTML = renderWidgetContent(type)
   }
 
   grid = GridStack.init(
@@ -202,7 +195,9 @@ onMounted(async () => {
     gridRef.value
   )
 
-  grid.load(widgetsWithContent)
+  // content field holds the widget type string (e.g., 'tasks-priority')
+  // renderCB generates the HTML from it
+  grid.load(savedWidgets)
   syncActiveTypes()
 
   grid.on('change', () => {
