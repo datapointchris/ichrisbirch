@@ -103,6 +103,14 @@ export type BoxSize = 'Book' | 'Small' | 'Medium' | 'Large' | 'Bag' | 'Monitor' 
 
 // --- User ---
 
+export interface UserPreferences {
+  theme_color: string
+  dark_mode: boolean
+  notifications: boolean
+  dashboard_layout: string[][]
+  [key: string]: unknown
+}
+
 export interface User {
   id: number
   alternative_id: number
@@ -111,6 +119,26 @@ export interface User {
   is_admin: boolean
   created_on: string
   last_login?: string
+  preferences: UserPreferences
+}
+
+// --- Personal API Key ---
+
+export interface PersonalApiKey {
+  id: number
+  name: string
+  key_prefix: string
+  created_at: string
+  last_used_at: string | null
+  revoked_at: string | null
+}
+
+export interface PersonalApiKeyCreate {
+  name: string
+}
+
+export interface PersonalApiKeyCreated extends PersonalApiKey {
+  key: string
 }
 
 // --- Countdown ---

@@ -153,7 +153,16 @@ const mainLinks: NavLink[] = [
   },
 ]
 
-const footerLinks: NavLink[] = [{ to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear', migrated: false }]
+const footerLinks: NavLink[] = [
+  {
+    to: '/profile',
+    label: 'Profile',
+    icon: 'fa-solid fa-user',
+    migrated: true,
+    activeNames: ['profile', 'profile-settings'],
+  },
+  { to: '/admin', label: 'Admin', icon: 'fa-solid fa-gear', migrated: false },
+]
 
 function isActive(link: NavLink): boolean {
   if (link.activeNames) {

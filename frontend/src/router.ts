@@ -124,6 +124,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Search Items' },
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { title: 'Profile' },
+  },
+  {
+    path: '/profile/settings',
+    name: 'profile-settings',
+    component: () => import('@/views/ProfileSettingsView.vue'),
+    meta: { title: 'Settings' },
+  },
+  {
     path: '/admin',
     name: 'admin',
     component: () => import('@/views/AdminView.vue'),
