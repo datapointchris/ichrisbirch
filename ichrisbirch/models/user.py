@@ -60,6 +60,7 @@ PREFERENCE_VALUE_CHECKS = {'view_type': AppView, 'theme_color': ThemeColor}
 DEFAULT_USER_PREFERENCES = {
     'theme_color': ThemeColor.TURQUOISE,
     'font_family': 'ubuntu-mono',
+    'custom_accent_hue': 62,
     'dark_mode': True,
     'notifications': False,
     'dashboard_layout': [

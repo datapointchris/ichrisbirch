@@ -41,10 +41,15 @@ describe('applyTheme', () => {
     expect(document.documentElement.style.getPropertyValue('--base-hue')).toBe('303')
   })
 
-  it('sets a random hue for random theme', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+  it('picks a theme from the full list when random is selected', () => {
+    // With Math.random() = 0.1, picks a color theme (early in the list)
+    vi.spyOn(Math, 'random').mockReturnValue(0.1)
     applyTheme('random')
-    expect(document.documentElement.style.getPropertyValue('--base-hue')).toBe('180')
+    // Should have applied some theme — either a hue or named colors
+    const el = document.documentElement
+    const hasHue = el.style.getPropertyValue('--base-hue') !== ''
+    const hasNamed = el.style.getPropertyValue('--clr-primary--darker') !== ''
+    expect(hasHue || hasNamed).toBe(true)
     vi.restoreAllMocks()
   })
 
@@ -76,12 +81,14 @@ describe('applyTheme', () => {
     expect(document.documentElement.style.getPropertyValue('--base-hue')).toBe('224')
   })
 
-  it('clears named theme overrides when switching to random', () => {
+  it('random can pick a named theme', () => {
+    // With Math.random() = 0.5, picks a theme from the middle of the list
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
-    applyTheme('gruvbox')
-    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('#1d2021')
     applyTheme('random')
-    expect(document.documentElement.style.getPropertyValue('--clr-primary--darker')).toBe('')
+    const el = document.documentElement
+    // Should have applied a named theme (sets --clr-primary--darker)
+    const hasNamed = el.style.getPropertyValue('--clr-primary--darker') !== ''
+    expect(hasNamed).toBe(true)
     vi.restoreAllMocks()
   })
 })

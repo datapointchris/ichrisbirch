@@ -5,9 +5,10 @@
   --clr-primary--darker: oklch(0.254 0.05 var(--base-hue));
   --clr-primary: oklch(0.269 0.05 var(--base-hue));
   --clr-primary--lighter: oklch(0.298 0.05 var(--base-hue));
-  --clr-accent: hsl(31 90% 57%);
-  --clr-accent-light: hsl(34 100% 90%);
-  --clr-accent-dark: hsl(34 100% 16%);
+  --accent-hue: 62;
+  --clr-accent: oklch(0.75 0.157 var(--accent-hue));
+  --clr-accent-light: oklch(0.94 0.045 var(--accent-hue));
+  --clr-accent-dark: oklch(0.34 0.076 var(--accent-hue));
   --clr-text: hsl(0 0% 87%);
   --clr-accent--orange: hsl(31 90% 57%);
   --clr-accent--yellow: hsl(55, 80%, 55%);

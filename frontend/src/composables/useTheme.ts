@@ -25,7 +25,7 @@ export interface ThemeDefinition {
   swatch: string
 }
 
-// CSS variables that named themes override
+// CSS variables that named themes override (cleared when switching away)
 const NAMED_THEME_VARS = [
   '--clr-primary--darker',
   '--clr-primary',
@@ -34,6 +34,9 @@ const NAMED_THEME_VARS = [
   '--clr-accent',
   '--clr-accent-light',
 ] as const
+
+// CSS variables for custom accent/tertiary hues (cleared when switching to named themes)
+const CUSTOM_HUE_VARS = ['--accent-hue'] as const
 
 export const themes: ThemeDefinition[] = [
   // Simple color themes — OKLCH hue rotation
@@ -225,13 +228,21 @@ function clearNamedThemeOverrides() {
   }
 }
 
+function clearCustomHueOverrides() {
+  const el = document.documentElement
+  for (const prop of CUSTOM_HUE_VARS) {
+    el.style.removeProperty(prop)
+  }
+}
+
 export function applyTheme(themeName: string) {
-  // Random is special — generates a random hue each time
+  // Random picks from ALL themes — color hues and named palettes
   if (themeName === 'random') {
-    clearNamedThemeOverrides()
-    const hue = Math.floor(Math.random() * 360)
-    document.documentElement.style.setProperty('--base-hue', String(hue))
-    logger.info('theme_applied', { theme: 'random', hue })
+    const nonRandomThemes = themes.filter((t) => t.id !== 'random')
+    const pick = nonRandomThemes[Math.floor(Math.random() * nonRandomThemes.length)]
+    if (!pick) return
+    applyTheme(pick.id)
+    logger.info('random_theme_picked', { picked: pick.id })
     return
   }
 
@@ -246,6 +257,7 @@ export function applyTheme(themeName: string) {
     document.documentElement.style.setProperty('--base-hue', String(theme.hue))
     logger.info('theme_applied', { theme: theme.id, type: 'color', hue: theme.hue })
   } else if (theme.type === 'named' && theme.colors) {
+    clearCustomHueOverrides()
     const el = document.documentElement
     el.style.setProperty('--clr-primary--darker', theme.colors.primaryDarker)
     el.style.setProperty('--clr-primary', theme.colors.primary)
@@ -255,6 +267,14 @@ export function applyTheme(themeName: string) {
     el.style.setProperty('--clr-accent-light', theme.colors.accentLight)
     logger.info('theme_applied', { theme: theme.id, type: 'named' })
   }
+}
+
+/**
+ * Apply a custom accent hue. Only works with color themes (not named themes).
+ */
+export function applyAccentHue(hue: number) {
+  document.documentElement.style.setProperty('--accent-hue', String(hue))
+  logger.info('accent_hue_applied', { hue })
 }
 
 export function getThemeById(themeId: string): ThemeDefinition | undefined {
@@ -359,6 +379,20 @@ export function useTheme() {
     (fontId) => {
       if (fontId && typeof fontId === 'string') {
         applyFont(fontId)
+      }
+    },
+    { immediate: true }
+  )
+
+  // Apply custom accent hue (only for color themes, not named)
+  watch(
+    () => auth.preferences?.custom_accent_hue,
+    (hue) => {
+      if (typeof hue === 'number') {
+        const currentTheme = themes.find((t) => t.id === auth.preferences?.theme_color)
+        if (currentTheme?.type === 'color') {
+          applyAccentHue(hue)
+        }
       }
     },
     { immediate: true }

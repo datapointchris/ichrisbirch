@@ -62,6 +62,29 @@
           </div>
         </div>
 
+        <div
+          v-if="isColorTheme"
+          class="setting-row"
+        >
+          <label class="setting-row__label">Accent Color</label>
+          <div class="hue-slider">
+            <input
+              type="range"
+              min="0"
+              max="360"
+              :value="accentHue"
+              class="hue-slider__input"
+              @input="onAccentHueInput"
+              @change="saveAccentHue"
+            />
+            <div
+              class="hue-slider__preview"
+              :style="{ background: `oklch(0.75 0.157 ${accentHue})` }"
+            ></div>
+            <span class="hue-slider__value">{{ accentHue }}°</span>
+          </div>
+        </div>
+
         <div class="setting-row">
           <label
             class="setting-row__label"
@@ -205,10 +228,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
-import { applyTheme, applyFont, fonts, themes } from '@/composables/useTheme'
+import { applyTheme, applyFont, applyAccentHue, fonts, themes } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
 
@@ -221,6 +244,11 @@ const namedThemes = themes.filter((t) => t.type === 'named')
 const selectedThemeColor = ref(auth.preferences?.theme_color ?? 'turquoise')
 const darkMode = ref(auth.preferences?.dark_mode ?? true)
 const selectedFont = ref((auth.preferences?.font_family as string) ?? 'ubuntu-mono')
+const accentHue = ref(Number(auth.preferences?.custom_accent_hue) || 62)
+const isColorTheme = computed(() => {
+  const t = themes.find((th) => th.id === selectedThemeColor.value)
+  return t?.type === 'color' && t.id !== 'random'
+})
 const availableFonts = fonts
 const keyName = ref('')
 const newlyCreatedKey = ref<string | null>(null)
@@ -255,6 +283,22 @@ async function saveDarkMode() {
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update dark mode: ${detail}`, 'error')
+  }
+}
+
+function onAccentHueInput(event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  accentHue.value = value
+  applyAccentHue(value)
+}
+
+async function saveAccentHue() {
+  try {
+    await auth.updatePreferences({ custom_accent_hue: accentHue.value })
+    notify(`Accent color updated`, 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update accent: ${detail}`, 'error')
   }
 }
 
@@ -325,6 +369,9 @@ onMounted(async () => {
     if (auth.preferences.font_family) {
       selectedFont.value = auth.preferences.font_family as string
     }
+    if (auth.preferences.custom_accent_hue) {
+      accentHue.value = Number(auth.preferences.custom_accent_hue)
+    }
   }
 })
 </script>
@@ -390,6 +437,54 @@ onMounted(async () => {
   width: auto;
   min-width: 5rem;
   padding: 0 var(--space-2xs);
+}
+
+/* Hue slider */
+.hue-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.hue-slider__input {
+  width: 16rem;
+  height: 0.5rem;
+  appearance: none;
+  border-radius: 0.25rem;
+  background: linear-gradient(
+    to right,
+    oklch(0.75 0.157 0),
+    oklch(0.75 0.157 60),
+    oklch(0.75 0.157 120),
+    oklch(0.75 0.157 180),
+    oklch(0.75 0.157 240),
+    oklch(0.75 0.157 300),
+    oklch(0.75 0.157 360)
+  );
+  cursor: pointer;
+}
+
+.hue-slider__input::-webkit-slider-thumb {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--clr-gray-600);
+  cursor: grab;
+}
+
+.hue-slider__preview {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  border: 2px solid var(--clr-gray-600);
+}
+
+.hue-slider__value {
+  font-size: var(--fs-300);
+  color: var(--clr-gray-400);
+  min-width: 3rem;
 }
 
 /* Theme selector layout */
