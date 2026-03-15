@@ -54,9 +54,11 @@ bright_cyan=$(tput setaf 14)
 orange=$(tput setaf 208)
 reset=$(tput sgr0)
 
-# Source stats commands
+# Source command modules
 # shellcheck source=cli/stats
 source "$ICHRISBIRCH_HOME/cli/stats"
+# shellcheck source=cli/db
+source "$ICHRISBIRCH_HOME/cli/db"
 
 function dev-credentials() {
   local env_file="$ICHRISBIRCH_HOME/.env"
@@ -368,38 +370,27 @@ function testing-health() {
 
 # Production environment
 function load-prod-env() {
-  local aws_region="${AWS_REGION:-us-east-2}"
-
-  get_ssm_param() {
-    aws ssm get-parameter \
-      --region "$aws_region" \
-      --name "/ichrisbirch/production/$1" \
-      --with-decryption \
-      --query 'Parameter.Value' \
-      --output text
-  }
-
-  export POSTGRES_PASSWORD
-  POSTGRES_PASSWORD=$(get_ssm_param "postgres/password") || {
-    echo "${red}Failed to fetch POSTGRES_PASSWORD from SSM${reset}"
+  cd "$ICHRISBIRCH_HOME" || exit
+  if ! command -v sops &>/dev/null; then
+    echo "${red}sops not found. Install from https://github.com/getsops/sops/releases${reset}"
     return 1
-  }
-
-  export REDIS_PASSWORD
-  REDIS_PASSWORD=$(get_ssm_param "redis/password") || {
-    echo "${red}Failed to fetch REDIS_PASSWORD from SSM${reset}"
+  fi
+  if [[ ! -f "secrets/secrets.prod.enc.env" ]]; then
+    echo "${red}secrets/secrets.prod.enc.env not found${reset}"
     return 1
-  }
-
+  fi
+  echo "${yellow}Loading production secrets via SOPS...${reset}"
+  set -a
+  # shellcheck disable=SC1090
+  source <(sops decrypt secrets/secrets.prod.enc.env)
+  set +a
   export DOMAIN="${DOMAIN:-ichrisbirch.com}"
 }
 
 function prod-start() {
   cd "$ICHRISBIRCH_HOME" || exit
 
-  echo "Fetching secrets from AWS SSM..."
   load-prod-env || return 1
-  echo "Secrets loaded for ${magenta}production${reset}"
 
   echo "Starting ${magenta}PRODUCTION${reset} environment"
   $COMPOSE_PROD up -d
@@ -427,7 +418,6 @@ function prod-restart() {
 
 function prod-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Fetching secrets from AWS SSM..."
   load-prod-env || return 1
   echo "Rebuilding ${magenta}PRODUCTION${reset} environment"
   $COMPOSE_PROD down
@@ -526,78 +516,7 @@ function prod-build-test() {
   echo "${green}Production build test PASSED${reset}"
   echo ""
   echo "${yellow}Note:${reset} This only tests the build, not container startup."
-  echo "To test startup, run: ${cyan}icb prod start${reset} (requires AWS SSM access)"
-}
-
-# Database commands
-function db-backup() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -z "$1" ]; then
-    echo "${red}Description required: icb db backup <description>${reset}"
-    echo "Example: icb db backup pre-migration"
-    return 1
-  fi
-
-  echo "${blue}Creating backup: $1${reset}"
-  uv run python -m ichrisbirch.database.backup --description "$1" "${@:2}"
-}
-
-function db-restore() {
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -z "$1" ]; then
-    echo "${red}Filename required: icb db restore <filename> --target-host ...${reset}"
-    echo ""
-    echo "Usage: icb db restore <filename> --target-host HOST --target-port PORT --target-username USER --target-password PASS"
-    echo ""
-    echo "Options:"
-    echo "  --skip-download    Use local file instead of downloading from S3"
-    echo "  --delete-local     Delete file after restore"
-    echo ""
-    echo "Examples:"
-    echo "  icb db restore latest --target-host localhost --target-port 5432 --target-username postgres --target-password secret"
-    echo "  icb db restore backup-2024-01-15.dump --target-host db.example.com ..."
-    return 1
-  fi
-
-  echo "${yellow}Restoring from: $1${reset}"
-  uv run python -m ichrisbirch.database.restore --filename "$1" "${@:2}"
-}
-
-function db-list() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  local env="${ENVIRONMENT:-development}"
-  local bucket
-  bucket=$(grep -E '^AWS_S3_BACKUP_BUCKET=' "$ICHRISBIRCH_HOME/.env" | cut -d= -f2 | tr -d '"')
-
-  echo "${blue}Recent backups in ${env}:${reset}"
-  aws s3 ls "s3://${bucket}/${env}/postgres/" --human-readable | sort -k1,2 -r | head -20
-}
-
-function db-usage() {
-  echo "${green}Database Commands:${reset}"
-  echo "  ${blue}db backup <description> [options]${reset} - Create manual backup to S3"
-  echo "  ${blue}db restore <filename> <target-options>${reset} - Restore database from backup"
-  echo "  ${blue}db list${reset}                               - List recent backups in S3"
-  echo ""
-  echo "${yellow}Backup Options:${reset}"
-  echo "  --skip-upload    Skip S3 upload (local only)"
-  echo "  --save-local     Save backup locally"
-  echo ""
-  echo "${yellow}Restore Options:${reset}"
-  echo "  --target-host HOST       Target database host (required)"
-  echo "  --target-port PORT       Target database port (required)"
-  echo "  --target-username USER   Target database user (required)"
-  echo "  --target-password PASS   Target database password (required)"
-  echo "  --skip-download          Use local file instead of S3"
-  echo "  --delete-local           Delete file after restore"
-  echo ""
-  echo "${yellow}Examples:${reset}"
-  echo "  icb db backup pre-migration"
-  echo "  icb db backup pre-migration --save-local"
-  echo "  icb db list"
-  echo "  icb db restore latest --target-host localhost --target-port 5432 --target-username postgres --target-password secret"
+  echo "To test startup, run: ${cyan}icb prod start${reset} (requires SOPS + age key)"
 }
 
 function usage() {
@@ -628,9 +547,10 @@ function usage() {
   echo "  ${blue}prod logs [service]${reset} - View logs"
   echo "  ${blue}prod status|health|apihealth${reset} - Check environment"
   echo
-  echo "${green}Database:${reset}"
-  echo "  ${blue}db backup <description>${reset} - Create manual backup"
-  echo "  ${blue}db list${reset} - List recent backups"
+  echo "${green}Database (under each environment):${reset}"
+  echo "  ${blue}dev db backup|list|seed|init${reset} - Dev database operations"
+  echo "  ${blue}testing db backup|list|seed|reset${reset} - Test database operations"
+  echo "  ${blue}dev db seed [--scale N] [--dry-run]${reset} - Seed with test data"
   echo
   echo "${green}Stats:${reset}"
   echo "  ${blue}stats${reset} - Show stats submenu"
@@ -676,6 +596,10 @@ testing)
     shift 2
     testing-logs "$@"
     ;;
+  db)
+    shift 2
+    env-db testing "$@"
+    ;;
   *) testing-"$2" ;;
   esac
   ;;
@@ -685,6 +609,10 @@ dev)
   logs)
     shift 2
     dev-logs "$@"
+    ;;
+  db)
+    shift 2
+    env-db development "$@"
     ;;
   *) dev-"$2" ;;
   esac
@@ -696,29 +624,15 @@ prod)
     shift 2
     prod-logs "$@"
     ;;
+  db)
+    shift 2
+    env-db production "$@"
+    ;;
   *) prod-"$2" ;;
   esac
   ;;
 ssl-manager)
   ssl-manager "$2" "$3"
-  ;;
-db)
-  case "$2" in
-  backup)
-    shift 2
-    db-backup "$@"
-    ;;
-  restore)
-    shift 2
-    db-restore "$@"
-    ;;
-  list) db-list ;;
-  "") db-usage ;;
-  *)
-    echo "${red}Unknown db command: $2${reset}"
-    db-usage
-    ;;
-  esac
   ;;
 stats)
   case "$2" in

@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# shellcheck disable=SC2034
+# shellcheck disable=SC2154
+# Database commands for ichrisbirch CLI
+# Sourced by main CLI - do not run directly
+# SC2034: Variables may appear unused but are used by sourcing script
+# SC2154: Color variables are defined in main CLI before sourcing
+
+function db-env-vars() {
+  # Map environment name to host-accessible connection params.
+  # .env has POSTGRES_HOST=postgres (Docker-internal), which doesn't resolve
+  # from the host. python-dotenv won't override existing env vars, so exporting
+  # here takes precedence over .env values.
+  local env="$1"
+  case "$env" in
+  development)
+    export ENVIRONMENT=development
+    export POSTGRES_HOST=localhost
+    export POSTGRES_PORT=5432
+    ;;
+  testing)
+    export ENVIRONMENT=testing
+    export POSTGRES_HOST=localhost
+    export POSTGRES_PORT=5434
+    ;;
+  production)
+    export ENVIRONMENT=production
+    ;;
+  *)
+    echo "${red}Unknown environment: $env${reset}"
+    return 1
+    ;;
+  esac
+}
+
+function db-container-prefix() {
+  # Map environment name to Docker container prefix
+  local env="$1"
+  case "$env" in
+  development) echo "icb-dev" ;;
+  testing) echo "icb-test" ;;
+  production) echo "icb-prod" ;;
+  esac
+}
+
+function db-backup() {
+  local env="$1"
+  shift
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -z "$1" ]; then
+    echo "${red}Description required: icb ${env%%elopment} db backup <description>${reset}"
+    echo "Example: icb dev db backup pre-migration"
+    return 1
+  fi
+
+  db-env-vars "$env" || return 1
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  echo "${blue}Creating ${env} backup: $1${reset}"
+  uv run python -m ichrisbirch.database.backup --description "$1" "${@:2}"
+}
+
+function db-restore() {
+  local env="$1"
+  shift
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [ -z "$1" ]; then
+    echo "${red}Filename required: icb ${env%%elopment} db restore <filename> --target-host ...${reset}"
+    echo ""
+    echo "Usage: icb dev db restore <filename> --target-host HOST --target-port PORT --target-username USER --target-password PASS"
+    echo ""
+    echo "Options:"
+    echo "  --skip-download    Use local file instead of downloading from S3"
+    echo "  --delete-local     Delete file after restore"
+    return 1
+  fi
+
+  db-env-vars "$env" || return 1
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  echo "${yellow}Restoring ${env} from: $1${reset}"
+  uv run python -m ichrisbirch.database.restore --filename "$1" "${@:2}"
+}
+
+function db-list() {
+  local env="$1"
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  db-env-vars "$env" || return 1
+  local bucket
+  bucket=$(grep -E '^AWS_S3_BACKUP_BUCKET=' "$ICHRISBIRCH_HOME/.env" | cut -d= -f2 | tr -d '"')
+
+  echo "${blue}Recent backups for ${env}:${reset}"
+  aws s3 ls "s3://${bucket}/${env}/postgres/" --human-readable | sort -k1,2 -r | head -20
+}
+
+function db-seed() {
+  local env="$1"
+  shift
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [[ "$env" == "production" ]]; then
+    echo "${red}Seeding production is not allowed${reset}"
+    return 1
+  fi
+
+  db-env-vars "$env" || return 1
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  echo "${blue}Seeding ${env} database...${reset}"
+  uv run python -m scripts.seed --env "$env" "$@"
+}
+
+function db-init() {
+  local env="$1"
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  local prefix
+  prefix=$(db-container-prefix "$env")
+  local container="${prefix}-api"
+
+  echo "${blue}Initializing ${env} database via ${container}...${reset}"
+  docker exec "$container" python -m ichrisbirch.database.initialization --env "$env"
+}
+
+function db-reset() {
+  local env="$1"
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  if [[ "$env" != "testing" ]]; then
+    echo "${red}Database reset is only allowed for testing environment${reset}"
+    return 1
+  fi
+
+  # reset_test_database.py enforces its own safety checks (testing, localhost, 5434)
+  # shellcheck disable=1091
+  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
+  echo "${blue}Resetting testing database...${reset}"
+  ENVIRONMENT=testing uv run python -m ichrisbirch.database.reset_test_database
+}
+
+function env-db() {
+  local env="$1"
+  local subcmd="$2"
+  shift 2
+
+  case "$subcmd" in
+  backup)
+    db-backup "$env" "$@"
+    ;;
+  restore)
+    db-restore "$env" "$@"
+    ;;
+  list)
+    db-list "$env"
+    ;;
+  seed)
+    db-seed "$env" "$@"
+    ;;
+  init)
+    db-init "$env"
+    ;;
+  reset)
+    db-reset "$env"
+    ;;
+  "")
+    db-usage
+    ;;
+  *)
+    echo "${red}Unknown db command: $subcmd${reset}"
+    db-usage
+    ;;
+  esac
+}
+
+function db-usage() {
+  echo "${green}Database Commands:${reset}"
+  echo "  ${blue}db backup <description> [options]${reset} - Create backup to S3"
+  echo "  ${blue}db restore <filename> <target-options>${reset} - Restore from backup"
+  echo "  ${blue}db list${reset}                               - List recent backups in S3"
+  echo "  ${blue}db seed [options]${reset}                     - Seed with generated data"
+  echo "  ${blue}db init${reset}                               - Initialize database"
+  echo "  ${blue}db reset${reset}                              - Reset database (testing only)"
+  echo ""
+  echo "${yellow}Seed Options:${reset}"
+  echo "  --scale N          Scale multiplier for record counts (default: 1)"
+  echo "  --dry-run          Discover and generate without inserting"
+  echo "  --only MODEL ...   Seed only these model names"
+  echo "  --seed N           Faker random seed (default: 42)"
+  echo ""
+  echo "${yellow}Backup Options:${reset}"
+  echo "  --skip-upload      Skip S3 upload (local only)"
+  echo "  --save-local       Save backup locally"
+  echo ""
+  echo "${yellow}Examples:${reset}"
+  echo "  icb dev db backup pre-migration"
+  echo "  icb dev db seed --scale 3 --dry-run"
+  echo "  icb testing db reset"
+  echo "  icb dev db list"
+}
