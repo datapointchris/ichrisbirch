@@ -1,0 +1,130 @@
+// Self-hosted fonts — loaded from /fonts/ in the Vue public directory
+// Only Regular (400) and Bold (700) weights are included to keep payload small
+
+// Hack
+@font-face {
+  font-family: 'Hack';
+  src: url('/fonts/HackNerdFont-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hack';
+  src: url('/fonts/HackNerdFont-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Commit Mono
+@font-face {
+  font-family: 'Commit Mono';
+  src: url('/fonts/CommitMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Commit Mono';
+  src: url('/fonts/CommitMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Comic Mono
+@font-face {
+  font-family: 'Comic Mono';
+  src: url('/fonts/ComicMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Comic Mono';
+  src: url('/fonts/ComicMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Iosevka
+@font-face {
+  font-family: 'Iosevka';
+  src: url('/fonts/Iosevka-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Iosevka';
+  src: url('/fonts/Iosevka-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Meslo LG M
+@font-face {
+  font-family: 'Meslo LG M';
+  src: url('/fonts/MesloLGM-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Meslo LG M';
+  src: url('/fonts/MesloLGM-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Monaspace Neon
+@font-face {
+  font-family: 'Monaspace Neon';
+  src: url('/fonts/MonaspaceNeon-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Monaspace Neon';
+  src: url('/fonts/MonaspaceNeon-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Serious Shanns
+@font-face {
+  font-family: 'Serious Shanns';
+  src: url('/fonts/SeriousShanns-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Serious Shanns';
+  src: url('/fonts/SeriousShanns-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Comic Shanns
+@font-face {
+  font-family: 'Comic Shanns';
+  src: url('/fonts/ComicShanns-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Comic Shanns';
+  src: url('/fonts/ComicShanns-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

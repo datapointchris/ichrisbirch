@@ -54,6 +54,28 @@
             @change="saveDarkMode"
           />
         </div>
+
+        <div class="setting-row setting-row--top">
+          <label class="setting-row__label">Font</label>
+          <div class="font-selector">
+            <button
+              v-for="font in availableFonts"
+              :key="font.id"
+              class="font-selector__option"
+              :class="{
+                'font-selector__option--selected': selectedFont === font.id,
+                'font-selector__option--mono': font.category === 'monospace',
+                'font-selector__option--sans': font.category === 'sans-serif',
+              }"
+              :style="{ fontFamily: font.family }"
+              @click="selectFont(font.id)"
+            >
+              <span class="font-selector__name">{{ font.name }}</span>
+              <span class="font-selector__preview">The quick brown fox</span>
+              <span class="font-selector__tag">{{ font.category === 'monospace' ? 'mono' : 'sans' }}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- API Keys -->
@@ -165,7 +187,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
-import { applyTheme } from '@/composables/useTheme'
+import { applyTheme, applyFont, fonts } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
 
@@ -188,6 +210,8 @@ const colorMap: Record<string, string> = {
 
 const selectedThemeColor = ref(auth.preferences?.theme_color ?? 'turquoise')
 const darkMode = ref(auth.preferences?.dark_mode ?? true)
+const selectedFont = ref((auth.preferences?.font_family as string) ?? 'ubuntu-mono')
+const availableFonts = fonts
 const keyName = ref('')
 const newlyCreatedKey = ref<string | null>(null)
 
@@ -220,6 +244,19 @@ async function saveDarkMode() {
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update dark mode: ${detail}`, 'error')
+  }
+}
+
+async function selectFont(fontId: string) {
+  selectedFont.value = fontId
+  applyFont(fontId)
+  try {
+    await auth.updatePreferences({ font_family: fontId })
+    const font = availableFonts.find((f) => f.id === fontId)
+    notify(`Font set to ${font?.name ?? fontId}`, 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update font: ${detail}`, 'error')
   }
 }
 
@@ -274,6 +311,9 @@ onMounted(async () => {
   if (auth.preferences) {
     selectedThemeColor.value = auth.preferences.theme_color
     darkMode.value = auth.preferences.dark_mode
+    if (auth.preferences.font_family) {
+      selectedFont.value = auth.preferences.font_family as string
+    }
   }
 })
 </script>
@@ -412,5 +452,63 @@ onMounted(async () => {
 .button--danger:hover {
   background: #e74c3c;
   color: white;
+}
+
+/* Setting row vertical alignment variant */
+.setting-row--top {
+  align-items: flex-start;
+}
+
+/* Font selector */
+.font-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  max-width: 32rem;
+}
+
+.font-selector__option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-s);
+  padding: var(--space-2xs) var(--space-xs);
+  background: var(--clr-gray-900);
+  border: 2px solid transparent;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.15s;
+  text-align: left;
+  color: var(--clr-gray-200);
+}
+
+.font-selector__option:hover {
+  background: var(--clr-gray-800);
+}
+
+.font-selector__option--selected {
+  border-color: var(--clr-gray-100);
+  background: var(--clr-gray-800);
+}
+
+.font-selector__name {
+  font-weight: 700;
+  min-width: 9rem;
+  color: var(--clr-gray-100);
+  font-size: var(--fs-300);
+}
+
+.font-selector__preview {
+  flex: 1;
+  font-size: var(--fs-300);
+  color: var(--clr-gray-400);
+}
+
+.font-selector__tag {
+  font-size: 0.65rem;
+  color: var(--clr-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 </style>

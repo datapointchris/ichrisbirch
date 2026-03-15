@@ -2,6 +2,7 @@
 // Resolves partials from ichrisbirch/app/static/sass/ via Vite loadPaths config
 // FontAwesome is loaded as CSS imports in main.ts (avoids font-path config issues)
 
+@use 'fonts';
 @use 'abstracts/colors';
 @use 'abstracts/spacing';
 @use 'abstracts/effects';

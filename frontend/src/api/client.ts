@@ -105,6 +105,7 @@ export type BoxSize = 'Book' | 'Small' | 'Medium' | 'Large' | 'Bag' | 'Monitor' 
 
 export interface UserPreferences {
   theme_color: string
+  font_family: string
   dark_mode: boolean
   notifications: boolean
   dashboard_layout: string[][]

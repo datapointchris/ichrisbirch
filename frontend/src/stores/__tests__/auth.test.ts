@@ -17,6 +17,7 @@ const mockApi = vi.mocked(api)
 
 const testPreferences = {
   theme_color: 'turquoise',
+  font_family: 'ubuntu-mono',
   dark_mode: true,
   notifications: false,
   dashboard_layout: [['tasks_priority', 'countdowns', 'events']],
