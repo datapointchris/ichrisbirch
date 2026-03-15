@@ -84,6 +84,8 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 
 **Critical:** Every new Vue path or static asset path (`/fonts`, `/profile`, etc.) must be added to Traefik PathPrefix rules in **ALL THREE** compose files (dev, test, prod). Flask catches anything not routed to Vue.
 
+**CORS gotcha:** Wildcard `Access-Control-Allow-Headers: *` does NOT work with `credentials: true` — list headers explicitly in Traefik middleware config (including `X-Request-ID`).
+
 ### Authentication
 
 **Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers. `api.ichrisbirch.com` bypasses ForwardAuth (for JWT/API key clients like MCP tools). Config in `~/homelab`.
