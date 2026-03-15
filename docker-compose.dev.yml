@@ -178,6 +178,7 @@ services:
       - /app/.venv  # Exclude .venv from bind mount for performance
       - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
       - ichrisbirch_logs:/var/log/ichrisbirch
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Admin panel: container status
     labels:
       # Environment label for Traefik constraint filtering
       - "traefik.environment=development"

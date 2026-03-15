@@ -39,5 +39,6 @@ class UserUpdate(UserConfig):
     name: str | None = None
     email: str | None = None
     password: str | None = None
+    is_admin: bool | None = None
     last_login: datetime | None = None
     preferences: Any | None = None

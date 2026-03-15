@@ -1,3 +1,4 @@
+from ichrisbirch.schemas import admin as admin
 from ichrisbirch.schemas.article import Article
 from ichrisbirch.schemas.article import ArticleCreate
 from ichrisbirch.schemas.article import ArticleCreateFromUrl
@@ -71,6 +72,7 @@ from ichrisbirch.schemas.user import UserCreate
 from ichrisbirch.schemas.user import UserUpdate
 
 __all__ = [
+    'admin',
     'Article',
     'ArticleCreate',
     'ArticleCreateFromUrl',

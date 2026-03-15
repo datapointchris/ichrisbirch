@@ -1,9 +1,11 @@
 import hashlib
 import hmac
 import re
+import shutil
 import time
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
 import pendulum
 import structlog
@@ -16,12 +18,15 @@ from fastapi import WebSocketDisconnect
 from fastapi import status
 from pygtail import Pygtail
 from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import validate_user_id
+from ichrisbirch.api.middleware import recent_errors
+from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.backup import DatabaseBackup
@@ -303,3 +308,144 @@ async def get_scheduler_history(
         query = query.where(models.SchedulerJobRun.job_id == job_id)
     query = query.limit(limit)
     return list(session.scalars(query).all())
+
+
+# --- System health endpoints ---
+
+SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
+
+
+def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
+    """Get status of Docker containers, gracefully handling unavailability."""
+    try:
+        import docker
+
+        client = docker.from_env()
+        containers = client.containers.list(all=True, filters={'name': 'icb-'})
+        return [
+            schemas.admin.DockerContainerStatus(
+                name=c.name,
+                status=c.status,
+                started_at=c.attrs.get('State', {}).get('StartedAt'),
+                image=','.join(c.image.tags) if c.image.tags else c.image.short_id,
+            )
+            for c in sorted(containers, key=lambda c: c.name)
+        ]
+    except Exception as e:
+        logger.warning('docker_status_unavailable', error=str(e))
+        return []
+
+
+def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats:
+    """Get database statistics via raw SQL."""
+    rows = session.execute(text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')).fetchall()
+    tables = [schemas.admin.TableRowCount(schema_name=r[0], table_name=r[1], row_count=r[2]) for r in rows]
+
+    size_result = session.execute(text('SELECT pg_database_size(current_database())')).scalar()
+    total_size_mb = round((size_result or 0) / (1024 * 1024), 2)
+
+    conn_result = session.execute(text('SELECT count(*) FROM pg_stat_activity')).scalar()
+
+    return schemas.admin.DatabaseStats(tables=tables, total_size_mb=total_size_mb, active_connections=conn_result or 0)
+
+
+def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats:
+    """Get Redis server statistics."""
+    try:
+        client = get_redis_client(settings)
+        info = client.info()
+        db_info = info.get(f'db{settings.redis.db}', {})
+        key_count = db_info.get('keys', 0) if isinstance(db_info, dict) else 0
+        return schemas.admin.RedisStats(
+            key_count=key_count,
+            memory_used_human=info.get('used_memory_human', 'N/A'),
+            connected_clients=info.get('connected_clients', 0),
+            uptime_seconds=info.get('uptime_in_seconds', 0),
+        )
+    except Exception as e:
+        logger.warning('redis_stats_unavailable', error=str(e))
+        return schemas.admin.RedisStats(key_count=0, memory_used_human='N/A', connected_clients=0, uptime_seconds=0)
+
+
+def _get_disk_usage() -> schemas.admin.DiskUsage:
+    """Get disk usage for the root filesystem."""
+    usage = shutil.disk_usage('/')
+    return schemas.admin.DiskUsage(
+        total_gb=round(usage.total / (1024**3), 2),
+        used_gb=round(usage.used / (1024**3), 2),
+        free_gb=round(usage.free / (1024**3), 2),
+        percent_used=round(usage.used / usage.total * 100, 1),
+    )
+
+
+def _mask_settings_value(key: str, value: object) -> Any:
+    """Mask sensitive settings values based on field name."""
+    key_lower = key.lower()
+    if any(keyword in key_lower for keyword in SENSITIVE_FIELD_KEYWORDS):
+        return '***MASKED***'
+    return value
+
+
+def _serialize_settings_section(section: object) -> dict:
+    """Serialize a settings section to a dict with secrets masked."""
+    result = {}
+    for attr in sorted(dir(section)):
+        if attr.startswith('_'):
+            continue
+        value = getattr(section, attr)
+        if callable(value):
+            continue
+        if hasattr(value, '__dict__') and value is not None and not isinstance(value, str | list | dict | int | float | bool):
+            result[attr] = _serialize_settings_section(value)
+        else:
+            result[attr] = _mask_settings_value(attr, value)
+    return result
+
+
+@router.get('/system/health/', response_model=schemas.admin.SystemHealth)
+async def get_system_health(
+    settings: Settings = Depends(get_settings),
+    session: Session = Depends(get_sqlalchemy_session),
+):
+    """Get combined system health information."""
+    return schemas.admin.SystemHealth(
+        server=schemas.admin.ServerInfo(
+            environment=settings.ENVIRONMENT,
+            api_url=settings.api_url,
+            server_time=pendulum.now().isoformat(timespec='seconds'),
+        ),
+        docker=_get_docker_containers(),
+        database=_get_database_stats(session),
+        redis=_get_redis_stats(settings),
+        disk=_get_disk_usage(),
+    )
+
+
+@router.get('/system/errors/', response_model=list[schemas.admin.RecentError])
+async def get_recent_errors():
+    """Get recent 4xx/5xx errors from the in-memory ring buffer."""
+    return list(recent_errors)
+
+
+@router.get('/config/', response_model=list[schemas.admin.EnvironmentConfigSection])
+async def get_environment_config(settings: Settings = Depends(get_settings)):
+    """Get environment configuration with sensitive values masked."""
+    sections = []
+    for attr in sorted(dir(settings)):
+        if attr.startswith('_'):
+            continue
+        value = getattr(settings, attr)
+        if callable(value):
+            continue
+        if hasattr(value, '__dict__') and value is not None and not isinstance(value, str | list | dict | int | float | bool):
+            sections.append(
+                schemas.admin.EnvironmentConfigSection(
+                    name=attr,
+                    settings=_serialize_settings_section(value),
+                )
+            )
+        else:
+            if not sections or sections[0].name != '_general':
+                sections.insert(0, schemas.admin.EnvironmentConfigSection(name='_general', settings={}))
+            sections[0].settings[attr] = _mask_settings_value(attr, value)
+    return sections

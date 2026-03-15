@@ -1,11 +1,19 @@
 import time
 import uuid
+from collections import deque
+from datetime import UTC
+from datetime import datetime
 
 import structlog
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = structlog.get_logger()
+
+# Module-level ring buffer for recent error responses (4xx/5xx).
+# Accessible from admin endpoints to provide "what just happened?" visibility.
+# Resets on process restart; per-worker in multi-worker setups.
+recent_errors: deque[dict] = deque(maxlen=200)
 
 
 class ResponseLoggerMiddleware(BaseHTTPMiddleware):
@@ -40,6 +48,18 @@ class ResponseLoggerMiddleware(BaseHTTPMiddleware):
             logger.warning('request_completed', **log_data)
         else:
             logger.info('request_completed', **log_data)
+
+        if response.status_code >= 400:
+            recent_errors.append(
+                {
+                    'timestamp': datetime.now(UTC).isoformat(),
+                    'method': request.method,
+                    'path': request.url.path,
+                    'status': response.status_code,
+                    'duration_ms': process_time,
+                    'request_id': request_id,
+                }
+            )
 
         structlog.contextvars.clear_contextvars()
         return response
