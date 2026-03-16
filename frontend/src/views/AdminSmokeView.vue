@@ -40,9 +40,9 @@
             <span>{{ store.smokeReport.duration_ms }}ms</span>
           </div>
           <div class="admin-kv">
-            <strong>Critical</strong>
-            <span :class="store.smokeReport.all_critical_passed ? 'admin-status admin-status--ok' : 'admin-status admin-status--error'">
-              {{ store.smokeReport.all_critical_passed ? 'All Passed' : 'FAILURES' }}
+            <strong>Result</strong>
+            <span :class="store.smokeReport.all_passed ? 'admin-status admin-status--ok' : 'admin-status admin-status--error'">
+              {{ store.smokeReport.all_passed ? 'All Passed' : 'FAILURES' }}
             </span>
           </div>
           <div class="admin-kv">
@@ -52,27 +52,22 @@
         </div>
       </div>
 
-      <!-- Results by category -->
-      <div
-        v-for="category in categories"
-        :key="category"
-        class="admin-section"
-      >
-        <h2>{{ categoryLabel(category) }}</h2>
+      <!-- Results -->
+      <div class="admin-section">
         <table class="admin-table admin-table--compact">
           <thead>
             <tr>
               <th>Result</th>
-              <th>Name</th>
-              <th>Path</th>
               <th>Status</th>
+              <th>Path</th>
+              <th>Name</th>
               <th>Time</th>
               <th>Error</th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="result in resultsByCategory(category)"
+              v-for="result in store.smokeReport.results"
               :key="result.path"
             >
               <td>
@@ -80,9 +75,9 @@
                   {{ result.passed ? 'PASS' : 'FAIL' }}
                 </span>
               </td>
-              <td>{{ result.name }}</td>
-              <td class="admin-table__mono">{{ result.path }}</td>
               <td>{{ result.status_code ?? '—' }}</td>
+              <td class="admin-table__mono">{{ result.path }}</td>
+              <td>{{ result.name }}</td>
               <td>{{ result.response_time_ms }}ms</td>
               <td class="admin-table__mono">{{ result.error ?? '' }}</td>
             </tr>
@@ -118,17 +113,6 @@
 import { useAdminStore } from '@/stores/admin'
 
 const store = useAdminStore()
-
-const categories = ['critical', 'important', 'secondary']
-
-function categoryLabel(category: string): string {
-  return category.charAt(0).toUpperCase() + category.slice(1)
-}
-
-function resultsByCategory(category: string) {
-  if (!store.smokeReport) return []
-  return store.smokeReport.results.filter((r) => r.category === category)
-}
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString()

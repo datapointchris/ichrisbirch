@@ -244,9 +244,11 @@ function dev-smoke() {
     echo "${red}Error: Could not connect to $DEV_API_URL${reset}"
     return 1
   fi
-  echo "$response" | jq -r '.results[] | (if .passed then "  \u001b[32m✓\u001b[0m" else "  \u001b[31m✗\u001b[0m" end) + " " + .path + " [" + (.status_code // "err" | tostring) + "] " + (.response_time_ms | tostring) + "ms"'
+  printf "  %-6s %5s  %-40s %-30s %8s  %s\n" "RESULT" "CODE" "PATH" "NAME" "TIME" "ERROR"
+  printf "  %s\n" "$(printf '%0.s─' {1..100})"
+  echo "$response" | jq -r '.results[] | (if .passed then "  \u001b[32m  PASS\u001b[0m" else "  \u001b[31m  FAIL\u001b[0m" end) + " " + ((.status_code // 0 | tostring) | " " * (5 - length) + .) + "  " + (.path + " " * 40)[:40] + " " + (.name + " " * 30)[:30] + " " + ((.response_time_ms | tostring) + "ms" | " " * (8 - length) + .) + "  " + (.error // "")'
   echo ""
-  echo "$response" | jq '{total: .total, passed: .passed, failed: .failed, duration_ms: .duration_ms, all_critical_passed: .all_critical_passed}'
+  echo "$response" | jq '{total: .total, passed: .passed, failed: .failed, duration_ms: .duration_ms, all_passed: .all_passed}'
 }
 
 # Test environment
@@ -521,9 +523,11 @@ function prod-smoke() {
     echo "${red}Error: Could not connect to $PROD_API_URL${reset}"
     return 1
   fi
-  echo "$response" | jq -r '.results[] | (if .passed then "  \u001b[32m✓\u001b[0m" else "  \u001b[31m✗\u001b[0m" end) + " " + .path + " [" + (.status_code // "err" | tostring) + "] " + (.response_time_ms | tostring) + "ms"'
+  printf "  %-6s %5s  %-40s %-30s %8s  %s\n" "RESULT" "CODE" "PATH" "NAME" "TIME" "ERROR"
+  printf "  %s\n" "$(printf '%0.s─' {1..100})"
+  echo "$response" | jq -r '.results[] | (if .passed then "  \u001b[32m  PASS\u001b[0m" else "  \u001b[31m  FAIL\u001b[0m" end) + " " + ((.status_code // 0 | tostring) | " " * (5 - length) + .) + "  " + (.path + " " * 40)[:40] + " " + (.name + " " * 30)[:30] + " " + ((.response_time_ms | tostring) + "ms" | " " * (8 - length) + .) + "  " + (.error // "")'
   echo ""
-  echo "$response" | jq '{total: .total, passed: .passed, failed: .failed, duration_ms: .duration_ms, all_critical_passed: .all_critical_passed}'
+  echo "$response" | jq '{total: .total, passed: .passed, failed: .failed, duration_ms: .duration_ms, all_passed: .all_passed}'
 }
 
 function prod-build-test() {

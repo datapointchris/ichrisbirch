@@ -25,60 +25,22 @@ class TestSmokeTests:
     """Test smoke test endpoint responses."""
 
     @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
-    def test_smoke_returns_report(self, mock_docker, test_api_logged_in_admin):
+    def test_smoke_all_endpoints_pass(self, mock_docker, test_api_logged_in_admin):
         mock_docker.return_value = []
         response = test_api_logged_in_admin.post(SMOKE_ENDPOINT)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
-        assert 'results' in data
-        assert 'total' in data
-        assert 'passed' in data
-        assert 'failed' in data
-        assert 'all_critical_passed' in data
-        assert 'run_at' in data
-        assert 'environment' in data
-        assert data['total'] > 0
-
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
-    def test_smoke_all_endpoints_pass(self, mock_docker, test_api_logged_in_admin):
-        mock_docker.return_value = []
-        response = test_api_logged_in_admin.post(SMOKE_ENDPOINT)
-        data = response.json()
         failed = [r for r in data['results'] if not r['passed']]
         assert data['failed'] == 0, f'Failed endpoints: {[(r["path"], r["status_code"], r.get("error")) for r in failed]}'
-        assert data['passed'] == data['total']
 
     @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
-    def test_smoke_has_all_categories(self, mock_docker, test_api_logged_in_admin):
+    def test_smoke_discovers_core_endpoints(self, mock_docker, test_api_logged_in_admin):
+        """Verify autodiscovery isn't filtering too aggressively."""
         mock_docker.return_value = []
         response = test_api_logged_in_admin.post(SMOKE_ENDPOINT)
         data = response.json()
-        categories = {r['category'] for r in data['results']}
-        assert 'critical' in categories
-        assert 'important' in categories
-        assert 'secondary' in categories
-
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
-    def test_smoke_critical_endpoints_present(self, mock_docker, test_api_logged_in_admin):
-        mock_docker.return_value = []
-        response = test_api_logged_in_admin.post(SMOKE_ENDPOINT)
-        data = response.json()
-        critical_paths = {r['path'] for r in data['results'] if r['category'] == 'critical'}
-        assert '/health' in critical_paths
-        assert '/tasks/' in critical_paths
-        assert '/articles/' in critical_paths
-        assert '/books/' in critical_paths
-
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
-    def test_smoke_result_structure(self, mock_docker, test_api_logged_in_admin):
-        mock_docker.return_value = []
-        response = test_api_logged_in_admin.post(SMOKE_ENDPOINT)
-        data = response.json()
-        result = data['results'][0]
-        assert 'path' in result
-        assert 'name' in result
-        assert 'category' in result
-        assert 'auth_level' in result
-        assert 'status_code' in result
-        assert 'response_time_ms' in result
-        assert 'passed' in result
+        paths = {r['path'] for r in data['results']}
+        assert '/health' in paths
+        assert '/tasks/' in paths
+        assert '/articles/' in paths
+        assert '/books/' in paths

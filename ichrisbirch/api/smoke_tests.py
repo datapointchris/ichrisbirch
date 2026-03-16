@@ -1,82 +1,59 @@
-from dataclasses import dataclass
+import operator
 from time import perf_counter
 
 import httpx
 import pendulum
 import structlog
+from fastapi.routing import APIRoute
 
 from ichrisbirch import schemas
 from ichrisbirch.config import Settings
 
 logger = structlog.get_logger()
 
-
-@dataclass
-class SmokeEndpoint:
-    path: str
-    name: str
-    category: str
-    auth_level: str
+SKIP_NAMES = {'run_smoke_tests_endpoint', 'docs_redirect'}
+SKIP_PREFIXES = ('/auth/',)
 
 
-ENDPOINTS = [
-    # Critical — must always work
-    SmokeEndpoint('/health', 'Health Check', 'critical', 'public'),
-    SmokeEndpoint('/tasks/', 'Tasks List', 'critical', 'user'),
-    SmokeEndpoint('/articles/', 'Articles List', 'critical', 'user'),
-    SmokeEndpoint('/books/', 'Books List', 'critical', 'user'),
-    SmokeEndpoint('/habits/', 'Habits List', 'critical', 'user'),
-    SmokeEndpoint('/admin/system/health/', 'System Health', 'critical', 'admin'),
-    # Important — core features
-    SmokeEndpoint('/tasks/todo/', 'Tasks Todo', 'important', 'user'),
-    SmokeEndpoint('/tasks/completed/', 'Tasks Completed', 'important', 'user'),
-    SmokeEndpoint('/articles/current/', 'Current Article', 'important', 'user'),
-    SmokeEndpoint('/countdowns/', 'Countdowns', 'important', 'user'),
-    SmokeEndpoint('/events/', 'Events', 'important', 'user'),
-    SmokeEndpoint('/autotasks/', 'AutoTasks', 'important', 'user'),
-    SmokeEndpoint('/users/me/', 'Current User', 'important', 'user'),
-    SmokeEndpoint('/admin/scheduler/jobs/', 'Scheduler Jobs', 'important', 'admin'),
-    SmokeEndpoint('/admin/config/', 'Environment Config', 'important', 'admin'),
-    # Secondary — nice to have
-    SmokeEndpoint('/server/', 'Server Stats', 'secondary', 'user'),
-    SmokeEndpoint('/durations/', 'Durations', 'secondary', 'user'),
-    SmokeEndpoint('/money-wasted/', 'Money Wasted', 'secondary', 'user'),
-    SmokeEndpoint('/box-packing/boxes/', 'Boxes', 'secondary', 'user'),
-    SmokeEndpoint('/box-packing/items/', 'Box Items', 'secondary', 'user'),
-    SmokeEndpoint('/box-packing/items/orphans/', 'Orphaned Items', 'secondary', 'user'),
-    SmokeEndpoint('/chat/chats/', 'Chats', 'secondary', 'user'),
-    SmokeEndpoint('/chat/messages/', 'Chat Messages', 'secondary', 'user'),
-    SmokeEndpoint('/api-keys/', 'API Keys', 'secondary', 'user'),
-    SmokeEndpoint('/articles/failed-imports/', 'Failed Imports', 'secondary', 'user'),
-    SmokeEndpoint('/habits/categories/', 'Habit Categories', 'secondary', 'user'),
-    SmokeEndpoint('/habits/completed/', 'Completed Habits', 'secondary', 'user'),
-    SmokeEndpoint('/admin/system/errors/', 'Recent Errors', 'secondary', 'admin'),
-    SmokeEndpoint('/admin/scheduler/history/', 'Scheduler History', 'secondary', 'admin'),
-    SmokeEndpoint('/admin/backups/', 'Backups', 'secondary', 'admin'),
-]
+def discover_get_endpoints(app) -> list[dict]:
+    """Discover all GET endpoints from the FastAPI app's route table."""
+    endpoints = []
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        if 'GET' not in route.methods:
+            continue
+        if route.name in SKIP_NAMES:
+            continue
+        if any(route.path.startswith(p) for p in SKIP_PREFIXES):
+            continue
+        if '{' in route.path:
+            continue
+        if any(p.required for p in route.dependant.query_params):
+            continue
+
+        endpoints.append({'path': route.path, 'name': route.name or route.path})
+
+    endpoints.sort(key=operator.itemgetter('path'))
+    return endpoints
 
 
 async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.admin.SmokeTestReport:
-    """Run smoke tests against all GET endpoints using ASGI transport (in-process)."""
+    """Run smoke tests against all discovered GET endpoints."""
+    endpoints = discover_get_endpoints(app)
     results: list[schemas.admin.SmokeTestResult] = []
     start = perf_counter()
+    headers = {'Remote-User': admin_email, 'Remote-Email': admin_email}
 
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url='http://smoke-test') as client:
-        for endpoint in ENDPOINTS:
-            headers = {}
-            if endpoint.auth_level in ('user', 'admin'):
-                headers['Remote-User'] = admin_email
-                headers['Remote-Email'] = admin_email
-
+        for endpoint in endpoints:
             result = await _test_endpoint(client, endpoint, headers)
             results.append(result)
 
     total_ms = (perf_counter() - start) * 1000
     passed = sum(1 for r in results if r.passed)
     failed = len(results) - passed
-    critical_results = [r for r in results if r.category == 'critical']
-    all_critical_passed = all(r.passed for r in critical_results)
 
     report = schemas.admin.SmokeTestReport(
         run_at=pendulum.now().isoformat(timespec='seconds'),
@@ -85,59 +62,38 @@ async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.
         passed=passed,
         failed=failed,
         duration_ms=round(total_ms, 1),
-        all_critical_passed=all_critical_passed,
+        all_passed=failed == 0,
         results=results,
     )
 
-    logger.info(
-        'smoke_tests_completed',
-        total=report.total,
-        passed=passed,
-        failed=failed,
-        duration_ms=report.duration_ms,
-        all_critical_passed=all_critical_passed,
-    )
-
+    logger.info('smoke_tests_completed', total=report.total, passed=passed, failed=failed, duration_ms=report.duration_ms)
     return report
 
 
-async def _test_endpoint(
-    client: httpx.AsyncClient,
-    endpoint: SmokeEndpoint,
-    headers: dict[str, str],
-) -> schemas.admin.SmokeTestResult:
+async def _test_endpoint(client: httpx.AsyncClient, endpoint: dict, headers: dict[str, str]) -> schemas.admin.SmokeTestResult:
     """Test a single endpoint and return the result."""
     start = perf_counter()
     try:
-        response = await client.get(endpoint.path, headers=headers, timeout=5.0)
+        response = await client.get(endpoint['path'], headers=headers, timeout=5.0)
         elapsed_ms = (perf_counter() - start) * 1000
         passed = 200 <= response.status_code < 300
 
         if not passed:
-            logger.warning(
-                'smoke_test_failed',
-                path=endpoint.path,
-                status_code=response.status_code,
-                response_time_ms=round(elapsed_ms, 1),
-            )
+            logger.warning('smoke_test_failed', path=endpoint['path'], status_code=response.status_code)
 
         return schemas.admin.SmokeTestResult(
-            path=endpoint.path,
-            name=endpoint.name,
-            category=endpoint.category,
-            auth_level=endpoint.auth_level,
+            path=endpoint['path'],
+            name=endpoint['name'],
             status_code=response.status_code,
             response_time_ms=round(elapsed_ms, 1),
             passed=passed,
         )
     except Exception as e:
         elapsed_ms = (perf_counter() - start) * 1000
-        logger.error('smoke_test_error', path=endpoint.path, error=str(e))
+        logger.error('smoke_test_error', path=endpoint['path'], error=str(e))
         return schemas.admin.SmokeTestResult(
-            path=endpoint.path,
-            name=endpoint.name,
-            category=endpoint.category,
-            auth_level=endpoint.auth_level,
+            path=endpoint['path'],
+            name=endpoint['name'],
             response_time_ms=round(elapsed_ms, 1),
             passed=False,
             error=str(e),

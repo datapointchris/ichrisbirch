@@ -670,8 +670,6 @@ export interface EnvironmentConfigSection {
 export interface SmokeTestResult {
   path: string
   name: string
-  category: string
-  auth_level: string
   status_code: number | null
   response_time_ms: number
   passed: boolean
@@ -685,6 +683,6 @@ export interface SmokeTestReport {
   passed: number
   failed: number
   duration_ms: number
-  all_critical_passed: boolean
+  all_passed: boolean
   results: SmokeTestResult[]
 }

@@ -72,8 +72,6 @@ class EnvironmentConfigSection(AdminConfig):
 class SmokeTestResult(AdminConfig):
     path: str
     name: str
-    category: str
-    auth_level: str
     status_code: int | None = None
     response_time_ms: float
     passed: bool
@@ -87,5 +85,5 @@ class SmokeTestReport(AdminConfig):
     passed: int
     failed: int
     duration_ms: float
-    all_critical_passed: bool
+    all_passed: bool
     results: list[SmokeTestResult]
