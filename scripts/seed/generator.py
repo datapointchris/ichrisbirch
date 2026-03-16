@@ -267,9 +267,9 @@ def _apply_special_rules(record: dict, model_name: str, config: SeedConfig, fk_c
             record['messages'] = [{'role': next(roles), 'content': fake.paragraph(nb_sentences=2)} for _ in range(num_msgs)]
 
     elif model_name == 'Event':
-        # date must be timezone-aware
-        if 'date' in record and isinstance(record['date'], datetime) and record['date'].tzinfo is None:
-            record['date'] = record['date'].replace(tzinfo=UTC)
+        # Generic datetime generator produces past-only dates; override so most events are upcoming
+        if 'date' in record:
+            record['date'] = fake.date_time_between('-2m', '+1y', tzinfo=UTC)
 
     elif model_name == 'HabitCompleted':
         # complete_date must be timezone-aware
