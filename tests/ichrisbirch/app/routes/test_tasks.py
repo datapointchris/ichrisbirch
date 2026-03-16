@@ -15,30 +15,35 @@ def insert_testing_data():
     delete_test_data('tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/tasks/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Priority Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_todo(test_app_logged_in):
     response = test_app_logged_in.get('/tasks/todo/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Outstanding Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_completed(test_app_logged_in):
     response = test_app_logged_in.get('/tasks/completed/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Completed Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_search(test_app_logged_in):
     response = test_app_logged_in.post('/tasks/search/', data={'terms': 'test'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Tasks Search')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_crud_add(test_app_logged_in):
     response = test_app_logged_in.post(
         '/tasks/crud/',
@@ -57,6 +62,7 @@ def test_crud_add(test_app_logged_in):
     tests.util.verify_page_title(response, 'Priority Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_crud_complete(test_app_logged_in, test_api_logged_in):
     # Get first task ID dynamically
     tasks = test_api_logged_in.get('/tasks/')
@@ -68,6 +74,7 @@ def test_crud_complete(test_app_logged_in, test_api_logged_in):
     tests.util.verify_page_title(response, 'Priority Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 @pytest.mark.parametrize('days', [7, 30])
 def test_crud_extend(test_app_logged_in, test_api_logged_in, days):
     """test_api needs to be used because the flask /tasks route always delegates to the api to get specific tasks."""
@@ -88,6 +95,7 @@ def test_crud_extend(test_app_logged_in, test_api_logged_in, days):
     assert priority + days == extended_priority
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_crud_delete(test_app_logged_in, test_api_logged_in):
     # Get first task ID dynamically
     tasks = test_api_logged_in.get('/tasks/')
@@ -99,6 +107,7 @@ def test_crud_delete(test_app_logged_in, test_api_logged_in):
     tests.util.verify_page_title(response, 'Outstanding Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_crud_reset_priorities(test_app_logged_in, test_api_logged_in):
     # Get priority of first task dynamically
     tasks = test_api_logged_in.get('/tasks/')
@@ -128,6 +137,7 @@ def test_crud_reset_priorities(test_app_logged_in, test_api_logged_in):
     assert p1_updated == p1 + abs(NEGATIVE_PRIORITY_TASK.priority)
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_api_logged_in):
     # Get priority of first task dynamically
     tasks = test_api_logged_in.get('/tasks/')
@@ -148,6 +158,7 @@ def test_crud_reset_priorities_no_negative_priorities(test_app_logged_in, test_a
     assert p1 == p1_updated
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 @pytest.mark.parametrize('category', TASK_CATEGORIES)
 def test_task_categories(test_app_logged_in, category):
     response = test_app_logged_in.post(
@@ -167,6 +178,7 @@ def test_task_categories(test_app_logged_in, category):
     tests.util.verify_page_title(response, 'Priority Tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_tasks_page.py')
 def test_completed_shows_data_not_error(test_app_logged_in):
     """Verify completed tasks page shows actual data, not silenced error.
 
