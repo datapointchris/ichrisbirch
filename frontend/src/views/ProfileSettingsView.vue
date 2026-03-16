@@ -410,7 +410,7 @@ onMounted(async () => {
 }
 
 .theme-colors__swatch {
-  @include buttons.neu-button('--selected');
+  @include buttons.neu-button($active-class: '--selected', $hover-transform: scale(1.1), $pressed-transform: scale(0.98));
   height: 3rem;
   display: flex;
   align-items: center;
@@ -590,7 +590,7 @@ onMounted(async () => {
 }
 
 .font-selector__option {
-  @include buttons.neu-button('--selected');
+  @include buttons.neu-button($active-class: '--selected', $hover-transform: scale(1.1), $pressed-transform: scale(0.98));
   display: flex;
   align-items: center;
   gap: var(--space-s);

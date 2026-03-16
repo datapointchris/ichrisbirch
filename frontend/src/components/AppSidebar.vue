@@ -217,7 +217,7 @@ function isActive(link: NavLink): boolean {
   flex-direction: column;
   gap: var(--space-3xs);
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .sidebar__issue {
@@ -232,7 +232,8 @@ function isActive(link: NavLink): boolean {
 }
 
 .nav-link {
-  @include buttons.neu-button('--active');
+  @include buttons.neu-button($active-class: '--active', $hover-transform: scale(1.2), $pressed-transform: scale(0.99));
+  transform-origin: center left;
   display: flex;
   align-items: center;
   gap: var(--space-xs);
