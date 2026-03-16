@@ -24,47 +24,45 @@
       <div class="grid__item">
         <h3>Appearance</h3>
 
-        <div class="setting-row setting-row--top">
-          <label class="setting-row__label">Theme</label>
-          <div class="theme-selector">
-            <div class="theme-selector__group">
-              <span class="theme-selector__group-label">Colors</span>
-              <div class="theme-colors">
-                <button
-                  v-for="theme in colorThemes"
-                  :key="theme.id"
-                  class="theme-colors__swatch"
-                  :class="{ 'theme-colors__swatch--selected': selectedThemeColor === theme.id }"
-                  :style="{ background: theme.swatch }"
-                  :title="theme.name"
-                  @click="selectThemeColor(theme.id)"
-                >
-                  <span class="theme-colors__label">{{ theme.name }}</span>
-                </button>
-              </div>
+        <label class="section-label">Theme</label>
+        <div class="theme-selector">
+          <div class="theme-selector__group">
+            <span class="theme-selector__group-label">Colors</span>
+            <div class="theme-colors">
+              <button
+                v-for="theme in colorThemes"
+                :key="theme.id"
+                class="theme-colors__swatch"
+                :class="{ 'theme-colors__swatch--selected': selectedThemeColor === theme.id }"
+                :style="{ background: theme.swatch }"
+                :title="theme.name"
+                @click="selectThemeColor(theme.id)"
+              >
+                <span class="theme-colors__label">{{ theme.name }}</span>
+              </button>
             </div>
-            <div class="theme-selector__group">
-              <span class="theme-selector__group-label">Named Themes</span>
-              <div class="theme-colors">
-                <button
-                  v-for="theme in namedThemes"
-                  :key="theme.id"
-                  class="theme-colors__swatch theme-colors__swatch--named"
-                  :class="{ 'theme-colors__swatch--selected': selectedThemeColor === theme.id }"
-                  :style="{ background: theme.swatch }"
-                  :title="theme.name"
-                  @click="selectThemeColor(theme.id)"
-                >
-                  <span class="theme-colors__label">{{ theme.name }}</span>
-                </button>
-              </div>
+          </div>
+          <div class="theme-selector__group">
+            <span class="theme-selector__group-label">Named Themes</span>
+            <div class="theme-colors">
+              <button
+                v-for="theme in namedThemes"
+                :key="theme.id"
+                class="theme-colors__swatch theme-colors__swatch--named"
+                :class="{ 'theme-colors__swatch--selected': selectedThemeColor === theme.id }"
+                :style="{ background: theme.swatch }"
+                :title="theme.name"
+                @click="selectThemeColor(theme.id)"
+              >
+                <span class="theme-colors__label">{{ theme.name }}</span>
+              </button>
             </div>
           </div>
         </div>
 
         <div
-          v-if="isColorTheme"
           class="setting-row"
+          :class="{ 'setting-row--disabled': !isColorTheme }"
         >
           <label class="setting-row__label">Accent Color</label>
           <div class="hue-slider">
@@ -99,26 +97,24 @@
           />
         </div>
 
-        <div class="setting-row setting-row--top">
-          <label class="setting-row__label">Font</label>
-          <div class="font-selector">
-            <button
-              v-for="font in availableFonts"
-              :key="font.id"
-              class="font-selector__option"
-              :class="{
-                'font-selector__option--selected': selectedFont === font.id,
-                'font-selector__option--mono': font.category === 'monospace',
-                'font-selector__option--sans': font.category === 'sans-serif',
-              }"
-              :style="{ fontFamily: font.family }"
-              @click="selectFont(font.id)"
-            >
-              <span class="font-selector__name">{{ font.name }}</span>
-              <span class="font-selector__preview">The quick brown fox</span>
-              <span class="font-selector__tag">{{ font.category === 'monospace' ? 'mono' : 'sans' }}</span>
-            </button>
-          </div>
+        <label class="section-label">Font</label>
+        <div class="font-selector">
+          <button
+            v-for="font in availableFonts"
+            :key="font.id"
+            class="font-selector__option"
+            :class="{
+              'font-selector__option--selected': selectedFont === font.id,
+              'font-selector__option--mono': font.category === 'monospace',
+              'font-selector__option--sans': font.category === 'sans-serif',
+            }"
+            :style="{ fontFamily: font.family }"
+            @click="selectFont(font.id)"
+          >
+            <span class="font-selector__name">{{ font.name }}</span>
+            <span class="font-selector__preview">The quick brown fox jumps over the lazy dog</span>
+            <span class="font-selector__tag">{{ font.category === 'monospace' ? 'mono' : 'sans' }}</span>
+          </button>
         </div>
       </div>
 
@@ -249,7 +245,7 @@ const isColorTheme = computed(() => {
   const t = themes.find((th) => th.id === selectedThemeColor.value)
   return t?.type === 'color' && t.id !== 'random'
 })
-const availableFonts = fonts
+const availableFonts = [...fonts].sort((a, b) => a.name.localeCompare(b.name))
 const keyName = ref('')
 const newlyCreatedKey = ref<string | null>(null)
 
@@ -381,6 +377,16 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: var(--space-m);
+  margin-top: var(--space-s);
+  margin-bottom: var(--space-s);
+}
+
+.section-label {
+  display: block;
+  font-size: var(--fs-500);
+  font-weight: 700;
+  color: var(--clr-gray-300);
+  margin-top: var(--space-m);
   margin-bottom: var(--space-s);
 }
 
@@ -397,46 +403,42 @@ onMounted(async () => {
 
 /* Theme color swatches */
 .theme-colors {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-xs);
-  flex-wrap: wrap;
 }
 
 .theme-colors__swatch {
-  width: 3rem;
   height: 3rem;
-  border-radius: 0.5rem;
-  border: 3px solid transparent;
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
   cursor: pointer;
-  transition:
-    border-color 0.2s,
-    transform 0.15s;
+  transition: all 0.2s ease;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   overflow: hidden;
 }
 
-.theme-colors__swatch:hover {
-  transform: scale(1.1);
+.theme-colors__swatch:hover:not(.theme-colors__swatch--selected) {
+  box-shadow: var(--bubble-box);
+  transform: scale(1.05);
 }
 
 .theme-colors__swatch--selected {
-  border-color: var(--clr-gray-100);
+  box-shadow: var(--floating-box-pressed);
 }
 
 .theme-colors__label {
-  font-size: 0.55rem;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-  padding-bottom: 0.15rem;
+  font-size: var(--fs-400);
+  color: var(--clr-gray-100);
+  font-weight: 500;
   text-transform: capitalize;
 }
 
 .theme-colors__swatch--named {
-  width: auto;
-  min-width: 5rem;
-  padding: 0 var(--space-2xs);
+  padding: var(--space-3xs) var(--space-2xs);
 }
 
 /* Hue slider */
@@ -489,9 +491,9 @@ onMounted(async () => {
 
 /* Theme selector layout */
 .theme-selector {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-s);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-m);
 }
 
 .theme-selector__group-label {
@@ -587,54 +589,59 @@ onMounted(async () => {
   align-items: flex-start;
 }
 
+.setting-row--disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 /* Font selector */
 .font-selector {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
-  max-width: 32rem;
 }
 
 .font-selector__option {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-s);
-  padding: var(--space-2xs) var(--space-xs);
-  background: var(--clr-gray-900);
-  border: 2px solid transparent;
-  border-radius: 0.375rem;
+  padding: var(--space-s) var(--space-m);
+  min-height: 3.5rem;
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
   cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background 0.15s;
+  transition: all 0.2s ease;
   text-align: left;
-  color: var(--clr-gray-200);
+  color: var(--clr-gray-100);
 }
 
-.font-selector__option:hover {
-  background: var(--clr-gray-800);
+.font-selector__option:hover:not(.font-selector__option--selected) {
+  box-shadow: var(--bubble-box);
+  transform: scale(1.02);
 }
 
 .font-selector__option--selected {
-  border-color: var(--clr-gray-100);
-  background: var(--clr-gray-800);
+  box-shadow: var(--floating-box-pressed);
+  background-color: var(--clr-primary--darker);
+  color: var(--clr-accent);
 }
 
 .font-selector__name {
   font-weight: 700;
   min-width: 9rem;
   color: var(--clr-gray-100);
-  font-size: var(--fs-300);
+  font-size: var(--fs-400);
 }
 
 .font-selector__preview {
   flex: 1;
-  font-size: var(--fs-300);
+  font-size: var(--fs-400);
   color: var(--clr-gray-400);
 }
 
 .font-selector__tag {
-  font-size: 0.65rem;
+  font-size: var(--fs-200);
   color: var(--clr-gray-500);
   text-transform: uppercase;
   letter-spacing: 0.05em;
