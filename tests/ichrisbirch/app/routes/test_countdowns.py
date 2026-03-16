@@ -15,12 +15,14 @@ def insert_testing_data():
     delete_test_data('countdowns')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/countdowns.spec.ts')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/countdowns/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Countdowns</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/countdowns.spec.ts')
 def test_add_countdown(test_app_logged_in):
     data = dict(
         name='Countdown 4 Computer with notes priority 3',
@@ -32,6 +34,7 @@ def test_add_countdown(test_app_logged_in):
     assert b'<title>Countdowns</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/countdowns.spec.ts')
 def test_delete_countdown(test_app_logged_in):
     response = test_app_logged_in.post('/countdowns/', data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
