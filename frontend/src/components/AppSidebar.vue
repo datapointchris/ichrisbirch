@@ -184,7 +184,8 @@ function isActive(link: NavLink): boolean {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use 'components/buttons';
 .sidebar {
   width: 220px;
   background-color: var(--clr-primary--darker);
@@ -231,17 +232,13 @@ function isActive(link: NavLink): boolean {
 }
 
 .nav-link {
+  @include buttons.neu-button('--active');
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-3xs) var(--space-xs);
-  border-radius: var(--button-border-radius);
-  background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
-  color: var(--clr-gray-100);
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.2s ease;
   font-size: var(--fs-300);
 }
 
@@ -249,18 +246,6 @@ function isActive(link: NavLink): boolean {
   width: 1.25em;
   text-align: center;
   flex-shrink: 0;
-}
-
-.nav-link:hover:not(.nav-link--active) {
-  box-shadow: var(--bubble-box);
-  color: var(--clr-text);
-  transform: scale(1.02);
-}
-
-.nav-link--active {
-  box-shadow: var(--floating-box-pressed);
-  background-color: var(--clr-primary--darker);
-  color: var(--clr-accent);
 }
 
 /* Collapsed tab — bevel button on the left edge */

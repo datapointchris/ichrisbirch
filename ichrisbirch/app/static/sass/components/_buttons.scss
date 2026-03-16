@@ -2,6 +2,128 @@
 
 :root {
     --button-border-radius: 12px;
+
+    // ─── Neumorphic shadow system ───────────────────────────────────────
+    //
+    // Three shadow states for interactive elements: resting, hover, pressed.
+    // These are CSS custom properties (not SCSS variables) because they use
+    // oklch(from var(--clr-primary) ...) which resolves at RUNTIME based on
+    // the active theme. SCSS variables would bake values at compile time.
+    //
+    // ARCHITECTURE:
+    //   CSS vars (here)  → define the shadow VALUES (adapt to theme)
+    //   SCSS mixin below → defines the BEHAVIOR (which var for which state)
+    //   Consumer         → includes the mixin, provides only layout
+    //
+    // SHADOW LAYER RULES:
+    //   - Resting and hover MUST have the same number of layers (10)
+    //   - Each layer position MUST match inset/outer across both states
+    //   - CSS can only interpolate between shadows with identical layer
+    //     counts and types — mismatches cause instant snapping not smooth transition
+    //   - Unused layers: pad with `0px 0px 0px transparent` (inset or outer to match)
+    //   - Pressed has a different inset/outer pattern (snaps, doesn't interpolate)
+    //     which is fine — press is a discrete state, not a continuous hover
+    //
+    // HIGHLIGHT COLORS:
+    //   Uses --clr-shadow-highlight-* (defined in _colors.scss) which derive
+    //   from --clr-primary via OKLCH relative color syntax. This means highlights
+    //   carry the theme's hue instead of neutral gray, avoiding simultaneous
+    //   contrast artifacts (e.g. yellow cast on purple backgrounds).
+    //
+    // PHYSICAL MODEL (light source top-left):
+    //   Resting: sitting on surface — dark bottom-right, highlight top-left
+    //   Hover:   lifted off surface — larger/softer shadows, translateY(-2px)
+    //   Pressed: pushed into surface — inset shadows, translateY(1px)
+
+    // prettier-ignore
+    --neu-resting:
+        0 -2px 2px var(--clr-black-trans-200),
+        0px 4px 4px var(--clr-black-trans-400),
+        0px 16px 16px var(--clr-black-trans-600),
+        16px 8px 16px var(--clr-black-trans-600),
+        inset 5px 5px 10px var(--clr-black-trans-200),
+        inset -10px -10px 10px var(--clr-black-trans-200),
+        inset -6px -6px 14px var(--clr-black-trans-600),
+        -4px -4px 10px var(--clr-shadow-highlight-md),
+        0px 0px 0px transparent,
+        inset 6px 6px 10px var(--clr-shadow-highlight-md);
+
+    // prettier-ignore
+    --neu-hover:
+        0 -3px 3px var(--clr-black-trans-200),
+        0px 7px 7px var(--clr-black-trans-400),
+        0px 18px 18px var(--clr-black-trans-600),
+        18px 10px 18px var(--clr-black-trans-600),
+        inset 0px 0px 0px transparent,
+        inset 0px 0px 0px transparent,
+        inset -10px -10px 16px var(--clr-black-trans-600),
+        -5px -5px 12px var(--clr-shadow-highlight-lg),
+        0px 0px 0px transparent,
+        inset 10px 10px 16px var(--clr-shadow-highlight-lg);
+
+    // prettier-ignore
+    --neu-pressed:
+        inset 2px 2px 5px var(--clr-black-trans-800),
+        -2px -2px 5px var(--clr-black-trans-800),
+        inset 4px 4px 8px var(--clr-black-trans-800),
+        -8px -8px 12px var(--clr-black-trans-600),
+        inset 8px 8px 32px var(--clr-black-trans-400),
+        inset -2px -2px 5px var(--clr-shadow-highlight-sm),
+        2px 2px 5px var(--clr-shadow-highlight-md),
+        inset -4px -4px 8px var(--clr-shadow-highlight-md),
+        8px 8px 24px var(--clr-shadow-highlight-lg),
+        inset -8px -8px 32px var(--clr-shadow-highlight-md);
+}
+
+// ─── Neumorphic button mixin ────────────────────────────────────────
+//
+// Applies the complete --neu-* shadow system with hover lift, pressed
+// sink, and consistent transitions. Consumer provides layout (padding,
+// flex, font) — this mixin provides the effect.
+//
+// $active-class: CSS class suffix for pressed state (e.g., '--active', '--selected')
+//                If null, uses :active pseudo-class instead
+// $hover-color:  text color on hover (default: brighten to --clr-text)
+// $active-color: text color when active/selected (default: accent)
+@mixin neu-button(
+    $active-class: null,
+    $hover-color: var(--clr-text),
+    $active-color: var(--clr-accent)
+) {
+    border-radius: var(--button-border-radius);
+    background-color: var(--clr-primary);
+    box-shadow: var(--neu-resting);
+    color: var(--clr-gray-100);
+    cursor: pointer;
+    transition: all 0.1s ease;
+
+    @if $active-class {
+        &:hover:not(&#{$active-class}) {
+            box-shadow: var(--neu-hover);
+            color: $hover-color;
+            transform: translateY(-2px);
+        }
+
+        &#{$active-class} {
+            box-shadow: var(--neu-pressed);
+            background-color: var(--clr-primary--darker);
+            color: $active-color;
+            transform: translateY(1px);
+        }
+    } @else {
+        &:hover {
+            box-shadow: var(--neu-hover);
+            color: $hover-color;
+            transform: translateY(-2px);
+        }
+
+        &:active {
+            box-shadow: var(--neu-pressed);
+            background-color: var(--clr-primary--darker);
+            color: $active-color;
+            transform: translateY(1px);
+        }
+    }
 }
 
 @mixin button-boxy($bottom-color: var(--clr-gray-200), $right-color: var(--clr-gray-050)) {
@@ -232,9 +354,9 @@
         transition: all $button-press-time ease-in-out;
         box-shadow:
             8px 8px 20px var(--clr-black-trans-600),
-            -8px -8px 20px var(--clr-gray-trans-800),
+            -8px -8px 20px var(--clr-shadow-highlight-lg),
             inset -8px -8px 20px var(--clr-black-trans-1000),
-            inset 8px 8px 20px var(--clr-gray-trans-600);
+            inset 8px 8px 20px var(--clr-shadow-highlight-md);
     }
 
     &:hover::before {
@@ -243,9 +365,9 @@
         transition: all $button-press-time ease-in-out;
         box-shadow:
             -8px -8px 20px var(--clr-black-trans-600),
-            4px 4px 20px var(--clr-gray-trans-800),
+            4px 4px 20px var(--clr-shadow-highlight-lg),
             inset 8px 8px 20px var(--clr-black-trans-1000),
-            inset -8px -8px 20px var(--clr-gray-trans-600);
+            inset -8px -8px 20px var(--clr-shadow-highlight-md);
     }
 
     &::after {
@@ -277,9 +399,9 @@
         transition: all $button-press-time ease-in-out $button-press-delay;
         box-shadow:
             -8px -8px 20px var(--clr-black-trans-600),
-            4px 4px 20px var(--clr-gray-trans-800),
+            4px 4px 20px var(--clr-shadow-highlight-lg),
             inset 8px 8px 20px var(--clr-black-trans-1000),
-            inset -8px -8px 20px var(--clr-gray-trans-600);
+            inset -8px -8px 20px var(--clr-shadow-highlight-md);
     }
 }
 

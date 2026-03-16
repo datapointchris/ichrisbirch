@@ -53,6 +53,13 @@
     --clr-gray-trans-875: hsla(0 0% 50% / 0.1);
     --clr-gray-trans-900: hsla(0 0% 15% / 0.95);
 
+    // Shadow highlights — derived from theme primary via OKLCH relative color syntax
+    // Lighter, less chromatic version of primary for natural neumorphic highlights
+    // that adapt to every theme hue without simultaneous contrast artifacts
+    --clr-shadow-highlight-sm: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.12);
+    --clr-shadow-highlight-md: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.25);
+    --clr-shadow-highlight-lg: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.35);
+
     --clr-black-trans-200: hsl(0 0% 5% / 0.2);
     --clr-black-trans-400: hsl(0 0% 5% / 0.4);
     --clr-black-trans-600: hsl(0 0% 5% / 0.6);

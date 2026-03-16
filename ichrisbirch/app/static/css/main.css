@@ -41,6 +41,9 @@
   --clr-gray-trans-850: hsla(0 0% 50% / 0.2);
   --clr-gray-trans-875: hsla(0 0% 50% / 0.1);
   --clr-gray-trans-900: hsla(0 0% 15% / 0.95);
+  --clr-shadow-highlight-sm: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.12);
+  --clr-shadow-highlight-md: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.25);
+  --clr-shadow-highlight-lg: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.35);
   --clr-black-trans-200: hsl(0 0% 5% / 0.2);
   --clr-black-trans-400: hsl(0 0% 5% / 0.4);
   --clr-black-trans-600: hsl(0 0% 5% / 0.6);
@@ -298,28 +301,30 @@ nav a:hover {
       0px 16px 16px var(--clr-black-trans-600),
       16px 8px 16px var(--clr-black-trans-600),
       inset 5px 5px 10px var(--clr-black-trans-200),
-      inset -10px -10px 10px var(--clr-black-trans-200);
+      inset -10px -10px 10px var(--clr-black-trans-200),
+      inset -6px -6px 14px var(--clr-black-trans-600),
+      -4px -4px 10px var(--clr-shadow-highlight-md),
+      inset 6px 6px 10px var(--clr-shadow-highlight-md);
   --floating-box-pressed:
       inset 2px 2px 5px var(--clr-black-trans-800),
       -2px -2px 5px var(--clr-black-trans-800),
       inset 4px 4px 8px var(--clr-black-trans-800),
       -8px -8px 12px var(--clr-black-trans-600),
       inset 8px 8px 32px var(--clr-black-trans-400),
-      inset -2px -2px 5px var(--clr-gray-trans-875),
-      2px 2px 5px var(--clr-gray-trans-875),
-      inset -4px -4px 8px var(--clr-gray-trans-850),
-      8px 8px 24px var(--clr-gray-trans-850),
-      inset -8px -8px 32px var(--clr-gray-trans-850);
+      inset -2px -2px 5px var(--clr-shadow-highlight-sm),
+      2px 2px 5px var(--clr-shadow-highlight-md),
+      inset -4px -4px 8px var(--clr-shadow-highlight-md),
+      8px 8px 24px var(--clr-shadow-highlight-lg),
+      inset -8px -8px 32px var(--clr-shadow-highlight-md);
   --bubble-box:
-      8px 8px 20px var(--clr-black-trans-600),
-      -4px -4px 20px var(--clr-gray-trans-800),
-      inset -8px -8px 20px var(--clr-black-trans-1000),
-      inset 8px 8px 20px var(--clr-gray-trans-600);
+      10px 10px 24px var(--clr-black-trans-800),
+      -4px -4px 12px var(--clr-shadow-highlight-lg),
+      inset 8px 8px 12px var(--clr-shadow-highlight-lg);
   --bubble-box-pressed:
       -8px -8px 20px var(--clr-black-trans-600),
-      4px 4px 20px var(--clr-gray-trans-800),
+      4px 4px 12px var(--clr-shadow-highlight-lg),
       inset 8px 8px 20px var(--clr-black-trans-1000),
-      inset -8px -8px 20px var(--clr-gray-trans-600);
+      inset -8px -8px 12px var(--clr-shadow-highlight-lg);
   --box-shadow-highlighted:
       inset 0px 0px 10px 2px var(--clr-accent-light);
 }
@@ -444,6 +449,39 @@ nav a:hover {
 }
 :root {
   --button-border-radius: 12px;
+  --neu-resting:
+      0 -2px 2px var(--clr-black-trans-200),
+      0px 4px 4px var(--clr-black-trans-400),
+      0px 16px 16px var(--clr-black-trans-600),
+      16px 8px 16px var(--clr-black-trans-600),
+      inset 5px 5px 10px var(--clr-black-trans-200),
+      inset -10px -10px 10px var(--clr-black-trans-200),
+      inset -6px -6px 14px var(--clr-black-trans-600),
+      -4px -4px 10px var(--clr-shadow-highlight-md),
+      0px 0px 0px transparent,
+      inset 6px 6px 10px var(--clr-shadow-highlight-md);
+  --neu-hover:
+      0 -3px 3px var(--clr-black-trans-200),
+      0px 7px 7px var(--clr-black-trans-400),
+      0px 18px 18px var(--clr-black-trans-600),
+      18px 10px 18px var(--clr-black-trans-600),
+      inset 0px 0px 0px transparent,
+      inset 0px 0px 0px transparent,
+      inset -10px -10px 16px var(--clr-black-trans-600),
+      -5px -5px 12px var(--clr-shadow-highlight-lg),
+      0px 0px 0px transparent,
+      inset 10px 10px 16px var(--clr-shadow-highlight-lg);
+  --neu-pressed:
+      inset 2px 2px 5px var(--clr-black-trans-800),
+      -2px -2px 5px var(--clr-black-trans-800),
+      inset 4px 4px 8px var(--clr-black-trans-800),
+      -8px -8px 12px var(--clr-black-trans-600),
+      inset 8px 8px 32px var(--clr-black-trans-400),
+      inset -2px -2px 5px var(--clr-shadow-highlight-sm),
+      2px 2px 5px var(--clr-shadow-highlight-md),
+      inset -4px -4px 8px var(--clr-shadow-highlight-md),
+      8px 8px 24px var(--clr-shadow-highlight-lg),
+      inset -8px -8px 32px var(--clr-shadow-highlight-md);
 }
 
 .button {
@@ -603,13 +641,13 @@ nav a:hover {
   background-color: var(--clr-gray-800);
   filter: blur(0.5px);
   transition: all 0.4s ease-in-out;
-  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-shadow-highlight-lg), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
 }
 .button-submit-issue:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(3px);
   transition: all 0.4s ease-in-out;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .button-submit-issue::after {
   /* OUTER RING
@@ -632,7 +670,7 @@ nav a:hover {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(3px);
   transition: all 0.4s ease-in-out 0.12s;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 
 .button-sidebar-toggle {
@@ -678,13 +716,13 @@ nav a:hover {
   background-color: var(--clr-gray-800);
   filter: blur(0.5px);
   transition: all 0.4s ease-in-out;
-  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-shadow-highlight-lg), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
 }
 .button-sidebar-toggle:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(3px);
   transition: all 0.4s ease-in-out;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .button-sidebar-toggle::after {
   /* OUTER RING
@@ -707,7 +745,7 @@ nav a:hover {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(3px);
   transition: all 0.4s ease-in-out 0.12s;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 
 .button-sidebar-tab {
@@ -752,13 +790,13 @@ nav a:hover {
   background-color: var(--clr-gray-800);
   filter: blur(0.5px);
   transition: all 0.4s ease-in-out;
-  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-shadow-highlight-lg), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
 }
 .button-sidebar-tab:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(3px);
   transition: all 0.4s ease-in-out;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .button-sidebar-tab::after {
   /* OUTER RING
@@ -781,7 +819,7 @@ nav a:hover {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(3px);
   transition: all 0.4s ease-in-out 0.12s;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 
 .textbox {
@@ -811,7 +849,7 @@ nav a:hover {
   line-height: 1.5em;
   border-radius: var(--button-border-radius);
   background-color: var(--clr-black-trans-600);
-  box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
+  box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-shadow-highlight-lg);
 }
 
 .add-item-form {
@@ -898,7 +936,7 @@ input[type=checkbox]:focus-visible {
   padding: var(--space-3xs) var(--space-s);
   border-radius: var(--button-border-radius);
   background-color: var(--clr-primary--lighter);
-  box-shadow: inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
   color: var(--clr-gray-300);
   font-size: var(--fs-200);
   cursor: pointer;
@@ -918,7 +956,7 @@ input[type=checkbox]:focus-visible {
   padding: var(--space-3xs) var(--space-s);
   border-radius: var(--button-border-radius);
   background-color: var(--clr-primary--lighter);
-  box-shadow: inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
   font-size: var(--fs-300);
   line-height: 1.5em;
   color: var(--clr-text);
@@ -1746,7 +1784,7 @@ span[data-tooltip][data-position=right]:after {
   transform: scale(1.05);
 }
 .book-filter--active {
-  box-shadow: inset 0 2px 4px var(--clr-black-trans-400), 0 0 12px var(--clr-gray-trans-875);
+  box-shadow: inset 0 2px 4px var(--clr-black-trans-400), 0 0 12px var(--clr-shadow-highlight-sm);
   transform: scale(1.08);
 }
 
@@ -2301,13 +2339,13 @@ span[data-tooltip][data-position=right]:after {
   background-color: var(--clr-gray-800);
   filter: blur(1px);
   transition: all 0.4s ease-in-out;
-  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-shadow-highlight-lg), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
 }
 .habit-check:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(6px);
   transition: all 0.4s ease-in-out;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .habit-check::after {
   /* OUTER RING
@@ -2330,7 +2368,7 @@ span[data-tooltip][data-position=right]:after {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(6px);
   transition: all 0.4s ease-in-out 0.12s;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .habit-check * button {
   color: inherit;
@@ -2381,7 +2419,7 @@ span[data-tooltip][data-position=right]:after {
   border-radius: 50px;
   background-color: var(--clr-gray-900);
   filter: blur(6px);
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .habit-checked::after {
   /* OUTER RING
@@ -2398,7 +2436,7 @@ span[data-tooltip][data-position=right]:after {
   border-radius: 75px;
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(6px);
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 
 .main-index-content {
@@ -2517,13 +2555,13 @@ span[data-tooltip][data-position=right]:after {
   background-color: var(--clr-gray-800);
   filter: blur(0px);
   transition: all 0.4s ease-in-out;
-  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  box-shadow: 8px 8px 20px var(--clr-black-trans-600), -8px -8px 20px var(--clr-shadow-highlight-lg), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-shadow-highlight-md);
 }
 .home-link-button:hover::before {
   background-color: var(--clr-gray-900);
   filter: blur(0px);
   transition: all 0.4s ease-in-out;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .home-link-button::after {
   /* OUTER RING
@@ -2546,7 +2584,7 @@ span[data-tooltip][data-position=right]:after {
   transform: scale(1.01); /* changing the shadow makes the button appear smaller, so scale up */
   filter: blur(0px);
   transition: all 0.4s ease-in-out 0.12s;
-  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-gray-trans-800), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-gray-trans-600);
+  box-shadow: -8px -8px 20px var(--clr-black-trans-600), 4px 4px 20px var(--clr-shadow-highlight-lg), inset 8px 8px 20px var(--clr-black-trans-1000), inset -8px -8px 20px var(--clr-shadow-highlight-md);
 }
 .home-link-button {
   width: var(--_btn-size);
@@ -2662,7 +2700,7 @@ span[data-tooltip][data-position=right]:after {
   line-height: 1.5em;
   border-radius: var(--button-border-radius);
   background-color: var(--clr-black-trans-600);
-  box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-gray-trans-800);
+  box-shadow: var(--floating-box), -1px -2px 3px var(--clr-black-trans-200), inset -5px -5px 12px var(--clr-gray-trans-900), inset 3px 3px 12px var(--clr-shadow-highlight-lg);
 }
 
 .perspective-wrapper {

@@ -372,7 +372,8 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use 'components/buttons';
 .setting-row {
   display: flex;
   align-items: center;
@@ -409,25 +410,12 @@ onMounted(async () => {
 }
 
 .theme-colors__swatch {
+  @include buttons.neu-button('--selected');
   height: 3rem;
-  border-radius: var(--button-border-radius);
-  background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-}
-
-.theme-colors__swatch:hover:not(.theme-colors__swatch--selected) {
-  box-shadow: var(--bubble-box);
-  transform: scale(1.05);
-}
-
-.theme-colors__swatch--selected {
-  box-shadow: var(--floating-box-pressed);
 }
 
 .theme-colors__label {
@@ -602,28 +590,13 @@ onMounted(async () => {
 }
 
 .font-selector__option {
+  @include buttons.neu-button('--selected');
   display: flex;
   align-items: center;
   gap: var(--space-s);
   padding: var(--space-s) var(--space-m);
   min-height: 3.5rem;
-  border-radius: var(--button-border-radius);
-  background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
-  cursor: pointer;
-  transition: all 0.2s ease;
   text-align: left;
-  color: var(--clr-gray-100);
-}
-
-.font-selector__option:hover:not(.font-selector__option--selected) {
-  box-shadow: var(--bubble-box);
-  transform: scale(1.02);
-}
-
-.font-selector__option--selected {
-  box-shadow: var(--floating-box-pressed);
-  background-color: var(--clr-primary--darker);
   color: var(--clr-accent);
 }
 

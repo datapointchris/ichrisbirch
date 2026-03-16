@@ -21,7 +21,7 @@
         background-color: var(--clr-primary--lighter);
         box-shadow:
             inset -8px -8px 20px var(--clr-black-trans-1000),
-            inset 8px 8px 20px var(--clr-gray-trans-600);
+            inset 8px 8px 20px var(--clr-shadow-highlight-md);
         color: var(--clr-gray-300);
         font-size: var(--fs-200);
         cursor: pointer;
@@ -45,7 +45,7 @@
         background-color: var(--clr-primary--lighter);
         box-shadow:
             inset -8px -8px 20px var(--clr-black-trans-1000),
-            inset 8px 8px 20px var(--clr-gray-trans-600);
+            inset 8px 8px 20px var(--clr-shadow-highlight-md);
         font-size: var(--fs-300);
         line-height: 1.5em;
         color: var(--clr-text);
