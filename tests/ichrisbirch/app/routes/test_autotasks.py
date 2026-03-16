@@ -16,12 +16,14 @@ def insert_testing_data():
     delete_test_data('autotasks', 'tasks')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_autotasks_page.py')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/autotasks/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>AutoTasks</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_autotasks_page.py')
 def test_add_autotask(test_app_logged_in, test_api_logged_in):
     """Test add a new autotask.
 
@@ -44,6 +46,7 @@ def test_add_autotask(test_app_logged_in, test_api_logged_in):
     assert len(tasks_response.json()) == 4
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by tests/ichrisbirch/frontend/test_autotasks_page.py')
 def test_delete_autotask(test_app_logged_in):
     response = test_app_logged_in.post('/autotasks/', data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
