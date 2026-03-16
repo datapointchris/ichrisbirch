@@ -19,6 +19,7 @@ const activeTab = computed(() => {
   if (name === 'admin-users') return 'users'
   if (name === 'admin-config') return 'config'
   if (name === 'admin-smoke') return 'smoke'
+  if (name === 'admin-design') return 'design'
   return 'system'
 })
 </script>

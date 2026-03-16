@@ -172,7 +172,7 @@ const footerLinks: NavLink[] = [
     label: 'Admin',
     icon: 'fa-solid fa-gear',
     migrated: true,
-    activeNames: ['admin', 'admin-scheduler', 'admin-users', 'admin-config'],
+    activeNames: ['admin', 'admin-scheduler', 'admin-users', 'admin-config', 'admin-design'],
   },
 ]
 

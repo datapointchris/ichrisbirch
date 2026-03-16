@@ -176,6 +176,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/AdminSmokeView.vue'),
         meta: { title: 'Admin — Smoke Tests' },
       },
+      {
+        path: 'design',
+        name: 'admin-design',
+        component: () => import('@/views/AdminDesignView.vue'),
+        meta: { title: 'Admin — Design' },
+      },
     ],
   },
 ]

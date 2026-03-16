@@ -81,12 +81,17 @@
 // sink, and consistent transitions. Consumer provides layout (padding,
 // flex, font) — this mixin provides the effect.
 //
-// $active-class: CSS class suffix for pressed state (e.g., '--active', '--selected')
-//                If null, uses :active pseudo-class instead
-// $hover-color:  text color on hover (default: brighten to --clr-text)
-// $active-color: text color when active/selected (default: accent)
+// $active-class:     CSS class suffix for pressed state (e.g., '--active', '--selected')
+//                    If null, uses :active pseudo-class instead
+// $hover-transform:  any CSS transform on hover (default: scale(1.02))
+// $pressed-transform: any CSS transform when pressed (default: scale(0.99) — subtle shrink)
+//                    Set to none for shadow-only state changes
+// $hover-color:      text color on hover (default: brighten to --clr-text)
+// $active-color:     text color when active/selected (default: accent)
 @mixin neu-button(
     $active-class: null,
+    $hover-transform: scale(1.02),
+    $pressed-transform: scale(0.99),
     $hover-color: var(--clr-text),
     $active-color: var(--clr-accent)
 ) {
@@ -96,32 +101,36 @@
     color: var(--clr-gray-100);
     cursor: pointer;
     transition: all 0.1s ease;
+    will-change: transform;
+    position: relative;
 
     @if $active-class {
         &:hover:not(&#{$active-class}) {
             box-shadow: var(--neu-hover);
             color: $hover-color;
-            transform: translateY(-2px);
+            transform: $hover-transform;
+            z-index: 2;
         }
 
         &#{$active-class} {
             box-shadow: var(--neu-pressed);
             background-color: var(--clr-primary--darker);
             color: $active-color;
-            transform: translateY(1px);
+            transform: $pressed-transform;
         }
     } @else {
         &:hover {
             box-shadow: var(--neu-hover);
             color: $hover-color;
-            transform: translateY(-2px);
+            transform: $hover-transform;
+            z-index: 2;
         }
 
         &:active {
             box-shadow: var(--neu-pressed);
             background-color: var(--clr-primary--darker);
             color: $active-color;
-            transform: translateY(1px);
+            transform: $pressed-transform;
         }
     }
 }
