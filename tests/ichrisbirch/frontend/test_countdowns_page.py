@@ -51,12 +51,14 @@ def _countdown_exists_in_db(countdown_id: int) -> bool:
         return result is not None
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/countdowns.spec.ts which covers same CRUD + form validation')
 def test_countdowns_index(page: Page):
     expect(page).to_have_title('Countdowns')
     # All 3 countdowns should be visible
     expect(page.locator('.grid__item h2').first).to_be_visible()
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/countdowns.spec.ts which covers same CRUD + form validation')
 def test_create_countdown(page: Page):
     """Fill the add form in a real browser, submit, verify in DB."""
     form = page.locator('form.add-item-form')
@@ -70,6 +72,7 @@ def test_create_countdown(page: Page):
     assert str(countdown.due_date) == '2051-03-15'
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/countdowns.spec.ts which covers same CRUD + form validation')
 def test_delete_countdown(page: Page):
     """Delete a specific countdown via button click, verify it's gone from DB."""
     countdown = _get_countdown_from_db('Birthday Party')
@@ -82,6 +85,7 @@ def test_delete_countdown(page: Page):
     assert not _countdown_exists_in_db(countdown_id), 'Countdown should be deleted'
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/countdowns.spec.ts which covers same CRUD + form validation')
 def test_countdown_create_and_delete_lifecycle(page: Page):
     """Create a countdown via the form, verify it appears, delete it, verify removal.
 
