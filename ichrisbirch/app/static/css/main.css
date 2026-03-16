@@ -881,46 +881,90 @@ input[type=checkbox]:focus-visible {
 
 .flash-messages {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 10px;
-  width: 60%;
+  right: var(--space-m);
+  bottom: var(--space-m);
+  width: 40%;
   z-index: 9999;
-  text-align: center;
+}
+.flash-messages__list {
+  display: flex;
+  flex-direction: column;
+}
+.flash-messages__dismiss-all {
+  display: flex;
+  justify-content: flex-end;
+}
+.flash-messages__dismiss-all-button {
+  padding: var(--space-3xs) var(--space-s);
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary--lighter);
+  box-shadow: inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  color: var(--clr-gray-300);
+  font-size: var(--fs-200);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  transition: all 0.2s ease;
+}
+.flash-messages__dismiss-all-button:hover {
+  color: var(--clr-accent--red);
 }
 .flash-messages__message {
-  margin: var(--space-2xs);
-  padding: var(--space-2xs) var(--space-s);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: var(--space-3xs) var(--space-s);
   border-radius: var(--button-border-radius);
-  box-shadow: 5px 5px 5px 0px var(--clr-black-trans-1000), inset 0px 0px 5px 0px var(--clr-gray-400), inset -5px -5px 4px -2px var(--clr-gray-400);
-  font-size: var(--fs-400);
-  line-height: 2em;
+  background-color: var(--clr-primary--lighter);
+  box-shadow: inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
+  font-size: var(--fs-300);
+  line-height: 1.5em;
   color: var(--clr-text);
+  border-left: 3px solid transparent;
 }
 .flash-messages__message--success {
-  background-color: var(--clr-success);
+  border-left-color: var(--clr-success);
 }
 .flash-messages__message--warning {
-  background-color: var(--clr-warning);
+  border-left-color: var(--clr-warning);
 }
 .flash-messages__message--error {
-  background-color: var(--clr-error);
+  border-left-color: var(--clr-error);
+}
+.flash-messages__text {
+  flex: 1;
 }
 .flash-messages__close-button {
-  position: absolute;
-  top: 50%;
-  right: 25px;
-  background-color: transparent;
-  font-size: var(--fs-600);
-  color: var(--clr-text);
+  background: none;
+  color: var(--clr-gray-400);
+  font-size: var(--fs-300);
   cursor: pointer;
-  transform: translate(-50%, -50%);
-  transition: all 0.2s ease-in-out;
+  flex-shrink: 0;
+  padding: var(--space-3xs);
+  transition: color 0.2s ease;
 }
 .flash-messages__close-button:hover {
-  font-weight: bold;
-  transform: scale(1.5) translate(-35%, -35%);
   color: var(--clr-accent--red);
+}
+
+.notification-enter-active {
+  transition: opacity 1s ease, transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.notification-leave-active {
+  transition: opacity 0.6s ease-in 0.4s, transform 1s cubic-bezier(0.36, 0, 0.66, -0.56);
+}
+
+.notification-move {
+  transition: transform 1s ease;
+}
+
+.notification-enter-from,
+.notification-leave-to {
+  opacity: 0;
+  transform: scale(0);
 }
 
 .site-errors {
