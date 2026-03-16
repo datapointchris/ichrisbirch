@@ -1557,21 +1557,20 @@ span[data-tooltip][data-position=right]:after {
 
 .books__header {
   display: grid;
-  grid-template-columns: 5fr 4fr 1fr 2fr 2fr 3fr 2fr;
+  grid-template-columns: 5fr 4fr 1fr 2fr 2fr 1fr 2fr;
   gap: 0 var(--space-xs);
   align-items: center;
-  padding-block: var(--space-s);
+  padding-block: var(--space-xs);
   padding-inline: var(--space-m);
-  font-size: var(--fs-500);
+  font-size: var(--fs-400);
   border-top: 3px solid var(--clr-accent);
   border-bottom: 3px solid var(--clr-accent);
   margin-bottom: var(--space-xs);
 }
 .books__header span:nth-child(3),
 .books__header span:nth-child(4),
-.books__header span:nth-child(5) {
-  text-align: center;
-}
+.books__header span:nth-child(5),
+.books__header span:nth-child(6),
 .books__header span:last-child {
   text-align: center;
 }
@@ -1588,7 +1587,7 @@ span[data-tooltip][data-position=right]:after {
 }
 .books__row {
   display: grid;
-  grid-template-columns: 5fr 4fr 1fr 2fr 2fr 3fr 2fr;
+  grid-template-columns: 5fr 4fr 1fr 2fr 2fr 1fr 2fr;
   gap: 0 var(--space-xs);
   align-items: center;
   margin-bottom: var(--space-xs);
@@ -1596,13 +1595,19 @@ span[data-tooltip][data-position=right]:after {
   padding-inline: var(--space-m);
   background-color: var(--clr-primary);
   border-radius: var(--button-border-radius);
-  font-size: var(--fs-400);
+  font-size: var(--fs-300);
   text-align: left;
   transition: transform 0.3s ease-in-out;
 }
+.books__row > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .books__row > span:nth-child(3),
 .books__row > span:nth-child(4),
-.books__row > span:nth-child(5) {
+.books__row > span:nth-child(5),
+.books__row > span:nth-child(6) {
   text-align: center;
 }
 .books__row:hover {
@@ -1636,7 +1641,7 @@ span[data-tooltip][data-position=right]:after {
 }
 .books__title {
   margin: 0;
-  font-size: var(--fs-500);
+  font-size: var(--fs-400);
   font-weight: var(--fs-400);
   color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
@@ -1695,7 +1700,8 @@ span[data-tooltip][data-position=right]:after {
   letter-spacing: 0.5px;
 }
 .books__detail-field-value {
-  font-size: var(--fs-400);
+  font-size: var(--fs-300);
+  color: var(--clr-text);
 }
 .books__detail-notes {
   grid-column: 1/-1;
@@ -1703,6 +1709,22 @@ span[data-tooltip][data-position=right]:after {
 .books__link {
   text-decoration: underline;
   color: var(--clr-accent-light);
+}
+.books__edit {
+  display: none;
+  margin-bottom: var(--space-s);
+  margin-top: calc(var(--space-xs) * -1);
+  padding: var(--space-m);
+  background-color: var(--clr-primary);
+  border-radius: 0 0 var(--button-border-radius) var(--button-border-radius);
+  border-top: 1px solid var(--clr-gray-600);
+}
+.books__edit--open {
+  display: block;
+}
+.books__edit h3 {
+  margin-bottom: var(--space-s);
+  text-align: center;
 }
 .books__empty-message {
   text-align: center;

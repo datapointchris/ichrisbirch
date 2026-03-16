@@ -64,6 +64,10 @@ export const useBooksStore = defineStore('books', () => {
           const rb = b.rating ?? 0
           return dir * (ra - rb)
         }
+        case 'progress':
+          return dir * (a.progress ?? '').localeCompare(b.progress ?? '')
+        case 'ownership':
+          return dir * (a.ownership ?? '').localeCompare(b.ownership ?? '')
         case 'finished': {
           const fa = a.read_finish_date ?? ''
           const fb = b.read_finish_date ?? ''

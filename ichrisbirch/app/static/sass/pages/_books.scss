@@ -33,29 +33,27 @@
     $author: 4fr;
     $priority: 1fr;
     $progress: 2fr;
-    $rating: 2fr;
-    $finished: 3fr;
+    $ownership: 2fr;
+    $rating: 1fr;
     $actions: 2fr;
 
     &__header {
         display: grid;
-        grid-template-columns: $title $author $priority $progress $rating $finished $actions;
+        grid-template-columns: $title $author $priority $progress $ownership $rating $actions;
         gap: 0 var(--space-xs);
         align-items: center;
-        padding-block: var(--space-s);
+        padding-block: var(--space-xs);
         padding-inline: var(--space-m);
-        font-size: var(--fs-500);
+        font-size: var(--fs-400);
         border-top: 3px solid var(--clr-accent);
         border-bottom: 3px solid var(--clr-accent);
         margin-bottom: var(--space-xs);
 
-        // Center-align columns that have short content
+        // Center-align priority, progress, ownership, rating, and actions
         span:nth-child(3),
         span:nth-child(4),
-        span:nth-child(5) {
-            text-align: center;
-        }
-
+        span:nth-child(5),
+        span:nth-child(6),
         span:last-child {
             text-align: center;
         }
@@ -77,7 +75,7 @@
 
     &__row {
         display: grid;
-        grid-template-columns: $title $author $priority $progress $rating $finished $actions;
+        grid-template-columns: $title $author $priority $progress $ownership $rating $actions;
         gap: 0 var(--space-xs);
         align-items: center;
         margin-bottom: var(--space-xs);
@@ -85,14 +83,22 @@
         padding-inline: var(--space-m);
         background-color: var(--clr-primary);
         border-radius: var(--button-border-radius);
-        font-size: var(--fs-400);
+        font-size: var(--fs-300);
         text-align: left;
         transition: transform 0.3s ease-in-out;
 
-        // Center-align priority, progress, and rating columns to match header
+        // All cells: single line, no wrapping
+        > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        // Center-align priority, progress, ownership, and rating columns
         > span:nth-child(3),
         > span:nth-child(4),
-        > span:nth-child(5) {
+        > span:nth-child(5),
+        > span:nth-child(6) {
             text-align: center;
         }
 
@@ -131,7 +137,7 @@
 
     &__title {
         margin: 0;
-        font-size: var(--fs-500);
+        font-size: var(--fs-400);
         font-weight: var(--fs-400);
         color: var(--clr-accent-light);
         text-shadow: var(--deep-3d-text-shadow);
@@ -199,7 +205,8 @@
         }
 
         &-value {
-            font-size: var(--fs-400);
+            font-size: var(--fs-300);
+            color: var(--clr-text);
         }
     }
 
@@ -210,6 +217,25 @@
     &__link {
         text-decoration: underline;
         color: var(--clr-accent-light);
+    }
+
+    &__edit {
+        display: none;
+        margin-bottom: var(--space-s);
+        margin-top: calc(var(--space-xs) * -1);
+        padding: var(--space-m);
+        background-color: var(--clr-primary);
+        border-radius: 0 0 var(--button-border-radius) var(--button-border-radius);
+        border-top: 1px solid var(--clr-gray-600);
+
+        &--open {
+            display: block;
+        }
+
+        h3 {
+            margin-bottom: var(--space-s);
+            text-align: center;
+        }
     }
 
     &__empty-message {

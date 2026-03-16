@@ -128,16 +128,20 @@
               @click="store.setSort('priority')"
               >Priority<span class="books__sort-indicator">{{ sortIndicator('priority') }}</span></span
             >
-            <span>Progress</span>
+            <span
+              class="books__sortable"
+              @click="store.setSort('progress')"
+              >Progress<span class="books__sort-indicator">{{ sortIndicator('progress') }}</span></span
+            >
+            <span
+              class="books__sortable"
+              @click="store.setSort('ownership')"
+              >Ownership<span class="books__sort-indicator">{{ sortIndicator('ownership') }}</span></span
+            >
             <span
               class="books__sortable"
               @click="store.setSort('rating')"
               >Rating<span class="books__sort-indicator">{{ sortIndicator('rating') }}</span></span
-            >
-            <span
-              class="books__sortable"
-              @click="store.setSort('finished')"
-              >Finished<span class="books__sort-indicator">{{ sortIndicator('finished') }}</span></span
             >
             <span>Actions</span>
           </div>
@@ -166,13 +170,9 @@
               >
               <span>{{ book.author }}</span>
               <span>{{ book.priority ?? '' }}</span>
-              <span
-                ><span :class="`books__status-badge task-layout__count book--${book.progress}`">{{
-                  statusLabels[book.progress as BookProgress]
-                }}</span></span
-              >
+              <span>{{ statusLabels[book.progress as BookProgress] }}</span>
+              <span>{{ ownershipLabels[book.ownership as BookOwnership] ?? book.ownership }}</span>
               <span>{{ book.rating ?? '' }}</span>
-              <span>{{ book.read_finish_date ? formatDate(book.read_finish_date) : '' }}</span>
               <span class="books__actions">
                 <i
                   class="button-icon books__chevron fa-solid fa-chevron-down"
@@ -289,24 +289,245 @@
                 <span class="books__detail-field-value">{{ book.review }}</span>
               </div>
             </div>
+
+            <!-- Inline Edit Form -->
+            <div
+              v-if="editingBookId === book.id"
+              class="books__edit books__edit--open"
+            >
+              <h3>Edit Book</h3>
+              <form
+                class="add-item-form"
+                @submit.prevent="handleEditSubmit"
+              >
+                <div class="add-item-form__item">
+                  <label :for="`edit-isbn-${book.id}`">ISBN:</label>
+                  <div style="display: flex; gap: var(--space-xs)">
+                    <input
+                      :id="`edit-isbn-${book.id}`"
+                      v-model="editForm.isbn"
+                      type="text"
+                      class="textbox"
+                    />
+                    <button
+                      type="button"
+                      class="button"
+                      :disabled="!editForm.isbn.trim()"
+                      @click="handleEditGoodreadsLookup"
+                    >
+                      <span class="button__text">Lookup</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-title-${book.id}`">Title:</label>
+                  <input
+                    :id="`edit-title-${book.id}`"
+                    v-model="editForm.title"
+                    type="text"
+                    class="textbox"
+                    required
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-author-${book.id}`">Author:</label>
+                  <input
+                    :id="`edit-author-${book.id}`"
+                    v-model="editForm.author"
+                    type="text"
+                    class="textbox"
+                    required
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-tags-${book.id}`">Tags (comma-separated):</label>
+                  <input
+                    :id="`edit-tags-${book.id}`"
+                    v-model="editForm.tags"
+                    type="text"
+                    class="textbox"
+                    required
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-goodreads_url-${book.id}`">Goodreads URL:</label>
+                  <input
+                    :id="`edit-goodreads_url-${book.id}`"
+                    v-model="editForm.goodreads_url"
+                    type="text"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-priority-${book.id}`">Priority:</label>
+                  <input
+                    :id="`edit-priority-${book.id}`"
+                    v-model="editForm.priority"
+                    type="number"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-rating-${book.id}`">Rating:</label>
+                  <input
+                    :id="`edit-rating-${book.id}`"
+                    v-model="editForm.rating"
+                    type="number"
+                    class="textbox"
+                    min="1"
+                    max="5"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-purchase_date-${book.id}`">Purchase Date:</label>
+                  <input
+                    :id="`edit-purchase_date-${book.id}`"
+                    v-model="editForm.purchase_date"
+                    type="date"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-purchase_price-${book.id}`">Purchase Price:</label>
+                  <input
+                    :id="`edit-purchase_price-${book.id}`"
+                    v-model="editForm.purchase_price"
+                    type="number"
+                    class="textbox"
+                    step="0.01"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-sell_date-${book.id}`">Sell Date:</label>
+                  <input
+                    :id="`edit-sell_date-${book.id}`"
+                    v-model="editForm.sell_date"
+                    type="date"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-sell_price-${book.id}`">Sell Price:</label>
+                  <input
+                    :id="`edit-sell_price-${book.id}`"
+                    v-model="editForm.sell_price"
+                    type="number"
+                    class="textbox"
+                    step="0.01"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-read_start_date-${book.id}`">Read Start Date:</label>
+                  <input
+                    :id="`edit-read_start_date-${book.id}`"
+                    v-model="editForm.read_start_date"
+                    type="date"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-read_finish_date-${book.id}`">Read Finish Date:</label>
+                  <input
+                    :id="`edit-read_finish_date-${book.id}`"
+                    v-model="editForm.read_finish_date"
+                    type="date"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-progress-${book.id}`">Progress:</label>
+                  <select
+                    :id="`edit-progress-${book.id}`"
+                    v-model="editForm.progress"
+                    class="textbox"
+                  >
+                    <option
+                      v-for="(label, value) in statusLabels"
+                      :key="value"
+                      :value="value"
+                    >
+                      {{ label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-ownership-${book.id}`">Ownership:</label>
+                  <select
+                    :id="`edit-ownership-${book.id}`"
+                    v-model="editForm.ownership"
+                    class="textbox"
+                  >
+                    <option
+                      v-for="(label, value) in ownershipLabels"
+                      :key="value"
+                      :value="value"
+                    >
+                      {{ label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="add-item-form__item">
+                  <label :for="`edit-location-${book.id}`">Location:</label>
+                  <input
+                    :id="`edit-location-${book.id}`"
+                    v-model="editForm.location"
+                    type="text"
+                    class="textbox"
+                  />
+                </div>
+                <div class="add-item-form__item add-item-form__item--full-width">
+                  <label :for="`edit-notes-${book.id}`">Notes:</label>
+                  <textarea
+                    :id="`edit-notes-${book.id}`"
+                    v-model="editForm.notes"
+                    rows="3"
+                    class="textbox"
+                  ></textarea>
+                </div>
+                <div class="add-item-form__item add-item-form__item--full-width">
+                  <label :for="`edit-review-${book.id}`">Review:</label>
+                  <textarea
+                    :id="`edit-review-${book.id}`"
+                    v-model="editForm.review"
+                    rows="3"
+                    class="textbox"
+                  ></textarea>
+                </div>
+                <div class="add-item-form__item add-item-form__item--full-width">
+                  <button
+                    type="submit"
+                    class="button"
+                  >
+                    <span class="button__text">Update Book</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="button button--danger"
+                    @click="cancelEdit"
+                  >
+                    <span class="button__text button__text--danger">Cancel</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </template>
         </template>
       </div>
     </div>
 
-    <!-- Add/Edit Form -->
+    <!-- Add New Book Form -->
     <div class="add-item-wrapper">
-      <h2>{{ editingBook ? 'Edit Book' : 'Add New Book' }}</h2>
+      <h2>Add New Book</h2>
       <form
         class="add-item-form"
-        @submit.prevent="handleSubmit"
+        @submit.prevent="handleAddSubmit"
       >
         <div class="add-item-form__item">
           <label for="isbn">ISBN:</label>
           <div style="display: flex; gap: var(--space-xs)">
             <input
               id="isbn"
-              v-model="form.isbn"
+              v-model="addForm.isbn"
               type="text"
               class="textbox"
               name="isbn"
@@ -314,8 +535,8 @@
             <button
               type="button"
               class="button"
-              :disabled="!form.isbn.trim()"
-              @click="handleGoodreadsLookup"
+              :disabled="!addForm.isbn.trim()"
+              @click="handleAddGoodreadsLookup"
             >
               <span class="button__text">Lookup</span>
             </button>
@@ -325,7 +546,7 @@
           <label for="title">Title:</label>
           <input
             id="title"
-            v-model="form.title"
+            v-model="addForm.title"
             type="text"
             class="textbox"
             name="title"
@@ -336,7 +557,7 @@
           <label for="author">Author:</label>
           <input
             id="author"
-            v-model="form.author"
+            v-model="addForm.author"
             type="text"
             class="textbox"
             name="author"
@@ -347,7 +568,7 @@
           <label for="tags">Tags (comma-separated):</label>
           <input
             id="tags"
-            v-model="form.tags"
+            v-model="addForm.tags"
             type="text"
             class="textbox"
             name="tags"
@@ -358,7 +579,7 @@
           <label for="goodreads_url">Goodreads URL:</label>
           <input
             id="goodreads_url"
-            v-model="form.goodreads_url"
+            v-model="addForm.goodreads_url"
             type="text"
             class="textbox"
             name="goodreads_url"
@@ -368,7 +589,7 @@
           <label for="priority">Priority:</label>
           <input
             id="priority"
-            v-model="form.priority"
+            v-model="addForm.priority"
             type="number"
             class="textbox"
             name="priority"
@@ -378,7 +599,7 @@
           <label for="rating">Rating:</label>
           <input
             id="rating"
-            v-model="form.rating"
+            v-model="addForm.rating"
             type="number"
             class="textbox"
             name="rating"
@@ -390,7 +611,7 @@
           <label for="purchase_date">Purchase Date:</label>
           <input
             id="purchase_date"
-            v-model="form.purchase_date"
+            v-model="addForm.purchase_date"
             type="date"
             class="textbox"
             name="purchase_date"
@@ -400,7 +621,7 @@
           <label for="purchase_price">Purchase Price:</label>
           <input
             id="purchase_price"
-            v-model="form.purchase_price"
+            v-model="addForm.purchase_price"
             type="number"
             class="textbox"
             name="purchase_price"
@@ -411,7 +632,7 @@
           <label for="sell_date">Sell Date:</label>
           <input
             id="sell_date"
-            v-model="form.sell_date"
+            v-model="addForm.sell_date"
             type="date"
             class="textbox"
             name="sell_date"
@@ -421,7 +642,7 @@
           <label for="sell_price">Sell Price:</label>
           <input
             id="sell_price"
-            v-model="form.sell_price"
+            v-model="addForm.sell_price"
             type="number"
             class="textbox"
             name="sell_price"
@@ -432,7 +653,7 @@
           <label for="read_start_date">Read Start Date:</label>
           <input
             id="read_start_date"
-            v-model="form.read_start_date"
+            v-model="addForm.read_start_date"
             type="date"
             class="textbox"
             name="read_start_date"
@@ -442,7 +663,7 @@
           <label for="read_finish_date">Read Finish Date:</label>
           <input
             id="read_finish_date"
-            v-model="form.read_finish_date"
+            v-model="addForm.read_finish_date"
             type="date"
             class="textbox"
             name="read_finish_date"
@@ -452,7 +673,7 @@
           <label for="progress">Progress:</label>
           <select
             id="progress"
-            v-model="form.progress"
+            v-model="addForm.progress"
             class="textbox"
             name="progress"
           >
@@ -469,7 +690,7 @@
           <label for="ownership">Ownership:</label>
           <select
             id="ownership"
-            v-model="form.ownership"
+            v-model="addForm.ownership"
             class="textbox"
             name="ownership"
           >
@@ -486,7 +707,7 @@
           <label for="location">Location:</label>
           <input
             id="location"
-            v-model="form.location"
+            v-model="addForm.location"
             type="text"
             class="textbox"
             name="location"
@@ -496,7 +717,7 @@
           <label for="notes">Notes:</label>
           <textarea
             id="notes"
-            v-model="form.notes"
+            v-model="addForm.notes"
             rows="3"
             class="textbox"
             name="notes"
@@ -506,7 +727,7 @@
           <label for="review">Review:</label>
           <textarea
             id="review"
-            v-model="form.review"
+            v-model="addForm.review"
             rows="3"
             class="textbox"
             name="review"
@@ -517,15 +738,7 @@
             type="submit"
             class="button"
           >
-            <span class="button__text">{{ editingBook ? 'Update Book' : 'Add Book' }}</span>
-          </button>
-          <button
-            v-if="editingBook"
-            type="button"
-            class="button button--danger"
-            @click="cancelEdit"
-          >
-            <span class="button__text button__text--danger">Cancel</span>
+            <span class="button__text">Add Book</span>
           </button>
         </div>
       </form>
@@ -545,7 +758,7 @@ const store = useBooksStore()
 const { show: notify } = useNotifications()
 
 const expandedBookId = ref<number | null>(null)
-const editingBook = ref<Book | null>(null)
+const editingBookId = ref<number | null>(null)
 const searchInput = ref('')
 
 const statusLabels: Record<BookProgress, string> = {
@@ -563,26 +776,31 @@ const ownershipLabels: Record<BookOwnership, string> = {
   donated: 'Donated',
 }
 
-const form = reactive({
-  isbn: '',
-  title: '',
-  author: '',
-  tags: '',
-  goodreads_url: '',
-  priority: '',
-  rating: '',
-  purchase_date: '',
-  purchase_price: '',
-  sell_date: '',
-  sell_price: '',
-  read_start_date: '',
-  read_finish_date: '',
-  progress: 'unread' as BookProgress,
-  ownership: 'owned' as BookOwnership,
-  location: '',
-  notes: '',
-  review: '',
-})
+function createEmptyForm() {
+  return {
+    isbn: '',
+    title: '',
+    author: '',
+    tags: '',
+    goodreads_url: '',
+    priority: '',
+    rating: '',
+    purchase_date: '',
+    purchase_price: '',
+    sell_date: '',
+    sell_price: '',
+    read_start_date: '',
+    read_finish_date: '',
+    progress: 'unread' as BookProgress,
+    ownership: 'owned' as BookOwnership,
+    location: '',
+    notes: '',
+    review: '',
+  }
+}
+
+const addForm = reactive(createEmptyForm())
+const editForm = reactive(createEmptyForm())
 
 onMounted(() => {
   store.fetchAll()
@@ -610,121 +828,158 @@ function toggleDetail(bookId: number) {
   expandedBookId.value = expandedBookId.value === bookId ? null : bookId
 }
 
-function resetForm() {
-  form.isbn = ''
-  form.title = ''
-  form.author = ''
-  form.tags = ''
-  form.goodreads_url = ''
-  form.priority = ''
-  form.rating = ''
-  form.purchase_date = ''
-  form.purchase_price = ''
-  form.sell_date = ''
-  form.sell_price = ''
-  form.read_start_date = ''
-  form.read_finish_date = ''
-  form.progress = 'unread'
-  form.ownership = 'owned'
-  form.location = ''
-  form.notes = ''
-  form.review = ''
-  editingBook.value = null
+function resetAddForm() {
+  Object.assign(addForm, createEmptyForm())
 }
 
 function startEdit(book: Book) {
-  editingBook.value = book
-  form.isbn = book.isbn ?? ''
-  form.title = book.title
-  form.author = book.author
-  form.tags = book.tags.join(', ')
-  form.goodreads_url = book.goodreads_url ?? ''
-  form.priority = book.priority != null ? String(book.priority) : ''
-  form.rating = book.rating != null ? String(book.rating) : ''
-  form.purchase_date = book.purchase_date ? book.purchase_date.split('T')[0]! : ''
-  form.purchase_price = book.purchase_price != null ? String(book.purchase_price) : ''
-  form.sell_date = book.sell_date ? book.sell_date.split('T')[0]! : ''
-  form.sell_price = book.sell_price != null ? String(book.sell_price) : ''
-  form.read_start_date = book.read_start_date ? book.read_start_date.split('T')[0]! : ''
-  form.read_finish_date = book.read_finish_date ? book.read_finish_date.split('T')[0]! : ''
-  form.progress = (book.progress ?? 'unread') as BookProgress
-  form.ownership = (book.ownership ?? 'owned') as BookOwnership
-  form.location = book.location ?? ''
-  form.notes = book.notes ?? ''
-  form.review = book.review ?? ''
+  editingBookId.value = book.id
+  expandedBookId.value = null
+  editForm.isbn = book.isbn ?? ''
+  editForm.title = book.title
+  editForm.author = book.author
+  editForm.tags = book.tags.join(', ')
+  editForm.goodreads_url = book.goodreads_url ?? ''
+  editForm.priority = book.priority != null ? String(book.priority) : ''
+  editForm.rating = book.rating != null ? String(book.rating) : ''
+  editForm.purchase_date = book.purchase_date ? book.purchase_date.split('T')[0]! : ''
+  editForm.purchase_price = book.purchase_price != null ? String(book.purchase_price) : ''
+  editForm.sell_date = book.sell_date ? book.sell_date.split('T')[0]! : ''
+  editForm.sell_price = book.sell_price != null ? String(book.sell_price) : ''
+  editForm.read_start_date = book.read_start_date ? book.read_start_date.split('T')[0]! : ''
+  editForm.read_finish_date = book.read_finish_date ? book.read_finish_date.split('T')[0]! : ''
+  editForm.progress = (book.progress ?? 'unread') as BookProgress
+  editForm.ownership = (book.ownership ?? 'owned') as BookOwnership
+  editForm.location = book.location ?? ''
+  editForm.notes = book.notes ?? ''
+  editForm.review = book.review ?? ''
 }
 
 function cancelEdit() {
-  resetForm()
+  editingBookId.value = null
+  Object.assign(editForm, createEmptyForm())
 }
 
-function buildPayload() {
-  const tags = form.tags
+function buildAddPayload() {
+  const tags = addForm.tags
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean)
   return {
-    isbn: form.isbn.trim() || undefined,
-    title: form.title.trim(),
-    author: form.author.trim(),
+    isbn: addForm.isbn.trim() || undefined,
+    title: addForm.title.trim(),
+    author: addForm.author.trim(),
     tags,
-    goodreads_url: form.goodreads_url.trim() || undefined,
-    priority: form.priority ? Number(form.priority) : undefined,
-    rating: form.rating ? Number(form.rating) : undefined,
-    purchase_date: form.purchase_date || undefined,
-    purchase_price: form.purchase_price ? Number(form.purchase_price) : undefined,
-    sell_date: form.sell_date || undefined,
-    sell_price: form.sell_price ? Number(form.sell_price) : undefined,
-    read_start_date: form.read_start_date || undefined,
-    read_finish_date: form.read_finish_date || undefined,
-    progress: form.progress,
-    ownership: form.ownership,
-    location: form.location.trim() || undefined,
-    notes: form.notes.trim() || undefined,
-    review: form.review.trim() || undefined,
+    goodreads_url: addForm.goodreads_url.trim() || undefined,
+    priority: addForm.priority ? Number(addForm.priority) : undefined,
+    rating: addForm.rating ? Number(addForm.rating) : undefined,
+    purchase_date: addForm.purchase_date || undefined,
+    purchase_price: addForm.purchase_price ? Number(addForm.purchase_price) : undefined,
+    sell_date: addForm.sell_date || undefined,
+    sell_price: addForm.sell_price ? Number(addForm.sell_price) : undefined,
+    read_start_date: addForm.read_start_date || undefined,
+    read_finish_date: addForm.read_finish_date || undefined,
+    progress: addForm.progress,
+    ownership: addForm.ownership,
+    location: addForm.location.trim() || undefined,
+    notes: addForm.notes.trim() || undefined,
+    review: addForm.review.trim() || undefined,
   }
 }
 
-async function handleSubmit() {
-  if (!form.title.trim() || !form.author.trim() || !form.tags.trim()) return
+// For edits, empty fields send null (to clear the value) instead of undefined (which omits the field)
+function buildEditPayload() {
+  const tags = editForm.tags
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+  return {
+    isbn: editForm.isbn.trim() || null,
+    title: editForm.title.trim(),
+    author: editForm.author.trim(),
+    tags,
+    goodreads_url: editForm.goodreads_url.trim() || null,
+    priority: editForm.priority ? Number(editForm.priority) : null,
+    rating: editForm.rating ? Number(editForm.rating) : null,
+    purchase_date: editForm.purchase_date || null,
+    purchase_price: editForm.purchase_price ? Number(editForm.purchase_price) : null,
+    sell_date: editForm.sell_date || null,
+    sell_price: editForm.sell_price ? Number(editForm.sell_price) : null,
+    read_start_date: editForm.read_start_date || null,
+    read_finish_date: editForm.read_finish_date || null,
+    progress: editForm.progress,
+    ownership: editForm.ownership,
+    location: editForm.location.trim() || null,
+    notes: editForm.notes.trim() || null,
+    review: editForm.review.trim() || null,
+  }
+}
+
+async function handleEditSubmit() {
+  if (!editForm.title.trim() || !editForm.author.trim() || !editForm.tags.trim()) return
+  if (!editingBookId.value) return
 
   try {
-    if (editingBook.value) {
-      await store.update(editingBook.value.id, buildPayload())
-      notify('Book updated', 'success')
-    } else {
-      await store.create(buildPayload() as Parameters<typeof store.create>[0])
-      notify('Book added', 'success')
-    }
-    resetForm()
+    await store.update(editingBookId.value, buildEditPayload())
+    notify(`${editForm.title.trim()}: ${editForm.author.trim()} | updated`, 'success')
+    cancelEdit()
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
-    const action = editingBook.value ? 'update' : 'add'
-    notify(`Failed to ${action} book: ${detail}`, 'error')
+    notify(`${editForm.title.trim()}: ${editForm.author.trim()} | update failed: ${detail}`, 'error')
+  }
+}
+
+async function handleAddSubmit() {
+  if (!addForm.title.trim() || !addForm.author.trim() || !addForm.tags.trim()) return
+
+  try {
+    await store.create(buildAddPayload() as Parameters<typeof store.create>[0])
+    notify(`${addForm.title.trim()}: ${addForm.author.trim()} | added`, 'success')
+    resetAddForm()
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`${addForm.title.trim()}: ${addForm.author.trim()} | add failed: ${detail}`, 'error')
   }
 }
 
 async function handleDelete(id: number) {
+  const book = store.books.find((b) => b.id === id)
+  const label = book ? `${book.title}: ${book.author}` : `Book ${id}`
   try {
     await store.remove(id)
-    if (editingBook.value?.id === id) {
-      resetForm()
+    if (editingBookId.value === id) {
+      cancelEdit()
     }
-    notify('Book deleted', 'success')
+    notify(`${label} | deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to delete book: ${detail}`, 'error')
+    notify(`${label} | delete failed: ${detail}`, 'error')
   }
 }
 
-async function handleGoodreadsLookup() {
-  if (!form.isbn.trim()) return
+async function handleAddGoodreadsLookup() {
+  if (!addForm.isbn.trim()) return
   try {
-    const info = await store.fetchGoodreadsInfo(form.isbn.trim())
-    form.title = info.title
-    form.author = info.author
-    form.tags = info.tags
-    form.goodreads_url = info.goodreads_url
+    const info = await store.fetchGoodreadsInfo(addForm.isbn.trim())
+    addForm.title = info.title
+    addForm.author = info.author
+    addForm.tags = info.tags
+    addForm.goodreads_url = info.goodreads_url
+    notify('Goodreads info loaded', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Goodreads lookup failed: ${detail}`, 'error')
+  }
+}
+
+async function handleEditGoodreadsLookup() {
+  if (!editForm.isbn.trim()) return
+  try {
+    const info = await store.fetchGoodreadsInfo(editForm.isbn.trim())
+    editForm.title = info.title
+    editForm.author = info.author
+    editForm.tags = info.tags
+    editForm.goodreads_url = info.goodreads_url
     notify('Goodreads info loaded', 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)

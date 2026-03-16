@@ -315,23 +315,23 @@ export interface BookCreate {
 }
 
 export interface BookUpdate {
-  isbn?: string
+  isbn?: string | null
   title?: string
   author?: string
   tags?: string[]
-  goodreads_url?: string
-  priority?: number
-  purchase_date?: string
-  purchase_price?: number
-  sell_date?: string
-  sell_price?: number
-  read_start_date?: string
-  read_finish_date?: string
-  rating?: number
+  goodreads_url?: string | null
+  priority?: number | null
+  purchase_date?: string | null
+  purchase_price?: number | null
+  sell_date?: string | null
+  sell_price?: number | null
+  read_start_date?: string | null
+  read_finish_date?: string | null
+  rating?: number | null
   abandoned?: boolean
-  location?: string
-  notes?: string
-  review?: string
+  location?: string | null
+  notes?: string | null
+  review?: string | null
 }
 
 export interface BookGoodreadsInfo {
