@@ -13,12 +13,14 @@ def insert_testing_data():
     delete_test_data('boxes')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/box-packing/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Box Packing')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_index_with_box_id(test_app_logged_in, test_api_logged_in):
     """Test viewing a specific box."""
     boxes = test_api_logged_in.get('/box-packing/boxes/')
@@ -28,6 +30,7 @@ def test_index_with_box_id(test_app_logged_in, test_api_logged_in):
     tests.util.verify_page_title(response, 'Box Packing')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_edit_page(test_app_logged_in, test_api_logged_in):
     """Test edit page loads."""
     boxes = test_api_logged_in.get('/box-packing/boxes/')
@@ -37,30 +40,35 @@ def test_edit_page(test_app_logged_in, test_api_logged_in):
     tests.util.verify_page_title(response, 'Edit Box')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_all_boxes(test_app_logged_in):
     response = test_app_logged_in.get('/box-packing/all/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Box Packing')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_orphans(test_app_logged_in):
     response = test_app_logged_in.get('/box-packing/orphans/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Box Packing - Search')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_search_page(test_app_logged_in):
     response = test_app_logged_in.get('/box-packing/search/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Box Packing - Search')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_search_post(test_app_logged_in):
     response = test_app_logged_in.post('/box-packing/search/', data={'search_text': 'find'}, follow_redirects=True)
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
     tests.util.verify_page_title(response, 'Box Packing - Search')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_add_box(test_app_logged_in):
     """Test adding a new box."""
     response = test_app_logged_in.post(
@@ -78,6 +86,7 @@ def test_crud_add_box(test_app_logged_in):
     assert 'Test Box' in response.data.decode('utf-8') or 'created' in response.data.decode('utf-8').lower()
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_edit_box(test_app_logged_in, test_api_logged_in):
     """Test editing a box - critical test since we changed the API contract."""
     boxes = test_api_logged_in.get('/box-packing/boxes/')
@@ -102,6 +111,7 @@ def test_crud_edit_box(test_app_logged_in, test_api_logged_in):
     assert updated_box.json()['name'] == 'Updated Box Name'
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_delete_box(test_app_logged_in, test_api_logged_in):
     """Test deleting a box."""
     boxes = test_api_logged_in.get('/box-packing/boxes/')
@@ -125,6 +135,7 @@ def test_crud_delete_box(test_app_logged_in, test_api_logged_in):
     assert deleted_box.status_code == status.HTTP_404_NOT_FOUND
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_add_item(test_app_logged_in, test_api_logged_in):
     """Test adding an item to a box."""
     boxes = test_api_logged_in.get('/box-packing/boxes/')
@@ -146,6 +157,7 @@ def test_crud_add_item(test_app_logged_in, test_api_logged_in):
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_orphan_item(test_app_logged_in, test_api_logged_in):
     """Test orphaning an item - critical test since we changed the API contract."""
     # Get a box with items
@@ -180,6 +192,7 @@ def test_crud_orphan_item(test_app_logged_in, test_api_logged_in):
     assert item_id in orphan_ids
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_add_orphan_to_box(test_app_logged_in, test_api_logged_in):
     """Test adding an orphan item back to a box - critical test since we changed the API contract."""
     # First create an orphan by orphaning an item
@@ -233,6 +246,7 @@ def test_crud_add_orphan_to_box(test_app_logged_in, test_api_logged_in):
     assert item_id not in [o['id'] for o in orphans_after.json()]
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/boxPacking.spec.ts')
 def test_crud_delete_item(test_app_logged_in, test_api_logged_in):
     """Test deleting an item from a box."""
     boxes = test_api_logged_in.get('/box-packing/boxes/')
