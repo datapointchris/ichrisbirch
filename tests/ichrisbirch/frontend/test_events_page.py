@@ -78,12 +78,14 @@ def _event_exists_in_db(event_id: int) -> bool:
         return result is not None
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/events.spec.ts which is more thorough (un-attend, visual state)')
 def test_events_index(page: Page):
     expect(page).to_have_title('Events')
     # All 3 events should be visible
     expect(page.locator('.grid__item h2')).to_have_count(3)
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/events.spec.ts which is more thorough (un-attend, visual state)')
 def test_create_event(page: Page):
     """Fill the add form in a real browser, submit, verify in DB."""
     form = page.locator('form.add-item-form')
@@ -104,6 +106,7 @@ def test_create_event(page: Page):
     assert event.notes == 'Created by Playwright'
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/events.spec.ts which is more thorough (un-attend, visual state)')
 def test_create_event_not_attending(page: Page):
     """Create an event without checking attending — hidden input should send '0'."""
     form = page.locator('form.add-item-form')
@@ -117,6 +120,7 @@ def test_create_event_not_attending(page: Page):
     assert event.attending is not True, 'Unchecked attending should be False'
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/events.spec.ts which is more thorough (un-attend, visual state)')
 def test_attend_event(page: Page):
     """Click attend on a non-attending event, verify state change in DB."""
     event = _get_event_from_db('Tech Meetup')
@@ -132,6 +136,7 @@ def test_attend_event(page: Page):
     assert result.venue == 'Convention Center', 'Other fields should survive'
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/events.spec.ts which is more thorough (un-attend, visual state)')
 def test_delete_event(page: Page):
     """Delete a specific event via button click, verify it's gone from DB."""
     event = _get_event_from_db('Art Exhibition')
@@ -143,6 +148,7 @@ def test_delete_event(page: Page):
     assert not _event_exists_in_db(event_id), 'Event should be deleted'
 
 
+@pytest.mark.skip(reason='Overlaps with frontend/e2e/events.spec.ts which is more thorough (un-attend, visual state)')
 def test_event_create_attend_delete_lifecycle(page: Page):
     """Create an event not attending, attend it, then delete it.
 
