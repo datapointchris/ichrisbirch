@@ -176,11 +176,11 @@
     $button-size: 75px,
     $button-step-blend: 1px,
     $button-press-time: 0.4s,
-    $font-size-ratio: 1.5,
-    $icon-size-ratio: 0.33,
+    $content-ratio: 0.3,
     $text-and-icon-color: var(--clr-accent-light),
     $selected-color: var(--clr-accent)
 ) {
+    position: relative;
     width: $button-size;
     height: $button-size;
 
@@ -200,7 +200,7 @@
         position: relative;
         z-index: 2;
         cursor: pointer;
-        font-size: calc(var(--fs-400) * $font-size-ratio);
+        font-size: $button-size * $content-ratio;
         line-height: 1;
         text-align: center;
     }
@@ -208,8 +208,8 @@
     &__icon {
         /* This works with svg but not fontawesome ie (fa-solid fa-code)
         must use class names for sizing */
-        width: $button-size * $icon-size-ratio;
-        height: $button-size * $icon-size-ratio;
+        width: $button-size * $content-ratio;
+        height: $button-size * $content-ratio;
     }
 
     &:hover {
@@ -284,22 +284,18 @@
 }
 
 .button-submit-issue {
-    $button-size: 100px;
-    position: absolute;
-    top: calc($button-size / 2);
-    right: calc($button-size / 2);
+    $button-size: 75px;
+    margin: var(--space-s) auto;
     @include double-bevel-button($button-size);
 }
 
 .button-sidebar-toggle {
     $button-size: 50px;
-    position: relative;
     margin: var(--space-xs) auto;
     @include double-bevel-button($button-size);
 }
 
 .button-sidebar-tab {
     $button-size: 40px;
-    position: relative;
     @include double-bevel-button($button-size);
 }

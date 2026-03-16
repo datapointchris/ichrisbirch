@@ -3,6 +3,7 @@
     <AppSidebar
       :open="sidebarOpen"
       @toggle="sidebarOpen = !sidebarOpen"
+      @open-issue="issueModalOpen = true"
     />
     <div
       class="layout"
@@ -12,7 +13,6 @@
         <RouterView />
       </main>
     </div>
-    <SubmitIssueButton @click="issueModalOpen = true" />
     <SubmitIssueModal
       :visible="issueModalOpen"
       @close="issueModalOpen = false"
@@ -25,7 +25,6 @@
 import { onMounted, ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
-import SubmitIssueButton from '@/components/SubmitIssueButton.vue'
 import SubmitIssueModal from '@/components/SubmitIssueModal.vue'
 import NotificationToast from '@/components/NotificationToast.vue'
 import { useTheme } from '@/composables/useTheme'

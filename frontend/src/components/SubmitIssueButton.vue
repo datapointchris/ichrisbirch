@@ -17,9 +17,4 @@ defineEmits<{
 }>()
 </script>
 
-<style scoped>
-.button-submit-issue {
-  position: fixed;
-  z-index: 90;
-}
-</style>
+<style scoped></style>

@@ -561,15 +561,14 @@ nav a:hover {
 }
 
 .button-submit-issue {
-  position: absolute;
-  top: 50px;
-  right: 50px;
-  width: 100px;
-  height: 100px;
+  margin: var(--space-s) auto;
+  position: relative;
+  width: 75px;
+  height: 75px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 100px;
+  border-radius: 75px;
   color: var(--clr-accent-light);
   transition: all 0.4s ease-in-out;
 }
@@ -577,15 +576,15 @@ nav a:hover {
   position: relative;
   z-index: 2;
   cursor: pointer;
-  font-size: calc(var(--fs-400) * 1.5);
+  font-size: 22.5px;
   line-height: 1;
   text-align: center;
 }
 .button-submit-issue__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
-  width: 33px;
-  height: 33px;
+  width: 22.5px;
+  height: 22.5px;
 }
 .button-submit-issue:hover {
   color: var(--clr-accent);
@@ -597,10 +596,10 @@ nav a:hover {
   top: 0;
   left: 0;
   display: block;
-  width: 100px;
-  height: 100px;
+  width: 75px;
+  height: 75px;
   content: "";
-  border-radius: 100px;
+  border-radius: 75px;
   background-color: var(--clr-gray-800);
   filter: blur(0.5px);
   transition: all 0.4s ease-in-out;
@@ -620,11 +619,11 @@ nav a:hover {
   position: absolute;
   translate: transform(-50%, -50%);
   display: block;
-  width: 150px;
-  height: 150px;
+  width: 112.5px;
+  height: 112.5px;
   content: "";
   cursor: pointer;
-  border-radius: 150px;
+  border-radius: 112.5px;
   filter: blur(1px);
   transition: all 0.4s ease-in-out 0.12s;
   box-shadow: 8px 8px 20px var(--clr-black-trans-600), -4px -4px 20px var(--clr-gray-trans-800), inset -8px -8px 20px var(--clr-black-trans-1000), inset 8px 8px 20px var(--clr-gray-trans-600);
@@ -637,8 +636,8 @@ nav a:hover {
 }
 
 .button-sidebar-toggle {
-  position: relative;
   margin: var(--space-xs) auto;
+  position: relative;
   width: 50px;
   height: 50px;
   display: flex;
@@ -652,15 +651,15 @@ nav a:hover {
   position: relative;
   z-index: 2;
   cursor: pointer;
-  font-size: calc(var(--fs-400) * 1.5);
+  font-size: 15px;
   line-height: 1;
   text-align: center;
 }
 .button-sidebar-toggle__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
-  width: 16.5px;
-  height: 16.5px;
+  width: 15px;
+  height: 15px;
 }
 .button-sidebar-toggle:hover {
   color: var(--clr-accent);
@@ -726,15 +725,15 @@ nav a:hover {
   position: relative;
   z-index: 2;
   cursor: pointer;
-  font-size: calc(var(--fs-400) * 1.5);
+  font-size: 12px;
   line-height: 1;
   text-align: center;
 }
 .button-sidebar-tab__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
-  width: 13.2px;
-  height: 13.2px;
+  width: 12px;
+  height: 12px;
 }
 .button-sidebar-tab:hover {
   color: var(--clr-accent);
@@ -2194,8 +2193,8 @@ span[data-tooltip][data-position=right]:after {
 }
 
 .habit-check {
-  position: relative;
   margin: var(--space-m);
+  position: relative;
   width: 50px;
   height: 50px;
   display: flex;
@@ -2209,15 +2208,15 @@ span[data-tooltip][data-position=right]:after {
   position: relative;
   z-index: 2;
   cursor: pointer;
-  font-size: calc(var(--fs-400) * 1.5);
+  font-size: 15px;
   line-height: 1;
   text-align: center;
 }
 .habit-check__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
-  width: 16.5px;
-  height: 16.5px;
+  width: 15px;
+  height: 15px;
 }
 .habit-check:hover {
   color: var(--clr-accent--green-bright);
@@ -2410,8 +2409,8 @@ span[data-tooltip][data-position=right]:after {
 .home-link-button {
   --_btn-size: clamp(100px, 18vw, 160px);
   --_btn-ring-size: calc(var(--_btn-size) * 1.5);
-  position: relative;
   margin: var(--space-m);
+  position: relative;
   width: 160px;
   height: 160px;
   display: flex;
@@ -2425,15 +2424,15 @@ span[data-tooltip][data-position=right]:after {
   position: relative;
   z-index: 2;
   cursor: pointer;
-  font-size: calc(var(--fs-400) * 1.5);
+  font-size: 48px;
   line-height: 1;
   text-align: center;
 }
 .home-link-button__icon {
   /* This works with svg but not fontawesome ie (fa-solid fa-code)
   must use class names for sizing */
-  width: 52.8px;
-  height: 52.8px;
+  width: 48px;
+  height: 48px;
 }
 .home-link-button:hover {
   color: var(--clr-accent);

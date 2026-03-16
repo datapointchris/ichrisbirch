@@ -20,7 +20,6 @@
 // Custom Checkboxes
 
 .habit-check {
-    position: relative;
     margin: var(--space-m);
     @include buttons.double-bevel-button(
         $button-size: 50px,
