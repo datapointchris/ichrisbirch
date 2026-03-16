@@ -235,11 +235,13 @@ function isActive(link: NavLink): boolean {
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-3xs) var(--space-xs);
-  border-radius: 4px;
+  border-radius: var(--button-border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
   color: var(--clr-gray-100);
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   font-size: var(--fs-300);
 }
 
@@ -249,13 +251,15 @@ function isActive(link: NavLink): boolean {
   flex-shrink: 0;
 }
 
-.nav-link:hover {
-  background-color: var(--clr-primary--lighter);
+.nav-link:hover:not(.nav-link--active) {
+  box-shadow: var(--bubble-box);
   color: var(--clr-text);
+  transform: scale(1.02);
 }
 
 .nav-link--active {
-  background-color: var(--clr-primary--lighter);
+  box-shadow: var(--floating-box-pressed);
+  background-color: var(--clr-primary--darker);
   color: var(--clr-accent);
 }
 

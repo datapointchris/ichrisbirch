@@ -146,6 +146,20 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 - **Docker Compose overrides**: List fields (`ports`, `volumes`, `environment`) **merge by default** across compose files. When a test/dev compose redefines a list that exists in the base compose, use `!override` to replace instead of append (e.g., `ports: !override`). Without this, both port mappings apply and cause "port already allocated" errors.
 - **File naming**: Lowercase with hyphens for docs (except README.md, CLAUDE.md, LICENSE.md). Snake_case for DB tables/columns.
 
+### Styling & Design Cohesion
+
+**Global over scoped**: Use the shared SCSS system (`ichrisbirch/app/static/sass/`) for visual styling. Avoid duplicating shadow/effect/button styles in Vue scoped `<style>` blocks — scoped overrides create maintenance burden and drift from the site's visual language. Scoped styles should handle layout (flexbox, grid, spacing) not visual effects.
+
+**Neumorphic shadow vocabulary** (defined in `layout/_grid.scss`):
+
+- `--floating-box`: raised/resting state (cards, rows, nav links)
+- `--floating-box-pressed`: sunken/active state (selected items, pressed buttons)
+- `--bubble-box` / `--bubble-box-pressed`: hover states (lighter raise/press)
+
+**`double-bevel-button` mixin** (`components/_buttons.scss`): Circular neumorphic buttons with inner button + outer ring. Takes `$button-size` — everything else (outer ring at 1.5x, icon at 30% via `$content-ratio`, `position: relative`) is calculated automatically. Never override proportions per-caller.
+
+**Proportional sizing**: Buttons, icons, and text within shared components must scale proportionally from a single size parameter. Never use fixed font sizes inside scaled containers.
+
 ### Adding a Vue Page
 
 1. Create Pinia store with `createLogger`, `ApiError` handling, `error: ref<ApiError | null>`
