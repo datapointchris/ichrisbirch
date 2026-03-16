@@ -23,18 +23,21 @@ NEW_OBJ = dict(
 ENDPOINT = '/money-wasted/'
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/money-wasted.spec.ts')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get(ENDPOINT)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Money Wasted</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/money-wasted.spec.ts')
 def test_add(test_app_logged_in):
     response = test_app_logged_in.post(ENDPOINT, data=NEW_OBJ | {'action': 'add'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Money Wasted</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/money-wasted.spec.ts')
 def test_delete(test_app_logged_in):
     response = test_app_logged_in.post(ENDPOINT, data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
