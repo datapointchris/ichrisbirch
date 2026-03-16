@@ -94,6 +94,13 @@ http:
         burst: 100    # Allow bursts up to 100
         period: 1s
 
+    # Strip /api prefix for same-origin API proxy
+    # Vue frontend calls /api/*, Traefik strips the prefix before reaching FastAPI
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+
     # IP whitelist for admin endpoints (customize as needed)
     admin-whitelist:
       ipAllowList:

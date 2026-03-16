@@ -1,0 +1,202 @@
+# Application services for blue/green deployment
+#
+# Deployed as either icb-blue or icb-green project alongside icb-infra.
+# Traefik routing is handled by the file provider (routing.yml), not Docker labels.
+#
+# Usage:
+#   DEPLOY_COLOR=blue docker compose --project-name icb-blue -f docker-compose.app.yml up -d
+#   DEPLOY_COLOR=green docker compose --project-name icb-green -f docker-compose.app.yml up -d
+#
+# Required env vars: DEPLOY_COLOR (blue|green), plus all vars from .env
+
+# Shared image build configuration - all Python services use the same image
+x-app-build: &app-build
+  image: ichrisbirch:${DEPLOY_COLOR}
+  build:
+    context: .
+    target: production
+
+x-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # FastAPI Backend Service
+  api:
+    <<: *app-build
+    container_name: icb-${DEPLOY_COLOR}-api
+    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+      - FASTAPI_DEBUG=False
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
+      - LOG_FILE=/var/log/ichrisbirch/api.log
+    ports: []
+    volumes:
+      - ~/.aws:/home/app/.aws:ro
+      - ichrisbirch_logs:/var/log/ichrisbirch
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    working_dir: /app
+    logging:
+      <<: *logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "${DEPLOY_COLOR}-api"
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - proxy
+      - icb-infra
+
+  # Vue Frontend Service (Caddy serves built SPA assets)
+  vue:
+    image: ichrisbirch-vue:${DEPLOY_COLOR}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: "/api"
+    container_name: icb-${DEPLOY_COLOR}-vue
+    ports: []
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    logging:
+      <<: *logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "${DEPLOY_COLOR}-vue"
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - proxy
+      - icb-infra
+
+  # Flask Frontend Service (legacy, lower priority)
+  app:
+    <<: *app-build
+    container_name: icb-${DEPLOY_COLOR}-app
+    command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+      - FLASK_DEBUG=False
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
+      - LOG_FILE=/var/log/ichrisbirch/app.log
+    ports: []
+    volumes:
+      - ~/.aws:/home/app/.aws:ro
+      - ichrisbirch_logs:/var/log/ichrisbirch
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    working_dir: /app
+    logging:
+      <<: *logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "${DEPLOY_COLOR}-app"
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - proxy
+      - icb-infra
+
+  # Chat Service (Streamlit)
+  chat:
+    <<: *app-build
+    container_name: icb-${DEPLOY_COLOR}-chat
+    command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
+      - LOG_FILE=/var/log/ichrisbirch/chat.log
+    ports: []
+    volumes:
+      - ~/.aws:/home/app/.aws:ro
+      - ichrisbirch_logs:/var/log/ichrisbirch
+    restart: always
+    healthcheck:
+      disable: true
+    working_dir: /app
+    logging:
+      <<: *logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "${DEPLOY_COLOR}-chat"
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - proxy
+      - icb-infra
+
+  # Scheduler Service (APScheduler background jobs)
+  scheduler:
+    <<: *app-build
+    container_name: icb-${DEPLOY_COLOR}-scheduler
+    command: python -m ichrisbirch.wsgi_scheduler
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_COLORS=${LOG_COLORS:-false}
+      - LOG_FILE=/var/log/ichrisbirch/scheduler.log
+    volumes:
+      - ~/.aws:/home/app/.aws:ro
+      - ichrisbirch_logs:/var/log/ichrisbirch
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: always
+    healthcheck:
+      disable: true
+    working_dir: /app
+    logging:
+      <<: *logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "${DEPLOY_COLOR}-scheduler"
+    networks:
+      - icb-infra
+
+# Shared log volume (same as infra)
+volumes:
+  ichrisbirch_logs:
+    name: icb-prod-logs
+    driver: local
+
+# Connect to infrastructure networks
+networks:
+  proxy:
+    external: true
+  icb-infra:
+    name: icb-infra_default
+    external: true

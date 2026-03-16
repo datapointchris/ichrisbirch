@@ -7,7 +7,7 @@ This guide covers the comprehensive CLI interface for managing the iChrisBirch a
 ```bash
 # Start any environment (uses Traefik + HTTPS by default)
 ichrisbirch dev start               # Development environment
-ichrisbirch testing start          # Testing environment  
+ichrisbirch testing start          # Testing environment
 ichrisbirch prod start             # Production environment
 
 # Check status with URLs
@@ -34,7 +34,7 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 ### ❌ **Removed Commands (No Longer Needed)**
 
 - `ichrisbirch traefik start <env>` → Use `ichrisbirch <env> start`
-- `ichrisbirch traefik stop <env>` → Use `ichrisbirch <env> stop`  
+- `ichrisbirch traefik stop <env>` → Use `ichrisbirch <env> stop`
 - `ichrisbirch traefik status <env>` → Use `ichrisbirch <env> status`
 - `ichrisbirch traefik health <env>` → Use `ichrisbirch <env> health`
 - `ichrisbirch traefik logs <env>` → Use `ichrisbirch <env> logs`
@@ -89,14 +89,22 @@ The `test run` command uses a clean start strategy for reliability:
 
 ### Production Environment
 
+All production commands are **blue/green aware** — they automatically detect the active deployment color and act on the correct containers. See [Blue/Green Deployment](blue-green-deployment.md) for the full guide.
+
 | Command | Description | Example |
 |---------|-------------|---------|
-| `prod start` | Start production with HTTPS | `ichrisbirch prod start` |
-| `prod stop` | Stop production environment | `ichrisbirch prod stop` |
-| `prod restart` | Restart production environment | `ichrisbirch prod restart` |
-| `prod status` | Show service status and HTTPS URLs | `ichrisbirch prod status` |
-| `prod logs` | View service logs | `ichrisbirch prod logs [service]` |
-| `prod health` | Run comprehensive health checks | `ichrisbirch prod health` |
+| `prod start` | Start infra + active color | `ichrisbirch prod start` |
+| `prod stop` | Stop active color + infra | `ichrisbirch prod stop` |
+| `prod restart` | Restart active color + infra | `ichrisbirch prod restart` |
+| `prod status` | Show infra + active color status | `ichrisbirch prod status` |
+| `prod logs` | View active color logs | `ichrisbirch prod logs [service]` |
+| `prod logs deploy` | View deployment event logs | `ichrisbirch prod logs deploy` |
+| `prod logs build` | View latest Docker build log | `ichrisbirch prod logs build` |
+| `prod health` | Run health checks | `ichrisbirch prod health` |
+| `prod smoke` | Run smoke tests against all endpoints | `ichrisbirch prod smoke` |
+| `prod deploy-status` | Show blue/green state and routing | `ichrisbirch prod deploy-status` |
+| `prod rollback` | Switch traffic to previous color | `ichrisbirch prod rollback` |
+| `prod build-test` | Test production Docker build locally | `ichrisbirch prod build-test` |
 
 ### SSL Certificate Management
 
@@ -162,21 +170,24 @@ ichrisbirch dev stop
 
 - **Domain**: `*.ichrisbirch.com` via Cloudflare Tunnel
 - **TLS**: Handled by Cloudflare (Traefik receives HTTP internally)
-- **Secrets**: Fetched from AWS SSM Parameter Store
+- **Secrets**: Decrypted via SOPS + age
+- **Deployment**: Blue/green with zero-downtime switching
 
 **Services:**
 
 - **API**: `https://api.ichrisbirch.com/`
-- **App**: `https://app.ichrisbirch.com/`
+- **App**: `https://ichrisbirch.com/`
 - **Chat**: `https://chat.ichrisbirch.com/`
 
-**Production Start:**
+**Production Commands:**
 
 ```bash
-ichrisbirch prod start   # Fetches SSM secrets, then starts services
+ichrisbirch prod start          # Start infra + active color
+ichrisbirch prod deploy-status  # Check which color is active
+ichrisbirch prod rollback       # Switch to previous color
 ```
 
-> **Note**: See [Homelab Deployment Guide](homelab-deployment.md) for complete production setup including Cloudflare Tunnel configuration
+> **Note**: See [Blue/Green Deployment](blue-green-deployment.md) for the deployment strategy and [Homelab Deployment Guide](homelab-deployment.md) for infrastructure setup
 
 ## 🔒 SSL Certificate Management with mkcert
 

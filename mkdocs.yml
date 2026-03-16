@@ -106,6 +106,7 @@ nav:
       - Nginx: devops/nginx.md
       - Supervisor: devops/supervisor.md
       - PG Cron: devops/pg_cron.md
+      - Blue/Green Deployment: blue-green-deployment.md
       - Backups: backups.md
       - CI/CD: cicd.md
       - Terraform: terraform.md

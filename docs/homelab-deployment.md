@@ -140,24 +140,35 @@ For chat (WebSocket support):
 
 ## Deployment
 
+Production uses **blue/green deployment** for zero-downtime deploys. See [Blue/Green Deployment](blue-green-deployment.md) for the full guide.
+
+### How It Works
+
+Infrastructure (Traefik, PostgreSQL, Redis) runs in `icb-infra` and is always up. App services deploy as alternating `icb-blue` / `icb-green` projects. Traefik switches routing via a file provider config — no restart needed.
+
+Pushing to `main` triggers the webhook, which runs `scripts/deploy-homelab.sh`. The script builds the new color, verifies health + smoke tests, then switches traffic. If anything fails, the old color keeps serving.
+
 ### Start Services
 
 ```bash
 cd /srv/ichrisbirch
 
-# Start production (fetches secrets from SSM, starts all services)
+# Start production (blue/green aware — starts infra + active color)
 ichrisbirch prod start
 ```
 
 This will:
 
-- Fetch secrets from AWS SSM (POSTGRES_PASSWORD, REDIS_PASSWORD)
-- Create the proxy network if needed
-- Start all services via Docker Compose
+- Decrypt secrets via SOPS + age
+- Start infrastructure services (Traefik, PostgreSQL, Redis) if not running
+- Start the active color's app services
 
 ### Verify Services
 
 ```bash
+# Check deployment state (which color is active)
+ichrisbirch prod deploy-status
+
 # Check container status
 ichrisbirch prod status
 
@@ -167,8 +178,19 @@ ichrisbirch prod logs
 # Test health endpoints
 ichrisbirch prod health
 
+# Run smoke tests
+ichrisbirch prod smoke
+
 # Check tunnel status
 sudo systemctl status cloudflared
+```
+
+### Rollback
+
+If a problem is discovered after a deploy:
+
+```bash
+ichrisbirch prod rollback    # Switch traffic back to previous color
 ```
 
 ### Access URLs
@@ -197,13 +219,17 @@ aws ssm put-parameter --region us-east-2 \
 ## CLI Commands
 
 ```bash
-ichrisbirch prod start    # Fetch SSM secrets and start services
-ichrisbirch prod stop     # Stop all services
-ichrisbirch prod restart  # Restart without rebuilding
-ichrisbirch prod rebuild  # Rebuild images and restart
-ichrisbirch prod logs     # View container logs
-ichrisbirch prod status   # Check service status
-ichrisbirch prod health   # Run health checks
+ichrisbirch prod start          # Start infra + active color
+ichrisbirch prod stop           # Stop active color + infra
+ichrisbirch prod restart        # Restart active color + infra
+ichrisbirch prod status         # Show container status
+ichrisbirch prod health         # Run health checks
+ichrisbirch prod smoke          # Run smoke tests against all endpoints
+ichrisbirch prod deploy-status  # Show blue/green state and routing
+ichrisbirch prod rollback       # Switch traffic back to previous color
+ichrisbirch prod logs           # View container logs
+ichrisbirch prod logs deploy    # View deployment event logs
+ichrisbirch prod logs build     # View latest Docker build log
 ```
 
 ## Troubleshooting
@@ -307,14 +333,18 @@ You may need to copy data between volumes or update the project name.
 ## Container Info
 
 - **LXC Host**: ichrisbirch-lxc @ `10.0.20.11`
-- **Services**:
-  - traefik (port 80, receives tunnel traffic)
-  - postgres (5432, Docker internal)
-  - redis (6379, Docker internal)
-  - api (8000, Docker internal)
-  - app (5000, Docker internal)
-  - chat (8505, Docker internal)
-  - scheduler (no port)
+- **Webhook Server**: app-ops-lxc @ `10.0.20.15`
+- **Infrastructure** (project `icb-infra`, always running):
+  - `icb-infra-traefik` (port 80, receives tunnel traffic)
+  - `icb-infra-postgres` (5432, Docker internal)
+  - `icb-infra-redis` (6379, Docker internal)
+- **App Services** (project `icb-blue` or `icb-green`, alternates per deploy):
+  - `icb-{color}-api` (8000, Docker internal)
+  - `icb-{color}-app` (5000, Docker internal)
+  - `icb-{color}-vue` (80, Docker internal)
+  - `icb-{color}-chat` (8505, Docker internal)
+  - `icb-{color}-scheduler` (no port)
+- **System Services**:
   - cloudflared (tunnel daemon, systemd service)
 
 ## Checklist

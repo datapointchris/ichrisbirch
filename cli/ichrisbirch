@@ -32,6 +32,24 @@ COMPOSE_DEV="docker compose --project-name icb-dev -f docker-compose.yml -f dock
 COMPOSE_TEST="docker compose --project-name icb-test -f docker-compose.yml -f docker-compose.test.yml"
 COMPOSE_PROD="docker compose --project-name icb-prod -f docker-compose.yml"
 
+# Blue/green deployment compose commands
+COMPOSE_INFRA="docker compose --project-name icb-infra -f docker-compose.infra.yml"
+BLUEGREEN_STATE_FILE="/var/lib/ichrisbirch/bluegreen-state"
+
+compose_app() {
+  local color="$1"
+  shift
+  DEPLOY_COLOR="$color" docker compose --project-name "icb-${color}" -f docker-compose.app.yml "$@"
+}
+
+get_active_color() {
+  if [[ -f "$BLUEGREEN_STATE_FILE" ]]; then
+    cat "$BLUEGREEN_STATE_FILE"
+  else
+    echo ""
+  fi
+}
+
 # Script paths
 HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/cli/health-check.sh"
 SSL_MANAGER_SCRIPT="$ICHRISBIRCH_HOME/deploy-containers/traefik/scripts/ssl-manager.sh"
@@ -93,6 +111,9 @@ function colored-logs() {
     -e 's/dev-//g' \
     -e 's/test-//g' \
     -e 's/prod-//g' \
+    -e 's/blue-//g' \
+    -e 's/green-//g' \
+    -e 's/infra-//g' \
     -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
     -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
     -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
@@ -122,6 +143,9 @@ function colored-status() {
     -v healthy="$GREEN_HEALTHY" '
     {
         gsub(/icb-/, "");
+        gsub(/blue-/, "");
+        gsub(/green-/, "");
+        gsub(/infra-/, "");
         gsub(/running/, running);
         gsub(/exited/, exited);
         gsub(/restarting/, restarting);
@@ -407,14 +431,21 @@ function load-prod-env() {
 
 function prod-start() {
   cd "$ICHRISBIRCH_HOME" || exit
-
   load-prod-env || return 1
 
-  echo "Starting ${magenta}PRODUCTION${reset} environment"
-  $COMPOSE_PROD up -d
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "Starting ${magenta}PRODUCTION${reset} (blue/green: ${cyan}${color}${reset})"
+    $COMPOSE_INFRA up -d
+    compose_app "$color" up -d
+  else
+    echo "Starting ${magenta}PRODUCTION${reset} (legacy single-compose)"
+    $COMPOSE_PROD up -d
+  fi
 
   echo ""
-  echo "Production environment started:"
   echo "  ${green}APP${reset}:  ${cyan}${PROD_APP_URL}${reset}"
   echo "  ${green}API${reset}:  ${cyan}${PROD_API_URL}${reset}"
   echo "  ${green}CHAT${reset}: ${cyan}${PROD_CHAT_URL}${reset}"
@@ -423,26 +454,190 @@ function prod-start() {
 function prod-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
-  echo "Stopping ${magenta}PRODUCTION${reset} environment"
-  $COMPOSE_PROD down
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "Stopping ${magenta}PRODUCTION${reset} app (${cyan}${color}${reset})"
+    compose_app "$color" down
+    echo "Stopping ${magenta}PRODUCTION${reset} infrastructure"
+    $COMPOSE_INFRA down
+  else
+    echo "Stopping ${magenta}PRODUCTION${reset} environment"
+    $COMPOSE_PROD down
+  fi
 }
 
 function prod-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
-  echo "Restarting ${magenta}PRODUCTION${reset} environment"
-  $COMPOSE_PROD up -d
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "Restarting ${magenta}PRODUCTION${reset} (${cyan}${color}${reset})"
+    $COMPOSE_INFRA up -d
+    compose_app "$color" up -d
+  else
+    echo "Restarting ${magenta}PRODUCTION${reset} environment"
+    $COMPOSE_PROD up -d
+  fi
 }
 
 function prod-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "${yellow}Blue/green is active. Use the deploy script instead:${reset}"
+    echo "  ${cyan}./scripts/deploy-homelab.sh${reset}"
+    echo ""
+    echo "Or to force a legacy rebuild (${red}causes downtime${reset}):"
+    echo "  ${cyan}icb prod legacy-rebuild${reset}"
+    return 1
+  fi
+
   echo "Rebuilding ${magenta}PRODUCTION${reset} environment"
   $COMPOSE_PROD down
   echo "Building images..."
   $COMPOSE_PROD build
   echo "Starting services..."
   $COMPOSE_PROD up -d
+}
+
+function prod-legacy-rebuild() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  load-prod-env || return 1
+  echo "${red}WARNING: Legacy rebuild causes downtime!${reset}"
+  echo "Rebuilding ${magenta}PRODUCTION${reset} environment (single-compose)"
+  $COMPOSE_PROD down
+  echo "Building images..."
+  $COMPOSE_PROD build
+  echo "Starting services..."
+  $COMPOSE_PROD up -d
+}
+
+function prod-deploy-status() {
+  cd "$ICHRISBIRCH_HOME" || exit
+
+  local color
+  color=$(get_active_color)
+
+  echo "${magenta}PRODUCTION${reset} deployment status:"
+  echo ""
+
+  if [[ -z "$color" ]]; then
+    echo "  ${yellow}Blue/green not initialized${reset} (using legacy single-compose)"
+    echo ""
+    return 0
+  fi
+
+  echo "  ${green}Active color${reset}: ${cyan}${color}${reset}"
+  echo ""
+
+  echo "  ${green}Infrastructure:${reset}"
+  docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=icb-infra" 2>/dev/null || echo "    not running"
+  echo ""
+
+  echo "  ${green}App (${color}):${reset}"
+  docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=icb-${color}" 2>/dev/null || echo "    not running"
+  echo ""
+
+  # Check if the other color has any containers (shouldn't normally)
+  local other_color
+  if [[ "$color" == "blue" ]]; then other_color="green"; else other_color="blue"; fi
+  local other_containers
+  other_containers=$(docker ps --format '{{.Names}}' --filter "name=icb-${other_color}" 2>/dev/null)
+  if [[ -n "$other_containers" ]]; then
+    echo "  ${yellow}Standby (${other_color}) — still running:${reset}"
+    docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=icb-${other_color}" 2>/dev/null
+    echo ""
+  fi
+
+  echo "  ${green}Routing:${reset}"
+  local routing_file="$ICHRISBIRCH_HOME/deploy-containers/traefik/dynamic/prod/routing.yml"
+  if [[ -f "$routing_file" ]]; then
+    local routing_color
+    routing_color=$(grep -o 'icb-\(blue\|green\)-api' "$routing_file" | head -1 | sed 's/icb-\(.*\)-api/\1/')
+    echo "    Traefik routing → ${cyan}${routing_color}${reset}"
+    if [[ "$routing_color" != "$color" ]]; then
+      echo "    ${red}WARNING: routing.yml points to ${routing_color} but state says ${color}!${reset}"
+    fi
+  else
+    echo "    ${red}routing.yml not found${reset}"
+  fi
+}
+
+function prod-rollback() {
+  cd "$ICHRISBIRCH_HOME" || exit
+  load-prod-env || return 1
+
+  local current_color
+  current_color=$(get_active_color)
+
+  if [[ -z "$current_color" ]]; then
+    echo "${red}Blue/green not initialized — nothing to roll back${reset}"
+    return 1
+  fi
+
+  local previous_color
+  if [[ "$current_color" == "blue" ]]; then previous_color="green"; else previous_color="blue"; fi
+
+  echo "${yellow}Rolling back:${reset} ${current_color} → ${previous_color}"
+  echo ""
+
+  # Check if previous color containers are still running
+  local prev_running
+  prev_running=$(docker ps --format '{{.Names}}' --filter "name=icb-${previous_color}-api" 2>/dev/null)
+
+  if [[ -z "$prev_running" ]]; then
+    echo "Previous containers (${previous_color}) not running. Starting them..."
+    compose_app "$previous_color" up -d
+
+    echo "Waiting for health checks..."
+    local max_wait=90
+    local interval=5
+    local waited=0
+    while [[ $waited -lt $max_wait ]]; do
+      local health
+      health=$(docker inspect --format='{{.State.Health.Status}}' "icb-${previous_color}-api" 2>/dev/null || echo "missing")
+      if [[ "$health" == "healthy" ]]; then
+        echo "${green}API container healthy after ${waited}s${reset}"
+        break
+      fi
+      sleep $interval
+      waited=$((waited + interval))
+    done
+
+    if [[ $waited -ge $max_wait ]]; then
+      echo "${red}Previous containers did not become healthy. Rollback aborted.${reset}"
+      return 1
+    fi
+  else
+    echo "Previous containers (${previous_color}) still running"
+  fi
+
+  # Switch routing
+  local routing_file="$ICHRISBIRCH_HOME/deploy-containers/traefik/dynamic/prod/routing.yml"
+  local routing_tmp="${routing_file}.tmp"
+
+  sed "s/icb-${current_color}/icb-${previous_color}/g; s/Active color: ${current_color}/Active color: ${previous_color}/" \
+      "$routing_file" > "$routing_tmp"
+  mv "$routing_tmp" "$routing_file"
+
+  echo "$previous_color" > "$BLUEGREEN_STATE_FILE"
+
+  echo ""
+  echo "${green}Rolled back to ${previous_color}${reset}"
+  echo "Traefik will pick up the change within 1-2 seconds."
+  echo ""
+  echo "The ${current_color} containers are still running. Stop them with:"
+  echo "  ${cyan}DEPLOY_COLOR=${current_color} docker compose --project-name icb-${current_color} -f docker-compose.app.yml down${reset}"
 }
 
 function prod-logs() {
@@ -479,12 +674,23 @@ function prod-logs() {
     ;;
   *)
     load-prod-env || return 1
-    echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
-    echo ""
-    while true; do
-      $COMPOSE_PROD logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-      sleep 2
-    done
+    local color
+    color=$(get_active_color)
+    if [[ -n "$color" ]]; then
+      echo "Viewing ${magenta}PRODUCTION${reset} logs (${cyan}${color}${reset}) (Ctrl+C to exit)"
+      echo ""
+      while true; do
+        compose_app "$color" logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+        sleep 2
+      done
+    else
+      echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
+      echo ""
+      while true; do
+        $COMPOSE_PROD logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
+        sleep 2
+      done
+    fi
     ;;
   esac
 }
@@ -492,9 +698,24 @@ function prod-logs() {
 function prod-status() {
   cd "$ICHRISBIRCH_HOME" || exit
   load-prod-env || return 1
-  echo "${magenta}PRODUCTION${reset} environment status:"
-  echo ""
-  $COMPOSE_PROD ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "${magenta}PRODUCTION${reset} status (active: ${cyan}${color}${reset}):"
+    echo ""
+    echo "${green}Infrastructure:${reset}"
+    $COMPOSE_INFRA ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+    echo ""
+    echo "${green}App (${color}):${reset}"
+    compose_app "$color" ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  else
+    echo "${magenta}PRODUCTION${reset} environment status:"
+    echo ""
+    $COMPOSE_PROD ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  fi
+
   echo ""
   echo "${magenta}URLs${reset}: $PROD_APP_URL | $PROD_API_URL | $PROD_CHAT_URL"
 }
@@ -591,10 +812,13 @@ function usage() {
   echo "    ${blue}testing db reset${reset} - Drop and recreate all tables"
   echo
   echo "${green}Production:${reset}"
-  echo "  ${blue}prod start|stop|restart|rebuild${reset} - Manage production"
+  echo "  ${blue}prod start|stop|restart${reset} - Manage production (blue/green aware)"
   echo "  ${blue}prod logs [service]${reset} - View logs"
   echo "  ${blue}prod status|health|apihealth${reset} - Check environment"
   echo "  ${blue}prod smoke${reset} - Run smoke tests against all endpoints"
+  echo "  ${blue}prod deploy-status${reset} - Show blue/green deployment state"
+  echo "  ${blue}prod rollback${reset} - Switch traffic back to previous color"
+  echo "  ${blue}prod build-test${reset} - Test production Docker build locally"
   echo "  ${green}DB:${reset}"
   echo "    ${blue}prod db backup <desc>${reset} - Create backup to S3"
   echo "    ${blue}prod db restore <file>${reset} - Restore from S3 backup"
@@ -680,6 +904,10 @@ prod)
     shift 2
     env-db production "$@"
     ;;
+  deploy-status) prod-deploy-status ;;
+  rollback) prod-rollback ;;
+  legacy-rebuild) prod-legacy-rebuild ;;
+  build-test) prod-build-test ;;
   *) prod-"$2" ;;
   esac
   ;;

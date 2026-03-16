@@ -21,16 +21,17 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 **Test Environment (`docker-compose.test.yml`)**:
 
 - **PostgreSQL**: Port 5434 (external) → 5432 (internal), tmpfs for speed
-- **Redis**: Port 6380 (external) → 6379 (internal), tmpfs for speed  
+- **Redis**: Port 6380 (external) → 6379 (internal), tmpfs for speed
 - **FastAPI Backend**: Port 8001 (external) → 8000 (internal), isolated test database
 - **Nginx**: Disabled for testing
 
-**Production Environment (`docker-compose.yml`)**:
+**Production Environment** (`docker-compose.infra.yml` + `docker-compose.app.yml`):
 
-- **All services**: Standard internal ports with production optimizations
-- **SSL/TLS**: Ready for certificate mounting
-- **Health checks**: Comprehensive monitoring
-- **Resource limits**: Production-ready constraints
+- **Blue/green deployment**: Infrastructure always running, app services alternate between blue/green
+- **Zero downtime**: New containers verified via health checks + smoke tests before traffic switches
+- **Traefik file provider**: Routing controlled by `routing.yml`, hot-reloaded on change
+- **Health checks**: Comprehensive monitoring on all services
+- See [Blue/Green Deployment](blue-green-deployment.md) for the full guide
 
 ## CLI Command Reference
 
@@ -38,7 +39,7 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 
 ```bash
 ichrisbirch dev start     # Start all development services
-ichrisbirch dev stop      # Stop and remove containers  
+ichrisbirch dev stop      # Stop and remove containers
 ichrisbirch dev restart   # Restart existing containers
 ichrisbirch dev rebuild   # Rebuild images and restart
 ichrisbirch dev logs      # View live container logs
@@ -68,18 +69,29 @@ ichrisbirch test logs     # Run tests with timestamped log output
 ### Production Commands
 
 ```bash
-ichrisbirch prod status    # Check production service status
-ichrisbirch prod apihealth # HTTP health check for API service
-ichrisbirch prod logs      # View production application logs
+ichrisbirch prod start          # Start infra + active color
+ichrisbirch prod stop           # Stop active color + infra
+ichrisbirch prod restart        # Restart without rebuilding
+ichrisbirch prod status         # Check production service status
+ichrisbirch prod health         # Run health checks
+ichrisbirch prod apihealth      # HTTP health check for API service
+ichrisbirch prod smoke          # Run smoke tests against all endpoints
+ichrisbirch prod deploy-status  # Show blue/green state and routing
+ichrisbirch prod rollback       # Switch traffic back to previous color
+ichrisbirch prod logs           # View production application logs
 ```
 
 ## Docker Compose Configuration
 
 ### File Structure
 
-- **`docker-compose.yml`**: Base production configuration
-- **`docker-compose.dev.yml`**: Development overrides with debugging
-- **`docker-compose.test.yml`**: Test environment with performance optimizations
+- **`docker-compose.yml`**: Legacy single-file production configuration (emergency fallback)
+- **`docker-compose.infra.yml`**: Production infrastructure (Traefik, PostgreSQL, Redis) — always running
+- **`docker-compose.app.yml`**: Production app services parameterized by `${DEPLOY_COLOR}` for blue/green
+- **`docker-compose.dev.yml`**: Development overrides (uses `docker-compose.yml` as base)
+- **`docker-compose.test.yml`**: Test environment with performance optimizations (uses `docker-compose.yml` as base)
+
+See [Blue/Green Deployment](blue-green-deployment.md) for details on the production compose split.
 
 ### Environment Variables
 
@@ -161,7 +173,7 @@ git clone <repository>
 cd ichrisbirch
 cp .env.example .env  # Configure environment variables
 
-# Start development environment  
+# Start development environment
 ichrisbirch dev start
 
 # View logs
@@ -187,7 +199,7 @@ ichrisbirch dev status
 # Check service status
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
-# View specific service logs  
+# View specific service logs
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs api
 
 # Execute commands in running containers
@@ -240,7 +252,7 @@ ichrisbirch dev status
 # View recent infrastructure logs
 ichrisbirch dev logs
 
-# Clean up unused containers/images  
+# Clean up unused containers/images
 docker system prune -f
 
 # Reset development environment

@@ -4,46 +4,47 @@ This document covers issues encountered during deployment and production operati
 
 ## Service Recovery
 
-When services are down in production, follow this emergency recovery procedure:
+Production uses [blue/green deployment](../blue-green-deployment.md). Infrastructure (Traefik, PostgreSQL, Redis) runs in `icb-infra`, app services run as `icb-blue` or `icb-green`.
 
 ### Quick Service Recovery
 
-#### 1. Check Service Status
+#### 1. Check Deployment State
 
 ```bash
+# What color is active? What's running?
+icb prod deploy-status
+
 # Check all containers
-docker ps -a
+docker ps -a | grep icb
 
-# Check specific service
-docker-compose -f docker-compose.prod.yml ps app
-
-# Check logs for errors
-docker-compose -f docker-compose.prod.yml logs --tail=50 app
+# Check deploy logs
+icb prod logs deploy
 ```
 
-#### 2. Restart Failed Services
+#### 2. Restart Services
 
 ```bash
-# Restart single service
-docker-compose -f docker-compose.prod.yml restart app
+# Restart active color + infrastructure
+icb prod restart
 
-# Restart all services
-docker-compose -f docker-compose.prod.yml restart
+# If a deploy failed and left the site down, rollback:
+icb prod rollback
 
-# Full recreation if needed
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml up -d
+# Emergency: fall back to legacy single-compose (causes brief downtime)
+icb prod legacy-rebuild
 ```
 
 #### 3. Verify Recovery
 
 ```bash
-# Test endpoints
-curl -f http://localhost/health
-curl -f http://localhost/api/health
+# Test health endpoint
+curl -f http://localhost:80/health -H "Host: api.ichrisbirch.com"
 
-# Check service logs
-docker-compose -f docker-compose.prod.yml logs -f app
+# Run full smoke tests
+icb prod smoke
+
+# Check container logs
+icb prod logs
 ```
 
 ## Build and Deployment Failures
@@ -405,23 +406,29 @@ df -h
 free -h
 docker system df
 
-# 2. Stop all services
-docker-compose -f docker-compose.prod.yml down
-
-# 3. Clean up if needed
+# 2. Clean up if needed
 docker system prune -f
 
-# 4. Restore from backup if necessary
-# (Follow backup recovery process above)
+# 3. Start infrastructure first (postgres, redis, traefik)
+cd /srv/ichrisbirch
+docker compose --project-name icb-infra -f docker-compose.infra.yml up -d
 
-# 5. Start services in order
-docker-compose -f docker-compose.prod.yml up -d postgres
-sleep 30
-docker-compose -f docker-compose.prod.yml up -d app
-docker-compose -f docker-compose.prod.yml up -d nginx
+# 4. Wait for postgres/redis to be healthy
+docker inspect --format='{{.State.Health.Status}}' icb-infra-postgres
+
+# 5. Start the active color's app services
+COLOR=$(cat /var/lib/ichrisbirch/bluegreen-state)
+DEPLOY_COLOR=$COLOR docker compose --project-name icb-$COLOR -f docker-compose.app.yml up -d
 
 # 6. Verify services
-./scripts/verify_deployment.sh
+icb prod health
+icb prod smoke
+```
+
+If blue/green state is missing or corrupted, use the legacy fallback:
+
+```bash
+icb prod legacy-rebuild
 ```
 
 ### Data Recovery

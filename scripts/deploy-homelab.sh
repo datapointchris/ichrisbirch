@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 #
-# Homelab deployment script - called by webhook receiver after GitHub CI passes
+# Blue/green deployment script for ichrisbirch
 #
-# This script:
-#   1. Pulls latest code from git
-#   2. Runs Alembic database migrations
-#   3. Rebuilds and restarts containers
-#   4. Verifies deployment health
-#   5. Sends Slack notification on success/failure
+# Deploys the opposite color from what's currently live, verifies health and
+# smoke tests, then atomically switches Traefik routing. If anything fails
+# before the switch, the live containers are never touched.
+#
+# Flow:
+#   1. Acquire deploy lock (prevents concurrent deploys)
+#   2. Pull latest code + decrypt secrets
+#   3. Determine which color to deploy (opposite of live)
+#   4. Ensure infrastructure (Traefik, PostgreSQL, Redis) is running
+#   5. Build new images and start new color containers
+#   6. Wait for health checks + run smoke tests
+#   7. Run database migrations
+#   8. Switch Traefik routing to new color
+#   9. Grace period, then tear down old color
 #
 # Usage:
 #   ./scripts/deploy-homelab.sh
-#
-# The webhook receiver should call this script after receiving the deployment signal.
-# Logs are output as JSON for structured parsing.
 
 set -euo pipefail
 
@@ -22,8 +27,14 @@ LOG_DIR="${INSTALL_DIR}/logs"
 LOG_FILE="${LOG_DIR}/deploy.log"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Ensure log directory exists
+LOCK_FILE="/var/lock/ichrisbirch-deploy.lock"
+STATE_DIR="/var/lib/ichrisbirch"
+STATE_FILE="${STATE_DIR}/bluegreen-state"
+COMPOSE_INFRA="docker compose --project-name icb-infra -f docker-compose.infra.yml"
+GRACE_PERIOD=30
+
 mkdir -p "$LOG_DIR"
+mkdir -p "$STATE_DIR"
 
 # Source structured logging library
 # shellcheck source=bash-lib/logging.sh
@@ -37,9 +48,21 @@ NEW_SHA=""
 DEPLOY_START_TIME=""
 FAILURE_STEP=""
 FAILURE_OUTPUT=""
+LIVE_COLOR=""
+DEPLOY_COLOR=""
+
+compose_app() {
+    local color="$1"
+    shift
+    DEPLOY_COLOR="$color" docker compose --project-name "icb-${color}" -f docker-compose.app.yml "$@"
+}
 
 cleanup() {
     local exit_code=$?
+
+    # Always release the lock
+    rmdir "$LOCK_FILE" 2>/dev/null || true
+
     if [[ "$DEPLOY_STARTED" == "true" && "$DEPLOY_SUCCESS" != "true" ]]; then
         local commit_msg
         commit_msg=$(cd "$INSTALL_DIR" && git log -1 --pretty=format:'%h - %s' 2>/dev/null || echo "unknown")
@@ -48,17 +71,25 @@ cleanup() {
             "exit_code" "$exit_code" \
             "step" "${FAILURE_STEP:-unknown}" \
             "current_sha" "${CURRENT_SHA:-unknown}" \
-            "target_sha" "${NEW_SHA:-unknown}" | tee -a "$LOG_FILE"
+            "target_sha" "${NEW_SHA:-unknown}" \
+            "live_color" "${LIVE_COLOR:-unknown}" \
+            "deploy_color" "${DEPLOY_COLOR:-unknown}" | tee -a "$LOG_FILE"
 
-        # Build detailed failure message for Slack
+        # Clean up failed deploy containers (live containers stay untouched)
+        if [[ -n "$DEPLOY_COLOR" ]]; then
+            log_info "cleaning_up_failed_deploy" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+            compose_app "$DEPLOY_COLOR" down 2>/dev/null || true
+        fi
+
+
         local message="*Commit:* \`${NEW_SHA:0:7}\`"
         message+="\n*Step Failed:* ${FAILURE_STEP:-unknown}"
         message+="\n*Exit Code:* $exit_code"
+        message+="\n*Live Color:* ${LIVE_COLOR:-unknown} (still serving)"
         message+="\n\n*Commit:* $commit_msg"
 
         local context=""
         if [[ -n "$FAILURE_OUTPUT" ]]; then
-            # Truncate to last 500 chars to avoid Slack limits
             local truncated_output="${FAILURE_OUTPUT: -500}"
             context="*Error Output:*\n\`\`\`${truncated_output}\`\`\`"
         fi
@@ -68,6 +99,16 @@ cleanup() {
     fi
 }
 trap cleanup EXIT
+
+acquire_lock() {
+    if ! mkdir "$LOCK_FILE" 2>/dev/null; then
+        log_warn "deploy_already_running" "lock" "$LOCK_FILE" | tee -a "$LOG_FILE"
+        # Not a failure — another deploy is handling it
+        DEPLOY_STARTED=false
+        exit 0
+    fi
+    log_info "lock_acquired" | tee -a "$LOG_FILE"
+}
 
 check_prerequisites() {
     FAILURE_STEP="prerequisites"
@@ -80,6 +121,12 @@ check_prerequisites() {
     if ! command -v docker &>/dev/null; then
         FAILURE_OUTPUT="Docker command not found"
         log_error "prerequisite_failed" "reason" "docker_not_found" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    if ! command -v jq &>/dev/null; then
+        FAILURE_OUTPUT="jq not found — needed for smoke test validation"
+        log_error "prerequisite_failed" "reason" "jq_not_found" | tee -a "$LOG_FILE"
         exit 1
     fi
 }
@@ -115,7 +162,6 @@ pull_latest_code() {
     log_info "git_fetch_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
-    # Fetch and show what's coming
     if ! git fetch origin main 2>&1; then
         FAILURE_OUTPUT="Failed to fetch from origin"
         exit 1
@@ -138,42 +184,73 @@ pull_latest_code() {
     fi
 }
 
-run_migrations() {
-    FAILURE_STEP="migrations"
-    log_info "migrations_started" | tee -a "$LOG_FILE"
-    cd "$INSTALL_DIR"
+determine_colors() {
+    FAILURE_STEP="determine_colors"
 
-    # Check if postgres is running
-    if ! docker ps --format '{{.Names}}' | grep -q 'icb-prod-postgres'; then
-        log_warn "postgres_not_running" "action" "starting_services" | tee -a "$LOG_FILE"
-        ./cli/ichrisbirch prod start
-        sleep 10
-    fi
-
-    # Run migrations via the api container (has alembic installed)
-    # alembic.ini is in /app/ichrisbirch/
-    local migration_output
-    if migration_output=$(docker exec -w /app/ichrisbirch icb-prod-api alembic upgrade head 2>&1); then
-        log_info "migrations_completed" | tee -a "$LOG_FILE"
+    if [[ -f "$STATE_FILE" ]]; then
+        LIVE_COLOR=$(cat "$STATE_FILE")
     else
-        FAILURE_OUTPUT="$migration_output"
-        log_error "migrations_failed" "output" "$migration_output" | tee -a "$LOG_FILE"
-        exit 1
+        # First deploy — no live color yet, default to deploying blue
+        LIVE_COLOR=""
     fi
+
+    if [[ "$LIVE_COLOR" == "blue" ]]; then
+        DEPLOY_COLOR="green"
+    else
+        DEPLOY_COLOR="blue"
+    fi
+
+    log_info "colors_determined" \
+        "live" "${LIVE_COLOR:-none}" \
+        "deploy" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 }
 
-restart_services() {
-    FAILURE_STEP="rebuild"
-    log_info "services_restart_started" | tee -a "$LOG_FILE"
+ensure_infra_running() {
+    FAILURE_STEP="infra_startup"
+    log_info "infra_check_started" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
-    # Capture rebuild output to a log file for debugging
+    # Start infra if not already running (idempotent)
+    if ! $COMPOSE_INFRA up -d 2>&1 | tee -a "$LOG_FILE"; then
+        FAILURE_OUTPUT="Failed to start infrastructure services"
+        log_error "infra_startup_failed" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    # Wait for postgres and redis to be healthy
+    local max_wait=60
+    local interval=5
+    local waited=0
+
+    while [[ $waited -lt $max_wait ]]; do
+        local pg_health redis_health
+        pg_health=$(docker inspect --format='{{.State.Health.Status}}' icb-infra-postgres 2>/dev/null || echo "missing")
+        redis_health=$(docker inspect --format='{{.State.Health.Status}}' icb-infra-redis 2>/dev/null || echo "missing")
+
+        if [[ "$pg_health" == "healthy" && "$redis_health" == "healthy" ]]; then
+            log_info "infra_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
+            return 0
+        fi
+
+        sleep $interval
+        waited=$((waited + interval))
+    done
+
+    FAILURE_OUTPUT="Infrastructure not healthy after ${max_wait}s. postgres=${pg_health}, redis=${redis_health}"
+    log_error "infra_not_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
+    exit 1
+}
+
+build_new_images() {
+    FAILURE_STEP="build"
+    log_info "build_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+    cd "$INSTALL_DIR"
+
     local build_log="${LOG_DIR}/build-$(date +%Y%m%d-%H%M%S).log"
 
-    # Rebuild images to pick up code changes and restart
-    if ! ./cli/ichrisbirch prod rebuild 2>&1 | tee "$build_log"; then
+    if ! compose_app "$DEPLOY_COLOR" build 2>&1 | tee "$build_log"; then
         FAILURE_OUTPUT=$(tail -30 "$build_log")
-        log_error "services_restart_failed" "step" "rebuild" "log" "$build_log" | tee -a "$LOG_FILE"
+        log_error "build_failed" "color" "$DEPLOY_COLOR" "log" "$build_log" | tee -a "$LOG_FILE"
         exit 1
     fi
 
@@ -181,16 +258,31 @@ restart_services() {
     # shellcheck disable=SC2012
     ls -t "${LOG_DIR}"/build-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
 
-    log_info "services_restart_completed" | tee -a "$LOG_FILE"
+    log_info "build_completed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 }
 
-wait_for_containers_healthy() {
+start_new_containers() {
+    FAILURE_STEP="start_containers"
+    log_info "containers_starting" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+    cd "$INSTALL_DIR"
+
+    if ! compose_app "$DEPLOY_COLOR" up -d 2>&1 | tee -a "$LOG_FILE"; then
+        FAILURE_OUTPUT="Failed to start ${DEPLOY_COLOR} containers"
+        log_error "containers_start_failed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    log_info "containers_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+}
+
+wait_for_healthy() {
+    FAILURE_STEP="health_check"
     local max_wait=90
     local interval=5
     local waited=0
-    local services="icb-prod-api icb-prod-app icb-prod-traefik icb-prod-postgres icb-prod-redis"
+    local services="icb-${DEPLOY_COLOR}-api icb-${DEPLOY_COLOR}-app icb-${DEPLOY_COLOR}-vue"
 
-    log_info "waiting_for_healthy" "max_wait" "$max_wait" | tee -a "$LOG_FILE"
+    log_info "waiting_for_healthy" "color" "$DEPLOY_COLOR" "max_wait" "$max_wait" | tee -a "$LOG_FILE"
 
     while [[ $waited -lt $max_wait ]]; do
         local all_healthy=true
@@ -206,7 +298,7 @@ wait_for_containers_healthy() {
         done
 
         if [[ "$all_healthy" == "true" ]]; then
-            log_info "containers_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
+            log_info "containers_healthy" "color" "$DEPLOY_COLOR" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
             return 0
         fi
 
@@ -214,34 +306,120 @@ wait_for_containers_healthy() {
         waited=$((waited + interval))
     done
 
-    log_warn "containers_not_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
-    return 1
+    # Log container statuses for debugging
+    local container_statuses
+    container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep "icb-${DEPLOY_COLOR}" || echo "no containers")
+    FAILURE_OUTPUT="Containers not healthy after ${max_wait}s. Status: $container_statuses"
+    log_error "containers_not_healthy" "color" "$DEPLOY_COLOR" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
+    exit 1
 }
 
-verify_deployment() {
-    FAILURE_STEP="health_check"
-    log_info "health_check_started" | tee -a "$LOG_FILE"
+run_migrations() {
+    FAILURE_STEP="migrations"
+    log_info "migrations_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
-    # Wait for Docker healthchecks to pass
-    if ! wait_for_containers_healthy; then
-        # Log container statuses for debugging
-        local container_statuses
-        container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep icb-prod || echo "no containers")
-        FAILURE_OUTPUT="Containers not healthy after 90s. Status: $container_statuses"
-        log_error "health_check_failed" "action" "deployment_blocked" "reason" "containers_not_healthy" | tee -a "$LOG_FILE"
+    local migration_output
+    if migration_output=$(docker exec -w /app/ichrisbirch "icb-${DEPLOY_COLOR}-api" alembic upgrade head 2>&1); then
+        log_info "migrations_completed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+    else
+        FAILURE_OUTPUT="$migration_output"
+        log_error "migrations_failed" "color" "$DEPLOY_COLOR" "output" "$migration_output" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+}
+
+run_smoke_tests() {
+    FAILURE_STEP="smoke_tests"
+    log_info "smoke_tests_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+
+    # Run the full 32-endpoint smoke test suite via the API's built-in endpoint
+    local smoke_output
+    if ! smoke_output=$(docker exec "icb-${DEPLOY_COLOR}-api" curl -sf \
+        -X POST http://localhost:8000/admin/smoke-tests/ \
+        -H "Remote-User: admin@ichrisbirch.com" \
+        -H "Remote-Email: admin@ichrisbirch.com" 2>&1); then
+        FAILURE_OUTPUT="Failed to reach smoke test endpoint: $smoke_output"
+        log_error "smoke_tests_unreachable" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
         exit 1
     fi
 
-    # Run application-level health check
-    local health_output
-    if health_output=$(./cli/ichrisbirch prod health 2>&1); then
-        log_info "health_check_passed" | tee -a "$LOG_FILE"
-    else
-        FAILURE_OUTPUT="$health_output"
-        log_error "health_check_failed" "action" "deployment_blocked" | tee -a "$LOG_FILE"
+    # Verify all critical endpoints passed
+    if ! echo "$smoke_output" | jq -e '.all_critical_passed == true' >/dev/null 2>&1; then
+        local failed_endpoints
+        failed_endpoints=$(echo "$smoke_output" | jq -r '.results[] | select(.passed == false) | "\(.path) (\(.status_code // .error))"' 2>/dev/null || echo "unknown")
+        FAILURE_OUTPUT="Critical smoke tests failed: $failed_endpoints"
+        log_error "smoke_tests_failed" "color" "$DEPLOY_COLOR" "failed" "$failed_endpoints" | tee -a "$LOG_FILE"
         exit 1
     fi
+
+    local passed total
+    passed=$(echo "$smoke_output" | jq -r '.passed' 2>/dev/null || echo "?")
+    total=$(echo "$smoke_output" | jq -r '.total' 2>/dev/null || echo "?")
+    log_info "smoke_tests_passed" "color" "$DEPLOY_COLOR" "passed" "$passed" "total" "$total" | tee -a "$LOG_FILE"
+
+    # Verify Vue SPA serves correctly
+    if ! docker exec "icb-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ >/dev/null 2>&1; then
+        FAILURE_OUTPUT="Vue container not serving SPA"
+        log_error "vue_smoke_failed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    # Verify Flask health
+    if ! docker exec "icb-${DEPLOY_COLOR}-app" curl -sf http://localhost:5000/health >/dev/null 2>&1; then
+        FAILURE_OUTPUT="Flask container health check failed"
+        log_error "flask_smoke_failed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    log_info "all_smoke_tests_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+}
+
+switch_traffic() {
+    FAILURE_STEP="switch_traffic"
+    log_info "traffic_switch_started" \
+        "from" "${LIVE_COLOR:-none}" \
+        "to" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+    cd "$INSTALL_DIR"
+
+    # Generate routing.yml pointing to the new color
+    # The routing template uses "blue" as default; swap to the deploy color
+    local routing_template="${INSTALL_DIR}/deploy-containers/traefik/dynamic/prod/routing.yml"
+    local routing_tmp="${routing_template}.tmp"
+
+    # Replace color in service URLs and the "Active color" comment
+    if [[ "$DEPLOY_COLOR" == "green" ]]; then
+        sed 's/icb-blue/icb-green/g; s/Active color: blue/Active color: green/' \
+            "$routing_template" > "$routing_tmp"
+    else
+        sed 's/icb-green/icb-blue/g; s/Active color: green/Active color: blue/' \
+            "$routing_template" > "$routing_tmp"
+    fi
+
+    # Atomic swap — Traefik watches the file and reloads within 1-2 seconds
+    mv "$routing_tmp" "$routing_template"
+
+    log_info "traffic_switched" "active_color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+}
+
+update_state() {
+    echo "$DEPLOY_COLOR" > "$STATE_FILE"
+    log_info "state_updated" "active_color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+}
+
+stop_old_containers() {
+    if [[ -z "$LIVE_COLOR" ]]; then
+        log_info "no_old_containers" "reason" "first_deploy" | tee -a "$LOG_FILE"
+        return 0
+    fi
+
+    log_info "grace_period_started" "seconds" "$GRACE_PERIOD" "old_color" "$LIVE_COLOR" | tee -a "$LOG_FILE"
+    sleep "$GRACE_PERIOD"
+
+    log_info "stopping_old_containers" "color" "$LIVE_COLOR" | tee -a "$LOG_FILE"
+    compose_app "$LIVE_COLOR" down 2>&1 | tee -a "$LOG_FILE" || true
+
+    log_info "old_containers_stopped" "color" "$LIVE_COLOR" | tee -a "$LOG_FILE"
 }
 
 cleanup_docker() {
@@ -257,6 +435,7 @@ main() {
     DEPLOY_START_TIME=$(date +%s)
     log_info "deployment_started" "install_dir" "$INSTALL_DIR" | tee -a "$LOG_FILE"
 
+    acquire_lock
     check_prerequisites
     pull_latest_code
     decrypt_secrets
@@ -267,14 +446,23 @@ main() {
         export SLACK_WEBHOOK_URL
     fi
 
-    restart_services
+    determine_colors
+    ensure_infra_running
+    build_new_images
+    start_new_containers
+    wait_for_healthy
     run_migrations
-    verify_deployment
+    run_smoke_tests
+
+    # === POINT OF NO RETURN ===
+    # Everything above verified successfully. Now switch traffic.
+    switch_traffic
+    update_state
+    stop_old_containers
     cleanup_docker
 
     DEPLOY_SUCCESS=true
 
-    # Calculate duration
     local end_time duration_secs duration_str
     end_time=$(date +%s)
     duration_secs=$((end_time - DEPLOY_START_TIME))
@@ -282,15 +470,15 @@ main() {
 
     log_info "deployment_completed" \
         "sha" "${NEW_SHA:0:7}" \
+        "color" "$DEPLOY_COLOR" \
         "duration_seconds" "$duration_secs" | tee -a "$LOG_FILE"
 
-    # Get commit message for notification
     local commit_msg
     commit_msg=$(cd "$INSTALL_DIR" && git log -1 --pretty=format:'%s' 2>/dev/null || echo "unknown")
 
-    # Build success message
     local message="*Commit:* \`${NEW_SHA:0:7}\` - $commit_msg"
     message+="\n*Duration:* ${duration_str}"
+    message+="\n*Active Color:* ${DEPLOY_COLOR}"
     message+="\n*URL:* https://ichrisbirch.com"
 
     notify_slack "success" "$message"

@@ -44,14 +44,17 @@ pre-commit run --all-files
 
 - **Production server**: `ssh chris@10.0.20.11` — path: `/srv/ichrisbirch/`
 - **Webhook server**: `ssh chris@10.0.20.15` — webhook code lives at `~/homelab`
-- **Deployment**: Push to main triggers webhook rebuild. Logs at `/srv/ichrisbirch/logs/`
+- **Deployment**: Push to main triggers webhook → blue/green deploy with zero downtime. Logs at `/srv/ichrisbirch/logs/`
+- **Blue/green**: Infrastructure (`icb-infra`) always running; app services alternate between `icb-blue`/`icb-green`. See `docs/blue-green-deployment.md`.
 
 ```bash
-# View production logs (read-only SSH)
-ssh chris@10.0.20.11 "docker logs icb-prod-api --tail=50 2>&1"
-ssh chris@10.0.20.11 "docker logs icb-prod-vue --tail=50 2>&1"
-ssh chris@10.0.20.11 "docker logs icb-prod-app --tail=50 2>&1"
+# View production logs (read-only SSH) — replace {color} with blue or green
+ssh chris@10.0.20.11 "docker logs icb-blue-api --tail=50 2>&1"
+ssh chris@10.0.20.11 "docker logs icb-blue-vue --tail=50 2>&1"
 ssh chris@10.0.20.11 "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+
+# Check which color is active
+ssh chris@10.0.20.11 "cat /var/lib/ichrisbirch/bluegreen-state"
 
 # Webhook server logs (if containers never started)
 ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
@@ -126,6 +129,8 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 
 Multi-stage Dockerfile: `base` → `development-builder` → `development` | `testing` | `production-builder` → `production`. Specify `--target`. Production image runs non-root with minimal deps.
 
+**Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider (`routing.yml`) switches traffic atomically. Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
+
 Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs managed via `./cli/ichrisbirch ssl-manager`.
 
 ## Conventions
@@ -137,7 +142,7 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 - **NEVER use `# noqa`** to bypass import order errors (E402). Restructure code instead.
 - **Database columns**: Always use `Text`, never `String(n)` or `varchar`.
 - **Categorical fields**: Use lookup tables with `TEXT PRIMARY KEY` + FK, never PostgreSQL enums.
-- **Docker containers**: Prefixed `icb-{env}-{service}` (e.g., `icb-dev-api`).
+- **Docker containers**: Prefixed `icb-{env}-{service}` (e.g., `icb-dev-api`). Production uses `icb-infra-{service}` for infrastructure and `icb-{blue|green}-{service}` for app services.
 - **Docker Compose overrides**: List fields (`ports`, `volumes`, `environment`) **merge by default** across compose files. When a test/dev compose redefines a list that exists in the base compose, use `!override` to replace instead of append (e.g., `ports: !override`). Without this, both port mappings apply and cause "port already allocated" errors.
 - **File naming**: Lowercase with hyphens for docs (except README.md, CLAUDE.md, LICENSE.md). Snake_case for DB tables/columns.
 
@@ -167,6 +172,6 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 
 **Serve locally**: `mkdocs serve` → `http://127.0.0.1:8000`
 
-Key docs: [Quick Start](docs/quick-start.md), [CLI Usage](docs/cli-traefik-usage.md), [Traefik Deployment](docs/traefik-deployment.md), [Alembic Migrations](docs/alembic.md), [Testing Guide](docs/testing/overview.md), [Troubleshooting](docs/troubleshooting.md)
+Key docs: [Quick Start](docs/quick-start.md), [CLI Usage](docs/cli-traefik-usage.md), [Blue/Green Deployment](docs/blue-green-deployment.md), [Traefik Deployment](docs/traefik-deployment.md), [Alembic Migrations](docs/alembic.md), [Testing Guide](docs/testing/overview.md), [Troubleshooting](docs/troubleshooting.md)
 
 **API docs**: FastAPI Swagger at `https://api.docker.localhost/docs`

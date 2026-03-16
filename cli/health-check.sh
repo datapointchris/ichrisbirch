@@ -198,15 +198,37 @@ check_containers() {
             )
             ;;
         prod)
-            containers=(
-                "icb-prod-traefik"
-                "icb-prod-api"
-                "icb-prod-app"
-                "icb-prod-chat"
-                "icb-prod-postgres"
-                "icb-prod-redis"
-                "icb-prod-scheduler"
-            )
+            # Blue/green: check infra + active color containers
+            local bluegreen_state="/var/lib/ichrisbirch/bluegreen-state"
+            local active_color=""
+            if [[ -f "$bluegreen_state" ]]; then
+                active_color=$(cat "$bluegreen_state")
+            fi
+
+            if [[ -n "$active_color" ]]; then
+                containers=(
+                    "icb-infra-traefik"
+                    "icb-infra-postgres"
+                    "icb-infra-redis"
+                    "icb-${active_color}-api"
+                    "icb-${active_color}-app"
+                    "icb-${active_color}-vue"
+                    "icb-${active_color}-chat"
+                    "icb-${active_color}-scheduler"
+                )
+                print_info "Blue/green active color: $active_color"
+            else
+                # Legacy single-compose
+                containers=(
+                    "icb-prod-traefik"
+                    "icb-prod-api"
+                    "icb-prod-app"
+                    "icb-prod-chat"
+                    "icb-prod-postgres"
+                    "icb-prod-redis"
+                    "icb-prod-scheduler"
+                )
+            fi
             ;;
     esac
 
