@@ -16,12 +16,14 @@ def insert_testing_data():
     delete_test_data('events')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/events.spec.ts')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/events/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/events.spec.ts')
 def test_add_event(test_app_logged_in):
     response = test_app_logged_in.post(
         '/events/',
@@ -58,12 +60,14 @@ def test_add_event_missing_attending_field(test_app_logged_in):
         )
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/events.spec.ts')
 def test_delete_event(test_app_logged_in):
     response = test_app_logged_in.post('/events/', data={'id': 1, 'action': 'delete'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert b'<title>Events</title>' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/events.spec.ts')
 def test_send_bad_method(test_app_logged_in):
     response = test_app_logged_in.post(
         '/events/',
