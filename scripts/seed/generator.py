@@ -333,8 +333,9 @@ def generate_coverage_set(
         record = _apply_special_rules(record, model_name, config, fk_cache, counters)
         records.append(record)
 
-    # Enforce uniqueness for fields that need it
+    # Post-generation passes
     _enforce_uniqueness(records, model_info, model_name)
+    _cap_current_habits(records, model_name)
 
     return records
 
@@ -367,3 +368,12 @@ def _enforce_uniqueness(records: list[dict], model_info: ModelInfo, model_name: 
                 counter += 1
             seen.add(val)
             record[col.name] = val
+
+
+def _cap_current_habits(records: list[dict], model_name: str, max_current: int = 10):
+    """Limit seeded habits to max_current by selecting a random subset."""
+    if model_name != 'Habit':
+        return
+    if len(records) > max_current:
+        random.shuffle(records)
+        del records[max_current:]
