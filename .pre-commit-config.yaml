@@ -242,7 +242,7 @@ repos:
         name: pytest (full test suite)
         stages: [pre-commit]
         language: system
-        entry: uv run python scripts/pre_commit_validations/pytest_full.py
+        entry: env ENVIRONMENT=testing uv run pytest --tb=short
         types: [python]
         pass_filenames: false
         always_run: false

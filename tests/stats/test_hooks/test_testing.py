@@ -181,58 +181,108 @@ class TestPytestFullRunner:
 
     def test_pytest_full_runner_skips_no_python(self) -> None:
         from stats.hooks.pytest_full import run
+        from stats.schemas.hooks.testing import PytestFullHookEvent
 
-        event = run(['README.md'], 'master', 'ichrisbirch')
+        events = run(['README.md'], 'master', 'ichrisbirch')
 
-        assert event.status == 'skipped'
-        assert event.tests_run == 0
+        assert len(events) == 1
+        assert isinstance(events[0], PytestFullHookEvent)
+        assert events[0].status == 'skipped'
+        assert events[0].tests_run == 0
 
     def test_pytest_full_runner_parses_output(self) -> None:
         from stats.hooks.pytest_full import run
         from stats.schemas.hooks.testing import PytestFullHookEvent
 
-        with patch('subprocess.run') as mock_run:
+        with (
+            patch('stats.hooks.pytest_full.subprocess.run') as mock_run,
+            patch('stats.hooks.pytest_full.pytest_collector.run', return_value=None),
+        ):
             mock_run.return_value = MagicMock(
                 returncode=0,
                 stdout='===== 150 passed in 45.12s =====',
                 stderr='',
             )
 
-            event = run(['main.py'], 'master', 'ichrisbirch')
+            events = run(['main.py'], 'master', 'ichrisbirch')
 
-            assert isinstance(event, PytestFullHookEvent)
-            assert event.status == 'passed'
-            assert event.tests_run == 150
+            assert len(events) == 1
+            hook_event = events[0]
+            assert isinstance(hook_event, PytestFullHookEvent)
+            assert hook_event.status == 'passed'
+            assert hook_event.tests_run == 150
+
+    def test_pytest_full_runner_emits_collect_event(self) -> None:
+        """Test runner emits both hook and collector events when JSON report exists."""
+        from stats.hooks.pytest_full import run
+        from stats.schemas.collectors.pytest_collector import PytestCollectEvent
+        from stats.schemas.collectors.pytest_collector import PytestSummary
+        from stats.schemas.hooks.testing import PytestFullHookEvent
+
+        mock_collect_event = PytestCollectEvent(
+            timestamp=datetime.now(UTC),
+            project='ichrisbirch',
+            branch='master',
+            summary=PytestSummary(passed=148, failed=2, total=150),
+            tests=[],
+            duration_seconds=45.0,
+            exit_code=1,
+        )
+
+        with (
+            patch('stats.hooks.pytest_full.subprocess.run') as mock_run,
+            patch('stats.hooks.pytest_full.pytest_collector.run', return_value=mock_collect_event),
+        ):
+            mock_run.return_value = MagicMock(
+                returncode=1,
+                stdout='===== 2 failed, 148 passed in 45.12s =====',
+                stderr='',
+            )
+
+            events = run(['main.py'], 'master', 'ichrisbirch')
+
+            assert len(events) == 2
+            assert isinstance(events[0], PytestFullHookEvent)
+            assert isinstance(events[1], PytestCollectEvent)
+            assert events[0].status == 'failed'
+            assert events[1].summary.failed == 2
 
     def test_pytest_full_runner_handles_failure(self) -> None:
         """Test runner returns failed event for failing tests."""
         from stats.hooks.pytest_full import run
         from stats.schemas.hooks.testing import PytestFullHookEvent
 
-        with patch('subprocess.run') as mock_run:
+        with (
+            patch('stats.hooks.pytest_full.subprocess.run') as mock_run,
+            patch('stats.hooks.pytest_full.pytest_collector.run', return_value=None),
+        ):
             mock_run.return_value = MagicMock(
                 returncode=1,
                 stdout='===== 2 failed, 40 passed in 16.30s =====',
                 stderr='',
             )
 
-            event = run(['ichrisbirch/api/main.py'], 'master', 'ichrisbirch')
+            events = run(['ichrisbirch/api/main.py'], 'master', 'ichrisbirch')
 
-            assert isinstance(event, PytestFullHookEvent)
-            assert event.status == 'failed'
-            assert event.exit_code == 1
+            hook_event = events[0]
+            assert isinstance(hook_event, PytestFullHookEvent)
+            assert hook_event.status == 'failed'
+            assert hook_event.exit_code == 1
 
     def test_pytest_full_runner_measures_duration(self) -> None:
         """Test runner measures execution duration."""
         from stats.hooks.pytest_full import run
 
-        with patch('subprocess.run') as mock_run:
+        with (
+            patch('stats.hooks.pytest_full.subprocess.run') as mock_run,
+            patch('stats.hooks.pytest_full.pytest_collector.run', return_value=None),
+        ):
             mock_run.return_value = MagicMock(
                 returncode=0,
                 stdout='===== 42 passed in 15.70s =====',
                 stderr='',
             )
 
-            event = run(['ichrisbirch/api/main.py'], 'master', 'ichrisbirch')
+            events = run(['ichrisbirch/api/main.py'], 'master', 'ichrisbirch')
 
-            assert event.duration_seconds >= 0
+            assert events[0].duration_seconds >= 0

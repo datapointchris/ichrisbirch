@@ -288,7 +288,7 @@ hooks = [
     # Project-specific
     "uv_lock", "validate_markdown_links", "validate_html", "code_sync", "generate_fixture_diagrams",
     # Testing
-    "pytest_affected", "pytest_full",
+    "pytest_full",
 ]
 
 [tool.devstats.collect]

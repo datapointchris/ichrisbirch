@@ -212,3 +212,55 @@ class TestMain:
                 assert len(lines) == 2
                 assert 'hook.ruff' in lines[0]
                 assert 'hook.mypy' in lines[1]
+
+    def test_main_handles_hook_returning_list_of_events(self) -> None:
+        """Test main emits all events when a hook returns a list."""
+        from stats.pre_commit_capture import main
+        from stats.schemas.collectors.pytest_collector import PytestCollectEvent
+        from stats.schemas.collectors.pytest_collector import PytestSummary
+        from stats.schemas.hooks.testing import PytestFullHookEvent
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            events_path = Path(tmpdir) / 'events.jsonl'
+
+            with (
+                patch('stats.pre_commit_capture.load_config') as mock_config,
+                patch('stats.pre_commit_capture.get_staged_files') as mock_staged,
+                patch('stats.pre_commit_capture.get_branch') as mock_branch,
+                patch('stats.hooks.pytest_full.run') as mock_pytest_run,
+            ):
+                mock_config.return_value = {
+                    'project': 'ichrisbirch',
+                    'events_path': str(events_path),
+                    'capture': {'hooks': ['pytest_full']},
+                }
+                mock_staged.return_value = ['test.py']
+                mock_branch.return_value = 'master'
+                mock_pytest_run.return_value = [
+                    PytestFullHookEvent(
+                        timestamp=datetime.now(UTC),
+                        project='ichrisbirch',
+                        branch='master',
+                        status='failed',
+                        exit_code=1,
+                        tests_run=150,
+                        duration_seconds=45.0,
+                    ),
+                    PytestCollectEvent(
+                        timestamp=datetime.now(UTC),
+                        project='ichrisbirch',
+                        branch='master',
+                        summary=PytestSummary(passed=148, failed=2, total=150),
+                        tests=[],
+                        duration_seconds=45.0,
+                        exit_code=1,
+                    ),
+                ]
+
+                result = main()
+
+                assert result == 0
+                lines = events_path.read_text().strip().split('\n')
+                assert len(lines) == 2
+                assert 'hook.pytest-full' in lines[0]
+                assert 'collect.pytest' in lines[1]

@@ -80,7 +80,7 @@ def main() -> int:
             hooks_to_run.append((hook_name, hook_runner))
 
     # Run hooks in parallel
-    events: list[tuple[str, float, object]] = []
+    results: list[tuple[str, float, object]] = []
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {}
         for hook_name, hook_runner in hooks_to_run:
@@ -90,14 +90,19 @@ def main() -> int:
 
         for future in as_completed(futures):
             hook_name, start = futures[future]
-            event = future.result()
+            result = future.result()
             duration = time.perf_counter() - start
-            events.append((hook_name, duration, event))
+            results.append((hook_name, duration, result))
 
     # Emit events and write timing after all hooks complete
-    for hook_name, duration, event in events:
+    # Hooks may return a single event or a list of events
+    for hook_name, duration, result in results:
         write_timing(hook_name, duration)
-        emit_event(event, events_path)
+        if isinstance(result, list):
+            for event in result:
+                emit_event(event, events_path)
+        else:
+            emit_event(result, events_path)
 
     total_duration = time.perf_counter() - total_start
     write_timing('', 0, total_duration)
