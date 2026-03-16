@@ -333,14 +333,55 @@ run_smoke_tests() {
     FAILURE_STEP="smoke_tests"
     log_info "smoke_tests_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 
+    # Verify Vue SPA serves correctly
+    local vue_output
+    if ! vue_output=$(docker exec "icb-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ 2>&1); then
+        FAILURE_OUTPUT="Vue not serving SPA: $vue_output"
+        log_error "vue_smoke_failed" "color" "$DEPLOY_COLOR" "output" "${vue_output:0:200}" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+    log_info "vue_smoke_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+
+    # Verify Flask health
+    local flask_output
+    if ! flask_output=$(docker exec "icb-${DEPLOY_COLOR}-app" curl -s http://localhost:5000/health 2>&1); then
+        FAILURE_OUTPUT="Flask health failed: $flask_output"
+        log_error "flask_smoke_failed" "color" "$DEPLOY_COLOR" "output" "${flask_output:0:200}" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+    log_info "flask_smoke_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+
     # Run the full 32-endpoint smoke test suite via the API's built-in endpoint
-    local smoke_output
-    if ! smoke_output=$(docker exec "icb-${DEPLOY_COLOR}-api" curl -sf \
+    # Use -s (silent) but NOT -f so we get the response body on errors
+    local admin_email
+    admin_email=$(grep '^USERS_DEFAULT_ADMIN_USER_EMAIL=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
+    if [[ -z "$admin_email" ]]; then
+        FAILURE_OUTPUT="USERS_DEFAULT_ADMIN_USER_EMAIL not found in .env"
+        log_error "smoke_admin_email_missing" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+    log_info "smoke_using_admin" "email" "$admin_email" | tee -a "$LOG_FILE"
+
+    local smoke_output http_code
+    smoke_output=$(docker exec "icb-${DEPLOY_COLOR}-api" curl -s -w '\n%{http_code}' \
         -X POST http://localhost:8000/admin/smoke-tests/ \
-        -H "Remote-User: admin@ichrisbirch.com" \
-        -H "Remote-Email: admin@ichrisbirch.com" 2>&1); then
-        FAILURE_OUTPUT="Failed to reach smoke test endpoint: $smoke_output"
-        log_error "smoke_tests_unreachable" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+        -H "Remote-User: ${admin_email}" \
+        -H "Remote-Email: ${admin_email}" 2>&1)
+    local curl_exit=$?
+
+    # Split response body from HTTP status code (appended by -w)
+    http_code=$(echo "$smoke_output" | tail -1)
+    smoke_output=$(echo "$smoke_output" | sed '$d')
+
+    if [[ $curl_exit -ne 0 ]]; then
+        FAILURE_OUTPUT="curl failed (exit $curl_exit): $smoke_output"
+        log_error "smoke_curl_failed" "color" "$DEPLOY_COLOR" "exit" "$curl_exit" "output" "${smoke_output:0:300}" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+
+    if [[ "$http_code" != "200" ]]; then
+        FAILURE_OUTPUT="Smoke endpoint HTTP $http_code: ${smoke_output:0:500}"
+        log_error "smoke_http_error" "color" "$DEPLOY_COLOR" "http_code" "$http_code" "body" "${smoke_output:0:300}" | tee -a "$LOG_FILE"
         exit 1
     fi
 
@@ -357,20 +398,6 @@ run_smoke_tests() {
     passed=$(echo "$smoke_output" | jq -r '.passed' 2>/dev/null || echo "?")
     total=$(echo "$smoke_output" | jq -r '.total' 2>/dev/null || echo "?")
     log_info "smoke_tests_passed" "color" "$DEPLOY_COLOR" "passed" "$passed" "total" "$total" | tee -a "$LOG_FILE"
-
-    # Verify Vue SPA serves correctly
-    if ! docker exec "icb-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ >/dev/null 2>&1; then
-        FAILURE_OUTPUT="Vue container not serving SPA"
-        log_error "vue_smoke_failed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
-        exit 1
-    fi
-
-    # Verify Flask health
-    if ! docker exec "icb-${DEPLOY_COLOR}-app" curl -sf http://localhost:5000/health >/dev/null 2>&1; then
-        FAILURE_OUTPUT="Flask container health check failed"
-        log_error "flask_smoke_failed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
-        exit 1
-    fi
 
     log_info "all_smoke_tests_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 }

@@ -124,15 +124,14 @@ If steps 6-10 fail, the LIVE containers keep serving traffic. The deploy script 
 Before switching traffic, the deploy script runs the full smoke test suite against the new containers:
 
 ```bash
-# Calls the existing /admin/smoke-tests/ endpoint on the new API container
-docker exec icb-${DEPLOY_COLOR}-api curl -sf \
+# Admin email is read from the decrypted .env (USERS_DEFAULT_ADMIN_USER_EMAIL)
+docker exec icb-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
     -X POST http://localhost:8000/admin/smoke-tests/ \
-    -H "Remote-User: admin@ichrisbirch.com" \
-    -H "Remote-Email: admin@ichrisbirch.com" \
-    | jq -e '.all_critical_passed == true'
+    -H "Remote-User: ${admin_email}" \
+    -H "Remote-Email: ${admin_email}"
 ```
 
-This tests 32 GET endpoints across critical, important, and secondary tiers. The deploy only proceeds if `all_critical_passed` is true. Vue and Flask containers are also health-checked directly.
+This tests 32 GET endpoints across critical, important, and secondary tiers. The deploy only proceeds if `all_critical_passed` is true and HTTP 200 is returned. Vue and Flask containers are also health-checked directly before the API smoke tests.
 
 ### Concurrent Deploy Protection
 
