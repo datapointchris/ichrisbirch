@@ -64,38 +64,42 @@ function stats-summary() {
   printf "  ${cyan}%-12s %'6d lines${reset}\n" "Total:" "$total_loc"
   echo ""
 
-  # Tests (combined Python + Frontend)
-  local py_total py_passed py_failed coverage py_duration
-  py_total=$(jq -r '.tests.total // 0' "$stats_file")
+  # Tests (combined Python + Frontend) - use 'active' (excludes skipped) with fallback to 'total'
+  local py_active py_passed py_failed py_skipped coverage py_duration
+  py_active=$(jq -r '.tests.active // .tests.total // 0' "$stats_file")
   py_passed=$(jq -r '.tests.passed // 0' "$stats_file")
   py_failed=$(jq -r '.tests.failed // 0' "$stats_file")
+  py_skipped=$(jq -r '.tests.skipped // 0' "$stats_file")
   coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
   py_duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
 
-  local fe_total fe_passed fe_failed fe_duration
-  fe_total=$(jq -r '.frontend_tests.total // 0' "$stats_file")
+  local fe_active fe_passed fe_failed fe_skipped fe_duration
+  fe_active=$(jq -r '.frontend_tests.active // .frontend_tests.total // 0' "$stats_file")
   fe_passed=$(jq -r '.frontend_tests.passed // 0' "$stats_file")
   fe_failed=$(jq -r '.frontend_tests.failed // 0' "$stats_file")
+  fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
   fe_duration=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
 
-  local all_total all_passed all_failed all_duration pass_rate
-  all_total=$((py_total + fe_total))
+  local all_active all_passed all_failed all_skipped all_duration pass_rate
+  all_active=$((py_active + fe_active))
   all_passed=$((py_passed + fe_passed))
   all_failed=$((py_failed + fe_failed))
+  all_skipped=$((py_skipped + fe_skipped))
   all_duration=$((py_duration + fe_duration))
   pass_rate=0
-  if [ "$all_total" -gt 0 ]; then
-    pass_rate=$((all_passed * 100 / all_total))
+  if [ "$all_active" -gt 0 ]; then
+    pass_rate=$((all_passed * 100 / all_active))
   fi
 
   echo "${blue}Tests${reset}"
   if [ "$all_failed" -eq 0 ]; then
-    printf "  Total:       %d tests (${green}%d%% pass${reset})\n" "$all_total" "$pass_rate"
+    printf "  Active:      %d tests (${green}%d%% pass${reset})\n" "$all_active" "$pass_rate"
   else
-    printf "  Total:       %d tests (${red}%d failed${reset})\n" "$all_total" "$all_failed"
+    printf "  Active:      %d tests (${red}%d failed${reset})\n" "$all_active" "$all_failed"
   fi
-  printf "    Python:    %d\n" "$py_total"
-  printf "    Frontend:  %d\n" "$fe_total"
+  printf "    Python:    %d\n" "$py_active"
+  printf "    Frontend:  %d\n" "$fe_active"
+  [ "$all_skipped" -gt 0 ] && printf "  Skipped:     ${yellow}%d${reset}\n" "$all_skipped"
   printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
   printf "  Duration:    %ds\n" "$all_duration"
   echo ""
@@ -176,8 +180,8 @@ function stats-tests() {
     return
   fi
 
-  local py_total py_passed py_failed py_skipped py_errors py_duration coverage
-  py_total=$(jq -r '.tests.total // 0' "$stats_file")
+  local py_active py_passed py_failed py_skipped py_errors py_duration coverage
+  py_active=$(jq -r '.tests.active // .tests.total // 0' "$stats_file")
   py_passed=$(jq -r '.tests.passed // 0' "$stats_file")
   py_failed=$(jq -r '.tests.failed // 0' "$stats_file")
   py_skipped=$(jq -r '.tests.skipped // 0' "$stats_file")
@@ -185,24 +189,24 @@ function stats-tests() {
   py_duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file")
   coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
 
-  local fe_total2 fe_passed2 fe_failed2 fe_skipped2 fe_duration2
-  fe_total2=$(jq -r '.frontend_tests.total // 0' "$stats_file")
+  local fe_active2 fe_passed2 fe_failed2 fe_skipped2 fe_duration2
+  fe_active2=$(jq -r '.frontend_tests.active // .frontend_tests.total // 0' "$stats_file")
   fe_passed2=$(jq -r '.frontend_tests.passed // 0' "$stats_file")
   fe_failed2=$(jq -r '.frontend_tests.failed // 0' "$stats_file")
   fe_skipped2=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
   fe_duration2=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file")
 
-  local all_total all_passed all_failed all_skipped all_duration
-  all_total=$((py_total + fe_total2))
+  local all_active all_passed all_failed all_skipped all_duration
+  all_active=$((py_active + fe_active2))
   all_passed=$((py_passed + fe_passed2))
   all_failed=$((py_failed + fe_failed2))
   all_skipped=$((py_skipped + fe_skipped2))
   all_duration=$(echo "$py_duration + $fe_duration2" | bc)
 
   echo "${blue}Current Results${reset}"
-  printf "  Total:     %d\n" "$all_total"
-  printf "    Python:    %d\n" "$py_total"
-  printf "    Frontend:  %d\n" "$fe_total2"
+  printf "  Active:    %d\n" "$all_active"
+  printf "    Python:    %d\n" "$py_active"
+  printf "    Frontend:  %d\n" "$fe_active2"
   printf "  Passed:    ${green}%d${reset}\n" "$all_passed"
   [ "$all_failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$all_failed"
   [ "$all_skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$all_skipped"
@@ -222,7 +226,7 @@ function stats-tests() {
       group_by(.timestamp[0:10]) |
       map({
         date: .[0].timestamp[0:10],
-        avg_tests: ([.[].summary.total] | add / length | floor),
+        avg_tests: ([.[].summary | (.total - (.skipped // 0))] | add / length | floor),
         avg_duration: ([.[].duration_seconds] | add / length | floor),
         total_failed: ([.[].summary.failed] | add),
         avg_passed: ([.[].summary.passed] | add / length | floor)
@@ -231,7 +235,7 @@ function stats-tests() {
       group_by(.timestamp[0:10]) |
       map({
         date: .[0].timestamp[0:10],
-        avg_tests: ([.[].summary.total] | add / length | floor),
+        avg_tests: ([.[].summary | (.total - (.skipped // 0))] | add / length | floor),
         avg_duration: ([.[].duration_seconds] | add / length | floor),
         total_failed: ([.[].summary.failed] | add),
         avg_passed: ([.[].summary.passed] | add / length | floor)
@@ -267,8 +271,8 @@ function stats-tests() {
     local test_history max_dur=1 max_tests=1
     # Combine pytest + vitest events by timestamp proximity, filter out bad data (runs with 0 tests)
     local pytest_hist vitest_hist
-    pytest_hist=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '[.[] | select(.summary.total > 0)] | .[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: .summary.total}' | jq -s '.' 2>/dev/null)
-    vitest_hist=$(grep '"type":"collect.vitest"' "$events_file" | jq -s '.[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: .summary.total}' | jq -s '.' 2>/dev/null)
+    pytest_hist=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '[.[] | select(.summary.total > 0)] | .[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: (.summary.total - (.summary.skipped // 0))}' | jq -s '.' 2>/dev/null)
+    vitest_hist=$(grep '"type":"collect.vitest"' "$events_file" | jq -s '.[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: (.summary.total - (.summary.skipped // 0))}' | jq -s '.' 2>/dev/null)
     # Merge: for each pytest run, find vitest event with closest timestamp (within 60s) and add counts
     test_history=$(echo "$pytest_hist" | jq -r --argjson vitest "$vitest_hist" '
       . as $pytest |
@@ -414,18 +418,18 @@ function stats-tests() {
   echo ""
 
   # Frontend Tests (Vitest)
-  local fe_total fe_passed fe_failed fe_skipped fe_duration
-  fe_total=$(jq -r '.frontend_tests.total // 0' "$stats_file")
+  local fe_active fe_passed fe_failed fe_skipped fe_duration
+  fe_active=$(jq -r '.frontend_tests.active // .frontend_tests.total // 0' "$stats_file")
   fe_passed=$(jq -r '.frontend_tests.passed // 0' "$stats_file")
   fe_failed=$(jq -r '.frontend_tests.failed // 0' "$stats_file")
   fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
   fe_duration=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file")
 
   echo "${blue}Frontend Test Details (Vitest)${reset}"
-  if [ "$fe_total" -eq 0 ]; then
+  if [ "$fe_active" -eq 0 ] && [ "$fe_skipped" -eq 0 ]; then
     printf "  %sNo vitest results collected%s\n" "$gray" "$reset"
   else
-    printf "  Total:     %d\n" "$fe_total"
+    printf "  Active:    %d\n" "$fe_active"
     printf "  Passed:    ${green}%d${reset}\n" "$fe_passed"
     [ "$fe_failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$fe_failed"
     [ "$fe_skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$fe_skipped"
@@ -601,13 +605,13 @@ function stats-events() {
       def info:
         if .type == "commit" then [.short_hash, ""]
         elif .type == "collect.tokei" then [(.total_files | tostring), "files"]
-        elif .type == "collect.pytest" then [(.summary.total | tostring), "tests"]
+        elif .type == "collect.pytest" then [((.summary.total - (.summary.skipped // 0)) | tostring), "tests"]
         elif .type == "collect.coverage" then ["\(.summary.percent_covered | floor)%", "coverage"]
         elif .type == "collect.docker" then [(.containers | length | tostring), "containers"]
         elif .type == "collect.dependencies" then [(.total_count | tostring), "pkgs"]
         elif .type == "collect.files" then [(.total_files | tostring), "files"]
         elif .type == "collect.radon" then [(.avg_complexity | floor | tostring), "avg_complexity"]
-        elif .type == "collect.vitest" then [(.summary.total | tostring), "fe_tests"]
+        elif .type == "collect.vitest" then [((.summary.total - (.summary.skipped // 0)) | tostring), "fe_tests"]
         elif .type == "collect.npm_dependencies" then [(.total_count | tostring), "npm_pkgs"]
         elif .status then [.status, ""]
         else ["-", ""]
@@ -762,23 +766,26 @@ function stats-trends() {
   latest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 
   if [ -n "$latest_stats" ]; then
-    local curr_py_tests curr_py_failed curr_cov curr_py_dur
-    curr_py_tests=$(jq -r '.tests.total // 0' "$latest_stats")
+    local curr_py_tests curr_py_failed curr_py_skipped curr_cov curr_py_dur
+    curr_py_tests=$(jq -r '.tests.active // .tests.total // 0' "$latest_stats")
     curr_py_failed=$(jq -r '.tests.failed // 0' "$latest_stats")
+    curr_py_skipped=$(jq -r '.tests.skipped // 0' "$latest_stats")
     curr_cov=$(jq -r '.coverage.line_percent // 0' "$latest_stats")
     curr_py_dur=$(jq -r '.tests.duration_seconds // 0' "$latest_stats")
 
-    local curr_fe_tests curr_fe_failed curr_fe_dur
-    curr_fe_tests=$(jq -r '.frontend_tests.total // 0' "$latest_stats")
+    local curr_fe_tests curr_fe_failed curr_fe_skipped curr_fe_dur
+    curr_fe_tests=$(jq -r '.frontend_tests.active // .frontend_tests.total // 0' "$latest_stats")
     curr_fe_failed=$(jq -r '.frontend_tests.failed // 0' "$latest_stats")
+    curr_fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$latest_stats")
     curr_fe_dur=$(jq -r '.frontend_tests.duration_seconds // 0' "$latest_stats")
 
-    local curr_all_tests curr_all_failed curr_all_dur
+    local curr_all_tests curr_all_failed curr_all_skipped curr_all_dur
     curr_all_tests=$((curr_py_tests + curr_fe_tests))
     curr_all_failed=$((curr_py_failed + curr_fe_failed))
+    curr_all_skipped=$((curr_py_skipped + curr_fe_skipped))
     curr_all_dur=$(echo "$curr_py_dur + $curr_fe_dur" | bc)
 
-    printf "  %-14s %d tests" "Total:" "$curr_all_tests"
+    printf "  %-14s %d tests" "Active:" "$curr_all_tests"
     if [ "$curr_all_failed" -gt 0 ]; then
       printf " (%s%d failed%s)\n" "$red" "$curr_all_failed" "$reset"
     else
@@ -786,6 +793,7 @@ function stats-trends() {
     fi
     printf "    Python:    %d\n" "$curr_py_tests"
     printf "    Frontend:  %d\n" "$curr_fe_tests"
+    [ "$curr_all_skipped" -gt 0 ] && printf "  %-14s ${yellow}%d${reset}\n" "Skipped:" "$curr_all_skipped"
     if [ "$(echo "$curr_cov > 0" | bc)" -eq 1 ]; then
       printf "  %-14s %.1f%%\n" "Coverage:" "$curr_cov"
     else

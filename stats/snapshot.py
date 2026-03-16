@@ -173,11 +173,14 @@ def build_tests_section(pytest_event: dict | None) -> dict:
         for t in tests
     )
 
+    total = summary.get('total', 0)
+    skipped = summary.get('skipped', 0)
     return {
-        'total': summary.get('total', 0),
+        'total': total,
+        'active': total - skipped,
         'passed': summary.get('passed', 0),
         'failed': summary.get('failed', 0),
-        'skipped': summary.get('skipped', 0),
+        'skipped': skipped,
         'errors': summary.get('error', 0),
         'duration_seconds': round(total_duration, 2),
         'slowest': slowest,
