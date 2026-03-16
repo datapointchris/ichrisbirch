@@ -386,7 +386,7 @@ run_smoke_tests() {
     fi
 
     # Verify all critical endpoints passed
-    if ! echo "$smoke_output" | jq -e '.all_critical_passed == true' >/dev/null 2>&1; then
+    if ! echo "$smoke_output" | jq -e '.all_passed == true' >/dev/null 2>&1; then
         local failed_endpoints
         failed_endpoints=$(echo "$smoke_output" | jq -r '.results[] | select(.passed == false) | "\(.path) (\(.status_code // .error))"' 2>/dev/null || echo "unknown")
         FAILURE_OUTPUT="Critical smoke tests failed: $failed_endpoints"
