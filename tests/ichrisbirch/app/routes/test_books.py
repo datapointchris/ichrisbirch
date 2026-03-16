@@ -21,16 +21,19 @@ def insert_testing_data():
     delete_test_data('books')
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_index(test_app_logged_in):
     response = test_app_logged_in.get('/books/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_add_page(test_app_logged_in):
     response = test_app_logged_in.get('/books/add/')
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 @patch('ichrisbirch.app.routes.books.logging_flask_session_client')
 def test_goodreads_info_uses_session_auth(mock_session_client, test_app_logged_in):
     """Verify that goodreads-info endpoint uses user session authentication."""
@@ -63,12 +66,14 @@ def test_goodreads_info_uses_session_auth(mock_session_client, test_app_logged_i
     assert data['goodreads_url'] == 'https://www.goodreads.com/book/show/4671'
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_goodreads_info_missing_isbn(test_app_logged_in):
     """Verify that goodreads-info returns 400 when ISBN is missing."""
     response = test_app_logged_in.post('/books/goodreads-info/', data='{}', content_type='application/json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_crud_add(test_app_logged_in):
     response = test_app_logged_in.post(
         '/books/crud/',
@@ -86,6 +91,7 @@ def test_crud_add(test_app_logged_in):
     assert response.status_code == status.HTTP_200_OK, tests.util.show_status_and_response(response)
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_crud_add_duplicate(test_app_logged_in):
     """Verify that adding a book with an existing ISBN shows a warning."""
     response = test_app_logged_in.post(
@@ -103,6 +109,7 @@ def test_crud_add_duplicate(test_app_logged_in):
     assert b'already exists' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_edit_page(test_app_logged_in, test_api_logged_in):
     books = test_api_logged_in.get('/books/')
     first_id = books.json()[0]['id']
@@ -111,6 +118,7 @@ def test_edit_page(test_app_logged_in, test_api_logged_in):
     assert b'Editing:' in response.data
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_crud_edit_with_empty_optional_fields(test_app_logged_in, test_api_logged_in):
     """Verify editing works when optional fields are submitted as empty strings (as HTML forms do)."""
     books = test_api_logged_in.get('/books/')
@@ -143,6 +151,7 @@ def test_crud_edit_with_empty_optional_fields(test_app_logged_in, test_api_logge
     assert updated.json()['title'] == 'Updated Title'
 
 
+@pytest.mark.skip(reason='Flask route replaced by Vue; covered by frontend/e2e/books.spec.ts')
 def test_crud_delete(test_app_logged_in, test_api_logged_in):
     books = test_api_logged_in.get('/books/')
     first_id = books.json()[0]['id']
