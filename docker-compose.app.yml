@@ -9,12 +9,11 @@
 #
 # Required env vars: DEPLOY_COLOR (blue|green), plus all vars from .env
 
-# Shared image build configuration - all Python services use the same image
-x-app-build: &app-build
+# Shared image reference - only the api service builds this image,
+# other services reference it by tag. This avoids a BuildKit race condition
+# where parallel builds of the same tag collide (moby/buildkit#6477).
+x-app-image: &app-image
   image: ichrisbirch:${DEPLOY_COLOR}
-  build:
-    context: .
-    target: production
 
 x-logging: &logging
   driver: "json-file"
@@ -23,9 +22,12 @@ x-logging: &logging
     max-file: "3"
 
 services:
-  # FastAPI Backend Service
+  # FastAPI Backend Service — builds the shared Python image
   api:
-    <<: *app-build
+    <<: *app-image
+    build:
+      context: .
+      target: production
     container_name: icb-${DEPLOY_COLOR}-api
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     env_file: .env
@@ -91,8 +93,10 @@ services:
 
   # Flask Frontend Service (legacy, lower priority)
   app:
-    <<: *app-build
+    <<: *app-image
     container_name: icb-${DEPLOY_COLOR}-app
+    depends_on:
+      - api
     command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
     env_file: .env
     environment:
@@ -128,8 +132,10 @@ services:
 
   # Chat Service (Streamlit)
   chat:
-    <<: *app-build
+    <<: *app-image
     container_name: icb-${DEPLOY_COLOR}-chat
+    depends_on:
+      - api
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
     env_file: .env
     environment:
@@ -160,8 +166,10 @@ services:
 
   # Scheduler Service (APScheduler background jobs)
   scheduler:
-    <<: *app-build
+    <<: *app-image
     container_name: icb-${DEPLOY_COLOR}-scheduler
+    depends_on:
+      - api
     command: python -m ichrisbirch.wsgi_scheduler
     env_file: .env
     environment:

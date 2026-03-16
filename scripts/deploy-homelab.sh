@@ -246,11 +246,6 @@ build_new_images() {
     log_info "build_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
-    # Remove any stale images from a previous failed build to avoid
-    # "image already exists" errors with BuildKit shared image builds
-    docker image rm "ichrisbirch:${DEPLOY_COLOR}" 2>/dev/null || true
-    docker image rm "ichrisbirch-vue:${DEPLOY_COLOR}" 2>/dev/null || true
-
     local build_log="${LOG_DIR}/build-$(date +%Y%m%d-%H%M%S).log"
 
     if ! compose_app "$DEPLOY_COLOR" build 2>&1 | tee "$build_log"; then
