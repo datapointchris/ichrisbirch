@@ -26,10 +26,10 @@
         </span>
       </div>
       <div
-        v-if="store.events.length === 0"
+        v-if="upcomingEvents.length === 0"
         class="widget-empty"
       >
-        No events
+        No upcoming events
       </div>
     </template>
   </div>

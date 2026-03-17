@@ -42,15 +42,3 @@ onMounted(() => {
   if (store.books.length === 0) store.fetchAll()
 })
 </script>
-
-<style scoped>
-.widget-stats {
-  display: flex;
-  gap: var(--space-s);
-  padding-bottom: var(--space-2xs);
-  border-bottom: 1px solid var(--clr-gray-800);
-  margin-bottom: var(--space-2xs);
-  color: var(--clr-gray-400);
-  font-size: var(--fs-200);
-}
-</style>

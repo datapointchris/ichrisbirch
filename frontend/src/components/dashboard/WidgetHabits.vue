@@ -22,18 +22,10 @@
         </button>
       </div>
       <div
-        v-for="habit in doneList"
-        :key="'done-' + habit.id"
-        class="widget-list__item widget-list__item--done"
-      >
-        <span class="widget-list__name">{{ habit.name }}</span>
-        <span class="widget-action-btn widget-action-btn--active">✓</span>
-      </div>
-      <div
-        v-if="todoList.length === 0 && doneList.length === 0"
+        v-if="todoList.length === 0"
         class="widget-empty"
       >
-        No habits
+        All done for today!
       </div>
     </template>
   </div>
@@ -46,9 +38,7 @@ import type { Habit } from '@/api/client'
 
 const store = useHabitsStore()
 
-// Flatten grouped records into arrays
 const todoList = computed(() => Object.values(store.todoHabits).flat() as Habit[])
-const doneList = computed(() => Object.values(store.doneHabits).flat())
 
 async function complete(habit: Habit) {
   await store.completeHabit(habit)

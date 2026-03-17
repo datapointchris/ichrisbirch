@@ -1,5 +1,8 @@
 <template>
-  <div class="app">
+  <div
+    class="app"
+    :class="{ 'app--loading': !ready }"
+  >
     <AppSidebar
       :open="sidebarOpen"
       @toggle="sidebarOpen = !sidebarOpen"
@@ -10,7 +13,7 @@
       :class="{ 'layout--expanded': !sidebarOpen }"
     >
       <main class="main">
-        <RouterView />
+        <RouterView v-if="ready" />
       </main>
     </div>
     <SubmitIssueModal
@@ -35,6 +38,7 @@ useTheme()
 const auth = useAuthStore()
 const sidebarOpen = ref(true)
 const issueModalOpen = ref(false)
+const ready = ref(false)
 
 onMounted(async () => {
   try {
@@ -42,6 +46,9 @@ onMounted(async () => {
   } catch {
     // Auth failure is non-fatal — user just won't see admin features
   }
+  ready.value = true
+  // Clear the pre-load dark background so theme colors show through
+  document.body.style.background = ''
 })
 </script>
 
@@ -49,6 +56,10 @@ onMounted(async () => {
 .app {
   display: flex;
   min-height: 100vh;
+}
+
+.app--loading {
+  visibility: hidden;
 }
 
 .layout {

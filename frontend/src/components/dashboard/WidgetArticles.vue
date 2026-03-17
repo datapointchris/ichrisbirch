@@ -51,12 +51,3 @@ onMounted(async () => {
   if (!store.currentArticle) await store.fetchCurrent()
 })
 </script>
-
-<style scoped>
-.widget-list__item--highlight {
-  background: var(--clr-primary--lighter);
-  padding: var(--space-3xs) var(--space-2xs);
-  border-radius: 0.25rem;
-  margin-bottom: var(--space-3xs);
-}
-</style>
