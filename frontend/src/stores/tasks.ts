@@ -127,12 +127,13 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
-  async function complete(id: number) {
+  async function complete(id: number): Promise<CompletedTask> {
     error.value = null
     try {
-      await api.patch(`/tasks/${id}/complete/`)
+      const response = await api.patch<CompletedTask>(`/tasks/${id}/complete/`)
       tasks.value = tasks.value.filter((t) => t.id !== id)
       logger.info('task_completed', { id })
+      return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError

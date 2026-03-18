@@ -295,7 +295,8 @@ async function loadData() {
 
 async function onComplete(id: number) {
   try {
-    await store.complete(id)
+    const completed = await store.complete(id)
+    completedToday.value.unshift(completed)
     show('Task completed', 'success')
   } catch {
     show('Failed to complete task', 'error')
