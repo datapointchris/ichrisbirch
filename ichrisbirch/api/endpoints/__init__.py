@@ -8,6 +8,7 @@ from ichrisbirch.api.endpoints import chat
 from ichrisbirch.api.endpoints import countdowns
 from ichrisbirch.api.endpoints import durations
 from ichrisbirch.api.endpoints import events
+from ichrisbirch.api.endpoints import github_issues
 from ichrisbirch.api.endpoints import habits
 from ichrisbirch.api.endpoints import home
 from ichrisbirch.api.endpoints import money_wasted
@@ -27,6 +28,7 @@ __all__ = [
     'countdowns',
     'durations',
     'events',
+    'github_issues',
     'habits',
     'home',
     'money_wasted',

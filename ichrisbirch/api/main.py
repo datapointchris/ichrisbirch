@@ -90,6 +90,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.chat.chats.router, prefix='/chat/chats', dependencies=chat_deps)
     api.include_router(endpoints.chat.messages.router, prefix='/chat/messages', dependencies=chat_deps)
     api.include_router(endpoints.events.router, prefix='/events', dependencies=deps)
+    api.include_router(endpoints.github_issues.router, prefix='/github/issues', dependencies=deps)
     api.include_router(endpoints.habits.router, prefix='/habits', dependencies=deps)
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
     api.include_router(endpoints.personal_api_keys.router, prefix='/api-keys', dependencies=deps)

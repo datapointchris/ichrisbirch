@@ -65,8 +65,9 @@
           <button
             type="submit"
             class="button"
+            :disabled="submitting"
           >
-            <span class="button__text">Create Issue</span>
+            <span class="button__text">{{ submitting ? 'Creating...' : 'Create Issue' }}</span>
           </button>
           <button
             type="button"
@@ -83,7 +84,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { api } from '@/api/client'
+import { ApiError } from '@/api/errors'
 import { useNotifications } from '@/composables/useNotifications'
+import { createLogger } from '@/utils/logger'
 
 const props = defineProps<{
   visible: boolean
@@ -93,12 +97,14 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const logger = createLogger('SubmitIssueModal')
 const { show: notify } = useNotifications()
 
 const title = ref('')
 const description = ref('')
 const selectedLabels = ref<string[]>([])
 const closing = ref(false)
+const submitting = ref(false)
 
 const issueLabels = [
   { name: 'bug', icon: 'fa-solid fa-bug' },
@@ -119,21 +125,31 @@ function onExplodeEnd(event: AnimationEvent) {
   }
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!title.value.trim()) {
     notify('Title is required', 'error')
     return
   }
-  // TODO: Call API endpoint when it exists
-  console.info('Issue submitted:', {
-    title: title.value,
-    description: description.value,
-    labels: selectedLabels.value,
-  })
-  notify('Issue submitted (placeholder — API endpoint not yet implemented)', 'warning')
-  title.value = ''
-  description.value = ''
-  selectedLabels.value = []
-  handleClose()
+  submitting.value = true
+  try {
+    const response = await api.post('/github/issues/', {
+      title: title.value.trim(),
+      description: description.value.trim() || '',
+      labels: selectedLabels.value,
+    })
+    const { number, html_url } = response.data
+    logger.info('issue_created', { number, url: html_url })
+    notify(`Issue #${number} created`, 'success')
+    title.value = ''
+    description.value = ''
+    selectedLabels.value = []
+    handleClose()
+  } catch (e) {
+    const message = e instanceof ApiError ? e.userMessage : String(e)
+    logger.error('issue_create_failed', { error: message })
+    notify(`Failed to create issue: ${message}`, 'error')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>

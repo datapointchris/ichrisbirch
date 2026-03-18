@@ -42,6 +42,8 @@ from ichrisbirch.schemas.duration import DurationUpdate
 from ichrisbirch.schemas.event import Event
 from ichrisbirch.schemas.event import EventCreate
 from ichrisbirch.schemas.event import EventUpdate
+from ichrisbirch.schemas.github_issue import GithubIssueCreate
+from ichrisbirch.schemas.github_issue import GithubIssueResponse
 from ichrisbirch.schemas.habit import Habit
 from ichrisbirch.schemas.habit import HabitCategory
 from ichrisbirch.schemas.habit import HabitCreate
@@ -115,6 +117,8 @@ __all__ = [
     'DurationUpdate',
     'Event',
     'EventCreate',
+    'GithubIssueCreate',
+    'GithubIssueResponse',
     'EventUpdate',
     'Habit',
     'HabitCreate',
