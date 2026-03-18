@@ -8,14 +8,14 @@ import time
 from datetime import UTC
 from datetime import datetime
 
-from stats.schemas.hooks.ruff import RuffEdit
-from stats.schemas.hooks.ruff import RuffFix
-from stats.schemas.hooks.ruff import RuffHookEvent
-from stats.schemas.hooks.ruff import RuffIssue
-from stats.schemas.hooks.ruff import RuffLocation
+from stats.schemas.hooks.ruff_check import RuffCheckHookEvent
+from stats.schemas.hooks.ruff_check import RuffEdit
+from stats.schemas.hooks.ruff_check import RuffFix
+from stats.schemas.hooks.ruff_check import RuffIssue
+from stats.schemas.hooks.ruff_check import RuffLocation
 
 
-def run(staged_files: list[str], branch: str, project: str) -> RuffHookEvent:
+def run(staged_files: list[str], branch: str, project: str) -> RuffCheckHookEvent:
     """Run ruff on staged files, return fully-typed event.
 
     Args:
@@ -24,7 +24,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffHookEvent:
         project: Project name
 
     Returns:
-        RuffHookEvent with full issue details
+        RuffCheckHookEvent with full issue details
     """
     start_time = time.perf_counter()
 
@@ -32,7 +32,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffHookEvent:
     python_files = [f for f in staged_files if f.endswith('.py')]
 
     if not python_files:
-        return RuffHookEvent(
+        return RuffCheckHookEvent(
             timestamp=datetime.now(UTC),
             project=project,
             branch=branch,
@@ -61,7 +61,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffHookEvent:
 
     issues = [_parse_issue(issue) for issue in raw_issues]
 
-    return RuffHookEvent(
+    return RuffCheckHookEvent(
         timestamp=datetime.now(UTC),
         project=project,
         branch=branch,

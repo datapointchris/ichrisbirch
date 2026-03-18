@@ -46,10 +46,10 @@ class RuffIssue(BaseModel):
     cell: int | None = None
 
 
-class RuffHookEvent(BaseEvent):
+class RuffCheckHookEvent(BaseEvent):
     """Ruff hook event with full issue details."""
 
-    type: Literal['hook.ruff'] = 'hook.ruff'
+    type: Literal['hook.ruff-check'] = 'hook.ruff-check'
     status: Literal['passed', 'failed']
     exit_code: int
     issues: list[RuffIssue]

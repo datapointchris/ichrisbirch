@@ -35,13 +35,13 @@ from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
 from stats.schemas.hooks.mypy import MypyHookEvent
 from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
 from stats.schemas.hooks.refurb import RefurbHookEvent
-from stats.schemas.hooks.ruff import RuffHookEvent
+from stats.schemas.hooks.ruff_check import RuffCheckHookEvent
 from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
 from stats.schemas.hooks.uv_lock import UvLockHookEvent
 from stats.schemas.hooks.validate_markdown_links import ValidateMarkdownLinksHookEvent
 
 Event = (
-    RuffHookEvent
+    RuffCheckHookEvent
     | MypyHookEvent
     | BanditHookEvent
     | ShellcheckHookEvent
@@ -117,7 +117,7 @@ __all__ = [
     'parse_event',
     'parse_events_file',
     # Hooks
-    'RuffHookEvent',
+    'RuffCheckHookEvent',
     'MypyHookEvent',
     'BanditHookEvent',
     'ShellcheckHookEvent',

@@ -4,6 +4,24 @@ from __future__ import annotations
 
 import json
 import tempfile
+from datetime import UTC
+from datetime import datetime
+
+from stats.schemas import Event
+from stats.schemas import parse_event
+from stats.schemas import parse_events_file
+from stats.schemas.collectors.coverage import CoverageCollectEvent
+from stats.schemas.collectors.dependencies import DependenciesCollectEvent
+from stats.schemas.collectors.docker import DockerCollectEvent
+from stats.schemas.collectors.files import FilesCollectEvent
+from stats.schemas.collectors.pytest_collector import PytestCollectEvent
+from stats.schemas.collectors.tokei import TokeiCollectEvent
+from stats.schemas.commit import CommitEvent
+from stats.schemas.hooks.bandit import BanditHookEvent
+from stats.schemas.hooks.codespell import CodespellHookEvent
+from stats.schemas.hooks.mypy import MypyHookEvent
+from stats.schemas.hooks.ruff_check import RuffCheckHookEvent
+from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
 
 
 class TestParseEvent:
@@ -11,11 +29,8 @@ class TestParseEvent:
 
     def test_parse_ruff_event(self) -> None:
         """Test parsing a ruff hook event."""
-        from stats.schemas import parse_event
-        from stats.schemas.hooks.ruff import RuffHookEvent
-
         data = {
-            'type': 'hook.ruff',
+            'type': 'hook.ruff-check',
             'timestamp': '2025-12-31T07:36:12Z',
             'project': 'ichrisbirch',
             'branch': 'master',
@@ -29,16 +44,13 @@ class TestParseEvent:
 
         event = parse_event(json_line)
 
-        assert isinstance(event, RuffHookEvent)
-        assert event.type == 'hook.ruff'
+        assert isinstance(event, RuffCheckHookEvent)
+        assert event.type == 'hook.ruff-check'
         assert event.status == 'passed'
         assert event.files_checked == ['test.py']
 
     def test_parse_mypy_event(self) -> None:
         """Test parsing a mypy hook event."""
-        from stats.schemas import parse_event
-        from stats.schemas.hooks.mypy import MypyHookEvent
-
         data = {
             'type': 'hook.mypy',
             'timestamp': '2025-12-31T07:36:12Z',
@@ -59,9 +71,6 @@ class TestParseEvent:
 
     def test_parse_commit_event(self) -> None:
         """Test parsing a commit event."""
-        from stats.schemas import parse_event
-        from stats.schemas.commit import CommitEvent
-
         data = {
             'type': 'commit',
             'timestamp': '2025-12-31T07:37:00Z',
@@ -87,9 +96,6 @@ class TestParseEvent:
 
     def test_parse_tokei_event(self) -> None:
         """Test parsing a tokei collect event."""
-        from stats.schemas import parse_event
-        from stats.schemas.collectors.tokei import TokeiCollectEvent
-
         data = {
             'type': 'collect.tokei',
             'timestamp': '2025-12-31T07:36:12Z',
@@ -111,9 +117,6 @@ class TestParseEvent:
 
     def test_parse_bandit_event(self) -> None:
         """Test parsing a bandit hook event."""
-        from stats.schemas import parse_event
-        from stats.schemas.hooks.bandit import BanditHookEvent
-
         data = {
             'type': 'hook.bandit',
             'timestamp': '2025-12-31T07:36:12Z',
@@ -145,12 +148,8 @@ class TestParseEventsFile:
 
     def test_parse_events_file_multiple_events(self) -> None:
         """Test parsing multiple events from a JSONL file."""
-        from stats.schemas import parse_events_file
-        from stats.schemas.commit import CommitEvent
-        from stats.schemas.hooks.ruff import RuffHookEvent
-
         ruff_event = {
-            'type': 'hook.ruff',
+            'type': 'hook.ruff-check',
             'timestamp': '2025-12-31T07:35:00Z',
             'project': 'ichrisbirch',
             'branch': 'master',
@@ -184,13 +183,11 @@ class TestParseEventsFile:
             events = parse_events_file(f.name)
 
             assert len(events) == 2
-            assert isinstance(events[0], RuffHookEvent)
+            assert isinstance(events[0], RuffCheckHookEvent)
             assert isinstance(events[1], CommitEvent)
 
     def test_parse_events_file_empty(self) -> None:
         """Test parsing an empty file."""
-        from stats.schemas import parse_events_file
-
         with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
             f.write('')
             f.flush()
@@ -201,8 +198,6 @@ class TestParseEventsFile:
 
     def test_parse_events_file_nonexistent(self) -> None:
         """Test parsing a non-existent file."""
-        from stats.schemas import parse_events_file
-
         events = parse_events_file('/nonexistent/file.jsonl')
 
         assert not events
@@ -213,15 +208,8 @@ class TestEventTypes:
 
     def test_all_hook_types_in_union(self) -> None:
         """Test that all hook types are in the Event union."""
-        from stats.schemas import Event
-        from stats.schemas.hooks.bandit import BanditHookEvent
-        from stats.schemas.hooks.codespell import CodespellHookEvent
-        from stats.schemas.hooks.mypy import MypyHookEvent
-        from stats.schemas.hooks.ruff import RuffHookEvent
-        from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
-
         hook_types = [
-            RuffHookEvent,
+            RuffCheckHookEvent,
             MypyHookEvent,
             BanditHookEvent,
             ShellcheckHookEvent,
@@ -235,14 +223,6 @@ class TestEventTypes:
 
     def test_all_collector_types_in_union(self) -> None:
         """Test that all collector types are in the Event union."""
-        from stats.schemas import Event
-        from stats.schemas.collectors.coverage import CoverageCollectEvent
-        from stats.schemas.collectors.dependencies import DependenciesCollectEvent
-        from stats.schemas.collectors.docker import DockerCollectEvent
-        from stats.schemas.collectors.files import FilesCollectEvent
-        from stats.schemas.collectors.pytest_collector import PytestCollectEvent
-        from stats.schemas.collectors.tokei import TokeiCollectEvent
-
         collector_types = [
             TokeiCollectEvent,
             PytestCollectEvent,
@@ -259,9 +239,6 @@ class TestEventTypes:
 
     def test_commit_type_in_union(self) -> None:
         """Test that CommitEvent is in the Event union."""
-        from stats.schemas import Event
-        from stats.schemas.commit import CommitEvent
-
         union_types = list(Event.__args__)
 
         assert CommitEvent in union_types
@@ -272,11 +249,6 @@ class TestTokeiSchema:
 
     def test_tokei_total_lines_optional(self) -> None:
         """Test TokeiCollectEvent can be created without total_lines."""
-        from datetime import UTC
-        from datetime import datetime
-
-        from stats.schemas.collectors.tokei import TokeiCollectEvent
-
         event = TokeiCollectEvent(
             timestamp=datetime.now(UTC),
             project='ichrisbirch',

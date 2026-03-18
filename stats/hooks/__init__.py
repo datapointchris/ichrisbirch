@@ -48,7 +48,7 @@ def get_hook(name: str) -> HookRunner | None:
     """Get a specific hook runner by name.
 
     Args:
-        name: Name of the hook (e.g., 'ruff', 'mypy')
+        name: Name of the hook (e.g., 'ruff_check', 'mypy')
 
     Returns:
         The hook's run function, or None if not found.

@@ -7,7 +7,7 @@ import time
 from datetime import UTC
 from datetime import datetime
 
-from stats.schemas.hooks.ruff import RuffFormatHookEvent
+from stats.schemas.hooks.ruff_check import RuffFormatHookEvent
 
 
 def run(staged_files: list[str], branch: str, project: str) -> RuffFormatHookEvent:

@@ -270,7 +270,7 @@ events_path = "stats/events/events.jsonl"
 [tool.devstats.capture]
 hooks = [
     # Python
-    "ruff", "ruff_format", "mypy", "bandit", "codespell", "refurb", "pyupgrade",
+    "ruff_check", "ruff_format", "mypy", "bandit", "codespell", "refurb", "pyupgrade",
     # Shell
     "shellcheck",
     # Markup & templates

@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import filecmp
 import re
 import subprocess  # nosec B404
+import tempfile
 import time
 from datetime import UTC
 from datetime import datetime
+from pathlib import Path
 
 from stats.schemas.hooks.sass import SassError
 from stats.schemas.hooks.sass import SassHookEvent
 
-# SASS source path (matching .pre-commit-config.yaml)
+# Paths matching .pre-commit-config.yaml:
+#   sass ichrisbirch/app/static/sass/main.scss:ichrisbirch/app/static/css/main.css
 SASS_SOURCE = 'ichrisbirch/app/static/sass/main.scss'
+CSS_OUTPUT = 'ichrisbirch/app/static/css/main.css'
 
 # Pattern to extract file location from SASS error output
 # Format: "  path/to/file.scss 3:15  root stylesheet"
@@ -22,17 +27,11 @@ LOCATION_PATTERN = re.compile(r'^\s+(.+\.scss)\s+(\d+):(\d+)')
 def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
     """Run SASS compilation on staged SCSS files, return fully-typed event.
 
-    Args:
-        staged_files: List of file paths to check
-        branch: Current git branch
-        project: Project name
-
-    Returns:
-        SassHookEvent with compilation results
+    Compiles to a temp file and compares against the committed CSS to detect
+    both syntax errors AND stale CSS (matching the real pre-commit hook behavior).
     """
     start_time = time.perf_counter()
 
-    # Filter to only SCSS files
     scss_files = [f for f in staged_files if f.endswith('.scss')]
 
     if not scss_files:
@@ -47,25 +46,50 @@ def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
             duration_seconds=0.0,
         )
 
-    # Run sass compilation to stdout only (no file modification)
-    # This checks for errors without interfering with the actual sass-compile hook
+    # Compile to a temp file so we can compare without modifying the working tree
+    with tempfile.NamedTemporaryFile(suffix='.css', delete=True) as tmp:
+        tmp_path = tmp.name
+
     result = subprocess.run(  # nosec B603 B607
-        ['sass', SASS_SOURCE],
+        ['sass', f'{SASS_SOURCE}:{tmp_path}'],
         capture_output=True,
         text=True,
     )
 
     duration = time.perf_counter() - start_time
 
-    # Parse any errors from stderr
+    # Parse syntax errors from stderr
     issues = _parse_sass_errors(result.stderr)
+
+    # If compilation succeeded, check if output differs from committed CSS
+    css_stale = False
+    if result.returncode == 0 and Path(tmp_path).exists():
+        if Path(CSS_OUTPUT).exists():
+            css_stale = not filecmp.cmp(tmp_path, CSS_OUTPUT, shallow=False)
+        else:
+            css_stale = True  # CSS file doesn't exist yet
+
+        if css_stale:
+            issues.append(
+                SassError(
+                    message='Compiled CSS differs from committed file (run sass-compile to update)',
+                    file=CSS_OUTPUT,
+                    line=None,
+                    column=None,
+                )
+            )
+
+        # Clean up temp file
+        Path(tmp_path).unlink(missing_ok=True)
+
+    failed = result.returncode != 0 or css_stale
 
     return SassHookEvent(
         timestamp=datetime.now(UTC),
         project=project,
         branch=branch,
-        status='passed' if result.returncode == 0 else 'failed',
-        exit_code=result.returncode,
+        status='failed' if failed else 'passed',
+        exit_code=result.returncode if result.returncode != 0 else (1 if css_stale else 0),
         issues=issues,
         files_checked=scss_files,
         duration_seconds=round(duration, 3),

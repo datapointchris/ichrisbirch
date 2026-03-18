@@ -459,14 +459,33 @@ function stats-quality() {
   printf "${cyan}%-18s %6s %6s %6s %6s${reset}\n" "Tool" "24h" "7d" "30d" "All"
   echo "----------------------------------------------------"
 
-  local tools=("ruff" "mypy" "bandit" "shellcheck" "codespell" "detect-private-key" "sass" "hadolint" "vue-eslint" "vue-typecheck")
+  local tools=(
+    # Python
+    "ruff-check" "ruff-format" "mypy" "bandit" "codespell" "refurb" "pyupgrade"
+    # Shell / Docker / Terraform
+    "shellcheck" "hadolint" "docker-compose-validate"
+    "terraform-validate" "terraform-tflint" "terraform-fmt" "terraform-docs"
+    # File format / fixers
+    "check-yaml" "check-toml" "check-json" "detect-private-key"
+    "end-of-file-fixer" "trailing-whitespace"
+    # Frontend
+    "sass" "vue-eslint" "vue-prettier" "vue-typecheck"
+    # Docs / validation
+    "markdownlint" "djlint" "actionlint"
+    "validate-html" "validate-markdown-links"
+    # Project
+    "code-sync" "generate-fixture-diagrams" "uv-lock"
+  )
 
   get_issue_field() {
     case "$1" in
-    mypy) echo ".errors" ;;
+    mypy|vue-typecheck) echo ".errors" ;;
+    ruff-format|vue-prettier|terraform-fmt) echo ".files_reformatted" ;;
+    pyupgrade) echo ".rewritten_files" ;;
     shellcheck) echo ".comments" ;;
     vue-eslint) echo ".messages" ;;
-    vue-typecheck) echo ".errors" ;;
+    end-of-file-fixer|trailing-whitespace) echo ".fixed_files" ;;
+    validate-markdown-links) echo ".broken_links" ;;
     *) echo ".issues" ;;
     esac
   }

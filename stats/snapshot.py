@@ -323,7 +323,7 @@ def build_quality_section(hook_events: list[dict]) -> dict:
         issues = event.get('issues', [])
         errors = event.get('errors', [])
 
-        if event_type == 'hook.ruff':
+        if event_type == 'hook.ruff-check':
             quality['ruff_issues'] = len(issues)
         elif event_type == 'hook.mypy':
             quality['mypy_errors'] = len(errors)
