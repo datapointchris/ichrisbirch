@@ -18,6 +18,8 @@ export const TASK_CATEGORIES: TaskCategory[] = [
   'Learn',
   'Personal',
   'Purchase',
+  'Research',
+  'Work',
 ]
 
 export const AUTOTASK_FREQUENCIES: AutoTaskFrequency[] = ['Daily', 'Weekly', 'Biweekly', 'Monthly', 'Quarterly', 'Semiannually', 'Yearly']

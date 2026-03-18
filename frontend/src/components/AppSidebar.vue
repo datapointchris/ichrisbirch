@@ -154,8 +154,8 @@ const mainLinks: NavLink[] = [
     to: '/tasks',
     label: 'Tasks',
     icon: 'fa-solid fa-list-check',
-    migrated: false,
-    activeNames: ['tasks', 'tasks-priority', 'tasks-completed'],
+    migrated: true,
+    activeNames: ['tasks', 'tasks-todo', 'tasks-completed', 'tasks-search'],
   },
 ]
 

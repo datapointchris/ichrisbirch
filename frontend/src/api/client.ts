@@ -96,6 +96,8 @@ export type TaskCategory =
   | 'Learn'
   | 'Personal'
   | 'Purchase'
+  | 'Research'
+  | 'Work'
 
 export type AutoTaskFrequency = 'Daily' | 'Weekly' | 'Biweekly' | 'Monthly' | 'Quarterly' | 'Semiannually' | 'Yearly'
 

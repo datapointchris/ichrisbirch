@@ -37,7 +37,7 @@ http:
 
     # Vue SPA — migrated pages served at higher priority
     vue-paths:
-      rule: "Host(`ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
+      rule: "Host(`ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
       service: vue
       priority: 100
       middlewares:
@@ -49,7 +49,7 @@ http:
 
     # Vue SPA — www subdomain
     vue-paths-www:
-      rule: "Host(`www.ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
+      rule: "Host(`www.ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
       service: vue
       priority: 100
       middlewares:
