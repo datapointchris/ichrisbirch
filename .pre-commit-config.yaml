@@ -161,6 +161,15 @@ repos:
         files: '^frontend/.*\.(vue|ts|tsx)$'
         stages: [pre-commit]
 
+      - id: vue-test
+        name: test (vue)
+        description: "Run Vue build check and Vitest unit tests"
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; cd frontend && npm test'
+        language: system
+        pass_filenames: false
+        files: '^frontend/.*\.(vue|ts|tsx)$'
+        stages: [pre-commit]
+
   # Terraform
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.99.5
