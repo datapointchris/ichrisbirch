@@ -153,6 +153,42 @@ test.describe('Tasks Page', () => {
     await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
   })
 
+  test('extends a task and verifies it remains on the page', async ({ page }) => {
+    await page.goto('/tasks')
+    await expect(page.locator('.task-layout__info')).toBeVisible({ timeout: 10000 })
+
+    // Create a task to extend
+    const taskName = `E2E Extend ${Date.now()}`
+    await page.locator('.tasks-subnav .button', { hasText: 'Add Task' }).click()
+    await expect(page.locator('#add-task-window.visible')).toBeVisible({ timeout: 5000 })
+    await page.fill('#add-task-name', taskName)
+    await page.locator('.add-task-categories__tile', { hasText: 'Chore' }).click()
+    await page.fill('#add-task-priority', '10')
+    await page.locator('#add-task-priority').press('Enter')
+    await expect(page.locator('#add-task-window.visible')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // Navigate to todo
+    await page.goto('/tasks/todo')
+    await expect(page.locator('.task-layout__title', { hasText: 'Outstanding Tasks' })).toBeVisible({
+      timeout: 10000,
+    })
+
+    // Extend by 7 days
+    const taskCard = page.locator('.task', { hasText: taskName })
+    await expect(taskCard).toBeVisible()
+    await taskCard.locator('.button', { hasText: 'Extend 7 Days' }).click()
+    await expect(page.locator(SUCCESS, { hasText: 'extended' })).toBeVisible({ timeout: 5000 })
+
+    // Task should still be on the page
+    await expect(taskCard).toBeVisible()
+
+    // Extend by 30 days
+    await taskCard.locator('.button', { hasText: 'Extend 30 Days' }).click()
+    await expect(page.locator(SUCCESS, { hasText: 'extended' })).toBeVisible({ timeout: 5000 })
+    await expect(taskCard).toBeVisible()
+  })
+
   test('search finds tasks by name', async ({ page }) => {
     await page.goto('/tasks')
     await expect(page.locator('.task-layout__info')).toBeVisible({ timeout: 10000 })
