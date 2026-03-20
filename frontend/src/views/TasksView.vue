@@ -200,7 +200,7 @@
       </div>
     </template>
 
-    <AddTaskModal
+    <AddEditTaskModal
       :visible="showAddTask"
       @close="showAddTask = false"
       @create="onCreate"
@@ -216,7 +216,7 @@ import type { CompletedTask } from '@/stores/tasks'
 import { useNotifications } from '@/composables/useNotifications'
 import TasksSubnav from '@/components/tasks/TasksSubnav.vue'
 import TaskInfoBar from '@/components/tasks/TaskInfoBar.vue'
-import AddTaskModal from '@/components/tasks/AddTaskModal.vue'
+import AddEditTaskModal from '@/components/tasks/AddEditTaskModal.vue'
 import TaskBlockPriority from '@/components/tasks/TaskBlockPriority.vue'
 import TaskCompactPriority from '@/components/tasks/TaskCompactPriority.vue'
 import TaskBlockTodo from '@/components/tasks/TaskBlockTodo.vue'

@@ -1,0 +1,50 @@
+nav {
+  & ul {
+    width: 90%;
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    justify-content: space-evenly;
+    align-items: center;
+    margin: 0 auto;
+    border-bottom-right-radius: 5em;
+    border-bottom-left-radius: 5em;
+    font-size: var(--fs-500);
+    font-weight: bold;
+    background-color: var(--clr-gray-800);
+    box-shadow:
+      0 5px 10px var(--clr-gray-600),
+      0 -2px 2px var(--clr-gray-600),
+      var(--clr-black-trans-200) 0px 4px 4px,
+      inset 0 -10px 10px var(--clr-black-trans-400),
+      var(--clr-black-trans-200) 0px 16px 16px;
+
+    &[data-secondary] {
+      width: 80%;
+      margin-left: var(--space-2xl);
+      z-index: 0;
+    }
+  }
+
+  & li {
+    list-style: none;
+    padding: var(--space-2xs);
+    padding-bottom: var(--space-xs); // extra on bottom for centering with the inset shadow
+  }
+
+  & a {
+    color: var(--clr-text);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  @media screen and (max-width: 600px) {
+    & ul {
+      // display: none;
+      flex-wrap: wrap;
+    }
+  }
+}

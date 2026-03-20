@@ -1,0 +1,68 @@
+:root {
+  // Theme hue — change this single value to shift the entire primary palette
+  // Default: 224 (turquoise in OKLCH space, equivalent to HSL 194)
+  --base-hue: 224;
+
+  // Primary colors generated from --base-hue using OKLCH
+  // Lightness and chroma are fixed; hue rotates with the theme
+  --clr-primary--darker: oklch(0.254 0.05 var(--base-hue));
+  --clr-primary: oklch(0.269 0.05 var(--base-hue));
+  --clr-primary--lighter: oklch(0.298 0.05 var(--base-hue));
+
+  // Accent colors generated from --accent-hue using OKLCH
+  // Default: 62 (orange in OKLCH space, equivalent to HSL 31)
+  --accent-hue: 62;
+  --clr-accent: oklch(0.75 0.157 var(--accent-hue));
+  --clr-accent-light: oklch(0.94 0.045 var(--accent-hue));
+  --clr-accent-dark: oklch(0.34 0.076 var(--accent-hue));
+
+  --clr-text: hsl(0 0% 87%);
+
+  --clr-accent--orange: hsl(31 90% 57%);
+  --clr-accent--yellow: hsl(55, 80%, 55%);
+  --clr-accent--red: hsl(0, 100%, 60%);
+  --clr-accent--blue: hsl(207, 48%, 45%);
+  --clr-accent--green: hsl(120 100% 18%);
+  --clr-accent--green-bright: hsl(120, 100%, 45%);
+  --clr-accent--purple: hsl(270, 60%, 55%);
+
+  --clr-success: hsl(120 100% 18% / 0.8);
+  --clr-warning: hsla(60, 100%, 28%, 0.8);
+  --clr-error: hsla(3, 100%, 30%, 0.8);
+  --clr-critical: var(--clr-error);
+  --clr-overdue: hsla(4, 100%, 40%, 0.8);
+
+  --clr-gray-050: hsl(0, 0%, 87%);
+  --clr-gray-100: hsl(0, 0%, 67%);
+  --clr-gray-200: hsl(0, 0%, 60%);
+  --clr-gray-300: hsl(0, 0%, 53%);
+  --clr-gray-400: hsl(0, 0%, 47%);
+  --clr-gray-500: hsl(0, 0%, 40%);
+  --clr-gray-600: hsl(0, 0%, 33%);
+  --clr-gray-700: hsl(0, 0%, 27%);
+  --clr-gray-800: hsl(0, 0%, 20%);
+  --clr-gray-900: hsl(0, 0%, 13%);
+  --clr-gray-1000: hsl(0, 0%, 7%);
+
+  --clr-gray-trans-400: hsla(0 0% 100% / 0.5);
+  --clr-gray-trans-500: hsla(0 0% 100% / 0.5);
+  --clr-gray-trans-600: hsla(0 0% 100% / 0.2);
+  --clr-gray-trans-700: hsla(0 0% 50% / 0.5);
+  --clr-gray-trans-800: hsla(0 0% 50% / 0.3);
+  --clr-gray-trans-850: hsla(0 0% 50% / 0.2);
+  --clr-gray-trans-875: hsla(0 0% 50% / 0.1);
+  --clr-gray-trans-900: hsla(0 0% 15% / 0.95);
+
+  // Shadow highlights — derived from theme primary via OKLCH relative color syntax
+  // Lighter, less chromatic version of primary for natural neumorphic highlights
+  // that adapt to every theme hue without simultaneous contrast artifacts
+  --clr-shadow-highlight-sm: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.12);
+  --clr-shadow-highlight-md: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.25);
+  --clr-shadow-highlight-lg: oklch(from var(--clr-primary) calc(l + 0.2) calc(c * 0.5) h / 0.35);
+
+  --clr-black-trans-200: hsl(0 0% 5% / 0.2);
+  --clr-black-trans-400: hsl(0 0% 5% / 0.4);
+  --clr-black-trans-600: hsl(0 0% 5% / 0.6);
+  --clr-black-trans-800: hsl(0 0% 5% / 0.8);
+  --clr-black-trans-1000: hsl(0 0% 5% / 1);
+}

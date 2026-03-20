@@ -1,0 +1,14 @@
+.event {
+  list-style: none;
+  margin: var(--space-xs);
+
+  &__item {
+    line-height: 2em;
+  }
+
+  &__buttons {
+    display: flex;
+    justify-content: space-evenly;
+    gap: var(--space-m);
+  }
+}

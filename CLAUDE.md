@@ -167,6 +167,12 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 
 **Proportional sizing**: Buttons, icons, and text within shared components must scale proportionally from a single size parameter. Never use fixed font sizes inside scaled containers.
 
+### Component Architecture — Consistency Over Convenience
+
+**Every reusable pattern gets a wrapper per entity.** When a shared component exists (e.g., `AddEditModal`), every entity that uses it gets its own wrapper component (e.g., `AddEditTaskModal`, `AddEditCountdownModal`). The wrapper encapsulates all entity-specific form markup, state, and validation. The page just drops in the component with one line and handles the emitted event. No exceptions based on form complexity — a 2-field form gets a wrapper the same as a 10-field form.
+
+**No subjective "rule of thumb" thresholds.** Either ALL pages follow the pattern or NONE do. This applies to components, composables, shared SCSS, and any architectural pattern. Consistency makes the codebase predictable — the next developer knows exactly where to find things and how to add new pages.
+
 ### Adding a Vue Page
 
 1. Create Pinia store with `createLogger`, `ApiError` handling, `error: ref<ApiError | null>`

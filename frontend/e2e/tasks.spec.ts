@@ -63,18 +63,18 @@ test.describe('Tasks Page', () => {
     await page.locator('.tasks-subnav .button', { hasText: 'Add Task' }).click()
 
     // Wait for the modal to animate in
-    await expect(page.locator('#add-task-window.visible')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).toBeVisible({ timeout: 5000 })
 
     // Fill in the form
     await page.fill('#add-task-name', taskName)
-    await page.locator('.add-task-categories__tile', { hasText: 'Chore' }).click()
+    await page.locator('.add-edit-modal__tile', { hasText: 'Chore' }).click()
     await page.fill('#add-task-priority', '15')
 
     // Submit via form submission (button can be off-viewport in small viewports)
     await page.locator('#add-task-priority').press('Enter')
 
     // Wait for the success animation to complete and modal to close
-    await expect(page.locator('#add-task-window.visible')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).not.toBeVisible({ timeout: 5000 })
 
     // Verify success notification
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
@@ -94,12 +94,12 @@ test.describe('Tasks Page', () => {
     // Create a task to complete
     const taskName = `E2E Complete ${Date.now()}`
     await page.locator('.tasks-subnav .button', { hasText: 'Add Task' }).click()
-    await expect(page.locator('#add-task-window.visible')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).toBeVisible({ timeout: 5000 })
     await page.fill('#add-task-name', taskName)
-    await page.locator('.add-task-categories__tile', { hasText: 'Chore' }).click()
+    await page.locator('.add-edit-modal__tile', { hasText: 'Chore' }).click()
     await page.fill('#add-task-priority', '20')
     await page.locator('#add-task-priority').press('Enter')
-    await expect(page.locator('#add-task-window.visible')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).not.toBeVisible({ timeout: 5000 })
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 
     // Navigate to todo to find it
@@ -127,12 +127,12 @@ test.describe('Tasks Page', () => {
     // Create a task to delete
     const taskName = `E2E Delete ${Date.now()}`
     await page.locator('.tasks-subnav .button', { hasText: 'Add Task' }).click()
-    await expect(page.locator('#add-task-window.visible')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).toBeVisible({ timeout: 5000 })
     await page.fill('#add-task-name', taskName)
-    await page.locator('.add-task-categories__tile', { hasText: 'Chore' }).click()
+    await page.locator('.add-edit-modal__tile', { hasText: 'Chore' }).click()
     await page.fill('#add-task-priority', '20')
     await page.locator('#add-task-priority').press('Enter')
-    await expect(page.locator('#add-task-window.visible')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).not.toBeVisible({ timeout: 5000 })
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 
     // Navigate to todo to find it
@@ -160,12 +160,12 @@ test.describe('Tasks Page', () => {
     // Create a task to extend
     const taskName = `E2E Extend ${Date.now()}`
     await page.locator('.tasks-subnav .button', { hasText: 'Add Task' }).click()
-    await expect(page.locator('#add-task-window.visible')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).toBeVisible({ timeout: 5000 })
     await page.fill('#add-task-name', taskName)
-    await page.locator('.add-task-categories__tile', { hasText: 'Chore' }).click()
+    await page.locator('.add-edit-modal__tile', { hasText: 'Chore' }).click()
     await page.fill('#add-task-priority', '10')
     await page.locator('#add-task-priority').press('Enter')
-    await expect(page.locator('#add-task-window.visible')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).not.toBeVisible({ timeout: 5000 })
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 
     // Navigate to todo
@@ -197,12 +197,12 @@ test.describe('Tasks Page', () => {
     const searchTag = `srch${Date.now()}`
     const taskName = `E2E ${searchTag}`
     await page.locator('.tasks-subnav .button', { hasText: 'Add Task' }).click()
-    await expect(page.locator('#add-task-window.visible')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).toBeVisible({ timeout: 5000 })
     await page.fill('#add-task-name', taskName)
-    await page.locator('.add-task-categories__tile', { hasText: 'Chore' }).click()
+    await page.locator('.add-edit-modal__tile', { hasText: 'Chore' }).click()
     await page.fill('#add-task-priority', '20')
     await page.locator('#add-task-priority').press('Enter')
-    await expect(page.locator('#add-task-window.visible')).not.toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.add-edit-modal__window.visible')).not.toBeVisible({ timeout: 5000 })
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 
     // Search for it

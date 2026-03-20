@@ -1,0 +1,122 @@
+@use '../components/buttons';
+
+.main-index-content {
+  --border-radius: 200px;
+  --border-thickness: 30px;
+  position: relative;
+  z-index: 0;
+  margin: var(--space-3xl);
+  padding: var(--space-2xl) var(--space-l) var(--space-l);
+  background-color: var(--clr-gray-900);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  text-align: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -2;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    background-color: var(--clr-gray-800);
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    background-image: conic-gradient(transparent, var(--clr-accent), var(--clr-accent-light), transparent 30%);
+    animation: rotate 4s linear infinite;
+  }
+
+  @keyframes rotate {
+    100% {
+      transform: rotate(1turn);
+    }
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: calc(var(--border-thickness) / 2);
+    top: calc(var(--border-thickness) / 2);
+    width: calc(100% - var(--border-thickness));
+    height: calc(100% - var(--border-thickness));
+    background: var(--clr-gray-900);
+    // Concentric radius keeps the border gap uniform at corners
+    border-radius: calc(var(--border-radius) - var(--border-thickness) / 2);
+  }
+
+  > h1 {
+    color: var(--clr-accent-light);
+    text-shadow: var(--deep-3d-text-shadow);
+    transition: ease-in-out 0.3s;
+
+    &:hover {
+      text-shadow: var(--deep-3d-text-shadow-elongated);
+      transform: scale(1.3) translateY(-20px);
+      transition: ease-in-out 0.3s;
+    }
+  }
+
+  > h2 {
+    color: var(--clr-accent-light);
+    text-shadow: var(--deep-3d-text-shadow);
+    transition: ease-in-out 0.2s;
+
+    &:hover {
+      text-shadow: var(--deep-3d-text-shadow-reversed-elongated);
+      transform: scale(1.3) translateY(20px);
+      transition: text-shadow 0.1s transform 0.2s ease-in-out;
+    }
+  }
+}
+
+.home-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: var(--space-xl);
+  gap: var(--space-xl);
+}
+
+.home-link-button {
+  // Responsive sizing via CSS custom properties overriding the mixin's fixed values.
+  // The mixin provides all shadow/transition/hover logic; we only override dimensions.
+  --_btn-size: clamp(100px, 18vw, 160px);
+  --_btn-ring-size: calc(var(--_btn-size) * 1.5);
+
+  margin: var(--space-m);
+  @include buttons.double-bevel-button(160px, 0px);
+
+  width: var(--_btn-size);
+  height: var(--_btn-size);
+  border-radius: var(--_btn-size);
+  flex-direction: column;
+  gap: var(--space-xs);
+
+  &::before {
+    width: var(--_btn-size);
+    height: var(--_btn-size);
+    border-radius: var(--_btn-size);
+  }
+
+  &::after {
+    width: var(--_btn-ring-size);
+    height: var(--_btn-ring-size);
+    border-radius: var(--_btn-ring-size);
+  }
+}
+
+// Content elements for Vue (avoids collision with mixin's &__text / &__icon selectors)
+.home-link-label,
+.home-link-icon {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.home-link-label {
+  font-size: calc(var(--fs-400) * 1.2);
+  text-align: center;
+}

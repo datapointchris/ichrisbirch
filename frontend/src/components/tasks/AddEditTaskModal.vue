@@ -1,26 +1,17 @@
 <template>
-  <Teleport to="body">
-    <div
-      id="add-task-background-overlay"
-      :class="{ visible: visible && !closeMode, closing: closeMode === 'cancel', 'closing-success': closeMode === 'success' }"
-      @click="handleClose"
-    ></div>
-    <div
-      id="add-task-window"
-      :class="{
-        visible: visible && !closeMode,
-        closing: closeMode === 'cancel',
-        'closing-success': closeMode === 'success',
-      }"
-      @animationend="onAnimationEnd"
-    >
+  <AddEditModal
+    :visible="visible"
+    :focus-ref="nameInput"
+    @close="emit('close')"
+  >
+    <template #default="{ handleClose, handleSuccess }">
       <form
-        class="add-task-form"
-        @submit.prevent="handleSubmit"
+        class="add-edit-modal__form"
+        @submit.prevent="handleSubmit(handleSuccess)"
       >
         <h2>Add New Task</h2>
 
-        <div class="add-task-form__item">
+        <div class="add-edit-modal__form-item">
           <label for="add-task-name">Name</label>
           <input
             id="add-task-name"
@@ -32,9 +23,9 @@
           />
         </div>
 
-        <div class="add-task-form__item">
+        <div class="add-edit-modal__form-item">
           <label>Category</label>
-          <div class="add-task-categories">
+          <div class="add-edit-modal__tiles">
             <template
               v-for="cat in categories"
               :key="cat"
@@ -43,12 +34,12 @@
                 :id="'cat-' + cat"
                 v-model="form.category"
                 type="radio"
-                class="add-task-categories__input"
+                class="add-edit-modal__tile-input"
                 :value="cat"
               />
               <label
                 :for="'cat-' + cat"
-                class="add-task-categories__tile"
+                class="add-edit-modal__tile"
               >
                 {{ cat }}
               </label>
@@ -56,20 +47,20 @@
           </div>
         </div>
 
-        <div class="add-task-form__row">
-          <div class="add-task-form__item">
+        <div class="add-edit-modal__form-row">
+          <div class="add-edit-modal__form-item">
             <label for="add-task-priority">Priority</label>
             <input
               id="add-task-priority"
               v-model.number="form.priority"
               type="number"
-              class="textbox add-task-priority-input"
+              class="textbox add-edit-modal__number-input"
               min="1"
             />
           </div>
         </div>
 
-        <div class="add-task-form__item">
+        <div class="add-edit-modal__form-item">
           <label for="add-task-notes">Notes</label>
           <textarea
             id="add-task-notes"
@@ -80,7 +71,7 @@
           ></textarea>
         </div>
 
-        <div class="add-task-form__buttons">
+        <div class="add-edit-modal__form-buttons">
           <button
             type="submit"
             class="button"
@@ -90,22 +81,23 @@
           <button
             type="button"
             class="button button--danger"
-            @click="handleClose"
+            @click="handleClose()"
           >
             <span class="button__text button__text--danger">Cancel</span>
           </button>
         </div>
       </form>
-    </div>
-  </Teleport>
+    </template>
+  </AddEditModal>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch, nextTick } from 'vue'
+import { reactive, ref } from 'vue'
 import type { TaskCategory } from '@/api/client'
 import { TASK_CATEGORIES } from '@/stores/tasks'
+import AddEditModal from '@/components/AddEditModal.vue'
 
-const props = defineProps<{
+defineProps<{
   visible: boolean
 }>()
 
@@ -115,7 +107,6 @@ const emit = defineEmits<{
 }>()
 
 const categories = TASK_CATEGORIES
-const closeMode = ref<'cancel' | 'success' | null>(null)
 const nameInput = ref<HTMLInputElement | null>(null)
 
 const form = reactive({
@@ -125,30 +116,7 @@ const form = reactive({
   notes: '',
 })
 
-watch(
-  () => props.visible,
-  (val) => {
-    if (val) {
-      nextTick(() => nameInput.value?.focus())
-    }
-  }
-)
-
-function handleClose() {
-  if (!props.visible || closeMode.value) return
-  closeMode.value = 'cancel'
-}
-
-function onAnimationEnd(event: AnimationEvent) {
-  if (event.animationName === 'window-cancel-squeeze' || event.animationName === 'window-success-squeeze') {
-    form.name = ''
-    form.notes = ''
-    closeMode.value = null
-    emit('close')
-  }
-}
-
-function handleSubmit() {
+function handleSubmit(handleSuccess: () => void) {
   if (!form.name.trim()) return
   emit('create', {
     name: form.name.trim(),
@@ -156,6 +124,8 @@ function handleSubmit() {
     priority: form.priority,
     notes: form.notes.trim() || undefined,
   })
-  closeMode.value = 'success'
+  form.name = ''
+  form.notes = ''
+  handleSuccess()
 }
 </script>

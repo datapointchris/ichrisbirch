@@ -1,0 +1,15 @@
+.daysleft {
+  line-height: 2em;
+}
+
+.past {
+  background-color: var(--clr-error);
+}
+
+.two-weeks-left {
+  background-color: var(--clr-error);
+}
+
+.month-left {
+  background-color: var(--clr-warning);
+}

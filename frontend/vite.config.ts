@@ -13,8 +13,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         loadPaths: [
-          fileURLToPath(new URL('../ichrisbirch/app/static/sass', import.meta.url)),
-          fileURLToPath(new URL('../ichrisbirch/app/static', import.meta.url)),
+          fileURLToPath(new URL('./src/assets/sass', import.meta.url)),
         ],
       },
     },
