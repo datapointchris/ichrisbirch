@@ -102,6 +102,9 @@ async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
     # Query for all tasks that are not completed
     query = select(models.Task).filter(models.Task.complete_date.is_(None))
     tasks = session.scalars(query).all()
+    if not tasks:
+        logger.info('task_priorities_no_reset')
+        return {'message': 'No tasks to reset'}
     min_val = min(task.priority for task in tasks)
     if min_val >= 0:
         logger.info('task_priorities_no_reset')
