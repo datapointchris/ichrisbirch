@@ -1,11 +1,15 @@
 <template>
-  <div :class="['task task--compact-layout todo', stateClass]">
+  <div
+    data-testid="task-item"
+    :class="['task task--compact-layout todo', stateClass]"
+  >
     <h3 class="task--compact-layout__title">{{ task.name }}</h3>
     <span>Priority: {{ task.priority }}</span>
     <span>Category: {{ task.category }}</span>
     <span>Add Date: {{ prettyDate(task.add_date) }}</span>
     <span>
       <button
+        data-testid="task-complete-button"
         class="button"
         @click="$emit('complete', task.id)"
       >
@@ -14,6 +18,7 @@
     </span>
     <span>
       <button
+        data-testid="task-extend-7-button"
         class="button"
         @click="$emit('extend', task.id, 7)"
       >
@@ -22,6 +27,7 @@
     </span>
     <span>
       <button
+        data-testid="task-extend-30-button"
         class="button"
         @click="$emit('extend', task.id, 30)"
       >
@@ -33,6 +39,7 @@
     </span>
     <span>
       <button
+        data-testid="task-delete-button"
         class="button--hidden"
         @click="$emit('delete', task.id)"
       >

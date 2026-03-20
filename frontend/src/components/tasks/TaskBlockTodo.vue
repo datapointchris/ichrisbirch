@@ -1,5 +1,8 @@
 <template>
-  <div :class="['task task--block-layout todo', stateClass]">
+  <div
+    data-testid="task-item"
+    :class="['task task--block-layout todo', stateClass]"
+  >
     <h3 class="task--block-layout__title">{{ task.name }}</h3>
     <div class="task--block-layout__priority">Priority: {{ task.priority }}</div>
     <div class="task--block-layout__category">Category: {{ task.category }}</div>
@@ -12,24 +15,28 @@
     </div>
     <div class="task--block-layout__buttons">
       <button
+        data-testid="task-complete-button"
         class="button"
         @click="$emit('complete', task.id)"
       >
         <span class="button__text">Complete Task</span>
       </button>
       <button
+        data-testid="task-extend-7-button"
         class="button"
         @click="$emit('extend', task.id, 7)"
       >
         <span class="button__text">Extend 7 Days</span>
       </button>
       <button
+        data-testid="task-extend-30-button"
         class="button"
         @click="$emit('extend', task.id, 30)"
       >
         <span class="button__text">Extend 30 Days</span>
       </button>
       <button
+        data-testid="task-delete-button"
         class="button button--danger"
         @click="$emit('delete', task.id)"
       >

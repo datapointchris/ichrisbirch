@@ -1,5 +1,8 @@
 <template>
-  <div class="task-layout__info">
+  <div
+    data-testid="task-info-bar"
+    class="task-layout__info"
+  >
     <span class="task-layout__count task--overdue">Overdue Tasks: {{ overdueCount }}</span>
     <span class="task-layout__count task--critical">Critical Tasks: {{ criticalCount }}</span>
     <span class="task-layout__toggle">

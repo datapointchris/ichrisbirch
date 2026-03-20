@@ -28,18 +28,21 @@
       >
         <input
           v-model="searchTerms"
+          data-testid="task-search-input"
           type="text"
           class="textbox"
           placeholder="Search tasks..."
         />
         <button
           type="submit"
+          data-testid="task-search-button"
           class="button"
         >
           <span class="button__text">Search</span>
         </button>
       </form>
       <button
+        data-testid="task-add-button"
         class="button"
         @click="$emit('add-task')"
       >

@@ -17,6 +17,7 @@
             id="add-task-name"
             ref="nameInput"
             v-model="form.name"
+            data-testid="task-name-input"
             type="text"
             size="50"
             class="textbox"
@@ -40,6 +41,7 @@
               <label
                 :for="'cat-' + cat"
                 class="add-edit-modal__tile"
+                :data-testid="'task-category-tile-' + cat"
               >
                 {{ cat }}
               </label>
@@ -53,6 +55,7 @@
             <input
               id="add-task-priority"
               v-model.number="form.priority"
+              data-testid="task-priority-input"
               type="number"
               class="textbox add-edit-modal__number-input"
               min="1"
@@ -74,12 +77,14 @@
         <div class="add-edit-modal__form-buttons">
           <button
             type="submit"
+            data-testid="task-submit-button"
             class="button"
           >
             <span class="button__text">Add Task</span>
           </button>
           <button
             type="button"
+            data-testid="task-cancel-button"
             class="button button--danger"
             @click="handleClose()"
           >
