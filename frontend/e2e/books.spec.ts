@@ -95,6 +95,67 @@ test.describe('Books Page', () => {
     await expect(targetRow).not.toBeVisible()
   })
 
+  test('edits a book and verifies changes persist through round-trips', async ({ page }) => {
+    await page.goto('/books')
+    await expect(page.locator('.books__header')).toBeVisible({ timeout: 10000 })
+
+    // Create a book to edit
+    const title = `E2E Edit ${Date.now()}`
+    await page.fill('#title', title)
+    await page.fill('#author', 'Edit Author')
+    await page.fill('#tags', 'original, tags')
+    await page.locator('.add-item-wrapper button[type="submit"]').click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // Open the edit form on that book's row
+    const row = page.locator('.books__row', { hasText: title })
+    await expect(row).toBeVisible()
+    await row.locator('.fa-pen-to-square').click()
+    await expect(page.locator('.books__edit--open')).toBeVisible()
+
+    // Edit 1: change tags, rating, progress
+    const editForm = page.locator('.books__edit--open')
+    await editForm.locator('input[id^="edit-tags"]').fill('updated, tags')
+    await editForm.locator('input[id^="edit-rating"]').fill('4')
+    await editForm.locator('select[id^="edit-progress"]').selectOption('reading')
+    await editForm.locator('button', { hasText: 'Update Book' }).click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // Wait for edit form to close after update
+    await expect(page.locator('.books__edit--open')).not.toBeVisible()
+
+    // Re-open edit form — verify previous changes are shown correctly
+    const updatedRow = page.locator('.books__row', { hasText: title })
+    await expect(updatedRow).toBeVisible()
+    await updatedRow.locator('.fa-pen-to-square').click()
+
+    const reopenedForm = page.locator('.books__edit--open')
+    await expect(reopenedForm).toBeVisible()
+
+    const tagsValue = await reopenedForm.locator('input[id^="edit-tags"]').inputValue()
+    expect(tagsValue).toContain('updated')
+    expect(tagsValue).not.toContain('[')
+
+    const ratingValue = await reopenedForm.locator('input[id^="edit-rating"]').inputValue()
+    expect(ratingValue).toBe('4')
+
+    const progressValue = await reopenedForm.locator('select[id^="edit-progress"]').inputValue()
+    expect(progressValue).toBe('reading')
+
+    // Edit 2: no-op submit — verify nothing gets corrupted
+    await reopenedForm.locator('button', { hasText: 'Update Book' }).click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.books__edit--open')).not.toBeVisible()
+
+    // Re-open and verify tags haven't been nested or corrupted
+    await updatedRow.locator('.fa-pen-to-square').click()
+    const finalForm = page.locator('.books__edit--open')
+    await expect(finalForm).toBeVisible()
+    const finalTags = await finalForm.locator('input[id^="edit-tags"]').inputValue()
+    expect(finalTags).toContain('updated')
+    expect(finalTags).not.toContain('[')
+  })
+
   test('sidebar navigation to books works', async ({ page }) => {
     await page.goto('/books')
     await expect(page).toHaveTitle('Books | iChrisBirch')
