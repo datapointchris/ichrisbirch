@@ -87,8 +87,8 @@
     text-align: left;
     transition: transform 0.3s ease-in-out;
 
-    // All cells: single line, no wrapping
-    > span {
+    // All cells: single line, no wrapping (except actions)
+    > span:not(.books__actions) {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

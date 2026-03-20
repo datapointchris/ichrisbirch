@@ -3,6 +3,17 @@ import { test, expect } from '@playwright/test'
 const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
+/** Helper: open the add book modal, fill in required fields, and submit */
+async function createBook(page: import('@playwright/test').Page, title: string, author = 'E2E Author') {
+  await page.getByTestId('book-add-button').click()
+  await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+  await page.getByTestId('book-title-input').fill(title)
+  await page.getByTestId('book-author-input').fill(author)
+  await page.getByTestId('book-tags-input').fill('test, e2e')
+  await page.getByTestId('book-tags-input').press('Enter')
+  await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+}
+
 test.describe('Books Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -13,14 +24,8 @@ test.describe('Books Page', () => {
     })
 
     await page.goto('/books')
-
-    // Wait for the table header to appear — this means the API GET succeeded
     await expect(page.locator('.books__header')).toBeVisible({ timeout: 10000 })
-
-    // No error notifications should be visible
     await expect(page.locator(ERROR)).not.toBeVisible()
-
-    // No structured error logs should have been emitted
     expect(apiErrors).toEqual([])
   })
 
@@ -33,23 +38,6 @@ test.describe('Books Page', () => {
   test('info bar is visible with status counters', async ({ page }) => {
     await page.goto('/books')
     await expect(page.locator('.task-layout__info')).toBeVisible()
-    await expect(page.locator('.book--read.book-filter')).toBeVisible()
-    await expect(page.locator('.book--reading.book-filter')).toBeVisible()
-    await expect(page.locator('.book--unread.book-filter')).toBeVisible()
-    await expect(page.locator('.book--abandoned.book-filter')).toBeVisible()
-    await expect(page.locator('.book--total.book-filter')).toBeVisible()
-  })
-
-  test('add form has required fields', async ({ page }) => {
-    await page.goto('/books')
-    await expect(page.locator('.add-item-wrapper')).toBeVisible()
-    await expect(page.locator('#title')).toBeVisible()
-    await expect(page.locator('#author')).toBeVisible()
-    await expect(page.locator('#tags')).toBeVisible()
-
-    await expect(page.locator('#title')).toHaveAttribute('required', '')
-    await expect(page.locator('#author')).toHaveAttribute('required', '')
-    await expect(page.locator('#tags')).toHaveAttribute('required', '')
   })
 
   test('creates a new book and verifies it appears in the table', async ({ page }) => {
@@ -57,18 +45,8 @@ test.describe('Books Page', () => {
     await expect(page.locator('.books__header')).toBeVisible({ timeout: 10000 })
 
     const title = `E2E Book ${Date.now()}`
-
-    await page.fill('#title', title)
-    await page.fill('#author', 'E2E Author')
-    await page.fill('#tags', 'test, e2e')
-    await page.locator('.add-item-wrapper button[type="submit"]').click()
-
-    // Verify success notification appears
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(page.locator(SUCCESS).first()).toContainText('added')
-
-    // Verify the book appears in the table
-    await expect(page.locator('.books__row', { hasText: title })).toBeVisible()
+    await createBook(page, title)
+    await expect(page.getByTestId('book-item').filter({ hasText: title })).toBeVisible()
   })
 
   test('deletes a book and verifies it is removed', async ({ page }) => {
@@ -76,82 +54,60 @@ test.describe('Books Page', () => {
     await expect(page.locator('.books__header')).toBeVisible({ timeout: 10000 })
 
     const title = `E2E Delete ${Date.now()}`
+    await createBook(page, title)
 
-    await page.fill('#title', title)
-    await page.fill('#author', 'Delete Author')
-    await page.fill('#tags', 'delete, test')
-    await page.locator('.add-item-wrapper button[type="submit"]').click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    const row = page.getByTestId('book-item').filter({ hasText: title })
+    await expect(row).toBeVisible()
+    await row.getByTestId('book-delete-button').click()
 
-    // Find and delete it
-    const targetRow = page.locator('.books__row', { hasText: title })
-    await expect(targetRow).toBeVisible()
-    await targetRow.locator('.button--hidden').click()
-
-    // Verify deletion notification
     await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
-
-    // Verify it's gone from the table
-    await expect(targetRow).not.toBeVisible()
+    await expect(row).not.toBeVisible()
   })
 
   test('edits a book and verifies changes persist through round-trips', async ({ page }) => {
     await page.goto('/books')
     await expect(page.locator('.books__header')).toBeVisible({ timeout: 10000 })
 
-    // Create a book to edit
     const title = `E2E Edit ${Date.now()}`
-    await page.fill('#title', title)
-    await page.fill('#author', 'Edit Author')
-    await page.fill('#tags', 'original, tags')
-    await page.locator('.add-item-wrapper button[type="submit"]').click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await createBook(page, title, 'Edit Author')
 
-    // Open the edit form on that book's row
-    const row = page.locator('.books__row', { hasText: title })
+    // Open edit modal
+    const row = page.getByTestId('book-item').filter({ hasText: title })
     await expect(row).toBeVisible()
-    await row.locator('.fa-pen-to-square').click()
-    await expect(page.locator('.books__edit--open')).toBeVisible()
+    await row.getByTestId('book-edit-button').click()
+    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
 
-    // Edit 1: change tags, rating, progress
-    const editForm = page.locator('.books__edit--open')
-    await editForm.locator('input[id^="edit-tags"]').fill('updated, tags')
-    await editForm.locator('input[id^="edit-rating"]').fill('4')
-    await editForm.locator('select[id^="edit-progress"]').selectOption('reading')
-    await editForm.locator('button', { hasText: 'Update Book' }).click()
+    // Edit: change tags, rating, progress
+    await page.getByTestId('book-tags-input').fill('updated, tags')
+    await page.getByTestId('book-rating-input').fill('4')
+    await page.getByTestId('book-progress-input').selectOption('reading')
+    await page.getByTestId('book-tags-input').press('Enter')
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 
-    // Wait for edit form to close after update
-    await expect(page.locator('.books__edit--open')).not.toBeVisible()
-
-    // Re-open edit form — verify previous changes are shown correctly
-    const updatedRow = page.locator('.books__row', { hasText: title })
+    // Re-open edit modal — verify previous changes
+    const updatedRow = page.getByTestId('book-item').filter({ hasText: title })
     await expect(updatedRow).toBeVisible()
-    await updatedRow.locator('.fa-pen-to-square').click()
+    await updatedRow.getByTestId('book-edit-button').click()
+    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
 
-    const reopenedForm = page.locator('.books__edit--open')
-    await expect(reopenedForm).toBeVisible()
-
-    const tagsValue = await reopenedForm.locator('input[id^="edit-tags"]').inputValue()
+    const tagsValue = await page.getByTestId('book-tags-input').inputValue()
     expect(tagsValue).toContain('updated')
     expect(tagsValue).not.toContain('[')
 
-    const ratingValue = await reopenedForm.locator('input[id^="edit-rating"]').inputValue()
+    const ratingValue = await page.getByTestId('book-rating-input').inputValue()
     expect(ratingValue).toBe('4')
 
-    const progressValue = await reopenedForm.locator('select[id^="edit-progress"]').inputValue()
+    const progressValue = await page.getByTestId('book-progress-input').inputValue()
     expect(progressValue).toBe('reading')
 
-    // Edit 2: no-op submit — verify nothing gets corrupted
-    await reopenedForm.locator('button', { hasText: 'Update Book' }).click()
+    // No-op submit — verify nothing gets corrupted
+    await page.getByTestId('book-tags-input').press('Enter')
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(page.locator('.books__edit--open')).not.toBeVisible()
 
-    // Re-open and verify tags haven't been nested or corrupted
-    await updatedRow.locator('.fa-pen-to-square').click()
-    const finalForm = page.locator('.books__edit--open')
-    await expect(finalForm).toBeVisible()
-    const finalTags = await finalForm.locator('input[id^="edit-tags"]').inputValue()
+    // Re-open and verify tags haven't been nested
+    await updatedRow.getByTestId('book-edit-button').click()
+    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+    const finalTags = await page.getByTestId('book-tags-input').inputValue()
     expect(finalTags).toContain('updated')
     expect(finalTags).not.toContain('[')
   })

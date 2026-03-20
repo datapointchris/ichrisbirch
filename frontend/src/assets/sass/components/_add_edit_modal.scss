@@ -101,17 +101,21 @@
 
 .add-edit-modal__form-item {
   padding: var(--space-2xs);
+  flex: 1;
 
   label {
     display: block;
     margin-bottom: var(--space-xs);
   }
+
+  .textbox {
+    width: 100%;
+  }
 }
 
 .add-edit-modal__form-row {
   display: flex;
-  gap: var(--space-l);
-  justify-content: center;
+  gap: var(--space-s);
 }
 
 .add-edit-modal__form-buttons {

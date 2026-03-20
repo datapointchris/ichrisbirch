@@ -160,6 +160,7 @@
             :key="book.id"
           >
             <div
+              data-testid="book-item"
               class="books__row"
               :class="`book--${book.progress}`"
             >
@@ -180,10 +181,12 @@
                   @click="toggleDetail(book.id)"
                 ></i>
                 <i
+                  data-testid="book-edit-button"
                   class="button-icon warning fa-solid fa-pen-to-square"
-                  @click="startEdit(book)"
+                  @click="openEdit(book)"
                 ></i>
                 <button
+                  data-testid="book-delete-button"
                   class="button--hidden"
                   @click="handleDelete(book.id)"
                 >
@@ -289,466 +292,47 @@
                 <span class="books__detail-field-value">{{ book.review }}</span>
               </div>
             </div>
-
-            <!-- Inline Edit Form -->
-            <div
-              v-if="editingBookId === book.id"
-              class="books__edit books__edit--open"
-            >
-              <h3>Edit Book</h3>
-              <form
-                class="add-item-form"
-                @submit.prevent="handleEditSubmit"
-              >
-                <div class="add-item-form__item">
-                  <label :for="`edit-isbn-${book.id}`">ISBN:</label>
-                  <div style="display: flex; gap: var(--space-xs)">
-                    <input
-                      :id="`edit-isbn-${book.id}`"
-                      v-model="editForm.isbn"
-                      type="text"
-                      class="textbox"
-                    />
-                    <button
-                      type="button"
-                      class="button"
-                      :disabled="!editForm.isbn.trim()"
-                      @click="handleEditGoodreadsLookup"
-                    >
-                      <span class="button__text">Lookup</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-title-${book.id}`">Title:</label>
-                  <input
-                    :id="`edit-title-${book.id}`"
-                    v-model="editForm.title"
-                    type="text"
-                    class="textbox"
-                    required
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-author-${book.id}`">Author:</label>
-                  <input
-                    :id="`edit-author-${book.id}`"
-                    v-model="editForm.author"
-                    type="text"
-                    class="textbox"
-                    required
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-tags-${book.id}`">Tags (comma-separated):</label>
-                  <input
-                    :id="`edit-tags-${book.id}`"
-                    v-model="editForm.tags"
-                    type="text"
-                    class="textbox"
-                    required
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-goodreads_url-${book.id}`">Goodreads URL:</label>
-                  <input
-                    :id="`edit-goodreads_url-${book.id}`"
-                    v-model="editForm.goodreads_url"
-                    type="text"
-                    class="textbox"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-priority-${book.id}`">Priority:</label>
-                  <input
-                    :id="`edit-priority-${book.id}`"
-                    v-model="editForm.priority"
-                    type="number"
-                    class="textbox"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-rating-${book.id}`">Rating:</label>
-                  <input
-                    :id="`edit-rating-${book.id}`"
-                    v-model="editForm.rating"
-                    type="number"
-                    class="textbox"
-                    min="1"
-                    max="5"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-purchase_date-${book.id}`">Purchase Date:</label>
-                  <DatePicker
-                    :id="`edit-purchase_date-${book.id}`"
-                    :model-value="editForm.purchase_date"
-                    @update:model-value="editForm.purchase_date = $event"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-purchase_price-${book.id}`">Purchase Price:</label>
-                  <input
-                    :id="`edit-purchase_price-${book.id}`"
-                    v-model="editForm.purchase_price"
-                    type="number"
-                    class="textbox"
-                    step="0.01"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-sell_date-${book.id}`">Sell Date:</label>
-                  <DatePicker
-                    :id="`edit-sell_date-${book.id}`"
-                    :model-value="editForm.sell_date"
-                    @update:model-value="editForm.sell_date = $event"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-sell_price-${book.id}`">Sell Price:</label>
-                  <input
-                    :id="`edit-sell_price-${book.id}`"
-                    v-model="editForm.sell_price"
-                    type="number"
-                    class="textbox"
-                    step="0.01"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-read_start_date-${book.id}`">Read Start Date:</label>
-                  <DatePicker
-                    :id="`edit-read_start_date-${book.id}`"
-                    :model-value="editForm.read_start_date"
-                    @update:model-value="editForm.read_start_date = $event"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-read_finish_date-${book.id}`">Read Finish Date:</label>
-                  <DatePicker
-                    :id="`edit-read_finish_date-${book.id}`"
-                    :model-value="editForm.read_finish_date"
-                    @update:model-value="editForm.read_finish_date = $event"
-                  />
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-progress-${book.id}`">Progress:</label>
-                  <select
-                    :id="`edit-progress-${book.id}`"
-                    v-model="editForm.progress"
-                    class="textbox"
-                  >
-                    <option
-                      v-for="(label, value) in statusLabels"
-                      :key="value"
-                      :value="value"
-                    >
-                      {{ label }}
-                    </option>
-                  </select>
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-ownership-${book.id}`">Ownership:</label>
-                  <select
-                    :id="`edit-ownership-${book.id}`"
-                    v-model="editForm.ownership"
-                    class="textbox"
-                  >
-                    <option
-                      v-for="(label, value) in ownershipLabels"
-                      :key="value"
-                      :value="value"
-                    >
-                      {{ label }}
-                    </option>
-                  </select>
-                </div>
-                <div class="add-item-form__item">
-                  <label :for="`edit-location-${book.id}`">Location:</label>
-                  <input
-                    :id="`edit-location-${book.id}`"
-                    v-model="editForm.location"
-                    type="text"
-                    class="textbox"
-                  />
-                </div>
-                <div class="add-item-form__item add-item-form__item--full-width">
-                  <label :for="`edit-notes-${book.id}`">Notes:</label>
-                  <textarea
-                    :id="`edit-notes-${book.id}`"
-                    v-model="editForm.notes"
-                    rows="3"
-                    class="textbox"
-                  ></textarea>
-                </div>
-                <div class="add-item-form__item add-item-form__item--full-width">
-                  <label :for="`edit-review-${book.id}`">Review:</label>
-                  <textarea
-                    :id="`edit-review-${book.id}`"
-                    v-model="editForm.review"
-                    rows="3"
-                    class="textbox"
-                  ></textarea>
-                </div>
-                <div class="add-item-form__item add-item-form__item--full-width">
-                  <button
-                    type="submit"
-                    class="button"
-                  >
-                    <span class="button__text">Update Book</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="button button--danger"
-                    @click="cancelEdit"
-                  >
-                    <span class="button__text button__text--danger">Cancel</span>
-                  </button>
-                </div>
-              </form>
-            </div>
           </template>
         </template>
       </div>
     </div>
 
-    <!-- Add New Book Form -->
     <div class="add-item-wrapper">
-      <h2>Add New Book</h2>
-      <form
-        class="add-item-form"
-        @submit.prevent="handleAddSubmit"
+      <button
+        data-testid="book-add-button"
+        class="button"
+        @click="showModal = true"
       >
-        <div class="add-item-form__item">
-          <label for="isbn">ISBN:</label>
-          <div style="display: flex; gap: var(--space-xs)">
-            <input
-              id="isbn"
-              v-model="addForm.isbn"
-              type="text"
-              class="textbox"
-              name="isbn"
-            />
-            <button
-              type="button"
-              class="button"
-              :disabled="!addForm.isbn.trim()"
-              @click="handleAddGoodreadsLookup"
-            >
-              <span class="button__text">Lookup</span>
-            </button>
-          </div>
-        </div>
-        <div class="add-item-form__item">
-          <label for="title">Title:</label>
-          <input
-            id="title"
-            v-model="addForm.title"
-            type="text"
-            class="textbox"
-            name="title"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="author">Author:</label>
-          <input
-            id="author"
-            v-model="addForm.author"
-            type="text"
-            class="textbox"
-            name="author"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="tags">Tags (comma-separated):</label>
-          <input
-            id="tags"
-            v-model="addForm.tags"
-            type="text"
-            class="textbox"
-            name="tags"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="goodreads_url">Goodreads URL:</label>
-          <input
-            id="goodreads_url"
-            v-model="addForm.goodreads_url"
-            type="text"
-            class="textbox"
-            name="goodreads_url"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="priority">Priority:</label>
-          <input
-            id="priority"
-            v-model="addForm.priority"
-            type="number"
-            class="textbox"
-            name="priority"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="rating">Rating:</label>
-          <input
-            id="rating"
-            v-model="addForm.rating"
-            type="number"
-            class="textbox"
-            name="rating"
-            min="1"
-            max="5"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="purchase_date">Purchase Date:</label>
-          <DatePicker
-            id="purchase_date"
-            :model-value="addForm.purchase_date"
-            @update:model-value="addForm.purchase_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="purchase_price">Purchase Price:</label>
-          <input
-            id="purchase_price"
-            v-model="addForm.purchase_price"
-            type="number"
-            class="textbox"
-            name="purchase_price"
-            step="0.01"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="sell_date">Sell Date:</label>
-          <DatePicker
-            id="sell_date"
-            :model-value="addForm.sell_date"
-            @update:model-value="addForm.sell_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="sell_price">Sell Price:</label>
-          <input
-            id="sell_price"
-            v-model="addForm.sell_price"
-            type="number"
-            class="textbox"
-            name="sell_price"
-            step="0.01"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="read_start_date">Read Start Date:</label>
-          <DatePicker
-            id="read_start_date"
-            :model-value="addForm.read_start_date"
-            @update:model-value="addForm.read_start_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="read_finish_date">Read Finish Date:</label>
-          <DatePicker
-            id="read_finish_date"
-            :model-value="addForm.read_finish_date"
-            @update:model-value="addForm.read_finish_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="progress">Progress:</label>
-          <select
-            id="progress"
-            v-model="addForm.progress"
-            class="textbox"
-            name="progress"
-          >
-            <option
-              v-for="(label, value) in statusLabels"
-              :key="value"
-              :value="value"
-            >
-              {{ label }}
-            </option>
-          </select>
-        </div>
-        <div class="add-item-form__item">
-          <label for="ownership">Ownership:</label>
-          <select
-            id="ownership"
-            v-model="addForm.ownership"
-            class="textbox"
-            name="ownership"
-          >
-            <option
-              v-for="(label, value) in ownershipLabels"
-              :key="value"
-              :value="value"
-            >
-              {{ label }}
-            </option>
-          </select>
-        </div>
-        <div class="add-item-form__item">
-          <label for="location">Location:</label>
-          <input
-            id="location"
-            v-model="addForm.location"
-            type="text"
-            class="textbox"
-            name="location"
-          />
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="notes">Notes:</label>
-          <textarea
-            id="notes"
-            v-model="addForm.notes"
-            rows="3"
-            class="textbox"
-            name="notes"
-          ></textarea>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="review">Review:</label>
-          <textarea
-            id="review"
-            v-model="addForm.review"
-            rows="3"
-            class="textbox"
-            name="review"
-          ></textarea>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <button
-            type="submit"
-            class="button"
-          >
-            <span class="button__text">Add Book</span>
-          </button>
-        </div>
-      </form>
+        <span class="button__text">Add Book</span>
+      </button>
     </div>
+
+    <AddEditBookModal
+      :visible="showModal"
+      :edit-data="editTarget"
+      @close="closeModal"
+      @create="handleCreate"
+      @update="handleUpdate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useBooksStore } from '@/stores/books'
 import type { BookProgress, BookOwnership } from '@/stores/books'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
-import DatePicker from '@/components/DatePicker.vue'
+import AddEditBookModal from '@/components/books/AddEditBookModal.vue'
 
 const store = useBooksStore()
 const { show: notify } = useNotifications()
 
 const expandedBookId = ref<number | null>(null)
-const editingBookId = ref<number | null>(null)
 const searchInput = ref('')
+const showModal = ref(false)
+const editTarget = ref<Book | null>(null)
 
 const statusLabels: Record<BookProgress, string> = {
   unread: 'Unread',
@@ -764,32 +348,6 @@ const ownershipLabels: Record<BookOwnership, string> = {
   sold: 'Sold',
   donated: 'Donated',
 }
-
-function createEmptyForm() {
-  return {
-    isbn: '',
-    title: '',
-    author: '',
-    tags: '',
-    goodreads_url: '',
-    priority: '',
-    rating: '',
-    purchase_date: '',
-    purchase_price: '',
-    sell_date: '',
-    sell_price: '',
-    read_start_date: '',
-    read_finish_date: '',
-    progress: 'unread' as BookProgress,
-    ownership: 'owned' as BookOwnership,
-    location: '',
-    notes: '',
-    review: '',
-  }
-}
-
-const addForm = reactive(createEmptyForm())
-const editForm = reactive(createEmptyForm())
 
 onMounted(() => {
   store.fetchAll()
@@ -817,128 +375,11 @@ function toggleDetail(bookId: number) {
   expandedBookId.value = expandedBookId.value === bookId ? null : bookId
 }
 
-function resetAddForm() {
-  Object.assign(addForm, createEmptyForm())
-}
-
-function startEdit(book: Book) {
-  editingBookId.value = book.id
-  expandedBookId.value = null
-  editForm.isbn = book.isbn ?? ''
-  editForm.title = book.title
-  editForm.author = book.author
-  editForm.tags = book.tags.join(', ')
-  editForm.goodreads_url = book.goodreads_url ?? ''
-  editForm.priority = book.priority != null ? String(book.priority) : ''
-  editForm.rating = book.rating != null ? String(book.rating) : ''
-  editForm.purchase_date = book.purchase_date ? book.purchase_date.split('T')[0]! : ''
-  editForm.purchase_price = book.purchase_price != null ? String(book.purchase_price) : ''
-  editForm.sell_date = book.sell_date ? book.sell_date.split('T')[0]! : ''
-  editForm.sell_price = book.sell_price != null ? String(book.sell_price) : ''
-  editForm.read_start_date = book.read_start_date ? book.read_start_date.split('T')[0]! : ''
-  editForm.read_finish_date = book.read_finish_date ? book.read_finish_date.split('T')[0]! : ''
-  editForm.progress = (book.progress ?? 'unread') as BookProgress
-  editForm.ownership = (book.ownership ?? 'owned') as BookOwnership
-  editForm.location = book.location ?? ''
-  editForm.notes = book.notes ?? ''
-  editForm.review = book.review ?? ''
-}
-
-function cancelEdit() {
-  editingBookId.value = null
-  Object.assign(editForm, createEmptyForm())
-}
-
-function buildAddPayload() {
-  const tags = addForm.tags
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
-  return {
-    isbn: addForm.isbn.trim() || undefined,
-    title: addForm.title.trim(),
-    author: addForm.author.trim(),
-    tags,
-    goodreads_url: addForm.goodreads_url.trim() || undefined,
-    priority: addForm.priority ? Number(addForm.priority) : undefined,
-    rating: addForm.rating ? Number(addForm.rating) : undefined,
-    purchase_date: addForm.purchase_date || undefined,
-    purchase_price: addForm.purchase_price ? Number(addForm.purchase_price) : undefined,
-    sell_date: addForm.sell_date || undefined,
-    sell_price: addForm.sell_price ? Number(addForm.sell_price) : undefined,
-    read_start_date: addForm.read_start_date || undefined,
-    read_finish_date: addForm.read_finish_date || undefined,
-    progress: addForm.progress,
-    ownership: addForm.ownership,
-    location: addForm.location.trim() || undefined,
-    notes: addForm.notes.trim() || undefined,
-    review: addForm.review.trim() || undefined,
-  }
-}
-
-// For edits, empty fields send null (to clear the value) instead of undefined (which omits the field)
-function buildEditPayload() {
-  const tags = editForm.tags
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
-  return {
-    isbn: editForm.isbn.trim() || null,
-    title: editForm.title.trim(),
-    author: editForm.author.trim(),
-    tags,
-    goodreads_url: editForm.goodreads_url.trim() || null,
-    priority: editForm.priority ? Number(editForm.priority) : null,
-    rating: editForm.rating ? Number(editForm.rating) : null,
-    purchase_date: editForm.purchase_date || null,
-    purchase_price: editForm.purchase_price ? Number(editForm.purchase_price) : null,
-    sell_date: editForm.sell_date || null,
-    sell_price: editForm.sell_price ? Number(editForm.sell_price) : null,
-    read_start_date: editForm.read_start_date || null,
-    read_finish_date: editForm.read_finish_date || null,
-    progress: editForm.progress,
-    ownership: editForm.ownership,
-    location: editForm.location.trim() || null,
-    notes: editForm.notes.trim() || null,
-    review: editForm.review.trim() || null,
-  }
-}
-
-async function handleEditSubmit() {
-  if (!editForm.title.trim() || !editForm.author.trim() || !editForm.tags.trim()) return
-  if (!editingBookId.value) return
-
-  try {
-    await store.update(editingBookId.value, buildEditPayload())
-    notify(`${editForm.title.trim()}: ${editForm.author.trim()} | updated`, 'success')
-    cancelEdit()
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`${editForm.title.trim()}: ${editForm.author.trim()} | update failed: ${detail}`, 'error')
-  }
-}
-
-async function handleAddSubmit() {
-  if (!addForm.title.trim() || !addForm.author.trim() || !addForm.tags.trim()) return
-
-  try {
-    await store.create(buildAddPayload() as Parameters<typeof store.create>[0])
-    notify(`${addForm.title.trim()}: ${addForm.author.trim()} | added`, 'success')
-    resetAddForm()
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`${addForm.title.trim()}: ${addForm.author.trim()} | add failed: ${detail}`, 'error')
-  }
-}
-
 async function handleDelete(id: number) {
   const book = store.books.find((b) => b.id === id)
   const label = book ? `${book.title}: ${book.author}` : `Book ${id}`
   try {
     await store.remove(id)
-    if (editingBookId.value === id) {
-      cancelEdit()
-    }
     notify(`${label} | deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
@@ -946,33 +387,33 @@ async function handleDelete(id: number) {
   }
 }
 
-async function handleAddGoodreadsLookup() {
-  if (!addForm.isbn.trim()) return
+function openEdit(book: Book) {
+  editTarget.value = book
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  editTarget.value = null
+}
+
+async function handleCreate(data: Parameters<typeof store.create>[0]) {
   try {
-    const info = await store.fetchGoodreadsInfo(addForm.isbn.trim())
-    addForm.title = info.title
-    addForm.author = info.author
-    addForm.tags = info.tags
-    addForm.goodreads_url = info.goodreads_url
-    notify('Goodreads info loaded', 'success')
+    await store.create(data)
+    notify(`${data.title}: ${data.author} | added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Goodreads lookup failed: ${detail}`, 'error')
+    notify(`${data.title}: ${data.author} | add failed: ${detail}`, 'error')
   }
 }
 
-async function handleEditGoodreadsLookup() {
-  if (!editForm.isbn.trim()) return
+async function handleUpdate(id: number, data: Parameters<typeof store.update>[1]) {
   try {
-    const info = await store.fetchGoodreadsInfo(editForm.isbn.trim())
-    editForm.title = info.title
-    editForm.author = info.author
-    editForm.tags = info.tags
-    editForm.goodreads_url = info.goodreads_url
-    notify('Goodreads info loaded', 'success')
+    await store.update(id, data)
+    notify('Book updated', 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Goodreads lookup failed: ${detail}`, 'error')
+    notify(`Update failed: ${detail}`, 'error')
   }
 }
 
