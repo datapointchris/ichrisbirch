@@ -55,7 +55,7 @@
               :title="entry.notes || ''"
               >{{ entry.notes || '' }}</span
             >
-            <span>
+            <span class="money-wasted__actions">
               <button
                 data-testid="mw-edit-button"
                 class="button--hidden"

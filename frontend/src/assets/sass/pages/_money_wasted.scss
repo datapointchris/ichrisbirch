@@ -1,10 +1,10 @@
 .money-wasted {
-  $item: 3fr;
+  $item: 5fr;
   $amount: 2fr;
   $date-purchased: 2.5fr;
   $date-wasted: 2.5fr;
   $notes: 5fr;
-  $actions: 1fr;
+  $actions: 1.5fr;
 
   &--total {
     color: var(--clr-accent-light);
@@ -84,6 +84,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-xs);
+    justify-content: center;
   }
 
   &__empty {
