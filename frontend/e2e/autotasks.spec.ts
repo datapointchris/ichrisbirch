@@ -66,6 +66,33 @@ test.describe('AutoTasks Page', () => {
     await expect(card).not.toBeVisible()
   })
 
+  test('runs an autotask and verifies success', async ({ page }) => {
+    await page.goto('/autotasks')
+    await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
+
+    // Create one to run
+    const name = `E2E Run ${Date.now()}`
+    await page.fill('#name', name)
+    await page.fill('#priority', '10')
+    await page.selectOption('#category', 'Home')
+    await page.selectOption('#frequency', 'Monthly')
+    await page.locator('button', { hasText: 'Add New Autotask' }).click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // Run it
+    const card = page.locator('.grid__item', { hasText: name })
+    await expect(card).toBeVisible()
+    await card.locator('button', { hasText: 'Run Autotask Now' }).click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // Autotask should still be on the page (run doesn't delete it)
+    await expect(card).toBeVisible()
+
+    // Run count should show 2 (1 from create + 1 from manual run)
+    const runCountItem = card.locator('.item-details__item', { hasText: 'Run Count' })
+    await expect(runCountItem.locator('.item-details__item-content')).toHaveText('2')
+  })
+
   test('sidebar navigation to autotasks works', async ({ page }) => {
     await page.goto('/autotasks')
     await expect(page).toHaveTitle('AutoTasks | iChrisBirch')
