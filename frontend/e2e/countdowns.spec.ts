@@ -3,6 +3,20 @@ import { test, expect } from '@playwright/test'
 const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
+/** Helper: open the add countdown modal, fill in fields, and submit */
+async function createCountdown(
+  page: import('@playwright/test').Page,
+  name: string,
+  dueDate = '2028-06-15',
+) {
+  await page.getByTestId('countdown-add-button').click()
+  await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+  await page.getByTestId('countdown-name-input').fill(name)
+  await page.getByTestId('countdown-due-date-input').locator('input').fill(dueDate)
+  await page.getByTestId('countdown-submit-button').click()
+  await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+}
+
 test.describe('Countdowns Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -37,16 +51,7 @@ test.describe('Countdowns Page', () => {
     await page.goto('/countdowns')
 
     const name = `E2E Create ${Date.now()}`
-
-    await page.getByTestId('countdown-add-button').click()
-    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-
-    await page.getByTestId('countdown-name-input').fill(name)
-    await page.getByTestId('countdown-due-date-input').locator('input').fill('2028-06-15')
-    await page.getByTestId('countdown-notes-input').fill('Created by Playwright')
-    await page.getByTestId('countdown-submit-button').click()
-
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await createCountdown(page, name)
     await expect(page.getByTestId('countdown-item').filter({ hasText: name })).toBeVisible()
   })
 
@@ -54,16 +59,8 @@ test.describe('Countdowns Page', () => {
     await page.goto('/countdowns')
 
     const name = `E2E Delete ${Date.now()}`
+    await createCountdown(page, name, '2028-12-31')
 
-    // Create one to delete
-    await page.getByTestId('countdown-add-button').click()
-    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-    await page.getByTestId('countdown-name-input').fill(name)
-    await page.getByTestId('countdown-due-date-input').locator('input').fill('2028-12-31')
-    await page.getByTestId('countdown-submit-button').click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-
-    // Delete it
     const targetItem = page.getByTestId('countdown-item').filter({ hasText: name })
     await expect(targetItem).toBeVisible()
     await targetItem.getByTestId('countdown-delete-button').click()
