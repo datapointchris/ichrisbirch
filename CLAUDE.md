@@ -129,6 +129,8 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 
 **E2E assertion style**: Never assert on exact notification/log text (e.g., `toContainText('Duration added')`). Messages change format frequently and couple tests to implementation details. Assert on generic keywords that verify intent: `'added'`, `'deleted'`, `'completed'`. Test behavior, not message formatting.
 
+**E2E selectors — use `data-testid`**: Never couple tests to CSS class names or DOM structure. Use `data-testid` attributes on interactive elements and `page.getByTestId()` in tests. This decouples tests from styling changes. Naming convention: `{entity}-{element}` — e.g., `countdown-add-button`, `countdown-name-input`, `countdown-item`, `add-edit-modal`. The `data-testid` attributes ship to production (negligible cost, enables prod E2E if needed).
+
 **Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icb prod build-test`.
 
 ## Deployment

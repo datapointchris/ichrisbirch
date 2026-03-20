@@ -1,6 +1,7 @@
 <template>
   <Teleport to="body">
     <div
+      data-testid="add-edit-modal-overlay"
       class="add-edit-modal__overlay"
       :class="{
         visible: visible && !closeMode,
@@ -10,6 +11,7 @@
       @click="handleClose"
     ></div>
     <div
+      data-testid="add-edit-modal"
       class="add-edit-modal__window"
       :class="{
         visible: visible && !closeMode,

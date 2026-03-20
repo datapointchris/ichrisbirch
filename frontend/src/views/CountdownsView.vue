@@ -17,6 +17,7 @@
         <div
           v-for="countdown in store.sortedCountdowns"
           :key="countdown.id"
+          data-testid="countdown-item"
           class="grid__item"
         >
           <h2>{{ countdown.name }}</h2>
@@ -31,6 +32,14 @@
           {{ countdown.notes }}
           <br /><br />
           <button
+            data-testid="countdown-edit-button"
+            class="button"
+            @click="openEdit(countdown)"
+          >
+            <span class="button__text">Edit</span>
+          </button>
+          <button
+            data-testid="countdown-delete-button"
             class="button button--danger"
             @click="handleDelete(countdown.id)"
           >
@@ -41,72 +50,39 @@
     </div>
 
     <div class="add-item-wrapper">
-      <h2>Add New Countdown:</h2>
-      <form
-        class="add-item-form"
-        @submit.prevent="handleAdd"
+      <button
+        data-testid="countdown-add-button"
+        class="button"
+        @click="showModal = true"
       >
-        <div class="add-item-form__item">
-          <label for="name">Name:</label>
-          <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            size="30"
-            class="textbox"
-            name="name"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="due_date">Due Date:</label>
-          <DatePicker
-            id="due_date"
-            :model-value="form.due_date"
-            required
-            @update:model-value="form.due_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="notes">Notes:</label>
-          <input
-            id="notes"
-            v-model="form.notes"
-            type="text"
-            size="40"
-            class="textbox"
-            name="notes"
-          />
-        </div>
-        <div class="add-item-form__item--full-width">
-          <button
-            type="submit"
-            class="button"
-          >
-            <span class="button__text">Add Countdown</span>
-          </button>
-        </div>
-      </form>
+        <span class="button__text">Add Countdown</span>
+      </button>
     </div>
+
+    <AddEditCountdownModal
+      :visible="showModal"
+      :edit-data="editTarget"
+      @close="closeModal"
+      @create="handleCreate"
+      @update="handleUpdate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useCountdownsStore } from '@/stores/countdowns'
 import { useNotifications } from '@/composables/useNotifications'
 import { computeDaysLeft, formatDate } from '@/composables/useDaysLeft'
 import { ApiError } from '@/api/errors'
-import DatePicker from '@/components/DatePicker.vue'
+import type { Countdown, CountdownCreate, CountdownUpdate } from '@/api/client'
+import AddEditCountdownModal from '@/components/countdowns/AddEditCountdownModal.vue'
 
 const store = useCountdownsStore()
 const { show: notify } = useNotifications()
 
-const form = reactive({
-  name: '',
-  due_date: '',
-  notes: '',
-})
+const showModal = ref(false)
+const editTarget = ref<{ id: number; name: string; due_date: string; notes?: string } | null>(null)
 
 onMounted(() => {
   store.fetchAll()
@@ -124,21 +100,38 @@ function urgencyClass(dueDate: string): string {
   return ''
 }
 
-async function handleAdd() {
-  if (!form.name.trim() || !form.due_date) return
+function openEdit(countdown: Countdown) {
+  editTarget.value = {
+    id: countdown.id,
+    name: countdown.name,
+    due_date: countdown.due_date,
+    notes: countdown.notes,
+  }
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  editTarget.value = null
+}
+
+async function handleCreate(data: CountdownCreate) {
   try {
-    await store.create({
-      name: form.name.trim(),
-      due_date: form.due_date,
-      notes: form.notes.trim() || undefined,
-    })
+    await store.create(data)
     notify('Countdown added', 'success')
-    form.name = ''
-    form.due_date = ''
-    form.notes = ''
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add countdown: ${detail}`, 'error')
+  }
+}
+
+async function handleUpdate(id: number, data: CountdownUpdate) {
+  try {
+    await store.update(id, data)
+    notify('Countdown updated', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update countdown: ${detail}`, 'error')
   }
 }
 

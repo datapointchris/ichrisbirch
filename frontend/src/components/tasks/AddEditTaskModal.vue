@@ -2,7 +2,7 @@
   <AddEditModal
     :visible="visible"
     :focus-ref="nameInput"
-    @close="emit('close')"
+    @close="handleModalClose"
   >
     <template #default="{ handleClose, handleSuccess }">
       <form
@@ -116,6 +116,14 @@ const form = reactive({
   notes: '',
 })
 
+function handleModalClose() {
+  form.name = ''
+  form.notes = ''
+  form.category = 'Chore' as TaskCategory
+  form.priority = 10
+  emit('close')
+}
+
 function handleSubmit(handleSuccess: () => void) {
   if (!form.name.trim()) return
   emit('create', {
@@ -124,8 +132,6 @@ function handleSubmit(handleSuccess: () => void) {
     priority: form.priority,
     notes: form.notes.trim() || undefined,
   })
-  form.name = ''
-  form.notes = ''
   handleSuccess()
 }
 </script>
