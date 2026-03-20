@@ -42,7 +42,7 @@ def get_branch() -> str:
 
 def write_timing(hook_name: str, duration: float, total_duration: float | None = None) -> None:
     """Append timing entry to capture timing log."""
-    TIMING_DIR.mkdir(exist_ok=True)
+    TIMING_DIR.mkdir(parents=True, exist_ok=True)
     log_file = TIMING_DIR / 'capture.log'
     timestamp = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
 

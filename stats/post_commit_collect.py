@@ -23,7 +23,7 @@ TIMING_DIR = Path(__file__).parent / 'data' / 'timing'
 
 def write_timing(collector_name: str, duration: float, total_duration: float | None = None) -> None:
     """Append timing entry to collect timing log."""
-    TIMING_DIR.mkdir(exist_ok=True)
+    TIMING_DIR.mkdir(parents=True, exist_ok=True)
     log_file = TIMING_DIR / 'collect.log'
     timestamp = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
 
