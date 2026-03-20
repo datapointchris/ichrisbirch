@@ -32,7 +32,7 @@ def run(staged_files: list[str], branch: str, project: str) -> GenerateFixtureDi
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['uv', 'run', 'python', '-m', 'mkdocs_plugins.diagrams'],
+        ['uv', 'run', 'python', '-m', 'mkdocs_plugins.diagrams', '--output-dir', '/tmp/devstats-diagrams'],  # nosec B108
         capture_output=True,
         text=True,
     )

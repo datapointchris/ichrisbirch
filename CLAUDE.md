@@ -144,6 +144,7 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 ### Must Follow
 
 - **Pre-commit hooks** run automatically: Ruff, mypy, codespell, bandit, ESLint, Prettier, TypeScript checking, sass compile, and more. Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
+- **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
 - **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
 - **NEVER use `# noqa`** to bypass import order errors (E402). Restructure code instead.
 - **Database columns**: Always use `Text`, never `String(n)` or `varchar`.

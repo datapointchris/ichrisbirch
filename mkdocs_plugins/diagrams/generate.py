@@ -27,6 +27,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = find_project_root()
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / 'docs' / 'images' / 'generated'
 HASH_CACHE_FILE = PROJECT_ROOT / '.diagram_hash_cache.json'
 
 
@@ -86,7 +87,7 @@ def update_hash_cache(component: str, file_patterns: list[str]) -> None:
         logger.warning(f'Error updating hash cache: {e}')
 
 
-def generate_fixture_diagrams(force: bool = False) -> None:
+def generate_fixture_diagrams(output_dir: str, force: bool = False) -> None:
     """Generate fixture diagrams based on code analysis."""
     fixture_file_patterns = [
         'tests/conftest.py',
@@ -100,23 +101,22 @@ def generate_fixture_diagrams(force: bool = False) -> None:
 
     logger.info('Generating fixture diagrams...')
     renderer = FixtureDiagramRenderer()
-    renderer.generate_all_diagrams()
+    renderer.generate_all_diagrams(output_dir=output_dir)
     logger.info('Generated fixture diagrams')
     update_hash_cache('fixtures', fixture_file_patterns)
 
 
-def generate_all_diagrams(force: bool = False) -> bool:
+def generate_all_diagrams(output_dir: str = str(DEFAULT_OUTPUT_DIR), force: bool = False) -> bool:
     """Generate all diagrams for documentation."""
     logger.info('Starting diagram generation process...')
 
-    output_dir = PROJECT_ROOT / 'docs' / 'images' / 'generated'
-    ensure_output_directory(output_dir)
+    ensure_output_directory(Path(output_dir))
 
-    generate_fixture_diagrams(force)
+    generate_fixture_diagrams(output_dir, force)
 
     aws_file_patterns = ['terraform/**/*']
     if force or has_code_changed('aws', aws_file_patterns):
-        generate_aws_diagrams(str(output_dir))
+        generate_aws_diagrams(output_dir)
         update_hash_cache('aws', aws_file_patterns)
         logger.info('Generated AWS diagrams')
     else:
@@ -124,7 +124,7 @@ def generate_all_diagrams(force: bool = False) -> bool:
 
     testing_file_patterns = ['tests/**/*.py']
     if force or has_code_changed('testing', testing_file_patterns):
-        generate_testing_diagrams(str(output_dir))
+        generate_testing_diagrams(output_dir)
         update_hash_cache('testing', testing_file_patterns)
         logger.info('Generated testing diagrams')
     else:
@@ -138,9 +138,10 @@ def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description='Generate diagrams for documentation.')
     parser.add_argument('--force', '-f', action='store_true', help='Force regeneration of all diagrams')
+    parser.add_argument('--output-dir', '-o', type=str, default=str(DEFAULT_OUTPUT_DIR), help='Output directory for generated diagrams')
     args = parser.parse_args()
 
-    success = generate_all_diagrams(force=args.force)
+    success = generate_all_diagrams(output_dir=args.output_dir, force=args.force)
     sys.exit(0 if success else 1)
 
 
