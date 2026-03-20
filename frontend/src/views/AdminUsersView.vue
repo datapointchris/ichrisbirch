@@ -109,34 +109,6 @@ async function handleToggleAdmin(user: User) {
 </script>
 
 <style scoped>
-.admin-section {
-  margin-bottom: var(--space-l);
-}
-
-.admin-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.admin-table th,
-.admin-table td {
-  text-align: left;
-  padding: var(--space-3xs) var(--space-xs);
-  border-bottom: 1px solid var(--clr-gray-800);
-}
-
-.admin-table th {
-  color: var(--clr-gray-400);
-  font-size: var(--fs-300);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.admin-table__mono {
-  font-family: var(--ff-mono);
-  font-size: var(--fs-300);
-}
-
 .admin-toggle {
   display: flex;
   align-items: center;
@@ -152,19 +124,5 @@ async function handleToggleAdmin(user: User) {
   color: var(--clr-gray-500);
   font-size: var(--fs-300);
   font-style: italic;
-}
-
-.admin-empty {
-  color: var(--clr-gray-500);
-  font-style: italic;
-  padding: var(--space-xs) 0;
-}
-
-.admin-error {
-  color: var(--clr-red-400, #f87171);
-  padding: var(--space-xs);
-  border: 1px solid var(--clr-red-800, #991b1b);
-  border-radius: 4px;
-  margin-top: var(--space-m);
 }
 </style>

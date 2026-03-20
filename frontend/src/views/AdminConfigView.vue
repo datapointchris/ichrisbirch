@@ -83,10 +83,6 @@ function formatValue(value: unknown): string {
 </script>
 
 <style scoped>
-.admin-section {
-  margin-bottom: var(--space-l);
-}
-
 .config-sections {
   display: flex;
   flex-direction: column;
@@ -140,19 +136,5 @@ function formatValue(value: unknown): string {
 .config-entry__value--masked {
   color: var(--clr-gray-600);
   font-style: italic;
-}
-
-.admin-empty {
-  color: var(--clr-gray-500);
-  font-style: italic;
-  padding: var(--space-xs) 0;
-}
-
-.admin-error {
-  color: var(--clr-red-400, #f87171);
-  padding: var(--space-xs);
-  border: 1px solid var(--clr-red-800, #991b1b);
-  border-radius: 4px;
-  margin-top: var(--space-m);
 }
 </style>
