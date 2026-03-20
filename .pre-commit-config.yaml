@@ -173,7 +173,7 @@ repos:
       - id: vue-e2e
         name: e2e (vue)
         description: "Run Playwright E2E tests against test containers"
-        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; cd frontend && npx playwright test'
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; if ! curl -sSf -k https://api.test.localhost:8443/health > /dev/null 2>&1; then echo "Test containers not running, starting..."; ./cli/ichrisbirch testing start; fi; cd frontend && npx playwright test'
         language: system
         pass_filenames: false
         files: '^frontend/.*\.(vue|ts|tsx)$'
