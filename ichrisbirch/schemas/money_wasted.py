@@ -34,11 +34,11 @@ class MoneyWasted(MoneyWastedConfig):
 
 
 class MoneyWastedUpdate(MoneyWastedConfig):
-    item: str | None
-    amount: float | None
-    date_purchased: date | None
-    date_wasted: date | None
-    notes: str | None
+    item: str | None = None
+    amount: float | None = None
+    date_purchased: date | None = None
+    date_wasted: date | None = None
+    notes: str | None = None
 
     @field_validator('date_purchased')
     @classmethod

@@ -22,8 +22,8 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/', response_model=schemas.MoneyWasted, status_code=status.HTTP_201_CREATED)
-async def create(countdown: schemas.MoneyWastedCreate, session: Session = Depends(get_sqlalchemy_session)):
-    db_obj = models.MoneyWasted(**countdown.model_dump())
+async def create(entry: schemas.MoneyWastedCreate, session: Session = Depends(get_sqlalchemy_session)):
+    db_obj = models.MoneyWasted(**entry.model_dump())
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
@@ -32,8 +32,21 @@ async def create(countdown: schemas.MoneyWastedCreate, session: Session = Depend
 
 @router.get('/{id}/', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if countdown := session.get(models.MoneyWasted, id):
-        return countdown
+    if db_obj := session.get(models.MoneyWasted, id):
+        return db_obj
+    else:
+        logger.warning('money_wasted_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'MoneyWasted {id} not found')
+
+
+@router.patch('/{id}/', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
+async def update(id: int, entry_update: schemas.MoneyWastedUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    if db_obj := session.get(models.MoneyWasted, id):
+        for field, value in entry_update.model_dump(exclude_unset=True).items():
+            setattr(db_obj, field, value)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
     else:
         logger.warning('money_wasted_not_found', id=id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'MoneyWasted {id} not found')
@@ -41,8 +54,8 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
-    if countdown := session.get(models.MoneyWasted, id):
-        session.delete(countdown)
+    if db_obj := session.get(models.MoneyWasted, id):
+        session.delete(db_obj)
         session.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:

@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import type { MoneyWasted, MoneyWastedCreate } from '@/api/client'
+import type { MoneyWasted, MoneyWastedCreate, MoneyWastedUpdate } from '@/api/client'
 
 const logger = createLogger('MoneyWastedStore')
 
@@ -52,6 +52,22 @@ export const useMoneyWastedStore = defineStore('moneyWasted', () => {
     }
   }
 
+  async function update(id: number, input: MoneyWastedUpdate) {
+    error.value = null
+    try {
+      const response = await api.patch<MoneyWasted>(`/money-wasted/${id}/`, input)
+      const index = items.value.findIndex((i) => i.id === id)
+      if (index !== -1) items.value[index] = response.data
+      logger.info('money_wasted_updated', { id })
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('money_wasted_update_failed', { id, detail: apiError.detail, status: apiError.status })
+      throw apiError
+    }
+  }
+
   async function remove(id: number) {
     error.value = null
     try {
@@ -75,6 +91,7 @@ export const useMoneyWastedStore = defineStore('moneyWasted', () => {
     clearError,
     fetchAll,
     create,
+    update,
     remove,
   }
 })
