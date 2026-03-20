@@ -170,6 +170,15 @@ repos:
         files: '^frontend/.*\.(vue|ts|tsx)$'
         stages: [pre-commit]
 
+      - id: vue-e2e
+        name: e2e (vue)
+        description: "Run Playwright E2E tests against test containers"
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; cd frontend && npx playwright test'
+        language: system
+        pass_filenames: false
+        files: '^frontend/.*\.(vue|ts|tsx)$'
+        stages: [pre-commit]
+
   # Terraform
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.99.5
