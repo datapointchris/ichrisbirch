@@ -18,10 +18,13 @@ from .crud_test import ApiCrudTester
 DEFAULT_USER_PREFERENCES = models.User.default_preferences()
 ENDPOINT = '/users/'
 
-# Factory-created users count (3 regular + admin replaces the old BASE_DATA approach)
-NUM_FACTORY_USERS = 3
+# User counts: default users (user@icb.com, admin@icb.com) are always present,
+# test login users are inserted by the insert_users_for_login fixture,
+# factory users are created by this test module.
+NUM_DEFAULT_USERS = 2
 NUM_LOGIN_USERS = len(get_test_login_users())
-EXPECTED_LENGTH = NUM_LOGIN_USERS + NUM_FACTORY_USERS
+NUM_FACTORY_USERS = 3
+EXPECTED_LENGTH = NUM_DEFAULT_USERS + NUM_LOGIN_USERS + NUM_FACTORY_USERS
 
 # Test user credentials for factory creation
 TEST_USERS = [

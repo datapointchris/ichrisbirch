@@ -71,6 +71,70 @@ def drop_all_tables(settings) -> None:
     logger.warning('all_tables_dropped')
 
 
+LOOKUP_DATA = {
+    'autotask_frequencies': [
+        'Biweekly',
+        'Daily',
+        'Monthly',
+        'Quarterly',
+        'Semiannually',
+        'Weekly',
+        'Yearly',
+    ],
+    'box_packing.box_sizes': [
+        'Bag',
+        'Book',
+        'Large',
+        'Medium',
+        'Misc',
+        'Monitor',
+        'Sixteen',
+        'Small',
+        'UhaulSmall',
+    ],
+    'task_categories': [
+        'Automotive',
+        'Chore',
+        'Computer',
+        'Dingo',
+        'Financial',
+        'Home',
+        'Kitchen',
+        'Learn',
+        'Personal',
+        'Purchase',
+        'Research',
+        'Work',
+    ],
+    'book_ownership': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
+    'book_progress': ['abandoned', 'read', 'reading', 'unread'],
+}
+
+
+def insert_lookup_table_data(settings) -> None:
+    """Insert static lookup table data (FK-required constants)."""
+    engine = get_db_engine(settings)
+    with engine.connect() as conn:
+        for table, values in LOOKUP_DATA.items():
+            placeholders = ', '.join(f"('{v}')" for v in values)
+            conn.execute(text(f'INSERT INTO {table} (name) VALUES {placeholders}'))  # nosec B608
+        conn.commit()
+    logger.info('lookup_data_inserted', tables=list(LOOKUP_DATA.keys()))
+
+
+def truncate_all_tables(settings) -> None:
+    """Truncate all data tables, preserving schema and alembic state."""
+    engine = get_db_engine(settings)
+    tables = [t for t in Base.metadata.sorted_tables if t.name != 'alembic_version']
+    table_names = ', '.join(f'"{t.schema}"."{t.name}"' if t.schema else f'"{t.name}"' for t in tables)
+
+    logger.info('truncating_all_tables')
+    with engine.connect() as conn:
+        conn.execute(text(f'TRUNCATE {table_names} RESTART IDENTITY CASCADE'))
+        conn.commit()
+    logger.info('truncate_all_tables_completed')
+
+
 def create_schemas(session: Session, settings) -> None:
     """Create database schemas if they don't exist."""
     inspector = sqlalchemy.inspect(get_db_engine(settings))

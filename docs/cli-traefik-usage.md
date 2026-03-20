@@ -78,12 +78,12 @@ Dev Credentials:
 
 **Test Run Behavior:**
 
-The `test run` command uses a clean start strategy for reliability:
+The `test run` command reuses running containers and cleans the database:
 
-1. **Full cleanup** - Stops any existing containers before starting
-2. **Fresh start** - New containers with clean database each run
-3. **No race conditions** - Handles back-to-back runs reliably (e.g., pre-commit hooks)
-4. **Time trade-off** - ~50s startup time accepted for reliability
+1. **Reuses containers** - Starts test containers only if not already running
+2. **Cleans database** - TRUNCATE (not drop/recreate) preserves schema, re-inserts lookup data and users
+3. **No stale connections** - API container's connection pool stays valid across test runs
+4. **Fast** - Sub-second database clean vs seconds for drop/recreate
 
 > **Note:** Test and dev environments use separate proxy networks (`proxy-test` and `proxy-dev`) to avoid Traefik routing conflicts when running simultaneously.
 

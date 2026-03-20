@@ -3,7 +3,6 @@ import re
 import pytest
 from playwright.sync_api import Page
 from playwright.sync_api import expect
-from sqlalchemy import delete
 from sqlalchemy import select
 
 from ichrisbirch import models
@@ -11,7 +10,6 @@ from tests.ichrisbirch.frontend.fixtures import FRONTEND_BASE_URL
 from tests.ichrisbirch.frontend.fixtures import login_regular_user
 from tests.ichrisbirch.frontend.fixtures import set_defaults
 from tests.utils.database import create_session
-from tests.utils.database import get_test_login_users
 from tests.utils.database import test_settings
 
 SIGNUP_USER = {
@@ -23,13 +21,9 @@ SIGNUP_USER = {
 
 @pytest.fixture(autouse=True)
 def setup_auth_tests(insert_users_for_login):
-    """Ensure login users exist. Cleanup any users created during tests."""
+    """Ensure login users exist. Users created during tests (signups) are
+    cleaned up by truncate_all_tables at the next session start."""
     yield
-
-    with create_session(test_settings) as session:
-        login_emails = [user['email'] for user in get_test_login_users()]
-        session.execute(delete(models.User).where(models.User.email.notin_(login_emails)))
-        session.commit()
 
 
 @pytest.fixture(autouse=True)

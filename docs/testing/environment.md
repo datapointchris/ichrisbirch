@@ -119,19 +119,22 @@ The test environment uses a "clean start" strategy for reliability:
 
 This approach provides:
 
-- **Reliability:** Each test run gets a fresh environment
-- **Clean state:** Database initialized from scratch each run
-- **No race conditions:** Handles back-to-back runs (e.g., pre-commit hooks)
+- **Reliability:** Each test run gets a clean database state
+- **Speed:** TRUNCATE is sub-second vs seconds for drop/recreate
+- **No stale connections:** Schema is preserved, so the API container's connection pool stays valid
 - **Predictable behavior:** Same behavior every time
 
-### How Clean Start Works
+### Database Lifecycle
 
-1. **Every run:** Full cleanup of any existing containers
-2. **Wait:** 3 seconds for volumes/networks to be released
-3. **Start fresh:** New containers with clean database
-4. **After tests:** Containers are stopped and cleaned up
+The test database has two CLI operations and one internal operation:
 
-> **Trade-off:** Each test run takes ~50 seconds for container startup. This time penalty is accepted for reliability, especially when running pre-commit hooks that execute multiple pytest sessions back-to-back.
+| Operation | What it does | When |
+|-----------|-------------|------|
+| **Initialize** (`db init`) | Create schemas + run migrations + insert users | Container startup (DB is empty) |
+| **Reset** (`db reset`) | Drop everything + initialize from scratch | Manual only — when migrations change |
+| **Truncate** (pytest fixture) | TRUNCATE all tables, re-insert lookup data | Automatically between test runs |
+
+Truncation is handled internally by the pytest `truncate_tables` fixture. It preserves the schema so the API container's connection pool stays valid — no container restart needed.
 
 ### Network Isolation
 
@@ -334,7 +337,7 @@ gh run view <run-id> --log-failed
 | Fixture | Purpose |
 |---------|---------|
 | `setup_test_environment` | Start Docker Compose, create tables |
-| `create_drop_tables` | Manage table lifecycle |
+| `truncate_tables` | Manage table lifecycle |
 | `insert_users_for_login` | Create test users |
 
 ### Module-Scoped (run once per test file)

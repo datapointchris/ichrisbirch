@@ -318,6 +318,14 @@ REINDEX DATABASE ichrisbirch;
 "
 ```
 
+### Test Database: Stale Connections After Reset
+
+**Problem:** E2E tests fail with `relation "users" does not exist` or API returns 500 after running pytest.
+
+**Cause:** `icb testing db reset` drops and recreates all tables. The API container's SQLAlchemy connection pool holds stale connections that don't see the new tables.
+
+**Resolution:** Between test runs, pytest automatically truncates tables (preserving schema) instead of dropping them. This keeps the API container's connections valid. Only use `icb testing db reset` when you've added new migrations or the schema is corrupt — and restart the test containers afterward (`icb testing stop && icb testing start`).
+
 ## Environment-Specific Issues
 
 ### Development vs Production Differences

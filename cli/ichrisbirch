@@ -330,12 +330,8 @@ function test-run() {
     sleep 15
   fi
 
-  # Always reset database to ensure clean state
-  echo "${blue}Resetting test database...${reset}"
-  if ! ENVIRONMENT=testing uv run python -m ichrisbirch.database.reset_test_database; then
-    echo "${red}Database initialization failed${reset}"
-    return 1
-  fi
+  # Database truncation is handled by pytest's truncate_tables fixture.
+  # Do NOT truncate here — double-truncate causes user count mismatches and FK violations.
 
   # Run pytest
   echo ""
@@ -364,11 +360,11 @@ function testing-start() {
   echo "Waiting for services to be ready..."
   sleep 15
 
-  echo "Resetting test database..."
+  echo "Initializing test database..."
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
 
-  if ENVIRONMENT=testing uv run python -m ichrisbirch.database.reset_test_database; then
+  if ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
     echo "${green}Database initialized successfully${reset}"
   else
     echo "${red}Database initialization failed${reset}"
@@ -880,7 +876,7 @@ function usage() {
   echo "    ${blue}testing db restore <file>${reset} - Restore from S3 backup"
   echo "    ${blue}testing db list${reset} - List S3 backups"
   echo "    ${blue}testing db seed [--scale N] [--dry-run]${reset} - Seed with test data"
-  echo "    ${blue}testing db reset${reset} - Drop and recreate all tables"
+  echo "    ${blue}testing db reset${reset} - Drop + recreate everything (nuclear)"
   echo
   echo "${green}Production:${reset}"
   echo "  ${blue}prod start|stop|restart${reset} - Manage production (blue/green aware)"

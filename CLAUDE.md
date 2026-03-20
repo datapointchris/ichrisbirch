@@ -14,11 +14,15 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 # Development
 ./cli/ichrisbirch dev start|stop|restart|rebuild|status|health|logs
 
-# Testing (reuses containers, resets database each run)
+# Testing (reuses containers, cleans database each run)
 ./cli/ichrisbirch test run              # All tests
 ./cli/ichrisbirch test run <path> -v    # Specific test
 ./cli/ichrisbirch test cov              # With coverage
 ./cli/ichrisbirch testing start|stop|health|logs  # Container management
+
+# Database lifecycle (testing)
+./cli/ichrisbirch testing db init       # First-time: schemas + migrations + users
+./cli/ichrisbirch testing db reset      # Nuclear: drop + recreate everything
 
 # Vue frontend
 cd frontend && npm test                 # Build check + unit tests

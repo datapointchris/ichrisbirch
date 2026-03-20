@@ -47,7 +47,7 @@ def setup_test_environment(request):
         with lock:
             if not TEST_READY_FILE.exists():
                 logger.info(f'Worker {worker_id}: Performing environment setup (first to acquire lock)')
-                test_env = DockerComposeTestEnvironment(test_settings, create_session)
+                test_env = DockerComposeTestEnvironment(test_settings)
                 test_env.setup()
                 TEST_READY_FILE.touch()
                 logger.info(f'Worker {worker_id}: Environment setup complete, marker created')
@@ -70,7 +70,7 @@ def setup_test_environment(request):
         # Don't teardown in parallel mode - containers are shared across workers
         logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
     else:
-        with DockerComposeTestEnvironment(test_settings, create_session) as test_env:
+        with DockerComposeTestEnvironment(test_settings) as test_env:
             logger.info('Docker Compose test environment is ready')
             yield test_env
 
@@ -87,19 +87,30 @@ def setup_test_environment(request):
 
 Module fixtures run once per test module:
 
-### `create_drop_tables`
+### `truncate_tables`
 
-- **Scope**: Module
-- **Description**: Creates tables in the test database at the beginning of a test module and drops them when the module completes
-- **Implementation**: Uses SQLAlchemy's metadata to create and drop tables
+- **Scope**: Session
+- **Description**: Cleans all tables via TRUNCATE at session start, preserving schema so the API container's connection pool stays valid
+- **Implementation**: Uses `truncate_all_tables()` which truncates data, re-inserts lookup table values, and re-inserts default users
 
 ### `insert_users_for_login`
 
 - **Scope**: Module
 - **Autouse**: Yes
-- **Description**: Inserts test users needed for login authentication
-- **Dependencies**: `create_drop_tables`
+- **Description**: Inserts test login users needed for Flask/API authentication fixtures
+- **Dependencies**: `truncate_tables`
 - **Implementation**: Inserts predefined test users from `get_test_login_users()`
+
+### Test Users
+
+There are two separate sets of users, each serving a different purpose:
+
+| Set | Users | Source | Purpose |
+|-----|-------|--------|---------|
+| **Default users** | `user@icb.com`, `admin@icb.com` | `insert_default_users()` in `initialization.py` | Application users for dev, E2E tests, Authelia auth simulation |
+| **Test login users** | `sacrifice@testgods.com`, `testloginregular@testuser.com`, `testloginadmin@testadmin.com` | `get_test_login_users()` in `tests/utils/database.py` | Pytest-specific users for Flask login and API auth fixtures |
+
+Default users are inserted during truncation (alongside lookup data) so the API container always has valid users. Test login users are inserted by the `insert_users_for_login` fixture. Both sets must be accounted for in tests that assert user counts.
 
 ### Test Client Fixtures (Module Scope)
 

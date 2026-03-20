@@ -185,9 +185,9 @@ class FixtureDiagramRenderer:
         with dot.subgraph(name='cluster_module') as c:
             c.attr(label='Module Fixtures', style='filled', color='#90ee90', fillcolor='#f0fff0')
 
-            c.node('create_drop_tables', 'create_drop_tables', shape='box')
+            c.node('truncate_tables', 'truncate_tables', shape='box')
             c.node('insert_users_for_login', 'insert_users_for_login', shape='box')
-            c.edge('create_drop_tables', 'insert_users_for_login')
+            c.edge('truncate_tables', 'insert_users_for_login')
 
             c.node('api_clients', 'API Client Fixtures', shape='box', style='rounded')
             c.node('test_api', 'test_api', shape='box')
@@ -236,7 +236,7 @@ class FixtureDiagramRenderer:
             c.node('test_admin_user', 'test_admin_user', shape='box')
 
         dot.edge('SessionScope', 'setup_test_env', style='dashed', constraint='false')
-        dot.edge('ModuleScope', 'create_drop_tables', style='dashed', constraint='false')
+        dot.edge('ModuleScope', 'truncate_tables', style='dashed', constraint='false')
         dot.edge('ModuleScope', 'api_clients', style='dashed', constraint='false')
         dot.edge('ModuleScope', 'app_clients', style='dashed', constraint='false')
         dot.edge('ModuleScope', 'other_mod', style='dashed', constraint='false')

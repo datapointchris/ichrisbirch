@@ -16,7 +16,6 @@ import subprocess
 # import threading
 import time
 
-# import docker
 import httpx
 import pytest
 from sqlalchemy import select
@@ -24,11 +23,11 @@ from sqlalchemy.schema import CreateSchema
 
 from ichrisbirch import models
 from ichrisbirch.config import Settings
-from ichrisbirch.database.initialization import create_schemas
-from ichrisbirch.database.initialization import create_tables
-from ichrisbirch.database.initialization import drop_all_tables
 from ichrisbirch.database.initialization import insert_default_users
+from ichrisbirch.database.initialization import insert_lookup_table_data
 from ichrisbirch.database.initialization import run_alembic_migrations
+from ichrisbirch.database.initialization import truncate_all_tables
+from ichrisbirch.database.session import create_session
 from tests.utils.database import get_test_login_users
 
 # from ichrisbirch.config import settings
@@ -63,9 +62,8 @@ class DockerComposeTestEnvironment:
         """Detect if running in CI environment."""
         return os.environ.get('CI', '').lower() == 'true'
 
-    def __init__(self, settings: Settings, test_session_generator):
+    def __init__(self, settings: Settings):
         self.settings = settings
-        self.test_session_generator = test_session_generator
         self.docker_compose_process: subprocess.Popen | None = None
 
     def __enter__(self):
@@ -105,8 +103,9 @@ class DockerComposeTestEnvironment:
                     logger.info('Starting Docker Compose test services')
                     self.setup_test_services()
 
-            # Always reset database to ensure clean state
-            self.reset_test_database()
+            # Truncate tables, re-insert lookup data and users.
+            # Preserves schema so the API container's connection pool stays valid.
+            self.truncate_test_database()
 
         except Exception as e:
             logger.error(f'Error during setup: {e}')
@@ -217,7 +216,7 @@ class DockerComposeTestEnvironment:
 
     def create_database_schemas(self) -> None:
         """Create database schemas (idempotent - uses IF NOT EXISTS)."""
-        with self.test_session_generator(self.settings) as session:
+        with create_session(self.settings) as session:
             for schema_name in self.settings.postgres.db_schemas:
                 try:
                     session.execute(CreateSchema(schema_name, if_not_exists=True))
@@ -227,21 +226,18 @@ class DockerComposeTestEnvironment:
                     raise
             session.commit()
 
-    def reset_test_database(self) -> None:
-        """Reset test database to clean state by dropping and recreating all tables.
+    def truncate_test_database(self) -> None:
+        """Truncate all tables and re-insert lookup data and default users.
 
-        Uses alembic migrations to recreate tables, matching the production code path.
+        Uses TRUNCATE (not DROP) so the API container's SQLAlchemy connection pool
+        stays valid — no container restart needed.
         """
-        logger.info('Resetting test database to clean state')
-
-        drop_all_tables(self.settings)
-
-        with self.test_session_generator(self.settings) as session:
-            create_schemas(session, self.settings)
-            create_tables(self.settings)
+        logger.info('Truncating test database')
+        truncate_all_tables(self.settings)
+        insert_lookup_table_data(self.settings)
+        with create_session(self.settings) as session:
             insert_default_users(session, self.settings)
-
-        logger.info('Test database reset complete')
+        logger.info('Test database truncate complete')
 
     def ensure_database_ready(self) -> None:
         """Ensure database is in a known good state (idempotent).
@@ -262,7 +258,7 @@ class DockerComposeTestEnvironment:
         logger.info('Ensured all tables exist via alembic')
 
         # 3. Ensure login users exist (check before insert)
-        with self.test_session_generator(self.settings) as session:
+        with create_session(self.settings) as session:
             for user_data in get_test_login_users():
                 existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
                 if not existing:

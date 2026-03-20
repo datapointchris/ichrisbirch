@@ -30,8 +30,10 @@ from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.main import create_api
 from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.initialization import drop_all_tables
-from ichrisbirch.database.initialization import run_alembic_migrations
+from ichrisbirch.database.initialization import insert_default_users
+from ichrisbirch.database.initialization import insert_lookup_table_data
+from ichrisbirch.database.initialization import truncate_all_tables
+from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
@@ -39,7 +41,6 @@ from tests import test_data
 from tests.environment import DockerComposeTestEnvironment
 from tests.factories import clear_factory_session
 from tests.factories import set_factory_session
-from tests.utils.database import create_session
 from tests.utils.database import get_test_login_users
 from tests.utils.database import get_test_runner_settings
 from tests.utils.database import get_test_session
@@ -135,7 +136,7 @@ def setup_test_environment(request):
         with lock:
             if not TEST_READY_FILE.exists():
                 logger.info(f'Worker {worker_id}: Performing environment setup (first to acquire lock)')
-                test_env = DockerComposeTestEnvironment(test_settings, create_session)
+                test_env = DockerComposeTestEnvironment(test_settings)
                 test_env.setup()
                 TEST_READY_FILE.touch()
                 logger.info(f'Worker {worker_id}: Environment setup complete, marker created')
@@ -158,7 +159,7 @@ def setup_test_environment(request):
         # Don't teardown in parallel mode - containers are shared across workers
         logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
     else:
-        with DockerComposeTestEnvironment(test_settings, create_session) as test_env:
+        with DockerComposeTestEnvironment(test_settings) as test_env:
             logger.info('Docker Compose test environment is ready')
             yield test_env
 
@@ -172,14 +173,14 @@ def setup_test_environment(request):
 
 
 @pytest.fixture(scope='session')
-def create_drop_tables(setup_test_environment, request):
-    """Create all tables once at session start, drop at session end.
+def truncate_tables(setup_test_environment, request):
+    """Clean all tables at session start via TRUNCATE.
 
-    This is session-scoped for performance - avoiding ~44 CREATE/DROP cycles.
-    Individual test modules manage their own data via insert_test_data/delete_test_data.
+    Uses TRUNCATE (not DROP/CREATE) to clear data while preserving schema,
+    so the API container's connection pool stays valid.
+    Lookup table data and default users are re-inserted after truncation.
 
-    In parallel mode, uses file locking to coordinate table creation across workers.
-    Tables are NOT dropped in parallel mode to avoid disrupting other workers.
+    In parallel mode, uses file locking to coordinate across workers.
     """
     worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
     is_parallel = worker_id != 'main'
@@ -189,31 +190,30 @@ def create_drop_tables(setup_test_environment, request):
         tables_ready = TEST_LOCK_DIR / 'tables_ready'
         with tables_lock:
             if not tables_ready.exists():
-                logger.info(f'Worker {worker_id}: Creating tables via alembic (first to acquire lock)')
-                drop_all_tables(test_settings)
-                logger.info(f'Worker {worker_id}: Dropped all tables (clean slate)')
-                run_alembic_migrations(test_settings)
-                logger.info(f'Worker {worker_id}: Created all tables via alembic')
+                logger.info(f'Worker {worker_id}: Cleaning tables (first to acquire lock)')
+                truncate_all_tables(test_settings)
+                insert_lookup_table_data(test_settings)
+                with create_session(test_settings) as session:
+                    insert_default_users(session, test_settings)
+                logger.info(f'Worker {worker_id}: Tables cleaned')
                 tables_ready.touch()
             else:
-                logger.info(f'Worker {worker_id}: Tables already created by another worker')
+                logger.info(f'Worker {worker_id}: Tables already cleaned by another worker')
         yield
-        # Don't drop tables in parallel mode
-        logger.info(f'Worker {worker_id}: Skipping table drop (parallel mode)')
+        logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
     else:
-        drop_all_tables(test_settings)
-        logger.info('dropped all tables (clean slate)')
-        run_alembic_migrations(test_settings)
-        logger.info('created all tables via alembic (session scope)')
+        truncate_all_tables(test_settings)
+        insert_lookup_table_data(test_settings)
+        with create_session(test_settings) as session:
+            insert_default_users(session, test_settings)
+        logger.info('cleaned all tables (session scope)')
         yield
-        drop_all_tables(test_settings)
-        logger.info('dropped all tables (session scope)')
         # Cleanup table marker
         (TEST_LOCK_DIR / 'tables_ready').unlink(missing_ok=True)
 
 
 @pytest.fixture(scope='session', autouse=True)
-def insert_users_for_login(create_drop_tables, request):
+def insert_users_for_login(truncate_tables, request):
     """Ensure login users exist for the session (idempotent).
 
     Session-scoped for performance - runs once instead of ~44 times.
@@ -454,7 +454,7 @@ def reset_sequences(engine):
 
 
 @pytest.fixture(scope='function')
-def factory_session(create_drop_tables):
+def factory_session(truncate_tables):
     """Provide a transactional SQLAlchemy session for factory_boy factories.
 
     Uses transaction isolation: all operations are wrapped in a transaction
