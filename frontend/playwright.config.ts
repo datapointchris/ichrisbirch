@@ -12,6 +12,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 const isDevEnv = process.env.E2E_ENV === 'dev'
 const baseURL = isDevEnv ? 'https://app.docker.localhost' : 'https://app.test.localhost:8443'
+const apiURL = isDevEnv ? 'https://api.docker.localhost' : 'https://api.test.localhost:8443'
 
 export default defineConfig({
   testDir: './e2e',
@@ -34,8 +35,14 @@ export default defineConfig({
 
   projects: [
     {
+      name: 'setup',
+      testMatch: /global\.setup\.ts/,
+      use: { baseURL: apiURL },
+    },
+    {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
     },
   ],
 })
