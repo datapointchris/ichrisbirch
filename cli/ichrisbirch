@@ -257,6 +257,34 @@ function dev-health() {
   "$HEALTH_CHECK_SCRIPT" dev
 }
 
+function dev-is-ready() {
+  curl -sSf -k "$DEV_API_URL/health" > /dev/null 2>&1
+}
+
+function dev-ensure() {
+  if dev-is-ready; then
+    echo "${green}Dev containers are running${reset}"
+  else
+    echo "${yellow}Dev containers not ready, starting...${reset}"
+    dev-start
+  fi
+}
+
+function dev-usage() {
+  echo "${green}Dev commands:${reset}"
+  echo "  ${blue}dev start${reset}              Start dev containers"
+  echo "  ${blue}dev stop${reset}               Stop dev containers"
+  echo "  ${blue}dev restart${reset}            Restart dev containers"
+  echo "  ${blue}dev rebuild${reset}            Full rebuild of dev containers"
+  echo "  ${blue}dev status${reset}             Show container status"
+  echo "  ${blue}dev health${reset}             Full diagnostic health check"
+  echo "  ${blue}dev is-ready${reset}           Quick check if API is responding (exit 0/1)"
+  echo "  ${blue}dev ensure${reset}             Start containers if not already running"
+  echo "  ${blue}dev smoke${reset}              Run smoke tests against all endpoints"
+  echo "  ${blue}dev logs [service]${reset}     View logs"
+  echo "  ${blue}dev db ...${reset}             Database commands (backup, restore, list, seed, init)"
+}
+
 function dev-smoke() {
   echo "Running smoke tests on ${blue}DEV${reset} environment"
   local response
@@ -408,6 +436,33 @@ function testing-health() {
   echo "Running health check for ${blue}TESTING${reset} environment"
   cd "$ICHRISBIRCH_HOME" || exit
   "$HEALTH_CHECK_SCRIPT" test
+}
+
+function testing-is-ready() {
+  curl -sSf -k "$TEST_API_URL/health" > /dev/null 2>&1
+}
+
+function testing-ensure() {
+  if testing-is-ready; then
+    echo "${green}Test containers are running${reset}"
+  else
+    echo "${yellow}Test containers not ready, starting...${reset}"
+    testing-start
+  fi
+}
+
+function testing-usage() {
+  echo "${green}Testing commands:${reset}"
+  echo "  ${blue}testing start${reset}          Start test containers and reset database"
+  echo "  ${blue}testing stop${reset}           Stop test containers and remove volumes"
+  echo "  ${blue}testing restart${reset}        Restart test containers"
+  echo "  ${blue}testing rebuild${reset}        Full rebuild of test containers"
+  echo "  ${blue}testing status${reset}         Show container status"
+  echo "  ${blue}testing health${reset}         Full diagnostic health check"
+  echo "  ${blue}testing is-ready${reset}       Quick check if API is responding (exit 0/1)"
+  echo "  ${blue}testing ensure${reset}         Start containers if not already running"
+  echo "  ${blue}testing logs [service]${reset} View logs"
+  echo "  ${blue}testing db ...${reset}         Database commands (backup, restore, list, seed, reset)"
 }
 
 # Production environment
@@ -779,6 +834,22 @@ function prod-build-test() {
   echo "To test startup, run: ${cyan}icb prod start${reset} (requires SOPS + age key)"
 }
 
+function prod-usage() {
+  echo "${green}Prod commands:${reset}"
+  echo "  ${blue}prod start${reset}             Start production (blue/green aware)"
+  echo "  ${blue}prod stop${reset}              Stop production services"
+  echo "  ${blue}prod restart${reset}           Restart production services"
+  echo "  ${blue}prod status${reset}            Show container status"
+  echo "  ${blue}prod health${reset}            Full diagnostic health check"
+  echo "  ${blue}prod apihealth${reset}         Check API health endpoint"
+  echo "  ${blue}prod smoke${reset}             Run smoke tests against all endpoints"
+  echo "  ${blue}prod deploy-status${reset}     Show blue/green deployment state"
+  echo "  ${blue}prod rollback${reset}          Switch traffic to previous color"
+  echo "  ${blue}prod build-test${reset}        Test production Docker build locally"
+  echo "  ${blue}prod logs [service]${reset}    View logs"
+  echo "  ${blue}prod db ...${reset}            Database commands (backup, restore, list, init)"
+}
+
 function usage() {
   echo "${yellow}           _                  _                  _       ${reset}"
   echo "${yellow}  (*)     |=|         (*)    |=|   (*)          |=|      ${reset}"
@@ -867,7 +938,10 @@ test)
   ;;
 testing)
   case "$2" in
+  "" | -h | --help | help) testing-usage ;;
   health) testing-health ;;
+  is-ready) testing-is-ready ;;
+  ensure) testing-ensure ;;
   logs)
     shift 2
     testing-logs "$@"
@@ -881,7 +955,10 @@ testing)
   ;;
 dev)
   case "$2" in
+  "" | -h | --help | help) dev-usage ;;
   health) dev-health ;;
+  is-ready) dev-is-ready ;;
+  ensure) dev-ensure ;;
   logs)
     shift 2
     dev-logs "$@"
@@ -895,6 +972,7 @@ dev)
   ;;
 prod)
   case "$2" in
+  "" | -h | --help | help) prod-usage ;;
   health) prod-health ;;
   logs)
     shift 2
