@@ -60,13 +60,9 @@
         </div>
         <div class="add-item-form__item">
           <label for="due_date">Due Date:</label>
-          <input
-            id="due_date"
-            v-model="form.due_date"
-            type="date"
-            class="textbox"
-            name="due_date"
-            required
+          <DatePicker
+            :model-value="form.due_date"
+            @update:model-value="form.due_date = $event"
           />
         </div>
         <div class="add-item-form__item add-item-form__item--full-width">
@@ -99,6 +95,7 @@ import { useCountdownsStore } from '@/stores/countdowns'
 import { useNotifications } from '@/composables/useNotifications'
 import { computeDaysLeft, formatDate } from '@/composables/useDaysLeft'
 import { ApiError } from '@/api/errors'
+import DatePicker from '@/components/DatePicker.vue'
 
 const store = useCountdownsStore()
 const { show: notify } = useNotifications()

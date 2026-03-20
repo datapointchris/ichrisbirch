@@ -196,11 +196,10 @@
 
           <!-- Add note form (always visible) -->
           <div class="duration-card__add-note">
-            <input
-              v-model="noteForm[duration.id]!.date"
-              type="date"
-              class="textbox textbox--small"
+            <DatePicker
+              :model-value="noteForm[duration.id]!.date"
               placeholder="Date"
+              @update:model-value="noteForm[duration.id]!.date = $event"
             />
             <input
               v-model="noteForm[duration.id]!.content"
@@ -222,10 +221,9 @@
             v-if="!duration.end_date"
             class="duration-card__end-form"
           >
-            <input
-              v-model="endDateForm[duration.id]"
-              type="date"
-              class="textbox textbox--small"
+            <DatePicker
+              :model-value="endDateForm[duration.id] ?? ''"
+              @update:model-value="endDateForm[duration.id] = $event"
             />
             <button
               class="button button--small"
@@ -276,23 +274,16 @@
         </div>
         <div class="add-item-form__item">
           <label for="start_date">Start Date:</label>
-          <input
-            id="start_date"
-            v-model="form.start_date"
-            type="date"
-            class="textbox"
-            name="start_date"
-            required
+          <DatePicker
+            :model-value="form.start_date"
+            @update:model-value="form.start_date = $event"
           />
         </div>
         <div class="add-item-form__item">
           <label for="end_date">End Date:</label>
-          <input
-            id="end_date"
-            v-model="form.end_date"
-            type="date"
-            class="textbox"
-            name="end_date"
+          <DatePicker
+            :model-value="form.end_date"
+            @update:model-value="form.end_date = $event"
           />
         </div>
         <div class="add-item-form__item add-item-form__item--full-width">
@@ -342,6 +333,7 @@ import { computeElapsedTime, computeTimeBetween } from '@/composables/useElapsed
 import { formatDate } from '@/composables/useDaysLeft'
 import { ApiError } from '@/api/errors'
 import type { Duration } from '@/api/client'
+import DatePicker from '@/components/DatePicker.vue'
 
 const store = useDurationsStore()
 const { show: notify } = useNotifications()

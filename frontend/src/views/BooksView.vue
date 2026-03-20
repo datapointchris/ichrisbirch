@@ -380,11 +380,9 @@
                 </div>
                 <div class="add-item-form__item">
                   <label :for="`edit-purchase_date-${book.id}`">Purchase Date:</label>
-                  <input
-                    :id="`edit-purchase_date-${book.id}`"
-                    v-model="editForm.purchase_date"
-                    type="date"
-                    class="textbox"
+                  <DatePicker
+                    :model-value="editForm.purchase_date"
+                    @update:model-value="editForm.purchase_date = $event"
                   />
                 </div>
                 <div class="add-item-form__item">
@@ -399,11 +397,9 @@
                 </div>
                 <div class="add-item-form__item">
                   <label :for="`edit-sell_date-${book.id}`">Sell Date:</label>
-                  <input
-                    :id="`edit-sell_date-${book.id}`"
-                    v-model="editForm.sell_date"
-                    type="date"
-                    class="textbox"
+                  <DatePicker
+                    :model-value="editForm.sell_date"
+                    @update:model-value="editForm.sell_date = $event"
                   />
                 </div>
                 <div class="add-item-form__item">
@@ -418,20 +414,16 @@
                 </div>
                 <div class="add-item-form__item">
                   <label :for="`edit-read_start_date-${book.id}`">Read Start Date:</label>
-                  <input
-                    :id="`edit-read_start_date-${book.id}`"
-                    v-model="editForm.read_start_date"
-                    type="date"
-                    class="textbox"
+                  <DatePicker
+                    :model-value="editForm.read_start_date"
+                    @update:model-value="editForm.read_start_date = $event"
                   />
                 </div>
                 <div class="add-item-form__item">
                   <label :for="`edit-read_finish_date-${book.id}`">Read Finish Date:</label>
-                  <input
-                    :id="`edit-read_finish_date-${book.id}`"
-                    v-model="editForm.read_finish_date"
-                    type="date"
-                    class="textbox"
+                  <DatePicker
+                    :model-value="editForm.read_finish_date"
+                    @update:model-value="editForm.read_finish_date = $event"
                   />
                 </div>
                 <div class="add-item-form__item">
@@ -609,12 +601,9 @@
         </div>
         <div class="add-item-form__item">
           <label for="purchase_date">Purchase Date:</label>
-          <input
-            id="purchase_date"
-            v-model="addForm.purchase_date"
-            type="date"
-            class="textbox"
-            name="purchase_date"
+          <DatePicker
+            :model-value="addForm.purchase_date"
+            @update:model-value="addForm.purchase_date = $event"
           />
         </div>
         <div class="add-item-form__item">
@@ -630,12 +619,9 @@
         </div>
         <div class="add-item-form__item">
           <label for="sell_date">Sell Date:</label>
-          <input
-            id="sell_date"
-            v-model="addForm.sell_date"
-            type="date"
-            class="textbox"
-            name="sell_date"
+          <DatePicker
+            :model-value="addForm.sell_date"
+            @update:model-value="addForm.sell_date = $event"
           />
         </div>
         <div class="add-item-form__item">
@@ -651,22 +637,16 @@
         </div>
         <div class="add-item-form__item">
           <label for="read_start_date">Read Start Date:</label>
-          <input
-            id="read_start_date"
-            v-model="addForm.read_start_date"
-            type="date"
-            class="textbox"
-            name="read_start_date"
+          <DatePicker
+            :model-value="addForm.read_start_date"
+            @update:model-value="addForm.read_start_date = $event"
           />
         </div>
         <div class="add-item-form__item">
           <label for="read_finish_date">Read Finish Date:</label>
-          <input
-            id="read_finish_date"
-            v-model="addForm.read_finish_date"
-            type="date"
-            class="textbox"
-            name="read_finish_date"
+          <DatePicker
+            :model-value="addForm.read_finish_date"
+            @update:model-value="addForm.read_finish_date = $event"
           />
         </div>
         <div class="add-item-form__item">
@@ -753,6 +733,7 @@ import type { BookProgress, BookOwnership } from '@/stores/books'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
+import DatePicker from '@/components/DatePicker.vue'
 
 const store = useBooksStore()
 const { show: notify } = useNotifications()

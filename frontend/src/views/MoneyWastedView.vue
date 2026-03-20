@@ -90,23 +90,16 @@
         </div>
         <div class="add-item-form__item">
           <label for="date_purchased">Date Purchased:</label>
-          <input
-            id="date_purchased"
-            v-model="form.date_purchased"
-            type="date"
-            class="textbox"
-            name="date_purchased"
+          <DatePicker
+            :model-value="form.date_purchased"
+            @update:model-value="form.date_purchased = $event"
           />
         </div>
         <div class="add-item-form__item">
           <label for="date_wasted">Date Wasted:</label>
-          <input
-            id="date_wasted"
-            v-model="form.date_wasted"
-            type="date"
-            class="textbox"
-            name="date_wasted"
-            required
+          <DatePicker
+            :model-value="form.date_wasted"
+            @update:model-value="form.date_wasted = $event"
           />
         </div>
         <div class="add-item-form__item add-item-form__item--full-width">
@@ -138,6 +131,7 @@ import { reactive, onMounted } from 'vue'
 import { useMoneyWastedStore } from '@/stores/moneyWasted'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import DatePicker from '@/components/DatePicker.vue'
 
 const store = useMoneyWastedStore()
 const { show: notify } = useNotifications()
