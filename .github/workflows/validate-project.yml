@@ -171,6 +171,9 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
             --project-name icb-test logs --tail=50
 
+      - name: Initialize test database
+        run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
+
       - name: Run pytest with Coverage
         run: uv run pytest --cov=ichrisbirch
 
