@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import type { AutoTask, AutoTaskCreate, TaskCategory, AutoTaskFrequency } from '@/api/client'
+import type { AutoTask, AutoTaskCreate, AutoTaskUpdate, TaskCategory, AutoTaskFrequency } from '@/api/client'
 
 const logger = createLogger('AutoTasksStore')
 
@@ -87,6 +87,22 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
     }
   }
 
+  async function update(id: number, input: AutoTaskUpdate) {
+    error.value = null
+    try {
+      const response = await api.patch<AutoTask>(`/autotasks/${id}/`, input)
+      const index = autotasks.value.findIndex((a) => a.id === id)
+      if (index !== -1) autotasks.value[index] = response.data
+      logger.info('autotask_updated', { id })
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('autotask_update_failed', { id, detail: apiError.detail, status: apiError.status })
+      throw apiError
+    }
+  }
+
   async function remove(id: number) {
     error.value = null
     try {
@@ -109,6 +125,7 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
     clearError,
     fetchAll,
     create,
+    update,
     run,
     remove,
   }

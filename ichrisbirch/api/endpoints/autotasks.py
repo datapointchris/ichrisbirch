@@ -41,6 +41,19 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
 
 
+@router.patch('/{id}/', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
+async def update(id: int, autotask_update: schemas.AutoTaskUpdate, session: Session = Depends(get_sqlalchemy_session)):
+    if db_obj := session.get(models.AutoTask, id):
+        for field, value in autotask_update.model_dump(exclude_unset=True).items():
+            setattr(db_obj, field, value)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+    else:
+        logger.warning('autotask_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
+
+
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
     if autotask := session.get(models.AutoTask, id):

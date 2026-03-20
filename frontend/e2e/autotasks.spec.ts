@@ -3,6 +3,18 @@ import { test, expect } from '@playwright/test'
 const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
+/** Helper: open the add autotask modal, fill in fields, and submit */
+async function createAutoTask(page: import('@playwright/test').Page, name: string, priority = '5') {
+  await page.getByTestId('autotask-add-button').click()
+  await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+  await page.getByTestId('autotask-name-input').fill(name)
+  await page.getByTestId('autotask-priority-input').fill(priority)
+  await page.getByTestId('autotask-category-input').selectOption('Chore')
+  await page.getByTestId('autotask-frequency-input').selectOption('Weekly')
+  await page.getByTestId('autotask-priority-input').press('Enter')
+  await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+}
+
 test.describe('AutoTasks Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -23,69 +35,51 @@ test.describe('AutoTasks Page', () => {
     await expect(page).toHaveTitle('AutoTasks | iChrisBirch')
   })
 
-  test('displays the add autotask form', async ({ page }) => {
+  test('add button opens the modal with all fields', async ({ page }) => {
     await page.goto('/autotasks')
-    await expect(page.locator('h2', { hasText: 'Add New AutoTask' })).toBeVisible()
-    await expect(page.locator('#name')).toBeVisible()
-    await expect(page.locator('#priority')).toBeVisible()
-    await expect(page.locator('#category')).toBeVisible()
-    await expect(page.locator('#frequency')).toBeVisible()
+
+    await page.getByTestId('autotask-add-button').click()
+    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('autotask-name-input')).toBeVisible()
+    await expect(page.getByTestId('autotask-priority-input')).toBeVisible()
+    await expect(page.getByTestId('autotask-category-input')).toBeVisible()
+    await expect(page.getByTestId('autotask-frequency-input')).toBeVisible()
   })
 
   test('creates a new autotask', async ({ page }) => {
     await page.goto('/autotasks')
     await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
 
-    await page.fill('#name', 'E2E Test AutoTask')
-    await page.fill('#priority', '5')
-    await page.selectOption('#category', 'Chore')
-    await page.selectOption('#frequency', 'Weekly')
-    await page.fill('#notes', 'Created by Playwright')
-
-    await page.locator('button', { hasText: 'Add New Autotask' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(page.locator('.grid__item h2', { hasText: 'E2E Test AutoTask' }).first()).toBeVisible()
+    const name = `E2E AutoTask ${Date.now()}`
+    await createAutoTask(page, name)
+    await expect(page.getByTestId('autotask-item').filter({ hasText: name }).first()).toBeVisible()
   })
 
   test('deletes an autotask', async ({ page }) => {
     await page.goto('/autotasks')
     await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
 
-    // Create one to delete
-    await page.fill('#name', 'E2E Delete AutoTask')
-    await page.fill('#priority', '1')
-    await page.selectOption('#category', 'Chore')
-    await page.selectOption('#frequency', 'Daily')
-    await page.locator('button', { hasText: 'Add New Autotask' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    const name = `E2E Delete ${Date.now()}`
+    await createAutoTask(page, name)
 
-    // Delete it
-    const card = page.locator('.grid__item', { hasText: 'E2E Delete AutoTask' })
-    await card.locator('button', { hasText: 'Delete Autotask' }).click()
+    const card = page.getByTestId('autotask-item').filter({ hasText: name })
+    await expect(card).toBeVisible()
+    await card.getByTestId('autotask-delete-button').click()
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
     await expect(card).not.toBeVisible()
   })
 
-  test('runs an autotask and verifies success', async ({ page }) => {
+  test('runs an autotask and verifies run count increments', async ({ page }) => {
     await page.goto('/autotasks')
     await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
 
-    // Create one to run
     const name = `E2E Run ${Date.now()}`
-    await page.fill('#name', name)
-    await page.fill('#priority', '10')
-    await page.selectOption('#category', 'Home')
-    await page.selectOption('#frequency', 'Monthly')
-    await page.locator('button', { hasText: 'Add New Autotask' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await createAutoTask(page, name, '10')
 
-    // Run it
-    const card = page.locator('.grid__item', { hasText: name })
+    const card = page.getByTestId('autotask-item').filter({ hasText: name })
     await expect(card).toBeVisible()
-    await card.locator('button', { hasText: 'Run Autotask Now' }).click()
+    await card.getByTestId('autotask-run-button').click()
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-
-    // Autotask should still be on the page (run doesn't delete it)
     await expect(card).toBeVisible()
 
     // Run count should show 2 (1 from create + 1 from manual run)

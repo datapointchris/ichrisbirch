@@ -1,5 +1,15 @@
 <template>
   <div>
+    <div class="add-item-wrapper">
+      <button
+        data-testid="autotask-add-button"
+        class="button"
+        @click="showModal = true"
+      >
+        <span class="button__text">Add AutoTask</span>
+      </button>
+    </div>
+
     <div class="grid grid--two-columns">
       <div
         v-if="store.loading"
@@ -17,6 +27,7 @@
         <div
           v-for="autotask in store.sortedAutoTasks"
           :key="autotask.id"
+          data-testid="autotask-item"
           class="grid__item"
         >
           <h2>{{ autotask.name }}</h2>
@@ -54,12 +65,21 @@
             </div>
             <div class="item-details__buttons">
               <button
+                data-testid="autotask-run-button"
                 class="button"
                 @click="handleRun(autotask.id, autotask.name)"
               >
                 <span class="button__text">Run Autotask Now</span>
               </button>
               <button
+                data-testid="autotask-edit-button"
+                class="button"
+                @click="openEdit(autotask)"
+              >
+                <span class="button__text">Edit</span>
+              </button>
+              <button
+                data-testid="autotask-delete-button"
                 class="button button--danger"
                 @click="handleDelete(autotask.id)"
               >
@@ -71,108 +91,29 @@
       </template>
     </div>
 
-    <div class="add-item-wrapper">
-      <h2>Add New AutoTask</h2>
-      <form
-        class="add-item-form"
-        @submit.prevent="handleAdd"
-      >
-        <div class="add-item-form__item">
-          <label for="name">Name:</label>
-          <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            class="textbox"
-            name="name"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="priority">Priority:</label>
-          <input
-            id="priority"
-            v-model="form.priority"
-            type="number"
-            min="1"
-            class="textbox"
-            name="priority"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="category">Category:</label>
-          <select
-            id="category"
-            v-model="form.category"
-            class="textbox"
-            name="category"
-          >
-            <option
-              v-for="cat in TASK_CATEGORIES"
-              :key="cat"
-              :value="cat"
-            >
-              {{ cat }}
-            </option>
-          </select>
-        </div>
-        <div class="add-item-form__item">
-          <label for="frequency">Task Frequency:</label>
-          <select
-            id="frequency"
-            v-model="form.frequency"
-            class="textbox"
-            name="frequency"
-          >
-            <option
-              v-for="freq in AUTOTASK_FREQUENCIES"
-              :key="freq"
-              :value="freq"
-            >
-              {{ freq }}
-            </option>
-          </select>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="notes">Notes:</label>
-          <textarea
-            id="notes"
-            v-model="form.notes"
-            rows="3"
-            class="textbox"
-            name="notes"
-          ></textarea>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <button
-            type="submit"
-            class="button"
-          >
-            <span class="button__text">Add New Autotask</span>
-          </button>
-        </div>
-      </form>
-    </div>
+    <AddEditAutoTaskModal
+      :visible="showModal"
+      :edit-data="editTarget"
+      @close="closeModal"
+      @create="handleCreate"
+      @update="handleUpdate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
-import { useAutoTasksStore, TASK_CATEGORIES, AUTOTASK_FREQUENCIES } from '@/stores/autotasks'
+import { ref, onMounted } from 'vue'
+import { useAutoTasksStore } from '@/stores/autotasks'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import type { AutoTask, AutoTaskCreate, AutoTaskUpdate } from '@/api/client'
+import AddEditAutoTaskModal from '@/components/autotasks/AddEditAutoTaskModal.vue'
 
 const store = useAutoTasksStore()
 const { show: notify } = useNotifications()
 
-const form = reactive({
-  name: '',
-  priority: 1,
-  category: 'Chore' as (typeof TASK_CATEGORIES)[number],
-  frequency: 'Monthly' as (typeof AUTOTASK_FREQUENCIES)[number],
-  notes: '',
-})
+const showModal = ref(false)
+const editTarget = ref<AutoTask | null>(null)
 
 onMounted(() => {
   store.fetchAll()
@@ -189,25 +130,33 @@ function formatDate(dateString: string): string {
   }).format(date)
 }
 
-async function handleAdd() {
-  if (!form.name.trim()) return
+function openEdit(autotask: AutoTask) {
+  editTarget.value = autotask
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  editTarget.value = null
+}
+
+async function handleCreate(data: AutoTaskCreate) {
   try {
-    await store.create({
-      name: form.name.trim(),
-      priority: Number(form.priority),
-      category: form.category,
-      frequency: form.frequency,
-      notes: form.notes.trim() || undefined,
-    })
+    await store.create(data)
     notify('AutoTask added and ran', 'success')
-    form.name = ''
-    form.priority = 1
-    form.category = 'Chore'
-    form.frequency = 'Monthly'
-    form.notes = ''
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add autotask: ${detail}`, 'error')
+  }
+}
+
+async function handleUpdate(id: number, data: AutoTaskUpdate) {
+  try {
+    await store.update(id, data)
+    notify('AutoTask updated', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update autotask: ${detail}`, 'error')
   }
 }
 

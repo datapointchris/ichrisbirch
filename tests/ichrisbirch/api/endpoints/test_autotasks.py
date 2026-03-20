@@ -90,6 +90,19 @@ def test_task_frequencies(txn_api_logged_in, frequency):
     assert created.json()['name'] == test_obj.name
 
 
+def test_update_autotask(autotask_crud_tester):
+    """Test updating an AutoTask's fields via PATCH."""
+    client, crud_tester = autotask_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated Name', 'priority': 99})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+    updated = response.json()
+    assert updated['name'] == 'Updated Name'
+    assert updated['priority'] == 99
+
+
 def test_run_autotask(autotask_crud_tester):
     """Test running an AutoTask creates a Task and updates run count."""
     client, crud_tester = autotask_crud_tester
@@ -128,6 +141,12 @@ class TestAutoTasksNotFound:
         """DELETE /{id}/ returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
         response = client.delete(f'{ENDPOINT}99999/')
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+    def test_update_not_found(self, autotask_crud_tester):
+        """PATCH /{id}/ returns 404 for non-existent autotask."""
+        client, _ = autotask_crud_tester
+        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Nope'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_run_not_found(self, autotask_crud_tester):
