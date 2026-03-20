@@ -61,7 +61,9 @@
         <div class="add-item-form__item">
           <label for="due_date">Due Date:</label>
           <DatePicker
+            id="due_date"
             :model-value="form.due_date"
+            required
             @update:model-value="form.due_date = $event"
           />
         </div>

@@ -121,7 +121,9 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`, `test_app`, `test_app_logged_in`), function-scoped (`*_function` suffix for isolation).
 
-**Vue three-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest), `test:e2e` (Playwright through Traefik). E2E defaults to test containers; use `E2E_ENV=dev` for dev.
+**Vue three-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
+
+**E2E assertion style**: Never assert on exact notification/log text (e.g., `toContainText('Duration added')`). Messages change format frequently and couple tests to implementation details. Assert on generic keywords that verify intent: `'added'`, `'deleted'`, `'completed'`. Test behavior, not message formatting.
 
 **Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icb prod build-test`.
 

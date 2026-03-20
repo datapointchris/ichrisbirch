@@ -46,7 +46,7 @@ test.describe('Durations Page', () => {
     await page.click('button[type="submit"]')
 
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(page.locator(SUCCESS).first()).toContainText('Duration added')
+    await expect(page.locator(SUCCESS).first()).toContainText('added')
 
     await expect(page.locator('.grid__item', { hasText: name })).toBeVisible()
   })

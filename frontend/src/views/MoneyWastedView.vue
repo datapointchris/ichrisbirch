@@ -91,6 +91,7 @@
         <div class="add-item-form__item">
           <label for="date_purchased">Date Purchased:</label>
           <DatePicker
+            id="date_purchased"
             :model-value="form.date_purchased"
             @update:model-value="form.date_purchased = $event"
           />
@@ -98,7 +99,9 @@
         <div class="add-item-form__item">
           <label for="date_wasted">Date Wasted:</label>
           <DatePicker
+            id="date_wasted"
             :model-value="form.date_wasted"
+            required
             @update:model-value="form.date_wasted = $event"
           />
         </div>

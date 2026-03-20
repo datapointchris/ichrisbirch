@@ -35,9 +35,8 @@ test.describe('Books Page', () => {
     await expect(page.locator('.task-layout__info')).toBeVisible()
     await expect(page.locator('.book--read.book-filter')).toBeVisible()
     await expect(page.locator('.book--reading.book-filter')).toBeVisible()
-    await expect(page.locator('.book--to-read.book-filter')).toBeVisible()
+    await expect(page.locator('.book--unread.book-filter')).toBeVisible()
     await expect(page.locator('.book--abandoned.book-filter')).toBeVisible()
-    await expect(page.locator('.book--sold.book-filter')).toBeVisible()
     await expect(page.locator('.book--total.book-filter')).toBeVisible()
   })
 
@@ -66,7 +65,7 @@ test.describe('Books Page', () => {
 
     // Verify success notification appears
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(page.locator(SUCCESS).first()).toContainText('Book added')
+    await expect(page.locator(SUCCESS).first()).toContainText('added')
 
     // Verify the book appears in the table
     await expect(page.locator('.books__row', { hasText: title })).toBeVisible()

@@ -381,6 +381,7 @@
                 <div class="add-item-form__item">
                   <label :for="`edit-purchase_date-${book.id}`">Purchase Date:</label>
                   <DatePicker
+                    :id="`edit-purchase_date-${book.id}`"
                     :model-value="editForm.purchase_date"
                     @update:model-value="editForm.purchase_date = $event"
                   />
@@ -398,6 +399,7 @@
                 <div class="add-item-form__item">
                   <label :for="`edit-sell_date-${book.id}`">Sell Date:</label>
                   <DatePicker
+                    :id="`edit-sell_date-${book.id}`"
                     :model-value="editForm.sell_date"
                     @update:model-value="editForm.sell_date = $event"
                   />
@@ -415,6 +417,7 @@
                 <div class="add-item-form__item">
                   <label :for="`edit-read_start_date-${book.id}`">Read Start Date:</label>
                   <DatePicker
+                    :id="`edit-read_start_date-${book.id}`"
                     :model-value="editForm.read_start_date"
                     @update:model-value="editForm.read_start_date = $event"
                   />
@@ -422,6 +425,7 @@
                 <div class="add-item-form__item">
                   <label :for="`edit-read_finish_date-${book.id}`">Read Finish Date:</label>
                   <DatePicker
+                    :id="`edit-read_finish_date-${book.id}`"
                     :model-value="editForm.read_finish_date"
                     @update:model-value="editForm.read_finish_date = $event"
                   />
@@ -602,6 +606,7 @@
         <div class="add-item-form__item">
           <label for="purchase_date">Purchase Date:</label>
           <DatePicker
+            id="purchase_date"
             :model-value="addForm.purchase_date"
             @update:model-value="addForm.purchase_date = $event"
           />
@@ -620,6 +625,7 @@
         <div class="add-item-form__item">
           <label for="sell_date">Sell Date:</label>
           <DatePicker
+            id="sell_date"
             :model-value="addForm.sell_date"
             @update:model-value="addForm.sell_date = $event"
           />
@@ -638,6 +644,7 @@
         <div class="add-item-form__item">
           <label for="read_start_date">Read Start Date:</label>
           <DatePicker
+            id="read_start_date"
             :model-value="addForm.read_start_date"
             @update:model-value="addForm.read_start_date = $event"
           />
@@ -645,6 +652,7 @@
         <div class="add-item-form__item">
           <label for="read_finish_date">Read Finish Date:</label>
           <DatePicker
+            id="read_finish_date"
             :model-value="addForm.read_finish_date"
             @update:model-value="addForm.read_finish_date = $event"
           />

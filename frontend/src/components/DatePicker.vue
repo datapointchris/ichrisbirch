@@ -5,10 +5,12 @@
   >
     <div class="datepicker__input-wrapper">
       <input
+        :id="id"
         ref="inputRef"
         type="text"
         class="textbox datepicker__input"
         :placeholder="placeholder"
+        :required="required"
         :value="displayValue"
         @focus="openCalendar"
         @input="handleTextInput"
@@ -118,10 +120,14 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 interface Props {
   modelValue: string // YYYY-MM-DD or empty string
   placeholder?: string
+  id?: string
+  required?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'YYYY-MM-DD',
+  id: undefined,
+  required: false,
 })
 
 const emit = defineEmits<{

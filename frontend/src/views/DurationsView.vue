@@ -275,13 +275,16 @@
         <div class="add-item-form__item">
           <label for="start_date">Start Date:</label>
           <DatePicker
+            id="start_date"
             :model-value="form.start_date"
+            required
             @update:model-value="form.start_date = $event"
           />
         </div>
         <div class="add-item-form__item">
           <label for="end_date">End Date:</label>
           <DatePicker
+            id="end_date"
             :model-value="form.end_date"
             @update:model-value="form.end_date = $event"
           />
