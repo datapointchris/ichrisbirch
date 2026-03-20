@@ -13,12 +13,9 @@ instance/*
 test-logs/
 logs/
 
-# Project stats data (synced via S3, not git)
-# Ignore data files but keep Python package code
-/stats/stats_*.json
-/stats/sessions/
-/stats/events/
-/stats/timing/
+# Project stats data (synced via Syncthing, not git)
+# stats/data is a symlink to ~/dev/repos/ichrisbirch/stats/ (managed by planning-sync.sh)
+/stats/data
 
 # Commit session tracking (local only, not synced)
 .tmp/

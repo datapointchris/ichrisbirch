@@ -7,8 +7,11 @@
 # SC2034: Variables may appear unused but are used by sourcing script
 # SC2154: Color variables are defined in main CLI before sourcing
 
+STATS_DATA_DIR="$ICHRISBIRCH_HOME/stats/data"
+STATS_EVENTS_FILE="$STATS_DATA_DIR/events/events.jsonl"
+
 function stats-latest-file() {
-  find "$ICHRISBIRCH_HOME/stats" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
+  find -L "$STATS_DATA_DIR" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
 }
 
 function stats-usage() {
@@ -33,9 +36,9 @@ function stats-usage() {
 
 function stats-summary() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file events_file
+  local stats_file
   stats_file=$(stats-latest-file)
-  events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
 
   echo "${green}Project Stats Summary${reset}"
   echo ""
@@ -122,12 +125,12 @@ function stats-summary() {
   echo ""
 
   # Commit activity
-  if [ -f "$events_file" ]; then
+  if [ -f "$STATS_EVENTS_FILE" ]; then
     local total_commits today_commits week_commits week_pattern
-    total_commits=$(grep -c '"type":"commit"' "$events_file" 2>/dev/null || echo 0)
-    today_commits=$(grep '"type":"commit"' "$events_file" | grep -c "$(date +%Y-%m-%d)")
+    total_commits=$(grep -c '"type":"commit"' "$STATS_EVENTS_FILE" 2>/dev/null || echo 0)
+    today_commits=$(grep '"type":"commit"' "$STATS_EVENTS_FILE" | grep -c "$(date +%Y-%m-%d)")
     week_pattern=$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')
-    week_commits=$(grep '"type":"commit"' "$events_file" | grep -cE "$week_pattern")
+    week_commits=$(grep '"type":"commit"' "$STATS_EVENTS_FILE" | grep -cE "$week_pattern")
 
     echo "${blue}Activity${reset}"
     printf "  Today:       %d commits\n" "$today_commits"
@@ -168,9 +171,9 @@ function stats-code() {
 
 function stats-tests() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file events_file
+  local stats_file
   stats_file=$(stats-latest-file)
-  events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
 
   echo "${green}Test Statistics${reset}"
   echo ""
@@ -216,13 +219,13 @@ function stats-tests() {
   echo ""
 
   # Test Suite Trends from events.jsonl
-  if [ -f "$events_file" ]; then
+  if [ -f "$STATS_EVENTS_FILE" ]; then
     echo "${blue}Test Suite Trends (by day)${reset}"
     printf "${cyan}%-12s %6s %8s %6s %8s${reset}\n" "Date" "Tests" "Duration" "Failed" "Pass %"
     echo "----------------------------------------------"
     # Combine pytest and vitest events by date
     local pytest_by_day vitest_by_day
-    pytest_by_day=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '
+    pytest_by_day=$(grep '"type":"collect.pytest"' "$STATS_EVENTS_FILE" | jq -s '
       group_by(.timestamp[0:10]) |
       map({
         date: .[0].timestamp[0:10],
@@ -231,7 +234,7 @@ function stats-tests() {
         total_failed: ([.[].summary.failed] | add),
         avg_passed: ([.[].summary.passed] | add / length | floor)
       })' 2>/dev/null)
-    vitest_by_day=$(grep '"type":"collect.vitest"' "$events_file" | jq -s '
+    vitest_by_day=$(grep '"type":"collect.vitest"' "$STATS_EVENTS_FILE" | jq -s '
       group_by(.timestamp[0:10]) |
       map({
         date: .[0].timestamp[0:10],
@@ -271,8 +274,8 @@ function stats-tests() {
     local test_history max_dur=1 max_tests=1
     # Combine pytest + vitest events by timestamp proximity, filter out bad data (runs with 0 tests)
     local pytest_hist vitest_hist
-    pytest_hist=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '[.[] | select(.summary.total > 0)] | .[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: (.summary.total - (.summary.skipped // 0))}' | jq -s '.' 2>/dev/null)
-    vitest_hist=$(grep '"type":"collect.vitest"' "$events_file" | jq -s '.[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: (.summary.total - (.summary.skipped // 0))}' | jq -s '.' 2>/dev/null)
+    pytest_hist=$(grep '"type":"collect.pytest"' "$STATS_EVENTS_FILE" | jq -s '[.[] | select(.summary.total > 0)] | .[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: (.summary.total - (.summary.skipped // 0))}' | jq -s '.' 2>/dev/null)
+    vitest_hist=$(grep '"type":"collect.vitest"' "$STATS_EVENTS_FILE" | jq -s '.[] | {ts: .timestamp[0:19], dur: (.duration_seconds | floor), tests: (.summary.total - (.summary.skipped // 0))}' | jq -s '.' 2>/dev/null)
     # Merge: for each pytest run, find vitest event with closest timestamp (within 60s) and add counts
     test_history=$(echo "$pytest_hist" | jq -r --argjson vitest "$vitest_hist" '
       . as $pytest |
@@ -340,7 +343,7 @@ function stats-tests() {
     # Slowest Test Files
     echo "${blue}Slowest Test Files${reset}"
     local latest_pytest
-    latest_pytest=$(grep '"type":"collect.pytest"' "$events_file" | tail -1)
+    latest_pytest=$(grep '"type":"collect.pytest"' "$STATS_EVENTS_FILE" | tail -1)
     echo "$latest_pytest" | jq -r '
       [.tests[] | {
         path: (
@@ -397,7 +400,7 @@ function stats-tests() {
     # Flaky Tests (tests that sometimes fail)
     echo "${blue}Flaky Tests (failed in some runs)${reset}"
     local flaky_tests
-    flaky_tests=$(grep '"type":"collect.pytest"' "$events_file" | jq -s '
+    flaky_tests=$(grep '"type":"collect.pytest"' "$STATS_EVENTS_FILE" | jq -s '
       [.[].tests[] | select(.outcome == "failed")] |
       group_by(.nodeid) |
       map({test: .[0].nodeid, failures: length}) |
@@ -443,12 +446,12 @@ function stats-tests() {
 
 function stats-quality() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
 
   echo "${green}Code Quality - Pre-commit Hook Results${reset}"
   echo ""
 
-  if [ ! -f "$events_file" ]; then
+  if [ ! -f "$STATS_EVENTS_FILE" ]; then
     echo "${yellow}No events file found.${reset}"
     return
   fi
@@ -494,10 +497,10 @@ function stats-quality() {
     local issues_today issues_7d issues_30d issues_all field
     field=$(get_issue_field "$tool")
 
-    issues_today=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep "$today" | jq -s "[.[]$field | length] | add // 0")
-    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
-    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$events_file" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
-    issues_all=$(grep "\"type\":\"hook.$tool\"" "$events_file" | jq -s "[.[]$field | length] | add // 0")
+    issues_today=$(grep "\"type\":\"hook.$tool\"" "$STATS_EVENTS_FILE" | grep "$today" | jq -s "[.[]$field | length] | add // 0")
+    issues_7d=$(grep "\"type\":\"hook.$tool\"" "$STATS_EVENTS_FILE" | grep -E "$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
+    issues_30d=$(grep "\"type\":\"hook.$tool\"" "$STATS_EVENTS_FILE" | grep -E "$(for i in $(seq 0 29); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')" | jq -s "[.[]$field | length] | add // 0")
+    issues_all=$(grep "\"type\":\"hook.$tool\"" "$STATS_EVENTS_FILE" | jq -s "[.[]$field | length] | add // 0")
 
     local c_today c_7d c_30d c_all
     if [ "$issues_today" -eq 0 ]; then c_today="${gray}     0${reset}"; else c_today="${yellow}$(printf '%6d' "$issues_today")${reset}"; fi
@@ -536,8 +539,8 @@ function stats-quality() {
       pattern=$(get_date_pattern "$days")
     fi
 
-    runs=$(grep '"type":"hook\.' "$events_file" | grep -cE "$pattern" || echo 0)
-    failed=$(grep '"type":"hook\.' "$events_file" | grep -E "$pattern" | grep -c '"status":"failed"' || echo 0)
+    runs=$(grep '"type":"hook\.' "$STATS_EVENTS_FILE" | grep -cE "$pattern" || echo 0)
+    failed=$(grep '"type":"hook\.' "$STATS_EVENTS_FILE" | grep -E "$pattern" | grep -c '"status":"failed"' || echo 0)
 
     if [ "$runs" -gt 0 ]; then
       pct=$(echo "scale=1; $failed * 100 / $runs" | bc)
@@ -576,12 +579,12 @@ function stats-quality() {
 function stats-activity() {
   cd "$ICHRISBIRCH_HOME" || exit
   local days="${1:-7}"
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
 
   echo "${green}Commit Activity (last $days days)${reset}"
   echo ""
 
-  if [ ! -f "$events_file" ]; then
+  if [ ! -f "$STATS_EVENTS_FILE" ]; then
     echo "${yellow}No events file found.${reset}"
     return
   fi
@@ -590,7 +593,7 @@ function stats-activity() {
     local date_str day_name count bar
     date_str=$(date -d "-${i} days" +%Y-%m-%d)
     day_name=$(date -d "-${i} days" +%a)
-    count=$(grep '"type":"commit"' "$events_file" | grep -c "$date_str")
+    count=$(grep '"type":"commit"' "$STATS_EVENTS_FILE" | grep -c "$date_str")
 
     bar=""
     for ((j = 0; j < count && j < 20; j++)); do
@@ -607,20 +610,20 @@ function stats-activity() {
 
   echo ""
   local total_week
-  total_week=$(grep -c '"type":"commit"' "$events_file")
+  total_week=$(grep -c '"type":"commit"' "$STATS_EVENTS_FILE")
   echo "Total recorded commits: $total_week"
 }
 
 function stats-events() {
   cd "$ICHRISBIRCH_HOME" || exit
   local count="${1:-20}"
-  local events_file="$ICHRISBIRCH_HOME/stats/events/events.jsonl"
+
 
   echo "${green}Recent Events (last $count)${reset}"
   echo ""
 
-  if [ -f "$events_file" ]; then
-    tail -n "$count" "$events_file" | jq -r '
+  if [ -f "$STATS_EVENTS_FILE" ]; then
+    tail -n "$count" "$STATS_EVENTS_FILE" | jq -r '
       def info:
         if .type == "commit" then [.short_hash, ""]
         elif .type == "collect.tokei" then [(.total_files | tostring), "files"]
@@ -780,9 +783,8 @@ function stats-trends() {
   echo ""
 
   echo "${blue}Test Suite (from latest snapshot)${reset}"
-  local stats_dir="$ICHRISBIRCH_HOME/stats"
   local latest_stats
-  latest_stats=$(find "$stats_dir" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+  latest_stats=$(find -L "$STATS_DATA_DIR" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 
   if [ -n "$latest_stats" ]; then
     local curr_py_tests curr_py_failed curr_py_skipped curr_cov curr_py_dur

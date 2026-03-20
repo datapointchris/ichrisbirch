@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Generate stats snapshots from event-sourced JSONL data.
 
-This module aggregates events from stats/events/events.jsonl into
+This module aggregates events from stats/data/events/events.jsonl into
 stats_*.json snapshot files that the CLI expects.
 """
 
@@ -423,9 +423,9 @@ def generate_snapshot(events_path: str | None = None, output_dir: str | None = N
     config = load_config()
 
     if events_path is None:
-        events_path = config.get('events_path', 'stats/events/events.jsonl')
+        events_path = config.get('events_path', 'stats/data/events/events.jsonl')
     if output_dir is None:
-        output_dir = 'stats'
+        output_dir = 'stats/data'
 
     events = read_events_backwards(events_path)
     if not events:

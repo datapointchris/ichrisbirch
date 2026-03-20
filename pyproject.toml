@@ -265,7 +265,7 @@ force-single-line = true
 
 [tool.devstats]
 project = "ichrisbirch"
-events_path = "stats/events/events.jsonl"
+events_path = "stats/data/events/events.jsonl"
 
 [tool.devstats.capture]
 hooks = [

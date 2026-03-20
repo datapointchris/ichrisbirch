@@ -18,7 +18,7 @@ from stats.schemas.commit import CommitEvent
 from stats.schemas.commit import StagedFile
 from stats.snapshot import generate_snapshot
 
-TIMING_DIR = Path(__file__).parent / 'timing'
+TIMING_DIR = Path(__file__).parent / 'data' / 'timing'
 
 
 def write_timing(collector_name: str, duration: float, total_duration: float | None = None) -> None:

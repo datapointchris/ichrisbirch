@@ -17,7 +17,7 @@ from stats.emit import emit_event
 from stats.hooks import discover_hooks
 from stats.hooks import get_hook
 
-TIMING_DIR = Path(__file__).parent / 'timing'
+TIMING_DIR = Path(__file__).parent / 'data' / 'timing'
 
 
 def get_staged_files() -> list[str]:
