@@ -72,6 +72,42 @@ test.describe('Habits Page', () => {
     }
   })
 
+  test('Manage page: hibernate and revive a habit', async ({ page }) => {
+    await page.goto('/habits/manage')
+    await expect(page.locator('h3', { hasText: 'Current Habits' })).toBeVisible({ timeout: 10000 })
+
+    // Create a category and habit to hibernate
+    const catName = `E2E HibCat ${Date.now()}`
+    await page.fill('#category-name', catName)
+    await page.locator('button[type="submit"]', { hasText: 'Add Category' }).click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    const habitName = `E2E HibHabit ${Date.now()}`
+    await page.fill('#habit-name', habitName)
+    await page.locator('#habit-category').selectOption({ label: catName })
+    await page.locator('button[type="submit"]', { hasText: 'Add Habit' }).click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // Verify it's in Current Habits
+    const currentRow = page.locator('.habits-manage__row', { hasText: habitName })
+    await expect(currentRow).toBeVisible()
+
+    // Hibernate it
+    await currentRow.locator('button', { hasText: 'Hibernate' }).click()
+    await expect(page.locator(SUCCESS, { hasText: 'hibernated' })).toBeVisible({ timeout: 5000 })
+
+    // Should now be in Hibernating section
+    await expect(page.locator('.habits-manage__row--muted', { hasText: habitName })).toBeVisible()
+
+    // Revive it
+    const hibernatedRow = page.locator('.habits-manage__row--muted', { hasText: habitName })
+    await hibernatedRow.locator('button', { hasText: 'Revive' }).click()
+    await expect(page.locator(SUCCESS, { hasText: 'revived' })).toBeVisible({ timeout: 5000 })
+
+    // Should be back in Current Habits
+    await expect(page.locator('.habits-manage__row:not(.habits-manage__row--muted)', { hasText: habitName })).toBeVisible()
+  })
+
   test('Completed page: filter and chart renders', async ({ page }) => {
     await page.goto('/habits/completed')
     await expect(page).toHaveTitle('Completed Habits | iChrisBirch')
