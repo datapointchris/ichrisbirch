@@ -1640,6 +1640,7 @@ input[type=checkbox]:focus-visible {
   position: relative;
   display: inline-block;
   width: 90%;
+  max-width: 400px;
 }
 .datepicker__input-wrapper {
   display: flex;
