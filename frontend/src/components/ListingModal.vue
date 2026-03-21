@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div
-      data-testid="add-edit-modal-overlay"
+      data-testid="listing-modal-overlay"
       class="add-edit-modal__overlay"
       :class="{
         visible: visible && !closeMode,
@@ -12,8 +12,8 @@
       @animationend="onOverlayAnimationEnd"
     ></div>
     <div
-      data-testid="add-edit-modal"
-      class="add-edit-modal__window"
+      data-testid="listing-modal"
+      class="listing-modal__window"
       :class="{
         visible: visible && !closeMode,
         closing: closeMode === 'cancel',

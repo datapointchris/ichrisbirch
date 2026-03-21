@@ -114,26 +114,8 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/box-packing',
     name: 'box-packing',
-    component: () => import('@/views/BoxPackingAllView.vue'),
-    meta: { title: 'All Boxes' },
-  },
-  {
-    path: '/box-packing/box/:id',
-    name: 'box-packing-detail',
-    component: () => import('@/views/BoxPackingDetailView.vue'),
-    meta: { title: 'Box Detail' },
-  },
-  {
-    path: '/box-packing/orphans',
-    name: 'box-packing-orphans',
-    component: () => import('@/views/BoxPackingOrphansView.vue'),
-    meta: { title: 'Orphaned Items' },
-  },
-  {
-    path: '/box-packing/search',
-    name: 'box-packing-search',
-    component: () => import('@/views/BoxPackingSearchView.vue'),
-    meta: { title: 'Search Items' },
+    component: () => import('@/views/BoxPackingView.vue'),
+    meta: { title: 'Box Packing' },
   },
   {
     path: '/profile',

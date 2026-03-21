@@ -286,6 +286,22 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
     }
   }
 
+  function clearSearch() {
+    searchResults.value = []
+  }
+
+  async function fetchAll() {
+    loading.value = true
+    error.value = null
+    try {
+      await Promise.all([fetchBoxes(), fetchOrphans()])
+    } catch {
+      // errors already set by individual fetchers
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     boxes,
     orphans,
@@ -297,8 +313,10 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
     viewMode,
     sortedBoxes,
     clearError,
+    clearSearch,
     setViewMode,
     setSortFields,
+    fetchAll,
     fetchBoxes,
     fetchBox,
     createBox,

@@ -9,6 +9,25 @@
   padding: 0.5em 1.75em;
   color: var(--clr-text);
   background-color: var(--clr-gray-800);
+
+  &--error {
+    border: 2px solid var(--clr-accent--red);
+    animation: textbox-error-flash 1s ease forwards;
+  }
+}
+
+@keyframes textbox-error-flash {
+  0% {
+    border-color: white;
+    box-shadow:
+      0 0 20px rgba(255, 255, 255, 0.8),
+      0 0 40px rgba(255, 60, 60, 0.6);
+  }
+
+  100% {
+    border-color: var(--clr-accent--red);
+    box-shadow: none;
+  }
 }
 
 .add-item-wrapper {
