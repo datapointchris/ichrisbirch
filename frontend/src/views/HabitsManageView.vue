@@ -10,6 +10,24 @@
     </div>
 
     <template v-else>
+      <!-- Add buttons -->
+      <div class="add-item-wrapper">
+        <button
+          data-testid="habit-add-button"
+          class="button"
+          @click="showHabitModal = true"
+        >
+          <span class="button__text">Add Habit</span>
+        </button>
+        <button
+          data-testid="category-add-button"
+          class="button"
+          @click="showCategoryModal = true"
+        >
+          <span class="button__text">Add Category</span>
+        </button>
+      </div>
+
       <!-- Current Habits -->
       <div class="grid grid--one-column grid--tight">
         <div class="grid__item">
@@ -23,16 +41,27 @@
           <div
             v-for="habit in store.currentHabits"
             :key="habit.id"
+            data-testid="habit-item"
             class="habits-manage__row"
           >
             <span>{{ habit.name }}</span>
             <span class="habits-manage__category-tag">{{ habit.category.name }}</span>
-            <button
-              class="button"
-              @click="handleHibernateHabit(habit.id)"
-            >
-              <span class="button__text">Hibernate</span>
-            </button>
+            <div class="habits-manage__actions">
+              <button
+                data-testid="habit-edit-button"
+                class="button"
+                @click="openEditHabit(habit)"
+              >
+                <span class="button__text">Edit</span>
+              </button>
+              <button
+                data-testid="habit-hibernate-button"
+                class="button"
+                @click="handleHibernateHabit(habit.id)"
+              >
+                <span class="button__text">Hibernate</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -47,18 +76,21 @@
           <div
             v-for="habit in store.hibernatingHabits"
             :key="habit.id"
+            data-testid="habit-item-hibernating"
             class="habits-manage__row habits-manage__row--muted"
           >
             <span>{{ habit.name }}</span>
             <span class="habits-manage__category-tag">{{ habit.category.name }}</span>
             <div class="habits-manage__actions">
               <button
+                data-testid="habit-revive-button"
                 class="button"
                 @click="handleReviveHabit(habit.id)"
               >
                 <span class="button__text">Revive</span>
               </button>
               <button
+                data-testid="habit-delete-button"
                 class="button--hidden"
                 @click="handleDeleteHabit(habit.id)"
               >
@@ -67,57 +99,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Add Habit -->
-      <div class="add-item-wrapper">
-        <h3>Add New Habit</h3>
-        <form
-          class="add-item-form"
-          @submit.prevent="handleAddHabit"
-        >
-          <div class="add-item-form__item">
-            <label for="habit-name">Name:</label>
-            <input
-              id="habit-name"
-              v-model="habitForm.name"
-              type="text"
-              class="textbox"
-              required
-            />
-          </div>
-          <div class="add-item-form__item">
-            <label for="habit-category">Category:</label>
-            <select
-              id="habit-category"
-              v-model="habitForm.category_id"
-              class="textbox"
-              required
-            >
-              <option
-                value=""
-                disabled
-              >
-                Select a category
-              </option>
-              <option
-                v-for="cat in store.currentCategories"
-                :key="cat.id"
-                :value="cat.id"
-              >
-                {{ cat.name }}
-              </option>
-            </select>
-          </div>
-          <div class="add-item-form__item">
-            <button
-              type="submit"
-              class="button"
-            >
-              <span class="button__text">Add Habit</span>
-            </button>
-          </div>
-        </form>
       </div>
 
       <!-- Current Categories -->
@@ -133,15 +114,26 @@
           <div
             v-for="cat in store.currentCategories"
             :key="cat.id"
+            data-testid="category-item"
             class="habits-manage__row"
           >
             <span>{{ cat.name }}</span>
-            <button
-              class="button"
-              @click="handleHibernateCategory(cat.id)"
-            >
-              <span class="button__text">Hibernate</span>
-            </button>
+            <div class="habits-manage__actions">
+              <button
+                data-testid="category-edit-button"
+                class="button"
+                @click="openEditCategory(cat)"
+              >
+                <span class="button__text">Edit</span>
+              </button>
+              <button
+                data-testid="category-hibernate-button"
+                class="button"
+                @click="handleHibernateCategory(cat.id)"
+              >
+                <span class="button__text">Hibernate</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -156,17 +148,20 @@
           <div
             v-for="cat in store.hibernatingCategories"
             :key="cat.id"
+            data-testid="category-item-hibernating"
             class="habits-manage__row habits-manage__row--muted"
           >
             <span>{{ cat.name }}</span>
             <div class="habits-manage__actions">
               <button
+                data-testid="category-revive-button"
                 class="button"
                 @click="handleReviveCategory(cat.id)"
               >
                 <span class="button__text">Revive</span>
               </button>
               <button
+                data-testid="category-delete-button"
                 class="button--hidden"
                 @click="handleDeleteCategory(cat.id)"
               >
@@ -176,110 +171,113 @@
           </div>
         </div>
       </div>
-
-      <!-- Add Category -->
-      <div class="add-item-wrapper">
-        <h3>Add New Category</h3>
-        <form
-          class="add-item-form"
-          @submit.prevent="handleAddCategory"
-        >
-          <div class="add-item-form__item">
-            <label for="category-name">Name:</label>
-            <input
-              id="category-name"
-              v-model="categoryForm.name"
-              type="text"
-              class="textbox"
-              required
-            />
-          </div>
-          <div class="add-item-form__item">
-            <button
-              type="submit"
-              class="button"
-            >
-              <span class="button__text">Add Category</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Completed Habits -->
-      <div
-        v-if="store.completedHabits.length > 0"
-        class="grid grid--one-column grid--tight"
-      >
-        <div class="grid__item">
-          <h3 class="habits-manage__section-title">Completed Habits</h3>
-          <div
-            v-for="completed in store.completedHabits"
-            :key="completed.id"
-            class="habits-manage__row"
-          >
-            <span>{{ completed.name }}</span>
-            <span class="habits-manage__category-tag">{{ completed.category.name }}</span>
-            <span class="habits-manage__date">{{ formatDate(completed.complete_date) }}</span>
-            <button
-              class="button--hidden"
-              @click="handleDeleteCompleted(completed.id)"
-            >
-              <i class="button-icon danger fa-regular fa-trash-can"></i>
-            </button>
-          </div>
-        </div>
-      </div>
     </template>
+
+    <AddEditHabitModal
+      :visible="showHabitModal"
+      :categories="store.currentCategories"
+      :edit-data="editHabitTarget"
+      @close="closeHabitModal"
+      @create="handleCreateHabit"
+      @update="handleUpdateHabit"
+    />
+
+    <AddEditCategoryModal
+      :visible="showCategoryModal"
+      :edit-data="editCategoryTarget"
+      @close="closeCategoryModal"
+      @create="handleCreateCategory"
+      @update="handleUpdateCategory"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useHabitsStore } from '@/stores/habits'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import type { Habit, HabitCreate, HabitUpdate, HabitCategory, HabitCategoryCreate, HabitCategoryUpdate } from '@/api/client'
 import HabitsSubnav from '@/components/HabitsSubnav.vue'
+import AddEditHabitModal from '@/components/habits/AddEditHabitModal.vue'
+import AddEditCategoryModal from '@/components/habits/AddEditCategoryModal.vue'
 
 const store = useHabitsStore()
 const { show: notify } = useNotifications()
 
-const habitForm = reactive({ name: '', category_id: '' as string | number })
-const categoryForm = reactive({ name: '' })
+const showHabitModal = ref(false)
+const editHabitTarget = ref<{ id: number; name: string; category_id: number } | null>(null)
+const showCategoryModal = ref(false)
+const editCategoryTarget = ref<{ id: number; name: string } | null>(null)
 
 onMounted(() => {
   store.fetchManageData()
 })
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+function openEditHabit(habit: Habit) {
+  editHabitTarget.value = {
+    id: habit.id,
+    name: habit.name,
+    category_id: habit.category_id,
+  }
+  showHabitModal.value = true
 }
 
-async function handleAddHabit() {
-  if (!habitForm.name.trim() || !habitForm.category_id) return
+function closeHabitModal() {
+  showHabitModal.value = false
+  editHabitTarget.value = null
+}
+
+function openEditCategory(cat: HabitCategory) {
+  editCategoryTarget.value = {
+    id: cat.id,
+    name: cat.name,
+  }
+  showCategoryModal.value = true
+}
+
+function closeCategoryModal() {
+  showCategoryModal.value = false
+  editCategoryTarget.value = null
+}
+
+async function handleCreateHabit(data: HabitCreate) {
   try {
-    await store.createHabit({ name: habitForm.name.trim(), category_id: Number(habitForm.category_id) })
+    await store.createHabit(data)
     notify('Habit added', 'success')
-    habitForm.name = ''
-    habitForm.category_id = ''
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add habit: ${detail}`, 'error')
   }
 }
 
-async function handleAddCategory() {
-  if (!categoryForm.name.trim()) return
+async function handleUpdateHabit(id: number, data: HabitUpdate) {
   try {
-    await store.createCategory({ name: categoryForm.name.trim() })
+    await store.updateHabit(id, data)
+    notify('Habit updated', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update habit: ${detail}`, 'error')
+  }
+}
+
+async function handleCreateCategory(data: HabitCategoryCreate) {
+  try {
+    await store.createCategory(data)
     notify('Category added', 'success')
-    categoryForm.name = ''
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add category: ${detail}`, 'error')
+  }
+}
+
+async function handleUpdateCategory(id: number, data: HabitCategoryUpdate) {
+  try {
+    await store.updateCategory(id, data)
+    notify('Category updated', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update category: ${detail}`, 'error')
   }
 }
 
@@ -342,16 +340,6 @@ async function handleDeleteCategory(id: number) {
     notify(`Failed to delete category: ${detail}`, 'error')
   }
 }
-
-async function handleDeleteCompleted(id: number) {
-  try {
-    await store.deleteCompleted(id)
-    notify('Completed habit entry deleted', 'success')
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to delete: ${detail}`, 'error')
-  }
-}
 </script>
 
 <style scoped>
@@ -388,12 +376,6 @@ async function handleDeleteCompleted(id: number) {
   background-color: var(--clr-gray-800);
   padding: 2px var(--space-xs);
   border-radius: 4px;
-}
-
-.habits-manage__date {
-  font-size: var(--fs-300);
-  color: var(--clr-gray-500);
-  margin-left: auto;
 }
 
 .habits-manage__actions {
