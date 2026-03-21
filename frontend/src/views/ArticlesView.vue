@@ -100,6 +100,7 @@
             :key="article.id"
           >
             <div
+              data-testid="article-item"
               class="articles__row"
               :class="{
                 'articles__row--favorite': article.is_favorite,
@@ -121,17 +122,26 @@
               <span>{{ article.read_count }}</span>
               <span class="articles__actions">
                 <i
+                  data-testid="article-favorite-button"
                   class="button-icon articles__star fa-solid fa-star"
                   :class="{ 'articles__star--active': article.is_favorite }"
                   title="Toggle favorite"
                   @click="handleToggleFavorite(article.id)"
                 ></i>
                 <i
+                  data-testid="article-edit-button"
+                  class="button-icon articles__chevron fa-solid fa-pen-to-square"
+                  title="Edit article"
+                  @click="openEdit(article)"
+                ></i>
+                <i
+                  data-testid="article-expand-button"
                   class="button-icon articles__chevron fa-solid fa-chevron-down"
                   :class="{ 'articles__chevron--open': expandedId === article.id }"
                   @click="toggleExpand(article.id)"
                 ></i>
                 <button
+                  data-testid="article-delete-button"
                   class="button--hidden"
                   @click="handleDelete(article.id)"
                 >
@@ -223,108 +233,48 @@
       </div>
     </div>
 
-    <!-- Add Article Form -->
     <div class="add-item-wrapper">
-      <h2>Add New Article</h2>
-      <form
-        class="add-item-form"
-        @submit.prevent="handleAdd"
+      <button
+        data-testid="article-add-button"
+        class="button"
+        @click="showModal = true"
       >
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="url">URL:</label>
-          <div class="articles__url-row">
-            <input
-              id="url"
-              v-model="form.url"
-              type="url"
-              class="textbox"
-              name="url"
-              required
-            />
-            <button
-              type="button"
-              class="button"
-              :disabled="!form.url.trim() || store.summarizing"
-              @click="handleAutoPopulate"
-            >
-              <span class="button__text">{{ store.summarizing ? 'Summarizing...' : 'Auto Populate' }}</span>
-            </button>
-          </div>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="title">Title:</label>
-          <input
-            id="title"
-            v-model="form.title"
-            type="text"
-            class="textbox"
-            name="title"
-            required
-          />
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="tags">Tags (comma-separated):</label>
-          <input
-            id="tags"
-            v-model="form.tags"
-            type="text"
-            class="textbox"
-            name="tags"
-          />
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="summary">Summary:</label>
-          <textarea
-            id="summary"
-            v-model="form.summary"
-            rows="6"
-            class="textbox"
-            name="summary"
-            required
-          ></textarea>
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="notes">Notes:</label>
-          <textarea
-            id="notes"
-            v-model="form.notes"
-            rows="3"
-            class="textbox"
-            name="notes"
-          ></textarea>
-        </div>
-        <div class="add-item-form__item--full-width">
-          <button
-            type="submit"
-            class="button"
-          >
-            <span class="button__text">Add Article</span>
-          </button>
-        </div>
-      </form>
+        <span class="button__text">Add Article</span>
+      </button>
     </div>
+
+    <AddEditArticleModal
+      :visible="showModal"
+      :edit-data="editTarget"
+      @close="closeModal"
+      @create="handleCreate"
+      @update="handleUpdate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useArticlesStore } from '@/stores/articles'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import type { Article, ArticleCreate, ArticleUpdate } from '@/api/client'
 import ArticlesSubnav from '@/components/ArticlesSubnav.vue'
+import AddEditArticleModal from '@/components/articles/AddEditArticleModal.vue'
 
 const store = useArticlesStore()
 const { show: notify } = useNotifications()
 const searchInput = ref('')
 const expandedId = ref<number | null>(null)
-
-const form = reactive({
-  url: '',
-  title: '',
-  tags: '',
-  summary: '',
-  notes: '',
-})
+const showModal = ref(false)
+const editTarget = ref<{
+  id: number
+  title: string
+  url: string
+  tags: string[]
+  summary: string
+  notes?: string
+} | null>(null)
 
 onMounted(() => {
   store.fetchAll()
@@ -344,48 +294,40 @@ function formatDate(dateString: string): string {
   }).format(date)
 }
 
-function resetForm() {
-  form.url = ''
-  form.title = ''
-  form.tags = ''
-  form.summary = ''
-  form.notes = ''
-}
-
-async function handleAutoPopulate() {
-  if (!form.url.trim()) return
-  try {
-    const result = await store.summarizeUrl(form.url.trim())
-    form.title = result.title
-    form.summary = result.summary
-    form.tags = result.tags.join(', ')
-    notify('Article info populated from URL', 'success')
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Auto-populate failed: ${detail}`, 'error')
+function openEdit(article: Article) {
+  editTarget.value = {
+    id: article.id,
+    title: article.title,
+    url: article.url,
+    tags: article.tags,
+    summary: article.summary,
+    notes: article.notes,
   }
+  showModal.value = true
 }
 
-async function handleAdd() {
-  if (!form.url.trim() || !form.title.trim() || !form.summary.trim()) return
-  const tags = form.tags
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
+function closeModal() {
+  showModal.value = false
+  editTarget.value = null
+}
+
+async function handleCreate(data: ArticleCreate) {
   try {
-    await store.create({
-      url: form.url.trim(),
-      title: form.title.trim(),
-      tags,
-      summary: form.summary.trim(),
-      notes: form.notes.trim() || undefined,
-      save_date: new Date().toISOString(),
-    })
+    await store.create(data)
     notify('Article added', 'success')
-    resetForm()
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add article: ${detail}`, 'error')
+  }
+}
+
+async function handleUpdate(id: number, data: ArticleUpdate) {
+  try {
+    await store.update(id, data)
+    notify('Article updated', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update article: ${detail}`, 'error')
   }
 }
 
@@ -654,15 +596,5 @@ async function handleClearSearch() {
   gap: var(--space-xs);
   margin-top: var(--space-s);
   flex-wrap: wrap;
-}
-
-/* Form URL row */
-.articles__url-row {
-  display: flex;
-  gap: var(--space-xs);
-}
-
-.articles__url-row .textbox {
-  flex: 1;
 }
 </style>

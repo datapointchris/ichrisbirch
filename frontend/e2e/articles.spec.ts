@@ -3,6 +3,23 @@ import { test, expect } from '@playwright/test'
 const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
+/** Helper: open the add article modal, fill in fields, and submit */
+async function createArticle(
+  page: import('@playwright/test').Page,
+  title: string,
+  url?: string,
+) {
+  const articleUrl = url ?? `https://example.com/e2e-${Date.now()}`
+  await page.getByTestId('article-add-button').click()
+  await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+  await page.getByTestId('article-url-input').fill(articleUrl)
+  await page.getByTestId('article-title-input').fill(title)
+  await page.getByTestId('article-tags-input').fill('e2e, testing')
+  await page.getByTestId('article-summary-input').fill('Created by Playwright E2E tests.')
+  await page.getByTestId('article-title-input').press('Enter')
+  await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+}
+
 test.describe('Articles Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -23,14 +40,16 @@ test.describe('Articles Page', () => {
     await expect(page).toHaveTitle('Articles | iChrisBirch')
   })
 
-  test('add form is present with all fields', async ({ page }) => {
+  test('add button opens the modal with all fields', async ({ page }) => {
     await page.goto('/articles')
-    await expect(page.locator('.add-item-wrapper')).toBeVisible()
-    await expect(page.locator('#url')).toBeVisible()
-    await expect(page.locator('#title')).toBeVisible()
-    await expect(page.locator('#tags')).toBeVisible()
-    await expect(page.locator('#summary')).toBeVisible()
-    await expect(page.locator('#notes')).toBeVisible()
+
+    await page.getByTestId('article-add-button').click()
+    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('article-url-input')).toBeVisible()
+    await expect(page.getByTestId('article-title-input')).toBeVisible()
+    await expect(page.getByTestId('article-tags-input')).toBeVisible()
+    await expect(page.getByTestId('article-summary-input')).toBeVisible()
+    await expect(page.getByTestId('article-notes-input')).toBeVisible()
   })
 
   test('search bar is present', async ({ page }) => {
@@ -42,34 +61,47 @@ test.describe('Articles Page', () => {
     await page.goto('/articles')
 
     const articleTitle = `E2E Article ${Date.now()}`
+    await createArticle(page, articleTitle)
+    await expect(page.locator(SUCCESS).first()).toContainText('added')
 
-    await page.fill('#url', `https://example.com/e2e-${Date.now()}`)
-    await page.fill('#title', articleTitle)
-    await page.fill('#tags', 'e2e, testing')
-    await page.fill('#summary', 'This article was created by Playwright E2E tests.')
-    await page.locator('.add-item-wrapper button', { hasText: 'Add Article' }).click()
+    await expect(page.getByTestId('article-item').filter({ hasText: articleTitle })).toBeVisible()
+  })
 
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(page.locator(SUCCESS).first()).toContainText('Article added')
+  test('edits an article via the modal', async ({ page }) => {
+    await page.goto('/articles')
 
-    await expect(page.locator('.articles__row', { hasText: articleTitle })).toBeVisible()
+    const title = `E2E Edit ${Date.now()}`
+    await createArticle(page, title)
+
+    const targetRow = page.getByTestId('article-item').filter({ hasText: title })
+    await expect(targetRow).toBeVisible()
+    await targetRow.getByTestId('article-edit-button').click()
+
+    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('article-title-input')).toHaveValue(title)
+
+    const updatedTitle = `${title} Updated`
+    await page.getByTestId('article-title-input').fill(updatedTitle)
+    await page.getByTestId('article-title-input').press('Enter')
+
+    await expect(page.locator(SUCCESS, { hasText: 'updated' })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('article-item').filter({ hasText: updatedTitle })).toBeVisible()
+
+    // Clean up
+    const updatedRow = page.getByTestId('article-item').filter({ hasText: updatedTitle })
+    await updatedRow.getByTestId('article-delete-button').click()
+    await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
   })
 
   test('deletes an article and verifies it is removed', async ({ page }) => {
     await page.goto('/articles')
 
     const articleTitle = `E2E Delete ${Date.now()}`
+    await createArticle(page, articleTitle)
 
-    await page.fill('#url', `https://example.com/e2e-delete-${Date.now()}`)
-    await page.fill('#title', articleTitle)
-    await page.fill('#tags', 'e2e, delete')
-    await page.fill('#summary', 'This article will be deleted.')
-    await page.locator('.add-item-wrapper button', { hasText: 'Add Article' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-
-    const targetRow = page.locator('.articles__row', { hasText: articleTitle })
+    const targetRow = page.getByTestId('article-item').filter({ hasText: articleTitle })
     await expect(targetRow).toBeVisible()
-    await targetRow.locator('.button--hidden').click()
+    await targetRow.getByTestId('article-delete-button').click()
 
     await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
     await expect(targetRow).not.toBeVisible()
@@ -79,28 +111,20 @@ test.describe('Articles Page', () => {
     await page.goto('/articles')
 
     const articleTitle = `E2E Favorite ${Date.now()}`
+    await createArticle(page, articleTitle)
 
-    await page.fill('#url', `https://example.com/e2e-fav-${Date.now()}`)
-    await page.fill('#title', articleTitle)
-    await page.fill('#tags', 'e2e, favorite')
-    await page.fill('#summary', 'Testing favorite toggle.')
-    await page.locator('.add-item-wrapper button', { hasText: 'Add Article' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-
-    const targetRow = page.locator('.articles__row', { hasText: articleTitle })
+    const targetRow = page.getByTestId('article-item').filter({ hasText: articleTitle })
     await expect(targetRow).toBeVisible()
 
-    // Initially not favorite — star is inactive
-    const star = targetRow.locator('.articles__star')
+    const star = targetRow.getByTestId('article-favorite-button')
     await expect(star).toBeVisible()
     await expect(star).not.toHaveClass(/articles__star--active/)
     await star.click()
 
-    // After toggle — star should be active (favorite)
     await expect(star).toHaveClass(/articles__star--active/, { timeout: 5000 })
 
     // Clean up
-    await targetRow.locator('.button--hidden').click()
+    await targetRow.getByTestId('article-delete-button').click()
     await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
   })
 
@@ -109,18 +133,13 @@ test.describe('Articles Page', () => {
     await expect(page.locator('.articles__header')).toBeVisible({ timeout: 10000 })
 
     const title = `E2E Archive ${Date.now()}`
-    await page.fill('#url', `https://example.com/e2e-archive-${Date.now()}`)
-    await page.fill('#title', title)
-    await page.fill('#tags', 'e2e, archive')
-    await page.fill('#summary', 'Testing archive.')
-    await page.locator('.add-item-wrapper button', { hasText: 'Add Article' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await createArticle(page, title)
 
-    const row = page.locator('.articles__row', { hasText: title })
+    const row = page.getByTestId('article-item').filter({ hasText: title })
     await expect(row).toBeVisible()
 
     // Expand and archive
-    await row.locator('.articles__chevron').click()
+    await row.getByTestId('article-expand-button').click()
     await expect(page.locator('.articles__detail--open')).toBeVisible()
     await page.locator('.articles__detail--open button', { hasText: 'Archive' }).click()
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
@@ -132,18 +151,13 @@ test.describe('Articles Page', () => {
     await expect(page.locator('.articles__header')).toBeVisible({ timeout: 10000 })
 
     const title = `E2E Read ${Date.now()}`
-    await page.fill('#url', `https://example.com/e2e-read-${Date.now()}`)
-    await page.fill('#title', title)
-    await page.fill('#tags', 'e2e, read')
-    await page.fill('#summary', 'Testing mark read.')
-    await page.locator('.add-item-wrapper button', { hasText: 'Add Article' }).click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await createArticle(page, title)
 
-    const row = page.locator('.articles__row', { hasText: title })
+    const row = page.getByTestId('article-item').filter({ hasText: title })
     await expect(row).toBeVisible()
 
     // Expand and mark read
-    await row.locator('.articles__chevron').click()
+    await row.getByTestId('article-expand-button').click()
     await expect(page.locator('.articles__detail--open')).toBeVisible()
     await page.locator('.articles__detail--open button', { hasText: 'Mark Read' }).click()
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
