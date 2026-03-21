@@ -84,6 +84,7 @@
         <div
           v-for="duration in displayedDurations"
           :key="duration.id"
+          data-testid="duration-item"
           class="grid__item duration-card"
           :style="cardStyle(duration)"
         >
@@ -236,129 +237,75 @@
           <!-- Actions -->
           <div class="duration-card__actions">
             <button
+              data-testid="duration-edit-button"
+              class="button button--small"
+              @click="openEdit(duration)"
+            >
+              <span class="button__text">Edit</span>
+            </button>
+            <button
               v-if="duration.end_date"
+              data-testid="duration-reopen-button"
               class="button button--small"
               @click="handleReopenDuration(duration.id)"
             >
               <span class="button__text">Reopen Duration</span>
             </button>
             <button
+              data-testid="duration-delete-button"
               class="button button--danger button--small"
               @click="handleDelete(duration.id)"
             >
-              <span class="button__text button__text--danger">Delete Duration</span>
+              <span class="button__text button__text--danger">Delete</span>
             </button>
           </div>
         </div>
       </template>
     </div>
 
-    <!-- Add Duration form -->
     <div class="add-item-wrapper">
-      <h2>Add New Duration:</h2>
-      <form
-        class="add-item-form"
-        @submit.prevent="handleAdd"
+      <button
+        data-testid="duration-add-button"
+        class="button"
+        @click="showModal = true"
       >
-        <div class="add-item-form__item">
-          <label for="name">Name:</label>
-          <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            size="30"
-            class="textbox"
-            name="name"
-            required
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="start_date">Start Date:</label>
-          <DatePicker
-            id="start_date"
-            :model-value="form.start_date"
-            required
-            @update:model-value="form.start_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label for="end_date">End Date:</label>
-          <DatePicker
-            id="end_date"
-            :model-value="form.end_date"
-            @update:model-value="form.end_date = $event"
-          />
-        </div>
-        <div class="add-item-form__item add-item-form__item--full-width">
-          <label for="notes">Notes:</label>
-          <input
-            id="notes"
-            v-model="form.notes"
-            type="text"
-            size="40"
-            class="textbox"
-            name="notes"
-          />
-        </div>
-        <div class="add-item-form__item">
-          <label>Color:</label>
-          <div class="color-picker">
-            <button
-              v-for="c in colorSwatches"
-              :key="c.value"
-              type="button"
-              class="color-picker__swatch"
-              :class="{ 'color-picker__swatch--selected': form.color === c.value }"
-              :style="{ backgroundColor: c.value }"
-              :title="c.label"
-              @click="form.color = form.color === c.value ? '' : c.value"
-            ></button>
-          </div>
-        </div>
-        <div class="add-item-form__item--full-width">
-          <button
-            type="submit"
-            class="button"
-          >
-            <span class="button__text">Add Duration</span>
-          </button>
-        </div>
-      </form>
+        <span class="button__text">Add Duration</span>
+      </button>
     </div>
+
+    <AddEditDurationModal
+      :visible="showModal"
+      :edit-data="editTarget"
+      @close="closeModal"
+      @create="handleCreate"
+      @update="handleUpdate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useDurationsStore } from '@/stores/durations'
 import { useNotifications } from '@/composables/useNotifications'
 import { computeElapsedTime, computeTimeBetween } from '@/composables/useElapsedTime'
 import { formatDate } from '@/composables/useDaysLeft'
 import { ApiError } from '@/api/errors'
-import type { Duration } from '@/api/client'
+import type { Duration, DurationCreate, DurationUpdate } from '@/api/client'
 import DatePicker from '@/components/DatePicker.vue'
+import AddEditDurationModal from '@/components/durations/AddEditDurationModal.vue'
 
 const store = useDurationsStore()
 const { show: notify } = useNotifications()
 
-const colorSwatches = [
-  { value: 'var(--clr-accent--orange)', label: 'Orange' },
-  { value: 'var(--clr-accent--red)', label: 'Red' },
-  { value: 'var(--clr-accent--blue)', label: 'Blue' },
-  { value: 'var(--clr-accent--green-bright)', label: 'Green' },
-  { value: 'var(--clr-accent--yellow)', label: 'Yellow' },
-  { value: 'var(--clr-accent--purple)', label: 'Purple' },
-  { value: 'var(--clr-accent)', label: 'Accent' },
-  { value: 'var(--clr-gray-400)', label: 'Gray' },
-]
-
-const form = reactive({
-  name: '',
-  start_date: '',
-  end_date: '',
-  notes: '',
-  color: '',
-})
+const showModal = ref(false)
+const editTarget = ref<{
+  id: number
+  name: string
+  start_date: string
+  end_date?: string
+  notes?: string
+  color?: string
+} | null>(null)
 
 // Per-duration note form state
 const noteForm = ref<Record<number, { date: string; content: string }>>({})
@@ -491,25 +438,40 @@ function removeFromCompare(idx: number) {
   selectedForCompare.value.splice(idx, 1)
 }
 
-async function handleAdd() {
-  if (!form.name.trim() || !form.start_date) return
+function openEdit(duration: Duration) {
+  editTarget.value = {
+    id: duration.id,
+    name: duration.name,
+    start_date: duration.start_date,
+    end_date: duration.end_date,
+    notes: duration.notes,
+    color: duration.color,
+  }
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+  editTarget.value = null
+}
+
+async function handleCreate(data: DurationCreate) {
   try {
-    await store.create({
-      name: form.name.trim(),
-      start_date: form.start_date,
-      end_date: form.end_date || undefined,
-      notes: form.notes.trim() || undefined,
-      color: form.color || undefined,
-    })
-    notify(`${form.name.trim()} added`, 'success')
-    form.name = ''
-    form.start_date = ''
-    form.end_date = ''
-    form.notes = ''
-    form.color = ''
+    await store.create(data)
+    notify('Duration added', 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add duration: ${detail}`, 'error')
+  }
+}
+
+async function handleUpdate(id: number, data: DurationUpdate) {
+  try {
+    await store.update(id, data)
+    notify('Duration updated', 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update duration: ${detail}`, 'error')
   }
 }
 
