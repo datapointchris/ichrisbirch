@@ -189,37 +189,21 @@
         <div class="add-edit-modal__form-row">
           <div class="add-edit-modal__form-item">
             <label for="book-progress">Progress</label>
-            <select
-              id="book-progress"
-              v-model="form.progress"
+            <NeuSelect
+              :model-value="form.progress"
+              :options="progressOptions"
               data-testid="book-progress-input"
-              class="textbox"
-            >
-              <option
-                v-for="(label, value) in statusLabels"
-                :key="value"
-                :value="value"
-              >
-                {{ label }}
-              </option>
-            </select>
+              @update:model-value="form.progress = $event"
+            />
           </div>
           <div class="add-edit-modal__form-item">
             <label for="book-ownership">Ownership</label>
-            <select
-              id="book-ownership"
-              v-model="form.ownership"
+            <NeuSelect
+              :model-value="form.ownership"
+              :options="ownershipOptions"
               data-testid="book-ownership-input"
-              class="textbox"
-            >
-              <option
-                v-for="(label, value) in ownershipLabels"
-                :key="value"
-                :value="value"
-              >
-                {{ label }}
-              </option>
-            </select>
+              @update:model-value="form.ownership = $event"
+            />
           </div>
           <div class="add-edit-modal__form-item">
             <label for="book-location">Location</label>
@@ -286,6 +270,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import AddEditModal from '@/components/AddEditModal.vue'
 import DatePicker from '@/components/DatePicker.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -309,6 +294,7 @@ const statusLabels: Record<BookProgress, string> = {
   read: 'Read',
   abandoned: 'Abandoned',
 }
+const progressOptions = (Object.entries(statusLabels) as [BookProgress, string][]).map(([value, label]) => ({ value, label }))
 
 const ownershipLabels: Record<BookOwnership, string> = {
   owned: 'Owned',
@@ -317,6 +303,7 @@ const ownershipLabels: Record<BookOwnership, string> = {
   sold: 'Sold',
   donated: 'Donated',
 }
+const ownershipOptions = (Object.entries(ownershipLabels) as [BookOwnership, string][]).map(([value, label]) => ({ value, label }))
 
 function createEmptyForm() {
   return {

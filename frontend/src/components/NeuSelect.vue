@@ -62,24 +62,24 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string | number">
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 
-export interface NeuSelectOption {
-  value: string | number
+export interface NeuSelectOption<V = string | number> {
+  value: V
   label: string
   [key: string]: unknown
 }
 
 const props = defineProps<{
-  modelValue: string | number | null
-  options: NeuSelectOption[]
+  modelValue: T | null
+  options: NeuSelectOption<T>[]
   placeholder?: string
   dataTestid?: string
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string | number]
+  'update:modelValue': [value: T]
 }>()
 
 const isOpen = ref(false)
@@ -92,9 +92,14 @@ const selectedOption = computed(() => props.options.find((o) => o.value === prop
 function updateDropdownPosition() {
   if (!trigger.value) return
   const rect = trigger.value.getBoundingClientRect()
+  const gap = 8
+  const viewportPadding = 8
+  const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPadding
+  const maxHeight = Math.max(120, Math.min(720, spaceBelow))
   dropdownStyle.value = {
-    top: `${rect.bottom + 8}px`,
+    top: `${rect.bottom + gap}px`,
     left: `${rect.left}px`,
+    maxHeight: `${maxHeight}px`,
   }
 }
 
@@ -109,7 +114,7 @@ function close() {
   isOpen.value = false
 }
 
-function select(opt: NeuSelectOption) {
+function select(opt: NeuSelectOption<T>) {
   emit('update:modelValue', opt.value)
   isOpen.value = false
 }
@@ -179,7 +184,6 @@ onBeforeUnmount(() => {
   position: fixed;
   min-width: 200px;
   width: max-content;
-  max-height: 720px;
   overflow-y: auto;
   scrollbar-width: none;
   &::-webkit-scrollbar {

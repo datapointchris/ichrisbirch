@@ -13,27 +13,13 @@
 
         <div class="add-edit-modal__form-item">
           <label for="item-box">Box</label>
-          <select
-            id="item-box"
-            v-model="form.box_id"
+          <NeuSelect
+            :model-value="form.box_id"
+            :options="boxOptions"
             data-testid="item-box-input"
-            class="textbox"
-            required
-          >
-            <option
-              value=""
-              disabled
-            >
-              Select a box
-            </option>
-            <option
-              v-for="box in boxes"
-              :key="box.id"
-              :value="box.id"
-            >
-              Box {{ box.number }}: {{ box.name }} ({{ box.size }})
-            </option>
-          </select>
+            placeholder="Select a box"
+            @update:model-value="form.box_id = $event"
+          />
         </div>
 
         <div class="add-edit-modal__form-item">
@@ -117,9 +103,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import type { Box, BoxItemCreate, BoxItemUpdate } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -143,8 +130,10 @@ const emit = defineEmits<{
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
+const boxOptions = computed(() => props.boxes.map((b) => ({ value: b.id, label: `Box ${b.number}: ${b.name} (${b.size})` })))
+
 const form = reactive({
-  box_id: '' as string | number,
+  box_id: null as number | null,
   name: '',
   essential: false,
   warm: false,
@@ -169,7 +158,7 @@ watch(
 )
 
 function resetForm() {
-  form.box_id = ''
+  form.box_id = null
   form.name = ''
   form.essential = false
   form.warm = false

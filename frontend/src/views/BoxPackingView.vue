@@ -44,50 +44,31 @@
 
     <!-- Row 2: Sort + Filter (labeled) -->
     <div class="box-controls">
-      <label class="box-controls__label">
+      <span class="box-controls__label">
         Sort:
-        <select
-          v-model="store.sortField1"
-          class="button"
-        >
-          <option
-            v-for="opt in SORT_OPTIONS"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </label>
-      <label class="box-controls__label">
+        <NeuSelect
+          :model-value="store.sortField1"
+          :options="SORT_OPTIONS"
+          @update:model-value="store.sortField1 = $event"
+        />
+      </span>
+      <span class="box-controls__label">
         Then:
-        <select
-          v-model="store.sortField2"
-          class="button"
-        >
-          <option value="">None</option>
-          <option
-            v-for="opt in SORT_OPTIONS"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </label>
-      <label class="box-controls__label">
+        <NeuSelect
+          :model-value="store.sortField2"
+          :options="sortOptionsWithNone"
+          @update:model-value="store.sortField2 = $event"
+        />
+      </span>
+      <span class="box-controls__label">
         Filter:
-        <select
-          v-model="filterBy"
+        <NeuSelect
+          :model-value="filterBy"
+          :options="filterByOptions"
           data-testid="box-filter-input"
-          class="button"
-        >
-          <option value="all">All</option>
-          <option value="essential">Essential</option>
-          <option value="warm">Warm</option>
-          <option value="liquid">Liquid</option>
-        </select>
-      </label>
+          @update:model-value="filterBy = $event"
+        />
+      </span>
     </div>
 
     <!-- Add buttons -->
@@ -456,6 +437,7 @@ import type { Box, BoxCreate, BoxUpdate, BoxItem, BoxItemCreate, BoxSize } from 
 import AddEditBoxModal from '@/components/box-packing/AddEditBoxModal.vue'
 import AddEditItemModal from '@/components/box-packing/AddEditItemModal.vue'
 import OrphansModal from '@/components/box-packing/OrphansModal.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const store = useBoxPackingStore()
 const { show: notify } = useNotifications()
@@ -466,6 +448,13 @@ const searchActive = ref(false)
 
 // Filter
 const filterBy = ref<'all' | 'essential' | 'warm' | 'liquid'>('all')
+const filterByOptions = [
+  { value: 'all' as const, label: 'All' },
+  { value: 'essential' as const, label: 'Essential' },
+  { value: 'warm' as const, label: 'Warm' },
+  { value: 'liquid' as const, label: 'Liquid' },
+]
+const sortOptionsWithNone = [{ value: '' as const, label: 'None' }, ...SORT_OPTIONS]
 
 // Expand
 const expandedIds = ref(new Set<number>())

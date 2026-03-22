@@ -26,27 +26,13 @@
 
         <div class="add-edit-modal__form-item">
           <label for="habit-category">Category</label>
-          <select
-            id="habit-category"
-            v-model="form.category_id"
+          <NeuSelect
+            :model-value="form.category_id"
+            :options="categoryOptions"
             data-testid="habit-category-input"
-            class="textbox"
-            required
-          >
-            <option
-              value=""
-              disabled
-            >
-              Select a category
-            </option>
-            <option
-              v-for="cat in categories"
-              :key="cat.id"
-              :value="cat.id"
-            >
-              {{ cat.name }}
-            </option>
-          </select>
+            placeholder="Select a category"
+            @update:model-value="form.category_id = $event"
+          />
         </div>
 
         <div class="add-edit-modal__form-buttons">
@@ -72,9 +58,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import type { HabitCreate, HabitUpdate, HabitCategory } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -94,9 +81,11 @@ const emit = defineEmits<{
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
+const categoryOptions = computed(() => props.categories.map((cat) => ({ value: cat.id, label: cat.name })))
+
 const form = reactive({
   name: '',
-  category_id: '' as string | number,
+  category_id: null as number | null,
 })
 
 watch(
@@ -111,7 +100,7 @@ watch(
 
 function resetForm() {
   form.name = ''
-  form.category_id = ''
+  form.category_id = null
 }
 
 function handleModalClose() {

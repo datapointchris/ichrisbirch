@@ -45,7 +45,7 @@
               :options="boxOptions"
               :data-testid="`orphan-assign-${orphan.id}`"
               placeholder="Assign"
-              @update:model-value="handleAssign(orphan.id, $event as number)"
+              @update:model-value="handleAssign(orphan.id, $event)"
             >
               <template #option="{ option }">
                 <span>{{ option.label }}</span>

@@ -80,7 +80,12 @@ test.describe('Books Page', () => {
     // Edit: change tags, rating, progress
     await page.getByTestId('book-tags-input').fill('updated, tags')
     await page.getByTestId('book-rating-input').fill('4')
-    await page.getByTestId('book-progress-input').selectOption('reading')
+    await page.evaluate(() => {
+      (document.querySelector('[data-testid="book-progress-input"]') as HTMLElement).click()
+    })
+    await page.evaluate(() => {
+      (document.querySelector('[data-testid="book-progress-input-option-reading"]') as HTMLElement).click()
+    })
     await page.getByTestId('book-tags-input').press('Enter')
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 
@@ -97,8 +102,8 @@ test.describe('Books Page', () => {
     const ratingValue = await page.getByTestId('book-rating-input').inputValue()
     expect(ratingValue).toBe('4')
 
-    const progressValue = await page.getByTestId('book-progress-input').inputValue()
-    expect(progressValue).toBe('reading')
+    const progressText = await page.getByTestId('book-progress-input').textContent()
+    expect(progressText).toContain('Reading')
 
     // No-op submit — verify nothing gets corrupted
     await page.getByTestId('book-tags-input').press('Enter')

@@ -21,7 +21,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: 'list',
-  timeout: 30000,
+  timeout: 20000,
+  maxFailures: 3,
 
   use: {
     // Must use app.*.localhost (not vue.*.localhost) to test through

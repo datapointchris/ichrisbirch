@@ -33,34 +33,16 @@
           @click="store.setFilter('all')"
           >Total: {{ store.statusCounts.total }}</span
         >
-        <select
-          class="textbox books__filter-select"
-          :value="store.activeFilter"
-          @change="store.setFilter(($event.target as HTMLSelectElement).value)"
-        >
-          <option value="all">All Progress</option>
-          <option
-            v-for="(label, value) in statusLabels"
-            :key="value"
-            :value="value"
-          >
-            {{ label }}
-          </option>
-        </select>
-        <select
-          class="textbox books__filter-select"
-          :value="store.ownershipFilter"
-          @change="store.setOwnershipFilter(($event.target as HTMLSelectElement).value)"
-        >
-          <option value="all">All Ownership</option>
-          <option
-            v-for="(label, value) in ownershipLabels"
-            :key="value"
-            :value="value"
-          >
-            {{ label }}
-          </option>
-        </select>
+        <NeuSelect
+          :model-value="store.activeFilter"
+          :options="progressFilterOptions"
+          @update:model-value="store.setFilter($event)"
+        />
+        <NeuSelect
+          :model-value="store.ownershipFilter"
+          :options="ownershipFilterOptions"
+          @update:model-value="store.setOwnershipFilter($event)"
+        />
       </div>
     </div>
 
@@ -326,6 +308,7 @@ import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
 import AddEditBookModal from '@/components/books/AddEditBookModal.vue'
 import { formatDate } from '@/composables/formatDate'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const store = useBooksStore()
 const { show: notify } = useNotifications()
@@ -349,6 +332,14 @@ const ownershipLabels: Record<BookOwnership, string> = {
   sold: 'Sold',
   donated: 'Donated',
 }
+const progressFilterOptions = [
+  { value: 'all', label: 'All Progress' },
+  ...Object.entries(statusLabels).map(([value, label]) => ({ value, label })),
+]
+const ownershipFilterOptions = [
+  { value: 'all', label: 'All Ownership' },
+  ...Object.entries(ownershipLabels).map(([value, label]) => ({ value, label })),
+]
 
 onMounted(() => {
   store.fetchAll()

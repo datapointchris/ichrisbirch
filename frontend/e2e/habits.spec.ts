@@ -17,7 +17,8 @@ async function createHabit(page: import('@playwright/test').Page, name: string, 
   await page.getByTestId('habit-add-button').click()
   await expect(page.getByTestId('habit-name-input')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('habit-name-input').fill(name)
-  await page.getByTestId('habit-category-input').selectOption({ label: categoryName })
+  await page.getByTestId('habit-category-input').click()
+  await page.locator('.neu-select__option', { hasText: categoryName }).click()
   await page.getByTestId('habit-name-input').press('Enter')
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }

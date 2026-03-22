@@ -41,21 +41,12 @@
 
         <div class="add-edit-modal__form-item">
           <label for="box-size">Size</label>
-          <select
-            id="box-size"
-            v-model="form.size"
+          <NeuSelect
+            :model-value="form.size"
+            :options="sizeOptions"
             data-testid="box-size-input"
-            class="textbox"
-            required
-          >
-            <option
-              v-for="size in BOX_SIZES"
-              :key="size"
-              :value="size"
-            >
-              {{ size }}
-            </option>
-          </select>
+            @update:model-value="form.size = $event"
+          />
         </div>
 
         <div class="add-edit-modal__form-buttons">
@@ -83,6 +74,9 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
 import { useBoxPackingStore, BOX_SIZES } from '@/stores/boxPacking'
+import NeuSelect from '@/components/NeuSelect.vue'
+
+const sizeOptions = BOX_SIZES.map((s) => ({ value: s, label: s }))
 import { useFieldErrors } from '@/composables/useFieldErrors'
 import type { BoxCreate, BoxUpdate, BoxSize } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'

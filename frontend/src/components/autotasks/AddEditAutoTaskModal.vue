@@ -39,37 +39,21 @@
           </div>
           <div class="add-edit-modal__form-item">
             <label for="autotask-category">Category</label>
-            <select
-              id="autotask-category"
-              v-model="form.category"
+            <NeuSelect
+              :model-value="form.category"
+              :options="categoryOptions"
               data-testid="autotask-category-input"
-              class="textbox"
-            >
-              <option
-                v-for="cat in TASK_CATEGORIES"
-                :key="cat"
-                :value="cat"
-              >
-                {{ cat }}
-              </option>
-            </select>
+              @update:model-value="form.category = $event"
+            />
           </div>
           <div class="add-edit-modal__form-item">
             <label for="autotask-frequency">Frequency</label>
-            <select
-              id="autotask-frequency"
-              v-model="form.frequency"
+            <NeuSelect
+              :model-value="form.frequency"
+              :options="frequencyOptions"
               data-testid="autotask-frequency-input"
-              class="textbox"
-            >
-              <option
-                v-for="freq in AUTOTASK_FREQUENCIES"
-                :key="freq"
-                :value="freq"
-              >
-                {{ freq }}
-              </option>
-            </select>
+              @update:model-value="form.frequency = $event"
+            />
           </div>
         </div>
 
@@ -110,6 +94,10 @@
 import { reactive, ref, watch } from 'vue'
 import type { AutoTask, AutoTaskCreate, AutoTaskUpdate, TaskCategory, AutoTaskFrequency } from '@/api/client'
 import { TASK_CATEGORIES, AUTOTASK_FREQUENCIES } from '@/stores/autotasks'
+import NeuSelect from '@/components/NeuSelect.vue'
+
+const categoryOptions = TASK_CATEGORIES.map((c) => ({ value: c, label: c }))
+const frequencyOptions = AUTOTASK_FREQUENCIES.map((f) => ({ value: f, label: f }))
 import AddEditModal from '@/components/AddEditModal.vue'
 
 const props = defineProps<{

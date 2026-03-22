@@ -14,7 +14,8 @@ async function createBox(
   await expect(page.getByTestId('box-name-input')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('box-name-input').fill(name)
   await page.getByTestId('box-number-input').fill(boxNumber)
-  await page.getByTestId('box-size-input').selectOption(size)
+  await page.getByTestId('box-size-input').click()
+  await page.getByTestId(`box-size-input-option-${size}`).click()
   await page.getByTestId('box-name-input').press('Enter')
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
@@ -79,6 +80,7 @@ test.describe('Box Packing Page', () => {
     const ts = Date.now()
     const name = `E2E EditBox ${ts}`
     await createBox(page, name, String(ts % 100000))
+    await expect(page.getByTestId('add-edit-modal-overlay').first()).not.toBeVisible({ timeout: 3000 })
 
     const boxRow = page.getByTestId('box-item').filter({ hasText: name })
     await expect(boxRow).toBeVisible()
@@ -159,10 +161,8 @@ test.describe('Box Packing Page', () => {
     const itemName = `E2E Item ${ts}`
     await page.getByTestId('item-add-button').click()
     await expect(page.getByTestId('item-name-input')).toBeVisible({ timeout: 5000 })
-    // Find the option that contains our box name and select it by its value
-    const boxOption = page.getByTestId('item-box-input').locator('option', { hasText: boxName })
-    const boxValue = await boxOption.getAttribute('value')
-    await page.getByTestId('item-box-input').selectOption(boxValue!)
+    await page.getByTestId('item-box-input').click()
+    await page.locator('.neu-select__option', { hasText: boxName }).click()
     await page.getByTestId('item-name-input').fill(itemName)
     await page.getByTestId('item-name-input').press('Enter')
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })

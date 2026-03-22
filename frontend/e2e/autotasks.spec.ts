@@ -9,8 +9,10 @@ async function createAutoTask(page: import('@playwright/test').Page, name: strin
   await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('autotask-name-input').fill(name)
   await page.getByTestId('autotask-priority-input').fill(priority)
-  await page.getByTestId('autotask-category-input').selectOption('Chore')
-  await page.getByTestId('autotask-frequency-input').selectOption('Weekly')
+  await page.getByTestId('autotask-category-input').click()
+  await page.getByTestId('autotask-category-input-option-Chore').click()
+  await page.getByTestId('autotask-frequency-input').click()
+  await page.getByTestId('autotask-frequency-input-option-Weekly').click()
   await page.getByTestId('autotask-priority-input').press('Enter')
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }

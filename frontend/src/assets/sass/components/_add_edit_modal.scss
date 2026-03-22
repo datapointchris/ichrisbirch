@@ -47,6 +47,8 @@
   border-bottom: 1px solid var(--clr-gray-700);
   z-index: 10;
   border-radius: var(--space-xl);
+  max-height: 90vh;
+  overflow-y: auto;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;

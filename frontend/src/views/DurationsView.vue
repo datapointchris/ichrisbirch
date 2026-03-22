@@ -39,25 +39,16 @@
     <!-- Controls bar -->
     <div class="duration-controls">
       <div class="duration-controls__filters">
-        <select
-          v-model="filterStatus"
-          class="textbox textbox--small"
-        >
-          <option value="all">All</option>
-          <option value="ongoing">Ongoing</option>
-          <option value="completed">Completed</option>
-        </select>
-        <select
-          v-model="sortBy"
-          class="textbox textbox--small"
-        >
-          <option value="start_asc">Start Date (oldest)</option>
-          <option value="start_desc">Start Date (newest)</option>
-          <option value="end_asc">End Date (oldest)</option>
-          <option value="end_desc">End Date (newest)</option>
-          <option value="longest">Longest</option>
-          <option value="shortest">Shortest</option>
-        </select>
+        <NeuSelect
+          :model-value="filterStatus"
+          :options="filterOptions"
+          @update:model-value="filterStatus = $event"
+        />
+        <NeuSelect
+          :model-value="sortBy"
+          :options="sortOptions"
+          @update:model-value="sortBy = $event"
+        />
       </div>
       <button
         class="button"
@@ -289,6 +280,7 @@ import { useDurationsStore } from '@/stores/durations'
 import { useNotifications } from '@/composables/useNotifications'
 import { computeElapsedTime, computeTimeBetween } from '@/composables/useElapsedTime'
 import { formatDate } from '@/composables/formatDate'
+import NeuSelect from '@/components/NeuSelect.vue'
 import { ApiError } from '@/api/errors'
 import type { Duration, DurationCreate, DurationUpdate } from '@/api/client'
 import DatePicker from '@/components/DatePicker.vue'
@@ -333,7 +325,20 @@ const expandedIds = ref(new Set<number>())
 const compareMode = ref(false)
 const selectedForCompare = ref<Array<{ label: string; date: string }>>([])
 const filterStatus = ref<'all' | 'ongoing' | 'completed'>('all')
+const filterOptions = [
+  { value: 'all' as const, label: 'All' },
+  { value: 'ongoing' as const, label: 'Ongoing' },
+  { value: 'completed' as const, label: 'Completed' },
+]
 const sortBy = ref<'start_asc' | 'start_desc' | 'end_asc' | 'end_desc' | 'longest' | 'shortest'>('start_asc')
+const sortOptions = [
+  { value: 'start_asc' as const, label: 'Start Date (oldest)' },
+  { value: 'start_desc' as const, label: 'Start Date (newest)' },
+  { value: 'end_asc' as const, label: 'End Date (oldest)' },
+  { value: 'end_desc' as const, label: 'End Date (newest)' },
+  { value: 'longest' as const, label: 'Longest' },
+  { value: 'shortest' as const, label: 'Shortest' },
+]
 
 function getDurationDays(d: Duration): number {
   return computeElapsedTime(d.start_date, d.end_date ?? undefined).totalDays
