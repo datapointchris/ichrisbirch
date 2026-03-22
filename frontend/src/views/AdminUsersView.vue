@@ -52,8 +52,8 @@
                 >
               </label>
             </td>
-            <td>{{ formatDate(user.created_on) }}</td>
-            <td>{{ user.last_login ? formatDate(user.last_login) : 'Never' }}</td>
+            <td>{{ formatDate(user.created_on, 'shortDate') }}</td>
+            <td>{{ user.last_login ? formatDate(user.last_login, 'shortDate') : 'Never' }}</td>
           </tr>
         </tbody>
       </table>
@@ -73,6 +73,7 @@ import { onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
+import { formatDate } from '@/composables/formatDate'
 import { ApiError } from '@/api/errors'
 import type { User } from '@/api/client'
 
@@ -86,14 +87,6 @@ onMounted(() => {
 
 function isSelf(userId: number): boolean {
   return authStore.user?.id === userId
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
 }
 
 async function handleToggleAdmin(user: User) {

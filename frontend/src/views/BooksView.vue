@@ -236,7 +236,7 @@
                 class="books__detail-field"
               >
                 <span class="books__detail-field-label">Purchase Date</span>
-                <span class="books__detail-field-value">{{ formatDate(book.purchase_date) }}</span>
+                <span class="books__detail-field-value">{{ formatDate(book.purchase_date, 'shortDate') }}</span>
               </div>
               <div
                 v-if="book.purchase_price"
@@ -250,7 +250,7 @@
                 class="books__detail-field"
               >
                 <span class="books__detail-field-label">Sell Date</span>
-                <span class="books__detail-field-value">{{ formatDate(book.sell_date) }}</span>
+                <span class="books__detail-field-value">{{ formatDate(book.sell_date, 'shortDate') }}</span>
               </div>
               <div
                 v-if="book.sell_price"
@@ -264,7 +264,7 @@
                 class="books__detail-field"
               >
                 <span class="books__detail-field-label">Read Start Date</span>
-                <span class="books__detail-field-value">{{ formatDate(book.read_start_date) }}</span>
+                <span class="books__detail-field-value">{{ formatDate(book.read_start_date, 'shortDate') }}</span>
               </div>
               <div class="books__detail-field">
                 <span class="books__detail-field-label">Ownership</span>
@@ -325,6 +325,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
 import AddEditBookModal from '@/components/books/AddEditBookModal.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useBooksStore()
 const { show: notify } = useNotifications()
@@ -352,15 +353,6 @@ const ownershipLabels: Record<BookOwnership, string> = {
 onMounted(() => {
   store.fetchAll()
 })
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  }).format(date)
-}
 
 function formatPrice(price: number): string {
   return `$${price.toFixed(2)}`

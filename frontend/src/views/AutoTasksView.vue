@@ -50,11 +50,11 @@
             </div>
             <div class="item-details__item">
               <strong>First Run Date</strong>
-              <span class="item-details__item-content">{{ formatDate(autotask.first_run_date) }}</span>
+              <span class="item-details__item-content">{{ formatDate(autotask.first_run_date, 'dateTime') }}</span>
             </div>
             <div class="item-details__item">
               <strong>Last Run Date</strong>
-              <span class="item-details__item-content">{{ formatDate(autotask.last_run_date) }}</span>
+              <span class="item-details__item-content">{{ formatDate(autotask.last_run_date, 'dateTime') }}</span>
             </div>
             <div
               v-if="autotask.notes"
@@ -108,6 +108,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { AutoTask, AutoTaskCreate, AutoTaskUpdate } from '@/api/client'
 import AddEditAutoTaskModal from '@/components/autotasks/AddEditAutoTaskModal.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useAutoTasksStore()
 const { show: notify } = useNotifications()
@@ -118,17 +119,6 @@ const editTarget = ref<AutoTask | null>(null)
 onMounted(() => {
   store.fetchAll()
 })
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date)
-}
 
 function openEdit(autotask: AutoTask) {
   editTarget.value = autotask

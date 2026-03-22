@@ -118,7 +118,7 @@
                 >
               </span>
               <span class="articles__tags">{{ article.tags.join(', ') }}</span>
-              <span>{{ formatDate(article.save_date) }}</span>
+              <span>{{ formatDate(article.save_date, 'shortDate') }}</span>
               <span>{{ article.read_count }}</span>
               <span class="articles__actions">
                 <i
@@ -184,7 +184,7 @@
                 class="articles__detail-field"
               >
                 <span class="articles__detail-label">Last Read</span>
-                <span class="articles__detail-value">{{ formatDate(article.last_read_date) }}</span>
+                <span class="articles__detail-value">{{ formatDate(article.last_read_date, 'shortDate') }}</span>
               </div>
               <div
                 v-if="article.review_days"
@@ -261,6 +261,7 @@ import { ApiError } from '@/api/errors'
 import type { Article, ArticleCreate, ArticleUpdate } from '@/api/client'
 import ArticlesSubnav from '@/components/ArticlesSubnav.vue'
 import AddEditArticleModal from '@/components/articles/AddEditArticleModal.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useArticlesStore()
 const { show: notify } = useNotifications()
@@ -283,15 +284,6 @@ onMounted(() => {
 
 function toggleExpand(id: number) {
   expandedId.value = expandedId.value === id ? null : id
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date)
 }
 
 function openEdit(article: Article) {

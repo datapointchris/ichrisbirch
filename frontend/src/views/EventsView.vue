@@ -23,7 +23,7 @@
         >
           <h2>{{ event.name }}</h2>
           <ul class="event">
-            <li class="event__item">{{ formatEventDate(event.date) }} | {{ event.venue }}</li>
+            <li class="event__item">{{ formatDate(event.date, 'weekdayDateTime') }} | {{ event.venue }}</li>
             <li class="event__item">
               <a
                 v-if="event.url"
@@ -104,6 +104,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditEventModal from '@/components/events/AddEditEventModal.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useEventsStore()
 const { show: notify } = useNotifications()
@@ -114,18 +115,6 @@ const editTarget = ref<Event | null>(null)
 onMounted(() => {
   store.fetchAll()
 })
-
-function formatEventDate(dateString: string): string {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: '2-digit',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date)
-}
 
 function formatCost(cost: number): string {
   return `$${cost.toFixed(2)}`

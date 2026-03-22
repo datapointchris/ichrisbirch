@@ -160,8 +160,8 @@
               <td>
                 <code>{{ key.key_prefix }}...</code>
               </td>
-              <td>{{ formatDate(key.created_at) }}</td>
-              <td>{{ key.last_used_at ? formatDate(key.last_used_at) : 'Never' }}</td>
+              <td>{{ formatDate(key.created_at, 'shortDate') }}</td>
+              <td>{{ key.last_used_at ? formatDate(key.last_used_at, 'shortDate') : 'Never' }}</td>
               <td>
                 <span :class="key.revoked_at ? 'status--revoked' : 'status--active'">
                   {{ key.revoked_at ? 'Revoked' : 'Active' }}
@@ -230,6 +230,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { applyTheme, applyFont, applyAccentHue, fonts, themes } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const auth = useAuthStore()
 const { show: notify } = useNotifications()
@@ -248,16 +249,6 @@ const isColorTheme = computed(() => {
 const availableFonts = [...fonts].sort((a, b) => a.name.localeCompare(b.name))
 const keyName = ref('')
 const newlyCreatedKey = ref<string | null>(null)
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-})
-
-function formatDate(dateStr: string): string {
-  return dateFormatter.format(new Date(dateStr))
-}
 
 async function selectThemeColor(themeId: string) {
   selectedThemeColor.value = themeId

@@ -27,7 +27,7 @@
           >
             {{ daysLeftText(countdown.due_date) }}
           </h2>
-          {{ formatDate(countdown.due_date) }}
+          {{ formatDate(countdown.due_date, 'shortDate') }}
           <br />
           {{ countdown.notes }}
           <br /><br />
@@ -73,7 +73,8 @@
 import { ref, onMounted } from 'vue'
 import { useCountdownsStore } from '@/stores/countdowns'
 import { useNotifications } from '@/composables/useNotifications'
-import { computeDaysLeft, formatDate } from '@/composables/useDaysLeft'
+import { computeDaysLeft } from '@/composables/useDaysLeft'
+import { formatDate } from '@/composables/formatDate'
 import { ApiError } from '@/api/errors'
 import type { Countdown, CountdownCreate, CountdownUpdate } from '@/api/client'
 import AddEditCountdownModal from '@/components/countdowns/AddEditCountdownModal.vue'

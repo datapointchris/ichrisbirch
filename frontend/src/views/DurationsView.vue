@@ -12,7 +12,7 @@
             :key="idx"
             class="duration-compare__chip"
           >
-            {{ item.label }} ({{ formatDate(item.date) }})
+            {{ item.label }} ({{ formatDate(item.date, 'shortDate') }})
             <button
               class="duration-compare__chip-remove"
               @click="removeFromCompare(idx)"
@@ -100,8 +100,8 @@
               {{ elapsedText(duration) }}
             </span>
             <span class="duration-card__dates">
-              {{ formatDate(duration.start_date) }}
-              <template v-if="duration.end_date"> &mdash; {{ formatDate(duration.end_date) }}</template>
+              {{ formatDate(duration.start_date, 'shortDate') }}
+              <template v-if="duration.end_date"> &mdash; {{ formatDate(duration.end_date, 'shortDate') }}</template>
               <template v-else> &mdash; ongoing</template>
             </span>
             <p
@@ -143,7 +143,7 @@
                   :key="note.id"
                   class="duration-notes__item"
                 >
-                  <span class="duration-notes__date">{{ formatDate(note.date) }}</span>
+                  <span class="duration-notes__date">{{ formatDate(note.date, 'shortDate') }}</span>
                   <span class="duration-notes__from-start">{{ timeFromStart(duration.start_date, note.date) }}</span>
                   <span class="duration-notes__content">{{ note.content }}</span>
                   <button
@@ -288,7 +288,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useDurationsStore } from '@/stores/durations'
 import { useNotifications } from '@/composables/useNotifications'
 import { computeElapsedTime, computeTimeBetween } from '@/composables/useElapsedTime'
-import { formatDate } from '@/composables/useDaysLeft'
+import { formatDate } from '@/composables/formatDate'
 import { ApiError } from '@/api/errors'
 import type { Duration, DurationCreate, DurationUpdate } from '@/api/client'
 import DatePicker from '@/components/DatePicker.vue'

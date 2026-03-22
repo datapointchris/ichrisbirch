@@ -60,7 +60,7 @@
                 class="admin-kv"
               >
                 <strong>Next Run Time</strong>
-                <span>{{ formatDateTime(job.next_run_time) }}</span>
+                <span>{{ formatDate(job.next_run_time, 'timestamp') }}</span>
               </div>
             </div>
             <div class="scheduler-job__actions">
@@ -126,7 +126,7 @@
                     v-for="run in filteredHistory(job.id)"
                     :key="run.id"
                   >
-                    <td>{{ formatDateTime(run.started_at) }}</td>
+                    <td>{{ formatDate(run.started_at, 'timestamp') }}</td>
                     <td>{{ run.duration_seconds.toFixed(2) }}s</td>
                     <td>
                       <span :class="run.success ? 'admin-status admin-status--ok' : 'admin-status admin-status--error'">
@@ -163,6 +163,7 @@ import { ref, onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useAdminStore()
 const { show: notify } = useNotifications()
@@ -171,11 +172,6 @@ const expandedJob = ref<string | null>(null)
 onMounted(() => {
   store.fetchSchedulerJobs()
 })
-
-function formatDateTime(iso: string | null): string {
-  if (!iso) return 'N/A'
-  return new Date(iso).toLocaleString()
-}
 
 function filteredHistory(jobId: string) {
   return store.jobHistory.filter((r) => r.job_id === jobId)

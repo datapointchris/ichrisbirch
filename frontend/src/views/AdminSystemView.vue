@@ -63,7 +63,7 @@
                 </span>
               </td>
               <td class="admin-table__mono">{{ container.image }}</td>
-              <td>{{ formatDateTime(container.started_at) }}</td>
+              <td>{{ formatDate(container.started_at, 'timestamp') }}</td>
             </tr>
           </tbody>
         </table>
@@ -192,7 +192,7 @@
               v-for="(err, idx) in store.recentErrors"
               :key="idx"
             >
-              <td>{{ formatDateTime(err.timestamp) }}</td>
+              <td>{{ formatDate(err.timestamp, 'timestamp') }}</td>
               <td>{{ err.method }}</td>
               <td class="admin-table__mono">{{ err.path }}</td>
               <td>
@@ -228,6 +228,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAdminStore } from '@/stores/admin'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useAdminStore()
 
@@ -254,11 +255,6 @@ watch(autoRefresh, (enabled) => {
 onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval)
 })
-
-function formatDateTime(iso: string | null): string {
-  if (!iso) return 'N/A'
-  return new Date(iso).toLocaleString()
-}
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400)

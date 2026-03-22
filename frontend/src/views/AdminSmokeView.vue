@@ -47,7 +47,7 @@
           </div>
           <div class="admin-kv">
             <strong>Run At</strong>
-            <span>{{ formatDateTime(store.smokeReport.run_at) }}</span>
+            <span>{{ formatDate(store.smokeReport.run_at, 'timestamp') }}</span>
           </div>
         </div>
       </div>
@@ -111,10 +111,7 @@
 
 <script setup lang="ts">
 import { useAdminStore } from '@/stores/admin'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useAdminStore()
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString()
-}
 </script>

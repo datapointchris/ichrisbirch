@@ -6,7 +6,7 @@
     <h3 class="task--block-layout__title">{{ task.name }}</h3>
     <div class="task--block-layout__priority">Priority: {{ task.priority }}</div>
     <div class="task--block-layout__category">Category: {{ task.category }}</div>
-    <div class="task--block-layout__add-date">Add Date: {{ prettyDate(task.add_date) }}</div>
+    <div class="task--block-layout__add-date">Add Date: {{ formatDate(task.add_date, 'shortDate') }}</div>
     <div
       v-if="task.notes"
       class="task--block-layout__notes"
@@ -48,7 +48,8 @@
 
 <script setup lang="ts">
 import type { Task } from '@/api/client'
-import { taskStateClass, prettyDate } from './taskUtils'
+import { taskStateClass } from './taskUtils'
+import { formatDate } from '@/composables/formatDate'
 import { computed } from 'vue'
 
 const props = defineProps<{ task: Task }>()

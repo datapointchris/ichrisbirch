@@ -48,8 +48,8 @@
           >
             <span class="money-wasted__item-name">{{ entry.item }}</span>
             <span>{{ formatCurrency(entry.amount) }}</span>
-            <span>{{ entry.date_purchased ? formatDate(entry.date_purchased) : '' }}</span>
-            <span>{{ formatDate(entry.date_wasted) }}</span>
+            <span>{{ entry.date_purchased ? formatDate(entry.date_purchased, 'shortDate') : '' }}</span>
+            <span>{{ formatDate(entry.date_wasted, 'shortDate') }}</span>
             <span
               class="money-wasted__notes"
               :title="entry.notes || ''"
@@ -93,6 +93,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { MoneyWasted, MoneyWastedCreate, MoneyWastedUpdate } from '@/api/client'
 import AddEditMoneyWastedModal from '@/components/money-wasted/AddEditMoneyWastedModal.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useMoneyWastedStore()
 const { show: notify } = useNotifications()
@@ -106,15 +107,6 @@ onMounted(() => {
 
 function formatCurrency(value: number): string {
   return `$${value.toFixed(2)}`
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date)
 }
 
 function openEdit(entry: MoneyWasted) {

@@ -7,12 +7,6 @@ export function taskStateClass(priority: number): string {
   return ''
 }
 
-export function prettyDate(dateStr: string | undefined): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: '2-digit' })
-}
-
 export function daysToComplete(task: CompletedTask): number {
   const add = new Date(task.add_date)
   const complete = new Date(task.complete_date)

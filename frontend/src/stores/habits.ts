@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
+import { formatDate } from '@/composables/formatDate'
 import type {
   Habit,
   HabitCreate,
@@ -143,8 +144,7 @@ export const useHabitsStore = defineStore('habits', () => {
     const labels: string[] = []
     const values: number[] = []
     for (const [dateStr, count] of counts) {
-      const d = new Date(dateStr + 'T00:00:00')
-      labels.push(d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))
+      labels.push(formatDate(dateStr, 'weekdayDate'))
       values.push(count)
     }
 

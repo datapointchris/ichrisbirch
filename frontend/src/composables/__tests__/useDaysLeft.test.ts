@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { computeDaysLeft, formatDate } from '../useDaysLeft'
+import { computeDaysLeft } from '../useDaysLeft'
 
 // Use local-time Date constructors to avoid UTC parsing offset issues
 function localDate(year: number, month: number, day: number): Date {
@@ -87,17 +87,5 @@ describe('computeDaysLeft', () => {
     vi.setSystemTime(localDate(2026, 6, 1))
     const result = computeDaysLeft('2026-07-15')
     expect(result.urgency).toBe('none')
-  })
-})
-
-describe('formatDate', () => {
-  it('formats date as "Month Day, Year"', () => {
-    const result = formatDate('2026-12-25')
-    expect(result).toBe('December 25, 2026')
-  })
-
-  it('formats single-digit day', () => {
-    const result = formatDate('2026-03-05')
-    expect(result).toBe('March 5, 2026')
   })
 })

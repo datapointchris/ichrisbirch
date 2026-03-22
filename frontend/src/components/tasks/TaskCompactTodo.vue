@@ -6,7 +6,7 @@
     <h3 class="task--compact-layout__title">{{ task.name }}</h3>
     <span>Priority: {{ task.priority }}</span>
     <span>Category: {{ task.category }}</span>
-    <span>Add Date: {{ prettyDate(task.add_date) }}</span>
+    <span>Add Date: {{ formatDate(task.add_date, 'shortDate') }}</span>
     <span>
       <button
         data-testid="task-complete-button"
@@ -51,7 +51,8 @@
 
 <script setup lang="ts">
 import type { Task } from '@/api/client'
-import { taskStateClass, prettyDate } from './taskUtils'
+import { taskStateClass } from './taskUtils'
+import { formatDate } from '@/composables/formatDate'
 import { computed } from 'vue'
 
 const props = defineProps<{ task: Task }>()

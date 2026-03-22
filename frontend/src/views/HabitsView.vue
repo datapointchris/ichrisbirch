@@ -83,18 +83,12 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import HabitsSubnav from '@/components/HabitsSubnav.vue'
 import type { Habit } from '@/api/client'
+import { formatDate } from '@/composables/formatDate'
 
 const store = useHabitsStore()
 const { show: notify } = useNotifications()
 
-const longDate = computed(() => {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-})
+const longDate = computed(() => formatDate(new Date().toISOString(), 'weekdayDate'))
 
 onMounted(() => {
   store.fetchDailyData()

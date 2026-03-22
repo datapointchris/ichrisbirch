@@ -26,9 +26,9 @@
           <dt>Role</dt>
           <dd>{{ auth.user.is_admin ? 'Admin' : 'User' }}</dd>
           <dt>Member Since</dt>
-          <dd>{{ formatDate(auth.user.created_on) }}</dd>
+          <dd>{{ formatDate(auth.user.created_on, 'shortDate') }}</dd>
           <dt>Last Login</dt>
-          <dd>{{ auth.user.last_login ? formatDate(auth.user.last_login) : 'Never' }}</dd>
+          <dd>{{ auth.user.last_login ? formatDate(auth.user.last_login, 'shortDate') : 'Never' }}</dd>
         </dl>
       </div>
 
@@ -54,18 +54,9 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
+import { formatDate } from '@/composables/formatDate'
 
 const auth = useAuthStore()
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-})
-
-function formatDate(dateStr: string): string {
-  return dateFormatter.format(new Date(dateStr))
-}
 
 onMounted(() => {
   if (!auth.user) {
