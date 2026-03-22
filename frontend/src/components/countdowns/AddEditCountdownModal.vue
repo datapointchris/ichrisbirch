@@ -38,14 +38,13 @@
 
         <div class="add-edit-modal__form-item">
           <label for="countdown-notes">Notes</label>
-          <input
+          <textarea
             id="countdown-notes"
             v-model="form.notes"
             data-testid="countdown-notes-input"
-            type="text"
-            size="40"
+            rows="2"
             class="textbox"
-          />
+          ></textarea>
         </div>
 
         <div class="add-edit-modal__form-buttons">
