@@ -1,0 +1,14 @@
+@mixin list-item {
+  align-items: center;
+  padding: var(--space-xs) var(--space-s);
+  border-bottom: 1px solid var(--clr-gray-800);
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--clr-gray-900);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}

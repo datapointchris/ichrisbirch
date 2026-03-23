@@ -1,3 +1,5 @@
+@use '../components/list_item';
+
 // Controls bar — filter/sort + compare button
 .duration-controls {
   display: flex;
@@ -163,13 +165,9 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-xs);
-  padding: var(--space-xs) 0;
   font-size: var(--fs-300);
-  border-bottom: 1px solid var(--clr-gray-800);
-
-  &:last-child {
-    border-bottom: none;
-  }
+  @include list_item.list-item;
+  padding: var(--space-xs) 0;
 
   &:hover .duration-notes__delete {
     opacity: 1;

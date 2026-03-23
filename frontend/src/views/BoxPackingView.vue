@@ -228,45 +228,47 @@
             >
               No items in this box.
             </div>
-            <div
-              v-for="item in sortItems(box.items)"
-              :key="item.id"
-              data-testid="box-content-item"
-              class="box-contents__item"
-            >
-              <span class="box-contents__item-name">{{ item.name }}</span>
-              <span
-                v-if="item.essential"
-                class="packed-box-item__details--essential"
-                >Essential</span
+            <div class="box-contents__items">
+              <div
+                v-for="item in sortItems(box.items)"
+                :key="item.id"
+                data-testid="box-content-item"
+                class="box-contents__item"
               >
-              <span
-                v-if="item.warm"
-                class="packed-box-item__details--warm"
-                >Warm</span
-              >
-              <span
-                v-if="item.liquid"
-                class="packed-box-item__details--liquid"
-                >Liquid</span
-              >
-              <span class="box-contents__item-actions">
-                <button
-                  data-testid="item-orphan-button"
-                  class="button--hidden"
-                  title="Remove from box"
-                  @click="handleOrphanItem(item.id, item.name, box.id)"
+                <span class="box-contents__item-name">{{ item.name }}</span>
+                <span
+                  v-if="item.essential"
+                  class="packed-box-item__details--essential"
+                  >Essential</span
                 >
-                  <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
-                </button>
-                <button
-                  data-testid="item-delete-button"
-                  class="button--hidden"
-                  @click="handleDeleteItem(item.id, item.name, box.id)"
+                <span
+                  v-if="item.warm"
+                  class="packed-box-item__details--warm"
+                  >Warm</span
                 >
-                  <i class="button-icon danger fa-regular fa-trash-can"></i>
-                </button>
-              </span>
+                <span
+                  v-if="item.liquid"
+                  class="packed-box-item__details--liquid"
+                  >Liquid</span
+                >
+                <span class="box-contents__item-actions">
+                  <button
+                    data-testid="item-orphan-button"
+                    class="button--hidden"
+                    title="Remove from box"
+                    @click="handleOrphanItem(item.id, item.name, box.id)"
+                  >
+                    <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
+                  </button>
+                  <button
+                    data-testid="item-delete-button"
+                    class="button--hidden"
+                    @click="handleDeleteItem(item.id, item.name, box.id)"
+                  >
+                    <i class="button-icon danger fa-regular fa-trash-can"></i>
+                  </button>
+                </span>
+              </div>
             </div>
             <div class="box-contents__add">
               <button
@@ -345,45 +347,47 @@
             >
               No items in this box.
             </div>
-            <div
-              v-for="item in sortItems(box.items)"
-              :key="item.id"
-              data-testid="box-content-item"
-              class="box-contents__item"
-            >
-              <span class="box-contents__item-name">{{ item.name }}</span>
-              <span
-                v-if="item.essential"
-                class="packed-box-item__details--essential"
-                >Essential</span
+            <div class="box-contents__items">
+              <div
+                v-for="item in sortItems(box.items)"
+                :key="item.id"
+                data-testid="box-content-item"
+                class="box-contents__item"
               >
-              <span
-                v-if="item.warm"
-                class="packed-box-item__details--warm"
-                >Warm</span
-              >
-              <span
-                v-if="item.liquid"
-                class="packed-box-item__details--liquid"
-                >Liquid</span
-              >
-              <span class="box-contents__item-actions">
-                <button
-                  data-testid="item-orphan-button"
-                  class="button--hidden"
-                  title="Remove from box"
-                  @click="handleOrphanItem(item.id, item.name, box.id)"
+                <span class="box-contents__item-name">{{ item.name }}</span>
+                <span
+                  v-if="item.essential"
+                  class="packed-box-item__details--essential"
+                  >Essential</span
                 >
-                  <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
-                </button>
-                <button
-                  data-testid="item-delete-button"
-                  class="button--hidden"
-                  @click="handleDeleteItem(item.id, item.name, box.id)"
+                <span
+                  v-if="item.warm"
+                  class="packed-box-item__details--warm"
+                  >Warm</span
                 >
-                  <i class="button-icon danger fa-regular fa-trash-can"></i>
-                </button>
-              </span>
+                <span
+                  v-if="item.liquid"
+                  class="packed-box-item__details--liquid"
+                  >Liquid</span
+                >
+                <span class="box-contents__item-actions">
+                  <button
+                    data-testid="item-orphan-button"
+                    class="button--hidden"
+                    title="Remove from box"
+                    @click="handleOrphanItem(item.id, item.name, box.id)"
+                  >
+                    <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
+                  </button>
+                  <button
+                    data-testid="item-delete-button"
+                    class="button--hidden"
+                    @click="handleDeleteItem(item.id, item.name, box.id)"
+                  >
+                    <i class="button-icon danger fa-regular fa-trash-can"></i>
+                  </button>
+                </span>
+              </div>
             </div>
             <div class="box-contents__add">
               <button
@@ -634,91 +638,3 @@ async function handleDeleteOrphan(id: number, name: string) {
   }
 }
 </script>
-
-<style scoped>
-/* Controls bar rows */
-.box-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-s);
-  margin: var(--space-xs) auto;
-  padding: var(--space-xs) 0;
-}
-
-.box-controls__search {
-  flex: 1;
-  max-width: 400px;
-}
-
-.box-controls__label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--fs-400);
-  color: var(--clr-gray-400);
-  white-space: nowrap;
-}
-
-/* Box header in block view */
-.packed-box__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.packed-box__actions {
-  display: flex;
-  gap: var(--space-xs);
-  align-items: center;
-}
-
-/* Expanded box contents — inset styling to look "inside" the box */
-.box-contents {
-  margin-top: var(--space-s);
-  margin-inline: var(--space-m);
-  padding: var(--space-s);
-  border-radius: var(--button-border-radius);
-  background-color: color-mix(in oklch, var(--clr-primary) 85%, black);
-  box-shadow: var(--floating-box-pressed);
-}
-
-.box-contents--compact {
-  margin-inline: var(--space-l);
-  margin-bottom: var(--space-xs);
-}
-
-.box-contents__empty {
-  color: var(--clr-gray-500);
-  font-style: italic;
-  padding: var(--space-xs) 0;
-}
-
-.box-contents__item {
-  display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr auto;
-  align-items: center;
-  gap: var(--space-s);
-  padding: var(--space-xs) var(--space-s);
-  border-bottom: 1px solid var(--clr-gray-800);
-}
-
-.box-contents__item:last-of-type {
-  border-bottom: none;
-}
-
-.box-contents__item-name {
-  font-weight: bold;
-}
-
-.box-contents__item-actions {
-  display: flex;
-  gap: var(--space-xs);
-  justify-content: flex-end;
-}
-
-.box-contents__add {
-  margin-top: var(--space-s);
-  text-align: center;
-}
-</style>

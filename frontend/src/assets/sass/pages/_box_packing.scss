@@ -1,4 +1,5 @@
 @use '../components/card_row';
+@use '../components/list_item';
 @use '../components/search_results';
 
 @mixin details-styles {
@@ -80,6 +81,86 @@
   &__title {
     font-size: var(--fs-700);
     padding: 0 var(--space-m);
+  }
+}
+
+// Controls bar
+.box-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-s);
+  margin: var(--space-xs) auto;
+  padding: var(--space-xs) 0;
+
+  &__search {
+    flex: 1;
+    max-width: 400px;
+  }
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--fs-400);
+    color: var(--clr-gray-400);
+    white-space: nowrap;
+  }
+}
+
+// Box header in block view
+.packed-box__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.packed-box__actions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+// Box contents — inset styling to look "inside" the box
+.box-contents {
+  margin-top: var(--space-s);
+  margin-inline: var(--space-m);
+  padding: var(--space-s);
+  border-radius: var(--button-border-radius);
+  background-color: color-mix(in oklch, var(--clr-primary) 85%, black);
+  box-shadow: var(--floating-box-pressed);
+
+  &--compact {
+    margin-inline: var(--space-l);
+    margin-bottom: var(--space-xs);
+  }
+
+  &__empty {
+    color: var(--clr-gray-500);
+    font-style: italic;
+    padding: var(--space-xs) 0;
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr 1fr auto;
+    gap: var(--space-s);
+    @include list_item.list-item;
+  }
+
+  &__item-name {
+    font-weight: bold;
+  }
+
+  &__item-actions {
+    display: flex;
+    gap: var(--space-xs);
+    justify-content: flex-end;
+  }
+
+  &__add {
+    margin-top: var(--space-s);
+    text-align: center;
   }
 }
 
