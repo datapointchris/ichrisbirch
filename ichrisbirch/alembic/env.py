@@ -7,7 +7,6 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.database.base import Base
 
 # Need the models imported for Base to find the tables
-from ichrisbirch.models import Apartment  # noqa
 from ichrisbirch.models import Article  # noqa
 from ichrisbirch.models import ArticleFailedImport  # noqa
 from ichrisbirch.models import AutoTask  # noqa
@@ -29,11 +28,9 @@ from ichrisbirch.models import Event  # noqa
 from ichrisbirch.models import Habit  # noqa
 from ichrisbirch.models import HabitCategory  # noqa
 from ichrisbirch.models import HabitCompleted  # noqa
-from ichrisbirch.models import JournalEntry  # noqa
 from ichrisbirch.models import JWTRefreshToken  # noqa
 from ichrisbirch.models import MoneyWasted  # noqa
 from ichrisbirch.models import PersonalAPIKey  # noqa
-from ichrisbirch.models import PortfolioProject  # noqa
 from ichrisbirch.models import SchedulerJobRun  # noqa
 from ichrisbirch.models import Task  # noqa
 from ichrisbirch.models import TaskCategory  # noqa

@@ -52,9 +52,6 @@ from ichrisbirch.schemas.habitcategory import HabitCategoryCreate
 from ichrisbirch.schemas.habitcategory import HabitCategoryUpdate
 from ichrisbirch.schemas.habitcompleted import HabitCompleted
 from ichrisbirch.schemas.habitcompleted import HabitCompletedCreate
-from ichrisbirch.schemas.journal import JournalEntry
-from ichrisbirch.schemas.journal import JournalEntryCreate
-from ichrisbirch.schemas.journal import JournalEntryUpdate
 from ichrisbirch.schemas.money_wasted import MoneyWasted
 from ichrisbirch.schemas.money_wasted import MoneyWastedCreate
 from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
@@ -128,9 +125,6 @@ __all__ = [
     'HabitCategory',
     'HabitCategoryCreate',
     'HabitCategoryUpdate',
-    'JournalEntry',
-    'JournalEntryCreate',
-    'JournalEntryUpdate',
     'MoneyWasted',
     'MoneyWastedCreate',
     'MoneyWastedUpdate',
