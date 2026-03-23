@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -7,7 +6,6 @@ import httpx
 from ichrisbirch import util as utils
 
 from .auth import CredentialProvider
-from .auth import FlaskSessionProvider
 from .auth import InternalServiceProvider
 from .auth import _get_settings_with_fallback
 
@@ -27,19 +25,9 @@ class APISession:
     ):
         self._settings = _get_settings_with_fallback(settings)
         self.base_url = base_url or self._settings.api_url
-        self.credential_provider = credential_provider or self._default_provider()
+        self.credential_provider = credential_provider or InternalServiceProvider(settings=self._settings)
         self.default_headers = default_headers or {}
         self.client = httpx.Client()
-
-    def _default_provider(self) -> CredentialProvider:
-        """Determine default credential provider based on context."""
-        with suppress(ImportError):
-            from flask import has_request_context
-
-            if has_request_context():
-                return FlaskSessionProvider(settings=self._settings)
-
-        return InternalServiceProvider(settings=self._settings)
 
     def request(self, method: str, endpoint: str, **kwargs) -> Any:
         """Make authenticated request."""

@@ -12,7 +12,6 @@ Error Handling:
     - APIParseError: Raised when response cannot be parsed
 """
 
-from contextlib import suppress
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
@@ -122,14 +121,6 @@ class LoggingResourceClient[ModelType]:
         headers = self.credential_provider.get_credentials()
         if additional_headers := kwargs.pop('headers', None):
             headers.update(additional_headers)
-
-        # Propagate request ID for cross-service tracing
-        with suppress(ImportError):
-            from flask import g
-            from flask import has_request_context
-
-            if has_request_context() and hasattr(g, 'request_id'):
-                headers['X-Request-ID'] = g.request_id
 
         # Log request details
         self._log_request_details(method, url, headers, **kwargs)
@@ -374,16 +365,4 @@ def logging_user_client(
     resolved_settings = _get_settings_with_fallback(settings)
     actual_app_id = app_id or resolved_settings.app_id
     provider = UserTokenProvider(user_id, actual_app_id, resolved_settings.auth.internal_service_key)
-    return LoggingAPIClient(provider, base_url, settings=resolved_settings)
-
-
-def logging_flask_session_client(
-    base_url: str | None = None,
-    settings: 'Settings | None' = None,
-) -> LoggingAPIClient:
-    """Create a Flask session client with extensive logging."""
-    from .auth import FlaskSessionProvider
-
-    resolved_settings = _get_settings_with_fallback(settings)
-    provider = FlaskSessionProvider(settings=resolved_settings)
     return LoggingAPIClient(provider, base_url, settings=resolved_settings)

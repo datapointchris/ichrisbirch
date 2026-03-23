@@ -178,6 +178,8 @@ ignore_missing_imports = true
 check_untyped_defs = false
 plugins = ["pydantic.mypy"]
 warn_return_any = false
+# Flask app is dead code being removed — exclude from type checking
+exclude = ["ichrisbirch/app/"]
 
 
 [tool.pyright]

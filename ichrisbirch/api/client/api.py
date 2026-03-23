@@ -5,7 +5,6 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 from .auth import CredentialProvider
-from .auth import FlaskSessionProvider
 from .auth import InternalServiceProvider
 from .auth import UserTokenProvider
 from .auth import _get_settings_with_fallback
@@ -70,13 +69,6 @@ def user_client(
     return APIClient(credential_provider=provider)
 
 
-def flask_session_client(settings: 'Settings | None' = None) -> APIClient:
-    """Create client using Flask session for authentication."""
-    resolved_settings = _get_settings_with_fallback(settings)
-    provider = FlaskSessionProvider(settings=resolved_settings)
-    return APIClient(credential_provider=provider)
-
-
 def default_client() -> APIClient:
-    """Create client with default authentication (context-aware)."""
-    return APIClient()  # Uses _default_provider logic
+    """Create client with default authentication (internal service)."""
+    return APIClient()

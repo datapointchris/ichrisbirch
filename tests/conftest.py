@@ -20,15 +20,12 @@ import filelock
 import pytest
 from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
-from flask_login import FlaskLoginClient
-from flask_login import login_user
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.main import create_api
-from ichrisbirch.app.main import create_app
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.initialization import insert_default_users
 from ichrisbirch.database.initialization import insert_lookup_table_data
@@ -320,86 +317,6 @@ def test_api_logged_in():
 def test_api_logged_in_admin():
     """Create test API client with logged in admin."""
     with create_test_api_client(login=True, admin=True) as client:
-        yield client
-
-
-class FlaskClientAPIHeaders(FlaskLoginClient):
-    """A Flask test client that allows for setting API headers."""
-
-    def __init__(self, *args, **kwargs):
-        self.api_headers = kwargs.pop('api_headers', {})
-        super().__init__(*args, **kwargs)
-
-    def open(self, *args, **kwargs):
-        headers = kwargs.pop('headers', {})
-        headers.update(self.api_headers)
-        kwargs['headers'] = headers
-        return super().open(*args, **kwargs)
-
-
-def create_test_app_base():
-    """This is used for the test client and also for tests/wsgi_app.py for Gunicorn."""
-    app = create_app(settings=test_settings)
-    app.config.update({'TESTING': True, 'WTF_CSRF_ENABLED': False, 'SESSION_PROTECTION': None})
-    return app
-
-
-def create_test_app_client(login=False, admin=False):
-    """Create a Flask test client with optional user login."""
-    app = create_test_app_base()
-    if login:
-        app.test_client_class = FlaskClientAPIHeaders
-        email = 'testloginadmin@testadmin.com' if admin else 'testloginregular@testuser.com'
-        user = get_test_user(email)
-        api_headers = {
-            'X-Application-ID': test_settings.app_id,
-            'X-User-ID': user.get_id(),
-            'X-Service-Key': test_settings.auth.internal_service_key,
-        }
-        with app.test_request_context():
-            login_user(user)
-            client = app.test_client(user=user, api_headers=api_headers)
-            logger.info(f'Logged in {"admin" if admin else "user"} to test app: {user.email}: {user.get_id()}')
-            return client
-    return app.test_client()
-
-
-@pytest.fixture(scope='module')
-def test_app():
-    """Create test Flask app client."""
-    with create_test_app_client() as client:
-        yield client
-
-
-@pytest.fixture(scope='module')
-def test_app_logged_in():
-    """Create test Flask app client with logged in user."""
-    with create_test_app_client(login=True) as client:
-        yield client
-
-
-@pytest.fixture(scope='module')
-def test_app_logged_in_admin():
-    """Create test Flask app client with logged in admin."""
-    with create_test_app_client(login=True, admin=True) as client:
-        yield client
-
-
-@pytest.fixture(scope='function')
-def test_app_function():
-    with create_test_app_client() as client:
-        yield client
-
-
-@pytest.fixture(scope='function')
-def test_app_logged_in_function():
-    with create_test_app_client(login=True) as client:
-        yield client
-
-
-@pytest.fixture(scope='function')
-def test_app_logged_in_admin_function():
-    with create_test_app_client(login=True, admin=True) as client:
         yield client
 
 

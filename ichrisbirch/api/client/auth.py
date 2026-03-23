@@ -1,11 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
-from contextlib import suppress
 from typing import TYPE_CHECKING
-
-from flask import current_app
-from flask import has_request_context
-from flask import session
 
 from ichrisbirch.config import get_settings
 
@@ -14,12 +9,9 @@ if TYPE_CHECKING:
 
 
 def _get_settings_with_fallback(explicit_settings: 'Settings | None' = None) -> 'Settings':
-    """Get settings with priority: explicit > Flask context > global."""
+    """Get settings with priority: explicit > global."""
     if explicit_settings:
         return explicit_settings
-    with suppress(RuntimeError):
-        if current_app and 'SETTINGS' in current_app.config:
-            return current_app.config['SETTINGS']
     return get_settings()
 
 
@@ -87,34 +79,4 @@ class UserTokenProvider(CredentialProvider):
 
     def _refresh_token(self) -> None:
         # Refresh token logic
-        pass
-
-
-class FlaskSessionProvider(CredentialProvider):
-    """Credentials from Flask session or Authelia-authenticated current_user."""
-
-    def __init__(self, settings: 'Settings | None' = None):
-        self.has_context = has_request_context()
-        self._settings = _get_settings_with_fallback(settings)
-
-    def get_credentials(self) -> dict[str, str]:
-        if not self.has_context:
-            return {}
-
-        user_id = session.get('_user_id', '')
-        # Fallback: when Authelia authenticates the user via request_loader,
-        # there's no Flask session cookie — get user ID from current_user instead.
-        if not user_id:
-            from flask_login import current_user
-
-            if current_user.is_authenticated:
-                user_id = current_user.get_id()
-        return {
-            'X-User-ID': user_id,
-            'X-Application-ID': self._settings.app_id,
-            'X-Service-Key': self._settings.auth.internal_service_key,
-        }
-
-    def refresh_if_needed(self) -> None:
-        # Flask sessions don't need refresh
         pass
