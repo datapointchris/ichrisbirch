@@ -289,29 +289,29 @@
           data-testid="box-item"
         >
           <div
-            class="packed-box-compact"
+            class="box-listing__row"
             @click="toggleExpand(box.id)"
           >
-            <h3 class="packed-box-compact__title">
-              <span class="packed-box-compact__link"> Box {{ box.number }}: {{ box.name }} </span>
+            <h3 class="box-listing__title">
+              <span class="box-listing__link"> Box {{ box.number }}: {{ box.name }} </span>
             </h3>
             <span>Size: {{ box.size }}</span>
             <span>{{ box.items.length }} Item{{ box.items.length !== 1 ? 's' : '' }}</span>
             <span
               v-if="box.essential"
-              class="packed-box-compact__details--essential"
+              class="box-listing__details--essential"
               >Essential</span
             >
             <span v-else>&nbsp;</span>
             <span
               v-if="box.warm"
-              class="packed-box-compact__details--warm"
+              class="box-listing__details--warm"
               >Warm</span
             >
             <span v-else>&nbsp;</span>
             <span
               v-if="box.liquid"
-              class="packed-box-compact__details--liquid"
+              class="box-listing__details--liquid"
               >Liquid</span
             >
             <span v-else>&nbsp;</span>

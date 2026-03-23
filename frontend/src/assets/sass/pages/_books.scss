@@ -1,3 +1,5 @@
+@use '../components/card_row';
+
 :root {
   --book-read-box-shadow: inset 0 0 8px 2px var(--clr-success);
   --book-reading-box-shadow: inset 0 0 8px 2px var(--clr-accent--blue);
@@ -29,6 +31,8 @@
 }
 
 .books {
+  @include card_row.card-row;
+
   $title: 5fr;
   $author: 4fr;
   $priority: 1fr;
@@ -36,10 +40,11 @@
   $ownership: 2fr;
   $rating: 1fr;
   $actions: 2fr;
+  $columns: $title $author $priority $progress $ownership $rating $actions;
 
   &__header {
     display: grid;
-    grid-template-columns: $title $author $priority $progress $ownership $rating $actions;
+    grid-template-columns: $columns;
     gap: 0 var(--space-xs);
     align-items: center;
     padding-block: var(--space-xs);
@@ -49,7 +54,6 @@
     border-bottom: 3px solid var(--clr-accent);
     margin-bottom: var(--space-xs);
 
-    // Center-align priority, progress, ownership, rating, and actions
     span:nth-child(3),
     span:nth-child(4),
     span:nth-child(5),
@@ -74,39 +78,21 @@
   }
 
   &__row {
-    display: grid;
-    grid-template-columns: $title $author $priority $progress $ownership $rating $actions;
+    grid-template-columns: $columns;
     gap: 0 var(--space-xs);
-    align-items: center;
-    margin-bottom: var(--space-xs);
-    padding-block: var(--space-xs);
-    padding-inline: var(--space-m);
-    background-color: var(--clr-primary);
-    border-radius: var(--button-border-radius);
     font-size: var(--fs-300);
-    text-align: left;
-    transition: transform 0.3s ease-in-out;
 
-    // All cells: single line, no wrapping (except actions)
     > span:not(.books__actions) {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    // Center-align priority, progress, ownership, and rating columns
     > span:nth-child(3),
     > span:nth-child(4),
     > span:nth-child(5),
     > span:nth-child(6) {
       text-align: center;
-    }
-
-    &:hover {
-      $movement: calc(var(--space-3xs) * -0.4);
-      box-shadow: var(--bubble-box);
-      transform: scale(1.01) translateY($movement);
-      transition: transform 0.3s ease-in-out;
     }
 
     &.book--read {
@@ -136,34 +122,11 @@
   }
 
   &__title {
-    margin: 0;
     font-size: var(--fs-400);
-    font-weight: var(--fs-400);
-    color: var(--clr-accent-light);
-    text-shadow: var(--deep-3d-text-shadow);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    gap: var(--space-xs);
   }
 
   &__delete-form {
     display: inline;
-  }
-
-  &__chevron {
-    cursor: pointer;
-    transition: transform 0.2s ease;
-
-    &--open {
-      transform: rotate(180deg);
-    }
   }
 
   &__status-badge {

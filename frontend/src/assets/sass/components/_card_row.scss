@@ -1,0 +1,52 @@
+@mixin card-row {
+  &__row {
+    display: grid;
+    margin-bottom: var(--space-xs);
+    padding-block: var(--space-xs);
+    padding-inline: var(--space-m);
+    background-color: var(--clr-primary);
+    border-radius: var(--button-border-radius);
+    box-shadow: var(--floating-box);
+    align-items: center;
+    text-align: left;
+    transition: transform 0.3s ease-in-out;
+
+    &:hover {
+      $movement: calc(var(--space-3xs) * -0.4);
+      box-shadow: var(--bubble-box);
+      transform: scale(1.01) translateY($movement);
+    }
+  }
+
+  &__title {
+    margin: 0;
+    font-weight: var(--fs-400);
+    color: var(--clr-accent-light);
+    text-shadow: var(--deep-3d-text-shadow);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__link {
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: var(--space-xs);
+  }
+
+  &__chevron {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+}
