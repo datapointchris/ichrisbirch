@@ -77,38 +77,6 @@ class FastAPISettings:
         ]
 
 
-class FlaskSettings:
-    def __init__(self) -> None:
-        self.host: str = os.environ['FLASK_HOST']
-        self.port: int = int(os.environ['FLASK_PORT'])
-        self.SECRET_KEY: str = os.environ['FLASK_SECRET_KEY']  # MUST be capitalized
-        self.TESTING: bool = bool(os.environ['FLASK_TESTING'])
-        self.DEBUG: bool = bool(os.environ['FLASK_DEBUG'])
-        # For flask-login, use the session to store the `next` value instead of passing as url parameters
-        self.USE_SESSION_FOR_NEXT: bool = True
-        self.app_id: str = os.environ['FLASK_APP_ID']
-        # CSRF token expires after 1 hour (balances security with usability for long sessions)
-        self.WTF_CSRF_TIME_LIMIT: int = 3600
-        # Session cookie security settings
-        # Production always uses secure cookies (Cloudflare handles HTTPS externally)
-        # Dev/testing use secure cookies when protocol is HTTPS
-        env = os.environ.get('ENVIRONMENT', 'development')
-        self.SESSION_COOKIE_SECURE: bool = env == 'production' or os.environ.get('PROTOCOL', 'https') == 'https'
-        self.SESSION_COOKIE_HTTPONLY: bool = True
-        self.SESSION_COOKIE_SAMESITE: str = 'Lax'
-
-
-class FlaskLoginSettings:
-    def __init__(self) -> None:
-        self.login_view: str = 'auth.login'
-        self.login_message: str = 'Please log in to access this page.'
-        self.login_message_category: str = 'info'
-        self.REMEMBER_COOKIE_DURATION: timedelta = timedelta(days=1)
-        # REMEMBER_COOKIE_DOMAIN: Set via .env for all environments, None allows any domain
-        self.REMEMBER_COOKIE_DOMAIN: str | None = os.environ.get('FLASK_COOKIE_DOMAIN') or None
-        self.SESSION_PROTECTION: str = 'strong'
-
-
 class GithubSettings:
     def __init__(self) -> None:
         self.api_token: str = os.environ['GITHUB_API_TOKEN']
@@ -183,7 +151,7 @@ class Settings:
         self.global_timezone = 'US/Eastern'
         self.protocol = os.environ['PROTOCOL']
         self.domain: str = os.environ.get('DOMAIN', 'ichrisbirch.com')
-        self.app_id: str = os.environ.get('APP_ID', os.environ.get('FLASK_APP_ID', ''))
+        self.app_id: str = os.environ.get('APP_ID', '')
         self.mac_safari_request_headers = {
             'User-Agent': (
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.4 Safari/605.1.15'
@@ -195,8 +163,6 @@ class Settings:
         self.aws = AWSSettings()
         self.chat = ChatSettings()
         self.fastapi = FastAPISettings()
-        self.flask = FlaskSettings()
-        self.flasklogin = FlaskLoginSettings()
         self.github = GithubSettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()
