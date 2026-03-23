@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-iChrisBirch is a personal productivity web application with a **multi-service architecture**: FastAPI backend (API), Flask frontend (App, being replaced by Vue), Vue 3 SPA frontend, Streamlit chat interface, and APScheduler service. All services share a PostgreSQL database and Redis cache, orchestrated via Docker Compose with Traefik reverse proxy.
+iChrisBirch is a personal productivity web application with a **multi-service architecture**: FastAPI backend (API), Vue 3 SPA frontend, Streamlit chat interface, and APScheduler service. All services share a PostgreSQL database and Redis cache, orchestrated via Docker Compose with Traefik reverse proxy.
 
 **Package Management**: uv for Python (`uv.lock`), npm for Vue (`package-lock.json`)
 
@@ -71,8 +71,7 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 | Service | Framework | Purpose |
 |---------|-----------|---------|
 | API | FastAPI | RESTful backend, JWT + Authelia auth |
-| App | Flask | Legacy SSR frontend (being replaced by Vue) |
-| Vue | Vue 3 + TypeScript | Modern SPA frontend, nearly all pages migrated |
+| Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
 | Chat | Streamlit | AI chat interface with OpenAI |
 | Scheduler | APScheduler | Daily jobs (task priorities, autotasks, S3 backup) |
 
@@ -80,7 +79,7 @@ Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tes
 
 ### Vue Frontend
 
-The Vue app incrementally replaces Flask pages via Traefik path-based routing (Vue at priority 100, Flask catchall at priority 50). Nearly all pages are migrated — only Admin remains on Flask.
+Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 **Key patterns:**
 
@@ -89,7 +88,7 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 - E2E tests run through `app.docker.localhost` (not `vue.docker.localhost`) to catch CORS issues
 - Self-hosted fonts in `frontend/public/fonts/` (woff2)
 
-**Critical:** Every new Vue path or static asset path (`/fonts`, `/profile`, etc.) must be added to Traefik PathPrefix rules in **ALL THREE** compose files (dev, test, prod). Flask catches anything not routed to Vue.
+**Critical:** Every new Vue path or static asset path (`/fonts`, `/profile`, etc.) must be added to Traefik PathPrefix rules in **ALL THREE** compose files (dev, test, prod).
 
 **CORS gotcha:** Wildcard `Access-Control-Allow-Headers: *` does NOT work with `credentials: true` — list headers explicitly in Traefik middleware config (including `X-Request-ID`).
 
@@ -102,8 +101,6 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 **Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: user@icb.com`.
 
 **FastAPI:** JWT tokens (access 15min, refresh 7d) + Authelia `Remote-User` header (highest priority) + Personal API Keys. Protected routes use `Depends(auth.get_current_user)`.
-
-**Flask:** Flask-Login sessions + CSRF via Flask-WTF.
 
 ### Configuration & Secrets
 
@@ -123,7 +120,7 @@ The Vue app incrementally replaces Flask pages via Traefik path-based routing (V
 
 **Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports.
 
-**Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`, `test_app`, `test_app_logged_in`), function-scoped (`*_function` suffix for isolation).
+**Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
 **Vue three-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
 
@@ -145,7 +142,7 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 
 ### Must Follow
 
-- **Pre-commit hooks** run automatically: Ruff, mypy, codespell, bandit, ESLint, Prettier, TypeScript checking, sass compile, and more. Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
+- **Pre-commit hooks** run automatically: Ruff, mypy, codespell, bandit, ESLint, Prettier, TypeScript checking, and more. Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
 - **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
 - **NEVER use `# noqa`** to bypass import order errors (E402). Restructure code instead.
@@ -188,8 +185,8 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 1. Create Pinia store with `createLogger`, `ApiError` handling, `error: ref<ApiError | null>`
 2. Create Vue view with `<script setup>`, `onMounted` fetch, `useNotifications()` for feedback
 3. Add route in `frontend/src/router.ts` (lazy-loaded)
-4. Update sidebar in `AppSidebar.vue` (`migrated: true`)
-5. Add PathPrefix to Traefik routing in **all three** compose files
+4. Update sidebar in `AppSidebar.vue`
+5. Add PathPrefix to Traefik routing in **all three** compose files (dev, test, prod)
 6. Write unit tests (mock API with `vi.mock`) and E2E tests (Playwright through `app.docker.localhost`)
 
 ### Logging
