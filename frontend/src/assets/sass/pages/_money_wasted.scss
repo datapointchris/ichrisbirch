@@ -1,10 +1,22 @@
+@use '../components/data_table';
+
 .money-wasted {
-  $item: 5fr;
-  $amount: 2fr;
-  $date-purchased: 2.5fr;
-  $date-wasted: 2.5fr;
-  $notes: 5fr;
-  $actions: 1.5fr;
+  @include data_table.data-table;
+
+  $columns: 5fr 2fr 2.5fr 2.5fr 5fr 1.5fr;
+
+  &__header,
+  &__row {
+    grid-template-columns: $columns;
+  }
+
+  &__header {
+    list-style: none;
+  }
+
+  &__row > span:last-child {
+    text-align: center;
+  }
 
   &--total {
     color: var(--clr-accent-light);
@@ -25,54 +37,6 @@
     overflow: hidden;
   }
 
-  // --- Header (shared between Flask <ul> and Vue <div>) ---
-  &__header {
-    display: grid;
-    grid-template-columns: $item $amount $date-purchased $date-wasted $notes $actions;
-    align-items: center;
-    gap: var(--space-s);
-    padding: var(--space-s) var(--space-m);
-    font-size: var(--fs-500);
-    border-bottom: 2px solid var(--clr-accent);
-    list-style: none;
-  }
-
-  // --- Vue rows ---
-  &__row {
-    display: grid;
-    grid-template-columns: $item $amount $date-purchased $date-wasted $notes $actions;
-    align-items: center;
-    gap: var(--space-s);
-    padding: var(--space-s) var(--space-m);
-    font-size: var(--fs-400);
-    border-bottom: 1px solid var(--clr-gray-800);
-
-    > span:last-child {
-      text-align: center;
-    }
-
-    &:hover {
-      background-color: var(--clr-primary--lighter);
-    }
-  }
-
-  // --- Flask rows (ul.money-wasted__item) ---
-  &__item {
-    display: grid;
-    grid-template-columns: $item $amount $date-purchased $date-wasted $notes $actions;
-    align-items: center;
-    gap: var(--space-s);
-    padding: var(--space-s) var(--space-m);
-    font-size: var(--fs-400);
-    border-bottom: 1px solid var(--clr-gray-800);
-    list-style: none;
-  }
-
-  // Flask columns need to not use equal flex sizing
-  &__column {
-    flex: unset;
-  }
-
   &__item-name {
     font-weight: 500;
     color: var(--clr-accent-light);
@@ -87,8 +51,6 @@
   }
 
   &__actions {
-    display: flex;
-    gap: var(--space-xs);
     justify-content: center;
   }
 

@@ -1,0 +1,37 @@
+@mixin data-table {
+  &__header {
+    display: grid;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-s) var(--space-m);
+    font-weight: bold;
+    font-size: var(--fs-500);
+    border-bottom: 2px solid var(--clr-accent);
+  }
+
+  &__row {
+    display: grid;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-s) var(--space-m);
+    font-size: var(--fs-400);
+    border-bottom: 1px solid var(--clr-gray-800);
+    transition: background-color 0.15s;
+
+    &:hover {
+      background-color: var(--clr-primary--lighter);
+    }
+  }
+
+  &__cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+}
