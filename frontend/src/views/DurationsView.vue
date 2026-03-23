@@ -193,13 +193,13 @@
               placeholder="Date"
               @update:model-value="noteForm[duration.id]!.date = $event"
             />
-            <input
+            <textarea
               v-model="noteForm[duration.id]!.content"
-              type="text"
               class="textbox"
+              rows="2"
               placeholder="Note content"
               @keyup.enter="handleAddNote(duration.id)"
-            />
+            ></textarea>
             <button
               class="button button--small"
               @click="handleAddNote(duration.id)"
