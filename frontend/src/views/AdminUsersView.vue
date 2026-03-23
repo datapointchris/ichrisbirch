@@ -4,13 +4,13 @@
       <h2>Users</h2>
       <div
         v-if="store.usersLoading"
-        class="admin-empty"
+        class="admin__empty"
       >
         Loading...
       </div>
       <div
         v-else-if="store.users.length === 0"
-        class="admin-empty"
+        class="admin__empty"
       >
         No users found
       </div>

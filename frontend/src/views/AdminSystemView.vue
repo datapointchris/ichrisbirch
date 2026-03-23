@@ -35,7 +35,7 @@
         <h2>Docker Containers</h2>
         <div
           v-if="store.systemHealth.docker.length === 0"
-          class="admin-empty"
+          class="admin__empty"
         >
           Docker status unavailable
         </div>
@@ -169,7 +169,7 @@
         </h2>
         <div
           v-if="store.recentErrors.length === 0"
-          class="admin-empty"
+          class="admin__empty"
         >
           No recent errors
         </div>
@@ -319,12 +319,6 @@ const diskUsageClass = computed(() => {
   transform: translate(-50%, -50%);
   font-size: var(--fs-300);
   font-weight: 600;
-}
-
-.admin-empty {
-  color: var(--clr-gray-500);
-  font-style: italic;
-  padding: var(--space-xs) 0;
 }
 
 .admin-error {

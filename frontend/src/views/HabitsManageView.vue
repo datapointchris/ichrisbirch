@@ -387,6 +387,5 @@ async function handleDeleteCategory(id: number) {
 .habits-manage__empty {
   color: var(--clr-gray-500);
   font-style: italic;
-  padding: var(--space-xs) 0;
 }
 </style>

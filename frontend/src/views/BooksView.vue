@@ -88,8 +88,7 @@
       <div class="grid__item">
         <div
           v-if="store.loading"
-          class="books__empty-message"
-          style="display: block"
+          class="books__empty"
         >
           Loading...
         </div>
@@ -129,12 +128,7 @@
           </div>
 
           <template v-if="store.sortedBooks.length === 0">
-            <div
-              class="books__empty-message"
-              style="display: block"
-            >
-              No books match the selected filter.
-            </div>
+            <div class="books__empty">No books match the selected filter.</div>
           </template>
 
           <template

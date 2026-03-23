@@ -201,12 +201,9 @@
     }
   }
 
-  &__empty-message {
-    text-align: center;
-    padding: var(--space-l);
-    font-size: var(--fs-500);
-    color: var(--clr-gray-400);
-    display: none;
+  &__empty {
+    color: var(--clr-gray-500);
+    font-style: italic;
   }
 
   &__hidden {

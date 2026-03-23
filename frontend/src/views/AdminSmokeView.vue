@@ -88,14 +88,14 @@
 
     <div
       v-else-if="!store.smokeTestsRunning"
-      class="admin-empty"
+      class="admin__empty"
     >
       Click "Run Smoke Tests" to check all endpoints
     </div>
 
     <div
       v-if="store.smokeTestsRunning"
-      class="admin-empty"
+      class="admin__empty"
     >
       Running smoke tests against all endpoints...
     </div>

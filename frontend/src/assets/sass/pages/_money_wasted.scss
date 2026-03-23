@@ -55,9 +55,7 @@
   }
 
   &__empty {
-    text-align: center;
-    padding: var(--space-l);
-    font-size: var(--fs-500);
-    color: var(--clr-gray-400);
+    color: var(--clr-gray-500);
+    font-style: italic;
   }
 }

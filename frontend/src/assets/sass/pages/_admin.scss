@@ -89,10 +89,9 @@
   background: var(--clr-red-900, #7f1d1d);
 }
 
-.admin-empty {
+.admin__empty {
   color: var(--clr-gray-500);
   font-style: italic;
-  padding: var(--space-xs) 0;
 }
 
 .admin-error {

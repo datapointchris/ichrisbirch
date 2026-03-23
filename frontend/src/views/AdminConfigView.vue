@@ -4,13 +4,13 @@
       <h2>Environment Configuration</h2>
       <div
         v-if="store.configLoading"
-        class="admin-empty"
+        class="admin__empty"
       >
         Loading...
       </div>
       <div
         v-else-if="store.config.length === 0"
-        class="admin-empty"
+        class="admin__empty"
       >
         No configuration loaded
       </div>

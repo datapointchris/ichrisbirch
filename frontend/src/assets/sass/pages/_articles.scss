@@ -130,8 +130,8 @@
 
   // Empty state
   &__empty {
-    padding: var(--space-m) var(--space-s);
-    color: var(--clr-gray-400);
+    color: var(--clr-gray-500);
+    font-style: italic;
   }
 
   // Expandable detail panel

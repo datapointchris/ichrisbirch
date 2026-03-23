@@ -20,7 +20,7 @@
         </h2>
         <div
           v-if="store.schedulerJobs.length === 0"
-          class="admin-empty"
+          class="admin__empty"
         >
           No scheduler jobs found
         </div>
@@ -99,13 +99,13 @@
             >
               <div
                 v-if="store.jobHistoryLoading"
-                class="admin-empty"
+                class="admin__empty"
               >
                 Loading history...
               </div>
               <div
                 v-else-if="filteredHistory(job.id).length === 0"
-                class="admin-empty"
+                class="admin__empty"
               >
                 No run history
               </div>
