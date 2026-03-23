@@ -186,8 +186,6 @@ def get_test_runner_settings() -> Settings:
     test_settings.sqlalchemy.database = 'ichrisbirch'
     test_settings.fastapi.host = 'localhost'
     test_settings.fastapi.port = 8001
-    test_settings.flask.host = 'localhost'
-    test_settings.flask.port = 5001
     test_settings.redis.host = 'localhost'
     test_settings.redis.port = 6380
     test_settings.chat.host = 'localhost'

@@ -190,7 +190,6 @@ class DockerComposeTestEnvironment:
 
         http_services = {
             'api': f'{self.settings.api_url}/health',
-            'app': f'{self.settings.protocol}://{self.settings.flask.host}:{self.settings.flask.port}',
             'chat': f'{self.settings.protocol}://{self.settings.chat.host}:{self.settings.chat.port}',
         }
         for service_name, url in http_services.items():
