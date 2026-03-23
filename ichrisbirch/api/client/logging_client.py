@@ -350,7 +350,7 @@ class LoggingAPIClient:
 
 # Factory functions for LoggingAPIClient
 def logging_internal_service_client(
-    service_name: str = 'flask-frontend',
+    service_name: str = 'internal-service',
     base_url: str | None = None,
     settings: 'Settings | None' = None,
 ) -> LoggingAPIClient:
@@ -372,7 +372,7 @@ def logging_user_client(
     from .auth import UserTokenProvider
 
     resolved_settings = _get_settings_with_fallback(settings)
-    actual_app_id = app_id or resolved_settings.flask.app_id
+    actual_app_id = app_id or resolved_settings.app_id
     provider = UserTokenProvider(user_id, actual_app_id, resolved_settings.auth.internal_service_key)
     return LoggingAPIClient(provider, base_url, settings=resolved_settings)
 

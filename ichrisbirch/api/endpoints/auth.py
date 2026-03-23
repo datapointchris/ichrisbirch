@@ -155,7 +155,7 @@ def authenticate_with_application_headers(
         if x_service_key != settings.auth.internal_service_key:
             logger.warning('app_headers_invalid_service_key')
             return None
-        if x_application_id != settings.flask.app_id:
+        if x_application_id != settings.app_id:
             logger.warning('app_headers_invalid_app_id', app_id=x_application_id[:-8])
             return None
         return x_user_id

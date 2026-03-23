@@ -379,7 +379,7 @@ def delete_test_data(*datasets):
 def make_app_headers_for_user(user):
     """Create app authentication headers for a user."""
     return {
-        'X-Application-ID': test_settings.flask.app_id,
+        'X-Application-ID': test_settings.app_id,
         'X-User-ID': user.get_id(),
         'X-Service-Key': test_settings.auth.internal_service_key,
     }
@@ -393,7 +393,7 @@ def make_jwt_header(token: str):
 def make_internal_service_headers():
     """Create internal service authentication headers."""
     return {
-        'X-Internal-Service': 'flask-frontend',
+        'X-Internal-Service': 'internal-service',
         'X-Service-Key': test_settings.auth.internal_service_key,
     }
 
@@ -401,6 +401,6 @@ def make_internal_service_headers():
 def make_invalid_internal_service_headers():
     """Create invalid internal service authentication headers."""
     return {
-        'X-Internal-Service': 'flask-frontend',
+        'X-Internal-Service': 'internal-service',
         'X-Service-Key': 'invalid_key',
     }

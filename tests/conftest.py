@@ -352,7 +352,7 @@ def create_test_app_client(login=False, admin=False):
         email = 'testloginadmin@testadmin.com' if admin else 'testloginregular@testuser.com'
         user = get_test_user(email)
         api_headers = {
-            'X-Application-ID': test_settings.flask.app_id,
+            'X-Application-ID': test_settings.app_id,
             'X-User-ID': user.get_id(),
             'X-Service-Key': test_settings.auth.internal_service_key,
         }

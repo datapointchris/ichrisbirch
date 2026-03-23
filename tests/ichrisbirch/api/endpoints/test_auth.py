@@ -140,7 +140,7 @@ def test_internal_service_authentication_missing_service_header(auth_test_contex
 def test_internal_service_authentication_missing_key_header(auth_test_context, test_user):
     """Test missing X-Service-Key header returns 401."""
     client, _, _, _ = auth_test_context
-    headers = {'X-Internal-Service': 'flask-frontend'}
+    headers = {'X-Internal-Service': 'internal-service'}
     response = client.get(f'/users/email/{test_user.email}/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert 'Admin or internal service access required' in response.json()['detail']

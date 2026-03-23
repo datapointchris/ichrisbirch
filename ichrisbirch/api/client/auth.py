@@ -40,7 +40,7 @@ class CredentialProvider(ABC):
 class InternalServiceProvider(CredentialProvider):
     """Credentials for internal service-to-service calls."""
 
-    def __init__(self, service_name: str = 'flask-frontend', settings: 'Settings | None' = None):
+    def __init__(self, service_name: str = 'internal-service', settings: 'Settings | None' = None):
         self.service_name = service_name
         self._settings = _get_settings_with_fallback(settings)
         self.service_key = self._settings.auth.internal_service_key
@@ -111,7 +111,7 @@ class FlaskSessionProvider(CredentialProvider):
                 user_id = current_user.get_id()
         return {
             'X-User-ID': user_id,
-            'X-Application-ID': self._settings.flask.app_id,
+            'X-Application-ID': self._settings.app_id,
             'X-Service-Key': self._settings.auth.internal_service_key,
         }
 

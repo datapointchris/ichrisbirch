@@ -49,7 +49,7 @@ class APIClient:
 
 # Factory functions for common credential providers
 def internal_service_client(
-    service_name: str = 'flask-frontend',
+    service_name: str = 'internal-service',
     settings: 'Settings | None' = None,
 ) -> APIClient:
     """Create client with internal service authentication."""
@@ -65,7 +65,7 @@ def user_client(
 ) -> APIClient:
     """Create client with user authentication."""
     resolved_settings = _get_settings_with_fallback(settings)
-    actual_app_id = app_id or resolved_settings.flask.app_id
+    actual_app_id = app_id or resolved_settings.app_id
     provider = UserTokenProvider(user_id, actual_app_id, resolved_settings.auth.internal_service_key)
     return APIClient(credential_provider=provider)
 
