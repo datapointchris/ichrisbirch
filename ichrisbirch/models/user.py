@@ -3,7 +3,6 @@ import random
 from datetime import datetime
 from typing import Any
 
-from flask_login import UserMixin
 from sqlalchemy import BigInteger
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
@@ -134,7 +133,7 @@ DEFAULT_USER_PREFERENCES = {
 }
 
 
-class User(UserMixin, Base):
+class User(Base):
     __tablename__ = 'users'
 
     @staticmethod
