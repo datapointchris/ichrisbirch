@@ -157,13 +157,21 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 
 ### Styling & Design Cohesion
 
-**Global over scoped**: Use the shared SCSS system (`ichrisbirch/app/static/sass/`) for visual styling. Avoid duplicating shadow/effect/button styles in Vue scoped `<style>` blocks — scoped overrides create maintenance burden and drift from the site's visual language. Scoped styles should handle layout (flexbox, grid, spacing) not visual effects.
+**Global over scoped**: Use the shared SCSS system (`frontend/src/assets/sass/`) for visual styling. Avoid duplicating shadow/effect/button styles in Vue scoped `<style>` blocks — scoped overrides create maintenance burden and drift from the site's visual language. Scoped styles should handle layout (flexbox, grid, spacing) not visual effects.
 
 **Neumorphic shadow vocabulary** (defined in `layout/_grid.scss`):
 
 - `--floating-box`: raised/resting state (cards, rows, nav links)
 - `--floating-box-pressed`: sunken/active state (selected items, pressed buttons)
 - `--bubble-box` / `--bubble-box-pressed`: hover states (lighter raise/press)
+
+**Shared SCSS mixins** (`components/`): Compound mixins following the `search-results` pattern — consumers include at entity level and set `grid-template-columns`. Mixins are opinionated (define the full visual pattern); consumers only provide what genuinely varies.
+
+- `data-table` — flat grid table with header/row/cell/actions (Articles, Money Wasted)
+- `card-row` — neumorphic raised row with title/link/actions/chevron (Books, Box Packing compact)
+- `list-item` — bordered row with hover highlight and last-child cleanup (Habits, Box contents, Duration notes)
+
+**Empty-state convention**: All `{block}__empty` classes use exactly `color: var(--clr-gray-500); font-style: italic` — no padding, font-size, or display overrides. Empty states inherit layout from their container.
 
 **`double-bevel-button` mixin** (`components/_buttons.scss`): Circular neumorphic buttons with inner button + outer ring. Takes `$button-size` — everything else (outer ring at 1.5x, icon at 30% via `$content-ratio`, `position: relative`) is calculated automatically. Never override proportions per-caller.
 
