@@ -280,7 +280,7 @@ wait_for_healthy() {
     local max_wait=90
     local interval=5
     local waited=0
-    local services="icb-${DEPLOY_COLOR}-api icb-${DEPLOY_COLOR}-app icb-${DEPLOY_COLOR}-vue"
+    local services="icb-${DEPLOY_COLOR}-api icb-${DEPLOY_COLOR}-vue"
 
     log_info "waiting_for_healthy" "color" "$DEPLOY_COLOR" "max_wait" "$max_wait" | tee -a "$LOG_FILE"
 
