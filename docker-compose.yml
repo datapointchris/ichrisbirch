@@ -39,7 +39,6 @@ services:
       - default
     depends_on:
       - api
-      - app
       - chat
     restart: always
     healthcheck:
@@ -228,52 +227,6 @@ services:
       - "traefik.http.routers.vue-paths-www.entrypoints=web"
       - "traefik.http.routers.vue-paths-www.priority=100"
       - "traefik.http.routers.vue-paths-www.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
-
-  # Flask Frontend Service - Production configuration (lower priority — Vue handles migrated paths)
-  app:
-    <<: *app-build
-    container_name: icb-prod-app
-    # Production WSGI server (timeout allows for long OpenAI requests)
-    command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
-    env_file: .env
-    environment:
-      - ENVIRONMENT=production
-      - FLASK_DEBUG=False
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - LOG_COLORS=${LOG_COLORS:-false}
-      - LOG_FILE=/var/log/ichrisbirch/app.log
-    # Remove external ports for security (only accessible within Docker network)
-    ports: []
-    depends_on:
-      - api
-    volumes:
-      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
-      - ichrisbirch_logs:/var/log/ichrisbirch
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 3
-    working_dir: /app
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "app"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
-      - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.priority=50"
-      - "traefik.http.routers.app.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
-      - "traefik.http.services.app.loadbalancer.server.port=5000"
-    networks:
-      - proxy
-      - default
 
   # Chat Service (Streamlit) - Production configuration
   chat:

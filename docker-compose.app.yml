@@ -91,45 +91,6 @@ services:
       - proxy
       - icb-infra
 
-  # Flask Frontend Service (legacy, lower priority)
-  app:
-    <<: *app-image
-    container_name: icb-${DEPLOY_COLOR}-app
-    depends_on:
-      - api
-    command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 180 ichrisbirch.wsgi_app:app
-    env_file: .env
-    environment:
-      - ENVIRONMENT=production
-      - FLASK_DEBUG=False
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - LOG_COLORS=${LOG_COLORS:-false}
-      - LOG_FILE=/var/log/ichrisbirch/app.log
-    ports: []
-    volumes:
-      - ~/.aws:/home/app/.aws:ro
-      - ichrisbirch_logs:/var/log/ichrisbirch
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 3
-    working_dir: /app
-    logging:
-      <<: *logging
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "${DEPLOY_COLOR}-app"
-    labels:
-      - "traefik.enable=false"
-    networks:
-      - proxy
-      - icb-infra
-
   # Chat Service (Streamlit)
   chat:
     <<: *app-image

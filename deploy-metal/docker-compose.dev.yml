@@ -106,38 +106,6 @@ services:
         max-file: "3"
         tag: "api-dev"
 
-  # Development overrides for Flask service
-  app:
-    build:
-      context: .
-      target: development
-    container_name: icb-metal-dev-app
-    # Enable debug mode and auto-reload for development
-    command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000 --debug --reload
-    environment:
-      - ENVIRONMENT=development
-      - FLASK_DEBUG=True
-    ports:
-      - "5000:5000"
-    restart: unless-stopped
-    # Override health check for Flask service
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 5s
-      retries: 3
-    volumes:
-      - .:/app
-      - /app/.venv
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "app-dev"
-
   # Development overrides for chat service
   chat:
     build:

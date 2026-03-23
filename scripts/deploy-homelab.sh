@@ -342,15 +342,6 @@ run_smoke_tests() {
     fi
     log_info "vue_smoke_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 
-    # Verify Flask health
-    local flask_output
-    if ! flask_output=$(docker exec "icb-${DEPLOY_COLOR}-app" curl -s http://localhost:5000/health 2>&1); then
-        FAILURE_OUTPUT="Flask health failed: $flask_output"
-        log_error "flask_smoke_failed" "color" "$DEPLOY_COLOR" "output" "${flask_output:0:200}" | tee -a "$LOG_FILE"
-        exit 1
-    fi
-    log_info "flask_smoke_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
-
     # Run the full 32-endpoint smoke test suite via the API's built-in endpoint
     # Use -s (silent) but NOT -f so we get the response body on errors
     local admin_email

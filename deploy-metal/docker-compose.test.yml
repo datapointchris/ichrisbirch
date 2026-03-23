@@ -129,58 +129,6 @@ services:
         max-file: "3"
         tag: "api-test"
 
-  # Test Flask app
-  app:
-    build:
-      context: .
-      target: testing
-    container_name: icb-metal-test-app
-    # Run without reload for consistent test environment
-    command: >
-      uv run flask
-      --app ichrisbirch.wsgi_app:app run
-      --host 0.0.0.0
-      --port 5000
-    ports:
-      - "5001:5000" # Map to different external port to avoid conflicts
-    environment:
-      - ENVIRONMENT=testing
-      - FLASK_TESTING=True
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
-      # AWS credentials for SSM parameter access (optional for local development)
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - AWS_REGION=${AWS_REGION:-us-east-2}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: bind
-        source: ~/.aws
-        target: /root/.aws
-        read_only: true
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_started  # Wait for API to initialize shared venv first
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "app-test"
-
   # Test chat service - needed for API tests
   chat:
     build:

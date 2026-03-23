@@ -227,79 +227,6 @@ services:
         max-file: "3"
         tag: "api-test"
 
-  # Test Flask app
-  app:
-    <<: *app-build
-    container_name: icb-test-app
-    # Run without reload for consistent test environment
-    command: >
-      uv run flask
-      --app ichrisbirch.wsgi_app:app run
-      --host 0.0.0.0
-      --port 5000
-    ports:
-      - "5001:5000" # Map to different external port to avoid conflicts
-    environment:
-      - ENVIRONMENT=testing
-      - FLASK_TESTING=True
-      - LOG_FORMAT=${LOG_FORMAT:-console}
-      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
-      - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/app.log
-      # AWS credentials for SSM parameter access (optional for local development)
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - AWS_REGION=${AWS_REGION:-us-east-2}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: bind
-        source: ~/.aws
-        target: /root/.aws
-        read_only: true
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-      - type: volume
-        source: ichrisbirch_logs
-        target: /var/log/ichrisbirch
-    networks:
-      - proxy
-      - default
-    labels:
-      # Environment label for Traefik constraint filtering
-      - "traefik.environment=testing"
-      - "traefik.enable=true"
-      # Disable inherited base labels (prevent collision with dev)
-      - "traefik.http.routers.app.rule=Host(`app.test.localhost`)"
-      - "traefik.http.routers.app.service=app-test"
-      - "traefik.http.services.app.loadbalancer.server.port=5000"
-      # App routes for test (lower priority — Vue paths take precedence for migrated pages)
-      - "traefik.http.routers.app-test.rule=Host(`app.test.localhost`)"
-      - "traefik.http.routers.app-test.entrypoints=websecure"
-      - "traefik.http.routers.app-test.tls=true"
-      - "traefik.http.routers.app-test.tls.options=test@file"
-      - "traefik.http.routers.app-test.priority=50"
-      - "traefik.http.routers.app-test.service=app-test"
-      - "traefik.http.routers.app-test.middlewares=cors-test@file,security-headers-test@file,rate-limit-test@file"
-      - "traefik.http.services.app-test.loadbalancer.server.port=5000"
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_started  # Wait for API to initialize shared venv first
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "app-test"
-
   # Test chat service - needed for API tests
   chat:
     <<: *app-build
@@ -461,7 +388,6 @@ services:
     volumes:
       - ./frontend:/app
       - vue_test_node_modules:/app/node_modules
-      - ./ichrisbirch/app/static:/ichrisbirch/app/static:ro
     labels:
       # Environment label for Traefik constraint filtering
       - "traefik.environment=testing"

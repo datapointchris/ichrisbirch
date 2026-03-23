@@ -210,65 +210,6 @@ services:
         max-file: "3"
         tag: "api-dev"
 
-  # Development overrides for Flask service
-  app:
-    <<: *app-build
-    container_name: icb-dev-app
-    # Enable debug mode and auto-reload for development
-    command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000 --debug --reload
-    environment:
-      - ENVIRONMENT=development
-      - FLASK_DEBUG=True
-      - LOG_FORMAT=${LOG_FORMAT:-console}
-      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
-      - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/app.log
-    ports:
-      - "5000:5000"  # Keep direct port access for development debugging
-    networks:
-      - proxy
-      - default
-    restart: unless-stopped
-    # Override health check timing for development (base uses /health)
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 5s
-      retries: 3
-    volumes:
-      - .:/app
-      - /app/.venv
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
-      - ichrisbirch_logs:/var/log/ichrisbirch
-    labels:
-      # Environment label for Traefik constraint filtering
-      - "traefik.environment=development"
-      # Enable Traefik
-      - "traefik.enable=true"
-
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.app-http.rule=Host(`app.docker.localhost`)"
-      - "traefik.http.routers.app-http.entrypoints=web"
-      - "traefik.http.routers.app-http.middlewares=redirect-to-https@docker"
-
-      # HTTPS router (lower priority — Vue paths take precedence for migrated pages)
-      - "traefik.http.routers.app.rule=Host(`app.docker.localhost`)"
-      - "traefik.http.routers.app.entrypoints=websecure"
-      - "traefik.http.routers.app.tls=true"
-      - "traefik.http.routers.app.tls.options="  # Override to disable TLS options
-      - "traefik.http.routers.app.priority=50"
-      - "traefik.http.routers.app.middlewares=dev-security@file"
-
-      # Service configuration
-      - "traefik.http.services.app.loadbalancer.server.port=5000"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "app-dev"
-
   # Development overrides for chat service
   chat:
     <<: *app-build
@@ -355,7 +296,6 @@ services:
     volumes:
       - ./frontend:/app
       - vue_node_modules:/app/node_modules
-      - ./ichrisbirch/app/static:/ichrisbirch/app/static:ro
     labels:
       # Environment label for Traefik constraint filtering
       - "traefik.environment=development"

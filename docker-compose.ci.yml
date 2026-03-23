@@ -15,19 +15,6 @@ services:
         source: uv_cache
         target: /root/.cache/uv
 
-  # Override App service for CI
-  app:
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-
   # Override Chat service for CI
   chat:
     volumes:
