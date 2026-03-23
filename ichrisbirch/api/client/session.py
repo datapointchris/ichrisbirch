@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 
-from ichrisbirch.app import utils
+from ichrisbirch import util as utils
 
 from .auth import CredentialProvider
 from .auth import FlaskSessionProvider

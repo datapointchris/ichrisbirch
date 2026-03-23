@@ -8,8 +8,8 @@ import structlog
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.client.logging_client import logging_internal_service_client
-from ichrisbirch.app.utils import url_builder
 from ichrisbirch.config import Settings
+from ichrisbirch.util import url_builder
 
 logger = structlog.get_logger()
 

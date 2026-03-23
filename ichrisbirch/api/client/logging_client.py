@@ -21,7 +21,7 @@ import httpx
 import structlog
 from pydantic import BaseModel
 
-from ichrisbirch.app import utils
+from ichrisbirch import util as utils
 
 from .auth import CredentialProvider
 from .auth import _get_settings_with_fallback
