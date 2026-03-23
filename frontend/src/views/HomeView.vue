@@ -2,6 +2,10 @@
   <div class="main-index-content">
     <h1>Chris Birch</h1>
     <h2>Data Engineer</h2>
+    <p class="home-tagline">
+      <span class="home-tagline__text">Nothing Is Truly Gone</span>
+      <code class="home-tagline__cmd">git log --all --full-history</code>
+    </p>
     <div class="home-links">
       <a
         v-for="link in allLinks"
