@@ -118,19 +118,6 @@ repos:
         args: ["--reformat"]
       - id: djlint
 
-  # SCSS/CSS
-  - repo: local
-    hooks:
-      - id: sass-compile
-        name: sass compile
-        description: "Compile SCSS to CSS"
-        stages: [pre-commit]
-        language: system
-        entry: sass ichrisbirch/app/static/sass/main.scss:ichrisbirch/app/static/css/main.css
-        files: "\\.(scss)$"
-        pass_filenames: false
-        always_run: false
-
   # Vue/Frontend (only run when frontend/package.json exists)
   - repo: local
     hooks:

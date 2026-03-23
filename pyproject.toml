@@ -138,7 +138,7 @@ skips = ["B113", "B311"]
 
 
 [tool.codespell]
-skip = '*.css.map,*chat_history.json,tests/stats/fixtures/tool_outputs/codespell_with_issues.txt,ichrisbirch/app/static/fontawesome/*,frontend/package-lock.json'
+skip = '*.css.map,*chat_history.json,tests/stats/fixtures/tool_outputs/codespell_with_issues.txt,frontend/package-lock.json'
 ignore-words-list = "astroid,aNULL,ANULL,anull,dependant,iterm,te"
 exclude-file = "uv.lock"
 check-filenames = true
@@ -178,8 +178,6 @@ ignore_missing_imports = true
 check_untyped_defs = false
 plugins = ["pydantic.mypy"]
 warn_return_any = false
-# Flask app is dead code being removed — exclude from type checking
-exclude = ["ichrisbirch/app/"]
 
 
 [tool.pyright]

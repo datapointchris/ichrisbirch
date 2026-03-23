@@ -34,7 +34,8 @@ def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
 
     scss_files = [f for f in staged_files if f.endswith('.scss')]
 
-    if not scss_files:
+    # Flask SCSS removed — only Vue frontend SCSS remains (handled by Vite, not sass CLI)
+    if not scss_files or not Path(SASS_SOURCE).exists():
         return SassHookEvent(
             timestamp=datetime.now(UTC),
             project=project,

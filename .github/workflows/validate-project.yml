@@ -160,7 +160,7 @@ jobs:
           echo "Waiting for database to be healthy..."
           sleep 10
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build api app chat scheduler
+            --project-name icb-test up -d --build api chat scheduler
           echo "Waiting for services to be ready..."
           sleep 30
 
@@ -231,8 +231,8 @@ jobs:
           echo "Waiting for database..."
           sleep 10
 
-          # Start app services
-          docker compose -f docker-compose.yml up -d api app chat scheduler
+          # Start application services
+          docker compose -f docker-compose.yml up -d api chat scheduler
           echo "Waiting for services to initialize..."
           sleep 15
 

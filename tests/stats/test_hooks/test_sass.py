@@ -78,8 +78,20 @@ class TestSassRunner:
         assert event.status == 'passed'
         assert not event.files_checked
 
-    def test_compilation_error_reports_failed(self) -> None:
+    def test_skips_when_source_missing(self) -> None:
+        """Test runner returns passed when SASS_SOURCE doesn't exist (Flask removed)."""
+        event = run(['main.scss'], 'master', 'ichrisbirch')
+
+        assert event.status == 'passed'
+        assert not event.files_checked
+
+    @patch('stats.hooks.sass.Path')
+    def test_compilation_error_reports_failed(self, mock_path_cls) -> None:
         """Test runner reports failed when sass compilation fails."""
+        mock_path_instance = MagicMock()
+        mock_path_instance.exists.return_value = True
+        mock_path_cls.return_value = mock_path_instance
+
         error_output = (
             'Error: expected "{".\n'
             '  \u2577\n'
