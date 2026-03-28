@@ -72,127 +72,234 @@
 
     <!-- Right pane: items for selected project -->
     <main class="projects-page__items">
-      <div
-        v-if="!store.selectedProjectId"
-        class="projects-page__empty"
+      <!-- Search bar (always visible) -->
+      <form
+        class="projects-page__search"
+        @submit.prevent="handleSearch"
       >
-        Select a project to view items
-      </div>
-      <template v-else>
-        <div class="projects-page__items-header">
-          <h2>{{ store.selectedProject?.name }}</h2>
-          <button
-            data-testid="project-item-add-button"
-            class="button button--small"
-            @click="showItemModal = true"
-          >
-            <span class="button__text"><i class="fa-solid fa-plus"></i> Add Item</span>
-          </button>
-        </div>
+        <input
+          v-model="searchQuery"
+          data-testid="project-search-input"
+          type="text"
+          class="textbox"
+          placeholder="Search all items..."
+        />
+        <button
+          type="submit"
+          data-testid="project-search-button"
+          class="button button--small"
+        >
+          <span class="button__text"><i class="fa-solid fa-search"></i></span>
+        </button>
+        <button
+          v-if="isSearchActive"
+          type="button"
+          data-testid="project-search-clear"
+          class="button button--small button--danger"
+          @click="clearSearch"
+        >
+          <span class="button__text button__text--danger">Clear</span>
+        </button>
+      </form>
 
+      <!-- Search results mode -->
+      <template v-if="isSearchActive">
+        <p class="projects-page__search-status">
+          {{ searchResults.length }} result{{ searchResults.length !== 1 ? 's' : '' }} for "{{ activeSearchQuery }}"
+        </p>
         <div
-          v-if="store.itemsLoading"
+          v-if="searchLoading"
           class="projects-page__empty"
         >
-          Loading items...
+          Searching...
         </div>
         <div
-          v-else-if="store.sortedItems.length === 0"
+          v-else-if="searchResults.length === 0"
           class="projects-page__empty"
         >
-          No items in this project
+          No results found
         </div>
-        <draggable
+        <div
           v-else
-          :list="localItems"
-          item-key="id"
-          handle=".projects-page__drag-handle"
-          ghost-class="projects-page__ghost"
-          :animation="150"
           class="projects-page__item-list"
-          @end="onItemDragEnd"
         >
-          <template #item="{ element: item }">
-            <div
-              data-testid="project-item-row"
-              class="projects-page__item"
-              :class="{
-                'projects-page__item--completed': item.completed,
-                'projects-page__item--archived': item.archived,
-                'projects-page__item--blocked': isBlocked(item.id),
-              }"
-            >
-              <div class="projects-page__drag-handle">
-                <i class="fa-solid fa-grip-vertical"></i>
-              </div>
-
-              <button
-                data-testid="project-item-complete-button"
-                class="projects-page__check"
-                :title="item.completed ? 'Mark incomplete' : 'Mark complete'"
-                @click="handleToggleComplete(item)"
+          <div
+            v-for="item in searchResults"
+            :key="item.id"
+            data-testid="project-search-result"
+            class="projects-page__item"
+            :class="{
+              'projects-page__item--completed': item.completed,
+              'projects-page__item--archived': item.archived,
+            }"
+          >
+            <i
+              :class="item.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"
+              class="projects-page__search-icon"
+            ></i>
+            <div class="projects-page__item-content">
+              <span class="projects-page__item-title">{{ item.title }}</span>
+              <span
+                v-if="item.notes"
+                class="projects-page__item-notes"
               >
-                <i :class="item.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
-              </button>
-
-              <div class="projects-page__item-content">
-                <span class="projects-page__item-title">{{ item.title }}</span>
-                <span
-                  v-if="item.notes"
-                  class="projects-page__item-notes"
-                >
-                  {{ item.notes }}
-                </span>
-                <span
-                  v-if="getBlockers(item.id).length > 0"
-                  class="projects-page__item-blockers"
-                >
-                  <i class="fa-solid fa-lock"></i>
-                  {{
-                    getBlockers(item.id)
-                      .map((b) => b.title)
-                      .join(', ')
-                  }}
-                </span>
-              </div>
-
-              <div class="projects-page__item-actions">
-                <button
-                  data-testid="project-item-deps-button"
-                  class="projects-page__action-btn"
-                  title="Manage dependencies"
-                  @click="openDepsModal(item)"
-                >
-                  <i class="fa-solid fa-link"></i>
-                </button>
-                <button
-                  data-testid="project-item-edit-button"
-                  class="projects-page__action-btn"
-                  title="Edit item"
-                  @click="openEditItem(item)"
-                >
-                  <i class="fa-solid fa-pen"></i>
-                </button>
-                <button
-                  data-testid="project-item-archive-button"
-                  class="projects-page__action-btn"
-                  title="Archive item"
-                  @click="handleArchiveItem(item.id)"
-                >
-                  <i class="fa-solid fa-box-archive"></i>
-                </button>
-                <button
-                  data-testid="project-item-delete-button"
-                  class="projects-page__action-btn projects-page__action-btn--danger"
-                  title="Delete item"
-                  @click="handleDeleteItem(item.id)"
-                >
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
+                {{ item.notes }}
+              </span>
             </div>
-          </template>
-        </draggable>
+            <div class="projects-page__item-actions projects-page__item-actions--visible">
+              <button
+                data-testid="search-result-projects-button"
+                class="projects-page__action-btn"
+                title="Manage projects"
+                @click="openProjectsModal(item)"
+              >
+                <i class="fa-solid fa-folder-open"></i>
+              </button>
+              <button
+                data-testid="search-result-deps-button"
+                class="projects-page__action-btn"
+                title="Manage dependencies"
+                @click="openDepsModal(item)"
+              >
+                <i class="fa-solid fa-link"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Normal project items mode -->
+      <template v-else>
+        <div
+          v-if="!store.selectedProjectId"
+          class="projects-page__empty"
+        >
+          Select a project to view items
+        </div>
+        <template v-else>
+          <div class="projects-page__items-header">
+            <h2>{{ store.selectedProject?.name }}</h2>
+            <button
+              data-testid="project-item-add-button"
+              class="button button--small"
+              @click="showItemModal = true"
+            >
+              <span class="button__text"><i class="fa-solid fa-plus"></i> Add Item</span>
+            </button>
+          </div>
+
+          <div
+            v-if="store.itemsLoading"
+            class="projects-page__empty"
+          >
+            Loading items...
+          </div>
+          <div
+            v-else-if="store.sortedItems.length === 0"
+            class="projects-page__empty"
+          >
+            No items in this project
+          </div>
+          <draggable
+            v-else
+            :list="localItems"
+            item-key="id"
+            handle=".projects-page__drag-handle"
+            ghost-class="projects-page__ghost"
+            :animation="150"
+            class="projects-page__item-list"
+            @end="onItemDragEnd"
+          >
+            <template #item="{ element: item }">
+              <div
+                data-testid="project-item-row"
+                class="projects-page__item"
+                :class="{
+                  'projects-page__item--completed': item.completed,
+                  'projects-page__item--archived': item.archived,
+                  'projects-page__item--blocked': isBlocked(item.id),
+                }"
+              >
+                <div class="projects-page__drag-handle">
+                  <i class="fa-solid fa-grip-vertical"></i>
+                </div>
+
+                <button
+                  data-testid="project-item-complete-button"
+                  class="projects-page__check"
+                  :title="item.completed ? 'Mark incomplete' : 'Mark complete'"
+                  @click="handleToggleComplete(item)"
+                >
+                  <i :class="item.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
+                </button>
+
+                <div class="projects-page__item-content">
+                  <span class="projects-page__item-title">{{ item.title }}</span>
+                  <span
+                    v-if="item.notes"
+                    class="projects-page__item-notes"
+                  >
+                    {{ item.notes }}
+                  </span>
+                  <span
+                    v-if="getBlockers(item.id).length > 0"
+                    class="projects-page__item-blockers"
+                  >
+                    <i class="fa-solid fa-lock"></i>
+                    {{
+                      getBlockers(item.id)
+                        .map((b) => b.title)
+                        .join(', ')
+                    }}
+                  </span>
+                </div>
+
+                <div class="projects-page__item-actions">
+                  <button
+                    data-testid="project-item-deps-button"
+                    class="projects-page__action-btn"
+                    title="Manage dependencies"
+                    @click="openDepsModal(item)"
+                  >
+                    <i class="fa-solid fa-link"></i>
+                  </button>
+                  <button
+                    data-testid="project-item-projects-button"
+                    class="projects-page__action-btn"
+                    title="Manage projects"
+                    @click="openProjectsModal(item)"
+                  >
+                    <i class="fa-solid fa-folder-open"></i>
+                  </button>
+                  <button
+                    data-testid="project-item-edit-button"
+                    class="projects-page__action-btn"
+                    title="Edit item"
+                    @click="openEditItem(item)"
+                  >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button
+                    data-testid="project-item-archive-button"
+                    class="projects-page__action-btn"
+                    title="Archive item"
+                    @click="handleArchiveItem(item.id)"
+                  >
+                    <i class="fa-solid fa-box-archive"></i>
+                  </button>
+                  <button
+                    data-testid="project-item-delete-button"
+                    class="projects-page__action-btn projects-page__action-btn--danger"
+                    title="Delete item"
+                    @click="handleDeleteItem(item.id)"
+                  >
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </template>
+          </draggable>
+        </template>
       </template>
     </main>
 
@@ -222,6 +329,14 @@
       @close="closeDepsModal"
       @updated="onDepsUpdated"
     />
+
+    <ManageProjectsModal
+      :visible="showProjectsModal"
+      :item-id="projectsTargetId"
+      :item-title="projectsTargetTitle"
+      @close="closeProjectsModal"
+      @updated="onDepsUpdated"
+    />
   </div>
 </template>
 
@@ -243,6 +358,7 @@ import type {
 import AddEditProjectModal from '@/components/projects/AddEditProjectModal.vue'
 import AddEditProjectItemModal from '@/components/projects/AddEditProjectItemModal.vue'
 import ManageDependenciesModal from '@/components/projects/ManageDependenciesModal.vue'
+import ManageProjectsModal from '@/components/projects/ManageProjectsModal.vue'
 
 const store = useProjectsStore()
 const { show: notify } = useNotifications()
@@ -279,6 +395,18 @@ const editItemTarget = ref<{ id: number; title: string; notes?: string } | null>
 const showDepsModal = ref(false)
 const depsTargetId = ref<number | null>(null)
 const depsTargetTitle = ref('')
+
+// --- Projects modal state ---
+const showProjectsModal = ref(false)
+const projectsTargetId = ref<number | null>(null)
+const projectsTargetTitle = ref('')
+
+// --- Search state ---
+const searchQuery = ref('')
+const activeSearchQuery = ref('')
+const searchResults = ref<ProjectItem[]>([])
+const searchLoading = ref(false)
+const isSearchActive = ref(false)
 
 onMounted(() => {
   store.fetchProjects()
@@ -424,7 +552,7 @@ async function handleDeleteItem(id: number) {
 
 // --- Dependencies modal ---
 
-function openDepsModal(item: ProjectItemInProject) {
+function openDepsModal(item: { id: number; title: string }) {
   depsTargetId.value = item.id
   depsTargetTitle.value = item.title
   showDepsModal.value = true
@@ -438,6 +566,46 @@ function closeDepsModal() {
 
 function onDepsUpdated() {
   store.fetchItemBlockers()
+}
+
+// --- Projects modal ---
+
+function openProjectsModal(item: { id: number; title: string }) {
+  projectsTargetId.value = item.id
+  projectsTargetTitle.value = item.title
+  showProjectsModal.value = true
+}
+
+function closeProjectsModal() {
+  showProjectsModal.value = false
+  projectsTargetId.value = null
+  projectsTargetTitle.value = ''
+}
+
+// --- Search ---
+
+async function handleSearch() {
+  const query = searchQuery.value.trim()
+  if (!query) return
+  searchLoading.value = true
+  isSearchActive.value = true
+  activeSearchQuery.value = query
+  try {
+    searchResults.value = await store.searchItems(query)
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Search failed: ${detail}`, 'error')
+    searchResults.value = []
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+function clearSearch() {
+  searchQuery.value = ''
+  activeSearchQuery.value = ''
+  searchResults.value = []
+  isSearchActive.value = false
 }
 </script>
 
@@ -662,6 +830,34 @@ function onDepsUpdated() {
     .projects-page__item:hover & {
       opacity: 1;
     }
+  }
+
+  // Search
+  &__search {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    .textbox {
+      flex: 1;
+    }
+  }
+
+  &__search-status {
+    margin: 0;
+    color: var(--clr-gray-500);
+    font-size: 0.9rem;
+  }
+
+  &__search-icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: var(--clr-gray-500);
+    margin-top: 0.1rem;
+  }
+
+  &__item-actions--visible {
+    opacity: 1;
   }
 
   // Drag ghost (the placeholder left behind)
