@@ -29,6 +29,7 @@ export const useProjectsStore = defineStore('projects', () => {
   // --- Item state (scoped to selected project) ---
   const items = ref<ProjectItemInProject[]>([])
   const itemsLoading = ref(false)
+  const itemBlockers = ref<Record<number, ProjectItem[]>>({})
 
   const sortedProjects = computed(() => [...projects.value].sort((a, b) => a.position - b.position))
 
@@ -110,11 +111,13 @@ export const useProjectsStore = defineStore('projects', () => {
   async function fetchItems(projectId: number) {
     selectedProjectId.value = projectId
     itemsLoading.value = true
+    itemBlockers.value = {}
     error.value = null
     try {
       const response = await api.get<ProjectItemInProject[]>(`/projects/${projectId}/items/`)
       items.value = response.data
       logger.info('items_fetched', { project_id: projectId, count: response.data.length })
+      fetchItemBlockers()
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
@@ -195,12 +198,101 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
+  async function reorderItems(orderedIds: number[]) {
+    if (selectedProjectId.value === null) return
+    const projectId = selectedProjectId.value
+    error.value = null
+
+    try {
+      const updates: Promise<unknown>[] = []
+
+      for (const [index, id] of orderedIds.entries()) {
+        const item = items.value.find((i) => i.id === id)
+        if (item && item.position !== index) {
+          updates.push(api.patch(`/project-items/${id}/reorder/`, { project_id: projectId, position: index }))
+        }
+      }
+
+      if (updates.length > 0) {
+        await Promise.all(updates)
+        for (const [index, id] of orderedIds.entries()) {
+          const item = items.value.find((i) => i.id === id)
+          if (item) item.position = index
+        }
+        logger.info('items_reordered', { project_id: projectId, count: updates.length })
+      }
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('items_reorder_failed', { detail: apiError.detail })
+      await fetchItems(projectId)
+      throw apiError
+    }
+  }
+
+  async function reorderProjects(orderedIds: number[]) {
+    error.value = null
+
+    try {
+      const updates: Promise<unknown>[] = []
+
+      for (const [index, id] of orderedIds.entries()) {
+        const project = projects.value.find((p) => p.id === id)
+        if (project && project.position !== index) {
+          updates.push(api.patch(`/projects/${id}/`, { position: index }))
+        }
+      }
+
+      if (updates.length > 0) {
+        await Promise.all(updates)
+        for (const [index, id] of orderedIds.entries()) {
+          const project = projects.value.find((p) => p.id === id)
+          if (project) project.position = index
+        }
+        logger.info('projects_reordered', { count: updates.length })
+      }
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('projects_reorder_failed', { detail: apiError.detail })
+      await fetchProjects()
+      throw apiError
+    }
+  }
+
   async function completeItem(id: number) {
     return updateItem(id, { completed: true })
   }
 
   async function archiveItem(id: number) {
     return updateItem(id, { archived: true })
+  }
+
+  // --- Blocker tracking ---
+
+  async function fetchItemBlockers() {
+    const blockerMap: Record<number, ProjectItem[]> = {}
+
+    await Promise.all(
+      items.value.map(async (item) => {
+        try {
+          const response = await api.get<ProjectItem[]>(`/project-items/${item.id}/blockers/`)
+          if (response.data.length > 0) {
+            blockerMap[item.id] = response.data
+          }
+        } catch {
+          // Non-critical — skip blocker info for this item
+        }
+      })
+    )
+
+    itemBlockers.value = blockerMap
+    logger.debug('item_blockers_fetched', { blocked_count: Object.keys(blockerMap).length })
+  }
+
+  async function fetchItemDetail(id: number) {
+    const response = await api.get<ProjectItemDetail>(`/project-items/${id}/`)
+    return response.data
   }
 
   // --- Dependencies ---
@@ -313,6 +405,7 @@ export const useProjectsStore = defineStore('projects', () => {
     // Item state
     items,
     itemsLoading,
+    itemBlockers,
     sortedItems,
     // Actions
     clearError,
@@ -325,8 +418,12 @@ export const useProjectsStore = defineStore('projects', () => {
     updateItem,
     removeItem,
     reorderItem,
+    reorderItems,
+    reorderProjects,
     completeItem,
     archiveItem,
+    fetchItemBlockers,
+    fetchItemDetail,
     addDependency,
     removeDependency,
     getBlockers,
