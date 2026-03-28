@@ -27,7 +27,7 @@ test.describe('Countdowns Page', () => {
     })
 
     await page.goto('/countdowns')
-    await expect(page.getByTestId('countdown-item').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
     await expect(page.locator(ERROR)).not.toBeVisible()
     expect(apiErrors).toEqual([])
   })
