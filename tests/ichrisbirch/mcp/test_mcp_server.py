@@ -167,6 +167,79 @@ class TestMcpBookTools:
         assert updated['title'] == 'New Title'
         assert updated['tags'] == ['Keep']
 
+    def test_get_book_returns_full_record(self, mcp_tools):
+        """get_book returns all fields for a single book."""
+        client, session = mcp_tools
+        created = json.loads(
+            mcp_server.create_book(
+                title='Meditations',
+                author='Marcus Aurelius',
+                tags='Philosophy, Stoicism',
+                notes='Classic stoic text',
+                rating=5,
+            )
+        )
+        result = json.loads(mcp_server.get_book(id=created['id']))
+        assert result['title'] == 'Meditations'
+        assert result['author'] == 'Marcus Aurelius'
+        assert result['notes'] == 'Classic stoic text'
+        assert result['rating'] == 5
+        assert 'isbn' in result
+        assert 'ownership' in result
+        assert 'purchase_date' in result
+
+    def test_get_book_not_found(self, mcp_tools):
+        """get_book returns error for non-existent ID."""
+        client, session = mcp_tools
+        result = json.loads(mcp_server.get_book(id=999999))
+        assert 'error' in result
+
+    def test_list_books_returns_summary_fields_only(self, mcp_tools):
+        """list_books returns only summary fields, not full records."""
+        client, session = mcp_tools
+        mcp_server.create_book(
+            title='Summary Test',
+            author='Author',
+            tags='Test',
+            isbn='1234567890',
+            purchase_price=9.99,
+            location='Shelf A',
+        )
+        books = json.loads(mcp_server.list_books())
+        assert len(books) > 0
+        book = next(b for b in books if b['title'] == 'Summary Test')
+        assert set(book.keys()) == {'id', 'title', 'author', 'tags', 'notes', 'progress', 'rating'}
+        assert 'isbn' not in book
+        assert 'purchase_price' not in book
+        assert 'location' not in book
+
+    def test_search_books_returns_summary_fields_only(self, mcp_tools):
+        """search_books returns only summary fields, not full records."""
+        client, session = mcp_tools
+        mcp_server.create_book(
+            title='Searchable Philosophy Book',
+            author='Philosopher',
+            tags='Philosophy',
+            isbn='0987654321',
+            purchase_price=14.99,
+        )
+        books = json.loads(mcp_server.search_books(query='Philosophy'))
+        assert len(books) > 0
+        book = books[0]
+        assert set(book.keys()) == {'id', 'title', 'author', 'tags', 'notes', 'progress', 'rating'}
+        assert 'isbn' not in book
+        assert 'purchase_price' not in book
+
+    def test_list_books_summary_with_ownership_filter(self, mcp_tools):
+        """list_books with ownership filter returns filtered summary results."""
+        client, session = mcp_tools
+        mcp_server.create_book(title='Owned Book', author='Author', tags='Test', ownership='owned')
+        mcp_server.create_book(title='Wishlist Book', author='Author', tags='Test', ownership='to_purchase')
+        owned = json.loads(mcp_server.list_books(ownership='owned'))
+        titles = [b['title'] for b in owned]
+        assert 'Owned Book' in titles
+        assert 'Wishlist Book' not in titles
+
 
 # ---------------------------------------------------------------------------
 # MCP Article tool integration tests
@@ -257,3 +330,27 @@ class TestJsonResponseHelper:
         result = json.loads(mcp_server._json_response(response))
         assert result['error'] == 401
         assert 'Unauthorized' in result['detail']
+
+
+class TestSummarizeHelper:
+    """Test the _summarize helper for field filtering."""
+
+    def test_summarize_list(self):
+        data = json.dumps([{'id': 1, 'title': 'Book', 'isbn': '123', 'price': 9.99}])
+        result = json.loads(mcp_server._summarize(data, ['id', 'title']))
+        assert result == [{'id': 1, 'title': 'Book'}]
+
+    def test_summarize_single_object(self):
+        data = json.dumps({'id': 1, 'title': 'Book', 'isbn': '123'})
+        result = json.loads(mcp_server._summarize(data, ['id', 'title']))
+        assert result == {'id': 1, 'title': 'Book'}
+
+    def test_summarize_passes_through_errors(self):
+        data = json.dumps({'error': 404, 'detail': 'Not found'})
+        result = json.loads(mcp_server._summarize(data, ['id', 'title']))
+        assert result == {'error': 404, 'detail': 'Not found'}
+
+    def test_summarize_missing_fields_excluded(self):
+        data = json.dumps([{'id': 1, 'title': 'Book'}])
+        result = json.loads(mcp_server._summarize(data, ['id', 'title', 'nonexistent']))
+        assert result == [{'id': 1, 'title': 'Book'}]

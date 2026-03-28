@@ -35,6 +35,19 @@ def _json_response(response: httpx.Response) -> str:
     return json.dumps({'error': response.status_code, 'detail': response.text})
 
 
+def _summarize(json_str: str, fields: list[str]) -> str:
+    """Filter a JSON response to include only the specified fields.
+
+    Works on both single objects and lists. Passes through error responses unchanged.
+    """
+    data = json.loads(json_str)
+    if isinstance(data, dict) and 'error' in data:
+        return json_str
+    if isinstance(data, list):
+        return json.dumps([{k: v for k, v in item.items() if k in fields} for item in data], default=str)
+    return json.dumps({k: v for k, v in data.items() if k in fields}, default=str)
+
+
 # =============================================================================
 # TASKS
 # =============================================================================
@@ -240,21 +253,38 @@ def delete_event(id: int) -> str:
 # =============================================================================
 
 
+BOOK_SUMMARY_FIELDS = ['id', 'title', 'author', 'tags', 'notes', 'progress', 'rating']
+
+
+@mcp.tool()
+def get_book(id: int) -> str:
+    """Get full details for a single book by ID."""
+    with _client() as c:
+        return _json_response(c.get(f'/books/{id}/'))
+
+
 @mcp.tool()
 def list_books(ownership: str | None = None) -> str:
-    """List all books, optionally filtered by ownership (owned, to_purchase, rejected, sold, donated)."""
+    """List all books (summary: id, title, author, tags, notes, progress, rating).
+
+    Use get_book(id) for full details on a specific book.
+    Optionally filter by ownership: owned, to_purchase, rejected, sold, donated.
+    """
     params = {}
     if ownership:
         params['ownership'] = ownership
     with _client() as c:
-        return _json_response(c.get('/books/', params=params))
+        return _summarize(_json_response(c.get('/books/', params=params)), BOOK_SUMMARY_FIELDS)
 
 
 @mcp.tool()
 def search_books(query: str) -> str:
-    """Search books by title, author, or tags."""
+    """Search books by title, author, or tags (summary: id, title, author, tags, notes, progress, rating).
+
+    Use get_book(id) for full details on a specific book.
+    """
     with _client() as c:
-        return _json_response(c.get('/books/search/', params={'q': query}))
+        return _summarize(_json_response(c.get('/books/search/', params={'q': query})), BOOK_SUMMARY_FIELDS)
 
 
 @mcp.tool()
