@@ -58,6 +58,18 @@ from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
 from ichrisbirch.schemas.personal_api_key import PersonalAPIKey
 from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreate
 from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreated
+from ichrisbirch.schemas.project import Project
+from ichrisbirch.schemas.project import ProjectCreate
+from ichrisbirch.schemas.project import ProjectUpdate
+from ichrisbirch.schemas.project import ProjectWithItemCount
+from ichrisbirch.schemas.project_item import ProjectItem
+from ichrisbirch.schemas.project_item import ProjectItemCreate
+from ichrisbirch.schemas.project_item import ProjectItemDependencyCreate
+from ichrisbirch.schemas.project_item import ProjectItemDetail
+from ichrisbirch.schemas.project_item import ProjectItemInProject
+from ichrisbirch.schemas.project_item import ProjectItemMembershipCreate
+from ichrisbirch.schemas.project_item import ProjectItemReorder
+from ichrisbirch.schemas.project_item import ProjectItemUpdate
 from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
@@ -131,6 +143,18 @@ __all__ = [
     'PersonalAPIKey',
     'PersonalAPIKeyCreate',
     'PersonalAPIKeyCreated',
+    'Project',
+    'ProjectCreate',
+    'ProjectUpdate',
+    'ProjectWithItemCount',
+    'ProjectItem',
+    'ProjectItemCreate',
+    'ProjectItemDependencyCreate',
+    'ProjectItemDetail',
+    'ProjectItemInProject',
+    'ProjectItemMembershipCreate',
+    'ProjectItemReorder',
+    'ProjectItemUpdate',
     'SchedulerJob',
     'SchedulerJobRun',
     'SchedulerJobRunCreate',

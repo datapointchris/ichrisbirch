@@ -64,7 +64,7 @@ class TestModelDiscovery:
 
         assert 'name' in cols_by_name
         assert cols_by_name['name'].python_type is str
-        assert cols_by_name['name'].max_length == 64
+        assert cols_by_name['name'].max_length is None
 
         assert 'category' in cols_by_name
         assert cols_by_name['category'].fk_target == 'task_categories.name'

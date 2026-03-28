@@ -3,7 +3,6 @@ from datetime import datetime
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -36,7 +35,7 @@ class TaskCategory(Base):
 class Task(Base):
     __tablename__ = 'tasks'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(64))
+    name: Mapped[str] = mapped_column(Text)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(Text, ForeignKey('task_categories.name'), nullable=False)
     priority: Mapped[int] = mapped_column(Integer)

@@ -118,7 +118,7 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 ## Testing
 
-**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports.
+**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. Test containers are **ephemeral** — the postgres data volume is destroyed on `testing stop`. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 

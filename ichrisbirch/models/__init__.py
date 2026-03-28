@@ -22,6 +22,10 @@ from ichrisbirch.models.habitcompleted import HabitCompleted
 from ichrisbirch.models.jwt_refresh_token import JWTRefreshToken
 from ichrisbirch.models.money_wasted import MoneyWasted
 from ichrisbirch.models.personal_api_key import PersonalAPIKey
+from ichrisbirch.models.project import Project
+from ichrisbirch.models.project import ProjectItem
+from ichrisbirch.models.project import ProjectItemDependency
+from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
 from ichrisbirch.models.task import Task
 from ichrisbirch.models.task import TaskCategory
@@ -52,6 +56,10 @@ __all__ = [
     'JWTRefreshToken',
     'MoneyWasted',
     'PersonalAPIKey',
+    'Project',
+    'ProjectItem',
+    'ProjectItemDependency',
+    'ProjectItemMembership',
     'SchedulerJobRun',
     'Task',
     'TaskCategory',

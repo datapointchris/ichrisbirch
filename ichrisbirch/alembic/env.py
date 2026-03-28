@@ -31,6 +31,10 @@ from ichrisbirch.models import HabitCompleted  # noqa
 from ichrisbirch.models import JWTRefreshToken  # noqa
 from ichrisbirch.models import MoneyWasted  # noqa
 from ichrisbirch.models import PersonalAPIKey  # noqa
+from ichrisbirch.models import Project  # noqa
+from ichrisbirch.models import ProjectItem  # noqa
+from ichrisbirch.models import ProjectItemDependency  # noqa
+from ichrisbirch.models import ProjectItemMembership  # noqa
 from ichrisbirch.models import SchedulerJobRun  # noqa
 from ichrisbirch.models import Task  # noqa
 from ichrisbirch.models import TaskCategory  # noqa

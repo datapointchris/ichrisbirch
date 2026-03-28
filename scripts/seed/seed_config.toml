@@ -1,7 +1,7 @@
 [seed]
 scale = 1
 faker_seed = 42
-skip_models = ["Apartment", "Feature", "PortfolioProject", "JournalEntry", "ArticleFailedImport"]
+skip_models = ["Apartment", "Feature", "PortfolioProject", "JournalEntry", "ArticleFailedImport", "ProjectItemMembership", "ProjectItemDependency"]
 
 # --- Task names by category ---
 
