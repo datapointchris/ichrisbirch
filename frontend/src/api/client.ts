@@ -525,6 +525,74 @@ export interface MoneyWastedUpdate {
   notes?: string
 }
 
+// --- Project ---
+
+export interface Project {
+  id: number
+  name: string
+  position: number
+  created_at: string
+}
+
+export interface ProjectCreate {
+  name: string
+  position?: number
+}
+
+export interface ProjectUpdate {
+  name?: string
+  position?: number
+}
+
+export interface ProjectWithItemCount extends Project {
+  item_count: number
+}
+
+export interface ProjectItem {
+  id: number
+  title: string
+  notes?: string
+  completed: boolean
+  archived: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ProjectItemCreate {
+  title: string
+  notes?: string
+  project_ids: number[]
+}
+
+export interface ProjectItemUpdate {
+  title?: string
+  notes?: string
+  completed?: boolean
+  archived?: boolean
+}
+
+export interface ProjectItemDetail extends ProjectItem {
+  projects: Project[]
+  dependency_ids: number[]
+}
+
+export interface ProjectItemInProject extends ProjectItem {
+  position: number
+}
+
+export interface ProjectItemReorder {
+  project_id: number
+  position: number
+}
+
+export interface ProjectItemMembershipCreate {
+  project_id: number
+}
+
+export interface ProjectItemDependencyCreate {
+  depends_on_id: number
+}
+
 // --- Box Packing ---
 
 export interface BoxItem {

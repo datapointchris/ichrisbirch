@@ -144,6 +144,7 @@ const mainLinks: NavLink[] = [
     activeNames: ['habits', 'habits-completed', 'habits-manage'],
   },
   { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: true },
+  { to: '/projects', label: 'Projects', icon: 'fa-solid fa-diagram-project', migrated: true },
   {
     to: '/tasks',
     label: 'Tasks',
