@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
+
+from ichrisbirch.schemas.project import Project
 
 
 class ProjectItemConfig(BaseModel):
@@ -41,7 +45,7 @@ class ProjectItemDetail(ProjectItemConfig):
     archived: bool
     created_at: datetime
     updated_at: datetime
-    project_ids: list[int]
+    projects: list[Project]
     dependency_ids: list[int]
 
 

@@ -51,7 +51,18 @@ def _detect_dependency_cycle(session: Session, item_id: int, depends_on_id: int)
     return False
 
 
-# --- Filters (must be before /{id}/ routes) ---
+# --- List and filters (must be before /{id}/ routes) ---
+
+
+@router.get('/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
+async def read_many(session: Session = Depends(get_sqlalchemy_session)):
+    """List all active (non-archived) project items."""
+    query = (
+        select(models.ProjectItem)
+        .where(models.ProjectItem.archived == False)  # noqa: E712
+        .order_by(models.ProjectItem.created_at.desc())
+    )
+    return list(session.scalars(query).all())
 
 
 @router.get('/blocked/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
@@ -121,6 +132,14 @@ async def create(item: schemas.ProjectItemCreate, session: Session = Depends(get
     session.commit()
     session.refresh(db_item)
 
+    projects = list(
+        session.scalars(
+            select(models.Project)
+            .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
+            .where(ProjectItemMembership.item_id == db_item.id)
+        ).all()
+    )
+
     return schemas.ProjectItemDetail(
         id=db_item.id,
         title=db_item.title,
@@ -129,7 +148,7 @@ async def create(item: schemas.ProjectItemCreate, session: Session = Depends(get
         archived=db_item.archived,
         created_at=db_item.created_at,
         updated_at=db_item.updated_at,
-        project_ids=item.project_ids,
+        projects=[schemas.Project.model_validate(p) for p in projects],
         dependency_ids=[],
     )
 
@@ -138,7 +157,13 @@ async def create(item: schemas.ProjectItemCreate, session: Session = Depends(get
 async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     item = _get_item_or_404(session, id)
 
-    project_ids = list(session.execute(select(ProjectItemMembership.project_id).where(ProjectItemMembership.item_id == id)).scalars().all())
+    projects = list(
+        session.scalars(
+            select(models.Project)
+            .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
+            .where(ProjectItemMembership.item_id == id)
+        ).all()
+    )
     dependency_ids = list(
         session.execute(select(ProjectItemDependency.depends_on_id).where(ProjectItemDependency.item_id == id)).scalars().all()
     )
@@ -151,7 +176,7 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
         archived=item.archived,
         created_at=item.created_at,
         updated_at=item.updated_at,
-        project_ids=project_ids,
+        projects=[schemas.Project.model_validate(p) for p in projects],
         dependency_ids=dependency_ids,
     )
 
