@@ -1,34 +1,25 @@
-"""Seed-specific test fixtures."""
+"""Seed test fixtures."""
 
 from __future__ import annotations
 
-from pathlib import Path
+import random
 
 import pytest
 from faker import Faker
 
-from scripts.seed.config import SeedConfig
-from scripts.seed.config import load_config
-from scripts.seed.discovery import discover_models
-
-
-@pytest.fixture
-def seed_config() -> SeedConfig:
-    """Load the default seed config."""
-    config_path = Path(__file__).parent.parent.parent / 'scripts' / 'seed' / 'seed_config.toml'
-    return load_config(config_path)
-
-
-@pytest.fixture
-def all_models():
-    """Discover all models."""
-    return discover_models()
+from ichrisbirch.database.session import create_session
+from tests.utils.database import test_settings
 
 
 @pytest.fixture(autouse=True)
-def seed_faker():
-    """Seed Faker for reproducible tests."""
+def seed_random():
+    """Seed random generators for reproducibility."""
     Faker.seed(42)
-    import random
-
     random.seed(42)
+
+
+@pytest.fixture
+def db():
+    """Provide a database session for seed integration tests."""
+    with create_session(test_settings) as session:
+        yield session
