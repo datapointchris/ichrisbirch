@@ -12,15 +12,14 @@ from ichrisbirch.gui.utils import set_app_geometry
 
 logger = structlog.get_logger()
 
-_settings = get_settings()
-
 
 def submit_form():
     if not (url := url_entry.get()):
         messagebox.showwarning('Validation Error', 'Please fill all fields correctly.')
         return
 
-    insights_endpoint = f'{_settings.api_url}/articles/insights/'
+    settings = get_settings()
+    insights_endpoint = f'{settings.api_url}/articles/insights/'
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_ACCESS_TOKEN',  # Placeholder for authorization header
