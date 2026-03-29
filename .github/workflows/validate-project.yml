@@ -281,6 +281,13 @@ jobs:
       - name: Install Python dependencies
         run: uv sync --frozen --group test
 
+      - name: Generate self-signed TLS certs for Traefik
+        run: |
+          openssl req -x509 -newkey rsa:2048 -keyout deploy-containers/traefik/certs/test.key \
+            -out deploy-containers/traefik/certs/test.crt -days 1 -nodes \
+            -subj "/CN=test.localhost" \
+            -addext "subjectAltName=DNS:test.localhost,DNS:*.test.localhost,DNS:api.test.localhost,DNS:app.test.localhost"
+
       - name: Create Docker network
         run: docker network create proxy || true
 
