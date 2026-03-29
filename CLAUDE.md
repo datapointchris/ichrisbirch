@@ -130,11 +130,13 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 **Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icb prod build-test`.
 
+**Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Same applies to DB schema changes (migrations run on startup). Symptoms: 500 errors on pages that import the new package, while other pages work fine.
+
 ## Deployment
 
 Multi-stage Dockerfile: `base` → `development-builder` → `development` | `testing` | `production-builder` → `production`. Specify `--target`. Production image runs non-root with minimal deps.
 
-**Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider (`routing.yml`) switches traffic atomically. Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
+**Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider: `routing.yml` (git-tracked routers) + `services.yml` (generated, points to active color). Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
 
 Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs managed via `./cli/ichrisbirch ssl-manager`.
 
