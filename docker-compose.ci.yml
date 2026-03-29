@@ -51,6 +51,7 @@ services:
       retries: 5
 
   # Override Traefik for CI - simplified without dashboard auth
+  # command is a list so it replaces entirely — must include all required flags
   traefik:
     command:
       - "--ping=true"
@@ -58,13 +59,15 @@ services:
       - "--log.level=WARN"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
+      - "--providers.docker.network=icb-test-proxy"
+      - "--providers.docker.constraints=Label(`traefik.environment`,`testing`)"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.http.tls.domains[0].main=*.test.localhost"
 
 networks:
   proxy:
