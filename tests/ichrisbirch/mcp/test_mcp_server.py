@@ -308,6 +308,176 @@ class TestMcpArticleTools:
 
 
 # ---------------------------------------------------------------------------
+# MCP Project tool integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestMcpProjectTools:
+    """Integration tests for MCP project tools against the real API."""
+
+    def test_create_and_list_projects(self, mcp_tools):
+        """Create a project and verify it appears in list."""
+        result = json.loads(mcp_server.create_project(name='MCP Test Project'))
+        assert 'id' in result
+        assert result['name'] == 'MCP Test Project'
+
+        projects = json.loads(mcp_server.list_projects())
+        names = [p['name'] for p in projects]
+        assert 'MCP Test Project' in names
+
+    def test_update_project(self, mcp_tools):
+        """Update a project name."""
+        created = json.loads(mcp_server.create_project(name='Original'))
+        updated = json.loads(mcp_server.update_project(id=created['id'], name='Renamed'))
+        assert updated['name'] == 'Renamed'
+
+    def test_delete_empty_project(self, mcp_tools):
+        """Delete a project with no items."""
+        created = json.loads(mcp_server.create_project(name='To Delete'))
+        result = json.loads(mcp_server.delete_project(id=created['id']))
+        assert result['status'] == 'success'
+
+    def test_delete_project_with_sole_items_fails(self, mcp_tools):
+        """Cannot delete a project if items belong only to it."""
+        project = json.loads(mcp_server.create_project(name='Sole Owner'))
+        mcp_server.create_project_item(title='Orphan Item', project_ids=str(project['id']))
+        result = json.loads(mcp_server.delete_project(id=project['id']))
+        assert result['error'] == 409
+
+    def test_create_and_list_project_items(self, mcp_tools):
+        """Create items in a project and list them."""
+        project = json.loads(mcp_server.create_project(name='Item Test'))
+        mcp_server.create_project_item(title='Item A', project_ids=str(project['id']))
+        mcp_server.create_project_item(title='Item B', project_ids=str(project['id']), notes='Some notes')
+
+        items = json.loads(mcp_server.list_project_items(project_id=project['id']))
+        titles = [i['title'] for i in items]
+        assert 'Item A' in titles
+        assert 'Item B' in titles
+
+    def test_list_project_items_returns_summary_fields(self, mcp_tools):
+        """list_project_items returns only summary fields."""
+        project = json.loads(mcp_server.create_project(name='Summary Test'))
+        mcp_server.create_project_item(title='Summary Item', project_ids=str(project['id']))
+
+        items = json.loads(mcp_server.list_project_items(project_id=project['id']))
+        assert len(items) > 0
+        assert set(items[0].keys()) == {'id', 'title', 'notes', 'completed', 'archived'}
+
+    def test_get_project_item_returns_full_detail(self, mcp_tools):
+        """get_project_item returns projects and dependency_ids."""
+        project = json.loads(mcp_server.create_project(name='Detail Test'))
+        item = json.loads(mcp_server.create_project_item(title='Detail Item', project_ids=str(project['id'])))
+
+        detail = json.loads(mcp_server.get_project_item(id=item['id']))
+        assert detail['title'] == 'Detail Item'
+        assert 'projects' in detail
+        assert 'dependency_ids' in detail
+        assert len(detail['projects']) == 1
+        assert detail['projects'][0]['name'] == 'Detail Test'
+
+    def test_update_project_item(self, mcp_tools):
+        """Update a project item's title and notes."""
+        project = json.loads(mcp_server.create_project(name='Update Test'))
+        item = json.loads(mcp_server.create_project_item(title='Original', project_ids=str(project['id'])))
+        updated = json.loads(mcp_server.update_project_item(id=item['id'], title='Changed', notes='New notes'))
+        assert updated['title'] == 'Changed'
+        assert updated['notes'] == 'New notes'
+
+    def test_complete_and_archive_project_item(self, mcp_tools):
+        """Mark item completed then archived."""
+        project = json.loads(mcp_server.create_project(name='Complete Test'))
+        item = json.loads(mcp_server.create_project_item(title='To Complete', project_ids=str(project['id'])))
+
+        completed = json.loads(mcp_server.update_project_item(id=item['id'], completed=True))
+        assert completed['completed'] is True
+
+        archived = json.loads(mcp_server.update_project_item(id=item['id'], archived=True))
+        assert archived['archived'] is True
+
+    def test_delete_project_item(self, mcp_tools):
+        """Delete a project item."""
+        project = json.loads(mcp_server.create_project(name='Delete Item Test'))
+        item = json.loads(mcp_server.create_project_item(title='To Delete', project_ids=str(project['id'])))
+        result = json.loads(mcp_server.delete_project_item(id=item['id']))
+        assert result['status'] == 'success'
+
+    def test_search_project_items(self, mcp_tools):
+        """Search items by title and verify summary fields."""
+        project = json.loads(mcp_server.create_project(name='Search Test'))
+        mcp_server.create_project_item(title='Unique Widget Alpha', project_ids=str(project['id']))
+
+        results = json.loads(mcp_server.search_project_items(query='Widget Alpha'))
+        assert len(results) > 0
+        assert results[0]['title'] == 'Unique Widget Alpha'
+        assert set(results[0].keys()) == {'id', 'title', 'notes', 'completed', 'archived'}
+
+    def test_add_and_remove_dependency(self, mcp_tools):
+        """Add a dependency and verify it appears in item detail, then remove it."""
+        project = json.loads(mcp_server.create_project(name='Dep Test'))
+        pid = str(project['id'])
+        item_a = json.loads(mcp_server.create_project_item(title='Blocked', project_ids=pid))
+        item_b = json.loads(mcp_server.create_project_item(title='Blocker', project_ids=pid))
+
+        detail = json.loads(mcp_server.add_project_item_dependency(item_id=item_a['id'], depends_on_id=item_b['id']))
+        assert item_b['id'] in detail['dependency_ids']
+
+        result = json.loads(mcp_server.remove_project_item_dependency(item_id=item_a['id'], depends_on_id=item_b['id']))
+        assert result['status'] == 'success'
+
+    def test_dependency_cycle_rejected(self, mcp_tools):
+        """Adding a dependency that creates a cycle returns 409."""
+        project = json.loads(mcp_server.create_project(name='Cycle Test'))
+        pid = str(project['id'])
+        item_a = json.loads(mcp_server.create_project_item(title='A', project_ids=pid))
+        item_b = json.loads(mcp_server.create_project_item(title='B', project_ids=pid))
+
+        mcp_server.add_project_item_dependency(item_id=item_a['id'], depends_on_id=item_b['id'])
+        result = json.loads(mcp_server.add_project_item_dependency(item_id=item_b['id'], depends_on_id=item_a['id']))
+        assert result['error'] == 409
+
+    def test_get_blockers(self, mcp_tools):
+        """Get incomplete blockers for an item."""
+        project = json.loads(mcp_server.create_project(name='Blocker Test'))
+        pid = str(project['id'])
+        item_a = json.loads(mcp_server.create_project_item(title='Blocked Item', project_ids=pid))
+        item_b = json.loads(mcp_server.create_project_item(title='Blocker Item', project_ids=pid))
+
+        mcp_server.add_project_item_dependency(item_id=item_a['id'], depends_on_id=item_b['id'])
+        blockers = json.loads(mcp_server.get_project_item_blockers(item_id=item_a['id']))
+        assert len(blockers) == 1
+        assert blockers[0]['title'] == 'Blocker Item'
+
+    def test_add_and_remove_from_project(self, mcp_tools):
+        """Add item to second project, then remove it."""
+        proj_a = json.loads(mcp_server.create_project(name='Proj A'))
+        proj_b = json.loads(mcp_server.create_project(name='Proj B'))
+        item = json.loads(mcp_server.create_project_item(title='Multi-project', project_ids=str(proj_a['id'])))
+
+        added = json.loads(mcp_server.add_project_item_to_project(item_id=item['id'], project_id=proj_b['id']))
+        assert added['name'] == 'Proj B'
+
+        removed = json.loads(mcp_server.remove_project_item_from_project(item_id=item['id'], project_id=proj_b['id']))
+        assert removed['status'] == 'success'
+
+    def test_remove_from_last_project_fails(self, mcp_tools):
+        """Cannot remove item from its only project."""
+        project = json.loads(mcp_server.create_project(name='Last Proj'))
+        item = json.loads(mcp_server.create_project_item(title='Stuck Item', project_ids=str(project['id'])))
+
+        result = json.loads(mcp_server.remove_project_item_from_project(item_id=item['id'], project_id=project['id']))
+        assert result['error'] == 409
+
+    def test_create_item_with_multiple_projects(self, mcp_tools):
+        """Create an item belonging to multiple projects at once."""
+        proj_a = json.loads(mcp_server.create_project(name='Multi A'))
+        proj_b = json.loads(mcp_server.create_project(name='Multi B'))
+
+        item = json.loads(mcp_server.create_project_item(title='Multi Item', project_ids=f'{proj_a["id"]},{proj_b["id"]}'))
+        assert len(item['projects']) == 2
+
+
+# ---------------------------------------------------------------------------
 # Helper function tests
 # ---------------------------------------------------------------------------
 

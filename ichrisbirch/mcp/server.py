@@ -526,6 +526,151 @@ def delete_countdown(id: int) -> str:
 
 
 # =============================================================================
+# PROJECTS
+# =============================================================================
+
+PROJECT_ITEM_SUMMARY_FIELDS = ['id', 'title', 'notes', 'completed', 'archived']
+
+
+@mcp.tool()
+def list_projects() -> str:
+    """List all projects with item counts, ordered by position."""
+    with _client() as c:
+        return _json_response(c.get('/projects/'))
+
+
+@mcp.tool()
+def create_project(name: str) -> str:
+    """Create a new project."""
+    with _client() as c:
+        return _json_response(c.post('/projects/', json={'name': name}))
+
+
+@mcp.tool()
+def update_project(id: int, name: str | None = None, position: int | None = None) -> str:
+    """Update a project by ID. Only provided fields are changed."""
+    payload: dict[str, Any] = {k: v for k, v in {'name': name, 'position': position}.items() if v is not None}
+    with _client() as c:
+        return _json_response(c.patch(f'/projects/{id}/', json=payload))
+
+
+@mcp.tool()
+def delete_project(id: int) -> str:
+    """Delete a project by ID. Fails if items belong only to this project."""
+    with _client() as c:
+        return _json_response(c.delete(f'/projects/{id}/'))
+
+
+@mcp.tool()
+def list_project_items(project_id: int, archived: bool = False) -> str:
+    """List items in a project (summary: id, title, notes, completed, archived).
+
+    Set archived=True to include archived items.
+    """
+    params: dict[str, Any] = {}
+    if archived:
+        params['archived'] = True
+    with _client() as c:
+        return _summarize(_json_response(c.get(f'/projects/{project_id}/items/', params=params)), PROJECT_ITEM_SUMMARY_FIELDS)
+
+
+@mcp.tool()
+def get_project_item(id: int) -> str:
+    """Get full details for a project item including its projects and dependency_ids."""
+    with _client() as c:
+        return _json_response(c.get(f'/project-items/{id}/'))
+
+
+@mcp.tool()
+def create_project_item(title: str, project_ids: str, notes: str | None = None) -> str:
+    """Create a new project item.
+
+    project_ids is a comma-separated list of project IDs (e.g. "1,3").
+    At least one project ID is required.
+    """
+    ids = [int(x.strip()) for x in project_ids.split(',') if x.strip()]
+    payload: dict[str, Any] = {'title': title, 'project_ids': ids}
+    if notes:
+        payload['notes'] = notes
+    with _client() as c:
+        return _json_response(c.post('/project-items/', json=payload))
+
+
+@mcp.tool()
+def update_project_item(
+    id: int,
+    title: str | None = None,
+    notes: str | None = None,
+    completed: bool | None = None,
+    archived: bool | None = None,
+    null_fields: str | None = None,
+) -> str:
+    """Update a project item by ID. Only provided fields are changed.
+
+    To set a field to null, include it in null_fields (comma-separated).
+    """
+    fields = {'title': title, 'notes': notes, 'completed': completed, 'archived': archived}
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
+    with _client() as c:
+        return _json_response(c.patch(f'/project-items/{id}/', json=payload))
+
+
+@mcp.tool()
+def delete_project_item(id: int) -> str:
+    """Delete a project item by ID."""
+    with _client() as c:
+        return _json_response(c.delete(f'/project-items/{id}/'))
+
+
+@mcp.tool()
+def search_project_items(query: str) -> str:
+    """Search project items by title or notes (summary: id, title, notes, completed, archived)."""
+    with _client() as c:
+        return _summarize(_json_response(c.get('/project-items/search/', params={'q': query})), PROJECT_ITEM_SUMMARY_FIELDS)
+
+
+@mcp.tool()
+def add_project_item_dependency(item_id: int, depends_on_id: int) -> str:
+    """Add a dependency: item_id will be blocked by depends_on_id.
+
+    Fails with 409 if this would create a cycle.
+    """
+    with _client() as c:
+        return _json_response(c.post(f'/project-items/{item_id}/dependencies/', json={'depends_on_id': depends_on_id}))
+
+
+@mcp.tool()
+def remove_project_item_dependency(item_id: int, depends_on_id: int) -> str:
+    """Remove a dependency between two project items."""
+    with _client() as c:
+        return _json_response(c.delete(f'/project-items/{item_id}/dependencies/{depends_on_id}/'))
+
+
+@mcp.tool()
+def get_project_item_blockers(item_id: int) -> str:
+    """Get incomplete items that block this item."""
+    with _client() as c:
+        return _summarize(_json_response(c.get(f'/project-items/{item_id}/blockers/')), PROJECT_ITEM_SUMMARY_FIELDS)
+
+
+@mcp.tool()
+def add_project_item_to_project(item_id: int, project_id: int) -> str:
+    """Add a project item to an additional project (multi-project membership)."""
+    with _client() as c:
+        return _json_response(c.post(f'/project-items/{item_id}/projects/', json={'project_id': project_id}))
+
+
+@mcp.tool()
+def remove_project_item_from_project(item_id: int, project_id: int) -> str:
+    """Remove a project item from a project. Fails if it's the item's last project."""
+    with _client() as c:
+        return _json_response(c.delete(f'/project-items/{item_id}/projects/{project_id}/'))
+
+
+# =============================================================================
 # AUTOTASKS
 # =============================================================================
 
