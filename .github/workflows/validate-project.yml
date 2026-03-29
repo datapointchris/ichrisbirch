@@ -20,8 +20,39 @@ defaults:
     shell: bash
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-24.04
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'ichrisbirch/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - 'alembic.ini'
+              - '.github/workflows/**'
+            docker:
+              - 'Dockerfile'
+              - 'docker-compose*.yml'
+              - 'deploy-containers/**'
+              - '.github/workflows/**'
+
   lint:
     name: Lint Code
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ${{matrix.os}}
     strategy:
       fail-fast: true
@@ -80,6 +111,8 @@ jobs:
 
   test:
     name: Run Tests
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ${{matrix.os}}
     strategy:
       fail-fast: true
@@ -188,6 +221,8 @@ jobs:
 
   test-production-build:
     name: Test Production Build
+    needs: changes
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-24.04
     # This job tests that the production Docker build works correctly.
     # It catches issues like the shared image race condition that only
