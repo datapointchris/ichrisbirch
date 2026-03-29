@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@v2.0.0
+        uses: ludeeus/action-shellcheck@2.0.0
 
       - name: Lint GitHub Actions workflow files
         run: |
@@ -74,7 +74,7 @@ jobs:
           ./actionlint -color -shellcheck=""
 
       - name: Install UV
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
           python-version: "3.13"
@@ -127,7 +127,7 @@ jobs:
           version: "latest"
 
       - name: Install UV
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
           python-version: "3.13"
@@ -273,7 +273,7 @@ jobs:
           version: "latest"
 
       - name: Install UV
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
           python-version: "3.13"
