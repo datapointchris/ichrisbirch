@@ -415,26 +415,28 @@ def delete_book(id: int) -> str:
 # ARTICLES
 # =============================================================================
 
+ARTICLE_SUMMARY_FIELDS = ['id', 'title', 'url', 'tags', 'summary']
+
 
 @mcp.tool()
 def list_articles() -> str:
-    """List all articles."""
+    """List all articles (summary: id, title, url, tags, summary)."""
     with _client() as c:
-        return _json_response(c.get('/articles/'))
+        return _summarize(_json_response(c.get('/articles/')), ARTICLE_SUMMARY_FIELDS)
 
 
 @mcp.tool()
 def get_current_article() -> str:
-    """Get the current article (the one being read)."""
+    """Get the current article (the one being read). Returns full detail."""
     with _client() as c:
         return _json_response(c.get('/articles/current/'))
 
 
 @mcp.tool()
 def search_articles(query: str) -> str:
-    """Search articles by title or tags."""
+    """Search articles by title or tags (summary: id, title, url, tags, summary)."""
     with _client() as c:
-        return _json_response(c.get('/articles/search/', params={'q': query}))
+        return _summarize(_json_response(c.get('/articles/search/', params={'q': query})), ARTICLE_SUMMARY_FIELDS)
 
 
 @mcp.tool()
