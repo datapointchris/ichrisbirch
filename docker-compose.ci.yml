@@ -41,6 +41,15 @@ services:
         source: uv_cache
         target: /root/.cache/uv
 
+  # Vue needs longer start_period in CI — npm install runs from scratch on fresh volume
+  vue:
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
+      interval: 10s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+
   # Override Traefik for CI - simplified without dashboard auth
   traefik:
     command:

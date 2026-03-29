@@ -171,20 +171,9 @@ jobs:
       - name: Start Docker Compose test environment
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build postgres redis
-          echo "Waiting for database to be healthy..."
-          sleep 10
+            --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build api chat scheduler
-          echo "Waiting for services to be ready..."
-          sleep 30
-
-      - name: Check Docker Compose status
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test ps
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test logs --tail=50
+            --project-name icb-test up -d --build --wait --wait-timeout 180 api chat scheduler
 
       - name: Initialize test database
         run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
@@ -296,39 +285,15 @@ jobs:
       - name: Start test containers for E2E
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build postgres redis
-          echo "Waiting for database to be healthy..."
-          sleep 10
+            --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build api vue traefik
+            --project-name icb-test up -d --build --wait --wait-timeout 300 api vue traefik
 
       - name: Initialize test database
         run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
 
       - name: Install Playwright browsers
         run: cd frontend && npx playwright install --with-deps chromium
-
-      - name: Wait for Vue dev server
-        run: |
-          echo "Waiting for Vue dev server (npm install + vite startup)..."
-          for i in $(seq 1 60); do
-            if curl -sf http://localhost:5174/ > /dev/null 2>&1; then
-              echo "Vue dev server ready after ~$((i * 3))s"
-              break
-            fi
-            if [ "$i" -eq 60 ]; then
-              echo "ERROR: Vue dev server not ready after 180s"
-              docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-                --project-name icb-test logs vue --tail=100
-              exit 1
-            fi
-            sleep 3
-          done
-
-      - name: Check container status
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test ps
 
       - name: Run Playwright E2E tests
         run: cd frontend && npx playwright test
