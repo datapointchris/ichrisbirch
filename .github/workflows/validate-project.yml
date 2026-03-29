@@ -25,13 +25,14 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       python: ${{ steps.filter.outputs.python }}
+      frontend: ${{ steps.filter.outputs.frontend }}
       docker: ${{ steps.filter.outputs.docker }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
 
       - name: Detect changed paths
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -43,51 +44,42 @@ jobs:
               - 'uv.lock'
               - 'alembic.ini'
               - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
             docker:
               - 'Dockerfile'
               - 'docker-compose*.yml'
               - 'deploy-containers/**'
               - '.github/workflows/**'
 
-  lint:
-    name: Lint Code
+  # ── Python ──────────────────────────────────────────────────────
+
+  lint-python:
+    name: Lint Python
     needs: changes
     if: needs.changes.outputs.python == 'true'
-    runs-on: ${{matrix.os}}
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ubuntu-24.04]
-        python-version: ["3.13"]
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
 
       - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@v2.0.0
 
-      - name: Check Github Actions Workflow Files
+      - name: Lint GitHub Actions workflow files
         run: |
           bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
           ./actionlint -color -shellcheck=""
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
       - name: Install UV
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v8
         with:
           enable-cache: true
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.13"
 
-      - name: Install CICD Dependencies
+      - name: Install dependencies
         run: uv sync --frozen --group test
 
       - name: Run ruff check
@@ -109,23 +101,20 @@ jobs:
       - name: Minimize uv cache
         run: uv cache prune --ci
 
-  test:
-    name: Run Tests
+  test-python:
+    name: Test Python
     needs: changes
     if: needs.changes.outputs.python == 'true'
-    runs-on: ${{matrix.os}}
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ubuntu-24.04]
-        python-version: ["3.13"]
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install SOPS
         uses: mdgreenwald/mozilla-sops-action@v1.6.0
+        with:
+          version: "3.12.2"
 
       - name: Decrypt testing secrets
         env:
@@ -137,22 +126,13 @@ jobs:
         with:
           version: "latest"
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
       - name: Install UV
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v8
         with:
           enable-cache: true
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.13"
 
-      - name: Install CICD Dependencies
+      - name: Install dependencies
         run: uv sync --frozen --group test
 
       - name: Get Playwright Version for Cache
@@ -162,20 +142,20 @@ jobs:
 
       # Cache browser binaries, cache key is based on Playwright version and OS
       - name: Cache Playwright Browser Binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
-          key: "${{ matrix.os }}-${{ matrix.python-version }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
+          key: "ubuntu-24.04-3.13-playwright-${{ env.PLAYWRIGHT_VERSION }}"
           restore-keys: |
-            ${{ matrix.os }}-${{ matrix.python-version }}-playwright-
+            ubuntu-24.04-3.13-playwright-
 
       - name: Install Playwright Browsers
         run: uv run playwright install
         if: steps.playwright-cache.outputs.cache-hit != 'true'
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-${{ github.event.repository.name }}-role
           aws-region: ${{ vars.AWS_REGION }}
@@ -219,6 +199,127 @@ jobs:
       - name: Minimize uv cache
         run: uv cache prune --ci
 
+  # ── Frontend ────────────────────────────────────────────────────
+
+  lint-frontend:
+    name: Lint Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Prettier check
+        run: npx prettier --check src/
+
+      - name: Run TypeScript type check
+        run: npm run typecheck
+
+  test-frontend:
+    name: Test Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Run Vitest unit tests
+        run: cd frontend && npm run test:unit
+
+      - name: Install SOPS
+        uses: mdgreenwald/mozilla-sops-action@v1.6.0
+        with:
+          version: "3.12.2"
+
+      - name: Decrypt testing secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: sops decrypt secrets/secrets.test.enc.env > .env
+
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@v2
+        with:
+          version: "latest"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --group test
+
+      - name: Create Docker network
+        run: docker network create proxy || true
+
+      - name: Start test containers for E2E
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name icb-test up -d --build postgres redis
+          echo "Waiting for database to be healthy..."
+          sleep 10
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name icb-test up -d --build api vue traefik
+          echo "Waiting for services to be ready..."
+          sleep 30
+
+      - name: Initialize test database
+        run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
+
+      - name: Install Playwright browsers
+        run: cd frontend && npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: cd frontend && npx playwright test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+      - name: Stop Docker Compose
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name icb-test down -v
+
+  # ── Docker ──────────────────────────────────────────────────────
+
   test-production-build:
     name: Test Production Build
     needs: changes
@@ -230,7 +331,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Docker Compose
         uses: docker/setup-compose-action@v2
