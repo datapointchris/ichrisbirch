@@ -41,8 +41,11 @@ services:
         source: uv_cache
         target: /root/.cache/uv
 
-  # Vue needs longer start_period in CI — npm install runs from scratch on fresh volume
+  # Vue: disable build so --build doesn't overwrite node:20-alpine with the
+  # production Caddy image from frontend/Dockerfile. Also extend healthcheck
+  # start_period since npm install runs from scratch on a fresh volume in CI.
   vue:
+    build: !reset null
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
       interval: 10s
