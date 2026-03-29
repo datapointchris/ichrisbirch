@@ -38,6 +38,7 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /global\.setup\.ts/,
+      retries: 0,
       use: { baseURL: apiURL },
     },
     {

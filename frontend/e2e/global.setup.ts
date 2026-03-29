@@ -18,9 +18,12 @@ test('API is reachable', async ({ request }) => {
 })
 
 test('frontend is serving', async ({ request }) => {
-  test.setTimeout(300_000)
+  test.setTimeout(180_000)
   await expect(async () => {
     const response = await request.get(appURL, { ignoreHTTPSErrors: true })
-    expect(response.ok()).toBeTruthy()
+    if (!response.ok()) {
+      const body = await response.text().catch(() => '(no body)')
+      throw new Error(`${appURL} returned ${response.status()}: ${body.slice(0, 200)}`)
+    }
   }).toPass({ intervals: [5_000] })
 })
