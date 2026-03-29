@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch.config import Settings
 from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
+from scripts.seed.config import SeedConfig
 from scripts.seed.config import load_config
 from scripts.seed.discovery import ModelInfo
 from scripts.seed.discovery import compute_insertion_order
@@ -167,6 +168,111 @@ def _update_fk_cache_with_created_ids(
             fk_cache[fk_key] = ids
 
 
+def _seed_project_ecosystem(
+    session: Session | None,
+    created_ids: dict[str, list[int]],
+    config: SeedConfig,
+    scale: int,
+    dry_run: bool = False,
+) -> dict[str, int]:
+    """Seed ProjectItems with memberships and dependencies.
+
+    Handled separately from the generic flow because:
+    - Every ProjectItem must have ≥1 ProjectItemMembership (M-N join)
+    - ProjectItemCreate schema requires project_ids (not a DB column)
+    - Dependencies must be acyclic and coordinated with memberships
+    - We want realistic coverage of completed/archived/multi-project states
+    """
+
+    project_ids = created_ids.get('Project', [])
+    if not project_ids:
+        logger.warning('skip_project_ecosystem', reason='no projects seeded')
+        return {}
+
+    title_pool = config.get_pool('ProjectItem', 'title') or [f'Project task {i}' for i in range(1, 16)]
+    notes_pool = config.get_pool('ProjectItem', 'notes') or ['Check requirements first', 'Low priority', 'Discuss in next meeting']
+
+    # State coverage cycle: (completed, archived)
+    # Weighted toward active items for realistic distribution
+    state_cycle = [
+        (False, False),  # active
+        (False, False),  # active
+        (False, False),  # active
+        (True, False),  # completed
+        (False, True),  # archived
+        (True, True),  # completed + archived
+    ]
+
+    target_count = len(title_pool) * scale
+    records = []
+    for i in range(target_count):
+        title = title_pool[i % len(title_pool)]
+        if scale > 1 and i >= len(title_pool):
+            title = f'{title} #{i // len(title_pool) + 1}'
+        completed, archived = state_cycle[i % len(state_cycle)]
+        notes = notes_pool[i % len(notes_pool)] if i % 3 != 0 else None
+        records.append(dict(title=title, notes=notes, completed=completed, archived=archived))
+
+    summary = {'ProjectItem': len(records)}
+
+    if dry_run:
+        memberships = target_count + target_count // 4
+        deps = min(2, len(project_ids)) * scale
+        logger.info('dry_run_project_ecosystem', items=len(records), memberships=memberships, dependencies=deps)
+        return summary
+
+    from ichrisbirch.models.project import ProjectItem
+    from ichrisbirch.models.project import ProjectItemDependency
+    from ichrisbirch.models.project import ProjectItemMembership
+
+    # Clear existing project items and relationships for clean reruns
+    session.execute(sqlalchemy.text('DELETE FROM project_item_dependencies'))
+    session.execute(sqlalchemy.text('DELETE FROM project_item_memberships'))
+    session.execute(sqlalchemy.text('DELETE FROM project_items'))
+    session.flush()
+
+    # Insert items
+    items = []
+    for record in records:
+        item = ProjectItem(**record)
+        session.add(item)
+        items.append(item)
+    session.flush()
+
+    # Memberships: distribute items round-robin, some with dual membership
+    membership_count = 0
+    for i, item in enumerate(items):
+        primary = project_ids[i % len(project_ids)]
+        session.add(ProjectItemMembership(item_id=item.id, project_id=primary, position=i // len(project_ids)))
+        membership_count += 1
+
+        # ~25% of items belong to a second project
+        if i % 4 == 0 and len(project_ids) > 1:
+            secondary = project_ids[(i + 1) % len(project_ids)]
+            session.add(ProjectItemMembership(item_id=item.id, project_id=secondary, position=99))
+            membership_count += 1
+    session.flush()
+
+    # Dependencies: short chains within each project (acyclic by construction)
+    dep_count = 0
+    items_by_project: dict[int, list[int]] = {}
+    for i, item in enumerate(items):
+        proj = project_ids[i % len(project_ids)]
+        items_by_project.setdefault(proj, []).append(item.id)
+
+    for item_ids_in_proj in items_by_project.values():
+        # Chain first 2-3 active items: item[1] depends on item[0], etc.
+        chain_len = min(3, len(item_ids_in_proj))
+        for j in range(1, chain_len):
+            session.add(ProjectItemDependency(item_id=item_ids_in_proj[j], depends_on_id=item_ids_in_proj[j - 1]))
+            dep_count += 1
+    session.flush()
+
+    created_ids['ProjectItem'] = [item.id for item in items]
+    logger.info('seeded_project_ecosystem', items=len(items), memberships=membership_count, dependencies=dep_count)
+    return summary
+
+
 def run_seed(
     settings: Settings,
     scale: int = 1,
@@ -230,6 +336,12 @@ def run_seed(
             logger.info('dry_run', model=model_name, count=len(valid_records))
             if verbose and valid_records:
                 logger.info('sample_record', model=model_name, record=valid_records[0])
+
+        # Project ecosystem (items + memberships + deps)
+        if only is None or 'ProjectItem' in only:
+            dry_ids = {'Project': list(range(1, summary.get('Project', 0) + 1))}
+            eco_summary = _seed_project_ecosystem(None, dry_ids, config, scale, dry_run=True)
+            summary.update(eco_summary)
 
         total = sum(summary.values())
         logger.info('seed_summary', total=total, per_model=summary)
@@ -296,6 +408,11 @@ def run_seed(
             if valid_records:
                 _insert_records(session, info, valid_records, model_name, created_ids)
                 _update_fk_cache_with_created_ids(fk_cache, created_ids, all_models)
+
+        # Project ecosystem: items + memberships + dependencies
+        if only is None or 'ProjectItem' in only:
+            eco_summary = _seed_project_ecosystem(session, created_ids, config, scale)
+            summary.update(eco_summary)
 
         session.commit()
         logger.info('seed_committed')

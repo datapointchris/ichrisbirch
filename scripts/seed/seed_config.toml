@@ -1,7 +1,7 @@
 [seed]
 scale = 1
 faker_seed = 42
-skip_models = ["Apartment", "Feature", "PortfolioProject", "JournalEntry", "ArticleFailedImport", "ProjectItemMembership", "ProjectItemDependency"]
+skip_models = ["Apartment", "Feature", "PortfolioProject", "JournalEntry", "ArticleFailedImport", "ProjectItem", "ProjectItemMembership", "ProjectItemDependency"]
 
 # --- Task names by category ---
 
@@ -352,4 +352,56 @@ pool = [
     "Blender",
     "Christmas lights",
     "Camping gear",
+]
+
+# --- Projects ---
+
+[overrides.Project.name]
+pool = [
+    "Home Renovation",
+    "Learn Kubernetes",
+    "Career Development",
+    "Side Project: Budget CLI",
+    "Fitness Goals 2026",
+    "Portland Trip Planning",
+]
+
+[overrides.Project.position]
+pool = [0, 1, 2, 3, 4, 5]
+
+# --- Project Items (used by _seed_project_ecosystem) ---
+
+[overrides.ProjectItem.title]
+pool = [
+    "Research options and alternatives",
+    "Create detailed project plan",
+    "Set up development environment",
+    "Write initial documentation",
+    "Design system architecture",
+    "Implement core functionality",
+    "Write tests and validation",
+    "Code review and refactoring",
+    "Set up deployment pipeline",
+    "Deploy to staging environment",
+    "Gather user feedback",
+    "Fix reported issues",
+    "Performance optimization pass",
+    "Security audit and hardening",
+    "Update project dependencies",
+    "Create monitoring dashboards",
+    "Write runbook for operations",
+    "Plan next milestone",
+    "Coordinate with stakeholders",
+    "Final review and release",
+]
+
+[overrides.ProjectItem.notes]
+pool = [
+    "Need to compare at least 3 options before deciding",
+    "Check if there are any blockers from other teams",
+    "Should be done before the end of the month",
+    "Low priority but good to have eventually",
+    "Discuss approach in next standup",
+    "Reference docs are in the shared drive",
+    "Blocked until upstream dependency is resolved",
 ]
