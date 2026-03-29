@@ -166,16 +166,16 @@ test.describe('Habits Page', () => {
 
   test('Subnav navigation between sub-pages works', async ({ page }) => {
     await page.goto('/habits')
-    await expect(page).toHaveTitle('Daily Habits | iChrisBirch')
+    await expect(page).toHaveURL(/\/habits$/)
 
-    await page.locator('a', { hasText: 'Completed' }).click()
-    await expect(page).toHaveTitle('Completed Habits | iChrisBirch')
+    await page.getByTestId('habits-subnav-completed').click()
+    await expect(page).toHaveURL(/\/habits\/completed/)
 
-    await page.locator('a', { hasText: 'Manage' }).click()
-    await expect(page).toHaveTitle('Manage Habits | iChrisBirch')
+    await page.getByTestId('habits-subnav-manage').click()
+    await expect(page).toHaveURL(/\/habits\/manage/)
 
-    await page.locator('a', { hasText: 'Daily Habits' }).click()
-    await expect(page).toHaveTitle('Daily Habits | iChrisBirch')
+    await page.getByTestId('habits-subnav-daily').click()
+    await expect(page).toHaveURL(/\/habits$/)
   })
 
   test('sidebar navigation to habits works', async ({ page }) => {

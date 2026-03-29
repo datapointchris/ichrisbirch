@@ -109,7 +109,7 @@
               data-testid="book-rating-input"
               type="number"
               min="1"
-              max="5"
+              max="10"
               class="textbox add-edit-modal__number-input"
             />
           </div>

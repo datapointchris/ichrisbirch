@@ -5,6 +5,7 @@
         to="/habits"
         class="habits-subnav__link"
         :class="{ 'habits-subnav__link--active': active === 'daily' }"
+        data-testid="habits-subnav-daily"
       >
         Daily Habits
       </RouterLink>
@@ -12,6 +13,7 @@
         to="/habits/completed"
         class="habits-subnav__link"
         :class="{ 'habits-subnav__link--active': active === 'completed' }"
+        data-testid="habits-subnav-completed"
       >
         Completed
       </RouterLink>
@@ -19,6 +21,7 @@
         to="/habits/manage"
         class="habits-subnav__link"
         :class="{ 'habits-subnav__link--active': active === 'manage' }"
+        data-testid="habits-subnav-manage"
       >
         Manage
       </RouterLink>
