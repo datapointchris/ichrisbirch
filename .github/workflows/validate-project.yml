@@ -40,12 +40,14 @@ jobs:
               - 'ichrisbirch/**'
               - 'tests/**'
               - 'scripts/**'
+              - 'secrets/**'
               - 'pyproject.toml'
               - 'uv.lock'
               - 'alembic.ini'
               - '.github/workflows/**'
             frontend:
               - 'frontend/**'
+              - 'secrets/**'
               - '.github/workflows/**'
             docker:
               - 'Dockerfile'
