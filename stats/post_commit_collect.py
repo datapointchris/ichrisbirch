@@ -164,7 +164,6 @@ def main() -> int:
 
     enabled_collectors = config.get('collect', {}).get('collectors', [])
     available_collectors = discover_collectors()
-    collect_config = config.get('collect', {})
 
     for collector_name in enabled_collectors:
         if collector_name not in available_collectors:
@@ -175,19 +174,7 @@ def main() -> int:
         if collector_runner is not None:
             try:
                 start = time.perf_counter()
-                if collector_name == 'pytest_collector':
-                    json_path = collect_config.get('pytest_json_path', '/tmp/ichrisbirch-pytest-report.json')  # nosec B108
-                    event = collector_runner(branch, project, json_path)
-                elif collector_name == 'vitest_collector':
-                    json_path = collect_config.get('vitest_json_path', '/tmp/ichrisbirch-vitest-report.json')  # nosec B108
-                    event = collector_runner(branch, project, json_path)
-                elif collector_name == 'playwright_collector':
-                    json_path = collect_config.get('playwright_json_path', '/tmp/ichrisbirch-playwright-report.json')  # nosec B108
-                    event = collector_runner(branch, project, json_path)
-                elif collector_name == 'coverage':
-                    event = collector_runner(branch, project)
-                else:
-                    event = collector_runner(branch, project)
+                event = collector_runner(branch, project)
                 duration = time.perf_counter() - start
                 write_timing(collector_name, duration)
 

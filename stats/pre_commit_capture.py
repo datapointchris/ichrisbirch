@@ -23,7 +23,7 @@ TIMING_DIR = Path(__file__).parent / 'data' / 'timing'
 def get_staged_files() -> list[str]:
     """Get list of staged files."""
     result = subprocess.run(  # nosec B603 B607
-        ['git', 'diff', '--cached', '--name-only'],
+        ['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR'],
         capture_output=True,
         text=True,
     )

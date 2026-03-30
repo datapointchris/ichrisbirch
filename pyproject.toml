@@ -286,10 +286,7 @@ hooks = [
 ]
 
 [tool.devstats.collect]
-collectors = ["tokei", "pytest_collector", "vitest_collector", "playwright_collector", "coverage", "docker", "dependencies", "npm_dependencies", "files", "radon"]
-pytest_json_path = "/tmp/ichrisbirch-pytest-report.json"
-vitest_json_path = "/tmp/ichrisbirch-vitest-report.json"
-playwright_json_path = "/tmp/ichrisbirch-playwright-report.json"
+collectors = ["tokei", "coverage", "docker", "dependencies", "npm_dependencies", "files", "radon"]
 
 
 [tool.uv]
