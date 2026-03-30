@@ -112,7 +112,15 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 ### Database Patterns
 
 - SQLAlchemy 2.0 declarative base, `Mapped[type]` annotations
-- Sessions via `create_session(settings)` context manager or FastAPI `Depends(get_sqlalchemy_session)`
+- **Session pattern decision tree** — `create_session(settings)` requires explicit settings (no default):
+
+  | Context | Pattern | Why |
+  |---------|---------|-----|
+  | FastAPI routes | `Depends(get_sqlalchemy_session)` | DI wrapper calls `get_settings()` internally |
+  | Scheduler jobs | `create_session(settings)` | Settings passed from job registration |
+  | CLI / scripts | `create_session(get_settings())` | Caller owns the settings lookup |
+  | Tests | Transactional fixtures (`test_settings`) | Session-scoped fixtures in `conftest.py` |
+
 - Pydantic schemas: `*Create` (POST), base (GET), `*Update` (PATCH, all optional), `ConfigDict(from_attributes=True)`
 - Migrations: Alembic (`ichrisbirch/alembic/`). Run migrations before tests if schema changes.
 
