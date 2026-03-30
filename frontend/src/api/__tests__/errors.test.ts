@@ -126,4 +126,65 @@ describe('extractApiError', () => {
     expect(err.status).toBe(500)
     expect(err.detail).toBe('An unexpected error occurred')
   })
+
+  it('handles null data in response', () => {
+    const axiosError = {
+      response: {
+        status: 502,
+        data: null as unknown as undefined,
+        headers: {},
+      },
+      message: 'Bad Gateway',
+    }
+
+    const err = extractApiError(axiosError)
+
+    expect(err.status).toBe(502)
+    expect(err.detail).toBe('An unexpected error occurred')
+  })
+
+  it('falls back to "Network error" when message is missing', () => {
+    const axiosError = { response: undefined }
+
+    const err = extractApiError(axiosError)
+
+    expect(err.isNetworkError).toBe(true)
+    expect(err.message).toBe('Network error')
+  })
+
+  it('skips validation entries missing loc or msg', () => {
+    const axiosError = {
+      response: {
+        status: 422,
+        data: {
+          detail: [
+            { loc: ['body', 'name'], msg: 'Required', type: 'missing' },
+            { msg: 'No loc field', type: 'missing' },
+            { loc: ['body', 'age'], type: 'missing' },
+          ],
+        },
+        headers: {},
+      },
+      message: 'Request failed',
+    }
+
+    const err = extractApiError(axiosError)
+
+    expect(err.validationErrors).toEqual([{ field: 'name', message: 'Required' }])
+  })
+
+  it('handles missing x-request-id header', () => {
+    const axiosError = {
+      response: {
+        status: 403,
+        data: { detail: 'Forbidden' },
+        headers: {},
+      },
+      message: 'Forbidden',
+    }
+
+    const err = extractApiError(axiosError)
+
+    expect(err.requestId).toBeUndefined()
+  })
 })
