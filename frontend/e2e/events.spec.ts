@@ -15,6 +15,10 @@ async function createEvent(page: import('@playwright/test').Page, name: string, 
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
+// Smoke tests only — interaction-heavy tests (edit, toggle attending,
+// URL links) are covered by component integration tests in
+// src/views/__tests__/EventsView.test.ts
+
 test.describe('Events Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -55,29 +59,6 @@ test.describe('Events Page', () => {
 
     await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
     await expect(item).not.toBeVisible()
-  })
-
-  test('toggles attending on then off', async ({ page }) => {
-    await page.goto('/events')
-
-    const name = `E2E Attend ${Date.now()}`
-    await createEvent(page, name)
-
-    const item = page.getByTestId('event-item').filter({ hasText: name })
-    await expect(item).toBeVisible()
-
-    // Should not be highlighted initially
-    await expect(item).not.toHaveClass(/grid__item--highlighted/)
-
-    // Attend
-    await item.getByTestId('event-attend-button').click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(item).toHaveClass(/grid__item--highlighted/, { timeout: 5000 })
-
-    // Un-attend
-    await item.getByTestId('event-attend-button').click()
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-    await expect(item).not.toHaveClass(/grid__item--highlighted/, { timeout: 5000 })
   })
 
   test('sidebar navigation to events works', async ({ page }) => {
