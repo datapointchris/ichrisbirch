@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
 
+// Smoke tests — VueDashView is composable-heavy (useVueDash with drag/resize/
+// FLIP animations). Component tests would require extensive mocking for minimal
+// gain. These E2E tests verify Traefik routing and basic page functionality.
+
 test.describe('Dashboard Page', () => {
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/dashboard')
