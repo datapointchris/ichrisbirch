@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import structlog
@@ -21,20 +22,20 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-def _get_item_or_404(session: Session, item_id: int) -> models.ProjectItem:
+def _get_item_or_404(session: Session, item_id: UUID) -> models.ProjectItem:
     item = session.get(models.ProjectItem, item_id)
     if not item:
         raise NotFoundException('project_item', item_id, logger)
     return item
 
 
-def _detect_dependency_cycle(session: Session, item_id: int, depends_on_id: int) -> bool:
+def _detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUID) -> bool:
     """Check if adding item_id -> depends_on_id would create a cycle.
 
     Walk forward from depends_on_id through existing dependencies.
     If we reach item_id, adding this edge would create a cycle.
     """
-    visited: set[int] = set()
+    visited: set[UUID] = set()
     queue = [depends_on_id]
 
     while queue:
@@ -154,7 +155,7 @@ async def create(item: schemas.ProjectItemCreate, session: Session = Depends(get
 
 
 @router.get('/{id}/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     item = _get_item_or_404(session, id)
 
     projects = list(
@@ -182,7 +183,7 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.ProjectItem, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.ProjectItemUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: UUID, update: schemas.ProjectItemUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_item_update', item_id=id, update_data=update_data)
 
@@ -196,7 +197,7 @@ async def update(id: int, update: schemas.ProjectItemUpdate, session: Session = 
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     item = _get_item_or_404(session, id)
     session.delete(item)
     session.commit()
@@ -207,7 +208,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/reorder/', response_model=schemas.ProjectItemInProject, status_code=status.HTTP_200_OK)
-async def reorder(id: int, reorder: schemas.ProjectItemReorder, session: Session = Depends(get_sqlalchemy_session)):
+async def reorder(id: UUID, reorder: schemas.ProjectItemReorder, session: Session = Depends(get_sqlalchemy_session)):
     item = _get_item_or_404(session, id)
 
     membership = session.get(ProjectItemMembership, (id, reorder.project_id))
@@ -237,7 +238,7 @@ async def reorder(id: int, reorder: schemas.ProjectItemReorder, session: Session
 
 
 @router.get('/{id}/projects/', response_model=list[schemas.Project], status_code=status.HTTP_200_OK)
-async def list_projects(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def list_projects(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     _get_item_or_404(session, id)
 
     query = (
@@ -250,7 +251,7 @@ async def list_projects(id: int, session: Session = Depends(get_sqlalchemy_sessi
 
 
 @router.post('/{id}/projects/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
-async def add_to_project(id: int, membership: schemas.ProjectItemMembershipCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def add_to_project(id: UUID, membership: schemas.ProjectItemMembershipCreate, session: Session = Depends(get_sqlalchemy_session)):
     _get_item_or_404(session, id)
 
     if not session.get(models.Project, membership.project_id):
@@ -279,7 +280,7 @@ async def add_to_project(id: int, membership: schemas.ProjectItemMembershipCreat
 
 
 @router.delete('/{id}/projects/{project_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_from_project(id: int, project_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def remove_from_project(id: UUID, project_id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     _get_item_or_404(session, id)
 
     membership = session.get(ProjectItemMembership, (id, project_id))
@@ -306,7 +307,7 @@ async def remove_from_project(id: int, project_id: int, session: Session = Depen
 
 
 @router.post('/{id}/dependencies/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
-async def add_dependency(id: int, dep: schemas.ProjectItemDependencyCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def add_dependency(id: UUID, dep: schemas.ProjectItemDependencyCreate, session: Session = Depends(get_sqlalchemy_session)):
     _get_item_or_404(session, id)
     _get_item_or_404(session, dep.depends_on_id)
 
@@ -335,7 +336,7 @@ async def add_dependency(id: int, dep: schemas.ProjectItemDependencyCreate, sess
 
 
 @router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_dependency(id: int, dep_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def remove_dependency(id: UUID, dep_id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     dep = session.get(ProjectItemDependency, (id, dep_id))
     if not dep:
         raise HTTPException(
@@ -349,7 +350,7 @@ async def remove_dependency(id: int, dep_id: int, session: Session = Depends(get
 
 
 @router.get('/{id}/blockers/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def get_blockers(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def get_blockers(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     """Get incomplete dependencies (items that block this item)."""
     _get_item_or_404(session, id)
 

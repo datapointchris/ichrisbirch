@@ -443,19 +443,22 @@ export interface MoneyWastedUpdate {
 // --- Project ---
 
 export interface Project {
-  id: number
+  id: string
   name: string
+  description?: string
   position: number
   created_at: string
 }
 
 export interface ProjectCreate {
   name: string
+  description?: string
   position?: number
 }
 
 export interface ProjectUpdate {
   name?: string
+  description?: string | null
   position?: number
 }
 
@@ -464,7 +467,7 @@ export interface ProjectWithItemCount extends Project {
 }
 
 export interface ProjectItem {
-  id: number
+  id: string
   title: string
   notes?: string
   completed: boolean
@@ -476,7 +479,7 @@ export interface ProjectItem {
 export interface ProjectItemCreate {
   title: string
   notes?: string
-  project_ids: number[]
+  project_ids: string[]
 }
 
 export interface ProjectItemUpdate {
@@ -488,7 +491,7 @@ export interface ProjectItemUpdate {
 
 export interface ProjectItemDetail extends ProjectItem {
   projects: Project[]
-  dependency_ids: number[]
+  dependency_ids: string[]
 }
 
 export interface ProjectItemInProject extends ProjectItem {
@@ -496,16 +499,38 @@ export interface ProjectItemInProject extends ProjectItem {
 }
 
 export interface ProjectItemReorder {
-  project_id: number
+  project_id: string
   position: number
 }
 
 export interface ProjectItemMembershipCreate {
-  project_id: number
+  project_id: string
 }
 
 export interface ProjectItemDependencyCreate {
-  depends_on_id: number
+  depends_on_id: string
+}
+
+// --- Project Item Task ---
+
+export interface ProjectItemTask {
+  id: string
+  item_id: string
+  title: string
+  completed: boolean
+  position: number
+  created_at: string
+}
+
+export interface ProjectItemTaskCreate {
+  title: string
+  position?: number
+}
+
+export interface ProjectItemTaskUpdate {
+  title?: string
+  completed?: boolean
+  position?: number
 }
 
 // --- Box Packing ---

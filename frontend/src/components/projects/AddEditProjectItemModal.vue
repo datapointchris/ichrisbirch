@@ -65,14 +65,14 @@ import AddEditModal from '@/components/AddEditModal.vue'
 
 const props = defineProps<{
   visible: boolean
-  editData?: { id: number; title: string; notes?: string } | null
-  projectId: number | null
+  editData?: { id: string; title: string; notes?: string } | null
+  projectId: string | null
 }>()
 
 const emit = defineEmits<{
   close: []
   create: [data: ProjectItemCreate]
-  update: [id: number, data: ProjectItemUpdate]
+  update: [id: string, data: ProjectItemUpdate]
 }>()
 
 const titleInput = ref<HTMLInputElement | null>(null)

@@ -385,20 +385,20 @@ watch(
 
 // --- Project modal state ---
 const showProjectModal = ref(false)
-const editProjectTarget = ref<{ id: number; name: string } | null>(null)
+const editProjectTarget = ref<{ id: string; name: string; description?: string } | null>(null)
 
 // --- Item modal state ---
 const showItemModal = ref(false)
-const editItemTarget = ref<{ id: number; title: string; notes?: string } | null>(null)
+const editItemTarget = ref<{ id: string; title: string; notes?: string } | null>(null)
 
 // --- Dependencies modal state ---
 const showDepsModal = ref(false)
-const depsTargetId = ref<number | null>(null)
+const depsTargetId = ref<string | null>(null)
 const depsTargetTitle = ref('')
 
 // --- Projects modal state ---
 const showProjectsModal = ref(false)
-const projectsTargetId = ref<number | null>(null)
+const projectsTargetId = ref<string | null>(null)
 const projectsTargetTitle = ref('')
 
 // --- Search state ---
@@ -412,7 +412,7 @@ onMounted(() => {
   store.fetchProjects()
 })
 
-function selectProject(projectId: number) {
+function selectProject(projectId: string) {
   store.fetchItems(projectId)
 }
 
@@ -436,19 +436,19 @@ function onItemDragEnd() {
 
 // --- Blocker helpers ---
 
-function isBlocked(itemId: number): boolean {
+function isBlocked(itemId: string): boolean {
   const blockers = store.itemBlockers[itemId]
   return !!blockers && blockers.length > 0
 }
 
-function getBlockers(itemId: number): ProjectItem[] {
+function getBlockers(itemId: string): ProjectItem[] {
   return store.itemBlockers[itemId] ?? []
 }
 
 // --- Project handlers ---
 
 function openEditProject(project: ProjectWithItemCount) {
-  editProjectTarget.value = { id: project.id, name: project.name }
+  editProjectTarget.value = { id: project.id, name: project.name, description: project.description }
   showProjectModal.value = true
 }
 
@@ -467,7 +467,7 @@ async function handleCreateProject(data: ProjectCreate) {
   }
 }
 
-async function handleUpdateProject(id: number, data: ProjectUpdate) {
+async function handleUpdateProject(id: string, data: ProjectUpdate) {
   try {
     await store.updateProject(id, data)
     notify('Project updated', 'success')
@@ -477,7 +477,7 @@ async function handleUpdateProject(id: number, data: ProjectUpdate) {
   }
 }
 
-async function handleDeleteProject(id: number) {
+async function handleDeleteProject(id: string) {
   try {
     await store.removeProject(id)
     notify('Project deleted', 'success')
@@ -509,7 +509,7 @@ async function handleCreateItem(data: ProjectItemCreate) {
   }
 }
 
-async function handleUpdateItem(id: number, data: ProjectItemUpdate) {
+async function handleUpdateItem(id: string, data: ProjectItemUpdate) {
   try {
     await store.updateItem(id, data)
     notify('Item updated', 'success')
@@ -530,7 +530,7 @@ async function handleToggleComplete(item: ProjectItemInProject) {
   }
 }
 
-async function handleArchiveItem(id: number) {
+async function handleArchiveItem(id: string) {
   try {
     await store.archiveItem(id)
     notify('Item archived', 'success')
@@ -540,7 +540,7 @@ async function handleArchiveItem(id: number) {
   }
 }
 
-async function handleDeleteItem(id: number) {
+async function handleDeleteItem(id: string) {
   try {
     await store.removeItem(id)
     notify('Item deleted', 'success')
@@ -552,7 +552,7 @@ async function handleDeleteItem(id: number) {
 
 // --- Dependencies modal ---
 
-function openDepsModal(item: { id: number; title: string }) {
+function openDepsModal(item: { id: string; title: string }) {
   depsTargetId.value = item.id
   depsTargetTitle.value = item.title
   showDepsModal.value = true
@@ -570,7 +570,7 @@ function onDepsUpdated() {
 
 // --- Projects modal ---
 
-function openProjectsModal(item: { id: number; title: string }) {
+function openProjectsModal(item: { id: string; title: string }) {
   projectsTargetId.value = item.id
   projectsTargetTitle.value = item.title
   showProjectsModal.value = true

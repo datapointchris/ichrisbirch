@@ -15,6 +15,9 @@ import type {
   ProjectItemReorder,
   ProjectItemMembershipCreate,
   ProjectItemDependencyCreate,
+  ProjectItemTask,
+  ProjectItemTaskCreate,
+  ProjectItemTaskUpdate,
 } from '@/api/client'
 
 const logger = createLogger('ProjectsStore')
@@ -22,14 +25,17 @@ const logger = createLogger('ProjectsStore')
 export const useProjectsStore = defineStore('projects', () => {
   // --- Project state ---
   const projects = ref<ProjectWithItemCount[]>([])
-  const selectedProjectId = ref<number | null>(null)
+  const selectedProjectId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
   // --- Item state (scoped to selected project) ---
   const items = ref<ProjectItemInProject[]>([])
   const itemsLoading = ref(false)
-  const itemBlockers = ref<Record<number, ProjectItem[]>>({})
+  const itemBlockers = ref<Record<string, ProjectItem[]>>({})
+
+  // --- Task state (per-item, loaded on demand) ---
+  const itemTasks = ref<Record<string, ProjectItemTask[]>>({})
 
   const sortedProjects = computed(() => [...projects.value].sort((a, b) => a.position - b.position))
 
@@ -74,7 +80,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function updateProject(id: number, input: ProjectUpdate) {
+  async function updateProject(id: string, input: ProjectUpdate) {
     error.value = null
     try {
       await api.patch(`/projects/${id}/`, input)
@@ -88,7 +94,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function removeProject(id: number) {
+  async function removeProject(id: string) {
     error.value = null
     try {
       await api.delete(`/projects/${id}/`)
@@ -108,7 +114,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
   // --- Item operations (scoped to selected project) ---
 
-  async function fetchItems(projectId: number) {
+  async function fetchItems(projectId: string) {
     selectedProjectId.value = projectId
     itemsLoading.value = true
     itemBlockers.value = {}
@@ -151,7 +157,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function updateItem(id: number, input: ProjectItemUpdate) {
+  async function updateItem(id: string, input: ProjectItemUpdate) {
     error.value = null
     try {
       const response = await api.patch<ProjectItem>(`/project-items/${id}/`, input)
@@ -170,7 +176,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function removeItem(id: number) {
+  async function removeItem(id: string) {
     error.value = null
     try {
       await api.delete(`/project-items/${id}/`)
@@ -185,7 +191,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function reorderItem(id: number, input: ProjectItemReorder) {
+  async function reorderItem(id: string, input: ProjectItemReorder) {
     error.value = null
     try {
       await api.patch(`/project-items/${id}/reorder/`, input)
@@ -198,7 +204,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function reorderItems(orderedIds: number[]) {
+  async function reorderItems(orderedIds: string[]) {
     if (selectedProjectId.value === null) return
     const projectId = selectedProjectId.value
     error.value = null
@@ -230,7 +236,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function reorderProjects(orderedIds: number[]) {
+  async function reorderProjects(orderedIds: string[]) {
     error.value = null
 
     try {
@@ -260,18 +266,18 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function completeItem(id: number) {
+  async function completeItem(id: string) {
     return updateItem(id, { completed: true })
   }
 
-  async function archiveItem(id: number) {
+  async function archiveItem(id: string) {
     return updateItem(id, { archived: true })
   }
 
   // --- Blocker tracking ---
 
   async function fetchItemBlockers() {
-    const blockerMap: Record<number, ProjectItem[]> = {}
+    const blockerMap: Record<string, ProjectItem[]> = {}
 
     await Promise.all(
       items.value.map(async (item) => {
@@ -290,14 +296,14 @@ export const useProjectsStore = defineStore('projects', () => {
     logger.debug('item_blockers_fetched', { blocked_count: Object.keys(blockerMap).length })
   }
 
-  async function fetchItemDetail(id: number) {
+  async function fetchItemDetail(id: string) {
     const response = await api.get<ProjectItemDetail>(`/project-items/${id}/`)
     return response.data
   }
 
   // --- Dependencies ---
 
-  async function addDependency(itemId: number, input: ProjectItemDependencyCreate) {
+  async function addDependency(itemId: string, input: ProjectItemDependencyCreate) {
     error.value = null
     try {
       const response = await api.post<ProjectItemDetail>(`/project-items/${itemId}/dependencies/`, input)
@@ -315,7 +321,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function removeDependency(itemId: number, depId: number) {
+  async function removeDependency(itemId: string, depId: string) {
     error.value = null
     try {
       await api.delete(`/project-items/${itemId}/dependencies/${depId}/`)
@@ -332,7 +338,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function getBlockers(itemId: number) {
+  async function getBlockers(itemId: string) {
     try {
       const response = await api.get<ProjectItem[]>(`/project-items/${itemId}/blockers/`)
       return response.data
@@ -349,7 +355,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
   // --- Membership ---
 
-  async function addToProject(itemId: number, input: ProjectItemMembershipCreate) {
+  async function addToProject(itemId: string, input: ProjectItemMembershipCreate) {
     error.value = null
     try {
       await api.post(`/project-items/${itemId}/projects/`, input)
@@ -362,7 +368,7 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
-  async function removeFromProject(itemId: number, projectId: number) {
+  async function removeFromProject(itemId: string, projectId: string) {
     error.value = null
     try {
       await api.delete(`/project-items/${itemId}/projects/${projectId}/`)
@@ -394,6 +400,68 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
+  // --- Item Tasks ---
+
+  async function fetchItemTasks(itemId: string) {
+    try {
+      const response = await api.get<ProjectItemTask[]>(`/project-items/${itemId}/tasks/`)
+      itemTasks.value[itemId] = response.data
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      logger.error('item_tasks_fetch_failed', { item_id: itemId, detail: apiError.detail })
+      throw apiError
+    }
+  }
+
+  async function createItemTask(itemId: string, input: ProjectItemTaskCreate) {
+    error.value = null
+    try {
+      const response = await api.post<ProjectItemTask>(`/project-items/${itemId}/tasks/`, input)
+      logger.info('item_task_created', { item_id: itemId, title: input.title })
+      await fetchItemTasks(itemId)
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('item_task_create_failed', { item_id: itemId, detail: apiError.detail })
+      throw apiError
+    }
+  }
+
+  async function updateItemTask(itemId: string, taskId: string, input: ProjectItemTaskUpdate) {
+    error.value = null
+    try {
+      const response = await api.patch<ProjectItemTask>(`/project-items/${itemId}/tasks/${taskId}/`, input)
+      logger.info('item_task_updated', { item_id: itemId, task_id: taskId })
+      await fetchItemTasks(itemId)
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('item_task_update_failed', { item_id: itemId, task_id: taskId, detail: apiError.detail })
+      throw apiError
+    }
+  }
+
+  async function removeItemTask(itemId: string, taskId: string) {
+    error.value = null
+    try {
+      await api.delete(`/project-items/${itemId}/tasks/${taskId}/`)
+      logger.info('item_task_deleted', { item_id: itemId, task_id: taskId })
+      await fetchItemTasks(itemId)
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('item_task_delete_failed', { item_id: itemId, task_id: taskId, detail: apiError.detail })
+      throw apiError
+    }
+  }
+
+  async function completeItemTask(itemId: string, taskId: string) {
+    return updateItemTask(itemId, taskId, { completed: true })
+  }
+
   return {
     // Project state
     projects,
@@ -407,6 +475,8 @@ export const useProjectsStore = defineStore('projects', () => {
     itemsLoading,
     itemBlockers,
     sortedItems,
+    // Task state
+    itemTasks,
     // Actions
     clearError,
     fetchProjects,
@@ -430,5 +500,11 @@ export const useProjectsStore = defineStore('projects', () => {
     addToProject,
     removeFromProject,
     searchItems,
+    // Task actions
+    fetchItemTasks,
+    createItemTask,
+    updateItemTask,
+    removeItemTask,
+    completeItemTask,
   }
 })

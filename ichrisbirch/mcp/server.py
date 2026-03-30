@@ -542,29 +542,32 @@ def list_projects() -> str:
 
 
 @mcp.tool()
-def create_project(name: str) -> str:
+def create_project(name: str, description: str | None = None) -> str:
     """Create a new project."""
+    payload: dict[str, Any] = {'name': name}
+    if description:
+        payload['description'] = description
     with _client() as c:
-        return _json_response(c.post('/projects/', json={'name': name}))
+        return _json_response(c.post('/projects/', json=payload))
 
 
 @mcp.tool()
-def update_project(id: int, name: str | None = None, position: int | None = None) -> str:
-    """Update a project by ID. Only provided fields are changed."""
-    payload: dict[str, Any] = {k: v for k, v in {'name': name, 'position': position}.items() if v is not None}
+def update_project(id: str, name: str | None = None, description: str | None = None, position: int | None = None) -> str:
+    """Update a project by UUID. Only provided fields are changed."""
+    payload: dict[str, Any] = {k: v for k, v in {'name': name, 'description': description, 'position': position}.items() if v is not None}
     with _client() as c:
         return _json_response(c.patch(f'/projects/{id}/', json=payload))
 
 
 @mcp.tool()
-def delete_project(id: int) -> str:
-    """Delete a project by ID. Fails if items belong only to this project."""
+def delete_project(id: str) -> str:
+    """Delete a project by UUID. Fails if items belong only to this project."""
     with _client() as c:
         return _json_response(c.delete(f'/projects/{id}/'))
 
 
 @mcp.tool()
-def list_project_items(project_id: int, archived: bool = False) -> str:
+def list_project_items(project_id: str, archived: bool = False) -> str:
     """List items in a project (summary: id, title, notes, completed, archived).
 
     Set archived=True to include archived items.
@@ -577,7 +580,7 @@ def list_project_items(project_id: int, archived: bool = False) -> str:
 
 
 @mcp.tool()
-def get_project_item(id: int) -> str:
+def get_project_item(id: str) -> str:
     """Get full details for a project item including its projects and dependency_ids."""
     with _client() as c:
         return _json_response(c.get(f'/project-items/{id}/'))
@@ -587,10 +590,10 @@ def get_project_item(id: int) -> str:
 def create_project_item(title: str, project_ids: str, notes: str | None = None) -> str:
     """Create a new project item.
 
-    project_ids is a comma-separated list of project IDs (e.g. "1,3").
+    project_ids is a comma-separated list of project UUIDs (e.g. "019d3ce0-...,019d3ce1-...").
     At least one project ID is required.
     """
-    ids = [int(x.strip()) for x in project_ids.split(',') if x.strip()]
+    ids = [x.strip() for x in project_ids.split(',') if x.strip()]
     payload: dict[str, Any] = {'title': title, 'project_ids': ids}
     if notes:
         payload['notes'] = notes
@@ -600,14 +603,14 @@ def create_project_item(title: str, project_ids: str, notes: str | None = None) 
 
 @mcp.tool()
 def update_project_item(
-    id: int,
+    id: str,
     title: str | None = None,
     notes: str | None = None,
     completed: bool | None = None,
     archived: bool | None = None,
     null_fields: str | None = None,
 ) -> str:
-    """Update a project item by ID. Only provided fields are changed.
+    """Update a project item by UUID. Only provided fields are changed.
 
     To set a field to null, include it in null_fields (comma-separated).
     """
@@ -621,8 +624,8 @@ def update_project_item(
 
 
 @mcp.tool()
-def delete_project_item(id: int) -> str:
-    """Delete a project item by ID."""
+def delete_project_item(id: str) -> str:
+    """Delete a project item by UUID."""
     with _client() as c:
         return _json_response(c.delete(f'/project-items/{id}/'))
 
@@ -635,7 +638,7 @@ def search_project_items(query: str) -> str:
 
 
 @mcp.tool()
-def add_project_item_dependency(item_id: int, depends_on_id: int) -> str:
+def add_project_item_dependency(item_id: str, depends_on_id: str) -> str:
     """Add a dependency: item_id will be blocked by depends_on_id.
 
     Fails with 409 if this would create a cycle.
@@ -645,31 +648,75 @@ def add_project_item_dependency(item_id: int, depends_on_id: int) -> str:
 
 
 @mcp.tool()
-def remove_project_item_dependency(item_id: int, depends_on_id: int) -> str:
+def remove_project_item_dependency(item_id: str, depends_on_id: str) -> str:
     """Remove a dependency between two project items."""
     with _client() as c:
         return _json_response(c.delete(f'/project-items/{item_id}/dependencies/{depends_on_id}/'))
 
 
 @mcp.tool()
-def get_project_item_blockers(item_id: int) -> str:
+def get_project_item_blockers(item_id: str) -> str:
     """Get incomplete items that block this item."""
     with _client() as c:
         return _summarize(_json_response(c.get(f'/project-items/{item_id}/blockers/')), PROJECT_ITEM_SUMMARY_FIELDS)
 
 
 @mcp.tool()
-def add_project_item_to_project(item_id: int, project_id: int) -> str:
+def add_project_item_to_project(item_id: str, project_id: str) -> str:
     """Add a project item to an additional project (multi-project membership)."""
     with _client() as c:
         return _json_response(c.post(f'/project-items/{item_id}/projects/', json={'project_id': project_id}))
 
 
 @mcp.tool()
-def remove_project_item_from_project(item_id: int, project_id: int) -> str:
+def remove_project_item_from_project(item_id: str, project_id: str) -> str:
     """Remove a project item from a project. Fails if it's the item's last project."""
     with _client() as c:
         return _json_response(c.delete(f'/project-items/{item_id}/projects/{project_id}/'))
+
+
+# =============================================================================
+# PROJECT ITEM TASKS
+# =============================================================================
+
+
+@mcp.tool()
+def list_project_item_tasks(item_id: str) -> str:
+    """List all tasks (sub-tasks) for a project item, ordered by position."""
+    with _client() as c:
+        return _json_response(c.get(f'/project-items/{item_id}/tasks/'))
+
+
+@mcp.tool()
+def create_project_item_task(item_id: str, title: str) -> str:
+    """Create a new task (sub-task) on a project item."""
+    with _client() as c:
+        return _json_response(c.post(f'/project-items/{item_id}/tasks/', json={'title': title}))
+
+
+@mcp.tool()
+def update_project_item_task(
+    item_id: str, task_id: str, title: str | None = None, completed: bool | None = None, position: int | None = None
+) -> str:
+    """Update a project item task. Only provided fields are changed."""
+    fields = {'title': title, 'completed': completed, 'position': position}
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+    with _client() as c:
+        return _json_response(c.patch(f'/project-items/{item_id}/tasks/{task_id}/', json=payload))
+
+
+@mcp.tool()
+def delete_project_item_task(item_id: str, task_id: str) -> str:
+    """Delete a project item task."""
+    with _client() as c:
+        return _json_response(c.delete(f'/project-items/{item_id}/tasks/{task_id}/'))
+
+
+@mcp.tool()
+def complete_project_item_task(item_id: str, task_id: str) -> str:
+    """Mark a project item task as complete."""
+    with _client() as c:
+        return _json_response(c.patch(f'/project-items/{item_id}/tasks/{task_id}/', json={'completed': True}))
 
 
 # =============================================================================

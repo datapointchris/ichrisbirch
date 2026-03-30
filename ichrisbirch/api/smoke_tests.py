@@ -29,7 +29,7 @@ def discover_get_endpoints(app) -> list[dict]:
             continue
         if '{' in route.path:
             continue
-        if any(p.required for p in route.dependant.query_params):
+        if any(p.field_info.is_required() for p in route.dependant.query_params):
             continue
 
         endpoints.append({'path': route.path, 'name': route.name or route.path})

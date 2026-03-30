@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -15,11 +16,11 @@ class ProjectItemConfig(BaseModel):
 class ProjectItemCreate(ProjectItemConfig):
     title: str
     notes: str | None = None
-    project_ids: list[int]
+    project_ids: list[UUID]
 
 
 class ProjectItem(ProjectItemConfig):
-    id: int
+    id: UUID
     title: str
     notes: str | None = None
     completed: bool
@@ -38,7 +39,7 @@ class ProjectItemUpdate(ProjectItemConfig):
 class ProjectItemDetail(ProjectItemConfig):
     """Extended view with membership and dependency info."""
 
-    id: int
+    id: UUID
     title: str
     notes: str | None = None
     completed: bool
@@ -46,13 +47,13 @@ class ProjectItemDetail(ProjectItemConfig):
     created_at: datetime
     updated_at: datetime
     projects: list[Project]
-    dependency_ids: list[int]
+    dependency_ids: list[UUID]
 
 
 class ProjectItemInProject(ProjectItemConfig):
     """Item as seen within a project context, includes position."""
 
-    id: int
+    id: UUID
     title: str
     notes: str | None = None
     completed: bool
@@ -63,13 +64,13 @@ class ProjectItemInProject(ProjectItemConfig):
 
 
 class ProjectItemReorder(ProjectItemConfig):
-    project_id: int
+    project_id: UUID
     position: int
 
 
 class ProjectItemMembershipCreate(ProjectItemConfig):
-    project_id: int
+    project_id: UUID
 
 
 class ProjectItemDependencyCreate(ProjectItemConfig):
-    depends_on_id: int
+    depends_on_id: UUID

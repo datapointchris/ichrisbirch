@@ -80,7 +80,7 @@ def test_create_event_date_formats(txn_api_logged_in, event_date, output):
         attending=False,
         notes='Date format test',
     )
-    response = client.post(ENDPOINT, content=event_obj.model_dump_json())
+    response = client.post(ENDPOINT, json=event_obj.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
     event = client.get(f'{ENDPOINT}{response.json()["id"]}/')
     assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
@@ -34,6 +36,7 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session)):
         schemas.ProjectWithItemCount(
             id=project.id,
             name=project.name,
+            description=project.description,
             position=project.position,
             created_at=project.created_at,
             item_count=item_count,
@@ -52,7 +55,7 @@ async def create(project: schemas.ProjectCreate, session: Session = Depends(get_
 
 
 @router.get('/{id}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     project = session.get(models.Project, id)
     if not project:
         raise NotFoundException('project', id, logger)
@@ -61,6 +64,7 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
     return schemas.ProjectWithItemCount(
         id=project.id,
         name=project.name,
+        description=project.description,
         position=project.position,
         created_at=project.created_at,
         item_count=item_count or 0,
@@ -68,7 +72,7 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.ProjectUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: UUID, update: schemas.ProjectUpdate, session: Session = Depends(get_sqlalchemy_session)):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_update', project_id=id, update_data=update_data)
 
@@ -83,7 +87,7 @@ async def update(id: int, update: schemas.ProjectUpdate, session: Session = Depe
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
     project = session.get(models.Project, id)
     if not project:
         raise NotFoundException('project', id, logger)
@@ -108,7 +112,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 @router.get('/{id}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
 async def list_items(
-    id: int,
+    id: UUID,
     session: Session = Depends(get_sqlalchemy_session),
     archived: bool = Query(False, description='Include archived items'),
 ):

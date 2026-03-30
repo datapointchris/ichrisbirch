@@ -1,4 +1,4 @@
-"""Seed projects with items, memberships, and dependencies.
+"""Seed projects with items, memberships, dependencies, and tasks.
 
 Extracted from the former _seed_project_ecosystem() — this was already
 the right pattern (explicit, coordinated multi-table insertion).
@@ -13,15 +13,16 @@ from ichrisbirch.models.project import Project
 from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.models.project import ProjectItemTask
 from scripts.seed.base import SeedResult
 
-PROJECT_NAMES = [
-    'Home Renovation',
-    'Learn Kubernetes',
-    'Career Development',
-    'Side Project: Budget CLI',
-    'Fitness Goals 2026',
-    'Portland Trip Planning',
+PROJECT_DATA = [
+    ('Home Renovation', 'Kitchen and bathroom remodel planning'),
+    ('Learn Kubernetes', 'Self-study track for container orchestration'),
+    ('Career Development', 'Skills growth and networking goals'),
+    ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking'),
+    ('Fitness Goals 2026', 'Strength training and running milestones'),
+    ('Portland Trip Planning', 'Research neighborhoods, flights, and activities'),
 ]
 
 ITEM_TITLES = [
@@ -57,6 +58,14 @@ ITEM_NOTES = [
     'Blocked until upstream dependency is resolved',
 ]
 
+TASK_TITLES = [
+    'Review requirements',
+    'Draft implementation',
+    'Write unit tests',
+    'Update documentation',
+    'Get approval',
+]
+
 # (completed, archived) — weighted toward active
 STATE_CYCLE = [
     (False, False),
@@ -69,6 +78,7 @@ STATE_CYCLE = [
 
 
 def clear(session: Session) -> None:
+    session.execute(sqlalchemy.text('DELETE FROM project_item_tasks'))
     session.execute(sqlalchemy.text('DELETE FROM project_item_dependencies'))
     session.execute(sqlalchemy.text('DELETE FROM project_item_memberships'))
     session.execute(sqlalchemy.text('DELETE FROM project_items'))
@@ -79,9 +89,9 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     # Create projects
     projects = []
     for rep in range(scale):
-        for i, name in enumerate(PROJECT_NAMES):
+        for i, (name, description) in enumerate(PROJECT_DATA):
             proj_name = name if scale == 1 else f'{name} #{rep + 1}'
-            projects.append(Project(name=proj_name, position=i))
+            projects.append(Project(name=proj_name, description=description, position=i))
     session.add_all(projects)
     session.flush()
 
@@ -116,7 +126,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
 
     # Dependencies: short chains within each project (acyclic by construction)
     dep_count = 0
-    items_by_project: dict[int, list[int]] = {}
+    items_by_project: dict[object, list[object]] = {}
     for i, item in enumerate(items):
         proj = project_ids[i % len(project_ids)]
         items_by_project.setdefault(proj, []).append(item.id)
@@ -133,9 +143,29 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             dep_count += 1
     session.flush()
 
+    # Tasks: ~60% of items get 1-3 sub-tasks
+    task_count = 0
+    for i, item in enumerate(items):
+        if i % 5 < 3:
+            num_tasks = (i % 3) + 1
+            for t in range(num_tasks):
+                session.add(
+                    ProjectItemTask(
+                        item_id=item.id,
+                        title=TASK_TITLES[t % len(TASK_TITLES)],
+                        completed=(t == 0 and i % 2 == 0),
+                        position=t,
+                    )
+                )
+                task_count += 1
+    session.flush()
+
     active = sum(1 for item in items if not item.completed and not item.archived)
     return SeedResult(
         model='Project',
-        count=len(projects) + len(items),
-        details=f'{len(projects)} projects, {len(items)} items ({active} active), {membership_count} memberships, {dep_count} deps',
+        count=len(projects) + len(items) + task_count,
+        details=(
+            f'{len(projects)} projects, {len(items)} items ({active} active), '
+            f'{membership_count} memberships, {dep_count} deps, {task_count} tasks'
+        ),
     )

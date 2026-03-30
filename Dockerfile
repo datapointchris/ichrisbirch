@@ -1,5 +1,5 @@
 # Base stage with common system dependencies and UV setup
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS base
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS base
 
 # UV optimization settings
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
@@ -74,7 +74,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 # Final production stage - minimal runtime image
-FROM python:3.13-slim-bookworm AS production
+FROM python:3.14-slim-bookworm AS production
 
 # Install only runtime system dependencies
 # PostgreSQL 16 client from official repo (Debian 12 only has v15)

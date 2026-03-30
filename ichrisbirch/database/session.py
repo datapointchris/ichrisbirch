@@ -1,3 +1,4 @@
+import functools
 from collections.abc import Generator
 from contextlib import contextmanager
 
@@ -10,10 +11,11 @@ from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 
 
-def get_db_engine(settings: Settings) -> Engine:
+@functools.lru_cache(maxsize=4)
+def _cached_engine(db_uri: str, echo: bool) -> Engine:
     return create_engine(
-        settings.sqlalchemy.db_uri,
-        echo=settings.sqlalchemy.echo,
+        db_uri,
+        echo=echo,
         pool_pre_ping=True,
         pool_recycle=5,
         connect_args={
@@ -23,6 +25,10 @@ def get_db_engine(settings: Settings) -> Engine:
             'keepalives_count': 5,
         },
     )
+
+
+def get_db_engine(settings: Settings) -> Engine:
+    return _cached_engine(settings.sqlalchemy.db_uri, settings.sqlalchemy.echo)
 
 
 @contextmanager
@@ -36,7 +42,7 @@ def create_session(settings: Settings):
         session.close()
 
 
-def get_sqlalchemy_session() -> Generator[Session, None, None]:
+def get_sqlalchemy_session() -> Generator[Session]:
     """Return `sqlalchemy.orm.Session` with automatic cleanup.
 
     Use this for FastAPI dependency injection:

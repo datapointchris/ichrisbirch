@@ -113,7 +113,7 @@ import type { ProjectItemInProject, ProjectItemDetail } from '@/api/client'
 
 const props = defineProps<{
   visible: boolean
-  itemId: number | null
+  itemId: string | null
   itemTitle: string
   projectItems: ProjectItemInProject[]
 }>()
@@ -170,7 +170,7 @@ function handleClose() {
   emit('close')
 }
 
-async function handleAddDep(depId: number) {
+async function handleAddDep(depId: string) {
   if (props.itemId === null) return
   depError.value = null
   try {
@@ -182,7 +182,7 @@ async function handleAddDep(depId: number) {
   }
 }
 
-async function handleRemoveDep(depId: number) {
+async function handleRemoveDep(depId: string) {
   if (props.itemId === null) return
   depError.value = null
   try {

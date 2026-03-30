@@ -8,6 +8,7 @@ from ichrisbirch.models.project import Project
 from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.models.project import ProjectItemTask
 from scripts.seed.seeders import projects
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]
@@ -18,7 +19,14 @@ class TestProjectSeeder:
         projects.clear(db)
         projects.seed(db, scale=1)
         count = db.query(Project).count()
-        assert count == len(projects.PROJECT_NAMES)
+        assert count == len(projects.PROJECT_DATA)
+
+    def test_projects_have_descriptions(self, db):
+        projects.clear(db)
+        projects.seed(db, scale=1)
+        all_projects = db.query(Project).all()
+        for project in all_projects:
+            assert project.description is not None, f'Project {project.name} has no description'
 
     def test_every_item_has_membership(self, db):
         projects.clear(db)
@@ -52,6 +60,20 @@ class TestProjectSeeder:
         assert active >= 1
         assert completed >= 1
         assert archived >= 1
+
+    def test_has_tasks(self, db):
+        projects.clear(db)
+        projects.seed(db, scale=1)
+        task_count = db.query(ProjectItemTask).count()
+        assert task_count >= 1
+
+    def test_every_task_has_parent_item(self, db):
+        projects.clear(db)
+        projects.seed(db, scale=1)
+        tasks = db.query(ProjectItemTask).all()
+        for task in tasks:
+            item = db.query(ProjectItem).filter(ProjectItem.id == task.item_id).first()
+            assert item is not None, f'Task {task.id} has no parent item'
 
     def test_scale_multiplier(self, db):
         projects.clear(db)

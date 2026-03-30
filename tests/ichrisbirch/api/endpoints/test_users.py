@@ -237,7 +237,7 @@ def test_user_set_password():
 
 def test_create_user_password_hashed(users_logged_in_context):
     client, _, _ = users_logged_in_context
-    created_response = client.post('/users/', content=NEW_OBJ.model_dump_json())
+    created_response = client.post('/users/', json=NEW_OBJ.model_dump(mode='json'))
     assert created_response.status_code == status.HTTP_201_CREATED, show_status_and_response(created_response)
     created_user = models.User(**created_response.json())
     assert created_user.name == NEW_OBJ.name

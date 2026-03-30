@@ -1,4 +1,6 @@
 from datetime import datetime
+from uuid import UUID
+from uuid import uuid7
 
 from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint
@@ -8,6 +10,7 @@ from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import Uuid
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
@@ -17,12 +20,13 @@ from ichrisbirch.database.base import Base
 
 class Project(Base):
     __tablename__ = 'projects'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
     name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
-    memberships: Mapped[list['ProjectItemMembership']] = relationship(
+    memberships: Mapped[list[ProjectItemMembership]] = relationship(
         'ProjectItemMembership', back_populates='project', cascade='all, delete-orphan'
     )
 
@@ -32,7 +36,7 @@ class Project(Base):
 
 class ProjectItem(Base):
     __tablename__ = 'project_items'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -40,20 +44,23 @@ class ProjectItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
-    memberships: Mapped[list['ProjectItemMembership']] = relationship(
+    memberships: Mapped[list[ProjectItemMembership]] = relationship(
         'ProjectItemMembership', back_populates='item', cascade='all, delete-orphan'
     )
-    dependencies: Mapped[list['ProjectItemDependency']] = relationship(
+    dependencies: Mapped[list[ProjectItemDependency]] = relationship(
         'ProjectItemDependency',
         foreign_keys='ProjectItemDependency.item_id',
         back_populates='item',
         cascade='all, delete-orphan',
     )
-    dependents: Mapped[list['ProjectItemDependency']] = relationship(
+    dependents: Mapped[list[ProjectItemDependency]] = relationship(
         'ProjectItemDependency',
         foreign_keys='ProjectItemDependency.depends_on_id',
         back_populates='depends_on',
         cascade='all, delete-orphan',
+    )
+    tasks: Mapped[list[ProjectItemTask]] = relationship(
+        'ProjectItemTask', back_populates='item', cascade='all, delete-orphan', order_by='ProjectItemTask.position'
     )
 
     __table_args__ = (Index('idx_pi_active', 'archived', postgresql_where=(archived == False)),)  # noqa: E712
@@ -64,12 +71,12 @@ class ProjectItem(Base):
 
 class ProjectItemMembership(Base):
     __tablename__ = 'project_item_memberships'
-    item_id: Mapped[int] = mapped_column(Integer, ForeignKey('project_items.id', ondelete='CASCADE'), primary_key=True)
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey('projects.id', ondelete='CASCADE'), primary_key=True)
+    item_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('project_items.id', ondelete='CASCADE'), primary_key=True)
+    project_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('projects.id', ondelete='CASCADE'), primary_key=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    item: Mapped['ProjectItem'] = relationship('ProjectItem', back_populates='memberships')
-    project: Mapped['Project'] = relationship('Project', back_populates='memberships')
+    item: Mapped[ProjectItem] = relationship('ProjectItem', back_populates='memberships')
+    project: Mapped[Project] = relationship('Project', back_populates='memberships')
 
     __table_args__ = (
         Index('idx_pim_project', 'project_id'),
@@ -83,11 +90,11 @@ class ProjectItemMembership(Base):
 
 class ProjectItemDependency(Base):
     __tablename__ = 'project_item_dependencies'
-    item_id: Mapped[int] = mapped_column(Integer, ForeignKey('project_items.id', ondelete='CASCADE'), primary_key=True)
-    depends_on_id: Mapped[int] = mapped_column(Integer, ForeignKey('project_items.id', ondelete='CASCADE'), primary_key=True)
+    item_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('project_items.id', ondelete='CASCADE'), primary_key=True)
+    depends_on_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('project_items.id', ondelete='CASCADE'), primary_key=True)
 
-    item: Mapped['ProjectItem'] = relationship('ProjectItem', foreign_keys=[item_id], back_populates='dependencies')
-    depends_on: Mapped['ProjectItem'] = relationship('ProjectItem', foreign_keys=[depends_on_id], back_populates='dependents')
+    item: Mapped[ProjectItem] = relationship('ProjectItem', foreign_keys=[item_id], back_populates='dependencies')
+    depends_on: Mapped[ProjectItem] = relationship('ProjectItem', foreign_keys=[depends_on_id], back_populates='dependents')
 
     __table_args__ = (
         CheckConstraint('item_id != depends_on_id', name='no_self_dependency'),
@@ -98,3 +105,23 @@ class ProjectItemDependency(Base):
 
     def __repr__(self):
         return f'ProjectItemDependency(item_id={self.item_id!r}, depends_on_id={self.depends_on_id!r})'
+
+
+class ProjectItemTask(Base):
+    __tablename__ = 'project_item_tasks'
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
+    item_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('project_items.id', ondelete='CASCADE'), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
+
+    item: Mapped[ProjectItem] = relationship('ProjectItem', back_populates='tasks')
+
+    __table_args__ = (
+        Index('idx_pit_item', 'item_id'),
+        Index('idx_pit_position', 'item_id', 'position'),
+    )
+
+    def __repr__(self):
+        return f'ProjectItemTask(id={self.id!r}, title={self.title!r}, completed={self.completed!r})'

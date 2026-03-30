@@ -25,6 +25,17 @@
           />
         </div>
 
+        <div class="add-edit-modal__form-item">
+          <label for="project-description">Description</label>
+          <textarea
+            id="project-description"
+            v-model="form.description"
+            data-testid="project-description-input"
+            rows="3"
+            class="textbox"
+          ></textarea>
+        </div>
+
         <div class="add-edit-modal__form-buttons">
           <button
             type="submit"
@@ -54,19 +65,20 @@ import AddEditModal from '@/components/AddEditModal.vue'
 
 const props = defineProps<{
   visible: boolean
-  editData?: { id: number; name: string } | null
+  editData?: { id: string; name: string; description?: string } | null
 }>()
 
 const emit = defineEmits<{
   close: []
   create: [data: ProjectCreate]
-  update: [id: number, data: ProjectUpdate]
+  update: [id: string, data: ProjectUpdate]
 }>()
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
 const form = reactive({
   name: '',
+  description: '',
 })
 
 watch(
@@ -74,12 +86,14 @@ watch(
   (val) => {
     if (val && props.editData) {
       form.name = props.editData.name
+      form.description = props.editData.description ?? ''
     }
   }
 )
 
 function resetForm() {
   form.name = ''
+  form.description = ''
 }
 
 function handleModalClose() {
@@ -90,9 +104,15 @@ function handleModalClose() {
 function handleSubmit(handleSuccess: () => void) {
   if (!form.name.trim()) return
   if (props.editData) {
-    emit('update', props.editData.id, { name: form.name.trim() })
+    emit('update', props.editData.id, {
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+    })
   } else {
-    emit('create', { name: form.name.trim() })
+    emit('create', {
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+    })
   }
   handleSuccess()
 }
