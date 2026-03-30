@@ -13,7 +13,7 @@ T = TypeVar('T', bound=BaseModel)
 class ResourceClient[T]:
     """Generic resource client for any API endpoint."""
 
-    def __init__(self, session: 'APISession', resource_name: str, model_class: type[T]):
+    def __init__(self, session: APISession, resource_name: str, model_class: type[T]):
         self.session = session
         self.resource_name = resource_name
         self.model_class = model_class

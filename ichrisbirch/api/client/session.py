@@ -21,7 +21,7 @@ class APISession:
         base_url: str | None = None,
         credential_provider: CredentialProvider | None = None,
         default_headers: dict[str, str] | None = None,
-        settings: 'Settings | None' = None,
+        settings: Settings | None = None,
     ):
         self._settings = _get_settings_with_fallback(settings)
         self.base_url = base_url or self._settings.api_url

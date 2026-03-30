@@ -21,7 +21,7 @@ class ChatAuthClient:
         self.users_url = f'{self.api_url}/users/'
 
     @contextmanager
-    def safe_request_client(self) -> Generator[httpx.Client, None, None]:
+    def safe_request_client(self) -> Generator[httpx.Client]:
         """Provide an HTTP client with automatic cleanup.
 
         Exceptions are logged and propagated to callers.

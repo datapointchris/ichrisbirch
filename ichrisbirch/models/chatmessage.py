@@ -20,7 +20,7 @@ class ChatMessage(Base):
     __tablename__ = 'messages'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     chat_id: Mapped[int] = mapped_column(ForeignKey('chat.chats.id', ondelete='CASCADE'), nullable=False)
-    chat: Mapped['Chat'] = relationship(back_populates='messages')
+    chat: Mapped[Chat] = relationship(back_populates='messages')
     role: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now)

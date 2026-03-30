@@ -19,8 +19,8 @@ class HabitCategory(Base):
     __tablename__ = 'categories'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    habits: Mapped[list['Habit']] = relationship('Habit', back_populates='category')
-    completed_habits: Mapped[list['HabitCompleted']] = relationship('HabitCompleted', back_populates='category')
+    habits: Mapped[list[Habit]] = relationship('Habit', back_populates='category')
+    completed_habits: Mapped[list[HabitCompleted]] = relationship('HabitCompleted', back_populates='category')
     is_current: Mapped[bool] = mapped_column(Boolean)
 
     def __repr__(self):

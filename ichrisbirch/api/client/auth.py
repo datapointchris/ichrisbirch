@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from ichrisbirch.config import Settings
 
 
-def _get_settings_with_fallback(explicit_settings: 'Settings | None' = None) -> 'Settings':
+def _get_settings_with_fallback(explicit_settings: Settings | None = None) -> Settings:
     """Get settings with priority: explicit > global."""
     if explicit_settings:
         return explicit_settings
@@ -32,7 +32,7 @@ class CredentialProvider(ABC):
 class InternalServiceProvider(CredentialProvider):
     """Credentials for internal service-to-service calls."""
 
-    def __init__(self, service_name: str = 'internal-service', settings: 'Settings | None' = None):
+    def __init__(self, service_name: str = 'internal-service', settings: Settings | None = None):
         self.service_name = service_name
         self._settings = _get_settings_with_fallback(settings)
         self.service_key = self._settings.auth.internal_service_key

@@ -21,7 +21,7 @@ class DurationNote(Base):
     duration_id: Mapped[int] = mapped_column(ForeignKey('durations.id', ondelete='CASCADE'), nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    duration: Mapped['Duration'] = relationship(back_populates='duration_notes')
+    duration: Mapped[Duration] = relationship(back_populates='duration_notes')
 
     def __repr__(self) -> str:
         return f'DurationNote(id={self.id!r}, duration_id={self.duration_id!r}, date={self.date!r})'

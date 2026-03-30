@@ -14,7 +14,7 @@ class ChatCreate(ChatConfig):
     category: str | None = None
     subcategory: str | None = None
     tags: list[str] | None = None
-    messages: list['ChatMessageCreate']
+    messages: list[ChatMessageCreate]
 
 
 class Chat(ChatConfig):
@@ -23,7 +23,7 @@ class Chat(ChatConfig):
     category: str | None = None
     subcategory: str | None = None
     tags: list[str] | None = None
-    messages: list['ChatMessage']
+    messages: list[ChatMessage]
 
 
 class ChatUpdate(ChatConfig):
@@ -31,4 +31,4 @@ class ChatUpdate(ChatConfig):
     category: str | None = None
     subcategory: str | None = None
     tags: list[str] | None = None
-    messages: list['ChatMessage']
+    messages: list[ChatMessage]

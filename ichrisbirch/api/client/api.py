@@ -49,7 +49,7 @@ class APIClient:
 # Factory functions for common credential providers
 def internal_service_client(
     service_name: str = 'internal-service',
-    settings: 'Settings | None' = None,
+    settings: Settings | None = None,
 ) -> APIClient:
     """Create client with internal service authentication."""
     resolved_settings = _get_settings_with_fallback(settings)
@@ -60,7 +60,7 @@ def internal_service_client(
 def user_client(
     user_id: str,
     app_id: str | None = None,
-    settings: 'Settings | None' = None,
+    settings: Settings | None = None,
 ) -> APIClient:
     """Create client with user authentication."""
     resolved_settings = _get_settings_with_fallback(settings)

@@ -22,7 +22,7 @@ class Duration(Base):
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     color: Mapped[str | None] = mapped_column(Text, nullable=True)
-    duration_notes: Mapped[list['DurationNote']] = relationship(
+    duration_notes: Mapped[list[DurationNote]] = relationship(
         back_populates='duration',
         order_by='DurationNote.date',
         cascade='all, delete-orphan',

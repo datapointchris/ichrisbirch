@@ -45,7 +45,7 @@ class LoggingResourceClient[ModelType]:
         session: httpx.Client,
         credential_provider: CredentialProvider,
         base_url: str | None = None,
-        settings: 'Settings | None' = None,
+        settings: Settings | None = None,
     ):
         self._settings = _get_settings_with_fallback(settings)
         self.endpoint = endpoint
@@ -307,7 +307,7 @@ class LoggingAPIClient:
         self,
         credential_provider: CredentialProvider,
         base_url: str | None = None,
-        settings: 'Settings | None' = None,
+        settings: Settings | None = None,
     ):
         self._settings = _get_settings_with_fallback(settings)
         self.credential_provider = credential_provider
@@ -343,7 +343,7 @@ class LoggingAPIClient:
 def logging_internal_service_client(
     service_name: str = 'internal-service',
     base_url: str | None = None,
-    settings: 'Settings | None' = None,
+    settings: Settings | None = None,
 ) -> LoggingAPIClient:
     """Create an internal service client with extensive logging."""
     from .auth import InternalServiceProvider
@@ -357,7 +357,7 @@ def logging_user_client(
     user_id: str,
     app_id: str | None = None,
     base_url: str | None = None,
-    settings: 'Settings | None' = None,
+    settings: Settings | None = None,
 ) -> LoggingAPIClient:
     """Create a user client with extensive logging."""
     from .auth import UserTokenProvider

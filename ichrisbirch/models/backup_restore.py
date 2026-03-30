@@ -31,7 +31,7 @@ class BackupRestore(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     backup_id: Mapped[int] = mapped_column(Integer, ForeignKey('admin.backup_history.id'), nullable=False)
-    backup: Mapped['BackupHistory'] = relationship('BackupHistory', back_populates='restores')
+    backup: Mapped[BackupHistory] = relationship('BackupHistory', back_populates='restores')
 
     restored_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     restored_to_environment: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -41,7 +41,7 @@ class BackupRestore(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     restored_by_user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
-    restored_by_user: Mapped['User | None'] = relationship('User', foreign_keys=[restored_by_user_id])
+    restored_by_user: Mapped[User | None] = relationship('User', foreign_keys=[restored_by_user_id])
 
     def __repr__(self) -> str:
         return f'BackupRestore(backup_id={self.backup_id}, restored_at={self.restored_at}, success={self.success})'

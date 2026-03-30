@@ -20,7 +20,7 @@ class Habit(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
-    category: Mapped['HabitCategory'] = relationship('HabitCategory', back_populates='habits')
+    category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='habits')
     is_current: Mapped[bool] = mapped_column(Boolean)
 
     def __repr__(self):

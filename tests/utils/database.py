@@ -126,7 +126,7 @@ def clear_test_connection() -> None:
     _test_connection = None
 
 
-def get_transactional_session() -> Generator[Session, None, None]:
+def get_transactional_session() -> Generator[Session]:
     """Return a session bound to the current test connection.
 
     This session participates in the test's transaction and will be
@@ -196,7 +196,7 @@ def get_test_runner_settings() -> Settings:
 test_settings = get_test_runner_settings()
 
 
-def get_test_session() -> Generator[Session, None, None]:
+def get_test_session() -> Generator[Session]:
     """Return a SQLAlchemy session for testing."""
     with create_session(test_settings) as session:
         yield session

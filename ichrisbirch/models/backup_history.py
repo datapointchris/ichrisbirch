@@ -58,9 +58,9 @@ class BackupHistory(Base):
     checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     triggered_by_user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
-    triggered_by_user: Mapped['User | None'] = relationship('User', foreign_keys=[triggered_by_user_id])
+    triggered_by_user: Mapped[User | None] = relationship('User', foreign_keys=[triggered_by_user_id])
 
-    restores: Mapped[list['BackupRestore']] = relationship(
+    restores: Mapped[list[BackupRestore]] = relationship(
         'BackupRestore',
         back_populates='backup',
         order_by='BackupRestore.restored_at',
