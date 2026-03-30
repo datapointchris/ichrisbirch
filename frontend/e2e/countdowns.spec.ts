@@ -17,6 +17,10 @@ async function createCountdown(
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
+// Smoke tests only — interaction-heavy tests (edit, modal fields,
+// urgency classes) are covered by component integration tests in
+// src/views/__tests__/CountdownsView.test.ts
+
 test.describe('Countdowns Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -35,16 +39,6 @@ test.describe('Countdowns Page', () => {
   test('loads the page and displays the countdown list', async ({ page }) => {
     await page.goto('/countdowns')
     await expect(page).toHaveTitle('Countdowns | iChrisBirch')
-  })
-
-  test('add button opens the modal with all fields', async ({ page }) => {
-    await page.goto('/countdowns')
-
-    await page.getByTestId('countdown-add-button').click()
-    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-    await expect(page.getByTestId('countdown-name-input')).toBeVisible()
-    await expect(page.getByTestId('countdown-due-date-input')).toBeVisible()
-    await expect(page.getByTestId('countdown-notes-input')).toBeVisible()
   })
 
   test('creates a new countdown and verifies it appears in the list', async ({ page }) => {
