@@ -148,19 +148,19 @@ repos:
         files: '^frontend/.*\.(vue|ts|tsx)$'
         stages: [pre-commit]
 
-      - id: vue-test
-        name: test (vue)
-        description: "Run Vue build check and Vitest unit tests"
-        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; cd frontend && npm test'
+      - id: vue-test-results
+        name: vue tests (results capture)
+        description: "Run Vitest unit tests and capture results for stats"
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; cd frontend && npm test; rc=$?; cd .. && uv run python -m stats.collect_report vitest; exit $rc'
         language: system
         pass_filenames: false
         files: '^frontend/.*\.(vue|ts|tsx)$'
         stages: [pre-commit]
 
-      - id: vue-e2e
-        name: e2e (vue)
-        description: "Run Playwright E2E tests against test containers"
-        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; ./cli/ichrisbirch testing ensure && cd frontend && npx playwright test'
+      - id: vue-e2e-results
+        name: vue e2e (results capture)
+        description: "Run Playwright E2E tests and capture results for stats"
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; ./cli/ichrisbirch testing ensure && cd frontend && npx playwright test; rc=$?; cd .. && uv run python -m stats.collect_report playwright; exit $rc'
         language: system
         pass_filenames: false
         files: '^frontend/.*\.(vue|ts|tsx)$'
@@ -233,20 +233,12 @@ repos:
   # ============================================================
   - repo: local
     hooks:
-      - id: pytest-affected
-        name: pytest (affected tests only)
+      - id: pytest-results
+        name: pytest (results capture)
+        description: "Run full pytest suite and capture results for stats"
         stages: [pre-commit]
         language: system
-        entry: uv run python scripts/pre_commit_validations/pytest_affected.py
-        types: [python]
-        pass_filenames: false
-        always_run: false
-
-      - id: pytest-full
-        name: pytest (full test suite)
-        stages: [pre-commit]
-        language: system
-        entry: env ENVIRONMENT=testing uv run pytest --tb=short
+        entry: bash -c 'ENVIRONMENT=testing uv run pytest --tb=short --json-report --json-report-file=/tmp/ichrisbirch-pytest-report.json --cov=ichrisbirch --cov-report=json:.coverage.json; rc=$?; uv run python -m stats.collect_report pytest; exit $rc'
         types: [python]
         pass_filenames: false
         always_run: false

@@ -304,6 +304,43 @@ def build_npm_dependencies_section(npm_event: dict | None) -> dict:
     }
 
 
+def build_e2e_section(playwright_event: dict | None) -> dict:
+    """Build the 'e2e_tests' section from a Playwright collector event."""
+    if not playwright_event:
+        return {
+            'total': 0,
+            'passed': 0,
+            'failed': 0,
+            'skipped': 0,
+            'duration_seconds': 0,
+            'slowest': [],
+            'source': 'playwright',
+        }
+
+    summary = playwright_event.get('summary', {})
+    tests = playwright_event.get('tests', [])
+
+    sorted_tests = sorted(tests, key=lambda t: t.get('duration', 0), reverse=True)
+    slowest = [
+        {
+            'name': f'{t.get("suite", "")} > {t.get("name", "")}',
+            'duration': round(t.get('duration', 0), 3),
+            'outcome': t.get('outcome', 'unknown'),
+        }
+        for t in sorted_tests[:10]
+    ]
+
+    return {
+        'total': summary.get('total', 0),
+        'passed': summary.get('passed', 0),
+        'failed': summary.get('failed', 0),
+        'skipped': summary.get('skipped', 0),
+        'duration_seconds': round(playwright_event.get('duration_seconds', 0), 2),
+        'slowest': slowest,
+        'source': 'playwright',
+    }
+
+
 def build_quality_section(hook_events: list[dict]) -> dict:
     """Build the 'quality' section from hook events."""
     quality: dict[str, Any] = {
@@ -375,6 +412,7 @@ def build_snapshot(
         'code': build_code_section(collectors_by_type.get('collect.tokei')),
         'tests': build_tests_section(collectors_by_type.get('collect.pytest')),
         'frontend_tests': build_frontend_tests_section(collectors_by_type.get('collect.vitest')),
+        'e2e_tests': build_e2e_section(collectors_by_type.get('collect.playwright')),
         'coverage': build_coverage_section(collectors_by_type.get('collect.coverage')),
         'docker': build_docker_section(collectors_by_type.get('collect.docker')),
         'dependencies': build_dependencies_section(collectors_by_type.get('collect.dependencies')),

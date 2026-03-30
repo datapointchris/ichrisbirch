@@ -20,7 +20,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: 'list',
+  reporter: [['list'], ['json', { outputFile: '/tmp/ichrisbirch-playwright-report.json' }]],
   timeout: 20000,
   maxFailures: 3,
 

@@ -12,11 +12,8 @@ from unittest.mock import patch
 from stats.pre_commit_capture import get_branch
 from stats.pre_commit_capture import get_staged_files
 from stats.pre_commit_capture import main
-from stats.schemas.collectors.pytest_collector import PytestCollectEvent
-from stats.schemas.collectors.pytest_collector import PytestSummary
 from stats.schemas.hooks.mypy import MypyHookEvent
 from stats.schemas.hooks.ruff_check import RuffCheckHookEvent
-from stats.schemas.hooks.testing import PytestFullHookEvent
 
 
 class TestGetStagedFiles:
@@ -212,33 +209,36 @@ class TestMain:
                 patch('stats.pre_commit_capture.load_config') as mock_config,
                 patch('stats.pre_commit_capture.get_staged_files') as mock_staged,
                 patch('stats.pre_commit_capture.get_branch') as mock_branch,
-                patch('stats.hooks.pytest_full.run') as mock_pytest_run,
+                patch('stats.hooks.ruff_check.run') as mock_ruff_run,
             ):
                 mock_config.return_value = {
                     'project': 'ichrisbirch',
                     'events_path': str(events_path),
-                    'capture': {'hooks': ['pytest_full']},
+                    'capture': {'hooks': ['ruff_check']},
                 }
                 mock_staged.return_value = ['test.py']
                 mock_branch.return_value = 'master'
-                mock_pytest_run.return_value = [
-                    PytestFullHookEvent(
+                # Simulate a hook returning multiple events (list)
+                mock_ruff_run.return_value = [
+                    RuffCheckHookEvent(
                         timestamp=datetime.now(UTC),
                         project='ichrisbirch',
                         branch='master',
-                        status='failed',
-                        exit_code=1,
-                        tests_run=150,
-                        duration_seconds=45.0,
+                        status='passed',
+                        exit_code=0,
+                        issues=[],
+                        files_checked=['test.py'],
+                        duration_seconds=0.5,
                     ),
-                    PytestCollectEvent(
+                    RuffCheckHookEvent(
                         timestamp=datetime.now(UTC),
                         project='ichrisbirch',
                         branch='master',
-                        summary=PytestSummary(passed=148, failed=2, total=150),
-                        tests=[],
-                        duration_seconds=45.0,
-                        exit_code=1,
+                        status='passed',
+                        exit_code=0,
+                        issues=[],
+                        files_checked=['test.py'],
+                        duration_seconds=0.3,
                     ),
                 ]
 
@@ -247,5 +247,3 @@ class TestMain:
                 assert result == 0
                 lines = events_path.read_text().strip().split('\n')
                 assert len(lines) == 2
-                assert 'hook.pytest-full' in lines[0]
-                assert 'collect.pytest' in lines[1]

@@ -18,9 +18,12 @@ from stats.schemas.collectors.coverage import CoverageCollectEvent
 from stats.schemas.collectors.dependencies import DependenciesCollectEvent
 from stats.schemas.collectors.docker import DockerCollectEvent
 from stats.schemas.collectors.files import FilesCollectEvent
+from stats.schemas.collectors.npm_dependencies import NpmDependenciesCollectEvent
+from stats.schemas.collectors.playwright_collector import PlaywrightCollectEvent
 from stats.schemas.collectors.pytest_collector import PytestCollectEvent
 from stats.schemas.collectors.radon import RadonCollectEvent
 from stats.schemas.collectors.tokei import TokeiCollectEvent
+from stats.schemas.collectors.vitest_collector import VitestCollectEvent
 from stats.schemas.commit import CommitEvent
 from stats.schemas.hooks.actionlint import ActionlintHookEvent
 from stats.schemas.hooks.bandit import BanditHookEvent
@@ -66,6 +69,9 @@ Event = (
     | DependenciesCollectEvent
     | FilesCollectEvent
     | RadonCollectEvent
+    | VitestCollectEvent
+    | NpmDependenciesCollectEvent
+    | PlaywrightCollectEvent
 )
 
 EventAdapter: TypeAdapter[Event] = TypeAdapter(Event)
@@ -144,4 +150,7 @@ __all__ = [
     'DependenciesCollectEvent',
     'FilesCollectEvent',
     'RadonCollectEvent',
+    'VitestCollectEvent',
+    'NpmDependenciesCollectEvent',
+    'PlaywrightCollectEvent',
 ]

@@ -283,14 +283,13 @@ hooks = [
     "vue_eslint", "vue_prettier", "vue_typecheck",
     # Project-specific
     "uv_lock", "validate_markdown_links", "validate_html", "code_sync", "generate_fixture_diagrams",
-    # Testing
-    "pytest_full",
 ]
 
 [tool.devstats.collect]
-collectors = ["tokei", "pytest_collector", "vitest_collector", "coverage", "docker", "dependencies", "npm_dependencies", "files", "radon"]
+collectors = ["tokei", "pytest_collector", "vitest_collector", "playwright_collector", "coverage", "docker", "dependencies", "npm_dependencies", "files", "radon"]
 pytest_json_path = "/tmp/ichrisbirch-pytest-report.json"
 vitest_json_path = "/tmp/ichrisbirch-vitest-report.json"
+playwright_json_path = "/tmp/ichrisbirch-playwright-report.json"
 
 
 [tool.uv]

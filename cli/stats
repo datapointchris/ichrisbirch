@@ -83,12 +83,19 @@ function stats-summary() {
   fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
   fe_duration=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
 
+  local e2e_active e2e_passed e2e_failed e2e_skipped e2e_duration
+  e2e_active=$(jq -r '.e2e_tests.total // 0' "$stats_file")
+  e2e_passed=$(jq -r '.e2e_tests.passed // 0' "$stats_file")
+  e2e_failed=$(jq -r '.e2e_tests.failed // 0' "$stats_file")
+  e2e_skipped=$(jq -r '.e2e_tests.skipped // 0' "$stats_file")
+  e2e_duration=$(jq -r '.e2e_tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
+
   local all_active all_passed all_failed all_skipped all_duration pass_rate
-  all_active=$((py_active + fe_active))
-  all_passed=$((py_passed + fe_passed))
-  all_failed=$((py_failed + fe_failed))
-  all_skipped=$((py_skipped + fe_skipped))
-  all_duration=$((py_duration + fe_duration))
+  all_active=$((py_active + fe_active + e2e_active))
+  all_passed=$((py_passed + fe_passed + e2e_passed))
+  all_failed=$((py_failed + fe_failed + e2e_failed))
+  all_skipped=$((py_skipped + fe_skipped + e2e_skipped))
+  all_duration=$((py_duration + fe_duration + e2e_duration))
   pass_rate=0
   if [ "$all_active" -gt 0 ]; then
     pass_rate=$((all_passed * 100 / all_active))
@@ -102,6 +109,7 @@ function stats-summary() {
   fi
   printf "    Python:    %d\n" "$py_active"
   printf "    Frontend:  %d\n" "$fe_active"
+  [ "$e2e_active" -gt 0 ] && printf "    E2E:       %d\n" "$e2e_active"
   [ "$all_skipped" -gt 0 ] && printf "  Skipped:     ${yellow}%d${reset}\n" "$all_skipped"
   printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
   printf "  Duration:    %ds\n" "$all_duration"
@@ -199,17 +207,25 @@ function stats-tests() {
   fe_skipped2=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
   fe_duration2=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file")
 
+  local e2e_active2 e2e_passed2 e2e_failed2 e2e_skipped2 e2e_duration2
+  e2e_active2=$(jq -r '.e2e_tests.total // 0' "$stats_file")
+  e2e_passed2=$(jq -r '.e2e_tests.passed // 0' "$stats_file")
+  e2e_failed2=$(jq -r '.e2e_tests.failed // 0' "$stats_file")
+  e2e_skipped2=$(jq -r '.e2e_tests.skipped // 0' "$stats_file")
+  e2e_duration2=$(jq -r '.e2e_tests.duration_seconds // 0' "$stats_file")
+
   local all_active all_passed all_failed all_skipped all_duration
-  all_active=$((py_active + fe_active2))
-  all_passed=$((py_passed + fe_passed2))
-  all_failed=$((py_failed + fe_failed2))
-  all_skipped=$((py_skipped + fe_skipped2))
-  all_duration=$(echo "$py_duration + $fe_duration2" | bc)
+  all_active=$((py_active + fe_active2 + e2e_active2))
+  all_passed=$((py_passed + fe_passed2 + e2e_passed2))
+  all_failed=$((py_failed + fe_failed2 + e2e_failed2))
+  all_skipped=$((py_skipped + fe_skipped2 + e2e_skipped2))
+  all_duration=$(echo "$py_duration + $fe_duration2 + $e2e_duration2" | bc)
 
   echo "${blue}Current Results${reset}"
   printf "  Active:    %d\n" "$all_active"
   printf "    Python:    %d\n" "$py_active"
   printf "    Frontend:  %d\n" "$fe_active2"
+  [ "$e2e_active2" -gt 0 ] && printf "    E2E:       %d\n" "$e2e_active2"
   printf "  Passed:    ${green}%d${reset}\n" "$all_passed"
   [ "$all_failed" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$all_failed"
   [ "$all_skipped" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$all_skipped"
@@ -441,6 +457,30 @@ function stats-tests() {
 
     echo "${blue}Slowest Frontend Tests${reset}"
     jq -r '.frontend_tests.slowest[:8] | .[] | (.name | sub(".*/frontend/src/"; "") | sub("/__tests__"; "") | sub("\\.test\\.ts::"; ": ")) as $short | "  " + (.duration | tostring | .[0:5]) + "s  " + $short' "$stats_file" 2>/dev/null
+  fi
+  echo ""
+
+  # E2E Tests (Playwright)
+  local e2e_total e2e_passed3 e2e_failed3 e2e_skipped3 e2e_duration3
+  e2e_total=$(jq -r '.e2e_tests.total // 0' "$stats_file")
+  e2e_passed3=$(jq -r '.e2e_tests.passed // 0' "$stats_file")
+  e2e_failed3=$(jq -r '.e2e_tests.failed // 0' "$stats_file")
+  e2e_skipped3=$(jq -r '.e2e_tests.skipped // 0' "$stats_file")
+  e2e_duration3=$(jq -r '.e2e_tests.duration_seconds // 0' "$stats_file")
+
+  echo "${blue}E2E Test Details (Playwright)${reset}"
+  if [ "$e2e_total" -eq 0 ]; then
+    printf "  %sNo E2E results collected%s\n" "$gray" "$reset"
+  else
+    printf "  Total:     %d\n" "$e2e_total"
+    printf "  Passed:    ${green}%d${reset}\n" "$e2e_passed3"
+    [ "$e2e_failed3" -gt 0 ] && printf "  Failed:    ${red}%d${reset}\n" "$e2e_failed3"
+    [ "$e2e_skipped3" -gt 0 ] && printf "  Skipped:   ${yellow}%d${reset}\n" "$e2e_skipped3"
+    printf "  Duration:  %.1fs\n" "$e2e_duration3"
+    echo ""
+
+    echo "${blue}Slowest E2E Tests${reset}"
+    jq -r '.e2e_tests.slowest[:8] | .[] | "  " + (.duration | tostring | .[0:5]) + "s  " + .name' "$stats_file" 2>/dev/null
   fi
 }
 
@@ -800,11 +840,17 @@ function stats-trends() {
     curr_fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$latest_stats")
     curr_fe_dur=$(jq -r '.frontend_tests.duration_seconds // 0' "$latest_stats")
 
+    local curr_e2e_tests curr_e2e_failed curr_e2e_skipped curr_e2e_dur
+    curr_e2e_tests=$(jq -r '.e2e_tests.total // 0' "$latest_stats")
+    curr_e2e_failed=$(jq -r '.e2e_tests.failed // 0' "$latest_stats")
+    curr_e2e_skipped=$(jq -r '.e2e_tests.skipped // 0' "$latest_stats")
+    curr_e2e_dur=$(jq -r '.e2e_tests.duration_seconds // 0' "$latest_stats")
+
     local curr_all_tests curr_all_failed curr_all_skipped curr_all_dur
-    curr_all_tests=$((curr_py_tests + curr_fe_tests))
-    curr_all_failed=$((curr_py_failed + curr_fe_failed))
-    curr_all_skipped=$((curr_py_skipped + curr_fe_skipped))
-    curr_all_dur=$(echo "$curr_py_dur + $curr_fe_dur" | bc)
+    curr_all_tests=$((curr_py_tests + curr_fe_tests + curr_e2e_tests))
+    curr_all_failed=$((curr_py_failed + curr_fe_failed + curr_e2e_failed))
+    curr_all_skipped=$((curr_py_skipped + curr_fe_skipped + curr_e2e_skipped))
+    curr_all_dur=$(echo "$curr_py_dur + $curr_fe_dur + $curr_e2e_dur" | bc)
 
     printf "  %-14s %d tests" "Active:" "$curr_all_tests"
     if [ "$curr_all_failed" -gt 0 ]; then
@@ -814,6 +860,7 @@ function stats-trends() {
     fi
     printf "    Python:    %d\n" "$curr_py_tests"
     printf "    Frontend:  %d\n" "$curr_fe_tests"
+    [ "$curr_e2e_tests" -gt 0 ] && printf "    E2E:       %d\n" "$curr_e2e_tests"
     [ "$curr_all_skipped" -gt 0 ] && printf "  %-14s ${yellow}%d${reset}\n" "Skipped:" "$curr_all_skipped"
     if [ "$(echo "$curr_cov > 0" | bc)" -eq 1 ]; then
       printf "  %-14s %.1f%%\n" "Coverage:" "$curr_cov"
