@@ -71,7 +71,7 @@ repos:
         additional_dependencies: ["bandit[toml]"]
 
   - repo: https://github.com/dosisod/refurb
-    rev: v2.1.0
+    rev: v2.3.0
     hooks:
       - id: refurb
         additional_dependencies: ["pydantic"]

@@ -203,6 +203,7 @@ ignore = ["FURB120", "FURB124", "FURB184"]
 
 
 [tool.ruff]
+target-version = "py313"
 line-length = 140
 exclude = [
   "alembic",
