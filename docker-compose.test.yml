@@ -368,6 +368,7 @@ services:
   # Overrides the production Caddy-based vue service with a Vite dev server
   vue:
     image: node:20-alpine
+    build: !reset null
     container_name: icb-test-vue
     working_dir: /app
     command: sh -c "npm install && npm run dev"
