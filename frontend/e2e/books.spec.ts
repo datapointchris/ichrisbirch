@@ -14,6 +14,10 @@ async function createBook(page: import('@playwright/test').Page, title: string, 
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
+// Smoke tests only — interaction-heavy tests (edit, search, sort,
+// filter, expand detail) are covered by component integration tests
+// in src/views/__tests__/BooksView.test.ts
+
 test.describe('Books Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -33,11 +37,6 @@ test.describe('Books Page', () => {
     await page.goto('/books')
     await expect(page).toHaveTitle('Books | iChrisBirch')
     await expect(page.locator('.books__header')).toBeVisible()
-  })
-
-  test('info bar is visible with status counters', async ({ page }) => {
-    await page.goto('/books')
-    await expect(page.locator('.task-layout__info')).toBeVisible()
   })
 
   test('creates a new book and verifies it appears in the table', async ({ page }) => {
@@ -64,57 +63,9 @@ test.describe('Books Page', () => {
     await expect(row).not.toBeVisible()
   })
 
-  test('edits a book and verifies changes persist through round-trips', async ({ page }) => {
+  test('info bar is visible with status counters', async ({ page }) => {
     await page.goto('/books')
-    await expect(page.locator('.books__header')).toBeVisible({ timeout: 10000 })
-
-    const title = `E2E Edit ${Date.now()}`
-    await createBook(page, title, 'Edit Author')
-
-    // Open edit modal
-    const row = page.getByTestId('book-item').filter({ hasText: title })
-    await expect(row).toBeVisible()
-    await row.getByTestId('book-edit-button').click()
-    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-
-    // Edit: change tags, rating, progress
-    await page.getByTestId('book-tags-input').fill('updated, tags')
-    await page.getByTestId('book-rating-input').fill('4')
-    await page.evaluate(() => {
-      (document.querySelector('[data-testid="book-progress-input"]') as HTMLElement).click()
-    })
-    await page.evaluate(() => {
-      (document.querySelector('[data-testid="book-progress-input-option-reading"]') as HTMLElement).click()
-    })
-    await page.getByTestId('book-tags-input').press('Enter')
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-
-    // Re-open edit modal — verify previous changes
-    const updatedRow = page.getByTestId('book-item').filter({ hasText: title })
-    await expect(updatedRow).toBeVisible()
-    await updatedRow.getByTestId('book-edit-button').click()
-    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-
-    const tagsValue = await page.getByTestId('book-tags-input').inputValue()
-    expect(tagsValue).toContain('updated')
-    expect(tagsValue).not.toContain('[')
-
-    const ratingValue = await page.getByTestId('book-rating-input').inputValue()
-    expect(ratingValue).toBe('4')
-
-    const progressText = await page.getByTestId('book-progress-input').textContent()
-    expect(progressText).toContain('Reading')
-
-    // No-op submit — verify nothing gets corrupted
-    await page.getByTestId('book-tags-input').press('Enter')
-    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
-
-    // Re-open and verify tags haven't been nested
-    await updatedRow.getByTestId('book-edit-button').click()
-    await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-    const finalTags = await page.getByTestId('book-tags-input').inputValue()
-    expect(finalTags).toContain('updated')
-    expect(finalTags).not.toContain('[')
+    await expect(page.locator('.task-layout__info')).toBeVisible()
   })
 
   test('sidebar navigation to books works', async ({ page }) => {
