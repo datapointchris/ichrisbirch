@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess  # nosec B404
 import time
 from datetime import UTC
@@ -13,6 +14,10 @@ from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
 def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesShebangsHookEvent:
     """Run check-executables-have-shebangs on staged files, return fully-typed event.
 
+    Pre-commit only passes files with `types: [executable]` to this tool.
+    The tool itself doesn't check permissions — it assumes it only receives
+    executable files. We must replicate that filter here.
+
     Args:
         staged_files: List of file paths to check
         branch: Current git branch
@@ -23,7 +28,10 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesS
     """
     start_time = time.perf_counter()
 
-    if not staged_files:
+    # Pre-commit filters to types: [executable] — only pass executable files
+    executable_files = [f for f in staged_files if os.access(f, os.X_OK)]
+
+    if not executable_files:
         return CheckExecutablesShebangsHookEvent(
             timestamp=datetime.now(UTC),
             project=project,
@@ -36,7 +44,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesS
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['uvx', '--from', 'pre-commit-hooks', 'check-executables-have-shebangs', *staged_files],
+        ['uvx', '--from', 'pre-commit-hooks', 'check-executables-have-shebangs', *executable_files],
         capture_output=True,
         text=True,
     )
@@ -51,7 +59,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesS
         status='passed' if result.returncode == 0 else 'failed',
         exit_code=result.returncode,
         files_without_shebangs=files_without_shebangs,
-        files_checked=staged_files,
+        files_checked=executable_files,
         duration_seconds=round(duration, 3),
     )
 

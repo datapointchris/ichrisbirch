@@ -34,7 +34,9 @@ def run(staged_files: list[str], branch: str, project: str) -> MypyHookEvent:
     """
     start_time = time.perf_counter()
 
-    # Filter to only Python files
+    # Pre-commit's mypy hook uses pass_filenames: false and runs on the
+    # whole ichrisbirch package. Running mypy on individual files produces
+    # different results (missing import context, different scope).
     python_files = [f for f in staged_files if f.endswith('.py')]
 
     if not python_files:
@@ -50,7 +52,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MypyHookEvent:
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['uv', 'run', 'mypy', '--config-file', 'pyproject.toml', '--show-error-codes', '--no-error-summary', *python_files],
+        ['uv', 'run', 'mypy', 'ichrisbirch', 'stats', '--config-file', 'pyproject.toml', '--show-error-codes', '--no-error-summary'],
         capture_output=True,
         text=True,
     )

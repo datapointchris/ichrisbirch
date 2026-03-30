@@ -11,9 +11,11 @@ from concurrent.futures import as_completed
 from datetime import UTC
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from stats.config import load_config
 from stats.emit import emit_event
+from stats.hooks import HookRunner
 from stats.hooks import discover_hooks
 from stats.hooks import get_hook
 
@@ -70,7 +72,7 @@ def main() -> int:
     available_hooks = discover_hooks()
 
     # Build list of valid hooks to run
-    hooks_to_run: list[tuple[str, object]] = []
+    hooks_to_run: list[tuple[str, HookRunner]] = []
     for hook_name in enabled_hooks:
         if hook_name not in available_hooks:
             print(f"Warning: Unknown hook '{hook_name}', skipping")
@@ -80,7 +82,7 @@ def main() -> int:
             hooks_to_run.append((hook_name, hook_runner))
 
     # Run hooks in parallel
-    results: list[tuple[str, float, object]] = []
+    results: list[tuple[str, float, Any]] = []
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {}
         for hook_name, hook_runner in hooks_to_run:

@@ -324,7 +324,10 @@ class TestCheckExecutablesShebangsRunner:
 
         issues_output = (FIXTURES_DIR / 'check_executables_shebangs_with_issues.txt').read_text()
 
-        with patch('subprocess.run') as mock_run:
+        with (
+            patch('subprocess.run') as mock_run,
+            patch('stats.hooks.check_executables_have_shebangs.os.access', return_value=True),
+        ):
             mock_run.return_value = MagicMock(
                 returncode=1,
                 stdout=issues_output,
