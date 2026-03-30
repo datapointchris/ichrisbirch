@@ -1,6 +1,6 @@
 # Testing Infrastructure Overview
 
-This document provides a comprehensive overview of the testing infrastructure in the ichrisbirch project. The testing infrastructure supports the FastAPI backend API, Flask frontend, and Vue 3 frontend.
+This document provides a comprehensive overview of the testing infrastructure in the ichrisbirch project. The testing infrastructure supports the FastAPI backend API and Vue 3 SPA frontend.
 
 ## Table of Contents
 
@@ -22,46 +22,32 @@ The testing infrastructure follows a layered approach:
 The architecture ensures that:
 
 1. Tests run in a controlled, isolated environment
-2. Both API and App servers are available for testing
+2. The API server is available for testing
 3. Test data is managed consistently
 4. Authentication and authorization can be tested effectively
 
 ## Test Environment Setup
 
-The test environment is managed by the `TestEnvironment` class, which handles:
-
-1. Creating a PostgreSQL container in Docker
-2. Starting the FastAPI server in a separate process
-3. Starting the Flask server in a separate process
-4. Setting up database schemas
-5. Managing the lifecycle of these components
-
-This ensures that tests run against real server instances, providing high confidence in test results.
+The test environment uses a separate Docker Compose environment with isolated database and Redis, running alongside dev on alternate ports. Test containers are ephemeral — the postgres data volume is destroyed on `testing stop`.
 
 ## Test Data Management
 
-Test data is managed through a set of modules in the `tests.test_data` package, with functions for:
-
-1. Inserting test data for specific datasets
-2. Deleting test data after tests
-3. Special handling for test users to support authentication
+Test data is managed through seed modules (`ichrisbirch/seeders/`) and test fixtures. The seed system uses per-entity seeders that populate the test database on container startup.
 
 ## Test Clients
 
-Test clients provide interfaces to interact with the API and App servers:
+Test clients provide interfaces to interact with the API server:
 
 1. **API Test Client**: Based on FastAPI's TestClient
-2. **App Test Client**: Based on Flask's FlaskClient and FlaskLoginClient
-
-Both support authenticated and anonymous requests.
+2. **Authenticated clients**: Module-scoped fixtures for logged-in and admin access
 
 ## Fixtures
 
 The testing infrastructure provides fixtures at different scopes:
 
-1. **Session-scoped**: Environment setup/teardown
-2. **Module-scoped**: Database tables and user creation
-3. **Function-scoped**: Test clients with different authentication levels
+1. **Session-scoped**: Docker orchestration, table lifecycle, test users
+2. **Module-scoped**: `test_api`, `test_api_logged_in`, `test_api_logged_in_admin`
+3. **Function-scoped**: `*_function` suffix variants for test isolation
 
 See the [fixtures documentation](fixtures.md) for more details.
 
@@ -71,7 +57,14 @@ See the [writing tests guide](writing_tests.md) for information on how to write 
 
 ## Vue Frontend Testing
 
-The Vue frontend uses a three-layer testing strategy:
+The Vue frontend uses a four-layer testing strategy:
+
+| Layer | Tool | Tests | Duration | What it catches |
+|-------|------|-------|----------|-----------------|
+| Build | `vue-tsc` + `vite build` | — | ~10s | TypeScript errors, missing imports |
+| Store/Unit | Vitest | ~347 | ~5s | Store logic, composables, utilities |
+| Component | Vitest + `@pinia/testing` | ~225 | ~2s | View rendering, store wiring, modals |
+| E2E | Playwright | ~80 | ~50s | CORS, Traefik routing, real CRUD |
 
 ### Build Verification (`npm run test:build`)
 
@@ -81,25 +74,36 @@ Runs `vue-tsc` (TypeScript checking) and `vite build` to catch:
 - Missing imports and broken module resolution
 - Dependencies installed on host but missing in Docker container
 
-### Unit Tests (`npm run test:unit`)
+### Store/Unit Tests (`npm run test:unit`)
 
 Vitest with Vue Test Utils. Tests Pinia stores, composables, and utility functions with mocked API calls.
 
-- **55 tests** across stores, API error handling, and logger formatting
-- Located in `frontend/src/**/__tests__/`
+- Located in `frontend/src/**/__tests__/` (store and composable directories)
 - API mocked via `vi.mock('@/api/client')`
+
+### Component Integration Tests (part of `npm run test:unit`)
+
+Vitest with `@pinia/testing`. Mounts real Vue view components with controlled store state.
+
+- Located in `frontend/src/views/__tests__/`
+- Pattern: `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`
+- Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`)
+- Verify: rendering states, conditional CSS classes, store action calls on user interaction, modal prop wiring
+- Every view page has a corresponding test file (14 files total)
 
 ### E2E Tests (`npm run test:e2e`)
 
-Playwright tests running through real Traefik routing at `https://app.docker.localhost`. These catch issues that unit tests cannot:
+Playwright tests running through real Traefik routing at `https://app.docker.localhost`. Trimmed to smoke-only — each page keeps:
 
-- CORS preflight failures between `app.docker.localhost` and `api.docker.localhost`
-- Auth header forwarding through Traefik middleware
-- Path-based routing delivering Vue vs Flask pages
-- Real CRUD operations against the live API and database
+- CORS/API reachability check
+- Page load with correct title
+- Sidebar nav active state
+- One CRUD roundtrip (create + delete)
 
-- **7 tests** in `frontend/e2e/countdowns.spec.ts`
-- Requires dev containers running (`./cli/ichrisbirch dev start`)
+Interaction-heavy tests (edit modals, toggles, filters, search, sort) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
+
+- Located in `frontend/e2e/`
+- Requires test containers running (`./cli/ichrisbirch testing start`)
 - Sequential execution (`workers: 1`) to maintain consistent database state
 
 ### Running Vue Tests
@@ -107,10 +111,10 @@ Playwright tests running through real Traefik routing at `https://app.docker.loc
 ```bash
 cd frontend
 
-# Build check + unit tests (fast, no containers needed)
+# Build check + all unit/component tests (fast, no containers needed)
 npm test
 
-# E2E tests (requires dev containers)
+# E2E tests (requires test containers)
 npm run test:e2e
 
 # E2E with interactive UI
@@ -119,11 +123,13 @@ npm run test:e2e:ui
 
 ### Pre-commit Integration
 
-Three pre-commit hooks gate Vue code quality on every commit:
+Five pre-commit hooks gate Vue code quality on every commit:
 
 - **vue-eslint**: Linting with auto-fix
 - **vue-prettier**: Code formatting
 - **vue-typecheck**: TypeScript type checking
+- **vue-test**: Vitest unit + component tests
+- **vue-e2e**: Playwright E2E smoke tests
 
 ## Related Documentation
 

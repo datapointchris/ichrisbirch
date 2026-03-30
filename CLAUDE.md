@@ -122,7 +122,11 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
-**Vue three-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
+**Vue four-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest store/composable tests), `test:component` (Vitest + `@pinia/testing` view integration tests), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
+
+**Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`). These run in ~2s and cover behavior that E2E previously tested.
+
+**E2E smoke-only pattern**: E2E tests are trimmed to smoke-level — each page keeps: CORS/API check, page load, sidebar nav, one CRUD roundtrip. Interaction-heavy tests (edit modals, toggles, filters, search) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 
 **E2E assertion style**: Never assert on exact notification/log text (e.g., `toContainText('Duration added')`). Messages change format frequently and couple tests to implementation details. Assert on generic keywords that verify intent: `'added'`, `'deleted'`, `'completed'`. Test behavior, not message formatting.
 
