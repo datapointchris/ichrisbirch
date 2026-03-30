@@ -1,5 +1,5 @@
 name: Deploy to Homelab
-run-name: "Deploy to Homelab — ${{ github.event.workflow_run.head_commit.message || 'manual trigger' }}"
+run-name: "Deploy to Homelab — ${{ github.event.workflow_run.display_title || 'manual trigger' }}"
 
 on:
   workflow_run:
