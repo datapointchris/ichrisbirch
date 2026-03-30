@@ -15,6 +15,10 @@ async function createTask(page: import('@playwright/test').Page, name: string, p
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
+// Smoke tests only — interaction-heavy tests (complete, delete, extend,
+// search) are covered by component integration tests in
+// src/views/__tests__/TasksView.test.ts
+
 test.describe('Tasks Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
@@ -53,74 +57,7 @@ test.describe('Tasks Page', () => {
     const taskName = `E2E Task ${Date.now()}`
     await createTask(page, taskName)
 
-    // Navigate to outstanding tasks to find it
     await page.goto('/tasks/todo')
-    await expect(page.getByTestId('task-item').filter({ hasText: taskName })).toBeVisible({ timeout: 10000 })
-  })
-
-  test('completes a task from the todo page', async ({ page }) => {
-    await page.goto('/tasks')
-    await expect(page.getByTestId('task-info-bar')).toBeVisible({ timeout: 10000 })
-
-    const taskName = `E2E Complete ${Date.now()}`
-    await createTask(page, taskName, '20')
-
-    await page.goto('/tasks/todo')
-    const taskCard = page.getByTestId('task-item').filter({ hasText: taskName })
-    await expect(taskCard).toBeVisible({ timeout: 10000 })
-    await taskCard.getByTestId('task-complete-button').click()
-
-    await expect(taskCard).not.toBeVisible({ timeout: 5000 })
-    await expect(page.locator(SUCCESS, { hasText: 'completed' })).toBeVisible({ timeout: 5000 })
-  })
-
-  test('deletes a task from the todo page', async ({ page }) => {
-    await page.goto('/tasks')
-    await expect(page.getByTestId('task-info-bar')).toBeVisible({ timeout: 10000 })
-
-    const taskName = `E2E Delete ${Date.now()}`
-    await createTask(page, taskName, '20')
-
-    await page.goto('/tasks/todo')
-    const taskCard = page.getByTestId('task-item').filter({ hasText: taskName })
-    await expect(taskCard).toBeVisible({ timeout: 10000 })
-    await taskCard.getByTestId('task-delete-button').click()
-
-    await expect(taskCard).not.toBeVisible({ timeout: 5000 })
-    await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
-  })
-
-  test('extends a task and verifies it remains on the page', async ({ page }) => {
-    await page.goto('/tasks')
-    await expect(page.getByTestId('task-info-bar')).toBeVisible({ timeout: 10000 })
-
-    const taskName = `E2E Extend ${Date.now()}`
-    await createTask(page, taskName, '10')
-
-    await page.goto('/tasks/todo')
-    const taskCard = page.getByTestId('task-item').filter({ hasText: taskName })
-    await expect(taskCard).toBeVisible({ timeout: 10000 })
-
-    await taskCard.getByTestId('task-extend-7-button').click()
-    await expect(page.locator(SUCCESS, { hasText: 'extended' })).toBeVisible({ timeout: 5000 })
-    await expect(taskCard).toBeVisible()
-
-    await taskCard.getByTestId('task-extend-30-button').click()
-    await expect(page.locator(SUCCESS, { hasText: 'extended' })).toBeVisible({ timeout: 5000 })
-    await expect(taskCard).toBeVisible()
-  })
-
-  test('search finds tasks by name', async ({ page }) => {
-    await page.goto('/tasks')
-    await expect(page.getByTestId('task-info-bar')).toBeVisible({ timeout: 10000 })
-
-    const searchTag = `srch${Date.now()}`
-    const taskName = `E2E ${searchTag}`
-    await createTask(page, taskName, '20')
-
-    await page.getByTestId('task-search-input').fill(searchTag)
-    await page.getByTestId('task-search-button').click()
-
     await expect(page.getByTestId('task-item').filter({ hasText: taskName })).toBeVisible({ timeout: 10000 })
   })
 
