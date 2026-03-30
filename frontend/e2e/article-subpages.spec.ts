@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
 
+// Smoke tests only — these sub-pages are form-based and already minimal.
+// Main article CRUD is covered by component integration tests in
+// src/views/__tests__/ArticlesView.test.ts
+
 test.describe('Article Insights Page', () => {
   test('loads the page and displays the form', async ({ page }) => {
     await page.goto('/articles/insights')

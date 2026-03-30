@@ -14,6 +14,10 @@ async function createMoneyWasted(page: import('@playwright/test').Page, item: st
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
+// Smoke tests only — interaction-heavy tests (edit, sort order, total
+// calculation) are covered by component integration tests in
+// src/views/__tests__/MoneyWastedView.test.ts
+
 test.describe('Money Wasted Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
     const apiErrors: string[] = []
