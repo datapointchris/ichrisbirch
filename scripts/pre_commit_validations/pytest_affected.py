@@ -56,7 +56,7 @@ def map_source_to_test(source_file: Path, project_root: Path) -> Path | None:
     # But skip utility modules (conftest, environment, utils, test_data, etc.)
     if source_str.startswith('tests/') and source_file.suffix == '.py':
         # Skip known utility directories and files
-        utility_patterns = ['utils', 'test_data', 'environment.py', '__init__.py']
+        utility_patterns = ['utils', 'util.py', 'test_data', 'environment.py', '__init__.py']
         if any(pattern in source_str for pattern in utility_patterns):
             return None
         test_path = project_root / source_file

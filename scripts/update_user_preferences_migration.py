@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import create_session
 from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
 
@@ -126,5 +127,5 @@ def migrate_preferences(session: Session, default_preferences: dict, transfer_ma
 
 
 if __name__ == '__main__':
-    with create_session() as session:
+    with create_session(get_settings()) as session:
         migrate_preferences(session, default_preferences=DEFAULT_USER_PREFERENCES)

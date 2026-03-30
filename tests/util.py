@@ -7,14 +7,15 @@ import httpx
 from fastapi import status
 from sqlalchemy.sql import select
 
+from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
 
 logger = logging.getLogger(__name__)
 logger.info('testing util loaded')
 
 
-def log_all_table_items(table_name, model, model_attribute=None):
-    with create_session() as session:
+def log_all_table_items(table_name, model, settings: Settings, model_attribute=None):
+    with create_session(settings) as session:
         all_table_items = session.execute(select(model)).scalars().all()
         items = [getattr(item, model_attribute) if model_attribute else item for item in all_table_items]
         logger.warning(f'ALL {table_name.upper()}: {", ".join(items)}')

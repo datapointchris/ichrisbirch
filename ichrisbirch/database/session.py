@@ -26,10 +26,9 @@ def get_db_engine(settings: Settings) -> Engine:
 
 
 @contextmanager
-def create_session(settings: Settings | None = None):
+def create_session(settings: Settings):
     """Get the SQLAlchemy session factory configured for the application."""
-    _settings = settings or get_settings()
-    SessionLocal = sessionmaker(bind=get_db_engine(_settings), autoflush=False)
+    SessionLocal = sessionmaker(bind=get_db_engine(settings), autoflush=False)
     session = SessionLocal()
     try:
         yield session
@@ -46,5 +45,5 @@ def get_sqlalchemy_session() -> Generator[Session, None, None]:
     >>> async def read_habit(id: int, session: Session = Depends(get_sqlalchemy_session)):
     >>>     return session.get(models.Habit, id)
     """
-    with create_session() as session:
+    with create_session(get_settings()) as session:
         yield session
