@@ -657,34 +657,7 @@ function stats-activity() {
 function stats-events() {
   cd "$ICHRISBIRCH_HOME" || exit
   local count="${1:-20}"
-
-
-  echo "${green}Recent Events (last $count)${reset}"
-  echo ""
-
-  if [ -f "$STATS_EVENTS_FILE" ]; then
-    tail -n "$count" "$STATS_EVENTS_FILE" | jq -r '
-      def info:
-        if .type == "commit" then [.short_hash, ""]
-        elif .type == "collect.tokei" then [(.total_files | tostring), "files"]
-        elif .type == "collect.pytest" then [((.summary.total - (.summary.skipped // 0)) | tostring), "tests"]
-        elif .type == "collect.coverage" then ["\(.summary.percent_covered | floor)%", "coverage"]
-        elif .type == "collect.docker" then [(.containers | length | tostring), "containers"]
-        elif .type == "collect.dependencies" then [(.total_count | tostring), "pkgs"]
-        elif .type == "collect.files" then [(.total_files | tostring), "files"]
-        elif .type == "collect.radon" then [(.avg_complexity | floor | tostring), "avg_complexity"]
-        elif .type == "collect.vitest" then [((.summary.total - (.summary.skipped // 0)) | tostring), "fe_tests"]
-        elif .type == "collect.npm_dependencies" then [(.total_count | tostring), "npm_pkgs"]
-        elif .status then [.status, ""]
-        else ["-", ""]
-        end;
-      "\(.type)\t\(.timestamp[11:19])\t\(info[0])\t\(info[1])"
-    ' | while IFS=$'\t' read -r type time value label; do
-      printf "%-30s  %s  %6s  %s\n" "$type" "$time" "$value" "$label"
-    done
-  else
-    echo "${yellow}No events file found.${reset}"
-  fi
+  uv run python -m stats.cli.events_view "$STATS_EVENTS_FILE" "$count"
 }
 
 function stats-churn() {
