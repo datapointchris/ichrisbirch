@@ -113,7 +113,6 @@
   --_btn-size: clamp(100px, 18vw, 160px);
   --_btn-ring-size: calc(var(--_btn-size) * 1.5);
 
-  margin: var(--space-m);
   @include buttons.double-bevel-button(160px, 0px);
 
   width: var(--_btn-size);
