@@ -157,7 +157,10 @@ function colored-status() {
 }
 
 function install() {
-  ln -sf "$ICHRISBIRCH_HOME/cli/icb" "$HOME/.local/bin/icb"
+  local target="$HOME/.local/bin/icb"
+  mkdir -p "$(dirname "$target")"
+  ln -sf "$ICHRISBIRCH_HOME/cli/icb" "$target"
+  echo "${green}Installed:${reset} $target -> $ICHRISBIRCH_HOME/cli/icb"
 }
 
 function wait-for-healthy() {
