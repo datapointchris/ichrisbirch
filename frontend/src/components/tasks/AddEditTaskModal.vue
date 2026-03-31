@@ -116,7 +116,7 @@ const nameInput = ref<HTMLInputElement | null>(null)
 
 const form = reactive({
   name: '',
-  category: 'Chore' as TaskCategory,
+  category: '' as TaskCategory | '',
   priority: 10,
   notes: '',
 })
@@ -124,16 +124,16 @@ const form = reactive({
 function handleModalClose() {
   form.name = ''
   form.notes = ''
-  form.category = 'Chore' as TaskCategory
+  form.category = ''
   form.priority = 10
   emit('close')
 }
 
 function handleSubmit(handleSuccess: () => void) {
-  if (!form.name.trim()) return
+  if (!form.name.trim() || !form.category) return
   emit('create', {
     name: form.name.trim(),
-    category: form.category,
+    category: form.category as TaskCategory,
     priority: form.priority,
     notes: form.notes.trim() || undefined,
   })
