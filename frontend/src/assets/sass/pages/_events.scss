@@ -6,6 +6,11 @@
     line-height: 2em;
   }
 
+  &__time-until {
+    color: var(--clr-accent);
+    font-style: italic;
+  }
+
   &__buttons {
     display: flex;
     justify-content: space-evenly;

@@ -142,6 +142,10 @@
       box-shadow: var(--floating-box-pressed);
     }
 
+    &--past {
+      opacity: 0.5;
+    }
+
     > h3 {
       line-height: var(--space-l);
     }

@@ -19,11 +19,17 @@
           :key="event.id"
           data-testid="event-item"
           class="grid__item"
-          :class="{ 'grid__item--highlighted': event.attending }"
+          :class="{
+            'grid__item--highlighted': event.attending && !isPast(event.date),
+            'grid__item--past': isPast(event.date),
+          }"
         >
           <h2>{{ event.name }}</h2>
           <ul class="event">
-            <li class="event__item">{{ formatDate(event.date, 'weekdayDateTime') }} | {{ event.venue }}</li>
+            <li class="event__item">
+              {{ formatDate(event.date, 'weekdayDateTime') }} | {{ event.venue }}
+              <span class="event__time-until">({{ timeUntil(event.date) }})</span>
+            </li>
             <li class="event__item">
               <a
                 v-if="event.url"
@@ -104,7 +110,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditEventModal from '@/components/events/AddEditEventModal.vue'
-import { formatDate } from '@/composables/formatDate'
+import { formatDate, timeUntil, isPast } from '@/composables/formatDate'
 
 const store = useEventsStore()
 const { show: notify } = useNotifications()

@@ -12,7 +12,15 @@ export const useEventsStore = defineStore('events', () => {
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
-  const sortedEvents = computed(() => [...events.value].sort((a, b) => a.date.localeCompare(b.date)))
+  const sortedEvents = computed(() => {
+    const now = new Date().toISOString()
+    return [...events.value].sort((a, b) => {
+      const aPast = a.date < now
+      const bPast = b.date < now
+      if (aPast !== bPast) return aPast ? 1 : -1
+      return a.date.localeCompare(b.date)
+    })
+  })
 
   function clearError() {
     error.value = null

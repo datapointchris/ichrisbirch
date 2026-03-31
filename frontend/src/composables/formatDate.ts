@@ -32,6 +32,27 @@ const timeWithSeconds = new Intl.DateTimeFormat('en-US', {
   second: '2-digit',
 })
 
+export function timeUntil(dateString: string | null | undefined): string {
+  if (!dateString) return ''
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateString) ? dateString + 'T00:00:00' : dateString
+  const target = new Date(normalized)
+  const now = new Date()
+  const diffMs = target.getTime() - now.getTime()
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'tomorrow'
+  if (diffDays === -1) return 'yesterday'
+  if (diffDays > 0) return `in ${diffDays} days`
+  return `${Math.abs(diffDays)} days ago`
+}
+
+export function isPast(dateString: string | null | undefined): boolean {
+  if (!dateString) return false
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateString) ? dateString + 'T00:00:00' : dateString
+  return new Date(normalized) < new Date()
+}
+
 export function formatDate(dateString: string | null | undefined, format: DateFormat): string {
   if (!dateString) return 'N/A'
   // Date-only strings (YYYY-MM-DD) parse as UTC midnight, shifting back a day in local time.
