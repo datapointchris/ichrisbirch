@@ -183,15 +183,6 @@ def load_snapshot(data_dir: str | Path) -> dict | None:
         return json.loads(f.read())
 
 
-def snapshot_path(data_dir: str | Path) -> Path | None:
-    """Return the path to the most recent snapshot, or None."""
-    data_path = Path(data_dir)
-    if not data_path.is_dir():
-        return None
-    snapshots = sorted(data_path.glob('stats_*.json'), key=lambda p: p.stat().st_mtime, reverse=True)
-    return snapshots[0] if snapshots else None
-
-
 def events_by_date(events: list[dict]) -> dict[str, list[dict]]:
     """Group events by their date (YYYY-MM-DD from timestamp field).
 

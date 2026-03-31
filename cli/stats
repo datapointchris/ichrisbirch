@@ -10,10 +10,6 @@
 STATS_DATA_DIR="$ICHRISBIRCH_HOME/stats/data"
 STATS_EVENTS_FILE="$STATS_DATA_DIR/events/events.jsonl"
 
-function stats-latest-file() {
-  find -L "$STATS_DATA_DIR" -maxdepth 1 -name 'stats_*.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
-}
-
 function stats-usage() {
   echo "${green}Stats Commands${reset}"
   echo ""
@@ -36,115 +32,7 @@ function stats-usage() {
 
 function stats-summary() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local stats_file
-  stats_file=$(stats-latest-file)
-
-
-  echo "${green}Project Stats Summary${reset}"
-  echo ""
-
-  if [ -z "$stats_file" ] || [ ! -f "$stats_file" ]; then
-    echo "${yellow}No stats snapshots found.${reset}"
-    echo "Stats are collected automatically on each commit."
-    return
-  fi
-
-  local collected_at
-  collected_at=$(jq -r '.collected_at' "$stats_file" | cut -d'T' -f1)
-  echo "Last collected: ${cyan}$collected_at${reset}"
-  echo ""
-
-  # Code stats (live from tokei) - show top 5 languages
-  local tokei_json total_loc
-  tokei_json=$(tokei . --compact --output json 2>/dev/null)
-  total_loc=$(echo "$tokei_json" | jq -r '[to_entries[] | select(.value.code != null and .key != "Total") | [.value.code, .value.comments] | max] | add // 0')
-
-  echo "${blue}Code${reset}"
-  echo "$tokei_json" | jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[0:5] | .[] | "\(.key)\t\([.value.code, .value.comments] | max)\t\(.value.reports | length)"' |
-    while IFS=$'\t' read -r lang content files; do
-      printf "  %-12s %'6d lines (%d files)\n" "$lang:" "$content" "$files"
-    done
-  printf "  ${cyan}%-12s %'6d lines${reset}\n" "Total:" "$total_loc"
-  echo ""
-
-  # Tests (combined Python + Frontend) - use 'active' (excludes skipped) with fallback to 'total'
-  local py_active py_passed py_failed py_skipped coverage py_duration
-  py_active=$(jq -r '.tests.active // .tests.total // 0' "$stats_file")
-  py_passed=$(jq -r '.tests.passed // 0' "$stats_file")
-  py_failed=$(jq -r '.tests.failed // 0' "$stats_file")
-  py_skipped=$(jq -r '.tests.skipped // 0' "$stats_file")
-  coverage=$(jq -r '.coverage.line_percent // 0' "$stats_file")
-  py_duration=$(jq -r '.tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
-
-  local fe_active fe_passed fe_failed fe_skipped fe_duration
-  fe_active=$(jq -r '.frontend_tests.active // .frontend_tests.total // 0' "$stats_file")
-  fe_passed=$(jq -r '.frontend_tests.passed // 0' "$stats_file")
-  fe_failed=$(jq -r '.frontend_tests.failed // 0' "$stats_file")
-  fe_skipped=$(jq -r '.frontend_tests.skipped // 0' "$stats_file")
-  fe_duration=$(jq -r '.frontend_tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
-
-  local e2e_active e2e_passed e2e_failed e2e_skipped e2e_duration
-  e2e_active=$(jq -r '.e2e_tests.total // 0' "$stats_file")
-  e2e_passed=$(jq -r '.e2e_tests.passed // 0' "$stats_file")
-  e2e_failed=$(jq -r '.e2e_tests.failed // 0' "$stats_file")
-  e2e_skipped=$(jq -r '.e2e_tests.skipped // 0' "$stats_file")
-  e2e_duration=$(jq -r '.e2e_tests.duration_seconds // 0' "$stats_file" | cut -d'.' -f1)
-
-  local all_active all_passed all_failed all_skipped all_duration pass_rate
-  all_active=$((py_active + fe_active + e2e_active))
-  all_passed=$((py_passed + fe_passed + e2e_passed))
-  all_failed=$((py_failed + fe_failed + e2e_failed))
-  all_skipped=$((py_skipped + fe_skipped + e2e_skipped))
-  all_duration=$((py_duration + fe_duration + e2e_duration))
-  pass_rate=0
-  if [ "$all_active" -gt 0 ]; then
-    pass_rate=$((all_passed * 100 / all_active))
-  fi
-
-  echo "${blue}Tests${reset}"
-  if [ "$all_failed" -eq 0 ]; then
-    printf "  Active:      %d tests (${green}%d%% pass${reset})\n" "$all_active" "$pass_rate"
-  else
-    printf "  Active:      %d tests (${red}%d failed${reset})\n" "$all_active" "$all_failed"
-  fi
-  printf "    Python:    %d\n" "$py_active"
-  printf "    Frontend:  %d\n" "$fe_active"
-  [ "$e2e_active" -gt 0 ] && printf "    E2E:       %d\n" "$e2e_active"
-  [ "$all_skipped" -gt 0 ] && printf "  Skipped:     ${yellow}%d${reset}\n" "$all_skipped"
-  printf "  Coverage:    ${cyan}%.1f%%${reset}\n" "$coverage"
-  printf "  Duration:    %ds\n" "$all_duration"
-  echo ""
-
-  # Dependencies
-  local deps_direct deps_total
-  deps_direct=$(jq -r '.dependencies.direct // 0' "$stats_file")
-  deps_total=$(jq -r '.dependencies.total // 0' "$stats_file")
-
-  local npm_prod npm_dev npm_total
-  npm_prod=$(jq -r '.npm_dependencies.production // 0' "$stats_file")
-  npm_dev=$(jq -r '.npm_dependencies.dev // 0' "$stats_file")
-  npm_total=$(jq -r '.npm_dependencies.total // 0' "$stats_file")
-
-  echo "${blue}Dependencies${reset}"
-  printf "  Python:      %d direct / %d total\n" "$deps_direct" "$deps_total"
-  if [ "$npm_total" -gt 0 ]; then
-    printf "  npm:         %d prod / %d dev / %d total\n" "$npm_prod" "$npm_dev" "$npm_total"
-  fi
-  echo ""
-
-  # Commit activity
-  if [ -f "$STATS_EVENTS_FILE" ]; then
-    local total_commits today_commits week_commits week_pattern
-    total_commits=$(grep -c '"type":"commit"' "$STATS_EVENTS_FILE" 2>/dev/null || echo 0)
-    today_commits=$(grep '"type":"commit"' "$STATS_EVENTS_FILE" | grep -c "$(date +%Y-%m-%d)")
-    week_pattern=$(for i in $(seq 0 6); do date -d "-${i} days" +%Y-%m-%d; done | paste -sd'|')
-    week_commits=$(grep '"type":"commit"' "$STATS_EVENTS_FILE" | grep -cE "$week_pattern")
-
-    echo "${blue}Activity${reset}"
-    printf "  Today:       %d commits\n" "$today_commits"
-    printf "  This week:   %d commits\n" "$week_commits"
-    printf "  All time:    %d commits\n" "$total_commits"
-  fi
+  uv run python -m stats.cli.dashboard summary "$STATS_DATA_DIR" "$STATS_EVENTS_FILE"
 }
 
 function stats-snapshot() {
@@ -154,27 +42,7 @@ function stats-snapshot() {
 
 function stats-code() {
   cd "$ICHRISBIRCH_HOME" || exit
-
-  echo "${green}Code Statistics by Language${reset}"
-  echo ""
-
-  printf "${cyan}%-15s %10s %10s %8s${reset}\n" "Language" "Content" "Blanks" "Files"
-  echo "---------------------------------------------------"
-
-  local tokei_json
-  tokei_json=$(tokei . --compact --output json 2>/dev/null)
-
-  echo "$tokei_json" |
-    jq -r 'to_entries | map(select(.value.code != null and .key != "Total")) | sort_by(-([.value.code, .value.comments] | max)) | .[] | [.key, ([.value.code, .value.comments] | max), .value.blanks, (.value.reports | length)] | @tsv' |
-    while IFS=$'\t' read -r lang content blanks files; do
-      printf "%-15s %'10d %'10d %8d\n" "$lang" "$content" "$blanks" "$files"
-    done
-
-  echo "---------------------------------------------------"
-  local total_content total_blanks
-  total_content=$(echo "$tokei_json" | jq -r '[to_entries[] | select(.value.code != null and .key != "Total") | [.value.code, .value.comments] | max] | add')
-  total_blanks=$(echo "$tokei_json" | jq -r '[to_entries[] | select(.value.code != null and .key != "Total") | .value.blanks] | add')
-  printf "${green}%-15s %'10d %'10d${reset}\n" "Total" "$total_content" "$total_blanks"
+  uv run python -m stats.cli.dashboard code
 }
 
 function stats-tests() {
