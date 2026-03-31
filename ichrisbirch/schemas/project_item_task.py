@@ -10,6 +10,7 @@ class ProjectItemTaskConfig(BaseModel):
 
 
 class ProjectItemTaskCreate(ProjectItemTaskConfig):
+    id: UUID | None = None
     title: str
     position: int = 0
 

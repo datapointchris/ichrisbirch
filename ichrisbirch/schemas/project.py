@@ -10,6 +10,7 @@ class ProjectConfig(BaseModel):
 
 
 class ProjectCreate(ProjectConfig):
+    id: UUID | None = None
     name: str
     description: str | None = None
     position: int = 0

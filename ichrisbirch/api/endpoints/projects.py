@@ -9,6 +9,7 @@ from fastapi import Response
 from fastapi import status
 from sqlalchemy import func
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
@@ -47,9 +48,15 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session)):
 
 @router.post('/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
 async def create(project: schemas.ProjectCreate, session: Session = Depends(get_sqlalchemy_session)):
-    db_obj = models.Project(**project.model_dump())
+    db_obj = models.Project(**project.model_dump(exclude={'id'}))
+    if project.id is not None:
+        db_obj.id = project.id
     session.add(db_obj)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Project with id {project.id} already exists') from None
     session.refresh(db_obj)
     return db_obj
 

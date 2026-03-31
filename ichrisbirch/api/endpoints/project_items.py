@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
@@ -114,8 +115,14 @@ async def create(item: schemas.ProjectItemCreate, session: Session = Depends(get
             raise NotFoundException('project', pid, logger)
 
     db_item = models.ProjectItem(title=item.title, notes=item.notes)
+    if item.id is not None:
+        db_item.id = item.id
     session.add(db_item)
-    session.flush()
+    try:
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Project item with id {item.id} already exists') from None
 
     for pid in item.project_ids:
         # Auto-assign position as next in project

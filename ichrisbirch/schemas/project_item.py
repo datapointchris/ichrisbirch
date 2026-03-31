@@ -14,6 +14,7 @@ class ProjectItemConfig(BaseModel):
 
 
 class ProjectItemCreate(ProjectItemConfig):
+    id: UUID | None = None
     title: str
     notes: str | None = None
     project_ids: list[UUID]

@@ -3,9 +3,11 @@ from uuid import UUID
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
@@ -57,8 +59,14 @@ async def create_task(item_id: UUID, task: ProjectItemTaskCreate, session: Sessi
             position = max_pos + 1
 
     db_task = ProjectItemTask(item_id=item_id, title=task.title, position=position)
+    if task.id is not None:
+        db_task.id = task.id
     session.add(db_task)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Task with id {task.id} already exists') from None
     session.refresh(db_task)
     return db_task
 
