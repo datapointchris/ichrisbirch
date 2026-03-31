@@ -619,39 +619,7 @@ function stats-quality() {
 function stats-activity() {
   cd "$ICHRISBIRCH_HOME" || exit
   local days="${1:-7}"
-
-
-  echo "${green}Commit Activity (last $days days)${reset}"
-  echo ""
-
-  if [ ! -f "$STATS_EVENTS_FILE" ]; then
-    echo "${yellow}No events file found.${reset}"
-    return
-  fi
-
-  for i in $(seq 0 $((days - 1))); do
-    local date_str day_name count bar
-    date_str=$(date -d "-${i} days" +%Y-%m-%d)
-    day_name=$(date -d "-${i} days" +%a)
-    count=$(grep '"type":"commit"' "$STATS_EVENTS_FILE" | grep -c "$date_str")
-
-    bar=""
-    for ((j = 0; j < count && j < 20; j++)); do
-      bar="${bar}#"
-    done
-    [ "$count" -gt 20 ] && bar="${bar}+"
-
-    if [ "$i" -eq 0 ]; then
-      printf "${cyan}%-10s${reset} %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
-    else
-      printf "%-10s %-3s  ${green}%-20s${reset} %d\n" "$date_str" "$day_name" "$bar" "$count"
-    fi
-  done
-
-  echo ""
-  local total_week
-  total_week=$(grep -c '"type":"commit"' "$STATS_EVENTS_FILE")
-  echo "Total recorded commits: $total_week"
+  uv run python -m stats.cli.activity_view "$STATS_EVENTS_FILE" "$days"
 }
 
 function stats-events() {
