@@ -1,57 +1,12 @@
+# Traefik middlewares for production environment
+#
+# CORS and security are separate middlewares — CORS fields belong in cors-prod
+# only, not in security-headers-prod. This prevents conflicting CORS settings
+# when both middlewares are applied to the same router.
+
 http:
   middlewares:
-    # Security headers middleware for production environment
-    security-headers-prod:
-      headers:
-        accessControlAllowMethods:
-          - GET
-          - OPTIONS
-          - PUT
-          - POST
-          - DELETE
-          - PATCH
-        accessControlAllowOriginList:
-          - "https://ichrisbirch.com"
-          - "https://www.ichrisbirch.com"
-          - "https://api.ichrisbirch.com"
-          - "https://chat.ichrisbirch.com"
-        accessControlAllowHeaders:
-          - "Accept"
-          - "Accept-Language"
-          - "Content-Language"
-          - "Content-Type"
-          - "Authorization"
-          - "X-Requested-With"
-          - "X-Request-ID"
-          - "X-User-ID"
-          - "X-Application-ID"
-          - "X-Internal-Service"
-          - "X-Service-Key"
-        accessControlExposeHeaders:
-          - "Content-Length"
-          - "Content-Type"
-          - "Location"
-          - "X-Total-Count"
-        accessControlAllowCredentials: true
-        accessControlMaxAge: 86400
-        addVaryHeader: true
-        # Security headers
-        customRequestHeaders:
-          X-Forwarded-Proto: "https"
-        customResponseHeaders:
-          X-Frame-Options: "DENY"
-          X-Content-Type-Options: "nosniff"
-          X-XSS-Protection: "1; mode=block"
-          Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
-          Referrer-Policy: "strict-origin-when-cross-origin"
-          X-Environment: "production"
-          # Content Security Policy for production environment
-          # Allows: cdn.jsdelivr.net (Swagger UI), fastapi.tiangolo.com (favicon), fonts.googleapis.com/gstatic.com (fonts)
-          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' wss: ws: https://*.ichrisbirch.com; font-src 'self' data: https://fonts.gstatic.com;"
-          # Permissions Policy
-          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
-
-    # CORS middleware for production environment
+    # CORS — allow methods, headers, and origins for cross-origin requests
     cors-prod:
       headers:
         accessControlAllowMethods:
@@ -87,11 +42,26 @@ http:
         accessControlMaxAge: 86400
         addVaryHeader: true
 
-    # Rate limiting for production environment (strict)
+    # Security headers — full production hardening (HSTS, CSP, Permissions-Policy)
+    security-headers-prod:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          X-Environment: "production"
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' wss: ws: https://*.ichrisbirch.com; font-src 'self' data: https://fonts.gstatic.com;"
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+
+    # Rate limiting (strict for production)
     rate-limit-prod:
       rateLimit:
-        average: 50   # 50 requests per second
-        burst: 100    # Allow bursts up to 100
+        average: 50
+        burst: 100
         period: 1s
 
     # Strip /api prefix for same-origin API proxy
@@ -101,7 +71,7 @@ http:
         prefixes:
           - "/api"
 
-    # IP whitelist for admin endpoints (customize as needed)
+    # IP allowlist for admin endpoints
     admin-whitelist:
       ipAllowList:
         sourceRange:

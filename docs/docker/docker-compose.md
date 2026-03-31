@@ -12,12 +12,12 @@ The ichrisbirch application uses a **layered Docker Compose approach** where env
 |--------|-------------|---------|-----|------------|
 | **Purpose** | Local development with hot reload | Running pytest suite | GitHub Actions CI | Live deployment |
 | **Compose Files** | base + dev | base + test | base + test + ci | base only |
-| **External Ports** | Standard (8000, 5000, 5432) | Alternate (8001, 5001, 5434) | Alternate (same as test) | Standard |
+| **External Ports** | Standard (8000, 5432) | Alternate (8001, 5434, 8443) | Alternate (same as test) | Standard |
 | **Hot Reload** | Yes | No | No | No |
 | **AWS Credentials** | `~/.config/aws` mount | `~/.config/aws` mount | Environment variables (OIDC) | IAM role |
 | **Database** | Persistent volume | tmpfs (in-memory) | tmpfs (in-memory) | Persistent volume |
 | **Traefik** | Dashboard enabled | Dashboard enabled | Dashboard disabled | Dashboard disabled |
-| **Network** | External `proxy` | External `proxy` | Internal bridge | External `proxy` |
+| **Network** | `icb-dev-proxy` | `icb-test-proxy` | Internal bridge | External `proxy` |
 
 ## File Structure
 
@@ -85,34 +85,23 @@ The base file defines production-ready services:
 | `postgres` | PostgreSQL 16 database | 5432 |
 | `redis` | Redis 7 cache | 6379 |
 | `api` | FastAPI backend | 8000 |
-| `app` | Flask frontend (unmigrated pages) | 5000 |
-| `vue` | Vue 3 frontend (migrated pages) | 5173 |
+| `vue` | Vue 3 frontend (SPA) | 5173 (dev) / 80 (prod via Caddy) |
 | `chat` | Streamlit chat interface | 8505 |
 | `scheduler` | APScheduler background jobs | N/A |
 
 ### Service Dependencies
 
 ```text
-postgres ─────┬───► api ──────► app (Flask, unmigrated pages)
+postgres ─────┬───► api ──────► vue (Vue 3 SPA)
               │       │
-redis ────────┤       ├──────► vue (Vue 3, migrated pages)
+redis ────────┤       ├──────► chat
               │       │
-              └───────┤──────► chat
-                      │
-                      └──────► scheduler
+              └───────┴──────► scheduler
 ```
 
-### Path-Based Routing (Vue Migration)
+### Routing
 
-During the incremental migration, Traefik routes requests to Vue or Flask based on the URL path:
-
-```text
-app.docker.localhost/countdowns  → Vue (priority 100, migrated)
-app.docker.localhost/events      → Flask (priority 50, not yet migrated)
-app.docker.localhost/tasks       → Flask (priority 50, not yet migrated)
-```
-
-As each page is migrated, its path is added to the Vue router rule in `docker-compose.dev.yml`. Flask's catchall handles everything not yet migrated.
+All routing is handled by the Traefik file provider (`deploy-containers/traefik/dynamic/{env}/routing.yml`), not Docker labels. Vue path prefixes are generated from `deploy-containers/traefik/vue-paths.txt` via `ich routing generate`.
 
 Services wait for dependencies via health checks:
 
@@ -174,7 +163,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 | Service | Dev Port | Test Port |
 |---------|----------|-----------|
 | API | 8000 | 8001 |
-| App | 5000 | 5001 |
+| Vue | 5173 | 5174 |
 | Chat | 8505 | 8507 |
 | PostgreSQL | 5432 | 5434 |
 | Redis | 6379 | 6380 |
@@ -326,8 +315,7 @@ All HTTP(S) traffic flows through Traefik:
 
 ```text
 Internet ──► Traefik (:443) ──┬──► api.domain.com ──► API (:8000)
-                              ├──► app.domain.com/migrated-path ──► Vue (:5173)  [priority 100]
-                              ├──► app.domain.com/* ──► Flask (:5000)  [priority 50, catchall]
+                              ├──► app.domain.com + PathPrefixes ──► Vue (:5173)
                               └──► chat.domain.com ──► Chat (:8505)
 ```
 
@@ -336,9 +324,6 @@ Internet ──► Traefik (:443) ──┬──► api.domain.com ──► AP
 Services communicate via Docker DNS using service names:
 
 ```python
-# Flask app calling FastAPI
-response = httpx.get('http://api:8000/tasks/')
-
 # Scheduler connecting to Postgres
 engine = create_engine('postgresql://postgres:5432/ichrisbirch')
 ```

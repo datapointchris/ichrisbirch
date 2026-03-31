@@ -1,5 +1,6 @@
-# Shared image build configuration - all app services use the same image
-# This reduces disk space from ~3.4GB (4 images) to ~850MB (1 image)
+# Test overrides — only what differs from base (docker-compose.yml)
+# Verify merged result: ich testing docker config
+
 x-app-build: &app-build
   image: ichrisbirch:testing
   build:
@@ -7,10 +8,8 @@ x-app-build: &app-build
     target: testing
 
 services:
-  # Traefik service for test environment
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
-    image: traefik:v3.6
     container_name: icb-test-traefik
     command:
       - "--ping=true"
@@ -29,21 +28,17 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.http.tls.domains[0].main=*.test.localhost"
     ports: !override
-      - "9080:80"    # HTTP redirect to HTTPS
-      - "8443:443"   # HTTPS traffic
-      - "9082:8080"  # Traefik dashboard
-    volumes:
+      - "9080:80"
+      - "8443:443"
+      - "9082:8080"
+    volumes: !override
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/dynamic/test:/etc/traefik/dynamic:ro
       - ./deploy-containers/traefik/certs:/etc/ssl/certs:ro
-    networks:
-      - proxy
-      - default
+    restart: unless-stopped
     labels:
-      # Environment label for Traefik constraint filtering
       - "traefik.environment=testing"
       - "traefik.enable=true"
-      # Dashboard route
       - "traefik.http.routers.dashboard-test.rule=Host(`dashboard.test.localhost`)"
       - "traefik.http.routers.dashboard-test.entrypoints=websecure"
       - "traefik.http.routers.dashboard-test.tls=true"
@@ -53,12 +48,6 @@ services:
     environment:
       - TRAEFIK_API_DASHBOARD=true
       - TRAEFIK_API_DEBUG=true
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "traefik", "healthcheck", "--ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -66,21 +55,24 @@ services:
         max-file: "3"
         tag: "traefik-test"
 
-  # Test database - optimized for speed over durability
+  # Test database — tmpfs for speed, durability disabled
   postgres:
-    image: postgres:16-alpine
     container_name: icb-test-postgres
-    ports:
+    ports: !override
       - "5434:5432"
-    environment:
+    environment: !override
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - PGDATA=/tmp/postgres
-    # Use tmpfs for faster test database (in-memory storage)
     tmpfs:
       - /tmp/postgres
-    # Test optimizations: disable durability for maximum speed
+    volumes: !override []
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     command: >
       postgres
       -c fsync=off
@@ -92,13 +84,6 @@ services:
       -c checkpoint_completion_target=0.9
       -c log_destination=stderr
       -c logging_collector=off
-    networks:
-      - default
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -107,21 +92,18 @@ services:
         max-file: "3"
         tag: "postgres-test"
 
-  # Test Redis - optimized for speed, no persistence
+  # Test Redis — no persistence
   redis:
-    image: redis:7-alpine
     container_name: icb-test-redis
-    ports:
+    ports: !override
       - "6380:6379"
-    # Test optimizations: no persistence, minimal configuration
     command: >
       redis-server
       --save ""
       --appendonly no
       --loglevel warning
-    environment: [] # Override production environment
-    networks:
-      - default
+    environment: !override []
+    volumes: !override []
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -135,91 +117,49 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "redis-test"
+
   api:
     <<: *app-build
     container_name: icb-test-api
-    # Run without reload for consistent test environment
     command: >
       uv run uvicorn ichrisbirch.wsgi_api:api
       --host 0.0.0.0
       --port 8000
       --log-level debug
       --no-access-log
-    ports:
-      - "8001:8000" # Map to different external port to avoid conflicts
-    environment:
+    ports: !override
+      - "8001:8000"
+    environment: !override
       - ENVIRONMENT=testing
+      - FASTAPI_DEBUG=False
       - FASTAPI_TESTING=True
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/api.log
-      # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_REGION=${AWS_REGION:-us-east-2}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: bind
-        source: ~/.aws
-        target: /root/.aws
-        read_only: true
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-      - type: volume
-        source: ichrisbirch_logs
-        target: /var/log/ichrisbirch
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
-    networks:
-      - proxy
-      - default
-    labels:
-      # Environment label for Traefik constraint filtering
-      - "traefik.environment=testing"
-      - "traefik.enable=true"
-      # Disable inherited base labels (prevent collision with dev)
-      - "traefik.http.routers.api.rule=Host(`api.test.localhost`)"
-      - "traefik.http.routers.api.service=api-test"
-      - "traefik.http.services.api.loadbalancer.server.port=8000"
-      # API routes for test
-      - "traefik.http.routers.api-test.rule=Host(`api.test.localhost`)"
-      - "traefik.http.routers.api-test.entrypoints=websecure"
-      - "traefik.http.routers.api-test.tls=true"
-      - "traefik.http.routers.api-test.tls.options=test@file"
-      - "traefik.http.routers.api-test.service=api-test"
-      - "traefik.http.routers.api-test.middlewares=cors-test@file,security-headers-test@file,test-authelia-sim@file,rate-limit-test@file"
-      # Admin API routes — higher priority, uses admin user sim so admin endpoints return data
-      - "traefik.http.routers.api-test-admin.rule=Host(`api.test.localhost`) && PathPrefix(`/admin`)"
-      - "traefik.http.routers.api-test-admin.entrypoints=websecure"
-      - "traefik.http.routers.api-test-admin.tls=true"
-      - "traefik.http.routers.api-test-admin.tls.options=test@file"
-      - "traefik.http.routers.api-test-admin.priority=200"
-      - "traefik.http.routers.api-test-admin.service=api-test"
-      - "traefik.http.routers.api-test-admin.middlewares=cors-test@file,security-headers-test@file,test-authelia-sim-admin@file,rate-limit-test@file"
-      - "traefik.http.services.api-test.loadbalancer.server.port=8000"
+    volumes: !override
+      - .:/app
+      - venv_shared:/app/.venv
+      - ~/.aws:/root/.aws:ro
+      - uv_cache:/root/.cache/uv
+      - ichrisbirch_logs:/var/log/ichrisbirch
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
       timeout: 10s
-      start_period: 60s  # Give more time for venv setup in CI
+      start_period: 60s
       retries: 5
+    labels: !override
+      - "traefik.environment=testing"
+      - "traefik.enable=true"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
     logging:
       driver: "json-file"
       options:
@@ -227,7 +167,6 @@ services:
         max-file: "3"
         tag: "api-test"
 
-  # Test chat service - needed for API tests
   chat:
     <<: *app-build
     container_name: icb-test-chat
@@ -236,73 +175,45 @@ services:
       --server.address=0.0.0.0
       --server.port=8505
       --server.headless=true
-    environment:
+    environment: !override
       - ENVIRONMENT=testing
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/chat.log
-      # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_REGION=${AWS_REGION:-us-east-2}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: bind
-        source: ~/.aws
-        target: /root/.aws
-        read_only: true
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-      - type: volume
-        source: ichrisbirch_logs
-        target: /var/log/ichrisbirch
-    ports:
-      - "8507:8505" # Different port to avoid conflicts
-    networks:
-      - proxy
-      - default
+    ports: !override
+      - "8507:8505"
+    volumes: !override
+      - .:/app
+      - venv_shared:/app/.venv
+      - ~/.aws:/root/.aws:ro
+      - uv_cache:/root/.cache/uv
+      - ichrisbirch_logs:/var/log/ichrisbirch
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
       interval: 30s
       timeout: 10s
       start_period: 30s
       retries: 3
-    labels:
-      # Environment label for Traefik constraint filtering
-      - "traefik.environment=testing"
-      - "traefik.enable=true"
-      # Disable inherited base labels (prevent collision with dev)
-      - "traefik.http.routers.chat.rule=Host(`chat.test.localhost`)"
-      - "traefik.http.routers.chat.service=chat-test"
-      - "traefik.http.services.chat.loadbalancer.server.port=8505"
-      # Chat routes with WebSocket support
-      - "traefik.http.routers.chat-test.rule=Host(`chat.test.localhost`)"
-      - "traefik.http.routers.chat-test.entrypoints=websecure"
-      - "traefik.http.routers.chat-test.tls=true"
-      - "traefik.http.routers.chat-test.tls.options=test@file"
-      - "traefik.http.routers.chat-test.service=chat-test"
-      - "traefik.http.routers.chat-test.middlewares=cors-test@file,security-headers-test@file,websocket-test@file"
-      - "traefik.http.services.chat-test.loadbalancer.server.port=8505"
-      # Enable sticky sessions for WebSocket connections
-      - "traefik.http.services.chat-test.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.chat-test.loadbalancer.sticky.cookie.name=chat-test-session"
     restart: unless-stopped
     depends_on:
       api:
-        condition: service_started  # Wait for API to initialize shared venv first
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    labels: !override
+      - "traefik.environment=testing"
+      - "traefik.enable=true"
+      - "traefik.http.services.chat.loadbalancer.server.port=8505"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=chat-test-session"
     logging:
       driver: "json-file"
       options:
@@ -310,53 +221,36 @@ services:
         max-file: "3"
         tag: "chat-test"
 
-  # Test scheduler - enabled for scheduler tests
   scheduler:
     <<: *app-build
     container_name: icb-test-scheduler
     command: uv run python -m ichrisbirch.wsgi_scheduler
-    environment:
+    environment: !override
       - ENVIRONMENT=testing
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/scheduler.log
-      # AWS credentials for SSM parameter access (optional for local development)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_REGION=${AWS_REGION:-us-east-2}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: bind
-        source: ~/.aws
-        target: /root/.aws
-        read_only: true
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-      - type: volume
-        source: ichrisbirch_logs
-        target: /var/log/ichrisbirch
-    networks:
-      - default
+    volumes: !override
+      - .:/app
+      - venv_shared:/app/.venv
+      - ~/.aws:/root/.aws:ro
+      - uv_cache:/root/.cache/uv
+      - ichrisbirch_logs:/var/log/ichrisbirch
     restart: unless-stopped
     depends_on:
       api:
-        condition: service_started  # Wait for API to initialize shared venv first
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     working_dir: /app
-    healthcheck:
-      disable: true
     logging:
       driver: "json-file"
       options:
@@ -364,21 +258,17 @@ services:
         max-file: "3"
         tag: "scheduler-test"
 
-  # Vue 3 frontend development server for test environment
-  # Overrides the production Caddy-based vue service with a Vite dev server
+  # Vue dev server — completely replaces prod Caddy build
   vue:
     image: node:20-alpine
     build: !reset null
     container_name: icb-test-vue
     working_dir: /app
     command: sh -c "npm install && npm run dev"
-    environment:
+    environment: !override
       - VITE_API_URL=https://api.test.localhost:8443
-    ports:
+    ports: !override
       - "5174:5173"
-    networks:
-      - proxy
-      - default
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
@@ -386,37 +276,13 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 3
-    volumes:
+    volumes: !override
       - ./frontend:/app
       - vue_test_node_modules:/app/node_modules
-    labels:
-      # Environment label for Traefik constraint filtering
+    labels: !override
       - "traefik.environment=testing"
       - "traefik.enable=true"
-
-      # Override default service port (production uses port 80/Caddy; test uses 5173/Vite)
       - "traefik.http.services.vue.loadbalancer.server.port=5173"
-
-      # HTTPS router — full Vue app at vue.test.localhost (testing)
-      - "traefik.http.routers.vue-test.rule=Host(`vue.test.localhost`)"
-      - "traefik.http.routers.vue-test.entrypoints=websecure"
-      - "traefik.http.routers.vue-test.tls=true"
-      - "traefik.http.routers.vue-test.tls.options=test@file"
-      - "traefik.http.routers.vue-test.service=vue-test"
-      - "traefik.http.routers.vue-test.middlewares=cors-test@file,security-headers-test@file"
-
-      # Path-based routing — migrated pages served from Vue on app.test.localhost
-      # Includes Vite dev server paths (/@vite, /src, etc.) needed for JS/CSS/HMR
-      - "traefik.http.routers.vue-test-paths.rule=Host(`app.test.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || Path(`/`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
-      - "traefik.http.routers.vue-test-paths.entrypoints=websecure"
-      - "traefik.http.routers.vue-test-paths.tls=true"
-      - "traefik.http.routers.vue-test-paths.tls.options=test@file"
-      - "traefik.http.routers.vue-test-paths.priority=100"
-      - "traefik.http.routers.vue-test-paths.service=vue-test"
-      - "traefik.http.routers.vue-test-paths.middlewares=cors-test@file,security-headers-test@file"
-
-      # Service configuration for test routers
-      - "traefik.http.services.vue-test.loadbalancer.server.port=5173"
     logging:
       driver: "json-file"
       options:
@@ -424,15 +290,7 @@ services:
         max-file: "3"
         tag: "vue-test"
 
-# Networks - test uses its own proxy network to avoid conflicts with dev
-networks:
-  proxy:
-    name: icb-test-proxy
-    external: false
-    driver: bridge
-  default:
-    driver: bridge
-
+# Test volumes — override base names to isolate from prod/dev
 volumes:
   postgres_data:
     name: icb-test-postgres-data
@@ -452,3 +310,11 @@ volumes:
   vue_test_node_modules:
     name: icb-test-vue-node-modules
     driver: local
+
+networks:
+  proxy:
+    name: icb-test-proxy
+    external: false
+    driver: bridge
+  default:
+    driver: bridge

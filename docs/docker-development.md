@@ -12,18 +12,18 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 
 - **Traefik**: Port 443 (reverse proxy with HTTPS, `*.docker.localhost`)
 - **FastAPI Backend**: Port 8000 (internal), auto-reload enabled
-- **Flask App**: Port 5000 (internal), serves unmigrated pages at priority 50
-- **Vue Frontend**: Port 5173 (Vite dev server), serves migrated pages at priority 100
+- **Vue Frontend**: Port 5173 (Vite dev server)
 - **PostgreSQL**: Port 5432 (internal/external), persistent volumes
 - **Redis**: Port 6379 (internal/external), persistent volumes
 - **Chat Service**: Port 8505 (internal), auto-reload enabled
+- **Scheduler**: APScheduler background jobs
 
 **Test Environment (`docker-compose.test.yml`)**:
 
+- **Traefik**: Port 8443 (HTTPS), `*.test.localhost`
 - **PostgreSQL**: Port 5434 (external) → 5432 (internal), tmpfs for speed
-- **Redis**: Port 6380 (external) → 6379 (internal), tmpfs for speed
+- **Redis**: Port 6380 (external) → 6379 (internal), no persistence
 - **FastAPI Backend**: Port 8001 (external) → 8000 (internal), isolated test database
-- **Nginx**: Disabled for testing
 
 **Production Environment** (`docker-compose.infra.yml` + `docker-compose.app.yml`):
 
@@ -85,11 +85,14 @@ ichrisbirch prod logs           # View production application logs
 
 ### File Structure
 
-- **`docker-compose.yml`**: Legacy single-file production configuration (emergency fallback)
+- **`docker-compose.yml`**: Base configuration (shared service definitions)
+- **`docker-compose.dev.yml`**: Development overrides (thin — only deltas from base, uses `!override` for list fields)
+- **`docker-compose.test.yml`**: Test overrides (thin — tmpfs, alternate ports, uses `!override`)
+- **`docker-compose.ci.yml`**: CI overrides (no local mounts, internal network)
 - **`docker-compose.infra.yml`**: Production infrastructure (Traefik, PostgreSQL, Redis) — always running
 - **`docker-compose.app.yml`**: Production app services parameterized by `${DEPLOY_COLOR}` for blue/green
-- **`docker-compose.dev.yml`**: Development overrides (uses `docker-compose.yml` as base)
-- **`docker-compose.test.yml`**: Test environment with performance optimizations (uses `docker-compose.yml` as base)
+
+Use `ich {dev,testing,prod} docker config [service]` to see fully merged output.
 
 See [Blue/Green Deployment](blue-green-deployment.md) for details on the production compose split.
 
@@ -104,27 +107,27 @@ Each environment uses `.env` files:
 
 **Development**:
 
-- Source code mounted for live editing
+- Source code bind-mounted for live editing (`.:/app`)
 - Persistent database and Redis volumes
-- Nginx configuration from `deploy/dev/nginx/`
+- AWS credentials mounted read-only
 
 **Testing**:
 
-- tmpfs mounts for database and Redis (maximum speed)
-- Isolated test data, discarded after tests
-- No source code mounts (clean container environment)
+- tmpfs for database (no persistence, maximum speed)
+- Source code bind-mounted (shared venv volume)
+- Isolated test data, discarded on `testing stop`
 
-**Production**:
+**Production (blue/green)**:
 
+- Code baked into Docker image (no bind mounts)
 - Named volumes for data persistence
-- SSL certificate mounting ready
-- Optimized configurations from `deploy/prod/`
+- See [Blue/Green Deployment](blue-green-deployment.md)
 
 ## Logging Architecture
 
 ### Application Logging
 
-- **Python services (API, Flask, Scheduler)**: structlog with stdout-only output. Key=value format for dev, JSON for production/Loki.
+- **Python services (API, Scheduler)**: structlog with stdout-only output. Key=value format for dev, JSON for production/Loki.
 - **Vue frontend**: consola with structured reporters matching structlog's format. Includes request tracing via X-Request-ID headers.
 - **Colored output**: CLI provides colored log viewing with `ichrisbirch dev logs`
 
@@ -144,7 +147,7 @@ Each environment uses `.env` files:
 - Traefik: localhost:443 (HTTPS reverse proxy)
 - PostgreSQL: localhost:5432
 - Redis: localhost:6379
-- API/Flask/Vue: Through Traefik reverse proxy at `*.docker.localhost`
+- API/Vue/Chat: Through Traefik reverse proxy at `*.docker.localhost`
 
 **Testing** (isolated ports):
 
@@ -154,7 +157,7 @@ Each environment uses `.env` files:
 
 **Production**:
 
-- Nginx: Port 80/443 only (reverse proxy handles internal routing)
+- Traefik: Port 80 only (Cloudflare handles TLS externally)
 - All other services: Internal container network only
 
 ### Service Communication
@@ -215,21 +218,10 @@ docker exec -it icb-dev-api /bin/bash
 - **Resource limits**: Memory and CPU constraints configured
 - **Health monitoring**: Comprehensive health check endpoints
 
-### SSL/TLS Configuration
-
-Ready for certificate mounting:
-
-```yaml
-volumes:
-  - ./nginx/ssl:/etc/nginx/ssl:ro  # Uncomment for SSL certificates
-```
-
 ### Scaling Considerations
 
 - **Database**: PostgreSQL optimized for production workloads
 - **Redis**: Configured with appropriate memory limits and eviction policies
-- **Application services**: Ready for horizontal scaling with load balancer
-- **Static files**: Nginx optimized for efficient static file serving
 
 ## Troubleshooting
 

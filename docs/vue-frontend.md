@@ -1,6 +1,6 @@
 # Vue 3 Frontend
 
-The ichrisbirch frontend is being incrementally migrated from Flask (Jinja2 templates) to Vue 3 with TypeScript. Both frontends coexist behind `app.docker.localhost` via Traefik path-based routing.
+The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.docker.localhost` via Traefik path-based routing.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ The ichrisbirch frontend is being incrementally migrated from Flask (Jinja2 temp
 | State | Pinia | Reactive store per feature |
 | Routing | Vue Router | Client-side routing with lazy-loaded views |
 | Build | Vite 7.x | Fast HMR in dev, optimized production builds |
-| Styling | SCSS (ITCSS) | Shared with Flask via Vite `loadPaths` |
+| Styling | SCSS (ITCSS) | Global SCSS system in `frontend/src/assets/sass/` |
 | HTTP | Axios | API calls with request tracing |
 | Logging | consola | Structured logging matching structlog format |
 | Unit Tests | Vitest + Vue Test Utils | Store and component testing |
@@ -32,16 +32,6 @@ The ichrisbirch frontend is being incrementally migrated from Flask (Jinja2 temp
 ### Running the Vue Frontend
 
 The Vue service starts automatically with `./cli/ichrisbirch dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
-
-### SCSS Integration
-
-The Vue frontend shares SCSS with the Flask app. Vite's `loadPaths` in `vite.config.ts` points to the Flask SCSS directory, and a Docker volume mount makes the paths work inside the container:
-
-```yaml
-# docker-compose.dev.yml
-volumes:
-  - ./ichrisbirch/app/static:/ichrisbirch/app/static:ro
-```
 
 ### Auth in Development
 
@@ -96,21 +86,10 @@ npm test             # Build check + unit tests
 2. Create Vue view in `frontend/src/views/`
 3. Add route in `frontend/src/router.ts`
 4. Add sidebar link in `frontend/src/components/AppSidebar.vue`
-5. Add path to Vue Traefik rule in `docker-compose.dev.yml` (priority 100)
+5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `ich routing generate`
 6. Write unit tests in `frontend/src/stores/__tests__/`
 7. Write E2E tests in `frontend/e2e/`
 8. Run `npm test` and `npm run test:e2e` before considering the page done
-
-## Migration Status
-
-| Page | Status | Notes |
-|------|--------|-------|
-| Countdowns | Done | Full CRUD with structured logging and error handling |
-| Events | Next | Similar to Countdowns |
-| Books | Planned | CRUD with status management |
-| Simple pages | Planned | Money Wasted, AutoTasks, Box Packing |
-| Complex pages | Planned | Tasks, Habits, Articles |
-| Admin | Last | Most Flask-specific features |
 
 ## Pre-commit Hooks
 
@@ -128,6 +107,5 @@ Lessons learned during infrastructure setup:
 
 - **Docker Alpine IPv6**: `wget` resolves `localhost` to `::1` but Node binds IPv4 only. Use `127.0.0.1` in health checks.
 - **CORS with credentials**: `Access-Control-Allow-Headers: *` is NOT a wildcard when `credentials: true` (per spec). Must list headers explicitly.
-- **Vite loadPaths in Docker**: Relative SCSS paths don't resolve inside the container. Fixed with volume mount at matching path.
 - **consola log levels**: Inverted from Python (error=0, debug=4). The `levelName()` function in `logger.ts` handles this.
 - **Named volumes vs host node_modules**: `npm install` on the host doesn't affect the container's named volume. Use `docker exec npm install` or add a `test:build` step.

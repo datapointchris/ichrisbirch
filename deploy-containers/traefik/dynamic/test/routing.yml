@@ -1,0 +1,79 @@
+# Traefik routers for test environment
+#
+# All routing rules live here (file provider), not in Docker Compose labels.
+# Services are discovered via Docker provider (traefik.enable=true label).
+#
+# The PathPrefix list in vue-paths is generated — edit vue-paths.txt and run
+# `ich routing generate` instead of modifying this file directly.
+#
+# Dashboard routing stays in Docker Compose labels (auth defined in middlewares.yml).
+
+http:
+  routers:
+    # API — direct access
+    api:
+      rule: "Host(`api.test.localhost`)"
+      service: api@docker
+      entrypoints:
+        - websecure
+      tls:
+        options: test@file
+      middlewares:
+        - cors-test@file
+        - security-headers-test@file
+        - test-authelia-sim@file
+        - rate-limit-test@file
+
+    # API — admin routes (higher priority, uses admin user sim)
+    api-admin:
+      rule: "Host(`api.test.localhost`) && PathPrefix(`/admin`)"
+      service: api@docker
+      priority: 200
+      entrypoints:
+        - websecure
+      tls:
+        options: test@file
+      middlewares:
+        - cors-test@file
+        - security-headers-test@file
+        - test-authelia-sim-admin@file
+        - rate-limit-test@file
+
+    # Vue SPA — full app at vue.test.localhost
+    vue:
+      rule: "Host(`vue.test.localhost`)"
+      service: vue@docker
+      entrypoints:
+        - websecure
+      tls:
+        options: test@file
+      middlewares:
+        - cors-test@file
+        - security-headers-test@file
+
+    # Vue SPA — path-based routing at app.test.localhost
+    # Includes Vite dev server paths needed for JS/CSS/HMR
+    vue-paths:
+      rule: "Host(`app.test.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || Path(`/`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
+      service: vue@docker
+      priority: 100
+      entrypoints:
+        - websecure
+      tls:
+        options: test@file
+      middlewares:
+        - cors-test@file
+        - security-headers-test@file
+
+    # Chat (Streamlit) — dedicated subdomain
+    chat:
+      rule: "Host(`chat.test.localhost`)"
+      service: chat@docker
+      entrypoints:
+        - websecure
+      tls:
+        options: test@file
+      middlewares:
+        - cors-test@file
+        - security-headers-test@file
+        - websocket-test@file

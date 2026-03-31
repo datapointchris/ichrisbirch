@@ -1,90 +1,55 @@
+# Traefik middlewares for development environment
+#
+# CORS and security are separate middlewares — CORS fields belong in dev-cors
+# only, not in dev-security. This prevents conflicting CORS settings when both
+# middlewares are applied to the same router.
+
 http:
   middlewares:
-    # Development-specific middleware
+    # CORS — allow methods, headers, and origins for cross-origin Vue→API calls
     dev-cors:
       headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
         accessControlAllowOriginList:
           - "https://app.docker.localhost"
           - "https://api.docker.localhost"
           - "https://chat.docker.localhost"
-          - "http://localhost:3000"  # For frontend dev servers
-        accessControlAllowMethods:
-          - "GET"
-          - "POST"
-          - "PUT"
-          - "DELETE"
-          - "OPTIONS"
-          - "PATCH"
+          - "http://localhost:3000"
         accessControlAllowHeaders:
+          - "Accept"
+          - "Accept-Language"
+          - "Content-Language"
           - "Content-Type"
           - "Authorization"
-          - "Accept"
+          - "X-Requested-With"
           - "X-Request-ID"
-          - "X-Application-ID"
           - "X-User-ID"
+          - "X-Application-ID"
+          - "X-Internal-Service"
           - "X-Service-Key"
-        accessControlAllowCredentials: true
-
-    # Aliased middlewares for compatibility with base compose file
-    cors-prod:
-      headers:
-        accessControlAllowOriginList:
-          - "https://app.docker.localhost"
-          - "https://api.docker.localhost"
-          - "https://chat.docker.localhost"
-          - "http://localhost:3000"  # For frontend dev servers
-        accessControlAllowMethods:
-          - "GET"
-          - "POST"
-          - "PUT"
-          - "DELETE"
-          - "OPTIONS"
-          - "PATCH"
-        accessControlAllowHeaders:
+        accessControlExposeHeaders:
+          - "Content-Length"
           - "Content-Type"
-          - "Authorization"
-          - "Accept"
-          - "X-Request-ID"
-          - "X-Application-ID"
-          - "X-User-ID"
-          - "X-Service-Key"
+          - "Location"
+          - "X-Total-Count"
         accessControlAllowCredentials: true
+        accessControlMaxAge: 86400
+        addVaryHeader: true
 
-    security-headers-prod:
-      headers:
-        customRequestHeaders:
-          X-Forwarded-Proto: "https"
-        customResponseHeaders:
-          X-Frame-Options: "SAMEORIGIN"  # More relaxed for dev
-          X-Content-Type-Options: "nosniff"
-        sslRedirect: true
-
-    rate-limit-prod:
-      rateLimit:
-        burst: 1000  # More generous for dev
-        average: 500
-
-    websocket-prod:
-      headers:
-        customRequestHeaders:
-          Connection: "upgrade"
-          Upgrade: "websocket"
-
-    # Relaxed security for development
+    # Security headers — relaxed for development (no HSTS, no CSP)
     dev-security:
       headers:
         customRequestHeaders:
           X-Forwarded-Proto: "https"
         customResponseHeaders:
-          X-Frame-Options: "SAMEORIGIN"  # More relaxed for dev
+          X-Frame-Options: "SAMEORIGIN"
           X-Content-Type-Options: "nosniff"
-        sslRedirect: true
-
-    # Development debugging headers
-    dev-debug:
-      headers:
-        customResponseHeaders:
-          X-Debug-Mode: "true"
           X-Environment: "development"
 
     # Simulate Authelia ForwardAuth headers for dev
@@ -96,10 +61,3 @@ http:
         customRequestHeaders:
           Remote-User: "admin@icb.com"
           Remote-Email: "admin@icb.com"
-
-    # WebSocket support for Streamlit
-    websocket-headers:
-      headers:
-        customRequestHeaders:
-          Connection: "upgrade"
-          Upgrade: "websocket"

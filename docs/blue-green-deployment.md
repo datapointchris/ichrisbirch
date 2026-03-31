@@ -16,7 +16,7 @@ Two parallel sets of **app containers** exist — called **blue** and **green**.
 Internet           │                                                 │
   → Cloudflare     │   Traefik ──→ services.yml ──→ icb-blue-api    │
     → Tunnel       │     :80          (file         icb-blue-vue     │
-      → :80        │                  provider)     icb-blue-app     │
+      → :80        │                  provider)                      │
                    │   PostgreSQL                   icb-blue-chat    │
                    │   Redis                                         │
                    │                                                 │
@@ -42,7 +42,7 @@ If anything fails in steps 1-3, the live color is untouched. Zero downtime, zero
 | File | Project Name | Contains | Lifecycle |
 |------|-------------|----------|-----------|
 | `docker-compose.infra.yml` | `icb-infra` | Traefik, PostgreSQL, Redis | Always running, never restarted during deploys |
-| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, App, Vue, Chat, Scheduler | Created/destroyed per deploy |
+| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Chat, Scheduler | Created/destroyed per deploy |
 | `docker-compose.yml` | `icb-prod` | All services (legacy) | Emergency fallback only |
 
 Dev and test environments (`docker-compose.dev.yml`, `docker-compose.test.yml`) are completely unaffected.
@@ -71,14 +71,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://icb-green-vue:80"
-  app:
-    loadBalancer:
-      servers:
-        - url: "http://icb-blue-app:5000"
-  chat:
-    loadBalancer:
-      servers:
-        - url: "http://icb-blue-chat:8505"
+    chat:
+      loadBalancer:
+        servers:
+          - url: "http://icb-green-chat:8505"
 ```
 
 Traefik has `--providers.file.watch=true`, so it hot-reloads within 1-2 seconds of the file changing. No restart needed.
@@ -130,7 +126,7 @@ docker exec icb-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
     -H "Remote-Email: ${admin_email}"
 ```
 
-This tests 32 GET endpoints across critical, important, and secondary tiers. The deploy only proceeds if `all_critical_passed` is true and HTTP 200 is returned. Vue and Flask containers are also health-checked directly before the API smoke tests.
+This tests 32 GET endpoints across critical, important, and secondary tiers. The deploy only proceeds if `all_critical_passed` is true and HTTP 200 is returned. Vue containers are also health-checked directly before the API smoke tests.
 
 ### Concurrent Deploy Protection
 

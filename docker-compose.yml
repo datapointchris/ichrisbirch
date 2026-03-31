@@ -171,18 +171,6 @@ services:
         tag: "api"
     labels:
       - "traefik.enable=true"
-      # Direct API access (for MCP tools, services using JWT/API keys)
-      - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.routers.api.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
-      # Same-origin API proxy for Vue frontend (auth via Authelia on main domain)
-      # Requests to ichrisbirch.com/api/* get Remote-User headers from Authelia,
-      # then the /api prefix is stripped before reaching FastAPI.
-      - "traefik.http.routers.api-proxy.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.api-proxy.entrypoints=web"
-      - "traefik.http.routers.api-proxy.priority=200"
-      - "traefik.http.routers.api-proxy.middlewares=strip-api-prefix@docker,security-headers-prod@file,rate-limit-prod@file"
-      - "traefik.http.middlewares.strip-api-prefix.stripprefix.prefixes=/api"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
     networks:
       - proxy
@@ -216,17 +204,7 @@ services:
         tag: "vue"
     labels:
       - "traefik.enable=true"
-      # Path-based routing — migrated pages served from Vue at higher priority
-      - "traefik.http.routers.vue-paths.rule=Host(`${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
-      - "traefik.http.routers.vue-paths.entrypoints=web"
-      - "traefik.http.routers.vue-paths.priority=100"
-      - "traefik.http.routers.vue-paths.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
       - "traefik.http.services.vue.loadbalancer.server.port=80"
-      # www subdomain also routes to Vue for migrated paths
-      - "traefik.http.routers.vue-paths-www.rule=Host(`www.${DOMAIN}`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/assets`) || Path(`/`))"
-      - "traefik.http.routers.vue-paths-www.entrypoints=web"
-      - "traefik.http.routers.vue-paths-www.priority=100"
-      - "traefik.http.routers.vue-paths-www.middlewares=cors-prod@file,security-headers-prod@file,rate-limit-prod@file"
 
   # Chat Service (Streamlit) - Production configuration
   chat:
@@ -264,13 +242,9 @@ services:
         tag: "chat"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.chat.rule=Host(`chat.${DOMAIN}`)"
-      - "traefik.http.routers.chat.entrypoints=web"
-      - "traefik.http.routers.chat.middlewares=cors-prod@file"
       - "traefik.http.services.chat.loadbalancer.server.port=8505"
-      # Enable sticky sessions for WebSocket connections
       - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=chat-prod-session"
+      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=chat-session"
     networks:
       - proxy
       - default

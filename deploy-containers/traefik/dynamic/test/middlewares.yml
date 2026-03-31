@@ -1,47 +1,15 @@
+# Traefik middlewares for test environment
+#
+# CORS and security are separate middlewares — CORS fields belong in cors-test
+# only, not in security-headers-test. This prevents conflicting CORS settings
+# when both middlewares are applied to the same router.
+#
+# Origins include :8443 because test Traefik maps 8443:443 (non-standard port),
+# so browsers send Origin with the port included.
+
 http:
   middlewares:
-    # Security headers middleware for test environment
-    # Origins include :8443 because test Traefik maps 8443:443 (non-standard port),
-    # so browsers send Origin with the port included.
-    security-headers-test:
-      headers:
-        accessControlAllowMethods:
-          - GET
-          - OPTIONS
-          - PUT
-          - POST
-          - DELETE
-          - PATCH
-        accessControlAllowOriginList:
-          - "https://api.test.localhost:8443"
-          - "https://app.test.localhost:8443"
-          - "https://chat.test.localhost:8443"
-          - "https://dashboard.test.localhost:8443"
-        accessControlAllowHeaders:
-          - "*"
-        accessControlExposeHeaders:
-          - "*"
-        accessControlAllowCredentials: true
-        accessControlMaxAge: 100
-        addVaryHeader: true
-        # Security headers
-        customRequestHeaders:
-          X-Forwarded-Proto: "https"
-        customResponseHeaders:
-          X-Frame-Options: "DENY"
-          X-Content-Type-Options: "nosniff"
-          X-XSS-Protection: "1; mode=block"
-          Referrer-Policy: "strict-origin-when-cross-origin"
-          X-Environment: "testing"
-          # Content Security Policy for test environment
-          # connect-src includes api.test.localhost:8443 for cross-origin Vue→API calls
-          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.test.localhost:8443 wss: ws:; font-src 'self' data:;"
-          # Permissions Policy
-          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
-
-    # CORS middleware for test environment
-    # Origins include :8443 because test Traefik maps 8443:443 (non-standard port),
-    # so browsers send Origin with the port included.
+    # CORS — allow methods, headers, and origins for cross-origin Vue→API calls
     cors-test:
       headers:
         accessControlAllowMethods:
@@ -77,6 +45,20 @@ http:
         accessControlMaxAge: 86400
         addVaryHeader: true
 
+    # Security headers — stricter than dev (CSP, Permissions-Policy)
+    security-headers-test:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          X-Environment: "testing"
+          Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.test.localhost:8443 wss: ws:; font-src 'self' data:;"
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+
     # WebSocket support for Streamlit chat service
     websocket-test:
       headers:
@@ -87,17 +69,14 @@ http:
           Sec-WebSocket-Key: ""
           Sec-WebSocket-Version: ""
 
-    # Rate limiting for test environment (more permissive)
+    # Rate limiting (permissive for test)
     rate-limit-test:
       rateLimit:
-        average: 200  # 200 requests per second
-        burst: 500    # Allow bursts up to 500
+        average: 200
+        burst: 500
         period: 1s
 
-    # Simulate Authelia ForwardAuth headers for test
-    # In production, Authelia injects Remote-User/Remote-Email via ForwardAuth.
-    # In test, this middleware fakes those headers so Vue can call the API without
-    # running a full Authelia instance (mirrors dev-authelia-sim).
+    # Simulate Authelia ForwardAuth headers for test (regular user)
     test-authelia-sim:
       headers:
         customRequestHeaders:
@@ -105,7 +84,6 @@ http:
           Remote-Email: "user@icb.com"
 
     # Simulate Authelia ForwardAuth headers for admin routes in test
-    # Uses admin@icb.com so admin API endpoints return data instead of 403.
     # Applied to a separate higher-priority router matching /admin/* paths.
     test-authelia-sim-admin:
       headers:
@@ -113,8 +91,8 @@ http:
           Remote-User: "admin@icb.com"
           Remote-Email: "admin@icb.com"
 
-    # Auth middleware for dashboard access (test environment)
+    # Dashboard auth (test environment)
     dashboard-auth-test:
       basicAuth:
         users:
-          - "test:$2y$10$Q7B5K8L2M3N4O5P6Q7R8SeTgUvWxYz0123456789ABCDEFabcdef"  # test:testpass
+          - "test:$2y$10$Q7B5K8L2M3N4O5P6Q7R8SeTgUvWxYz0123456789ABCDEFabcdef"

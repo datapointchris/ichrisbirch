@@ -28,6 +28,13 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 cd frontend && npm test                 # Build check + unit tests
 cd frontend && npm run test:e2e         # Playwright E2E through Traefik
 
+# Traefik routing (after adding a Vue page path)
+./cli/ichrisbirch routing generate
+
+# Merged Docker Compose config (debug overrides)
+./cli/ichrisbirch dev docker config [service]
+./cli/ichrisbirch testing docker config [service]
+
 # Database
 alembic revision --autogenerate -m "description"
 alembic upgrade head
@@ -88,9 +95,9 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 - E2E tests run through `app.docker.localhost` (not `vue.docker.localhost`) to catch CORS issues
 - Self-hosted fonts in `frontend/public/fonts/` (woff2)
 
-**Critical:** Every new Vue path or static asset path (`/fonts`, `/profile`, etc.) must be added to Traefik PathPrefix rules in **ALL THREE** compose files (dev, test, prod).
+**Critical:** Every new Vue path or static asset path must be added to `deploy-containers/traefik/vue-paths.txt`, then run `ich routing generate` to update all three routing files (dev, test, prod).
 
-**CORS gotcha:** Wildcard `Access-Control-Allow-Headers: *` does NOT work with `credentials: true` — list headers explicitly in Traefik middleware config (including `X-Request-ID`).
+**CORS gotcha:** Wildcard `Access-Control-Allow-Headers: *` does NOT work with `credentials: true` — list headers explicitly in Traefik CORS middleware config (including `X-Request-ID`). CORS and security headers are in separate middlewares to prevent chaining conflicts.
 
 ### Authentication
 
@@ -98,7 +105,7 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 **Vue (Production):** Same-origin proxy — Vue calls `/api/...`, Traefik `api-proxy` router (priority 200) strips `/api` prefix and forwards to FastAPI. No CORS needed.
 
-**Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: user@icb.com`.
+**Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: admin@icb.com`.
 
 **FastAPI:** JWT tokens (access 15min, refresh 7d) + Authelia `Remote-User` header (highest priority) + Personal API Keys. Protected routes use `Depends(auth.get_current_user)`.
 
@@ -150,7 +157,7 @@ Multi-stage Dockerfile: `base` → `development-builder` → `development` | `te
 
 **Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider: `routing.yml` (git-tracked routers) + `services.yml` (generated, points to active color). Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
 
-Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs managed via `./cli/ichrisbirch ssl-manager`.
+Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is generated from `deploy-containers/traefik/vue-paths.txt` via `ich routing generate`. CORS and security headers are separate middlewares per environment (`cors-*` and `security-headers-*`). Use `ich {dev,testing,prod} docker config [service]` to see fully merged compose output. SSL certs managed via `./cli/ichrisbirch ssl-manager`.
 
 ## Conventions
 
@@ -200,7 +207,7 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. SSL certs manage
 2. Create Vue view with `<script setup>`, `onMounted` fetch, `useNotifications()` for feedback
 3. Add route in `frontend/src/router.ts` (lazy-loaded)
 4. Update sidebar in `AppSidebar.vue`
-5. Add PathPrefix to Traefik routing in **all three** compose files (dev, test, prod)
+5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `ich routing generate`
 6. Write unit tests (mock API with `vi.mock`) and E2E tests (Playwright through `app.docker.localhost`)
 
 ### Logging

@@ -1,0 +1,25 @@
+# Vue SPA route prefixes — one per line
+# Add new Vue pages here, then run: ich routing generate
+#
+# The script also adds:
+#   Path(/)           — all environments (SPA root)
+#   /assets           — prod only (Vite-built static assets served by Caddy)
+#   /@vite /@fs etc.  — dev/test only (Vite dev server HMR/source paths)
+#
+# Do NOT add those here — they are environment-specific.
+
+/countdowns
+/durations
+/events
+/books
+/autotasks
+/money-wasted
+/articles
+/habits
+/box-packing
+/projects
+/tasks
+/profile
+/admin
+/dashboard
+/fonts

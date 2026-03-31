@@ -160,6 +160,33 @@ function install() {
   ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" "$HOME/.local/bin/icb"
 }
 
+function env-docker-config() {
+  local env="$1"
+  shift
+  local service="$1"
+  local compose_cmd
+
+  case "$env" in
+    development) compose_cmd="$COMPOSE_DEV" ;;
+    testing) compose_cmd="$COMPOSE_TEST" ;;
+    production) compose_cmd="$COMPOSE_PROD" ;;
+    *) echo "${red}Unknown environment: $env${reset}"; return 1 ;;
+  esac
+
+  cd "$ICHRISBIRCH_HOME" || return 1
+
+  if [[ -z "$service" ]]; then
+    $compose_cmd config
+  else
+    if ! $compose_cmd config --services 2>/dev/null | grep -q "^${service}$"; then
+      echo "${red}Unknown service: $service${reset}"
+      echo "Available: $($compose_cmd config --services 2>/dev/null | tr '\n' ' ')"
+      return 1
+    fi
+    $compose_cmd config 2>/dev/null | yq -y ".services.\"$service\""
+  fi
+}
+
 function ssl-manager() {
   local action="${1:-info}"
   local environment="${2:-all}"
@@ -279,6 +306,7 @@ function dev-usage() {
   echo "  ${blue}dev ensure${reset}             Start containers if not already running"
   echo "  ${blue}dev smoke${reset}              Run smoke tests against all endpoints"
   echo "  ${blue}dev logs [service]${reset}     View logs"
+  echo "  ${blue}dev docker [service]${reset}   Show merged Docker Compose config"
   echo "  ${blue}dev db ...${reset}             Database commands (backup, restore, list, seed, init)"
 }
 
@@ -454,6 +482,7 @@ function testing-usage() {
   echo "  ${blue}testing is-ready${reset}       Quick check if API is responding (exit 0/1)"
   echo "  ${blue}testing ensure${reset}         Start containers if not already running"
   echo "  ${blue}testing logs [service]${reset} View logs"
+  echo "  ${blue}testing docker [service]${reset} Show merged Docker Compose config"
   echo "  ${blue}testing db ...${reset}         Database commands (backup, restore, list, seed, reset)"
 }
 
@@ -859,6 +888,7 @@ function prod-usage() {
   echo "  ${blue}prod rollback${reset}          Switch traffic to previous color"
   echo "  ${blue}prod build-test${reset}        Test production Docker build locally"
   echo "  ${blue}prod logs [service]${reset}    View logs"
+  echo "  ${blue}prod docker [service]${reset}  Show merged Docker Compose config"
   echo "  ${blue}prod db ...${reset}            Database commands (backup, restore, list, init)"
 }
 
@@ -910,6 +940,7 @@ function usage() {
   echo
   echo "${green}Tools:${reset}"
   echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates"
+  echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
   echo
   echo "${green}Stats:${reset}"
   echo "  ${blue}stats${reset} - Show stats submenu"
@@ -962,6 +993,10 @@ testing)
     shift 2
     env-db testing "$@"
     ;;
+  docker)
+    shift 2
+    env-docker-config testing "$@"
+    ;;
   *) testing-"$2" ;;
   esac
   ;;
@@ -979,6 +1014,10 @@ dev)
     shift 2
     env-db development "$@"
     ;;
+  docker)
+    shift 2
+    env-docker-config development "$@"
+    ;;
   *) dev-"$2" ;;
   esac
   ;;
@@ -994,6 +1033,10 @@ prod)
     shift 2
     env-db production "$@"
     ;;
+  docker)
+    shift 2
+    env-docker-config production "$@"
+    ;;
   deploy-status) prod-deploy-status ;;
   rollback) prod-rollback ;;
   legacy-rebuild) prod-legacy-rebuild ;;
@@ -1003,6 +1046,26 @@ prod)
   ;;
 ssl-manager)
   ssl-manager "$2" "$3"
+  ;;
+routing)
+  case "$2" in
+  generate)
+    bash "$ICHRISBIRCH_HOME/deploy-containers/traefik/generate-routing.sh"
+    echo ""
+    if ! git -C "$ICHRISBIRCH_HOME" diff --quiet deploy-containers/traefik/dynamic/; then
+      echo "${blue}Changes:${reset}"
+      git -C "$ICHRISBIRCH_HOME" diff --stat deploy-containers/traefik/dynamic/
+    else
+      echo "${green}No changes — routing files already up to date.${reset}"
+    fi
+    ;;
+  *)
+    echo "${green}Routing Commands:${reset}"
+    echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
+    echo ""
+    echo "Canonical path list: deploy-containers/traefik/vue-paths.txt"
+    ;;
+  esac
   ;;
 stats)
   case "$2" in

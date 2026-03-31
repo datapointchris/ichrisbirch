@@ -1,6 +1,8 @@
 # Nginx to Traefik Migration Complete
 
-This document summarizes the successful migration from nginx to Traefik reverse proxy, including the **major CLI simplification** that eliminated confusing command duplication.
+> **Historical document.** This describes the initial migration from nginx to Traefik. Since then, routing moved from Docker labels to Traefik file provider configs, and Flask was fully removed. See [traefik-deployment.md](traefik-deployment.md) for current architecture.
+
+This document summarizes the successful migration from nginx to Traefik reverse proxy, including the CLI simplification that eliminated confusing command duplication.
 
 ## 🎯 Migration Objectives & Results
 
@@ -11,7 +13,7 @@ This document summarizes the successful migration from nginx to Traefik reverse 
    - Automatic HTTPS termination with certificate management
    - Built-in health checks and load balancing
 
-2. **✅ Eliminate confusing CLI command duplication**  
+2. **✅ Eliminate confusing CLI command duplication**
    - **SOLVED**: Removed all `traefik-*` commands that duplicated regular environment commands
    - **RESULT**: Clean, professional CLI interface with single commands per operation
 
@@ -46,7 +48,7 @@ ichrisbirch dev start            # Also started dev environment with Traefik
 ```bash
 # CLEAN - Single command per operation
 ichrisbirch dev start            # Starts dev with Traefik + HTTPS (automatic)
-ichrisbirch testing start       # Starts testing with Traefik + HTTPS (automatic)  
+ichrisbirch testing start       # Starts testing with Traefik + HTTPS (automatic)
 ichrisbirch prod start          # Starts prod with Traefik + HTTPS (automatic)
 
 # Implementation details hidden from users
@@ -111,7 +113,7 @@ ichrisbirch ssl-manager generate dev
 ```bash
 # mkcert generates these domains for development:
 - docker.localhost
-- *.docker.localhost  
+- *.docker.localhost
 - api.docker.localhost
 - app.docker.localhost
 - chat.docker.localhost
@@ -142,7 +144,7 @@ nginx.conf (static file)
 ```text
 Traefik Dynamic Configuration
 ├── Docker labels (automatic service discovery)
-├── Environment-specific configs (dynamic-dev/, dynamic-testing/, dynamic-prod/)
+├── Environment-specific configs (dynamic/dev/, dynamic/test/, dynamic/prod/)
 ├── Automatic SSL termination (mkcert + OpenSSL fallback)
 └── Built-in health checks and load balancing
 ```
@@ -163,7 +165,7 @@ Traefik Dynamic Configuration
 - **Certificates**: mkcert browser-trusted
 - **Dashboard**: `https://dashboard.docker.localhost/` (dev/devpass)
 
-### Testing Environment  
+### Testing Environment
 
 - **Domain**: `*.test.localhost`
 - **Port**: 8443 (custom HTTPS port)
@@ -183,27 +185,16 @@ Traefik Dynamic Configuration
 
 ```yaml
 deploy-containers/traefik/
+├── vue-paths.txt             # Canonical Vue route prefixes
+├── generate-routing.sh       # Generates routing.yml from vue-paths.txt
 ├── certs/                    # SSL certificates
 │   ├── dev.crt|key          # Development (mkcert generated)
 │   ├── testing.crt|key      # Testing environment
 │   └── prod.crt|key         # Production environment
-│
-├── dynamic-dev/              # Development configuration
-│   ├── tls.yml              # TLS configuration
-│   └── middlewares.yml      # Development middleware
-│
-├── dynamic-testing/          # Testing configuration  
-│   ├── tls.yml
-│   └── middlewares.yml
-│
-├── dynamic-prod/             # Production configuration
-│   ├── tls.yml
-│   └── middlewares.yml
-│
-├── scripts/
-│   └── ssl-manager.sh       # Certificate management (mkcert support)
-│
-└── traefik.yml              # Base Traefik configuration
+└── dynamic/                  # Per-environment file provider configs
+    ├── dev/                  # routing.yml, middlewares.yml, tls.yml
+    ├── test/                 # routing.yml, middlewares.yml, tls.yml
+    └── prod/                 # routing.yml, services.yml, middlewares.yml, tls.yml
 ```
 
 ### Removed nginx Files
@@ -280,7 +271,7 @@ ichrisbirch dev start
 **Solution**:
 
 ```bash
-# Stop all nginx containers  
+# Stop all nginx containers
 docker stop $(docker ps -q --filter "name=nginx")
 docker rm $(docker ps -aq --filter "name=nginx")
 
@@ -297,7 +288,7 @@ ichrisbirch dev start
 ```bash
 # Add Traefik domains
 echo "127.0.0.1 api.docker.localhost" | sudo tee -a /etc/hosts
-echo "127.0.0.1 app.docker.localhost" | sudo tee -a /etc/hosts  
+echo "127.0.0.1 app.docker.localhost" | sudo tee -a /etc/hosts
 echo "127.0.0.1 chat.docker.localhost" | sudo tee -a /etc/hosts
 echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 ```
@@ -406,7 +397,7 @@ The **nginx to Traefik migration** has been successfully completed with signific
 ### ✅ **Major Achievements**
 
 1. **CLI Duplication Eliminated**: Removed confusing `traefik-*` commands
-2. **Browser-Trusted HTTPS**: mkcert integration eliminates security warnings  
+2. **Browser-Trusted HTTPS**: mkcert integration eliminates security warnings
 3. **Modern Architecture**: Dynamic service discovery with automatic configuration
 4. **Professional UX**: Clean, consistent CLI interface following industry standards
 

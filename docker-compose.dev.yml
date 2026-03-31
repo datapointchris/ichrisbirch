@@ -1,5 +1,6 @@
-# Shared image build configuration - all app services use the same image
-# This reduces disk space from ~3.4GB (4 images) to ~850MB (1 image)
+# Dev overrides — only what differs from base (docker-compose.yml)
+# Verify merged result: ich dev docker config
+
 x-app-build: &app-build
   image: ichrisbirch:development
   build:
@@ -7,77 +8,49 @@ x-app-build: &app-build
     target: development
 
 services:
-  # Traefik reverse proxy for development
-  # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
-    image: traefik:v3.6
     container_name: icb-dev-traefik
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    networks:
-      - proxy
-      - default
-    ports:
+    ports: !override
       - "80:80"
       - "443:443"
-      - "8080:8080"  # Dashboard port
-    volumes:
+      - "8080:8080"
+    volumes: !override
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/certs/dev.crt:/certs/tls.crt:ro
       - ./deploy-containers/traefik/certs/dev.key:/certs/tls.key:ro
       - ./deploy-containers/traefik/dynamic/dev:/etc/traefik/dynamic:ro
     command:
-      # Healthcheck support
       - "--ping=true"
-
-      # EntryPoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http.tls=true"
-
-      # TLS configuration
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
-
-      # Docker provider - only discover dev containers
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=icb-dev-proxy"
       - "--providers.docker.constraints=Label(`traefik.environment`,`development`)"
-
-      # API & Dashboard
       - "--api.dashboard=true"
       - "--api.insecure=true"
-
-      # Logging for development
       - "--log.level=INFO"
       - "--accesslog=true"
       - "--accesslog.format=json"
       - "--metrics.prometheus=true"
     labels:
-      # Environment label for Traefik constraint filtering
       - "traefik.environment=development"
-      # Enable Traefik for itself (dashboard)
       - "traefik.enable=true"
-
-      # Dashboard router
       - "traefik.http.routers.dashboard.rule=Host(`dashboard.docker.localhost`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.tls=true"
-
-      # Dashboard authentication (set TRAEFIK_DASHBOARD_AUTH in .env)
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
       - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
-    healthcheck:
-      test: ["CMD", "traefik", "healthcheck", "--ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -85,27 +58,19 @@ services:
         max-file: "3"
         tag: "traefik-dev"
 
-  # Development database - optimized for debugging and development
   postgres:
-    image: postgres:16-alpine
     container_name: icb-dev-postgres
-    environment:
+    environment: !override
       - POSTGRES_DB=ichrisbirch
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres  # Simple password for development
-    ports:
-      - "5432:5432"  # Keep direct port access for development tools
-    networks:
-      - default
-    # Development optimizations: detailed logging, relaxed performance constraints
+      - POSTGRES_PASSWORD=postgres
+    ports: !override
+      - "5432:5432"
     command: >
       postgres
       -c log_destination=stderr
       -c shared_preload_libraries=pg_stat_statements
       -c max_connections=200
-    # Use persistent volumes for development
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
@@ -119,19 +84,12 @@ services:
         max-file: "3"
         tag: "postgres-dev"
 
-  # Development Redis - with debugging capabilities
   redis:
-    image: redis:7-alpine
     container_name: icb-dev-redis
-    ports:
-      - "6379:6379"  # Keep direct port access for development tools
-    networks:
-      - default
-    # Development Redis with some persistence and debugging
+    ports: !override
+      - "6379:6379"
     command: redis-server --save 60 1 --loglevel notice --maxmemory 256mb --maxmemory-policy allkeys-lru
-    environment: []  # Override production environment
-    volumes:
-      - redis_data:/data
+    environment: !override []
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -145,64 +103,36 @@ services:
         max-file: "3"
         tag: "redis-dev"
 
-  # Development overrides for FastAPI service
   api:
     <<: *app-build
     container_name: icb-dev-api
-    # command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --log-level debug --no-access-log
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir ichrisbirch/api --reload-dir ichrisbirch/models --reload-dir ichrisbirch/schemas --log-level debug --no-access-log
-    environment:
-      # Development-specific environment variables
+    environment: !override
       - ENVIRONMENT=development
       - FASTAPI_DEBUG=True
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/api.log
-    ports:
-      - "8000:8000"  # Keep direct port access for development debugging
-    networks:
-      - proxy
-      - default
+    ports: !override
+      - "8000:8000"
     restart: unless-stopped
-    # Override health check for API service
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       start_period: 5s
       retries: 3
-    # Additional volumes for development tools
-    volumes:
+    volumes: !override
       - .:/app
-      - /app/.venv  # Exclude .venv from bind mount for performance
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - /app/.venv
+      - ~/.aws:/root/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # Admin panel: container status
-    labels:
-      # Environment label for Traefik constraint filtering
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels: !override
       - "traefik.environment=development"
-      # Enable Traefik
       - "traefik.enable=true"
-
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.api-http.rule=Host(`api.docker.localhost`)"
-      - "traefik.http.routers.api-http.entrypoints=web"
-      - "traefik.http.routers.api-http.middlewares=redirect-to-https@docker"
-
-      # HTTPS router (override base config to remove TLS options)
-      - "traefik.http.routers.api.rule=Host(`api.docker.localhost`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls=true"
-      - "traefik.http.routers.api.tls.options="  # Override to disable TLS options
-      - "traefik.http.routers.api.middlewares=dev-cors@file,dev-security@file,dev-authelia-sim@file"
-
-      # Service configuration
       - "traefik.http.services.api.loadbalancer.server.port=8000"
-
-      # Define redirect middleware
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     logging:
       driver: "json-file"
       options:
@@ -210,24 +140,18 @@ services:
         max-file: "3"
         tag: "api-dev"
 
-  # Development overrides for chat service
   chat:
     <<: *app-build
     container_name: icb-dev-chat
-    # Enable hot reloading for Streamlit in development
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
-    environment:
+    environment: !override
       - ENVIRONMENT=development
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/chat.log
-    # Standard development port
-    ports:
-      - "8505:8505"  # Keep direct port access for development debugging
-    networks:
-      - proxy
-      - default
+    ports: !override
+      - "8505:8505"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
@@ -235,30 +159,14 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 3
-    volumes:
+    volumes: !override
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ~/.aws:/root/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
-    labels:
-      # Environment label for Traefik constraint filtering
+    labels: !override
       - "traefik.environment=development"
-      # Enable Traefik
       - "traefik.enable=true"
-
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.chat-http.rule=Host(`chat.docker.localhost`)"
-      - "traefik.http.routers.chat-http.entrypoints=web"
-      - "traefik.http.routers.chat-http.middlewares=redirect-to-https@docker"
-
-      # HTTPS router
-      - "traefik.http.routers.chat.rule=Host(`chat.docker.localhost`)"
-      - "traefik.http.routers.chat.entrypoints=websecure"
-      - "traefik.http.routers.chat.tls=true"
-      - "traefik.http.routers.chat.tls.options="  # Override to disable TLS options
-      - "traefik.http.routers.chat.middlewares=dev-security@file"
-
-      # Service configuration with WebSocket support for Streamlit
       - "traefik.http.services.chat.loadbalancer.server.port=8505"
       - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=streamlit-session"
@@ -269,7 +177,6 @@ services:
         max-file: "3"
         tag: "chat-dev"
 
-  # Vue 3 frontend development server
   # !reset clears the inherited build: key from docker-compose.yml (prod Vue builds
   # a Caddy image from frontend/Dockerfile). Without this, `docker compose build`
   # tags the Caddy build output as node:20-alpine, corrupting the base image.
@@ -279,13 +186,10 @@ services:
     container_name: icb-dev-vue
     working_dir: /app
     command: sh -c "npm install && npm run dev"
-    environment:
+    environment: !override
       - VITE_API_URL=https://api.docker.localhost
-    ports:
+    ports: !override
       - "5173:5173"
-    networks:
-      - proxy
-      - default
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
@@ -293,37 +197,12 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 3
-    volumes:
+    volumes: !override
       - ./frontend:/app
       - vue_node_modules:/app/node_modules
-    labels:
-      # Environment label for Traefik constraint filtering
+    labels: !override
       - "traefik.environment=development"
-      # Enable Traefik
       - "traefik.enable=true"
-
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.vue-http.rule=Host(`vue.docker.localhost`)"
-      - "traefik.http.routers.vue-http.entrypoints=web"
-      - "traefik.http.routers.vue-http.middlewares=redirect-to-https@docker"
-
-      # HTTPS router — full Vue app at vue.docker.localhost (development)
-      - "traefik.http.routers.vue.rule=Host(`vue.docker.localhost`)"
-      - "traefik.http.routers.vue.entrypoints=websecure"
-      - "traefik.http.routers.vue.tls=true"
-      - "traefik.http.routers.vue.tls.options="  # Override to disable TLS options
-      - "traefik.http.routers.vue.middlewares=dev-cors@file,dev-security@file"
-
-      # Path-based routing — migrated pages served from Vue on app.docker.localhost
-      # Includes Vite dev server paths (/@vite, /src, etc.) needed for JS/CSS/HMR
-      - "traefik.http.routers.vue-paths.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || Path(`/`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
-      - "traefik.http.routers.vue-paths.entrypoints=websecure"
-      - "traefik.http.routers.vue-paths.tls=true"
-      - "traefik.http.routers.vue-paths.tls.options="
-      - "traefik.http.routers.vue-paths.priority=100"
-      - "traefik.http.routers.vue-paths.middlewares=dev-cors@file,dev-security@file"
-
-      # Service configuration (shared by both routers)
       - "traefik.http.services.vue.loadbalancer.server.port=5173"
     logging:
       driver: "json-file"
@@ -332,30 +211,22 @@ services:
         max-file: "3"
         tag: "vue-dev"
 
-  # Development overrides for scheduler
   scheduler:
     <<: *app-build
     container_name: icb-dev-scheduler
-    # In development, you might want to disable or modify the scheduler
-    # Uncomment to disable scheduler in development
-    # command: /bin/sh -c "echo 'Scheduler disabled in development' && sleep infinity"
-    environment:
+    environment: !override
       - ENVIRONMENT=development
       - LOG_FORMAT=${LOG_FORMAT:-console}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/scheduler.log
-    networks:
-      - default
     restart: unless-stopped
-    # Disable health check for scheduler (no HTTP server)
-    healthcheck:
-      disable: true
-    volumes:
+    volumes: !override
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
+      - ~/.aws:/root/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     logging:
       driver: "json-file"
       options:
@@ -363,7 +234,7 @@ services:
         max-file: "3"
         tag: "scheduler-dev"
 
-# Development volumes with explicit names to avoid conflicts
+# Dev volumes — override base names to isolate from prod
 volumes:
   postgres_data:
     name: icb-dev-postgres-data
@@ -378,7 +249,6 @@ volumes:
     name: icb-dev-vue-node-modules
     driver: local
 
-# Networks - dev uses its own proxy network to avoid conflicts with test
 networks:
   proxy:
     name: icb-dev-proxy

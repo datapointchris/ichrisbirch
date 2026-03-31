@@ -76,10 +76,11 @@ Add link in `frontend/src/components/AppSidebar.vue`
 
 ### 4. Traefik Routing
 
-Update `docker-compose.dev.yml` to add the path to the Vue router rule (priority 100):
+Add the new path to `deploy-containers/traefik/vue-paths.txt` and regenerate routing:
 
-```yaml
-- "traefik.http.routers.vue.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/items`))"
+```bash
+echo "/items" >> deploy-containers/traefik/vue-paths.txt
+./cli/ichrisbirch routing generate
 ```
 
 ### 5. Tests
@@ -94,23 +95,3 @@ cd frontend
 npm test           # Build check + 55 unit tests
 npm run test:e2e   # E2E through Traefik (requires dev containers)
 ```
-
-## Flask Frontend (Legacy, Unmigrated Pages Only)
-
-For pages not yet migrated to Vue:
-
-### 1. Flask Blueprint (`ichrisbirch/app/routes/items.py`)
-
-Register in `ichrisbirch/app/main.py`.
-
-### 2. Jinja2 Templates (`ichrisbirch/app/templates/items/`)
-
-Extend base template, use WTForms for forms.
-
-### 3. Flask Navigation Link
-
-Add link in `ichrisbirch/app/templates/base.html`.
-
-### 4. App Route Tests
-
-Create `tests/ichrisbirch/app/routes/test_items.py`.

@@ -1,0 +1,57 @@
+# Traefik routers for development environment
+#
+# All routing rules live here (file provider), not in Docker Compose labels.
+# Services are discovered via Docker provider (traefik.enable=true label).
+#
+# The PathPrefix list in vue-paths is generated — edit vue-paths.txt and run
+# `ich routing generate` instead of modifying this file directly.
+#
+# Dashboard routing stays in Docker Compose labels (needs env var for auth).
+
+http:
+  routers:
+    # API — direct access
+    api:
+      rule: "Host(`api.docker.localhost`)"
+      service: api@docker
+      entrypoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - dev-cors@file
+        - dev-security@file
+        - dev-authelia-sim@file
+
+    # Vue SPA — full app at vue.docker.localhost
+    vue:
+      rule: "Host(`vue.docker.localhost`)"
+      service: vue@docker
+      entrypoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - dev-cors@file
+        - dev-security@file
+
+    # Vue SPA — path-based routing at app.docker.localhost
+    # Includes Vite dev server paths needed for JS/CSS/HMR
+    vue-paths:
+      rule: "Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/tasks`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || Path(`/`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
+      service: vue@docker
+      priority: 100
+      entrypoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - dev-cors@file
+        - dev-security@file
+
+    # Chat (Streamlit) — dedicated subdomain
+    chat:
+      rule: "Host(`chat.docker.localhost`)"
+      service: chat@docker
+      entrypoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - dev-security@file

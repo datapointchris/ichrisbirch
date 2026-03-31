@@ -48,7 +48,7 @@ Welcome to the iChrisBirch application documentation.
 
 ## Frontend
 
-The frontend is being incrementally migrated from Flask (Jinja2) to Vue 3 (TypeScript). Both run behind `app.docker.localhost` via Traefik path-based routing.
+The frontend is a Vue 3 SPA (TypeScript) served behind `app.docker.localhost` via Traefik path-based routing.
 
 - [Vue Frontend](vue-frontend.md) - Vue 3 architecture, testing, and migration patterns
 - [CSS](css.md) - Styling guidelines and SCSS architecture (ITCSS)

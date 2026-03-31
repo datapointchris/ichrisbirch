@@ -4,45 +4,26 @@ This guide covers the complete deployment of Traefik reverse proxy for the iChri
 
 ## 🎯 Overview
 
-**Traefik v3.4** serves as the modern reverse proxy solution with a **simplified, unified CLI interface** that has **eliminated confusing command duplication**:
+**Traefik v3.4** serves as the reverse proxy for all environments:
 
-- **One command per operation**: `ichrisbirch dev start` (no more separate `traefik start dev`)
-- **Dynamic service discovery** via Docker labels
+- **File provider routing** in `deploy-containers/traefik/dynamic/{dev,test,prod}/routing.yml`
+- **Docker provider** for service discovery (container ports)
 - **Browser-trusted HTTPS** with mkcert for local development
-- **Automatic certificate management** with fallback strategies
-- **Centralized routing** for all application services
-- **Production-ready** configuration with security best practices
-
-### 🚀 CLI Simplification Benefits
-
-The CLI has been **completely refactored** to provide a clean, professional interface:
-
-**Before (Confusing):**
-
-- `ichrisbirch traefik start dev` vs `ichrisbirch dev start` (did the same thing)
-- Users needed to understand Traefik implementation details
-- Inconsistent command patterns
-
-**After (Clean & Simple):**
-
-- **Single command**: `ichrisbirch dev start` uses Traefik + HTTPS by default
-- **Hidden implementation**: Users don't need to know about reverse proxy details  
-- **Consistent patterns**: All environments work the same way
-- **Modern HTTPS by default**: No separate "traefik" commands needed
+- **Generated routing** from canonical `vue-paths.txt` via `ich routing generate`
+- **Separate CORS and security middlewares** per environment
 
 ## 🏗️ Architecture Overview
 
-### Traefik vs. Nginx
+### Dual Provider Architecture
 
-| Feature | Nginx (Legacy) | Traefik (Modern) |
-|---------|----------------|------------------|
-| Configuration | Static files | Dynamic Docker labels |
-| SSL/TLS | Manual setup | Automatic certificate management |
-| Service Discovery | Manual config updates | Automatic via Docker |
-| WebSocket Support | Manual proxy_pass | Built-in with headers |
-| Load Balancing | Manual upstream blocks | Automatic service discovery |
-| Health Checks | External scripts | Built-in health monitoring |
-| Hot Reload | Requires restart | Automatic configuration reload |
+Traefik uses two providers simultaneously:
+
+| Provider | Configures | Source |
+|----------|-----------|--------|
+| **File provider** | Routers (rules, middleware, priorities) | `deploy-containers/traefik/dynamic/{env}/routing.yml` |
+| **Docker provider** | Services (container ports, health) | Docker labels on containers |
+
+File provider routers reference Docker-discovered services via `service: name@docker`. This separates routing logic (YAML files, diffable, generatable) from service discovery (Docker labels, minimal).
 
 ### Environment Separation
 
@@ -66,72 +47,82 @@ This allows all environments to run simultaneously. Traefik only discovers conta
 
 ```text
 deploy-containers/traefik/
+├── vue-paths.txt                    # Canonical list of Vue SPA route prefixes
+├── generate-routing.sh              # Generates routing.yml for all 3 envs from vue-paths.txt
 ├── certs/                           # SSL certificates
-│   ├── dev.crt, dev.key            # Development environment (mkcert generated)
-│   ├── testing.crt, testing.key    # Testing environment
-│   └── prod.crt, prod.key          # Production environment
-├── dynamic-dev/                     # Development-specific configuration
-│   ├── tls.yml                     # Development TLS config
-│   └── middlewares.yml             # Development middleware
-├── dynamic-testing/                 # Testing-specific configuration
-│   ├── tls.yml                     # Testing TLS config
-│   └── middlewares.yml             # Testing middleware
-├── dynamic-prod/                    # Production-specific configuration
-│   ├── tls.yml                     # Production TLS config
-│   └── middlewares.yml             # Production middleware
-├── scripts/                        # Management utilities
-│   └── ssl-manager.sh              # Certificate management (with mkcert support)
-└── traefik.yml                     # Base Traefik configuration
+│   ├── dev.crt, dev.key            # Development (mkcert generated)
+│   ├── testing.crt, testing.key    # Testing
+│   └── prod.crt, prod.key          # Production
+└── dynamic/                         # Per-environment Traefik file provider configs
+    ├── dev/
+    │   ├── routing.yml             # Dev routers (generated)
+    │   ├── middlewares.yml         # dev-cors, dev-security, dev-authelia-sim
+    │   └── tls.yml
+    ├── test/
+    │   ├── routing.yml             # Test routers (generated)
+    │   ├── middlewares.yml         # cors-test, security-headers-test, etc.
+    │   └── tls.yml
+    └── prod/
+        ├── routing.yml             # Prod routers (generated)
+        ├── services.yml            # Generated per deploy (blue/green color)
+        ├── middlewares.yml         # cors-prod, security-headers-prod, etc.
+        └── tls.yml
 ```
 
 ## 🔧 Configuration Details
 
-### Service Discovery
+### Routing (File Provider)
 
-Traefik discovers services automatically via Docker labels:
+All routing rules live in `routing.yml` per environment. Docker labels only declare service ports:
 
 ```yaml
-# Example service configuration
+# Docker Compose label (minimal — just port discovery)
 api:
   labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.api-dev.rule=Host(`api.docker.localhost`)"
-    - "traefik.http.routers.api-dev.entrypoints=websecure"
-    - "traefik.http.routers.api-dev.tls=true"
-    - "traefik.http.routers.api-dev.tls.options=dev@file"
-    - "traefik.http.routers.api-dev.middlewares=cors-dev@file,security-headers-dev@file"
-    - "traefik.http.services.api-dev.loadbalancer.server.port=8000"
+    - "traefik.http.services.api.loadbalancer.server.port=8000"
+
+# deploy-containers/traefik/dynamic/dev/routing.yml (full routing)
+http:
+  routers:
+    api:
+      rule: "Host(`api.docker.localhost`)"
+      entrypoints: [websecure]
+      service: api@docker
+      middlewares: [dev-cors@file, dev-security@file, dev-authelia-sim@file]
+      tls: {}
 ```
+
+Routing files are generated from `vue-paths.txt` via `ich routing generate`.
 
 ### Middleware Stack
 
-Each environment includes:
+CORS and security headers are in **separate middlewares** to prevent chaining conflicts (wildcard `*` in one middleware overriding explicit lists in another). Each environment has:
 
-- **CORS Headers**: Cross-origin request handling
-- **Security Headers**: XSS protection, content security policy
-- **Rate Limiting**: Request throttling (environment-specific)
-- **WebSocket Support**: For Streamlit chat service
-- **TLS Options**: Cipher suites and protocol versions
+| Middleware | Dev | Test | Prod |
+|-----------|-----|------|------|
+| CORS | `dev-cors` | `cors-test` | `cors-prod` |
+| Security Headers | `dev-security` | `security-headers-test` | `security-headers-prod` |
+| Auth Simulation | `dev-authelia-sim` | `test-authelia-sim` | (Authelia ForwardAuth) |
+| Rate Limiting | (none) | `rate-limit-test` | `rate-limit-prod` |
+| WebSocket | (none) | `websocket-test` | (none) |
 
 ### Network Architecture
 
 ```mermaid
 graph TB
     Client[Client Browser] --> Traefik[Traefik Reverse Proxy]
-    Traefik -->|"migrated paths (priority 100)"| VUE[Vue 3 Frontend]
-    Traefik -->|"catchall (priority 50)"| APP[Flask Frontend]
+    Traefik -->|"vue-paths (priority 100)"| VUE[Vue 3 Frontend]
     Traefik --> API[FastAPI Backend]
     Traefik --> CHAT[Streamlit Chat]
     VUE -->|"cross-origin API calls"| API
     API --> DB[(PostgreSQL)]
     API --> CACHE[(Redis)]
-    APP --> API
     CHAT --> API
 
     subgraph "Docker Networks"
         Traefik -.-> PROXY[proxy network]
         API -.-> DEFAULT[default network]
-        APP -.-> DEFAULT
         VUE -.-> DEFAULT
         CHAT -.-> DEFAULT
         DB -.-> DEFAULT
@@ -139,25 +130,13 @@ graph TB
     end
 ```
 
-### Path-Based Routing for Vue Migration
+### Path-Based Routing
 
-During the incremental Flask-to-Vue migration, Traefik uses priority-based path routing so both frontends share `app.docker.localhost`:
+Vue serves all pages at `app.docker.localhost`. The `vue-paths` router matches specific PathPrefix rules (generated from `vue-paths.txt`). Adding a new page:
 
-```yaml
-# Vue gets specific migrated paths (higher priority)
-vue:
-  labels:
-    - "traefik.http.routers.vue.rule=Host(`app.docker.localhost`) && (PathPrefix(`/countdowns`) || ...)"
-    - "traefik.http.routers.vue.priority=100"
-
-# Flask gets everything else (lower priority, catchall)
-app:
-  labels:
-    - "traefik.http.routers.app.rule=Host(`app.docker.localhost`)"
-    - "traefik.http.routers.app.priority=50"
-```
-
-As each page is migrated, its `PathPrefix` is added to the Vue router rule. Users never see the migration — the URL stays `app.docker.localhost`.
+1. Add the path to `deploy-containers/traefik/vue-paths.txt`
+2. Run `ich routing generate` to update all three `routing.yml` files
+3. Traefik's `file.watch=true` picks up the change automatically
 
 ### Dev Auth Simulation
 
@@ -168,8 +147,8 @@ In production, Authelia ForwardAuth injects `Remote-User` and `Remote-Email` hea
 dev-authelia-sim:
   headers:
     customRequestHeaders:
-      Remote-User: "user@icb.com"
-      Remote-Email: "user@icb.com"
+      Remote-User: "admin@icb.com"
+      Remote-Email: "admin@icb.com"
 ```
 
 This middleware is applied to the API router so Vue's cross-origin API calls are authenticated without running Authelia locally.
@@ -211,7 +190,7 @@ Cloudflare handles TLS termination; Traefik receives HTTP internally and provide
 ```bash
 # Start any environment (uses Traefik automatically)
 ichrisbirch dev start               # Development
-ichrisbirch testing start          # Testing  
+ichrisbirch testing start          # Testing
 ichrisbirch prod start             # Production
 
 # Status and monitoring
@@ -225,54 +204,23 @@ ichrisbirch ssl-manager info dev        # Certificate information
 ichrisbirch ssl-manager validate dev    # Validate certificates
 ```
 
-### ❌ Removed Commands (No Longer Needed)
-
-The following commands have been **eliminated to reduce confusion**:
-
-- `ichrisbirch traefik start <env>` → Use `ichrisbirch <env> start`
-- `ichrisbirch traefik stop <env>` → Use `ichrisbirch <env> stop`  
-- `ichrisbirch traefik status <env>` → Use `ichrisbirch <env> status`
-- `ichrisbirch traefik health <env>` → Use `ichrisbirch <env> health`
-- `ichrisbirch traefik logs <env>` → Use `ichrisbirch <env> logs`
-
-### Legacy CLI Commands (Deprecated)
+### Routing and Config Commands
 
 ```bash
-# DEPRECATED - DO NOT USE
-ichrisbirch traefik start <env>      # REMOVED - Use ichrisbirch <env> start instead
-ichrisbirch traefik stop <env>       # REMOVED - Use ichrisbirch <env> stop instead
-ichrisbirch traefik restart <env>    # REMOVED - Use ichrisbirch <env> restart instead
-ichrisbirch traefik status <env>     # REMOVED - Use ichrisbirch <env> status instead
-ichrisbirch traefik logs <env>       # REMOVED - Use ichrisbirch <env> logs instead
-ichrisbirch traefik health <env>     # REMOVED - Use ichrisbirch <env> health instead
+# Generate routing files from vue-paths.txt
+ichrisbirch routing generate
+
+# See fully merged Docker Compose output (debug overrides)
+ichrisbirch dev docker config [service]
+ichrisbirch testing docker config [service]
 ```
 
 ## SSL certificate management
 
+```bash
 ichrisbirch ssl-manager generate ENV   # Generate certificates
 ichrisbirch ssl-manager validate ENV   # Validate existing
 ichrisbirch ssl-manager info ENV       # Show certificate info
-
-### Direct Script Usage
-
-```bash
-# Alternative: Use scripts directly
-./deploy-containers/traefik/scripts/deploy.sh dev up
-./deploy-containers/traefik/scripts/health-check.sh dev
-./deploy-containers/traefik/scripts/ssl-manager.sh info all
-```
-
-### Docker Compose Commands
-
-```bash
-# Development
-docker-compose -f docker-compose.dev.yml up -d
-
-# Test  
-docker-compose -f docker-compose.test.yml up -d
-
-# Production
-docker-compose up -d
 ```
 
 ## 🔒 SSL Certificate Management
@@ -303,7 +251,7 @@ For local development, add entries to `/etc/hosts`:
 ```bash
 # Development environment
 127.0.0.1 api.docker.localhost
-127.0.0.1 app.docker.localhost  
+127.0.0.1 app.docker.localhost
 127.0.0.1 chat.docker.localhost
 127.0.0.1 dashboard.docker.localhost
 
@@ -329,7 +277,7 @@ The health check system validates:
 ### Health Check Output
 
 ```bash
-$ ichrisbirch traefik health dev
+$ ichrisbirch dev health
 
 Health Check for dev Environment
 ========================================
@@ -370,7 +318,7 @@ Health Check for dev Environment
 
    ```bash
    # Check specific container logs
-   ichrisbirch traefik logs dev api
+   ichrisbirch dev logs api
    ```
 
 ### Verification Steps
@@ -384,7 +332,7 @@ Health Check for dev Environment
 2. **Container Status**
 
    ```bash
-   ichrisbirch traefik status dev
+   ichrisbirch dev status
    ```
 
 3. **Certificate Validation**
@@ -405,23 +353,11 @@ Health Check for dev Environment
 
 - **Traefik**: Lightweight proxy with minimal overhead
 - **API**: Multiple workers for production (4 workers)
-- **App**: Gunicorn WSGI server for production
 - **Database**: Production-tuned PostgreSQL settings
 
-## 🔄 Migration from Nginx
+## 🔄 Migration History
 
-### Advantages of Migration
-
-1. **Dynamic Configuration**: No manual config file updates
-2. **Automatic Service Discovery**: Docker label-based routing
-3. **Built-in SSL**: Automatic certificate management
-4. **WebSocket Support**: Native WebSocket proxying
-5. **Health Monitoring**: Integrated health checks
-6. **Hot Reload**: Configuration changes without restarts
-
-### Legacy Support
-
-The original nginx configuration remains available in `deploy-metal/` for compatibility and rollback scenarios.
+Nginx was replaced by Traefik. The original nginx configuration remains in `deploy-metal/` (legacy, will be retired).
 
 ## 🛠️ Advanced Configuration
 
@@ -430,7 +366,7 @@ The original nginx configuration remains available in `deploy-metal/` for compat
 Add custom middleware in dynamic configuration files:
 
 ```yaml
-# deploy-containers/traefik/dynamic/middlewares-dev.yml
+# deploy-containers/traefik/dynamic/dev/middlewares.yml
 http:
   middlewares:
     custom-headers:

@@ -2,7 +2,7 @@
 
 ## Overview
 
-iChrisBirch is a monorepo with a multi-service architecture: FastAPI backend (API), Flask frontend (App, being replaced by Vue), Vue 3 frontend, Streamlit chat interface, and APScheduler service.
+iChrisBirch is a monorepo with a multi-service architecture: FastAPI backend (API), Vue 3 frontend, Streamlit chat interface, and APScheduler service.
 
 ## Directory Structure
 
@@ -10,7 +10,7 @@ iChrisBirch is a monorepo with a multi-service architecture: FastAPI backend (AP
 ichrisbirch/
 ├── ichrisbirch/              # Python application code
 │   ├── api/                  # FastAPI backend (endpoints, middleware, auth)
-│   ├── app/                  # Flask frontend (being replaced by Vue)
+│   ├── app/                  # (removed — Flask frontend fully replaced by Vue)
 │   ├── chat/                 # Streamlit chat interface
 │   ├── scheduler/            # APScheduler background jobs
 │   ├── models/               # SQLAlchemy ORM models (shared)

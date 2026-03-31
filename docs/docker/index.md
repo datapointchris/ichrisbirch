@@ -11,7 +11,7 @@ The iChrisBirch application runs in a containerized environment using Docker and
 The application consists of multiple services orchestrated through Docker Compose:
 
 - **API Service**: FastAPI backend service handling REST API requests
-- **App Service**: Flask frontend service serving web interface
+- **Vue Service**: Vue 3 frontend SPA
 - **Scheduler Service**: Background job processing service
 - **PostgreSQL**: Database service for persistent storage
 - **Redis**: Caching and session storage service

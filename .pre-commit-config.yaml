@@ -36,7 +36,7 @@ repos:
       - id: docker-compose-validate
         name: validate docker compose files
         description: "Validate compose files using the actual Docker Compose parser"
-        entry: bash -c 'docker compose -f docker-compose.yml config --quiet && docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet && docker compose -f docker-compose.test.yml config --quiet'
+        entry: bash -c 'docker compose -f docker-compose.yml config --quiet && docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet && docker compose -f docker-compose.yml -f docker-compose.test.yml config --quiet'
         language: system
         files: ^docker-compose.*\.yml$
         pass_filenames: false

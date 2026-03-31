@@ -73,7 +73,7 @@ cd ichrisbirch
 Open these URLs in your browser (**no security warnings with mkcert**):
 
 - **API**: <https://api.docker.localhost/>
-- **App**: <https://app.docker.localhost/> (Vue + Flask behind same URL)
+- **App**: <https://app.docker.localhost/> (Vue 3 SPA)
 - **Chat**: <https://chat.docker.localhost/>
 - **Dashboard**: <https://dashboard.docker.localhost/> (dev/devpass)
 
@@ -82,7 +82,7 @@ Open these URLs in your browser (**no security warnings with mkcert**):
 ### Modern Development Environment
 
 - **✅ Browser-trusted HTTPS**: No certificate warnings with mkcert
-- **✅ Automatic service discovery**: Traefik detects services automatically  
+- **✅ Automatic service discovery**: Traefik detects services automatically
 - **✅ Professional URLs**: Clean subdomain-based routing
 - **✅ Built-in monitoring**: Traefik dashboard with real-time metrics
 - **✅ Health checks**: Comprehensive service health monitoring
@@ -95,7 +95,7 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 # Single commands for each operation
 ./cli/ichrisbirch dev start       # Start development (Traefik + HTTPS automatic)
 ./cli/ichrisbirch dev status      # Show status + URLs
-./cli/ichrisbirch dev health      # Run health checks  
+./cli/ichrisbirch dev health      # Run health checks
 ./cli/ichrisbirch dev logs        # View service logs
 ./cli/ichrisbirch dev stop        # Stop development
 
@@ -110,18 +110,18 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ### Development Environment
 
-**Domains**: `*.docker.localhost`  
-**Port**: 443 (standard HTTPS)  
+**Domains**: `*.docker.localhost`
+**Port**: 443 (standard HTTPS)
 **Certificates**: mkcert browser-trusted
 
 **Services**:
 
 - **FastAPI Backend**: `https://api.docker.localhost/`
-- **App Frontend**: `https://app.docker.localhost/` (Vue for migrated pages, Flask for the rest)
+- **App Frontend**: `https://app.docker.localhost/` (Vue 3 SPA)
 - **Streamlit Chat**: `https://chat.docker.localhost/`
 - **Traefik Dashboard**: `https://dashboard.docker.localhost/` (dev/devpass)
 
-> **Note**: The frontend is being incrementally migrated from Flask to Vue 3. Both run behind `app.docker.localhost` — Traefik routes migrated paths (e.g., `/countdowns`) to Vue at higher priority, with Flask as the catchall for unmigrated pages.
+> **Note**: All 14 pages are served by Vue 3 at `app.docker.localhost`. Routing is controlled by `deploy-containers/traefik/vue-paths.txt`.
 
 ### What's Running
 
@@ -134,7 +134,6 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 # [✓] icb-dev-traefik    (Up 2 minutes)
 # [✓] icb-dev-postgres   (Up 2 minutes (healthy))
 # [✓] icb-dev-api        (Up 2 minutes (healthy))
-# [✓] icb-dev-app        (Up 2 minutes (healthy))
 # [✓] icb-dev-vue        (Up 2 minutes (healthy))
 # [✓] icb-dev-chat       (Up 2 minutes)
 #
@@ -153,7 +152,7 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 # Start development
 ./cli/ichrisbirch dev start
 
-# Quick status check  
+# Quick status check
 ./cli/ichrisbirch dev status
 
 # View API logs while developing
@@ -172,7 +171,7 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 # View specific service logs
 ./cli/ichrisbirch dev logs traefik    # Traefik proxy logs
 ./cli/ichrisbirch dev logs api        # API backend logs
-./cli/ichrisbirch dev logs app        # Flask app logs
+./cli/ichrisbirch dev logs vue        # Vue frontend logs
 
 # Restart if needed
 ./cli/ichrisbirch dev restart
@@ -263,10 +262,8 @@ grep docker.localhost /etc/hosts
 ./cli/ichrisbirch testing start
 # Access at: https://api.test.localhost:8443/
 
-# Production environment (requires Cloudflare Tunnel setup)
-./cli/ichrisbirch prod start
-# Fetches secrets from AWS SSM, starts services
-# Access at: https://api.ichrisbirch.com/ (via Cloudflare Tunnel)
+# Production environment (runs on homelab, not locally)
+# See blue-green-deployment.md
 ```
 
 > **Note**: Production requires additional setup. See [Homelab Deployment Guide](homelab-deployment.md)
@@ -285,7 +282,7 @@ grep docker.localhost /etc/hosts
 **Modern (Traefik + mkcert)**:
 
 - ✅ **Automatic service discovery**: Services appear immediately when started
-- ✅ **Browser-trusted HTTPS**: No security warnings during development  
+- ✅ **Browser-trusted HTTPS**: No security warnings during development
 - ✅ **Professional URLs**: Clean subdomain-based routing
 - ✅ **Built-in monitoring**: Traefik dashboard with real-time metrics
 - ✅ **Simplified CLI**: One command per operation, no confusing duplication
@@ -293,7 +290,7 @@ grep docker.localhost /etc/hosts
 ### Developer Experience
 
 - **⚡ Faster startup**: Single command starts everything
-- **🔒 Secure by default**: HTTPS with trusted certificates  
+- **🔒 Secure by default**: HTTPS with trusted certificates
 - **🎯 Simple commands**: No need to understand reverse proxy details
 - **📊 Better debugging**: Comprehensive health checks and monitoring
 - **👥 Team consistency**: Same setup works for all developers

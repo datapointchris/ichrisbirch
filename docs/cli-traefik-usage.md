@@ -264,7 +264,7 @@ Starting DEV environment with Docker Compose + Traefik (HTTPS)
  ✔ Container icb-dev-postgres   Healthy
  ✔ Container icb-dev-redis      Started
  ✔ Container icb-dev-api        Started
- ✔ Container icb-dev-app        Started
+ ✔ Container icb-dev-vue        Started
  ✔ Container icb-dev-chat       Started
  ✔ Container icb-dev-traefik    Started
 
@@ -297,7 +297,7 @@ Container Status:
 [✓] icb-dev-postgres   (Up 2 minutes (healthy))
 [✓] icb-dev-redis      (Up 2 minutes (healthy))
 [✓] icb-dev-api        (Up 2 minutes (healthy))
-[✓] icb-dev-app        (Up 2 minutes (healthy))
+[✓] icb-dev-vue        (Up 2 minutes (healthy))
 [✓] icb-dev-chat       (Up 2 minutes)
 [✓] icb-dev-scheduler  (Up 2 minutes)
 
@@ -335,7 +335,7 @@ Health Check for dev Environment
 [INFO] Checking Docker containers for dev environment
 [✓] Container: icb-dev-traefik (Up 2 minutes)
 [✓] Container: icb-dev-api (Up 2 minutes (healthy))
-[✓] Container: icb-dev-app (Up 2 minutes (healthy))
+[✓] Container: icb-dev-vue (Up 2 minutes (healthy))
 [✓] Container: icb-dev-chat (Up 2 minutes)
 
 [INFO] Checking DNS resolution for api.docker.localhost
