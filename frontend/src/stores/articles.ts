@@ -14,6 +14,7 @@ export const useArticlesStore = defineStore('articles', () => {
   const error = ref<ApiError | null>(null)
   const summarizing = ref(false)
 
+  const showArchived = ref(false)
   const searchQuery = ref('')
   const searchResults = ref<Article[]>([])
   const isSearchActive = computed(() => searchQuery.value.length > 0)
@@ -30,7 +31,7 @@ export const useArticlesStore = defineStore('articles', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Article[]>('/articles/')
+      const response = await api.get<Article[]>('/articles/', { params: { archived: showArchived.value } })
       articles.value = response.data
       logger.info('articles_fetched', { count: response.data.length })
     } catch (e) {
@@ -120,10 +121,13 @@ export const useArticlesStore = defineStore('articles', () => {
     const article = articles.value.find((a) => a.id === id)
     if (!article) return
     const updated = await update(id, { is_archived: !article.is_archived })
-    if (updated.is_archived) {
-      articles.value = articles.value.filter((a) => a.id !== id)
-    }
+    articles.value = articles.value.filter((a) => a.id !== id)
     return updated
+  }
+
+  async function setShowArchived(value: boolean) {
+    showArchived.value = value
+    await fetchAll()
   }
 
   async function makeCurrent(id: number) {
@@ -199,6 +203,7 @@ export const useArticlesStore = defineStore('articles', () => {
     loading,
     error,
     summarizing,
+    showArchived,
     searchQuery,
     searchResults,
     isSearchActive,
@@ -212,6 +217,7 @@ export const useArticlesStore = defineStore('articles', () => {
     remove,
     toggleFavorite,
     toggleArchive,
+    setShowArchived,
     makeCurrent,
     removeCurrent,
     markRead,

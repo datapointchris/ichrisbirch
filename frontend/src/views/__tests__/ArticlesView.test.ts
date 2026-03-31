@@ -70,6 +70,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
               loading: false,
               error: null,
               summarizing: false,
+              showArchived: false,
               searchQuery: '',
               searchResults: [],
               ...storeState,
@@ -325,5 +326,29 @@ describe('ArticlesView', () => {
     await wrapper.find('.button--danger').trigger('click')
 
     expect(store.clearSearch).toHaveBeenCalled()
+  })
+
+  // --- Archive toggle ---
+
+  it('renders archive toggle button', () => {
+    const wrapper = createWrapper({ articles: testArticles })
+    const toggle = wrapper.find('[data-testid="article-archive-toggle"]')
+    expect(toggle.exists()).toBe(true)
+    expect(toggle.text()).toContain('Show Archived')
+  })
+
+  it('calls setShowArchived when clicking archive toggle', async () => {
+    const wrapper = createWrapper({ articles: testArticles })
+    const store = useArticlesStore()
+
+    await wrapper.find('[data-testid="article-archive-toggle"]').trigger('click')
+
+    expect(store.setShowArchived).toHaveBeenCalledWith(true)
+  })
+
+  it('shows "Show Active" label when viewing archived', () => {
+    const wrapper = createWrapper({ articles: testArticles, showArchived: true })
+    const toggle = wrapper.find('[data-testid="article-archive-toggle"]')
+    expect(toggle.text()).toContain('Show Active')
   })
 })

@@ -72,6 +72,7 @@ describe('useArticlesStore', () => {
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
     expect(store.summarizing).toBe(false)
+    expect(store.showArchived).toBe(false)
     expect(store.searchQuery).toBe('')
     expect(store.searchResults).toEqual([])
     expect(store.isSearchActive).toBe(false)
@@ -85,7 +86,7 @@ describe('useArticlesStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/articles/')
+    expect(mockApi.get).toHaveBeenCalledWith('/articles/', { params: { archived: false } })
     expect(store.articles).toEqual(testArticles)
     expect(store.loading).toBe(false)
   })
@@ -279,6 +280,31 @@ describe('useArticlesStore', () => {
 
     expect(mockApi.patch).toHaveBeenCalledWith('/articles/3/', { is_archived: true })
     expect(store.articles.find((a) => a.id === 3)).toBeUndefined()
+  })
+
+  it('unarchives an article and removes from archived list', async () => {
+    const archivedArticle = { ...testArticles[2]!, is_archived: true }
+    const updated = { ...testArticles[2]!, is_archived: false }
+    mockApi.patch.mockResolvedValue({ data: updated })
+    const store = useArticlesStore()
+    store.articles = [archivedArticle]
+
+    await store.toggleArchive(3)
+
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3/', { is_archived: false })
+    expect(store.articles.find((a) => a.id === 3)).toBeUndefined()
+  })
+
+  // --- setShowArchived ---
+
+  it('sets showArchived and re-fetches with archived param', async () => {
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useArticlesStore()
+
+    await store.setShowArchived(true)
+
+    expect(store.showArchived).toBe(true)
+    expect(mockApi.get).toHaveBeenCalledWith('/articles/', { params: { archived: true } })
   })
 
   // --- makeCurrent ---

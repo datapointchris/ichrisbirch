@@ -29,6 +29,15 @@
           >
             <span class="button__text button__text--danger">Clear</span>
           </button>
+          <button
+            data-testid="article-archive-toggle"
+            type="button"
+            class="button"
+            :class="{ 'button--active': store.showArchived }"
+            @click="handleToggleShowArchived"
+          >
+            <span class="button__text">{{ store.showArchived ? 'Show Active' : 'Show Archived' }}</span>
+          </button>
         </form>
         <p
           v-if="store.isSearchActive"
@@ -395,5 +404,9 @@ async function handleSearch() {
 async function handleClearSearch() {
   searchInput.value = ''
   await store.clearSearch()
+}
+
+async function handleToggleShowArchived() {
+  await store.setShowArchived(!store.showArchived)
 }
 </script>
