@@ -41,14 +41,6 @@ class AuthSettings:
         self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']
 
 
-class AWSSettings:
-    def __init__(self) -> None:
-        self.region: str = os.environ['AWS_REGION']
-        self.account_id: str = os.environ['AWS_ACCOUNT_ID']
-        self.postgres_backup_role: str = os.environ['AWS_POSTGRES_BACKUP_ROLE'] or 'role/S3DatabaseBackups'
-        self.s3_backup_bucket: str = os.environ['AWS_S3_BACKUP_BUCKET']
-
-
 class ChatSettings:
     def __init__(self) -> None:
         self.host: str = os.environ['CHAT_HOST']
@@ -160,7 +152,6 @@ class Settings:
 
         self.ai = AISettings()
         self.auth = AuthSettings()
-        self.aws = AWSSettings()
         self.chat = ChatSettings()
         self.fastapi = FastAPISettings()
         self.github = GithubSettings()

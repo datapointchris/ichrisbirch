@@ -2,8 +2,6 @@ from ichrisbirch.models.article import Article
 from ichrisbirch.models.article import ArticleFailedImport
 from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.autotask import AutoTaskFrequency
-from ichrisbirch.models.backup_history import BackupHistory
-from ichrisbirch.models.backup_restore import BackupRestore
 from ichrisbirch.models.book import Book
 from ichrisbirch.models.book import BookOwnership
 from ichrisbirch.models.book import BookProgress
@@ -37,8 +35,6 @@ __all__ = [
     'ArticleFailedImport',
     'AutoTask',
     'AutoTaskFrequency',
-    'BackupHistory',
-    'BackupRestore',
     'Book',
     'BookOwnership',
     'BookProgress',

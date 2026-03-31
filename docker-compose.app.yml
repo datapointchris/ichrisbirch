@@ -40,7 +40,6 @@ services:
       - LOG_FILE=/var/log/ichrisbirch/api.log
     ports: []
     volumes:
-      - ~/.aws:/home/app/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
     restart: always
     healthcheck:
@@ -107,7 +106,6 @@ services:
       - LOG_FILE=/var/log/ichrisbirch/chat.log
     ports: []
     volumes:
-      - ~/.aws:/home/app/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
     restart: always
     healthcheck:
@@ -140,7 +138,6 @@ services:
       - LOG_COLORS=${LOG_COLORS:-false}
       - LOG_FILE=/var/log/ichrisbirch/scheduler.log
     volumes:
-      - ~/.aws:/home/app/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: always

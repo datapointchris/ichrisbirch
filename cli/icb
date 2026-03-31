@@ -328,7 +328,7 @@ function dev-usage() {
   echo "  ${blue}dev smoke${reset}              Run smoke tests against all endpoints"
   echo "  ${blue}dev logs [service]${reset}     View logs"
   echo "  ${blue}dev docker [service]${reset}   Show merged Docker Compose config"
-  echo "  ${blue}dev db ...${reset}             Database commands (backup, restore, list, seed, init)"
+  echo "  ${blue}dev db ...${reset}             Database commands (seed, init)"
 }
 
 function dev-smoke() {
@@ -512,7 +512,7 @@ function testing-usage() {
   echo "  ${blue}testing ensure${reset}         Start containers if not already running"
   echo "  ${blue}testing logs [service]${reset} View logs"
   echo "  ${blue}testing docker [service]${reset} Show merged Docker Compose config"
-  echo "  ${blue}testing db ...${reset}         Database commands (backup, restore, list, seed, reset)"
+  echo "  ${blue}testing db ...${reset}         Database commands (seed, reset)"
 }
 
 # Production environment
@@ -903,7 +903,7 @@ function prod-usage() {
   echo "  ${blue}prod build-test${reset}        Test production Docker build locally"
   echo "  ${blue}prod logs [service]${reset}    View logs"
   echo "  ${blue}prod docker [service]${reset}  Show merged Docker Compose config"
-  echo "  ${blue}prod db ...${reset}            Database commands (backup, restore, list, init)"
+  echo "  ${blue}prod db ...${reset}            Database commands (init)"
 }
 
 function usage() {
@@ -920,9 +920,6 @@ function usage() {
   echo "  ${blue}dev status|health${reset} - Check environment"
   echo "  ${blue}dev smoke${reset} - Run smoke tests against all endpoints"
   echo "  ${green}DB:${reset}"
-  echo "    ${blue}dev db backup <desc>${reset} - Create backup to S3"
-  echo "    ${blue}dev db restore <file>${reset} - Restore from S3 backup"
-  echo "    ${blue}dev db list${reset} - List S3 backups"
   echo "    ${blue}dev db seed [--scale N] [--dry-run]${reset} - Seed with test data"
   echo "    ${blue}dev db init${reset} - Initialize schema"
   echo
@@ -932,9 +929,6 @@ function usage() {
   echo "  ${blue}testing status|health${reset} - Check environment"
   echo "  ${blue}test run [path] [args]${reset} - Run pytest (fast iteration)"
   echo "  ${green}DB:${reset}"
-  echo "    ${blue}testing db backup <desc>${reset} - Create backup to S3"
-  echo "    ${blue}testing db restore <file>${reset} - Restore from S3 backup"
-  echo "    ${blue}testing db list${reset} - List S3 backups"
   echo "    ${blue}testing db seed [--scale N] [--dry-run]${reset} - Seed with test data"
   echo "    ${blue}testing db reset${reset} - Drop + recreate everything (nuclear)"
   echo
@@ -947,9 +941,6 @@ function usage() {
   echo "  ${blue}prod rollback${reset} - Switch traffic back to previous color"
   echo "  ${blue}prod build-test${reset} - Test production Docker build locally"
   echo "  ${green}DB:${reset}"
-  echo "    ${blue}prod db backup <desc>${reset} - Create backup to S3"
-  echo "    ${blue}prod db restore <file>${reset} - Restore from S3 backup"
-  echo "    ${blue}prod db list${reset} - List S3 backups"
   echo "    ${blue}prod db init${reset} - Initialize schema"
   echo
   echo "${green}Tools:${reset}"

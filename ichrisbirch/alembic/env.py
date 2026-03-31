@@ -11,8 +11,6 @@ from ichrisbirch.models import Article  # noqa
 from ichrisbirch.models import ArticleFailedImport  # noqa
 from ichrisbirch.models import AutoTask  # noqa
 from ichrisbirch.models import AutoTaskFrequency  # noqa
-from ichrisbirch.models import BackupHistory  # noqa
-from ichrisbirch.models import BackupRestore  # noqa
 from ichrisbirch.models import Book  # noqa
 from ichrisbirch.models import BookOwnership  # noqa
 from ichrisbirch.models import BookProgress  # noqa

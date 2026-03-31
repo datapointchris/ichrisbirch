@@ -31,7 +31,6 @@ from ichrisbirch.api.middleware import recent_errors
 from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.backup import DatabaseBackup
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.logger import LOG_DIR
 from ichrisbirch.scheduler.main import get_jobstore
@@ -165,58 +164,6 @@ async def websocket_endpoint_log(
         logger.error('websocket_stream_error', error=str(e))
     finally:
         logger.debug('websocket_closed')
-
-
-@router.post('/backups/', response_model=schemas.BackupResult, status_code=status.HTTP_201_CREATED)
-async def create_backup(
-    backup_request: schemas.BackupCreate,
-    user: models.User = Depends(get_admin_user),
-):
-    """Create a new database backup."""
-    logger.info('backup_create_request', description=backup_request.description, user_id=user.id)
-
-    if not backup_request.upload_to_s3 and not backup_request.save_local:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='At least one of upload_to_s3 or save_local must be True',
-        )
-
-    db_backup = DatabaseBackup()
-    record = db_backup.backup(
-        description=backup_request.description,
-        upload=backup_request.upload_to_s3,
-        save_local=backup_request.save_local,
-        backup_type='manual',
-        user_id=user.id,
-    )
-
-    logger.info('backup_created', success=record.success, filename=record.filename, backup_id=record.id)
-
-    if not record.success:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f'Backup failed: {record.error_message}',
-        )
-
-    return record
-
-
-@router.get('/backups/', response_model=list[schemas.Backup], status_code=status.HTTP_200_OK)
-async def read_backups(
-    session: Session = Depends(get_sqlalchemy_session),
-    limit: int = 50,
-):
-    """Get backup history."""
-    query = select(models.BackupHistory).order_by(models.BackupHistory.created_at.desc()).limit(limit)
-    return list(session.scalars(query).all())
-
-
-@router.get('/backups/{id}/', response_model=schemas.Backup, status_code=status.HTTP_200_OK)
-async def read_backup(id: int, session: Session = Depends(get_sqlalchemy_session)):
-    """Get a single backup record."""
-    if backup := session.get(models.BackupHistory, id):
-        return backup
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Backup {id} not found')
 
 
 # --- Scheduler endpoints ---

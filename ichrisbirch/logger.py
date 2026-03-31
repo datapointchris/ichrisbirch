@@ -170,8 +170,6 @@ def configure_stdlib_logging():
     third_party_levels = {
         'apscheduler': logging.WARNING,
         'asyncio': logging.INFO,
-        'boto3': logging.INFO,
-        'botocore': logging.INFO,
         'faker': logging.INFO,
         'fsevents': logging.INFO,
         'httpcore': logging.INFO,
@@ -180,7 +178,6 @@ def configure_stdlib_logging():
         'multipart.multipart': logging.INFO,
         'openai': logging.INFO,
         'python_multipart': logging.INFO,
-        's3transfer': logging.INFO,
         'sqlalchemy_json': logging.INFO,
         'tzlocal': logging.INFO,
         'urllib3': logging.INFO,

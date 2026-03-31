@@ -153,7 +153,6 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
       - ichrisbirch_logs:/var/log/ichrisbirch
     restart: always
     healthcheck:
@@ -227,7 +226,6 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
       - ichrisbirch_logs:/var/log/ichrisbirch
     restart: always
     # Disable health check for chat (Streamlit doesn't have standard health endpoint)
@@ -270,7 +268,6 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ~/.aws:/home/app/.aws:ro  # Mount AWS credentials directory to app user home
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro  # For docker_prune scheduled job
     restart: always

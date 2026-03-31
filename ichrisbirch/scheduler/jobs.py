@@ -23,9 +23,7 @@ from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch.config import Settings
-from ichrisbirch.database.backup import DatabaseBackup
 from ichrisbirch.database.session import create_session
-from ichrisbirch.scheduler.postgres_snapshot_to_s3 import AwsRdsSnapshotS3
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -33,7 +31,6 @@ logger = structlog.get_logger()
 
 daily_1am_trigger = CronTrigger(day='*', hour=1)
 daily_115am_trigger = CronTrigger(day='*', hour=1, minute=15)
-daily_130am_trigger = CronTrigger(day='*', hour=1, minute=30)
 daily_3pm_trigger = CronTrigger(day='*', hour=15)
 weekly_sunday_3am_trigger = CronTrigger(day_of_week='sun', hour=3, minute=0)
 
@@ -183,23 +180,6 @@ def check_and_run_autotasks(settings: Settings) -> None:
 
 
 @job_logger
-def aws_postgres_snapshot_to_s3(settings: Settings) -> None:
-    """Create a snapshot from RDS postgres and save it to S3, then delete the snapshot.
-
-    This function is an alternative to the postgres_backup for testing but it is difficult to restore from a snapshot.
-    """
-    rds_snap = AwsRdsSnapshotS3(logger=logger, settings=settings)
-    rds_snap.snapshot()
-
-
-@job_logger
-def postgres_backup(settings: Settings) -> None:
-    """Create a postgres backup and save metadata to backup_history table."""
-    db_backup = DatabaseBackup()
-    db_backup.backup(description='scheduled', backup_type='scheduled')
-
-
-@job_logger
 def docker_prune(settings: Settings) -> None:
     """Weekly cleanup of old Docker images.
 
@@ -250,12 +230,6 @@ def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
             args=(settings,),
             trigger=daily_115am_trigger,
             id='check_and_run_autotasks_daily',
-        ),
-        JobToAdd(
-            func=postgres_backup,
-            args=(settings,),
-            trigger=daily_130am_trigger,
-            id='postgres_backup_daily',
         ),
         JobToAdd(
             func=docker_prune,

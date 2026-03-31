@@ -93,7 +93,6 @@ nav:
       - Admin Dashboard: admin.md
       - Database: alembic.md
       - Scheduler: scheduler.md
-  - AWS: AWS.md
   - DevOps:
       - Overview: devops/index.md
       - Domain Names: domain_names.md
@@ -107,7 +106,6 @@ nav:
       - Supervisor: devops/supervisor.md
       - PG Cron: devops/pg_cron.md
       - Blue/Green Deployment: blue-green-deployment.md
-      - Backups: backups.md
       - CI/CD: cicd.md
       - Terraform: terraform.md
   - Frontend:

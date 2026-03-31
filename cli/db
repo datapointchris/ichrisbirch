@@ -44,59 +44,6 @@ function db-container-prefix() {
   esac
 }
 
-function db-backup() {
-  local env="$1"
-  shift
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -z "$1" ]; then
-    echo "${red}Description required: icb ${env%%elopment} db backup <description>${reset}"
-    echo "Example: icb dev db backup pre-migration"
-    return 1
-  fi
-
-  db-env-vars "$env" || return 1
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  echo "${blue}Creating ${env} backup: $1${reset}"
-  uv run python -m ichrisbirch.database.backup --description "$1" "${@:2}"
-}
-
-function db-restore() {
-  local env="$1"
-  shift
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  if [ -z "$1" ]; then
-    echo "${red}Filename required: icb ${env%%elopment} db restore <filename> --target-host ...${reset}"
-    echo ""
-    echo "Usage: icb dev db restore <filename> --target-host HOST --target-port PORT --target-username USER --target-password PASS"
-    echo ""
-    echo "Options:"
-    echo "  --skip-download    Use local file instead of downloading from S3"
-    echo "  --delete-local     Delete file after restore"
-    return 1
-  fi
-
-  db-env-vars "$env" || return 1
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  echo "${yellow}Restoring ${env} from: $1${reset}"
-  uv run python -m ichrisbirch.database.restore --filename "$1" "${@:2}"
-}
-
-function db-list() {
-  local env="$1"
-  cd "$ICHRISBIRCH_HOME" || exit
-
-  db-env-vars "$env" || return 1
-  local bucket
-  bucket=$(grep -E '^AWS_S3_BACKUP_BUCKET=' "$ICHRISBIRCH_HOME/.env" | cut -d= -f2 | tr -d '"')
-
-  echo "${blue}Recent backups for ${env}:${reset}"
-  aws s3 ls "s3://${bucket}/${env}/postgres/" --human-readable | sort -k1,2 -r | head -20
-}
-
 function db-seed() {
   local env="$1"
   shift
@@ -148,15 +95,6 @@ function env-db() {
   shift 2
 
   case "$subcmd" in
-  backup)
-    db-backup "$env" "$@"
-    ;;
-  restore)
-    db-restore "$env" "$@"
-    ;;
-  list)
-    db-list "$env"
-    ;;
   seed)
     db-seed "$env" "$@"
     ;;
@@ -178,12 +116,9 @@ function env-db() {
 
 function db-usage() {
   echo "${green}Database Commands:${reset}"
-  echo "  ${blue}db backup <description> [options]${reset} - Create backup to S3"
-  echo "  ${blue}db restore <filename> <target-options>${reset} - Restore from backup"
-  echo "  ${blue}db list${reset}                               - List recent backups in S3"
-  echo "  ${blue}db seed [options]${reset}                     - Seed with generated data"
-  echo "  ${blue}db init${reset}                               - Initialize database (schemas + migrations + users)"
-  echo "  ${blue}db reset${reset}                              - Drop + recreate everything (testing only)"
+  echo "  ${blue}db seed [options]${reset}  - Seed with generated data"
+  echo "  ${blue}db init${reset}            - Initialize database (schemas + migrations + users)"
+  echo "  ${blue}db reset${reset}           - Drop + recreate everything (testing only)"
   echo ""
   echo "${yellow}Database Lifecycle:${reset}"
   echo "  ${green}init${reset}   — First-time setup: create schemas, run migrations, insert users"
@@ -196,13 +131,7 @@ function db-usage() {
   echo "  --only MODEL ...   Seed only these model names"
   echo "  --seed N           Faker random seed (default: 42)"
   echo ""
-  echo "${yellow}Backup Options:${reset}"
-  echo "  --skip-upload      Skip S3 upload (local only)"
-  echo "  --save-local       Save backup locally"
-  echo ""
   echo "${yellow}Examples:${reset}"
-  echo "  icb dev db backup pre-migration"
   echo "  icb dev db seed --scale 3 --dry-run"
   echo "  icb testing db reset"
-  echo "  icb dev db list"
 }

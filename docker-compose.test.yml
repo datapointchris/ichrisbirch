@@ -137,15 +137,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/api.log
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - AWS_REGION=${AWS_REGION:-us-east-2}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
     volumes: !override
       - .:/app
       - venv_shared:/app/.venv
-      - ~/.aws:/root/.aws:ro
       - uv_cache:/root/.cache/uv
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -181,17 +175,11 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/chat.log
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - AWS_REGION=${AWS_REGION:-us-east-2}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
     ports: !override
       - "8507:8505"
     volumes: !override
       - .:/app
       - venv_shared:/app/.venv
-      - ~/.aws:/root/.aws:ro
       - uv_cache:/root/.cache/uv
       - ichrisbirch_logs:/var/log/ichrisbirch
     healthcheck:
@@ -231,15 +219,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/scheduler.log
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - AWS_REGION=${AWS_REGION:-us-east-2}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-2}
     volumes: !override
       - .:/app
       - venv_shared:/app/.venv
-      - ~/.aws:/root/.aws:ro
       - uv_cache:/root/.cache/uv
       - ichrisbirch_logs:/var/log/ichrisbirch
     restart: unless-stopped

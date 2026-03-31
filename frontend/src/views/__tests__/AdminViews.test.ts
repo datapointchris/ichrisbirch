@@ -75,9 +75,9 @@ const testJobs: SchedulerJob[] = [
     is_paused: false,
   },
   {
-    id: 'weekly-backup',
-    name: 'S3 Backup',
-    trigger: 'cron[day_of_week=sun, hour=2]',
+    id: 'weekly-prune',
+    name: 'Docker Prune',
+    trigger: 'cron[day_of_week=sun, hour=3]',
     next_run_time: null,
     time_until_next_run: 'N/A',
     is_paused: true,
@@ -303,7 +303,7 @@ describe('AdminSchedulerView', () => {
 
   it('shows Paused badge for paused jobs', () => {
     const wrapper = createSchedulerWrapper({ schedulerJobs: testJobs })
-    expect(wrapper.text()).toContain('S3 Backup')
+    expect(wrapper.text()).toContain('Docker Prune')
     expect(wrapper.findAll('.admin-status--warn').some((el) => el.text() === 'Paused')).toBe(true)
   })
 

@@ -126,7 +126,6 @@ services:
     volumes: !override
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels: !override
@@ -162,7 +161,6 @@ services:
     volumes: !override
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
     labels: !override
       - "traefik.environment=development"
@@ -224,7 +222,6 @@ services:
     volumes: !override
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     logging:

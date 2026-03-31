@@ -133,7 +133,6 @@ def verify_diagram_generator():
             'fixture_dependencies_module.svg',
             'fixture_dependencies_function.svg',
             'fixtures_comprehensive.svg',
-            'aws_iam.svg',
             'test_env_architecture.svg',
             'test_env_setup_sequence.svg',
             'test_env_teardown_sequence.svg',

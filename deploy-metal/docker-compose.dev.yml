@@ -98,7 +98,6 @@ services:
     volumes:
       - .:/app
       - /app/.venv  # Exclude .venv from bind mount for performance
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     logging:
       driver: "json-file"
       options:
@@ -129,7 +128,6 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     logging:
       driver: "json-file"
       options:
@@ -155,7 +153,6 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - ~/.aws:/root/.aws:ro  # Mount AWS credentials directory
     logging:
       driver: "json-file"
       options:

@@ -19,7 +19,6 @@ from glob import glob
 from pathlib import Path
 
 from ..utils import find_project_root
-from .renderers.aws_diagram_renderer import generate_aws_diagrams
 from .renderers.fixture_diagram_renderer import FixtureDiagramRenderer
 from .renderers.testing_diagram_renderer import generate_testing_diagrams
 
@@ -113,14 +112,6 @@ def generate_all_diagrams(output_dir: str = str(DEFAULT_OUTPUT_DIR), force: bool
     ensure_output_directory(Path(output_dir))
 
     generate_fixture_diagrams(output_dir, force)
-
-    aws_file_patterns = ['terraform/**/*']
-    if force or has_code_changed('aws', aws_file_patterns):
-        generate_aws_diagrams(output_dir)
-        update_hash_cache('aws', aws_file_patterns)
-        logger.info('Generated AWS diagrams')
-    else:
-        logger.info('AWS infrastructure code has not changed, skipping diagram generation')
 
     testing_file_patterns = ['tests/**/*.py']
     if force or has_code_changed('testing', testing_file_patterns):
