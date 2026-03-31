@@ -20,9 +20,9 @@ vi.mock('@/composables/formatDate', () => ({
 
 vi.mock('@/composables/useDaysLeft', () => ({
   computeDaysLeft: (date: string) => {
-    if (date === '2026-04-05') return { text: '7 days left', urgency: 'two-weeks' }
-    if (date === '2025-01-01') return { text: '454 days ago', urgency: 'past' }
-    return { text: '820 days left', urgency: 'normal' }
+    if (date === '2026-04-05') return { text: '7 days left', urgency: 'two-weeks', totalDays: 7 }
+    if (date === '2025-01-01') return { text: '454 days ago', urgency: 'past', totalDays: 0 }
+    return { text: '820 days left', urgency: 'normal', totalDays: 820 }
   },
 }))
 

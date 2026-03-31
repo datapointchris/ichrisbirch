@@ -1,5 +1,10 @@
 .daysleft {
   line-height: 2em;
+
+  &__total {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
 }
 
 .past {

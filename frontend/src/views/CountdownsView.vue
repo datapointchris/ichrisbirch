@@ -27,6 +27,12 @@
           >
             {{ daysLeftText(countdown.due_date) }}
           </h2>
+          <p
+            v-if="totalDays(countdown.due_date) > 0"
+            class="daysleft__total"
+          >
+            {{ totalDays(countdown.due_date) }} total days
+          </p>
           {{ formatDate(countdown.due_date, 'shortDate') }}
           <br />
           {{ countdown.notes }}
@@ -91,6 +97,10 @@ onMounted(() => {
 
 function daysLeftText(dueDate: string): string {
   return computeDaysLeft(dueDate).text
+}
+
+function totalDays(dueDate: string): number {
+  return computeDaysLeft(dueDate).totalDays
 }
 
 function urgencyClass(dueDate: string): string {
