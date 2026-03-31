@@ -219,3 +219,235 @@ def date_range(days: int) -> str:
 
     dt = datetime.now(UTC) - timedelta(days=days)
     return dt.strftime('%Y-%m-%d')
+
+
+# ── Test data aggregation ──────────────────────────────────────────
+
+
+def _aggregate_test_type_by_day(events: list[dict]) -> dict[str, dict]:
+    """Aggregate test events by date, computing per-day averages.
+
+    Replaces the jq pattern:
+        group_by(.timestamp[0:10]) | map({date, avg_tests, avg_duration, ...})
+
+    Returns:
+        Dict mapping date strings to aggregated stats dicts with keys:
+        tests, duration, failed, passed.
+    """
+    by_date = events_by_date(events)
+    result: dict[str, dict] = {}
+
+    for date_key, day_events in by_date.items():
+        n = len(day_events)
+        tests_list = []
+        dur_list = []
+        failed_list = []
+        passed_list = []
+
+        for e in day_events:
+            summary = e.get('summary', {})
+            total = summary.get('total', 0)
+            skipped = summary.get('skipped') or 0
+            tests_list.append(total - skipped)
+            dur_list.append(e.get('duration_seconds', 0))
+            failed_list.append(summary.get('failed', 0))
+            passed_list.append(summary.get('passed', 0))
+
+        result[date_key] = {
+            'tests': int(sum(tests_list) / n),
+            'duration': int(sum(dur_list) / n),
+            'failed': sum(failed_list),
+            'passed': int(sum(passed_list) / n),
+        }
+
+    return result
+
+
+def merge_test_trends(events_path: str | Path, days: int = 7) -> list[dict]:
+    """Merge pytest + vitest daily trends into combined rows.
+
+    Replaces the jq timestamp-proximity LEFT JOIN that merges
+    pytest and vitest daily aggregates by date.
+
+    Returns:
+        List of dicts with keys: date, tests, duration, failed, passed,
+        pass_pct — sorted by date descending, limited to ``days`` entries.
+    """
+    pytest_events = load_events(events_path, event_type='collect.pytest')
+    vitest_events = load_events(events_path, event_type='collect.vitest')
+
+    pytest_by_day = _aggregate_test_type_by_day(pytest_events)
+    vitest_by_day = _aggregate_test_type_by_day(vitest_events)
+
+    # Merge: use pytest dates as the base, add vitest where date matches
+    merged = []
+    for date_key in sorted(pytest_by_day.keys()):
+        py = pytest_by_day[date_key]
+        vi = vitest_by_day.get(date_key, {'tests': 0, 'duration': 0, 'failed': 0, 'passed': 0})
+
+        tests = py['tests'] + vi['tests']
+        passed = py['passed'] + vi['passed']
+        pass_pct = int((passed * 100) / tests) if tests > 0 else 0
+
+        merged.append(
+            {
+                'date': date_key,
+                'tests': tests,
+                'duration': py['duration'] + vi['duration'],
+                'failed': py['failed'] + vi['failed'],
+                'passed': passed,
+                'pass_pct': pass_pct,
+            }
+        )
+
+    # Last N days, most recent first
+    return list(reversed(merged[-days:]))
+
+
+def merge_test_history(events_path: str | Path, limit: int = 25) -> list[dict]:
+    """Merge pytest + vitest events by timestamp proximity for the history chart.
+
+    For each pytest run, finds a vitest event on the same date and adds
+    the counts together.  This replaces the jq timestamp-proximity join
+    that matched events within the same day.
+
+    Returns:
+        List of dicts with keys: duration, tests — oldest first,
+        limited to the last ``limit`` entries.
+    """
+    pytest_events = load_events(events_path, event_type='collect.pytest')
+    vitest_events = load_events(events_path, event_type='collect.vitest')
+
+    # Build date→first vitest event lookup
+    vitest_by_date: dict[str, dict] = {}
+    for e in vitest_events:
+        date_key = e.get('timestamp', '')[:10]
+        if date_key and date_key not in vitest_by_date:
+            vitest_by_date[date_key] = e
+
+    # Filter out bad data (runs with 0 tests) and merge
+    history = []
+    for pe in pytest_events:
+        summary = pe.get('summary', {})
+        if summary.get('total', 0) == 0:
+            continue
+
+        py_tests = summary.get('total', 0) - (summary.get('skipped') or 0)
+        py_dur = int(pe.get('duration_seconds', 0))
+
+        date_key = pe.get('timestamp', '')[:10]
+        ve = vitest_by_date.get(date_key)
+        if ve:
+            vs = ve.get('summary', {})
+            vi_tests = vs.get('total', 0) - (vs.get('skipped') or 0)
+            vi_dur = int(ve.get('duration_seconds', 0))
+        else:
+            vi_tests = 0
+            vi_dur = 0
+
+        history.append(
+            {
+                'duration': py_dur + vi_dur,
+                'tests': py_tests + vi_tests,
+            }
+        )
+
+    return history[-limit:]
+
+
+def aggregate_slowest_tests(events_path: str | Path, top_n: int = 12) -> list[dict]:
+    """Aggregate test durations by file path from the latest pytest run.
+
+    Replaces the jq pipeline that splits nodeids, groups by path,
+    sums durations, and filters by threshold.
+
+    Returns:
+        List of dicts with keys: path, total, count — sorted by
+        total duration descending.
+    """
+    latest = load_events_reversed(events_path, event_type='collect.pytest', limit=1)
+    if not latest:
+        return []
+
+    tests = latest[0].get('tests', [])
+    by_file: dict[str, dict] = {}
+
+    for t in tests:
+        nodeid = t.get('nodeid', '')
+        file_path = nodeid.split('::')[0] if '::' in nodeid else nodeid
+
+        # Shorten path: keep full path for deep test dirs,
+        # truncate to 3 segments otherwise
+        parts = file_path.split('/')
+        if len(parts) > 2 and parts[1] == 'ichrisbirch' and parts[2] in ('api', 'app', 'frontend'):
+            short = file_path
+        else:
+            short = '/'.join(parts[:3])
+
+        dur = sum((t.get(phase) or {}).get('duration', 0) for phase in ('setup', 'call', 'teardown'))
+
+        if short in by_file:
+            by_file[short]['total'] += dur
+            by_file[short]['count'] += 1
+        else:
+            by_file[short] = {'path': short, 'total': dur, 'count': 1}
+
+    sorted_files = sorted(by_file.values(), key=lambda x: -x['total'])
+
+    # Filter out files below 0.8% of grand total (same threshold as bash)
+    grand_total = sum(f['total'] for f in sorted_files)
+    if grand_total > 0:
+        sorted_files = [f for f in sorted_files if f['total'] > grand_total * 0.008]
+
+    return sorted_files[:top_n]
+
+
+def tests_per_directory(events_path: str | Path, top_n: int = 10) -> list[dict]:
+    """Count tests per directory from the latest pytest run.
+
+    Returns:
+        List of dicts with keys: dir, count — sorted by count descending.
+    """
+    latest = load_events_reversed(events_path, event_type='collect.pytest', limit=1)
+    if not latest:
+        return []
+
+    dir_counts: dict[str, int] = {}
+    for t in latest[0].get('tests', []):
+        nodeid = t.get('nodeid', '')
+        # Strip ::ClassName::method to get just the file path
+        file_path = nodeid.split('::')[0] if '::' in nodeid else nodeid
+        parts = file_path.split('/')
+
+        if len(parts) > 3 and parts[1] == 'ichrisbirch' and parts[2] in ('api', 'app'):
+            dir_key = '/'.join(parts[:4])
+        else:
+            dir_key = '/'.join(parts[:3])
+
+        dir_counts[dir_key] = dir_counts.get(dir_key, 0) + 1
+
+    sorted_dirs = sorted(dir_counts.items(), key=lambda x: -x[1])
+    return [{'dir': d, 'count': c} for d, c in sorted_dirs[:top_n]]
+
+
+def detect_flaky_tests(events_path: str | Path, top_n: int = 5) -> list[dict]:
+    """Find tests that have failed in some runs across all recorded events.
+
+    Replaces the jq pipeline that groups all test outcomes by nodeid
+    and counts failures.
+
+    Returns:
+        List of dicts with keys: test, failures — sorted by failure
+        count descending.
+    """
+    all_pytest = load_events(events_path, event_type='collect.pytest')
+
+    failure_counts: dict[str, int] = {}
+    for event in all_pytest:
+        for t in event.get('tests', []):
+            if t.get('outcome') == 'failed':
+                nodeid = t.get('nodeid', '')
+                failure_counts[nodeid] = failure_counts.get(nodeid, 0) + 1
+
+    sorted_flaky = sorted(failure_counts.items(), key=lambda x: -x[1])
+    return [{'test': name, 'failures': count} for name, count in sorted_flaky[:top_n]]
