@@ -179,7 +179,7 @@ check_containers() {
             containers=(
                 "icb-dev-traefik"
                 "icb-dev-api"
-                "icb-dev-app"
+                "icb-dev-vue"
                 "icb-dev-chat"
                 "icb-dev-postgres"
                 "icb-dev-redis"
@@ -190,7 +190,7 @@ check_containers() {
             containers=(
                 "icb-test-traefik"
                 "icb-test-api"
-                "icb-test-app"
+                "icb-test-vue"
                 "icb-test-chat"
                 "icb-test-postgres"
                 "icb-test-redis"
@@ -211,7 +211,6 @@ check_containers() {
                     "icb-infra-postgres"
                     "icb-infra-redis"
                     "icb-${active_color}-api"
-                    "icb-${active_color}-app"
                     "icb-${active_color}-vue"
                     "icb-${active_color}-chat"
                     "icb-${active_color}-scheduler"

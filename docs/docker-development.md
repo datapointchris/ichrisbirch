@@ -38,12 +38,12 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 ### Development Commands
 
 ```bash
-ichrisbirch dev start     # Start all development services
-ichrisbirch dev stop      # Stop and remove containers
-ichrisbirch dev restart   # Restart existing containers
-ichrisbirch dev rebuild   # Rebuild images and restart
-ichrisbirch dev logs      # View live container logs
-ichrisbirch dev status    # Show container status
+icb dev start     # Start all development services
+icb dev stop      # Stop and remove containers
+icb dev restart   # Restart existing containers
+icb dev rebuild   # Rebuild images and restart
+icb dev logs      # View live container logs
+icb dev status    # Show container status
 ```
 
 **Technical Details**:
@@ -55,8 +55,8 @@ ichrisbirch dev status    # Show container status
 ### Test Commands
 
 ```bash
-ichrisbirch test          # Run pytest in containerized environment
-ichrisbirch test logs     # Run tests with timestamped log output
+icb test          # Run pytest in containerized environment
+icb test logs     # Run tests with timestamped log output
 ```
 
 **Test Infrastructure**:
@@ -69,16 +69,16 @@ ichrisbirch test logs     # Run tests with timestamped log output
 ### Production Commands
 
 ```bash
-ichrisbirch prod start          # Start infra + active color
-ichrisbirch prod stop           # Stop active color + infra
-ichrisbirch prod restart        # Restart without rebuilding
-ichrisbirch prod status         # Check production service status
-ichrisbirch prod health         # Run health checks
-ichrisbirch prod apihealth      # HTTP health check for API service
-ichrisbirch prod smoke          # Run smoke tests against all endpoints
-ichrisbirch prod deploy-status  # Show blue/green state and routing
-ichrisbirch prod rollback       # Switch traffic back to previous color
-ichrisbirch prod logs           # View production application logs
+icb prod start          # Start infra + active color
+icb prod stop           # Stop active color + infra
+icb prod restart        # Restart without rebuilding
+icb prod status         # Check production service status
+icb prod health         # Run health checks
+icb prod apihealth      # HTTP health check for API service
+icb prod smoke          # Run smoke tests against all endpoints
+icb prod deploy-status  # Show blue/green state and routing
+icb prod rollback       # Switch traffic back to previous color
+icb prod logs           # View production application logs
 ```
 
 ## Docker Compose Configuration
@@ -129,7 +129,7 @@ Each environment uses `.env` files:
 
 - **Python services (API, Scheduler)**: structlog with stdout-only output. Key=value format for dev, JSON for production/Loki.
 - **Vue frontend**: consola with structured reporters matching structlog's format. Includes request tracing via X-Request-ID headers.
-- **Colored output**: CLI provides colored log viewing with `ichrisbirch dev logs`
+- **Colored output**: CLI provides colored log viewing with `icb dev logs`
 
 ### Container Logging
 
@@ -177,10 +177,10 @@ cd ichrisbirch
 cp .env.example .env  # Configure environment variables
 
 # Start development environment
-ichrisbirch dev start
+icb dev start
 
 # View logs
-ichrisbirch dev logs
+icb dev logs
 ```
 
 ### Running Tests
@@ -190,10 +190,10 @@ ichrisbirch dev logs
 ichrisbirch test
 
 # Run with log output
-ichrisbirch test logs
+icb test logs
 
 # Check test infrastructure
-ichrisbirch dev status
+icb dev status
 ```
 
 ### Debugging Services
@@ -239,16 +239,16 @@ docker exec -it icb-dev-api /bin/bash
 
 ```bash
 # Check all container status
-ichrisbirch dev status
+icb dev status
 
 # View recent infrastructure logs
-ichrisbirch dev logs
+icb dev logs
 
 # Clean up unused containers/images
 docker system prune -f
 
 # Reset development environment
-ichrisbirch dev stop && ichrisbirch dev rebuild
+icb dev stop && icb dev rebuild
 ```
 
 ### Performance Optimization

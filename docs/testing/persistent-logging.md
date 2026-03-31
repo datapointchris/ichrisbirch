@@ -12,16 +12,16 @@ The CLI provides persistent log viewing that automatically reconnects when conta
 
 ```bash
 # View all test service logs
-./cli/ichrisbirch testing logs
+./cli/icb testing logs
 
 # View specific service logs
-./cli/ichrisbirch testing logs api
-./cli/ichrisbirch testing logs app
-./cli/ichrisbirch testing logs chat
-./cli/ichrisbirch testing logs scheduler
+./cli/icb testing logs api
+./cli/icb testing logs app
+./cli/icb testing logs chat
+./cli/icb testing logs scheduler
 ```
 
-The logs command uses a watch loop (`cli/ichrisbirch:316-324`) that:
+The logs command uses a watch loop (`cli/icb:316-324`) that:
 
 - Follows logs in real-time
 - Automatically reconnects when containers restart
@@ -70,7 +70,7 @@ curl -v https://api.test.localhost:8443/tasks/
 # Response includes: X-Request-ID: abc12345
 
 # Search logs for that request
-./cli/ichrisbirch testing logs | grep abc12345
+./cli/icb testing logs | grep abc12345
 ```
 
 ## Log Persistence
@@ -104,10 +104,10 @@ When using `test run`, containers stay running after tests complete. View logs i
 
 ```bash
 # Run tests
-./cli/ichrisbirch test run tests/ichrisbirch/api/test_tasks.py
+./cli/icb test run tests/ichrisbirch/api/test_tasks.py
 
 # View logs after failure
-./cli/ichrisbirch testing logs api
+./cli/icb testing logs api
 ```
 
 ### Correlating Test Failures with Logs
@@ -115,7 +115,7 @@ When using `test run`, containers stay running after tests complete. View logs i
 1. Run tests with verbose output to get timestamps:
 
    ```bash
-   ./cli/ichrisbirch test run -v
+   ./cli/icb test run -v
    ```
 
 2. View logs around the failure time:
@@ -127,7 +127,7 @@ When using `test run`, containers stay running after tests complete. View logs i
 3. Search for error events:
 
    ```bash
-   ./cli/ichrisbirch testing logs | grep -i error
+   ./cli/icb testing logs | grep -i error
    ```
 
 ## Configuration
@@ -150,7 +150,7 @@ services:
 Tests typically run with `LOG_LEVEL=DEBUG` to capture all diagnostic information. Override for less verbose output:
 
 ```bash
-LOG_LEVEL=INFO ./cli/ichrisbirch test run
+LOG_LEVEL=INFO ./cli/icb test run
 ```
 
 ## Comparison with Development

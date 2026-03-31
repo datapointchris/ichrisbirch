@@ -31,7 +31,7 @@ The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.dock
 
 ### Running the Vue Frontend
 
-The Vue service starts automatically with `./cli/ichrisbirch dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
+The Vue service starts automatically with `./cli/icb dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
 
 ### Auth in Development
 

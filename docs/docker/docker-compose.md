@@ -141,7 +141,7 @@ volumes:
 
 ```bash
 # Via CLI (recommended)
-./cli/ichrisbirch dev start
+./cli/icb dev start
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
@@ -186,18 +186,15 @@ postgres:
 
 ```bash
 # Recommended: Ephemeral test run (starts fresh, runs tests, stops)
-./cli/ichrisbirch test run
-
-# With coverage
-./cli/ichrisbirch test cov
+./cli/icb test run
 
 # Keep containers for debugging
-./cli/ichrisbirch test run --keep
+./cli/icb test run --keep
 
 # Manual management (for extended debugging)
-./cli/ichrisbirch testing start
+./cli/icb testing start
 uv run pytest
-./cli/ichrisbirch testing stop
+./cli/icb testing stop
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
@@ -334,20 +331,20 @@ engine = create_engine('postgresql://postgres:5432/ichrisbirch')
 
 ```bash
 # Development
-./cli/ichrisbirch dev start
+./cli/icb dev start
 
 # Testing
-./cli/ichrisbirch testing start
+./cli/icb testing start
 
 # Production
-./cli/ichrisbirch prod start
+./cli/icb prod start
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-./cli/ichrisbirch dev logs
+./cli/icb dev logs
 
 # Specific service
 docker compose logs -f api
@@ -360,7 +357,7 @@ docker compose logs -f --timestamps api
 
 ```bash
 # Rebuild and restart
-./cli/ichrisbirch dev rebuild
+./cli/icb dev rebuild
 
 # Rebuild specific service
 docker compose build api
@@ -401,7 +398,7 @@ If ports are in use:
 lsof -i :8000
 
 # Use testing ports instead
-./cli/ichrisbirch testing start  # Uses 8001, 5001, etc.
+./cli/icb testing start  # Uses 8001, 5001, etc.
 ```
 
 ### Database Connection Issues
@@ -433,8 +430,8 @@ docker network create proxy
 
 ## Best Practices
 
-1. **Use the CLI:** `./cli/ichrisbirch dev start` handles complexity
+1. **Use the CLI:** `./cli/icb dev start` handles complexity
 2. **Don't mix environments:** Use testing ports when dev is running
-3. **Check health first:** `./cli/ichrisbirch dev health` before debugging
+3. **Check health first:** `./cli/icb dev health` before debugging
 4. **Read logs:** Most issues are visible in container logs
 5. **Rebuild after Dockerfile changes:** Images don't auto-update

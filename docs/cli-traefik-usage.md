@@ -6,18 +6,18 @@ This guide covers the comprehensive CLI interface for managing the iChrisBirch a
 
 ```bash
 # Start any environment (uses Traefik + HTTPS by default)
-ichrisbirch dev start               # Development environment
-ichrisbirch testing start          # Testing environment
-ichrisbirch prod start             # Production environment
+icb dev start               # Development environment
+icb testing start          # Testing environment
+icb prod start             # Production environment
 
 # Check status with URLs
-ichrisbirch dev status
+icb dev status
 
 # Run health checks
-ichrisbirch dev health
+icb dev health
 
 # SSL certificate management
-ichrisbirch ssl-manager <command> <env>
+icb ssl-manager <command> <env>
 ```
 
 ## 📋 Modern CLI Architecture
@@ -33,11 +33,11 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 
 ### ❌ **Removed Commands (No Longer Needed)**
 
-- `ichrisbirch traefik start <env>` → Use `ichrisbirch <env> start`
-- `ichrisbirch traefik stop <env>` → Use `ichrisbirch <env> stop`
-- `ichrisbirch traefik status <env>` → Use `ichrisbirch <env> status`
-- `ichrisbirch traefik health <env>` → Use `ichrisbirch <env> health`
-- `ichrisbirch traefik logs <env>` → Use `ichrisbirch <env> logs`
+- `icb traefik start <env>` → Use `ichrisbirch <env> start`
+- `icb traefik stop <env>` → Use `ichrisbirch <env> stop`
+- `icb traefik status <env>` → Use `ichrisbirch <env> status`
+- `icb traefik health <env>` → Use `ichrisbirch <env> health`
+- `icb traefik logs <env>` → Use `ichrisbirch <env> logs`
 
 ## 🔧 Environment Management Commands
 
@@ -45,13 +45,18 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `dev start` | Start development with HTTPS | `ichrisbirch dev start` |
-| `dev stop` | Stop development environment | `ichrisbirch dev stop` |
-| `dev restart` | Restart development environment | `ichrisbirch dev restart` |
-| `dev rebuild` | Rebuild images, restart, and initialize database | `ichrisbirch dev rebuild` |
-| `dev status` | Show service status, URLs, and credentials | `ichrisbirch dev status` |
-| `dev logs` | View service logs | `ichrisbirch dev logs [service]` |
-| `dev health` | Run comprehensive health checks | `ichrisbirch dev health` |
+| `dev start` | Start development with HTTPS | `icb dev start` |
+| `dev stop` | Stop development environment | `icb dev stop` |
+| `dev restart` | Restart development environment | `icb dev restart` |
+| `dev rebuild` | Rebuild images, restart, and initialize database | `icb dev rebuild` |
+| `dev status` | Show service status, URLs, and credentials | `icb dev status` |
+| `dev logs` | View service logs | `icb dev logs [service]` |
+| `dev health` | Run comprehensive health checks | `icb dev health` |
+| `dev is-ready` | Quick API health check (exit 0/1) | `icb dev is-ready` |
+| `dev ensure` | Start containers if not already running | `icb dev ensure` |
+| `dev smoke` | Run smoke tests against all endpoints | `icb dev smoke` |
+| `dev docker [service]` | Show merged Docker Compose config | `icb dev docker api` |
+| `dev db ...` | Database commands (backup, restore, list, seed, init) | `icb dev db init` |
 
 **Dev Credentials Display:**
 
@@ -67,25 +72,29 @@ Dev Credentials:
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `test run` | Run tests (reuses containers) | `ichrisbirch test run [path] [args]` |
-| `test cov` | Run tests with coverage | `ichrisbirch test cov` |
-| `testing start` | Start testing environment | `ichrisbirch testing start` |
-| `testing stop` | Stop testing environment | `ichrisbirch testing stop` |
-| `testing restart` | Restart testing environment | `ichrisbirch testing restart` |
-| `testing status` | Show service status and HTTPS URLs | `ichrisbirch testing status` |
-| `testing logs` | View service logs | `ichrisbirch testing logs [service]` |
-| `testing health` | Run comprehensive health checks | `ichrisbirch testing health` |
+| `test run` | Run tests (reuses containers) | `icb test run [path] [args]` |
+| `testing start` | Start testing environment | `icb testing start` |
+| `testing stop` | Stop testing environment | `icb testing stop` |
+| `testing restart` | Restart testing environment | `icb testing restart` |
+| `testing status` | Show service status and HTTPS URLs | `icb testing status` |
+| `testing logs` | View service logs | `icb testing logs [service]` |
+| `testing health` | Run comprehensive health checks | `icb testing health` |
+| `testing rebuild` | Rebuild test container images | `icb testing rebuild` |
+| `testing is-ready` | Quick API health check (exit 0/1) | `icb testing is-ready` |
+| `testing ensure` | Start containers if not already running | `icb testing ensure` |
+| `testing docker [service]` | Show merged Docker Compose config | `icb testing docker api` |
+| `testing db ...` | Database commands (backup, restore, list, seed, reset) | `icb testing db reset` |
 
 **Test Run Behavior:**
 
-The `test run` command reuses running containers and cleans the database:
+The `test run` command reuses running containers for fast iteration:
 
 1. **Reuses containers** - Starts test containers only if not already running
-2. **Cleans database** - TRUNCATE (not drop/recreate) preserves schema, re-inserts lookup data and users
+2. **Database cleaning** - Handled automatically by pytest's `truncate_tables` fixture (not by the CLI)
 3. **No stale connections** - API container's connection pool stays valid across test runs
 4. **Fast** - Sub-second database clean vs seconds for drop/recreate
 
-> **Note:** Test and dev environments use separate proxy networks (`proxy-test` and `proxy-dev`) to avoid Traefik routing conflicts when running simultaneously.
+> **Note:** Test and dev environments use separate proxy networks (`icb-test-proxy` and `icb-dev-proxy`) to avoid Traefik routing conflicts when running simultaneously.
 
 ### Production Environment
 
@@ -93,27 +102,52 @@ All production commands are **blue/green aware** — they automatically detect t
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `prod start` | Start infra + active color | `ichrisbirch prod start` |
-| `prod stop` | Stop active color + infra | `ichrisbirch prod stop` |
-| `prod restart` | Restart active color + infra | `ichrisbirch prod restart` |
-| `prod status` | Show infra + active color status | `ichrisbirch prod status` |
-| `prod logs` | View active color logs | `ichrisbirch prod logs [service]` |
-| `prod logs deploy` | View deployment event logs | `ichrisbirch prod logs deploy` |
-| `prod logs build` | View latest Docker build log | `ichrisbirch prod logs build` |
-| `prod health` | Run health checks | `ichrisbirch prod health` |
-| `prod smoke` | Run smoke tests against all endpoints | `ichrisbirch prod smoke` |
-| `prod deploy-status` | Show blue/green state and routing | `ichrisbirch prod deploy-status` |
-| `prod rollback` | Switch traffic to previous color | `ichrisbirch prod rollback` |
-| `prod build-test` | Test production Docker build locally | `ichrisbirch prod build-test` |
+| `prod start` | Start infra + active color | `icb prod start` |
+| `prod stop` | Stop active color + infra | `icb prod stop` |
+| `prod restart` | Restart active color + infra | `icb prod restart` |
+| `prod status` | Show infra + active color status | `icb prod status` |
+| `prod logs` | View active color logs | `icb prod logs [service]` |
+| `prod logs deploy` | View deployment event logs | `icb prod logs deploy` |
+| `prod logs build` | View latest Docker build log | `icb prod logs build` |
+| `prod health` | Run health checks | `icb prod health` |
+| `prod smoke` | Run smoke tests against all endpoints | `icb prod smoke` |
+| `prod deploy-status` | Show blue/green state and routing | `icb prod deploy-status` |
+| `prod rollback` | Switch traffic to previous color | `icb prod rollback` |
+| `prod build-test` | Test production Docker build locally | `icb prod build-test` |
+| `prod apihealth` | Check API health endpoint (JSON) | `icb prod apihealth` |
+| `prod docker [service]` | Show merged Docker Compose config | `icb prod docker api` |
+| `prod db ...` | Database commands (backup, restore, list, init) | `icb prod db backup pre-deploy` |
 
 ### SSL Certificate Management
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `ssl-manager generate` | Generate SSL certificates with mkcert | `ichrisbirch ssl-manager generate dev` |
-| `ssl-manager validate` | Validate existing certificates | `ichrisbirch ssl-manager validate dev` |
-| `ssl-manager info` | Show certificate information | `ichrisbirch ssl-manager info dev` |
-| `ssl-manager help` | Show SSL manager help | `ichrisbirch ssl-manager help` |
+| `ssl-manager generate` | Generate SSL certificates with mkcert | `icb ssl-manager generate dev` |
+| `ssl-manager validate` | Validate existing certificates | `icb ssl-manager validate dev` |
+| `ssl-manager info` | Show certificate information | `icb ssl-manager info dev` |
+| `ssl-manager help` | Show SSL manager help | `icb ssl-manager help` |
+
+### Stats Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `stats summary` | Dashboard with code, tests, quality, activity | `icb stats summary` |
+| `stats code` | Lines of code by language (live from tokei) | `icb stats code` |
+| `stats tests` | Test results, coverage, and slowest tests | `icb stats tests` |
+| `stats quality` | Linter issues over 24h/7d/30d/all time | `icb stats quality` |
+| `stats activity [n]` | Commit activity graph (default: 7 days) | `icb stats activity 14` |
+| `stats events [n]` | Recent pre-commit hook events (default: 20) | `icb stats events 50` |
+| `stats trends` | Velocity, code churn, test suite trends | `icb stats trends` |
+| `stats churn [n\|all]` | File churn analysis (default: 30 days) | `icb stats churn all` |
+| `stats snapshot` | Regenerate stats snapshot from events.jsonl | `icb stats snapshot` |
+
+### Routing Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `routing generate` | Regenerate Traefik routing from vue-paths.txt | `icb routing generate` |
+
+The canonical path list is at `deploy-containers/traefik/vue-paths.txt`. After generating, the CLI shows a diff of any changes.
 
 ## 🌐 Environment Details
 
@@ -135,19 +169,19 @@ All production commands are **blue/green aware** — they automatically detect t
 
 ```bash
 # Start development environment
-ichrisbirch dev start
+icb dev start
 
 # Check what's running
-ichrisbirch dev status
+icb dev status
 
 # Verify everything is healthy
-ichrisbirch dev health
+icb dev health
 
 # View API logs
-ichrisbirch dev logs api
+icb dev logs api
 
 # Stop when done
-ichrisbirch dev stop
+icb dev stop
 ```
 
 ### Testing Environment (`testing`)
@@ -182,9 +216,9 @@ ichrisbirch dev stop
 **Production Commands:**
 
 ```bash
-ichrisbirch prod start          # Start infra + active color
-ichrisbirch prod deploy-status  # Check which color is active
-ichrisbirch prod rollback       # Switch to previous color
+icb prod start          # Start infra + active color
+icb prod deploy-status  # Check which color is active
+icb prod rollback       # Switch to previous color
 ```
 
 > **Note**: See [Blue/Green Deployment](blue-green-deployment.md) for the deployment strategy and [Homelab Deployment Guide](homelab-deployment.md) for infrastructure setup
@@ -214,13 +248,13 @@ mkcert -install
 
 ```bash
 # Generate certificates for development
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 
 # Generate certificates for all environments
-ichrisbirch ssl-manager generate all
+icb ssl-manager generate all
 
 # View certificate information
-ichrisbirch ssl-manager info dev
+icb ssl-manager info dev
 ```
 
 #### What mkcert Provides
@@ -243,7 +277,7 @@ ichrisbirch ssl-manager info dev
 
 ## 🚀 Detailed Command Reference
 
-### `ichrisbirch dev start`
+### `icb dev start`
 
 Starts the development environment with full Traefik + HTTPS setup.
 
@@ -278,12 +312,12 @@ Dev Credentials:
   Regular: user@example.com / password123
   Admin:   admin@example.com / adminpass123
 
-Use ichrisbirch dev logs to view live container logs
-Use ichrisbirch dev status to check service status
-Use ichrisbirch dev health to run health checks
+Use icb dev logs to view live container logs
+Use icb dev status to check service status
+Use icb dev health to run health checks
 ```
 
-### `ichrisbirch dev status`
+### `icb dev status`
 
 Shows detailed status of all services with HTTPS URLs and health information.
 
@@ -312,7 +346,7 @@ Database Info:
   Redis:      localhost:6379 (external access)
 ```
 
-### `ichrisbirch dev health`
+### `icb dev health`
 
 Runs comprehensive health checks for the development environment.
 
@@ -352,16 +386,16 @@ Health Check for dev Environment
 [!] Chat Service WebSocket: HTTP 400 (May not support WebSocket)
 ```
 
-### `ichrisbirch dev logs [service]`
+### `icb dev logs [service]`
 
 View logs for all services or a specific service.
 
 **Usage:**
 
 ```bash
-ichrisbirch dev logs          # All services
-ichrisbirch dev logs api      # API service only
-ichrisbirch dev logs traefik  # Traefik logs
+icb dev logs          # All services
+icb dev logs api      # API service only
+icb dev logs traefik  # Traefik logs
 ```
 
 **Features:**
@@ -372,15 +406,15 @@ ichrisbirch dev logs traefik  # Traefik logs
 - Colored output for better readability (service names colorized)
 - Uses structlog format (timestamp, level, event, context)
 
-### `ichrisbirch ssl-manager generate <env|all>`
+### `icb ssl-manager generate <env|all>`
 
 Generates SSL certificates for the specified environment using mkcert when available.
 
 **Usage:**
 
 ```bash
-ichrisbirch ssl-manager generate dev    # Development certificates
-ichrisbirch ssl-manager generate all    # All environments
+icb ssl-manager generate dev    # Development certificates
+icb ssl-manager generate all    # All environments
 ```
 
 **With mkcert (Recommended):**
@@ -417,7 +451,7 @@ It will expire on 21 January 2028 🗓
 [INFO] This certificate will be trusted by browsers without warnings
 ```
 
-### `ichrisbirch ssl-manager info <env|all>`
+### `icb ssl-manager info <env|all>`
 
 Displays detailed information about SSL certificates.
 
@@ -452,10 +486,10 @@ Valid until: Jan 22 00:45:19 2028 GMT
 
 ```bash
 # Complete environment restart with health check
-ichrisbirch dev restart && ichrisbirch dev health
+icb dev restart && icb dev health
 
 # Generate certificates and start environment
-ichrisbirch ssl-manager generate dev && ichrisbirch dev start
+icb ssl-manager generate dev && icb dev start
 
 # Check status across all environments
 for env in dev testing prod; do
@@ -468,30 +502,30 @@ done
 
 ```bash
 # Daily development startup
-ichrisbirch dev start
+icb dev start
 
 # Quick status check
-ichrisbirch dev status
+icb dev status
 
 # View API logs while developing
-ichrisbirch dev logs api
+icb dev logs api
 
 # Clean shutdown at end of day
-ichrisbirch dev stop
+icb dev stop
 ```
 
 ### Debugging Workflows
 
 ```bash
 # Troubleshoot service issues
-ichrisbirch dev status          # Check overall status
-ichrisbirch dev logs api        # Check specific service logs
-ichrisbirch dev health          # Run comprehensive health check
+icb dev status          # Check overall status
+icb dev logs api        # Check specific service logs
+icb dev health          # Run comprehensive health check
 
 # SSL certificate issues
-ichrisbirch ssl-manager validate dev    # Check certificate validity
-ichrisbirch ssl-manager info dev        # Show certificate details
-ichrisbirch ssl-manager generate dev    # Regenerate if needed
+icb ssl-manager validate dev    # Check certificate validity
+icb ssl-manager info dev        # Show certificate details
+icb ssl-manager generate dev    # Regenerate if needed
 ```
 
 ## 🚨 Troubleshooting
@@ -502,21 +536,21 @@ ichrisbirch ssl-manager generate dev    # Regenerate if needed
 
    ```bash
    # Make CLI executable
-   chmod +x ./cli/ichrisbirch
+   chmod +x ./cli/icb
 
    # Use absolute path
-   ./cli/ichrisbirch dev start
+   ./cli/icb dev start
    ```
 
 2. **Port conflicts**
 
    ```bash
    # Stop conflicting services
-   ichrisbirch dev stop
+   icb dev stop
    docker stop $(docker ps -q --filter "name=ichrisbirch")
 
    # Restart
-   ichrisbirch dev start
+   icb dev start
    ```
 
 3. **DNS resolution issues**
@@ -540,10 +574,10 @@ ichrisbirch ssl-manager generate dev    # Regenerate if needed
    mkcert -install
 
    # Regenerate certificates with mkcert
-   ichrisbirch ssl-manager generate dev
+   icb ssl-manager generate dev
 
    # Restart to pick up new certificates
-   ichrisbirch dev restart
+   icb dev restart
    ```
 
 5. **Browser still shows certificate warnings**
@@ -553,7 +587,7 @@ ichrisbirch ssl-manager generate dev    # Regenerate if needed
    mkcert -install
 
    # Check certificate details
-   ichrisbirch ssl-manager info dev
+   icb ssl-manager info dev
 
    # Clear browser cache and restart browser
    # Chrome: Settings > Privacy > Clear browsing data
@@ -563,13 +597,13 @@ ichrisbirch ssl-manager generate dev    # Regenerate if needed
 
 ```bash
 # Show general help
-ichrisbirch help
+icb help
 
 # Show environment-specific help
-ichrisbirch dev help
+icb dev help
 
 # Show SSL manager help
-ichrisbirch ssl-manager help
+icb ssl-manager help
 ```
 
 ## 📊 Performance Tips
@@ -597,14 +631,14 @@ curl https://dashboard.docker.localhost/api/overview
 
 ### Before (Confusing Duplication)
 
-- `ichrisbirch traefik start dev` vs `ichrisbirch dev start` (both did the same thing)
+- `icb traefik start dev` vs `icb dev start` (both did the same thing)
 - Users had to understand Traefik implementation details
 - Inconsistent command patterns
 - Implementation details exposed in user interface
 
 ### After (Clean & Simple)
 
-- **Single command per operation**: `ichrisbirch dev start`
+- **Single command per operation**: `icb dev start`
 - **Implementation details hidden**: Users don't need to know about Traefik
 - **Consistent patterns**: All environments work the same way
 - **Modern HTTPS by default**: No separate "traefik" commands needed
@@ -613,7 +647,7 @@ curl https://dashboard.docker.localhost/api/overview
 
 - **Faster onboarding**: New developers don't need to understand reverse proxy details
 - **Reduced cognitive load**: Fewer commands to remember
-- **Better discoverability**: `ichrisbirch help` shows all available commands clearly
+- **Better discoverability**: `icb help` shows all available commands clearly
 - **Professional CLI patterns**: Follows industry-standard CLI design principles
 
 The simplified CLI provides a clean, professional interface that hides implementation complexity while providing powerful functionality for managing the modern Traefik-based deployment architecture.

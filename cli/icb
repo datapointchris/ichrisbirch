@@ -99,7 +99,7 @@ function colored-logs() {
   local RED_REDIS="${red}redis${reset}"
   local GREEN_POSTGRES="${green}postgres${reset}"
   local BRIGHT_GREEN_API="${bright_green}api${reset}"
-  local BRIGHT_BLUE_APP="${bright_blue}app${reset}"
+  local BRIGHT_BLUE_VUE="${bright_blue}vue${reset}"
   local ORANGE_CHAT="${orange}chat${reset}"
   local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
   local CYAN_TRAEFIK="${cyan}traefik${reset}"
@@ -113,7 +113,7 @@ function colored-logs() {
     -e 's/green-//g' \
     -e 's/infra-//g' \
     -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
-    -e 's/^app[ ]*|/'"${BRIGHT_BLUE_APP}"' |/' \
+    -e 's/^vue[ ]*|/'"${BRIGHT_BLUE_VUE}"' |/' \
     -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
     -e 's/^postgres[ ]*|/'"${GREEN_POSTGRES}"' |/' \
     -e 's/^chat[ ]*|/'"${ORANGE_CHAT}"' |/' \
@@ -157,7 +157,28 @@ function colored-status() {
 }
 
 function install() {
-  ln -sf "$ICHRISBIRCH_HOME/cli/ichrisbirch" "$HOME/.local/bin/icb"
+  ln -sf "$ICHRISBIRCH_HOME/cli/icb" "$HOME/.local/bin/icb"
+}
+
+function wait-for-healthy() {
+  local container="$1"
+  local max_wait="${2:-60}"
+  local interval="${3:-5}"
+  local waited=0
+
+  while [[ $waited -lt $max_wait ]]; do
+    local health
+    health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "missing")
+    if [[ "$health" == "healthy" ]]; then
+      echo "${green}${container} healthy after ${waited}s${reset}"
+      return 0
+    fi
+    sleep "$interval"
+    waited=$((waited + interval))
+  done
+
+  echo "${yellow}${container} not healthy after ${max_wait}s (continuing anyway)${reset}"
+  return 1
 }
 
 function env-docker-config() {
@@ -206,8 +227,8 @@ function dev-start() {
   echo "Starting ${blue}DEV${reset} environment"
   $COMPOSE_DEV up -d
 
-  echo "Ensuring database is initialized..."
-  sleep 3
+  echo "Waiting for API container..."
+  wait-for-healthy icb-dev-api 30 || true
   docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development 2>/dev/null || true
 
   echo ""
@@ -246,8 +267,8 @@ function dev-rebuild() {
   $COMPOSE_DEV build
   echo "Starting services..."
   $COMPOSE_DEV up -d
-  echo "Waiting for postgres to be ready..."
-  sleep 5
+  echo "Waiting for API container..."
+  wait-for-healthy icb-dev-api 60
   echo "Initializing database..."
   docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development
   echo "${green}DEV environment rebuilt and initialized${reset}"
@@ -351,8 +372,8 @@ function test-run() {
   if [ "$containers_ready" = false ]; then
     echo "${blue}Starting test containers...${reset}"
     $COMPOSE_TEST up -d
-    echo "Waiting for services to be ready..."
-    sleep 15
+    echo "Waiting for API container..."
+    wait-for-healthy icb-test-api 60 || true
   fi
 
   # Database truncation is handled by pytest's truncate_tables fixture.
@@ -377,13 +398,21 @@ function test-run() {
   return $test_exit_code
 }
 
+function test-usage() {
+  echo "${green}Test commands:${reset}"
+  echo "  ${blue}test run [path] [args]${reset}  Run pytest (reuses containers for fast iteration)"
+  echo ""
+  echo "Containers are left running after tests for fast re-runs."
+  echo "Stop them with: ${blue}icb testing stop${reset}"
+}
+
 function testing-start() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Starting ${blue}TESTING${reset} environment"
   $COMPOSE_TEST up -d
 
-  echo "Waiting for services to be ready..."
-  sleep 15
+  echo "Waiting for API container..."
+  wait-for-healthy icb-test-api 60 || true
 
   echo "Initializing test database..."
   # shellcheck disable=1091
@@ -675,22 +704,7 @@ function prod-rollback() {
     echo "Previous containers (${previous_color}) not running. Starting them..."
     compose_app "$previous_color" up -d
 
-    echo "Waiting for health checks..."
-    local max_wait=90
-    local interval=5
-    local waited=0
-    while [[ $waited -lt $max_wait ]]; do
-      local health
-      health=$(docker inspect --format='{{.State.Health.Status}}' "icb-${previous_color}-api" 2>/dev/null || echo "missing")
-      if [[ "$health" == "healthy" ]]; then
-        echo "${green}API container healthy after ${waited}s${reset}"
-        break
-      fi
-      sleep $interval
-      waited=$((waited + interval))
-    done
-
-    if [[ $waited -ge $max_wait ]]; then
+    if ! wait-for-healthy "icb-${previous_color}-api" 90; then
       echo "${red}Previous containers did not become healthy. Rollback aborted.${reset}"
       return 1
     fi
@@ -883,7 +897,7 @@ function prod-usage() {
   echo "  ${blue}prod status${reset}            Show container status"
   echo "  ${blue}prod health${reset}            Full diagnostic health check"
   echo "  ${blue}prod apihealth${reset}         Check API health endpoint"
-  echo "  ${blue}prod smoke${reset}             Run smoke tests against all endpoints"
+  echo "  ${blue}prod smoke${reset}             Run smoke tests (requires ICHRISBIRCH_API_KEY)"
   echo "  ${blue}prod deploy-status${reset}     Show blue/green deployment state"
   echo "  ${blue}prod rollback${reset}          Switch traffic to previous color"
   echo "  ${blue}prod build-test${reset}        Test production Docker build locally"
@@ -941,14 +955,11 @@ function usage() {
   echo "${green}Tools:${reset}"
   echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates"
   echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
+  echo "  ${blue}install${reset} - Symlink CLI to ~/.local/bin/icb"
   echo
   echo "${green}Stats:${reset}"
   echo "  ${blue}stats${reset} - Show stats submenu"
   echo "  ${blue}stats summary${reset} - Dashboard overview"
-  echo
-  echo "${green}SASS:${reset}"
-  echo "  ${blue}sass compile${reset} - Compile SCSS once"
-  echo "  ${blue}sass watch${reset} - Watch and compile SCSS on changes"
   echo
   echo "${green}URLs:${reset}"
   echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
@@ -968,20 +979,27 @@ help | -h | --help)
 install)
   install
   ;;
-cd)
-  cd "$ICHRISBIRCH_HOME" || exit
-  # shellcheck source=/dev/null
-  [ -d ".venv" ] && source .venv/bin/activate
-  exec "$SHELL"
-  ;;
 test)
-  subcmd="$2"
-  shift 2
-  test-"$subcmd" "$@"
+  case "$2" in
+  "" | -h | --help | help) test-usage ;;
+  run)
+    shift 2
+    test-run "$@"
+    ;;
+  *)
+    echo "${red}Unknown test command: $2${reset}"
+    test-usage
+    ;;
+  esac
   ;;
 testing)
   case "$2" in
   "" | -h | --help | help) testing-usage ;;
+  start) testing-start ;;
+  stop) testing-stop ;;
+  restart) testing-restart ;;
+  rebuild) testing-rebuild ;;
+  status) testing-status ;;
   health) testing-health ;;
   is-ready) testing-is-ready ;;
   ensure) testing-ensure ;;
@@ -997,12 +1015,21 @@ testing)
     shift 2
     env-docker-config testing "$@"
     ;;
-  *) testing-"$2" ;;
+  *)
+    echo "${red}Unknown testing command: $2${reset}"
+    testing-usage
+    ;;
   esac
   ;;
 dev)
   case "$2" in
   "" | -h | --help | help) dev-usage ;;
+  start) dev-start ;;
+  stop) dev-stop ;;
+  restart) dev-restart ;;
+  rebuild) dev-rebuild ;;
+  status) dev-status ;;
+  smoke) dev-smoke ;;
   health) dev-health ;;
   is-ready) dev-is-ready ;;
   ensure) dev-ensure ;;
@@ -1018,12 +1045,22 @@ dev)
     shift 2
     env-docker-config development "$@"
     ;;
-  *) dev-"$2" ;;
+  *)
+    echo "${red}Unknown dev command: $2${reset}"
+    dev-usage
+    ;;
   esac
   ;;
 prod)
   case "$2" in
   "" | -h | --help | help) prod-usage ;;
+  start) prod-start ;;
+  stop) prod-stop ;;
+  restart) prod-restart ;;
+  rebuild) prod-rebuild ;;
+  status) prod-status ;;
+  smoke) prod-smoke ;;
+  apihealth) prod-apihealth ;;
   health) prod-health ;;
   logs)
     shift 2
@@ -1041,7 +1078,10 @@ prod)
   rollback) prod-rollback ;;
   legacy-rebuild) prod-legacy-rebuild ;;
   build-test) prod-build-test ;;
-  *) prod-"$2" ;;
+  *)
+    echo "${red}Unknown prod command: $2${reset}"
+    prod-usage
+    ;;
   esac
   ;;
 ssl-manager)
@@ -1082,29 +1122,6 @@ stats)
   *)
     echo "${red}Unknown stats command: $2${reset}"
     stats-usage
-    ;;
-  esac
-  ;;
-sass)
-  SASS_INPUT="$ICHRISBIRCH_HOME/ichrisbirch/app/static/sass/main.scss"
-  SASS_OUTPUT="$ICHRISBIRCH_HOME/ichrisbirch/app/static/css/main.css"
-  case "$2" in
-  watch)
-    echo "${blue}Watching SCSS for changes...${reset}"
-    echo "  Input:  ${cyan}$SASS_INPUT${reset}"
-    echo "  Output: ${cyan}$SASS_OUTPUT${reset}"
-    echo ""
-    sass --watch "$SASS_INPUT":"$SASS_OUTPUT"
-    ;;
-  compile)
-    echo "${blue}Compiling SCSS...${reset}"
-    sass "$SASS_INPUT":"$SASS_OUTPUT"
-    echo "${green}Done${reset}"
-    ;;
-  *)
-    echo "${green}SASS Commands:${reset}"
-    echo "  ${blue}sass compile${reset} - Compile SCSS once"
-    echo "  ${blue}sass watch${reset} - Watch and compile on changes"
     ;;
   esac
   ;;

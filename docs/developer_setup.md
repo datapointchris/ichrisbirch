@@ -23,10 +23,10 @@ cp .env.example .env
 pre-commit install
 
 # Generate SSL certificates for local development
-./cli/ichrisbirch ssl-manager generate dev
+./cli/icb ssl-manager generate dev
 
 # Start development environment
-./cli/ichrisbirch dev start
+./cli/icb dev start
 ```
 
 ## Access

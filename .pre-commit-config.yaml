@@ -160,7 +160,7 @@ repos:
       - id: vue-e2e-results
         name: vue e2e (results capture)
         description: "Run Playwright E2E tests and capture results for stats"
-        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; ./cli/ichrisbirch testing ensure && cd frontend && npx playwright test; rc=$?; cd .. && uv run python -m stats.collect_report playwright; exit $rc'
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; ./cli/icb testing ensure && cd frontend && npx playwright test; rc=$?; cd .. && uv run python -m stats.collect_report playwright; exit $rc'
         language: system
         pass_filenames: false
         files: '^frontend/.*\.(vue|ts|tsx)$'

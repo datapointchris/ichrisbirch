@@ -19,7 +19,7 @@ The application uses a **two-tier certificate strategy**:
 
 ```text
 NET::ERR_CERT_AUTHORITY_INVALID
-ERR_SSL_KEY_USAGE_INCOMPATIBLE  
+ERR_SSL_KEY_USAGE_INCOMPATIBLE
 SSL_ERROR_SELF_SIGNED_CERT
 ```
 
@@ -40,10 +40,10 @@ sudo cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
 mkcert -install
 
 # Regenerate certificates with mkcert
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 
 # Restart environment to use new certificates
-ichrisbirch dev restart
+icb dev restart
 ```
 
 **Prevention**: Always use mkcert for local development to avoid browser warnings
@@ -76,10 +76,10 @@ mkcert -install
 mkcert -CAROOT
 
 # Regenerate certificates
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 
 # Verify certificate information
-ichrisbirch ssl-manager info dev
+icb ssl-manager info dev
 ```
 
 **Prevention**: Always prefer mkcert over OpenSSL for local development certificates
@@ -101,10 +101,10 @@ ERR_CERT_COMMON_NAME_INVALID
 
 ```bash
 # Check which domains are covered by current certificate
-ichrisbirch ssl-manager info dev
+icb ssl-manager info dev
 
 # Regenerate with proper SANs (automatically includes all required domains)
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 ```
 
 **Prevention**: The ssl-manager script automatically includes all required domains when generating certificates
@@ -126,13 +126,13 @@ SSL_ERROR_EXPIRED_CERT
 
 ```bash
 # Check certificate expiration
-ichrisbirch ssl-manager info dev
+icb ssl-manager info dev
 
 # Regenerate certificates (mkcert certificates last 2+ years)
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 
 # Restart to use new certificates
-ichrisbirch dev restart
+icb dev restart
 ```
 
 **Prevention**: mkcert certificates have much longer validity (2+ years) compared to OpenSSL (365 days)
@@ -228,7 +228,7 @@ chmod 644 deploy-containers/traefik/certs/*.crt
 chmod 600 deploy-containers/traefik/certs/*.key
 
 # Restart Traefik
-ichrisbirch dev restart
+icb dev restart
 ```
 
 **Prevention**: The ssl-manager script sets proper permissions automatically
@@ -252,13 +252,13 @@ unable to load X509 key pair: open /etc/traefik/certs/dev.crt: no such file or d
 ls -la deploy-containers/traefik/certs/
 
 # Generate missing certificates
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 
 # Verify certificate files
-ichrisbirch ssl-manager validate dev
+icb ssl-manager validate dev
 
 # Restart environment
-ichrisbirch dev restart
+icb dev restart
 ```
 
 **Prevention**: Always run certificate generation before starting environments
@@ -311,33 +311,33 @@ certmgr.msc  # Run this to open Certificate Manager
 
 ```bash
 # Generate certificates for development (prefers mkcert)
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 
 # Generate certificates for all environments
-ichrisbirch ssl-manager generate all
+icb ssl-manager generate all
 
 # Force OpenSSL generation (for testing)
-FORCE_OPENSSL=1 ichrisbirch ssl-manager generate dev
+FORCE_OPENSSL=1 icb ssl-manager generate dev
 ```
 
 ### Validate Certificates
 
 ```bash
 # Validate specific environment certificates
-ichrisbirch ssl-manager validate dev
+icb ssl-manager validate dev
 
 # Validate all environment certificates
-ichrisbirch ssl-manager validate all
+icb ssl-manager validate all
 ```
 
 ### Certificate Information
 
 ```bash
 # Show detailed certificate information
-ichrisbirch ssl-manager info dev
+icb ssl-manager info dev
 
 # Show certificate information for all environments
-ichrisbirch ssl-manager info all
+icb ssl-manager info all
 ```
 
 ## 🚀 Best Practices
@@ -346,7 +346,7 @@ ichrisbirch ssl-manager info all
 
 1. **Install mkcert first**: Always install mkcert before generating certificates
 2. **Install CA**: Run `mkcert -install` to trust the local Certificate Authority
-3. **Generate certificates**: Use `ichrisbirch ssl-manager generate dev`
+3. **Generate certificates**: Use `icb ssl-manager generate dev`
 4. **Verify browser trust**: Test <https://api.docker.localhost/> in browser
 5. **Document for team**: Ensure all developers follow the same setup
 
@@ -361,11 +361,11 @@ ichrisbirch ssl-manager info all
 ### Troubleshooting Workflow
 
 1. **Check certificate existence**: `ls deploy-containers/traefik/certs/`
-2. **Validate certificates**: `ichrisbirch ssl-manager validate dev`
-3. **Check certificate info**: `ichrisbirch ssl-manager info dev`
+2. **Validate certificates**: `icb ssl-manager validate dev`
+3. **Check certificate info**: `icb ssl-manager info dev`
 4. **Test browser access**: Visit <https://api.docker.localhost/>
-5. **Check Traefik logs**: `ichrisbirch dev logs traefik`
-6. **Regenerate if needed**: `ichrisbirch ssl-manager generate dev`
+5. **Check Traefik logs**: `icb dev logs traefik`
+6. **Regenerate if needed**: `icb ssl-manager generate dev`
 
 ### Security Considerations
 

@@ -103,7 +103,7 @@ Playwright tests running through real Traefik routing at `https://app.docker.loc
 Interaction-heavy tests (edit modals, toggles, filters, search, sort) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 
 - Located in `frontend/e2e/`
-- Requires test containers running (`./cli/ichrisbirch testing start`)
+- Requires test containers running (`./cli/icb testing start`)
 - Sequential execution (`workers: 1`) to maintain consistent database state
 
 ### Running Vue Tests

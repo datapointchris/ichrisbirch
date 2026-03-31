@@ -414,7 +414,7 @@ def main():
         estimate_optimization_impact()
     except Exception as e:
         print(f'\nError: {e}')
-        print('Ensure the test database is running: ./cli/ichrisbirch testing start')
+        print('Ensure the test database is running: ./cli/icb testing start')
         raise
 
 

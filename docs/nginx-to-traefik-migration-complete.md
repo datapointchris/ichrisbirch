@@ -33,8 +33,8 @@ The CLI had **confusing command duplication** where multiple commands did the sa
 
 ```bash
 # CONFUSING - Multiple commands for the same operation
-ichrisbirch traefik start dev    # Started dev environment with Traefik
-ichrisbirch dev start            # Also started dev environment with Traefik
+icb traefik start dev    # Started dev environment with Traefik
+icb dev start            # Also started dev environment with Traefik
 
 # Users were confused about which command to use
 # Implementation details (Traefik) were exposed in user interface
@@ -47,9 +47,9 @@ ichrisbirch dev start            # Also started dev environment with Traefik
 
 ```bash
 # CLEAN - Single command per operation
-ichrisbirch dev start            # Starts dev with Traefik + HTTPS (automatic)
-ichrisbirch testing start       # Starts testing with Traefik + HTTPS (automatic)
-ichrisbirch prod start          # Starts prod with Traefik + HTTPS (automatic)
+icb dev start            # Starts dev with Traefik + HTTPS (automatic)
+icb testing start       # Starts testing with Traefik + HTTPS (automatic)
+icb prod start          # Starts prod with Traefik + HTTPS (automatic)
 
 # Implementation details hidden from users
 # Consistent patterns across all environments
@@ -60,28 +60,28 @@ ichrisbirch prod start          # Starts prod with Traefik + HTTPS (automatic)
 
 All `traefik-*` commands have been **completely removed**:
 
-- `ichrisbirch traefik start <env>` → **REMOVED** (use `ichrisbirch <env> start`)
-- `ichrisbirch traefik stop <env>` → **REMOVED** (use `ichrisbirch <env> stop`)
-- `ichrisbirch traefik restart <env>` → **REMOVED** (use `ichrisbirch <env> restart`)
-- `ichrisbirch traefik status <env>` → **REMOVED** (use `ichrisbirch <env> status`)
-- `ichrisbirch traefik logs <env>` → **REMOVED** (use `ichrisbirch <env> logs`)
-- `ichrisbirch traefik health <env>` → **REMOVED** (use `ichrisbirch <env> health`)
+- `icb traefik start <env>` → **REMOVED** (use `ichrisbirch <env> start`)
+- `icb traefik stop <env>` → **REMOVED** (use `ichrisbirch <env> stop`)
+- `icb traefik restart <env>` → **REMOVED** (use `ichrisbirch <env> restart`)
+- `icb traefik status <env>` → **REMOVED** (use `ichrisbirch <env> status`)
+- `icb traefik logs <env>` → **REMOVED** (use `ichrisbirch <env> logs`)
+- `icb traefik health <env>` → **REMOVED** (use `ichrisbirch <env> health`)
 
 ### ✅ **Current Simplified Commands**
 
 ```bash
 # Environment Management (with Traefik + HTTPS by default)
-ichrisbirch dev start           # Start development environment
-ichrisbirch dev stop            # Stop development environment
-ichrisbirch dev restart         # Restart development environment
-ichrisbirch dev status          # Show status + HTTPS URLs
-ichrisbirch dev logs            # View logs
-ichrisbirch dev health          # Run health checks
+icb dev start           # Start development environment
+icb dev stop            # Stop development environment
+icb dev restart         # Restart development environment
+icb dev status          # Show status + HTTPS URLs
+icb dev logs            # View logs
+icb dev health          # Run health checks
 
 # SSL Certificate Management (top-level command)
-ichrisbirch ssl-manager generate dev    # Generate certificates (prefers mkcert)
-ichrisbirch ssl-manager info dev        # Show certificate details
-ichrisbirch ssl-manager validate dev    # Validate certificates
+icb ssl-manager generate dev    # Generate certificates (prefers mkcert)
+icb ssl-manager info dev        # Show certificate details
+icb ssl-manager validate dev    # Validate certificates
 ```
 
 ## 🔒 Browser-Trusted HTTPS Implementation
@@ -98,7 +98,7 @@ brew install mkcert
 mkcert -install
 
 # Generate browser-trusted certificates
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 ```
 
 **Results**:
@@ -246,8 +246,8 @@ api:
 # Install and use mkcert for browser-trusted certificates
 brew install mkcert
 mkcert -install
-ichrisbirch ssl-manager generate dev
-ichrisbirch dev restart
+icb ssl-manager generate dev
+icb dev restart
 ```
 
 #### 2. **Command Not Found Errors**
@@ -258,10 +258,10 @@ ichrisbirch dev restart
 
 ```bash
 # WRONG (removed)
-ichrisbirch traefik start dev
+icb traefik start dev
 
 # CORRECT (current)
-ichrisbirch dev start
+icb dev start
 ```
 
 #### 3. **Port Conflicts**
@@ -276,7 +276,7 @@ docker stop $(docker ps -q --filter "name=nginx")
 docker rm $(docker ps -aq --filter "name=nginx")
 
 # Start with Traefik
-ichrisbirch dev start
+icb dev start
 ```
 
 #### 4. **DNS Resolution Issues**
@@ -311,7 +311,7 @@ echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 
 ```bash
 # Comprehensive environment health check
-ichrisbirch dev health
+icb dev health
 
 # Example output:
 # [✓] Container: icb-dev-traefik (Up 2 hours)
@@ -335,7 +335,7 @@ ichrisbirch dev health
 
 **After (Traefik + simplified CLI)**:
 
-1. **Single command per operation**: `ichrisbirch dev start`
+1. **Single command per operation**: `icb dev start`
 2. **Automatic service discovery**: New services appear immediately
 3. **Dynamic updates**: No restarts needed
 4. **Browser-trusted HTTPS**: No certificate warnings with mkcert
@@ -356,7 +356,7 @@ ichrisbirch dev health
 
 - ✅ **Eliminated 6 duplicate commands** (all `traefik-*` variants)
 - ✅ **Reduced cognitive load** for new developers
-- ✅ **Improved command discoverability** through `ichrisbirch help`
+- ✅ **Improved command discoverability** through `icb help`
 - ✅ **Professional CLI patterns** following industry standards
 
 ### Technical Improvements
@@ -403,7 +403,7 @@ The **nginx to Traefik migration** has been successfully completed with signific
 
 ### 🎯 **Key Benefits**
 
-- **Simplified Operations**: Single command per operation (`ichrisbirch dev start`)
+- **Simplified Operations**: Single command per operation (`icb dev start`)
 - **Better Security**: Browser-trusted certificates with proper Subject Alternative Names
 - **Improved Monitoring**: Built-in dashboard and comprehensive health checks
 - **Faster Development**: Automatic service discovery and dynamic updates

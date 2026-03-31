@@ -48,7 +48,7 @@ echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 cd ichrisbirch
 
 # Start development environment (includes HTTPS + Traefik automatically)
-./cli/ichrisbirch dev start
+./cli/icb dev start
 ```
 
 **What this does**:
@@ -62,10 +62,10 @@ cd ichrisbirch
 
 ```bash
 # Check service status and URLs
-./cli/ichrisbirch dev status
+./cli/icb dev status
 
 # Run comprehensive health checks
-./cli/ichrisbirch dev health
+./cli/icb dev health
 ```
 
 ### 3. Access Your Applications
@@ -93,15 +93,15 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Single commands for each operation
-./cli/ichrisbirch dev start       # Start development (Traefik + HTTPS automatic)
-./cli/ichrisbirch dev status      # Show status + URLs
-./cli/ichrisbirch dev health      # Run health checks
-./cli/ichrisbirch dev logs        # View service logs
-./cli/ichrisbirch dev stop        # Stop development
+./cli/icb dev start       # Start development (Traefik + HTTPS automatic)
+./cli/icb dev status      # Show status + URLs
+./cli/icb dev health      # Run health checks
+./cli/icb dev logs        # View service logs
+./cli/icb dev stop        # Stop development
 
 # SSL certificate management
-./cli/ichrisbirch ssl-manager generate dev    # Generate certificates
-./cli/ichrisbirch ssl-manager info dev        # Certificate information
+./cli/icb ssl-manager generate dev    # Generate certificates
+./cli/icb ssl-manager info dev        # Certificate information
 ```
 
 **No more confusing command duplication** - each operation has exactly one command.
@@ -127,7 +127,7 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Check what's running
-./cli/ichrisbirch dev status
+./cli/icb dev status
 
 # Example output:
 # Container Status:
@@ -150,44 +150,44 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Start development
-./cli/ichrisbirch dev start
+./cli/icb dev start
 
 # Quick status check
-./cli/ichrisbirch dev status
+./cli/icb dev status
 
 # View API logs while developing
-./cli/ichrisbirch dev logs api
+./cli/icb dev logs api
 
 # Stop when done
-./cli/ichrisbirch dev stop
+./cli/icb dev stop
 ```
 
 ### Troubleshooting
 
 ```bash
 # Run comprehensive health check
-./cli/ichrisbirch dev health
+./cli/icb dev health
 
 # View specific service logs
-./cli/ichrisbirch dev logs traefik    # Traefik proxy logs
-./cli/ichrisbirch dev logs api        # API backend logs
-./cli/ichrisbirch dev logs vue        # Vue frontend logs
+./cli/icb dev logs traefik    # Traefik proxy logs
+./cli/icb dev logs api        # API backend logs
+./cli/icb dev logs vue        # Vue frontend logs
 
 # Restart if needed
-./cli/ichrisbirch dev restart
+./cli/icb dev restart
 ```
 
 ### SSL Certificate Management
 
 ```bash
 # Generate certificates (automatic with mkcert)
-./cli/ichrisbirch ssl-manager generate dev
+./cli/icb ssl-manager generate dev
 
 # Check certificate information
-./cli/ichrisbirch ssl-manager info dev
+./cli/icb ssl-manager info dev
 
 # Validate certificates
-./cli/ichrisbirch ssl-manager validate dev
+./cli/icb ssl-manager validate dev
 ```
 
 ## 🚨 Quick Troubleshooting
@@ -201,8 +201,8 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 ```bash
 brew install mkcert
 mkcert -install
-./cli/ichrisbirch ssl-manager generate dev
-./cli/ichrisbirch dev restart
+./cli/icb ssl-manager generate dev
+./cli/icb dev restart
 ```
 
 ### 2. Service Not Accessible
@@ -212,9 +212,9 @@ mkcert -install
 **Solution**: Check service status and health
 
 ```bash
-./cli/ichrisbirch dev status
-./cli/ichrisbirch dev health
-./cli/ichrisbirch dev logs
+./cli/icb dev status
+./cli/icb dev health
+./cli/icb dev logs
 ```
 
 ### 3. Port Conflicts
@@ -224,9 +224,9 @@ mkcert -install
 **Solution**: Stop conflicting services
 
 ```bash
-./cli/ichrisbirch dev stop
+./cli/icb dev stop
 docker stop $(docker ps -q --filter "name=ichrisbirch")
-./cli/ichrisbirch dev start
+./cli/icb dev start
 ```
 
 ### 4. DNS Resolution Issues
@@ -259,7 +259,7 @@ grep docker.localhost /etc/hosts
 
 ```bash
 # Testing environment (different port and domain)
-./cli/ichrisbirch testing start
+./cli/icb testing start
 # Access at: https://api.test.localhost:8443/
 
 # Production environment (runs on homelab, not locally)

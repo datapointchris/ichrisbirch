@@ -144,11 +144,11 @@ Use the CLI to view colored logs that persist across container restarts:
 
 ```bash
 # All services
-./cli/ichrisbirch dev logs
+./cli/icb dev logs
 
 # Specific service
-./cli/ichrisbirch dev logs api
-./cli/ichrisbirch dev logs app
+./cli/icb dev logs api
+./cli/icb dev logs app
 ```
 
 The logs command uses a watch loop that automatically reconnects when containers restart.
@@ -157,20 +157,20 @@ The logs command uses a watch loop that automatically reconnects when containers
 
 ```bash
 # View test environment logs
-./cli/ichrisbirch testing logs
+./cli/icb testing logs
 
 # Specific service
-./cli/ichrisbirch testing logs api
+./cli/icb testing logs api
 ```
 
 ### Production
 
 ```bash
 # View production logs
-./cli/ichrisbirch prod logs
+./cli/icb prod logs
 
 # Specific service
-./cli/ichrisbirch prod logs api
+./cli/icb prod logs api
 ```
 
 ### Direct Docker Commands

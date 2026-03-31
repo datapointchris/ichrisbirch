@@ -15,10 +15,10 @@ The CLI underwent a **major simplification** to eliminate confusing command dupl
 **Error Messages**:
 
 ```bash
-$ ichrisbirch traefik start dev
+$ icb traefik start dev
 Unknown command: traefik
 
-$ ichrisbirch traefik status dev  
+$ icb traefik status dev
 Unknown command: traefik
 ```
 
@@ -27,30 +27,30 @@ Unknown command: traefik
 **Attempted Solutions (That Failed)**:
 
 - Looking for `traefik` command in help output (it's no longer there)
-- Trying variations like `ichrisbirch traefik-start dev` (doesn't exist)
+- Trying variations like `icb traefik-start dev` (doesn't exist)
 - Assuming the CLI is broken (it's working correctly, just simplified)
 
 **Resolution**: Use the simplified commands instead
 
 ```bash
 # WRONG (removed commands)
-ichrisbirch traefik start dev     → Use: ichrisbirch dev start
-ichrisbirch traefik stop dev      → Use: ichrisbirch dev stop
-ichrisbirch traefik restart dev   → Use: ichrisbirch dev restart
-ichrisbirch traefik status dev    → Use: ichrisbirch dev status
-ichrisbirch traefik logs dev      → Use: ichrisbirch dev logs
-ichrisbirch traefik health dev    → Use: ichrisbirch dev health
+icb traefik start dev     → Use: icb dev start
+icb traefik stop dev      → Use: icb dev stop
+icb traefik restart dev   → Use: icb dev restart
+icb traefik status dev    → Use: icb dev status
+icb traefik logs dev      → Use: icb dev logs
+icb traefik health dev    → Use: icb dev health
 
 # CORRECT (current commands)
-ichrisbirch dev start             # Starts dev with Traefik + HTTPS
-ichrisbirch dev stop              # Stops dev environment  
-ichrisbirch dev restart           # Restarts dev environment
-ichrisbirch dev status            # Shows status + HTTPS URLs
-ichrisbirch dev logs              # Shows service logs
-ichrisbirch dev health            # Runs health checks
+icb dev start             # Starts dev with Traefik + HTTPS
+icb dev stop              # Stops dev environment
+icb dev restart           # Restarts dev environment
+icb dev status            # Shows status + HTTPS URLs
+icb dev logs              # Shows service logs
+icb dev health            # Runs health checks
 ```
 
-**Prevention**: Use `ichrisbirch help` to see all available commands. The simplified interface only shows actual working commands.
+**Prevention**: Use `icb help` to see all available commands. The simplified interface only shows actual working commands.
 
 ### 2. Confusion About Which Command to Use
 
@@ -65,9 +65,9 @@ ichrisbirch dev health            # Runs health checks
 ichrisbirch <environment> <action>
 
 # Examples:
-ichrisbirch dev start         # Development environment
-ichrisbirch testing start    # Testing environment  
-ichrisbirch prod start       # Production environment
+icb dev start         # Development environment
+icb testing start    # Testing environment
+icb prod start       # Production environment
 ```
 
 **Benefits of Simplified Interface**:
@@ -84,7 +84,7 @@ ichrisbirch prod start       # Production environment
 **Error Messages**:
 
 ```bash
-$ ichrisbirch traefik ssl-manager generate dev
+$ icb traefik ssl-manager generate dev
 Unknown command: traefik
 ```
 
@@ -94,12 +94,12 @@ Unknown command: traefik
 
 ```bash
 # WRONG (old location)
-ichrisbirch traefik ssl-manager generate dev
+icb traefik ssl-manager generate dev
 
 # CORRECT (current location)
-ichrisbirch ssl-manager generate dev
-ichrisbirch ssl-manager info dev
-ichrisbirch ssl-manager validate dev
+icb ssl-manager generate dev
+icb ssl-manager info dev
+icb ssl-manager validate dev
 ```
 
 **Why This Changed**: SSL management is a fundamental operation that applies to all environments, not just Traefik-specific functionality.
@@ -114,13 +114,13 @@ ichrisbirch ssl-manager validate dev
 
 | Old Command (Removed) | New Command (Current) | Description |
 |----------------------|----------------------|-------------|
-| `ichrisbirch traefik start <env>` | `ichrisbirch <env> start` | Start environment |
-| `ichrisbirch traefik stop <env>` | `ichrisbirch <env> stop` | Stop environment |
-| `ichrisbirch traefik restart <env>` | `ichrisbirch <env> restart` | Restart environment |
-| `ichrisbirch traefik status <env>` | `ichrisbirch <env> status` | Environment status |
-| `ichrisbirch traefik logs <env>` | `ichrisbirch <env> logs` | View logs |
-| `ichrisbirch traefik health <env>` | `ichrisbirch <env> health` | Health checks |
-| `ichrisbirch traefik ssl-manager <cmd>` | `ichrisbirch ssl-manager <cmd>` | SSL management |
+| `icb traefik start <env>` | `ichrisbirch <env> start` | Start environment |
+| `icb traefik stop <env>` | `ichrisbirch <env> stop` | Stop environment |
+| `icb traefik restart <env>` | `ichrisbirch <env> restart` | Restart environment |
+| `icb traefik status <env>` | `ichrisbirch <env> status` | Environment status |
+| `icb traefik logs <env>` | `ichrisbirch <env> logs` | View logs |
+| `icb traefik health <env>` | `ichrisbirch <env> health` | Health checks |
+| `icb traefik ssl-manager <cmd>` | `icb ssl-manager <cmd>` | SSL management |
 
 **Prevention**: Always refer to the current [CLI Management Guide](../cli-traefik-usage.md) for up-to-date command references.
 
@@ -129,7 +129,7 @@ ichrisbirch ssl-manager validate dev
 **Problem**: Looking for `traefik` in help output
 
 ```bash
-$ ichrisbirch help
+$ icb help
 # traefik commands not listed
 ```
 
@@ -139,13 +139,13 @@ $ ichrisbirch help
 
 ```bash
 # General help (shows all top-level commands)
-ichrisbirch help
+icb help
 
 # Environment-specific help
-ichrisbirch dev help
+icb dev help
 
 # SSL manager help
-ichrisbirch ssl-manager help
+icb ssl-manager help
 ```
 
 **Expected Help Output**:
@@ -165,7 +165,7 @@ Available commands:
 **Error Messages**:
 
 ```bash
-./deploy.sh: line 15: ichrisbirch traefik start dev: command failed
+./deploy.sh: line 15: icb traefik start dev: command failed
 ```
 
 **Root Cause**: Scripts written for the old duplicated CLI interface
@@ -175,13 +175,13 @@ Available commands:
 ```bash
 # WRONG (will fail)
 #!/bin/bash
-ichrisbirch traefik start dev
-ichrisbirch traefik health dev
+icb traefik start dev
+icb traefik health dev
 
 # CORRECT (current)
 #!/bin/bash
-ichrisbirch dev start
-ichrisbirch dev health
+icb dev start
+icb dev health
 ```
 
 **Prevention**: Update all automation scripts and CI/CD pipelines to use the new simplified interface.
@@ -192,33 +192,33 @@ ichrisbirch dev health
 
 ```bash
 # Verify CLI is executable
-ls -la ./cli/ichrisbirch
+ls -la ./cli/icb
 
 # Make executable if needed
-chmod +x ./cli/ichrisbirch
+chmod +x ./cli/icb
 
 # Test basic functionality
-./cli/ichrisbirch help
+./cli/icb help
 ```
 
 ### Verify Current CLI Version
 
 ```bash
 # Check CLI script for version information
-head -20 ./cli/ichrisbirch
+head -20 ./cli/icb
 
 # Look for the function definitions to confirm simplified interface
-grep -n "function.*start\|function.*traefik" ./cli/ichrisbirch
+grep -n "function.*start\|function.*traefik" ./cli/icb
 ```
 
 ### Debug Command Parsing
 
 ```bash
 # Enable bash debugging to see command parsing
-bash -x ./cli/ichrisbirch dev start
+bash -x ./cli/icb dev start
 
 # Check if commands are being recognized
-./cli/ichrisbirch dev help
+./cli/icb dev help
 ```
 
 ## 🚀 CLI Migration Guide
@@ -228,7 +228,7 @@ bash -x ./cli/ichrisbirch dev start
 1. **Update muscle memory**: Practice using `<env> <action>` pattern
 2. **Update bookmarks**: Replace any documented commands with new syntax
 3. **Check scripts**: Update any personal scripts or aliases
-4. **Use help commands**: Rely on `ichrisbirch help` for current command reference
+4. **Use help commands**: Rely on `icb help` for current command reference
 
 ### For Teams
 
@@ -252,8 +252,8 @@ bash -x ./cli/ichrisbirch dev start
 
 ```bash
 # Users had to choose between equivalent commands
-ichrisbirch traefik start dev    # Started dev environment
-ichrisbirch dev start            # Also started dev environment (same result)
+icb traefik start dev    # Started dev environment
+icb dev start            # Also started dev environment (same result)
 
 # Problems:
 # - Confusion about which command to use
@@ -266,7 +266,7 @@ ichrisbirch dev start            # Also started dev environment (same result)
 
 ```bash
 # One command per operation
-ichrisbirch dev start            # Clear, simple, consistent
+icb dev start            # Clear, simple, consistent
 
 # Benefits:
 # - No confusion about which command to use
@@ -295,50 +295,56 @@ ichrisbirch dev start            # Clear, simple, consistent
 ### Current Simplified Commands
 
 ```bash
-# Environment Management (all use Traefik + HTTPS automatically)
-ichrisbirch dev start           # Start development
-ichrisbirch dev stop            # Stop development  
-ichrisbirch dev restart         # Restart development
-ichrisbirch dev status          # Status + URLs
-ichrisbirch dev logs            # View logs
-ichrisbirch dev health          # Health checks
+# Development
+icb dev start|stop|restart|rebuild  # Manage dev environment
+icb dev status|health               # Check environment
+icb dev logs [service]              # View logs
+icb dev smoke                       # Run smoke tests
+icb dev is-ready                    # Quick health check (exit 0/1)
+icb dev ensure                      # Start if not running
+icb dev docker [service]            # Show merged compose config
+icb dev db backup|restore|list|seed|init  # Database commands
 
-ichrisbirch testing start       # Start testing
-ichrisbirch testing stop        # Stop testing
-ichrisbirch testing restart     # Restart testing
-ichrisbirch testing status      # Status + URLs
-ichrisbirch testing logs        # View logs
-ichrisbirch testing health      # Health checks
+# Testing
+icb testing start|stop|restart|rebuild  # Manage test environment
+icb testing status|health               # Check environment
+icb testing logs [service]              # View logs
+icb testing db backup|restore|list|seed|reset  # Database commands
+icb test run [path] [args]              # Run pytest
 
-ichrisbirch prod start          # Start production
-ichrisbirch prod stop           # Stop production
-ichrisbirch prod restart        # Restart production
-ichrisbirch prod status         # Status + URLs
-ichrisbirch prod logs           # View logs
-ichrisbirch prod health         # Health checks
+# Production (blue/green aware)
+icb prod start|stop|restart         # Manage production
+icb prod status|health|apihealth    # Check environment
+icb prod logs [service|deploy|build]  # View logs
+icb prod smoke                      # Run smoke tests (requires ICHRISBIRCH_API_KEY)
+icb prod deploy-status              # Show blue/green state
+icb prod rollback                   # Switch traffic to previous color
+icb prod build-test                 # Test production Docker build locally
+icb prod db backup|restore|list|init  # Database commands
 
-# SSL Certificate Management (top-level commands)
-ichrisbirch ssl-manager generate dev    # Generate certificates
-ichrisbirch ssl-manager info dev        # Certificate information
-ichrisbirch ssl-manager validate dev    # Validate certificates
-ichrisbirch ssl-manager help            # SSL manager help
+# Tools
+icb ssl-manager generate|validate|info [env]  # SSL certificates
+icb routing generate                # Regenerate Traefik routing
+icb install                         # Symlink CLI to ~/.local/bin/icb
+icb stats summary|code|tests|quality|activity|events|trends|churn  # Stats
 
-# Help Commands
-ichrisbirch help                # General help
-ichrisbirch dev help            # Development help
-ichrisbirch ssl-manager help    # SSL help
+# Help
+icb help                # General help
+icb dev help            # Development help
+icb test help           # Test help
+icb stats               # Stats submenu
 ```
 
 ### Removed Commands (Do Not Use)
 
 ```bash
 # THESE COMMANDS NO LONGER EXIST:
-ichrisbirch traefik start <env>     # REMOVED
-ichrisbirch traefik stop <env>      # REMOVED
-ichrisbirch traefik restart <env>   # REMOVED
-ichrisbirch traefik status <env>    # REMOVED
-ichrisbirch traefik logs <env>      # REMOVED
-ichrisbirch traefik health <env>    # REMOVED
+icb traefik start <env>     # REMOVED
+icb traefik stop <env>      # REMOVED
+icb traefik restart <env>   # REMOVED
+icb traefik status <env>    # REMOVED
+icb traefik logs <env>      # REMOVED
+icb traefik health <env>    # REMOVED
 ```
 
 The CLI simplification provides a clean, professional interface that eliminates confusion and follows modern CLI design principles. The new simplified commands are more intuitive, easier to remember, and provide a better developer experience.

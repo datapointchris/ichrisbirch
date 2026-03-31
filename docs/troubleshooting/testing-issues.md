@@ -30,12 +30,12 @@ This silently suppressed cleanup errors, so failed cleanup operations went unnot
 **Attempted Solutions (That Failed):**
 
 - Running `docker system prune` manually between tests - temporary fix but not automated
-- Checking for specific container names only - missed containers with dynamic names  
+- Checking for specific container names only - missed containers with dynamic names
 - Using docker-compose down without additional cleanup - didn't handle edge cases where compose cleanup failed
 
 **Resolution:** Implemented container reuse strategy with database reset:
 
-**Test run command** (`cli/ichrisbirch:208-259`):
+**Test run command** (`cli/icb:208-259`):
 
 ```bash
 function test-run() {
@@ -91,7 +91,7 @@ function test-run() {
 
 ```bash
 # Stop and remove all test containers and volumes
-./cli/ichrisbirch testing stop
+./cli/icb testing stop
 
 # Full Docker cleanup if issues persist
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
@@ -746,7 +746,7 @@ find tests/ -name "*.py" | grep -E "(environment|conftest)"
 
 ```bash
 docker-compose -f docker-compose.test.yml build --no-cache test-runner
-ichrisbirch test
+icb test
 ```
 
 ## Test Checklist

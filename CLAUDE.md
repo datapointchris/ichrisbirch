@@ -12,28 +12,27 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 
 ```bash
 # Development
-./cli/ichrisbirch dev start|stop|restart|rebuild|status|health|logs
+./cli/icb dev start|stop|restart|rebuild|status|health|logs
 
 # Testing (reuses containers, cleans database each run)
-./cli/ichrisbirch test run              # All tests
-./cli/ichrisbirch test run <path> -v    # Specific test
-./cli/ichrisbirch test cov              # With coverage
-./cli/ichrisbirch testing start|stop|health|logs  # Container management
+./cli/icb test run              # All tests
+./cli/icb test run <path> -v    # Specific test
+./cli/icb testing start|stop|health|logs  # Container management
 
 # Database lifecycle (testing)
-./cli/ichrisbirch testing db init       # First-time: schemas + migrations + users
-./cli/ichrisbirch testing db reset      # Nuclear: drop + recreate everything
+./cli/icb testing db init       # First-time: schemas + migrations + users
+./cli/icb testing db reset      # Nuclear: drop + recreate everything
 
 # Vue frontend
 cd frontend && npm test                 # Build check + unit tests
 cd frontend && npm run test:e2e         # Playwright E2E through Traefik
 
 # Traefik routing (after adding a Vue page path)
-./cli/ichrisbirch routing generate
+./cli/icb routing generate
 
 # Merged Docker Compose config (debug overrides)
-./cli/ichrisbirch dev docker config [service]
-./cli/ichrisbirch testing docker config [service]
+./cli/icb dev docker config [service]
+./cli/icb testing docker config [service]
 
 # Database
 alembic revision --autogenerate -m "description"
@@ -157,7 +156,7 @@ Multi-stage Dockerfile: `base` → `development-builder` → `development` | `te
 
 **Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider: `routing.yml` (git-tracked routers) + `services.yml` (generated, points to active color). Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
 
-Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is generated from `deploy-containers/traefik/vue-paths.txt` via `ich routing generate`. CORS and security headers are separate middlewares per environment (`cors-*` and `security-headers-*`). Use `ich {dev,testing,prod} docker config [service]` to see fully merged compose output. SSL certs managed via `./cli/ichrisbirch ssl-manager`.
+Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is generated from `deploy-containers/traefik/vue-paths.txt` via `ich routing generate`. CORS and security headers are separate middlewares per environment (`cors-*` and `security-headers-*`). Use `ich {dev,testing,prod} docker config [service]` to see fully merged compose output. SSL certs managed via `./cli/icb ssl-manager`.
 
 ## Conventions
 
@@ -217,8 +216,8 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 **Vue**: consola with structured reporters matching structlog key=value format. JSON for Loki in production. Use `createLogger('ModuleName')`.
 
 ```bash
-./cli/ichrisbirch dev logs [service]     # Dev logs
-./cli/ichrisbirch testing logs [service] # Test logs
+./cli/icb dev logs [service]     # Dev logs
+./cli/icb testing logs [service] # Test logs
 ```
 
 ## Documentation

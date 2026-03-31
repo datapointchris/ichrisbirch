@@ -80,7 +80,7 @@ Add the new path to `deploy-containers/traefik/vue-paths.txt` and regenerate rou
 
 ```bash
 echo "/items" >> deploy-containers/traefik/vue-paths.txt
-./cli/ichrisbirch routing generate
+./cli/icb routing generate
 ```
 
 ### 5. Tests

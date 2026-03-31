@@ -189,38 +189,38 @@ Cloudflare handles TLS termination; Traefik receives HTTP internally and provide
 
 ```bash
 # Start any environment (uses Traefik automatically)
-ichrisbirch dev start               # Development
-ichrisbirch testing start          # Testing
-ichrisbirch prod start             # Production
+icb dev start               # Development
+icb testing start          # Testing
+icb prod start             # Production
 
 # Status and monitoring
-ichrisbirch dev status             # Service status + URLs
-ichrisbirch dev health             # Comprehensive health checks
-ichrisbirch dev logs               # View service logs
+icb dev status             # Service status + URLs
+icb dev health             # Comprehensive health checks
+icb dev logs               # View service logs
 
 # SSL certificate management
-ichrisbirch ssl-manager generate dev    # Generate certificates (prefers mkcert)
-ichrisbirch ssl-manager info dev        # Certificate information
-ichrisbirch ssl-manager validate dev    # Validate certificates
+icb ssl-manager generate dev    # Generate certificates (prefers mkcert)
+icb ssl-manager info dev        # Certificate information
+icb ssl-manager validate dev    # Validate certificates
 ```
 
 ### Routing and Config Commands
 
 ```bash
 # Generate routing files from vue-paths.txt
-ichrisbirch routing generate
+icb routing generate
 
 # See fully merged Docker Compose output (debug overrides)
-ichrisbirch dev docker config [service]
-ichrisbirch testing docker config [service]
+icb dev docker config [service]
+icb testing docker config [service]
 ```
 
 ## SSL certificate management
 
 ```bash
-ichrisbirch ssl-manager generate ENV   # Generate certificates
-ichrisbirch ssl-manager validate ENV   # Validate existing
-ichrisbirch ssl-manager info ENV       # Show certificate info
+icb ssl-manager generate ENV   # Generate certificates
+icb ssl-manager validate ENV   # Validate existing
+icb ssl-manager info ENV       # Show certificate info
 ```
 
 ## 🔒 SSL Certificate Management
@@ -231,10 +231,10 @@ Certificates are generated automatically with appropriate Subject Alternative Na
 
 ```bash
 # Generate certificates for all environments
-ichrisbirch ssl-manager generate all
+icb ssl-manager generate all
 
 # Generate specific environment
-ichrisbirch ssl-manager generate dev
+icb ssl-manager generate dev
 ```
 
 ### Certificate Details
@@ -277,7 +277,7 @@ The health check system validates:
 ### Health Check Output
 
 ```bash
-$ ichrisbirch dev health
+$ icb dev health
 
 Health Check for dev Environment
 ========================================
@@ -311,14 +311,14 @@ Health Check for dev Environment
 
    ```bash
    # Regenerate certificates
-   ichrisbirch ssl-manager generate all
+   icb ssl-manager generate all
    ```
 
 4. **Container Health**
 
    ```bash
    # Check specific container logs
-   ichrisbirch dev logs api
+   icb dev logs api
    ```
 
 ### Verification Steps
@@ -332,13 +332,13 @@ Health Check for dev Environment
 2. **Container Status**
 
    ```bash
-   ichrisbirch dev status
+   icb dev status
    ```
 
 3. **Certificate Validation**
 
    ```bash
-   ichrisbirch ssl-manager validate dev
+   icb ssl-manager validate dev
    ```
 
 ## 📈 Performance Considerations
