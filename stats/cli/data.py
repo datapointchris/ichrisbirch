@@ -221,6 +221,154 @@ def date_range(days: int) -> str:
     return dt.strftime('%Y-%m-%d')
 
 
+# ── Hook quality aggregation ────────────────────────────────────────
+
+# Maps tool name → the JSON field that holds its issues list.
+# Mirrors the bash get_issue_field() case statement.
+ISSUE_FIELD_MAP: dict[str, str] = {
+    'mypy': 'errors',
+    'vue-typecheck': 'errors',
+    'ruff-format': 'files_reformatted',
+    'vue-prettier': 'files_reformatted',
+    'terraform-fmt': 'files_reformatted',
+    'pyupgrade': 'rewritten_files',
+    'shellcheck': 'comments',
+    'vue-eslint': 'messages',
+    'end-of-file-fixer': 'fixed_files',
+    'trailing-whitespace': 'fixed_files',
+    'validate-markdown-links': 'broken_links',
+}
+
+# The ordered list of tools shown in the quality matrix.
+QUALITY_TOOLS = [
+    # Python
+    'ruff-check',
+    'ruff-format',
+    'mypy',
+    'bandit',
+    'codespell',
+    'refurb',
+    'pyupgrade',
+    # Shell / Docker / Terraform
+    'shellcheck',
+    'hadolint',
+    'docker-compose-validate',
+    'terraform-validate',
+    'terraform-tflint',
+    'terraform-fmt',
+    'terraform-docs',
+    # File format / fixers
+    'check-yaml',
+    'check-toml',
+    'check-json',
+    'detect-private-key',
+    'end-of-file-fixer',
+    'trailing-whitespace',
+    # Frontend
+    'sass',
+    'vue-eslint',
+    'vue-prettier',
+    'vue-typecheck',
+    # Docs / validation
+    'markdownlint',
+    'djlint',
+    'actionlint',
+    'validate-html',
+    'validate-markdown-links',
+    # Project
+    'code-sync',
+    'generate-fixture-diagrams',
+    'uv-lock',
+]
+
+
+def _issue_count(event: dict, tool: str) -> int:
+    """Count issues in a single hook event based on its tool-specific field."""
+    field = ISSUE_FIELD_MAP.get(tool, 'issues')
+    value = event.get(field, [])
+    return len(value) if isinstance(value, list) else 0
+
+
+def aggregate_hook_issues(events_path: str | Path) -> dict[str, dict[str, int]]:
+    """Aggregate issue counts per tool per date from all hook events.
+
+    Scans the events file once and builds a nested dict:
+    ``{tool_name: {date_str: total_issues}}``.
+
+    This replaces the bash loop that grep'd the file 124 times
+    (31 tools × 4 time windows).
+    """
+    all_hooks = load_events(events_path, event_type=None)
+
+    result: dict[str, dict[str, int]] = {}
+    for event in all_hooks:
+        event_type = event.get('type', '')
+        if not event_type.startswith('hook.'):
+            continue
+
+        tool = event_type.removeprefix('hook.')
+        date_key = event.get('timestamp', '')[:10]
+        if not date_key:
+            continue
+
+        count = _issue_count(event, tool)
+        tool_dates = result.setdefault(tool, {})
+        tool_dates[date_key] = tool_dates.get(date_key, 0) + count
+
+    return result
+
+
+def sum_issues_in_window(tool_dates: dict[str, int], days: int | None = None) -> int:
+    """Sum issue counts within a time window.
+
+    Args:
+        tool_dates: {date_str: count} for a single tool.
+        days: Number of days back from today. None means all time.
+    """
+    if days is None:
+        return sum(tool_dates.values())
+
+    cutoff = date_range(days)
+    return sum(count for date_str, count in tool_dates.items() if date_str >= cutoff)
+
+
+def hook_run_summary(events_path: str | Path) -> list[dict]:
+    """Compute hook run counts and failure rates across time periods.
+
+    Returns a list of dicts with keys: label, days, runs, failed, pct.
+    """
+    all_hooks = load_events(events_path, event_type=None)
+
+    # Collect all hook events with date + status
+    hook_events: list[tuple[str, bool]] = []
+    for event in all_hooks:
+        if not event.get('type', '').startswith('hook.'):
+            continue
+        date_key = event.get('timestamp', '')[:10]
+        is_failed = event.get('status') == 'failed'
+        if date_key:
+            hook_events.append((date_key, is_failed))
+
+    periods = [
+        ('Today', 1),
+        ('Last 7d', 7),
+        ('Last 14d', 14),
+        ('Last 30d', 30),
+        ('Last 60d', 60),
+        ('Last 90d', 90),
+    ]
+
+    results = []
+    for label, days in periods:
+        cutoff = date_range(days)
+        runs = sum(1 for d, _ in hook_events if d >= cutoff)
+        failed = sum(1 for d, f in hook_events if d >= cutoff and f)
+        pct = round(failed * 100 / runs, 1) if runs > 0 else 0.0
+        results.append({'label': label, 'days': days, 'runs': runs, 'failed': failed, 'pct': pct})
+
+    return results
+
+
 # ── Test data aggregation ──────────────────────────────────────────
 
 
