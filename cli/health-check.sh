@@ -221,7 +221,7 @@ check_containers() {
                 containers=(
                     "icb-prod-traefik"
                     "icb-prod-api"
-                    "icb-prod-app"
+                    "icb-prod-vue"
                     "icb-prod-chat"
                     "icb-prod-postgres"
                     "icb-prod-redis"
