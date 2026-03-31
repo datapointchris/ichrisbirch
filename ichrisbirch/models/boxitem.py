@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy import String
+from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
@@ -14,7 +14,7 @@ class BoxItem(Base):
     __tablename__ = 'items'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     box_id: Mapped[int] = mapped_column(Integer, ForeignKey('box_packing.boxes.id', ondelete='SET NULL'), nullable=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean, nullable=False)
     warm: Mapped[bool] = mapped_column(Boolean, nullable=False)
     liquid: Mapped[bool] = mapped_column(Boolean, nullable=False)

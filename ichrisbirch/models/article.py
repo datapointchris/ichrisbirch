@@ -3,7 +3,6 @@ from datetime import datetime
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
-from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped
@@ -15,8 +14,8 @@ from ichrisbirch.database.base import Base
 class Article(Base):
     __tablename__ = 'articles'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[str] = mapped_column(String(256), nullable=False)
-    tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(String), nullable=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, unique=True, nullable=True)
     save_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -48,7 +47,7 @@ class ArticleFailedImport(Base):
     __tablename__ = 'article_failed_imports'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     url: Mapped[str] = mapped_column(Text, nullable=False)
-    batch_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    batch_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=False)
     failed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

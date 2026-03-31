@@ -7,7 +7,6 @@ from sqlalchemy import BigInteger
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
-from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
@@ -150,9 +149,9 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     alternative_id: Mapped[int] = mapped_column(BigInteger, unique=True, default=generate_63_bit_int)
-    name: Mapped[str] = mapped_column(String(100), unique=False, nullable=False)
+    name: Mapped[str] = mapped_column(Text, unique=False, nullable=False)
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String(200), primary_key=False, unique=False, nullable=False)
+    password: Mapped[str] = mapped_column(Text, primary_key=False, unique=False, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, primary_key=False, unique=False, nullable=False, default=False)
     created_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
     last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)

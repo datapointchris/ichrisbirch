@@ -1,7 +1,6 @@
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -35,7 +34,7 @@ class Box(Base):
     __tablename__ = 'boxes'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     number: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
     size: Mapped[str] = mapped_column(Text, ForeignKey('box_packing.box_sizes.name'), nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean)
     warm: Mapped[bool] = mapped_column(Boolean)
