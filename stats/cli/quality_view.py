@@ -38,7 +38,7 @@ def _render_issue_matrix(con: Console, events_path: str) -> None:
         pad_edge=False,
         padding=(0, 1),
     )
-    table.add_column('Tool', min_width=18)
+    table.add_column('Tool', min_width=38)
     table.add_column('24h', justify='right', width=6)
     table.add_column('7d', justify='right', width=6)
     table.add_column('30d', justify='right', width=6)

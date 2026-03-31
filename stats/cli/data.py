@@ -228,6 +228,8 @@ ISSUE_FIELD_MAP: dict[str, str] = {
     'end-of-file-fixer': 'fixed_files',
     'trailing-whitespace': 'fixed_files',
     'validate-markdown-links': 'broken_links',
+    'check-executables-have-shebangs': 'files_without_shebangs',
+    'check-shebang-scripts-are-executable': 'files_not_executable',
 }
 
 # The ordered list of tools shown in the quality matrix.
@@ -252,6 +254,8 @@ QUALITY_TOOLS = [
     'check-yaml',
     'check-toml',
     'check-json',
+    'check-executables-have-shebangs',
+    'check-shebang-scripts-are-executable',
     'detect-private-key',
     'end-of-file-fixer',
     'trailing-whitespace',

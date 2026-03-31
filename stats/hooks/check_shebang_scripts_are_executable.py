@@ -57,12 +57,19 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckShebangExecu
 
 
 def _parse_output(output: str) -> list[str]:
-    """Parse check-shebang-scripts-are-executable output for failing file paths."""
+    """Parse check-shebang-scripts-are-executable output for failing file paths.
+
+    The tool outputs 3 lines per issue: the file path with error message,
+    then two help lines starting with 'If'. Only extract the file path
+    from the error lines.
+    """
     files: list[str] = []
 
     for line in output.split('\n'):
         line = line.strip()
-        if line:
-            files.append(line)
+        if not line or line.startswith('If '):
+            continue
+        path = line.split(': ')[0] if ': ' in line else line
+        files.append(path)
 
     return files

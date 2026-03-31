@@ -65,12 +65,20 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesS
 
 
 def _parse_output(output: str) -> list[str]:
-    """Parse check-executables-have-shebangs output for failing file paths."""
+    """Parse check-executables-have-shebangs output for failing file paths.
+
+    The tool outputs 3 lines per issue: the file path with error message,
+    then two help lines starting with 'If'. Only extract the file path
+    from the error lines.
+    """
     files: list[str] = []
 
     for line in output.split('\n'):
         line = line.strip()
-        if line:
-            files.append(line)
+        if not line or line.startswith('If '):
+            continue
+        # Extract file path from "path: marked executable but has no..."
+        path = line.split(': ')[0] if ': ' in line else line
+        files.append(path)
 
     return files
