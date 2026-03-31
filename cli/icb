@@ -261,12 +261,22 @@ function dev-restart() {
 
 function dev-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Rebuilding ${blue}DEV${reset} environment"
-  $COMPOSE_DEV down
-  echo "Building images..."
-  $COMPOSE_DEV build
-  echo "Starting services..."
-  $COMPOSE_DEV up -d
+
+  if [[ "${1:-}" == "--all" ]]; then
+    echo "Full rebuild of ${blue}DEV${reset} environment (all services)"
+    $COMPOSE_DEV down
+    echo "Building images..."
+    $COMPOSE_DEV build
+    echo "Starting all services..."
+    $COMPOSE_DEV up -d
+  else
+    echo "Rebuilding ${blue}DEV${reset} app services (use ${cyan}--all${reset} for infra too)"
+    echo "Building app image..."
+    $COMPOSE_DEV build api
+    echo "Recreating app services..."
+    $COMPOSE_DEV up -d --force-recreate api chat scheduler vue
+  fi
+
   echo "Waiting for API container..."
   wait-for-healthy icb-dev-api 60
   echo "Initializing database..."
@@ -320,7 +330,8 @@ function dev-usage() {
   echo "  ${blue}dev start${reset}              Start dev containers"
   echo "  ${blue}dev stop${reset}               Stop dev containers"
   echo "  ${blue}dev restart${reset}            Restart dev containers"
-  echo "  ${blue}dev rebuild${reset}            Full rebuild of dev containers"
+  echo "  ${blue}dev rebuild${reset}            Rebuild app services (api, chat, scheduler, vue)"
+  echo "  ${blue}dev rebuild --all${reset}      Full rebuild including infra (traefik, postgres, redis)"
   echo "  ${blue}dev status${reset}             Show container status"
   echo "  ${blue}dev health${reset}             Full diagnostic health check"
   echo "  ${blue}dev is-ready${reset}           Quick check if API is responding (exit 0/1)"
@@ -1018,7 +1029,7 @@ dev)
   start) dev-start ;;
   stop) dev-stop ;;
   restart) dev-restart ;;
-  rebuild) dev-rebuild ;;
+  rebuild) dev-rebuild "$3" ;;
   status) dev-status ;;
   smoke) dev-smoke ;;
   health) dev-health ;;
