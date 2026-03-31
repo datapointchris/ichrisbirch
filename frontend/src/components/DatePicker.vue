@@ -14,6 +14,7 @@
         :value="displayValue"
         @focus="openCalendar"
         @input="handleTextInput"
+        @blur="handleBlur"
         @keydown.escape="closeCalendar"
         @keydown.enter.prevent="commitTextInput"
       />
@@ -332,7 +333,7 @@ function handleTextInput(event: Event) {
   }
 }
 
-function commitTextInput() {
+function handleBlur() {
   if (!inputRef.value) return
   const val = inputRef.value.value.trim()
   if (!val) {
@@ -344,7 +345,11 @@ function commitTextInput() {
     }
   }
   closeCalendar()
-  inputRef.value.blur()
+}
+
+function commitTextInput() {
+  handleBlur()
+  inputRef.value?.blur()
 }
 
 function prevMonth() {
