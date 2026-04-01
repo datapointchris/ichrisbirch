@@ -263,15 +263,15 @@ Ensure WebSockets are enabled in the tunnel route settings for chat.ichrisbirch.
 
 ### Database Role Does Not Exist
 
-If you see `FATAL: role "ichrisbirch" does not exist`:
+If you see `FATAL: role "icb_app" does not exist`:
 
 ```bash
-# Create the role (get password from SSM first)
-PG_PASS=$(aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/postgres/password" --with-decryption --query 'Parameter.Value' --output text)
+# Create the role (get password from decrypted .env)
+PG_PASS=$(grep '^POSTGRES_PASSWORD=' /srv/ichrisbirch/.env | cut -d= -f2- | tr -d '"')
 
-docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$PG_PASS';"
-docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
-docker exec icb-prod-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
+docker exec icb-infra-postgres psql -U postgres -c "CREATE ROLE icb_app WITH LOGIN PASSWORD '$PG_PASS';"
+docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;"
+docker exec icb-infra-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO icb_app;"
 ```
 
 ### Database Restore from Backup
@@ -283,12 +283,12 @@ If you need to restore from a `.dump` file:
 docker stop icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
 
 # Terminate existing connections and recreate database
-docker exec icb-prod-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
-docker exec icb-prod-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
-docker exec icb-prod-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
+docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
+docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
+docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
 
 # Restore from dump
-cat /path/to/backup.dump | docker exec -i icb-prod-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner
+cat /path/to/backup.dump | docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner
 
 # Start services
 docker start icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler

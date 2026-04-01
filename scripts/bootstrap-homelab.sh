@@ -288,9 +288,25 @@ post_start_database() {
     local pg_password
     pg_password=$(grep '^POSTGRES_PASSWORD=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
 
-    docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';"
-    docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;"
-    docker exec icb-prod-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO ichrisbirch;"
+    docker exec icb-infra-postgres psql -U postgres -c "CREATE ROLE icb_app WITH LOGIN PASSWORD '$pg_password';"
+    docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;"
+    docker exec icb-infra-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO icb_app;"
+
+    # Grant schema access and set default privileges for future objects
+    docker exec icb-infra-postgres psql -U postgres -d ichrisbirch -c "
+DO \$\$
+DECLARE
+    s TEXT;
+BEGIN
+    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','chat','habits'])
+    LOOP
+        EXECUTE format('GRANT ALL ON SCHEMA %I TO icb_app', s);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON TABLES TO icb_app', s);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON SEQUENCES TO icb_app', s);
+    END LOOP;
+END
+\$\$;
+"
 
     log_success "Database role created"
     rm /tmp/ichrisbirch_db_init
@@ -310,16 +326,32 @@ post_start_database() {
     local pg_password
     pg_password=$(grep '^POSTGRES_PASSWORD=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
 
-    docker exec icb-prod-postgres psql -U postgres -c "CREATE ROLE ichrisbirch WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
-    docker exec icb-prod-postgres psql -U postgres -c "ALTER ROLE ichrisbirch CREATEDB;" 2>/dev/null || true
+    docker exec icb-infra-postgres psql -U postgres -c "CREATE ROLE icb_app WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
+    docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;" 2>/dev/null || true
 
     # Drop and recreate database
-    docker exec icb-prod-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();" 2>/dev/null || true
-    docker exec icb-prod-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
-    docker exec icb-prod-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER ichrisbirch;"
+    docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();" 2>/dev/null || true
+    docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
+    docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
+
+    # Grant schema access and set default privileges for future objects
+    docker exec icb-infra-postgres psql -U postgres -d ichrisbirch -c "
+DO \$\$
+DECLARE
+    s TEXT;
+BEGIN
+    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','chat','habits'])
+    LOOP
+        EXECUTE format('GRANT ALL ON SCHEMA %I TO icb_app', s);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON TABLES TO icb_app', s);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON SEQUENCES TO icb_app', s);
+    END LOOP;
+END
+\$\$;
+"
 
     # Restore
-    docker exec -i icb-prod-postgres pg_restore -U ichrisbirch -d ichrisbirch --no-owner <"$backup_path" || true
+    docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner <"$backup_path" || true
 
     # Start services back up
     docker start icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler

@@ -169,7 +169,7 @@ docker-compose -f docker-compose.prod.yml restart nginx
 ```bash
 # 1. Backup database first
 docker-compose -f docker-compose.prod.yml exec postgres pg_dump \
-  -U ichrisbirch ichrisbirch > backup_$(date +%Y%m%d_%H%M%S).sql
+  -U icb_app ichrisbirch > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # 2. Test migrations on backup
 docker-compose -f docker-compose.test.yml run test-runner \
@@ -322,7 +322,7 @@ sleep 30
 
 # Restore data
 docker-compose -f docker-compose.prod.yml exec postgres \
-  pg_restore -U ichrisbirch -d ichrisbirch \
+  pg_restore -U icb_app -d ichrisbirch \
   /backup/backup_20231201_120000.dump
 ```
 
@@ -441,7 +441,7 @@ docker-compose -f docker-compose.prod.yml stop app
 
 # 2. Assess damage
 docker-compose -f docker-compose.prod.yml exec postgres \
-  psql -U ichrisbirch -c "SELECT COUNT(*) FROM users;"
+  psql -U icb_app -c "SELECT COUNT(*) FROM users;"
 
 # 3. Restore from most recent backup
 # (Use backup recovery procedure)

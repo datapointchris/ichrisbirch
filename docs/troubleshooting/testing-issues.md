@@ -124,7 +124,7 @@ services:
   test-runner:
     environment:
       - POSTGRES_DB_SCHEMA=ichrisbirch_test
-      - DATABASE_URL=postgresql://ichrisbirch:password@postgres:5432/ichrisbirch_test
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ichrisbirch
 ```
 
 1. **Run Alembic migrations in test setup:**
@@ -209,7 +209,7 @@ services:
 
   postgres:
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -370,7 +370,7 @@ TEST_DATA_DIR = BASE_DIR / "tests" / "data"
 ```yaml
 # .env.test
 POSTGRES_DB_SCHEMA=ichrisbirch_test
-DATABASE_URL=postgresql://ichrisbirch:password@postgres:5432/ichrisbirch_test
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ichrisbirch
 API_URL=http://api:8000
 FLASK_ENV=testing
 ```

@@ -12,7 +12,7 @@ This document covers database-related issues encountered during development, tes
 
 - `psycopg2.OperationalError: connection to server at "localhost" (127.0.0.1) port 5432 refused`
 - `FATAL: database "ichrisbirch" does not exist`
-- `FATAL: role "ichrisbirch" does not exist`
+- `FATAL: role "icb_app" does not exist`
 
 **Common Causes and Solutions:**
 
@@ -50,9 +50,9 @@ services:
 
 ```sql
 -- Connect as superuser and create database/user
-CREATE USER ichrisbirch WITH PASSWORD 'password';
-CREATE DATABASE ichrisbirch OWNER ichrisbirch;
-GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO ichrisbirch;
+CREATE USER icb_app WITH PASSWORD 'password';
+CREATE DATABASE ichrisbirch OWNER icb_app;
+GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO icb_app;
 ```
 
 ### Schema and Table Issues
@@ -91,7 +91,7 @@ services:
 ```sql
 -- Connect to database and create schema
 CREATE SCHEMA IF NOT EXISTS ichrisbirch_test;
-ALTER USER ichrisbirch SET search_path TO ichrisbirch_test;
+ALTER USER icb_app SET search_path TO ichrisbirch_test;
 ```
 
 ## Migration Issues
@@ -309,10 +309,10 @@ SELECT conname, contype FROM pg_constraint WHERE contype = 'f';
 
 ```bash
 # Backup database before repairs
-docker-compose exec postgres pg_dump -U ichrisbirch ichrisbirch > backup.sql
+docker-compose exec postgres pg_dump -U icb_app ichrisbirch > backup.sql
 
 # Run integrity checks
-docker-compose exec postgres psql -U ichrisbirch -d ichrisbirch -c "
+docker-compose exec postgres psql -U icb_app -d ichrisbirch -c "
 VACUUM ANALYZE;
 REINDEX DATABASE ichrisbirch;
 "
@@ -391,7 +391,7 @@ DATABASE_URL = "postgresql://user:pass@host:5432/db?sslmode=require&sslcert=clie
 ```bash
 # Create backup with custom format
 docker-compose exec postgres pg_dump \
-  -U ichrisbirch \
+  -U icb_app \
   -d ichrisbirch \
   -f /backup/ichrisbirch_$(date +%Y%m%d_%H%M%S).dump \
   --format=custom \
@@ -399,7 +399,7 @@ docker-compose exec postgres pg_dump \
 
 # Create SQL backup
 docker-compose exec postgres pg_dump \
-  -U ichrisbirch \
+  -U icb_app \
   -d ichrisbirch \
   -f /backup/ichrisbirch_$(date +%Y%m%d_%H%M%S).sql \
   --verbose
@@ -410,7 +410,7 @@ docker-compose exec postgres pg_dump \
 ```bash
 # Restore from custom format
 docker-compose exec postgres pg_restore \
-  -U ichrisbirch \
+  -U icb_app \
   -d ichrisbirch_restored \
   --clean --create \
   --verbose \
@@ -418,7 +418,7 @@ docker-compose exec postgres pg_restore \
 
 # Restore from SQL
 docker-compose exec postgres psql \
-  -U ichrisbirch \
+  -U icb_app \
   -d ichrisbirch_restored \
   -f /backup/ichrisbirch_20231201_120000.sql
 ```
