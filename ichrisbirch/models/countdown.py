@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import Date
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -11,7 +12,7 @@ from ichrisbirch.database.base import Base
 
 class Countdown(Base):
     __tablename__ = 'countdowns'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     due_date: Mapped[date] = mapped_column(Date, nullable=False)

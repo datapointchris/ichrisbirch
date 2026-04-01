@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Float
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -17,7 +18,7 @@ class SchedulerJobRun(Base):
     __tablename__ = 'scheduler_job_runs'
     __table_args__ = {'schema': 'admin'}
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     job_id: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

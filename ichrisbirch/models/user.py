@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import BigInteger
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import event
@@ -162,7 +163,7 @@ class User(Base):
     def default_preferences():
         return DEFAULT_USER_PREFERENCES
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     alternative_id: Mapped[int] = mapped_column(BigInteger, unique=True, default=generate_63_bit_int)
     name: Mapped[str] = mapped_column(Text, unique=False, nullable=False)
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)

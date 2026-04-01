@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import Date
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 class DurationNote(Base):
     __tablename__ = 'duration_notes'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     duration_id: Mapped[int] = mapped_column(ForeignKey('durations.id', ondelete='CASCADE'), nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)

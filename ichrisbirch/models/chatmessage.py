@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 class ChatMessage(Base):
     __table_args__ = {'schema': 'chat'}
     __tablename__ = 'messages'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     chat_id: Mapped[int] = mapped_column(ForeignKey('chat.chats.id', ondelete='CASCADE'), nullable=False)
     chat: Mapped[Chat] = relationship(back_populates='messages')
     role: Mapped[str] = mapped_column(Text, nullable=False)

@@ -1,5 +1,6 @@
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -12,7 +13,7 @@ from ichrisbirch.database.base import Base
 class BoxItem(Base):
     __table_args__ = {'schema': 'box_packing'}
     __tablename__ = 'items'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     box_id: Mapped[int] = mapped_column(Integer, ForeignKey('box_packing.boxes.id', ondelete='SET NULL'), nullable=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     essential: Mapped[bool] = mapped_column(Boolean, nullable=False)

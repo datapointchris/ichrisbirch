@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import Float
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -13,7 +14,7 @@ from ichrisbirch.database.base import Base
 
 class Event(Base):
     __tablename__ = 'events'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     venue: Mapped[str] = mapped_column(Text, nullable=False)

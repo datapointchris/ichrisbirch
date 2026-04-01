@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 class Habit(Base):
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'habits'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
     category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='habits')

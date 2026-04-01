@@ -4,6 +4,7 @@ from datetime import datetime
 import pendulum
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import func
@@ -50,7 +51,7 @@ def frequency_to_duration(frequency: str) -> pendulum.Duration:
 
 class AutoTask(Base):
     __tablename__ = 'autotasks'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(Text, ForeignKey('task_categories.name'), nullable=False)

@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
@@ -13,7 +14,7 @@ from ichrisbirch.database.base import Base
 
 class Article(Base):
     __tablename__ = 'articles'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
@@ -45,7 +46,7 @@ class Article(Base):
 
 class ArticleFailedImport(Base):
     __tablename__ = 'article_failed_imports'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     url: Mapped[str] = mapped_column(Text, nullable=False)
     batch_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=False)

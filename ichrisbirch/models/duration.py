@@ -2,6 +2,7 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Date
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 class Duration(Base):
     __tablename__ = 'durations'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)

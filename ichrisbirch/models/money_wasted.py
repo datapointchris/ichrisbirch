@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlalchemy import Date
 from sqlalchemy import Float
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -12,7 +13,7 @@ from ichrisbirch.database.base import Base
 
 class MoneyWasted(Base):
     __tablename__ = 'money_wasted'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     item: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     date_purchased: Mapped[date] = mapped_column(Date, nullable=True)

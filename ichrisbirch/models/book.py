@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import DateTime
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
@@ -45,7 +46,7 @@ class BookProgress(Base):
 
 class Book(Base):
     __tablename__ = 'books'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     isbn: Mapped[str | None] = mapped_column(Text, nullable=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     author: Mapped[str] = mapped_column(Text, nullable=False)

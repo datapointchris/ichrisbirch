@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 class Chat(Base):
     __table_args__ = {'schema': 'chat'}
     __tablename__ = 'chats'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     category: Mapped[str] = mapped_column(Text, nullable=True)
     subcategory: Mapped[str] = mapped_column(Text, nullable=True)

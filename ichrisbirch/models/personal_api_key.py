@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
@@ -28,7 +29,7 @@ def hash_api_key(key: str) -> str:
 class PersonalAPIKey(Base):
     __tablename__ = 'personal_api_keys'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     key_prefix: Mapped[str] = mapped_column(Text, nullable=False)
