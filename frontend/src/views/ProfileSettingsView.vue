@@ -118,6 +118,34 @@
         </div>
       </div>
 
+      <!-- Sidebar Order -->
+      <div class="grid__item">
+        <h3>Sidebar Order</h3>
+        <p class="setting-description">Drag to reorder the sidebar navigation links.</p>
+        <draggable
+          :list="sidebarLinks"
+          item-key="to"
+          handle=".sidebar-order__drag-handle"
+          ghost-class="sidebar-order__ghost"
+          :animation="150"
+          class="sidebar-order"
+          @end="onSidebarDragEnd"
+        >
+          <template #item="{ element: link }">
+            <div class="sidebar-order__item">
+              <div class="sidebar-order__drag-handle">
+                <i class="fa-solid fa-grip-vertical"></i>
+              </div>
+              <i
+                :class="link.icon"
+                class="sidebar-order__icon"
+              ></i>
+              <span class="sidebar-order__label">{{ link.label }}</span>
+            </div>
+          </template>
+        </draggable>
+      </div>
+
       <!-- API Keys -->
       <div class="grid__item">
         <h3>Personal API Keys</h3>
@@ -229,6 +257,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
 import { applyTheme, applyFont, applyAccentHue, fonts, themes } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
+import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
+import draggable from 'vuedraggable'
 import ProfileSubnav from '@/components/ProfileSubnav.vue'
 import { formatDate } from '@/composables/formatDate'
 
@@ -249,6 +279,19 @@ const isColorTheme = computed(() => {
 const availableFonts = [...fonts].sort((a, b) => a.name.localeCompare(b.name))
 const keyName = ref('')
 const newlyCreatedKey = ref<string | null>(null)
+
+// Sidebar ordering — vuedraggable mutates sidebarLinks directly via :list
+const sidebarLinks = ref<NavLink[]>([])
+
+async function onSidebarDragEnd() {
+  const order = sidebarLinks.value.map((link) => link.to)
+  try {
+    await auth.updatePreferences({ sidebar_order: order })
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update sidebar order: ${detail}`, 'error')
+  }
+}
 
 async function selectThemeColor(themeId: string) {
   selectedThemeColor.value = themeId
@@ -359,6 +402,11 @@ onMounted(async () => {
     if (auth.preferences.custom_accent_hue) {
       accentHue.value = Number(auth.preferences.custom_accent_hue)
     }
+    const order = (auth.preferences.sidebar_order as string[] | undefined) ?? DEFAULT_SIDEBAR_ORDER
+    const linkMap = new Map(allMainLinks.map((link) => [link.to, link]))
+    sidebarLinks.value = order.map((path) => linkMap.get(path)).filter((l): l is NavLink => l != null)
+  } else {
+    sidebarLinks.value = [...allMainLinks]
   }
 })
 </script>
@@ -609,5 +657,63 @@ onMounted(async () => {
   color: var(--clr-gray-500);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Sidebar order */
+.sidebar-order {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.sidebar-order__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-2xs) var(--space-s);
+  border-radius: 0.375rem;
+  box-shadow: var(--floating-box);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--bubble-box);
+  }
+}
+
+.sidebar-order__drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  cursor: grab;
+  color: var(--clr-gray-500);
+  font-size: 0.75rem;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+
+  .sidebar-order__item:hover & {
+    opacity: 1;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.sidebar-order__icon {
+  width: 1.25em;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--clr-accent);
+}
+
+.sidebar-order__label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.sidebar-order__ghost {
+  opacity: 0.3;
 }
 </style>

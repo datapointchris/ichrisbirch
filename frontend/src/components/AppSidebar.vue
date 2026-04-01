@@ -98,7 +98,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
 import SubmitIssueButton from '@/components/SubmitIssueButton.vue'
 
 defineProps<{
@@ -110,49 +113,25 @@ defineEmits<{
   'open-issue': []
 }>()
 
-interface NavLink {
-  to: string
-  label: string
-  icon: string
-  migrated: boolean
-  activeNames?: string[]
-}
-
 const route = useRoute()
+const auth = useAuthStore()
 
-const mainLinks: NavLink[] = [
-  { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: true },
-  { to: '/dashboard', label: 'Dashboard', icon: 'fa-solid fa-grip', migrated: true },
-  {
-    to: '/articles',
-    label: 'Articles',
-    icon: 'fa-solid fa-newspaper',
-    migrated: true,
-    activeNames: ['articles', 'article-insights', 'article-bulk-import'],
-  },
-  { to: '/autotasks', label: 'AutoTasks', icon: 'fa-solid fa-robot', migrated: true },
-  { to: '/books', label: 'Books', icon: 'fa-solid fa-book', migrated: true },
-  { to: '/box-packing', label: 'Box Packing', icon: 'fa-solid fa-box', migrated: true },
-  { to: '/countdowns', label: 'Countdowns', icon: 'fa-solid fa-hourglass-half', migrated: true },
-  { to: '/durations', label: 'Durations', icon: 'fa-solid fa-clock-rotate-left', migrated: true },
-  { to: '/events', label: 'Events', icon: 'fa-solid fa-calendar', migrated: true },
-  {
-    to: '/habits',
-    label: 'Habits',
-    icon: 'fa-solid fa-repeat',
-    migrated: true,
-    activeNames: ['habits', 'habits-completed', 'habits-manage'],
-  },
-  { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: true },
-  { to: '/projects', label: 'Projects', icon: 'fa-solid fa-diagram-project', migrated: true },
-  {
-    to: '/tasks',
-    label: 'Tasks',
-    icon: 'fa-solid fa-list-check',
-    migrated: true,
-    activeNames: ['tasks', 'tasks-todo', 'tasks-completed', 'tasks-search'],
-  },
-]
+const mainLinks = computed(() => {
+  const order = (auth.preferences?.sidebar_order as string[] | undefined) ?? DEFAULT_SIDEBAR_ORDER
+  const linkMap = new Map(allMainLinks.map((link) => [link.to, link]))
+  const sorted: NavLink[] = []
+  for (const path of order) {
+    const link = linkMap.get(path)
+    if (link) {
+      sorted.push(link)
+      linkMap.delete(path)
+    }
+  }
+  for (const link of linkMap.values()) {
+    sorted.push(link)
+  }
+  return sorted
+})
 
 const footerLinks: NavLink[] = [
   {

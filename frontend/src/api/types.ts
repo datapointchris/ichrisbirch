@@ -26,6 +26,7 @@ export interface UserPreferences {
   dark_mode: boolean
   notifications: boolean
   dashboard_layout: string[][]
+  sidebar_order?: string[]
   [key: string]: unknown
 }
 
