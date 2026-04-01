@@ -654,6 +654,7 @@ export interface ServerInfo {
   environment: string
   api_url: string
   server_time: string
+  deploy_color: string | null
 }
 
 export interface SystemHealth {

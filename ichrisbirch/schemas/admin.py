@@ -45,6 +45,7 @@ class ServerInfo(AdminConfig):
     environment: str
     api_url: str
     server_time: str
+    deploy_color: str | None = None
 
 
 class SystemHealth(AdminConfig):

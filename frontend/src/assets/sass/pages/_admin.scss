@@ -89,6 +89,20 @@
   background: var(--clr-red-900, #7f1d1d);
 }
 
+.admin-status--blue {
+  color: oklch(0.75 0.15 240);
+  background: oklch(0.3 0.08 240);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-status--green {
+  color: oklch(0.75 0.15 145);
+  background: oklch(0.3 0.08 145);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .admin__empty {
   color: var(--clr-gray-500);
   font-style: italic;
@@ -100,6 +114,67 @@
   border: 1px solid var(--clr-red-800, #991b1b);
   border-radius: 4px;
   margin-top: var(--space-m);
+}
+
+.admin-meter {
+  position: relative;
+  height: 24px;
+  background: var(--clr-gray-800);
+  border-radius: 4px;
+  margin-top: var(--space-2xs);
+  overflow: hidden;
+}
+
+.admin-meter__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.admin-meter__fill--ok {
+  background: var(--clr-green-600, #16a34a);
+}
+
+.admin-meter__fill--warn {
+  background: var(--clr-yellow-600, #ca8a04);
+}
+
+.admin-meter__fill--danger {
+  background: var(--clr-red-600, #dc2626);
+}
+
+.admin-meter__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--fs-300);
+  font-weight: 600;
+}
+
+.admin-details {
+  margin-top: var(--space-xs);
+}
+
+.admin-details summary {
+  cursor: pointer;
+  color: var(--clr-gray-400);
+  font-size: var(--fs-300);
+}
+
+.admin-actions {
+  margin-top: var(--space-m);
+  display: flex;
+  gap: var(--space-s);
+}
+
+.admin-auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--clr-gray-400);
+  font-size: var(--fs-300);
+  cursor: pointer;
 }
 
 .button--small {

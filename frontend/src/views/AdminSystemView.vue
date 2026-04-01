@@ -19,6 +19,18 @@
             <strong>API URL</strong>
             <span>{{ store.systemHealth.server.api_url }}</span>
           </div>
+          <div
+            v-if="store.systemHealth.server.deploy_color"
+            class="admin-kv"
+          >
+            <strong>Deploy</strong>
+            <span
+              class="admin-status"
+              :class="`admin-status--${store.systemHealth.server.deploy_color}`"
+            >
+              {{ store.systemHealth.server.deploy_color }}
+            </span>
+          </div>
           <div class="admin-kv">
             <strong>Server Time</strong>
             <span>{{ store.systemHealth.server.server_time }}</span>
@@ -283,74 +295,3 @@ const diskUsageClass = computed(() => {
   return 'admin-meter__fill--ok'
 })
 </script>
-
-<style scoped>
-.admin-meter {
-  position: relative;
-  height: 24px;
-  background: var(--clr-gray-800);
-  border-radius: 4px;
-  margin-top: var(--space-2xs);
-  overflow: hidden;
-}
-
-.admin-meter__fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.admin-meter__fill--ok {
-  background: var(--clr-green-600, #16a34a);
-}
-
-.admin-meter__fill--warn {
-  background: var(--clr-yellow-600, #ca8a04);
-}
-
-.admin-meter__fill--danger {
-  background: var(--clr-red-600, #dc2626);
-}
-
-.admin-meter__label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: var(--fs-300);
-  font-weight: 600;
-}
-
-.admin-error {
-  color: var(--clr-red-400, #f87171);
-  padding: var(--space-xs);
-  border: 1px solid var(--clr-red-800, #991b1b);
-  border-radius: 4px;
-  margin-top: var(--space-m);
-}
-
-.admin-details {
-  margin-top: var(--space-xs);
-}
-
-.admin-details summary {
-  cursor: pointer;
-  color: var(--clr-gray-400);
-  font-size: var(--fs-300);
-}
-
-.admin-actions {
-  margin-top: var(--space-m);
-  display: flex;
-  gap: var(--space-s);
-}
-
-.admin-auto-refresh {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2xs);
-  color: var(--clr-gray-400);
-  font-size: var(--fs-300);
-  cursor: pointer;
-}
-</style>

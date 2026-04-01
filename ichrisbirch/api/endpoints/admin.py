@@ -372,11 +372,14 @@ async def get_system_health(
     settings: Settings = Depends(get_settings),
 ):
     """Get combined system health information."""
+    bluegreen_state = Path('/var/lib/ichrisbirch/bluegreen-state')
+    deploy_color = bluegreen_state.read_text().strip() if bluegreen_state.exists() else None
     return schemas.admin.SystemHealth(
         server=schemas.admin.ServerInfo(
             environment=settings.ENVIRONMENT,
             api_url=settings.api_url,
             server_time=pendulum.now().isoformat(timespec='seconds'),
+            deploy_color=deploy_color,
         ),
         docker=_get_docker_containers(),
         database=_get_database_stats(session),
