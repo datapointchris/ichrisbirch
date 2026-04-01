@@ -1,22 +1,20 @@
 import structlog
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Chat], status_code=status.HTTP_200_OK)
-async def read_many(name: str | None = None, session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(session: DbSession, name: str | None = None):
     query = select(models.Chat).order_by(models.Chat.created_at.desc())
     if name is not None:
         query = query.where(models.Chat.name == name)
@@ -24,7 +22,7 @@ async def read_many(name: str | None = None, session: Session = Depends(get_sqla
 
 
 @router.post('/', response_model=schemas.Chat, status_code=status.HTTP_201_CREATED)
-async def create(obj_in: schemas.ChatCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(obj_in: schemas.ChatCreate, session: DbSession):
     messages = [models.ChatMessage(**m.model_dump()) for m in obj_in.messages]
     obj_in.messages = []
     obj = models.Chat(**obj_in.model_dump())
@@ -36,14 +34,14 @@ async def create(obj_in: schemas.ChatCreate, session: Session = Depends(get_sqla
 
 
 @router.get('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: int, session: DbSession):
     if chat := session.get(models.Chat, id):
         return chat
     raise NotFoundException('chat', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession):
     if chat := session.get(models.Chat, id):
         session.delete(chat)
         session.commit()
@@ -53,7 +51,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.ChatUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, update: schemas.ChatUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('chat_update_patch', chat_id=id, update_data=update_data)
 
@@ -68,7 +66,7 @@ async def update(id: int, update: schemas.ChatUpdate, session: Session = Depends
 
 
 @router.put('/{id}/', response_model=schemas.Chat, status_code=status.HTTP_200_OK)
-async def update_messages(id: int, update: schemas.ChatUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update_messages(id: int, update: schemas.ChatUpdate, session: DbSession):
     messages = [models.ChatMessage(**m.model_dump()) for m in update.messages]
 
     if chat := session.get(models.Chat, id):

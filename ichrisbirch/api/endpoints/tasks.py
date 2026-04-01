@@ -3,31 +3,29 @@ from zoneinfo import ZoneInfo
 
 import structlog
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def read_many(session: Session = Depends(get_sqlalchemy_session), limit: int | None = None):
+async def read_many(session: DbSession, limit: int | None = None):
     query = select(models.Task).order_by(models.Task.priority.asc(), models.Task.add_date.asc()).limit(limit)
     return list(session.scalars(query).all())
 
 
 @router.get('/todo/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def todo(
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     limit: int | None = None,
     priority: tuple[int, int] | None = None,
 ):
@@ -42,7 +40,7 @@ async def todo(
 
 @router.get('/completed/', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
 async def completed(
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     start_date: str | None = None,
     end_date: str | None = None,
     first: bool | None = None,
@@ -76,7 +74,7 @@ async def completed(
 
 
 @router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
+async def search(q: str, session: DbSession):
     logger.debug('task_search', query=q)
     tasks = (
         select(models.Task)
@@ -89,7 +87,7 @@ async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
-async def create(task: schemas.TaskCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(task: schemas.TaskCreate, session: DbSession):
     db_obj = models.Task(**task.model_dump())
     session.add(db_obj)
     session.commit()
@@ -98,7 +96,7 @@ async def create(task: schemas.TaskCreate, session: Session = Depends(get_sqlalc
 
 
 @router.post('/reset-priorities/', status_code=status.HTTP_200_OK)
-async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
+async def reset_priorities(session: DbSession):
     # Query for all tasks that are not completed
     query = select(models.Task).filter(models.Task.complete_date.is_(None))
     tasks = session.scalars(query).all()
@@ -120,14 +118,14 @@ async def reset_priorities(session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.get('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: int, session: DbSession):
     if task := session.get(models.Task, id):
         return task
     raise NotFoundException('task', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession):
     if task := session.get(models.Task, id):
         session.delete(task)
         session.commit()
@@ -137,7 +135,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.TaskUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, update: schemas.TaskUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('task_update', task_id=id, update_data=update_data)
 
@@ -152,7 +150,7 @@ async def update(id: int, update: schemas.TaskUpdate, session: Session = Depends
 
 
 @router.patch('/{task_id}/complete/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def complete(task_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def complete(task_id: int, session: DbSession):
     if task := session.get(models.Task, task_id):
         task.complete_date = datetime.now(tz=ZoneInfo('America/Chicago')).isoformat()  # type: ignore
         session.add(task)
@@ -164,7 +162,7 @@ async def complete(task_id: int, session: Session = Depends(get_sqlalchemy_sessi
 
 
 @router.patch('/{task_id}/extend/{days}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def extend(task_id: int, days: int, session: Session = Depends(get_sqlalchemy_session)):
+async def extend(task_id: int, days: int, session: DbSession):
     if task := session.get(models.Task, task_id):
         task.priority += days
         session.add(task)

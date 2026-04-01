@@ -15,6 +15,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import AdminOrInternalServiceAccess
 from ichrisbirch.api.endpoints.auth import CurrentUser
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.endpoints.auth import get_admin_or_internal_service_access
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user_or_none
@@ -23,7 +24,6 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -63,9 +63,7 @@ async def require_admin_or_internal_service(
 
 
 @router.get('/', response_model=list[schemas.User], status_code=status.HTTP_200_OK)
-async def read_many(
-    session: Session = Depends(get_sqlalchemy_session), _: bool = Depends(require_admin_or_internal_service), limit: int | None = None
-):
+async def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_service), limit: int | None = None):
     """List all users.
 
     Requires admin user or internal service authentication.
@@ -120,7 +118,7 @@ async def me(user: CurrentUser):
 @router.get('/{id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def read_one(
     id: int,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     _: bool = Depends(require_user_access_or_admin_or_internal_service),
 ):
     """Get user by ID.
@@ -135,7 +133,7 @@ async def read_one(
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
 async def create(
     user: schemas.UserCreate,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     settings: Settings = Depends(get_settings),
 ):
     if not settings.auth.accepting_new_signups:
@@ -166,7 +164,7 @@ async def _update_user_preferences_helper(db_user: models.User, update_data: dic
 
 
 @router.patch('/me/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def update_my_preferences(request: Request, user: CurrentUser, session: Session = Depends(get_sqlalchemy_session)):
+async def update_my_preferences(request: Request, user: CurrentUser, session: DbSession):
     """Update the current user's preferences."""
     update_data = await request.json()
     logger.debug('user_preferences_update', update_data=update_data)
@@ -181,7 +179,7 @@ async def update_user_preferences(
     id: int,
     request: Request,
     user: CurrentUser,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
 ):
     """Update a specific user's preferences.
 
@@ -199,7 +197,7 @@ async def update_user_preferences(
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, admin_user: models.User = Depends(get_admin_user), session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession, admin_user: models.User = Depends(get_admin_user)):
     """Delete a user (admin only).
 
     Admin users cannot delete themselves.
@@ -251,7 +249,7 @@ async def require_update_access(
 async def update(
     id: int,
     update: schemas.UserUpdate,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     _: bool = Depends(require_update_access),
 ):
     """Update a user.
@@ -274,7 +272,7 @@ async def update(
 @router.get('/alt/{alternative_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
 async def read_by_alternative_id(
     alternative_id: int,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     current_user: models.User | None = Depends(get_current_user_or_none),
     x_internal_service: str | None = Header(None),
     x_service_key: str | None = Header(None),
@@ -309,7 +307,7 @@ async def read_by_alternative_id(
 async def read_by_email(
     email: str,
     _: AdminOrInternalServiceAccess,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
 ):
     """Get user by email address.
 

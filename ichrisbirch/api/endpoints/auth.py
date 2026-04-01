@@ -368,6 +368,7 @@ def require_user_or_internal_service(
 
 
 # Type aliases for cleaner endpoint signatures
+DbSession = Annotated[Session, Depends(get_sqlalchemy_session)]
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
 CurrentUserOrInternalService = Annotated[models.User | None, Depends(require_user_or_internal_service)]
 AdminUser = Annotated[models.User, Depends(get_admin_user)]

@@ -11,14 +11,13 @@ from sqlalchemy import cast
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -26,7 +25,7 @@ router = APIRouter()
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
 async def read_many(
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     ownership: str | None = Query(None),
 ):
     query = select(models.Book).order_by(models.Book.priority.asc())
@@ -36,7 +35,7 @@ async def read_many(
 
 
 @router.post('/', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
-async def create(book: schemas.BookCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(book: schemas.BookCreate, session: DbSession):
     obj = models.Book(**book.model_dump())
     session.add(obj)
     session.commit()
@@ -45,7 +44,7 @@ async def create(book: schemas.BookCreate, session: Session = Depends(get_sqlalc
 
 
 @router.get('/search/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
+async def search(q: str, session: DbSession):
     """Search for comma-separated list of tags.
 
     Search terms must be separated and wildcards added.
@@ -99,21 +98,21 @@ async def goodreads(request: Request, settings: Settings = Depends(get_settings)
 
 
 @router.get('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: int, session: DbSession):
     if book := session.get(models.Book, id):
         return book
     raise NotFoundException('book', id, logger)
 
 
 @router.get('/isbn/{isbn}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def get_book_by_isbn(isbn: str, session: Session = Depends(get_sqlalchemy_session)):
+async def get_book_by_isbn(isbn: str, session: DbSession):
     if book := session.scalar(select(models.Book).where(models.Book.isbn == isbn)):
         return book
     raise NotFoundException('book', f'isbn={isbn}', logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession):
     if book := session.get(models.Book, id):
         session.delete(book)
         session.commit()
@@ -123,7 +122,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def update(id: int, book_update: schemas.BookUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, book_update: schemas.BookUpdate, session: DbSession):
     update_data = book_update.model_dump(exclude_unset=True)
     logger.debug('book_update', book_id=id, update_data=update_data)
 

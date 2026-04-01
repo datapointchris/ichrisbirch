@@ -23,10 +23,10 @@ from youtube_transcript_api.formatters import TextFormatter
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.openai import OpenAIAssistant
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
@@ -63,10 +63,10 @@ def _get_text_content_from_html(soup: BeautifulSoup) -> str:
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 async def read_many(
+    session: DbSession,
     favorites: bool | None = None,
     archived: bool | None = None,
     unread: bool | None = None,
-    session: Session = Depends(get_sqlalchemy_session),
 ):
     query = select(models.Article).order_by(models.Article.title.asc())
     if favorites is True:
@@ -90,13 +90,13 @@ async def read_many(
 
 
 @router.get('/current/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
-async def current(session: Session = Depends(get_sqlalchemy_session)):
+async def current(session: DbSession):
     query = select(models.Article).where(models.Article.is_current.is_(True))
     return session.scalars(query).first()
 
 
 @router.get('/url/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def read_one_url(url: str, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one_url(url: str, session: DbSession):
     url = clean_url(url)
     if article := session.scalar(select(models.Article).where(models.Article.url == url)):
         return article
@@ -104,7 +104,7 @@ async def read_one_url(url: str, session: Session = Depends(get_sqlalchemy_sessi
 
 
 @router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
-async def create(article: schemas.ArticleCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(article: schemas.ArticleCreate, session: DbSession):
     obj = models.Article(**article.model_dump())
     session.add(obj)
     session.commit()
@@ -162,7 +162,7 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
 @router.post('/create-from-url/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
 async def create_from_url(
     body: schemas.ArticleCreateFromUrl,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     settings: Settings = Depends(get_settings),
 ):
     """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
@@ -197,14 +197,14 @@ async def bulk_import_status(batch_id: str, request: Request):
 
 
 @router.get('/failed-imports/', response_model=list[schemas.ArticleFailedImport], status_code=status.HTTP_200_OK)
-async def list_failed_imports(session: Session = Depends(get_sqlalchemy_session)):
+async def list_failed_imports(session: DbSession):
     """List all failed article imports."""
     query = select(models.ArticleFailedImport).order_by(models.ArticleFailedImport.failed_at.desc())
     return list(session.scalars(query).all())
 
 
 @router.get('/search/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
-async def search(q: str, session: Session = Depends(get_sqlalchemy_session)):
+async def search(q: str, session: DbSession):
     """Search for comma-separated list of tags.
 
     Search terms must be separated and wildcards added.
@@ -295,14 +295,14 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
 
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         return article
     raise NotFoundException('article', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         session.delete(article)
         session.commit()
@@ -311,7 +311,7 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.ArticleUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('article_update', article_id=id, update_data=update_data)
     if article := session.get(models.Article, id):

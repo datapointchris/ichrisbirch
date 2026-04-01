@@ -2,17 +2,15 @@ from datetime import datetime
 
 import structlog
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import CurrentUser
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.models.personal_api_key import generate_api_key
 from ichrisbirch.models.personal_api_key import hash_api_key
 
@@ -24,7 +22,7 @@ router = APIRouter()
 async def create(
     data: schemas.PersonalAPIKeyCreate,
     user: CurrentUser,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
 ):
     raw_key = generate_api_key()
     db_obj = models.PersonalAPIKey(
@@ -49,13 +47,13 @@ async def create(
 
 
 @router.get('/', response_model=list[schemas.PersonalAPIKey], status_code=status.HTTP_200_OK)
-async def read_many(user: CurrentUser, session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(user: CurrentUser, session: DbSession):
     query = select(models.PersonalAPIKey).where(models.PersonalAPIKey.user_id == user.id).order_by(models.PersonalAPIKey.created_at.desc())
     return list(session.scalars(query).all())
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def revoke(id: int, user: CurrentUser, session: Session = Depends(get_sqlalchemy_session)):
+async def revoke(id: int, user: CurrentUser, session: DbSession):
     if key := session.get(models.PersonalAPIKey, id):
         if key.user_id != user.id:
             raise NotFoundException('api_key', id, logger)

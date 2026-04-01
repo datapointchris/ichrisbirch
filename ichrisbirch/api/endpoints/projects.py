@@ -2,7 +2,6 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
@@ -10,12 +9,11 @@ from fastapi import status
 from sqlalchemy import func
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.models.project import ProjectItemMembership
 
 logger = structlog.get_logger()
@@ -23,7 +21,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.ProjectWithItemCount], status_code=status.HTTP_200_OK)
-async def read_many(session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(session: DbSession):
     query = (
         select(
             models.Project,
@@ -47,7 +45,7 @@ async def read_many(session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.post('/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
-async def create(project: schemas.ProjectCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(project: schemas.ProjectCreate, session: DbSession):
     db_obj = models.Project(**project.model_dump(exclude={'id'}))
     if project.id is not None:
         db_obj.id = project.id
@@ -62,7 +60,7 @@ async def create(project: schemas.ProjectCreate, session: Session = Depends(get_
 
 
 @router.get('/{id}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
-async def read_one(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: UUID, session: DbSession):
     project = session.get(models.Project, id)
     if not project:
         raise NotFoundException('project', id, logger)
@@ -79,7 +77,7 @@ async def read_one(id: UUID, session: Session = Depends(get_sqlalchemy_session))
 
 
 @router.patch('/{id}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
-async def update(id: UUID, update: schemas.ProjectUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: UUID, update: schemas.ProjectUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_update', project_id=id, update_data=update_data)
 
@@ -94,7 +92,7 @@ async def update(id: UUID, update: schemas.ProjectUpdate, session: Session = Dep
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: UUID, session: DbSession):
     project = session.get(models.Project, id)
     if not project:
         raise NotFoundException('project', id, logger)
@@ -120,7 +118,7 @@ async def delete(id: UUID, session: Session = Depends(get_sqlalchemy_session)):
 @router.get('/{id}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
 async def list_items(
     id: UUID,
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     archived: bool = Query(False, description='Include archived items'),
 ):
     if not session.get(models.Project, id):

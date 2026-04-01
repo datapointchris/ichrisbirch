@@ -3,26 +3,24 @@ import datetime as dt
 import pendulum
 import structlog
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from pendulum.parsing.exceptions import ParserError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.database.session import get_sqlalchemy_session
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.post('/', response_model=schemas.Habit, status_code=status.HTTP_201_CREATED)
-async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create_habit(habit: schemas.HabitCreate, session: DbSession):
     db_obj = models.Habit(**habit.model_dump())
     session.add(db_obj)
     session.commit()
@@ -31,7 +29,7 @@ async def create_habit(habit: schemas.HabitCreate, session: Session = Depends(ge
 
 
 @router.get('/', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
-async def read_many_habits(session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None):
+async def read_many_habits(session: DbSession, current: bool | None = None, limit: int | None = None):
     query = select(models.Habit).limit(limit)
     if current is True:
         query = query.filter(models.Habit.is_current.is_(True))
@@ -41,7 +39,7 @@ async def read_many_habits(session: Session = Depends(get_sqlalchemy_session), c
 
 
 @router.post('/categories/', response_model=schemas.HabitCategory, status_code=status.HTTP_201_CREATED)
-async def create_category(category: schemas.HabitCategoryCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create_category(category: schemas.HabitCategoryCreate, session: DbSession):
     db_obj = models.HabitCategory(**category.model_dump())
     session.add(db_obj)
     session.commit()
@@ -50,7 +48,7 @@ async def create_category(category: schemas.HabitCategoryCreate, session: Sessio
 
 
 @router.get('/categories/', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
-async def read_many_categories(session: Session = Depends(get_sqlalchemy_session), current: bool | None = None, limit: int | None = None):
+async def read_many_categories(session: DbSession, current: bool | None = None, limit: int | None = None):
     query = select(models.HabitCategory).limit(limit)
     if current is True:
         query = query.filter(models.HabitCategory.is_current.is_(True))
@@ -60,7 +58,7 @@ async def read_many_categories(session: Session = Depends(get_sqlalchemy_session
 
 
 @router.post('/completed/', response_model=schemas.HabitCompleted, status_code=status.HTTP_201_CREATED)
-async def create_completed(habit: schemas.HabitCompletedCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create_completed(habit: schemas.HabitCompletedCreate, session: DbSession):
     db_obj = models.HabitCompleted(**habit.model_dump())
     session.add(db_obj)
     session.commit()
@@ -70,7 +68,7 @@ async def create_completed(habit: schemas.HabitCompletedCreate, session: Session
 
 @router.get('/completed/', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 async def read_many_completed(
-    session: Session = Depends(get_sqlalchemy_session),
+    session: DbSession,
     start_date: dt.datetime | dt.date | str | None = None,
     end_date: dt.datetime | dt.date | str | None = None,
     first: bool | None = None,
@@ -106,14 +104,14 @@ async def read_many_completed(
 
 
 @router.get('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: int, session: DbSession):
     if habit := session.get(models.Habit, id):
         return habit
     raise NotFoundException('habit', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.HabitUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, update: schemas.HabitUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('habit_update', habit_id=id, update_data=update_data)
 
@@ -128,7 +126,7 @@ async def update(id: int, update: schemas.HabitUpdate, session: Session = Depend
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession):
     if habit := session.get(models.Habit, id):
         session.delete(habit)
         session.commit()
@@ -138,16 +136,14 @@ async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.get('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
-async def read_one_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one_category(category_id: int, session: DbSession):
     if category := session.get(models.HabitCategory, category_id):
         return category
     raise NotFoundException('habit category', category_id, logger)
 
 
 @router.patch('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
-async def update_habit_category(
-    category_id: int, category_update: schemas.HabitCategoryUpdate, session: Session = Depends(get_sqlalchemy_session)
-):
+async def update_habit_category(category_id: int, category_update: schemas.HabitCategoryUpdate, session: DbSession):
     if category := session.get(models.HabitCategory, category_id):
         for attr, value in category_update.model_dump().items():
             if value is not None:
@@ -160,7 +156,7 @@ async def update_habit_category(
 
 
 @router.delete('/categories/{category_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(category_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete_category(category_id: int, session: DbSession):
     if category := session.get(models.HabitCategory, category_id):
         try:
             session.delete(category)
@@ -175,14 +171,14 @@ async def delete_category(category_id: int, session: Session = Depends(get_sqlal
 
 
 @router.get('/completed/{completed_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
-async def read_one_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one_completed(completed_id: int, session: DbSession):
     if completed := session.get(models.HabitCompleted, completed_id):
         return completed
     raise NotFoundException('habit completed', completed_id, logger)
 
 
 @router.delete('/completed/{completed_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_completed(completed_id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete_completed(completed_id: int, session: DbSession):
     if completed := session.get(models.HabitCompleted, completed_id):
         session.delete(completed)
         session.commit()

@@ -1,28 +1,26 @@
 import structlog
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.database.session import get_sqlalchemy_session
+from ichrisbirch.api.endpoints.auth import DbSession
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.MoneyWasted], status_code=status.HTTP_200_OK)
-async def read_many(session: Session = Depends(get_sqlalchemy_session)):
+async def read_many(session: DbSession):
     query = select(models.MoneyWasted).order_by(models.MoneyWasted.date_wasted.desc())
     return list(session.scalars(query).all())
 
 
 @router.post('/', response_model=schemas.MoneyWasted, status_code=status.HTTP_201_CREATED)
-async def create(entry: schemas.MoneyWastedCreate, session: Session = Depends(get_sqlalchemy_session)):
+async def create(entry: schemas.MoneyWastedCreate, session: DbSession):
     db_obj = models.MoneyWasted(**entry.model_dump())
     session.add(db_obj)
     session.commit()
@@ -31,7 +29,7 @@ async def create(entry: schemas.MoneyWastedCreate, session: Session = Depends(ge
 
 
 @router.get('/{id}/', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def read_one(id: int, session: DbSession):
     if db_obj := session.get(models.MoneyWasted, id):
         return db_obj
     else:
@@ -40,7 +38,7 @@ async def read_one(id: int, session: Session = Depends(get_sqlalchemy_session)):
 
 
 @router.patch('/{id}/', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
-async def update(id: int, entry_update: schemas.MoneyWastedUpdate, session: Session = Depends(get_sqlalchemy_session)):
+async def update(id: int, entry_update: schemas.MoneyWastedUpdate, session: DbSession):
     if db_obj := session.get(models.MoneyWasted, id):
         for field, value in entry_update.model_dump(exclude_unset=True).items():
             setattr(db_obj, field, value)
@@ -53,7 +51,7 @@ async def update(id: int, entry_update: schemas.MoneyWastedUpdate, session: Sess
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: Session = Depends(get_sqlalchemy_session)):
+async def delete(id: int, session: DbSession):
     if db_obj := session.get(models.MoneyWasted, id):
         session.delete(db_obj)
         session.commit()

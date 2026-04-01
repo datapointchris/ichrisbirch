@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api import smoke_tests
+from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.api.middleware import recent_errors
@@ -247,9 +248,9 @@ async def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_set
 
 @router.get('/scheduler/history/', response_model=list[schemas.SchedulerJobRun])
 async def get_scheduler_history(
+    session: DbSession,
     job_id: str | None = None,
     limit: int = 50,
-    session: Session = Depends(get_sqlalchemy_session),
 ):
     """Get scheduler job run history, optionally filtered by job_id."""
     query = select(models.SchedulerJobRun).order_by(models.SchedulerJobRun.started_at.desc())
@@ -367,8 +368,8 @@ def _serialize_settings_section(section: object) -> dict:
 
 @router.get('/system/health/', response_model=schemas.admin.SystemHealth)
 async def get_system_health(
+    session: DbSession,
     settings: Settings = Depends(get_settings),
-    session: Session = Depends(get_sqlalchemy_session),
 ):
     """Get combined system health information."""
     return schemas.admin.SystemHealth(
