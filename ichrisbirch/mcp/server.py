@@ -4,6 +4,7 @@ Reads ICHRISBIRCH_API_URL and ICHRISBIRCH_API_TOKEN from environment.
 Authenticates via Bearer token (personal API key).
 """
 
+import datetime
 import json
 import os
 from typing import Any
@@ -171,6 +172,27 @@ def create_habit(name: str, category_id: int, is_current: bool = True) -> str:
     """Create a new habit."""
     with _client() as c:
         return _json_response(c.post('/habits/', json={'name': name, 'category_id': category_id, 'is_current': is_current}))
+
+
+@mcp.tool()
+def update_habit(
+    id: int,
+    name: str | None = None,
+    category_id: int | None = None,
+    is_current: bool | None = None,
+) -> str:
+    """Update a habit by ID. Only provided fields are changed."""
+    fields = {'name': name, 'category_id': category_id, 'is_current': is_current}
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+    with _client() as c:
+        return _json_response(c.patch(f'/habits/{id}/', json=payload))
+
+
+@mcp.tool()
+def delete_habit(id: int) -> str:
+    """Delete a habit by ID."""
+    with _client() as c:
+        return _json_response(c.delete(f'/habits/{id}/'))
 
 
 @mcp.tool()
@@ -419,10 +441,25 @@ ARTICLE_SUMMARY_FIELDS = ['id', 'title', 'url', 'tags', 'summary']
 
 
 @mcp.tool()
-def list_articles() -> str:
-    """List all articles (summary: id, title, url, tags, summary)."""
+def list_articles(
+    favorites: bool | None = None,
+    archived: bool | None = None,
+    unread: bool | None = None,
+) -> str:
+    """List articles (summary: id, title, url, tags, summary).
+
+    favorites=True: only favorites due for re-read. archived=True/False: filter by archived state.
+    unread=True: never-read articles only.
+    """
+    params: dict[str, Any] = {}
+    if favorites is not None:
+        params['favorites'] = favorites
+    if archived is not None:
+        params['archived'] = archived
+    if unread is not None:
+        params['unread'] = unread
     with _client() as c:
-        return _summarize(_json_response(c.get('/articles/')), ARTICLE_SUMMARY_FIELDS)
+        return _summarize(_json_response(c.get('/articles/', params=params)), ARTICLE_SUMMARY_FIELDS)
 
 
 @mcp.tool()
@@ -477,24 +514,58 @@ def list_failed_article_imports() -> str:
 def update_article(
     id: int,
     title: str | None = None,
-    url: str | None = None,
     tags: str | None = None,
+    summary: str | None = None,
     notes: str | None = None,
+    is_favorite: bool | None = None,
+    is_current: bool | None = None,
+    is_archived: bool | None = None,
+    review_days: int | None = None,
+    last_read_date: str | None = None,
+    read_count: int | None = None,
     null_fields: str | None = None,
 ) -> str:
     """Update an article by ID. Only provided fields are changed.
 
     Tags is an optional comma-separated string (e.g. "python, databases, sql").
+    last_read_date accepts ISO format (YYYY-MM-DDTHH:MM:SS).
     To set a field to null, include it in null_fields (comma-separated).
-    Example: null_fields="notes" sets notes to null.
+    Example: null_fields="notes,review_days" sets both to null.
     """
-    payload: dict[str, Any] = {k: v for k, v in {'title': title, 'url': url, 'notes': notes}.items() if v is not None}
+    scalar_fields = {
+        'title': title,
+        'summary': summary,
+        'notes': notes,
+        'is_favorite': is_favorite,
+        'is_current': is_current,
+        'is_archived': is_archived,
+        'review_days': review_days,
+        'last_read_date': last_read_date,
+        'read_count': read_count,
+    }
+    payload: dict[str, Any] = {k: v for k, v in scalar_fields.items() if v is not None}
     if tags is not None:
         payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
     if null_fields:
         for field in null_fields.split(','):
             payload[field.strip()] = None
     with _client() as c:
+        return _json_response(c.patch(f'/articles/{id}/', json=payload))
+
+
+@mcp.tool()
+def mark_article_read(id: int) -> str:
+    """Mark an article as read: archives it, increments read_count, sets last_read_date to now."""
+    with _client() as c:
+        current = c.get(f'/articles/{id}/')
+        if not current.is_success:
+            return _json_response(current)
+        article = current.json()
+        payload = {
+            'is_archived': True,
+            'read_count': article['read_count'] + 1,
+            'last_read_date': datetime.datetime.now(datetime.UTC).isoformat(),
+        }
         return _json_response(c.patch(f'/articles/{id}/', json=payload))
 
 
@@ -518,6 +589,28 @@ def create_countdown(name: str, due_date: str, notes: str | None = None) -> str:
         payload['notes'] = notes
     with _client() as c:
         return _json_response(c.post('/countdowns/', json=payload))
+
+
+@mcp.tool()
+def update_countdown(
+    id: int,
+    name: str | None = None,
+    due_date: str | None = None,
+    notes: str | None = None,
+    null_fields: str | None = None,
+) -> str:
+    """Update a countdown by ID. Only provided fields are changed.
+
+    due_date in ISO format (YYYY-MM-DD).
+    To set notes to null, pass null_fields="notes".
+    """
+    fields = {'name': name, 'due_date': due_date, 'notes': notes}
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
+    with _client() as c:
+        return _json_response(c.patch(f'/countdowns/{id}/', json=payload))
 
 
 @mcp.tool()
