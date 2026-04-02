@@ -80,6 +80,8 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.auth.router, prefix='/auth')
     api.include_router(endpoints.autotasks.router, prefix='/autotasks', dependencies=deps)
     api.include_router(endpoints.books.router, prefix='/books', dependencies=deps)
+    api.include_router(endpoints.coffee.shops_router, prefix='/coffee/shops', dependencies=deps)
+    api.include_router(endpoints.coffee.beans_router, prefix='/coffee/beans', dependencies=deps)
     api.include_router(endpoints.box_packing.router, prefix='/box-packing', dependencies=deps)
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', dependencies=deps)
     api.include_router(endpoints.durations.router, prefix='/durations', dependencies=deps)

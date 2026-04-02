@@ -9,6 +9,7 @@ from scripts.seed.seeders import autotasks
 from scripts.seed.seeders import books
 from scripts.seed.seeders import boxes
 from scripts.seed.seeders import chats
+from scripts.seed.seeders import coffee
 from scripts.seed.seeders import countdowns
 from scripts.seed.seeders import durations
 from scripts.seed.seeders import events
@@ -22,6 +23,7 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('tasks', tasks),
     ('habits', habits),
     ('books', books),
+    ('coffee', coffee),
     ('articles', articles),
     ('events', events),
     ('countdowns', countdowns),

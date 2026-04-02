@@ -38,6 +38,22 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Books' },
   },
   {
+    path: '/coffee',
+    redirect: '/coffee/shops',
+  },
+  {
+    path: '/coffee/shops',
+    name: 'coffee-shops',
+    component: () => import('@/views/CoffeeShopsView.vue'),
+    meta: { title: 'Coffee Shops' },
+  },
+  {
+    path: '/coffee/beans',
+    name: 'coffee-beans',
+    component: () => import('@/views/CoffeeBeansView.vue'),
+    meta: { title: 'Coffee Beans' },
+  },
+  {
     path: '/money-wasted',
     name: 'money-wasted',
     component: () => import('@/views/MoneyWastedView.vue'),

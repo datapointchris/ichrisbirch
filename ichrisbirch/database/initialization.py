@@ -108,6 +108,8 @@ LOOKUP_DATA = {
     ],
     'book_ownership': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
     'book_progress': ['abandoned', 'read', 'reading', 'unread'],
+    'coffee.roast_levels': ['light', 'medium-light', 'medium', 'medium-dark', 'dark'],
+    'coffee.brew_methods': ['pour-over', 'espresso', 'french-press', 'aeropress', 'cold-brew', 'drip', 'moka-pot'],
 }
 
 

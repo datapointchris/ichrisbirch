@@ -187,6 +187,111 @@ export interface TaskUpdate {
   complete_date?: string
 }
 
+// --- Coffee ---
+
+export type RoastLevel = 'light' | 'medium-light' | 'medium' | 'medium-dark' | 'dark'
+export type BrewMethod = 'pour-over' | 'espresso' | 'french-press' | 'aeropress' | 'cold-brew' | 'drip' | 'moka-pot'
+
+export interface CoffeeShop {
+  id: number
+  name: string
+  address?: string
+  city?: string
+  state?: string
+  country?: string
+  google_maps_url?: string
+  website?: string
+  rating?: number
+  notes?: string
+  review?: string
+  date_visited?: string
+  created_at: string
+}
+
+export interface CoffeeShopCreate {
+  name: string
+  address?: string
+  city?: string
+  state?: string
+  country?: string
+  google_maps_url?: string
+  website?: string
+  rating?: number
+  notes?: string
+  review?: string
+  date_visited?: string
+}
+
+export interface CoffeeShopUpdate {
+  name?: string
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  country?: string | null
+  google_maps_url?: string | null
+  website?: string | null
+  rating?: number | null
+  notes?: string | null
+  review?: string | null
+  date_visited?: string | null
+}
+
+export interface CoffeeBean {
+  id: number
+  name: string
+  roaster?: string
+  origin?: string
+  process?: string
+  roast_level?: RoastLevel
+  brew_method?: BrewMethod
+  flavor_notes?: string
+  rating?: number
+  review?: string
+  notes?: string
+  price?: number
+  purchase_date?: string
+  coffee_shop_id?: number | null
+  purchase_source?: string
+  purchase_url?: string
+  created_at: string
+}
+
+export interface CoffeeBeanCreate {
+  name: string
+  roaster?: string
+  origin?: string
+  process?: string
+  roast_level?: RoastLevel
+  brew_method?: BrewMethod
+  flavor_notes?: string
+  rating?: number
+  review?: string
+  notes?: string
+  price?: number
+  purchase_date?: string
+  coffee_shop_id?: number | null
+  purchase_source?: string
+  purchase_url?: string
+}
+
+export interface CoffeeBeanUpdate {
+  name?: string
+  roaster?: string | null
+  origin?: string | null
+  process?: string | null
+  roast_level?: RoastLevel | null
+  brew_method?: BrewMethod | null
+  flavor_notes?: string | null
+  rating?: number | null
+  review?: string | null
+  notes?: string | null
+  price?: number | null
+  purchase_date?: string | null
+  coffee_shop_id?: number | null
+  purchase_source?: string | null
+  purchase_url?: string | null
+}
+
 // --- Book ---
 
 export interface Book {

@@ -12,6 +12,8 @@
 /durations
 /events
 /books
+/coffee/shops
+/coffee/beans
 /autotasks
 /money-wasted
 /articles

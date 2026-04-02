@@ -167,4 +167,12 @@ export type {
   EnvironmentConfigSection,
   SmokeTestResult,
   SmokeTestReport,
+  RoastLevel,
+  BrewMethod,
+  CoffeeShop,
+  CoffeeShopCreate,
+  CoffeeShopUpdate,
+  CoffeeBean,
+  CoffeeBeanCreate,
+  CoffeeBeanUpdate,
 } from './types'

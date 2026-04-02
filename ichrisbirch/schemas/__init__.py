@@ -24,6 +24,12 @@ from ichrisbirch.schemas.chat import ChatUpdate
 from ichrisbirch.schemas.chatmessage import ChatMessage
 from ichrisbirch.schemas.chatmessage import ChatMessageCreate
 from ichrisbirch.schemas.chatmessage import ChatMessageUpdate
+from ichrisbirch.schemas.coffee import CoffeeBean
+from ichrisbirch.schemas.coffee import CoffeeBeanCreate
+from ichrisbirch.schemas.coffee import CoffeeBeanUpdate
+from ichrisbirch.schemas.coffee import CoffeeShop
+from ichrisbirch.schemas.coffee import CoffeeShopCreate
+from ichrisbirch.schemas.coffee import CoffeeShopUpdate
 from ichrisbirch.schemas.countdown import Countdown
 from ichrisbirch.schemas.countdown import CountdownCreate
 from ichrisbirch.schemas.countdown import CountdownUpdate
@@ -100,6 +106,12 @@ __all__ = [
     'BookCreate',
     'BookGoodreadsInfo',
     'BookUpdate',
+    'CoffeeBean',
+    'CoffeeBeanCreate',
+    'CoffeeBeanUpdate',
+    'CoffeeShop',
+    'CoffeeShopCreate',
+    'CoffeeShopUpdate',
     'Box',
     'BoxCreate',
     'BoxUpdate',

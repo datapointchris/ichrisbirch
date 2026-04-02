@@ -200,6 +200,19 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 **No subjective "rule of thumb" thresholds.** Either ALL pages follow the pattern or NONE do. This applies to components, composables, shared SCSS, and any architectural pattern. Consistency makes the codebase predictable — the next developer knows exactly where to find things and how to add new pages.
 
+### Adding a New API Endpoint (⚠️ MANDATORY checklist)
+
+Every new API endpoint group **must** include a seeder script. No exceptions.
+
+1. Create SQLAlchemy model + Alembic migration
+2. Create Pydantic schemas (Create, response, Update)
+3. Create FastAPI router in `ichrisbirch/api/endpoints/`
+4. Register router in `ichrisbirch/api/main.py`
+5. **Create seeder in `scripts/seed/seeders/<name>.py`** — implements `seed(session, scale)` and `clear(session)`, returns `SeedResult`
+6. **Register seeder in `scripts/seed/seeders/__init__.py`** — add to import list and `SEED_ORDER` (after its FK dependencies)
+7. Create test data in `tests/test_data/<name>.py` + register in `tests/test_data/__init__.py`
+8. Write API endpoint tests in `tests/ichrisbirch/api/endpoints/test_<name>.py`
+
 ### Adding a Vue Page
 
 1. Create Pinia store with `createLogger`, `ApiError` handling, `error: ref<ApiError | null>`

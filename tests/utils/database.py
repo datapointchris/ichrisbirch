@@ -286,6 +286,8 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'autotasks': {'model': models.AutoTask, 'data': tests.test_data.autotasks.BASE_DATA},
         'books': {'model': models.Book, 'data': tests.test_data.books.BASE_DATA},
         'boxes': {'model': models.Box, 'data': tests.test_data.boxes.BASE_DATA},
+        'coffee_shops': {'model': models.CoffeeShop, 'data': tests.test_data.coffee_shops.BASE_DATA},
+        'coffee_beans': {'model': models.CoffeeBean, 'data': tests.test_data.coffee_beans.BASE_DATA},
         'boxitems': {'model': models.BoxItem, 'data': []},  # Inserted via Box.items relationship
         'chats': {'model': models.Chat, 'data': tests.test_data.chats.BASE_DATA},
         'chatmessages': {'model': models.ChatMessage, 'data': []},  # Inserted via Chat.messages relationship

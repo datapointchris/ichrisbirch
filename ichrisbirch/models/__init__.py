@@ -10,6 +10,10 @@ from ichrisbirch.models.box import BoxSize
 from ichrisbirch.models.boxitem import BoxItem
 from ichrisbirch.models.chat import Chat
 from ichrisbirch.models.chatmessage import ChatMessage
+from ichrisbirch.models.coffee import BrewMethod
+from ichrisbirch.models.coffee import CoffeeBean
+from ichrisbirch.models.coffee import CoffeeShop
+from ichrisbirch.models.coffee import RoastLevel
 from ichrisbirch.models.countdown import Countdown
 from ichrisbirch.models.duration import Duration
 from ichrisbirch.models.duration_note import DurationNote
@@ -41,7 +45,11 @@ __all__ = [
     'Box',
     'BoxItem',
     'BoxSize',
+    'BrewMethod',
     'Chat',
+    'CoffeeBean',
+    'CoffeeShop',
+    'RoastLevel',
     'ChatMessage',
     'Countdown',
     'Duration',

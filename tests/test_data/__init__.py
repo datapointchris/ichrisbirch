@@ -3,6 +3,8 @@ from tests.test_data import autotasks
 from tests.test_data import books
 from tests.test_data import boxes
 from tests.test_data import chats
+from tests.test_data import coffee_beans
+from tests.test_data import coffee_shops
 from tests.test_data import countdowns
 from tests.test_data import durations
 from tests.test_data import events
@@ -16,6 +18,8 @@ __all__ = [
     'articles',
     'autotasks',
     'books',
+    'coffee_beans',
+    'coffee_shops',
     'boxes',
     # 'boxitems' - now inserted via Box.items relationship
     'chats',
