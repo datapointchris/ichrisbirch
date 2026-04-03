@@ -59,6 +59,7 @@ test.describe('AutoTasks Page', () => {
 
     const card = page.getByTestId('autotask-item').filter({ hasText: name })
     await expect(card).toBeVisible()
+    await expect(page.locator(SUCCESS).first()).not.toBeVisible({ timeout: 15000 })
     await card.getByTestId('autotask-delete-button').click()
     await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
     await expect(card).not.toBeVisible()

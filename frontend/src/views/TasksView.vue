@@ -67,12 +67,20 @@
     <!-- Outstanding Tasks (todo page) -->
     <template v-if="activePage === 'todo'">
       <div class="grid grid--one-column grid--tight">
-        <h2 class="task-layout__title">Outstanding Tasks</h2>
+        <div class="task-layout__filters">
+          <h2 class="task-layout__title">Outstanding Tasks</h2>
+          <NeuSelect
+            v-model="selectedCategory"
+            :options="categoryOptions"
+            placeholder="All Categories"
+            data-testid="todo-category-filter"
+          />
+        </div>
       </div>
       <div :class="gridClass">
         <template v-if="viewType === 'block'">
           <TaskBlockTodo
-            v-for="task in store.sortedTasks"
+            v-for="task in filteredTodoTasks"
             :key="task.id"
             :task="task"
             @complete="onComplete"
@@ -82,7 +90,7 @@
         </template>
         <template v-else>
           <TaskCompactTodo
-            v-for="task in store.sortedTasks"
+            v-for="task in filteredTodoTasks"
             :key="task.id"
             :task="task"
             @complete="onComplete"
@@ -104,34 +112,42 @@
           :total-count="store.totalCount"
         />
         <h2 class="task-layout__title">Completed Tasks</h2>
-        <div class="radio-scale-selector">
-          <template
-            v-for="filter in DATE_FILTERS"
-            :key="filter"
-          >
-            <input
-              :id="'radio-' + filter"
-              type="radio"
-              class="radio-scale-selector__option"
-              name="filter"
-              :value="filter"
-              :checked="selectedFilter === filter"
-              @change="onFilterChange(filter)"
-            />
-            <label :for="'radio-' + filter">{{ dateFilterLabel(filter) }}</label>
-          </template>
+        <div class="task-layout__filters">
+          <div class="radio-scale-selector">
+            <template
+              v-for="filter in DATE_FILTERS"
+              :key="filter"
+            >
+              <input
+                :id="'radio-' + filter"
+                type="radio"
+                class="radio-scale-selector__option"
+                name="filter"
+                :value="filter"
+                :checked="selectedFilter === filter"
+                @change="onFilterChange(filter)"
+              />
+              <label :for="'radio-' + filter">{{ dateFilterLabel(filter) }}</label>
+            </template>
+          </div>
+          <NeuSelect
+            v-model="selectedCategory"
+            :options="categoryOptions"
+            placeholder="All Categories"
+            data-testid="completed-category-filter"
+          />
         </div>
       </div>
 
       <template v-if="store.completedTasks.length > 0">
         <div class="grid grid--two-columns-wide grid--tight">
-          <h3 class="task-layout__title">Total Tasks Completed: {{ store.completedTasks.length }}</h3>
+          <h3 class="task-layout__title">Total Tasks Completed: {{ filteredCompletedTasks.length }}</h3>
           <h3 class="task-layout__title">Average Completion Time: {{ avgCompletion }}</h3>
 
           <div :class="gridClass">
             <template v-if="viewType === 'block'">
               <TaskBlockCompleted
-                v-for="task in store.completedTasks"
+                v-for="task in filteredCompletedTasks"
                 :key="task.id"
                 :task="task"
                 @delete="onDelete"
@@ -139,7 +155,7 @@
             </template>
             <template v-else>
               <TaskCompactCompleted
-                v-for="task in store.completedTasks"
+                v-for="task in filteredCompletedTasks"
                 :key="task.id"
                 :task="task"
                 @delete="onDelete"
@@ -148,7 +164,7 @@
           </div>
 
           <div class="grid grid--one-column-narrow-nested grid--tight">
-            <CompletedChart :tasks="store.completedTasks" />
+            <CompletedChart :tasks="filteredCompletedTasks" />
           </div>
         </div>
       </template>
@@ -211,7 +227,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useTasksStore } from '@/stores/tasks'
+import { useTasksStore, TASK_CATEGORIES } from '@/stores/tasks'
 import type { CompletedTask } from '@/stores/tasks'
 import { useNotifications } from '@/composables/useNotifications'
 import TasksSubnav from '@/components/tasks/TasksSubnav.vue'
@@ -224,6 +240,7 @@ import TaskCompactTodo from '@/components/tasks/TaskCompactTodo.vue'
 import TaskBlockCompleted from '@/components/tasks/TaskBlockCompleted.vue'
 import TaskCompactCompleted from '@/components/tasks/TaskCompactCompleted.vue'
 import CompletedChart from '@/components/tasks/CompletedChart.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
 import { DATE_FILTERS, dateFilterLabel, dateFilterRange, averageCompletionTime, type DateFilterKey } from '@/components/tasks/taskUtils'
 import type { TaskCategory } from '@/api/client'
 
@@ -233,8 +250,21 @@ const { show } = useNotifications()
 
 const viewType = ref<'block' | 'compact'>('block')
 const selectedFilter = ref<DateFilterKey>('this_week')
+const selectedCategory = ref<string>('')
 const completedToday = ref<CompletedTask[]>([])
 const showAddTask = ref(false)
+
+const categoryOptions = [{ value: '', label: 'All Categories' }, ...TASK_CATEGORIES.map((c) => ({ value: c, label: c }))]
+
+const filteredTodoTasks = computed(() => {
+  if (!selectedCategory.value) return store.sortedTasks
+  return store.sortedTasks.filter((t) => t.category === selectedCategory.value)
+})
+
+const filteredCompletedTasks = computed(() => {
+  if (!selectedCategory.value) return store.completedTasks
+  return store.completedTasks.filter((t) => t.category === selectedCategory.value)
+})
 
 const activePage = computed<'priority' | 'todo' | 'completed' | 'search'>(() => {
   switch (route.name) {
@@ -255,7 +285,7 @@ const gridClass = computed(() =>
 
 const topTasks = computed(() => store.sortedTasks.slice(0, 5))
 
-const avgCompletion = computed(() => averageCompletionTime(store.completedTasks))
+const avgCompletion = computed(() => averageCompletionTime(filteredCompletedTasks.value))
 
 const noCompletedMessage = computed(() => {
   const label = selectedFilter.value
@@ -336,6 +366,27 @@ function onFilterChange(filter: DateFilterKey) {
   store.fetchCompleted(range.start, range.end)
 }
 
-watch(() => route.fullPath, loadData)
+watch(
+  () => route.fullPath,
+  () => {
+    selectedCategory.value = ''
+    loadData()
+  }
+)
 onMounted(loadData)
 </script>
+
+<style scoped>
+.task-layout__filters {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+/* radio-scale-selector uses margin: auto for standalone centering,
+   which absorbs all flex space when it has siblings — reset it here */
+.task-layout__filters .radio-scale-selector {
+  margin: 0;
+}
+</style>
