@@ -86,6 +86,10 @@ api.interceptors.response.use(
 // Re-export all types so existing imports from '@/api/client' continue to work
 export type {
   TaskCategory,
+  AutoFun,
+  AutoFunCreate,
+  AutoFunUpdate,
+  AutoFunPreferences,
   AutoTaskFrequency,
   BoxSize,
   UserPreferences,

@@ -140,6 +140,12 @@ DEFAULT_USER_PREFERENCES = {
             'search': {'view_type': AppView.COMPACT},
         },
     },
+    'autofun': {
+        'interval_days': 7,
+        'max_concurrent': 1,
+        'is_paused': False,
+        'task_priority': 7,
+    },
     'events': {
         'pages': {
             'index': {'view_type': AppView.COMPACT},

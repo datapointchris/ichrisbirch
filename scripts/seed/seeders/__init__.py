@@ -5,6 +5,7 @@ from __future__ import annotations
 import types
 
 from scripts.seed.seeders import articles
+from scripts.seed.seeders import autofun
 from scripts.seed.seeders import autotasks
 from scripts.seed.seeders import books
 from scripts.seed.seeders import boxes
@@ -27,6 +28,7 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('articles', articles),
     ('events', events),
     ('countdowns', countdowns),
+    ('autofun', autofun),
     ('autotasks', autotasks),
     ('money_wasted', money_wasted),
     ('durations', durations),

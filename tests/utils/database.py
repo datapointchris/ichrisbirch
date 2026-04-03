@@ -283,6 +283,7 @@ def get_test_data() -> dict[str, dict[str, Any]]:
     """
     return {
         'articles': {'model': models.Article, 'data': tests.test_data.articles.BASE_DATA},
+        'autofun': {'model': models.AutoFun, 'data': tests.test_data.autofun.BASE_DATA},
         'autotasks': {'model': models.AutoTask, 'data': tests.test_data.autotasks.BASE_DATA},
         'books': {'model': models.Book, 'data': tests.test_data.books.BASE_DATA},
         'boxes': {'model': models.Box, 'data': tests.test_data.boxes.BASE_DATA},

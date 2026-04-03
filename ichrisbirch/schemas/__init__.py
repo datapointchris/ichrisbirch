@@ -5,6 +5,9 @@ from ichrisbirch.schemas.article import ArticleCreateFromUrl
 from ichrisbirch.schemas.article import ArticleFailedImport
 from ichrisbirch.schemas.article import ArticleSummary
 from ichrisbirch.schemas.article import ArticleUpdate
+from ichrisbirch.schemas.autofun import AutoFun
+from ichrisbirch.schemas.autofun import AutoFunCreate
+from ichrisbirch.schemas.autofun import AutoFunUpdate
 from ichrisbirch.schemas.autotask import AutoTask
 from ichrisbirch.schemas.autotask import AutoTaskCreate
 from ichrisbirch.schemas.autotask import AutoTaskUpdate
@@ -93,6 +96,9 @@ __all__ = [
     'ArticleSummary',
     'ArticleUpdate',
     'ArticleFailedImport',
+    'AutoFun',
+    'AutoFunCreate',
+    'AutoFunUpdate',
     'AutoTask',
     'AutoTaskCreate',
     'AutoTaskUpdate',

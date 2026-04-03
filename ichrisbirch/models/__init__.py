@@ -1,5 +1,7 @@
 from ichrisbirch.models.article import Article
 from ichrisbirch.models.article import ArticleFailedImport
+from ichrisbirch.models.autofun import AutoFun
+from ichrisbirch.models.autofun import AutoFunActiveTask
 from ichrisbirch.models.autotask import AutoTask
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.book import Book
@@ -37,6 +39,8 @@ from ichrisbirch.models.user import User
 __all__ = [
     'Article',
     'ArticleFailedImport',
+    'AutoFun',
+    'AutoFunActiveTask',
     'AutoTask',
     'AutoTaskFrequency',
     'Book',

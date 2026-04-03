@@ -486,6 +486,34 @@ export interface HabitCompletedCreate {
   complete_date: string
 }
 
+// --- AutoFun ---
+
+export interface AutoFun {
+  id: number
+  name: string
+  notes?: string
+  is_completed: boolean
+  completed_date?: string
+  added_date: string
+}
+
+export interface AutoFunCreate {
+  name: string
+  notes?: string
+}
+
+export interface AutoFunUpdate {
+  name?: string
+  notes?: string
+}
+
+export interface AutoFunPreferences {
+  interval_days: number
+  max_concurrent: number
+  is_paused: boolean
+  task_priority: number
+}
+
 // --- AutoTask ---
 
 export interface AutoTask {

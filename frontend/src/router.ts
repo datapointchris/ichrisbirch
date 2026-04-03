@@ -60,6 +60,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Money Wasted' },
   },
   {
+    path: '/autofun',
+    name: 'autofun',
+    component: () => import('@/views/AutoFunView.vue'),
+    meta: { title: 'AutoFun' },
+  },
+  {
     path: '/autotasks',
     name: 'autotasks',
     component: () => import('@/views/AutoTasksView.vue'),

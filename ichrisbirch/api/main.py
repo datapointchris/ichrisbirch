@@ -78,6 +78,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.admin.ws_router, prefix='/admin')  # WebSocket handles its own auth
     api.include_router(endpoints.articles.router, prefix='/articles', dependencies=deps)
     api.include_router(endpoints.auth.router, prefix='/auth')
+    api.include_router(endpoints.autofun.router, prefix='/autofun', dependencies=deps)
     api.include_router(endpoints.autotasks.router, prefix='/autotasks', dependencies=deps)
     api.include_router(endpoints.books.router, prefix='/books', dependencies=deps)
     api.include_router(endpoints.coffee.shops_router, prefix='/coffee/shops', dependencies=deps)

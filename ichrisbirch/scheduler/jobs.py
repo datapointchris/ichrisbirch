@@ -7,6 +7,7 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 """
 
 import functools
+import random
 import subprocess  # nosec B404
 from collections import defaultdict
 from collections.abc import Callable
@@ -180,6 +181,77 @@ def check_and_run_autotasks(settings: Settings) -> None:
 
 
 @job_logger
+def check_and_run_autofun(settings: Settings) -> None:
+    """Sync autofun active tasks then fill open slots from the fun list.
+
+    Each run:
+    1. For each active junction record, check if the linked task was completed
+       or deleted; update the fun item accordingly and free the slot.
+    2. While open slots remain (active < max_concurrent), pick a random
+       available fun item and create a task for it.
+    """
+    with create_session(settings) as session:
+        # Load scheduler settings from the single admin user's preferences
+        admin_user = session.scalars(select(models.User).where(models.User.is_admin.is_(True))).first()
+        if not admin_user:
+            logger.warning('autofun_no_admin_user')
+            return
+
+        if admin_user.get_preference('autofun.is_paused'):
+            logger.info('autofun_paused')
+            return
+
+        max_concurrent: int = admin_user.get_preference('autofun.max_concurrent')
+        task_priority: int = admin_user.get_preference('autofun.task_priority')
+
+        # Step 1: clean up completed or deleted tasks
+        active_records = list(session.scalars(select(models.AutoFunActiveTask)).all())
+        for record in active_records:
+            task = session.get(models.Task, record.task_id)
+            if task is None:
+                # Task was deleted — free the slot, item stays available
+                session.delete(record)
+                logger.info('autofun_task_deleted', fun_item_id=record.fun_item_id)
+            elif task.complete_date is not None:
+                # Task was completed — mark the fun item done permanently
+                fun_item = session.get(models.AutoFun, record.fun_item_id)
+                if fun_item:
+                    fun_item.is_completed = True
+                    fun_item.completed_date = datetime.now()
+                session.delete(record)
+                logger.info('autofun_item_completed', fun_item_id=record.fun_item_id)
+
+        session.flush()
+
+        # Step 2: fill open slots
+        remaining_active = list(session.scalars(select(models.AutoFunActiveTask)).all())
+        active_item_ids = {r.fun_item_id for r in remaining_active}
+        active_count = len(remaining_active)
+        available = [
+            item
+            for item in session.scalars(select(models.AutoFun).where(models.AutoFun.is_completed.is_(False))).all()
+            if item.id not in active_item_ids
+        ]
+
+        while active_count < max_concurrent and available:
+            chosen = random.choice(available)
+            available.remove(chosen)
+            task = models.Task(
+                name=chosen.name,
+                notes=chosen.notes,
+                category='Personal',
+                priority=task_priority,
+            )
+            session.add(task)
+            session.flush()
+            session.add(models.AutoFunActiveTask(fun_item_id=chosen.id, task_id=task.id))
+            active_count += 1
+            logger.info('autofun_task_created', fun_item_id=chosen.id, task_id=task.id)
+
+        session.commit()
+
+
+@job_logger
 def docker_prune(settings: Settings) -> None:
     """Weekly cleanup of old Docker images.
 
@@ -230,6 +302,12 @@ def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
             args=(settings,),
             trigger=daily_115am_trigger,
             id='check_and_run_autotasks_daily',
+        ),
+        JobToAdd(
+            func=check_and_run_autofun,
+            args=(settings,),
+            trigger=daily_115am_trigger,
+            id='check_and_run_autofun_daily',
         ),
         JobToAdd(
             func=docker_prune,

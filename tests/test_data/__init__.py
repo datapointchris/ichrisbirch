@@ -1,4 +1,5 @@
 from tests.test_data import articles
+from tests.test_data import autofun
 from tests.test_data import autotasks
 from tests.test_data import books
 from tests.test_data import boxes
@@ -16,6 +17,7 @@ from tests.test_data import users
 
 __all__ = [
     'articles',
+    'autofun',
     'autotasks',
     'books',
     'coffee_beans',
