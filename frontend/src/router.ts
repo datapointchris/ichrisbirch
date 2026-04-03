@@ -90,6 +90,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Bulk Import Articles' },
   },
   {
+    path: '/articles/stats',
+    name: 'article-stats',
+    component: () => import('@/views/ArticlesStatsView.vue'),
+    meta: { title: 'Articles Stats' },
+  },
+  {
     path: '/tasks',
     name: 'tasks',
     component: () => import('@/views/TasksView.vue'),

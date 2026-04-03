@@ -32,7 +32,7 @@ export const allMainLinks: NavLink[] = [
     label: 'Articles',
     icon: 'fa-solid fa-newspaper',
     migrated: true,
-    activeNames: ['articles', 'article-insights', 'article-bulk-import'],
+    activeNames: ['articles', 'article-insights', 'article-bulk-import', 'article-stats'],
   },
   { to: '/autofun', label: 'AutoFun', icon: 'fa-solid fa-face-laugh', migrated: true },
   { to: '/autotasks', label: 'AutoTasks', icon: 'fa-solid fa-robot', migrated: true },

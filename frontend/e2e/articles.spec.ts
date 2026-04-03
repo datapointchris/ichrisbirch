@@ -7,12 +7,14 @@ const ERROR = '.flash-messages__message--error'
 async function createArticle(page: import('@playwright/test').Page, title: string, url?: string) {
   const articleUrl = url ?? `https://example.com/e2e-${Date.now()}`
   await page.getByTestId('article-add-button').click()
-  await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-  await page.getByTestId('article-url-input').fill(articleUrl)
-  await page.getByTestId('article-title-input').fill(title)
-  await page.getByTestId('article-tags-input').fill('e2e, testing')
-  await page.getByTestId('article-summary-input').fill('Created by Playwright E2E tests.')
-  await page.getByTestId('article-title-input').press('Enter')
+  // Two modal instances exist (create in subnav + edit in view); scope to the visible one
+  const modal = page.locator('[data-testid="add-edit-modal"].visible')
+  await expect(modal).toBeVisible({ timeout: 5000 })
+  await modal.getByTestId('article-url-input').fill(articleUrl)
+  await modal.getByTestId('article-title-input').fill(title)
+  await modal.getByTestId('article-tags-input').fill('e2e, testing')
+  await modal.getByTestId('article-summary-input').fill('Created by Playwright E2E tests.')
+  await modal.getByTestId('article-title-input').press('Enter')
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 

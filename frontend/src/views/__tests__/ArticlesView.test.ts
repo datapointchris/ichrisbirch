@@ -247,15 +247,7 @@ describe('ArticlesView', () => {
 
   // --- Modal wiring ---
 
-  it('opens add modal on add button click', async () => {
-    const wrapper = createWrapper()
-
-    await wrapper.find('[data-testid="article-add-button"]').trigger('click')
-
-    const modal = wrapper.findComponent({ name: 'AddEditArticleModal' })
-    expect(modal.props('visible')).toBe(true)
-    expect(modal.props('editData')).toBeNull()
-  })
+  // Note: add button and create modal live in ArticlesSubnav, not here
 
   it('opens edit modal with article data', async () => {
     const wrapper = createWrapper({ articles: testArticles })

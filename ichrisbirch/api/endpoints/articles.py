@@ -15,6 +15,7 @@ from sqlalchemy import cast
 from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -292,6 +293,60 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     html = markdown.markdown(full_mkd)
 
     return Response(html)
+
+
+@router.get('/stats/', response_model=schemas.ArticleStats, status_code=status.HTTP_200_OK)
+async def stats(session: DbSession):
+    """Return aggregated article statistics: summary counts, by-tag breakdown, save intake, and read frequency."""
+    summary_row = session.execute(
+        select(
+            func.count().label('total'),
+            func.count(models.Article.last_read_date).label('read'),
+            func.count().filter(models.Article.is_favorite.is_(True)).label('favorites'),
+            func.count().filter(models.Article.is_archived.is_(True)).label('archived'),
+            func.count().filter(models.Article.is_current.is_(True)).label('current'),
+        )
+    ).one()
+    summary = schemas.ArticleSummaryStats(
+        total=summary_row.total,
+        read=summary_row.read,
+        unread=summary_row.total - summary_row.read,
+        favorites=summary_row.favorites,
+        archived=summary_row.archived,
+        current=summary_row.current,
+    )
+
+    by_tag_rows = session.execute(
+        select(
+            func.unnest(models.Article.tags).label('tag'),
+            func.count().label('total'),
+            func.count(models.Article.last_read_date).label('read'),
+        )
+        .group_by(text('tag'))
+        .order_by(func.count().desc())
+    ).all()
+    by_tag = [schemas.ArticleTagStat(tag=r.tag, total=r.total, read=r.read, unread=r.total - r.read) for r in by_tag_rows]
+
+    saved_by_month_rows = session.execute(
+        select(
+            func.date_trunc('month', models.Article.save_date).label('month'),
+            func.count().label('count'),
+        )
+        .group_by(text('month'))
+        .order_by(text('month'))
+    ).all()
+    saved_by_month = [schemas.ArticleSavedByMonth(month=r.month.strftime('%Y-%m'), count=r.count) for r in saved_by_month_rows]
+
+    frequently_read = list(
+        session.scalars(select(models.Article).where(models.Article.read_count >= 2).order_by(models.Article.read_count.desc())).all()
+    )
+
+    return schemas.ArticleStats(
+        summary=summary,
+        by_tag=by_tag,
+        saved_by_month=saved_by_month,
+        frequently_read=frequently_read,
+    )
 
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)

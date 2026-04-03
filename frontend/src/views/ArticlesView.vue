@@ -242,21 +242,10 @@
       </div>
     </div>
 
-    <div class="add-item-wrapper">
-      <button
-        data-testid="article-add-button"
-        class="button"
-        @click="showModal = true"
-      >
-        <span class="button__text">Add Article</span>
-      </button>
-    </div>
-
     <AddEditArticleModal
       :visible="showModal"
       :edit-data="editTarget"
       @close="closeModal"
-      @create="handleCreate"
       @update="handleUpdate"
     />
   </div>
@@ -267,7 +256,7 @@ import { ref, onMounted } from 'vue'
 import { useArticlesStore } from '@/stores/articles'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
-import type { Article, ArticleCreate, ArticleUpdate } from '@/api/client'
+import type { Article, ArticleUpdate } from '@/api/client'
 import ArticlesSubnav from '@/components/ArticlesSubnav.vue'
 import AddEditArticleModal from '@/components/articles/AddEditArticleModal.vue'
 import { formatDate } from '@/composables/formatDate'
@@ -310,16 +299,6 @@ function openEdit(article: Article) {
 function closeModal() {
   showModal.value = false
   editTarget.value = null
-}
-
-async function handleCreate(data: ArticleCreate) {
-  try {
-    await store.create(data)
-    notify('Article added', 'success')
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to add article: ${detail}`, 'error')
-  }
 }
 
 async function handleUpdate(id: number, data: ArticleUpdate) {

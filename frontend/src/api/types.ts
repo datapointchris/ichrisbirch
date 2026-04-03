@@ -415,6 +415,34 @@ export interface ArticleSummary {
   tags: string[]
 }
 
+export interface ArticleSummaryStats {
+  total: number
+  read: number
+  unread: number
+  favorites: number
+  archived: number
+  current: number
+}
+
+export interface ArticleTagStat {
+  tag: string
+  total: number
+  read: number
+  unread: number
+}
+
+export interface ArticleSavedByMonth {
+  month: string
+  count: number
+}
+
+export interface ArticleStats {
+  summary: ArticleSummaryStats
+  by_tag: ArticleTagStat[]
+  saved_by_month: ArticleSavedByMonth[]
+  frequently_read: Article[]
+}
+
 export interface BulkImportResponse {
   batch_id: string
   total: number
