@@ -1,10 +1,12 @@
 import json
+import re
 
 import httpx
 import markdown
 import pendulum
 import structlog
 from bs4 import BeautifulSoup
+from bs4 import Tag
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -34,32 +36,91 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
+def _extract_video_id(url: str) -> str:
+    """Extract YouTube video ID from any supported URL format.
+
+    Handles youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID,
+    and youtube.com/live/ID. Strips query parameters from the ID.
+    """
+    if 'youtu.be/' in url:
+        return url.split('youtu.be/')[1].split('?')[0].split('&')[0]
+    if 'youtube.com/shorts/' in url:
+        return url.split('/shorts/')[1].split('?')[0].split('&')[0]
+    if 'youtube.com/live/' in url:
+        return url.split('/live/')[1].split('?')[0].split('&')[0]
+    if 'v=' in url:
+        return url.split('v=')[1].split('&')[0]
+    raise ValueError(f'Cannot extract video ID from URL: {url}')
+
+
 def _get_youtube_video_text_captions(url: str) -> str:
+    video_id = _extract_video_id(url)
     yt_trans = YouTubeTranscriptApi()
     formatter = TextFormatter()
-    # remove playlist
-    url = url.split('&list=')[0]
-    video_id = url.split('v=')[1]
     transcript = yt_trans.fetch(video_id)
-    formatted = formatter.format_transcript(transcript)
-    return formatted
+    return formatter.format_transcript(transcript)
 
 
 def _get_formatted_title(soup: BeautifulSoup) -> str:
-    if soup.title and soup.title.string:
-        title = soup.title.string.split('|')[0].replace('...', '')
-        title = title.removesuffix(' - YouTube').strip()
-    else:
+    """Extract and clean page title.
+
+    Strips common site name suffixes separated by | or - (takes the first segment).
+    """
+    if not (soup.title and soup.title.string):
         logger.warning('article_title_parse_failed')
-        title = 'Could not parse title'
-    return title
+        return 'Could not parse title'
+
+    title = soup.title.string.strip()
+
+    # Strip site name suffixes: "Article Title | Site Name" or "Article Title - Site Name"
+    # Split on the LAST separator to preserve titles that use these characters internally.
+    for sep in (' | ', ' - ', ' — ', ' · '):
+        if sep in title:
+            parts = title.rsplit(sep, 1)
+            if len(parts[1].split()) <= 4:
+                title = parts[0]
+            break
+
+    return title.removesuffix(' - YouTube').strip()
+
+
+def _strip_noise_tags(soup: BeautifulSoup) -> None:
+    """Remove tags that contribute noise rather than content."""
+    for tag_name in ('script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript', 'svg', 'form'):
+        for tag in soup.find_all(tag_name):
+            tag.decompose()
+    noise_pattern = re.compile(r'comment|cookie|banner|popup|modal|sidebar|social|share|newsletter|advert', re.IGNORECASE)
+    for attr in ('class', 'id'):
+        for tag in soup.find_all(attrs={attr: noise_pattern}):
+            if isinstance(tag, Tag):
+                tag.decompose()
 
 
 def _get_text_content_from_html(soup: BeautifulSoup) -> str:
-    relevant_content_tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'li']
-    tag_content = soup.find_all(relevant_content_tags)
-    text_content = ' '.join(tag.get_text() for tag in tag_content)
-    return text_content
+    """Extract readable text from HTML, preserving paragraph structure.
+
+    Tries <article> tag first (standard semantic container for main content),
+    then falls back to <main>, then the full <body>. Strips noise tags before
+    extraction to avoid navigation menus, footers, cookie banners, etc.
+    """
+    _strip_noise_tags(soup)
+
+    found = soup.find('article') or soup.find('main') or soup.find('body')
+    container = found if isinstance(found, Tag) else soup
+
+    content_tags = ('p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'li', 'figcaption', 'td', 'th', 'dt', 'dd')
+    elements = container.find_all(content_tags)
+
+    if not elements:
+        return container.get_text(separator='\n\n', strip=True)
+
+    blocks: list[str] = []
+    for el in elements:
+        text = el.get_text(strip=True)
+        if text and len(text) > 1:
+            blocks.append(text)
+
+    return '\n\n'.join(blocks)
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
