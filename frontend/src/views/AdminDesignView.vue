@@ -65,6 +65,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Segmented toggle experiments -->
+    <h3 class="style-col__title">Segmented Toggle Groups</h3>
+    <div class="segment-experiments">
+      <div
+        v-for="experiment in segmentExperiments"
+        :key="experiment.name"
+        class="segment-experiment"
+      >
+        <h4 class="segment-experiment__title">{{ experiment.name }}</h4>
+        <div
+          class="segment-experiment__group"
+          :class="experiment.containerClass"
+          role="radiogroup"
+        >
+          <button
+            v-for="opt in segmentOptions"
+            :key="opt"
+            role="radio"
+            :aria-checked="segmentSelections[experiment.name] === opt"
+            class="segment-experiment__option"
+            :class="[experiment.buttonClass, { [experiment.selectedClass]: segmentSelections[experiment.name] === opt }]"
+            @click="segmentSelections[experiment.name] = opt"
+          >
+            {{ opt }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,6 +126,35 @@ const navLinks = [
   { label: 'Events', icon: 'fa-solid fa-calendar' },
   { label: 'Habits', icon: 'fa-solid fa-repeat' },
   { label: 'Tasks', icon: 'fa-solid fa-list-check' },
+]
+
+const segmentOptions = ['Today', 'Yesterday', 'This Week', 'Last 7', 'This Month', 'Last 30', 'This Year', 'All']
+
+const segmentSelections = reactive<Record<string, string>>({
+  'hover: color shift': 'This Week',
+  'hover: inner glow': 'This Week',
+  'hover: bg + text glow': 'This Week',
+})
+
+const segmentExperiments = [
+  {
+    name: 'hover: color shift',
+    containerClass: 'seg-group--dark-shadow',
+    buttonClass: 'seg-btn--color-shift',
+    selectedClass: 'seg-btn--color-shift--selected',
+  },
+  {
+    name: 'hover: inner glow',
+    containerClass: 'seg-group--dark-shadow',
+    buttonClass: 'seg-btn--inner-glow',
+    selectedClass: 'seg-btn--inner-glow--selected',
+  },
+  {
+    name: 'hover: bg + text glow',
+    containerClass: 'seg-group--dark-shadow',
+    buttonClass: 'seg-btn--text-glow',
+    selectedClass: 'seg-btn--text-glow--selected',
+  },
 ]
 </script>
 
@@ -204,6 +262,125 @@ const navLinks = [
 .nav-btn i {
   width: 1.25em;
   text-align: center;
+}
+
+/* ── Segmented toggle experiments ── */
+.segment-experiments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+.segment-experiment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.segment-experiment__title {
+  font-size: var(--fs-200);
+  color: var(--clr-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.segment-experiment__group {
+  display: inline-flex;
+  border-radius: var(--button-border-radius);
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.seg-group--dark-shadow {
+  box-shadow: var(--floating-box);
+  background-color: var(--clr-primary--darker);
+}
+
+/* Shared base for all segment button experiments */
+%seg-btn-base {
+  background-color: var(--clr-primary);
+  box-shadow: var(--neu-hover);
+  color: var(--clr-gray-100);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  padding: var(--space-xs) var(--space-s);
+  font-size: var(--fs-400);
+  border: none;
+  font-family: inherit;
+  position: relative;
+  z-index: 1;
+}
+
+%seg-btn-pressed {
+  box-shadow: var(--neu-pressed);
+  background-color: var(--clr-primary--darker);
+  color: var(--clr-accent);
+  z-index: 0;
+}
+
+/* 1. Color shift — lighter bg + accent text, no shadow change */
+.seg-btn--color-shift {
+  @extend %seg-btn-base;
+
+  &:hover:not(.seg-btn--color-shift--selected) {
+    background-color: var(--clr-primary--lighter);
+    color: var(--clr-accent);
+  }
+
+  &--selected {
+    @extend %seg-btn-pressed;
+  }
+}
+
+/* 2. Inner glow — accent-tinted inset glow + text scale + press animation */
+.seg-btn--inner-glow {
+  @extend %seg-btn-base;
+  transition:
+    color 0.15s ease,
+    font-size 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover:not(.seg-btn--inner-glow--selected) {
+    color: var(--clr-accent);
+    box-shadow:
+      var(--neu-hover),
+      inset 0 0 16px var(--clr-accent-dark);
+    font-size: calc(var(--fs-400) * 1.2);
+  }
+
+  &--selected {
+    @extend %seg-btn-pressed;
+    animation: segment-press 0.5s ease-in-out;
+  }
+}
+
+@keyframes segment-press {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 3. Background + text glow — lighter bg + glowing text shadow */
+.seg-btn--text-glow {
+  @extend %seg-btn-base;
+
+  &:hover:not(.seg-btn--text-glow--selected) {
+    background-color: var(--clr-primary--lighter);
+    color: var(--clr-accent);
+    text-shadow:
+      0 0 8px var(--clr-accent),
+      0 0 20px var(--clr-accent-dark);
+  }
+
+  &--selected {
+    @extend %seg-btn-pressed;
+  }
 }
 
 /* ── Column 1: translate, press scale 0.99 ── */

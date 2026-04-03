@@ -113,23 +113,12 @@
         />
         <h2 class="task-layout__title">Completed Tasks</h2>
         <div class="task-layout__filters">
-          <div class="radio-scale-selector">
-            <template
-              v-for="filter in DATE_FILTERS"
-              :key="filter"
-            >
-              <input
-                :id="'radio-' + filter"
-                type="radio"
-                class="radio-scale-selector__option"
-                name="filter"
-                :value="filter"
-                :checked="selectedFilter === filter"
-                @change="onFilterChange(filter)"
-              />
-              <label :for="'radio-' + filter">{{ dateFilterLabel(filter) }}</label>
-            </template>
-          </div>
+          <NeuToggleGroup
+            :model-value="selectedFilter"
+            :options="dateFilterOptions"
+            data-testid="completed-date-filter"
+            @update:model-value="onFilterChange"
+          />
           <NeuSelect
             v-model="selectedCategory"
             :options="categoryOptions"
@@ -241,6 +230,8 @@ import TaskBlockCompleted from '@/components/tasks/TaskBlockCompleted.vue'
 import TaskCompactCompleted from '@/components/tasks/TaskCompactCompleted.vue'
 import CompletedChart from '@/components/tasks/CompletedChart.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
+import NeuToggleGroup from '@/components/NeuToggleGroup.vue'
+import type { NeuToggleGroupOption } from '@/components/NeuToggleGroup.vue'
 import { DATE_FILTERS, dateFilterLabel, dateFilterRange, averageCompletionTime, type DateFilterKey } from '@/components/tasks/taskUtils'
 import type { TaskCategory } from '@/api/client'
 
@@ -255,6 +246,11 @@ const completedToday = ref<CompletedTask[]>([])
 const showAddTask = ref(false)
 
 const categoryOptions = [{ value: '', label: 'All Categories' }, ...TASK_CATEGORIES.map((c) => ({ value: c, label: c }))]
+
+const dateFilterOptions: NeuToggleGroupOption<DateFilterKey>[] = DATE_FILTERS.map((f) => ({
+  value: f,
+  label: dateFilterLabel(f),
+}))
 
 const filteredTodoTasks = computed(() => {
   if (!selectedCategory.value) return store.sortedTasks
@@ -382,11 +378,5 @@ onMounted(loadData)
   justify-content: center;
   align-items: center;
   gap: var(--space-s);
-}
-
-/* radio-scale-selector uses margin: auto for standalone centering,
-   which absorbs all flex space when it has siblings — reset it here */
-.task-layout__filters .radio-scale-selector {
-  margin: 0;
 }
 </style>

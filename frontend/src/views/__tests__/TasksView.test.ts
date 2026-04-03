@@ -68,6 +68,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         TaskBlockCompleted: true,
         TaskCompactCompleted: true,
         CompletedChart: true,
+        NeuToggleGroup: true,
       },
     },
   })
