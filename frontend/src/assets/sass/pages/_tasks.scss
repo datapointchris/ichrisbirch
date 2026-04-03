@@ -1,8 +1,8 @@
 :root {
-  --task-completed-box-shadow: inset 0 0 8px 2px var(--clr-success);
-  --task-soon-box-shadow: inset 0 0 8px 2px var(--clr-warning);
-  --task-critical-box-shadow: inset 0 0 8px 2px var(--clr-critical);
-  --task-overdue-box-shadow: inset 0 0 8px 2px var(--clr-overdue);
+  --task-completed-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-success) calc(l * 0.6) c h / 0.8);
+  --task-soon-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-warning) calc(l * 0.6) c h / 0.8);
+  --task-critical-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-critical) calc(l * 0.6) c h / 0.8);
+  --task-overdue-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-overdue) calc(l * 0.6) c h / 0.8);
   --task-total-box-shadow: inset 0 0 8px 2px var(--clr-gray-400);
 }
 

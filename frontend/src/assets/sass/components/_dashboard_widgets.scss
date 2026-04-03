@@ -25,7 +25,7 @@
 
 .widget-list__item--done {
   opacity: 0.4;
-  border-left-color: var(--clr-accent--green);
+  border-left-color: var(--clr-success);
 }
 
 .widget-list__item--highlight {
@@ -65,12 +65,12 @@
 }
 
 .widget-list__days--urgent {
-  color: var(--clr-accent--red);
+  color: var(--clr-error);
   font-weight: 700;
 }
 
 .widget-list__days--soon {
-  color: var(--clr-accent--yellow);
+  color: var(--clr-warning);
 }
 
 .widget-list__days--past {
@@ -103,8 +103,8 @@
 }
 
 .widget-action-btn--active {
-  border-color: var(--clr-accent--green);
-  color: var(--clr-accent--green);
+  border-color: var(--clr-success);
+  color: var(--clr-success);
   background: var(--clr-gray-700);
 }
 
@@ -131,7 +131,7 @@
 }
 
 .widget-stats__total--red {
-  color: var(--clr-accent--red) !important;
+  color: var(--clr-error) !important;
 }
 
 .widget-list__category {

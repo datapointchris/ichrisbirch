@@ -106,7 +106,7 @@
 
 .habit-check {
   margin: var(--space-m);
-  @include buttons.double-bevel-button($button-size: 50px, $button-step-blend: 2px, $selected-color: var(--clr-accent--green-bright));
+  @include buttons.double-bevel-button($button-size: 50px, $button-step-blend: 2px, $selected-color: var(--clr-tertiary));
 
   * button {
     color: inherit;
@@ -128,7 +128,7 @@
   $font-size-ratio: 1.5;
   $icon-size-ratio: 0.33;
   $text-and-icon-color: var(--clr-accent-light);
-  $selected-color: var(--clr-accent--green-bright);
+  $selected-color: var(--clr-tertiary);
 
   position: relative;
   margin: var(--space-m);

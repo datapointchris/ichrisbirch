@@ -43,7 +43,7 @@
     border-radius: 0;
 
     &:hover {
-      color: var(--clr-accent--red);
+      color: var(--clr-error);
     }
   }
 
@@ -173,5 +173,5 @@
 }
 
 .datepicker__clear-btn:hover {
-  color: var(--clr-accent--red);
+  color: var(--clr-error);
 }

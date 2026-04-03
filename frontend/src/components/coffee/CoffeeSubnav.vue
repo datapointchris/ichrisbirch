@@ -49,12 +49,12 @@ defineProps<{
 }
 
 .coffee-subnav__link:hover {
-  color: var(--clr-accent--orange);
+  color: var(--clr-accent-light);
 }
 
 .coffee-subnav__link--active {
-  color: var(--clr-accent--orange);
-  border-bottom: 2px solid var(--clr-accent--orange);
+  color: var(--clr-accent-light);
+  border-bottom: 2px solid var(--clr-accent-light);
   margin-bottom: -2px;
 }
 </style>

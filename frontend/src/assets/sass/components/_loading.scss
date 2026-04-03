@@ -2,7 +2,7 @@
 
 @keyframes push {
   33% {
-    color: var(--clr-accent--green);
+    color: var(--clr-tertiary);
     translate: 1rem;
   }
 }
@@ -11,7 +11,7 @@
     transform: rotateY(0deg);
   }
   33% {
-    color: var(--clr-accent--green);
+    color: var(--clr-tertiary);
   }
   50% {
   }

@@ -11,7 +11,7 @@
   background-color: var(--clr-gray-800);
 
   &--error {
-    border: 2px solid var(--clr-accent--red);
+    border: 2px solid var(--clr-error);
     animation: textbox-error-flash 1s ease forwards;
   }
 }
@@ -25,7 +25,7 @@
   }
 
   100% {
-    border-color: var(--clr-accent--red);
+    border-color: var(--clr-error);
     box-shadow: none;
   }
 }

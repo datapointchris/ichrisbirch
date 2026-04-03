@@ -1,14 +1,14 @@
 // Coffee Tracker — card-based layout with warm orange tones
-// Uses --clr-accent--orange as the primary accent throughout
+// Uses --clr-accent-light as the warm accent throughout
 
 // ── Custom tokens ──────────────────────────────────────────────────────────────
 :root {
-  --coffee-card-hover-glow: inset 0 0 14px 3px oklch(from var(--clr-accent--orange) l c h / 0.2);
+  --coffee-card-hover-glow: inset 0 0 14px 3px oklch(from var(--clr-accent-light) l c h / 0.2);
 }
 
 // ── Page title treatment (shared by shops + beans) ────────────────────────────
 %coffee-page-title {
-  color: var(--clr-accent--orange);
+  color: var(--clr-accent-light);
   text-shadow: var(--deep-3d-text-shadow);
   font-size: var(--fs-700);
   letter-spacing: 0.02em;
@@ -26,8 +26,8 @@
   transition: background-color 0.15s ease;
 
   &--filled {
-    background-color: var(--clr-accent--orange);
-    box-shadow: 0 0 5px 1px oklch(from var(--clr-accent--orange) l c h / 0.5);
+    background-color: var(--clr-accent-light);
+    box-shadow: 0 0 5px 1px oklch(from var(--clr-accent-light) l c h / 0.5);
   }
 }
 
@@ -81,7 +81,7 @@
   }
 
   &__card-name {
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
     text-shadow: var(--deep-3d-text-shadow);
     font-size: var(--fs-500);
     margin: 0;
@@ -116,12 +116,12 @@
     line-height: 1.5;
     margin: 0;
     padding-left: var(--space-xs);
-    border-left: 2px solid oklch(from var(--clr-accent--orange) l c h / 0.4);
+    border-left: 2px solid oklch(from var(--clr-accent-light) l c h / 0.4);
   }
 
   &__card-review-icon {
     font-size: var(--fs-200);
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
     opacity: 0.6;
     margin-right: var(--space-3xs);
     vertical-align: middle;
@@ -177,7 +177,7 @@
   }
 
   &__card-name {
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
     text-shadow: var(--deep-3d-text-shadow);
     font-size: var(--fs-500);
     margin: 0;
@@ -207,9 +207,9 @@
   &__card-roast-badge {
     padding: 2px var(--space-2xs);
     border-radius: calc(var(--button-border-radius) * 0.5);
-    border: 1px solid oklch(from var(--clr-accent--orange) l c h / 0.5);
+    border: 1px solid oklch(from var(--clr-accent-light) l c h / 0.5);
     font-size: var(--fs-200);
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
   }
 
   &__flavor-notes {
@@ -221,10 +221,10 @@
   &__flavor-pill {
     padding: 2px var(--space-xs);
     border-radius: 20px;
-    background-color: oklch(from var(--clr-accent--orange) l c h / 0.1);
-    border: 1px solid oklch(from var(--clr-accent--orange) l c h / 0.3);
+    background-color: oklch(from var(--clr-accent-light) l c h / 0.1);
+    border: 1px solid oklch(from var(--clr-accent-light) l c h / 0.3);
     font-size: var(--fs-200);
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
   }
 
   &__card-notes {
@@ -241,12 +241,12 @@
     line-height: 1.5;
     margin: 0;
     padding-left: var(--space-xs);
-    border-left: 2px solid oklch(from var(--clr-accent--orange) l c h / 0.4);
+    border-left: 2px solid oklch(from var(--clr-accent-light) l c h / 0.4);
   }
 
   &__card-review-icon {
     font-size: var(--fs-200);
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
     opacity: 0.6;
     margin-right: var(--space-3xs);
     vertical-align: middle;

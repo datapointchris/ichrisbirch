@@ -20,6 +20,13 @@ export interface ThemeDefinition {
     text: string
     accent: string
     accentLight: string
+    secondary: string
+    tertiary: string
+    info: string
+    subtle: string
+    error: string
+    warning: string
+    success: string
   }
   // Preview swatch color for the selector
   swatch: string
@@ -33,6 +40,13 @@ const NAMED_THEME_VARS = [
   '--clr-text',
   '--clr-accent',
   '--clr-accent-light',
+  '--clr-secondary',
+  '--clr-tertiary',
+  '--clr-info',
+  '--clr-subtle',
+  '--clr-error',
+  '--clr-warning',
+  '--clr-success',
 ] as const
 
 // CSS variables for custom accent/tertiary hues (cleared when switching to named themes)
@@ -63,6 +77,13 @@ export const themes: ThemeDefinition[] = [
       text: '#c5c8c6',
       accent: '#4eb6fe',
       accentLight: '#ffc400',
+      secondary: '#b294bb',
+      tertiary: '#b5bd68',
+      info: '#8abeb7',
+      subtle: '#969896',
+      error: '#cc6666',
+      warning: '#f0c674',
+      success: '#b5bd68',
     },
   },
   {
@@ -77,6 +98,13 @@ export const themes: ThemeDefinition[] = [
       text: '#dcd7ba',
       accent: '#7e9cd8',
       accentLight: '#e6c384',
+      secondary: '#957fb8',
+      tertiary: '#98bb6c',
+      info: '#7aa89f',
+      subtle: '#727169',
+      error: '#c34043',
+      warning: '#ff9e64',
+      success: '#76946a',
     },
   },
   {
@@ -91,6 +119,13 @@ export const themes: ThemeDefinition[] = [
       text: '#e0def4',
       accent: '#c4a7e7',
       accentLight: '#ebbcba',
+      secondary: '#eb6f92',
+      tertiary: '#9ccfd8',
+      info: '#31748f',
+      subtle: '#6e6a86',
+      error: '#eb6f92',
+      warning: '#f6c177',
+      success: '#9ccfd8',
     },
   },
   {
@@ -105,6 +140,13 @@ export const themes: ThemeDefinition[] = [
       text: '#ebdbb2',
       accent: '#83a598',
       accentLight: '#fabd2f',
+      secondary: '#d3869b',
+      tertiary: '#b8bb26',
+      info: '#8ec07c',
+      subtle: '#928374',
+      error: '#fb4934',
+      warning: '#fabd2f',
+      success: '#b8bb26',
     },
   },
   {
@@ -119,6 +161,13 @@ export const themes: ThemeDefinition[] = [
       text: '#bbc3d4',
       accent: '#88c0d0',
       accentLight: '#ebcb8b',
+      secondary: '#b48ead',
+      tertiary: '#a3be8c',
+      info: '#8fbcbb',
+      subtle: '#616e88',
+      error: '#bf616a',
+      warning: '#ebcb8b',
+      success: '#a3be8c',
     },
   },
   {
@@ -133,6 +182,13 @@ export const themes: ThemeDefinition[] = [
       text: '#cdcecf',
       accent: '#719cd6',
       accentLight: '#dbc074',
+      secondary: '#c397d8',
+      tertiary: '#81b29a',
+      info: '#63cdcf',
+      subtle: '#738091',
+      error: '#c94f6d',
+      warning: '#dbc074',
+      success: '#81b29a',
     },
   },
   {
@@ -147,6 +203,13 @@ export const themes: ThemeDefinition[] = [
       text: '#d3c6aa',
       accent: '#a7c080',
       accentLight: '#dbbc7f',
+      secondary: '#d699b6',
+      tertiary: '#7fbbb3',
+      info: '#83c092',
+      subtle: '#859289',
+      error: '#e67e80',
+      warning: '#dbbc7f',
+      success: '#a7c080',
     },
   },
   {
@@ -161,6 +224,13 @@ export const themes: ThemeDefinition[] = [
       text: '#93a1a1',
       accent: '#268bd2',
       accentLight: '#b58900',
+      secondary: '#d33682',
+      tertiary: '#859900',
+      info: '#2aa198',
+      subtle: '#657b83',
+      error: '#dc322f',
+      warning: '#b58900',
+      success: '#859900',
     },
   },
   {
@@ -175,6 +245,13 @@ export const themes: ThemeDefinition[] = [
       text: '#e6eaea',
       accent: '#5a93aa',
       accentLight: '#ead49b',
+      secondary: '#ad5c7c',
+      tertiary: '#7aa4a1',
+      info: '#a1cdd8',
+      subtle: '#6d7f8b',
+      error: '#e85c51',
+      warning: '#fda47f',
+      success: '#7aa4a1',
     },
   },
   {
@@ -189,6 +266,13 @@ export const themes: ThemeDefinition[] = [
       text: '#c0c5ce',
       accent: '#6699cc',
       accentLight: '#fac863',
+      secondary: '#c594c5',
+      tertiary: '#99c794',
+      info: '#5fb3b3',
+      subtle: '#65737e',
+      error: '#ec5f67',
+      warning: '#fac863',
+      success: '#99c794',
     },
   },
   {
@@ -203,6 +287,13 @@ export const themes: ThemeDefinition[] = [
       text: '#cecdc3',
       accent: '#3aa99f',
       accentLight: '#d0a215',
+      secondary: '#ce5d97',
+      tertiary: '#879a39',
+      info: '#4385be',
+      subtle: '#878580',
+      error: '#d14d41',
+      warning: '#d0a215',
+      success: '#879a39',
     },
   },
   {
@@ -217,6 +308,13 @@ export const themes: ThemeDefinition[] = [
       text: '#ebdbb2',
       accent: '#83a598',
       accentLight: '#fabd2f',
+      secondary: '#d3869b',
+      tertiary: '#b8bb26',
+      info: '#8ec07c',
+      subtle: '#928374',
+      error: '#fb4934',
+      warning: '#fabd2f',
+      success: '#b8bb26',
     },
   },
 ]
@@ -265,6 +363,13 @@ export function applyTheme(themeName: string) {
     el.style.setProperty('--clr-text', theme.colors.text)
     el.style.setProperty('--clr-accent', theme.colors.accent)
     el.style.setProperty('--clr-accent-light', theme.colors.accentLight)
+    el.style.setProperty('--clr-secondary', theme.colors.secondary)
+    el.style.setProperty('--clr-tertiary', theme.colors.tertiary)
+    el.style.setProperty('--clr-info', theme.colors.info)
+    el.style.setProperty('--clr-subtle', theme.colors.subtle)
+    el.style.setProperty('--clr-error', theme.colors.error)
+    el.style.setProperty('--clr-warning', theme.colors.warning)
+    el.style.setProperty('--clr-success', theme.colors.success)
     logger.info('theme_applied', { theme: theme.id, type: 'named' })
   }
 }

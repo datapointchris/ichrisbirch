@@ -75,10 +75,33 @@
               @input="onAccentHueInput"
               @change="saveAccentHue"
             />
-            <div
-              class="hue-slider__preview"
-              :style="{ background: `oklch(0.75 0.157 ${accentHue})` }"
-            ></div>
+            <div class="hue-slider__swatches">
+              <div
+                class="hue-slider__swatch"
+                :style="{ background: `oklch(0.75 0.157 ${accentHue})` }"
+                title="Accent"
+              ></div>
+              <div
+                class="hue-slider__swatch hue-slider__swatch--companion"
+                :style="{ background: secondaryPreview }"
+                title="Secondary"
+              ></div>
+              <div
+                class="hue-slider__swatch hue-slider__swatch--companion"
+                :style="{ background: tertiaryPreview }"
+                title="Tertiary"
+              ></div>
+              <div
+                class="hue-slider__swatch hue-slider__swatch--companion"
+                :style="{ background: infoPreview }"
+                title="Info"
+              ></div>
+              <div
+                class="hue-slider__swatch hue-slider__swatch--companion"
+                :style="{ background: subtlePreview }"
+                title="Subtle"
+              ></div>
+            </div>
             <span class="hue-slider__value">{{ accentHue }}°</span>
           </div>
         </div>
@@ -276,6 +299,14 @@ const isColorTheme = computed(() => {
   const t = themes.find((th) => th.id === selectedThemeColor.value)
   return t?.type === 'color' && t.id !== 'random'
 })
+const baseHue = computed(() => {
+  const t = themes.find((th) => th.id === selectedThemeColor.value)
+  return t?.hue ?? 224
+})
+const secondaryPreview = computed(() => `oklch(0.65 0.12 ${(accentHue.value + 120) % 360})`)
+const tertiaryPreview = computed(() => `oklch(0.65 0.10 ${(accentHue.value + 240) % 360})`)
+const infoPreview = computed(() => `oklch(0.70 0.08 ${(accentHue.value + 180) % 360})`)
+const subtlePreview = computed(() => `oklch(0.55 0.04 ${baseHue.value})`)
 const availableFonts = [...fonts].sort((a, b) => a.name.localeCompare(b.name))
 const keyName = ref('')
 const newlyCreatedKey = ref<string | null>(null)
@@ -503,11 +534,24 @@ onMounted(async () => {
   cursor: grab;
 }
 
-.hue-slider__preview {
+.hue-slider__swatches {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+.hue-slider__swatch {
   width: 2rem;
   height: 2rem;
   border-radius: 0.375rem;
   border: 2px solid var(--clr-gray-600);
+}
+
+.hue-slider__swatch--companion {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  border-width: 1px;
 }
 
 .hue-slider__value {

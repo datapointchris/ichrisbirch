@@ -105,12 +105,12 @@ import AddEditModal from '@/components/AddEditModal.vue'
 import DatePicker from '@/components/DatePicker.vue'
 
 const colorSwatches = [
-  { value: 'var(--clr-accent--orange)', label: 'Orange' },
-  { value: 'var(--clr-accent--red)', label: 'Red' },
-  { value: 'var(--clr-accent--blue)', label: 'Blue' },
-  { value: 'var(--clr-accent--green-bright)', label: 'Green' },
-  { value: 'var(--clr-accent--yellow)', label: 'Yellow' },
-  { value: 'var(--clr-accent--purple)', label: 'Purple' },
+  { value: 'var(--clr-accent-light)', label: 'Warm' },
+  { value: 'var(--clr-error)', label: 'Red' },
+  { value: 'var(--clr-info)', label: 'Blue' },
+  { value: 'var(--clr-tertiary)', label: 'Green' },
+  { value: 'var(--clr-warning)', label: 'Yellow' },
+  { value: 'var(--clr-secondary)', label: 'Purple' },
   { value: 'var(--clr-accent)', label: 'Accent' },
   { value: 'var(--clr-gray-400)', label: 'Gray' },
 ]

@@ -8,15 +8,15 @@
   align-items: center;
 
   &--essential {
-    color: var(--clr-accent--orange);
+    color: var(--clr-accent-light);
   }
 
   &--warm {
-    color: var(--clr-accent--red);
+    color: var(--clr-error);
   }
 
   &--liquid {
-    color: var(--clr-accent--blue);
+    color: var(--clr-info);
   }
 }
 

@@ -131,9 +131,9 @@ defineEmits<{
 }
 
 .dashboard-widget__remove:hover {
-  color: var(--clr-accent--red);
-  border-color: var(--clr-accent--red);
-  box-shadow: 0 0 8px var(--clr-accent--red);
+  color: var(--clr-error);
+  border-color: var(--clr-error);
+  box-shadow: 0 0 8px var(--clr-error);
   transform: scale(1.2);
 }
 
