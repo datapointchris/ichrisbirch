@@ -45,21 +45,26 @@ async def create(book: schemas.BookCreate, session: DbSession):
 
 @router.get('/search/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
 async def search(q: str, session: DbSession):
-    """Search for comma-separated list of tags.
+    """Search books by title, author, or tags.
 
-    Search terms must be separated and wildcards added.
+    Accepts comma-separated terms (for multi-word phrases) or space-separated
+    keywords.  When the query contains commas, splits on commas to preserve
+    phrases like ``shadow work,Jung``.  Otherwise splits on whitespace so that
+    natural-language queries like ``Edinger ego archetype`` match any word.
+
     `tags` column must be converted from array to string to perform the like comparison for each search term.
     Use the OR to search for any of the specified search terms.
     NOTE: Converting the tags array to text cannot use the GIN index that is set in postgres on the tags column.
     This is a limitation of the array type in that it can't match partial results and use the index.
     """
     logger.debug('book_search', query=q)
-    search_terms = [f'%{term.strip()}%' for term in q.split(',')]
+    raw_terms = q.split(',') if ',' in q else q.split()
+    search_terms = [f'%{term.strip()}%' for term in raw_terms if term.strip()]
     logger.debug('book_search_terms', terms=search_terms)
     title_matches = [models.Book.title.ilike(term) for term in search_terms]
     author_matches = [models.Book.author.ilike(term) for term in search_terms]
     tag_matches = [cast((models.Book.tags), postgresql.TEXT).ilike(term) for term in search_terms]
-    all_matches = set(title_matches + author_matches + tag_matches)
+    all_matches = title_matches + author_matches + tag_matches
     books = select(models.Book).filter(or_(*all_matches)).order_by(models.Book.title.asc())
     results = session.scalars(books).all()
     logger.debug('book_search_results', count=len(results))
