@@ -469,7 +469,7 @@ function closeModal() {
 async function handleCreate(data: DurationCreate) {
   try {
     await store.create(data)
-    notify('Duration added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add duration: ${detail}`, 'error')
@@ -477,9 +477,10 @@ async function handleCreate(data: DurationCreate) {
 }
 
 async function handleUpdate(id: number, data: DurationUpdate) {
+  const name = store.durations.find((d) => d.id === id)?.name ?? 'Duration'
   try {
     await store.update(id, data)
-    notify('Duration updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update duration: ${detail}`, 'error')

@@ -139,7 +139,7 @@ function closeModal() {
 async function handleCreate(data: EventCreate) {
   try {
     await store.create(data)
-    notify('Event added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add event: ${detail}`, 'error')
@@ -147,9 +147,10 @@ async function handleCreate(data: EventCreate) {
 }
 
 async function handleUpdate(id: number, data: EventUpdate) {
+  const name = store.events.find((e) => e.id === id)?.name ?? 'Event'
   try {
     await store.update(id, data)
-    notify('Event updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update event: ${detail}`, 'error')
@@ -157,9 +158,10 @@ async function handleUpdate(id: number, data: EventUpdate) {
 }
 
 async function handleDelete(id: number) {
+  const name = store.events.find((e) => e.id === id)?.name ?? 'Event'
   try {
     await store.remove(id)
-    notify('Event deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete event: ${detail}`, 'error')
@@ -170,7 +172,7 @@ async function handleToggleAttending(id: number) {
   try {
     const updated = await store.toggleAttending(id)
     if (updated) {
-      notify(updated.attending ? 'Attending event' : 'No longer attending', 'success')
+      notify(updated.attending ? `Attending ${updated.name}` : `No longer attending ${updated.name}`, 'success')
     }
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)

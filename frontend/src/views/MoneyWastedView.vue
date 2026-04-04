@@ -122,7 +122,7 @@ function closeModal() {
 async function handleCreate(data: MoneyWastedCreate) {
   try {
     await store.create(data)
-    notify('Money wasted entry added', 'success')
+    notify(`${data.item} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add entry: ${detail}`, 'error')
@@ -130,9 +130,10 @@ async function handleCreate(data: MoneyWastedCreate) {
 }
 
 async function handleUpdate(id: number, data: MoneyWastedUpdate) {
+  const item = store.items.find((i) => i.id === id)?.item ?? 'Entry'
   try {
     await store.update(id, data)
-    notify('Entry updated', 'success')
+    notify(`${item} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update entry: ${detail}`, 'error')
@@ -140,9 +141,10 @@ async function handleUpdate(id: number, data: MoneyWastedUpdate) {
 }
 
 async function handleDelete(id: number) {
+  const item = store.items.find((i) => i.id === id)?.item ?? 'Entry'
   try {
     await store.remove(id)
-    notify('Entry deleted', 'success')
+    notify(`${item} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete entry: ${detail}`, 'error')

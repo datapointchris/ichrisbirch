@@ -546,7 +546,7 @@ function closeBoxModal() {
 async function handleCreateBox(data: BoxCreate) {
   try {
     await store.createBox(data)
-    notify('Box added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add box: ${detail}`, 'error')
@@ -554,9 +554,10 @@ async function handleCreateBox(data: BoxCreate) {
 }
 
 async function handleUpdateBox(id: number, data: BoxUpdate) {
+  const name = store.boxes.find((b) => b.id === id)?.name ?? 'Box'
   try {
     await store.updateBox(id, data)
-    notify('Box updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update box: ${detail}`, 'error')
@@ -589,7 +590,7 @@ function closeItemModal() {
 async function handleCreateItem(data: BoxItemCreate) {
   try {
     await store.createItem(data)
-    notify('Item added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add item: ${detail}`, 'error')
@@ -619,9 +620,11 @@ async function handleDeleteItem(itemId: number, itemName: string, boxId: number)
 
 // Orphan actions
 async function handleAssignOrphan(itemId: number, boxId: number) {
+  const itemName = store.orphans.find((o) => o.id === itemId)?.name ?? 'Item'
+  const boxName = store.boxes.find((b) => b.id === boxId)?.name ?? 'box'
   try {
     await store.assignOrphanToBox(itemId, boxId)
-    notify('Item assigned to box', 'success')
+    notify(`${itemName} assigned to ${boxName}`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to assign item: ${detail}`, 'error')

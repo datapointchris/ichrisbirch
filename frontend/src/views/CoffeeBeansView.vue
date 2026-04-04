@@ -246,9 +246,10 @@ async function handleCreate(data: CoffeeBeanCreate) {
 }
 
 async function handleUpdate(id: number, data: CoffeeBeanUpdate) {
+  const name = beansStore.items.find((b) => b.id === id)?.name ?? 'Bean'
   try {
     await beansStore.update(id, data)
-    notify('Bean updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Update failed: ${detail}`, 'error')

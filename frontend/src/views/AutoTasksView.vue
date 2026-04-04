@@ -133,7 +133,7 @@ function closeModal() {
 async function handleCreate(data: AutoTaskCreate) {
   try {
     await store.create(data)
-    notify('AutoTask added and ran', 'success')
+    notify(`${data.name} added and ran`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add autotask: ${detail}`, 'error')
@@ -141,9 +141,10 @@ async function handleCreate(data: AutoTaskCreate) {
 }
 
 async function handleUpdate(id: number, data: AutoTaskUpdate) {
+  const name = store.autotasks.find((a) => a.id === id)?.name ?? 'AutoTask'
   try {
     await store.update(id, data)
-    notify('AutoTask updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update autotask: ${detail}`, 'error')
@@ -153,7 +154,7 @@ async function handleUpdate(id: number, data: AutoTaskUpdate) {
 async function handleRun(id: number, name: string) {
   try {
     await store.run(id)
-    notify(`Ran autotask: ${name}`, 'success')
+    notify(`Ran ${name}`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to run autotask: ${detail}`, 'error')
@@ -161,9 +162,10 @@ async function handleRun(id: number, name: string) {
 }
 
 async function handleDelete(id: number) {
+  const name = store.autotasks.find((a) => a.id === id)?.name ?? 'AutoTask'
   try {
     await store.remove(id)
-    notify('AutoTask deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete autotask: ${detail}`, 'error')

@@ -36,7 +36,7 @@ const showModal = ref(false)
 async function handleCreate(data: ArticleCreate) {
   try {
     await store.create(data)
-    notify('Article added', 'success')
+    notify(`${data.title} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add article: ${detail}`, 'error')

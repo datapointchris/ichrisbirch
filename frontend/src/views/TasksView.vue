@@ -320,25 +320,27 @@ async function onComplete(id: number) {
   try {
     const completed = await store.complete(id)
     completedToday.value.unshift(completed)
-    show('Task completed', 'success')
+    show(`${completed.name} completed`, 'success')
   } catch {
     show('Failed to complete task', 'error')
   }
 }
 
 async function onExtend(id: number, days: number) {
+  const name = store.tasks.find((t) => t.id === id)?.name ?? 'Task'
   try {
     await store.extend(id, days)
-    show(`Task extended by ${days} days`, 'success')
+    show(`${name} extended by ${days} days`, 'success')
   } catch {
     show('Failed to extend task', 'error')
   }
 }
 
 async function onDelete(id: number) {
+  const name = store.tasks.find((t) => t.id === id)?.name ?? 'Task'
   try {
     await store.remove(id)
-    show('Task deleted', 'success')
+    show(`${name} deleted`, 'success')
   } catch {
     show('Failed to delete task', 'error')
   }
@@ -347,7 +349,7 @@ async function onDelete(id: number) {
 async function onCreate(data: { name: string; category: TaskCategory; priority: number; notes?: string }) {
   try {
     await store.create(data)
-    show('Task created', 'success')
+    show(`${data.name} created`, 'success')
   } catch {
     show('Failed to create task', 'error')
   }

@@ -460,7 +460,7 @@ function closeProjectModal() {
 async function handleCreateProject(data: ProjectCreate) {
   try {
     await store.createProject(data)
-    notify('Project added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add project: ${detail}`, 'error')
@@ -468,9 +468,10 @@ async function handleCreateProject(data: ProjectCreate) {
 }
 
 async function handleUpdateProject(id: string, data: ProjectUpdate) {
+  const name = store.projects.find((p) => p.id === id)?.name ?? 'Project'
   try {
     await store.updateProject(id, data)
-    notify('Project updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update project: ${detail}`, 'error')
@@ -478,9 +479,10 @@ async function handleUpdateProject(id: string, data: ProjectUpdate) {
 }
 
 async function handleDeleteProject(id: string) {
+  const name = store.projects.find((p) => p.id === id)?.name ?? 'Project'
   try {
     await store.removeProject(id)
-    notify('Project deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete project: ${detail}`, 'error')
@@ -502,7 +504,7 @@ function closeItemModal() {
 async function handleCreateItem(data: ProjectItemCreate) {
   try {
     await store.createItem(data)
-    notify('Item added', 'success')
+    notify(`${data.title} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add item: ${detail}`, 'error')
@@ -510,9 +512,10 @@ async function handleCreateItem(data: ProjectItemCreate) {
 }
 
 async function handleUpdateItem(id: string, data: ProjectItemUpdate) {
+  const title = store.items.find((i) => i.id === id)?.title ?? 'Item'
   try {
     await store.updateItem(id, data)
-    notify('Item updated', 'success')
+    notify(`${title} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update item: ${detail}`, 'error')
@@ -522,7 +525,7 @@ async function handleUpdateItem(id: string, data: ProjectItemUpdate) {
 async function handleToggleComplete(item: ProjectItemInProject) {
   try {
     await store.updateItem(item.id, { completed: !item.completed })
-    notify(item.completed ? 'Item reopened' : 'Item completed', 'success')
+    notify(item.completed ? `${item.title} reopened` : `${item.title} completed`, 'success')
     store.fetchItemBlockers()
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
@@ -531,9 +534,10 @@ async function handleToggleComplete(item: ProjectItemInProject) {
 }
 
 async function handleArchiveItem(id: string) {
+  const title = store.items.find((i) => i.id === id)?.title ?? 'Item'
   try {
     await store.archiveItem(id)
-    notify('Item archived', 'success')
+    notify(`${title} archived`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to archive item: ${detail}`, 'error')
@@ -541,9 +545,10 @@ async function handleArchiveItem(id: string) {
 }
 
 async function handleDeleteItem(id: string) {
+  const title = store.items.find((i) => i.id === id)?.title ?? 'Item'
   try {
     await store.removeItem(id)
-    notify('Item deleted', 'success')
+    notify(`${title} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete item: ${detail}`, 'error')

@@ -129,7 +129,7 @@ function closeModal() {
 async function handleCreate(data: CountdownCreate) {
   try {
     await store.create(data)
-    notify('Countdown added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add countdown: ${detail}`, 'error')
@@ -137,9 +137,10 @@ async function handleCreate(data: CountdownCreate) {
 }
 
 async function handleUpdate(id: number, data: CountdownUpdate) {
+  const name = store.countdowns.find((c) => c.id === id)?.name ?? 'Countdown'
   try {
     await store.update(id, data)
-    notify('Countdown updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update countdown: ${detail}`, 'error')
@@ -147,9 +148,10 @@ async function handleUpdate(id: number, data: CountdownUpdate) {
 }
 
 async function handleDelete(id: number) {
+  const name = store.countdowns.find((c) => c.id === id)?.name ?? 'Countdown'
   try {
     await store.remove(id)
-    notify('Countdown deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete countdown: ${detail}`, 'error')

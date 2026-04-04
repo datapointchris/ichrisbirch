@@ -247,7 +247,7 @@ function closeCategoryModal() {
 async function handleCreateHabit(data: HabitCreate) {
   try {
     await store.createHabit(data)
-    notify('Habit added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add habit: ${detail}`, 'error')
@@ -255,9 +255,10 @@ async function handleCreateHabit(data: HabitCreate) {
 }
 
 async function handleUpdateHabit(id: number, data: HabitUpdate) {
+  const name = store.habits.find((h) => h.id === id)?.name ?? 'Habit'
   try {
     await store.updateHabit(id, data)
-    notify('Habit updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update habit: ${detail}`, 'error')
@@ -267,7 +268,7 @@ async function handleUpdateHabit(id: number, data: HabitUpdate) {
 async function handleCreateCategory(data: HabitCategoryCreate) {
   try {
     await store.createCategory(data)
-    notify('Category added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add category: ${detail}`, 'error')
@@ -275,9 +276,10 @@ async function handleCreateCategory(data: HabitCategoryCreate) {
 }
 
 async function handleUpdateCategory(id: number, data: HabitCategoryUpdate) {
+  const name = store.categories.find((c) => c.id === id)?.name ?? 'Category'
   try {
     await store.updateCategory(id, data)
-    notify('Category updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update category: ${detail}`, 'error')
@@ -285,9 +287,10 @@ async function handleUpdateCategory(id: number, data: HabitCategoryUpdate) {
 }
 
 async function handleHibernateHabit(id: number) {
+  const name = store.habits.find((h) => h.id === id)?.name ?? 'Habit'
   try {
     await store.hibernateHabit(id)
-    notify('Habit hibernated', 'success')
+    notify(`${name} hibernated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to hibernate habit: ${detail}`, 'error')
@@ -295,9 +298,10 @@ async function handleHibernateHabit(id: number) {
 }
 
 async function handleReviveHabit(id: number) {
+  const name = store.habits.find((h) => h.id === id)?.name ?? 'Habit'
   try {
     await store.reviveHabit(id)
-    notify('Habit revived', 'success')
+    notify(`${name} revived`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to revive habit: ${detail}`, 'error')
@@ -305,9 +309,10 @@ async function handleReviveHabit(id: number) {
 }
 
 async function handleDeleteHabit(id: number) {
+  const name = store.habits.find((h) => h.id === id)?.name ?? 'Habit'
   try {
     await store.deleteHabit(id)
-    notify('Habit deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete habit: ${detail}`, 'error')
@@ -315,9 +320,10 @@ async function handleDeleteHabit(id: number) {
 }
 
 async function handleHibernateCategory(id: number) {
+  const name = store.categories.find((c) => c.id === id)?.name ?? 'Category'
   try {
     await store.hibernateCategory(id)
-    notify('Category hibernated', 'success')
+    notify(`${name} hibernated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to hibernate category: ${detail}`, 'error')
@@ -325,9 +331,10 @@ async function handleHibernateCategory(id: number) {
 }
 
 async function handleReviveCategory(id: number) {
+  const name = store.categories.find((c) => c.id === id)?.name ?? 'Category'
   try {
     await store.reviveCategory(id)
-    notify('Category revived', 'success')
+    notify(`${name} revived`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to revive category: ${detail}`, 'error')
@@ -335,9 +342,10 @@ async function handleReviveCategory(id: number) {
 }
 
 async function handleDeleteCategory(id: number) {
+  const name = store.categories.find((c) => c.id === id)?.name ?? 'Category'
   try {
     await store.deleteCategory(id)
-    notify('Category deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete category: ${detail}`, 'error')

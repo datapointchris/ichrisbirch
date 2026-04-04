@@ -302,9 +302,10 @@ function closeModal() {
 }
 
 async function handleUpdate(id: number, data: ArticleUpdate) {
+  const title = store.articles.find((a) => a.id === id)?.title ?? 'Article'
   try {
     await store.update(id, data)
-    notify('Article updated', 'success')
+    notify(`${title} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update article: ${detail}`, 'error')
@@ -321,9 +322,11 @@ async function handleToggleFavorite(id: number) {
 }
 
 async function handleToggleArchive(id: number) {
+  const article = store.articles.find((a) => a.id === id)
+  const title = article?.title ?? 'Article'
   try {
     await store.toggleArchive(id)
-    notify('Article archive status changed', 'success')
+    notify(`${title} ${article?.is_archived ? 'unarchived' : 'archived'}`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to toggle archive: ${detail}`, 'error')
@@ -331,9 +334,10 @@ async function handleToggleArchive(id: number) {
 }
 
 async function handleMakeCurrent(id: number) {
+  const title = store.articles.find((a) => a.id === id)?.title ?? 'Article'
   try {
     await store.makeCurrent(id)
-    notify('Article set as current', 'success')
+    notify(`${title} set as current`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to set current: ${detail}`, 'error')
@@ -341,9 +345,10 @@ async function handleMakeCurrent(id: number) {
 }
 
 async function handleRemoveCurrent(id: number) {
+  const title = store.articles.find((a) => a.id === id)?.title ?? 'Article'
   try {
     await store.removeCurrent(id)
-    notify('Current status removed', 'success')
+    notify(`${title} current status removed`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to remove current: ${detail}`, 'error')
@@ -351,9 +356,10 @@ async function handleRemoveCurrent(id: number) {
 }
 
 async function handleMarkRead(id: number) {
+  const title = store.articles.find((a) => a.id === id)?.title ?? 'Article'
   try {
     await store.markRead(id)
-    notify('Article marked as read and archived', 'success')
+    notify(`${title} marked as read and archived`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to mark as read: ${detail}`, 'error')
@@ -361,9 +367,10 @@ async function handleMarkRead(id: number) {
 }
 
 async function handleDelete(id: number) {
+  const title = store.articles.find((a) => a.id === id)?.title ?? 'Article'
   try {
     await store.remove(id)
-    notify('Article deleted', 'success')
+    notify(`${title} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete article: ${detail}`, 'error')

@@ -249,7 +249,7 @@ function closeModal() {
 async function handleCreate(data: AutoFunCreate) {
   try {
     await store.create(data)
-    notify('Activity added', 'success')
+    notify(`${data.name} added`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add activity: ${detail}`, 'error')
@@ -257,9 +257,10 @@ async function handleCreate(data: AutoFunCreate) {
 }
 
 async function handleUpdate(id: number, data: AutoFunUpdate) {
+  const name = store.items.find((i) => i.id === id)?.name ?? 'Activity'
   try {
     await store.update(id, data)
-    notify('Activity updated', 'success')
+    notify(`${name} updated`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update activity: ${detail}`, 'error')
@@ -267,9 +268,10 @@ async function handleUpdate(id: number, data: AutoFunUpdate) {
 }
 
 async function handleDelete(id: number) {
+  const name = store.items.find((i) => i.id === id)?.name ?? 'Activity'
   try {
     await store.remove(id)
-    notify('Activity deleted', 'success')
+    notify(`${name} deleted`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to delete activity: ${detail}`, 'error')
