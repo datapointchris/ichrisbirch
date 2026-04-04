@@ -398,10 +398,13 @@ function test-run() {
   echo "${green}Running tests...${reset}"
   echo ""
   local test_exit_code=0
+  local -a json_report_flags=(--json-report --json-report-file=/tmp/ichrisbirch-pytest-report.json --json-report-indent=2)
   if [ $# -eq 0 ]; then
-    uv run pytest || test_exit_code=$?
+    uv run pytest "${json_report_flags[@]}" 2>&1 | tee /tmp/ichrisbirch-pytest-output.log
+    test_exit_code=${PIPESTATUS[0]}
   else
-    uv run pytest "$@" || test_exit_code=$?
+    uv run pytest "${json_report_flags[@]}" "$@" 2>&1 | tee /tmp/ichrisbirch-pytest-output.log
+    test_exit_code=${PIPESTATUS[0]}
   fi
 
   # Always leave containers running for fast iteration
@@ -409,7 +412,7 @@ function test-run() {
   echo "${cyan}Containers left running for fast iteration.${reset}"
   echo "Stop them with: ${blue}icb testing stop${reset}"
 
-  return $test_exit_code
+  return "$test_exit_code"
 }
 
 function test-usage() {

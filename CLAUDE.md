@@ -15,8 +15,8 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 ./cli/icb dev start|stop|restart|rebuild|status|health|logs
 
 # Testing (reuses containers, cleans database each run)
-./cli/icb test run              # All tests
-./cli/icb test run <path> -v    # Specific test
+./cli/icb test run              # All tests (auto-starts containers if needed)
+./cli/icb test run <path> -v    # Specific test (auto-starts containers if needed)
 ./cli/icb testing start|stop|health|logs  # Container management
 
 # Database lifecycle (testing)
@@ -132,7 +132,7 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 ## Testing
 
-**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. Test containers are **ephemeral** — the postgres data volume is destroyed on `testing stop`. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
+**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icb test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the postgres data volume is destroyed on `testing stop`. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
@@ -147,6 +147,13 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 **E2E selectors — use `data-testid`**: Never couple tests to CSS class names or DOM structure. Use `data-testid` attributes on interactive elements and `page.getByTestId()` in tests. This decouples tests from styling changes. Naming convention: `{entity}-{element}` — e.g., `countdown-add-button`, `countdown-name-input`, `countdown-item`, `add-edit-modal`. The `data-testid` attributes ship to production (negligible cost, enables prod E2E if needed).
 
 **Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icb prod build-test`.
+
+**Test output files** (written on every pytest run — pre-commit and CLI):
+
+- `/tmp/ichrisbirch-pytest-output.log` — full terminal output (human-readable)
+- `/tmp/ichrisbirch-pytest-report.json` — structured JSON report with nodeids, tracebacks, durations
+
+When tests fail, read these files instead of re-running tests. The JSON report's `tests` array has `nodeid`, `outcome`, and `call.longrepr` (full traceback) for each failure.
 
 **Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Same applies to DB schema changes (migrations run on startup). Symptoms: 500 errors on pages that import the new package, while other pages work fine.
 

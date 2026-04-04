@@ -238,7 +238,7 @@ repos:
         description: "Run full pytest suite and capture results for stats"
         stages: [pre-commit]
         language: system
-        entry: bash -c 'ENVIRONMENT=testing uv run pytest --tb=short --json-report --json-report-file=/tmp/ichrisbirch-pytest-report.json --cov=ichrisbirch --cov-report=json:.coverage.json; rc=$?; uv run python -m stats.collect_report pytest; exit $rc'
+        entry: bash -c 'ENVIRONMENT=testing uv run pytest --tb=short --json-report --json-report-file=/tmp/ichrisbirch-pytest-report.json --cov=ichrisbirch --cov-report=json:.coverage.json 2>&1 | tee /tmp/ichrisbirch-pytest-output.log; rc=${PIPESTATUS[0]}; uv run python -m stats.collect_report pytest; exit $rc'
         types: [python]
         pass_filenames: false
         always_run: false
