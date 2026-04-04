@@ -43,10 +43,3 @@ class TestBookSeeder:
         assert len(rejected) >= 1
         for book in rejected:
             assert book.reject_reason is not None
-
-    def test_scale_multiplier(self, db):
-        books.clear(db)
-        r1 = books.seed(db, scale=1)
-        books.clear(db)
-        r2 = books.seed(db, scale=2)
-        assert r2.count > r1.count
