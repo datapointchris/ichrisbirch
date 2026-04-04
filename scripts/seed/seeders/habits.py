@@ -35,6 +35,7 @@ HABITS = [
     ('Take vitamins', 'Wellness', True, 6.0),
     ('Practice guitar', 'Music', True, 3.0),
     ('Ear training', 'Music', True, 2.0),
+    ('Cold shower', 'Wellness', True, 0.0),
     ('Journal entry', 'Productivity', False, 1.5),
     ('Code review', 'Productivity', False, 0.5),
 ]

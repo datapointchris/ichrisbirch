@@ -20,6 +20,8 @@ COUNTDOWNS = [
     ('Birthday Party', None),
     ('Tax Deadline', 'Gather W-2 and 1099 forms'),
     ('Concert Tickets', None),
+    ('Dentist Appointment', 'Already happened, need to reschedule'),
+    ('Insurance Renewal', None),
 ]
 
 
@@ -32,8 +34,11 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for rep in range(scale):
         for i, (name, notes) in enumerate(COUNTDOWNS):
             title = name if scale == 1 else f'{name} #{rep + 1}'
-            # Spread due dates: some near (7-30 days), some far (60-365 days)
-            if i % 2 == 0:
+            # Spread due dates: some overdue, some near, some far
+            if i >= 7:
+                # Last 2 items are overdue (past due dates)
+                due = date.today() - timedelta(days=random.randint(3, 30))
+            elif i % 2 == 0:
                 due = date.today() + timedelta(days=random.randint(7, 30))
             else:
                 due = date.today() + timedelta(days=random.randint(60, 365))
@@ -42,9 +47,11 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     session.add_all(countdowns)
     session.flush()
 
-    near = sum(1 for c in countdowns if (c.due_date - date.today()).days <= 30)
+    overdue = sum(1 for c in countdowns if c.due_date < date.today())
+    near = sum(1 for c in countdowns if 0 <= (c.due_date - date.today()).days <= 30)
+    far = len(countdowns) - overdue - near
     return SeedResult(
         model='Countdown',
         count=len(countdowns),
-        details=f'{near} near-term, {len(countdowns) - near} far-future',
+        details=f'{overdue} overdue, {near} near-term, {far} far-future',
     )

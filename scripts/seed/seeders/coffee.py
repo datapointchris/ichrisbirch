@@ -161,7 +161,7 @@ BEANS = [
         'origin': 'Indonesia',
         'process': 'wet-hulled',
         'roast_level': 'dark',
-        'brew_method': 'french-press',
+        'brew_method': 'moka-pot',
         'flavor_notes': 'cedar, dark chocolate, earth, dried herbs',
         'rating': 3.8,
         'price': 13.50,
@@ -260,6 +260,18 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
         data['purchase_date'] = random_past_datetime(365) if random.random() > 0.3 else None
         data['created_at'] = random_past_datetime(365)
         beans.append(CoffeeBean(**data))
+
+    # Add a bean with minimal data (just purchased, haven't tried yet)
+    beans.append(
+        CoffeeBean(
+            name='Mystery Sample from Farmers Market',
+            roaster='Unknown',
+            origin='Unknown',
+            purchase_date=random_past_datetime(30),
+            created_at=random_past_datetime(30),
+            notes='Grabbed this on impulse, no label on the bag',
+        )
+    )
 
     if scale > 1:
         extra_roasters = ['Onyx Coffee Lab', 'La Cabra', 'Passenger Coffee', 'Heart Roasters', 'Equator Coffees']

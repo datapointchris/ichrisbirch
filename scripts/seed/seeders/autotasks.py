@@ -41,8 +41,18 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for rep in range(scale):
         for i, (name, category, frequency) in enumerate(AUTOTASKS):
             title = name if scale == 1 else f'{name} #{rep + 1}'
-            run_count = random.randint(0, 20)
-            last_run = datetime.now(UTC) - timedelta(days=random.randint(1, 60))
+            # First 2 autotasks have never been run (run_count=0, last_run_date
+            # defaults to creation time via server_default — don't override it)
+            if i < 2:
+                run_count = 0
+                last_run = datetime.now(UTC)  # mimics server_default=now()
+            else:
+                run_count = random.randint(1, 20)
+                # One autotask should be due today (last_run far enough ago for its frequency)
+                if i == 2:
+                    last_run = datetime.now(UTC) - timedelta(days=30)
+                else:
+                    last_run = datetime.now(UTC) - timedelta(days=random.randint(1, 60))
 
             autotasks.append(
                 AutoTask(

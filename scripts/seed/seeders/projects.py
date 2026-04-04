@@ -141,6 +141,21 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                 )
             )
             dep_count += 1
+
+    # Fan-in dependency: one item depends on two others (exercises blocker UI)
+    # Pick the first project with 4+ items so we have room for a diamond
+    for item_ids_in_proj in items_by_project.values():
+        if len(item_ids_in_proj) >= 4:
+            # Item at index 3 depends on both index 0 and index 2
+            # Index 0 already in chain, so this creates a fan-in on index 3
+            session.add(
+                ProjectItemDependency(
+                    item_id=item_ids_in_proj[3],
+                    depends_on_id=item_ids_in_proj[0],
+                )
+            )
+            dep_count += 1
+            break
     session.flush()
 
     # Tasks: ~60% of items get 1-3 sub-tasks

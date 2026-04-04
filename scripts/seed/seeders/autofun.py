@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import random
+from datetime import UTC
+from datetime import datetime
+from datetime import timedelta
 
 import sqlalchemy
 from sqlalchemy.orm import Session
@@ -40,15 +43,23 @@ def clear(session: Session) -> None:
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     items = []
+    # Mark first 5 items as completed with dates spread across recent months
+    completed_indices = set(range(5))
+    now = datetime.now(UTC)
+
     for rep in range(scale):
-        for name, notes in AUTOFUN_ITEMS:
+        for idx, (name, notes) in enumerate(AUTOFUN_ITEMS):
             title = name if scale == 1 else f'{name} #{rep + 1}'
-            items.append(AutoFun(name=title, notes=notes))
+            if idx in completed_indices:
+                completed_date = now - timedelta(days=random.randint(7, 150))
+                items.append(AutoFun(name=title, notes=notes, is_completed=True, completed_date=completed_date))
+            else:
+                items.append(AutoFun(name=title, notes=notes))
 
     session.add_all(items)
     session.flush()
 
-    # Pick 3 random items and create active tasks (mimics the scheduler)
+    # Pick 3 random items from the incomplete pool and create active tasks
     available = [item for item in items if not item.is_completed]
     active_count = min(3, len(available))
     chosen = random.sample(available, active_count)

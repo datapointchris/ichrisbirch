@@ -47,18 +47,43 @@ def clear(session: Session) -> None:
 def seed(session: Session, scale: int = 1) -> SeedResult:
     articles = []
     current_count = 0
+    now = datetime.now(UTC)
+
+    # review_days values for favorites: exercises the "due for review" API filter
+    REVIEW_DAYS_BY_INDEX = {0: 7, 2: 14, 4: 30, 6: 90}
 
     for rep in range(scale):
         for i, (title, url, tags) in enumerate(ARTICLES):
             article_title = title if scale == 1 else f'{title} #{rep + 1}'
             article_url = url if scale == 1 else f'{url}-{rep + 1}'
-            save_date = datetime.now(UTC) - timedelta(days=random.randint(1, 365))
+            save_date = now - timedelta(days=random.randint(1, 365))
 
-            is_current = i == 0
+            # Decouple is_current from is_favorite — index 1 is current, not a favorite
+            is_current = i == 1
             is_archived = i >= 7
-            is_favorite = i in (0, 2, 4)
+            # Index 6: favorite + archived (re-archived favorite with review_days)
+            is_favorite = i in (0, 2, 4, 6)
+            if i == 6:
+                is_archived = True
             read_count = random.randint(0, 5) if not is_current else 0
-            last_read = save_date + timedelta(days=random.randint(1, 30)) if read_count > 0 else None
+
+            # Set review_days on favorites to exercise the review feature
+            review_days = REVIEW_DAYS_BY_INDEX.get(i)
+
+            # For favorites with review_days, control last_read_date to create both
+            # "due for review" and "not yet due" states
+            if read_count > 0 and review_days is not None:
+                if i == 0:
+                    # Due for review: last read longer ago than review_days
+                    last_read = now - timedelta(days=review_days + random.randint(5, 30))
+                else:
+                    # Not yet due: last read recently (within review_days)
+                    last_read = now - timedelta(days=max(1, review_days - random.randint(3, 10)))
+            elif read_count > 0:
+                last_read = save_date + timedelta(days=random.randint(1, 30))
+            else:
+                last_read = None
+
             notes = f'Good reference for {tags[0]}' if i % 3 == 0 else None
 
             if is_current:
@@ -76,6 +101,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     is_favorite=is_favorite,
                     is_current=is_current,
                     is_archived=is_archived,
+                    review_days=review_days,
                     notes=notes,
                 )
             )

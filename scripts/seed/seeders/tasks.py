@@ -199,6 +199,22 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
 
                 tasks.append(task)
 
+    # Guarantee tasks in each priority band for frontend badge visibility
+    # Vue store: overdue (< 1), critical (1-2), due_soon (3-5)
+    outstanding = [t for t in tasks if t.complete_date is None]
+    band_targets = [
+        (lambda t: t.priority < 1, -5, 'overdue'),
+        (lambda t: 1 <= t.priority <= 2, 2, 'critical'),
+        (lambda t: 3 <= t.priority <= 5, 4, 'due_soon'),
+    ]
+    for check_fn, target_priority, _label in band_targets:
+        in_band = sum(1 for t in outstanding if check_fn(t))
+        if in_band < 2:
+            # Move some high-priority outstanding tasks into this band
+            candidates = [t for t in outstanding if t.priority > 5 and not check_fn(t)]
+            for t in candidates[: 2 - in_band]:
+                t.priority = target_priority
+
     session.add_all(tasks)
     session.flush()
 

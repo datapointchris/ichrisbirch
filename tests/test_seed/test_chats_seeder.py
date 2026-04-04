@@ -29,9 +29,18 @@ class TestChatSeeder:
         chats.seed(db, scale=1)
         for chat in db.query(Chat).all():
             msgs = db.query(ChatMessage).filter(ChatMessage.chat_id == chat.id).order_by(ChatMessage.id).all()
-            for i, msg in enumerate(msgs):
+            # Skip optional system message at the start
+            non_system = [m for m in msgs if m.role != 'system']
+            for i, msg in enumerate(non_system):
                 expected_role = 'user' if i % 2 == 0 else 'assistant'
                 assert msg.role == expected_role
+
+    def test_system_messages_present(self, db):
+        chats.clear(db)
+        chats.seed(db, scale=1)
+        all_msgs = db.query(ChatMessage).all()
+        system_msgs = [m for m in all_msgs if m.role == 'system']
+        assert len(system_msgs) >= 1, 'Should have at least one system message'
 
     def test_scale_multiplier(self, db):
         chats.clear(db)

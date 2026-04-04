@@ -30,6 +30,8 @@ EVENTS = [
     ('Trail Run 10K', 'Forest Park', 35.00),
     ('Friends Wedding', 'McMenamins Edgefield', 0.00),
     ('AWS re:Invent', 'Las Vegas Convention Center', 1800.00),
+    ('Coffee with Alex', 'Stumptown Coffee', 0.00),
+    ('Bike Tune-Up Drop-off', 'Clever Cycles', 45.00),
 ]
 
 NOTES = [
@@ -52,8 +54,10 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for rep in range(scale):
         for i, (name, venue, cost) in enumerate(EVENTS):
             title = name if scale == 1 else f'{name} #{rep + 1}'
-            # ~30% past events, ~70% upcoming
-            if i % 3 == 0:
+            # ~30% past events, ~70% upcoming, last 2 are imminent (today/tomorrow)
+            if i >= len(EVENTS) - 2:
+                event_date = datetime.now(UTC) + timedelta(days=i - (len(EVENTS) - 2))
+            elif i % 3 == 0:
                 event_date = datetime.now(UTC) - timedelta(days=random.randint(7, 180))
                 past_count += 1
             else:

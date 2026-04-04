@@ -64,6 +64,16 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             session.add(chat)
             session.flush()
 
+            # First 2 chats get a system message
+            if i < 2:
+                system_content = (
+                    'You are a helpful programming assistant.'
+                    if i == 0
+                    else 'You are a knowledgeable cooking assistant who suggests practical recipes.'
+                )
+                session.add(ChatMessage(chat_id=chat.id, role='system', content=system_content))
+                message_count += 1
+
             # 2-6 messages per chat (1-3 user/assistant pairs)
             num_pairs = random.randint(1, 3)
             for j in range(num_pairs):

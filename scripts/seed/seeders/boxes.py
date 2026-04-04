@@ -78,10 +78,11 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for rep in range(scale):
         for i, item_name in enumerate(ITEMS):
             name = item_name if scale == 1 else f'{item_name} #{rep + 1}'
-            box = boxes[i % len(boxes)]
+            # Last 3 items are unboxed (not yet packed)
+            box_id = boxes[i % len(boxes)].id if i < len(ITEMS) - 3 else None
             items.append(
                 BoxItem(
-                    box_id=box.id,
+                    box_id=box_id,
                     name=name,
                     essential=i % 4 == 0,
                     warm=i in (3, 4, 15),

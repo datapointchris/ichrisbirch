@@ -24,10 +24,12 @@ class TestBoxSeeder:
         boxes.seed(db, scale=1)
         item_count = db.query(BoxItem).count()
         assert item_count == len(boxes.ITEMS)
-        # Every box should have at least one item
-        box_ids_with_items = {i.box_id for i in db.query(BoxItem).all()}
+        all_items = db.query(BoxItem).all()
+        boxed_ids = {i.box_id for i in all_items if i.box_id is not None}
+        unboxed = [i for i in all_items if i.box_id is None]
         all_box_ids = {b.id for b in db.query(Box).all()}
-        assert box_ids_with_items.issubset(all_box_ids)
+        assert boxed_ids.issubset(all_box_ids)
+        assert len(unboxed) >= 1, 'Should have at least one unboxed item'
 
     def test_boxes_have_unique_numbers(self, db):
         boxes.clear(db)

@@ -57,6 +57,7 @@ AUTHORS = [
     'Daniel Kahneman',
     'Steve Klabnik',
     'Yuval Noah Harari',
+    'Gene Kim',
 ]
 
 TAGS = [
@@ -110,6 +111,7 @@ BOOK_STATES = [
     ('to_purchase', 'unread', False, False, False, False),
     ('rejected', 'unread', False, False, False, True),
     ('rejected', 'unread', False, False, False, True),
+    ('donated', 'abandoned', True, False, True, False),
 ]
 
 
@@ -161,7 +163,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     read_start_date=read_start,
                     read_finish_date=read_finish,
                     rating=random.randint(1, 10) if has_rating else None,
-                    location=random.choice(LOCATIONS) if ownership == 'owned' else None,
+                    location=random.choice(LOCATIONS) if ownership == 'owned' and i != 0 else None,
                     reject_reason=random.choice(REJECT_REASONS) if has_reject else None,
                     notes=f'Great {TAGS[title_idx % len(TAGS)][0]} book' if i % 4 == 0 else None,
                 )
