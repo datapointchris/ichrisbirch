@@ -3,11 +3,7 @@ from ichrisbirch.schemas.article import Article
 from ichrisbirch.schemas.article import ArticleCreate
 from ichrisbirch.schemas.article import ArticleCreateFromUrl
 from ichrisbirch.schemas.article import ArticleFailedImport
-from ichrisbirch.schemas.article import ArticleSavedByMonth
-from ichrisbirch.schemas.article import ArticleStats
 from ichrisbirch.schemas.article import ArticleSummary
-from ichrisbirch.schemas.article import ArticleSummaryStats
-from ichrisbirch.schemas.article import ArticleTagStat
 from ichrisbirch.schemas.article import ArticleUpdate
 from ichrisbirch.schemas.autofun import AutoFun
 from ichrisbirch.schemas.autofun import AutoFunCreate
@@ -100,10 +96,6 @@ __all__ = [
     'ArticleSummary',
     'ArticleUpdate',
     'ArticleFailedImport',
-    'ArticleSavedByMonth',
-    'ArticleStats',
-    'ArticleSummaryStats',
-    'ArticleTagStat',
     'AutoFun',
     'AutoFunCreate',
     'AutoFunUpdate',

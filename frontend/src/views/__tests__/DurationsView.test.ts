@@ -62,6 +62,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
+        AppSubnav: true,
         AddEditDurationModal: true,
         NeuSelect: true,
         DatePicker: true,

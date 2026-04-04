@@ -62,34 +62,6 @@ class ArticleSummary(ArticleConfig):
     tags: list[str]
 
 
-class ArticleSummaryStats(ArticleConfig):
-    total: int
-    read: int
-    unread: int
-    favorites: int
-    archived: int
-    current: int
-
-
-class ArticleTagStat(ArticleConfig):
-    tag: str
-    total: int
-    read: int
-    unread: int
-
-
-class ArticleSavedByMonth(ArticleConfig):
-    month: str
-    count: int
-
-
-class ArticleStats(ArticleConfig):
-    summary: ArticleSummaryStats
-    by_tag: list[ArticleTagStat]
-    saved_by_month: list[ArticleSavedByMonth]
-    frequently_read: list['Article']
-
-
 class ArticleFailedImport(ArticleConfig):
     id: int
     url: str

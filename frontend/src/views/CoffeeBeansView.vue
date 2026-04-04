@@ -1,6 +1,6 @@
 <template>
   <div>
-    <CoffeeSubnav active="beans" />
+    <AppSubnav :links="subnavLinks" />
 
     <div class="grid grid--one-column grid--tight">
       <div class="coffee-beans__header">
@@ -183,7 +183,10 @@ import { useCoffeeShopsStore } from '@/stores/coffeeShops'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import NeuSelect from '@/components/NeuSelect.vue'
-import CoffeeSubnav from '@/components/coffee/CoffeeSubnav.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { COFFEE_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = COFFEE_SUBNAV
 import AddEditCoffeeBeanModal from '@/components/coffee/AddEditCoffeeBeanModal.vue'
 
 const beansStore = useCoffeeBeansStore()

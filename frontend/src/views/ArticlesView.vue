@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ArticlesSubnav active="articles" />
+    <ArticlesSubnav />
 
     <!-- Search Bar -->
     <div class="grid grid--one-column grid--tight">

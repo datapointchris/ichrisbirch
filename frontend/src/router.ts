@@ -20,6 +20,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Countdowns' },
   },
   {
+    path: '/durations/stats',
+    name: 'durations-stats',
+    component: () => import('@/views/DurationsStatsView.vue'),
+    meta: { title: 'Durations Stats' },
+  },
+  {
     path: '/durations',
     name: 'durations',
     component: () => import('@/views/DurationsView.vue'),
@@ -30,6 +36,12 @@ const routes: RouteRecordRaw[] = [
     name: 'events',
     component: () => import('@/views/EventsView.vue'),
     meta: { title: 'Events' },
+  },
+  {
+    path: '/books/stats',
+    name: 'books-stats',
+    component: () => import('@/views/BooksStatsView.vue'),
+    meta: { title: 'Books Stats' },
   },
   {
     path: '/books',
@@ -58,6 +70,18 @@ const routes: RouteRecordRaw[] = [
     name: 'money-wasted',
     component: () => import('@/views/MoneyWastedView.vue'),
     meta: { title: 'Money Wasted' },
+  },
+  {
+    path: '/autofun/completed',
+    name: 'autofun-completed',
+    component: () => import('@/views/AutoFunCompletedView.vue'),
+    meta: { title: 'AutoFun Completed' },
+  },
+  {
+    path: '/autofun/stats',
+    name: 'autofun-stats',
+    component: () => import('@/views/AutoFunStatsView.vue'),
+    meta: { title: 'AutoFun Stats' },
   },
   {
     path: '/autofun',
@@ -96,6 +120,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Articles Stats' },
   },
   {
+    path: '/tasks/stats',
+    name: 'tasks-stats',
+    component: () => import('@/views/TasksStatsView.vue'),
+    meta: { title: 'Tasks Stats' },
+  },
+  {
     path: '/tasks',
     name: 'tasks',
     component: () => import('@/views/TasksView.vue'),
@@ -120,6 +150,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Tasks Search' },
       },
     ],
+  },
+  {
+    path: '/habits/stats',
+    name: 'habits-stats',
+    component: () => import('@/views/HabitsStatsView.vue'),
+    meta: { title: 'Habits Stats' },
   },
   {
     path: '/habits',

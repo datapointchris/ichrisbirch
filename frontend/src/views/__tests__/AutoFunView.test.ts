@@ -84,6 +84,7 @@ function createWrapper(autofunState: Record<string, unknown> = {}, authState: Re
         }),
       ],
       stubs: {
+        AppSubnav: true,
         AddEditAutoFunModal: true,
       },
     },

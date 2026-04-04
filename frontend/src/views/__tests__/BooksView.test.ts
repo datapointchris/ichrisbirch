@@ -73,6 +73,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
+        AppSubnav: true,
         AddEditBookModal: true,
         NeuSelect: true,
       },

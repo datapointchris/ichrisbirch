@@ -68,9 +68,9 @@ test.describe('Articles Page', () => {
 
   test('subnav links are present', async ({ page }) => {
     await page.goto('/articles')
-    await expect(page.locator('.articles-subnav__link', { hasText: 'All Articles' })).toBeVisible()
-    await expect(page.locator('.articles-subnav__link', { hasText: 'Bulk Import' })).toBeVisible()
-    await expect(page.locator('.articles-subnav__link', { hasText: 'Insights' })).toBeVisible()
+    await expect(page.getByTestId('articles-subnav-all')).toBeVisible()
+    await expect(page.getByTestId('articles-subnav-bulk-import')).toBeVisible()
+    await expect(page.getByTestId('articles-subnav-insights')).toBeVisible()
   })
 
   test('sidebar navigation to articles works', async ({ page }) => {

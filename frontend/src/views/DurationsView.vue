@@ -1,5 +1,7 @@
 <template>
   <div>
+    <AppSubnav :links="subnavLinks" />
+
     <!-- Compare bar -->
     <Transition name="slide-down">
       <div
@@ -276,7 +278,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { DURATIONS_SUBNAV } from '@/config/subnavLinks'
 import { useDurationsStore } from '@/stores/durations'
+
+const subnavLinks = DURATIONS_SUBNAV
 import { useNotifications } from '@/composables/useNotifications'
 import { computeElapsedTime, computeTimeBetween } from '@/composables/useElapsedTime'
 import { formatDate } from '@/composables/formatDate'

@@ -1,5 +1,7 @@
 <template>
   <div>
+    <AppSubnav :links="subnavLinks" />
+
     <!-- Info Bar -->
     <div class="grid grid--one-column grid--tight">
       <div class="task-layout__info">
@@ -295,7 +297,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { BOOKS_SUBNAV } from '@/config/subnavLinks'
 import { useBooksStore } from '@/stores/books'
+
+const subnavLinks = BOOKS_SUBNAV
 import type { BookProgress, BookOwnership } from '@/stores/books'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'

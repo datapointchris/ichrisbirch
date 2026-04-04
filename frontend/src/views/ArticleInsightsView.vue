@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ArticlesSubnav active="insights" />
+    <ArticlesSubnav />
 
     <div class="grid grid--one-column">
       <div class="add-item-wrapper">

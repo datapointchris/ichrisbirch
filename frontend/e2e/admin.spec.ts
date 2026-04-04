@@ -30,15 +30,15 @@ test.describe('Admin Pages', () => {
 
   test('navigates between all tabs', async ({ page }) => {
     await page.goto('/admin')
-    await expect(page.locator('.admin-subnav__link--active', { hasText: 'System Health' })).toBeVisible()
+    await expect(page.getByTestId('admin-subnav-system')).toHaveClass(/subnav__link--active/)
 
-    await page.locator('.admin-subnav__link', { hasText: 'Scheduler' }).click()
+    await page.getByTestId('admin-subnav-scheduler').click()
     await expect(page).toHaveTitle('Admin — Scheduler | iChrisBirch')
 
-    await page.locator('.admin-subnav__link', { hasText: 'Users' }).click()
+    await page.getByTestId('admin-subnav-users').click()
     await expect(page).toHaveTitle('Admin — Users | iChrisBirch')
 
-    await page.locator('.admin-subnav__link', { hasText: 'Config' }).click()
+    await page.getByTestId('admin-subnav-config').click()
     await expect(page).toHaveTitle('Admin — Config | iChrisBirch')
   })
 

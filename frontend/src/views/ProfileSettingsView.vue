@@ -1,5 +1,5 @@
 <template>
-  <ProfileSubnav active="settings" />
+  <AppSubnav :links="subnavLinks" />
 
   <div class="grid grid--one-column">
     <div
@@ -282,7 +282,10 @@ import { applyTheme, applyFont, applyAccentHue, fonts, themes } from '@/composab
 import { ApiError } from '@/api/errors'
 import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
 import draggable from 'vuedraggable'
-import ProfileSubnav from '@/components/ProfileSubnav.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { PROFILE_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = PROFILE_SUBNAV
 import { formatDate } from '@/composables/formatDate'
 
 const auth = useAuthStore()

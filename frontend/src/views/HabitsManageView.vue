@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HabitsSubnav active="manage" />
+    <AppSubnav :links="subnavLinks" />
 
     <div
       v-if="store.loading"
@@ -198,7 +198,10 @@ import { useHabitsStore } from '@/stores/habits'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Habit, HabitCreate, HabitUpdate, HabitCategory, HabitCategoryCreate, HabitCategoryUpdate } from '@/api/client'
-import HabitsSubnav from '@/components/HabitsSubnav.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { HABITS_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = HABITS_SUBNAV
 import AddEditHabitModal from '@/components/habits/AddEditHabitModal.vue'
 import AddEditCategoryModal from '@/components/habits/AddEditCategoryModal.vue'
 

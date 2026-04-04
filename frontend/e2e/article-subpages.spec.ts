@@ -15,7 +15,7 @@ test.describe('Article Insights Page', () => {
 
   test('subnav shows insights as active', async ({ page }) => {
     await page.goto('/articles/insights')
-    await expect(page.locator('.articles-subnav__link--active', { hasText: 'Insights' })).toBeVisible()
+    await expect(page.getByTestId('articles-subnav-insights')).toHaveClass(/subnav__link--active/)
   })
 })
 
@@ -30,6 +30,6 @@ test.describe('Article Bulk Import Page', () => {
 
   test('subnav shows bulk-import as active', async ({ page }) => {
     await page.goto('/articles/bulk-import')
-    await expect(page.locator('.articles-subnav__link--active', { hasText: 'Bulk Import' })).toBeVisible()
+    await expect(page.getByTestId('articles-subnav-bulk-import')).toHaveClass(/subnav__link--active/)
   })
 })

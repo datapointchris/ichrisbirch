@@ -31,7 +31,7 @@ test.describe('Durations Page', () => {
     })
 
     await page.goto('/durations')
-    await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.grid').first()).toBeVisible({ timeout: 10000 })
     await expect(page.locator(ERROR)).not.toBeVisible()
     expect(apiErrors).toEqual([])
   })
@@ -39,7 +39,7 @@ test.describe('Durations Page', () => {
   test('loads the page and displays the duration list', async ({ page }) => {
     await page.goto('/durations')
     await expect(page).toHaveTitle('Durations | iChrisBirch')
-    await expect(page.locator('.grid')).toBeVisible()
+    await expect(page.locator('.grid').first()).toBeVisible()
   })
 
   test('creates a new duration and verifies it appears in the list', async ({ page }) => {

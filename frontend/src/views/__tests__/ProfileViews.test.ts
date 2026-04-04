@@ -72,7 +72,7 @@ function createProfileWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
-        ProfileSubnav: true,
+        AppSubnav: true,
       },
     },
   })
@@ -141,7 +141,7 @@ function createSettingsWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
-        ProfileSubnav: true,
+        AppSubnav: true,
       },
     },
   })

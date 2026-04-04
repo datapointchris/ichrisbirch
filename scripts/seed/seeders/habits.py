@@ -17,27 +17,26 @@ from scripts.seed.base import SeedResult
 
 CATEGORIES = [
     ('Exercise', True),
-    ('Reading', True),
-    ('Meditation', True),
-    ('Coding', True),
+    ('Learning', True),
+    ('Wellness', True),
     ('Music', True),
-    ('Nutrition', True),
-    ('Journaling', False),
-    ('Drawing', False),
+    ('Productivity', False),
 ]
 
-# (name, category_name, is_current)
+# (name, category_name, is_current, frequency)
+# frequency: avg completions per week (higher = more consistent habit)
+# Realistic: ~8 current habits across ~4 active categories
 HABITS = [
-    ('Morning run', 'Exercise', True),
-    ('Strength training', 'Exercise', True),
-    ('Read 30 minutes', 'Reading', True),
-    ('Review saved articles', 'Reading', True),
-    ('10 minute meditation', 'Meditation', True),
-    ('Breathing exercises', 'Meditation', False),
-    ('LeetCode problem', 'Coding', True),
-    ('Open source contribution', 'Coding', False),
-    ('Practice guitar', 'Music', True),
-    ('Music theory study', 'Music', True),
+    ('Morning run', 'Exercise', True, 4.0),
+    ('Stretching', 'Exercise', True, 5.5),
+    ('Read 30 minutes', 'Learning', True, 6.0),
+    ('Duolingo lesson', 'Learning', True, 5.0),
+    ('10 minute meditation', 'Wellness', True, 4.5),
+    ('Take vitamins', 'Wellness', True, 6.0),
+    ('Practice guitar', 'Music', True, 3.0),
+    ('Ear training', 'Music', True, 2.0),
+    ('Journal entry', 'Productivity', False, 1.5),
+    ('Code review', 'Productivity', False, 0.5),
 ]
 
 
@@ -48,6 +47,9 @@ def clear(session: Session) -> None:
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
+    rng = random.Random(42)
+    now = datetime.now(UTC)
+
     # Create categories
     categories = []
     cat_map: dict[str, HabitCategory] = {}
@@ -63,7 +65,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     # Create habits
     habits = []
     for rep in range(scale):
-        for name, cat_name, is_current in HABITS:
+        for name, cat_name, is_current, _freq in HABITS:
             habit_name = name if scale == 1 else f'{name} #{rep + 1}'
             habits.append(
                 Habit(
@@ -75,21 +77,54 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     session.add_all(habits)
     session.flush()
 
-    # Create completion records for current habits
+    # Generate completions spread over 18 months with realistic variation
     completions = []
+    history_days = 540  # 18 months
+
     for habit in habits:
+        _name, _cat, _current, freq = next((n, c, cur, f) for n, c, cur, f in HABITS if habit.name.startswith(n))
+
+        # Non-current habits only have sparse old completions
         if not habit.is_current:
-            continue
-        num_completions = random.randint(1, 3) * scale
-        for _ in range(num_completions):
-            complete_date = datetime.now(UTC) - timedelta(days=random.randint(1, 60))
-            completions.append(
-                HabitCompleted(
-                    name=habit.name,
-                    category_id=habit.category_id,
-                    complete_date=complete_date,
+            num = rng.randint(3, 12) * scale
+            for _ in range(num):
+                days_ago = rng.randint(180, history_days)
+                completions.append(
+                    HabitCompleted(
+                        name=habit.name,
+                        category_id=habit.category_id,
+                        complete_date=now - timedelta(days=days_ago, hours=rng.randint(6, 22)),
+                    )
                 )
-            )
+            continue
+
+        # Current habits: simulate week-by-week with frequency as probability
+        # Add a per-habit consistency factor so some habits are more reliably done
+        consistency = rng.uniform(0.5, 1.2)
+        weekly_target = freq * consistency * scale
+
+        for week in range(history_days // 7):
+            week_start_days_ago = history_days - (week * 7)
+            # Habits tend to be done more recently (ramp up over time)
+            recency_boost = 0.6 + 0.4 * (week / (history_days // 7))
+            actual_completions = int(weekly_target * recency_boost + rng.uniform(-0.5, 0.5))
+            actual_completions = max(0, min(actual_completions, 7))
+
+            # Randomly skip entire weeks occasionally (vacation, illness)
+            if rng.random() < 0.08:
+                continue
+
+            for day_offset in rng.sample(range(7), min(actual_completions, 7)):
+                days_ago = week_start_days_ago - day_offset
+                if days_ago < 0:
+                    continue
+                completions.append(
+                    HabitCompleted(
+                        name=habit.name,
+                        category_id=habit.category_id,
+                        complete_date=now - timedelta(days=days_ago, hours=rng.randint(6, 22)),
+                    )
+                )
 
     session.add_all(completions)
     session.flush()

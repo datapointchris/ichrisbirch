@@ -1,5 +1,7 @@
 <template>
   <div>
+    <AppSubnav :links="subnavLinks" />
+
     <div class="autofun-tabs">
       <button
         class="autofun-tabs__tab"
@@ -199,6 +201,10 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { AutoFun, AutoFunCreate, AutoFunUpdate, AutoFunPreferences } from '@/api/types'
 import AddEditAutoFunModal from '@/components/autofun/AddEditAutoFunModal.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { AUTOFUN_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = AUTOFUN_SUBNAV
 import { formatDate } from '@/composables/formatDate'
 
 const store = useAutoFunStore()

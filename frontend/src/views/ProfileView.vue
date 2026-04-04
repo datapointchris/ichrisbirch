@@ -1,5 +1,5 @@
 <template>
-  <ProfileSubnav active="profile" />
+  <AppSubnav :links="subnavLinks" />
 
   <div class="grid grid--one-column">
     <div
@@ -53,7 +53,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import ProfileSubnav from '@/components/ProfileSubnav.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { PROFILE_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = PROFILE_SUBNAV
 import { formatDate } from '@/composables/formatDate'
 
 const auth = useAuthStore()

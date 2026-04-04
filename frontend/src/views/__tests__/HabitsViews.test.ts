@@ -72,7 +72,7 @@ function createDailyWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
-        HabitsSubnav: true,
+        AppSubnav: true,
       },
     },
   })
@@ -171,7 +171,7 @@ function createManageWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
-        HabitsSubnav: true,
+        AppSubnav: true,
         AddEditHabitModal: true,
         AddEditCategoryModal: true,
       },
@@ -334,7 +334,7 @@ function createCompletedWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
-        HabitsSubnav: true,
+        AppSubnav: true,
         Bar: { template: '<canvas data-testid="bar-chart"></canvas>' },
       },
     },

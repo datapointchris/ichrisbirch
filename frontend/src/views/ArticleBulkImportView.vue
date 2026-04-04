@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ArticlesSubnav active="bulk-import" />
+    <ArticlesSubnav />
 
     <div class="grid grid--one-column-wide">
       <div class="add-item-wrapper">

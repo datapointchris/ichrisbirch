@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HabitsSubnav active="daily" />
+    <AppSubnav :links="subnavLinks" />
 
     <div class="grid grid--one-column grid--tight">
       <div class="grid__item">
@@ -81,7 +81,10 @@ import { computed, onMounted } from 'vue'
 import { useHabitsStore } from '@/stores/habits'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
-import HabitsSubnav from '@/components/HabitsSubnav.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { HABITS_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = HABITS_SUBNAV
 import type { Habit } from '@/api/client'
 import { formatDate } from '@/composables/formatDate'
 

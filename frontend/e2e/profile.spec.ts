@@ -18,15 +18,15 @@ test.describe('Profile Page', () => {
 
   test('subnav navigation works between profile and settings', async ({ page }) => {
     await page.goto('/profile')
-    await expect(page.locator('.profile-subnav__link--active', { hasText: 'Profile' })).toBeVisible()
+    await expect(page.getByTestId('profile-subnav-profile')).toHaveClass(/subnav__link--active/)
 
     // Navigate to settings
-    await page.locator('.profile-subnav__link', { hasText: 'Settings' }).click()
+    await page.getByTestId('profile-subnav-settings').click()
     await expect(page).toHaveTitle('Settings | iChrisBirch', { timeout: 5000 })
-    await expect(page.locator('.profile-subnav__link--active', { hasText: 'Settings' })).toBeVisible()
+    await expect(page.getByTestId('profile-subnav-settings')).toHaveClass(/subnav__link--active/)
 
     // Navigate back to profile
-    await page.locator('.profile-subnav__link', { hasText: 'Profile' }).click()
+    await page.getByTestId('profile-subnav-profile').click()
     await expect(page).toHaveTitle('Profile | iChrisBirch', { timeout: 5000 })
   })
 

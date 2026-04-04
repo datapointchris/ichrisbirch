@@ -1,9 +1,6 @@
 <template>
   <div>
-    <TasksSubnav
-      :active="activePage"
-      @add-task="showAddTask = true"
-    />
+    <TasksSubnav @add-task="showAddTask = true" />
 
     <!-- Info Bar (shown on priority, todo, search) -->
     <div

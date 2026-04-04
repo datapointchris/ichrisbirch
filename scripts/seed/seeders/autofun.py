@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import random
+
 import sqlalchemy
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.autofun import AutoFun
+from ichrisbirch.models.autofun import AutoFunActiveTask
+from ichrisbirch.models.task import Task
 from scripts.seed.base import SeedResult
 
 AUTOFUN_ITEMS = [
@@ -26,8 +30,11 @@ AUTOFUN_ITEMS = [
     ('See a show at SFJAZZ', 'Check their lineup for the season'),
 ]
 
+ACTIVE_TASK_PRIORITY = 30
+
 
 def clear(session: Session) -> None:
+    session.execute(sqlalchemy.text('DELETE FROM autofun_active_tasks'))
     session.execute(sqlalchemy.text('DELETE FROM autofun'))
 
 
@@ -40,4 +47,27 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
 
     session.add_all(items)
     session.flush()
-    return SeedResult(model='AutoFun', count=len(items), details=f'{len(AUTOFUN_ITEMS)} unique activities')
+
+    # Pick 3 random items and create active tasks (mimics the scheduler)
+    available = [item for item in items if not item.is_completed]
+    active_count = min(3, len(available))
+    chosen = random.sample(available, active_count)
+
+    for fun_item in chosen:
+        task = Task(
+            name=fun_item.name,
+            notes=fun_item.notes,
+            category='Personal',
+            priority=ACTIVE_TASK_PRIORITY,
+        )
+        session.add(task)
+        session.flush()
+        session.add(AutoFunActiveTask(fun_item_id=fun_item.id, task_id=task.id))
+
+    session.flush()
+
+    return SeedResult(
+        model='AutoFun',
+        count=len(items),
+        details=f'{len(AUTOFUN_ITEMS)} unique activities, {active_count} active tasks',
+    )

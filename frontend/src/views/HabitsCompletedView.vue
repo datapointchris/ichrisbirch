@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HabitsSubnav active="completed" />
+    <AppSubnav :links="subnavLinks" />
 
     <!-- Filter Controls -->
     <div class="grid grid--one-column grid--tight">
@@ -75,7 +75,10 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { useHabitsStore, DATE_FILTERS } from '@/stores/habits'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
-import HabitsSubnav from '@/components/HabitsSubnav.vue'
+import AppSubnav from '@/components/AppSubnav.vue'
+import { HABITS_SUBNAV } from '@/config/subnavLinks'
+
+const subnavLinks = HABITS_SUBNAV
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip)
 

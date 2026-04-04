@@ -95,7 +95,7 @@ function createShopsWrapper(storeState: Record<string, unknown> = {}) {
         }),
       ],
       stubs: {
-        CoffeeSubnav: true,
+        AppSubnav: true,
         AddEditCoffeeShopModal: true,
         NeuSelect: true,
       },
@@ -245,7 +245,7 @@ function createBeansWrapper(beansState: Record<string, unknown> = {}, shopsState
         }),
       ],
       stubs: {
-        CoffeeSubnav: true,
+        AppSubnav: true,
         AddEditCoffeeBeanModal: true,
         NeuSelect: true,
       },

@@ -194,6 +194,15 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 **Proportional sizing**: Buttons, icons, and text within shared components must scale proportionally from a single size parameter. Never use fixed font sizes inside scaled containers.
 
+**Design-style-switch readiness** (⚠️ MANDATORY): The site is being built toward a future design style switcher (neumorphic / jagged / bubbly / etc.) that changes shape, shadow, and border properties site-wide — the same way the color theme switcher changes all colors today. To keep this feasible:
+
+- **NEVER** hardcode `box-shadow`, `border-radius`, or button shapes in scoped `<style>` blocks. Always reference the CSS variable (`--floating-box`, `--border-radius`, etc.).
+- **NEVER** hardcode chart colors, grid colors, or text colors in Chart.js config. Use `getThemeColors()` / `paletteColors()` from `useStatsCharts` composable, which reads live CSS custom properties.
+- All visual effects must flow through CSS variables defined in the SCSS abstracts layer. Scoped styles handle **layout only** (flexbox, grid, gaps, padding).
+- When the switcher is built, it will toggle a `data-design` attribute on `<html>` and swap variable sets. Components that follow these rules will just work.
+
+**Stats page shared kit** (`frontend/src/components/stats/`, `frontend/src/composables/useStatsCharts.ts`): Reusable components for any entity's stats/analytics page. `StatsSummaryCards` (value + label card row), `StatsTable` + `StatsTableRow` (header + neumorphic rows), `useStatsCharts` (theme-aware Chart.js colors and option builders). All chart colors are derived from the active theme's CSS custom properties (`--clr-accent`, `--clr-secondary`, `--clr-tertiary`, `--clr-info`, `--clr-warning`, `--clr-success`).
+
 ### Component Architecture — Consistency Over Convenience
 
 **Every reusable pattern gets a wrapper per entity.** When a shared component exists (e.g., `AddEditModal`), every entity that uses it gets its own wrapper component (e.g., `AddEditTaskModal`, `AddEditCountdownModal`). The wrapper encapsulates all entity-specific form markup, state, and validation. The page just drops in the component with one line and handles the emitted event. No exceptions based on form complexity — a 2-field form gets a wrapper the same as a 10-field form.
@@ -212,6 +221,18 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
 6. **Register seeder in `scripts/seed/seeders/__init__.py`** — add to import list and `SEED_ORDER` (after its FK dependencies)
 7. Create test data in `tests/test_data/<name>.py` + register in `tests/test_data/__init__.py`
 8. Write API endpoint tests in `tests/ichrisbirch/api/endpoints/test_<name>.py`
+
+### Adding a Stats Page
+
+Follow the Articles/Tasks stats pattern. Every stats page uses the shared kit.
+
+1. **Backend**: Add stats Pydantic schemas to `ichrisbirch/schemas/<entity>.py` (SummaryStats, per-category/tag breakdown, time-series, notable items list) + export from `schemas/__init__.py`
+2. **Backend**: Add `GET /<entity>/stats/` endpoint with DB-level aggregation (use `func.count`, `func.avg`, `func.date_trunc`, `extract`). Place before `/{id}/` routes.
+3. **Frontend types**: Add TypeScript interfaces to `frontend/src/api/types.ts` + export from `client.ts`
+4. **Frontend view**: Create `<Entity>StatsView.vue` — import `StatsSummaryCards`, `StatsTable`, `StatsTableRow`, and chart builders from `useStatsCharts`. All chart colors via `getThemeColors()` / `paletteColors()`.
+5. **Route**: Add to `frontend/src/router.ts` (before parent route if it has path params)
+6. **Subnav**: Add Stats link to the entity's subnav component
+7. **Seed data**: Ensure the entity's seeder produces enough varied data to make charts meaningful (spread dates, varied categories, mix of completed/outstanding)
 
 ### Adding a Vue Page
 
