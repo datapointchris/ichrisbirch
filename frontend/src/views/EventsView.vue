@@ -1,5 +1,15 @@
 <template>
   <div>
+    <div class="add-item-wrapper">
+      <button
+        data-testid="event-add-button"
+        class="button"
+        @click="showModal = true"
+      >
+        <span class="button__text">Add Event</span>
+      </button>
+    </div>
+
     <div class="grid grid--one-column">
       <div
         v-if="store.loading"
@@ -81,16 +91,6 @@
           </div>
         </div>
       </template>
-    </div>
-
-    <div class="add-item-wrapper">
-      <button
-        data-testid="event-add-button"
-        class="button"
-        @click="showModal = true"
-      >
-        <span class="button__text">Add Event</span>
-      </button>
     </div>
 
     <AddEditEventModal

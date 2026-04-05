@@ -11,7 +11,7 @@ test('API is reachable', async ({ request }) => {
   test.setTimeout(180_000)
   await expect(async () => {
     const response = await request.get('/users/me/', {
-      headers: { 'Remote-User': 'user@icb.com' },
+      headers: { 'Remote-User': 'admin@icb.com' },
     })
     expect(response.ok()).toBeTruthy()
   }).toPass({ intervals: [5_000] })

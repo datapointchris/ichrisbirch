@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import ProfileView from '../ProfileView.vue'
-import ProfileSettingsView from '../ProfileSettingsView.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { User } from '@/api/client'
 
@@ -51,9 +50,7 @@ const testUser: User = {
   },
 }
 
-// --- ProfileView ---
-
-function createProfileWrapper(storeState: Record<string, unknown> = {}) {
+function createWrapper(storeState: Record<string, unknown> = {}) {
   return mount(ProfileView, {
     global: {
       plugins: [
@@ -62,74 +59,6 @@ function createProfileWrapper(storeState: Record<string, unknown> = {}) {
             auth: {
               user: null,
               preferences: null,
-              loading: false,
-              error: null,
-              ...storeState,
-            },
-          },
-          stubActions: true,
-          createSpy: vi.fn,
-        }),
-      ],
-      stubs: {
-        AppSubnav: true,
-      },
-    },
-  })
-}
-
-describe('ProfileView', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('calls fetchCurrentUser on mount when no user loaded', () => {
-    createProfileWrapper()
-    const store = useAuthStore()
-    expect(store.fetchCurrentUser).toHaveBeenCalledOnce()
-  })
-
-  it('does not fetch when user is already loaded', () => {
-    createProfileWrapper({ user: testUser })
-    const store = useAuthStore()
-    expect(store.fetchCurrentUser).not.toHaveBeenCalled()
-  })
-
-  it('renders loading state', () => {
-    const wrapper = createProfileWrapper({ loading: true })
-    expect(wrapper.text()).toContain('Loading...')
-  })
-
-  it('renders error when no user', () => {
-    const wrapper = createProfileWrapper()
-    expect(wrapper.text()).toContain('Unable to load profile')
-  })
-
-  it('renders user info when loaded', () => {
-    const wrapper = createProfileWrapper({ user: testUser, preferences: testUser.preferences })
-    expect(wrapper.text()).toContain('Chris Birch')
-    expect(wrapper.text()).toContain('chris@example.com')
-    expect(wrapper.text()).toContain('Admin')
-  })
-
-  it('renders preferences section', () => {
-    const wrapper = createProfileWrapper({ user: testUser, preferences: testUser.preferences })
-    expect(wrapper.text()).toContain('blue')
-    expect(wrapper.text()).toContain('On') // dark_mode
-  })
-})
-
-// --- ProfileSettingsView ---
-
-function createSettingsWrapper(storeState: Record<string, unknown> = {}) {
-  return mount(ProfileSettingsView, {
-    global: {
-      plugins: [
-        createTestingPinia({
-          initialState: {
-            auth: {
-              user: testUser,
-              preferences: testUser.preferences,
               apiKeys: [],
               loading: false,
               error: null,
@@ -140,43 +69,58 @@ function createSettingsWrapper(storeState: Record<string, unknown> = {}) {
           createSpy: vi.fn,
         }),
       ],
-      stubs: {
-        AppSubnav: true,
-      },
     },
   })
 }
 
-describe('ProfileSettingsView', () => {
+describe('ProfileView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
+  it('calls fetchCurrentUser on mount when no user loaded', () => {
+    createWrapper()
+    const store = useAuthStore()
+    expect(store.fetchCurrentUser).toHaveBeenCalledOnce()
+  })
+
+  it('does not fetch when user is already loaded', () => {
+    createWrapper({ user: testUser })
+    const store = useAuthStore()
+    expect(store.fetchCurrentUser).not.toHaveBeenCalled()
+  })
+
   it('renders loading state', () => {
-    const wrapper = createSettingsWrapper({ loading: true })
+    const wrapper = createWrapper({ loading: true })
     expect(wrapper.text()).toContain('Loading...')
   })
 
-  it('renders all three setting sections', () => {
-    const wrapper = createSettingsWrapper()
-    expect(wrapper.text()).toContain('Appearance')
-    expect(wrapper.text()).toContain('Personal API Keys')
-    expect(wrapper.text()).toContain('Actions')
+  it('renders error when no user', () => {
+    const wrapper = createWrapper()
+    expect(wrapper.text()).toContain('Unable to load profile')
   })
 
-  it('renders theme color swatches', () => {
-    const wrapper = createSettingsWrapper()
+  it('renders user info when loaded', () => {
+    const wrapper = createWrapper({ user: testUser, preferences: testUser.preferences })
+    expect(wrapper.text()).toContain('Chris Birch')
+    expect(wrapper.text()).toContain('chris@example.com')
+    expect(wrapper.text()).toContain('Admin')
+  })
+
+  it('renders appearance settings', () => {
+    const wrapper = createWrapper({ user: testUser, preferences: testUser.preferences })
+    expect(wrapper.text()).toContain('Appearance')
     const swatches = wrapper.findAll('.theme-colors__swatch')
     expect(swatches.length).toBeGreaterThan(0)
   })
 
   it('renders font selector', () => {
-    const wrapper = createSettingsWrapper()
+    const wrapper = createWrapper({ user: testUser, preferences: testUser.preferences })
     expect(wrapper.text()).toContain('Font')
   })
 
-  it('renders reset task priorities button', () => {
-    const wrapper = createSettingsWrapper()
-    expect(wrapper.text()).toContain('Reset Task Priorities')
+  it('renders API keys section', () => {
+    const wrapper = createWrapper({ user: testUser, preferences: testUser.preferences })
+    expect(wrapper.text()).toContain('Personal API Keys')
   })
 })

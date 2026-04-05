@@ -133,22 +133,27 @@ const mainLinks = computed(() => {
   return sorted
 })
 
-const footerLinks: NavLink[] = [
-  {
-    to: '/profile',
-    label: 'Profile',
-    icon: 'fa-solid fa-user',
-    migrated: true,
-    activeNames: ['profile', 'profile-settings'],
-  },
-  {
-    to: '/admin',
-    label: 'Admin',
-    icon: 'fa-solid fa-gear',
-    migrated: true,
-    activeNames: ['admin', 'admin-scheduler', 'admin-users', 'admin-config', 'admin-design'],
-  },
-]
+const footerLinks = computed(() => {
+  const links: NavLink[] = [
+    {
+      to: '/profile',
+      label: 'Profile',
+      icon: 'fa-solid fa-user',
+      migrated: true,
+      activeNames: ['profile'],
+    },
+  ]
+  if (auth.isAdmin) {
+    links.push({
+      to: '/admin',
+      label: 'Admin',
+      icon: 'fa-solid fa-gear',
+      migrated: true,
+      activeNames: ['admin', 'admin-scheduler', 'admin-users', 'admin-config', 'admin-design'],
+    })
+  }
+  return links
+})
 
 function isActive(link: NavLink): boolean {
   if (link.activeNames) {
@@ -179,10 +184,10 @@ function isActive(link: NavLink): boolean {
 
 .sidebar__title {
   font-size: var(--fs-600);
-  color: var(--clr-accent);
+  color: var(--clr-text);
   font-weight: 700;
   text-decoration: none;
-  text-shadow: var(--text-glow);
+  text-shadow: var(--deep-3d-text-shadow);
 }
 
 .sidebar__nav {

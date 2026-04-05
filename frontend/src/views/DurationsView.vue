@@ -38,6 +38,16 @@
       </div>
     </Transition>
 
+    <div class="add-item-wrapper">
+      <button
+        data-testid="duration-add-button"
+        class="button"
+        @click="showModal = true"
+      >
+        <span class="button__text">Add Duration</span>
+      </button>
+    </div>
+
     <!-- Controls bar -->
     <div class="duration-controls">
       <div class="duration-controls__filters">
@@ -254,16 +264,6 @@
           </div>
         </div>
       </template>
-    </div>
-
-    <div class="add-item-wrapper">
-      <button
-        data-testid="duration-add-button"
-        class="button"
-        @click="showModal = true"
-      >
-        <span class="button__text">Add Duration</span>
-      </button>
     </div>
 
     <AddEditDurationModal

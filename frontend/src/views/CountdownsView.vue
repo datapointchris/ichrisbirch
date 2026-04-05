@@ -1,5 +1,15 @@
 <template>
   <div>
+    <div class="add-item-wrapper">
+      <button
+        data-testid="countdown-add-button"
+        class="button"
+        @click="showModal = true"
+      >
+        <span class="button__text">Add Countdown</span>
+      </button>
+    </div>
+
     <div class="grid grid--one-column">
       <div
         v-if="store.loading"
@@ -53,16 +63,6 @@
           </button>
         </div>
       </template>
-    </div>
-
-    <div class="add-item-wrapper">
-      <button
-        data-testid="countdown-add-button"
-        class="button"
-        @click="showModal = true"
-      >
-        <span class="button__text">Add Countdown</span>
-      </button>
     </div>
 
     <AddEditCountdownModal

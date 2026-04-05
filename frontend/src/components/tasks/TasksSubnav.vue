@@ -26,16 +26,28 @@
     >
       <span class="button__text">Add Task</span>
     </button>
+    <button
+      data-testid="task-reset-priorities-button"
+      class="button"
+      @click="handleResetPriorities"
+    >
+      <span class="button__text">Reset Priorities</span>
+    </button>
   </AppSubnav>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTasksStore } from '@/stores/tasks'
+import { useNotifications } from '@/composables/useNotifications'
+import { ApiError } from '@/api/errors'
 import AppSubnav from '@/components/AppSubnav.vue'
 import { TASKS_SUBNAV } from '@/config/subnavLinks'
 
 const links = TASKS_SUBNAV
+const store = useTasksStore()
+const { show: notify } = useNotifications()
 
 defineEmits<{
   'add-task': []
@@ -47,6 +59,16 @@ const searchTerms = ref('')
 function onSearch() {
   if (searchTerms.value.trim()) {
     router.push({ name: 'tasks-search', query: { q: searchTerms.value.trim() } })
+  }
+}
+
+async function handleResetPriorities() {
+  try {
+    const message = await store.resetPriorities()
+    notify(message, 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to reset priorities: ${detail}`, 'error')
   }
 }
 </script>

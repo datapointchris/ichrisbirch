@@ -8,13 +8,22 @@
 }
 
 .past {
-  background-color: var(--clr-error);
+  color: var(--clr-error);
+  background-color: oklch(from var(--clr-error) l c h / 0.15);
+  border-radius: var(--button-border-radius, 8px);
+  padding: 0.1em 0.4em;
 }
 
 .two-weeks-left {
-  background-color: var(--clr-error);
+  color: var(--clr-error);
+  background-color: oklch(from var(--clr-error) l c h / 0.15);
+  border-radius: var(--button-border-radius, 8px);
+  padding: 0.1em 0.4em;
 }
 
 .month-left {
-  background-color: var(--clr-warning);
+  color: var(--clr-warning);
+  background-color: oklch(from var(--clr-warning) l c h / 0.15);
+  border-radius: var(--button-border-radius, 8px);
+  padding: 0.1em 0.4em;
 }

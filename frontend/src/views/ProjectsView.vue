@@ -71,7 +71,10 @@
     </aside>
 
     <!-- Right pane: items for selected project -->
-    <main class="projects-page__items">
+    <main
+      class="projects-page__items"
+      :class="{ 'projects-page__items--fading': itemsFading }"
+    >
       <!-- Search bar (always visible) -->
       <form
         class="projects-page__search"
@@ -213,11 +216,13 @@
             <template #item="{ element: item }">
               <div
                 data-testid="project-item-row"
+                :data-item-id="item.id"
                 class="projects-page__item"
                 :class="{
                   'projects-page__item--completed': item.completed,
                   'projects-page__item--archived': item.archived,
                   'projects-page__item--blocked': isBlocked(item.id),
+                  'projects-page__item--flash': flashItemId === item.id,
                 }"
               >
                 <div class="projects-page__drag-handle">
@@ -246,11 +251,17 @@
                     class="projects-page__item-blockers"
                   >
                     <i class="fa-solid fa-lock"></i>
-                    {{
-                      getBlockers(item.id)
-                        .map((b) => b.title)
-                        .join(', ')
-                    }}
+                    <template
+                      v-for="(blocker, idx) in getBlockers(item.id)"
+                      :key="blocker.id"
+                    >
+                      <span
+                        class="projects-page__blocker-link"
+                        @click.stop="handleBlockerClick(blocker.id)"
+                        >{{ blocker.title }}</span
+                      >
+                      <span v-if="idx < getBlockers(item.id).length - 1">, </span>
+                    </template>
                   </span>
                 </div>
 
@@ -341,12 +352,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { useProjectsStore } from '@/stores/projects'
 import { useNotifications } from '@/composables/useNotifications'
+import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import type {
+  Project,
   ProjectWithItemCount,
   ProjectCreate,
   ProjectUpdate,
@@ -443,6 +456,62 @@ function isBlocked(itemId: string): boolean {
 
 function getBlockers(itemId: string): ProjectItem[] {
   return store.itemBlockers[itemId] ?? []
+}
+
+const flashItemId = ref<string | null>(null)
+const itemsFading = ref(false)
+
+const FADE_DURATION = 300
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function flashItem(itemId: string) {
+  flashItemId.value = null
+  nextTick(() => {
+    flashItemId.value = itemId
+    const el = document.querySelector(`[data-item-id="${itemId}"]`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    setTimeout(() => {
+      flashItemId.value = null
+    }, 1500)
+  })
+}
+
+async function handleBlockerClick(blockerId: string) {
+  // Check if the blocker is in the current project's items
+  const localItem = store.sortedItems.find((i) => i.id === blockerId)
+  if (localItem) {
+    flashItem(blockerId)
+    return
+  }
+
+  // Blocker is in another project — fade out, switch, fade in, then flash
+  try {
+    const response = await api.get<Project[]>(`/project-items/${blockerId}/projects/`)
+    const targetProject = response.data[0]
+    if (!targetProject) return
+
+    // Fade out current items
+    itemsFading.value = true
+    await sleep(FADE_DURATION)
+
+    // Switch project while faded out
+    await store.fetchItems(targetProject.id)
+    await nextTick()
+
+    // Fade back in
+    itemsFading.value = false
+    await sleep(FADE_DURATION)
+
+    flashItem(blockerId)
+  } catch {
+    itemsFading.value = false
+    notify('Could not navigate to blocker', 'error')
+  }
 }
 
 // --- Project handlers ---
@@ -664,6 +733,10 @@ function clearSearch() {
 
     &--selected {
       box-shadow: var(--floating-box-pressed);
+
+      &:hover {
+        box-shadow: var(--floating-box-pressed);
+      }
     }
   }
 
@@ -731,6 +804,14 @@ function clearSearch() {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  &__items--fading {
+    opacity: 0;
+    transform: translateY(8px);
   }
 
   &__items-header {
@@ -816,6 +897,7 @@ function clearSearch() {
   &__item-blockers {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.35rem;
     color: var(--clr-danger, #e74c3c);
     font-size: 0.8rem;
@@ -823,6 +905,21 @@ function clearSearch() {
     i {
       font-size: 0.7rem;
     }
+  }
+
+  &__blocker-link {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: var(--clr-text);
+    }
+  }
+
+  &__item--flash {
+    animation: item-flash 1.2s ease forwards;
   }
 
   &__item-actions {
@@ -868,6 +965,18 @@ function clearSearch() {
   // Drag ghost (the placeholder left behind)
   &__ghost {
     opacity: 0.3;
+  }
+}
+
+@keyframes item-flash {
+  0% {
+    box-shadow:
+      0 0 20px rgba(255, 255, 255, 0.8),
+      0 0 40px rgba(255, 60, 60, 0.6);
+  }
+
+  100% {
+    box-shadow: var(--floating-box);
   }
 }
 </style>

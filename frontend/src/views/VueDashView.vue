@@ -363,7 +363,7 @@ onUnmounted(() => {
 
 .vuedash__title {
   font-size: var(--fs-600);
-  color: var(--clr-accent);
+  color: var(--clr-text);
   margin: 0;
   text-shadow:
     0 0 8px var(--clr-accent),

@@ -48,6 +48,16 @@
       </div>
     </div>
 
+    <div class="add-item-wrapper">
+      <button
+        data-testid="book-add-button"
+        class="button"
+        @click="showModal = true"
+      >
+        <span class="button__text">Add Book</span>
+      </button>
+    </div>
+
     <!-- Search Bar -->
     <div class="grid grid--one-column grid--tight">
       <div class="grid__item">
@@ -273,16 +283,6 @@
           </template>
         </template>
       </div>
-    </div>
-
-    <div class="add-item-wrapper">
-      <button
-        data-testid="book-add-button"
-        class="button"
-        @click="showModal = true"
-      >
-        <span class="button__text">Add Book</span>
-      </button>
     </div>
 
     <AddEditBookModal

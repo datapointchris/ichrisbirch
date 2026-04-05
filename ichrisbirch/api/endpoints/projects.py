@@ -97,18 +97,29 @@ async def delete(id: UUID, session: DbSession):
     if not project:
         raise NotFoundException('project', id, logger)
 
-    # Check for items that only belong to this project (would become orphans)
+    # Find items that only belong to this project (would become orphans)
+    multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != id)
     orphan_query = (
-        select(ProjectItemMembership.item_id)
+        select(models.ProjectItem)
+        .join(ProjectItemMembership, models.ProjectItem.id == ProjectItemMembership.item_id)
         .where(ProjectItemMembership.project_id == id)
-        .where(~ProjectItemMembership.item_id.in_(select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != id)))
+        .where(~models.ProjectItem.id.in_(multi_project_items))
     )
-    orphan_count = len(session.execute(orphan_query).all())
-    if orphan_count > 0:
+    orphan_items = session.execute(orphan_query).scalars().all()
+
+    # Auto-delete completed orphans; block only on incomplete ones
+    incomplete_orphans = [item for item in orphan_items if not item.completed]
+    if incomplete_orphans:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f'Cannot delete project: {orphan_count} item(s) belong only to this project. Move or delete them first.',
+            detail=(
+                f'Cannot delete project: {len(incomplete_orphans)} incomplete item(s) belong only to this project.'
+                ' Complete, move, or delete them first.'
+            ),
         )
+
+    for item in orphan_items:
+        session.delete(item)
 
     session.delete(project)
     session.commit()

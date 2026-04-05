@@ -76,12 +76,12 @@ http:
         burst: 500
         period: 1s
 
-    # Simulate Authelia ForwardAuth headers for test (regular user)
+    # Simulate Authelia ForwardAuth headers for test (admin user, matching dev)
     test-authelia-sim:
       headers:
         customRequestHeaders:
-          Remote-User: "user@icb.com"
-          Remote-Email: "user@icb.com"
+          Remote-User: "admin@icb.com"
+          Remote-Email: "admin@icb.com"
 
     # Simulate Authelia ForwardAuth headers for admin routes in test
     # Applied to a separate higher-priority router matching /admin/* paths.

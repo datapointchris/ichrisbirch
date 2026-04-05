@@ -42,11 +42,6 @@ export const COFFEE_SUBNAV: SubnavLink[] = [
   { label: 'Beans', to: '/coffee/beans', testId: 'coffee-subnav-beans', icon: 'fa-solid fa-seedling' },
 ]
 
-export const PROFILE_SUBNAV: SubnavLink[] = [
-  { label: 'Profile', to: '/profile', testId: 'profile-subnav-profile', icon: 'fa-solid fa-user' },
-  { label: 'Settings', to: '/profile/settings', testId: 'profile-subnav-settings', icon: 'fa-solid fa-gear' },
-]
-
 export const ADMIN_SUBNAV: SubnavLink[] = [
   { label: 'System Health', to: '/admin', testId: 'admin-subnav-system', icon: 'fa-solid fa-heart-pulse' },
   { label: 'Scheduler', to: '/admin/scheduler', testId: 'admin-subnav-scheduler', icon: 'fa-solid fa-clock' },

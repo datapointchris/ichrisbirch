@@ -194,15 +194,9 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Profile' },
   },
   {
-    path: '/profile/settings',
-    name: 'profile-settings',
-    component: () => import('@/views/ProfileSettingsView.vue'),
-    meta: { title: 'Settings' },
-  },
-  {
     path: '/admin',
     component: () => import('@/views/AdminView.vue'),
-    meta: { title: 'Admin' },
+    meta: { title: 'Admin', requiresAdmin: true },
     children: [
       {
         path: '',
@@ -249,9 +243,20 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const title = to.meta.title as string
   document.title = title ? `${title} | iChrisBirch` : 'iChrisBirch'
+
+  if (to.matched.some((record) => record.meta.requiresAdmin)) {
+    const { useAuthStore } = await import('@/stores/auth')
+    const auth = useAuthStore()
+    if (!auth.user) {
+      await auth.fetchCurrentUser()
+    }
+    if (!auth.isAdmin) {
+      return { name: 'home' }
+    }
+  }
 })
 
 export default router

@@ -92,8 +92,8 @@ defineEmits<{
 
 .dashboard-widget__title i {
   font-size: var(--fs-600);
-  color: var(--clr-accent);
-  filter: drop-shadow(0 0 3px var(--clr-accent));
+  color: var(--clr-text);
+  filter: drop-shadow(0 0 5px var(--clr-accent));
 }
 
 .dashboard-widget__link {

@@ -4,9 +4,9 @@ import { test, expect } from '@playwright/test'
 // status classes, user toggles) are covered by component integration tests
 // in src/views/__tests__/AdminViews.test.ts
 
-// E2E tests run as user@icb.com for most routes, but admin API routes
-// (/admin/*) use test-authelia-sim-admin which injects admin@icb.com,
-// so admin data endpoints return data instead of 403.
+// E2E tests run as admin@icb.com (test-authelia-sim injects admin headers),
+// matching the dev environment. The Vue router guard checks auth.isAdmin
+// before allowing access to /admin routes.
 
 test.describe('Admin Pages', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
