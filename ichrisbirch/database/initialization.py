@@ -29,8 +29,6 @@ from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
-from ichrisbirch.models.personal_api_key import PersonalAPIKey
-from ichrisbirch.models.personal_api_key import hash_api_key
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -199,41 +197,6 @@ def insert_default_users(session: Session, settings) -> None:
             raise
 
 
-DEV_API_KEY = 'icb_dev00000000000000000000000000'
-DEV_API_KEY_HASH = hash_api_key(DEV_API_KEY)
-
-
-def insert_dev_api_key(session: Session, settings) -> None:
-    """Insert a well-known API key for dev/testing so external tools (todoui) can connect.
-
-    Skipped in production. The key is deterministic so it survives container rebuilds
-    without needing to reconfigure clients.
-    """
-    if settings.ENVIRONMENT == 'production':
-        return
-
-    existing = session.query(PersonalAPIKey).filter(PersonalAPIKey.hashed_key == DEV_API_KEY_HASH).first()
-    if existing:
-        logger.info('dev_api_key_exists')
-        return
-
-    user = session.query(User).filter(User.email == settings.users.default_regular_user_email).first()
-    if not user:
-        logger.warning('dev_api_key_skipped_no_user')
-        return
-
-    session.add(
-        PersonalAPIKey(
-            user_id=user.id,
-            name='todoui-dev',
-            key_prefix=DEV_API_KEY[:8],
-            hashed_key=DEV_API_KEY_HASH,
-        )
-    )
-    session.commit()
-    logger.info('dev_api_key_created', key_prefix=DEV_API_KEY[:8])
-
-
 def full_initialization(settings, use_alembic: bool = True) -> None:
     """Perform complete database initialization."""
     logger.info('db_init_starting', environment=settings.ENVIRONMENT, use_alembic=use_alembic)
@@ -242,7 +205,6 @@ def full_initialization(settings, use_alembic: bool = True) -> None:
         create_schemas(session, settings)
         create_tables(settings, use_alembic=use_alembic)
         insert_default_users(session, settings)
-        insert_dev_api_key(session, settings)
 
     logger.info('db_init_completed')
 

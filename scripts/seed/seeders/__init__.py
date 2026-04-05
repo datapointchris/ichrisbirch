@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 
+from scripts.seed.seeders import api_keys
 from scripts.seed.seeders import articles
 from scripts.seed.seeders import autofun
 from scripts.seed.seeders import autotasks
@@ -21,6 +22,7 @@ from scripts.seed.seeders import tasks
 
 # Parents before children, independent models first
 SEED_ORDER: list[tuple[str, types.ModuleType]] = [
+    ('api_keys', api_keys),
     ('tasks', tasks),
     ('habits', habits),
     ('books', books),

@@ -284,7 +284,9 @@ function dev-rebuild() {
   wait-for-healthy icb-dev-api 60
   echo "Initializing database..."
   docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development
-  echo "${green}DEV environment rebuilt and initialized${reset}"
+  echo "Seeding database..."
+  db-seed development
+  echo "${green}DEV environment rebuilt, initialized, and seeded${reset}"
   dev-credentials
 }
 
