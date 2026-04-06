@@ -89,13 +89,13 @@
               >
                 <span class="button__text">Revive</span>
               </button>
-              <button
+              <ActionButton
                 data-testid="habit-delete-button"
-                class="button--hidden"
+                icon="fa-regular fa-trash-can"
+                variant="danger"
+                title="Delete habit"
                 @click="handleDeleteHabit(habit.id)"
-              >
-                <i class="button-icon danger fa-regular fa-trash-can"></i>
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -160,13 +160,13 @@
               >
                 <span class="button__text">Revive</span>
               </button>
-              <button
+              <ActionButton
                 data-testid="category-delete-button"
-                class="button--hidden"
+                icon="fa-regular fa-trash-can"
+                variant="danger"
+                title="Delete category"
                 @click="handleDeleteCategory(cat.id)"
-              >
-                <i class="button-icon danger fa-regular fa-trash-can"></i>
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -198,6 +198,7 @@ import { useHabitsStore } from '@/stores/habits'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Habit, HabitCreate, HabitUpdate, HabitCategory, HabitCategoryCreate, HabitCategoryUpdate } from '@/api/client'
+import ActionButton from '@/components/ActionButton.vue'
 import AppSubnav from '@/components/AppSubnav.vue'
 import { HABITS_SUBNAV } from '@/config/subnavLinks'
 

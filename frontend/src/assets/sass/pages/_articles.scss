@@ -99,33 +99,18 @@
     color: var(--clr-gray-400);
   }
 
-  // Interactive elements
-  &__star {
-    cursor: pointer;
+  // Star favorite toggle — class applied to ActionButton root, targets inner icon
+  &__star .button-icon {
     color: var(--clr-gray-600);
     transition: color 0.15s;
 
     &:hover {
       color: var(--clr-primary-400);
     }
-
-    &--active {
-      color: var(--clr-primary-400);
-    }
   }
 
-  &__chevron {
-    cursor: pointer;
-    transition: transform 0.2s;
-    color: var(--clr-gray-400);
-
-    &:hover {
-      color: var(--clr-gray-200);
-    }
-
-    &--open {
-      transform: rotate(180deg);
-    }
+  &__star--active .button-icon {
+    color: var(--clr-primary-400);
   }
 
   // Empty state

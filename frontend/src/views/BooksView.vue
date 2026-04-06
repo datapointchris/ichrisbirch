@@ -163,23 +163,26 @@
               <span>{{ ownershipLabels[book.ownership as BookOwnership] ?? book.ownership }}</span>
               <span>{{ book.rating ?? '' }}</span>
               <span class="books__actions">
-                <i
-                  class="button-icon books__chevron fa-solid fa-chevron-down"
-                  :class="{ 'books__chevron--open': expandedBookId === book.id }"
+                <ActionButton
+                  icon="fa-solid fa-chevron-down"
+                  title="Toggle details"
+                  :rotated="expandedBookId === book.id"
                   @click="toggleDetail(book.id)"
-                ></i>
-                <i
+                />
+                <ActionButton
                   data-testid="book-edit-button"
-                  class="button-icon warning fa-solid fa-pen-to-square"
+                  icon="fa-solid fa-pen-to-square"
+                  variant="warning"
+                  title="Edit book"
                   @click="openEdit(book)"
-                ></i>
-                <button
+                />
+                <ActionButton
                   data-testid="book-delete-button"
-                  class="button--hidden"
+                  icon="fa-regular fa-trash-can"
+                  variant="danger"
+                  title="Delete book"
                   @click="handleDelete(book.id)"
-                >
-                  <i class="button-icon danger fa-regular fa-trash-can"></i>
-                </button>
+                />
               </span>
             </div>
 
@@ -306,6 +309,7 @@ import type { BookProgress, BookOwnership } from '@/stores/books'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Book } from '@/api/client'
+import ActionButton from '@/components/ActionButton.vue'
 import AddEditBookModal from '@/components/books/AddEditBookModal.vue'
 import { formatDate } from '@/composables/formatDate'
 import NeuSelect from '@/components/NeuSelect.vue'

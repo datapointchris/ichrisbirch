@@ -98,22 +98,20 @@
             >
               <i class="fa-solid fa-map-location-dot"></i>
             </a>
-            <button
-              class="button-icon"
+            <ActionButton
               data-testid="shop-edit-button"
+              icon="fa-solid fa-pen"
+              variant="warning"
               title="Edit"
               @click="openEdit(shop)"
-            >
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button
-              class="button-icon danger"
+            />
+            <ActionButton
               data-testid="shop-delete-button"
+              icon="fa-solid fa-trash"
+              variant="danger"
               title="Delete"
               @click="handleDelete(shop.id, shop.name)"
-            >
-              <i class="fa-solid fa-trash"></i>
-            </button>
+            />
           </div>
         </div>
       </template>
@@ -135,6 +133,7 @@ import type { CoffeeShop, CoffeeShopCreate, CoffeeShopUpdate } from '@/api/clien
 import { useCoffeeShopsStore } from '@/stores/coffeeShops'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import ActionButton from '@/components/ActionButton.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
 import AppSubnav from '@/components/AppSubnav.vue'
 import { COFFEE_SUBNAV } from '@/config/subnavLinks'

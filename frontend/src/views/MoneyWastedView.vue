@@ -56,20 +56,20 @@
               >{{ entry.notes || '' }}</span
             >
             <span class="money-wasted__actions">
-              <button
+              <ActionButton
                 data-testid="mw-edit-button"
-                class="button--hidden"
+                icon="fa-solid fa-pen-to-square"
+                variant="warning"
+                title="Edit entry"
                 @click="openEdit(entry)"
-              >
-                <i class="button-icon warning fa-solid fa-pen-to-square"></i>
-              </button>
-              <button
+              />
+              <ActionButton
                 data-testid="mw-delete-button"
-                class="button--hidden"
+                icon="fa-regular fa-trash-can"
+                variant="danger"
+                title="Delete entry"
                 @click="handleDelete(entry.id)"
-              >
-                <i class="button-icon danger fa-regular fa-trash-can"></i>
-              </button>
+              />
             </span>
           </div>
         </template>
@@ -92,6 +92,7 @@ import { useMoneyWastedStore } from '@/stores/moneyWasted'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { MoneyWasted, MoneyWastedCreate, MoneyWastedUpdate } from '@/api/client'
+import ActionButton from '@/components/ActionButton.vue'
 import AddEditMoneyWastedModal from '@/components/money-wasted/AddEditMoneyWastedModal.vue'
 import { formatDate } from '@/composables/formatDate'
 

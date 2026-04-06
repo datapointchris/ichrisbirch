@@ -56,7 +56,7 @@ Catches: TypeScript errors, missing imports, dependencies missing in Docker.
 ### Unit Tests
 
 ```bash
-npm run test:unit    # Vitest (55 tests)
+npm run test:unit    # Vitest (681 tests)
 npm run test:watch   # Watch mode
 npm run test:ui      # Interactive UI
 ```
@@ -66,7 +66,7 @@ Catches: Store logic errors, error handling paths, API response parsing.
 ### E2E Tests
 
 ```bash
-npm run test:e2e     # Playwright (7 tests, requires dev containers)
+npm run test:e2e     # Playwright (85 tests, requires test containers)
 npm run test:e2e:ui  # Interactive UI
 ```
 

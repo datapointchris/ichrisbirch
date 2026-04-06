@@ -144,22 +144,20 @@
           </div>
 
           <div class="coffee-beans__card-actions">
-            <button
-              class="button-icon"
+            <ActionButton
               data-testid="bean-edit-button"
+              icon="fa-solid fa-pen"
+              variant="warning"
               title="Edit"
               @click="openEdit(bean)"
-            >
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button
-              class="button-icon danger"
+            />
+            <ActionButton
               data-testid="bean-delete-button"
+              icon="fa-solid fa-trash"
+              variant="danger"
               title="Delete"
               @click="handleDelete(bean.id, bean.name)"
-            >
-              <i class="fa-solid fa-trash"></i>
-            </button>
+            />
           </div>
         </div>
       </template>
@@ -182,6 +180,7 @@ import { useCoffeeBeansStore, ROAST_LEVELS, BREW_METHODS } from '@/stores/coffee
 import { useCoffeeShopsStore } from '@/stores/coffeeShops'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
+import ActionButton from '@/components/ActionButton.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
 import AppSubnav from '@/components/AppSubnav.vue'
 import { COFFEE_SUBNAV } from '@/config/subnavLinks'

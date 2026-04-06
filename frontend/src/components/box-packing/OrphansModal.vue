@@ -52,13 +52,13 @@
                 <span class="orphans-modal__box-detail">{{ option.size }}</span>
               </template>
             </NeuSelect>
-            <button
+            <ActionButton
               data-testid="orphan-delete-button"
-              class="button--hidden"
+              icon="fa-regular fa-trash-can"
+              variant="danger"
+              title="Delete item"
               @click="$emit('delete', orphan.id, orphan.name)"
-            >
-              <i class="button-icon danger fa-regular fa-trash-can"></i>
-            </button>
+            />
           </div>
         </div>
 
@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Box, BoxItem } from '@/api/client'
+import ActionButton from '@/components/ActionButton.vue'
 import ListingModal from '@/components/ListingModal.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
 

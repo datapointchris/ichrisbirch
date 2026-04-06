@@ -130,32 +130,35 @@
               <span>{{ formatDate(article.save_date, 'shortDate') }}</span>
               <span>{{ article.read_count }}</span>
               <span class="articles__actions">
-                <i
+                <ActionButton
                   data-testid="article-favorite-button"
-                  class="button-icon articles__star fa-solid fa-star"
+                  class="articles__star"
                   :class="{ 'articles__star--active': article.is_favorite }"
+                  icon="fa-solid fa-star"
                   title="Toggle favorite"
                   @click="handleToggleFavorite(article.id)"
-                ></i>
-                <i
+                />
+                <ActionButton
                   data-testid="article-edit-button"
-                  class="button-icon articles__chevron fa-solid fa-pen-to-square"
+                  icon="fa-solid fa-pen-to-square"
+                  variant="warning"
                   title="Edit article"
                   @click="openEdit(article)"
-                ></i>
-                <i
+                />
+                <ActionButton
                   data-testid="article-expand-button"
-                  class="button-icon articles__chevron fa-solid fa-chevron-down"
-                  :class="{ 'articles__chevron--open': expandedId === article.id }"
+                  icon="fa-solid fa-chevron-down"
+                  title="Toggle details"
+                  :rotated="expandedId === article.id"
                   @click="toggleExpand(article.id)"
-                ></i>
-                <button
+                />
+                <ActionButton
                   data-testid="article-delete-button"
-                  class="button--hidden"
+                  icon="fa-regular fa-trash-can"
+                  variant="danger"
+                  title="Delete article"
                   @click="handleDelete(article.id)"
-                >
-                  <i class="button-icon danger fa-regular fa-trash-can"></i>
-                </button>
+                />
               </span>
             </div>
 
@@ -258,6 +261,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Article, ArticleUpdate } from '@/api/client'
 import ArticlesSubnav from '@/components/ArticlesSubnav.vue'
+import ActionButton from '@/components/ActionButton.vue'
 import AddEditArticleModal from '@/components/articles/AddEditArticleModal.vue'
 import { formatDate } from '@/composables/formatDate'
 

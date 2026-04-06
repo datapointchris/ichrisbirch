@@ -4,21 +4,26 @@
     <span>Category: {{ task.category }}</span>
     <span>Age: {{ timeToComplete(task) }}</span>
     <span>
-      <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+      <ActionButton
+        icon="fa-solid fa-pen-to-square"
+        variant="warning"
+        title="Edit task"
+      />
     </span>
     <span>
-      <button
-        class="button--hidden"
+      <ActionButton
+        icon="fa-regular fa-trash-can"
+        variant="danger"
+        title="Delete task"
         @click="$emit('delete', task.id)"
-      >
-        <i class="button-icon danger fa-regular fa-trash-can"></i>
-      </button>
+      />
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { CompletedTask } from '@/stores/tasks'
+import ActionButton from '@/components/ActionButton.vue'
 import { timeToComplete } from './taskUtils'
 
 defineProps<{ task: CompletedTask }>()

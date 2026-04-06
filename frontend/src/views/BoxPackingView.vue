@@ -184,20 +184,20 @@
           <div class="packed-box__header">
             <h2 class="packed-box__title">Box {{ box.number }}: {{ box.name }}</h2>
             <div class="packed-box__actions">
-              <button
+              <ActionButton
                 data-testid="box-edit-button"
-                class="button--hidden"
+                icon="fa-solid fa-pen-to-square"
+                variant="warning"
+                title="Edit box"
                 @click="openEditBox(box)"
-              >
-                <i class="button-icon warning fa-solid fa-pen-to-square"></i>
-              </button>
-              <button
+              />
+              <ActionButton
                 data-testid="box-delete-button"
-                class="button--hidden"
+                icon="fa-regular fa-trash-can"
+                variant="danger"
+                title="Delete box"
                 @click="handleDeleteBox(box.id, box.name)"
-              >
-                <i class="button-icon danger fa-regular fa-trash-can"></i>
-              </button>
+              />
             </div>
           </div>
           <h3>Size: {{ box.size }}</h3>
@@ -252,21 +252,20 @@
                   >Liquid</span
                 >
                 <span class="box-contents__item-actions">
-                  <button
+                  <ActionButton
                     data-testid="item-orphan-button"
-                    class="button--hidden"
+                    icon="fa-solid fa-arrow-up-from-bracket"
+                    variant="warning"
                     title="Remove from box"
                     @click="handleOrphanItem(item.id, item.name, box.id)"
-                  >
-                    <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
-                  </button>
-                  <button
+                  />
+                  <ActionButton
                     data-testid="item-delete-button"
-                    class="button--hidden"
+                    icon="fa-regular fa-trash-can"
+                    variant="danger"
+                    title="Delete item"
                     @click="handleDeleteItem(item.id, item.name, box.id)"
-                  >
-                    <i class="button-icon danger fa-regular fa-trash-can"></i>
-                  </button>
+                  />
                 </span>
               </div>
             </div>
@@ -318,22 +317,22 @@
             >
             <span v-else>&nbsp;</span>
             <span @click.stop>
-              <button
+              <ActionButton
                 data-testid="box-edit-button"
-                class="button--hidden"
+                icon="fa-solid fa-pen-to-square"
+                variant="warning"
+                title="Edit box"
                 @click="openEditBox(box)"
-              >
-                <i class="button-icon warning fa-solid fa-pen-to-square"></i>
-              </button>
+              />
             </span>
             <span @click.stop>
-              <button
+              <ActionButton
                 data-testid="box-delete-button"
-                class="button--hidden"
+                icon="fa-regular fa-trash-can"
+                variant="danger"
+                title="Delete box"
                 @click="handleDeleteBox(box.id, box.name)"
-              >
-                <i class="button-icon danger fa-regular fa-trash-can"></i>
-              </button>
+              />
             </span>
           </div>
           <!-- Expanded items in compact view -->
@@ -371,21 +370,20 @@
                   >Liquid</span
                 >
                 <span class="box-contents__item-actions">
-                  <button
+                  <ActionButton
                     data-testid="item-orphan-button"
-                    class="button--hidden"
+                    icon="fa-solid fa-arrow-up-from-bracket"
+                    variant="warning"
                     title="Remove from box"
                     @click="handleOrphanItem(item.id, item.name, box.id)"
-                  >
-                    <i class="button-icon warning fa-solid fa-arrow-up-from-bracket"></i>
-                  </button>
-                  <button
+                  />
+                  <ActionButton
                     data-testid="item-delete-button"
-                    class="button--hidden"
+                    icon="fa-regular fa-trash-can"
+                    variant="danger"
+                    title="Delete item"
                     @click="handleDeleteItem(item.id, item.name, box.id)"
-                  >
-                    <i class="button-icon danger fa-regular fa-trash-can"></i>
-                  </button>
+                  />
                 </span>
               </div>
             </div>
@@ -438,6 +436,7 @@ import { useBoxPackingStore, SORT_OPTIONS } from '@/stores/boxPacking'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Box, BoxCreate, BoxUpdate, BoxItem, BoxItemCreate, BoxSize } from '@/api/client'
+import ActionButton from '@/components/ActionButton.vue'
 import AddEditBoxModal from '@/components/box-packing/AddEditBoxModal.vue'
 import AddEditItemModal from '@/components/box-packing/AddEditItemModal.vue'
 import OrphansModal from '@/components/box-packing/OrphansModal.vue'

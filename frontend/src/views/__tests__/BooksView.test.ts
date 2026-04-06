@@ -133,7 +133,7 @@ describe('BooksView', () => {
 
   it('expands book detail on chevron click', async () => {
     const wrapper = createWrapper({ books: testBooks })
-    const chevron = wrapper.find('.books__chevron')
+    const chevron = wrapper.find('.books__actions .action-btn')
     await chevron.trigger('click')
 
     const detail = wrapper.find('.books__detail--open')

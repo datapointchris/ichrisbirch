@@ -4,29 +4,34 @@
     <span>Priority: {{ task.priority }}</span>
     <span>Category: {{ task.category }}</span>
     <span>
-      <button
-        class="button--hidden"
+      <ActionButton
+        icon="fa-regular fa-circle-check"
+        variant="success"
+        title="Complete task"
         @click="$emit('complete', task.id)"
-      >
-        <i class="button-icon success fa-regular fa-circle-check"></i>
-      </button>
+      />
     </span>
     <span>
-      <i class="button-icon warning fa-solid fa-pen-to-square"></i>
+      <ActionButton
+        icon="fa-solid fa-pen-to-square"
+        variant="warning"
+        title="Edit task"
+      />
     </span>
     <span>
-      <button
-        class="button--hidden"
+      <ActionButton
+        icon="fa-regular fa-trash-can"
+        variant="danger"
+        title="Delete task"
         @click="$emit('delete', task.id)"
-      >
-        <i class="button-icon danger fa-regular fa-trash-can"></i>
-      </button>
+      />
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Task } from '@/api/client'
+import ActionButton from '@/components/ActionButton.vue'
 import { taskStateClass } from './taskUtils'
 import { computed } from 'vue'
 
