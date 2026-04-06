@@ -87,9 +87,9 @@ const summaryCards = computed<StatsCard[]>(() => {
   const avgRating = average(rated.map((b) => b.rating!))
   return [
     { label: 'Total', value: all.length },
-    { label: 'Read', value: all.filter((b) => b.progress === 'Read').length },
-    { label: 'Reading', value: all.filter((b) => b.progress === 'Reading').length },
-    { label: 'Unread', value: all.filter((b) => b.progress === 'Unread').length },
+    { label: 'Read', value: all.filter((b) => b.progress === 'read').length },
+    { label: 'Reading', value: all.filter((b) => b.progress === 'reading').length },
+    { label: 'Unread', value: all.filter((b) => b.progress === 'unread').length },
     { label: 'Abandoned', value: all.filter((b) => b.progress === 'abandoned').length },
     { label: 'Avg Rating', value: avgRating },
   ]
