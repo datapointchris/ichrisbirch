@@ -300,6 +300,7 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'habits': {'model': models.Habit, 'data': []},  # Inserted via HabitCategory.habits relationship
         'habitscompleted': {'model': models.HabitCompleted, 'data': []},  # Inserted via HabitCategory.completed_habits relationship
         'money_wasted': {'model': models.MoneyWasted, 'data': tests.test_data.money_wasted.BASE_DATA},
+        'projects': {'model': models.Project, 'data': tests.test_data.projects.BASE_DATA},
         'tasks': {'model': models.Task, 'data': tests.test_data.tasks.BASE_DATA},
         'users': {'model': models.User, 'data': tests.test_data.users.BASE_DATA},
     }

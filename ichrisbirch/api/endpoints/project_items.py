@@ -194,6 +194,16 @@ async def update(id: UUID, update: schemas.ProjectItemUpdate, session: DbSession
     logger.debug('project_item_update', item_id=id, update_data=update_data)
 
     item = _get_item_or_404(session, id)
+
+    # Guard: cannot complete an item that has incomplete tasks
+    if update_data.get('completed') is True and not item.completed:
+        incomplete_tasks = [t for t in item.tasks if not t.completed]
+        if incomplete_tasks:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Cannot complete item with {len(incomplete_tasks)} incomplete task(s). Finish all tasks first.',
+            )
+
     for attr, value in update_data.items():
         setattr(item, attr, value)
     item.updated_at = datetime.now(tz=ZoneInfo('UTC'))
