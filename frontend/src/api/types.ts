@@ -618,7 +618,7 @@ export interface ProjectItemCreate {
 
 export interface ProjectItemUpdate {
   title?: string
-  notes?: string
+  notes?: string | null
   completed?: boolean
   archived?: boolean
 }

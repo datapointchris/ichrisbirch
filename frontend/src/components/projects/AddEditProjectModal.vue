@@ -31,8 +31,8 @@
             id="project-description"
             v-model="form.description"
             data-testid="project-description-input"
-            rows="3"
-            class="textbox"
+            rows="8"
+            class="textbox project-modal__desc-input"
           ></textarea>
         </div>
 
@@ -106,7 +106,7 @@ function handleSubmit(handleSuccess: () => void) {
   if (props.editData) {
     emit('update', props.editData.id, {
       name: form.name.trim(),
-      description: form.description.trim() || undefined,
+      description: form.description.trim() || null,
     })
   } else {
     emit('create', {
@@ -117,3 +117,10 @@ function handleSubmit(handleSuccess: () => void) {
   handleSuccess()
 }
 </script>
+
+<style scoped lang="scss">
+.project-modal__desc-input {
+  min-width: 400px;
+  resize: vertical;
+}
+</style>

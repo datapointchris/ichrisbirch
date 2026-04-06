@@ -31,8 +31,8 @@
             id="item-notes"
             v-model="form.notes"
             data-testid="project-item-notes-input"
-            rows="3"
-            class="textbox"
+            rows="8"
+            class="textbox item-modal__notes-input"
           ></textarea>
         </div>
 
@@ -107,7 +107,7 @@ function handleSubmit(handleSuccess: () => void) {
   if (props.editData) {
     emit('update', props.editData.id, {
       title: form.title.trim(),
-      notes: form.notes.trim() || undefined,
+      notes: form.notes.trim() || null,
     })
   } else {
     if (props.projectId === null) return
@@ -120,3 +120,10 @@ function handleSubmit(handleSuccess: () => void) {
   handleSuccess()
 }
 </script>
+
+<style scoped lang="scss">
+.item-modal__notes-input {
+  min-width: 400px;
+  resize: vertical;
+}
+</style>
