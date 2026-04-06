@@ -20,14 +20,34 @@ const DraggableStub = {
   emits: ['end'],
 }
 
+const PROJ_1_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
+const PROJ_2_ID = 'aaaaaaaa-0000-0000-0000-000000000002'
+const ITEM_1_ID = 'bbbbbbbb-0000-0000-0000-000000000001'
+const ITEM_2_ID = 'bbbbbbbb-0000-0000-0000-000000000002'
+const ITEM_3_ID = 'bbbbbbbb-0000-0000-0000-000000000003'
+
 const testProjects: ProjectWithItemCount[] = [
-  { id: 1, name: 'Music Setup', position: 0, created_at: '2026-01-01T00:00:00Z', item_count: 3 },
-  { id: 2, name: 'Home Renovation', position: 1, created_at: '2026-02-01T00:00:00Z', item_count: 2 },
+  {
+    id: PROJ_1_ID,
+    name: 'Music Setup',
+    description: 'Setting up the studio',
+    position: 0,
+    created_at: '2026-01-01T00:00:00Z',
+    item_count: 3,
+  },
+  {
+    id: PROJ_2_ID,
+    name: 'Home Renovation',
+    description: undefined,
+    position: 1,
+    created_at: '2026-02-01T00:00:00Z',
+    item_count: 2,
+  },
 ]
 
 const testItems: ProjectItemInProject[] = [
   {
-    id: 10,
+    id: ITEM_1_ID,
     title: 'Decide budget',
     notes: 'Check forums',
     completed: false,
@@ -37,7 +57,7 @@ const testItems: ProjectItemInProject[] = [
     position: 0,
   },
   {
-    id: 11,
+    id: ITEM_2_ID,
     title: 'Research interfaces',
     notes: null,
     completed: true,
@@ -47,7 +67,7 @@ const testItems: ProjectItemInProject[] = [
     position: 1,
   },
   {
-    id: 12,
+    id: ITEM_3_ID,
     title: 'Archived item',
     notes: null,
     completed: false,
@@ -68,10 +88,15 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
               projects: [],
               items: [],
               selectedProjectId: null,
+              // selectedProjectIds drives all template conditions — always provide it
+              selectedProjectIds: [],
+              isViewAll: false,
               loading: false,
               itemsLoading: false,
               error: null,
               itemBlockers: {},
+              projectGroups: [],
+              itemTasks: {},
               ...storeState,
             },
           },
@@ -86,9 +111,22 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         AddEditProjectItemModal: true,
         ManageDependenciesModal: true,
         ManageProjectsModal: true,
+        // ProjectItemTasks renders inline — stub it to avoid fetchItemTasks spy noise
+        ProjectItemTasks: true,
       },
     },
   })
+}
+
+/** Convenience: state for a single selected project with items visible. */
+function selectedState(projectIndex = 0, extraItems: ProjectItemInProject[] = testItems) {
+  const project = testProjects[projectIndex]!
+  return {
+    projects: testProjects,
+    selectedProjectId: project.id,
+    selectedProjectIds: [project.id],
+    items: extraItems,
+  }
 }
 
 describe('ProjectsView', () => {
@@ -123,11 +161,7 @@ describe('ProjectsView', () => {
   })
 
   it('shows items pane when project is selected', () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     expect(wrapper.text()).toContain('Music Setup')
     expect(wrapper.find('[data-testid="project-item-add-button"]').exists()).toBe(true)
     const rows = wrapper.findAll('[data-testid="project-item-row"]')
@@ -137,52 +171,34 @@ describe('ProjectsView', () => {
   })
 
   it('shows empty items message when project has no items', () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: [],
-    })
+    const wrapper = createWrapper({ ...selectedState(0, []) })
     expect(wrapper.text()).toContain('No items in this project')
   })
 
   it('shows items loading state', () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      itemsLoading: true,
-    })
-    expect(wrapper.text()).toContain('Loading items...')
+    const wrapper = createWrapper({ ...selectedState(), itemsLoading: true })
+    expect(wrapper.text()).toContain('Loading...')
   })
 
   // --- CSS classes for item states ---
 
   it('applies completed class to completed items', () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     const rows = wrapper.findAll('[data-testid="project-item-row"]')
     expect(rows[1]!.classes()).toContain('projects-page__item--completed')
   })
 
   it('applies archived class to archived items', () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     const rows = wrapper.findAll('[data-testid="project-item-row"]')
     expect(rows[2]!.classes()).toContain('projects-page__item--archived')
   })
 
   it('applies blocked class and shows blocker text', () => {
     const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
+      ...selectedState(),
       itemBlockers: {
-        10: [{ id: 11, title: 'Research interfaces', completed: false, archived: false, created_at: '', updated_at: '' }],
+        [ITEM_1_ID]: [{ id: ITEM_2_ID, title: 'Research interfaces', completed: false, archived: false, created_at: '', updated_at: '' }],
       },
     })
     const rows = wrapper.findAll('[data-testid="project-item-row"]')
@@ -190,10 +206,11 @@ describe('ProjectsView', () => {
     expect(rows[0]!.text()).toContain('Research interfaces')
   })
 
-  it('applies selected class to the active project', () => {
+  it('applies selected class to the active project in sidebar', () => {
     const wrapper = createWrapper({
       projects: testProjects,
-      selectedProjectId: 1,
+      selectedProjectId: PROJ_1_ID,
+      selectedProjectIds: [PROJ_1_ID],
     })
     const items = wrapper.findAll('[data-testid="project-item"]')
     expect(items[0]!.classes()).toContain('projects-page__project--selected')
@@ -208,61 +225,62 @@ describe('ProjectsView', () => {
     expect(store.fetchProjects).toHaveBeenCalledOnce()
   })
 
-  it('calls fetchItems when clicking a project', async () => {
+  it('calls fetchItems when clicking a project row', async () => {
     const wrapper = createWrapper({ projects: testProjects })
     const store = useProjectsStore()
 
     await wrapper.findAll('[data-testid="project-item"]')[0]!.trigger('click')
 
-    expect(store.fetchItems).toHaveBeenCalledWith(1)
+    expect(store.fetchItems).toHaveBeenCalledWith(PROJ_1_ID)
   })
 
-  it('calls removeProject when clicking delete button', async () => {
+  it('calls toggleProjectSelection when clicking the multi-select checkbox', async () => {
     const wrapper = createWrapper({ projects: testProjects })
     const store = useProjectsStore()
 
-    await wrapper.findAll('[data-testid="project-delete-button"]')[0]!.trigger('click')
+    // The multi-select button is the second button inside the project row
+    const projectRow = wrapper.findAll('[data-testid="project-item"]')[0]!
+    const multiBtn = projectRow.find('.projects-page__multi-select-btn')
+    await multiBtn.trigger('click')
 
-    expect(store.removeProject).toHaveBeenCalledWith(1)
+    expect(store.toggleProjectSelection).toHaveBeenCalledWith(PROJ_1_ID)
+  })
+
+  it('calls removeProject when clicking project delete button', async () => {
+    // Delete button is in the items header, only visible when a project is selected
+    const wrapper = createWrapper(selectedState())
+    const store = useProjectsStore()
+
+    await wrapper.find('[data-testid="project-delete-button"]').trigger('click')
+
+    expect(store.removeProject).toHaveBeenCalledWith(PROJ_1_ID)
   })
 
   it('calls updateItem with completed toggle when clicking complete', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     const store = useProjectsStore()
 
     await wrapper.findAll('[data-testid="project-item-complete-button"]')[0]!.trigger('click')
 
-    expect(store.updateItem).toHaveBeenCalledWith(10, { completed: true })
+    expect(store.updateItem).toHaveBeenCalledWith(ITEM_1_ID, { completed: true })
   })
 
   it('calls archiveItem when clicking archive button', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     const store = useProjectsStore()
 
     await wrapper.findAll('[data-testid="project-item-archive-button"]')[0]!.trigger('click')
 
-    expect(store.archiveItem).toHaveBeenCalledWith(10)
+    expect(store.archiveItem).toHaveBeenCalledWith(ITEM_1_ID)
   })
 
   it('calls removeItem when clicking delete item button', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     const store = useProjectsStore()
 
     await wrapper.findAll('[data-testid="project-item-delete-button"]')[0]!.trigger('click')
 
-    expect(store.removeItem).toHaveBeenCalledWith(10)
+    expect(store.removeItem).toHaveBeenCalledWith(ITEM_1_ID)
   })
 
   // --- Modal wiring ---
@@ -277,72 +295,57 @@ describe('ProjectsView', () => {
     expect(modal.props('editData')).toBeNull()
   })
 
-  it('opens project edit modal with project data', async () => {
-    const wrapper = createWrapper({ projects: testProjects })
+  it('opens project edit modal with project data from items header', async () => {
+    // Edit button is in the items header, only visible when a project is selected
+    const wrapper = createWrapper(selectedState())
 
-    await wrapper.findAll('[data-testid="project-edit-button"]')[0]!.trigger('click')
+    await wrapper.find('[data-testid="project-edit-button"]').trigger('click')
 
     const modal = wrapper.findComponent({ name: 'AddEditProjectModal' })
     expect(modal.props('visible')).toBe(true)
-    expect(modal.props('editData')).toEqual({ id: 1, name: 'Music Setup' })
+    expect(modal.props('editData')).toMatchObject({ id: PROJ_1_ID, name: 'Music Setup' })
   })
 
   it('opens item add modal on add item button click', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
 
     await wrapper.find('[data-testid="project-item-add-button"]').trigger('click')
 
     const modal = wrapper.findComponent({ name: 'AddEditProjectItemModal' })
     expect(modal.props('visible')).toBe(true)
     expect(modal.props('editData')).toBeNull()
-    expect(modal.props('projectId')).toBe(1)
+    expect(modal.props('projectId')).toBe(PROJ_1_ID)
   })
 
   it('opens item edit modal with item data', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
 
     await wrapper.findAll('[data-testid="project-item-edit-button"]')[0]!.trigger('click')
 
     const modal = wrapper.findComponent({ name: 'AddEditProjectItemModal' })
     expect(modal.props('visible')).toBe(true)
-    expect(modal.props('editData')).toEqual({ id: 10, title: 'Decide budget', notes: 'Check forums' })
+    expect(modal.props('editData')).toEqual({ id: ITEM_1_ID, title: 'Decide budget', notes: 'Check forums' })
   })
 
   it('opens dependencies modal with item context', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
 
     await wrapper.findAll('[data-testid="project-item-deps-button"]')[0]!.trigger('click')
 
     const modal = wrapper.findComponent({ name: 'ManageDependenciesModal' })
     expect(modal.props('visible')).toBe(true)
-    expect(modal.props('itemId')).toBe(10)
+    expect(modal.props('itemId')).toBe(ITEM_1_ID)
     expect(modal.props('itemTitle')).toBe('Decide budget')
   })
 
   it('opens projects modal with item context', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
 
     await wrapper.findAll('[data-testid="project-item-projects-button"]')[0]!.trigger('click')
 
     const modal = wrapper.findComponent({ name: 'ManageProjectsModal' })
     expect(modal.props('visible')).toBe(true)
-    expect(modal.props('itemId')).toBe(10)
+    expect(modal.props('itemId')).toBe(ITEM_1_ID)
     expect(modal.props('itemTitle')).toBe('Decide budget')
   })
 
@@ -352,7 +355,7 @@ describe('ProjectsView', () => {
     const wrapper = createWrapper({ projects: testProjects })
     const store = useProjectsStore()
     vi.mocked(store.searchItems).mockResolvedValue([
-      { id: 10, title: 'Decide budget', notes: null, completed: false, archived: false, created_at: '', updated_at: '' },
+      { id: ITEM_1_ID, title: 'Decide budget', notes: null, completed: false, archived: false, created_at: '', updated_at: '' },
     ])
 
     await wrapper.find('[data-testid="project-search-input"]').setValue('budget')
@@ -363,14 +366,10 @@ describe('ProjectsView', () => {
   })
 
   it('renders search results and hides normal items pane', async () => {
-    const wrapper = createWrapper({
-      projects: testProjects,
-      selectedProjectId: 1,
-      items: testItems,
-    })
+    const wrapper = createWrapper(selectedState())
     const store = useProjectsStore()
     vi.mocked(store.searchItems).mockResolvedValue([
-      { id: 10, title: 'Decide budget', notes: null, completed: false, archived: false, created_at: '', updated_at: '' },
+      { id: ITEM_1_ID, title: 'Decide budget', notes: null, completed: false, archived: false, created_at: '', updated_at: '' },
     ])
 
     await wrapper.find('[data-testid="project-search-input"]').setValue('budget')

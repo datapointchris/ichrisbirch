@@ -82,13 +82,12 @@ test.describe('Projects Page', () => {
 
     const name = `E2E DelProj ${Date.now()}`
     await createProject(page, name)
+    await selectProject(page, name)
 
-    const projectRow = page.getByTestId('project-item').filter({ hasText: name })
-    await expect(projectRow).toBeVisible()
-    await projectRow.getByTestId('project-delete-button').click()
+    await page.getByTestId('project-delete-button').click()
 
     await expect(page.locator(SUCCESS, { hasText: 'deleted' })).toBeVisible({ timeout: 5000 })
-    await expect(projectRow).not.toBeVisible()
+    await expect(page.getByTestId('project-item').filter({ hasText: name })).not.toBeVisible()
   })
 
   test('sidebar navigation to projects works', async ({ page }) => {

@@ -26,13 +26,16 @@ export const useProjectsStore = defineStore('projects', () => {
   // --- Project state ---
   const projects = ref<ProjectWithItemCount[]>([])
   const selectedProjectId = ref<string | null>(null)
+  const selectedProjectIds = ref<string[]>([])
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
-  // --- Item state (scoped to selected project) ---
+  // --- Item state (scoped to selected project, or all projects) ---
   const items = ref<ProjectItemInProject[]>([])
   const itemsLoading = ref(false)
   const itemBlockers = ref<Record<string, ProjectItem[]>>({})
+  const isViewAll = ref(false)
+  const projectGroups = ref<{ project: ProjectWithItemCount; items: ProjectItemInProject[] }[]>([])
 
   // --- Task state (per-item, loaded on demand) ---
   const itemTasks = ref<Record<string, ProjectItemTask[]>>({})
@@ -99,9 +102,10 @@ export const useProjectsStore = defineStore('projects', () => {
     try {
       await api.delete(`/projects/${id}/`)
       projects.value = projects.value.filter((p) => p.id !== id)
+      selectedProjectIds.value = selectedProjectIds.value.filter((x) => x !== id)
       if (selectedProjectId.value === id) {
-        selectedProjectId.value = null
-        items.value = []
+        selectedProjectId.value = selectedProjectIds.value[0] ?? null
+        if (selectedProjectIds.value.length === 0) items.value = []
       }
       logger.info('project_deleted', { id })
     } catch (e) {
@@ -116,6 +120,8 @@ export const useProjectsStore = defineStore('projects', () => {
 
   async function fetchItems(projectId: string) {
     selectedProjectId.value = projectId
+    selectedProjectIds.value = [projectId]
+    isViewAll.value = false
     itemsLoading.value = true
     itemBlockers.value = {}
     error.value = null
@@ -132,6 +138,101 @@ export const useProjectsStore = defineStore('projects', () => {
         detail: apiError.detail,
         status: apiError.status,
       })
+      throw apiError
+    } finally {
+      itemsLoading.value = false
+    }
+  }
+
+  async function fetchItemsForProjects(ids: string[]) {
+    selectedProjectId.value = ids[0] ?? null
+    selectedProjectIds.value = ids
+    isViewAll.value = false
+    itemsLoading.value = true
+    itemBlockers.value = {}
+    error.value = null
+    try {
+      if (projects.value.length === 0) await fetchProjects()
+      const projectsToFetch = sortedProjects.value.filter((p) => ids.includes(p.id))
+      const groups = await Promise.all(
+        projectsToFetch.map(async (project) => {
+          const response = await api.get<ProjectItemInProject[]>(`/projects/${project.id}/items/`)
+          return { project, items: response.data }
+        })
+      )
+      projectGroups.value = groups
+      const seen = new Set<string>()
+      items.value = groups
+        .flatMap((g) => g.items)
+        .filter((item) => {
+          if (seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        })
+      fetchItemBlockers()
+      logger.info('projects_fetched_multi', { ids: ids.length, items: items.value.length })
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('projects_fetch_multi_failed', { detail: apiError.detail, status: apiError.status })
+      throw apiError
+    } finally {
+      itemsLoading.value = false
+    }
+  }
+
+  function toggleProjectSelection(id: string) {
+    const idx = selectedProjectIds.value.indexOf(id)
+    if (idx >= 0) {
+      selectedProjectIds.value = selectedProjectIds.value.filter((x) => x !== id)
+    } else {
+      selectedProjectIds.value = [...selectedProjectIds.value, id]
+    }
+
+    const ids = selectedProjectIds.value
+    if (ids.length === 0) {
+      selectedProjectId.value = null
+      items.value = []
+      projectGroups.value = []
+      isViewAll.value = false
+    } else if (ids.length === 1 && ids[0] !== undefined) {
+      fetchItems(ids[0])
+    } else {
+      fetchItemsForProjects(ids)
+    }
+  }
+
+  async function fetchAllProjectsWithItems() {
+    selectedProjectId.value = null
+    selectedProjectIds.value = []
+    isViewAll.value = true
+    itemsLoading.value = true
+    itemBlockers.value = {}
+    error.value = null
+    try {
+      if (projects.value.length === 0) await fetchProjects()
+      const groups = await Promise.all(
+        sortedProjects.value.map(async (project) => {
+          const response = await api.get<ProjectItemInProject[]>(`/projects/${project.id}/items/`)
+          return { project, items: response.data }
+        })
+      )
+      projectGroups.value = groups
+      // Deduplicated flat list for blocker fetching (items can be in multiple projects)
+      const seen = new Set<string>()
+      items.value = groups
+        .flatMap((g) => g.items)
+        .filter((item) => {
+          if (seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        })
+      fetchItemBlockers()
+      logger.info('all_projects_fetched', { groups: groups.length, items: items.value.length })
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('all_projects_fetch_failed', { detail: apiError.detail, status: apiError.status })
       throw apiError
     } finally {
       itemsLoading.value = false
@@ -466,6 +567,7 @@ export const useProjectsStore = defineStore('projects', () => {
     // Project state
     projects,
     selectedProjectId,
+    selectedProjectIds,
     loading,
     error,
     sortedProjects,
@@ -474,6 +576,8 @@ export const useProjectsStore = defineStore('projects', () => {
     items,
     itemsLoading,
     itemBlockers,
+    isViewAll,
+    projectGroups,
     sortedItems,
     // Task state
     itemTasks,
@@ -484,6 +588,9 @@ export const useProjectsStore = defineStore('projects', () => {
     updateProject,
     removeProject,
     fetchItems,
+    fetchItemsForProjects,
+    toggleProjectSelection,
+    fetchAllProjectsWithItems,
     createItem,
     updateItem,
     removeItem,

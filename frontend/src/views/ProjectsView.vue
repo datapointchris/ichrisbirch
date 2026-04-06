@@ -13,6 +13,16 @@
         </button>
       </div>
 
+      <!-- All Projects shortcut -->
+      <div
+        class="projects-page__project projects-page__project--all"
+        :class="{ 'projects-page__project--selected': store.isViewAll }"
+        @click="store.fetchAllProjectsWithItems()"
+      >
+        <i class="fa-solid fa-layer-group projects-page__all-icon"></i>
+        <span class="projects-page__project-name">All Projects</span>
+      </div>
+
       <div
         v-if="store.loading"
         class="projects-page__empty"
@@ -39,7 +49,7 @@
           <div
             data-testid="project-item"
             class="projects-page__project"
-            :class="{ 'projects-page__project--selected': project.id === store.selectedProjectId }"
+            :class="{ 'projects-page__project--selected': store.selectedProjectIds.includes(project.id) }"
             @click="selectProject(project.id)"
           >
             <div class="projects-page__drag-handle">
@@ -47,24 +57,13 @@
             </div>
             <span class="projects-page__project-name">{{ project.name }}</span>
             <span class="projects-page__project-count">{{ project.item_count }}</span>
-            <div class="projects-page__project-actions">
-              <button
-                data-testid="project-edit-button"
-                class="projects-page__action-btn"
-                title="Edit project"
-                @click.stop="openEditProject(project)"
-              >
-                <i class="fa-solid fa-pen"></i>
-              </button>
-              <button
-                data-testid="project-delete-button"
-                class="projects-page__action-btn projects-page__action-btn--danger"
-                title="Delete project"
-                @click.stop="handleDeleteProject(project.id)"
-              >
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
+            <button
+              class="projects-page__multi-select-btn"
+              :title="store.selectedProjectIds.includes(project.id) ? 'Remove from view' : 'Add to view'"
+              @click.stop="store.toggleProjectSelection(project.id)"
+            >
+              <i :class="store.selectedProjectIds.includes(project.id) ? 'fa-solid fa-square-check' : 'fa-regular fa-square'"></i>
+            </button>
           </div>
         </template>
       </draggable>
@@ -149,23 +148,19 @@
                 {{ item.notes }}
               </span>
             </div>
-            <div class="projects-page__item-actions projects-page__item-actions--visible">
-              <button
+            <div class="projects-page__item-actions">
+              <ActionButton
                 data-testid="search-result-projects-button"
-                class="projects-page__action-btn"
+                icon="fa-solid fa-folder-open"
                 title="Manage projects"
                 @click="openProjectsModal(item)"
-              >
-                <i class="fa-solid fa-folder-open"></i>
-              </button>
-              <button
+              />
+              <ActionButton
                 data-testid="search-result-deps-button"
-                class="projects-page__action-btn"
+                icon="fa-solid fa-link"
                 title="Manage dependencies"
                 @click="openDepsModal(item)"
-              >
-                <i class="fa-solid fa-link"></i>
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -174,142 +169,269 @@
       <!-- Normal project items mode -->
       <template v-else>
         <div
-          v-if="!store.selectedProjectId"
+          v-if="store.selectedProjectIds.length === 0 && !store.isViewAll"
           class="projects-page__empty"
         >
           Select a project to view items
         </div>
         <template v-else>
-          <div class="projects-page__items-header">
-            <h2>{{ store.selectedProject?.name }}</h2>
-            <button
-              data-testid="project-item-add-button"
-              class="button button--small"
-              @click="showItemModal = true"
-            >
-              <span class="button__text"><i class="fa-solid fa-plus"></i> Add Item</span>
-            </button>
+          <!-- Single-project header -->
+          <div
+            v-if="store.selectedProjectIds.length === 1 && !store.isViewAll"
+            class="projects-page__items-header"
+          >
+            <div class="projects-page__items-header-title">
+              <h2>{{ store.selectedProject?.name }}</h2>
+              <span
+                v-if="store.selectedProject?.description"
+                class="projects-page__project-desc"
+                :class="{ 'projects-page__project-desc--open': descOpen }"
+                >{{ store.selectedProject!.description }}</span
+              >
+            </div>
+            <div class="projects-page__header-actions">
+              <ActionButton
+                v-if="store.selectedProject?.description"
+                icon="fa-solid fa-chevron-down"
+                title="Toggle description"
+                :rotated="descOpen"
+                @click="descOpen = !descOpen"
+              />
+              <ActionButton
+                data-testid="project-edit-button"
+                icon="fa-solid fa-pen"
+                variant="warning"
+                title="Edit project"
+                @click="store.selectedProject && openEditProject(store.selectedProject)"
+              />
+              <ActionButton
+                data-testid="project-delete-button"
+                icon="fa-solid fa-trash"
+                variant="danger"
+                title="Delete project"
+                @click="store.selectedProject && handleDeleteProject(store.selectedProject.id)"
+              />
+              <button
+                data-testid="project-item-add-button"
+                class="button button--small"
+                @click="showItemModal = true"
+              >
+                <span class="button__text"><i class="fa-solid fa-plus"></i> Add Item</span>
+              </button>
+            </div>
           </div>
 
           <div
             v-if="store.itemsLoading"
             class="projects-page__empty"
           >
-            Loading items...
+            Loading...
           </div>
-          <div
-            v-else-if="store.sortedItems.length === 0"
-            class="projects-page__empty"
-          >
-            No items in this project
-          </div>
-          <draggable
-            v-else
-            :list="localItems"
-            item-key="id"
-            handle=".projects-page__drag-handle"
-            ghost-class="projects-page__ghost"
-            :animation="150"
-            class="projects-page__item-list"
-            @end="onItemDragEnd"
-          >
-            <template #item="{ element: item }">
-              <div
-                data-testid="project-item-row"
-                :data-item-id="item.id"
-                class="projects-page__item"
-                :class="{
-                  'projects-page__item--completed': item.completed,
-                  'projects-page__item--archived': item.archived,
-                  'projects-page__item--blocked': isBlocked(item.id),
-                  'projects-page__item--flash': flashItemId === item.id,
-                }"
-              >
-                <div class="projects-page__drag-handle">
-                  <i class="fa-solid fa-grip-vertical"></i>
-                </div>
 
-                <button
-                  data-testid="project-item-complete-button"
-                  class="projects-page__check"
-                  :title="item.completed ? 'Mark incomplete' : 'Mark complete'"
-                  @click="handleToggleComplete(item)"
+          <!-- ── Single project: draggable flat list ── -->
+          <template v-else-if="store.selectedProjectIds.length === 1 && !store.isViewAll">
+            <div
+              v-if="store.sortedItems.length === 0"
+              class="projects-page__empty"
+            >
+              No items in this project
+            </div>
+            <draggable
+              v-else
+              :list="localItems"
+              item-key="id"
+              handle=".projects-page__drag-handle"
+              ghost-class="projects-page__ghost"
+              :animation="150"
+              class="projects-page__item-list"
+              @end="onItemDragEnd"
+            >
+              <template #item="{ element: item }">
+                <div
+                  data-testid="project-item-row"
+                  :data-item-id="item.id"
+                  class="projects-page__item"
+                  :class="{
+                    'projects-page__item--completed': item.completed,
+                    'projects-page__item--archived': item.archived,
+                    'projects-page__item--blocked': isBlocked(item.id),
+                    'projects-page__item--flash': flashItemId === item.id,
+                  }"
                 >
-                  <i :class="item.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
-                </button>
-
-                <div class="projects-page__item-content">
-                  <span class="projects-page__item-title">{{ item.title }}</span>
-                  <span
-                    v-if="item.notes"
-                    class="projects-page__item-notes"
+                  <div class="projects-page__drag-handle">
+                    <i class="fa-solid fa-grip-vertical"></i>
+                  </div>
+                  <button
+                    data-testid="project-item-complete-button"
+                    class="projects-page__check"
+                    :title="item.completed ? 'Mark incomplete' : 'Mark complete'"
+                    @click="handleToggleComplete(item)"
                   >
-                    {{ item.notes }}
-                  </span>
-                  <span
-                    v-if="getBlockers(item.id).length > 0"
-                    class="projects-page__item-blockers"
-                  >
-                    <i class="fa-solid fa-lock"></i>
-                    <template
-                      v-for="(blocker, idx) in getBlockers(item.id)"
-                      :key="blocker.id"
+                    <i :class="item.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
+                  </button>
+                  <div class="projects-page__item-content">
+                    <span class="projects-page__item-title">{{ item.title }}</span>
+                    <span
+                      v-if="item.notes"
+                      class="projects-page__item-notes"
+                      >{{ item.notes }}</span
                     >
-                      <span
-                        class="projects-page__blocker-link"
-                        @click.stop="handleBlockerClick(blocker.id)"
-                        >{{ blocker.title }}</span
+                    <span
+                      v-if="getBlockers(item.id).length > 0"
+                      class="projects-page__item-blockers"
+                    >
+                      <i class="fa-solid fa-lock"></i>
+                      <template
+                        v-for="(blocker, idx) in getBlockers(item.id)"
+                        :key="blocker.id"
                       >
-                      <span v-if="idx < getBlockers(item.id).length - 1">, </span>
-                    </template>
-                  </span>
+                        <span
+                          class="projects-page__blocker-link"
+                          @click.stop="handleBlockerClick(blocker.id)"
+                          >{{ blocker.title }}</span
+                        >
+                        <span v-if="idx < getBlockers(item.id).length - 1">, </span>
+                      </template>
+                    </span>
+                    <ProjectItemTasks :item-id="item.id" />
+                  </div>
+                  <div class="projects-page__item-actions">
+                    <ActionButton
+                      data-testid="project-item-deps-button"
+                      icon="fa-solid fa-link"
+                      title="Manage dependencies"
+                      @click="openDepsModal(item)"
+                    />
+                    <ActionButton
+                      data-testid="project-item-projects-button"
+                      icon="fa-solid fa-folder-open"
+                      title="Manage projects"
+                      @click="openProjectsModal(item)"
+                    />
+                    <ActionButton
+                      data-testid="project-item-edit-button"
+                      icon="fa-solid fa-pen"
+                      variant="warning"
+                      title="Edit item"
+                      @click="openEditItem(item)"
+                    />
+                    <ActionButton
+                      data-testid="project-item-archive-button"
+                      icon="fa-solid fa-box-archive"
+                      title="Archive item"
+                      @click="handleArchiveItem(item.id)"
+                    />
+                    <ActionButton
+                      data-testid="project-item-delete-button"
+                      icon="fa-solid fa-trash"
+                      variant="danger"
+                      title="Delete item"
+                      @click="handleDeleteItem(item.id)"
+                    />
+                  </div>
                 </div>
+              </template>
+            </draggable>
+          </template>
 
-                <div class="projects-page__item-actions">
+          <!-- ── All Projects: grouped by project ── -->
+          <template v-else>
+            <div
+              v-for="group in store.projectGroups"
+              :key="group.project.id"
+              class="projects-page__project-group"
+            >
+              <div class="projects-page__group-header">
+                <h2>{{ group.project.name }}</h2>
+              </div>
+              <div
+                v-if="group.items.length === 0"
+                class="projects-page__empty projects-page__empty--indent"
+              >
+                No items
+              </div>
+              <div
+                v-else
+                class="projects-page__item-list"
+              >
+                <div
+                  v-for="item in group.items"
+                  :key="`${item.id}-${group.project.id}`"
+                  :data-item-id="item.id"
+                  class="projects-page__item"
+                  :class="{
+                    'projects-page__item--completed': item.completed,
+                    'projects-page__item--archived': item.archived,
+                    'projects-page__item--blocked': isBlocked(item.id),
+                    'projects-page__item--flash': flashItemId === item.id,
+                  }"
+                >
                   <button
-                    data-testid="project-item-deps-button"
-                    class="projects-page__action-btn"
-                    title="Manage dependencies"
-                    @click="openDepsModal(item)"
+                    class="projects-page__check"
+                    :title="item.completed ? 'Mark incomplete' : 'Mark complete'"
+                    @click="handleToggleComplete(item)"
                   >
-                    <i class="fa-solid fa-link"></i>
+                    <i :class="item.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
                   </button>
-                  <button
-                    data-testid="project-item-projects-button"
-                    class="projects-page__action-btn"
-                    title="Manage projects"
-                    @click="openProjectsModal(item)"
-                  >
-                    <i class="fa-solid fa-folder-open"></i>
-                  </button>
-                  <button
-                    data-testid="project-item-edit-button"
-                    class="projects-page__action-btn"
-                    title="Edit item"
-                    @click="openEditItem(item)"
-                  >
-                    <i class="fa-solid fa-pen"></i>
-                  </button>
-                  <button
-                    data-testid="project-item-archive-button"
-                    class="projects-page__action-btn"
-                    title="Archive item"
-                    @click="handleArchiveItem(item.id)"
-                  >
-                    <i class="fa-solid fa-box-archive"></i>
-                  </button>
-                  <button
-                    data-testid="project-item-delete-button"
-                    class="projects-page__action-btn projects-page__action-btn--danger"
-                    title="Delete item"
-                    @click="handleDeleteItem(item.id)"
-                  >
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
+                  <div class="projects-page__item-content">
+                    <span class="projects-page__item-title">{{ item.title }}</span>
+                    <span
+                      v-if="item.notes"
+                      class="projects-page__item-notes"
+                      >{{ item.notes }}</span
+                    >
+                    <span
+                      v-if="getBlockers(item.id).length > 0"
+                      class="projects-page__item-blockers"
+                    >
+                      <i class="fa-solid fa-lock"></i>
+                      <template
+                        v-for="(blocker, idx) in getBlockers(item.id)"
+                        :key="blocker.id"
+                      >
+                        <span
+                          class="projects-page__blocker-link"
+                          @click.stop="handleBlockerClick(blocker.id)"
+                          >{{ blocker.title }}</span
+                        >
+                        <span v-if="idx < getBlockers(item.id).length - 1">, </span>
+                      </template>
+                    </span>
+                    <ProjectItemTasks :item-id="item.id" />
+                  </div>
+                  <div class="projects-page__item-actions">
+                    <ActionButton
+                      icon="fa-solid fa-link"
+                      title="Manage dependencies"
+                      @click="openDepsModal(item)"
+                    />
+                    <ActionButton
+                      icon="fa-solid fa-folder-open"
+                      title="Manage projects"
+                      @click="openProjectsModal(item)"
+                    />
+                    <ActionButton
+                      icon="fa-solid fa-pen"
+                      variant="warning"
+                      title="Edit item"
+                      @click="openEditItem(item)"
+                    />
+                    <ActionButton
+                      icon="fa-solid fa-box-archive"
+                      title="Archive item"
+                      @click="handleArchiveItem(item.id)"
+                    />
+                    <ActionButton
+                      icon="fa-solid fa-trash"
+                      variant="danger"
+                      title="Delete item"
+                      @click="handleDeleteItem(item.id)"
+                    />
+                  </div>
                 </div>
               </div>
-            </template>
-          </draggable>
+            </div>
+          </template>
         </template>
       </template>
     </main>
@@ -372,6 +494,8 @@ import AddEditProjectModal from '@/components/projects/AddEditProjectModal.vue'
 import AddEditProjectItemModal from '@/components/projects/AddEditProjectItemModal.vue'
 import ManageDependenciesModal from '@/components/projects/ManageDependenciesModal.vue'
 import ManageProjectsModal from '@/components/projects/ManageProjectsModal.vue'
+import ProjectItemTasks from '@/components/projects/ProjectItemTasks.vue'
+import ActionButton from '@/components/ActionButton.vue'
 
 const store = useProjectsStore()
 const { show: notify } = useNotifications()
@@ -413,6 +537,16 @@ const depsTargetTitle = ref('')
 const showProjectsModal = ref(false)
 const projectsTargetId = ref<string | null>(null)
 const projectsTargetTitle = ref('')
+
+// --- Description expand state ---
+const descOpen = ref(false)
+
+watch(
+  () => store.selectedProjectId,
+  () => {
+    descOpen.value = false
+  }
+)
 
 // --- Search state ---
 const searchQuery = ref('')
@@ -597,8 +731,12 @@ async function handleToggleComplete(item: ProjectItemInProject) {
     notify(item.completed ? `${item.title} reopened` : `${item.title} completed`, 'success')
     store.fetchItemBlockers()
   } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to update item: ${detail}`, 'error')
+    if (e instanceof ApiError && e.status === 400) {
+      notify(e.userMessage, 'error')
+    } else {
+      const detail = e instanceof ApiError ? e.userMessage : String(e)
+      notify(`Failed to update item: ${detail}`, 'error')
+    }
   }
 }
 
@@ -707,7 +845,7 @@ function clearSearch() {
   }
 
   &__empty {
-    color: var(--clr-gray-500);
+    color: var(--clr-gray-300);
     font-style: italic;
   }
 
@@ -717,6 +855,30 @@ function clearSearch() {
     gap: 0.25rem;
   }
 
+  &__project--all {
+    margin-bottom: 0.5rem;
+
+    .projects-page__project-name {
+      color: var(--clr-text);
+    }
+
+    .projects-page__all-icon {
+      color: var(--clr-tertiary);
+    }
+
+    &:hover .projects-page__project-name,
+    &.projects-page__project--selected .projects-page__project-name {
+      color: var(--clr-accent-light);
+    }
+  }
+
+  &__all-icon {
+    font-size: 0.85rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
   &__project {
     display: flex;
     align-items: center;
@@ -724,15 +886,26 @@ function clearSearch() {
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
     cursor: pointer;
+    background-color: var(--clr-primary);
     box-shadow: var(--floating-box);
-    transition: box-shadow 0.15s ease;
+    transition:
+      box-shadow 0.15s ease,
+      color 0.1s ease;
 
     &:hover {
       box-shadow: var(--bubble-box);
+
+      .projects-page__project-name {
+        color: var(--clr-accent-light);
+      }
     }
 
     &--selected {
       box-shadow: var(--floating-box-pressed);
+
+      .projects-page__project-name {
+        color: var(--clr-accent-light);
+      }
 
       &:hover {
         box-shadow: var(--floating-box-pressed);
@@ -747,9 +920,9 @@ function clearSearch() {
     justify-content: center;
     width: 20px;
     cursor: grab;
-    color: var(--clr-gray-500);
+    color: var(--clr-gray-400);
     font-size: 0.75rem;
-    opacity: 0.4;
+    opacity: 0.5;
     transition: opacity 0.15s ease;
 
     .projects-page__project:hover &,
@@ -768,35 +941,26 @@ function clearSearch() {
   }
 
   &__project-count {
-    color: var(--clr-gray-500);
+    color: var(--clr-accent);
     font-size: 0.85rem;
   }
 
-  &__project-actions {
-    display: flex;
-    gap: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-
-    .projects-page__project:hover & {
-      opacity: 1;
-    }
-  }
-
-  &__action-btn {
+  &__multi-select-btn {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.25rem;
-    color: var(--clr-gray-500);
+    padding: 0.1rem 0.15rem;
     font-size: 0.8rem;
+    color: var(--clr-subtle);
+    flex-shrink: 0;
+    transition: color 0.1s ease;
 
-    &:hover {
-      color: var(--clr-text);
+    .projects-page__project--selected & {
+      color: var(--clr-accent-light);
     }
 
-    &--danger:hover {
-      color: var(--clr-danger, #e74c3c);
+    &:hover {
+      color: var(--clr-accent-light);
     }
   }
 
@@ -816,45 +980,114 @@ function clearSearch() {
 
   &__items-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 1rem;
 
     h2 {
       margin: 0;
+      color: var(--clr-accent-light);
     }
   }
 
-  &__item-list {
+  &__items-header-title {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
+    flex: 1;
   }
 
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  &__project-desc {
+    color: var(--clr-subtle);
+    font-size: 0.85rem;
+    max-height: 1.5em;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    flex: 1;
+
+    &--open {
+      max-height: 30em;
+    }
+  }
+
+  // Sunken inset container — like box-contents
+  &__item-list {
+    border-radius: var(--button-border-radius);
+    background-color: color-mix(in oklch, var(--clr-primary) 85%, black);
+    box-shadow: var(--floating-box-pressed);
+    overflow: hidden; // clips border-radius on first/last items
+  }
+
+  &__project-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__group-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+
+    h2 {
+      margin: 0;
+      color: var(--clr-accent-light);
+    }
+  }
+
+  &__empty--indent {
+    padding: 0.75rem;
+  }
+
+  // List row — like list-item mixin
   &__item {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 8px;
-    box-shadow: var(--floating-box);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--clr-gray-800);
+    transition: background-color 0.15s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: var(--clr-gray-trans-875);
+    }
 
     &--completed {
-      opacity: 0.6;
-
       .projects-page__item-title {
         text-decoration: line-through;
+        color: var(--clr-gray-300);
+      }
+
+      .projects-page__item-notes {
+        opacity: 0.5;
+      }
+
+      .projects-page__check {
+        color: var(--clr-success);
       }
     }
 
     &--archived {
-      opacity: 0.4;
+      opacity: 0.45;
     }
 
     &--blocked {
-      opacity: 0.5;
-
       .projects-page__item-title {
-        color: var(--clr-gray-500);
+        color: var(--clr-gray-300);
       }
     }
   }
@@ -865,12 +1098,12 @@ function clearSearch() {
     cursor: pointer;
     padding: 0;
     font-size: 1.2rem;
-    color: var(--clr-gray-500);
+    color: var(--clr-gray-200);
     flex-shrink: 0;
     margin-top: 0.1rem;
 
     &:hover {
-      color: var(--clr-text);
+      color: var(--clr-accent-light);
     }
   }
 
@@ -884,14 +1117,12 @@ function clearSearch() {
 
   &__item-title {
     font-weight: 500;
+    color: var(--clr-text);
   }
 
   &__item-notes {
-    color: var(--clr-gray-500);
+    color: var(--clr-gray-100);
     font-size: 0.85rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   &__item-blockers {
@@ -899,7 +1130,7 @@ function clearSearch() {
     align-items: center;
     flex-wrap: wrap;
     gap: 0.35rem;
-    color: var(--clr-danger, #e74c3c);
+    color: var(--clr-error);
     font-size: 0.8rem;
 
     i {
@@ -926,12 +1157,6 @@ function clearSearch() {
     display: flex;
     gap: 0.25rem;
     flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-
-    .projects-page__item:hover & {
-      opacity: 1;
-    }
   }
 
   // Search
@@ -947,19 +1172,15 @@ function clearSearch() {
 
   &__search-status {
     margin: 0;
-    color: var(--clr-gray-500);
+    color: var(--clr-gray-200);
     font-size: 0.9rem;
   }
 
   &__search-icon {
     flex-shrink: 0;
     font-size: 1.1rem;
-    color: var(--clr-gray-500);
+    color: var(--clr-gray-200);
     margin-top: 0.1rem;
-  }
-
-  &__item-actions--visible {
-    opacity: 1;
   }
 
   // Drag ghost (the placeholder left behind)
