@@ -79,7 +79,7 @@ def _net_str(net: int) -> str:
 
 def _render_commit_velocity(con: Console) -> None:
     """Commit counts for today, 7d, 30d with delta vs previous period."""
-    today = _count_lines(_git(['log', '--oneline', '--since=24 hours ago']))
+    today = _count_lines(_git(['log', '--oneline', '--since=midnight']))
     week = _count_lines(_git(['log', '--oneline', '--since=7 days ago']))
     month = _count_lines(_git(['log', '--oneline', '--since=30 days ago']))
     prev_week = _count_lines(_git(['log', '--oneline', '--since=14 days ago', '--until=7 days ago']))
@@ -194,7 +194,7 @@ def _render_hot_files(con: Console) -> None:
 
 def _render_daily_commits(con: Console) -> None:
     """30-day daily commit chart using vertical bars."""
-    today = datetime.now(UTC).date()
+    today = datetime.now(UTC).astimezone().date()  # local date to match git --since/--until
     labels = []
     values = []
 

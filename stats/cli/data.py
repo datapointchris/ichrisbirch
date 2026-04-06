@@ -205,10 +205,14 @@ def events_by_date(events: list[dict]) -> dict[str, list[dict]]:
 
 
 def date_range(days: int) -> str:
-    """Return an ISO date string N days ago, for use as a ``since`` filter."""
+    """Return an ISO date string N days ago, for use as a ``since`` filter.
+
+    Uses local time because event timestamps come from git author dates
+    which are stored in the committer's local timezone.
+    """
     from datetime import timedelta
 
-    dt = datetime.now(UTC) - timedelta(days=days)
+    dt = datetime.now(UTC).astimezone() - timedelta(days=days)
     return dt.strftime('%Y-%m-%d')
 
 

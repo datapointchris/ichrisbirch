@@ -70,9 +70,15 @@ def read_events_backwards(events_path: str, limit: int = 5000) -> list[dict]:
 def find_latest_commit_events(events: list[dict]) -> tuple[dict | None, list[dict], list[dict]]:
     """Find the latest commit and its associated collector/hook events.
 
-    Events are read most-recent-first, so collector events appear BEFORE
-    their associated commit event. We collect events until we find a commit,
-    then return those as the associated events.
+    Events are read most-recent-first. Post-commit collectors (tokei,
+    coverage, etc.) appear AFTER the commit in the file, so they're seen
+    BEFORE the commit when reading backwards — collected in phase 1.
+
+    Pre-commit test collectors (pytest, vitest, playwright) are emitted
+    DURING pre-commit hooks, so they appear BEFORE the commit in the file.
+    Reading backwards, they're on the far side of the commit event —
+    phase 2 continues past the commit to collect these, stopping at the
+    next commit or after a gap with no more relevant events.
 
     Args:
         events: List of events (most recent first)
@@ -84,11 +90,30 @@ def find_latest_commit_events(events: list[dict]) -> tuple[dict | None, list[dic
     collector_events = []
     hook_events = []
 
-    for event in events:
+    # Phase 1: collect post-commit events until we hit the commit
+    commit_idx = 0
+    for i, event in enumerate(events):
         event_type = event.get('type', '')
 
         if event_type == 'commit':
             commit_event = event
+            commit_idx = i
+            break
+
+        if event_type.startswith('collect.'):
+            collector_events.append(event)
+        elif event_type.startswith('hook.'):
+            hook_events.append(event)
+
+    if not commit_event:
+        return None, collector_events, hook_events
+
+    # Phase 2: continue past the commit to find pre-commit test/hook events,
+    # stopping at the previous commit (which belongs to an earlier snapshot)
+    for event in events[commit_idx + 1 :]:
+        event_type = event.get('type', '')
+
+        if event_type == 'commit':
             break
 
         if event_type.startswith('collect.'):
@@ -448,6 +473,52 @@ def write_snapshot(snapshot: dict, output_dir: str) -> Path:
     return filepath
 
 
+def _fill_missing_collectors(
+    events: list[dict],
+    collector_events: list[dict],
+    required_types: set[str],
+) -> list[dict]:
+    """Fill in missing collector types from earlier event history.
+
+    Not every test suite runs on every commit — pytest skips Vue-only
+    changes, vitest skips Python-only changes. Rather than showing zeros,
+    scan backwards through all events and use the most recent result for
+    each suite that didn't run in the latest commit cycle.
+
+    Args:
+        events: Full event list (most recent first).
+        collector_events: Events already found for the latest commit.
+        required_types: Collector event types that should always be present.
+
+    Returns:
+        The collector_events list, extended with any found backfills.
+    """
+    found_types = {e.get('type') for e in collector_events}
+    missing = required_types - found_types
+
+    if not missing:
+        return collector_events
+
+    for event in events:
+        event_type = event.get('type', '')
+        if event_type in missing:
+            collector_events.append(event)
+            missing.discard(event_type)
+            if not missing:
+                break
+
+    return collector_events
+
+
+# Collector types that should always appear in a snapshot, backfilled
+# from earlier commits if they didn't run in the latest cycle.
+_BACKFILL_COLLECTOR_TYPES = {
+    'collect.pytest',
+    'collect.vitest',
+    'collect.playwright',
+}
+
+
 def generate_snapshot(events_path: str | None = None, output_dir: str | None = None) -> Path | None:
     """Generate a snapshot from the latest events.
 
@@ -475,6 +546,8 @@ def generate_snapshot(events_path: str | None = None, output_dir: str | None = N
     if not commit_event:
         print('No commit events found')
         return None
+
+    collector_events = _fill_missing_collectors(events, collector_events, _BACKFILL_COLLECTOR_TYPES)
 
     snapshot = build_snapshot(commit_event, collector_events, hook_events)
     filepath = write_snapshot(snapshot, output_dir)

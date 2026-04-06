@@ -37,7 +37,9 @@ def render(events_path: str, days: int = 7, *, console: Console | None = None) -
     con = console or Console()
 
     # Single scan of events file, filtered to commits
-    since_date = (datetime.now(UTC) - timedelta(days=days)).strftime('%Y-%m-%d')
+    # Local time: event timestamps use git author dates in local timezone
+    local_now = datetime.now(UTC).astimezone()
+    since_date = (local_now - timedelta(days=days)).strftime('%Y-%m-%d')
     commits = load_events(events_path, event_type='commit', since=since_date)
     by_date = events_by_date(commits)
 
@@ -46,7 +48,7 @@ def render(events_path: str, days: int = 7, *, console: Console | None = None) -
     total = len(all_commits)
 
     # Build day list from most recent to oldest
-    today = datetime.now(UTC).date()
+    today = local_now.date()
     day_data: list[tuple[str, str, int]] = []
     for i in range(days):
         dt = today - timedelta(days=i)
