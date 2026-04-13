@@ -81,6 +81,8 @@ http:
           - url: "http://icb-green-mcp:3000"
 ```
 
+To add a new Traefik-routed service: add it to `docker-compose.app.yml`, `routing.yml`, and `generate_services_file()` in `scripts/deploy-homelab.sh`.
+
 Traefik has `--providers.file.watch=true`, so it hot-reloads within 1-2 seconds of the file changing. No restart needed.
 
 ### State Tracking

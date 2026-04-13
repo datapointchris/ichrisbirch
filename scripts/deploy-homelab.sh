@@ -422,6 +422,10 @@ http:
         sticky:
           cookie:
             name: chat-prod-session
+    mcp:
+      loadBalancer:
+        servers:
+          - url: "http://icb-${color}-mcp:3000"
 EOF
 
     # Atomic swap — Traefik watches the directory and reloads within 1-2 seconds
