@@ -58,6 +58,17 @@ http:
       entrypoints:
         - web
 
+    # MCP Server — Claude Code connects via streamable HTTP
+    mcp:
+      rule: "Host(`api.ichrisbirch.com`) && PathPrefix(`/mcp`)"
+      service: mcp
+      priority: 200
+      middlewares:
+        - security-headers-prod@file
+        - rate-limit-prod@file
+      entrypoints:
+        - web
+
     # Chat (Streamlit) — dedicated subdomain
     chat:
       rule: "Host(`chat.ichrisbirch.com`)"

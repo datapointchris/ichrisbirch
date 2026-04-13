@@ -115,7 +115,9 @@ graph TB
     Traefik -->|"vue-paths (priority 100)"| VUE[Vue 3 Frontend]
     Traefik --> API[FastAPI Backend]
     Traefik --> CHAT[Streamlit Chat]
+    Traefik -->|"/mcp (priority 200)"| MCP[MCP Server]
     VUE -->|"cross-origin API calls"| API
+    MCP -->|"internal HTTP"| API
     API --> DB[(PostgreSQL)]
     API --> CACHE[(Redis)]
     CHAT --> API

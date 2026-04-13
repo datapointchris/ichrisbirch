@@ -42,7 +42,7 @@ If anything fails in steps 1-3, the live color is untouched. Zero downtime, zero
 | File | Project Name | Contains | Lifecycle |
 |------|-------------|----------|-----------|
 | `docker-compose.infra.yml` | `icb-infra` | Traefik, PostgreSQL, Redis | Always running, never restarted during deploys |
-| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Chat, Scheduler | Created/destroyed per deploy |
+| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Chat, Scheduler, MCP | Created/destroyed per deploy |
 | `docker-compose.yml` | `icb-prod` | All services (legacy) | Emergency fallback only |
 
 Dev and test environments (`docker-compose.dev.yml`, `docker-compose.test.yml`) are completely unaffected.
@@ -75,6 +75,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://icb-green-chat:8505"
+    mcp:
+      loadBalancer:
+        servers:
+          - url: "http://icb-green-mcp:3000"
 ```
 
 Traefik has `--providers.file.watch=true`, so it hot-reloads within 1-2 seconds of the file changing. No restart needed.

@@ -88,6 +88,7 @@ The base file defines production-ready services:
 | `vue` | Vue 3 frontend (SPA) | 5173 (dev) / 80 (prod via Caddy) |
 | `chat` | Streamlit chat interface | 8505 |
 | `scheduler` | APScheduler background jobs | N/A |
+| `mcp` | MCP server (FastMCP streamable HTTP) | 3000 |
 
 ### Service Dependencies
 
@@ -95,6 +96,8 @@ The base file defines production-ready services:
 postgres ─────┬───► api ──────► vue (Vue 3 SPA)
               │       │
 redis ────────┤       ├──────► chat
+              │       │
+              │       ├──────► mcp
               │       │
               └───────┴──────► scheduler
 ```

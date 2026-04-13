@@ -79,7 +79,8 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 | API | FastAPI | RESTful backend, JWT + Authelia auth |
 | Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
 | Chat | Streamlit | AI chat interface with OpenAI |
-| Scheduler | APScheduler | Daily jobs (task priorities, autotasks, S3 backup) |
+| Scheduler | APScheduler | Daily jobs (task priorities, autotasks) |
+| MCP | FastMCP | MCP tool server for Claude Code (streamable HTTP in prod, stdio in dev) |
 
 Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite). See the filesystem for the full structure.
 

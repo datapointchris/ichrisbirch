@@ -153,6 +153,43 @@ services:
     networks:
       - icb-infra
 
+  # MCP Server (FastMCP Streamable HTTP)
+  mcp:
+    <<: *app-image
+    container_name: icb-${DEPLOY_COLOR}-mcp
+    depends_on:
+      - api
+    command: python -m ichrisbirch.mcp
+    env_file: .env
+    environment:
+      - MCP_TRANSPORT=streamable-http
+      - ICHRISBIRCH_API_URL=http://api:8000
+      - ICHRISBIRCH_API_TOKEN=${ICHRISBIRCH_MCP_TOKEN}
+      - MCP_PORT=3000
+      - ENVIRONMENT=production
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports: []
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/mcp"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    working_dir: /app
+    logging:
+      <<: *logging
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "${DEPLOY_COLOR}-mcp"
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - proxy
+      - icb-infra
+
 # Shared log volume (same as infra)
 volumes:
   ichrisbirch_logs:

@@ -12,17 +12,28 @@ from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP('ichrisbirch')
+MCP_PORT = int(os.environ.get('MCP_PORT', '8000'))
+
+mcp = FastMCP('ichrisbirch', host='0.0.0.0', port=MCP_PORT)  # nosec B104  # Docker requires binding all interfaces
 
 API_URL = os.environ.get('ICHRISBIRCH_API_URL', 'https://api.docker.localhost')
 API_TOKEN = os.environ.get('ICHRISBIRCH_API_TOKEN', '')
 
 
 def _client() -> httpx.Client:
+    # Plain HTTP (internal Docker network) needs no TLS verification;
+    # self-signed dev certs (https://api.docker.localhost) need verify=False;
+    # real HTTPS endpoints use default verification.
+    if API_URL.startswith('http://'):
+        verify = True  # irrelevant for plain HTTP, but httpx requires a value
+    elif 'localhost' in API_URL:
+        verify = False  # noqa: S501  # nosec B501  # dev certs are self-signed
+    else:
+        verify = True
     return httpx.Client(
         base_url=API_URL,
         headers={'Authorization': f'Bearer {API_TOKEN}'},
-        verify=False,  # noqa: S501  # nosec B501  # dev certs are self-signed
+        verify=verify,
         timeout=30,
     )
 
