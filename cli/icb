@@ -265,15 +265,37 @@ function dev-restart() {
 function dev-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
 
-  if [[ "${1:-}" == "--all" ]]; then
-    echo "Full rebuild of ${blue}DEV${reset} environment (all services)"
+  local rebuild_all=false
+  local wipe_volumes=false
+  for arg in "$@"; do
+    case "$arg" in
+      --all) rebuild_all=true ;;
+      --volumes) wipe_volumes=true ;;
+      *) echo "${red}Unknown flag: $arg${reset}"; echo "Valid flags: --all, --volumes"; return 1 ;;
+    esac
+  done
+
+  if [[ "$wipe_volumes" == true ]]; then
+    echo "Wiping volumes for ${blue}DEV${reset} environment (${yellow}--volumes${reset})"
+    $COMPOSE_DEV down --volumes
+  elif [[ "$rebuild_all" == true ]]; then
+    echo "Full rebuild of ${blue}DEV${reset} environment (${yellow}--all${reset})"
     $COMPOSE_DEV down
-    echo "Building images..."
+  fi
+
+  if [[ "$rebuild_all" == true ]]; then
+    echo "Building all images..."
     $COMPOSE_DEV build
     echo "Starting all services..."
     $COMPOSE_DEV up -d
+  elif [[ "$wipe_volumes" == true ]]; then
+    # Volumes wiped, everything is down. Rebuild api only and start everything back up.
+    echo "Building app image..."
+    $COMPOSE_DEV build api
+    echo "Starting all services (volumes were wiped)..."
+    $COMPOSE_DEV up -d
   else
-    echo "Rebuilding ${blue}DEV${reset} app services (use ${cyan}--all${reset} for infra too)"
+    echo "Rebuilding ${blue}DEV${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
     echo "Building app image..."
     $COMPOSE_DEV build api
     echo "Recreating app services..."
@@ -337,6 +359,7 @@ function dev-usage() {
   echo "  ${blue}dev restart${reset}            Restart dev containers"
   echo "  ${blue}dev rebuild${reset}            Rebuild app services (api, chat, scheduler, vue)"
   echo "  ${blue}dev rebuild --all${reset}      Full rebuild including infra (traefik, postgres, redis)"
+  echo "  ${blue}dev rebuild --volumes${reset}  Wipe named volumes and rebuild (combines with --all)"
   echo "  ${blue}dev status${reset}             Show container status"
   echo "  ${blue}dev health${reset}             Full diagnostic health check"
   echo "  ${blue}dev is-ready${reset}           Quick check if API is responding (exit 0/1)"
@@ -472,12 +495,42 @@ function testing-restart() {
 
 function testing-rebuild() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Rebuilding ${blue}TESTING${reset} environment"
-  $COMPOSE_TEST down
-  echo "Building images..."
-  $COMPOSE_TEST build
-  echo "Starting services..."
-  $COMPOSE_TEST up -d
+
+  local rebuild_all=false
+  local wipe_volumes=false
+  for arg in "$@"; do
+    case "$arg" in
+      --all) rebuild_all=true ;;
+      --volumes) wipe_volumes=true ;;
+      *) echo "${red}Unknown flag: $arg${reset}"; echo "Valid flags: --all, --volumes"; return 1 ;;
+    esac
+  done
+
+  if [[ "$wipe_volumes" == true ]]; then
+    echo "Wiping volumes for ${blue}TESTING${reset} environment (${yellow}--volumes${reset})"
+    $COMPOSE_TEST down --volumes
+  elif [[ "$rebuild_all" == true ]]; then
+    echo "Full rebuild of ${blue}TESTING${reset} environment (${yellow}--all${reset})"
+    $COMPOSE_TEST down
+  fi
+
+  if [[ "$rebuild_all" == true ]]; then
+    echo "Building all images..."
+    $COMPOSE_TEST build
+    echo "Starting all services..."
+    $COMPOSE_TEST up -d
+  elif [[ "$wipe_volumes" == true ]]; then
+    echo "Building app image..."
+    $COMPOSE_TEST build api
+    echo "Starting all services (volumes were wiped)..."
+    $COMPOSE_TEST up -d
+  else
+    echo "Rebuilding ${blue}TESTING${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
+    echo "Building app image..."
+    $COMPOSE_TEST build api
+    echo "Recreating app services..."
+    $COMPOSE_TEST up -d --force-recreate api chat scheduler vue
+  fi
 }
 
 function testing-logs() {
@@ -524,7 +577,9 @@ function testing-usage() {
   echo "  ${blue}testing start${reset}          Start test containers and reset database"
   echo "  ${blue}testing stop${reset}           Stop test containers and remove volumes"
   echo "  ${blue}testing restart${reset}        Restart test containers"
-  echo "  ${blue}testing rebuild${reset}        Full rebuild of test containers"
+  echo "  ${blue}testing rebuild${reset}        Rebuild app services (api, chat, scheduler, vue)"
+  echo "  ${blue}testing rebuild --all${reset}  Full rebuild including infra (traefik, postgres, redis)"
+  echo "  ${blue}testing rebuild --volumes${reset} Wipe named volumes and rebuild (combines with --all)"
   echo "  ${blue}testing status${reset}         Show container status"
   echo "  ${blue}testing health${reset}         Full diagnostic health check"
   echo "  ${blue}testing is-ready${reset}       Quick check if API is responding (exit 0/1)"
@@ -1008,7 +1063,10 @@ testing)
   start) testing-start ;;
   stop) testing-stop ;;
   restart) testing-restart ;;
-  rebuild) testing-rebuild ;;
+  rebuild)
+    shift 2
+    testing-rebuild "$@"
+    ;;
   status) testing-status ;;
   health) testing-health ;;
   is-ready) testing-is-ready ;;
@@ -1037,7 +1095,10 @@ dev)
   start) dev-start ;;
   stop) dev-stop ;;
   restart) dev-restart ;;
-  rebuild) dev-rebuild "$3" ;;
+  rebuild)
+    shift 2
+    dev-rebuild "$@"
+    ;;
   status) dev-status ;;
   smoke) dev-smoke ;;
   health) dev-health ;;

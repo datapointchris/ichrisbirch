@@ -231,19 +231,62 @@ check_containers() {
             ;;
     esac
 
-    local all_running=true
+    local all_healthy=true
 
     for container in "${containers[@]}"; do
-        if docker ps --format "{{.Names}}" | grep -q "^$container$"; then
-            local status=$(docker ps --format "{{.Status}}" --filter "name=^$container$")
-            print_success "Container: $container ($status)"
-        else
-            print_error "Container: $container (not running)"
-            all_running=false
+        # State.Status: running | restarting | exited | created | paused | dead
+        local state
+        state=$(docker inspect --format='{{.State.Status}}' "$container" 2>/dev/null || echo "missing")
+
+        if [ "$state" = "missing" ]; then
+            print_error "Container: $container (not found)"
+            all_healthy=false
+            continue
         fi
+
+        # State.Health.Status: healthy | unhealthy | starting | <empty if no healthcheck>
+        local health
+        health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container" 2>/dev/null || echo "none")
+
+        local status
+        status=$(docker ps -a --format "{{.Status}}" --filter "name=^$container$")
+
+        case "$state" in
+            running)
+                case "$health" in
+                    healthy|none)
+                        print_success "Container: $container ($status)"
+                        ;;
+                    starting)
+                        print_warning "Container: $container ($status) — healthcheck starting"
+                        all_healthy=false
+                        ;;
+                    unhealthy)
+                        print_error "Container: $container ($status) — UNHEALTHY"
+                        all_healthy=false
+                        ;;
+                    *)
+                        print_warning "Container: $container ($status) — unknown health: $health"
+                        all_healthy=false
+                        ;;
+                esac
+                ;;
+            restarting)
+                print_error "Container: $container ($status) — RESTARTING (crash loop)"
+                all_healthy=false
+                ;;
+            exited|dead)
+                print_error "Container: $container ($status) — not running"
+                all_healthy=false
+                ;;
+            *)
+                print_warning "Container: $container ($status) — state: $state"
+                all_healthy=false
+                ;;
+        esac
     done
 
-    if [ "$all_running" = "true" ]; then
+    if [ "$all_healthy" = "true" ]; then
         return 0
     else
         return 1
