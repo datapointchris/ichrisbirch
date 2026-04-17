@@ -21,6 +21,7 @@
 /habits
 /box-packing
 /projects
+/recipes
 /tasks
 /profile
 /admin

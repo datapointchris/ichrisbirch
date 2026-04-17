@@ -18,6 +18,7 @@ from scripts.seed.seeders import events
 from scripts.seed.seeders import habits
 from scripts.seed.seeders import money_wasted
 from scripts.seed.seeders import projects
+from scripts.seed.seeders import recipes
 from scripts.seed.seeders import tasks
 
 # Parents before children, independent models first
@@ -37,4 +38,5 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('boxes', boxes),
     ('chats', chats),
     ('projects', projects),
+    ('recipes', recipes),
 ]

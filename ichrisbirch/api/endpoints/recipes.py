@@ -1,0 +1,368 @@
+from datetime import UTC
+from datetime import datetime
+
+import structlog
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import Query
+from fastapi import Response
+from fastapi import status
+from sqlalchemy import case
+from sqlalchemy import cast
+from sqlalchemy import func
+from sqlalchemy import or_
+from sqlalchemy import select
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
+
+from ichrisbirch import models
+from ichrisbirch import schemas
+from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
+from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.config import Settings
+from ichrisbirch.config import get_settings
+
+logger = structlog.get_logger()
+router = APIRouter()
+
+
+def _load_recipe(session: Session, recipe_id: int) -> models.Recipe | None:
+    query = select(models.Recipe).options(selectinload(models.Recipe.ingredients)).where(models.Recipe.id == recipe_id)
+    return session.scalar(query)
+
+
+def _scaled_recipe_response(recipe: models.Recipe, servings: int | None) -> schemas.Recipe:
+    """Build a Recipe response and, if `servings` differs from the base, include scaled quantities."""
+    response = schemas.Recipe.model_validate(recipe)
+    if servings is None or recipe.servings in (servings, 0):
+        return response
+    factor = servings / recipe.servings
+    for ing_model, ing_out in zip(recipe.ingredients, response.ingredients, strict=False):
+        ing_out.scaled_quantity = round(ing_model.quantity * factor, 4) if ing_model.quantity is not None else None
+    return response
+
+
+@router.get('/', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
+async def read_many(
+    session: DbSession,
+    cuisine: str | None = None,
+    meal_type: str | None = None,
+    difficulty: str | None = None,
+    rating_min: int | None = Query(None, ge=1, le=5),
+    max_total_time: int | None = Query(None, ge=0),
+):
+    query = select(models.Recipe).options(selectinload(models.Recipe.ingredients)).order_by(models.Recipe.name.asc())
+    if cuisine:
+        query = query.filter(models.Recipe.cuisine == cuisine)
+    if meal_type:
+        query = query.filter(models.Recipe.meal_type == meal_type)
+    if difficulty:
+        query = query.filter(models.Recipe.difficulty == difficulty)
+    if rating_min is not None:
+        query = query.filter(models.Recipe.rating >= rating_min)
+    if max_total_time is not None:
+        query = query.filter(models.Recipe.total_time_minutes <= max_total_time)
+    return list(session.scalars(query).all())
+
+
+@router.post('/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
+async def create(recipe: schemas.RecipeCreate, session: DbSession):
+    ingredients_data = recipe.ingredients
+    recipe_data = recipe.model_dump(exclude={'ingredients'})
+    obj = models.Recipe(**recipe_data)
+    for idx, ing in enumerate(ingredients_data):
+        ing_dict = ing.model_dump()
+        # Preserve provided position if non-default, otherwise use list index
+        if ing_dict.get('position', 0) == 0:
+            ing_dict['position'] = idx
+        obj.ingredients.append(models.RecipeIngredient(**ing_dict))
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    reloaded = _load_recipe(session, obj.id)
+    return reloaded
+
+
+@router.get('/search/', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
+async def search(q: str, session: DbSession):
+    """Search recipes by name, tags, or instructions.
+
+    Follows the books/articles pattern: split on comma (for phrases) or whitespace,
+    ILIKE across multiple fields, OR'd together.
+    """
+    logger.debug('recipe_search', query=q)
+    raw_terms = q.split(',') if ',' in q else q.split()
+    search_terms = [f'%{term.strip()}%' for term in raw_terms if term.strip()]
+    if not search_terms:
+        return []
+    name_matches = [models.Recipe.name.ilike(term) for term in search_terms]
+    instruction_matches = [models.Recipe.instructions.ilike(term) for term in search_terms]
+    tag_matches = [cast(models.Recipe.tags, postgresql.TEXT).ilike(term) for term in search_terms]
+    query = (
+        select(models.Recipe)
+        .options(selectinload(models.Recipe.ingredients))
+        .filter(or_(*(name_matches + instruction_matches + tag_matches)))
+        .order_by(models.Recipe.name.asc())
+    )
+    return list(session.scalars(query).all())
+
+
+@router.get(
+    '/search-by-ingredients/',
+    response_model=list[schemas.RecipeIngredientSearchResult],
+    status_code=status.HTTP_200_OK,
+)
+async def search_by_ingredients(
+    session: DbSession,
+    have: str = Query(..., description='Comma-separated list of ingredients the user has'),
+    match: str = Query('any', pattern='^(any|all)$'),
+):
+    """Find recipes whose ingredients match the user-supplied list.
+
+    `match=any` — return recipes containing ANY of the listed ingredients, ranked by
+    coverage (how many matched) descending.
+    `match=all` — only return recipes where every listed ingredient is present.
+
+    Matching is case-insensitive substring ILIKE on `recipe_ingredients.item`, so
+    'chicken' matches 'boneless chicken breast'.
+    """
+    terms = [t.strip() for t in have.split(',') if t.strip()]
+    if not terms:
+        return []
+
+    # For each term, count distinct recipes where any ingredient item ILIKEs it.
+    # Build a CASE-based coverage counter: for each recipe, sum 1 per term matched.
+    per_term_hit = [
+        func.max(case((models.RecipeIngredient.item.ilike(f'%{term}%'), 1), else_=0)).label(f'hit_{i}') for i, term in enumerate(terms)
+    ]
+
+    # First aggregation: for each recipe, did each term match at least once?
+    any_conditions = or_(*[models.RecipeIngredient.item.ilike(f'%{term}%') for term in terms])
+
+    subq = (
+        select(models.RecipeIngredient.recipe_id.label('recipe_id'), *per_term_hit)
+        .where(any_conditions)
+        .group_by(models.RecipeIngredient.recipe_id)
+        .subquery()
+    )
+
+    total_count_subq = (
+        select(
+            models.RecipeIngredient.recipe_id.label('recipe_id'),
+            func.count(models.RecipeIngredient.id).label('total_ingredients'),
+        )
+        .group_by(models.RecipeIngredient.recipe_id)
+        .subquery()
+    )
+
+    hit_sum = sum(getattr(subq.c, f'hit_{i}') for i in range(len(terms)))
+
+    query = (
+        select(models.Recipe, hit_sum.label('coverage'), total_count_subq.c.total_ingredients)
+        .join(subq, subq.c.recipe_id == models.Recipe.id)
+        .join(total_count_subq, total_count_subq.c.recipe_id == models.Recipe.id)
+        .options(selectinload(models.Recipe.ingredients))
+        .order_by(hit_sum.desc(), models.Recipe.name.asc())
+    )
+
+    if match == 'all':
+        query = query.where(hit_sum == len(terms))
+
+    results = session.execute(query).all()
+    return [
+        schemas.RecipeIngredientSearchResult(
+            recipe=schemas.Recipe.model_validate(recipe),
+            coverage=int(coverage),
+            total_ingredients=int(total),
+        )
+        for recipe, coverage, total in results
+    ]
+
+
+@router.get('/stats/', response_model=schemas.RecipeStats, status_code=status.HTTP_200_OK)
+async def stats(session: DbSession):
+    total_recipes = session.scalar(select(func.count(models.Recipe.id))) or 0
+    total_times_cooked = session.scalar(select(func.coalesce(func.sum(models.Recipe.times_made), 0))) or 0
+    average_rating = session.scalar(select(func.avg(models.Recipe.rating)))
+    unique_cuisines = session.scalar(select(func.count(func.distinct(models.Recipe.cuisine))).where(models.Recipe.cuisine.isnot(None))) or 0
+
+    rating_rows = session.execute(
+        select(models.Recipe.rating, func.count(models.Recipe.id))
+        .where(models.Recipe.rating.isnot(None))
+        .group_by(models.Recipe.rating)
+        .order_by(models.Recipe.rating.asc())
+    ).all()
+    rating_breakdown = [schemas.RecipeRatingBreakdown(rating=r, count=c) for r, c in rating_rows]
+
+    def _category_breakdown(column) -> list[schemas.RecipeCategoryBreakdown]:
+        rows = session.execute(
+            select(
+                column,
+                func.count(models.Recipe.id),
+                func.avg(models.Recipe.rating),
+                func.coalesce(func.sum(models.Recipe.times_made), 0),
+            )
+            .where(column.isnot(None))
+            .group_by(column)
+            .order_by(func.count(models.Recipe.id).desc())
+        ).all()
+        return [
+            schemas.RecipeCategoryBreakdown(
+                name=name,
+                count=count,
+                avg_rating=float(avg) if avg is not None else None,
+                total_times_made=int(times_made),
+            )
+            for name, count, avg, times_made in rows
+        ]
+
+    most_made = list(
+        session.scalars(
+            select(models.Recipe)
+            .options(selectinload(models.Recipe.ingredients))
+            .where(models.Recipe.times_made > 0)
+            .order_by(models.Recipe.times_made.desc())
+            .limit(5)
+        ).all()
+    )
+    highest_rated = list(
+        session.scalars(
+            select(models.Recipe)
+            .options(selectinload(models.Recipe.ingredients))
+            .where(models.Recipe.rating.isnot(None))
+            .order_by(models.Recipe.rating.desc(), models.Recipe.times_made.desc())
+            .limit(5)
+        ).all()
+    )
+    untried = list(
+        session.scalars(
+            select(models.Recipe)
+            .options(selectinload(models.Recipe.ingredients))
+            .where(models.Recipe.times_made == 0)
+            .order_by(models.Recipe.created_at.desc())
+            .limit(5)
+        ).all()
+    )
+
+    return schemas.RecipeStats(
+        total_recipes=total_recipes,
+        total_times_cooked=total_times_cooked,
+        average_rating=float(average_rating) if average_rating is not None else None,
+        unique_cuisines=unique_cuisines,
+        rating_breakdown=rating_breakdown,
+        cuisine_breakdown=_category_breakdown(models.Recipe.cuisine),
+        meal_type_breakdown=_category_breakdown(models.Recipe.meal_type),
+        most_made=[schemas.Recipe.model_validate(r) for r in most_made],
+        highest_rated=[schemas.Recipe.model_validate(r) for r in highest_rated],
+        untried=[schemas.Recipe.model_validate(r) for r in untried],
+    )
+
+
+@router.post('/ai-suggest/', response_model=schemas.RecipeSuggestionResponse, status_code=status.HTTP_200_OK)
+async def ai_suggest(
+    request: schemas.RecipeSuggestionRequest,
+    settings: Settings = Depends(get_settings),
+):
+    """Ask Claude (with web_search) to find recipes matching the user's inputs.
+
+    Returns candidates WITHOUT saving — the user reviews and saves via /ai-save/.
+    """
+    assistant = AnthropicAssistant(
+        name='Recipe Suggestions',
+        system_prompt=settings.ai.prompts.recipe_suggestions,
+        settings=settings,
+        tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 5}],
+    )
+    user_message = (
+        f'have: {", ".join(request.have) if request.have else "(none specified)"}\n'
+        f'want: {request.want or "(no preference)"}\n'
+        f'count: {request.count}'
+    )
+    text = assistant.generate(user_message, max_tokens=8192)
+    parsed = AnthropicAssistant.parse_json(text)
+    if isinstance(parsed, dict) and 'candidates' in parsed:
+        candidates_raw = parsed['candidates']
+    elif isinstance(parsed, list):
+        candidates_raw = parsed
+    else:
+        logger.error('recipe_suggestion_parse_failed', payload_preview=text[:500])
+        return schemas.RecipeSuggestionResponse(candidates=[])
+    candidates = [schemas.RecipeCandidate.model_validate(c) for c in candidates_raw]
+    return schemas.RecipeSuggestionResponse(candidates=candidates)
+
+
+@router.post('/ai-save/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
+async def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
+    """Save an AI-generated candidate to the recipes table."""
+    payload = candidate.model_dump()
+    ingredients_data = payload.pop('ingredients', [])
+    obj = models.Recipe(**payload)
+    for idx, ing_dict in enumerate(ingredients_data):
+        if ing_dict.get('position', 0) == 0:
+            ing_dict['position'] = idx
+        obj.ingredients.append(models.RecipeIngredient(**ing_dict))
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return _load_recipe(session, obj.id)
+
+
+@router.get('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
+async def read_one(
+    id: int,
+    session: DbSession,
+    servings: int | None = Query(None, ge=1, description='Optional scaling — returns scaled_quantity per ingredient'),
+):
+    recipe = _load_recipe(session, id)
+    if recipe is None:
+        raise NotFoundException('recipe', id, logger)
+    return _scaled_recipe_response(recipe, servings)
+
+
+@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def delete(id: int, session: DbSession):
+    recipe = session.get(models.Recipe, id)
+    if recipe is None:
+        raise NotFoundException('recipe', id, logger)
+    session.delete(recipe)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
+async def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
+    recipe = _load_recipe(session, id)
+    if recipe is None:
+        raise NotFoundException('recipe', id, logger)
+
+    update_data = recipe_update.model_dump(exclude_unset=True)
+    ingredients_data = update_data.pop('ingredients', None)
+    for attr, value in update_data.items():
+        setattr(recipe, attr, value)
+
+    if ingredients_data is not None:
+        # Replace-all strategy: simpler than diff, sufficient for a modal-based UX.
+        recipe.ingredients.clear()
+        session.flush()
+        for idx, ing in enumerate(ingredients_data):
+            if ing.get('position', 0) == 0:
+                ing['position'] = idx
+            recipe.ingredients.append(models.RecipeIngredient(**ing))
+
+    session.commit()
+    session.refresh(recipe)
+    return _load_recipe(session, id)
+
+
+@router.post('/{id}/mark-made/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
+async def mark_made(id: int, session: DbSession):
+    """Increment times_made and set last_made_date to now."""
+    recipe = session.get(models.Recipe, id)
+    if recipe is None:
+        raise NotFoundException('recipe', id, logger)
+    recipe.times_made = (recipe.times_made or 0) + 1
+    recipe.last_made_date = datetime.now(UTC)
+    session.commit()
+    return _load_recipe(session, id)

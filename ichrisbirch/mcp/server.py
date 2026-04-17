@@ -833,3 +833,281 @@ def list_autotasks() -> str:
     """List all auto-tasks (recurring task templates)."""
     with _client() as c:
         return _json_response(c.get('/autotasks/'))
+
+
+# =============================================================================
+# RECIPES
+# =============================================================================
+
+RECIPE_SUMMARY_FIELDS = [
+    'id',
+    'name',
+    'cuisine',
+    'meal_type',
+    'difficulty',
+    'total_time_minutes',
+    'servings',
+    'rating',
+    'times_made',
+]
+
+
+@mcp.tool()
+def list_recipes(
+    cuisine: str | None = None,
+    meal_type: str | None = None,
+    difficulty: str | None = None,
+    rating_min: int | None = None,
+    max_total_time: int | None = None,
+) -> str:
+    """List recipes with summary fields.
+
+    Filters (all optional):
+    - cuisine: american, italian, mexican, asian, indian, mediterranean, french, other
+    - meal_type: breakfast, lunch, dinner, snack, dessert, side, sauce, drink
+    - difficulty: easy, medium, hard
+    - rating_min: 1-5
+    - max_total_time: minutes
+
+    Use get_recipe(id) for full detail including ingredients and instructions.
+    """
+    params: dict[str, Any] = {}
+    if cuisine:
+        params['cuisine'] = cuisine
+    if meal_type:
+        params['meal_type'] = meal_type
+    if difficulty:
+        params['difficulty'] = difficulty
+    if rating_min is not None:
+        params['rating_min'] = rating_min
+    if max_total_time is not None:
+        params['max_total_time'] = max_total_time
+    with _client() as c:
+        return _summarize(_json_response(c.get('/recipes/', params=params)), RECIPE_SUMMARY_FIELDS)
+
+
+@mcp.tool()
+def get_recipe(id: int, servings: int | None = None) -> str:
+    """Get full details for a recipe by ID, including ingredients and instructions.
+
+    Pass `servings` to receive scaled quantities on each ingredient (scaled_quantity field).
+    """
+    params: dict[str, Any] = {}
+    if servings is not None:
+        params['servings'] = servings
+    with _client() as c:
+        return _json_response(c.get(f'/recipes/{id}/', params=params))
+
+
+@mcp.tool()
+def search_recipes(query: str) -> str:
+    """Search recipes by name, tags, or instruction text.
+
+    Pass comma-separated phrases or whitespace-separated keywords.
+    Returns summary fields; use get_recipe(id) for full detail.
+    """
+    with _client() as c:
+        return _summarize(_json_response(c.get('/recipes/search/', params={'q': query})), RECIPE_SUMMARY_FIELDS)
+
+
+@mcp.tool()
+def search_recipes_by_ingredients(have: str, match: str = 'any') -> str:
+    """Find recipes whose ingredients match the provided list.
+
+    `have` is comma-separated (e.g. "chicken, lemon, garlic").
+    `match='any'` — rank by coverage (how many matched), descending.
+    `match='all'` — only return recipes that contain every listed ingredient.
+
+    Returns list of {recipe, coverage, total_ingredients}.
+    """
+    with _client() as c:
+        return _json_response(c.get('/recipes/search-by-ingredients/', params={'have': have, 'match': match}))
+
+
+@mcp.tool()
+def create_recipe(
+    name: str,
+    instructions: str,
+    ingredients_json: str,
+    description: str | None = None,
+    source_url: str | None = None,
+    source_name: str | None = None,
+    prep_time_minutes: int | None = None,
+    cook_time_minutes: int | None = None,
+    total_time_minutes: int | None = None,
+    servings: int = 4,
+    difficulty: str | None = None,
+    cuisine: str | None = None,
+    meal_type: str | None = None,
+    tags: str | None = None,
+    notes: str | None = None,
+    rating: int | None = None,
+) -> str:
+    """Create a new recipe with structured ingredients.
+
+    `ingredients_json` is a JSON array of objects, each with fields:
+      {"quantity": number|null, "unit": string|null, "item": string,
+       "prep_note": string|null, "is_optional": bool, "ingredient_group": string|null}
+
+    Example: '[{"quantity": 1, "unit": "cup", "item": "flour", "prep_note": null, "is_optional": false, "ingredient_group": null}]'
+
+    Valid units: cup, tbsp, tsp, oz, fl_oz, lb, g, kg, ml, l, pinch, dash, clove, slice, can, package, piece, whole, to_taste.
+    `tags` is comma-separated.
+    """
+    try:
+        raw_ingredients = json.loads(ingredients_json)
+    except json.JSONDecodeError as e:
+        return json.dumps({'error': 'invalid_ingredients_json', 'detail': str(e)})
+    ingredients = [
+        {
+            'position': ing.get('position', idx),
+            'quantity': ing.get('quantity'),
+            'unit': ing.get('unit'),
+            'item': ing['item'],
+            'prep_note': ing.get('prep_note'),
+            'is_optional': ing.get('is_optional', False),
+            'ingredient_group': ing.get('ingredient_group'),
+        }
+        for idx, ing in enumerate(raw_ingredients)
+    ]
+    payload: dict[str, Any] = {
+        'name': name,
+        'instructions': instructions,
+        'servings': servings,
+        'ingredients': ingredients,
+    }
+    optional_fields = {
+        'description': description,
+        'source_url': source_url,
+        'source_name': source_name,
+        'prep_time_minutes': prep_time_minutes,
+        'cook_time_minutes': cook_time_minutes,
+        'total_time_minutes': total_time_minutes,
+        'difficulty': difficulty,
+        'cuisine': cuisine,
+        'meal_type': meal_type,
+        'notes': notes,
+        'rating': rating,
+    }
+    payload.update({k: v for k, v in optional_fields.items() if v is not None})
+    if tags:
+        payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    with _client() as c:
+        return _json_response(c.post('/recipes/', json=payload))
+
+
+@mcp.tool()
+def update_recipe(
+    id: int,
+    name: str | None = None,
+    description: str | None = None,
+    instructions: str | None = None,
+    source_url: str | None = None,
+    source_name: str | None = None,
+    prep_time_minutes: int | None = None,
+    cook_time_minutes: int | None = None,
+    total_time_minutes: int | None = None,
+    servings: int | None = None,
+    difficulty: str | None = None,
+    cuisine: str | None = None,
+    meal_type: str | None = None,
+    tags: str | None = None,
+    notes: str | None = None,
+    rating: int | None = None,
+    ingredients_json: str | None = None,
+    null_fields: str | None = None,
+) -> str:
+    """Update a recipe by ID. Only provided fields are changed.
+
+    If `ingredients_json` is provided, it REPLACES the entire ingredient list (replace-all semantics).
+    `tags` is comma-separated. `null_fields` is comma-separated list of fields to set to null.
+    """
+    fields = {
+        'name': name,
+        'description': description,
+        'instructions': instructions,
+        'source_url': source_url,
+        'source_name': source_name,
+        'prep_time_minutes': prep_time_minutes,
+        'cook_time_minutes': cook_time_minutes,
+        'total_time_minutes': total_time_minutes,
+        'servings': servings,
+        'difficulty': difficulty,
+        'cuisine': cuisine,
+        'meal_type': meal_type,
+        'notes': notes,
+        'rating': rating,
+    }
+    payload: dict[str, Any] = {k: v for k, v in fields.items() if v is not None}
+    if tags is not None:
+        payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    if ingredients_json is not None:
+        try:
+            raw = json.loads(ingredients_json)
+        except json.JSONDecodeError as e:
+            return json.dumps({'error': 'invalid_ingredients_json', 'detail': str(e)})
+        payload['ingredients'] = [
+            {
+                'position': ing.get('position', idx),
+                'quantity': ing.get('quantity'),
+                'unit': ing.get('unit'),
+                'item': ing['item'],
+                'prep_note': ing.get('prep_note'),
+                'is_optional': ing.get('is_optional', False),
+                'ingredient_group': ing.get('ingredient_group'),
+            }
+            for idx, ing in enumerate(raw)
+        ]
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
+    with _client() as c:
+        return _json_response(c.patch(f'/recipes/{id}/', json=payload))
+
+
+@mcp.tool()
+def delete_recipe(id: int) -> str:
+    """Delete a recipe by ID."""
+    with _client() as c:
+        return _json_response(c.delete(f'/recipes/{id}/'))
+
+
+@mcp.tool()
+def mark_recipe_made(id: int) -> str:
+    """Increment the times_made counter and set last_made_date to now."""
+    with _client() as c:
+        return _json_response(c.post(f'/recipes/{id}/mark-made/'))
+
+
+@mcp.tool()
+def ai_suggest_recipes(have: str, want: str | None = None, count: int = 3) -> str:
+    """Ask Claude (with web search) to find recipes matching available ingredients.
+
+    `have` is comma-separated ingredients on hand.
+    `want` is a free-form description of the kind of dish (optional).
+    `count` is how many suggestions to return (default 3).
+
+    Returns candidates WITHOUT saving — use ai_save_recipe(candidate_json) per result to persist.
+    This call may take 30-60 seconds due to the web search.
+    """
+    payload = {
+        'have': [s.strip() for s in have.split(',') if s.strip()],
+        'want': want,
+        'count': count,
+    }
+    with _client() as c:
+        return _json_response(c.post('/recipes/ai-suggest/', json=payload))
+
+
+@mcp.tool()
+def ai_save_recipe(candidate_json: str) -> str:
+    """Save an AI-generated candidate to the recipes table.
+
+    Pass a JSON object matching the RecipeCandidate schema (as returned from ai_suggest_recipes).
+    """
+    try:
+        candidate = json.loads(candidate_json)
+    except json.JSONDecodeError as e:
+        return json.dumps({'error': 'invalid_candidate_json', 'detail': str(e)})
+    with _client() as c:
+        return _json_response(c.post('/recipes/ai-save/', json=candidate))

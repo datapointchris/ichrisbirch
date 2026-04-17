@@ -831,3 +831,172 @@ export interface SmokeTestReport {
   all_passed: boolean
   results: SmokeTestResult[]
 }
+
+// --- Recipe ---
+
+export type RecipeDifficulty = 'easy' | 'medium' | 'hard'
+export type RecipeCuisine = 'american' | 'italian' | 'mexican' | 'asian' | 'indian' | 'mediterranean' | 'french' | 'other'
+export type RecipeMealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'side' | 'sauce' | 'drink'
+export type RecipeUnit =
+  | 'cup'
+  | 'tbsp'
+  | 'tsp'
+  | 'oz'
+  | 'fl_oz'
+  | 'lb'
+  | 'g'
+  | 'kg'
+  | 'ml'
+  | 'l'
+  | 'pinch'
+  | 'dash'
+  | 'clove'
+  | 'slice'
+  | 'can'
+  | 'package'
+  | 'piece'
+  | 'whole'
+  | 'to_taste'
+
+export interface RecipeIngredient {
+  id: number
+  recipe_id: number
+  position: number
+  quantity: number | null
+  unit: RecipeUnit | string | null
+  item: string
+  prep_note: string | null
+  is_optional: boolean
+  ingredient_group: string | null
+  scaled_quantity?: number | null
+}
+
+export interface RecipeIngredientCreate {
+  position: number
+  quantity: number | null
+  unit: RecipeUnit | string | null
+  item: string
+  prep_note: string | null
+  is_optional: boolean
+  ingredient_group: string | null
+}
+
+export interface Recipe {
+  id: number
+  name: string
+  description: string | null
+  source_url: string | null
+  source_name: string | null
+  prep_time_minutes: number | null
+  cook_time_minutes: number | null
+  total_time_minutes: number | null
+  servings: number
+  difficulty: RecipeDifficulty | string | null
+  cuisine: RecipeCuisine | string | null
+  meal_type: RecipeMealType | string | null
+  tags: string[] | null
+  instructions: string
+  notes: string | null
+  rating: number | null
+  times_made: number
+  last_made_date: string | null
+  created_at: string
+  updated_at: string
+  ingredients: RecipeIngredient[]
+}
+
+export interface RecipeCreate {
+  name: string
+  description?: string | null
+  source_url?: string | null
+  source_name?: string | null
+  prep_time_minutes?: number | null
+  cook_time_minutes?: number | null
+  total_time_minutes?: number | null
+  servings: number
+  difficulty?: string | null
+  cuisine?: string | null
+  meal_type?: string | null
+  tags?: string[] | null
+  instructions: string
+  notes?: string | null
+  rating?: number | null
+  ingredients: RecipeIngredientCreate[]
+}
+
+export interface RecipeUpdate {
+  name?: string | null
+  description?: string | null
+  source_url?: string | null
+  source_name?: string | null
+  prep_time_minutes?: number | null
+  cook_time_minutes?: number | null
+  total_time_minutes?: number | null
+  servings?: number | null
+  difficulty?: string | null
+  cuisine?: string | null
+  meal_type?: string | null
+  tags?: string[] | null
+  instructions?: string | null
+  notes?: string | null
+  rating?: number | null
+  ingredients?: RecipeIngredientCreate[] | null
+}
+
+export interface RecipeIngredientSearchResult {
+  recipe: Recipe
+  coverage: number
+  total_ingredients: number
+}
+
+export interface RecipeSuggestionRequest {
+  have: string[]
+  want: string | null
+  count: number
+}
+
+export interface RecipeCandidate {
+  name: string
+  description: string | null
+  source_url: string
+  source_name: string | null
+  prep_time_minutes: number | null
+  cook_time_minutes: number | null
+  total_time_minutes: number | null
+  servings: number
+  difficulty: string | null
+  cuisine: string | null
+  meal_type: string | null
+  tags: string[] | null
+  instructions: string
+  ingredients: RecipeIngredientCreate[]
+}
+
+export interface RecipeSuggestionResponse {
+  candidates: RecipeCandidate[]
+}
+
+export interface RecipeRatingBreakdown {
+  rating: number
+  count: number
+}
+
+export interface RecipeCategoryBreakdown {
+  name: string
+  count: number
+  avg_rating: number | null
+  total_times_made: number
+}
+
+export interface RecipeStats {
+  total_recipes: number
+  total_times_cooked: number
+  average_rating: number | null
+  unique_cuisines: number
+  rating_breakdown: RecipeRatingBreakdown[]
+  cuisine_breakdown: RecipeCategoryBreakdown[]
+  meal_type_breakdown: RecipeCategoryBreakdown[]
+  most_made: Recipe[]
+  highest_rated: Recipe[]
+  untried: Recipe[]
+}

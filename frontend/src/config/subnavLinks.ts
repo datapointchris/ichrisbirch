@@ -26,6 +26,12 @@ export const BOOKS_SUBNAV: SubnavLink[] = [
   { label: 'Stats', to: '/books/stats', icon: 'fa-solid fa-chart-bar' },
 ]
 
+export const RECIPES_SUBNAV: SubnavLink[] = [
+  { label: 'Recipes', to: '/recipes', testId: 'recipes-subnav-list', icon: 'fa-solid fa-utensils' },
+  { label: 'AI Suggest', to: '/recipes/suggest', testId: 'recipes-subnav-suggest', icon: 'fa-solid fa-wand-magic-sparkles' },
+  { label: 'Stats', to: '/recipes/stats', testId: 'recipes-subnav-stats', icon: 'fa-solid fa-chart-bar' },
+]
+
 export const DURATIONS_SUBNAV: SubnavLink[] = [
   { label: 'Durations', to: '/durations', icon: 'fa-solid fa-hourglass-half' },
   { label: 'Stats', to: '/durations/stats', icon: 'fa-solid fa-chart-bar' },

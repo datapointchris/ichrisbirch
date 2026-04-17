@@ -31,6 +31,12 @@ from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.models.project import ProjectItemTask
+from ichrisbirch.models.recipe import Recipe
+from ichrisbirch.models.recipe import RecipeCuisine
+from ichrisbirch.models.recipe import RecipeDifficulty
+from ichrisbirch.models.recipe import RecipeIngredient
+from ichrisbirch.models.recipe import RecipeMealType
+from ichrisbirch.models.recipe import RecipeUnit
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
 from ichrisbirch.models.task import Task
 from ichrisbirch.models.task import TaskCategory
@@ -70,6 +76,12 @@ __all__ = [
     'ProjectItemDependency',
     'ProjectItemMembership',
     'ProjectItemTask',
+    'Recipe',
+    'RecipeCuisine',
+    'RecipeDifficulty',
+    'RecipeIngredient',
+    'RecipeMealType',
+    'RecipeUnit',
     'SchedulerJobRun',
     'Task',
     'TaskCategory',

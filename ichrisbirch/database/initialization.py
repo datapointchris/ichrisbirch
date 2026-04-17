@@ -29,6 +29,10 @@ from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
+from ichrisbirch.models.recipe import RECIPE_CUISINES
+from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
+from ichrisbirch.models.recipe import RECIPE_MEAL_TYPES
+from ichrisbirch.models.recipe import RECIPE_UNITS
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -110,6 +114,10 @@ LOOKUP_DATA = {
     'book_progress': ['abandoned', 'read', 'reading', 'unread'],
     'coffee.roast_levels': ['light', 'medium-light', 'medium', 'medium-dark', 'dark'],
     'coffee.brew_methods': ['pour-over', 'espresso', 'french-press', 'aeropress', 'cold-brew', 'drip', 'moka-pot'],
+    'recipe_units': RECIPE_UNITS,
+    'recipe_difficulty': RECIPE_DIFFICULTIES,
+    'recipe_cuisine': RECIPE_CUISINES,
+    'recipe_meal_type': RECIPE_MEAL_TYPES,
 }
 
 

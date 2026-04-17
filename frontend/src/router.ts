@@ -188,6 +188,30 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Box Packing' },
   },
   {
+    path: '/recipes/stats',
+    name: 'recipes-stats',
+    component: () => import('@/views/RecipesStatsView.vue'),
+    meta: { title: 'Recipes Stats' },
+  },
+  {
+    path: '/recipes/suggest',
+    name: 'recipes-suggest',
+    component: () => import('@/views/RecipesAISuggestView.vue'),
+    meta: { title: 'Recipe AI Suggest' },
+  },
+  {
+    path: '/recipes/:id',
+    name: 'recipe-detail',
+    component: () => import('@/views/RecipeDetailView.vue'),
+    meta: { title: 'Recipe' },
+  },
+  {
+    path: '/recipes',
+    name: 'recipes',
+    component: () => import('@/views/RecipesView.vue'),
+    meta: { title: 'Recipes' },
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),

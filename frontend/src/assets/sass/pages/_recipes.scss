@@ -1,0 +1,77 @@
+@use '../components/card_row';
+
+.recipes {
+  @include card_row.card-row;
+
+  $name: 5fr;
+  $cuisine: 2fr;
+  $time: 1.5fr;
+  $made: 1fr;
+  $rating: 1fr;
+  $actions: 3fr;
+  $columns: $name $cuisine $time $made $rating $actions;
+
+  &__header {
+    display: grid;
+    grid-template-columns: $columns;
+    gap: 0 var(--space-xs);
+    align-items: center;
+    padding-block: var(--space-xs);
+    padding-inline: var(--space-m);
+    font-size: var(--fs-400);
+    border-top: 3px solid var(--clr-accent);
+    border-bottom: 3px solid var(--clr-accent);
+    margin-bottom: var(--space-xs);
+
+    span:nth-child(2),
+    span:nth-child(3),
+    span:nth-child(4),
+    span:nth-child(5),
+    span:last-child {
+      text-align: center;
+    }
+  }
+
+  &__sortable {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      color: var(--clr-accent-light);
+    }
+  }
+
+  &__sort-indicator {
+    font-size: var(--fs-300);
+    margin-left: var(--space-3xs);
+  }
+
+  &__row {
+    grid-template-columns: $columns;
+    gap: 0 var(--space-xs);
+    font-size: var(--fs-300);
+
+    > span:not(.recipes__actions) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    > span:nth-child(2),
+    > span:nth-child(3),
+    > span:nth-child(4),
+    > span:nth-child(5) {
+      text-align: center;
+      text-transform: capitalize;
+    }
+  }
+
+  &__title {
+    font-size: var(--fs-400);
+  }
+
+  &__empty {
+    color: var(--clr-gray-500);
+    font-style: italic;
+  }
+}

@@ -76,6 +76,18 @@ from ichrisbirch.schemas.project_item import ProjectItemUpdate
 from ichrisbirch.schemas.project_item_task import ProjectItemTask as ProjectItemTaskSchema
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskCreate
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskUpdate
+from ichrisbirch.schemas.recipe import Recipe
+from ichrisbirch.schemas.recipe import RecipeCandidate
+from ichrisbirch.schemas.recipe import RecipeCategoryBreakdown
+from ichrisbirch.schemas.recipe import RecipeCreate
+from ichrisbirch.schemas.recipe import RecipeIngredient
+from ichrisbirch.schemas.recipe import RecipeIngredientCreate
+from ichrisbirch.schemas.recipe import RecipeIngredientSearchResult
+from ichrisbirch.schemas.recipe import RecipeRatingBreakdown
+from ichrisbirch.schemas.recipe import RecipeStats
+from ichrisbirch.schemas.recipe import RecipeSuggestionRequest
+from ichrisbirch.schemas.recipe import RecipeSuggestionResponse
+from ichrisbirch.schemas.recipe import RecipeUpdate
 from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
@@ -167,6 +179,18 @@ __all__ = [
     'ProjectItemTaskSchema',
     'ProjectItemTaskCreate',
     'ProjectItemTaskUpdate',
+    'Recipe',
+    'RecipeCandidate',
+    'RecipeCategoryBreakdown',
+    'RecipeCreate',
+    'RecipeIngredient',
+    'RecipeIngredientCreate',
+    'RecipeIngredientSearchResult',
+    'RecipeRatingBreakdown',
+    'RecipeStats',
+    'RecipeSuggestionRequest',
+    'RecipeSuggestionResponse',
+    'RecipeUpdate',
     'SchedulerJob',
     'SchedulerJobRun',
     'SchedulerJobRunCreate',

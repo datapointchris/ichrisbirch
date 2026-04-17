@@ -18,15 +18,22 @@ class AISettings:
             self.api_key: str = os.environ['AI_OPENAI_API_KEY']
             self.model = os.environ['AI_OPENAI_DEFAULT_MODEL']
 
+    class AnthropicSettings:
+        def __init__(self) -> None:
+            self.api_key: str = os.environ.get('AI_ANTHROPIC_API_KEY', '')
+            self.model: str = os.environ.get('AI_ANTHROPIC_DEFAULT_MODEL', 'claude-haiku-4-5-20251001')
+
     class PromptSettings:
         PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
 
         def __init__(self) -> None:
             self.article_summary_tags = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
             self.article_insights = (self.PROMPT_DIR / 'article_insights.txt').read_text()
+            self.recipe_suggestions = (self.PROMPT_DIR / 'recipe_suggestions.txt').read_text()
 
     def __init__(self) -> None:
         self.openai = self.OpenAISettings()
+        self.anthropic = self.AnthropicSettings()
         self.prompts = self.PromptSettings()
 
 

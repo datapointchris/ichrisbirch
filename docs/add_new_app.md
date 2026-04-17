@@ -44,12 +44,19 @@ alembic revision --autogenerate -m "add items table"
 alembic upgrade head
 ```
 
-### 5. Test Data
+### 5. Seeder (Required)
+
+:material-seed: Create `scripts/seed/seeders/items.py` implementing `seed(session, scale)` and `clear(session)`
+:material-import: Register in `scripts/seed/seeders/__init__.py` — add to the imports and to `SEED_ORDER` after any FK dependencies
+
+If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add the lookup values to `LOOKUP_DATA` in `ichrisbirch/database/initialization.py` — that dict is re-seeded after every test truncate, separate from the Alembic migration seed.
+
+### 6. Test Data
 
 :material-test: Add testing data into `tests/test_data/`
 :material-import: Import in `tests/test_data/__init__.py`
 
-### 6. API Tests
+### 7. API Tests
 
 Create `tests/ichrisbirch/api/endpoints/test_items.py` using `ApiCrudTester` or direct assertions.
 
