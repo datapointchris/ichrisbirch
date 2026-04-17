@@ -122,7 +122,7 @@ services:
     <<: *app-build
     container_name: icb-test-api
     command: >
-      uv run uvicorn ichrisbirch.wsgi_api:api
+      uvicorn ichrisbirch.wsgi_api:api
       --host 0.0.0.0
       --port 8000
       --log-level debug
@@ -139,8 +139,7 @@ services:
       - LOG_FILE=/var/log/ichrisbirch/api.log
     volumes: !override
       - .:/app
-      - venv_shared:/app/.venv
-      - uv_cache:/root/.cache/uv
+      - /app/.venv
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
@@ -165,7 +164,7 @@ services:
     <<: *app-build
     container_name: icb-test-chat
     command: >
-      uv run streamlit run ichrisbirch/chat/app.py
+      streamlit run ichrisbirch/chat/app.py
       --server.address=0.0.0.0
       --server.port=8505
       --server.headless=true
@@ -179,8 +178,7 @@ services:
       - "8507:8505"
     volumes: !override
       - .:/app
-      - venv_shared:/app/.venv
-      - uv_cache:/root/.cache/uv
+      - /app/.venv
       - ichrisbirch_logs:/var/log/ichrisbirch
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
@@ -212,7 +210,7 @@ services:
   scheduler:
     <<: *app-build
     container_name: icb-test-scheduler
-    command: uv run python -m ichrisbirch.wsgi_scheduler
+    command: python -m ichrisbirch.wsgi_scheduler
     environment: !override
       - ENVIRONMENT=testing
       - LOG_FORMAT=${LOG_FORMAT:-console}
@@ -221,8 +219,7 @@ services:
       - LOG_FILE=/var/log/ichrisbirch/scheduler.log
     volumes: !override
       - .:/app
-      - venv_shared:/app/.venv
-      - uv_cache:/root/.cache/uv
+      - /app/.venv
       - ichrisbirch_logs:/var/log/ichrisbirch
     restart: unless-stopped
     depends_on:
@@ -273,6 +270,10 @@ services:
         tag: "vue-test"
 
 # Test volumes — override base names to isolate from prod/dev
+# .venv is an anonymous volume on api/chat/scheduler (matches dev pattern) —
+# Docker seeds it from the image layer on every new container, so rebuilding
+# the image always produces a fresh venv. A named volume would persist stale
+# contents across rebuilds and break runtime package resolution.
 volumes:
   postgres_data:
     name: icb-test-postgres-data
@@ -282,12 +283,6 @@ volumes:
     driver: local
   ichrisbirch_logs:
     name: icb-test-logs
-    driver: local
-  uv_cache:
-    name: icb-test-uv-cache
-    driver: local
-  venv_shared:
-    name: icb-test-venv-shared
     driver: local
   vue_test_node_modules:
     name: icb-test-vue-node-modules

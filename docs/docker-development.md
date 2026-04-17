@@ -114,7 +114,7 @@ Each environment uses `.env` files:
 **Testing**:
 
 - tmpfs for database (no persistence, maximum speed)
-- Source code bind-mounted (shared venv volume)
+- Source code bind-mounted, anonymous `.venv` volume seeded fresh from the image (matches dev)
 - Isolated test data, discarded on `testing stop`
 
 **Production (blue/green)**:

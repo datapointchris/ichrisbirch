@@ -2,44 +2,16 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml up -d
 
 services:
-  # Override API service for CI (no AWS credentials mount needed)
+  # CI strips the docker.sock bind-mount that test.yml's api uses for the
+  # docker_prune scheduled job. The anonymous /app/.venv and ichrisbirch_logs
+  # volume are inherited unchanged from test.yml via !override's full list
+  # replacement — do NOT reintroduce named venv/uv-cache volumes here; that
+  # was the root cause of the stale-venv test hangs (see feedback memory).
   api:
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-
-  # Override Chat service for CI
-  chat:
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-
-  # Override Scheduler service for CI
-  scheduler:
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
+    volumes: !override
+      - .:/app
+      - /app/.venv
+      - ichrisbirch_logs:/var/log/ichrisbirch
 
   # Vue: disable build so --build doesn't overwrite node:20-alpine with the
   # production Caddy image from frontend/Dockerfile. Also extend healthcheck

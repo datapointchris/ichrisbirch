@@ -135,6 +135,19 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 **Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icb test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the postgres data volume is destroyed on `testing stop`. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
+**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/chat/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `streamlit`, `python -m …`) — **never** `uv run` at container startup. An earlier named-volume setup (`venv_shared`, `uv_cache`) combined with `uv run` caused stale venv state to persist across rebuilds, producing API containers stuck in "health: starting" while uv tried to resync packages at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
+
+**If test containers still misbehave — wipe first, investigate second**: Even with anonymous volumes, cached Docker state from interrupted runs can linger. If `icb testing stop` reports `Volume ... Resource is still in use` or a fresh `icb testing start` shows stuck services, do the full wipe BEFORE investigating:
+
+```bash
+docker ps -a --filter "name=icb-test" -q | xargs -r docker rm -f
+docker volume ls --filter "name=icb-test" -q | xargs -r docker volume rm
+docker network ls --filter "name=icb-test" -q | xargs -r docker network rm
+./cli/icb testing start
+```
+
+Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" state problems. If fresh containers from a clean wipe still fail, THEN investigate.
+
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
 **Vue four-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest store/composable tests), `test:component` (Vitest + `@pinia/testing` view integration tests), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.

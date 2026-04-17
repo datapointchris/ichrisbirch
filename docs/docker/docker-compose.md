@@ -224,14 +224,14 @@ The CI environment differs from local development:
 ```yaml
 services:
   api:
-    volumes:
-      # Remove AWS credentials mount, keep other volumes
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
+    # !override replaces the base list so the docker.sock bind mount from
+    # test.yml is NOT merged in. The anonymous /app/.venv volume matches
+    # the test.yml pattern — DO NOT reintroduce a named venv/uv-cache volume,
+    # since persistent named volumes caused stale-venv test hangs.
+    volumes: !override
+      - .:/app
+      - /app/.venv
+      - ichrisbirch_logs:/var/log/ichrisbirch
 
 networks:
   proxy:
