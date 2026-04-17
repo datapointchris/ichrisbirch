@@ -9,7 +9,7 @@ The ichrisbirch application uses a **layered Docker Compose approach** where env
 ## Environment Comparison
 
 | Aspect | Development | Testing | CI | Production |
-|--------|-------------|---------|-----|------------|
+| ------ | ----------- | ------- | --- | ---------- |
 | **Purpose** | Local development with hot reload | Running pytest suite | GitHub Actions CI | Live deployment |
 | **Compose Files** | base + dev | base + test | base + test + ci | base only |
 | **External Ports** | Standard (8000, 5432) | Alternate (8001, 5434, 8443) | Alternate (same as test) | Standard |
@@ -80,7 +80,7 @@ The base file defines production-ready services:
 ### Core Services
 
 | Service | Purpose | Internal Port |
-|---------|---------|---------------|
+| ------- | ------- | ------------- |
 | `traefik` | Reverse proxy with HTTPS | 80, 443, 8080 |
 | `postgres` | PostgreSQL 16 database | 5432 |
 | `redis` | Redis 7 cache | 6379 |
@@ -140,6 +140,28 @@ volumes:
     read_only: true
 ```
 
+### Bind Mount + Named Volume Overlap (Vue services)
+
+The vue service in dev and test uses a mount pattern that deserves explicit callout:
+
+```yaml
+volumes:
+  - ./frontend:/app                          # bind mount: host source → container
+  - vue_node_modules:/app/node_modules       # named volume on top of /app/node_modules
+```
+
+**Why:** Mounting `./frontend:/app` would expose the host's empty (or stale) `node_modules/` to the container. The named volume overlays that subpath so npm packages installed inside the container go to Docker-managed storage, not the host's filesystem. This keeps install fast (Linux ext4 vs slow fsnotify on bind mounts), avoids permission conflicts, and isolates container-side node_modules from IDE/pre-commit hooks that might write there.
+
+**Side effect — root-owned host mount point:** When Docker starts a container with this config, it needs `./frontend/node_modules/` to exist on the host as a mount point. If it doesn't, the Docker daemon auto-creates it, and because the daemon runs as `root`, the directory inherits `root:root` ownership. This is documented Docker behavior. At runtime the named volume shadows it and container writes go to the volume — the empty host dir is just an anchor.
+
+**Practical implications:**
+
+- Your host's `frontend/node_modules/` may appear empty even after `npm install` ran in the container.
+- Running `npm install` on the host writes to a root-owned dir and usually fails with EACCES. Pre-create as your user (`mkdir frontend/node_modules`) before bringing up containers if you need host-side installs.
+- Nothing in `docker-compose.*.yml` can change this — it's Linux mount semantics.
+
+**Recovery for corrupted volumes:** Partial install state in the named volume (e.g., npm install interrupted mid-run) can cause persistent ENOTEMPTY errors. Use `./cli/icb testing rebuild --all --volumes` (or `dev rebuild --all --volumes`) to wipe the named volume and start fresh. See [Docker troubleshooting](../troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for the full crash-loop recovery procedure.
+
 ### Usage
 
 ```bash
@@ -164,7 +186,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ### Port Mapping
 
 | Service | Dev Port | Test Port |
-|---------|----------|-----------|
+| ------- | -------- | --------- |
 | API | 8000 | 8001 |
 | Vue | 5173 | 5174 |
 | Chat | 8505 | 8507 |
@@ -213,7 +235,7 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml \
 The CI environment differs from local development:
 
 | Difference | Local | CI | Solution |
-|------------|-------|-----|----------|
+| ---------- | ----- | --- | -------- |
 | AWS credentials | `~/.config/aws` exists | Only env vars via OIDC | Remove bind mount |
 | Proxy network | Pre-created externally | Doesn't exist | Create as bridge |
 | Project files | Full local checkout | GitHub checkout only | Use volumes not binds |

@@ -89,6 +89,57 @@ docker-compose exec app env | grep DATABASE
 docker-compose exec app nc -zv postgres 5432
 ```
 
+### Containers on Newer Networks Have No Internet (Dual iptables Backends)
+
+**Problem:** Containers on one Docker network can reach their gateway but NOT the internet (ping `1.1.1.1` times out, `wget https://registry.npmjs.org` hangs). Containers on OTHER Docker networks on the same host work fine. DNS resolves correctly.
+
+**Symptoms specific to this repo:** `icb-test-vue` can't finish `npm install` (times out fetching packages) while `icb-dev-vue` works. Testing containers show "health: starting" indefinitely.
+
+**Cause (Arch Linux and similar):** The Linux kernel can have BOTH netfilter backends loaded simultaneously — `nftables` (modern) and `xt_tables` (legacy). Both evaluate packets at each netfilter hook. Docker writes MASQUERADE and FORWARD rules to its currently-configured backend (usually nft on modern systems), but if orphan rules exist in the OTHER backend referencing dead bridge IDs, they can drop traffic for newer Docker networks before nft's rules can NAT them.
+
+How orphans appear: if Docker was ever briefly using `iptables-legacy` (an older install, a kernel update that temporarily broke `ip_tables` module loading, a failed daemon start), it wrote rules to legacy. When Docker switches to nft, it stops maintaining the legacy rules. Legacy rules persist until manually flushed, and the legacy kernel modules stay loaded for the session.
+
+**Diagnostic:**
+
+```bash
+# Current backend — on Arch this should say iptables (nft-backed)
+docker info | grep -i firewall
+
+# Check both rule sets — stale bridge IDs in legacy are the signal
+sudo iptables -t nat -L POSTROUTING -n -v        # Docker's current backend
+sudo iptables-legacy -t nat -L POSTROUTING -n -v # orphan rules from prior backend
+
+# Confirm legacy modules are loaded (can't evaluate legacy rules without them)
+lsmod | grep -E "^(iptable|ip_tables)"
+
+# Compare bridge IDs with actual Docker networks
+docker network ls --no-trunc --format '{{.ID}} {{.Name}}'
+```
+
+**Recovery:**
+
+```bash
+sudo iptables-legacy -F
+sudo iptables-legacy -t nat -F
+sudo iptables-legacy -X
+sudo iptables-legacy -t nat -X
+sudo systemctl restart docker
+./cli/icb testing rebuild --all --volumes
+```
+
+**Permanent prevention:** blacklist the legacy kernel modules so they never reload:
+
+```bash
+sudo tee /etc/modprobe.d/disable-iptables-legacy.conf <<'EOF'
+blacklist iptable_filter
+blacklist iptable_nat
+blacklist iptable_raw
+blacklist ip_tables
+EOF
+```
+
+A reboot will ensure only `nftables` modules load.
+
 ## Build Context and Performance
 
 ### Large Build Contexts
@@ -256,6 +307,49 @@ services:
   app:
     user: "${UID:-1000}:${GID:-1000}"
 ```
+
+### Root-Owned `node_modules/` on the Host (Expected, Not a Bug)
+
+**Problem:** `./frontend/node_modules/` exists on the host as an empty directory owned by `root:root`, and you can't `npm install` into it as your user.
+
+**Cause:** The Vue services mount `./frontend:/app` (bind mount) AND `vue_*_node_modules:/app/node_modules` (named volume) on top of it. For Docker to satisfy both mounts, the mount point `./frontend/node_modules/` must exist on the host side of the bind mount. If it doesn't, the Docker daemon auto-creates it — and because the daemon runs as root, that directory inherits root ownership. At runtime, the named volume shadows it, so container writes go to the volume, not the host directory. This is documented Docker behavior, not a bug in the project.
+
+**Consequences:**
+
+- Host-side `npm install` writes go to an empty, shadowed directory (invisible to the container)
+- Pre-commit hooks that run `npm` on the host fail with EACCES unless the directory is pre-created by your user
+- `git clean -fdx frontend/` requires sudo
+
+**Resolution (pick based on goal):**
+
+- **Accept the artifact** — if you only ever npm-install inside the container, nothing is broken. Leave the root-owned empty dir alone.
+- **Pre-create as your user** — before starting containers, run `mkdir frontend/node_modules` so Docker finds it existing. Your host's node_modules content will seed the named volume on the next `down --volumes` + `up`, which may or may not be what you want.
+- **Never edit compose files to "fix" the ownership** — there is no compose-level fix for this. The root-owned directory is a consequence of Docker's mount-point creation logic running as root.
+
+### Container Crash Loop That Crashes `dockerd`
+
+**Problem:** A container with `restart: unless-stopped` hits a deterministic error (e.g., npm install ENOTEMPTY from partial volume state), restart policy keeps retrying, eventually the daemon dies. `sudo systemctl status docker` may show `inactive (dead)` with `Job: ####` queued.
+
+**Why it's self-inflicted:** Each restart involves creating and tearing down network namespaces, veth pairs, iptables rules, and DNS entries. At ~1 restart/second for extended periods, this can exhaust file descriptors, trigger kernel locking contention, or otherwise destabilize `dockerd`.
+
+**Observed case (2026-04-16):** Vue test container stuck on `ENOTEMPTY: directory not empty, rename '/app/node_modules/data-urls' -> '/app/node_modules/.data-urls-CbOQj4xY'` — a partial npm install left `.data-urls-CbOQj4xY` temp directory non-empty, subsequent installs couldn't rename on top of it. `restartCount` climbed past 11 before dockerd died.
+
+**Recovery:**
+
+```bash
+# 1. Bring docker back
+sudo systemctl reset-failed docker.service docker.socket
+sudo systemctl start docker
+
+# 2. IMMEDIATELY kill the looping container (before restart policy puts docker back in the same loop)
+docker rm -f icb-test-vue 2>/dev/null
+docker volume rm icb-test-vue-node-modules 2>/dev/null
+
+# 3. Clean rebuild
+./cli/icb testing rebuild --all --volumes
+```
+
+**Prevention:** Consider `restart: on-failure:3` instead of `restart: unless-stopped` for dev-mode containers where a bad volume could trigger a crash loop. Caps retries at 3 so the daemon can't be DOS'd by a deterministic failure.
 
 ## Service Orchestration Issues
 

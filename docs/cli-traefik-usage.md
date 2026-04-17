@@ -44,11 +44,13 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 ### Development Environment
 
 | Command | Description | Example |
-|---------|-------------|---------|
+| ------- | ----------- | ------- |
 | `dev start` | Start development with HTTPS | `icb dev start` |
 | `dev stop` | Stop development environment | `icb dev stop` |
 | `dev restart` | Restart development environment | `icb dev restart` |
-| `dev rebuild` | Rebuild images, restart, and initialize database | `icb dev rebuild` |
+| `dev rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icb dev rebuild` |
+| `dev rebuild --all` | Full rebuild including infra (traefik, postgres, redis) | `icb dev rebuild --all` |
+| `dev rebuild --volumes` | Wipe named volumes and rebuild (stackable with `--all`) | `icb dev rebuild --all --volumes` |
 | `dev status` | Show service status, URLs, and credentials | `icb dev status` |
 | `dev logs` | View service logs | `icb dev logs [service]` |
 | `dev health` | Run comprehensive health checks | `icb dev health` |
@@ -71,7 +73,7 @@ Dev Credentials:
 ### Testing Environment
 
 | Command | Description | Example |
-|---------|-------------|---------|
+| ------- | ----------- | ------- |
 | `test run` | Run tests (reuses containers) | `icb test run [path] [args]` |
 | `testing start` | Start testing environment | `icb testing start` |
 | `testing stop` | Stop testing environment | `icb testing stop` |
@@ -79,7 +81,9 @@ Dev Credentials:
 | `testing status` | Show service status and HTTPS URLs | `icb testing status` |
 | `testing logs` | View service logs | `icb testing logs [service]` |
 | `testing health` | Run comprehensive health checks | `icb testing health` |
-| `testing rebuild` | Rebuild test container images | `icb testing rebuild` |
+| `testing rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icb testing rebuild` |
+| `testing rebuild --all` | Full rebuild including infra | `icb testing rebuild --all` |
+| `testing rebuild --volumes` | Wipe named volumes and rebuild (use to recover from ENOTEMPTY / crash loops) | `icb testing rebuild --all --volumes` |
 | `testing is-ready` | Quick API health check (exit 0/1) | `icb testing is-ready` |
 | `testing ensure` | Start containers if not already running | `icb testing ensure` |
 | `testing docker [service]` | Show merged Docker Compose config | `icb testing docker api` |
@@ -101,7 +105,7 @@ The `test run` command reuses running containers for fast iteration:
 All production commands are **blue/green aware** — they automatically detect the active deployment color and act on the correct containers. See [Blue/Green Deployment](blue-green-deployment.md) for the full guide.
 
 | Command | Description | Example |
-|---------|-------------|---------|
+| ------- | ----------- | ------- |
 | `prod start` | Start infra + active color | `icb prod start` |
 | `prod stop` | Stop active color + infra | `icb prod stop` |
 | `prod restart` | Restart active color + infra | `icb prod restart` |
@@ -121,7 +125,7 @@ All production commands are **blue/green aware** — they automatically detect t
 ### SSL Certificate Management
 
 | Command | Description | Example |
-|---------|-------------|---------|
+| ------- | ----------- | ------- |
 | `ssl-manager generate` | Generate SSL certificates with mkcert | `icb ssl-manager generate dev` |
 | `ssl-manager validate` | Validate existing certificates | `icb ssl-manager validate dev` |
 | `ssl-manager info` | Show certificate information | `icb ssl-manager info dev` |
@@ -130,7 +134,7 @@ All production commands are **blue/green aware** — they automatically detect t
 ### Stats Commands
 
 | Command | Description | Example |
-|---------|-------------|---------|
+| ------- | ----------- | ------- |
 | `stats summary` | Dashboard with code, tests, quality, activity | `icb stats summary` |
 | `stats code` | Lines of code by language (live from tokei) | `icb stats code` |
 | `stats tests` | Test results, coverage, and slowest tests | `icb stats tests` |
@@ -143,8 +147,8 @@ All production commands are **blue/green aware** — they automatically detect t
 
 ### Routing Commands
 
-| Command | Description | Example |
-|---------|-------------|---------|
+| Command            | Description                                   | Example                |
+| ------------------ | --------------------------------------------- | ---------------------- |
 | `routing generate` | Regenerate Traefik routing from vue-paths.txt | `icb routing generate` |
 
 The canonical path list is at `deploy-containers/traefik/vue-paths.txt`. After generating, the CLI shows a diff of any changes.
@@ -592,6 +596,39 @@ icb ssl-manager generate dev    # Regenerate if needed
    # Clear browser cache and restart browser
    # Chrome: Settings > Privacy > Clear browsing data
    ```
+
+6. **Test containers stuck in restart loop / `npm install` ENOTEMPTY errors**
+
+   A corrupted named volume (usually `icb-test-vue-node-modules` from an interrupted `npm install`) causes the container to crash-loop forever. Use `--volumes` to wipe and rebuild:
+
+   ```bash
+   ./cli/icb testing rebuild --all --volumes
+   ```
+
+   If the loop has already crashed `dockerd` itself (see `systemctl status docker` showing `inactive (dead)`):
+
+   ```bash
+   sudo systemctl reset-failed docker.service docker.socket
+   sudo systemctl start docker
+   docker rm -f icb-test-vue 2>/dev/null       # kill the loop immediately
+   docker volume rm icb-test-vue-node-modules 2>/dev/null
+   ./cli/icb testing rebuild --all --volumes
+   ```
+
+   See [Docker troubleshooting](troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for full recovery procedure.
+
+7. **Containers can reach gateway but not internet (Arch Linux / dual iptables backends)**
+
+   Symptom: one container network has internet, another doesn't. Signature: `docker exec $container ping 1.1.1.1` times out, but pinging the network's gateway works. DNS resolves fine. Root cause: orphan `iptables-legacy` rules referencing dead bridge IDs.
+
+   ```bash
+   sudo iptables-legacy -F
+   sudo iptables-legacy -t nat -F
+   sudo iptables-legacy -X
+   sudo systemctl restart docker
+   ```
+
+   See [Docker troubleshooting](troubleshooting/docker-issues.md#containers-on-newer-networks-have-no-internet-dual-iptables-backends) for diagnostic commands and permanent prevention.
 
 ### Getting Help
 

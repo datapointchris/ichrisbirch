@@ -13,11 +13,15 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 ```bash
 # Development
 ./cli/icb dev start|stop|restart|rebuild|status|health|logs
+./cli/icb dev rebuild --all          # Full rebuild including infra (traefik, postgres, redis)
+./cli/icb dev rebuild --volumes      # Wipe named volumes and rebuild (stackable with --all)
 
 # Testing (reuses containers, cleans database each run)
 ./cli/icb test run              # All tests (auto-starts containers if needed)
 ./cli/icb test run <path> -v    # Specific test (auto-starts containers if needed)
 ./cli/icb testing start|stop|health|logs  # Container management
+./cli/icb testing rebuild --all      # Full rebuild including infra
+./cli/icb testing rebuild --volumes  # Wipe named volumes and rebuild (use for ENOTEMPTY/crash-loop recovery)
 
 # Database lifecycle (testing)
 ./cli/icb testing db init       # First-time: schemas + migrations + users
@@ -75,7 +79,7 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 ### Services
 
 | Service | Framework | Purpose |
-|---------|-----------|---------|
+| --------- | ----------- | --------- |
 | API | FastAPI | RESTful backend, JWT + Authelia auth |
 | Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
 | Chat | Streamlit | AI chat interface with OpenAI |
@@ -122,7 +126,7 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 - **Session pattern decision tree** — `create_session(settings)` requires explicit settings (no default):
 
   | Context | Pattern | Why |
-  |---------|---------|-----|
+  | --------- | --------- | ----- |
   | FastAPI routes | `Depends(get_sqlalchemy_session)` | DI wrapper calls `get_settings()` internally |
   | Scheduler jobs | `create_session(settings)` | Settings passed from job registration |
   | CLI / scripts | `create_session(get_settings())` | Caller owns the settings lookup |
@@ -137,9 +141,20 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 **Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/chat/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `streamlit`, `python -m …`) — **never** `uv run` at container startup. An earlier named-volume setup (`venv_shared`, `uv_cache`) combined with `uv run` caused stale venv state to persist across rebuilds, producing API containers stuck in "health: starting" while uv tried to resync packages at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
 
-**If test containers still misbehave — wipe first, investigate second**: Even with anonymous volumes, cached Docker state from interrupted runs can linger. If `icb testing stop` reports `Volume ... Resource is still in use` or a fresh `icb testing start` shows stuck services, do the full wipe BEFORE investigating:
+**If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
 
 ```bash
+./cli/icb testing rebuild --all --volumes   # down --volumes + rebuild all + up
+# or for dev:
+./cli/icb dev rebuild --all --volumes
+```
+
+Fallback when the CLI is wedged or docker itself has crashed (restart-looping vue container brought down the daemon):
+
+```bash
+sudo systemctl restart docker
+docker rm -f icb-test-vue 2>/dev/null     # kill the loop before restart policy puts docker back in the same state
+docker volume rm icb-test-vue-node-modules 2>/dev/null
 docker ps -a --filter "name=icb-test" -q | xargs -r docker rm -f
 docker volume ls --filter "name=icb-test" -q | xargs -r docker volume rm
 docker network ls --filter "name=icb-test" -q | xargs -r docker network rm
@@ -147,6 +162,10 @@ docker network ls --filter "name=icb-test" -q | xargs -r docker network rm
 ```
 
 Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" state problems. If fresh containers from a clean wipe still fail, THEN investigate.
+
+**Bind mount + named volume overlap creates root-owned empty host dirs** (expected, not a bug): The vue services mount `./frontend:/app` (bind) AND `vue_*_node_modules:/app/node_modules` (named volume). Docker needs `./frontend/node_modules/` to exist on the host as a mount point — if it doesn't, the Docker daemon auto-creates it, which means `root:root` ownership. At runtime the named volume shadows it, so container writes go to the volume, NOT the host directory. Host-side `npm install` writes are therefore invisible to the container. Don't try to "fix" the ownership in compose — either accept the empty host dir, or `mkdir frontend/node_modules` as your user BEFORE bringing up containers if you need host-side node_modules for pre-commit typecheck.
+
+**Dual iptables backends can block Docker egress** (Arch gotcha): If containers on a NEWER Docker network can ping their gateway but not the internet, while older networks work fine, the cause is orphan `iptables-legacy` rules referencing dead bridge IDs. The Linux kernel loads both netfilter backends simultaneously and evaluates both; Docker only maintains rules in its current backend (nft). Diagnose: `sudo iptables-legacy -t nat -L POSTROUTING -n -v` — stale bridge IDs are the signal. Recovery: `sudo iptables-legacy -F && sudo iptables-legacy -t nat -F && sudo systemctl restart docker`. See `project_docker_iptables_gotcha.md` in memory for full forensics.
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
