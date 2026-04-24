@@ -30,6 +30,7 @@ class AISettings:
             self.article_summary_tags = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
             self.article_insights = (self.PROMPT_DIR / 'article_insights.txt').read_text()
             self.recipe_suggestions = (self.PROMPT_DIR / 'recipe_suggestions.txt').read_text()
+            self.url_import_classifier = (self.PROMPT_DIR / 'url_import_classifier.txt').read_text()
 
     def __init__(self) -> None:
         self.openai = self.OpenAISettings()

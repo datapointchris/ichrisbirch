@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -208,3 +209,52 @@ class CookingTechniqueUpdate(RecipeConfig):
 class CookingTechniqueCategoryBreakdown(RecipeConfig):
     name: str
     count: int
+
+
+# =============================================================================
+# URL IMPORT — classify and save recipes and/or techniques from a single URL.
+# =============================================================================
+
+
+UrlImportKind = Literal['recipe', 'technique', 'both']
+
+
+class UrlImportRequest(RecipeConfig):
+    url: str
+    hint: Literal['auto', 'recipe', 'technique', 'both'] = 'auto'
+
+
+class UrlImportCandidate(RecipeConfig):
+    """Classifier output / user-reviewed save payload for a URL ingest.
+
+    When `kind='both'`, both `recipe` and `technique` are populated and
+    `technique_mention` carries a one-line note the save endpoint appends to
+    `recipe.notes` to preserve the "these two records came from the same source"
+    signal without a database link.
+    """
+
+    kind: UrlImportKind
+    recipe: RecipeCandidate | None = None
+    technique: CookingTechniqueCreate | None = None
+    technique_mention: str | None = None
+
+    @model_validator(mode='after')
+    def payload_matches_kind(self):
+        if self.kind == 'recipe' and self.recipe is None:
+            raise ValueError('kind=recipe requires a recipe payload')
+        if self.kind == 'technique' and self.technique is None:
+            raise ValueError('kind=technique requires a technique payload')
+        if self.kind == 'both' and (self.recipe is None or self.technique is None):
+            raise ValueError('kind=both requires both recipe and technique payloads')
+        return self
+
+
+class UrlImportResponse(RecipeConfig):
+    candidate: UrlImportCandidate
+
+
+class UrlImportSaveResult(RecipeConfig):
+    """Returned by the save endpoint after persistence."""
+
+    recipe: Recipe | None = None
+    technique: CookingTechnique | None = None

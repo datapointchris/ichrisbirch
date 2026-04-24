@@ -92,6 +92,11 @@ from ichrisbirch.schemas.recipe import RecipeStats
 from ichrisbirch.schemas.recipe import RecipeSuggestionRequest
 from ichrisbirch.schemas.recipe import RecipeSuggestionResponse
 from ichrisbirch.schemas.recipe import RecipeUpdate
+from ichrisbirch.schemas.recipe import UrlImportCandidate
+from ichrisbirch.schemas.recipe import UrlImportKind
+from ichrisbirch.schemas.recipe import UrlImportRequest
+from ichrisbirch.schemas.recipe import UrlImportResponse
+from ichrisbirch.schemas.recipe import UrlImportSaveResult
 from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
@@ -195,6 +200,11 @@ __all__ = [
     'RecipeSuggestionRequest',
     'RecipeSuggestionResponse',
     'RecipeUpdate',
+    'UrlImportCandidate',
+    'UrlImportKind',
+    'UrlImportRequest',
+    'UrlImportResponse',
+    'UrlImportSaveResult',
     'SchedulerJob',
     'SchedulerJobRun',
     'SchedulerJobRunCreate',
