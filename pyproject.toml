@@ -44,6 +44,9 @@ dependencies = [
   "uvicorn[standard]>=0.29.0",
   "werkzeug>=3.0.0",
   "youtube-transcript-api>=0.6.2",
+  # yt-dlp pulls YouTube description/metadata without downloading the video.
+  # Lower bound only — yt-dlp releases weekly to track YouTube site changes.
+  "yt-dlp>=2024.12.0",
   "typer>=0.16.0",
   "rich>=14.1.0",
   "Markdown>=3.6",

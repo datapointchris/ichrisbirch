@@ -4,11 +4,24 @@ Consumers: `api/endpoints/articles.py`, `api/endpoints/recipes.py` (URL ingest).
 """
 
 import re
+from dataclasses import dataclass
 
+import structlog
+import yt_dlp
 from bs4 import BeautifulSoup
 from bs4 import Tag
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
+
+logger = structlog.get_logger()
+
+
+@dataclass(frozen=True)
+class YouTubeMetadata:
+    title: str | None
+    description: str | None
+    uploader: str | None
+    duration_seconds: int | None
 
 
 def extract_video_id(url: str) -> str:
@@ -34,6 +47,29 @@ def get_youtube_video_text_captions(url: str) -> str:
     formatter = TextFormatter()
     transcript = yt_trans.fetch(video_id)
     return formatter.format_transcript(transcript)
+
+
+def get_youtube_video_metadata(url: str) -> YouTubeMetadata:
+    """Fetch title/description/uploader/duration via yt-dlp without downloading the video.
+
+    Returns a YouTubeMetadata with all-None fields if the fetch fails — yt-dlp breaks
+    regularly as YouTube changes, so a failure is non-fatal. Callers should fall
+    through to transcript-only extraction on empty metadata.
+    """
+    try:
+        with yt_dlp.YoutubeDL({'skip_download': True, 'quiet': True, 'no_warnings': True}) as ydl:
+            info = ydl.extract_info(url, download=False) or {}
+    except Exception as e:
+        logger.warning('yt_dlp_metadata_fetch_failed', url=url, error=str(e))
+        return YouTubeMetadata(title=None, description=None, uploader=None, duration_seconds=None)
+
+    duration = info.get('duration')
+    return YouTubeMetadata(
+        title=info.get('title'),
+        description=info.get('description'),
+        uploader=info.get('uploader') or info.get('channel'),
+        duration_seconds=int(duration) if isinstance(duration, int | float) else None,
+    )
 
 
 def strip_noise_tags(soup: BeautifulSoup) -> None:
