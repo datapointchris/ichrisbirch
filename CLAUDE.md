@@ -20,8 +20,8 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 ./cli/icb test run              # All tests (auto-starts containers if needed)
 ./cli/icb test run <path> -v    # Specific test (auto-starts containers if needed)
 ./cli/icb testing start|stop|health|logs  # Container management
+./cli/icb testing rebuild --volumes  # DEFAULT — use when ANY code/deps/routes/migrations change (see Must Follow)
 ./cli/icb testing rebuild --all      # Full rebuild including infra
-./cli/icb testing rebuild --volumes  # Wipe named volumes and rebuild (use for ENOTEMPTY/crash-loop recovery)
 
 # Database lifecycle (dev + testing; production is rejected)
 ./cli/icb dev db init           # First-time: schemas + migrations + users
@@ -204,6 +204,7 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 ### Must Follow
 
+- **Test container updates: `rebuild --volumes` is the DEFAULT, not recovery** (⚠️ MANDATORY): Whenever code you've edited needs to take effect in test containers — new/renamed API routes, new dependencies, migrations, schema changes, Python imports affecting the running app, Vue package.json changes — run `./cli/icb testing rebuild --volumes`. NEVER `docker restart`, NEVER `testing stop && start`, NEVER plain `testing rebuild` without `--volumes` hoping the bind mount picks it up. FastAPI registers routes at startup, dependencies live in an anonymous `.venv` volume that only re-seeds on container recreate, and only `--volumes` fully resets the state. Every hour spent "investigating" a test container that has gone stale is an hour that `rebuild --volumes` would have saved in 60 seconds. Apply the same rule to dev via `./cli/icb dev rebuild --volumes` when code changes aren't appearing. If you're about to debug container state, STOP — rebuild with `--volumes` FIRST, then diagnose only if that didn't fix it.
 - **Pre-commit hooks** run automatically: Ruff, mypy, codespell, bandit, ESLint, Prettier, TypeScript checking, and more. Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
 - **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
