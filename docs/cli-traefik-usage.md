@@ -58,7 +58,7 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 | `dev ensure` | Start containers if not already running | `icb dev ensure` |
 | `dev smoke` | Run smoke tests against all endpoints | `icb dev smoke` |
 | `dev docker [service]` | Show merged Docker Compose config | `icb dev docker api` |
-| `dev db ...` | Database commands (backup, restore, list, seed, init) | `icb dev db init` |
+| `dev db ...` | Database commands (seed, init, reset) | `icb dev db reset` |
 
 **Dev Credentials Display:**
 
@@ -87,7 +87,7 @@ Dev Credentials:
 | `testing is-ready` | Quick API health check (exit 0/1) | `icb testing is-ready` |
 | `testing ensure` | Start containers if not already running | `icb testing ensure` |
 | `testing docker [service]` | Show merged Docker Compose config | `icb testing docker api` |
-| `testing db ...` | Database commands (backup, restore, list, seed, reset) | `icb testing db reset` |
+| `testing db ...` | Database commands (seed, init, reset) | `icb testing db reset` |
 
 **Test Run Behavior:**
 

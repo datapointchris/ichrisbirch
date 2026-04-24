@@ -23,9 +23,11 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 ./cli/icb testing rebuild --all      # Full rebuild including infra
 ./cli/icb testing rebuild --volumes  # Wipe named volumes and rebuild (use for ENOTEMPTY/crash-loop recovery)
 
-# Database lifecycle (testing)
-./cli/icb testing db init       # First-time: schemas + migrations + users
-./cli/icb testing db reset      # Nuclear: drop + recreate everything
+# Database lifecycle (dev + testing; production is rejected)
+./cli/icb dev db init           # First-time: schemas + migrations + users
+./cli/icb dev db reset          # Nuclear: drop + recreate everything
+./cli/icb testing db init       # Same, for test environment
+./cli/icb testing db reset      # Same, for test environment
 
 # Vue frontend
 cd frontend && npm test                 # Build check + unit tests

@@ -66,14 +66,32 @@ def stamp_alembic_head(settings) -> None:
 
 
 def drop_all_tables(settings) -> None:
-    """Drop all tables including alembic_version."""
+    """Drop every table in every non-system schema, including zombie tables
+    that exist in migrations but have no SQLAlchemy model (e.g. legacy
+    `apartments.apartments`). Uses live PostgreSQL introspection rather than
+    Base.metadata, which only tracks currently-imported models."""
     engine = get_db_engine(settings)
     logger.warning('dropping_all_tables')
-    Base.metadata.drop_all(engine)
+
     with engine.connect() as conn:
-        conn.execute(text('DROP TABLE IF EXISTS alembic_version'))
+        result = conn.execute(
+            text(
+                'SELECT schema_name FROM information_schema.schemata '
+                "WHERE schema_name NOT IN ('pg_catalog', 'pg_toast', 'information_schema')"
+            )
+        )
+        schemas = [row[0] for row in result]
+
+        for schema in schemas:
+            if schema == 'public':
+                conn.execute(text('DROP SCHEMA public CASCADE'))
+                conn.execute(text('CREATE SCHEMA public'))
+            else:
+                conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+
         conn.commit()
-    logger.warning('all_tables_dropped')
+
+    logger.warning('all_tables_dropped', schemas=schemas)
 
 
 LOOKUP_DATA = {

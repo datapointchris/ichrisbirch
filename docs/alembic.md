@@ -39,20 +39,17 @@ with engine.connect() as c:
 rm ichrisbirch/alembic/versions/*.py
 
 # 3. Drop test database and recreate schemas
+#    drop_all_tables now issues `DROP SCHEMA ... CASCADE` for every non-system
+#    schema via live introspection, then create_schemas recreates the configured set.
 ENVIRONMENT=testing POSTGRES_HOST=localhost POSTGRES_PORT=5434 \
   python -c "
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.initialization import drop_all_tables
-from ichrisbirch.database.session import get_db_engine
-from sqlalchemy import text
+from ichrisbirch.database.initialization import drop_all_tables, create_schemas
+from ichrisbirch.database.session import create_session
 settings = get_settings()
 drop_all_tables(settings)
-engine = get_db_engine(settings)
-with engine.connect() as conn:
-    for schema in settings.postgres.db_schemas:
-        conn.execute(text(f'DROP SCHEMA IF EXISTS {schema} CASCADE'))
-        conn.execute(text(f'CREATE SCHEMA {schema}'))
-    conn.commit()
+with create_session(settings) as session:
+    create_schemas(session, settings)
 "
 
 # 4. Generate new baseline
@@ -122,7 +119,7 @@ category: str
 ## Key Commands
 
 | Command | What it does |
-|---------|-------------|
+| ------- | ------------ |
 | `alembic revision --autogenerate -m "msg"` | Generate migration from model changes |
 | `alembic revision -m "msg"` | Create empty migration (for hand-written) |
 | `alembic upgrade head` | Apply all pending migrations |

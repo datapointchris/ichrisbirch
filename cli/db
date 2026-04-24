@@ -77,16 +77,16 @@ function db-reset() {
   local env="$1"
   cd "$ICHRISBIRCH_HOME" || exit
 
-  if [[ "$env" != "testing" ]]; then
-    echo "${red}Database reset is only allowed for testing environment${reset}"
+  if [[ "$env" == "production" ]]; then
+    echo "${red}Resetting production is not allowed${reset}"
     return 1
   fi
 
-  # reset_test_database.py enforces its own safety checks (testing, localhost, 5434)
+  db-env-vars "$env" || return 1
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  echo "${blue}Resetting testing database...${reset}"
-  ENVIRONMENT=testing uv run python -m ichrisbirch.database.reset_test_database
+  echo "${blue}Resetting ${env} database...${reset}"
+  ENVIRONMENT="$env" uv run python -m ichrisbirch.database.reset_database
 }
 
 function env-db() {
@@ -118,7 +118,7 @@ function db-usage() {
   echo "${green}Database Commands:${reset}"
   echo "  ${blue}db seed [options]${reset}  - Seed with generated data"
   echo "  ${blue}db init${reset}            - Initialize database (schemas + migrations + users)"
-  echo "  ${blue}db reset${reset}           - Drop + recreate everything (testing only)"
+  echo "  ${blue}db reset${reset}           - Drop + recreate everything (dev + testing)"
   echo ""
   echo "${yellow}Database Lifecycle:${reset}"
   echo "  ${green}init${reset}   — First-time setup: create schemas, run migrations, insert users"
