@@ -1113,6 +1113,48 @@ def ai_save_recipe(candidate_json: str) -> str:
         return _json_response(c.post('/recipes/ai-save/', json=candidate))
 
 
+@mcp.tool()
+def ai_import_from_url(url: str, hint: str = 'auto') -> str:
+    """Classify a YouTube or article URL and return recipe/technique candidate(s) for review.
+
+    `url` is the content URL (YouTube video or article page).
+    `hint` forces a kind: 'auto' (default, classifier decides), 'recipe', 'technique', 'both'.
+
+    Returns a UrlImportCandidate with `kind` and the populated `recipe`/`technique` payloads.
+    Nothing is persisted — call ai_save_url_import(candidate_json) to persist after review.
+
+    Response codes the caller should handle:
+    - 200: candidate returned
+    - 409: URL already in the catalog (response body has existing recipe_id/technique_id)
+    - 422: URL could not be fetched
+    - 502: classifier output failed validation (raw output in response)
+
+    This call may take 15-45 seconds for YouTube videos due to description + transcript
+    extraction followed by classification.
+    """
+    payload = {'url': url, 'hint': hint}
+    with _client() as c:
+        return _json_response(c.post('/recipes/import-from-url/', json=payload))
+
+
+@mcp.tool()
+def ai_save_url_import(candidate_json: str) -> str:
+    """Persist a reviewed UrlImportCandidate from ai_import_from_url.
+
+    Pass a JSON object matching the UrlImportCandidate schema. For kind='both', the
+    `technique_mention` string is appended to the created recipe's notes field so the
+    recipe↔technique relationship stays visible as prose.
+
+    Returns a UrlImportSaveResult with the persisted `recipe` and/or `technique`.
+    """
+    try:
+        candidate = json.loads(candidate_json)
+    except json.JSONDecodeError as e:
+        return json.dumps({'error': 'invalid_candidate_json', 'detail': str(e)})
+    with _client() as c:
+        return _json_response(c.post('/recipes/save-url-import/', json=candidate))
+
+
 # =============================================================================
 # COOKING TECHNIQUES
 # =============================================================================

@@ -477,6 +477,66 @@ class TestMcpProjectTools:
         assert len(item['projects']) == 2
 
 
+class TestMcpRecipeUrlImportTools:
+    """Exercises ai_import_from_url and ai_save_url_import end-to-end through the test API."""
+
+    _RECIPE = {
+        'name': 'Classic Chimichurri',
+        'source_url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc',
+        'source_name': 'Kevin / KWOOWK (YouTube)',
+        'instructions': 'Chop herbs, mix vinaigrette, rest overnight.',
+        'servings': 6,
+        'ingredients': [
+            {
+                'position': 0,
+                'quantity': 1,
+                'unit': 'cup',
+                'item': 'parsley',
+                'prep_note': 'chopped',
+                'is_optional': False,
+                'ingredient_group': None,
+            },
+        ],
+    }
+    _TECHNIQUE = {
+        'name': '3:1 Vinaigrette Ratio',
+        'category': 'composition_and_ratio',
+        'summary': 'Three parts fat to one part acid.',
+        'body': 'The 3:1 ratio balances richness against brightness.',
+        'source_url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc',
+    }
+
+    @patch('ichrisbirch.services.url_ingest.classify_url_content')
+    @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
+    def test_ai_import_from_url_returns_candidate(self, mock_extract, mock_classify, mcp_tools):
+        from ichrisbirch import schemas
+
+        mock_extract.return_value = 'fake content'
+        mock_classify.return_value = schemas.UrlImportCandidate(
+            kind='recipe',
+            recipe=schemas.RecipeCandidate(**self._RECIPE),
+        )
+        result = json.loads(mcp_server.ai_import_from_url('https://www.youtube.com/watch?v=qEb96qFi2Tc', hint='auto'))
+        assert result['candidate']['kind'] == 'recipe'
+        assert result['candidate']['recipe']['name'] == 'Classic Chimichurri'
+
+    def test_ai_save_url_import_persists_both(self, mcp_tools):
+        payload = {
+            'kind': 'both',
+            'recipe': self._RECIPE | {'source_url': 'https://example.com/mcp-save-both'},
+            'technique': self._TECHNIQUE | {'source_url': 'https://example.com/mcp-save-both'},
+            'technique_mention': 'Uses the 3:1 vinaigrette ratio technique',
+        }
+        result = json.loads(mcp_server.ai_save_url_import(json.dumps(payload)))
+        assert result['recipe'] is not None
+        assert result['technique'] is not None
+        assert 'Uses the 3:1 vinaigrette ratio technique' in result['recipe']['notes']
+
+    def test_ai_save_url_import_returns_error_on_invalid_json(self, mcp_tools):
+        result = json.loads(mcp_server.ai_save_url_import('not valid json'))
+        assert result['error'] == 'invalid_candidate_json'
+
+
 # ---------------------------------------------------------------------------
 # Helper function tests
 # ---------------------------------------------------------------------------
