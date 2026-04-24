@@ -12,6 +12,10 @@ import type {
   RecipeSuggestionResponse,
   RecipeCandidate,
   RecipeStats,
+  UrlImportRequest,
+  UrlImportResponse,
+  UrlImportCandidate,
+  UrlImportSaveResult,
 } from '@/api/client'
 
 const logger = createLogger('RecipesStore')
@@ -34,6 +38,8 @@ export const useRecipesStore = defineStore('recipes', () => {
   const ingredientSearchActive = ref(false)
   const aiCandidates = ref<RecipeCandidate[]>([])
   const aiLoading = ref(false)
+  const urlImportCandidate = ref<UrlImportCandidate | null>(null)
+  const urlImportLoading = ref(false)
 
   const filteredRecipes = computed(() => {
     let result = recipes.value
@@ -307,6 +313,47 @@ export const useRecipesStore = defineStore('recipes', () => {
     aiCandidates.value = []
   }
 
+  async function importFromUrl(request: UrlImportRequest) {
+    urlImportLoading.value = true
+    error.value = null
+    try {
+      const response = await api.post<UrlImportResponse>('/recipes/import-from-url/', request)
+      urlImportCandidate.value = response.data.candidate
+      logger.info('recipe_url_import_classified', { kind: response.data.candidate.kind })
+      return response.data.candidate
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('recipe_url_import_failed', { detail: apiError.detail })
+      throw apiError
+    } finally {
+      urlImportLoading.value = false
+    }
+  }
+
+  async function saveUrlImport(candidate: UrlImportCandidate) {
+    error.value = null
+    try {
+      const response = await api.post<UrlImportSaveResult>('/recipes/save-url-import/', candidate)
+      if (response.data.recipe) recipes.value.push(response.data.recipe)
+      urlImportCandidate.value = null
+      logger.info('recipe_url_import_saved', {
+        recipe_id: response.data.recipe?.id ?? null,
+        technique_id: response.data.technique?.id ?? null,
+      })
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('recipe_url_import_save_failed', { detail: apiError.detail })
+      throw apiError
+    }
+  }
+
+  function clearUrlImportCandidate() {
+    urlImportCandidate.value = null
+  }
+
   return {
     recipes,
     loading,
@@ -345,5 +392,10 @@ export const useRecipesStore = defineStore('recipes', () => {
     aiSuggest,
     aiSave,
     clearAICandidates,
+    urlImportCandidate,
+    urlImportLoading,
+    importFromUrl,
+    saveUrlImport,
+    clearUrlImportCandidate,
   }
 })

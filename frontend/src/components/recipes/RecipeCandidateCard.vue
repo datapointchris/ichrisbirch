@@ -48,7 +48,10 @@
       class="recipe-candidate__source"
       >{{ candidate.source_name || 'View source' }}</a
     >
-    <div class="recipe-candidate__actions">
+    <div
+      v-if="!hideActions"
+      class="recipe-candidate__actions"
+    >
       <button
         type="button"
         class="button"
@@ -72,7 +75,7 @@
 <script setup lang="ts">
 import type { RecipeCandidate } from '@/api/client'
 
-defineProps<{ candidate: RecipeCandidate }>()
+withDefaults(defineProps<{ candidate: RecipeCandidate; hideActions?: boolean }>(), { hideActions: false })
 defineEmits<{
   save: [candidate: RecipeCandidate]
   dismiss: [candidate: RecipeCandidate]

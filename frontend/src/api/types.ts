@@ -969,6 +969,7 @@ export interface RecipeCandidate {
   meal_type: string | null
   tags: string[] | null
   instructions: string
+  notes: string | null
   ingredients: RecipeIngredientCreate[]
 }
 
@@ -1060,4 +1061,28 @@ export interface CookingTechniqueUpdate {
 export interface CookingTechniqueCategoryBreakdown {
   name: string
   count: number
+}
+
+export type UrlImportKind = 'recipe' | 'technique' | 'both'
+export type UrlImportHint = 'auto' | 'recipe' | 'technique' | 'both'
+
+export interface UrlImportRequest {
+  url: string
+  hint: UrlImportHint
+}
+
+export interface UrlImportCandidate {
+  kind: UrlImportKind
+  recipe: RecipeCandidate | null
+  technique: CookingTechniqueCreate | null
+  technique_mention: string | null
+}
+
+export interface UrlImportResponse {
+  candidate: UrlImportCandidate
+}
+
+export interface UrlImportSaveResult {
+  recipe: Recipe | null
+  technique: CookingTechnique | null
 }

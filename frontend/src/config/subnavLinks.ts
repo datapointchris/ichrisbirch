@@ -35,6 +35,7 @@ export const RECIPES_SUBNAV: SubnavLink[] = [
     icon: 'fa-solid fa-mortar-pestle',
   },
   { label: 'AI Suggest', to: '/recipes/suggest', testId: 'recipes-subnav-suggest', icon: 'fa-solid fa-wand-magic-sparkles' },
+  { label: 'Import URL', to: '/recipes/import-from-url', testId: 'recipes-subnav-import-url', icon: 'fa-solid fa-link' },
   { label: 'Stats', to: '/recipes/stats', testId: 'recipes-subnav-stats', icon: 'fa-solid fa-chart-bar' },
 ]
 

@@ -200,4 +200,10 @@ export type {
   CookingTechniqueCreate,
   CookingTechniqueUpdate,
   CookingTechniqueCategoryBreakdown,
+  UrlImportKind,
+  UrlImportHint,
+  UrlImportRequest,
+  UrlImportCandidate,
+  UrlImportResponse,
+  UrlImportSaveResult,
 } from './types'
