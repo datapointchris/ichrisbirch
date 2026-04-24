@@ -60,6 +60,7 @@ Purpose beats mechanism AND purpose beats equipment. "Wok hei" → `flavor_devel
   "meal_type": "breakfast" | "lunch" | "dinner" | "snack" | "dessert" | "side" | "sauce" | "drink" | null,
   "tags": ["string", ...],
   "instructions": "string — full numbered or paragraph instructions",
+  "notes": "string or null — optional free-form notes (rest times, pairings, tips from the creator)",
   "ingredients": [
     {
       "position": integer starting at 0,

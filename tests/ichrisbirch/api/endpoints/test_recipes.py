@@ -442,6 +442,194 @@ class TestAISuggest:
         assert saved['ingredients'][0]['item'] == 'apple'
 
 
+class TestUrlImport:
+    _RECIPE_CANDIDATE = {
+        'name': 'Classic Argentinian Chimichurri',
+        'description': 'The real-deal chimichurri built on a 3:1 vinaigrette framework.',
+        'source_url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc',
+        'source_name': 'Kevin / KWOOWK (YouTube)',
+        'prep_time_minutes': 10,
+        'cook_time_minutes': 0,
+        'total_time_minutes': 10,
+        'servings': 6,
+        'difficulty': 'easy',
+        'cuisine': 'other',
+        'meal_type': 'sauce',
+        'tags': ['chimichurri', 'herb', 'vinaigrette'],
+        'instructions': 'Chop herbs; mix with oil, vinegar, garlic; rest overnight.',
+        'notes': None,
+        'ingredients': [
+            {
+                'position': 0,
+                'quantity': 1,
+                'unit': 'cup',
+                'item': 'parsley',
+                'prep_note': 'chopped',
+                'is_optional': False,
+                'ingredient_group': None,
+            },
+        ],
+    }
+
+    _TECHNIQUE_CANDIDATE = {
+        'name': '3:1 Vinaigrette Ratio',
+        'category': 'composition_and_ratio',
+        'summary': 'Three parts fat to one part acid is the baseline vinaigrette.',
+        'body': 'The 3:1 ratio balances richness against brightness. Tune within 2:1 and 4:1.',
+        'why_it_works': None,
+        'common_pitfalls': None,
+        'source_url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc',
+        'source_name': 'Kevin / KWOOWK (YouTube)',
+        'tags': ['ratio', 'vinaigrette'],
+        'rating': None,
+    }
+
+    @patch('ichrisbirch.services.url_ingest.classify_url_content')
+    @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
+    def test_import_happy_path_returns_recipe_candidate(self, mock_extract, mock_classify, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        mock_extract.return_value = 'fake extracted content'
+        mock_classify.return_value = schemas.UrlImportCandidate(
+            kind='recipe',
+            recipe=schemas.RecipeCandidate(**self._RECIPE_CANDIDATE),
+        )
+        response = client.post(
+            f'{ENDPOINT}import-from-url/',
+            json={'url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc', 'hint': 'auto'},
+        )
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        data = response.json()
+        assert data['candidate']['kind'] == 'recipe'
+        assert data['candidate']['recipe']['name'] == 'Classic Argentinian Chimichurri'
+        assert data['candidate']['technique'] is None
+
+    @patch('ichrisbirch.services.url_ingest.classify_url_content')
+    @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
+    def test_import_returns_both_candidates(self, mock_extract, mock_classify, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        mock_extract.return_value = 'fake'
+        mock_classify.return_value = schemas.UrlImportCandidate(
+            kind='both',
+            recipe=schemas.RecipeCandidate(**self._RECIPE_CANDIDATE),
+            technique=schemas.CookingTechniqueCreate(**self._TECHNIQUE_CANDIDATE),
+            technique_mention='Uses the 3:1 vinaigrette ratio technique',
+        )
+        response = client.post(
+            f'{ENDPOINT}import-from-url/',
+            json={'url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc'},
+        )
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        data = response.json()
+        assert data['candidate']['kind'] == 'both'
+        assert data['candidate']['technique_mention'] == 'Uses the 3:1 vinaigrette ratio technique'
+
+    def test_import_returns_409_when_url_already_exists_as_recipe(self, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        url = 'https://example.com/existing-recipe'
+        existing = self._RECIPE_CANDIDATE | {'source_url': url}
+        client.post(f'{ENDPOINT}ai-save/', json=existing)
+        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': url})
+        assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+        detail = response.json()['detail']
+        assert detail['recipe_id'] is not None
+        assert detail['technique_id'] is None
+
+    def test_import_returns_409_when_url_already_exists_as_technique(self, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        url = 'https://example.com/existing-technique'
+        client.post(
+            f'{ENDPOINT}cooking-techniques/',
+            json=self._TECHNIQUE_CANDIDATE | {'source_url': url},
+        )
+        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': url})
+        assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+        detail = response.json()['detail']
+        assert detail['technique_id'] is not None
+        assert detail['recipe_id'] is None
+
+    @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
+    def test_import_returns_422_on_fetch_failure(self, mock_extract, recipe_crud_tester):
+        import httpx
+
+        client, _ = recipe_crud_tester
+        mock_extract.side_effect = httpx.RequestError('connection refused')
+        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/dead'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    @patch('ichrisbirch.services.url_ingest.classify_url_content')
+    @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
+    def test_import_returns_502_on_classifier_output_error(self, mock_extract, mock_classify, recipe_crud_tester):
+        from ichrisbirch.services.url_ingest import ClassifierOutputError
+
+        client, _ = recipe_crud_tester
+        mock_extract.return_value = 'fake'
+        mock_classify.side_effect = ClassifierOutputError('malformed', raw_output='not json at all')
+        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/broken'})
+        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        detail = response.json()['detail']
+        assert detail['raw_classifier_output'] == 'not json at all'
+
+    def test_save_recipe_only_persists_recipe(self, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        payload = {
+            'kind': 'recipe',
+            'recipe': self._RECIPE_CANDIDATE | {'source_url': 'https://example.com/save-recipe-only'},
+        }
+        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['recipe'] is not None
+        assert data['recipe']['name'] == 'Classic Argentinian Chimichurri'
+        assert data['technique'] is None
+
+    def test_save_technique_only_persists_technique_with_slug(self, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        payload = {
+            'kind': 'technique',
+            'technique': self._TECHNIQUE_CANDIDATE | {'source_url': 'https://example.com/save-technique-only'},
+        }
+        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['recipe'] is None
+        assert data['technique'] is not None
+        assert data['technique']['slug']
+        assert data['technique']['name'] == '3:1 Vinaigrette Ratio'
+
+    def test_save_both_appends_technique_mention_to_recipe_notes(self, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        payload = {
+            'kind': 'both',
+            'recipe': self._RECIPE_CANDIDATE | {'source_url': 'https://example.com/save-both'},
+            'technique': self._TECHNIQUE_CANDIDATE | {'source_url': 'https://example.com/save-both'},
+            'technique_mention': 'Uses the 3:1 vinaigrette ratio technique',
+        }
+        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['recipe'] is not None
+        assert data['technique'] is not None
+        assert 'Uses the 3:1 vinaigrette ratio technique' in data['recipe']['notes']
+
+    def test_save_both_preserves_existing_notes_when_appending_mention(self, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        recipe_with_notes = self._RECIPE_CANDIDATE | {
+            'source_url': 'https://example.com/save-both-with-notes',
+            'notes': 'Rest overnight for best flavor.',
+        }
+        payload = {
+            'kind': 'both',
+            'recipe': recipe_with_notes,
+            'technique': self._TECHNIQUE_CANDIDATE | {'source_url': 'https://example.com/save-both-with-notes'},
+            'technique_mention': 'Uses the 3:1 vinaigrette ratio technique',
+        }
+        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        notes = response.json()['recipe']['notes']
+        assert 'Rest overnight for best flavor.' in notes
+        assert 'Uses the 3:1 vinaigrette ratio technique' in notes
+
+
 class TestRecipesNotFound:
     def test_read_one_not_found(self, recipe_crud_tester):
         client, _ = recipe_crud_tester

@@ -125,6 +125,7 @@ class RecipeCandidate(RecipeConfig):
     meal_type: str | None = None
     tags: list[str] | None = None
     instructions: str
+    notes: str | None = None
     ingredients: list[RecipeIngredientCreate] = Field(default_factory=list)
 
 

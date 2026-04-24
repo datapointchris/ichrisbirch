@@ -1,6 +1,7 @@
 from datetime import UTC
 from datetime import datetime
 
+import httpx
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
@@ -24,6 +25,8 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.services import url_ingest
+from ichrisbirch.services.url_ingest import ClassifierOutputError
 from ichrisbirch.util import slugify
 
 logger = structlog.get_logger()
@@ -320,6 +323,102 @@ async def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
     session.commit()
     session.refresh(obj)
     return _load_recipe(session, obj.id)
+
+
+# =============================================================================
+# URL IMPORT — classify a YouTube or article URL into recipe/technique candidates.
+# =============================================================================
+
+
+@router.post('/import-from-url/', response_model=schemas.UrlImportResponse, status_code=status.HTTP_200_OK)
+async def import_from_url(
+    request: schemas.UrlImportRequest,
+    session: DbSession,
+    settings: Settings = Depends(get_settings),
+):
+    """Extract content from a URL, classify via Claude, and return candidate(s) for review.
+
+    Returns 409 if the URL is already ingested as a recipe or a technique (checks
+    both tables — a single URL can legitimately back either entity). Returns 502 if
+    the classifier output fails to validate against the candidate schema, with the
+    raw output embedded for prompt-drift observability.
+    """
+    url = request.url
+    existing_recipe = session.scalar(select(models.Recipe).where(models.Recipe.source_url == url))
+    existing_technique = session.scalar(select(models.CookingTechnique).where(models.CookingTechnique.source_url == url))
+    if existing_recipe is not None or existing_technique is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                'message': 'URL already ingested',
+                'recipe_id': existing_recipe.id if existing_recipe else None,
+                'technique_id': existing_technique.id if existing_technique else None,
+            },
+        )
+
+    try:
+        content = url_ingest.extract_content_for_classifier(url, settings)
+    except httpx.HTTPError as e:
+        logger.error('url_content_fetch_failed', url=url, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'Could not fetch URL content: {e}',
+        ) from e
+
+    try:
+        candidate = url_ingest.classify_url_content(url, request.hint, content, settings)
+    except ClassifierOutputError as e:
+        logger.error('url_import_classifier_validation_failed', url=url, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={'message': str(e), 'raw_classifier_output': e.raw_output},
+        ) from e
+
+    return schemas.UrlImportResponse(candidate=candidate)
+
+
+@router.post('/save-url-import/', response_model=schemas.UrlImportSaveResult, status_code=status.HTTP_201_CREATED)
+async def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
+    """Persist a reviewed URL-import candidate atomically.
+
+    For `kind='both'`, both the recipe and technique are created in one transaction
+    and the candidate's `technique_mention` is appended to `recipe.notes` so the
+    relationship between the two records stays visible as prose (no link table —
+    see Phase 2 rejection in the planning doc).
+    """
+    recipe_obj: models.Recipe | None = None
+    technique_obj: models.CookingTechnique | None = None
+
+    if candidate.recipe is not None:
+        recipe_data = candidate.recipe.model_dump()
+        ingredients_data = recipe_data.pop('ingredients', [])
+        if candidate.kind == 'both' and candidate.technique_mention:
+            existing_notes = recipe_data.get('notes')
+            recipe_data['notes'] = f'{existing_notes}\n\n{candidate.technique_mention}' if existing_notes else candidate.technique_mention
+        recipe_obj = models.Recipe(**recipe_data)
+        for idx, ing_dict in enumerate(ingredients_data):
+            if ing_dict.get('position', 0) == 0:
+                ing_dict['position'] = idx
+            recipe_obj.ingredients.append(models.RecipeIngredient(**ing_dict))
+        session.add(recipe_obj)
+
+    if candidate.technique is not None:
+        technique_data = candidate.technique.model_dump()
+        technique_data['slug'] = _unique_cooking_technique_slug(session, slugify(technique_data['name']))
+        technique_obj = models.CookingTechnique(**technique_data)
+        session.add(technique_obj)
+
+    session.commit()
+
+    result_recipe = None
+    result_technique = None
+    if recipe_obj is not None:
+        session.refresh(recipe_obj)
+        result_recipe = schemas.Recipe.model_validate(_load_recipe(session, recipe_obj.id))
+    if technique_obj is not None:
+        session.refresh(technique_obj)
+        result_technique = schemas.CookingTechnique.model_validate(technique_obj)
+    return schemas.UrlImportSaveResult(recipe=result_recipe, technique=result_technique)
 
 
 # =============================================================================
