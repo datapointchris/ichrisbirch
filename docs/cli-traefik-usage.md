@@ -83,7 +83,7 @@ Dev Credentials:
 | `testing health` | Run comprehensive health checks | `icb testing health` |
 | `testing rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icb testing rebuild` |
 | `testing rebuild --all` | Full rebuild including infra | `icb testing rebuild --all` |
-| `testing rebuild --volumes` | Wipe named volumes and rebuild (use to recover from ENOTEMPTY / crash loops) | `icb testing rebuild --all --volumes` |
+| `testing rebuild --volumes` | Wipe named volumes and rebuild — step 2 of the code-change escalation ladder (see CLAUDE.md); covers stale `.venv`, deps, node_modules, ENOTEMPTY | `icb testing rebuild --all --volumes` |
 | `testing is-ready` | Quick API health check (exit 0/1) | `icb testing is-ready` |
 | `testing ensure` | Start containers if not already running | `icb testing ensure` |
 | `testing docker [service]` | Show merged Docker Compose config | `icb testing docker api` |

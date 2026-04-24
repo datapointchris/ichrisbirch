@@ -20,7 +20,7 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 ./cli/icb test run              # All tests (auto-starts containers if needed)
 ./cli/icb test run <path> -v    # Specific test (auto-starts containers if needed)
 ./cli/icb testing start|stop|health|logs  # Container management
-./cli/icb testing rebuild --volumes  # DEFAULT — use when ANY code/deps/routes/migrations change (see Must Follow)
+./cli/icb testing rebuild --volumes  # Step 2 of the code-change escalation ladder (see Must Follow)
 ./cli/icb testing rebuild --all      # Full rebuild including infra
 
 # Database lifecycle (dev + testing; production is rejected)
@@ -204,7 +204,12 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 ### Must Follow
 
-- **Test container updates: `rebuild --volumes` is the DEFAULT, not recovery** (⚠️ MANDATORY): Whenever code you've edited needs to take effect in test containers — new/renamed API routes, new dependencies, migrations, schema changes, Python imports affecting the running app, Vue package.json changes — run `./cli/icb testing rebuild --volumes`. NEVER `docker restart`, NEVER `testing stop && start`, NEVER plain `testing rebuild` without `--volumes` hoping the bind mount picks it up. FastAPI registers routes at startup, dependencies live in an anonymous `.venv` volume that only re-seeds on container recreate, and only `--volumes` fully resets the state. Every hour spent "investigating" a test container that has gone stale is an hour that `rebuild --volumes` would have saved in 60 seconds. Apply the same rule to dev via `./cli/icb dev rebuild --volumes` when code changes aren't appearing. If you're about to debug container state, STOP — rebuild with `--volumes` FIRST, then diagnose only if that didn't fix it.
+- **Container code-change escalation ladder** (⚠️ MANDATORY): When edits aren't taking effect in running containers — new/renamed API routes, new dependencies, migrations, schema changes, Vue package.json changes, Python imports — follow THIS sequence in order. Do NOT skip steps. Do NOT substitute manual `docker` subcommands for these CLI steps:
+  1. **`./cli/icb testing stop && ./cli/icb testing start`** (~30s). Fixes most issues — accumulated DB state, FastAPI not having re-registered routes, stale module imports. Test containers are ephemeral and should be killed freely.
+  2. **`./cli/icb testing rebuild --volumes`** (~60–90s). Use if step 1 didn't resolve it. Fixes stale `.venv` contents, dependency changes (pyproject.toml additions), anonymous-volume staleness, ENOTEMPTY errors, vue node_modules corruption.
+  3. **ONLY NOW** reach for `docker logs`, `docker inspect`, `docker exec`, `docker restart`, or any manual docker subcommand. Fresh containers from step 2 still failing is a real bug; containers that haven't been through steps 1–2 aren't.
+
+  The same ladder applies to dev via `./cli/icb dev stop && start` then `./cli/icb dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow — an hour of "investigating" that a 90-second CLI escalation would have resolved. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
 - **Pre-commit hooks** run automatically: Ruff, mypy, codespell, bandit, ESLint, Prettier, TypeScript checking, and more. Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
 - **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
