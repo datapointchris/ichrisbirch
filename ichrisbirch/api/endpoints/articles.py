@@ -1,12 +1,10 @@
 import json
-import re
 
 import httpx
 import markdown
 import pendulum
 import structlog
 from bs4 import BeautifulSoup
-from bs4 import Tag
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -19,8 +17,6 @@ from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -29,35 +25,12 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.url_extraction import get_text_content_from_html
+from ichrisbirch.services.url_extraction import get_youtube_video_text_captions
 from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 router = APIRouter()
-
-
-def _extract_video_id(url: str) -> str:
-    """Extract YouTube video ID from any supported URL format.
-
-    Handles youtube.com/watch?v=ID, youtu.be/ID, youtube.com/shorts/ID,
-    and youtube.com/live/ID. Strips query parameters from the ID.
-    """
-    if 'youtu.be/' in url:
-        return url.split('youtu.be/')[1].split('?')[0].split('&')[0]
-    if 'youtube.com/shorts/' in url:
-        return url.split('/shorts/')[1].split('?')[0].split('&')[0]
-    if 'youtube.com/live/' in url:
-        return url.split('/live/')[1].split('?')[0].split('&')[0]
-    if 'v=' in url:
-        return url.split('v=')[1].split('&')[0]
-    raise ValueError(f'Cannot extract video ID from URL: {url}')
-
-
-def _get_youtube_video_text_captions(url: str) -> str:
-    video_id = _extract_video_id(url)
-    yt_trans = YouTubeTranscriptApi()
-    formatter = TextFormatter()
-    transcript = yt_trans.fetch(video_id)
-    return formatter.format_transcript(transcript)
 
 
 def _get_formatted_title(soup: BeautifulSoup) -> str:
@@ -81,45 +54,6 @@ def _get_formatted_title(soup: BeautifulSoup) -> str:
             break
 
     return title.removesuffix(' - YouTube').strip()
-
-
-def _strip_noise_tags(soup: BeautifulSoup) -> None:
-    """Remove tags that contribute noise rather than content."""
-    for tag_name in ('script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript', 'svg', 'form'):
-        for tag in soup.find_all(tag_name):
-            tag.decompose()
-    noise_pattern = re.compile(r'comment|cookie|banner|popup|modal|sidebar|social|share|newsletter|advert', re.IGNORECASE)
-    for attr in ('class', 'id'):
-        for tag in soup.find_all(attrs={attr: noise_pattern}):
-            if isinstance(tag, Tag):
-                tag.decompose()
-
-
-def _get_text_content_from_html(soup: BeautifulSoup) -> str:
-    """Extract readable text from HTML, preserving paragraph structure.
-
-    Tries <article> tag first (standard semantic container for main content),
-    then falls back to <main>, then the full <body>. Strips noise tags before
-    extraction to avoid navigation menus, footers, cookie banners, etc.
-    """
-    _strip_noise_tags(soup)
-
-    found = soup.find('article') or soup.find('main') or soup.find('body')
-    container = found if isinstance(found, Tag) else soup
-
-    content_tags = ('p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'li', 'figcaption', 'td', 'th', 'dt', 'dd')
-    elements = container.find_all(content_tags)
-
-    if not elements:
-        return container.get_text(separator='\n\n', strip=True)
-
-    blocks: list[str] = []
-    for el in elements:
-        text = el.get_text(strip=True)
-        if text and len(text) > 1:
-            blocks.append(text)
-
-    return '\n\n'.join(blocks)
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
@@ -189,9 +123,9 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
     title = _get_formatted_title(soup)
 
     if 'youtube.com' in url or 'youtu.be' in url:
-        text_content = _get_youtube_video_text_captions(url)
+        text_content = get_youtube_video_text_captions(url)
     else:
-        text_content = _get_text_content_from_html(soup)
+        text_content = get_text_content_from_html(soup)
 
     assistant = OpenAIAssistant(
         name='Article Summary with Tags',
@@ -300,9 +234,9 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     logger.debug('article_title_retrieved', title=title)
 
     if 'youtube.com' in url or 'youtu.be' in url:
-        text_content = _get_youtube_video_text_captions(url)
+        text_content = get_youtube_video_text_captions(url)
     else:
-        text_content = _get_text_content_from_html(soup)
+        text_content = get_text_content_from_html(soup)
 
     assistant = OpenAIAssistant(
         name='Article Summary with Tags',
@@ -332,7 +266,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     if 'youtube.com' in url or 'youtu.be' in url:
         try:
             logger.debug('youtube_captions_fetching')
-            text_content = _get_youtube_video_text_captions(url)
+            text_content = get_youtube_video_text_captions(url)
         except Exception as e:
             logger.error('youtube_captions_error', url=url, error=str(e))
             # format error response into html
@@ -345,7 +279,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
             html = ''.join(lines).replace('<p></p>', '')
             return Response(content=html)  # must return status code 200 to avoid error in form javascript
     else:
-        text_content = _get_text_content_from_html(soup)
+        text_content = get_text_content_from_html(soup)
 
     assistant = OpenAIAssistant(name='Article Insights', settings=settings, instructions=settings.ai.prompts.article_insights)
     mkd = assistant.generate(text_content)
