@@ -12,6 +12,7 @@ from scripts.seed.seeders import books
 from scripts.seed.seeders import boxes
 from scripts.seed.seeders import chats
 from scripts.seed.seeders import coffee
+from scripts.seed.seeders import cooking_techniques
 from scripts.seed.seeders import countdowns
 from scripts.seed.seeders import durations
 from scripts.seed.seeders import events
@@ -39,4 +40,5 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('chats', chats),
     ('projects', projects),
     ('recipes', recipes),
+    ('cooking_techniques', cooking_techniques),
 ]

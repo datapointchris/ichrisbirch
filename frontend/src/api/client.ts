@@ -195,4 +195,9 @@ export type {
   RecipeRatingBreakdown,
   RecipeCategoryBreakdown,
   RecipeStats,
+  CookingTechniqueCategory,
+  CookingTechnique,
+  CookingTechniqueCreate,
+  CookingTechniqueUpdate,
+  CookingTechniqueCategoryBreakdown,
 } from './types'

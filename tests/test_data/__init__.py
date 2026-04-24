@@ -6,6 +6,7 @@ from tests.test_data import boxes
 from tests.test_data import chats
 from tests.test_data import coffee_beans
 from tests.test_data import coffee_shops
+from tests.test_data import cooking_techniques
 from tests.test_data import countdowns
 from tests.test_data import durations
 from tests.test_data import events
@@ -27,6 +28,7 @@ __all__ = [
     'boxes',
     # 'boxitems' - now inserted via Box.items relationship
     'chats',
+    'cooking_techniques',
     'countdowns',
     'durations',
     # 'duration_notes' - inserted via Duration.duration_notes relationship

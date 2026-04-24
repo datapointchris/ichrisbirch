@@ -1000,3 +1000,64 @@ export interface RecipeStats {
   highest_rated: Recipe[]
   untried: Recipe[]
 }
+
+// --- Cooking Technique ---
+
+export type CookingTechniqueCategory =
+  | 'heat_application'
+  | 'flavor_development'
+  | 'emulsion_and_texture'
+  | 'preservation_and_pre_treatment'
+  | 'seasoning_and_finishing'
+  | 'dough_and_batter'
+  | 'knife_work_and_prep'
+  | 'composition_and_ratio'
+  | 'equipment_technique'
+
+export interface CookingTechnique {
+  id: number
+  name: string
+  slug: string
+  category: CookingTechniqueCategory | string
+  summary: string
+  body: string
+  why_it_works: string | null
+  common_pitfalls: string | null
+  source_url: string | null
+  source_name: string | null
+  tags: string[] | null
+  rating: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CookingTechniqueCreate {
+  name: string
+  category: CookingTechniqueCategory | string
+  summary: string
+  body: string
+  why_it_works?: string | null
+  common_pitfalls?: string | null
+  source_url?: string | null
+  source_name?: string | null
+  tags?: string[] | null
+  rating?: number | null
+}
+
+export interface CookingTechniqueUpdate {
+  name?: string | null
+  category?: CookingTechniqueCategory | string | null
+  summary?: string | null
+  body?: string | null
+  why_it_works?: string | null
+  common_pitfalls?: string | null
+  source_url?: string | null
+  source_name?: string | null
+  tags?: string[] | null
+  rating?: number | null
+}
+
+export interface CookingTechniqueCategoryBreakdown {
+  name: string
+  count: number
+}

@@ -292,6 +292,7 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'boxitems': {'model': models.BoxItem, 'data': []},  # Inserted via Box.items relationship
         'chats': {'model': models.Chat, 'data': tests.test_data.chats.BASE_DATA},
         'chatmessages': {'model': models.ChatMessage, 'data': []},  # Inserted via Chat.messages relationship
+        'cooking_techniques': {'model': models.CookingTechnique, 'data': tests.test_data.cooking_techniques.BASE_DATA},
         'countdowns': {'model': models.Countdown, 'data': tests.test_data.countdowns.BASE_DATA},
         'durations': {'model': models.Duration, 'data': tests.test_data.durations.BASE_DATA},
         'duration_notes': {'model': models.DurationNote, 'data': []},  # Inserted via Duration.duration_notes relationship

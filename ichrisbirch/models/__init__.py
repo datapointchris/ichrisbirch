@@ -31,6 +31,8 @@ from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.models.project import ProjectItemTask
+from ichrisbirch.models.recipe import CookingTechnique
+from ichrisbirch.models.recipe import CookingTechniqueCategory
 from ichrisbirch.models.recipe import Recipe
 from ichrisbirch.models.recipe import RecipeCuisine
 from ichrisbirch.models.recipe import RecipeDifficulty
@@ -76,6 +78,8 @@ __all__ = [
     'ProjectItemDependency',
     'ProjectItemMembership',
     'ProjectItemTask',
+    'CookingTechnique',
+    'CookingTechniqueCategory',
     'Recipe',
     'RecipeCuisine',
     'RecipeDifficulty',

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean
+from sqlalchemy import CheckConstraint
 from sqlalchemy import DateTime
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
@@ -60,6 +61,18 @@ RECIPE_MEAL_TYPES = [
     'side',
     'sauce',
     'drink',
+]
+
+COOKING_TECHNIQUE_CATEGORIES = [
+    'heat_application',
+    'flavor_development',
+    'emulsion_and_texture',
+    'preservation_and_pre_treatment',
+    'seasoning_and_finishing',
+    'dough_and_batter',
+    'knife_work_and_prep',
+    'composition_and_ratio',
+    'equipment_technique',
 ]
 
 
@@ -143,3 +156,36 @@ class RecipeIngredient(Base):
 
     def __repr__(self) -> str:
         return f'RecipeIngredient(id={self.id!r}, recipe_id={self.recipe_id!r}, item={self.item!r})'
+
+
+class CookingTechniqueCategory(Base):
+    """Lookup table for cooking technique categories.
+
+    Stable taxonomy of 9 orthogonal buckets. See planning doc for tiebreaker rules.
+    """
+
+    __tablename__ = 'cooking_technique_categories'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
+
+
+class CookingTechnique(Base):
+    __tablename__ = 'cooking_techniques'
+    __table_args__ = (CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 5)', name='ck_cooking_techniques_rating_range'),)
+
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    slug: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    category: Mapped[str] = mapped_column(Text, ForeignKey('cooking_technique_categories.name'), nullable=False, index=True)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    why_it_works: Mapped[str | None] = mapped_column(Text, nullable=True)
+    common_pitfalls: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list[str] | None] = mapped_column(postgresql.ARRAY(Text), nullable=True)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self) -> str:
+        return f'CookingTechnique(id={self.id!r}, name={self.name!r}, category={self.category!r})'

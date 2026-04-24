@@ -76,6 +76,10 @@ from ichrisbirch.schemas.project_item import ProjectItemUpdate
 from ichrisbirch.schemas.project_item_task import ProjectItemTask as ProjectItemTaskSchema
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskCreate
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskUpdate
+from ichrisbirch.schemas.recipe import CookingTechnique
+from ichrisbirch.schemas.recipe import CookingTechniqueCategoryBreakdown
+from ichrisbirch.schemas.recipe import CookingTechniqueCreate
+from ichrisbirch.schemas.recipe import CookingTechniqueUpdate
 from ichrisbirch.schemas.recipe import Recipe
 from ichrisbirch.schemas.recipe import RecipeCandidate
 from ichrisbirch.schemas.recipe import RecipeCategoryBreakdown
@@ -195,6 +199,10 @@ __all__ = [
     'SchedulerJobRun',
     'SchedulerJobRunCreate',
     'ServerStats',
+    'CookingTechnique',
+    'CookingTechniqueCategoryBreakdown',
+    'CookingTechniqueCreate',
+    'CookingTechniqueUpdate',
     'Task',
     'TaskCompleted',
     'TaskCreate',

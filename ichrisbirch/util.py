@@ -1,6 +1,7 @@
 import functools
 import inspect
 import logging
+import re
 from pathlib import Path
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
@@ -115,6 +116,19 @@ def url_builder(base_url: str, *parts) -> str:
         elif isinstance(part, int):
             stripped_parts.append(str(part))
     return '/'.join([base_url.rstrip('/')] + stripped_parts) + '/'
+
+
+_SLUG_NON_ALNUM = re.compile(r'[^a-z0-9]+')
+
+
+def slugify(text: str) -> str:
+    """Lowercase, hyphenate, and strip a string into a URL-safe slug.
+
+    "3:1 Vinaigrette Ratio" -> "3-1-vinaigrette-ratio"
+    """
+    lowered = text.lower().strip()
+    hyphenated = _SLUG_NON_ALNUM.sub('-', lowered)
+    return hyphenated.strip('-')
 
 
 def convert_bytes(num: int | float) -> str:

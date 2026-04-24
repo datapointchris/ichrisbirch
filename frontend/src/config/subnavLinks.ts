@@ -28,6 +28,12 @@ export const BOOKS_SUBNAV: SubnavLink[] = [
 
 export const RECIPES_SUBNAV: SubnavLink[] = [
   { label: 'Recipes', to: '/recipes', testId: 'recipes-subnav-list', icon: 'fa-solid fa-utensils' },
+  {
+    label: 'Techniques',
+    to: '/recipes/cooking-techniques',
+    testId: 'recipes-subnav-techniques',
+    icon: 'fa-solid fa-mortar-pestle',
+  },
   { label: 'AI Suggest', to: '/recipes/suggest', testId: 'recipes-subnav-suggest', icon: 'fa-solid fa-wand-magic-sparkles' },
   { label: 'Stats', to: '/recipes/stats', testId: 'recipes-subnav-stats', icon: 'fa-solid fa-chart-bar' },
 ]

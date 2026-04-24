@@ -200,6 +200,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Recipe AI Suggest' },
   },
   {
+    path: '/recipes/cooking-techniques',
+    name: 'cooking-techniques',
+    component: () => import('@/views/CookingTechniquesView.vue'),
+    meta: { title: 'Cooking Techniques' },
+  },
+  {
+    path: '/recipes/cooking-techniques/:slug',
+    name: 'cooking-technique-detail',
+    component: () => import('@/views/CookingTechniqueDetailView.vue'),
+    meta: { title: 'Cooking Technique' },
+  },
+  {
     path: '/recipes/:id',
     name: 'recipe-detail',
     component: () => import('@/views/RecipeDetailView.vue'),

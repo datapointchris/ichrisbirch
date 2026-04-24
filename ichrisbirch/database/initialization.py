@@ -29,6 +29,7 @@ from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
+from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
 from ichrisbirch.models.recipe import RECIPE_CUISINES
 from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
 from ichrisbirch.models.recipe import RECIPE_MEAL_TYPES
@@ -118,6 +119,7 @@ LOOKUP_DATA = {
     'recipe_difficulty': RECIPE_DIFFICULTIES,
     'recipe_cuisine': RECIPE_CUISINES,
     'recipe_meal_type': RECIPE_MEAL_TYPES,
+    'cooking_technique_categories': COOKING_TECHNIQUE_CATEGORIES,
 }
 
 

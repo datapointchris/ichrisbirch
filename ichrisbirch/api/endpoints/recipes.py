@@ -4,6 +4,7 @@ from datetime import datetime
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
 from fastapi import status
@@ -23,9 +24,21 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.util import slugify
 
 logger = structlog.get_logger()
 router = APIRouter()
+
+
+def _unique_cooking_technique_slug(session: Session, base_slug: str) -> str:
+    """Append -2, -3, ... if `base_slug` already exists."""
+    existing = set(session.scalars(select(models.CookingTechnique.slug).where(models.CookingTechnique.slug.like(f'{base_slug}%'))).all())
+    if base_slug not in existing:
+        return base_slug
+    counter = 2
+    while f'{base_slug}-{counter}' in existing:
+        counter += 1
+    return f'{base_slug}-{counter}'
 
 
 def _load_recipe(session: Session, recipe_id: int) -> models.Recipe | None:
@@ -307,6 +320,131 @@ async def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
     session.commit()
     session.refresh(obj)
     return _load_recipe(session, obj.id)
+
+
+# =============================================================================
+# COOKING TECHNIQUES
+# =============================================================================
+# Cooking techniques are part of the Recipes domain — reusable cooking patterns
+# (e.g. "3:1 vinaigrette ratio", "caramelize tomato paste before liquids") that
+# multiple recipes can reference. Served as sub-resources under /recipes/cooking-techniques/.
+
+
+@router.get('/cooking-techniques/', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
+async def list_cooking_techniques(
+    session: DbSession,
+    category: str | None = None,
+    rating_min: int | None = Query(None, ge=1, le=5),
+):
+    query = select(models.CookingTechnique).order_by(models.CookingTechnique.name.asc())
+    if category:
+        query = query.filter(models.CookingTechnique.category == category)
+    if rating_min is not None:
+        query = query.filter(models.CookingTechnique.rating >= rating_min)
+    return list(session.scalars(query).all())
+
+
+@router.post('/cooking-techniques/', response_model=schemas.CookingTechnique, status_code=status.HTTP_201_CREATED)
+async def create_cooking_technique(technique: schemas.CookingTechniqueCreate, session: DbSession):
+    data = technique.model_dump()
+    data['slug'] = _unique_cooking_technique_slug(session, slugify(data['name']))
+    obj = models.CookingTechnique(**data)
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+@router.get('/cooking-techniques/search/', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
+async def search_cooking_techniques(q: str, session: DbSession):
+    """Search cooking techniques by name, summary, body, or tags.
+
+    Whitespace- or comma-separated terms; ILIKE match on any field, OR'd together.
+    """
+    logger.debug('cooking_technique_search', query=q)
+    raw_terms = q.split(',') if ',' in q else q.split()
+    search_terms = [f'%{term.strip()}%' for term in raw_terms if term.strip()]
+    if not search_terms:
+        return []
+    name_matches = [models.CookingTechnique.name.ilike(term) for term in search_terms]
+    summary_matches = [models.CookingTechnique.summary.ilike(term) for term in search_terms]
+    body_matches = [models.CookingTechnique.body.ilike(term) for term in search_terms]
+    tag_matches = [cast(models.CookingTechnique.tags, postgresql.TEXT).ilike(term) for term in search_terms]
+    query = (
+        select(models.CookingTechnique)
+        .filter(or_(*(name_matches + summary_matches + body_matches + tag_matches)))
+        .order_by(models.CookingTechnique.name.asc())
+    )
+    return list(session.scalars(query).all())
+
+
+@router.get(
+    '/cooking-techniques/categories/',
+    response_model=list[schemas.CookingTechniqueCategoryBreakdown],
+    status_code=status.HTTP_200_OK,
+)
+async def list_cooking_technique_categories(session: DbSession):
+    """List all cooking technique categories with counts. Includes zero-count categories so the UI shows every bucket."""
+    category_names = list(
+        session.scalars(select(models.CookingTechniqueCategory.name).order_by(models.CookingTechniqueCategory.name.asc())).all()
+    )
+    counts_rows = session.execute(
+        select(models.CookingTechnique.category, func.count(models.CookingTechnique.id)).group_by(models.CookingTechnique.category)
+    ).all()
+    counts = {name: count for name, count in counts_rows}
+    return [schemas.CookingTechniqueCategoryBreakdown(name=name, count=counts.get(name, 0)) for name in category_names]
+
+
+@router.get('/cooking-techniques/slug/{slug}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
+async def read_cooking_technique_by_slug(slug: str, session: DbSession):
+    technique = session.scalar(select(models.CookingTechnique).where(models.CookingTechnique.slug == slug))
+    if technique is None:
+        raise NotFoundException('cooking_technique', slug, logger)
+    return technique
+
+
+@router.get('/cooking-techniques/{id}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
+async def read_cooking_technique(id: int, session: DbSession):
+    technique = session.get(models.CookingTechnique, id)
+    if technique is None:
+        raise NotFoundException('cooking_technique', id, logger)
+    return technique
+
+
+@router.delete('/cooking-techniques/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_cooking_technique(id: int, session: DbSession):
+    technique = session.get(models.CookingTechnique, id)
+    if technique is None:
+        raise NotFoundException('cooking_technique', id, logger)
+    session.delete(technique)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch('/cooking-techniques/{id}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
+async def update_cooking_technique(id: int, technique_update: schemas.CookingTechniqueUpdate, session: DbSession):
+    technique = session.get(models.CookingTechnique, id)
+    if technique is None:
+        raise NotFoundException('cooking_technique', id, logger)
+
+    update_data = technique_update.model_dump(exclude_unset=True)
+    # Slug is server-owned — name changes do not alter the slug (preserves deep links).
+    for attr, value in update_data.items():
+        setattr(technique, attr, value)
+
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.error('cooking_technique_update_failed', id=id, error=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    session.refresh(technique)
+    return technique
+
+
+# =============================================================================
+# RECIPES (by id)
+# =============================================================================
 
 
 @router.get('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)

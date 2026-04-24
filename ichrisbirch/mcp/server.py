@@ -1111,3 +1111,170 @@ def ai_save_recipe(candidate_json: str) -> str:
         return json.dumps({'error': 'invalid_candidate_json', 'detail': str(e)})
     with _client() as c:
         return _json_response(c.post('/recipes/ai-save/', json=candidate))
+
+
+# =============================================================================
+# COOKING TECHNIQUES
+# =============================================================================
+# Reusable cooking patterns inside the Recipes domain — served under
+# /recipes/cooking-techniques/. Categories: heat_application, flavor_development,
+# emulsion_and_texture, preservation_and_pre_treatment, seasoning_and_finishing,
+# dough_and_batter, knife_work_and_prep, composition_and_ratio, equipment_technique.
+
+COOKING_TECHNIQUES_ENDPOINT = '/recipes/cooking-techniques/'
+COOKING_TECHNIQUE_SUMMARY_FIELDS = ['id', 'name', 'slug', 'category', 'summary', 'tags', 'rating']
+
+
+@mcp.tool()
+def list_cooking_techniques(category: str | None = None, rating_min: int | None = None) -> str:
+    """List cooking techniques with summary fields (id, name, slug, category, summary, tags, rating).
+
+    Filters (all optional):
+    - category: one of the 9 fixed categories (see module docstring)
+    - rating_min: 1-5
+
+    Use get_cooking_technique(id) for the full body, why_it_works, and common_pitfalls.
+    """
+    params: dict[str, Any] = {}
+    if category:
+        params['category'] = category
+    if rating_min is not None:
+        params['rating_min'] = rating_min
+    with _client() as c:
+        return _summarize(_json_response(c.get(COOKING_TECHNIQUES_ENDPOINT, params=params)), COOKING_TECHNIQUE_SUMMARY_FIELDS)
+
+
+@mcp.tool()
+def get_cooking_technique(id: int) -> str:
+    """Get the full cooking technique record by ID — includes body (markdown), why_it_works, and common_pitfalls."""
+    with _client() as c:
+        return _json_response(c.get(f'{COOKING_TECHNIQUES_ENDPOINT}{id}/'))
+
+
+@mcp.tool()
+def get_cooking_technique_by_slug(slug: str) -> str:
+    """Get a cooking technique by URL-safe slug (e.g. 'vinaigrette-ratio-3-1')."""
+    with _client() as c:
+        return _json_response(c.get(f'{COOKING_TECHNIQUES_ENDPOINT}slug/{slug}/'))
+
+
+@mcp.tool()
+def search_cooking_techniques(query: str) -> str:
+    """Search cooking techniques by name, summary, body, or tags.
+
+    Pass comma-separated phrases or whitespace-separated keywords.
+    Returns summary fields; use get_cooking_technique(id) for full detail.
+    """
+    with _client() as c:
+        return _summarize(
+            _json_response(c.get(f'{COOKING_TECHNIQUES_ENDPOINT}search/', params={'q': query})),
+            COOKING_TECHNIQUE_SUMMARY_FIELDS,
+        )
+
+
+@mcp.tool()
+def list_cooking_technique_categories() -> str:
+    """List all 9 cooking technique categories with counts.
+
+    Includes zero-count categories so every bucket is visible.
+    Returns [{"name": str, "count": int}, ...].
+    """
+    with _client() as c:
+        return _json_response(c.get(f'{COOKING_TECHNIQUES_ENDPOINT}categories/'))
+
+
+@mcp.tool()
+def create_cooking_technique(
+    name: str,
+    category: str,
+    summary: str,
+    body: str,
+    why_it_works: str | None = None,
+    common_pitfalls: str | None = None,
+    source_url: str | None = None,
+    source_name: str | None = None,
+    tags: str | None = None,
+    rating: int | None = None,
+) -> str:
+    """Create a new cooking technique.
+
+    `category` must be one of: heat_application, flavor_development, emulsion_and_texture,
+    preservation_and_pre_treatment, seasoning_and_finishing, dough_and_batter,
+    knife_work_and_prep, composition_and_ratio, equipment_technique.
+
+    `body` is long-form markdown — the full write-up.
+    `summary` is a one-paragraph TL;DR.
+    `tags` is comma-separated.
+    `rating` is 1-5.
+
+    Slug is generated server-side from `name` and cannot be set.
+    """
+    payload: dict[str, Any] = {
+        'name': name,
+        'category': category,
+        'summary': summary,
+        'body': body,
+    }
+    optional_fields = {
+        'why_it_works': why_it_works,
+        'common_pitfalls': common_pitfalls,
+        'source_url': source_url,
+        'source_name': source_name,
+        'rating': rating,
+    }
+    payload.update({k: v for k, v in optional_fields.items() if v is not None})
+    if tags:
+        payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    with _client() as c:
+        return _json_response(c.post(COOKING_TECHNIQUES_ENDPOINT, json=payload))
+
+
+@mcp.tool()
+def update_cooking_technique(
+    id: int,
+    name: str | None = None,
+    category: str | None = None,
+    summary: str | None = None,
+    body: str | None = None,
+    why_it_works: str | None = None,
+    common_pitfalls: str | None = None,
+    source_url: str | None = None,
+    source_name: str | None = None,
+    tags: str | None = None,
+    rating: int | None = None,
+    null_fields: str | None = None,
+) -> str:
+    """Update a cooking technique by ID. Only provided fields are changed.
+
+    Slug is NEVER updated — renaming preserves the deep link.
+
+    `null_fields` is a comma-separated list of field names to explicitly set to NULL
+    (e.g. null_fields="why_it_works,common_pitfalls").
+    """
+    payload: dict[str, Any] = {}
+    candidates = {
+        'name': name,
+        'category': category,
+        'summary': summary,
+        'body': body,
+        'why_it_works': why_it_works,
+        'common_pitfalls': common_pitfalls,
+        'source_url': source_url,
+        'source_name': source_name,
+        'rating': rating,
+    }
+    payload.update({k: v for k, v in candidates.items() if v is not None})
+    if tags is not None:
+        payload['tags'] = [t.strip() for t in tags.split(',') if t.strip()]
+    if null_fields:
+        for field in null_fields.split(','):
+            payload[field.strip()] = None
+    with _client() as c:
+        return _json_response(c.patch(f'{COOKING_TECHNIQUES_ENDPOINT}{id}/', json=payload))
+
+
+@mcp.tool()
+def delete_cooking_technique(id: int) -> str:
+    """Delete a cooking technique by ID."""
+    with _client() as c:
+        return _json_response(c.delete(f'{COOKING_TECHNIQUES_ENDPOINT}{id}/'))

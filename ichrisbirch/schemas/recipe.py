@@ -154,3 +154,57 @@ class RecipeStats(RecipeConfig):
     most_made: list[Recipe]
     highest_rated: list[Recipe]
     untried: list[Recipe]
+
+
+class CookingTechniqueBase(RecipeConfig):
+    name: str
+    category: str
+    summary: str
+    body: str
+    why_it_works: str | None = None
+    common_pitfalls: str | None = None
+    source_url: str | None = None
+    source_name: str | None = None
+    tags: list[str] | None = None
+    rating: int | None = Field(default=None, ge=1, le=5)
+
+
+class CookingTechniqueCreate(CookingTechniqueBase):
+    @model_validator(mode='before')
+    @classmethod
+    def empty_field_to_none(cls, data):
+        if isinstance(data, dict):
+            return {k: (v if isinstance(v, list | dict | bool | int | float) else (v or None)) for k, v in data.items()}
+        return data
+
+
+class CookingTechnique(CookingTechniqueBase):
+    id: int
+    slug: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CookingTechniqueUpdate(RecipeConfig):
+    name: str | None = None
+    category: str | None = None
+    summary: str | None = None
+    body: str | None = None
+    why_it_works: str | None = None
+    common_pitfalls: str | None = None
+    source_url: str | None = None
+    source_name: str | None = None
+    tags: list[str] | None = None
+    rating: int | None = Field(default=None, ge=1, le=5)
+
+    @model_validator(mode='before')
+    @classmethod
+    def empty_field_to_none(cls, data):
+        if isinstance(data, dict):
+            return {k: (None if v == '' else v) for k, v in data.items()}
+        return data
+
+
+class CookingTechniqueCategoryBreakdown(RecipeConfig):
+    name: str
+    count: int
