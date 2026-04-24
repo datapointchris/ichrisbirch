@@ -279,7 +279,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     aiLoading.value = true
     error.value = null
     try {
-      const response = await api.post<RecipeSuggestionResponse>('/recipes/ai-suggest/', request)
+      const response = await api.post<RecipeSuggestionResponse>('/recipes/ai-suggest/', request, { timeout: 180_000 })
       aiCandidates.value = response.data.candidates
       logger.info('recipe_ai_suggest', { count: response.data.candidates.length })
       return response.data.candidates
@@ -317,7 +317,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     urlImportLoading.value = true
     error.value = null
     try {
-      const response = await api.post<UrlImportResponse>('/recipes/import-from-url/', request)
+      const response = await api.post<UrlImportResponse>('/recipes/import-from-url/', request, { timeout: 180_000 })
       urlImportCandidate.value = response.data.candidate
       logger.info('recipe_url_import_classified', { kind: response.data.candidate.kind })
       return response.data.candidate
