@@ -221,26 +221,38 @@ describe('useTasksStore', () => {
     expect(store.tasks).toHaveLength(5) // unchanged
   })
 
-  // --- extend ---
+  // --- shift ---
 
-  it('extends a task and updates it in place', async () => {
-    const extended: Task = { ...testTasks[2]!, priority: 8 }
-    mockApi.patch.mockResolvedValue({ data: extended })
+  it('shifts a task priority down and updates it in place', async () => {
+    const shifted: Task = { ...testTasks[2]!, priority: 8 }
+    mockApi.patch.mockResolvedValue({ data: shifted })
     const store = useTasksStore()
     store.tasks = [...testTasks]
 
-    await store.extend(3, 7)
+    await store.shift(3, 7)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/3/extend/7/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/3/shift/7/')
     expect(store.tasks.find((t) => t.id === 3)!.priority).toBe(8)
   })
 
-  it('sets error on extend failure', async () => {
+  it('shifts a task priority up with a negative value', async () => {
+    const shifted: Task = { ...testTasks[4]!, priority: 2 }
+    mockApi.patch.mockResolvedValue({ data: shifted })
+    const store = useTasksStore()
+    store.tasks = [...testTasks]
+
+    await store.shift(5, -5)
+
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/5/shift/-5/')
+    expect(store.tasks.find((t) => t.id === 5)!.priority).toBe(2)
+  })
+
+  it('sets error on shift failure', async () => {
     const apiError = new ApiError({ message: 'API 404', detail: 'Task not found', status: 404 })
     mockApi.patch.mockRejectedValue(apiError)
     const store = useTasksStore()
 
-    await expect(store.extend(999, 7)).rejects.toThrow(ApiError)
+    await expect(store.shift(999, 7)).rejects.toThrow(ApiError)
     expect(store.error).toBe(apiError)
   })
 
@@ -281,61 +293,66 @@ describe('useTasksStore', () => {
     expect(store.error!.status).toBe(500)
   })
 
-  // --- resetPriorities ---
+  // --- reorder ---
 
-  it('calls reset priorities endpoint', async () => {
-    mockApi.post.mockResolvedValue({ data: { message: 'Priorities reset successfully' } })
+  it('calls reorder endpoint and refetches tasks', async () => {
+    mockApi.post.mockResolvedValue({ data: { message: 'Reordered 5 tasks' } })
+    mockApi.get.mockResolvedValue({ data: testTasks })
     const store = useTasksStore()
 
-    const message = await store.resetPriorities()
+    const message = await store.reorder()
 
-    expect(mockApi.post).toHaveBeenCalledWith('/tasks/reset-priorities/')
-    expect(message).toBe('Priorities reset successfully')
+    expect(mockApi.post).toHaveBeenCalledWith('/tasks/reorder/')
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/todo/')
+    expect(message).toBe('Reordered 5 tasks')
   })
 
-  it('sets error on resetPriorities failure', async () => {
-    const apiError = new ApiError({ message: 'API 500', detail: 'Reset failed', status: 500 })
+  it('sets error on reorder failure', async () => {
+    const apiError = new ApiError({ message: 'API 500', detail: 'Reorder failed', status: 500 })
     mockApi.post.mockRejectedValue(apiError)
     const store = useTasksStore()
 
-    await expect(store.resetPriorities()).rejects.toThrow(ApiError)
+    await expect(store.reorder()).rejects.toThrow(ApiError)
+    expect(store.error).toBe(apiError)
+  })
+
+  // --- setPriority ---
+
+  it('sets priority on a task via single-row PATCH', async () => {
+    const updated: Task = { ...testTasks[2]!, priority: 0 }
+    mockApi.patch.mockResolvedValue({ data: updated })
+    const store = useTasksStore()
+    store.tasks = [...testTasks]
+
+    await store.setPriority(3, 0)
+
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/3/', { priority: 0 })
+    expect(store.tasks.find((t) => t.id === 3)!.priority).toBe(0)
+  })
+
+  it('sets error on setPriority failure', async () => {
+    const apiError = new ApiError({ message: 'API 404', detail: 'Task not found', status: 404 })
+    mockApi.patch.mockRejectedValue(apiError)
+    const store = useTasksStore()
+
+    await expect(store.setPriority(999, 1)).rejects.toThrow(ApiError)
     expect(store.error).toBe(apiError)
   })
 
   // --- sortedTasks ---
 
-  it('sorts tasks by priority ascending', () => {
+  it('sorts tasks by priority ascending, then add_date ascending', () => {
     const store = useTasksStore()
-    store.tasks = [...testTasks]
+    // Two tasks tied at priority 1; older add_date should come first.
+    const tied: Task[] = [
+      { id: 20, name: 'Newer tie', category: 'Chore', priority: 1, add_date: '2026-03-15T00:00:00' },
+      { id: 21, name: 'Older tie', category: 'Chore', priority: 1, add_date: '2026-01-01T00:00:00' },
+      { id: 22, name: 'Low prio', category: 'Chore', priority: 5, add_date: '2026-02-01T00:00:00' },
+    ]
+    store.tasks = tied
 
-    const priorities = store.sortedTasks.map((t) => t.priority)
-    expect(priorities).toEqual([-2, 0.5, 1, 3, 7])
-  })
-
-  // --- priority computed counts ---
-
-  it('computes overdueCount for tasks with priority < 1', () => {
-    const store = useTasksStore()
-    store.tasks = [...testTasks]
-
-    // priority -2 and 0.5 are both < 1
-    expect(store.overdueCount).toBe(2)
-  })
-
-  it('computes criticalCount for tasks with priority > 0 and <= 2', () => {
-    const store = useTasksStore()
-    store.tasks = [...testTasks]
-
-    // priority 0.5 and 1 match (> 0 and <= 2)
-    expect(store.criticalCount).toBe(2)
-  })
-
-  it('computes dueSoonCount for tasks with priority > 2 and <= 5', () => {
-    const store = useTasksStore()
-    store.tasks = [...testTasks]
-
-    // priority 3 matches (> 2 and <= 5)
-    expect(store.dueSoonCount).toBe(1)
+    const ids = store.sortedTasks.map((t) => t.id)
+    expect(ids).toEqual([21, 20, 22])
   })
 
   it('computes totalCount', () => {

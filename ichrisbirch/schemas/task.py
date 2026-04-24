@@ -12,7 +12,7 @@ class TaskCreate(TaskConfig):
     name: str
     notes: str | None = None
     category: str
-    priority: int
+    priority: int = 1
 
 
 class Task(TaskConfig):

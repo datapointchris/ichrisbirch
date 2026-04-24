@@ -34,6 +34,7 @@
   border-radius: var(--button-border-radius);
   box-shadow: var(--floating-box);
   transition: transform $transition-time ease-in-out;
+  position: relative;
 
   &:hover {
     $movement: calc(var(--space-3xs) * -0.4);
@@ -51,6 +52,12 @@
     align-items: center;
     line-height: 1.5em;
     text-align: left;
+
+    .task-drag-handle {
+      position: absolute;
+      top: var(--space-xs);
+      left: var(--space-xs);
+    }
 
     &.priority {
       grid-template-areas:
@@ -142,14 +149,14 @@
     font-size: var(--fs-400);
     text-align: left;
 
+    $drag-handle: 1fr;
     $name: 6fr;
     $priority: 2fr;
     $category: 4fr;
     $add-date: 4fr;
     $complete-date: 4fr;
     $time-to-complete: 4fr;
-    $extend-7: 3fr;
-    $extend-30: 3fr;
+    $shift: 3fr;
     $complete-button: 3fr;
     $complete-icon: 1fr;
     $edit-icon: 1fr;
@@ -169,7 +176,7 @@
     }
 
     &.todo {
-      grid-template-columns: $name $priority $category $add-date $complete-button $extend-7 $extend-30 $edit-icon $delete-icon;
+      grid-template-columns: $drag-handle $name $priority $category $add-date $complete-button $shift $edit-icon $delete-icon;
     }
 
     &__title {
@@ -276,4 +283,24 @@
 
 .task-search-form {
   display: flex;
+}
+
+.task-drag-handle {
+  cursor: grab;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-2xs);
+  color: var(--clr-gray-400);
+
+  &:active {
+    cursor: grabbing;
+    color: var(--clr-accent);
+  }
+}
+
+// Placeholder shown in the drag target slot while a task is being dragged.
+// vuedraggable adds the .sortable-ghost class to the ghost element.
+.sortable-ghost {
+  opacity: 0.4;
 }

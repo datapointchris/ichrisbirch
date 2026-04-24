@@ -27,11 +27,11 @@
       <span class="button__text">Add Task</span>
     </button>
     <button
-      data-testid="task-reset-priorities-button"
+      data-testid="task-reorder-button"
       class="button"
-      @click="handleResetPriorities"
+      @click="handleReorder"
     >
-      <span class="button__text">Reset Priorities</span>
+      <span class="button__text">Reorder</span>
     </button>
   </AppSubnav>
 </template>
@@ -62,13 +62,13 @@ function onSearch() {
   }
 }
 
-async function handleResetPriorities() {
+async function handleReorder() {
   try {
-    const message = await store.resetPriorities()
+    const message = await store.reorder()
     notify(message, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to reset priorities: ${detail}`, 'error')
+    notify(`Failed to reorder: ${detail}`, 'error')
   }
 }
 </script>

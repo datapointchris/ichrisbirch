@@ -1,5 +1,5 @@
 <template>
-  <div :class="['task task--block-layout priority', stateClass]">
+  <div class="task task--block-layout priority">
     <h3 class="task--block-layout__title">{{ task.name }}</h3>
     <div class="task--block-layout__priority">Priority: {{ task.priority }}</div>
     <div class="task--block-layout__category">Category: {{ task.category }}</div>
@@ -23,11 +23,8 @@
 
 <script setup lang="ts">
 import type { Task } from '@/api/client'
-import { taskStateClass } from './taskUtils'
 import { formatDate } from '@/composables/formatDate'
-import { computed } from 'vue'
 
-const props = defineProps<{ task: Task }>()
+defineProps<{ task: Task }>()
 defineEmits<{ complete: [id: number] }>()
-const stateClass = computed(() => taskStateClass(props.task.priority))
 </script>

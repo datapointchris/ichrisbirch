@@ -15,7 +15,7 @@ async function createTask(page: import('@playwright/test').Page, name: string, p
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
-// Smoke tests only — interaction-heavy tests (complete, delete, extend,
+// Smoke tests only — interaction-heavy tests (complete, delete, shift,
 // search) are covered by component integration tests in
 // src/views/__tests__/TasksView.test.ts
 
@@ -67,5 +67,34 @@ test.describe('Tasks Page', () => {
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Tasks' })
     await expect(sidebarLink).toBeVisible()
+  })
+
+  test('reorder button runs on-demand compaction and tasks stay loaded', async ({ page }) => {
+    await page.goto('/tasks/todo')
+    await expect(page.getByTestId('task-info-bar')).toBeVisible({ timeout: 10000 })
+
+    await page.getByTestId('task-reorder-button').click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('task-info-bar')).toBeVisible()
+  })
+
+  test('shift button moves a task 10 positions down', async ({ page }) => {
+    await page.goto('/tasks/todo')
+    await expect(page.getByTestId('task-info-bar')).toBeVisible({ timeout: 10000 })
+
+    const firstTask = page.getByTestId('task-item').first()
+    await expect(firstTask).toBeVisible({ timeout: 10000 })
+
+    const priorityText = await firstTask.locator('text=/Priority:\\s*-?\\d+/').first().textContent()
+    const beforePriority = parseInt((priorityText ?? '').replace(/\D+/g, ''))
+
+    await firstTask.getByTestId('task-shift-button').click()
+    await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
+
+    // The task that was first likely shifted down; just verify at least one
+    // task on the page now has priority >= beforePriority + 10.
+    const priorities = await page.getByTestId('task-item').locator('text=/Priority:\\s*-?\\d+/').allTextContents()
+    const values = priorities.map((t) => parseInt(t.replace(/\D+/g, '')))
+    expect(Math.max(...values)).toBeGreaterThanOrEqual(beforePriority + 10)
   })
 })

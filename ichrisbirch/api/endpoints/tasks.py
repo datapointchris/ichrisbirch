@@ -12,6 +12,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -95,26 +96,19 @@ async def create(task: schemas.TaskCreate, session: DbSession):
     return db_obj
 
 
-@router.post('/reset-priorities/', status_code=status.HTTP_200_OK)
-async def reset_priorities(session: DbSession):
-    # Query for all tasks that are not completed
-    query = select(models.Task).filter(models.Task.complete_date.is_(None))
-    tasks = session.scalars(query).all()
-    if not tasks:
-        logger.info('task_priorities_no_reset')
-        return {'message': 'No tasks to reset'}
-    min_val = min(task.priority for task in tasks)
-    if min_val >= 0:
-        logger.info('task_priorities_no_reset')
-        return {'message': 'No negative priorities to reset'}
+@router.post('/reorder/', status_code=status.HTTP_200_OK)
+async def reorder(session: DbSession):
+    """Dense-rank incomplete tasks to priorities 1..K, tiebreak by add_date.
 
-    for task in tasks:
-        task.priority += abs(min_val)
-        session.add(task)
+    Same operation the nightly scheduler runs, exposed for on-demand use
+    when the user wants priorities tidied up immediately.
+    """
+    count = compact_incomplete_task_priorities(session)
     session.commit()
-    logger.info('task_priorities_reset', count=len(tasks))
-
-    return {'message': f'Reset priorities for {len(tasks)} tasks'}
+    logger.info('task_priorities_reordered', count=count)
+    if count == 0:
+        return {'message': 'No tasks to reorder'}
+    return {'message': f'Reordered {count} tasks'}
 
 
 @router.get('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
@@ -161,10 +155,16 @@ async def complete(task_id: int, session: DbSession):
     raise NotFoundException('task', task_id, logger)
 
 
-@router.patch('/{task_id}/extend/{days}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def extend(task_id: int, days: int, session: DbSession):
+@router.patch('/{task_id}/shift/{positions}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def shift(task_id: int, positions: int, session: DbSession):
+    """Shift the task's priority rank by `positions` (positive = down, negative = up).
+
+    Priority is a positional rank — lower numbers are higher priority.
+    Positive values push the task down the list; negative values push it
+    up. Nightly compaction absorbs any gaps the shift creates.
+    """
     if task := session.get(models.Task, task_id):
-        task.priority += days
+        task.priority += positions
         session.add(task)
         session.commit()
         session.refresh(task)

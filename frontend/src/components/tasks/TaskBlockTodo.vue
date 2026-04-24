@@ -1,8 +1,14 @@
 <template>
   <div
     data-testid="task-item"
-    :class="['task task--block-layout todo', stateClass]"
+    class="task task--block-layout todo"
   >
+    <span
+      class="task-drag-handle"
+      title="Drag to reorder"
+    >
+      <i class="fa-solid fa-grip-lines"></i>
+    </span>
     <h3 class="task--block-layout__title">{{ task.name }}</h3>
     <div class="task--block-layout__priority">Priority: {{ task.priority }}</div>
     <div class="task--block-layout__category">Category: {{ task.category }}</div>
@@ -22,18 +28,12 @@
         <span class="button__text">Complete Task</span>
       </button>
       <button
-        data-testid="task-extend-7-button"
+        data-testid="task-shift-button"
         class="button"
-        @click="$emit('extend', task.id, 7)"
+        title="Shift this task 10 positions down the list"
+        @click="$emit('shift', task.id, 10)"
       >
-        <span class="button__text">Extend 7 Days</span>
-      </button>
-      <button
-        data-testid="task-extend-30-button"
-        class="button"
-        @click="$emit('extend', task.id, 30)"
-      >
-        <span class="button__text">Extend 30 Days</span>
+        <span class="button__text">↓ 10</span>
       </button>
       <button
         data-testid="task-delete-button"
@@ -48,11 +48,8 @@
 
 <script setup lang="ts">
 import type { Task } from '@/api/client'
-import { taskStateClass } from './taskUtils'
 import { formatDate } from '@/composables/formatDate'
-import { computed } from 'vue'
 
-const props = defineProps<{ task: Task }>()
-defineEmits<{ complete: [id: number]; extend: [id: number, days: number]; delete: [id: number] }>()
-const stateClass = computed(() => taskStateClass(props.task.priority))
+defineProps<{ task: Task }>()
+defineEmits<{ complete: [id: number]; shift: [id: number, positions: number]; delete: [id: number] }>()
 </script>

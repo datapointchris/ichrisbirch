@@ -58,8 +58,17 @@
               data-testid="task-priority-input"
               type="number"
               class="textbox add-edit-modal__number-input"
-              min="1"
             />
+          </div>
+          <div class="add-edit-modal__form-item">
+            <button
+              type="button"
+              data-testid="task-pin-to-top-button"
+              class="button"
+              @click="form.priority = 0"
+            >
+              <span class="button__text">Pin to Top</span>
+            </button>
           </div>
         </div>
 
@@ -117,7 +126,7 @@ const nameInput = ref<HTMLInputElement | null>(null)
 const form = reactive({
   name: '',
   category: '' as TaskCategory | '',
-  priority: 10,
+  priority: 1,
   notes: '',
 })
 
@@ -125,7 +134,7 @@ function handleModalClose() {
   form.name = ''
   form.notes = ''
   form.category = ''
-  form.priority = 10
+  form.priority = 1
   emit('close')
 }
 

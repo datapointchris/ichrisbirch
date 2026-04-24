@@ -117,16 +117,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function resetTaskPriorities(): Promise<{ message: string }> {
+  async function reorderTasks(): Promise<{ message: string }> {
     error.value = null
     try {
-      const response = await api.post<{ message: string }>('/tasks/reset-priorities/')
-      logger.info('task_priorities_reset', { message: response.data.message })
+      const response = await api.post<{ message: string }>('/tasks/reorder/')
+      logger.info('tasks_reordered', { message: response.data.message })
       return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
-      logger.error('task_priorities_reset_failed', { detail: apiError.detail, status: apiError.status })
+      logger.error('tasks_reorder_failed', { detail: apiError.detail, status: apiError.status })
       throw apiError
     }
   }
@@ -147,6 +147,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchApiKeys,
     createApiKey,
     revokeApiKey,
-    resetTaskPriorities,
+    reorderTasks,
   }
 })

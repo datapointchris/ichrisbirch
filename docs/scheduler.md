@@ -2,17 +2,28 @@
 
 ## APScheduler
 
-The scheduler is run in it's own `wsgi` application managed by `supervisor`.
-The scheduler is using the standard blocking scheduler since it is in its own process.
-Workers need to be set to 1 for `gunicorn` in order to not start multiple instances of the scheduler.
-Technically the scheduler could be run as part of the API since the tasks are related to the API, but the API will be changing to async in the future which would require a different scheduler, and the jobs may not always be only related to the API.
+The scheduler runs as its own Docker container (`icb-{env}-scheduler` for
+dev/test, `icb-{blue,green}-scheduler` for production). It uses APScheduler's
+blocking scheduler in a single process — a single instance is required to
+avoid duplicate job runs.
 
-The jobs are located in the `jobs.py` file in the `/scheduler` directory.
+Every job execution is persisted as a `SchedulerJobRun` record (job id,
+started/finished timestamps, duration, success, error details) via the
+`job_logger` decorator. Exceptions inside a job are logged but swallowed so
+one failing job cannot take down the whole scheduler.
+
+Jobs are registered in `ichrisbirch/scheduler/jobs.py` via `get_jobs_to_add()`.
 
 ## Current Jobs
 
-`decrease_task_priority` - Decreases the priority of all tasks by 1 every 24 hours.
+| Job | Trigger | Purpose |
+| --- | --- | --- |
+| `make_logs` | every 15 seconds | Heartbeat / log sanity check |
+| `check_and_run_autotasks` | daily at 1:00 AM | Create new Tasks from AutoTask templates whose schedule fires today and are under `max_concurrent` |
+| `check_and_run_autofun` | daily at 1:00 AM | Sync AutoFun active tasks and fill open slots from the fun list |
+| `compact_task_priorities` | daily at 1:15 AM | Dense-rank all incomplete Task priorities to `1..K` (tiebreak by `add_date ASC`) — runs *after* autotasks so same-night seeded tasks get included |
+| `docker_prune` | weekly, Sunday 3:00 AM | Prune Docker images older than 7 days to free disk space |
 
-`check_and_run_autotasks` - Checks if any autotasks need to be run based on their schedule and runs them if so.
-
-`backup_database` - Backs up the postgres database to S3 every 3 days.
+Task priority is a positional rank, not a time budget — `compact_task_priorities` is
+cosmetic housekeeping, not correctness-critical. The `/tasks/reorder/` API
+endpoint runs the same logic on demand.

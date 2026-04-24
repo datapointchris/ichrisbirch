@@ -34,6 +34,14 @@ class TaskCategory(Base):
 
 
 class Task(Base):
+    """A task in the to-do list.
+
+    `priority` is a positional rank (lower = earlier in the list). Ties are
+    allowed at any value and resolved at read time by `add_date ASC`
+    (oldest-waiting surfaces first). The nightly `compact_task_priorities`
+    job dense-ranks incomplete tasks to 1..K for cosmetic tidiness.
+    """
+
     __tablename__ = 'tasks'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text)

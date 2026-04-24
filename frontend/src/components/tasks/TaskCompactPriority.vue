@@ -1,5 +1,5 @@
 <template>
-  <div :class="['task task--compact-layout priority', stateClass]">
+  <div class="task task--compact-layout priority">
     <h3 class="task--compact-layout__title">{{ task.name }}</h3>
     <span>Priority: {{ task.priority }}</span>
     <span>Category: {{ task.category }}</span>
@@ -32,10 +32,7 @@
 <script setup lang="ts">
 import type { Task } from '@/api/client'
 import ActionButton from '@/components/ActionButton.vue'
-import { taskStateClass } from './taskUtils'
-import { computed } from 'vue'
 
-const props = defineProps<{ task: Task }>()
+defineProps<{ task: Task }>()
 defineEmits<{ complete: [id: number]; delete: [id: number] }>()
-const stateClass = computed(() => taskStateClass(props.task.priority))
 </script>

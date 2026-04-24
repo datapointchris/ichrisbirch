@@ -34,13 +34,18 @@ class TestTaskSchema:
         assert task.category == 'Home'
         assert task.priority == 1
 
+    def test_task_create_without_priority_defaults_to_1(self):
+        """TaskCreate has priority=1 default under the rank-based priority model."""
+        task = TaskCreate(name='Test Task', category='Home')
+        assert task.priority == 1
+
     def test_task_create_invalid_missing_fields(self):
-        """Test TaskCreate fails with missing required fields."""
+        """Test TaskCreate fails when truly required fields (name, category) are missing."""
         with pytest.raises(ValidationError) as exc_info:
-            TaskCreate(name='Test Task', category='Home')
+            TaskCreate(name='Test Task')
 
         errors = exc_info.value.errors()
-        assert any(err['type'] == 'missing' and err['loc'][0] == 'priority' for err in errors)
+        assert any(err['type'] == 'missing' and err['loc'][0] == 'category' for err in errors)
 
     def test_task_model_valid(self):
         """Test creating a valid Task model."""

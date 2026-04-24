@@ -229,22 +229,22 @@ describe('useAuthStore', () => {
     expect(store.error).toBe(apiError)
   })
 
-  // --- resetTaskPriorities ---
+  // --- reorderTasks ---
 
-  it('resets task priorities successfully', async () => {
-    mockApi.post.mockResolvedValueOnce({ data: { message: 'Reset priorities for 5 tasks' } })
+  it('reorders tasks successfully', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { message: 'Reordered 5 tasks' } })
     const store = useAuthStore()
-    const result = await store.resetTaskPriorities()
-    expect(mockApi.post).toHaveBeenCalledWith('/tasks/reset-priorities/')
-    expect(result.message).toBe('Reset priorities for 5 tasks')
+    const result = await store.reorderTasks()
+    expect(mockApi.post).toHaveBeenCalledWith('/tasks/reorder/')
+    expect(result.message).toBe('Reordered 5 tasks')
     expect(store.error).toBeNull()
   })
 
-  it('handles resetTaskPriorities failure', async () => {
+  it('handles reorderTasks failure', async () => {
     const apiError = new ApiError({ message: 'Server Error', detail: 'Database error', status: 500 })
     mockApi.post.mockRejectedValueOnce(apiError)
     const store = useAuthStore()
-    await expect(store.resetTaskPriorities()).rejects.toThrow(ApiError)
+    await expect(store.reorderTasks()).rejects.toThrow(ApiError)
     expect(store.error).toBe(apiError)
   })
 

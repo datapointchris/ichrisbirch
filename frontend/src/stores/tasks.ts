@@ -45,11 +45,13 @@ export const useTasksStore = defineStore('tasks', () => {
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
-  const sortedTasks = computed(() => [...tasks.value].sort((a, b) => a.priority - b.priority))
+  const sortedTasks = computed(() =>
+    [...tasks.value].sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority
+      return new Date(a.add_date).getTime() - new Date(b.add_date).getTime()
+    })
+  )
 
-  const overdueCount = computed(() => tasks.value.filter((t) => t.priority < 1).length)
-  const criticalCount = computed(() => tasks.value.filter((t) => t.priority > 0 && t.priority <= 2).length)
-  const dueSoonCount = computed(() => tasks.value.filter((t) => t.priority > 2 && t.priority <= 5).length)
   const totalCount = computed(() => tasks.value.length)
 
   function clearError() {
@@ -142,19 +144,19 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
-  async function extend(id: number, days: number) {
+  async function shift(id: number, positions: number) {
     error.value = null
     try {
-      const response = await api.patch<Task>(`/tasks/${id}/extend/${days}/`)
+      const response = await api.patch<Task>(`/tasks/${id}/shift/${positions}/`)
       const index = tasks.value.findIndex((t) => t.id === id)
       if (index !== -1) {
         tasks.value[index] = response.data
       }
-      logger.info('task_extended', { id, days })
+      logger.info('task_shifted', { id, positions })
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
-      logger.error('task_extend_failed', { id, detail: apiError.detail, status: apiError.status })
+      logger.error('task_shift_failed', { id, detail: apiError.detail, status: apiError.status })
       throw apiError
     }
   }
@@ -174,16 +176,35 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
-  async function resetPriorities() {
+  async function reorder() {
     error.value = null
     try {
-      const response = await api.post<{ message: string }>('/tasks/reset-priorities/')
-      logger.info('priorities_reset', { message: response.data.message })
+      const response = await api.post<{ message: string }>('/tasks/reorder/')
+      logger.info('tasks_reordered', { message: response.data.message })
+      // Refetch so local state reflects the dense-ranked priorities
+      await fetchTodo()
       return response.data.message
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
-      logger.error('priorities_reset_failed', { detail: apiError.detail, status: apiError.status })
+      logger.error('tasks_reorder_failed', { detail: apiError.detail, status: apiError.status })
+      throw apiError
+    }
+  }
+
+  async function setPriority(id: number, priority: number) {
+    error.value = null
+    try {
+      const response = await api.patch<Task>(`/tasks/${id}/`, { priority })
+      const index = tasks.value.findIndex((t) => t.id === id)
+      if (index !== -1) {
+        tasks.value[index] = response.data
+      }
+      logger.info('task_priority_set', { id, priority })
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('task_priority_set_failed', { id, detail: apiError.detail, status: apiError.status })
       throw apiError
     }
   }
@@ -194,9 +215,6 @@ export const useTasksStore = defineStore('tasks', () => {
     loading,
     error,
     sortedTasks,
-    overdueCount,
-    criticalCount,
-    dueSoonCount,
     totalCount,
     clearError,
     fetchTodo,
@@ -204,8 +222,9 @@ export const useTasksStore = defineStore('tasks', () => {
     search,
     create,
     complete,
-    extend,
+    shift,
     remove,
-    resetPriorities,
+    reorder,
+    setPriority,
   }
 })

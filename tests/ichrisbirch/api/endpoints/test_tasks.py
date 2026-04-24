@@ -107,39 +107,45 @@ def test_task_categories(txn_api_logged_in, category):
     assert created_task.json()['name'] == test_task.name
 
 
-def test_reset_priorities(task_crud_tester):
-    client, crud_tester = task_crud_tester
-    # Priority of first task
-    first_id = crud_tester.item_id_by_position(client, position=1)
-    task_1 = client.get(f'/tasks/{first_id}/')
-    p1 = task_1.json()['priority']
-
-    # Create a task with negative priority
-    NEGATIVE_PRIORITY_TASK = schemas.TaskCreate(
-        name='Task Negative priority',
-        notes='Notes task negative',
-        category='Home',
-        priority=-5,
-    )
-    client.post(ENDPOINT, json=NEGATIVE_PRIORITY_TASK.model_dump())
-
-    # Reset priorities
-    response = client.post('/tasks/reset-priorities/')
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    # One of the 3 original tasks is completed, so 2 tasks + 1 new task = 3
-    assert response.json().get('message') == 'Reset priorities for 3 tasks'
-
-    # Check that the negative priority task updated other task priorities
-    task_1_updated = client.get(f'/tasks/{first_id}/')
-    p1_updated = task_1_updated.json()['priority']
-    assert p1_updated == p1 + abs(NEGATIVE_PRIORITY_TASK.priority)
-
-
-def test_reset_priorities_no_negative_priorities(task_crud_tester):
+def test_reorder_dense_ranks_incomplete_tasks(task_crud_tester):
+    """POST /tasks/reorder/ compacts incomplete priorities to a dense 1..K sequence."""
     client, _ = task_crud_tester
-    response = client.post('/tasks/reset-priorities/')
+    # Bump the two incomplete tasks to non-dense values so there's something to compact.
+    todo = client.get('/tasks/todo/').json()
+    ids_in_order = [t['id'] for t in todo]
+    client.patch(f'/tasks/{ids_in_order[0]}/', json={'priority': 5})
+    client.patch(f'/tasks/{ids_in_order[1]}/', json={'priority': 20})
+
+    # Add a "pin to top" style task at priority 0.
+    PINNED_TASK = schemas.TaskCreate(name='Pinned to top', notes=None, category='Home', priority=0)
+    pinned_response = client.post(ENDPOINT, json=PINNED_TASK.model_dump())
+    pinned_id = pinned_response.json()['id']
+
+    response = client.post('/tasks/reorder/')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert response.json().get('message') == 'No negative priorities to reset'
+    assert response.json().get('message') == 'Reordered 3 tasks'
+
+    after = client.get('/tasks/todo/').json()
+    # Dense 1..K, tiebreak by add_date ASC. Pinned (priority 0) was lowest so it's rank 1.
+    assert [t['priority'] for t in after] == [1, 2, 3]
+    assert after[0]['id'] == pinned_id
+    assert [t['id'] for t in after[1:]] == ids_in_order
+
+
+def test_reorder_with_no_incomplete_tasks(txn_api_logged_in):
+    """POST /tasks/reorder/ returns a friendly message when there are no incomplete tasks."""
+    client, _ = txn_api_logged_in
+    response = client.post('/tasks/reorder/')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json().get('message') == 'No tasks to reorder'
+
+
+def test_create_task_without_priority_defaults_to_1(txn_api_logged_in):
+    """Omitting priority on TaskCreate should default to 1 (top of the list)."""
+    client, _ = txn_api_logged_in
+    response = client.post(ENDPOINT, json={'name': 'No explicit priority', 'category': 'Chore'})
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    assert response.json()['priority'] == 1
 
 
 def test_completed_with_date_filter(task_crud_tester):
@@ -198,7 +204,7 @@ def test_completed_with_invalid_dates(task_crud_tester):
 def test_todo_with_limit(task_crud_tester):
     """Test /tasks/todo/ endpoint with limit parameter.
 
-    Test data has 2 uncompleted tasks (priority 5 and 10).
+    Test data has 2 uncompleted tasks (priority 1 and 2).
     Limit should restrict the number of results.
     """
     client, _ = task_crud_tester
@@ -213,6 +219,6 @@ def test_todo_with_limit(task_crud_tester):
     assert response_limited.status_code == status.HTTP_200_OK, show_status_and_response(response_limited)
     assert len(response_limited.json()) == 1, 'Expected 1 task with limit=1'
 
-    # The returned task should be the one with lowest priority (5)
+    # The returned task should be the one with lowest priority (1)
     tasks = response_limited.json()
-    assert tasks[0]['priority'] == 5, 'Expected task with priority 5 (lowest) to be returned first'
+    assert tasks[0]['priority'] == 1, 'Expected task with priority 1 (lowest) to be returned first'

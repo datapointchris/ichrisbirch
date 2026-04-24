@@ -1,12 +1,5 @@
 import type { CompletedTask } from '@/stores/tasks'
 
-export function taskStateClass(priority: number): string {
-  if (priority < 1) return 'task--overdue'
-  if (priority <= 2) return 'task--critical'
-  if (priority <= 5) return 'task--soon'
-  return ''
-}
-
 export function daysToComplete(task: CompletedTask): number {
   const add = new Date(task.add_date)
   const complete = new Date(task.complete_date)

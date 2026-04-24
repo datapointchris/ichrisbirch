@@ -9,9 +9,6 @@
     >
       <TaskInfoBar
         v-model:view-type="viewType"
-        :overdue-count="store.overdueCount"
-        :critical-count="store.criticalCount"
-        :due-soon-count="store.dueSoonCount"
         :total-count="store.totalCount"
       />
     </div>
@@ -75,26 +72,30 @@
         </div>
       </div>
       <div :class="gridClass">
-        <template v-if="viewType === 'block'">
-          <TaskBlockTodo
-            v-for="task in filteredTodoTasks"
-            :key="task.id"
-            :task="task"
-            @complete="onComplete"
-            @extend="onExtend"
-            @delete="onDelete"
-          />
-        </template>
-        <template v-else>
-          <TaskCompactTodo
-            v-for="task in filteredTodoTasks"
-            :key="task.id"
-            :task="task"
-            @complete="onComplete"
-            @extend="onExtend"
-            @delete="onDelete"
-          />
-        </template>
+        <draggable
+          :list="filteredTodoTasks"
+          item-key="id"
+          handle=".task-drag-handle"
+          data-testid="tasks-draggable"
+          @end="onDragEnd"
+        >
+          <template #item="{ element: task }">
+            <TaskBlockTodo
+              v-if="viewType === 'block'"
+              :task="task"
+              @complete="onComplete"
+              @shift="onShift"
+              @delete="onDelete"
+            />
+            <TaskCompactTodo
+              v-else
+              :task="task"
+              @complete="onComplete"
+              @shift="onShift"
+              @delete="onDelete"
+            />
+          </template>
+        </draggable>
       </div>
     </template>
 
@@ -103,9 +104,6 @@
       <div class="grid grid--one-column grid--tight">
         <TaskInfoBar
           v-model:view-type="viewType"
-          :overdue-count="store.overdueCount"
-          :critical-count="store.criticalCount"
-          :due-soon-count="store.dueSoonCount"
           :total-count="store.totalCount"
         />
         <h2 class="task-layout__title">Completed Tasks</h2>
@@ -173,7 +171,7 @@
             :key="task.id"
             :task="task"
             @complete="onComplete"
-            @extend="onExtend"
+            @shift="onShift"
             @delete="onDelete"
           />
           <TaskBlockCompleted
@@ -189,7 +187,7 @@
             :key="task.id"
             :task="task"
             @complete="onComplete"
-            @extend="onExtend"
+            @shift="onShift"
             @delete="onDelete"
           />
           <TaskCompactCompleted
@@ -213,8 +211,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import draggable from 'vuedraggable'
 import { useTasksStore, TASK_CATEGORIES } from '@/stores/tasks'
 import type { CompletedTask } from '@/stores/tasks'
+import type { Task } from '@/api/client'
 import { useNotifications } from '@/composables/useNotifications'
 import TasksSubnav from '@/components/tasks/TasksSubnav.vue'
 import TaskInfoBar from '@/components/tasks/TaskInfoBar.vue'
@@ -249,10 +249,15 @@ const dateFilterOptions: NeuToggleGroupOption<DateFilterKey>[] = DATE_FILTERS.ma
   label: dateFilterLabel(f),
 }))
 
-const filteredTodoTasks = computed(() => {
-  if (!selectedCategory.value) return store.sortedTasks
-  return store.sortedTasks.filter((t) => t.category === selectedCategory.value)
-})
+const filteredTodoTasks = ref<Task[]>([])
+
+function syncFilteredTodoTasks() {
+  filteredTodoTasks.value = selectedCategory.value
+    ? store.sortedTasks.filter((t) => t.category === selectedCategory.value)
+    : [...store.sortedTasks]
+}
+
+watch(() => [store.sortedTasks, selectedCategory.value], syncFilteredTodoTasks, { deep: true, immediate: true })
 
 const filteredCompletedTasks = computed(() => {
   if (!selectedCategory.value) return store.completedTasks
@@ -326,13 +331,14 @@ async function onComplete(id: number) {
   }
 }
 
-async function onExtend(id: number, days: number) {
+async function onShift(id: number, positions: number) {
   const name = store.tasks.find((t) => t.id === id)?.name ?? 'Task'
   try {
-    await store.extend(id, days)
-    show(`${name} extended by ${days} days`, 'success')
+    await store.shift(id, positions)
+    const direction = positions >= 0 ? 'down' : 'up'
+    show(`${name} shifted ${direction} ${Math.abs(positions)} positions`, 'success')
   } catch {
-    show('Failed to extend task', 'error')
+    show('Failed to shift task', 'error')
   }
 }
 
@@ -352,6 +358,42 @@ async function onCreate(data: { name: string; category: TaskCategory; priority: 
     show(`${data.name} created`, 'success')
   } catch {
     show('Failed to create task', 'error')
+  }
+}
+
+async function onDragEnd(evt: { oldIndex: number; newIndex: number }) {
+  const { oldIndex, newIndex } = evt
+  if (oldIndex === newIndex) return
+
+  // After vuedraggable mutates filteredTodoTasks, the dragged task is at newIndex.
+  // We pick a target priority based on the direction of travel:
+  //   - Dragged UP: tie with the task immediately above (or priority 0 if at top).
+  //   - Dragged DOWN: tie with the task immediately below (or prev-bottom's priority + 1 if at bottom).
+  // This gives "approximate drag" — the tie is broken by add_date ASC at read time.
+  const dragged = filteredTodoTasks.value[newIndex]
+  if (!dragged) return
+
+  let targetPriority: number
+  if (oldIndex > newIndex) {
+    const above = filteredTodoTasks.value[newIndex - 1]
+    targetPriority = above ? above.priority : 0
+  } else {
+    const below = filteredTodoTasks.value[newIndex + 1]
+    if (below) {
+      targetPriority = below.priority
+    } else {
+      const prevBottom = filteredTodoTasks.value[newIndex - 1]
+      targetPriority = prevBottom ? prevBottom.priority + 1 : 1
+    }
+  }
+
+  try {
+    await store.setPriority(dragged.id, targetPriority)
+    syncFilteredTodoTasks()
+  } catch {
+    show('Failed to reorder task', 'error')
+    // Roll back local drag by re-syncing from the store
+    syncFilteredTodoTasks()
   }
 }
 

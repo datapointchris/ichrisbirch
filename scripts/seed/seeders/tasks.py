@@ -156,6 +156,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             for i, name in enumerate(names):
                 title = name if scale == 1 else f'{name} #{rep + 1}'
                 notes = NOTES[i % len(NOTES)] if random.random() < 0.4 else None
+                # Temporary priority — incomplete tasks get dense-ranked 1..K below.
                 priority = random.randint(1, 50)
 
                 # Spread add_date across the last 18 months for realistic history
@@ -189,31 +190,18 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     if complete_date <= now:
                         task.complete_date = complete_date
                         completed_count += 1
-                    else:
-                        # Leave as outstanding — these become the "recent" outstanding tasks
-                        pass
-                else:
-                    # Outstanding tasks — some overdue (negative priority)
-                    if random.random() < 0.2:
-                        task.priority = random.randint(-10, -1)
 
                 tasks.append(task)
 
-    # Guarantee tasks in each priority band for frontend badge visibility
-    # Vue store: overdue (< 1), critical (1-2), due_soon (3-5)
-    outstanding = [t for t in tasks if t.complete_date is None]
-    band_targets = [
-        (lambda t: t.priority < 1, -5, 'overdue'),
-        (lambda t: 1 <= t.priority <= 2, 2, 'critical'),
-        (lambda t: 3 <= t.priority <= 5, 4, 'due_soon'),
-    ]
-    for check_fn, target_priority, _label in band_targets:
-        in_band = sum(1 for t in outstanding if check_fn(t))
-        if in_band < 2:
-            # Move some high-priority outstanding tasks into this band
-            candidates = [t for t in outstanding if t.priority > 5 and not check_fn(t)]
-            for t in candidates[: 2 - in_band]:
-                t.priority = target_priority
+    # Dense-rank incomplete tasks to 1..K by (priority, add_date) so seeded
+    # data matches the post-compaction invariant the nightly scheduler
+    # maintains. Completed tasks keep whatever priority they had.
+    outstanding = sorted(
+        (t for t in tasks if t.complete_date is None),
+        key=lambda t: (t.priority, t.add_date),
+    )
+    for new_rank, task in enumerate(outstanding, start=1):
+        task.priority = new_rank
 
     session.add_all(tasks)
     session.flush()

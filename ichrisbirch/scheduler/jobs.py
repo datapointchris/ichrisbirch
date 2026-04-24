@@ -25,6 +25,7 @@ from sqlalchemy import select
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -138,13 +139,12 @@ def make_logs(settings: Settings) -> None:
 
 
 @job_logger
-def decrease_task_priority(settings: Settings) -> None:
-    """Decrease priority of all tasks by 1."""
+def compact_task_priorities(settings: Settings) -> None:
+    """Dense-rank incomplete tasks to priorities 1..K, tiebreak by add_date."""
     with create_session(settings) as session:
-        query = select(models.Task).filter(models.Task.complete_date.is_(None))
-        for task in session.scalars(query).all():
-            task.priority -= 1
+        count = compact_incomplete_task_priorities(session)
         session.commit()
+        logger.info('task_priorities_compacted', count=count)
 
 
 @job_logger
@@ -292,22 +292,22 @@ def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
             id='make_logs',
         ),
         JobToAdd(
-            func=decrease_task_priority,
-            args=(settings,),
-            trigger=daily_1am_trigger,
-            id='decrease_task_priority_daily',
-        ),
-        JobToAdd(
             func=check_and_run_autotasks,
             args=(settings,),
-            trigger=daily_115am_trigger,
+            trigger=daily_1am_trigger,
             id='check_and_run_autotasks_daily',
         ),
         JobToAdd(
             func=check_and_run_autofun,
             args=(settings,),
-            trigger=daily_115am_trigger,
+            trigger=daily_1am_trigger,
             id='check_and_run_autofun_daily',
+        ),
+        JobToAdd(
+            func=compact_task_priorities,
+            args=(settings,),
+            trigger=daily_115am_trigger,
+            id='compact_task_priorities_daily',
         ),
         JobToAdd(
             func=docker_prune,

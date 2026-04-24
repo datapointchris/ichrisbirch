@@ -18,17 +18,29 @@ def insert_testing_data():
     delete_test_data('autotasks')
 
 
-def test_decrease_task_priority(test_api_logged_in):
-    """Test if able to decrease priority of all tasks."""
-    before = test_api_logged_in.get('/tasks/')
-    assert before.status_code == 200, show_status_and_response(before)
-    assert sum([task['priority'] for task in before.json()]) == 5 + 10 + 15
-    jobs.decrease_task_priority(test_settings)
-    after = test_api_logged_in.get('/tasks/')
-    assert after.status_code == 200, show_status_and_response(after)
-    # Task 3 is completed so it's priority should not be decreased from 15
-    assert sum([task['priority'] for task in after.json()]) == 4 + 9 + 15, after.json()
-    assert len(before.json()) == len(after.json())
+def test_compact_task_priorities(test_api_logged_in):
+    """Dense-rank incomplete tasks to 1..K; completed tasks are untouched."""
+    # Bump incomplete task priorities to non-dense values so the compaction
+    # has something to do. The two incomplete tasks start at 1 and 2 per the
+    # baseline fixture — push them to 7 and 12 to simulate a post-add_date
+    # pile-up that would be tidied up overnight.
+    todo = test_api_logged_in.get('/tasks/todo/').json()
+    assert len(todo) == 2, todo
+    ids_in_order = [t['id'] for t in todo]
+    test_api_logged_in.patch(f'/tasks/{ids_in_order[0]}/', json={'priority': 7})
+    test_api_logged_in.patch(f'/tasks/{ids_in_order[1]}/', json={'priority': 12})
+
+    jobs.compact_task_priorities(test_settings)
+
+    after = test_api_logged_in.get('/tasks/todo/').json()
+    assert [t['priority'] for t in after] == [1, 2], after
+    # Same task that was rank-1 by add_date should still be rank-1 afterward.
+    assert [t['id'] for t in after] == ids_in_order
+
+    # Completed task's priority is untouched (baseline priority = 3).
+    completed = test_api_logged_in.get('/tasks/completed/').json()
+    assert len(completed) == 1
+    assert completed[0]['priority'] == 3
 
 
 NEW_AUTOTASK = schemas.AutoTaskCreate(
