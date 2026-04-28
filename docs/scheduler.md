@@ -8,9 +8,13 @@ blocking scheduler in a single process — a single instance is required to
 avoid duplicate job runs.
 
 Every job execution is persisted as a `SchedulerJobRun` record (job id,
-started/finished timestamps, duration, success, error details) via the
-`job_logger` decorator. Exceptions inside a job are logged but swallowed so
-one failing job cannot take down the whole scheduler.
+`job_run_id` correlation token, started/finished timestamps, duration, success,
+error details) via the `job_logger` decorator. The decorator binds the
+`job_run_id` into structlog contextvars for the duration of the run, so every
+log line emitted during the job is queryable in Loki by
+`{job_run_id="..."}` and joins back to the DB row of the same id.
+Exceptions inside a job are logged but swallowed so one failing job cannot
+take down the whole scheduler.
 
 Jobs are registered in `ichrisbirch/scheduler/jobs.py` via `get_jobs_to_add()`.
 

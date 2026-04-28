@@ -390,25 +390,37 @@ Health Check for dev Environment
 [!] Chat Service WebSocket: HTTP 400 (May not support WebSocket)
 ```
 
-### `icb dev logs [service]`
+### `icb {dev|testing|prod} logs [service] [flags]`
 
-View logs for all services or a specific service.
+View logs for all services or a specific service. Backed by `cli/log_viewer.py`,
+a structured renderer that JSON-decodes structlog lines from ichrisbirch
+containers and falls through to passthrough rendering for third-party services
+(traefik, postgres, redis).
 
 **Usage:**
 
 ```bash
-icb dev logs          # All services
-icb dev logs api      # API service only
-icb dev logs traefik  # Traefik logs
+icb dev logs                                 # All services
+icb dev logs api                             # API only
+icb dev logs --level WARNING                 # Filter by level
+icb dev logs --request-id abc12345           # Follow one request across services
+icb dev logs --module CountdownsStore        # Filter by structlog logger / Vue module
+icb dev logs --event task_created            # Filter by event name substring
+icb dev logs --grep 'pattern'                # Arbitrary regex filter
+icb dev logs --no-callsite                   # Hide file:line for denser output
+icb dev logs --json                          # Raw JSON passthrough (for piping to jq)
+icb dev logs --no-follow                     # Print recent and exit
 ```
+
+The same flags work for `icb testing logs ...` and `icb prod logs ...`.
 
 **Features:**
 
-- **Persistent viewing:** Watch loop automatically reconnects when containers restart
-- Real-time log following (Ctrl+C to exit)
-- Service-specific filtering
-- Colored output for better readability (service names colorized)
-- Uses structlog format (timestamp, level, event, context)
+- Watch loop automatically reconnects when containers restart
+- Service-name colorization for non-JSON lines
+- Structured rendering with optional callsite (`file.py:42`)
+- Cross-service request tracing via `--request-id`
+- Dev / test default to `LOG_FORMAT=json` so the viewer always sees structured input
 
 ### `icb ssl-manager generate <env|all>`
 

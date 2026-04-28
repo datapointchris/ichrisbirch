@@ -20,6 +20,7 @@ class SchedulerJobRun(Base):
 
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     job_id: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    job_run_id: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_seconds: Mapped[float] = mapped_column(Float, nullable=False)

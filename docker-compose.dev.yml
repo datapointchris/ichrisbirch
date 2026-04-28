@@ -110,7 +110,7 @@ services:
     environment: !override
       - ENVIRONMENT=development
       - FASTAPI_DEBUG=True
-      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/api.log
@@ -145,7 +145,7 @@ services:
     command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.runOnSave=true --server.headless=true
     environment: !override
       - ENVIRONMENT=development
-      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/chat.log
@@ -214,7 +214,7 @@ services:
     container_name: icb-dev-scheduler
     environment: !override
       - ENVIRONMENT=development
-      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
       - LOG_FILE=/var/log/ichrisbirch/scheduler.log

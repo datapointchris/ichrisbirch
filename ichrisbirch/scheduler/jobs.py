@@ -9,6 +9,7 @@ by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 import functools
 import random
 import subprocess  # nosec B404
+import uuid
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import asdict
@@ -57,6 +58,7 @@ class JobToAdd:
 def _persist_job_run(
     settings: Settings,
     job_id: str,
+    job_run_id: str,
     started_at: datetime,
     finished_at: datetime,
     duration_seconds: float,
@@ -70,6 +72,7 @@ def _persist_job_run(
             session.add(
                 models.SchedulerJobRun(
                     job_id=job_id,
+                    job_run_id=job_run_id,
                     started_at=started_at,
                     finished_at=finished_at,
                     duration_seconds=duration_seconds,
@@ -80,20 +83,27 @@ def _persist_job_run(
             )
             session.commit()
     except Exception as e:
-        logger.error('job_run_persist_failed', job_id=job_id, error=str(e))
+        logger.error('job_run_persist_failed', job_id=job_id, job_run_id=job_run_id, error=str(e))
 
 
 def job_logger(func: Callable) -> Callable:
-    """Decorator to log job start, completion, and failures.
+    """Decorator that wraps each job invocation with structured logging.
 
-    Exceptions are logged but swallowed to prevent one failing job
-    from crashing the entire scheduler. Also persists a SchedulerJobRun
-    record for each execution.
+    Binds a per-invocation `job_run_id` into contextvars so every log
+    statement the job emits downstream inherits it. This lets operators
+    trace a single execution across the full job using Grafana's
+    `{job_run_id="..."}` label query.
+
+    Exceptions are logged but swallowed to prevent one failing job from
+    crashing the entire scheduler. Persists a SchedulerJobRun row with
+    the same correlation ID so DB history and log streams can be joined.
     """
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        logger.info('job_started', job_name=func.__name__)
+        job_run_id = uuid.uuid4().hex[:8]
+        structlog.contextvars.bind_contextvars(job_name=func.__name__, job_run_id=job_run_id)
+        logger.info('job_started')
         started_at = pendulum.now()
         success = False
         error_type = None
@@ -102,12 +112,12 @@ def job_logger(func: Callable) -> Callable:
             func(*args, **kwargs)
             success = True
             elapsed = (pendulum.now() - started_at).in_words()
-            logger.info('job_completed', job_name=func.__name__, elapsed=elapsed)
+            logger.info('job_completed', elapsed=elapsed)
         except Exception as e:
             elapsed = (pendulum.now() - started_at).in_words()
             error_type = type(e).__name__
             error_message = str(e)
-            logger.error('job_failed', job_name=func.__name__, elapsed=elapsed, error_type=error_type, error=error_message)
+            logger.error('job_failed', elapsed=elapsed, error_type=error_type, error=error_message)
         finally:
             finished_at = pendulum.now()
             duration_seconds = (finished_at - started_at).total_seconds()
@@ -117,6 +127,7 @@ def job_logger(func: Callable) -> Callable:
                 _persist_job_run(
                     settings=settings,
                     job_id=func.__name__,
+                    job_run_id=job_run_id,
                     started_at=started_at,
                     finished_at=finished_at,
                     duration_seconds=duration_seconds,
@@ -124,6 +135,7 @@ def job_logger(func: Callable) -> Callable:
                     error_type=error_type,
                     error_message=error_message,
                 )
+            structlog.contextvars.unbind_contextvars('job_name', 'job_run_id')
 
     return wrapper
 

@@ -20,10 +20,16 @@ LOG_DIR = os.environ.get('LOG_DIR', '/var/log/ichrisbirch')
 
 Controls the output format for log messages.
 
-| Value | Description | Use Case |
-|-------|-------------|----------|
-| `console` (default) | Human-readable colored output | Development, debugging |
-| `json` | Structured JSON output | Production, log aggregation (ELK, Datadog) |
+| Value | Description |
+| --- | --- |
+| `console` | Human-readable colored output |
+| `json` | Structured JSON output |
+
+`json` is the default for dev, test, and production and is required by the
+CLI viewer (`cli/log_viewer.py`) and by Loki's pipeline. The dev and test
+compose files set `LOG_FORMAT=${LOG_FORMAT:-json}` so the viewer always
+receives structured input. Override per-service by exporting
+`LOG_FORMAT=console` for raw colored output without the viewer.
 
 **Console format example:**
 
@@ -42,7 +48,7 @@ Controls the output format for log messages.
 Controls which log messages are output.
 
 | Value | Description |
-|-------|-------------|
+| --- | --- |
 | `DEBUG` (default) | All messages including detailed diagnostics |
 | `INFO` | Normal operations (user login, task created, job completed) |
 | `WARNING` | Recoverable issues (invalid input, retry attempts) |
@@ -54,7 +60,7 @@ Controls which log messages are output.
 Controls whether colored output is used in console format.
 
 | Value | Description |
-|-------|-------------|
+| --- | --- |
 | `auto` (default) | Use TTY detection (colors if terminal, no colors if piped) |
 | `true` | Force colors on (useful in Docker where TTY detection fails) |
 | `false` | Force colors off |
@@ -64,7 +70,7 @@ Controls whether colored output is used in console format.
 Optional path to a log file for persistence. When set and the directory exists, logs are written to both stdout and the specified file.
 
 | Value | Description |
-|-------|-------------|
+| --- | --- |
 | Empty (default) | No file logging, stdout only |
 | `/var/log/ichrisbirch/api.log` | Write logs to file (and stdout) |
 
@@ -80,7 +86,7 @@ Optional path to a log file for persistence. When set and the directory exists, 
 Directory where log files are stored (used by admin UI for log aggregation).
 
 | Value | Description |
-|-------|-------------|
+| --- | --- |
 | `/var/log/ichrisbirch` (default) | Standard log directory |
 
 **Docker volume mount:**
@@ -97,33 +103,23 @@ All services support request tracing via the `X-Request-ID` header. When a reque
 ### Request ID Flow
 
 ```text
-Flask Process                          FastAPI Process
-─────────────────                      ─────────────────
-1. Request arrives
-2. Middleware generates/extracts:
-   X-Request-ID: abc12345
-3. bind_contextvars(request_id)
-4. All Flask logs include request_id
-5. API client adds header to request
+Vue SPA (browser)                       FastAPI Process
+─────────────────                       ─────────────────
+1. Vue API client generates
+   X-Request-ID: abc12345 per request
+   (frontend/src/api/client.ts)
               │
-              └──── HTTP Request ────► 6. Request arrives with header
-                                       7. Middleware extracts request_id
-                                       8. bind_contextvars(request_id)
-                                       9. All FastAPI logs include request_id
+              └──── HTTP Request ────► 2. Middleware extracts request_id
+                                          (or generates one if missing)
+                                       3. bind_contextvars(request_id)
+                                       4. All FastAPI logs include request_id
+                                       5. Header echoed on the response
+   ◀── X-Request-ID: abc12345 ────────────────────────
+6. Vue captures response header
+   into ApiError for surfacing in UI
 ```
 
 ### Middleware Implementation
-
-**Flask**: `ichrisbirch/app/middleware.py`
-
-```python
-class RequestTracingMiddleware:
-    def _before_request(self):
-        structlog.contextvars.clear_contextvars()
-        request_id = request.headers.get('X-Request-ID', str(uuid.uuid4())[:8])
-        g.request_id = request_id
-        structlog.contextvars.bind_contextvars(request_id=request_id)
-```
 
 **FastAPI**: `ichrisbirch/api/middleware.py`
 
@@ -135,6 +131,16 @@ class RequestTracingMiddleware(BaseHTTPMiddleware):
         structlog.contextvars.bind_contextvars(request_id=request_id)
         # ...
 ```
+
+### Scheduler Job Correlation
+
+Scheduler jobs are not request-scoped, so they get their own correlation token.
+The `@job_logger` decorator in `ichrisbirch/scheduler/jobs.py` generates a
+per-invocation `job_run_id` (8-hex), binds it into structlog contextvars for
+the lifetime of the job, and persists it on the `SchedulerJobRun` row written
+at the end. Every log line a job emits carries the `job_run_id`, so a single
+execution is queryable in Loki via `{job_run_id="..."}` and joins back to the
+DB record by the same id.
 
 ## Viewing Logs
 
@@ -148,10 +154,11 @@ Use the CLI to view colored logs that persist across container restarts:
 
 # Specific service
 ./cli/icb dev logs api
-./cli/icb dev logs app
+./cli/icb dev logs scheduler
+./cli/icb dev logs vue
 ```
 
-The logs command uses a watch loop that automatically reconnects when containers restart.
+The logs command uses a watch loop that automatically reconnects when containers restart, and supports filter flags described in [CLI Usage](cli-traefik-usage.md).
 
 ### Testing
 
@@ -245,10 +252,9 @@ Noisy third-party loggers are suppressed to reduce log noise:
 **Configuration**: `ichrisbirch/logger.py:78-101`
 
 | Logger | Level | Reason |
-|--------|-------|--------|
+| --- | --- | --- |
 | `apscheduler` | WARNING | Verbose job scheduling messages |
 | `httpx` | WARNING | HTTP client request details |
-| `werkzeug` | WARNING | Flask development server messages |
 | `boto3`, `botocore` | INFO | AWS SDK details |
 | `sqlalchemy_json` | INFO | JSON field operations |
 
@@ -271,7 +277,7 @@ logger.error('database_error', error=str(e), operation='create_user')
 Use snake_case event names that describe what happened:
 
 | Good | Bad |
-|------|-----|
+| --- | --- |
 | `user_login_success` | `logged in user` |
 | `task_created` | `Created new task` |
 | `api_request_failed` | `HTTP error` |
@@ -282,7 +288,7 @@ Use snake_case event names that describe what happened:
 The project migrated from Python's standard logging module to structlog. Key differences:
 
 | Standard Logging | Structlog |
-|------------------|-----------|
+| --- | --- |
 | `logger = logging.getLogger(__name__)` | `logger = structlog.get_logger()` |
 | `logger.info(f'User {user_id} logged in')` | `logger.info('user_login', user_id=user_id)` |
 | String interpolation | Keyword arguments |
@@ -314,15 +320,21 @@ logger.error('countdown_create_failed', { detail: error.detail, status: error.st
 2026-03-13T15:30:45.123Z [info   ] countdown_created              module=CountdownsStore id=42 name="Summer Trip"
 ```
 
-**Production (JSON, for Loki)**:
+**Production (JSON, in browser DevTools only)**:
 
 ```json
 {"timestamp":"2026-03-13T15:30:45.123Z","level":"info","event":"countdown_created","module":"CountdownsStore","id":42,"name":"Summer Trip"}
 ```
 
+In production the JSON reporter calls `console.info(JSON.stringify(...))`, so
+the entry lands in the user's browser DevTools and nowhere else. There is no
+shipping pipeline today — Vue is a static SPA in production, so its logs
+never reach a container that Promtail can scrape. Cross-service log shipping
+for the browser is planned via OpenTelemetry; see `.planning/otel-rum.md`.
+
 ### Vue Request Tracing
 
-The Vue API client (`frontend/src/api/client.ts`) adds `X-Request-ID` headers to every outgoing request via an Axios interceptor. This ID is logged on both the client (consola) and server (structlog), enabling end-to-end request correlation.
+The Vue API client (`frontend/src/api/client.ts`) adds `X-Request-ID` headers to every outgoing request via an Axios interceptor. This ID is logged in the browser console (consola) and on the server (structlog), enabling correlation when reading both sides simultaneously. End-to-end correlation in a single query becomes possible once the OTel work in `.planning/otel-rum.md` lands.
 
 ### Log Level Control
 
@@ -376,9 +388,15 @@ api:
   volumes:
     - ichrisbirch_logs:/var/log/ichrisbirch
 
-app:
+scheduler:
   environment:
-    - LOG_FILE=/var/log/ichrisbirch/app.log
+    - LOG_FILE=/var/log/ichrisbirch/scheduler.log
+  volumes:
+    - ichrisbirch_logs:/var/log/ichrisbirch
+
+chat:
+  environment:
+    - LOG_FILE=/var/log/ichrisbirch/chat.log
   volumes:
     - ichrisbirch_logs:/var/log/ichrisbirch
 ```

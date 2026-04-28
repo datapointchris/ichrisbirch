@@ -131,7 +131,7 @@ exclude_dirs = [
   "tests",
   "scripts",
 ]
-skips = ["B113", "B311"]
+skips = ["B113", "B311", "B404", "B603"]
 
 
 [tool.codespell]

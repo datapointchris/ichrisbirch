@@ -21,6 +21,7 @@ class SchedulerJob(SchedulerConfig):
 
 class SchedulerJobRunCreate(SchedulerConfig):
     job_id: str
+    job_run_id: str | None = None
     started_at: datetime
     finished_at: datetime
     duration_seconds: float
@@ -32,6 +33,7 @@ class SchedulerJobRunCreate(SchedulerConfig):
 class SchedulerJobRun(SchedulerConfig):
     id: int
     job_id: str
+    job_run_id: str | None = None
     started_at: datetime
     finished_at: datetime
     duration_seconds: float

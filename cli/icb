@@ -316,11 +316,7 @@ function dev-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Viewing ${blue}DEV${reset} logs (Ctrl+C to exit)"
   echo ""
-
-  while true; do
-    $COMPOSE_DEV logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-    sleep 2
-  done
+  uv run cli/log_viewer.py dev "$@"
 }
 
 function dev-status() {
@@ -537,11 +533,7 @@ function testing-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Viewing ${blue}TESTING${reset} logs (Ctrl+C to exit)"
   echo ""
-
-  while true; do
-    $COMPOSE_TEST logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-    sleep 2
-  done
+  uv run cli/log_viewer.py testing "$@"
 }
 
 function testing-status() {
@@ -862,19 +854,11 @@ function prod-logs() {
     color=$(get_active_color)
     if [[ -n "$color" ]]; then
       echo "Viewing ${magenta}PRODUCTION${reset} logs (${cyan}${color}${reset}) (Ctrl+C to exit)"
-      echo ""
-      while true; do
-        compose_app "$color" logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-        sleep 2
-      done
     else
       echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
-      echo ""
-      while true; do
-        $COMPOSE_PROD logs --follow --tail=50 "$@" 2>/dev/null | colored-logs
-        sleep 2
-      done
     fi
+    echo ""
+    uv run cli/log_viewer.py prod "$@"
     ;;
   esac
 }
