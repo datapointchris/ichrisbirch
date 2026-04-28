@@ -119,7 +119,7 @@ category: str
 ## Key Commands
 
 | Command | What it does |
-| ------- | ------------ |
+| --- | --- |
 | `alembic revision --autogenerate -m "msg"` | Generate migration from model changes |
 | `alembic revision -m "msg"` | Create empty migration (for hand-written) |
 | `alembic upgrade head` | Apply all pending migrations |

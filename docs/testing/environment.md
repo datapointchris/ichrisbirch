@@ -127,7 +127,7 @@ This approach provides:
 The test database has two CLI operations and one internal operation:
 
 | Operation | What it does | When |
-|-----------|-------------|------|
+| --- | --- | --- |
 | **Initialize** (`db init`) | Create schemas + run migrations + insert users | Container startup (DB is empty) |
 | **Reset** (`db reset`) | Drop everything + initialize from scratch | Manual only — when migrations change |
 | **Truncate** (pytest fixture) | TRUNCATE all tables, re-insert lookup data | Automatically between test runs |
@@ -171,7 +171,7 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml \
 The test and development environments can run simultaneously on different ports:
 
 | Service | Dev Port | Test Port |
-|---------|----------|-----------|
+| --- | --- | --- |
 | PostgreSQL | 5432 | 5434 |
 | Redis | 6379 | 6380 |
 | API | 8000 | 8001 |
@@ -242,7 +242,7 @@ This provides:
 The fixture `insert_users_for_login` creates test users:
 
 | User | Email | Role | Purpose |
-|------|-------|------|---------|
+| --- | --- | --- | --- |
 | Test User | <testlogin@test.com> | User | Regular user tests |
 | Test Admin | <testloginadmin@testadmin.com> | Admin | Admin-only tests |
 
@@ -320,7 +320,7 @@ gh run view <run-id> --log-failed
 ## Configuration Files
 
 | File | Purpose |
-|------|---------|
+| --- | --- |
 | `docker-compose.yml` | Base service definitions |
 | `docker-compose.test.yml` | Test-specific overrides (ports, tmpfs) |
 | `docker-compose.ci.yml` | CI-specific overrides (no local mounts) |
@@ -333,7 +333,7 @@ gh run view <run-id> --log-failed
 ### Session-Scoped (run once per test session)
 
 | Fixture | Purpose |
-|---------|---------|
+| --- | --- |
 | `setup_test_environment` | Start Docker Compose, create tables |
 | `truncate_tables` | Manage table lifecycle |
 | `insert_users_for_login` | Create test users |
@@ -341,7 +341,7 @@ gh run view <run-id> --log-failed
 ### Module-Scoped (run once per test file)
 
 | Fixture | Purpose |
-|---------|---------|
+| --- | --- |
 | `test_api` | Unauthenticated API client |
 | `test_api_logged_in` | Authenticated regular user |
 | `test_api_logged_in_admin` | Authenticated admin user |

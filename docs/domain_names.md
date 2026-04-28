@@ -1,6 +1,6 @@
 # Domain Names
 
-Hosted in `AWS Route 53`  
+Hosted in `AWS Route 53`
 There are 3 hosted zones, one for the top level domain and one for each subdomain.
 
 ## ichrisbirch.com Hosted Zone
@@ -9,33 +9,33 @@ This is referred to as the `Apex` domain, or top level domain.
 
 There are 5 records in this hosted zone:
 
-| Record Name          | Type    | Description                                   | Value                    |
-| -------------------- | ------- | --------------------------------------------- | ------------------------ |
-| ichrisbirch.com      | `NS`    | Created automatically with the hosted zone    | AWS Apex Nameservers     |
-| ichrisbirch.com      | `SOA`   | Created automtaically with the hosted zone    | AWS DNS                  |
-| api.ichrisbirch.com  | `NS`    | Nameservers from hosted zone `NS` record      | AWS API Nameservers      |
+| Record Name | Type | Description | Value |
+| --- | --- | --- | --- |
+| ichrisbirch.com | `NS` | Created automatically with the hosted zone | AWS Apex Nameservers |
+| ichrisbirch.com | `SOA` | Created automtaically with the hosted zone | AWS DNS |
+| api.ichrisbirch.com | `NS` | Nameservers from hosted zone `NS` record | AWS API Nameservers |
 | docs.ichrisbirch.com | `CNAME` | Re-direct from Github Pages to docs subdomain | datapointchris.github.io |
-| \www.ichrisbirch.com | `A`     | Points to the EC2 IP of the webserver         | EC2 IP (Elastic IP)      |
+| \www.ichrisbirch.com | `A` | Points to the EC2 IP of the webserver | EC2 IP (Elastic IP) |
 
 ## api.ichrisbirch.com Hosted Zone
 
 There are 3 records in this hosted zone:
 
-| Record Name         | Type  | Description                                | Value                 |
-| ------------------- | ----- | ------------------------------------------ | --------------------- |
-| api.ichrisbirch.com | `A`   | Points to the EC2 IP of the webserver      | EC2 IP (Elastic IP)   |
-| api.ichrisbirch.com | `NS`  | Created automatically with the hosted zone | AWS Api Nameservers   |
-| api.ichrisbirch.com | `SOA` | Created automtaically with the hosted zone | AWS DNS               |
+| Record Name | Type | Description | Value |
+| --- | --- | --- | --- |
+| api.ichrisbirch.com | `A` | Points to the EC2 IP of the webserver | EC2 IP (Elastic IP) |
+| api.ichrisbirch.com | `NS` | Created automatically with the hosted zone | AWS Api Nameservers |
+| api.ichrisbirch.com | `SOA` | Created automtaically with the hosted zone | AWS DNS |
 
 ## docs.ichrisbirch.com Hosted Zone
 
 There are 3 records in this hosted zone:
 
-| Record Name          | Type  | Description                                | Value                 |
-| -------------------- | ----- | ------------------------------------------ | --------------------- |
-| docs.ichrisbirch.com | `A`   | Points to the EC2 IP of the webserver      | Github Servers        |
-| docs.ichrisbirch.com | `NS`  | Created automatically with the hosted zone | AWS Docs Nameservers  |
-| docs.ichrisbirch.com | `SOA` | Created automtaically with the hosted zone | AWS DNS               |
+| Record Name | Type | Description | Value |
+| --- | --- | --- | --- |
+| docs.ichrisbirch.com | `A` | Points to the EC2 IP of the webserver | Github Servers |
+| docs.ichrisbirch.com | `NS` | Created automatically with the hosted zone | AWS Docs Nameservers |
+| docs.ichrisbirch.com | `SOA` | Created automtaically with the hosted zone | AWS DNS |
 
 Refer to the [Documentation](documentation.md) and [CICD](cicd.md) pages for setting up Github Pages with this subdomain.
 
@@ -43,18 +43,18 @@ Refer to the [Documentation](documentation.md) and [CICD](cicd.md) pages for set
     Use `dig {address}` to see if the domain looks set up correctly.
 
 !!! danger WARNING
-    If the DNS seems to not be updating and the records are not working, be wary of the `Browser Cache` and history!!  
-    `Safari` kept the old `IP` in the cache until restart, the only way to see the update was to use a `Private Window`  
+    If the DNS seems to not be updating and the records are not working, be wary of the `Browser Cache` and history!!
+    `Safari` kept the old `IP` in the cache until restart, the only way to see the update was to use a `Private Window`
     ***Check the cache*** before troubleshooting.
 
 ### Apex - `ichrisbirch.com ( www.ichrisbirch.com )`
 
-There should be a `nameserver` record created with the `hosted zone`, and the `soa` is created automatically.  
+There should be a `nameserver` record created with the `hosted zone`, and the `soa` is created automatically.
 The `A` record should point to the elastic IP if assigned, or public ip of the instance or load balancer and the name should have subdomain `www`.  *I believe* because the domain `ichrisbirch.com` is the apex, it doesn't need an `A` record.
 
 ### `api.ichrisbirch.com`
 
-There should be a `nameserver` record created with the `hosted zone` and `soa`, same as the Apex.  
+There should be a `nameserver` record created with the `hosted zone` and `soa`, same as the Apex.
 The `A` record should point to the elastic IP.
 
 !!! caution ""
@@ -63,8 +63,8 @@ The `A` record should point to the elastic IP.
 
 ### `docs.ichrisbirch.com`
 
-The docs are slightly different because they are hosted by `github`, being served with `mkdocs`, so they are not sitting on the server like the app (www) and api (api) are.  
-There should be the similar `NS` and `soa` records created.  
+The docs are slightly different because they are hosted by `github`, being served with `mkdocs`, so they are not sitting on the server like the app (www) and api (api) are.
+There should be the similar `NS` and `soa` records created.
 
 !!! important ""
     The `A` record points to the `github` (I think) hosts where the docs are hosted:
@@ -74,7 +74,7 @@ There should be the similar `NS` and `soa` records created.
     "185.199.110.153",
     "185.199.111.153"
     ```
-    The `CNAME` record lives at the `Apex` level, in place of the `NS` records like the `api` uses.  
+    The `CNAME` record lives at the `Apex` level, in place of the `NS` records like the `api` uses.
     Since the `CNAME` is an alias, it is used to alias `docs.ichrisbirch.com` => `datapointchris.github.io`
 
 ## Reference

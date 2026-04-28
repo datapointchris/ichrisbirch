@@ -60,7 +60,7 @@ See the [writing tests guide](writing_tests.md) for information on how to write 
 The Vue frontend uses a four-layer testing strategy:
 
 | Layer | Tool | Tests | Duration | What it catches |
-|-------|------|-------|----------|-----------------|
+| --- | --- | --- | --- | --- |
 | Build | `vue-tsc` + `vite build` | — | ~10s | TypeScript errors, missing imports |
 | Store/Unit | Vitest | ~347 | ~5s | Store logic, composables, utilities |
 | Component | Vitest + `@pinia/testing` | ~225 | ~2s | View rendering, store wiring, modals |

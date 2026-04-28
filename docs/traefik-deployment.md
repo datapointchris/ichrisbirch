@@ -19,7 +19,7 @@ This guide covers the complete deployment of Traefik reverse proxy for the iChri
 Traefik uses two providers simultaneously:
 
 | Provider | Configures | Source |
-|----------|-----------|--------|
+| --- | --- | --- |
 | **File provider** | Routers (rules, middleware, priorities) | `deploy-containers/traefik/dynamic/{env}/routing.yml` |
 | **Docker provider** | Services (container ports, health) | Docker labels on containers |
 
@@ -36,7 +36,7 @@ File provider routers reference Docker-discovered services via `service: name@do
 Each environment uses its own proxy network to avoid routing conflicts:
 
 | Environment | Proxy Network | Traefik Constraint |
-|-------------|---------------|-------------------|
+| --- | --- | --- |
 | Development | `proxy-dev` | `traefik.environment=development` |
 | Testing | `proxy-test` | `traefik.environment=testing` |
 | Production | `proxy` | (no constraint needed) |
@@ -100,7 +100,7 @@ Routing files are generated from `vue-paths.txt` via `ich routing generate`.
 CORS and security headers are in **separate middlewares** to prevent chaining conflicts (wildcard `*` in one middleware overriding explicit lists in another). Each environment has:
 
 | Middleware | Dev | Test | Prod |
-|-----------|-----|------|------|
+| --- | --- | --- | --- |
 | CORS | `dev-cors` | `cors-test` | `cors-prod` |
 | Security Headers | `dev-security` | `security-headers-test` | `security-headers-prod` |
 | Auth Simulation | `dev-authelia-sim` | `test-authelia-sim` | (Authelia ForwardAuth) |

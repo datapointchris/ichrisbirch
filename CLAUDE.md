@@ -81,7 +81,7 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 ### Services
 
 | Service | Framework | Purpose |
-| --------- | ----------- | --------- |
+| --- | --- | --- |
 | API | FastAPI | RESTful backend, JWT + Authelia auth |
 | Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
 | Chat | Streamlit | AI chat interface with OpenAI |
@@ -128,7 +128,7 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 - **Session pattern decision tree** — `create_session(settings)` requires explicit settings (no default):
 
   | Context | Pattern | Why |
-  | --------- | --------- | ----- |
+  | --- | --- | --- |
   | FastAPI routes | `Depends(get_sqlalchemy_session)` | DI wrapper calls `get_settings()` internally |
   | Scheduler jobs | `create_session(settings)` | Settings passed from job registration |
   | CLI / scripts | `create_session(get_settings())` | Caller owns the settings lookup |

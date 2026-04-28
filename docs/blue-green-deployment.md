@@ -40,7 +40,7 @@ If anything fails in steps 1-3, the live color is untouched. Zero downtime, zero
 ### Compose File Split
 
 | File | Project Name | Contains | Lifecycle |
-|------|-------------|----------|-----------|
+| --- | --- | --- | --- |
 | `docker-compose.infra.yml` | `icb-infra` | Traefik, PostgreSQL, Redis | Always running, never restarted during deploys |
 | `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Chat, Scheduler, MCP | Created/destroyed per deploy |
 | `docker-compose.yml` | `icb-prod` | All services (legacy) | Emergency fallback only |
@@ -88,7 +88,7 @@ Traefik has `--providers.file.watch=true`, so it hot-reloads within 1-2 seconds 
 ### State Tracking
 
 | File | Location | Purpose |
-|------|----------|---------|
+| --- | --- | --- |
 | `bluegreen-state` | `/var/lib/ichrisbirch/bluegreen-state` | Active color (`blue` or `green`) |
 | Deploy lock | `/var/lock/ichrisbirch-deploy.lock` | Prevents concurrent deploys |
 
@@ -194,7 +194,7 @@ Blue/green with a shared database requires **backward-compatible migrations**. B
 These require two separate deploys:
 
 | Operation | Phase 1 | Phase 2 |
-|-----------|---------|---------|
+| --- | --- | --- |
 | Make column NOT NULL | Backfill NULLs + update code to always set value | Add NOT NULL constraint |
 | Rename column | Add new column + backfill + update code to use new | Drop old column |
 | Drop column | Remove all code references | Drop column from schema |
@@ -270,7 +270,7 @@ Data persists via named volumes (`icb-prod-postgres-data`, `icb-prod-redis-data`
 ## Resource Requirements
 
 | Resource | Minimum | Recommended | Notes |
-|----------|---------|-------------|-------|
+| --- | --- | --- | --- |
 | RAM | 4 GB | 6 GB | Both colors + build process run simultaneously during deploy |
 | Disk | 20 GB | 40 GB | Two sets of images (~1.8 GB), build cache, logs |
 | CPU | 2 cores | 4 cores | Parallel image builds benefit from more cores |
@@ -340,7 +340,7 @@ Every deploy sends a Slack notification with:
 ### Log Locations
 
 | Log | Path | Contents |
-|-----|------|----------|
+| --- | --- | --- |
 | Deploy log | `/srv/ichrisbirch/logs/deploy.log` | Structured JSON events from each deploy |
 | Build logs | `/srv/ichrisbirch/logs/build-*.log` | Docker build output (last 5 kept) |
 | Container logs | `docker logs icb-{color}-{service}` | Application stdout/stderr |
@@ -348,7 +348,7 @@ Every deploy sends a Slack notification with:
 ## Key Files
 
 | File | Purpose |
-|------|---------|
+| --- | --- |
 | `docker-compose.infra.yml` | Infrastructure services (Traefik, PostgreSQL, Redis) |
 | `docker-compose.app.yml` | Application services parameterized by `${DEPLOY_COLOR}` |
 | `docker-compose.yml` | Legacy single-compose fallback |

@@ -550,7 +550,7 @@ echo "Test environment setup complete!"
 ## Common Error Messages and Solutions
 
 | Error Message | Cause | Solution |
-|---------------|-------|----------|
+| --- | --- | --- |
 | `schema "ichrisbirch_test" does not exist` | Missing schema environment variable | Set `POSTGRES_DB_SCHEMA=ichrisbirch_test` |
 | `relation "users" does not exist` | Database migrations not run | Run `alembic upgrade head` |
 | `pytest: not found` | Missing test dependencies | Install with `uv sync --group test` |

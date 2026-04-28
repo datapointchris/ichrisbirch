@@ -22,7 +22,7 @@ from ichrisbirch.api.client import (
     APIClient,              # Main client class
     default_client,         # Context-aware (recommended)
     internal_service_client,# Service-to-service auth
-    user_client,           # User token auth  
+    user_client,           # User token auth
     flask_session_client   # Flask session auth
 )
 ```
@@ -89,13 +89,13 @@ docs/api/client/
 ### ⚡ Session Management
 
 - **Connection pooling**: Reuses HTTP connections
-- **Lifecycle management**: Proper cleanup with context managers  
+- **Lifecycle management**: Proper cleanup with context managers
 - **Configuration**: Centralized base URL and headers
 
 ## Architecture Benefits
 
 | Aspect | QueryAPI (Old) | API Client (New) |
-|--------|----------------|------------------|
+| --- | --- | --- |
 | **Pattern** | Custom implementation | Industry standard (boto3-style) |
 | **Authentication** | Boolean flag | Pluggable providers |
 | **Type Safety** | Raw dictionaries | Pydantic models |
@@ -236,6 +236,6 @@ The implementation is considered successful when:
 
 ---
 
-**Status**: ✅ Implementation Complete - Ready for Migration  
-**Last Updated**: [Current Date]  
+**Status**: ✅ Implementation Complete - Ready for Migration
+**Last Updated**: [Current Date]
 **Maintainer**: Engineering Team

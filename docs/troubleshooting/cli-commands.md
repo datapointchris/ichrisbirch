@@ -113,7 +113,7 @@ icb ssl-manager validate dev
 **Resolution**: Use the command translation guide
 
 | Old Command (Removed) | New Command (Current) | Description |
-|----------------------|----------------------|-------------|
+| --- | --- | --- |
 | `icb traefik start <env>` | `ichrisbirch <env> start` | Start environment |
 | `icb traefik stop <env>` | `ichrisbirch <env> stop` | Stop environment |
 | `icb traefik restart <env>` | `ichrisbirch <env> restart` | Restart environment |

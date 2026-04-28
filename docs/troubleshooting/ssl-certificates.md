@@ -380,7 +380,7 @@ icb ssl-manager info all
 ### Technical Advantages
 
 | Feature | mkcert | OpenSSL Self-Signed |
-|---------|--------|-------------------|
+| --- | --- | --- |
 | Browser Trust | ✅ Trusted automatically | ❌ Requires manual trust |
 | Certificate Warnings | ✅ No warnings | ❌ Security warnings |
 | Subject Alternative Names | ✅ Automatic wildcard + specific | ⚠️ Manual configuration |

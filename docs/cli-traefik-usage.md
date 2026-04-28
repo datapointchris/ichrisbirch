@@ -44,7 +44,7 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 ### Development Environment
 
 | Command | Description | Example |
-| ------- | ----------- | ------- |
+| --- | --- | --- |
 | `dev start` | Start development with HTTPS | `icb dev start` |
 | `dev stop` | Stop development environment | `icb dev stop` |
 | `dev restart` | Restart development environment | `icb dev restart` |
@@ -73,7 +73,7 @@ Dev Credentials:
 ### Testing Environment
 
 | Command | Description | Example |
-| ------- | ----------- | ------- |
+| --- | --- | --- |
 | `test run` | Run tests (reuses containers) | `icb test run [path] [args]` |
 | `testing start` | Start testing environment | `icb testing start` |
 | `testing stop` | Stop testing environment | `icb testing stop` |
@@ -105,7 +105,7 @@ The `test run` command reuses running containers for fast iteration:
 All production commands are **blue/green aware** — they automatically detect the active deployment color and act on the correct containers. See [Blue/Green Deployment](blue-green-deployment.md) for the full guide.
 
 | Command | Description | Example |
-| ------- | ----------- | ------- |
+| --- | --- | --- |
 | `prod start` | Start infra + active color | `icb prod start` |
 | `prod stop` | Stop active color + infra | `icb prod stop` |
 | `prod restart` | Restart active color + infra | `icb prod restart` |
@@ -125,7 +125,7 @@ All production commands are **blue/green aware** — they automatically detect t
 ### SSL Certificate Management
 
 | Command | Description | Example |
-| ------- | ----------- | ------- |
+| --- | --- | --- |
 | `ssl-manager generate` | Generate SSL certificates with mkcert | `icb ssl-manager generate dev` |
 | `ssl-manager validate` | Validate existing certificates | `icb ssl-manager validate dev` |
 | `ssl-manager info` | Show certificate information | `icb ssl-manager info dev` |
@@ -134,7 +134,7 @@ All production commands are **blue/green aware** — they automatically detect t
 ### Stats Commands
 
 | Command | Description | Example |
-| ------- | ----------- | ------- |
+| --- | --- | --- |
 | `stats summary` | Dashboard with code, tests, quality, activity | `icb stats summary` |
 | `stats code` | Lines of code by language (live from tokei) | `icb stats code` |
 | `stats tests` | Test results, coverage, and slowest tests | `icb stats tests` |
@@ -147,8 +147,8 @@ All production commands are **blue/green aware** — they automatically detect t
 
 ### Routing Commands
 
-| Command            | Description                                   | Example                |
-| ------------------ | --------------------------------------------- | ---------------------- |
+| Command | Description | Example |
+| --- | --- | --- |
 | `routing generate` | Regenerate Traefik routing from vue-paths.txt | `icb routing generate` |
 
 The canonical path list is at `deploy-containers/traefik/vue-paths.txt`. After generating, the CLI shows a diff of any changes.

@@ -334,7 +334,7 @@ def test_get_tasks():
 ### Method Names
 
 | QueryAPI | API Client |
-|----------|------------|
+| --- | --- |
 | `get_generic(endpoint)` | `resource(name, model).list()` |
 | `get_generic(endpoint, resource_id=123)` | `resource(name, model).get(123)` |
 | `post_action(endpoint, data)` | `resource(name, model).action(name, data)` |

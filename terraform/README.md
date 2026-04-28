@@ -31,7 +31,7 @@ An IAM role and an instance profile are related but distinct concepts in AWS. He
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| --- | --- |
 | terraform | >= 1.9 |
 | aws | ~> 5.6 |
 | tls | ~> 4.0 |
@@ -39,7 +39,7 @@ An IAM role and an instance profile are related but distinct concepts in AWS. He
 ## Providers
 
 | Name | Version |
-|------|---------|
+| --- | --- |
 | aws | 5.67.0 |
 | tls | 4.0.6 |
 
@@ -50,7 +50,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| --- | --- |
 | [aws_db_subnet_group.icb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_subnet_group) | resource |
 | [aws_dynamodb_table.ichrisbirch_terraform_state_locking](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table) | resource |
 | [aws_iam_group.developer](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_group) | resource |
@@ -129,7 +129,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| --- | --- | --- | --- | :---: |
 | gh\_actions\_token\_url | URL for the Github Actions API | `string` | `"https://token.actions.githubusercontent.com"` | no |
 | gh\_org | Name of the Github Organization. | `string` | `"datapointchris"` | no |
 | gh\_repo | Name of the ECR Repository- should match the Github repo name. | `string` | `"ichrisbirch"` | no |
@@ -141,7 +141,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| --- | --- |
 | aws\_account\_id | n/a |
 | aws\_region | n/a |
 | iam\_group\_developer\_admin\_arn | n/a |

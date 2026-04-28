@@ -90,7 +90,7 @@ sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
 ### Log Lifecycle
 
 | Action | Logs Preserved |
-|--------|----------------|
+| --- | --- |
 | `testing restart` | Yes |
 | `testing stop` | Yes (until container removed) |
 | `testing stop` then `testing start` | Yes |
@@ -156,7 +156,7 @@ LOG_LEVEL=INFO ./cli/icb test run
 ## Comparison with Development
 
 | Aspect | Development | Testing |
-|--------|-------------|---------|
+| --- | --- | --- |
 | Log destination | stdout | stdout |
 | Persistence | Docker json-file | Docker json-file |
 | CLI command | `dev logs` | `testing logs` |

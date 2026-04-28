@@ -106,7 +106,7 @@ Module fixtures run once per test module:
 There are two separate sets of users, each serving a different purpose:
 
 | Set | Users | Source | Purpose |
-|-----|-------|--------|---------|
+| --- | --- | --- | --- |
 | **Default users** | `user@icb.com`, `admin@icb.com` | `insert_default_users()` in `initialization.py` | Application users for dev, E2E tests, Authelia auth simulation |
 | **Test login users** | `sacrifice@testgods.com`, `testloginregular@testuser.com`, `testloginadmin@testadmin.com` | `get_test_login_users()` in `tests/utils/database.py` | Pytest-specific users for Flask login and API auth fixtures |
 
@@ -117,7 +117,7 @@ Default users are inserted during truncation (alongside lookup data) so the API 
 Various test client fixtures provide access to the API and App with different authentication levels:
 
 | Fixture Name | Description | Authentication |
-|--------------|-------------|----------------|
+| --- | --- | --- |
 | `test_api` | Basic API test client | None |
 | `test_api_logged_in` | API client with regular user authentication | Regular user |
 | `test_api_logged_in_admin` | API client with admin authentication | Admin user |
@@ -139,14 +139,14 @@ Function fixtures run once per test function:
 
 These fixtures are function-scoped versions of the module-scoped test client fixtures:
 
-| Fixture Name                        | Description                                       | Authentication |
-| ----------------------------------- | ------------------------------------------------- | -------------- |
-| `test_api_function`                 | Function-scoped basic API client                  | None           |
-| `test_api_logged_in_function`       | Function-scoped API client with regular user auth | Regular user   |
-| `test_api_logged_in_admin_function` | Function-scoped API client with admin auth        | Admin user     |
-| `test_app_function`                 | Function-scoped basic App client                  | None           |
-| `test_app_logged_in_function`       | Function-scoped App client with regular user auth | Regular user   |
-| `test_app_logged_in_admin_function` | Function-scoped App client with admin auth        | Admin user     |
+| Fixture Name | Description | Authentication |
+| --- | --- | --- |
+| `test_api_function` | Function-scoped basic API client | None |
+| `test_api_logged_in_function` | Function-scoped API client with regular user auth | Regular user |
+| `test_api_logged_in_admin_function` | Function-scoped API client with admin auth | Admin user |
+| `test_app_function` | Function-scoped basic App client | None |
+| `test_app_logged_in_function` | Function-scoped App client with regular user auth | Regular user |
+| `test_app_logged_in_admin_function` | Function-scoped App client with admin auth | Admin user |
 
 ## Test Data Fixtures
 

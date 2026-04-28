@@ -2,13 +2,13 @@
 
 For this document example we will be creating a new app called `Items`
 
-|                                      |           |
-| ------------------------------------ | --------- |
-| :material-database: db table         | `items`   |
-| :simple-sqlalchemy: sqlalchemy model | `Item`    |
-| :simple-pydantic: pydantic schema    | `Item`    |
-| :material-api: api endpoint          | `/items/` |
-| :material-application: frontend      | `/items`  |
+| Layer | Name |
+| --- | --- |
+| :material-database: db table | `items` |
+| :simple-sqlalchemy: sqlalchemy model | `Item` |
+| :simple-pydantic: pydantic schema | `Item` |
+| :material-api: api endpoint | `/items/` |
+| :material-application: frontend | `/items` |
 
 ## Backend (Required for All Features)
 

@@ -137,7 +137,7 @@ client = APIClient(credential_provider=provider)
 ## Provider Selection Guide
 
 | Context | Recommended Provider | Use Case |
-|---------|---------------------|----------|
+| --- | --- | --- |
 | Flask request with user session | `FlaskSessionProvider` | Web app user actions |
 | Flask request without session | `InternalServiceProvider` | Internal API calls |
 | Background job with user context | `UserTokenProvider` | User-specific tasks |

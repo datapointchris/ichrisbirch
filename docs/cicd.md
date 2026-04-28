@@ -7,7 +7,7 @@ This document details the Continuous Integration and Continuous Deployment workf
 The project uses GitHub Actions for CI/CD with the following workflows:
 
 | Workflow | File | Trigger | Purpose |
-|----------|------|---------|---------|
+| --- | --- | --- | --- |
 | Validate Project | `validate-project.yml` | Push to master, PRs | Run linting, type checking, and tests |
 | Deploy MkDocs | `deploy-docs.yml` | Push to master (docs changes) | Build and deploy documentation |
 | Sync Documentation Code | `sync-docs.yml` | Push to master | Sync code snippets in documentation |
@@ -64,7 +64,7 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compos
 The CI override file addresses differences between local and CI environments:
 
 | Issue | Local Development | CI Environment | CI Override Solution |
-|-------|-------------------|----------------|---------------------|
+| --- | --- | --- | --- |
 | AWS credentials | `~/.config/aws` mounted | Environment variables via OIDC | Remove bind mount |
 | Docker network | External `proxy` network | Network doesn't exist | Create as bridge network |
 | File mounts | Local paths exist | Only repo checkout | Use volumes only |
@@ -264,7 +264,7 @@ uv run pytest --cov=ichrisbirch
 ## Workflow Files Reference
 
 | File | Purpose |
-|------|---------|
+| --- | --- |
 | `.github/workflows/validate-project.yml` | Main CI workflow |
 | `.github/workflows/deploy-docs.yml` | Documentation deployment |
 | `.github/workflows/sync-docs.yml` | Code sync in docs |

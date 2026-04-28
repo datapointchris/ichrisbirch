@@ -73,7 +73,7 @@ Analytics and visualization of log data.
 Each log line is parsed into:
 
 | Field | Type | Description |
-|-------|------|-------------|
+| --- | --- | --- |
 | `log_level` | Categorical | DEBUG, INFO, WARNING, ERROR, CRITICAL |
 | `timestamp` | Datetime | When the log was created |
 | `filename` | String | Source file name |

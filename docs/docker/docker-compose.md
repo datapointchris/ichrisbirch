@@ -9,7 +9,7 @@ The ichrisbirch application uses a **layered Docker Compose approach** where env
 ## Environment Comparison
 
 | Aspect | Development | Testing | CI | Production |
-| ------ | ----------- | ------- | --- | ---------- |
+| --- | --- | --- | --- | --- |
 | **Purpose** | Local development with hot reload | Running pytest suite | GitHub Actions CI | Live deployment |
 | **Compose Files** | base + dev | base + test | base + test + ci | base only |
 | **External Ports** | Standard (8000, 5432) | Alternate (8001, 5434, 8443) | Alternate (same as test) | Standard |
@@ -80,7 +80,7 @@ The base file defines production-ready services:
 ### Core Services
 
 | Service | Purpose | Internal Port |
-| ------- | ------- | ------------- |
+| --- | --- | --- |
 | `traefik` | Reverse proxy with HTTPS | 80, 443, 8080 |
 | `postgres` | PostgreSQL 16 database | 5432 |
 | `redis` | Redis 7 cache | 6379 |
@@ -186,7 +186,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ### Port Mapping
 
 | Service | Dev Port | Test Port |
-| ------- | -------- | --------- |
+| --- | --- | --- |
 | API | 8000 | 8001 |
 | Vue | 5173 | 5174 |
 | Chat | 8505 | 8507 |
@@ -235,7 +235,7 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml \
 The CI environment differs from local development:
 
 | Difference | Local | CI | Solution |
-| ---------- | ----- | --- | -------- |
+| --- | --- | --- | --- |
 | AWS credentials | `~/.config/aws` exists | Only env vars via OIDC | Remove bind mount |
 | Proxy network | Pre-created externally | Doesn't exist | Create as bridge |
 | Project files | Full local checkout | GitHub checkout only | Use volumes not binds |

@@ -54,7 +54,7 @@ ichrisbirch/
 ## Environment Files
 
 | File | Purpose |
-|------|---------|
+| --- | --- |
 | `.env` | Environment variables (from `.env.example` for dev, SOPS-decrypted for prod) |
 | `secrets/secrets.prod.enc.env` | Production secrets (SOPS + age encrypted) |
 | `secrets/secrets.test.enc.env` | Testing secrets (SOPS + age encrypted) |

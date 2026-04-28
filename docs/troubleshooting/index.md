@@ -17,7 +17,7 @@ The troubleshooting documentation is organized by component and includes:
 ### Common Issues by Component
 
 | Component | Common Issues | Quick Solutions |
-|-----------|---------------|-----------------|
+| --- | --- | --- |
 | [Docker](docker-issues.md) | Build failures, container networking | Check Dockerfile syntax, network configuration |
 | [Poetry to UV Migration](poetry-uv-migration.md) | Dependency management, virtual environments | Follow migration checklist |
 | [Testing](testing-issues.md) | Test failures, pytest not found, Docker issues | Verify test dependencies, rebuild images |
@@ -35,7 +35,7 @@ The troubleshooting documentation is organized by component and includes:
 **Testing Infrastructure Failures:**
 
 - `error: Failed to spawn: 'pytest'` → Missing `--group test` in Dockerfile
-- `service has neither an image nor a build context` → Add build directive to compose services  
+- `service has neither an image nor a build context` → Add build directive to compose services
 - `ModuleNotFoundError: tests.utils.environment` → Fix import paths in conftest.py
 - Docker network conflicts → Run comprehensive Docker cleanup
 

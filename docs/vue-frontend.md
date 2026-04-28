@@ -5,7 +5,7 @@ The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.dock
 ## Architecture
 
 | Component | Technology | Purpose |
-|-----------|-----------|---------|
+| --- | --- | --- |
 | Framework | Vue 3.5+ | Component-based SPA |
 | Language | TypeScript (strict mode) | Type safety |
 | State | Pinia | Reactive store per feature |
@@ -20,7 +20,7 @@ The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.dock
 ## Key Infrastructure Files
 
 | File | Purpose |
-|------|---------|
+| --- | --- |
 | `frontend/src/utils/logger.ts` | consola-based structured logger (createLogger pattern) |
 | `frontend/src/api/errors.ts` | ApiError class with status, detail, validationErrors, requestId |
 | `frontend/src/api/client.ts` | Axios with X-Request-ID tracing, structured logging, WeakMap metadata |
