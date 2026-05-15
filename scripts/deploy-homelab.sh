@@ -6,12 +6,16 @@
 # smoke tests, then atomically switches Traefik routing. If anything fails
 # before the switch, the live containers are never touched.
 #
+# Images are built by GHA (.github/workflows/release.yml) and pushed to
+# ghcr.io/datapointchris/{ichrisbirch,ichrisbirch-vue}:latest. This script
+# pulls them — it does not build locally.
+#
 # Flow:
 #   1. Acquire deploy lock (prevents concurrent deploys)
 #   2. Pull latest code + decrypt secrets
 #   3. Determine which color to deploy (opposite of live)
 #   4. Ensure infrastructure (Traefik, PostgreSQL, Redis) is running
-#   5. Build new images and start new color containers
+#   5. Pull new images and start new color containers
 #   6. Wait for health checks + run smoke tests
 #   7. Run database migrations
 #   8. Switch Traefik routing to new color
@@ -241,24 +245,24 @@ ensure_infra_running() {
     exit 1
 }
 
-build_new_images() {
-    FAILURE_STEP="build"
-    log_info "build_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+pull_new_images() {
+    FAILURE_STEP="pull"
+    log_info "pull_started" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
     cd "$INSTALL_DIR"
 
-    local build_log="${LOG_DIR}/build-$(date +%Y%m%d-%H%M%S).log"
+    local pull_log="${LOG_DIR}/pull-$(date +%Y%m%d-%H%M%S).log"
 
-    if ! compose_app "$DEPLOY_COLOR" build 2>&1 | tee "$build_log"; then
-        FAILURE_OUTPUT=$(tail -30 "$build_log")
-        log_error "build_failed" "color" "$DEPLOY_COLOR" "log" "$build_log" | tee -a "$LOG_FILE"
+    if ! compose_app "$DEPLOY_COLOR" pull 2>&1 | tee "$pull_log"; then
+        FAILURE_OUTPUT=$(tail -30 "$pull_log")
+        log_error "pull_failed" "color" "$DEPLOY_COLOR" "log" "$pull_log" | tee -a "$LOG_FILE"
         exit 1
     fi
 
-    # Keep only last 5 build logs
+    # Keep only last 5 pull logs
     # shellcheck disable=SC2012
-    ls -t "${LOG_DIR}"/build-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
+    ls -t "${LOG_DIR}"/pull-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
 
-    log_info "build_completed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+    log_info "pull_completed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 }
 
 start_new_containers() {
@@ -464,8 +468,9 @@ stop_old_containers() {
 }
 
 cleanup_docker() {
+    # Reaps dangling images created when :latest re-tagged to a new SHA.
+    # Build cache prune dropped — images are built on GHA, no cache on host.
     log_info "docker_cleanup_started" | tee -a "$LOG_FILE"
-    docker builder prune --force 2>&1 | tail -1 | tee -a "$LOG_FILE" || true
     docker image prune -f 2>&1 | tail -1 | tee -a "$LOG_FILE" || true
     sudo fstrim -v / 2>&1 | tee -a "$LOG_FILE" || true
     log_info "docker_cleanup_completed" | tee -a "$LOG_FILE"
@@ -489,7 +494,7 @@ main() {
 
     determine_colors
     ensure_infra_running
-    build_new_images
+    pull_new_images
     start_new_containers
     wait_for_healthy
     run_migrations

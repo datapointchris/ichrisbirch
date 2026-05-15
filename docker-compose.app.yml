@@ -9,11 +9,11 @@
 #
 # Required env vars: DEPLOY_COLOR (blue|green), plus all vars from .env
 
-# Shared image reference - only the api service builds this image,
-# other services reference it by tag. This avoids a BuildKit race condition
-# where parallel builds of the same tag collide (moby/buildkit#6477).
+# Shared image reference for api, chat, scheduler, mcp — same image, different
+# commands. Built by GHA and pushed to ghcr.io (see .github/workflows/release.yml).
+# Blue/green is the docker compose project name; the image tag is color-agnostic.
 x-app-image: &app-image
-  image: ichrisbirch:${DEPLOY_COLOR}
+  image: ghcr.io/datapointchris/ichrisbirch:latest
 
 x-logging: &logging
   driver: "json-file"
@@ -22,12 +22,9 @@ x-logging: &logging
     max-file: "3"
 
 services:
-  # FastAPI Backend Service — builds the shared Python image
+  # FastAPI Backend Service — uses the shared Python image from ghcr.io
   api:
     <<: *app-image
-    build:
-      context: .
-      target: production
     container_name: icb-${DEPLOY_COLOR}-api
     command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     env_file: .env
@@ -63,12 +60,7 @@ services:
 
   # Vue Frontend Service (Caddy serves built SPA assets)
   vue:
-    image: ichrisbirch-vue:${DEPLOY_COLOR}
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        VITE_API_URL: "/api"
+    image: ghcr.io/datapointchris/ichrisbirch-vue:latest
     container_name: icb-${DEPLOY_COLOR}-vue
     ports: []
     restart: always
