@@ -11,10 +11,25 @@ from typing import Any
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 MCP_PORT = int(os.environ.get('MCP_PORT', '8000'))
 
 mcp = FastMCP('ichrisbirch', host='0.0.0.0', port=MCP_PORT)  # nosec B104  # Docker requires binding all interfaces
+
+
+@mcp.custom_route('/health', methods=['GET'])
+async def health_check(request: Request) -> JSONResponse:
+    """Liveness probe for the Docker healthcheck.
+
+    Deliberately does NOT touch the MCP session manager. Probing /mcp mints a new
+    orphaned streamable-http transport on every request, which leaked unbounded
+    (a 33-day, 4.5 GB leak that pinned the host into swap). This route bypasses
+    the protocol machinery entirely and simply confirms the app is serving HTTP.
+    """
+    return JSONResponse({'status': 'ok'})
+
 
 API_URL = os.environ.get('ICHRISBIRCH_API_URL', 'https://api.docker.localhost')
 API_TOKEN = os.environ.get('ICHRISBIRCH_API_TOKEN', '')

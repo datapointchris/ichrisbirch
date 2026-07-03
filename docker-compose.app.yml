@@ -164,7 +164,7 @@ services:
     ports: []
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/mcp"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       start_period: 15s
