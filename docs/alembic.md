@@ -88,7 +88,7 @@ Production's `alembic_version` table contains `e010f859f025`. The new baseline m
 
 ## Lookup Tables (Replacing PostgreSQL ENUMs)
 
-Never use PostgreSQL ENUM types. Use lookup tables with text primary keys instead. See the [enum removal memory](../CLAUDE.md) for rationale.
+Never use PostgreSQL ENUM types. Use lookup tables with text primary keys instead. See the [enum removal memory](https://github.com/datapointchris/ichrisbirch/blob/main/CLAUDE.md) for rationale.
 
 ### Adding a new value to an existing lookup table
 
