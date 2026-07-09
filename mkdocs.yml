@@ -101,6 +101,7 @@ plugins:
             show_bases: true
             show_submodules: true
 nav:
+  - ← Docs Hub: https://docs.ichrisbirch.com/
   - Home: index.md
   - Quick Start: quick-start.md
   - Project:
