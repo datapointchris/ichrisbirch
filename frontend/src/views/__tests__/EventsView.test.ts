@@ -20,12 +20,17 @@ vi.mock('@/composables/formatDate', () => ({
   isPast: (date: string) => new Date(date) < new Date(),
 }))
 
+// Dates are relative to "now": the view highlights an event only when it is both
+// attending AND not past, and orders via sortedEvents (future ascending). Hardcoded
+// calendar dates would rot into the past as the wall clock advances.
+const daysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString()
+
 const testEvents: Event[] = [
-  { id: 1, name: 'Concert', date: '2026-06-15T18:00:00Z', venue: 'Arena', cost: 50, attending: true, url: 'https://example.com' },
+  { id: 1, name: 'Concert', date: daysFromNow(10), venue: 'Arena', cost: 50, attending: true, url: 'https://example.com' },
   {
     id: 2,
     name: 'Conference',
-    date: '2026-07-01T09:00:00Z',
+    date: daysFromNow(20),
     venue: 'Convention Center',
     cost: 200,
     attending: false,

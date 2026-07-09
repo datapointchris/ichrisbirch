@@ -17,6 +17,10 @@ vi.mock('@/api/client', () => ({
 import { api } from '@/api/client'
 const mockApi = vi.mocked(api)
 
+// Dates must be relative to "now" — sortedEvents partitions on past-vs-future,
+// so hardcoded calendar dates would flip buckets as the wall clock advances.
+const daysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString()
+
 // Reusable test data matching the Event interface
 const testEvents = [
   {
@@ -232,13 +236,15 @@ describe('useEventsStore', () => {
 
   // --- sortedEvents ---
 
-  it('sorts events by date ascending', () => {
+  it('sorts future events ascending and sinks past events to the bottom', () => {
     const store = useEventsStore()
-    store.events = [...testEvents]
+    store.events = [
+      { id: 1, name: 'Far Future', date: daysFromNow(30), venue: 'A', cost: 0, attending: false },
+      { id: 2, name: 'Past', date: daysFromNow(-10), venue: 'B', cost: 0, attending: false },
+      { id: 3, name: 'Near Future', date: daysFromNow(3), venue: 'C', cost: 0, attending: false },
+    ]
     const sorted = store.sortedEvents
-    expect(sorted[0]!.name).toBe('Conference') // June
-    expect(sorted[1]!.name).toBe('Concert') // September
-    expect(sorted[2]!.name).toBe('Birthday Party') // December
+    expect(sorted.map((e) => e.name)).toEqual(['Near Future', 'Far Future', 'Past'])
   })
 
   // --- clearError ---
