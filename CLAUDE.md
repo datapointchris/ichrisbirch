@@ -202,6 +202,14 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 ## Conventions
 
+### MCP routing — dev vs prod
+
+The repo-level `.mcp.json` overrides `~/.claude.json`. Inside this repo, every `mcp__ichrisbirch__*` call hits the **local dev stack** (`api.docker.localhost` → `icb-dev-api` → dev Postgres), not production. The global prod config is silently shadowed.
+
+**Never assume "production"** when reading MCP data from a session inside this repo. To verify which stack you're on: `cat .mcp.json | jq '.mcpServers.ichrisbirch.env'` — if `ICHRISBIRCH_API_URL` is `api.docker.localhost`, you're on dev.
+
+For prod-state questions: use curl with the prod bearer token from `~/.claude.json`, or ask the user. A separate `ichrisbirch-prod` MCP server needs to be added to `~/.claude.json` to make prod reads available without config-shuffling (settled 2026-04-23).
+
 ### Must Follow
 
 - **Container code-change escalation ladder** (⚠️ MANDATORY): When edits aren't taking effect in running containers — new/renamed API routes, new dependencies, migrations, schema changes, Vue package.json changes, Python imports — follow THIS sequence in order. Do NOT skip steps. Do NOT substitute manual `docker` subcommands for these CLI steps:
