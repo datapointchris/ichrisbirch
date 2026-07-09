@@ -250,7 +250,9 @@ resource "aws_iam_policy" "cloud_developer" {
           "rds:*",
           "route53:*",
           "s3:*",
-          "ssm:*"
+          "ssm:*",
+          "glue:*",
+          "logs:*"
         ],
         Resource = "*"
       }
