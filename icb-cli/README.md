@@ -23,10 +23,11 @@ language; the two share no code.
 - **Phase 2 (done):** the standalone apps — `tasks`, `countdowns`, `events`,
   `habits`, `books`, and `articles` ({list,view,search,create,edit,delete} plus
   resource-specific verbs: `articles current`/`read`, `habits complete`, etc.).
-- **Phase 3 (in progress):** MCP parity + retirement — close the last 24-tool
-  gap so `icb` covers the full ~78-tool surface, then run parallel, retire the
-  MCP, and drop the `api` bypass. Parity additions: `autotasks` (done),
-  `articles` bulk-import (done), `cooking-techniques` (done), and `recipes`.
+- **Phase 3 (in progress):** MCP parity + retirement. Tool parity is **complete**
+  — `icb` now covers the full ~78-tool MCP surface (parity additions: `autotasks`,
+  `articles` bulk-import, `cooking-techniques`, and `recipes` incl. the AI
+  suggest/import flows). Remaining: run parallel, retire the MCP, and drop the
+  `api.ichrisbirch.com` ForwardAuth bypass (homelab-gated).
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
 `icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and
