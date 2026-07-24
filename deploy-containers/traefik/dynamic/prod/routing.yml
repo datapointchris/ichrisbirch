@@ -9,7 +9,7 @@
 
 http:
   routers:
-    # Direct API access (for MCP tools, services using JWT/API keys)
+    # Direct API access (for clients using Personal API Keys / JWT)
     api:
       rule: "Host(`api.ichrisbirch.com`)"
       service: api
@@ -53,17 +53,6 @@ http:
       priority: 100
       middlewares:
         - cors-prod@file
-        - security-headers-prod@file
-        - rate-limit-prod@file
-      entrypoints:
-        - web
-
-    # MCP Server — Claude Code connects via streamable HTTP
-    mcp:
-      rule: "Host(`api.ichrisbirch.com`) && PathPrefix(`/mcp`)"
-      service: mcp
-      priority: 200
-      middlewares:
         - security-headers-prod@file
         - rate-limit-prod@file
       entrypoints:
