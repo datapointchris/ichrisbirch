@@ -92,6 +92,16 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 		{"tasks shift needs two args", []string{"tasks", "shift", "1"}, 2},
 		{"tasks shift with non-int positions is usage error", []string{"tasks", "shift", "1", "x"}, 2},
 		{"tasks complete without an id is usage error", []string{"tasks", "complete"}, 2},
+		{"bare countdowns shows help (success)", []string{"countdowns"}, 0},
+		{"countdowns view without an id is usage error", []string{"countdowns", "view"}, 2},
+		{"countdowns create without --name is usage error", []string{"countdowns", "create", "--due", "2027-01-01"}, 2},
+		{"countdowns create with bad --due is usage error", []string{"countdowns", "create", "--name", "x", "--due", "nope"}, 2},
+		{"countdowns edit with no fields is usage error", []string{"countdowns", "edit", "1"}, 2},
+		{"bare events shows help (success)", []string{"events"}, 0},
+		{"events view without an id is usage error", []string{"events", "view"}, 2},
+		{"events create without --venue is usage error", []string{"events", "create", "--name", "x", "--date", "2026-09-01"}, 2},
+		{"events edit with no fields is usage error", []string{"events", "edit", "1"}, 2},
+		{"events attend without an id is usage error", []string{"events", "attend"}, 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -104,7 +114,7 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 
 func TestRootCommand_WiresResourceGroups(t *testing.T) {
 	root := NewRootCommand()
-	for _, name := range []string{"auth", "projects", "items", "tasks"} {
+	for _, name := range []string{"auth", "projects", "items", "tasks", "countdowns", "events"} {
 		cmd, _, err := root.Find([]string{name})
 		if err != nil || cmd.Name() != name {
 			t.Errorf("expected %q command wired into root, got %v (err %v)", name, cmd, err)
