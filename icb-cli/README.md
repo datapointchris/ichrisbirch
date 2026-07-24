@@ -20,8 +20,11 @@ language; the two share no code.
   ({list,view,create,edit,delete,items}) and `icb items` (project-item CRUD,
   complete/reopen, archive/unarchive, reorder, multi-project membership,
   dependencies + blockers, and sub-task verbs).
-- **Phase 2 (in progress):** the standalone apps. `tasks`, `countdowns`,
-  `events`, `habits`, and `books` landed; `articles` next.
+- **Phase 2 (done):** the standalone apps — `tasks`, `countdowns`, `events`,
+  `habits`, `books`, and `articles` ({list,view,search,create,edit,delete} plus
+  resource-specific verbs: `articles current`/`read`, `habits complete`, etc.).
+- **Phase 3 (next):** MCP parity + retirement — confirm `icb` covers the
+  ~78-tool surface, run parallel, retire the MCP, drop the `api` bypass.
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
 `icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and
