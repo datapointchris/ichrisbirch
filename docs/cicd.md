@@ -256,9 +256,9 @@ uv run ruff format --check .
 uv run mypy ichrisbirch/
 
 # Run tests with the same configuration as CI
-./cli/icb testing start
+./cli/icbops testing start
 uv run pytest --cov=ichrisbirch
-./cli/icb testing stop
+./cli/icbops testing stop
 ```
 
 ## Workflow Files Reference

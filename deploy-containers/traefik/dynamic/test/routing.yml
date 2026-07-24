@@ -4,7 +4,7 @@
 # Services are discovered via Docker provider (traefik.enable=true label).
 #
 # The PathPrefix list in vue-paths is generated — edit vue-paths.txt and run
-# `ich routing generate` instead of modifying this file directly.
+# `icbops routing generate` instead of modifying this file directly.
 #
 # Dashboard routing stays in Docker Compose labels (auth defined in middlewares.yml).
 

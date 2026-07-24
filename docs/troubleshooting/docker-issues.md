@@ -124,7 +124,7 @@ sudo iptables-legacy -t nat -F
 sudo iptables-legacy -X
 sudo iptables-legacy -t nat -X
 sudo systemctl restart docker
-./cli/icb testing rebuild --all --volumes
+./cli/icbops testing rebuild --all --volumes
 ```
 
 **Permanent prevention:** blacklist the legacy kernel modules so they never reload:
@@ -346,7 +346,7 @@ docker rm -f icb-test-vue 2>/dev/null
 docker volume rm icb-test-vue-node-modules 2>/dev/null
 
 # 3. Clean rebuild
-./cli/icb testing rebuild --all --volumes
+./cli/icbops testing rebuild --all --volumes
 ```
 
 **Prevention:** Consider `restart: on-failure:3` instead of `restart: unless-stopped` for dev-mode containers where a bad volume could trigger a crash loop. Caps retries at 3 so the daemon can't be DOS'd by a deterministic failure.

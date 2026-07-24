@@ -104,7 +104,7 @@ redis ────────┤       ├──────► chat
 
 ### Routing
 
-All routing is handled by the Traefik file provider (`deploy-containers/traefik/dynamic/{env}/routing.yml`), not Docker labels. Vue path prefixes are generated from `deploy-containers/traefik/vue-paths.txt` via `ich routing generate`.
+All routing is handled by the Traefik file provider (`deploy-containers/traefik/dynamic/{env}/routing.yml`), not Docker labels. Vue path prefixes are generated from `deploy-containers/traefik/vue-paths.txt` via `icbops routing generate`.
 
 Services wait for dependencies via health checks:
 
@@ -160,13 +160,13 @@ volumes:
 - Running `npm install` on the host writes to a root-owned dir and usually fails with EACCES. Pre-create as your user (`mkdir frontend/node_modules`) before bringing up containers if you need host-side installs.
 - Nothing in `docker-compose.*.yml` can change this — it's Linux mount semantics.
 
-**Recovery for corrupted volumes:** Partial install state in the named volume (e.g., npm install interrupted mid-run) can cause persistent ENOTEMPTY errors. Use `./cli/icb testing rebuild --all --volumes` (or `dev rebuild --all --volumes`) to wipe the named volume and start fresh. See [Docker troubleshooting](../troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for the full crash-loop recovery procedure.
+**Recovery for corrupted volumes:** Partial install state in the named volume (e.g., npm install interrupted mid-run) can cause persistent ENOTEMPTY errors. Use `./cli/icbops testing rebuild --all --volumes` (or `dev rebuild --all --volumes`) to wipe the named volume and start fresh. See [Docker troubleshooting](../troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for the full crash-loop recovery procedure.
 
 ### Usage
 
 ```bash
 # Via CLI (recommended)
-./cli/icb dev start
+./cli/icbops dev start
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
@@ -211,15 +211,15 @@ postgres:
 
 ```bash
 # Recommended: Ephemeral test run (starts fresh, runs tests, stops)
-./cli/icb test run
+./cli/icbops test run
 
 # Keep containers for debugging
-./cli/icb test run --keep
+./cli/icbops test run --keep
 
 # Manual management (for extended debugging)
-./cli/icb testing start
+./cli/icbops testing start
 uv run pytest
-./cli/icb testing stop
+./cli/icbops testing stop
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
@@ -356,20 +356,20 @@ engine = create_engine('postgresql://postgres:5432/ichrisbirch')
 
 ```bash
 # Development
-./cli/icb dev start
+./cli/icbops dev start
 
 # Testing
-./cli/icb testing start
+./cli/icbops testing start
 
 # Production
-./cli/icb prod start
+./cli/icbops prod start
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-./cli/icb dev logs
+./cli/icbops dev logs
 
 # Specific service
 docker compose logs -f api
@@ -382,7 +382,7 @@ docker compose logs -f --timestamps api
 
 ```bash
 # Rebuild and restart
-./cli/icb dev rebuild
+./cli/icbops dev rebuild
 
 # Rebuild specific service
 docker compose build api
@@ -423,7 +423,7 @@ If ports are in use:
 lsof -i :8000
 
 # Use testing ports instead
-./cli/icb testing start  # Uses 8001, 5001, etc.
+./cli/icbops testing start  # Uses 8001, 5001, etc.
 ```
 
 ### Database Connection Issues
@@ -455,8 +455,8 @@ docker network create proxy
 
 ## Best Practices
 
-1. **Use the CLI:** `./cli/icb dev start` handles complexity
+1. **Use the CLI:** `./cli/icbops dev start` handles complexity
 2. **Don't mix environments:** Use testing ports when dev is running
-3. **Check health first:** `./cli/icb dev health` before debugging
+3. **Check health first:** `./cli/icbops dev health` before debugging
 4. **Read logs:** Most issues are visible in container logs
 5. **Rebuild after Dockerfile changes:** Images don't auto-update

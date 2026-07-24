@@ -34,23 +34,23 @@ Unknown command: traefik
 
 ```bash
 # WRONG (removed commands)
-icb traefik start dev     → Use: icb dev start
-icb traefik stop dev      → Use: icb dev stop
-icb traefik restart dev   → Use: icb dev restart
-icb traefik status dev    → Use: icb dev status
-icb traefik logs dev      → Use: icb dev logs
-icb traefik health dev    → Use: icb dev health
+icb traefik start dev     → Use: icbops dev start
+icb traefik stop dev      → Use: icbops dev stop
+icb traefik restart dev   → Use: icbops dev restart
+icb traefik status dev    → Use: icbops dev status
+icb traefik logs dev      → Use: icbops dev logs
+icb traefik health dev    → Use: icbops dev health
 
 # CORRECT (current commands)
-icb dev start             # Starts dev with Traefik + HTTPS
-icb dev stop              # Stops dev environment
-icb dev restart           # Restarts dev environment
-icb dev status            # Shows status + HTTPS URLs
-icb dev logs              # Shows service logs
-icb dev health            # Runs health checks
+icbops dev start             # Starts dev with Traefik + HTTPS
+icbops dev stop              # Stops dev environment
+icbops dev restart           # Restarts dev environment
+icbops dev status            # Shows status + HTTPS URLs
+icbops dev logs              # Shows service logs
+icbops dev health            # Runs health checks
 ```
 
-**Prevention**: Use `icb help` to see all available commands. The simplified interface only shows actual working commands.
+**Prevention**: Use `icbops help` to see all available commands. The simplified interface only shows actual working commands.
 
 ### 2. Confusion About Which Command to Use
 
@@ -65,9 +65,9 @@ icb dev health            # Runs health checks
 ichrisbirch <environment> <action>
 
 # Examples:
-icb dev start         # Development environment
-icb testing start    # Testing environment
-icb prod start       # Production environment
+icbops dev start         # Development environment
+icbops testing start    # Testing environment
+icbops prod start       # Production environment
 ```
 
 **Benefits of Simplified Interface**:
@@ -97,9 +97,9 @@ Unknown command: traefik
 icb traefik ssl-manager generate dev
 
 # CORRECT (current location)
-icb ssl-manager generate dev
-icb ssl-manager info dev
-icb ssl-manager validate dev
+icbops ssl-manager generate dev
+icbops ssl-manager info dev
+icbops ssl-manager validate dev
 ```
 
 **Why This Changed**: SSL management is a fundamental operation that applies to all environments, not just Traefik-specific functionality.
@@ -120,7 +120,7 @@ icb ssl-manager validate dev
 | `icb traefik status <env>` | `ichrisbirch <env> status` | Environment status |
 | `icb traefik logs <env>` | `ichrisbirch <env> logs` | View logs |
 | `icb traefik health <env>` | `ichrisbirch <env> health` | Health checks |
-| `icb traefik ssl-manager <cmd>` | `icb ssl-manager <cmd>` | SSL management |
+| `icb traefik ssl-manager <cmd>` | `icbops ssl-manager <cmd>` | SSL management |
 
 **Prevention**: Always refer to the current [CLI Management Guide](../cli-traefik-usage.md) for up-to-date command references.
 
@@ -129,7 +129,7 @@ icb ssl-manager validate dev
 **Problem**: Looking for `traefik` in help output
 
 ```bash
-$ icb help
+$ icbops help
 # traefik commands not listed
 ```
 
@@ -139,13 +139,13 @@ $ icb help
 
 ```bash
 # General help (shows all top-level commands)
-icb help
+icbops help
 
 # Environment-specific help
-icb dev help
+icbops dev help
 
 # SSL manager help
-icb ssl-manager help
+icbops ssl-manager help
 ```
 
 **Expected Help Output**:
@@ -180,8 +180,8 @@ icb traefik health dev
 
 # CORRECT (current)
 #!/bin/bash
-icb dev start
-icb dev health
+icbops dev start
+icbops dev health
 ```
 
 **Prevention**: Update all automation scripts and CI/CD pipelines to use the new simplified interface.
@@ -192,33 +192,33 @@ icb dev health
 
 ```bash
 # Verify CLI is executable
-ls -la ./cli/icb
+ls -la ./cli/icbops
 
 # Make executable if needed
-chmod +x ./cli/icb
+chmod +x ./cli/icbops
 
 # Test basic functionality
-./cli/icb help
+./cli/icbops help
 ```
 
 ### Verify Current CLI Version
 
 ```bash
 # Check CLI script for version information
-head -20 ./cli/icb
+head -20 ./cli/icbops
 
 # Look for the function definitions to confirm simplified interface
-grep -n "function.*start\|function.*traefik" ./cli/icb
+grep -n "function.*start\|function.*traefik" ./cli/icbops
 ```
 
 ### Debug Command Parsing
 
 ```bash
 # Enable bash debugging to see command parsing
-bash -x ./cli/icb dev start
+bash -x ./cli/icbops dev start
 
 # Check if commands are being recognized
-./cli/icb dev help
+./cli/icbops dev help
 ```
 
 ## 🚀 CLI Migration Guide
@@ -228,7 +228,7 @@ bash -x ./cli/icb dev start
 1. **Update muscle memory**: Practice using `<env> <action>` pattern
 2. **Update bookmarks**: Replace any documented commands with new syntax
 3. **Check scripts**: Update any personal scripts or aliases
-4. **Use help commands**: Rely on `icb help` for current command reference
+4. **Use help commands**: Rely on `icbops help` for current command reference
 
 ### For Teams
 
@@ -253,7 +253,7 @@ bash -x ./cli/icb dev start
 ```bash
 # Users had to choose between equivalent commands
 icb traefik start dev    # Started dev environment
-icb dev start            # Also started dev environment (same result)
+icbops dev start            # Also started dev environment (same result)
 
 # Problems:
 # - Confusion about which command to use
@@ -266,7 +266,7 @@ icb dev start            # Also started dev environment (same result)
 
 ```bash
 # One command per operation
-icb dev start            # Clear, simple, consistent
+icbops dev start            # Clear, simple, consistent
 
 # Benefits:
 # - No confusion about which command to use
@@ -296,43 +296,43 @@ icb dev start            # Clear, simple, consistent
 
 ```bash
 # Development
-icb dev start|stop|restart|rebuild  # Manage dev environment
-icb dev status|health               # Check environment
-icb dev logs [service]              # View logs
-icb dev smoke                       # Run smoke tests
-icb dev is-ready                    # Quick health check (exit 0/1)
-icb dev ensure                      # Start if not running
-icb dev docker [service]            # Show merged compose config
-icb dev db backup|restore|list|seed|init  # Database commands
+icbops dev start|stop|restart|rebuild  # Manage dev environment
+icbops dev status|health               # Check environment
+icbops dev logs [service]              # View logs
+icbops dev smoke                       # Run smoke tests
+icbops dev is-ready                    # Quick health check (exit 0/1)
+icbops dev ensure                      # Start if not running
+icbops dev docker [service]            # Show merged compose config
+icbops dev db backup|restore|list|seed|init  # Database commands
 
 # Testing
-icb testing start|stop|restart|rebuild  # Manage test environment
-icb testing status|health               # Check environment
-icb testing logs [service]              # View logs
-icb testing db backup|restore|list|seed|reset  # Database commands
-icb test run [path] [args]              # Run pytest
+icbops testing start|stop|restart|rebuild  # Manage test environment
+icbops testing status|health               # Check environment
+icbops testing logs [service]              # View logs
+icbops testing db backup|restore|list|seed|reset  # Database commands
+icbops test run [path] [args]              # Run pytest
 
 # Production (blue/green aware)
-icb prod start|stop|restart         # Manage production
-icb prod status|health|apihealth    # Check environment
-icb prod logs [service|deploy|build]  # View logs
-icb prod smoke                      # Run smoke tests (requires ICHRISBIRCH_API_KEY)
-icb prod deploy-status              # Show blue/green state
-icb prod rollback                   # Switch traffic to previous color
-icb prod build-test                 # Test production Docker build locally
-icb prod db backup|restore|list|init  # Database commands
+icbops prod start|stop|restart         # Manage production
+icbops prod status|health|apihealth    # Check environment
+icbops prod logs [service|deploy|build]  # View logs
+icbops prod smoke                      # Run smoke tests (requires ICHRISBIRCH_API_KEY)
+icbops prod deploy-status              # Show blue/green state
+icbops prod rollback                   # Switch traffic to previous color
+icbops prod build-test                 # Test production Docker build locally
+icbops prod db backup|restore|list|init  # Database commands
 
 # Tools
-icb ssl-manager generate|validate|info [env]  # SSL certificates
-icb routing generate                # Regenerate Traefik routing
-icb install                         # Symlink CLI to ~/.local/bin/icb
-icb stats summary|code|tests|quality|activity|events|trends|churn  # Stats
+icbops ssl-manager generate|validate|info [env]  # SSL certificates
+icbops routing generate                # Regenerate Traefik routing
+icbops install                         # Symlink CLI to ~/.local/bin/icb
+icbops stats summary|code|tests|quality|activity|events|trends|churn  # Stats
 
 # Help
-icb help                # General help
-icb dev help            # Development help
-icb test help           # Test help
-icb stats               # Stats submenu
+icbops help                # General help
+icbops dev help            # Development help
+icbops test help           # Test help
+icbops stats               # Stats submenu
 ```
 
 ### Removed Commands (Do Not Use)

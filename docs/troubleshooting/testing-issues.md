@@ -35,7 +35,7 @@ This silently suppressed cleanup errors, so failed cleanup operations went unnot
 
 **Resolution:** Implemented container reuse strategy with database reset:
 
-**Test run command** (`cli/icb:208-259`):
+**Test run command** (`cli/icbops:208-259`):
 
 ```bash
 function test-run() {
@@ -73,7 +73,7 @@ function test-run() {
 
   # Leave containers running for fast iteration
   echo "Containers left running for fast iteration."
-  echo "Stop them with: icb testing stop"
+  echo "Stop them with: icbops testing stop"
 }
 ```
 
@@ -91,7 +91,7 @@ function test-run() {
 
 ```bash
 # Stop and remove all test containers and volumes
-./cli/icb testing stop
+./cli/icbops testing stop
 
 # Full Docker cleanup if issues persist
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
@@ -746,7 +746,7 @@ find tests/ -name "*.py" | grep -E "(environment|conftest)"
 
 ```bash
 docker-compose -f docker-compose.test.yml build --no-cache test-runner
-icb test
+icbops test
 ```
 
 ## Test Checklist

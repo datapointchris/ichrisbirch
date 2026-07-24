@@ -48,7 +48,7 @@ echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 cd ichrisbirch
 
 # Start development environment (includes HTTPS + Traefik automatically)
-./cli/icb dev start
+./cli/icbops dev start
 ```
 
 **What this does**:
@@ -62,10 +62,10 @@ cd ichrisbirch
 
 ```bash
 # Check service status and URLs
-./cli/icb dev status
+./cli/icbops dev status
 
 # Run comprehensive health checks
-./cli/icb dev health
+./cli/icbops dev health
 ```
 
 ### 3. Access Your Applications
@@ -93,15 +93,15 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Single commands for each operation
-./cli/icb dev start       # Start development (Traefik + HTTPS automatic)
-./cli/icb dev status      # Show status + URLs
-./cli/icb dev health      # Run health checks
-./cli/icb dev logs        # View service logs
-./cli/icb dev stop        # Stop development
+./cli/icbops dev start       # Start development (Traefik + HTTPS automatic)
+./cli/icbops dev status      # Show status + URLs
+./cli/icbops dev health      # Run health checks
+./cli/icbops dev logs        # View service logs
+./cli/icbops dev stop        # Stop development
 
 # SSL certificate management
-./cli/icb ssl-manager generate dev    # Generate certificates
-./cli/icb ssl-manager info dev        # Certificate information
+./cli/icbops ssl-manager generate dev    # Generate certificates
+./cli/icbops ssl-manager info dev        # Certificate information
 ```
 
 **No more confusing command duplication** - each operation has exactly one command.
@@ -127,7 +127,7 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Check what's running
-./cli/icb dev status
+./cli/icbops dev status
 
 # Example output:
 # Container Status:
@@ -150,44 +150,44 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Start development
-./cli/icb dev start
+./cli/icbops dev start
 
 # Quick status check
-./cli/icb dev status
+./cli/icbops dev status
 
 # View API logs while developing
-./cli/icb dev logs api
+./cli/icbops dev logs api
 
 # Stop when done
-./cli/icb dev stop
+./cli/icbops dev stop
 ```
 
 ### Troubleshooting
 
 ```bash
 # Run comprehensive health check
-./cli/icb dev health
+./cli/icbops dev health
 
 # View specific service logs
-./cli/icb dev logs traefik    # Traefik proxy logs
-./cli/icb dev logs api        # API backend logs
-./cli/icb dev logs vue        # Vue frontend logs
+./cli/icbops dev logs traefik    # Traefik proxy logs
+./cli/icbops dev logs api        # API backend logs
+./cli/icbops dev logs vue        # Vue frontend logs
 
 # Restart if needed
-./cli/icb dev restart
+./cli/icbops dev restart
 ```
 
 ### SSL Certificate Management
 
 ```bash
 # Generate certificates (automatic with mkcert)
-./cli/icb ssl-manager generate dev
+./cli/icbops ssl-manager generate dev
 
 # Check certificate information
-./cli/icb ssl-manager info dev
+./cli/icbops ssl-manager info dev
 
 # Validate certificates
-./cli/icb ssl-manager validate dev
+./cli/icbops ssl-manager validate dev
 ```
 
 ## 🚨 Quick Troubleshooting
@@ -201,8 +201,8 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 ```bash
 brew install mkcert
 mkcert -install
-./cli/icb ssl-manager generate dev
-./cli/icb dev restart
+./cli/icbops ssl-manager generate dev
+./cli/icbops dev restart
 ```
 
 ### 2. Service Not Accessible
@@ -212,9 +212,9 @@ mkcert -install
 **Solution**: Check service status and health
 
 ```bash
-./cli/icb dev status
-./cli/icb dev health
-./cli/icb dev logs
+./cli/icbops dev status
+./cli/icbops dev health
+./cli/icbops dev logs
 ```
 
 ### 3. Port Conflicts
@@ -224,9 +224,9 @@ mkcert -install
 **Solution**: Stop conflicting services
 
 ```bash
-./cli/icb dev stop
+./cli/icbops dev stop
 docker stop $(docker ps -q --filter "name=ichrisbirch")
-./cli/icb dev start
+./cli/icbops dev start
 ```
 
 ### 4. DNS Resolution Issues
@@ -259,7 +259,7 @@ grep docker.localhost /etc/hosts
 
 ```bash
 # Testing environment (different port and domain)
-./cli/icb testing start
+./cli/icbops testing start
 # Access at: https://api.test.localhost:8443/
 
 # Production environment (runs on homelab, not locally)

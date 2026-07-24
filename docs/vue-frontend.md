@@ -31,7 +31,7 @@ The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.dock
 
 ### Running the Vue Frontend
 
-The Vue service starts automatically with `./cli/icb dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
+The Vue service starts automatically with `./cli/icbops dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
 
 ### Auth in Development
 
@@ -86,7 +86,7 @@ npm test             # Build check + unit tests
 2. Create Vue view in `frontend/src/views/`
 3. Add route in `frontend/src/router.ts`
 4. Add sidebar link in `frontend/src/components/AppSidebar.vue`
-5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `ich routing generate`
+5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`
 6. Write unit tests in `frontend/src/stores/__tests__/`
 7. Write E2E tests in `frontend/e2e/`
 8. Run `npm test` and `npm run test:e2e` before considering the page done

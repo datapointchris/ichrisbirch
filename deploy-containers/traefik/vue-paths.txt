@@ -1,5 +1,5 @@
 # Vue SPA route prefixes — one per line
-# Add new Vue pages here, then run: ich routing generate
+# Add new Vue pages here, then run: icbops routing generate
 #
 # The script also adds:
 #   Path(/)           — all environments (SPA root)

@@ -121,8 +121,8 @@ clone_repository() {
 
 install_cli() {
   log_info "Installing ichrisbirch CLI..."
-  ln -sf "$INSTALL_DIR/cli/icb" /usr/local/bin/icb
-  log_success "CLI installed: icb"
+  ln -sf "$INSTALL_DIR/cli/icbops" /usr/local/bin/icbops
+  log_success "CLI installed: icbops"
 }
 
 setup_aws_credentials() {
@@ -270,11 +270,11 @@ start_services() {
   log_info "Starting production services..."
   cd "$INSTALL_DIR"
 
-  if ! command -v icb &>/dev/null; then
+  if ! command -v icbops &>/dev/null; then
     log_error "CLI not in PATH, using direct path"
-    "$INSTALL_DIR/cli/icb" prod start
+    "$INSTALL_DIR/cli/icbops" prod start
   else
-    icb prod start
+    icbops prod start
   fi
 }
 
@@ -372,8 +372,8 @@ print_summary() {
   echo "Next steps:"
   echo "  1. Verify age key: sops decrypt secrets/secrets.prod.enc.env > /dev/null"
   echo "  2. Verify AWS credentials (for S3 backups): aws sts get-caller-identity"
-  echo "  3. Check services: icb prod status"
-  echo "  4. View logs: icb prod logs"
+  echo "  3. Check services: icbops prod status"
+  echo "  4. View logs: icbops prod logs"
   echo ""
   if ! systemctl is-active --quiet cloudflared 2>/dev/null; then
     echo -e "${YELLOW}Cloudflare tunnel not configured!${NC}"

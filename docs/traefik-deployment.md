@@ -9,7 +9,7 @@ This guide covers the complete deployment of Traefik reverse proxy for the iChri
 - **File provider routing** in `deploy-containers/traefik/dynamic/{dev,test,prod}/routing.yml`
 - **Docker provider** for service discovery (container ports)
 - **Browser-trusted HTTPS** with mkcert for local development
-- **Generated routing** from canonical `vue-paths.txt` via `ich routing generate`
+- **Generated routing** from canonical `vue-paths.txt` via `icbops routing generate`
 - **Separate CORS and security middlewares** per environment
 
 ## 🏗️ Architecture Overview
@@ -93,7 +93,7 @@ http:
       tls: {}
 ```
 
-Routing files are generated from `vue-paths.txt` via `ich routing generate`.
+Routing files are generated from `vue-paths.txt` via `icbops routing generate`.
 
 ### Middleware Stack
 
@@ -137,7 +137,7 @@ graph TB
 Vue serves all pages at `app.docker.localhost`. The `vue-paths` router matches specific PathPrefix rules (generated from `vue-paths.txt`). Adding a new page:
 
 1. Add the path to `deploy-containers/traefik/vue-paths.txt`
-2. Run `ich routing generate` to update all three `routing.yml` files
+2. Run `icbops routing generate` to update all three `routing.yml` files
 3. Traefik's `file.watch=true` picks up the change automatically
 
 ### Dev Auth Simulation
@@ -191,38 +191,38 @@ Cloudflare handles TLS termination; Traefik receives HTTP internally and provide
 
 ```bash
 # Start any environment (uses Traefik automatically)
-icb dev start               # Development
-icb testing start          # Testing
-icb prod start             # Production
+icbops dev start               # Development
+icbops testing start          # Testing
+icbops prod start             # Production
 
 # Status and monitoring
-icb dev status             # Service status + URLs
-icb dev health             # Comprehensive health checks
-icb dev logs               # View service logs
+icbops dev status             # Service status + URLs
+icbops dev health             # Comprehensive health checks
+icbops dev logs               # View service logs
 
 # SSL certificate management
-icb ssl-manager generate dev    # Generate certificates (prefers mkcert)
-icb ssl-manager info dev        # Certificate information
-icb ssl-manager validate dev    # Validate certificates
+icbops ssl-manager generate dev    # Generate certificates (prefers mkcert)
+icbops ssl-manager info dev        # Certificate information
+icbops ssl-manager validate dev    # Validate certificates
 ```
 
 ### Routing and Config Commands
 
 ```bash
 # Generate routing files from vue-paths.txt
-icb routing generate
+icbops routing generate
 
 # See fully merged Docker Compose output (debug overrides)
-icb dev docker config [service]
-icb testing docker config [service]
+icbops dev docker config [service]
+icbops testing docker config [service]
 ```
 
 ## SSL certificate management
 
 ```bash
-icb ssl-manager generate ENV   # Generate certificates
-icb ssl-manager validate ENV   # Validate existing
-icb ssl-manager info ENV       # Show certificate info
+icbops ssl-manager generate ENV   # Generate certificates
+icbops ssl-manager validate ENV   # Validate existing
+icbops ssl-manager info ENV       # Show certificate info
 ```
 
 ## 🔒 SSL Certificate Management
@@ -233,10 +233,10 @@ Certificates are generated automatically with appropriate Subject Alternative Na
 
 ```bash
 # Generate certificates for all environments
-icb ssl-manager generate all
+icbops ssl-manager generate all
 
 # Generate specific environment
-icb ssl-manager generate dev
+icbops ssl-manager generate dev
 ```
 
 ### Certificate Details
@@ -279,7 +279,7 @@ The health check system validates:
 ### Health Check Output
 
 ```bash
-$ icb dev health
+$ icbops dev health
 
 Health Check for dev Environment
 ========================================
@@ -313,14 +313,14 @@ Health Check for dev Environment
 
    ```bash
    # Regenerate certificates
-   icb ssl-manager generate all
+   icbops ssl-manager generate all
    ```
 
 4. **Container Health**
 
    ```bash
    # Check specific container logs
-   icb dev logs api
+   icbops dev logs api
    ```
 
 ### Verification Steps
@@ -334,13 +334,13 @@ Health Check for dev Environment
 2. **Container Status**
 
    ```bash
-   icb dev status
+   icbops dev status
    ```
 
 3. **Certificate Validation**
 
    ```bash
-   icb ssl-manager validate dev
+   icbops ssl-manager validate dev
    ```
 
 ## 📈 Performance Considerations

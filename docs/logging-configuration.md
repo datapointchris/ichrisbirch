@@ -150,12 +150,12 @@ Use the CLI to view colored logs that persist across container restarts:
 
 ```bash
 # All services
-./cli/icb dev logs
+./cli/icbops dev logs
 
 # Specific service
-./cli/icb dev logs api
-./cli/icb dev logs scheduler
-./cli/icb dev logs vue
+./cli/icbops dev logs api
+./cli/icbops dev logs scheduler
+./cli/icbops dev logs vue
 ```
 
 The logs command uses a watch loop that automatically reconnects when containers restart, and supports filter flags described in [CLI Usage](cli-traefik-usage.md).
@@ -164,20 +164,20 @@ The logs command uses a watch loop that automatically reconnects when containers
 
 ```bash
 # View test environment logs
-./cli/icb testing logs
+./cli/icbops testing logs
 
 # Specific service
-./cli/icb testing logs api
+./cli/icbops testing logs api
 ```
 
 ### Production
 
 ```bash
 # View production logs
-./cli/icb prod logs
+./cli/icbops prod logs
 
 # Specific service
-./cli/icb prod logs api
+./cli/icbops prod logs api
 ```
 
 ### Direct Docker Commands

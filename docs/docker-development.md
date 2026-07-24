@@ -38,12 +38,12 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 ### Development Commands
 
 ```bash
-icb dev start     # Start all development services
-icb dev stop      # Stop and remove containers
-icb dev restart   # Restart existing containers
-icb dev rebuild   # Rebuild images and restart
-icb dev logs      # View live container logs
-icb dev status    # Show container status
+icbops dev start     # Start all development services
+icbops dev stop      # Stop and remove containers
+icbops dev restart   # Restart existing containers
+icbops dev rebuild   # Rebuild images and restart
+icbops dev logs      # View live container logs
+icbops dev status    # Show container status
 ```
 
 **Technical Details**:
@@ -55,8 +55,8 @@ icb dev status    # Show container status
 ### Test Commands
 
 ```bash
-icb test          # Run pytest in containerized environment
-icb test logs     # Run tests with timestamped log output
+icbops test          # Run pytest in containerized environment
+icbops test logs     # Run tests with timestamped log output
 ```
 
 **Test Infrastructure**:
@@ -69,16 +69,16 @@ icb test logs     # Run tests with timestamped log output
 ### Production Commands
 
 ```bash
-icb prod start          # Start infra + active color
-icb prod stop           # Stop active color + infra
-icb prod restart        # Restart without rebuilding
-icb prod status         # Check production service status
-icb prod health         # Run health checks
-icb prod apihealth      # HTTP health check for API service
-icb prod smoke          # Run smoke tests against all endpoints
-icb prod deploy-status  # Show blue/green state and routing
-icb prod rollback       # Switch traffic back to previous color
-icb prod logs           # View production application logs
+icbops prod start          # Start infra + active color
+icbops prod stop           # Stop active color + infra
+icbops prod restart        # Restart without rebuilding
+icbops prod status         # Check production service status
+icbops prod health         # Run health checks
+icbops prod apihealth      # HTTP health check for API service
+icbops prod smoke          # Run smoke tests against all endpoints
+icbops prod deploy-status  # Show blue/green state and routing
+icbops prod rollback       # Switch traffic back to previous color
+icbops prod logs           # View production application logs
 ```
 
 ## Docker Compose Configuration
@@ -92,7 +92,7 @@ icb prod logs           # View production application logs
 - **`docker-compose.infra.yml`**: Production infrastructure (Traefik, PostgreSQL, Redis) — always running
 - **`docker-compose.app.yml`**: Production app services parameterized by `${DEPLOY_COLOR}` for blue/green
 
-Use `ich {dev,testing,prod} docker config [service]` to see fully merged output.
+Use `icbops {dev,testing,prod} docker config [service]` to see fully merged output.
 
 See [Blue/Green Deployment](blue-green-deployment.md) for details on the production compose split.
 
@@ -129,7 +129,7 @@ Each environment uses `.env` files:
 
 - **Python services (API, Scheduler)**: structlog with stdout-only output. Key=value format for dev, JSON for production/Loki.
 - **Vue frontend**: consola with structured reporters matching structlog's format. Includes request tracing via X-Request-ID headers.
-- **Colored output**: CLI provides colored log viewing with `icb dev logs`
+- **Colored output**: CLI provides colored log viewing with `icbops dev logs`
 
 ### Container Logging
 
@@ -177,10 +177,10 @@ cd ichrisbirch
 cp .env.example .env  # Configure environment variables
 
 # Start development environment
-icb dev start
+icbops dev start
 
 # View logs
-icb dev logs
+icbops dev logs
 ```
 
 ### Running Tests
@@ -190,10 +190,10 @@ icb dev logs
 ichrisbirch test
 
 # Run with log output
-icb test logs
+icbops test logs
 
 # Check test infrastructure
-icb dev status
+icbops dev status
 ```
 
 ### Debugging Services
@@ -239,16 +239,16 @@ docker exec -it icb-dev-api /bin/bash
 
 ```bash
 # Check all container status
-icb dev status
+icbops dev status
 
 # View recent infrastructure logs
-icb dev logs
+icbops dev logs
 
 # Clean up unused containers/images
 docker system prune -f
 
 # Reset development environment
-icb dev stop && icb dev rebuild
+icbops dev stop && icbops dev rebuild
 ```
 
 ### Performance Optimization

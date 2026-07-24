@@ -1,5 +1,5 @@
 # Test overrides — only what differs from base (docker-compose.yml)
-# Verify merged result: ich testing docker config
+# Verify merged result: icbops testing docker config
 
 x-app-build: &app-build
   image: ichrisbirch:testing

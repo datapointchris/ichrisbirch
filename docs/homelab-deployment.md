@@ -68,7 +68,7 @@ git clone https://github.com/datapointchris/ichrisbirch.git
 cd ichrisbirch
 
 # Install CLI
-sudo ln -sf /srv/ichrisbirch/cli/icb /usr/local/bin/icb
+sudo ln -sf /srv/ichrisbirch/cli/icbops /usr/local/bin/icb
 
 # Set up AWS credentials
 mkdir -p ~/.aws
@@ -154,7 +154,7 @@ Pushing to `main` triggers the webhook, which runs `scripts/deploy-homelab.sh`. 
 cd /srv/ichrisbirch
 
 # Start production (blue/green aware — starts infra + active color)
-icb prod start
+icbops prod start
 ```
 
 This will:
@@ -167,19 +167,19 @@ This will:
 
 ```bash
 # Check deployment state (which color is active)
-icb prod deploy-status
+icbops prod deploy-status
 
 # Check container status
-icb prod status
+icbops prod status
 
 # View logs
-icb prod logs
+icbops prod logs
 
 # Test health endpoints
-icb prod health
+icbops prod health
 
 # Run smoke tests
-icb prod smoke
+icbops prod smoke
 
 # Check tunnel status
 sudo systemctl status cloudflared
@@ -190,7 +190,7 @@ sudo systemctl status cloudflared
 If a problem is discovered after a deploy:
 
 ```bash
-icb prod rollback    # Switch traffic back to previous color
+icbops prod rollback    # Switch traffic back to previous color
 ```
 
 ### Access URLs
@@ -219,17 +219,17 @@ aws ssm put-parameter --region us-east-2 \
 ## CLI Commands
 
 ```bash
-icb prod start          # Start infra + active color
-icb prod stop           # Stop active color + infra
-icb prod restart        # Restart active color + infra
-icb prod status         # Show container status
-icb prod health         # Run health checks
-icb prod smoke          # Run smoke tests against all endpoints
-icb prod deploy-status  # Show blue/green state and routing
-icb prod rollback       # Switch traffic back to previous color
-icb prod logs           # View container logs
-icb prod logs deploy    # View deployment event logs
-icb prod logs build     # View latest Docker build log
+icbops prod start          # Start infra + active color
+icbops prod stop           # Stop active color + infra
+icbops prod restart        # Restart active color + infra
+icbops prod status         # Show container status
+icbops prod health         # Run health checks
+icbops prod smoke          # Run smoke tests against all endpoints
+icbops prod deploy-status  # Show blue/green state and routing
+icbops prod rollback       # Switch traffic back to previous color
+icbops prod logs           # View container logs
+icbops prod logs deploy    # View deployment event logs
+icbops prod logs build     # View latest Docker build log
 ```
 
 ## Troubleshooting
@@ -251,7 +251,7 @@ sudo systemctl restart cloudflared
 curl -I http://localhost:80
 
 # Check container status
-icb prod status
+icbops prod status
 
 # View Traefik logs
 docker logs icb-prod-traefik
@@ -313,7 +313,7 @@ Should be `http`. If it's `https`, fix it:
 aws ssm put-parameter --region us-east-2 --name "/ichrisbirch/production/protocol" --value "http" --type String --overwrite
 ```
 
-Then restart services: `icb prod restart`
+Then restart services: `icbops prod restart`
 
 ### Volume Naming Issues
 

@@ -152,8 +152,8 @@ fi
 ### Blue/Green Commands
 
 ```bash
-icb prod deploy-status    # Show active color, container status, routing state
-icb prod rollback         # Switch traffic back to previous color
+icbops prod deploy-status    # Show active color, container status, routing state
+icbops prod rollback         # Switch traffic back to previous color
 ```
 
 ### Standard Commands (Blue/Green Aware)
@@ -161,13 +161,13 @@ icb prod rollback         # Switch traffic back to previous color
 These commands automatically detect whether blue/green is active and act accordingly:
 
 ```bash
-icb prod start            # Start infra + active color (or legacy single-compose)
-icb prod stop             # Stop active color + infra (or legacy)
-icb prod restart          # Restart active color + infra (or legacy)
-icb prod status           # Show infra + active color status (or legacy)
-icb prod logs [service]   # View active color logs (or legacy)
-icb prod health           # Health check with correct container names
-icb prod smoke            # Run smoke tests via API
+icbops prod start            # Start infra + active color (or legacy single-compose)
+icbops prod stop             # Stop active color + infra (or legacy)
+icbops prod restart          # Restart active color + infra (or legacy)
+icbops prod status           # Show infra + active color status (or legacy)
+icbops prod logs [service]   # View active color logs (or legacy)
+icbops prod health           # Health check with correct container names
+icbops prod smoke            # Run smoke tests via API
 ```
 
 ### Emergency Fallback
@@ -175,7 +175,7 @@ icb prod smoke            # Run smoke tests via API
 If blue/green causes issues, the original `docker-compose.yml` still works:
 
 ```bash
-icb prod legacy-rebuild   # Old-style down→build→up (causes downtime)
+icbops prod legacy-rebuild   # Old-style down→build→up (causes downtime)
 ```
 
 ## Database Migrations
@@ -232,7 +232,7 @@ If the build, health checks, or smoke tests fail, the live containers were never
 ### Manual (Post-Switch Problem)
 
 ```bash
-icb prod rollback
+icbops prod rollback
 ```
 
 This command:
@@ -315,14 +315,14 @@ When transitioning from the legacy single-compose deployment to blue/green:
    docker network rm icb-prod_default 2>/dev/null || true
    ```
 
-4. Verify with `icb prod deploy-status`
+4. Verify with `icbops prod deploy-status`
 
 ## Monitoring
 
 ### Deploy Status
 
 ```bash
-icb prod deploy-status
+icbops prod deploy-status
 ```
 
 Shows: active color, infrastructure container status, app container status, routing file state, and any mismatches.
@@ -356,5 +356,5 @@ Every deploy sends a Slack notification with:
 | `deploy-containers/traefik/dynamic/prod/routing.yml` | Traefik routers — rules, middleware, priorities (git-tracked) |
 | `deploy-containers/traefik/dynamic/prod/services.yml` | Traefik services — active color's container URLs (generated per deploy) |
 | `deploy-containers/traefik/dynamic/prod/middlewares.yml` | Traefik middleware definitions |
-| `cli/icb` | CLI with blue/green-aware commands |
+| `cli/icbops` | CLI with blue/green-aware commands |
 | `cli/health-check.sh` | Health check script (reads active color from state file) |

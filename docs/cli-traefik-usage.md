@@ -6,18 +6,18 @@ This guide covers the comprehensive CLI interface for managing the iChrisBirch a
 
 ```bash
 # Start any environment (uses Traefik + HTTPS by default)
-icb dev start               # Development environment
-icb testing start          # Testing environment
-icb prod start             # Production environment
+icbops dev start               # Development environment
+icbops testing start          # Testing environment
+icbops prod start             # Production environment
 
 # Check status with URLs
-icb dev status
+icbops dev status
 
 # Run health checks
-icb dev health
+icbops dev health
 
 # SSL certificate management
-icb ssl-manager <command> <env>
+icbops ssl-manager <command> <env>
 ```
 
 ## 📋 Modern CLI Architecture
@@ -45,20 +45,20 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `dev start` | Start development with HTTPS | `icb dev start` |
-| `dev stop` | Stop development environment | `icb dev stop` |
-| `dev restart` | Restart development environment | `icb dev restart` |
-| `dev rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icb dev rebuild` |
-| `dev rebuild --all` | Full rebuild including infra (traefik, postgres, redis) | `icb dev rebuild --all` |
-| `dev rebuild --volumes` | Wipe named volumes and rebuild (stackable with `--all`) | `icb dev rebuild --all --volumes` |
-| `dev status` | Show service status, URLs, and credentials | `icb dev status` |
-| `dev logs` | View service logs | `icb dev logs [service]` |
-| `dev health` | Run comprehensive health checks | `icb dev health` |
-| `dev is-ready` | Quick API health check (exit 0/1) | `icb dev is-ready` |
-| `dev ensure` | Start containers if not already running | `icb dev ensure` |
-| `dev smoke` | Run smoke tests against all endpoints | `icb dev smoke` |
-| `dev docker [service]` | Show merged Docker Compose config | `icb dev docker api` |
-| `dev db ...` | Database commands (seed, init, reset) | `icb dev db reset` |
+| `dev start` | Start development with HTTPS | `icbops dev start` |
+| `dev stop` | Stop development environment | `icbops dev stop` |
+| `dev restart` | Restart development environment | `icbops dev restart` |
+| `dev rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icbops dev rebuild` |
+| `dev rebuild --all` | Full rebuild including infra (traefik, postgres, redis) | `icbops dev rebuild --all` |
+| `dev rebuild --volumes` | Wipe named volumes and rebuild (stackable with `--all`) | `icbops dev rebuild --all --volumes` |
+| `dev status` | Show service status, URLs, and credentials | `icbops dev status` |
+| `dev logs` | View service logs | `icbops dev logs [service]` |
+| `dev health` | Run comprehensive health checks | `icbops dev health` |
+| `dev is-ready` | Quick API health check (exit 0/1) | `icbops dev is-ready` |
+| `dev ensure` | Start containers if not already running | `icbops dev ensure` |
+| `dev smoke` | Run smoke tests against all endpoints | `icbops dev smoke` |
+| `dev docker [service]` | Show merged Docker Compose config | `icbops dev docker api` |
+| `dev db ...` | Database commands (seed, init, reset) | `icbops dev db reset` |
 
 **Dev Credentials Display:**
 
@@ -74,20 +74,20 @@ Dev Credentials:
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `test run` | Run tests (reuses containers) | `icb test run [path] [args]` |
-| `testing start` | Start testing environment | `icb testing start` |
-| `testing stop` | Stop testing environment | `icb testing stop` |
-| `testing restart` | Restart testing environment | `icb testing restart` |
-| `testing status` | Show service status and HTTPS URLs | `icb testing status` |
-| `testing logs` | View service logs | `icb testing logs [service]` |
-| `testing health` | Run comprehensive health checks | `icb testing health` |
-| `testing rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icb testing rebuild` |
-| `testing rebuild --all` | Full rebuild including infra | `icb testing rebuild --all` |
-| `testing rebuild --volumes` | Wipe named volumes and rebuild — step 2 of the code-change escalation ladder (see CLAUDE.md); covers stale `.venv`, deps, node_modules, ENOTEMPTY | `icb testing rebuild --all --volumes` |
-| `testing is-ready` | Quick API health check (exit 0/1) | `icb testing is-ready` |
-| `testing ensure` | Start containers if not already running | `icb testing ensure` |
-| `testing docker [service]` | Show merged Docker Compose config | `icb testing docker api` |
-| `testing db ...` | Database commands (seed, init, reset) | `icb testing db reset` |
+| `test run` | Run tests (reuses containers) | `icbops test run [path] [args]` |
+| `testing start` | Start testing environment | `icbops testing start` |
+| `testing stop` | Stop testing environment | `icbops testing stop` |
+| `testing restart` | Restart testing environment | `icbops testing restart` |
+| `testing status` | Show service status and HTTPS URLs | `icbops testing status` |
+| `testing logs` | View service logs | `icbops testing logs [service]` |
+| `testing health` | Run comprehensive health checks | `icbops testing health` |
+| `testing rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icbops testing rebuild` |
+| `testing rebuild --all` | Full rebuild including infra | `icbops testing rebuild --all` |
+| `testing rebuild --volumes` | Wipe named volumes and rebuild — step 2 of the code-change escalation ladder (see CLAUDE.md); covers stale `.venv`, deps, node_modules, ENOTEMPTY | `icbops testing rebuild --all --volumes` |
+| `testing is-ready` | Quick API health check (exit 0/1) | `icbops testing is-ready` |
+| `testing ensure` | Start containers if not already running | `icbops testing ensure` |
+| `testing docker [service]` | Show merged Docker Compose config | `icbops testing docker api` |
+| `testing db ...` | Database commands (seed, init, reset) | `icbops testing db reset` |
 
 **Test Run Behavior:**
 
@@ -106,50 +106,50 @@ All production commands are **blue/green aware** — they automatically detect t
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `prod start` | Start infra + active color | `icb prod start` |
-| `prod stop` | Stop active color + infra | `icb prod stop` |
-| `prod restart` | Restart active color + infra | `icb prod restart` |
-| `prod status` | Show infra + active color status | `icb prod status` |
-| `prod logs` | View active color logs | `icb prod logs [service]` |
-| `prod logs deploy` | View deployment event logs | `icb prod logs deploy` |
-| `prod logs build` | View latest Docker build log | `icb prod logs build` |
-| `prod health` | Run health checks | `icb prod health` |
-| `prod smoke` | Run smoke tests against all endpoints | `icb prod smoke` |
-| `prod deploy-status` | Show blue/green state and routing | `icb prod deploy-status` |
-| `prod rollback` | Switch traffic to previous color | `icb prod rollback` |
-| `prod build-test` | Test production Docker build locally | `icb prod build-test` |
-| `prod apihealth` | Check API health endpoint (JSON) | `icb prod apihealth` |
-| `prod docker [service]` | Show merged Docker Compose config | `icb prod docker api` |
-| `prod db ...` | Database commands (backup, restore, list, init) | `icb prod db backup pre-deploy` |
+| `prod start` | Start infra + active color | `icbops prod start` |
+| `prod stop` | Stop active color + infra | `icbops prod stop` |
+| `prod restart` | Restart active color + infra | `icbops prod restart` |
+| `prod status` | Show infra + active color status | `icbops prod status` |
+| `prod logs` | View active color logs | `icbops prod logs [service]` |
+| `prod logs deploy` | View deployment event logs | `icbops prod logs deploy` |
+| `prod logs build` | View latest Docker build log | `icbops prod logs build` |
+| `prod health` | Run health checks | `icbops prod health` |
+| `prod smoke` | Run smoke tests against all endpoints | `icbops prod smoke` |
+| `prod deploy-status` | Show blue/green state and routing | `icbops prod deploy-status` |
+| `prod rollback` | Switch traffic to previous color | `icbops prod rollback` |
+| `prod build-test` | Test production Docker build locally | `icbops prod build-test` |
+| `prod apihealth` | Check API health endpoint (JSON) | `icbops prod apihealth` |
+| `prod docker [service]` | Show merged Docker Compose config | `icbops prod docker api` |
+| `prod db ...` | Database commands (backup, restore, list, init) | `icbops prod db backup pre-deploy` |
 
 ### SSL Certificate Management
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `ssl-manager generate` | Generate SSL certificates with mkcert | `icb ssl-manager generate dev` |
-| `ssl-manager validate` | Validate existing certificates | `icb ssl-manager validate dev` |
-| `ssl-manager info` | Show certificate information | `icb ssl-manager info dev` |
-| `ssl-manager help` | Show SSL manager help | `icb ssl-manager help` |
+| `ssl-manager generate` | Generate SSL certificates with mkcert | `icbops ssl-manager generate dev` |
+| `ssl-manager validate` | Validate existing certificates | `icbops ssl-manager validate dev` |
+| `ssl-manager info` | Show certificate information | `icbops ssl-manager info dev` |
+| `ssl-manager help` | Show SSL manager help | `icbops ssl-manager help` |
 
 ### Stats Commands
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `stats summary` | Dashboard with code, tests, quality, activity | `icb stats summary` |
-| `stats code` | Lines of code by language (live from tokei) | `icb stats code` |
-| `stats tests` | Test results, coverage, and slowest tests | `icb stats tests` |
-| `stats quality` | Linter issues over 24h/7d/30d/all time | `icb stats quality` |
-| `stats activity [n]` | Commit activity graph (default: 7 days) | `icb stats activity 14` |
-| `stats events [n]` | Recent pre-commit hook events (default: 20) | `icb stats events 50` |
-| `stats trends` | Velocity, code churn, test suite trends | `icb stats trends` |
-| `stats churn [n\|all]` | File churn analysis (default: 30 days) | `icb stats churn all` |
-| `stats snapshot` | Regenerate stats snapshot from events.jsonl | `icb stats snapshot` |
+| `stats summary` | Dashboard with code, tests, quality, activity | `icbops stats summary` |
+| `stats code` | Lines of code by language (live from tokei) | `icbops stats code` |
+| `stats tests` | Test results, coverage, and slowest tests | `icbops stats tests` |
+| `stats quality` | Linter issues over 24h/7d/30d/all time | `icbops stats quality` |
+| `stats activity [n]` | Commit activity graph (default: 7 days) | `icbops stats activity 14` |
+| `stats events [n]` | Recent pre-commit hook events (default: 20) | `icbops stats events 50` |
+| `stats trends` | Velocity, code churn, test suite trends | `icbops stats trends` |
+| `stats churn [n\|all]` | File churn analysis (default: 30 days) | `icbops stats churn all` |
+| `stats snapshot` | Regenerate stats snapshot from events.jsonl | `icbops stats snapshot` |
 
 ### Routing Commands
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `routing generate` | Regenerate Traefik routing from vue-paths.txt | `icb routing generate` |
+| `routing generate` | Regenerate Traefik routing from vue-paths.txt | `icbops routing generate` |
 
 The canonical path list is at `deploy-containers/traefik/vue-paths.txt`. After generating, the CLI shows a diff of any changes.
 
@@ -173,19 +173,19 @@ The canonical path list is at `deploy-containers/traefik/vue-paths.txt`. After g
 
 ```bash
 # Start development environment
-icb dev start
+icbops dev start
 
 # Check what's running
-icb dev status
+icbops dev status
 
 # Verify everything is healthy
-icb dev health
+icbops dev health
 
 # View API logs
-icb dev logs api
+icbops dev logs api
 
 # Stop when done
-icb dev stop
+icbops dev stop
 ```
 
 ### Testing Environment (`testing`)
@@ -220,9 +220,9 @@ icb dev stop
 **Production Commands:**
 
 ```bash
-icb prod start          # Start infra + active color
-icb prod deploy-status  # Check which color is active
-icb prod rollback       # Switch to previous color
+icbops prod start          # Start infra + active color
+icbops prod deploy-status  # Check which color is active
+icbops prod rollback       # Switch to previous color
 ```
 
 > **Note**: See [Blue/Green Deployment](blue-green-deployment.md) for the deployment strategy and [Homelab Deployment Guide](homelab-deployment.md) for infrastructure setup
@@ -252,13 +252,13 @@ mkcert -install
 
 ```bash
 # Generate certificates for development
-icb ssl-manager generate dev
+icbops ssl-manager generate dev
 
 # Generate certificates for all environments
-icb ssl-manager generate all
+icbops ssl-manager generate all
 
 # View certificate information
-icb ssl-manager info dev
+icbops ssl-manager info dev
 ```
 
 #### What mkcert Provides
@@ -281,7 +281,7 @@ icb ssl-manager info dev
 
 ## 🚀 Detailed Command Reference
 
-### `icb dev start`
+### `icbops dev start`
 
 Starts the development environment with full Traefik + HTTPS setup.
 
@@ -316,12 +316,12 @@ Dev Credentials:
   Regular: user@example.com / password123
   Admin:   admin@example.com / adminpass123
 
-Use icb dev logs to view live container logs
-Use icb dev status to check service status
-Use icb dev health to run health checks
+Use icbops dev logs to view live container logs
+Use icbops dev status to check service status
+Use icbops dev health to run health checks
 ```
 
-### `icb dev status`
+### `icbops dev status`
 
 Shows detailed status of all services with HTTPS URLs and health information.
 
@@ -350,7 +350,7 @@ Database Info:
   Redis:      localhost:6379 (external access)
 ```
 
-### `icb dev health`
+### `icbops dev health`
 
 Runs comprehensive health checks for the development environment.
 
@@ -390,7 +390,7 @@ Health Check for dev Environment
 [!] Chat Service WebSocket: HTTP 400 (May not support WebSocket)
 ```
 
-### `icb {dev|testing|prod} logs [service] [flags]`
+### `icbops {dev|testing|prod} logs [service] [flags]`
 
 View logs for all services or a specific service. Backed by `cli/log_viewer.py`,
 a structured renderer that JSON-decodes structlog lines from ichrisbirch
@@ -400,19 +400,19 @@ containers and falls through to passthrough rendering for third-party services
 **Usage:**
 
 ```bash
-icb dev logs                                 # All services
-icb dev logs api                             # API only
-icb dev logs --level WARNING                 # Filter by level
-icb dev logs --request-id abc12345           # Follow one request across services
-icb dev logs --module CountdownsStore        # Filter by structlog logger / Vue module
-icb dev logs --event task_created            # Filter by event name substring
-icb dev logs --grep 'pattern'                # Arbitrary regex filter
-icb dev logs --no-callsite                   # Hide file:line for denser output
-icb dev logs --json                          # Raw JSON passthrough (for piping to jq)
-icb dev logs --no-follow                     # Print recent and exit
+icbops dev logs                                 # All services
+icbops dev logs api                             # API only
+icbops dev logs --level WARNING                 # Filter by level
+icbops dev logs --request-id abc12345           # Follow one request across services
+icbops dev logs --module CountdownsStore        # Filter by structlog logger / Vue module
+icbops dev logs --event task_created            # Filter by event name substring
+icbops dev logs --grep 'pattern'                # Arbitrary regex filter
+icbops dev logs --no-callsite                   # Hide file:line for denser output
+icbops dev logs --json                          # Raw JSON passthrough (for piping to jq)
+icbops dev logs --no-follow                     # Print recent and exit
 ```
 
-The same flags work for `icb testing logs ...` and `icb prod logs ...`.
+The same flags work for `icbops testing logs ...` and `icbops prod logs ...`.
 
 **Features:**
 
@@ -422,15 +422,15 @@ The same flags work for `icb testing logs ...` and `icb prod logs ...`.
 - Cross-service request tracing via `--request-id`
 - Dev / test default to `LOG_FORMAT=json` so the viewer always sees structured input
 
-### `icb ssl-manager generate <env|all>`
+### `icbops ssl-manager generate <env|all>`
 
 Generates SSL certificates for the specified environment using mkcert when available.
 
 **Usage:**
 
 ```bash
-icb ssl-manager generate dev    # Development certificates
-icb ssl-manager generate all    # All environments
+icbops ssl-manager generate dev    # Development certificates
+icbops ssl-manager generate all    # All environments
 ```
 
 **With mkcert (Recommended):**
@@ -467,7 +467,7 @@ It will expire on 21 January 2028 🗓
 [INFO] This certificate will be trusted by browsers without warnings
 ```
 
-### `icb ssl-manager info <env|all>`
+### `icbops ssl-manager info <env|all>`
 
 Displays detailed information about SSL certificates.
 
@@ -502,10 +502,10 @@ Valid until: Jan 22 00:45:19 2028 GMT
 
 ```bash
 # Complete environment restart with health check
-icb dev restart && icb dev health
+icbops dev restart && icbops dev health
 
 # Generate certificates and start environment
-icb ssl-manager generate dev && icb dev start
+icbops ssl-manager generate dev && icbops dev start
 
 # Check status across all environments
 for env in dev testing prod; do
@@ -518,30 +518,30 @@ done
 
 ```bash
 # Daily development startup
-icb dev start
+icbops dev start
 
 # Quick status check
-icb dev status
+icbops dev status
 
 # View API logs while developing
-icb dev logs api
+icbops dev logs api
 
 # Clean shutdown at end of day
-icb dev stop
+icbops dev stop
 ```
 
 ### Debugging Workflows
 
 ```bash
 # Troubleshoot service issues
-icb dev status          # Check overall status
-icb dev logs api        # Check specific service logs
-icb dev health          # Run comprehensive health check
+icbops dev status          # Check overall status
+icbops dev logs api        # Check specific service logs
+icbops dev health          # Run comprehensive health check
 
 # SSL certificate issues
-icb ssl-manager validate dev    # Check certificate validity
-icb ssl-manager info dev        # Show certificate details
-icb ssl-manager generate dev    # Regenerate if needed
+icbops ssl-manager validate dev    # Check certificate validity
+icbops ssl-manager info dev        # Show certificate details
+icbops ssl-manager generate dev    # Regenerate if needed
 ```
 
 ## 🚨 Troubleshooting
@@ -552,21 +552,21 @@ icb ssl-manager generate dev    # Regenerate if needed
 
    ```bash
    # Make CLI executable
-   chmod +x ./cli/icb
+   chmod +x ./cli/icbops
 
    # Use absolute path
-   ./cli/icb dev start
+   ./cli/icbops dev start
    ```
 
 2. **Port conflicts**
 
    ```bash
    # Stop conflicting services
-   icb dev stop
+   icbops dev stop
    docker stop $(docker ps -q --filter "name=ichrisbirch")
 
    # Restart
-   icb dev start
+   icbops dev start
    ```
 
 3. **DNS resolution issues**
@@ -590,10 +590,10 @@ icb ssl-manager generate dev    # Regenerate if needed
    mkcert -install
 
    # Regenerate certificates with mkcert
-   icb ssl-manager generate dev
+   icbops ssl-manager generate dev
 
    # Restart to pick up new certificates
-   icb dev restart
+   icbops dev restart
    ```
 
 5. **Browser still shows certificate warnings**
@@ -603,7 +603,7 @@ icb ssl-manager generate dev    # Regenerate if needed
    mkcert -install
 
    # Check certificate details
-   icb ssl-manager info dev
+   icbops ssl-manager info dev
 
    # Clear browser cache and restart browser
    # Chrome: Settings > Privacy > Clear browsing data
@@ -614,7 +614,7 @@ icb ssl-manager generate dev    # Regenerate if needed
    A corrupted named volume (usually `icb-test-vue-node-modules` from an interrupted `npm install`) causes the container to crash-loop forever. Use `--volumes` to wipe and rebuild:
 
    ```bash
-   ./cli/icb testing rebuild --all --volumes
+   ./cli/icbops testing rebuild --all --volumes
    ```
 
    If the loop has already crashed `dockerd` itself (see `systemctl status docker` showing `inactive (dead)`):
@@ -624,7 +624,7 @@ icb ssl-manager generate dev    # Regenerate if needed
    sudo systemctl start docker
    docker rm -f icb-test-vue 2>/dev/null       # kill the loop immediately
    docker volume rm icb-test-vue-node-modules 2>/dev/null
-   ./cli/icb testing rebuild --all --volumes
+   ./cli/icbops testing rebuild --all --volumes
    ```
 
    See [Docker troubleshooting](troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for full recovery procedure.
@@ -646,13 +646,13 @@ icb ssl-manager generate dev    # Regenerate if needed
 
 ```bash
 # Show general help
-icb help
+icbops help
 
 # Show environment-specific help
-icb dev help
+icbops dev help
 
 # Show SSL manager help
-icb ssl-manager help
+icbops ssl-manager help
 ```
 
 ## 📊 Performance Tips
@@ -680,14 +680,14 @@ curl https://dashboard.docker.localhost/api/overview
 
 ### Before (Confusing Duplication)
 
-- `icb traefik start dev` vs `icb dev start` (both did the same thing)
+- `icb traefik start dev` vs `icbops dev start` (both did the same thing)
 - Users had to understand Traefik implementation details
 - Inconsistent command patterns
 - Implementation details exposed in user interface
 
 ### After (Clean & Simple)
 
-- **Single command per operation**: `icb dev start`
+- **Single command per operation**: `icbops dev start`
 - **Implementation details hidden**: Users don't need to know about Traefik
 - **Consistent patterns**: All environments work the same way
 - **Modern HTTPS by default**: No separate "traefik" commands needed
@@ -696,7 +696,7 @@ curl https://dashboard.docker.localhost/api/overview
 
 - **Faster onboarding**: New developers don't need to understand reverse proxy details
 - **Reduced cognitive load**: Fewer commands to remember
-- **Better discoverability**: `icb help` shows all available commands clearly
+- **Better discoverability**: `icbops help` shows all available commands clearly
 - **Professional CLI patterns**: Follows industry-standard CLI design principles
 
 The simplified CLI provides a clean, professional interface that hides implementation complexity while providing powerful functionality for managing the modern Traefik-based deployment architecture.

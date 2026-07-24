@@ -157,10 +157,10 @@ function colored-status() {
 }
 
 function install() {
-  local target="$HOME/.local/bin/icb"
+  local target="$HOME/.local/bin/icbops"
   mkdir -p "$(dirname "$target")"
-  ln -sf "$ICHRISBIRCH_HOME/cli/icb" "$target"
-  echo "${green}Installed:${reset} $target -> $ICHRISBIRCH_HOME/cli/icb"
+  ln -sf "$ICHRISBIRCH_HOME/cli/icbops" "$target"
+  echo "${green}Installed:${reset} $target -> $ICHRISBIRCH_HOME/cli/icbops"
 }
 
 function wait-for-healthy() {
@@ -431,7 +431,7 @@ function test-run() {
   # Always leave containers running for fast iteration
   echo ""
   echo "${cyan}Containers left running for fast iteration.${reset}"
-  echo "Stop them with: ${blue}icb testing stop${reset}"
+  echo "Stop them with: ${blue}icbops testing stop${reset}"
 
   return "$test_exit_code"
 }
@@ -441,7 +441,7 @@ function test-usage() {
   echo "  ${blue}test run [path] [args]${reset}  Run pytest (reuses containers for fast iteration)"
   echo ""
   echo "Containers are left running after tests for fast re-runs."
-  echo "Stop them with: ${blue}icb testing stop${reset}"
+  echo "Stop them with: ${blue}icbops testing stop${reset}"
 }
 
 function testing-start() {
@@ -669,7 +669,7 @@ function prod-rebuild() {
     echo "  ${cyan}./scripts/deploy-homelab.sh${reset}"
     echo ""
     echo "Or to force a legacy rebuild (${red}causes downtime${reset}):"
-    echo "  ${cyan}icb prod legacy-rebuild${reset}"
+    echo "  ${cyan}icbops prod legacy-rebuild${reset}"
     return 1
   fi
 
@@ -944,7 +944,7 @@ function prod-build-test() {
   echo "${green}Production build test PASSED${reset}"
   echo ""
   echo "${yellow}Note:${reset} This only tests the build, not container startup."
-  echo "To test startup, run: ${cyan}icb prod start${reset} (requires SOPS + age key)"
+  echo "To test startup, run: ${cyan}icbops prod start${reset} (requires SOPS + age key)"
 }
 
 function prod-usage() {
@@ -1004,7 +1004,7 @@ function usage() {
   echo "${green}Tools:${reset}"
   echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates"
   echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
-  echo "  ${blue}install${reset} - Symlink CLI to ~/.local/bin/icb"
+  echo "  ${blue}install${reset} - Symlink CLI to ~/.local/bin/icbops"
   echo
   echo "${green}Stats:${reset}"
   echo "  ${blue}stats${reset} - Show stats submenu"

@@ -42,7 +42,7 @@ ichrisbirch/
 │       └── scripts/          # Certificate management
 ├── docs/                     # MkDocs documentation
 ├── scripts/                  # Utility scripts (backup, restore)
-├── cli/icb           # Main CLI tool
+├── cli/icbops           # Main CLI tool
 ├── docker-compose.yml        # Production config
 ├── docker-compose.dev.yml    # Development overrides (incl. Vue + path routing)
 ├── docker-compose.test.yml   # Testing overrides

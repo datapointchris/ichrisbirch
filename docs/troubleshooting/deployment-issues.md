@@ -12,26 +12,26 @@ Production uses [blue/green deployment](../blue-green-deployment.md). Infrastruc
 
 ```bash
 # What color is active? What's running?
-icb prod deploy-status
+icbops prod deploy-status
 
 # Check all containers
 docker ps -a | grep icb
 
 # Check deploy logs
-icb prod logs deploy
+icbops prod logs deploy
 ```
 
 #### 2. Restart Services
 
 ```bash
 # Restart active color + infrastructure
-icb prod restart
+icbops prod restart
 
 # If a deploy failed and left the site down, rollback:
-icb prod rollback
+icbops prod rollback
 
 # Emergency: fall back to legacy single-compose (causes brief downtime)
-icb prod legacy-rebuild
+icbops prod legacy-rebuild
 ```
 
 #### 3. Verify Recovery
@@ -41,10 +41,10 @@ icb prod legacy-rebuild
 curl -f http://localhost:80/health -H "Host: api.ichrisbirch.com"
 
 # Run full smoke tests
-icb prod smoke
+icbops prod smoke
 
 # Check container logs
-icb prod logs
+icbops prod logs
 ```
 
 ## Build and Deployment Failures
@@ -421,14 +421,14 @@ COLOR=$(cat /var/lib/ichrisbirch/bluegreen-state)
 DEPLOY_COLOR=$COLOR docker compose --project-name icb-$COLOR -f docker-compose.app.yml up -d
 
 # 6. Verify services
-icb prod health
-icb prod smoke
+icbops prod health
+icbops prod smoke
 ```
 
 If blue/green state is missing or corrupted, use the legacy fallback:
 
 ```bash
-icb prod legacy-rebuild
+icbops prod legacy-rebuild
 ```
 
 ### Data Recovery

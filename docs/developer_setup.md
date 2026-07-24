@@ -23,10 +23,10 @@ cp .env.example .env
 pre-commit install
 
 # Generate SSL certificates for local development
-./cli/icb ssl-manager generate dev
+./cli/icbops ssl-manager generate dev
 
 # Start development environment
-./cli/icb dev start
+./cli/icbops dev start
 ```
 
 ## Access

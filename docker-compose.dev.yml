@@ -1,5 +1,5 @@
 # Dev overrides — only what differs from base (docker-compose.yml)
-# Verify merged result: ich dev docker config
+# Verify merged result: icbops dev docker config
 
 x-app-build: &app-build
   image: ichrisbirch:development
