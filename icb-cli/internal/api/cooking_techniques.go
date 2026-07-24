@@ -139,10 +139,15 @@ func (c *Client) CreateCookingTechnique(ctx context.Context, in CookingTechnique
 }
 
 // UpdateCookingTechnique applies a partial update (PATCH
-// /recipes/cooking-techniques/{id}/).
-func (c *Client) UpdateCookingTechnique(ctx context.Context, id int, in CookingTechniqueUpdateInput) (CookingTechnique, error) {
+// /recipes/cooking-techniques/{id}/). Each field named in clear is sent as an
+// explicit null (the API's null_fields capability).
+func (c *Client) UpdateCookingTechnique(ctx context.Context, id int, in CookingTechniqueUpdateInput, clear []string) (CookingTechnique, error) {
+	body, err := mergeClearNulls(in, clear)
+	if err != nil {
+		return CookingTechnique{}, err
+	}
 	var technique CookingTechnique
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/recipes/cooking-techniques/%d/", id), in, &technique); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/recipes/cooking-techniques/%d/", id), body, &technique); err != nil {
 		return CookingTechnique{}, err
 	}
 	return technique, nil

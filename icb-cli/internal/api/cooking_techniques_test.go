@@ -110,3 +110,30 @@ func TestListCookingTechniqueCategories_Decodes(t *testing.T) {
 		t.Errorf("categories = %+v", categories)
 	}
 }
+
+func TestUpdateCookingTechnique_ClearSendsNulls(t *testing.T) {
+	var gotBody map[string]json.RawMessage
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":3,"name":"N","category":"c","summary":"s","body":"b","tags":null,"slug":"n","created_at":"2026-07-24T14:33:26Z","updated_at":"2026-07-24T14:33:26Z"}`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	summary := "new summary"
+	_, err := client.UpdateCookingTechnique(context.Background(), 3, CookingTechniqueUpdateInput{Summary: &summary}, []string{"rating"})
+	if err != nil {
+		t.Fatalf("UpdateCookingTechnique: %v", err)
+	}
+	if string(gotBody["summary"]) != `"new summary"` {
+		t.Errorf("summary = %s", gotBody["summary"])
+	}
+	if string(gotBody["rating"]) != "null" {
+		t.Errorf("rating not cleared to null: %s", gotBody["rating"])
+	}
+	if _, ok := gotBody["name"]; ok {
+		t.Errorf("unset name should be absent, body = %v", gotBody)
+	}
+}

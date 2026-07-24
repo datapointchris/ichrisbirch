@@ -216,13 +216,16 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 		sourceName     string
 		tags           []string
 		rating         int
+		clear          []string
 		asJSON         bool
 	)
 	cmd := &cobra.Command{
-		Use:     "edit <technique-id> [flags]",
-		Short:   "Change fields on an existing technique",
-		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb cooking-techniques edit 3 --rating 4 --tag legumes",
+		Use:   "edit <technique-id> [flags]",
+		Short: "Change fields on an existing technique",
+		Long: "Update only the fields whose flags you pass. --clear <field> sets a field to\n" +
+			"null (repeatable, API field names) — use it for the rating an empty string\n" +
+			"cannot clear.",
+		Example: "  icb cooking-techniques edit 3 --rating 4 --tag legumes\n  icb cooking-techniques edit 3 --clear rating",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
@@ -244,15 +247,15 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 			}
 			in.Rating = intFlag(f, "rating", &rating)
 
-			if isEmptyTechniqueUpdate(in) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one field flag")}
+			if isEmptyTechniqueUpdate(in) && len(clear) == 0 {
+				return usageError{fmt.Errorf("nothing to change — pass at least one field flag or --clear")}
 			}
 
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			technique, err := client.UpdateCookingTechnique(cmd.Context(), id, in)
+			technique, err := client.UpdateCookingTechnique(cmd.Context(), id, in, clear)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -264,6 +267,7 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 		},
 	}
 	addTechniqueContentFlags(cmd, &name, &category, &summary, &body, &whyItWorks, &commonPitfalls, &sourceURL, &sourceName, &tags, &rating)
+	cmd.Flags().StringArrayVar(&clear, "clear", nil, "Field to set to null, e.g. --clear rating (repeatable, API field names)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated technique as JSON to stdout")
 	return cmd
 }
