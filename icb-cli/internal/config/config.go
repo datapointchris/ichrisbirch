@@ -9,15 +9,18 @@ import (
 
 const (
 	defaultIssuer = "https://auth.ichrisbirch.com"
-	// defaultAudience / defaultAPIBase point at api.ichrisbirch.com — the same
-	// endpoint the MCP hits today. That endpoint currently *bypasses* Authelia
-	// ForwardAuth (for the MCP's JWT/API-key clients); moving it behind the edge
-	// is the last step of the MCP retirement (see .planning/icb-cli.md). Both are
-	// env-overridable, so the homelab's routing decision (cookie-gated
-	// ichrisbirch.com vs api.ichrisbirch.com behind ForwardAuth) can retarget the
-	// CLI without a code change.
-	defaultAudience = "https://api.ichrisbirch.com"
-	defaultAPIBase  = "https://api.ichrisbirch.com"
+	// defaultAudience / defaultAPIBase target the cookie-gated ichrisbirch.com
+	// webapp host — the same nomad-consistent single-domain model where nomad-cli
+	// targets nomad.ichrisbirch.com. That host is already Authelia ForwardAuth
+	// protected and content-negotiates cookie (browser) vs bearer (this CLI), so
+	// icb's opaque `authelia.bearer.authz` token is edge-validated by audience and
+	// Remote-User is injected — the FastAPI's highest-priority auth path. The app's
+	// internal Traefik strips the /api prefix before the request reaches FastAPI.
+	// Deliberately NOT api.ichrisbirch.com: that host *bypasses* ForwardAuth solely
+	// for the MCP's PAT/JWT clients, so routing here leaves the MCP untouched during
+	// parallel-run and needs no Traefik change. Both are env-overridable.
+	defaultAudience = "https://ichrisbirch.com"
+	defaultAPIBase  = "https://ichrisbirch.com/api"
 )
 
 // LoopbackPorts is the fixed set registered as redirect_uris on the Authelia
