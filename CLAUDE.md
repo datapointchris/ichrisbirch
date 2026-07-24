@@ -86,9 +86,16 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 | Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
 | Chat | Streamlit | AI chat interface with OpenAI |
 | Scheduler | APScheduler | Daily jobs (task priorities, autotasks) |
-| MCP | FastMCP | MCP tool server for Claude Code (streamable HTTP in prod, stdio in dev) |
+| MCP | FastMCP | MCP tool server for Claude Code (streamable HTTP in prod, stdio in dev) — **being retired** in favor of the `icb` CLI (see below) |
 
-Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite). See the filesystem for the full structure.
+Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite), `cli/` (the `icbops` bash ops/deploy tool), `icb-cli/` (the `icb` Go resource CLI). See the filesystem for the full structure.
+
+### CLIs — `icbops` (ops) and `icb` (data)
+
+Two separate command-line tools with distinct concerns:
+
+- **`cli/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./cli/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
+- **`icb-cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the **replacement for the MCP** as the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). Copied from nomad's `cli/` (own Go module `ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` uses Authelia edge-authorized bearer tokens in the OS keychain — **not** the FastAPI JWT/PAK code. Build/install/auth details in `icb-cli/README.md`; design and phased plan in `.planning/icb-cli.md`.
 
 ### Vue Frontend
 
