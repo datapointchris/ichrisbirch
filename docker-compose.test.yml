@@ -239,7 +239,7 @@ services:
 
   # Vue dev server — completely replaces prod Caddy build
   vue:
-    image: node:20-alpine
+    image: node:24-alpine
     build: !reset null
     container_name: icb-test-vue
     working_dir: /app

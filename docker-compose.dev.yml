@@ -177,9 +177,9 @@ services:
 
   # !reset clears the inherited build: key from docker-compose.yml (prod Vue builds
   # a Caddy image from frontend/Dockerfile). Without this, `docker compose build`
-  # tags the Caddy build output as node:20-alpine, corrupting the base image.
+  # tags the Caddy build output as node:24-alpine, corrupting the base image.
   vue:
-    image: node:20-alpine
+    image: node:24-alpine
     build: !reset null
     container_name: icb-dev-vue
     working_dir: /app

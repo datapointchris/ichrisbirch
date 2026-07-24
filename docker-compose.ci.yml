@@ -13,7 +13,7 @@ services:
       - /app/.venv
       - ichrisbirch_logs:/var/log/ichrisbirch
 
-  # Vue: disable build so --build doesn't overwrite node:20-alpine with the
+  # Vue: disable build so --build doesn't overwrite node:24-alpine with the
   # production Caddy image from frontend/Dockerfile. Also extend healthcheck
   # start_period since npm install runs from scratch on a fresh volume in CI.
   vue:
