@@ -16,8 +16,11 @@ language; the two share no code.
 ## Status
 
 - **Phase 0 (done):** module scaffold + `icb auth {login,logout,status,token}`.
-- **Phase 1+ (in progress):** resource command groups (`projects` first, then
-  `tasks`, `habits`, `books`, `articles`, `countdowns`, `events`).
+- **Phase 1 (in progress):** `icb projects {list,view,create,edit,delete,items}`
+  landed; the `items` group (project items + their tasks, dependencies, and
+  membership) is next.
+- **Phase 2+ (planned):** `tasks`, `habits`, `books`, `articles`, `countdowns`,
+  `events`.
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
 `icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and

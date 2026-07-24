@@ -55,11 +55,18 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 	}{
 		{"bare root shows help (success)", nil, 0},
 		{"bare auth shows help (success)", []string{"auth"}, 0},
+		{"bare projects shows help (success)", []string{"projects"}, 0},
 		{"unknown top-level command is usage error", []string{"nope"}, 2},
 		{"unknown auth subcommand is usage error", []string{"auth", "nope"}, 2},
+		{"unknown projects subcommand is usage error", []string{"projects", "nope"}, 2},
 		{"unknown flag is usage error", []string{"--nonsense"}, 2},
 		{"auth login rejects positional args", []string{"auth", "login", "extra"}, 2},
 		{"auth status rejects positional args", []string{"auth", "status", "extra"}, 2},
+		{"projects view without an id is usage error", []string{"projects", "view"}, 2},
+		{"projects create without --name is usage error", []string{"projects", "create"}, 2},
+		{"projects edit with no fields is usage error", []string{"projects", "edit", "018f"}, 2},
+		{"projects delete without an id is usage error", []string{"projects", "delete"}, 2},
+		{"projects items without an id is usage error", []string{"projects", "items"}, 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -70,10 +77,12 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 	}
 }
 
-func TestRootCommand_WiresAuthGroup(t *testing.T) {
+func TestRootCommand_WiresResourceGroups(t *testing.T) {
 	root := NewRootCommand()
-	cmd, _, err := root.Find([]string{"auth"})
-	if err != nil || cmd.Name() != "auth" {
-		t.Errorf("expected %q command wired into root, got %v (err %v)", "auth", cmd, err)
+	for _, name := range []string{"auth", "projects"} {
+		cmd, _, err := root.Find([]string{name})
+		if err != nil || cmd.Name() != name {
+			t.Errorf("expected %q command wired into root, got %v (err %v)", name, cmd, err)
+		}
 	}
 }
