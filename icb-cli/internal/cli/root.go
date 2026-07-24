@@ -81,6 +81,7 @@ func NewRootCommand() *cobra.Command {
 
 	root.AddCommand(newAuthCommand())
 	root.AddCommand(newProjectsCommand())
+	root.AddCommand(newItemsCommand())
 	return root
 }
 

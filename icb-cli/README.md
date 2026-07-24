@@ -16,10 +16,11 @@ language; the two share no code.
 ## Status
 
 - **Phase 0 (done):** module scaffold + `icb auth {login,logout,status,token}`.
-- **Phase 1 (in progress):** `icb projects {list,view,create,edit,delete,items}`
-  landed; the `items` group (project items + their tasks, dependencies, and
-  membership) is next.
-- **Phase 2+ (planned):** `tasks`, `habits`, `books`, `articles`, `countdowns`,
+- **Phase 1 (done):** the Projects domain — `icb projects`
+  ({list,view,create,edit,delete,items}) and `icb items` (project-item CRUD,
+  complete/reopen, archive/unarchive, reorder, multi-project membership,
+  dependencies + blockers, and sub-task verbs).
+- **Phase 2 (next):** `tasks`, `habits`, `books`, `articles`, `countdowns`,
   `events`.
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
