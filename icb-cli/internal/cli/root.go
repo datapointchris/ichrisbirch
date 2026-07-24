@@ -80,6 +80,7 @@ func NewRootCommand() *cobra.Command {
 	}
 
 	root.AddCommand(newAuthCommand())
+	root.AddCommand(newOverviewCommand())
 	root.AddCommand(newProjectsCommand())
 	root.AddCommand(newItemsCommand())
 	root.AddCommand(newTasksCommand())

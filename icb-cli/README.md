@@ -66,6 +66,34 @@ curl -H "Authorization: Bearer $(icb auth token)" https://api.ichrisbirch.com/ta
 
 Client id is per (machine × app): `icb-cli-<shorthostname>`.
 
+## `icb overview` — the cross-cutting snapshot
+
+Every other command is `icb <resource> <verb>`. `overview` is the one composition
+command: open tasks, habits still due today, current and next reading, next and
+blocked project items, and approaching countdowns and events — fetched
+concurrently and returned as one payload, so a dashboard needs a single call
+instead of nine.
+
+```bash
+icb overview                 # the human glance
+icb overview --json          # the stable schema, for consumers
+icb overview --limit 0       # no per-section cap
+```
+
+Contract notes for consumers (`menu dashboard` in dotfiles is the first):
+
+- `schema_version` is the compatibility signal. Additive changes do not bump it;
+  read fields defensively and it stays stable.
+- Every capped section reports its pre-cap `total`, so "… and N more" is truthful
+  without a second call.
+- `warnings` is always an array, each entry keyed by `section`, so one dead
+  endpoint degrades one lane instead of the whole snapshot. A rejected session or
+  a total failure is *not* a warning — it fails the command, because a partial
+  payload would misrepresent an unauthenticated state as an empty one.
+- Habit completions carry no habit id, so "done today" matches on name and
+  category. A habit renamed after being completed today reads as due again until
+  its next completion.
+
 ## Config (env over default)
 
 | Variable | Default | Purpose |
