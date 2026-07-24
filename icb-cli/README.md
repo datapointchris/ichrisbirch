@@ -2,9 +2,9 @@
 
 `icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
 programmatic front door to the personal-productivity apps (tasks, projects,
-countdowns, books, articles, habits, events) and the intended **replacement for
-the MCP server** — the agent and power-user surface, driven by Claude via Bash or
-by a person at the terminal.
+countdowns, books, articles, habits, events, recipes, cooking-techniques) and the
+**replacement for the retired MCP server** — the agent and power-user surface,
+driven by Claude via Bash or by a person at the terminal.
 
 It is a per-machine developer tool, not one of the deployed containers. The bash
 ops/deploy tool lives at `../cli/icbops` — a different concern in a different
@@ -23,15 +23,20 @@ language; the two share no code.
 - **Phase 2 (done):** the standalone apps — `tasks`, `countdowns`, `events`,
   `habits`, `books`, and `articles` ({list,view,search,create,edit,delete} plus
   resource-specific verbs: `articles current`/`read`, `habits complete`, etc.).
-- **Phase 3 (in progress):** MCP parity + retirement. Tool parity is **complete**
-  — `icb` now covers the full ~78-tool MCP surface (parity additions: `autotasks`,
-  `articles` bulk-import, `cooking-techniques`, and `recipes` incl. the AI
-  suggest/import flows). Remaining: run parallel, retire the MCP, and drop the
-  `api.ichrisbirch.com` ForwardAuth bypass (homelab-gated).
+- **Phase 3 (done, 2026-07-24):** MCP parity + retirement. `icb` covers the full
+  ~78-tool surface (parity additions: `autotasks`, `articles` bulk-import,
+  `cooking-techniques`, and `recipes` incl. the AI suggest/import flows). The
+  homelab Authelia `icb-cli-{host}` clients are deployed, `icb auth login` works
+  end-to-end against production, and the **MCP server has been retired**. The
+  `api.ichrisbirch.com` bypass is kept — it is the Personal API Key access path,
+  not MCP-specific (icb targets the cookie-gated `ichrisbirch.com` host instead).
+- **Phase 4 (done):** `Makefile` (build/install/test/lint/fmt) + a CI **Test CLI**
+  job gated on the `icb-cli/**` path filter (not in the deploy gate).
 
-End-to-end `icb auth login` additionally requires the homelab Authelia
-`icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and
-per-machine concern, tracked in `.planning/icb-cli.md`.
+The homelab Authelia `icb-cli-<host>` public clients are deployed (audience
+`https://ichrisbirch.com`, loopback ports 8270-8272) and `icb auth login` works
+end-to-end; a fresh machine only needs its `icb-cli-<host>` client added to the
+Authelia config (see `~/homelab/pyinfra/templates/authelia/configuration.yml.j2`).
 
 ## Build & install
 

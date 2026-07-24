@@ -254,7 +254,7 @@ def get_current_user(
     Priority order:
     0. Authelia ForwardAuth headers (browser SSO via Remote-User/Remote-Email)
     1. Application headers (internal services)
-    2. Personal API key (MCP / external tools)
+    2. Personal API key (external tools / programmatic clients)
     3. JWT token (API clients)
     4. OAuth2 form data (web forms)
 

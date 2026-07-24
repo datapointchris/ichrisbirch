@@ -16,9 +16,10 @@ const (
 	// icb's opaque `authelia.bearer.authz` token is edge-validated by audience and
 	// Remote-User is injected — the FastAPI's highest-priority auth path. The app's
 	// internal Traefik strips the /api prefix before the request reaches FastAPI.
-	// Deliberately NOT api.ichrisbirch.com: that host *bypasses* ForwardAuth solely
-	// for the MCP's PAT/JWT clients, so routing here leaves the MCP untouched during
-	// parallel-run and needs no Traefik change. Both are env-overridable.
+	// Deliberately NOT api.ichrisbirch.com: that host *bypasses* ForwardAuth for
+	// direct Personal API Key / JWT clients, so routing here needs no Traefik change
+	// and left the MCP's bypass untouched through its retirement. Both are
+	// env-overridable.
 	defaultAudience = "https://ichrisbirch.com"
 	defaultAPIBase  = "https://ichrisbirch.com/api"
 )

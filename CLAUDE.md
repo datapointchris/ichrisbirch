@@ -86,7 +86,6 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 | Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
 | Chat | Streamlit | AI chat interface with OpenAI |
 | Scheduler | APScheduler | Daily jobs (task priorities, autotasks) |
-| MCP | FastMCP | MCP tool server for Claude Code (streamable HTTP in prod, stdio in dev) — **being retired** in favor of the `icb` CLI (see below) |
 
 Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite), `cli/` (the `icbops` bash ops/deploy tool), `icb-cli/` (the `icb` Go resource CLI). See the filesystem for the full structure.
 
@@ -95,7 +94,7 @@ Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tes
 Two separate command-line tools with distinct concerns:
 
 - **`cli/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./cli/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
-- **`icb-cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the **replacement for the MCP** as the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). Copied from nomad's `cli/` (own Go module `ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` uses Authelia edge-authorized bearer tokens in the OS keychain — **not** the FastAPI JWT/PAK code. Build/install/auth details in `icb-cli/README.md`; design and phased plan in `.planning/icb-cli.md`.
+- **`icb-cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It **replaced the retired MCP server** (2026-07-24) with full parity across the ~78-tool surface. Copied from nomad's `cli/` (own Go module `ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` uses Authelia edge-authorized bearer tokens in the OS keychain (targets the cookie-gated `ichrisbirch.com` host, audience `https://ichrisbirch.com`) — **not** the FastAPI JWT/PAK code. Build/install/auth details in `icb-cli/README.md`; design and phased plan in `.planning/icb-cli.md`.
 
 ### Vue Frontend
 
@@ -114,7 +113,7 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 ### Authentication
 
-**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers. `api.ichrisbirch.com` bypasses ForwardAuth (for JWT/API key clients like MCP tools). Config in `~/homelab`.
+**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers — content-negotiates cookie (browser) vs bearer (the `icb` CLI's opaque `authelia.bearer.authz` token, edge-validated by audience). `api.ichrisbirch.com` bypasses ForwardAuth for Personal API Key clients hitting the API directly. Config in `~/homelab`.
 
 **Vue (Production):** Same-origin proxy — Vue calls `/api/...`, Traefik `api-proxy` router (priority 200) strips `/api` prefix and forwards to FastAPI. No CORS needed.
 
@@ -209,13 +208,11 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 ## Conventions
 
-### MCP routing — dev vs prod
+### `icb` CLI — dev vs prod (data access)
 
-The repo-level `.mcp.json` overrides `~/.claude.json`. Inside this repo, every `mcp__ichrisbirch__*` call hits the **local dev stack** (`api.docker.localhost` → `icb-dev-api` → dev Postgres), not production. The global prod config is silently shadowed.
+The MCP server was retired (2026-07-24); the `icb` CLI is the programmatic data surface. Unlike the old repo-level `.mcp.json` override, the installed `icb` binary is **not** repo-aware: it always targets **production** (`https://ichrisbirch.com`, Authelia bearer auth) regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
 
-**Never assume "production"** when reading MCP data from a session inside this repo. To verify which stack you're on: `cat .mcp.json | jq '.mcpServers.ichrisbirch.env'` — if `ICHRISBIRCH_API_URL` is `api.docker.localhost`, you're on dev.
-
-For prod-state questions: use curl with the prod bearer token from `~/.claude.json`, or ask the user. A separate `ichrisbirch-prod` MCP server needs to be added to `~/.claude.json` to make prod reads available without config-shuffling (settled 2026-04-23).
+To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/tasks/`. Override the CLI's target per-invocation with `ICB_API_BASE` / `ICB_OIDC_AUDIENCE` if you need `icb` itself pointed at dev.
 
 ### Must Follow
 
