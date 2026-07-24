@@ -82,6 +82,16 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 		{"items complete-task needs two ids", []string{"items", "complete-task", "018f"}, 2},
 		{"items edit-task with no fields is usage error", []string{"items", "edit-task", "018f", "018g"}, 2},
 		{"items remove-task needs two ids", []string{"items", "remove-task", "018f"}, 2},
+		{"bare tasks shows help (success)", []string{"tasks"}, 0},
+		{"unknown tasks subcommand is usage error", []string{"tasks", "nope"}, 2},
+		{"tasks view without an id is usage error", []string{"tasks", "view"}, 2},
+		{"tasks view with non-int id is usage error", []string{"tasks", "view", "abc"}, 2},
+		{"tasks create without --name is usage error", []string{"tasks", "create", "--category", "c"}, 2},
+		{"tasks create without --category is usage error", []string{"tasks", "create", "--name", "n"}, 2},
+		{"tasks edit with no fields is usage error", []string{"tasks", "edit", "1"}, 2},
+		{"tasks shift needs two args", []string{"tasks", "shift", "1"}, 2},
+		{"tasks shift with non-int positions is usage error", []string{"tasks", "shift", "1", "x"}, 2},
+		{"tasks complete without an id is usage error", []string{"tasks", "complete"}, 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -94,7 +104,7 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 
 func TestRootCommand_WiresResourceGroups(t *testing.T) {
 	root := NewRootCommand()
-	for _, name := range []string{"auth", "projects", "items"} {
+	for _, name := range []string{"auth", "projects", "items", "tasks"} {
 		cmd, _, err := root.Find([]string{name})
 		if err != nil || cmd.Name() != name {
 			t.Errorf("expected %q command wired into root, got %v (err %v)", name, cmd, err)

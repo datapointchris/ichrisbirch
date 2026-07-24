@@ -20,8 +20,9 @@ language; the two share no code.
   ({list,view,create,edit,delete,items}) and `icb items` (project-item CRUD,
   complete/reopen, archive/unarchive, reorder, multi-project membership,
   dependencies + blockers, and sub-task verbs).
-- **Phase 2 (next):** `tasks`, `habits`, `books`, `articles`, `countdowns`,
-  `events`.
+- **Phase 2 (in progress):** the standalone apps. `tasks` landed
+  (list/todo/completed/search/view/create/edit/complete/shift/reorder/delete);
+  `habits`, `books`, `articles`, `countdowns`, `events` next.
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
 `icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and
