@@ -38,8 +38,10 @@ install:
 	@echo "installed $(BINARY) $(VERSION) -> $(GOBIN)/$(BINARY)"
 
 ## test: run the CLI test suite
+# -race is not optional: `overview` fetches its sections concurrently off one
+# shared token source, so a regression there is only visible to the detector.
 test:
-	go test ./...
+	go test -race ./...
 
 ## lint: vet + gofmt check (fails if any file needs formatting)
 lint:

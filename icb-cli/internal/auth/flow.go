@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -264,9 +265,13 @@ func randomToken() (string, error) {
 // newly-refreshed token back to the keychain, so a refresh performed on one
 // invocation persists for the next.
 type persistingTokenSource struct {
-	base        oauth2.TokenSource
-	store       *TokenStore
-	clientID    string
+	base     oauth2.TokenSource
+	store    *TokenStore
+	clientID string
+
+	// mu guards lastPersist: `overview` fetches every section concurrently off a
+	// single token source, so the compare-and-store below has parallel callers.
+	mu          sync.Mutex
 	lastPersist string
 }
 
@@ -275,6 +280,8 @@ func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if tok.AccessToken != p.lastPersist {
 		if saveErr := p.store.Save(p.clientID, tok); saveErr != nil {
 			return tok, fmt.Errorf("persist refreshed token: %w", saveErr)
