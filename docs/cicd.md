@@ -21,7 +21,7 @@ The main CI workflow that validates code quality and runs tests.
 ```text
 1. Checkout & Setup
    ├── Checkout repository
-   ├── Set up Python 3.13
+   ├── Set up Python 3.14
    ├── Install UV package manager
    └── Install dependencies (uv sync)
 

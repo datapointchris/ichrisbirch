@@ -27,6 +27,7 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
       frontend: ${{ steps.filter.outputs.frontend }}
       docker: ${{ steps.filter.outputs.docker }}
+      cli: ${{ steps.filter.outputs.cli }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -53,6 +54,9 @@ jobs:
               - 'Dockerfile'
               - 'docker-compose*.yml'
               - 'deploy-containers/**'
+              - '.github/workflows/**'
+            cli:
+              - 'icb-cli/**'
               - '.github/workflows/**'
 
   # ── Python ──────────────────────────────────────────────────────
@@ -380,3 +384,35 @@ jobs:
         if: always()
         run: |
           docker compose -f docker-compose.yml down -v 2>/dev/null || true
+
+  # ── icb resource CLI (Go) ───────────────────────────────────────
+  # Standalone gate for the icb-cli Go module. Intentionally NOT in any deploy
+  # or image job's `needs`: the CLI is a local binary, not a deployed container,
+  # so a CLI failure must never block the app deploy.
+  test-cli:
+    name: Test CLI
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: icb-cli
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: icb-cli/go.mod
+          cache-dependency-path: icb-cli/go.sum
+
+      - name: Lint (go vet + gofmt)
+        run: make lint
+
+      - name: Test
+        run: make test
+
+      - name: Build
+        run: make build
