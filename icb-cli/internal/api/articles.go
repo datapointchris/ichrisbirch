@@ -54,6 +54,90 @@ type ArticleUpdateInput struct {
 	ReviewDays   *int     `json:"review_days,omitempty"`
 }
 
+// ArticleBulkImportInput is the body for POST /articles/bulk-import/ — a list of
+// URLs to fetch and AI-summarize asynchronously. The server returns a batch id to
+// poll for progress.
+type ArticleBulkImportInput struct {
+	URLs []string `json:"urls"`
+}
+
+// ArticleBulkImportBatch is the enqueue response (202) — the handle for polling.
+type ArticleBulkImportBatch struct {
+	BatchID string `json:"batch_id"`
+	Total   int    `json:"total"`
+	Status  string `json:"status"`
+}
+
+// ArticleImportError is one failed URL within a batch status payload.
+type ArticleImportError struct {
+	URL   string `json:"url"`
+	Error string `json:"error"`
+}
+
+// ArticleImportResult is one succeeded URL within a batch status payload.
+type ArticleImportResult struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
+}
+
+// ArticleBulkImportStatus is the batch progress payload (GET
+// /articles/bulk-import/{batch_id}/). The timestamps are Redis-stored naive
+// datetimes (no timezone), so they stay strings — Go's time.Time JSON decode
+// requires RFC3339 and would reject them.
+type ArticleBulkImportStatus struct {
+	BatchID     string                `json:"batch_id"`
+	Status      string                `json:"status"`
+	Total       int                   `json:"total"`
+	Processed   int                   `json:"processed"`
+	Succeeded   int                   `json:"succeeded"`
+	FailedCount int                   `json:"failed_count"`
+	Errors      []ArticleImportError  `json:"errors"`
+	Results     []ArticleImportResult `json:"results"`
+	CreatedAt   string                `json:"created_at"`
+	UpdatedAt   string                `json:"updated_at"`
+}
+
+// ArticleFailedImport is a permanently-failed import row (GET
+// /articles/failed-imports/). batch_id is nullable (a standalone failure has
+// none); failed_at is a tz-aware datetime.
+type ArticleFailedImport struct {
+	ID           int       `json:"id"`
+	URL          string    `json:"url"`
+	BatchID      *string   `json:"batch_id"`
+	ErrorMessage string    `json:"error_message"`
+	FailedAt     time.Time `json:"failed_at"`
+}
+
+// BulkImportArticles enqueues URLs for async fetch + AI-summarize (POST
+// /articles/bulk-import/ → 202). Returns the batch handle for polling.
+func (c *Client) BulkImportArticles(ctx context.Context, urls []string) (ArticleBulkImportBatch, error) {
+	var batch ArticleBulkImportBatch
+	if err := c.send(ctx, http.MethodPost, "/articles/bulk-import/", ArticleBulkImportInput{URLs: urls}, &batch); err != nil {
+		return ArticleBulkImportBatch{}, err
+	}
+	return batch, nil
+}
+
+// BulkImportStatus polls a batch (GET /articles/bulk-import/{batch_id}/). An
+// unknown batch id is a 404.
+func (c *Client) BulkImportStatus(ctx context.Context, batchID string) (ArticleBulkImportStatus, error) {
+	var status ArticleBulkImportStatus
+	if err := c.get(ctx, fmt.Sprintf("/articles/bulk-import/%s/", url.PathEscape(batchID)), &status); err != nil {
+		return ArticleBulkImportStatus{}, err
+	}
+	return status, nil
+}
+
+// ListFailedArticleImports returns permanently-failed imports, newest first
+// (GET /articles/failed-imports/).
+func (c *Client) ListFailedArticleImports(ctx context.Context) ([]ArticleFailedImport, error) {
+	var failed []ArticleFailedImport
+	if err := c.get(ctx, "/articles/failed-imports/", &failed); err != nil {
+		return nil, err
+	}
+	return failed, nil
+}
+
 // ListArticles returns articles ordered by title (GET /articles/). Each of
 // favorites/archived/unread, when non-nil, adds a tri-state filter query param
 // (favorites=true returns only favorites due for re-read).

@@ -175,3 +175,86 @@ func TestDeleteArticle_Sends204NoBody(t *testing.T) {
 		t.Errorf("method = %s, want DELETE", gotMethod)
 	}
 }
+
+func TestBulkImportArticles_PostsURLs(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte(`{"batch_id":"abc-123","total":2,"status":"queued"}`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	batch, err := client.BulkImportArticles(context.Background(), []string{"https://a.com", "https://b.com"})
+	if err != nil {
+		t.Fatalf("BulkImportArticles: %v", err)
+	}
+	if gotPath != "/articles/bulk-import/" {
+		t.Errorf("path = %s", gotPath)
+	}
+	urls, _ := gotBody["urls"].([]any)
+	if len(urls) != 2 {
+		t.Errorf("urls = %v", gotBody["urls"])
+	}
+	if batch.BatchID != "abc-123" || batch.Total != 2 || batch.Status != "queued" {
+		t.Errorf("batch = %+v", batch)
+	}
+}
+
+func TestBulkImportStatus_DecodesNaiveTimestamps(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.EscapedPath() // Path is decoded; EscapedPath shows the wire form.
+		w.Header().Set("Content-Type", "application/json")
+		// created_at/updated_at are naive (no timezone) — must decode as strings.
+		_, _ = w.Write([]byte(`{"batch_id":"abc 123","status":"completed","total":2,"processed":2,"succeeded":1,"failed_count":1,"errors":[{"url":"https://b.com","error":"404 Not Found\nsee docs"}],"results":[{"url":"https://a.com","title":"A Post"}],"created_at":"2026-07-24T14:39:51.432465","updated_at":"2026-07-24T14:39:52.116682"}`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	status, err := client.BulkImportStatus(context.Background(), "abc 123")
+	if err != nil {
+		t.Fatalf("BulkImportStatus: %v", err)
+	}
+	if gotPath != "/articles/bulk-import/abc%20123/" {
+		t.Errorf("path = %q (batch id must be path-escaped)", gotPath)
+	}
+	if status.Succeeded != 1 || status.FailedCount != 1 {
+		t.Errorf("status = %+v", status)
+	}
+	if len(status.Results) != 1 || status.Results[0].Title != "A Post" {
+		t.Errorf("results = %+v", status.Results)
+	}
+	if len(status.Errors) != 1 || status.Errors[0].URL != "https://b.com" {
+		t.Errorf("errors = %+v", status.Errors)
+	}
+	if status.CreatedAt != "2026-07-24T14:39:51.432465" {
+		t.Errorf("created_at = %q", status.CreatedAt)
+	}
+}
+
+func TestListFailedArticleImports_DecodesRows(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":2,"url":"https://b.com","batch_id":"abc-123","error_message":"404 Not Found\nsee docs","failed_at":"2026-07-24T14:39:52.113047Z"}]`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	failed, err := client.ListFailedArticleImports(context.Background())
+	if err != nil {
+		t.Fatalf("ListFailedArticleImports: %v", err)
+	}
+	if len(failed) != 1 {
+		t.Fatalf("failed = %+v", failed)
+	}
+	f := failed[0]
+	if f.ID != 2 || f.BatchID == nil || *f.BatchID != "abc-123" || f.FailedAt.IsZero() {
+		t.Errorf("failed[0] = %+v", f)
+	}
+}

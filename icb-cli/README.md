@@ -26,7 +26,7 @@ language; the two share no code.
 - **Phase 3 (in progress):** MCP parity + retirement — close the last 24-tool
   gap so `icb` covers the full ~78-tool surface, then run parallel, retire the
   MCP, and drop the `api` bypass. Parity additions: `autotasks` (done),
-  `recipes`, `cooking-techniques`, and `articles` bulk-import.
+  `articles` bulk-import (done), `recipes`, and `cooking-techniques`.
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
 `icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and

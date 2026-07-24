@@ -28,8 +28,132 @@ func newArticlesCommand() *cobra.Command {
 		newArticlesEditCommand(),
 		newArticlesReadCommand(),
 		newArticlesDeleteCommand(),
+		newArticlesImportCommand(),
+		newArticlesImportStatusCommand(),
+		newArticlesFailedImportsCommand(),
 	)
 	return cmd
+}
+
+func newArticlesImportCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "import <url> [url...]",
+		Short: "Bulk-import articles from URLs (async)",
+		Long: "Enqueue one or more URLs for background fetch and AI-summarize. Returns a\n" +
+			"batch id — poll it with `icb articles import-status <batch-id>`.",
+		Example: "  icb articles import https://a.com/post https://b.com/post\n" +
+			"  icb articles import https://a.com/post --json",
+		Args: usageArgs(cobra.MinimumNArgs(1)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			batch, err := client.BulkImportArticles(cmd.Context(), args)
+			if err != nil {
+				return handleAPIError(err)
+			}
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), batch)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Queued %d URL(s) as batch %s (status: %s)\n", batch.Total, batch.BatchID, batch.Status)
+			fmt.Fprintf(cmd.OutOrStdout(), "Poll with: icb articles import-status %s\n", batch.BatchID)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the batch handle as JSON to stdout")
+	return cmd
+}
+
+func newArticlesImportStatusCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:     "import-status <batch-id>",
+		Short:   "Check the progress of a bulk import batch",
+		Example: "  icb articles import-status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7",
+		Args:    usageArgs(cobra.ExactArgs(1)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			status, err := client.BulkImportStatus(cmd.Context(), args[0])
+			if err != nil {
+				return handleAPIError(err)
+			}
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), status)
+			}
+			printBulkImportStatus(cmd.OutOrStdout(), status)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the batch status as JSON to stdout")
+	return cmd
+}
+
+func newArticlesFailedImportsCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:     "failed-imports",
+		Short:   "List permanently-failed article imports",
+		Example: "  icb articles failed-imports",
+		Args:    usageArgs(cobra.NoArgs),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			failed, err := client.ListFailedArticleImports(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), failed)
+			}
+			printFailedImportsTable(cmd.OutOrStdout(), failed)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output failed imports as JSON to stdout")
+	return cmd
+}
+
+func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
+	fmt.Fprintf(out, "batch %s\n", s.BatchID)
+	fmt.Fprintf(out, "  status:    %s\n", s.Status)
+	fmt.Fprintf(out, "  progress:  %d/%d processed\n", s.Processed, s.Total)
+	fmt.Fprintf(out, "  succeeded: %d\n", s.Succeeded)
+	fmt.Fprintf(out, "  failed:    %d\n", s.FailedCount)
+	for _, r := range s.Results {
+		fmt.Fprintf(out, "  + %s (%s)\n", r.Title, r.URL)
+	}
+	for _, e := range s.Errors {
+		fmt.Fprintf(out, "  x %s — %s\n", e.URL, firstLine(e.Error))
+	}
+}
+
+func printFailedImportsTable(out io.Writer, failed []api.ArticleFailedImport) {
+	if len(failed) == 0 {
+		fmt.Fprintln(out, "No failed imports.")
+		return
+	}
+	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(tw, "ID\tFAILED\tURL\tERROR")
+	for _, f := range failed {
+		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
+			f.ID, f.FailedAt.Format("2006-01-02"), f.URL, firstLine(f.ErrorMessage))
+	}
+	_ = tw.Flush()
+}
+
+// firstLine trims a multi-line error to its first line for table/summary display.
+func firstLine(s string) string {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		return s[:i]
+	}
+	return s
 }
 
 func newArticlesListCommand() *cobra.Command {
