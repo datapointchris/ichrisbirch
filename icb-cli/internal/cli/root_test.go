@@ -108,6 +108,12 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 		{"habits create without --category is usage error", []string{"habits", "create", "--name", "x"}, 2},
 		{"habits edit with no fields is usage error", []string{"habits", "edit", "1"}, 2},
 		{"habits complete without an id is usage error", []string{"habits", "complete"}, 2},
+		{"bare books shows help (success)", []string{"books"}, 0},
+		{"books view without an id is usage error", []string{"books", "view"}, 2},
+		{"books create without --title is usage error", []string{"books", "create", "--author", "a", "--tag", "t"}, 2},
+		{"books create without a tag is usage error", []string{"books", "create", "--title", "t", "--author", "a"}, 2},
+		{"books edit with no fields is usage error", []string{"books", "edit", "1"}, 2},
+		{"books isbn without an isbn is usage error", []string{"books", "isbn"}, 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -120,7 +126,7 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 
 func TestRootCommand_WiresResourceGroups(t *testing.T) {
 	root := NewRootCommand()
-	for _, name := range []string{"auth", "projects", "items", "tasks", "countdowns", "events", "habits"} {
+	for _, name := range []string{"auth", "projects", "items", "tasks", "countdowns", "events", "habits", "books"} {
 		cmd, _, err := root.Find([]string{name})
 		if err != nil || cmd.Name() != name {
 			t.Errorf("expected %q command wired into root, got %v (err %v)", name, cmd, err)

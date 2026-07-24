@@ -86,6 +86,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newCountdownsCommand())
 	root.AddCommand(newEventsCommand())
 	root.AddCommand(newHabitsCommand())
+	root.AddCommand(newBooksCommand())
 	return root
 }
 

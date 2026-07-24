@@ -21,7 +21,7 @@ language; the two share no code.
   complete/reopen, archive/unarchive, reorder, multi-project membership,
   dependencies + blockers, and sub-task verbs).
 - **Phase 2 (in progress):** the standalone apps. `tasks`, `countdowns`,
-  `events`, and `habits` landed; `books`, `articles` next.
+  `events`, `habits`, and `books` landed; `articles` next.
 
 End-to-end `icb auth login` additionally requires the homelab Authelia
 `icb-cli-<host>` public clients and the ForwardAuth edge routing — a homelab and
