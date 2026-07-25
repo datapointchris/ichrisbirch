@@ -27,6 +27,7 @@ type ProjectItemInProject struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	Notes     *string   `json:"notes"`
+	Repo      *string   `json:"repo"`
 	Completed bool      `json:"completed"`
 	Archived  bool      `json:"archived"`
 	CreatedAt time.Time `json:"created_at"`
