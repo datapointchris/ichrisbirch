@@ -20,6 +20,7 @@ import sqlalchemy
 import structlog
 from alembic import command
 from alembic.config import Config
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -180,15 +181,35 @@ def create_schemas(session: Session, settings) -> None:
     session.commit()
 
 
+def create_apscheduler_jobstore_table(settings) -> None:
+    """Create the APScheduler jobstore table.
+
+    APScheduler owns `apscheduler_jobs` and creates it when the scheduler service
+    starts, which is why alembic excludes it from autogenerate. Nothing else
+    creates it — so after a drop-and-recreate the admin scheduler endpoint 500s
+    on a missing relation until the scheduler happens to run, which in the
+    testing stack it never does. Creating it here makes a reset database whole
+    rather than whole-except-one-table.
+    """
+    logger.info('apscheduler_jobstore_table_creating')
+    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri)
+    # start() is what emits the CREATE TABLE; APScheduler has no public call for
+    # the schema alone. The scheduler argument is unused for table setup.
+    jobstore.start(None, 'default')
+    logger.info('apscheduler_jobstore_table_created')
+
+
 def create_tables(settings, use_alembic: bool = True) -> None:
     """Create database tables using alembic migrations (default) or create_all."""
     if use_alembic:
         run_alembic_migrations(settings)
+        create_apscheduler_jobstore_table(settings)
         return
 
     logger.info('tables_creating_with_create_all')
     engine = get_db_engine(settings)
     Base.metadata.create_all(engine)
+    create_apscheduler_jobstore_table(settings)
     logger.info('tables_created')
 
 
