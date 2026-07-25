@@ -150,6 +150,7 @@ async def list_items(
             id=item.id,
             title=item.title,
             notes=item.notes,
+            repo=item.repo,
             completed=item.completed,
             archived=item.archived,
             created_at=item.created_at,

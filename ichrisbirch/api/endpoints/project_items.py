@@ -10,6 +10,7 @@ from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -60,6 +61,7 @@ async def read_many(session: DbSession):
     """List all active (non-archived) project items."""
     query = (
         select(models.ProjectItem)
+        .options(selectinload(models.ProjectItem.projects))
         .where(models.ProjectItem.archived == False)  # noqa: E712
         .order_by(models.ProjectItem.created_at.desc())
     )
@@ -71,6 +73,7 @@ async def list_blocked(session: DbSession):
     """List items that have at least one incomplete dependency."""
     query = (
         select(models.ProjectItem)
+        .options(selectinload(models.ProjectItem.projects))
         .where(
             models.ProjectItem.id.in_(
                 select(ProjectItemDependency.item_id)
@@ -89,6 +92,7 @@ async def search(q: str, session: DbSession):
     logger.debug('project_item_search', query=q)
     query = (
         select(models.ProjectItem)
+        .options(selectinload(models.ProjectItem.projects))
         .where(models.ProjectItem.title.ilike(f'%{q}%') | models.ProjectItem.notes.ilike(f'%{q}%'))
         .order_by(models.ProjectItem.created_at.desc())
     )
@@ -113,7 +117,7 @@ async def create(item: schemas.ProjectItemCreate, session: DbSession):
         if not session.get(models.Project, pid):
             raise NotFoundException('project', pid, logger)
 
-    db_item = models.ProjectItem(title=item.title, notes=item.notes)
+    db_item = models.ProjectItem(title=item.title, notes=item.notes, repo=item.repo)
     if item.id is not None:
         db_item.id = item.id
     session.add(db_item)
@@ -151,6 +155,7 @@ async def create(item: schemas.ProjectItemCreate, session: DbSession):
         id=db_item.id,
         title=db_item.title,
         notes=db_item.notes,
+        repo=db_item.repo,
         completed=db_item.completed,
         archived=db_item.archived,
         created_at=db_item.created_at,
@@ -179,6 +184,7 @@ async def read_one(id: UUID, session: DbSession):
         id=item.id,
         title=item.title,
         notes=item.notes,
+        repo=item.repo,
         completed=item.completed,
         archived=item.archived,
         created_at=item.created_at,
@@ -242,6 +248,7 @@ async def reorder(id: UUID, reorder: schemas.ProjectItemReorder, session: DbSess
         id=item.id,
         title=item.title,
         notes=item.notes,
+        repo=item.repo,
         completed=item.completed,
         archived=item.archived,
         created_at=item.created_at,
@@ -372,6 +379,7 @@ async def get_blockers(id: UUID, session: DbSession):
 
     query = (
         select(models.ProjectItem)
+        .options(selectinload(models.ProjectItem.projects))
         .join(ProjectItemDependency, models.ProjectItem.id == ProjectItemDependency.depends_on_id)
         .where(ProjectItemDependency.item_id == id)
         .where(models.ProjectItem.completed == False)  # noqa: E712

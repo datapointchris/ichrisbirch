@@ -10,14 +10,19 @@ import (
 // ProjectItem mirrors the API's project-item JSON as returned by the list,
 // search, blocked, and blockers endpoints (schemas.ProjectItem). Only rendered
 // fields are decoded; unknown fields are ignored.
+//
+// Projects rides along on every list response: an item title alone names a thing
+// without saying what work it belongs to.
 type ProjectItem struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	Notes     *string   `json:"notes"`
+	Repo      *string   `json:"repo"`
 	Completed bool      `json:"completed"`
 	Archived  bool      `json:"archived"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Projects  []Project `json:"projects"`
 }
 
 // ProjectItemDetail is the extended view (GET /project-items/{id}/, and the
@@ -27,6 +32,7 @@ type ProjectItemDetail struct {
 	ID            string    `json:"id"`
 	Title         string    `json:"title"`
 	Notes         *string   `json:"notes"`
+	Repo          *string   `json:"repo"`
 	Completed     bool      `json:"completed"`
 	Archived      bool      `json:"archived"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -40,6 +46,7 @@ type ProjectItemDetail struct {
 type ProjectItemCreateInput struct {
 	Title      string   `json:"title"`
 	Notes      *string  `json:"notes,omitempty"`
+	Repo       *string  `json:"repo,omitempty"`
 	ProjectIDs []string `json:"project_ids"`
 }
 
@@ -50,6 +57,7 @@ type ProjectItemCreateInput struct {
 type ProjectItemUpdateInput struct {
 	Title     *string `json:"title,omitempty"`
 	Notes     *string `json:"notes,omitempty"`
+	Repo      *string `json:"repo,omitempty"`
 	Completed *bool   `json:"completed,omitempty"`
 	Archived  *bool   `json:"archived,omitempty"`
 }

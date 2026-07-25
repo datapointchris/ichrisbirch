@@ -183,6 +183,7 @@ func newItemsCreateCommand() *cobra.Command {
 	var (
 		title    string
 		notes    string
+		repo     string
 		projects []string
 		asJSON   bool
 	)
@@ -202,6 +203,9 @@ func newItemsCreateCommand() *cobra.Command {
 			if cmd.Flags().Changed("notes") {
 				in.Notes = &notes
 			}
+			if cmd.Flags().Changed("repo") {
+				in.Repo = &repo
+			}
 
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -220,6 +224,7 @@ func newItemsCreateCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&title, "title", "", "Item title (required)")
 	cmd.Flags().StringVar(&notes, "notes", "", "Markdown notes for the item")
+	cmd.Flags().StringVar(&repo, "repo", "", "Repo this item is work on, by ~/dev/repos.json name (optional)")
 	cmd.Flags().StringArrayVar(&projects, "project", nil, "Project id to add the item to (repeatable; at least one)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created item as JSON to stdout")
 	return cmd
@@ -229,12 +234,13 @@ func newItemsEditCommand() *cobra.Command {
 	var (
 		title  string
 		notes  string
+		repo   string
 		asJSON bool
 	)
 	cmd := &cobra.Command{
 		Use:     "edit <item-id> [flags]",
-		Short:   "Change an item's title or notes",
-		Long:    "Update only the fields whose flags you pass. Use complete/reopen and\narchive/unarchive for those state changes.",
+		Short:   "Change an item's title, notes, or repo",
+		Long:    "Update only the fields whose flags you pass. Use complete/reopen and\narchive/unarchive for those state changes.\n\nPass --repo \"\" to unlink an item from its repo.",
 		Example: "  icb items edit 018f... --title \"New title\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -246,14 +252,18 @@ func newItemsEditCommand() *cobra.Command {
 			if f.Changed("notes") {
 				in.Notes = &notes
 			}
+			if f.Changed("repo") {
+				in.Repo = &repo
+			}
 			if in == (api.ProjectItemUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass --title and/or --notes")}
+				return usageError{fmt.Errorf("nothing to change — pass --title, --notes, and/or --repo")}
 			}
 			return runItemUpdate(cmd, args[0], in, asJSON, "Updated")
 		},
 	}
 	cmd.Flags().StringVar(&title, "title", "", "New item title")
 	cmd.Flags().StringVar(&notes, "notes", "", "New markdown notes")
+	cmd.Flags().StringVar(&repo, "repo", "", "Repo this item is work on, by ~/dev/repos.json name (empty string unlinks)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated item as JSON to stdout")
 	return cmd
 }
@@ -740,6 +750,9 @@ func printItemDetail(out io.Writer, d api.ProjectItemDetail, tasks []api.Project
 	fmt.Fprintf(out, "%s\n", d.Title)
 	fmt.Fprintf(out, "  id:      %s\n", d.ID)
 	fmt.Fprintf(out, "  status:  %s\n", detailStatus(d))
+	if r := strValue(d.Repo); r != "" {
+		fmt.Fprintf(out, "  repo:    %s\n", r)
+	}
 	if n := strValue(d.Notes); n != "" {
 		fmt.Fprintf(out, "  notes:   %s\n", n)
 	}

@@ -139,6 +139,100 @@ class TestProjectItemUpdate:
         assert response.json()['notes'] is None, 'notes must be null after explicit null patch'
 
 
+class TestProjectItemRepoLink:
+    """The optional `repo` link, by ~/dev/repos.json registry name.
+
+    Nullable on purpose: most items are not repo work (home projects, errands),
+    and those stay first-class.
+    """
+
+    @pytest.fixture
+    def project_id(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client, client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+    def test_repo_round_trips_through_create_and_read(self, project_id):
+        client, pid = project_id
+        created = client.post(
+            PROJECT_ITEMS_ENDPOINT,
+            json={'title': 'Fix the brief collision', 'repo': 'forge', 'project_ids': [pid]},
+        )
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['repo'] == 'forge', 'create response must echo the repo it stored'
+
+        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created.json()["id"]}/')
+        assert fetched.json()['repo'] == 'forge', 'read must return the stored repo'
+
+    def test_repo_defaults_to_null_for_non_repo_work(self, project_id):
+        client, pid = project_id
+        response = client.post(
+            PROJECT_ITEMS_ENDPOINT,
+            json={'title': 'Build the microwave cart', 'project_ids': [pid]},
+        )
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        assert response.json()['repo'] is None
+
+    def test_repo_can_be_set_and_cleared_by_patch(self, project_id):
+        client, pid = project_id
+        item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Link me', 'project_ids': [pid]}).json()
+
+        linked = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'repo': 'indy'})
+        assert linked.status_code == status.HTTP_200_OK, show_status_and_response(linked)
+        assert linked.json()['repo'] == 'indy'
+
+        cleared = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'repo': None})
+        assert cleared.json()['repo'] is None, 'null must unlink, matching how notes clears'
+
+    def test_partial_patch_leaves_repo_unchanged(self, project_id):
+        client, pid = project_id
+        item = client.post(
+            PROJECT_ITEMS_ENDPOINT,
+            json={'title': 'Keep my repo', 'repo': 'forge', 'project_ids': [pid]},
+        ).json()
+
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'title': 'Renamed'})
+        assert response.json()['repo'] == 'forge', 'omitting repo must not clear it'
+
+
+class TestProjectItemMembershipOnLists:
+    """The list endpoints carry each item's projects.
+
+    An item title alone ("Glove 80") names a thing without saying what work it is
+    part of, so membership travels with every list response rather than costing a
+    consumer one detail call per item.
+    """
+
+    @pytest.fixture
+    def project_id(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client, client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+    def test_read_many_names_each_items_projects(self, project_id):
+        client, pid = project_id
+        project_name = client.get(f'{PROJECTS_ENDPOINT}{pid}/').json()['name']
+        client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Glove 80', 'project_ids': [pid]})
+
+        response = client.get(PROJECT_ITEMS_ENDPOINT)
+
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        item = next(item for item in response.json() if item['title'] == 'Glove 80')
+        assert [project['name'] for project in item['projects']] == [project_name]
+
+    def test_an_item_in_several_projects_names_all_of_them(self, project_id):
+        client, pid = project_id
+        other = client.post(PROJECTS_ENDPOINT, json={'name': 'A Second Project'}).json()
+        item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Shared work', 'project_ids': [pid]}).json()
+        client.post(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/projects/', json={'project_id': other['id']})
+
+        response = client.get(PROJECT_ITEMS_ENDPOINT)
+
+        listed = next(row for row in response.json() if row['title'] == 'Shared work')
+        assert 'A Second Project' in [project['name'] for project in listed['projects']]
+        assert len(listed['projects']) == 2, 'both memberships must be reported, not an arbitrary first'
+
+
 class TestProjectItemCompletionGuard:
     """PATCH /project-items/{id}/ — cannot complete an item with incomplete tasks."""
 

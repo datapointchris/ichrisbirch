@@ -41,6 +41,8 @@ class ProjectItem(Base):
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Registry name from ~/dev/repos.json. Nullable: most items are not repo work.
+    repo: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
@@ -48,6 +50,14 @@ class ProjectItem(Base):
 
     memberships: Mapped[list[ProjectItemMembership]] = relationship(
         'ProjectItemMembership', back_populates='item', cascade='all, delete-orphan'
+    )
+    # Read path only. Writes go through ProjectItemMembership, which carries the
+    # item's position within each project — a writable secondary would drop it.
+    projects: Mapped[list[Project]] = relationship(
+        'Project',
+        secondary='project_item_memberships',
+        viewonly=True,
+        order_by='Project.position',
     )
     dependencies: Mapped[list[ProjectItemDependency]] = relationship(
         'ProjectItemDependency',

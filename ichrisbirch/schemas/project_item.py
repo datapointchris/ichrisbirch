@@ -17,22 +17,33 @@ class ProjectItemCreate(ProjectItemConfig):
     id: UUID | None = None
     title: str
     notes: str | None = None
+    repo: str | None = None
     project_ids: list[UUID]
 
 
 class ProjectItem(ProjectItemConfig):
+    """An item always travels with the projects it belongs to.
+
+    An item title on its own ("Glove 80") names a thing without saying what work
+    it is part of, so every list response carries its membership rather than
+    making each consumer fetch it per item.
+    """
+
     id: UUID
     title: str
     notes: str | None = None
+    repo: str | None = None
     completed: bool
     archived: bool
     created_at: datetime
     updated_at: datetime
+    projects: list[Project] = []
 
 
 class ProjectItemUpdate(ProjectItemConfig):
     title: str | None = None
     notes: str | None = None
+    repo: str | None = None
     completed: bool | None = None
     archived: bool | None = None
 
@@ -43,6 +54,7 @@ class ProjectItemDetail(ProjectItemConfig):
     id: UUID
     title: str
     notes: str | None = None
+    repo: str | None = None
     completed: bool
     archived: bool
     created_at: datetime
@@ -57,6 +69,7 @@ class ProjectItemInProject(ProjectItemConfig):
     id: UUID
     title: str
     notes: str | None = None
+    repo: str | None = None
     completed: bool
     archived: bool
     created_at: datetime
