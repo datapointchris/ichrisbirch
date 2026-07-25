@@ -18,9 +18,14 @@ import (
 
 const (
 	// overviewSchemaVersion is the contract between this command and its
-	// consumers (menu dashboard). Bump it only for a breaking reshape: consumers
-	// read fields defensively, so additions are free.
-	overviewSchemaVersion = 1
+	// consumers (menu dashboard, and the wall and mobile renderers behind it).
+	// Bump it only for a breaking reshape: consumers read fields defensively, so
+	// additions are free.
+	//
+	// v2 split the old `reading` section into `books` and `articles`. They are
+	// separate apps, and one section spanning two of them meant neither of its
+	// counts described the pile it sat above.
+	overviewSchemaVersion = 2
 
 	// defaultOverviewLimit caps each section so the payload stays a glance. Every
 	// section reports its pre-cap total, so a capped list never lies about size.
@@ -39,7 +44,8 @@ const (
 const (
 	sectionTasks        = "tasks"
 	sectionHabits       = "habits"
-	sectionReading      = "reading"
+	sectionBooks        = "books"
+	sectionArticles     = "articles"
 	sectionProjectItems = "project_items"
 	sectionCountdowns   = "countdowns"
 	sectionEvents       = "events"
@@ -53,7 +59,8 @@ type overviewReport struct {
 	GeneratedAt   time.Time          `json:"generated_at"`
 	Tasks         taskSection        `json:"tasks"`
 	Habits        habitSection       `json:"habits"`
-	Reading       readingSection     `json:"reading"`
+	Books         bookSection        `json:"books"`
+	Articles      articleSection     `json:"articles"`
 	ProjectItems  projectItemSection `json:"project_items"`
 	Countdowns    countdownSection   `json:"countdowns"`
 	Events        eventSection       `json:"events"`
@@ -71,11 +78,18 @@ type habitSection struct {
 	CurrentTotal   int                  `json:"current_total"`
 }
 
-type readingSection struct {
-	Reading        []api.Book   `json:"reading"`
-	NextUp         []api.Book   `json:"next_up"`
-	NextUpTotal    int          `json:"next_up_total"`
-	CurrentArticle *api.Article `json:"current_article"`
+type bookSection struct {
+	Reading     []api.Book `json:"reading"`
+	NextUp      []api.Book `json:"next_up"`
+	NextUpTotal int        `json:"next_up_total"`
+}
+
+// articleSection is the reading list, its own app with its own rhythm: Current
+// is the one being read, Unread is the queue behind it.
+type articleSection struct {
+	Current     *api.Article  `json:"current"`
+	Unread      []api.Article `json:"unread"`
+	UnreadTotal int           `json:"unread_total"`
 }
 
 type projectItemSection struct {
@@ -110,6 +124,7 @@ type overviewData struct {
 	CompletedHabits []api.HabitCompleted
 	OwnedBooks      []api.Book
 	CurrentArticle  *api.Article
+	UnreadArticles  []api.Article
 	Items           []api.ProjectItem
 	BlockedItems    []api.ProjectItem
 	Countdowns      []api.Countdown
@@ -139,10 +154,11 @@ func newOverviewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "overview",
 		Short: "Show everything outstanding right now across the apps",
-		Long: "A cross-cutting snapshot: open tasks, habits still due today, what you are\n" +
-			"reading and what is next, the next and blocked project items, and approaching\n" +
-			"countdowns and events. Composed from those endpoints in one command so a\n" +
-			"dashboard needs a single call.",
+		Long: "A cross-cutting snapshot: open tasks, habits still due today, the books and\n" +
+			"articles you are reading and what is next in each, the next and blocked\n" +
+			"project items with the projects they belong to, and approaching countdowns\n" +
+			"and events. Composed from those endpoints in one command so a dashboard\n" +
+			"needs a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 0",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -194,14 +210,20 @@ func overviewFetches() []overviewFetch {
 			d.CompletedHabits = completed
 			return err
 		}},
-		{sectionReading, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
+		{sectionBooks, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			books, err := c.ListBooks(ctx, "owned")
 			d.OwnedBooks = books
 			return err
 		}},
-		{sectionReading, "current article", func(ctx context.Context, c *api.Client, d *overviewData) error {
+		{sectionArticles, "current article", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			article, err := c.GetCurrentArticle(ctx)
 			d.CurrentArticle = article
+			return err
+		}},
+		{sectionArticles, "unread articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
+			unread := true
+			articles, err := c.ListArticles(ctx, nil, nil, &unread)
+			d.UnreadArticles = articles
 			return err
 		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
@@ -275,6 +297,7 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	dueHabits, doneHabits := splitHabitsByCompletion(data.CurrentHabits, data.CompletedHabits, now)
 	nextItems := nextProjectItems(data.Items, data.BlockedItems)
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
+	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
 	countdowns := upcomingCountdowns(data.Countdowns, now)
 	events := upcomingEvents(data.Events, now)
 
@@ -290,11 +313,15 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			CompletedToday: doneHabits,
 			CurrentTotal:   len(data.CurrentHabits),
 		},
-		Reading: readingSection{
-			Reading:        booksByProgress(data.OwnedBooks, "reading"),
-			NextUp:         capItems(nextBooks, limit),
-			NextUpTotal:    len(nextBooks),
-			CurrentArticle: data.CurrentArticle,
+		Books: bookSection{
+			Reading:     booksByProgress(data.OwnedBooks, "reading"),
+			NextUp:      capItems(nextBooks, limit),
+			NextUpTotal: len(nextBooks),
+		},
+		Articles: articleSection{
+			Current:     data.CurrentArticle,
+			Unread:      capItems(queuedArticles, limit),
+			UnreadTotal: len(queuedArticles),
 		},
 		ProjectItems: projectItemSection{
 			Next:         capItems(nextItems, limit),
@@ -389,6 +416,19 @@ func nextProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.Pr
 	return next
 }
 
+// articlesBehindCurrent is the unread queue with the one being read removed, so
+// the current article is never also counted as waiting.
+func articlesBehindCurrent(unread []api.Article, current *api.Article) []api.Article {
+	var queued []api.Article
+	for _, article := range unread {
+		if current != nil && article.ID == current.ID {
+			continue
+		}
+		queued = append(queued, article)
+	}
+	return queued
+}
+
 // booksByProgress filters an already ownership-filtered list, preserving the
 // server's priority order.
 func booksByProgress(books []api.Book, progress string) []api.Book {
@@ -438,7 +478,8 @@ func capItems[T any](items []T, limit int) []T {
 func printOverview(out io.Writer, r overviewReport) {
 	printTaskSection(out, r.Tasks)
 	printHabitSection(out, r.Habits)
-	printReadingSection(out, r.Reading)
+	printBookSection(out, r.Books)
+	printArticleSection(out, r.Articles)
 	printProjectItemSection(out, r.ProjectItems)
 	printUpcomingSection(out, r.Countdowns, r.Events, r.GeneratedAt)
 
@@ -480,9 +521,9 @@ func printHabitSection(out io.Writer, section habitSection) {
 	fmt.Fprintf(out, "  due: %s\n", strings.Join(names, ", "))
 }
 
-func printReadingSection(out io.Writer, section readingSection) {
-	fmt.Fprintln(out, "\nReading")
-	if len(section.Reading) == 0 && len(section.NextUp) == 0 && section.CurrentArticle == nil {
+func printBookSection(out io.Writer, section bookSection) {
+	fmt.Fprintf(out, "\nBooks (%d reading, %d queued)\n", len(section.Reading), section.NextUpTotal)
+	if len(section.Reading) == 0 && len(section.NextUp) == 0 {
 		fmt.Fprintln(out, "  (none)")
 		return
 	}
@@ -496,11 +537,28 @@ func printReadingSection(out io.Writer, section readingSection) {
 		}
 		fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(book.Title), book.Author)
 	}
-	if section.CurrentArticle != nil {
-		fmt.Fprintf(tw, "  article:\t%s\t\n", truncateTitle(section.CurrentArticle.Title))
-	}
 	_ = tw.Flush()
 	printMore(out, len(section.NextUp), section.NextUpTotal)
+}
+
+func printArticleSection(out io.Writer, section articleSection) {
+	fmt.Fprintf(out, "\nArticles (%d unread)\n", section.UnreadTotal)
+	if section.Current == nil && len(section.Unread) == 0 {
+		fmt.Fprintln(out, "  (none)")
+		return
+	}
+	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
+	if section.Current != nil {
+		fmt.Fprintf(tw, "  reading:\t%s\n", truncateTitle(section.Current.Title))
+	}
+	for i, article := range section.Unread {
+		if i >= printListCap {
+			break
+		}
+		fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(article.Title))
+	}
+	_ = tw.Flush()
+	printMore(out, len(section.Unread), section.UnreadTotal)
 }
 
 func printProjectItemSection(out io.Writer, section projectItemSection) {
@@ -514,13 +572,13 @@ func printProjectItemSection(out io.Writer, section projectItemSection) {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(item.Title))
+		fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
 	}
 	for i, item := range section.Blocked {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  blocked:\t%s\n", truncateTitle(item.Title))
+		fmt.Fprintf(tw, "  blocked:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
 	}
 	_ = tw.Flush()
 	printMore(out, len(section.Next), section.NextTotal)
@@ -555,6 +613,16 @@ func printUpcomingSection(out io.Writer, countdowns countdownSection, events eve
 	}
 	_ = tw.Flush()
 	printMore(out, len(entries), len(entries))
+}
+
+// projectNames labels an item with the work it belongs to. An item can sit in
+// several projects, so all of them are named rather than an arbitrary first.
+func projectNames(item api.ProjectItem) string {
+	names := make([]string, 0, len(item.Projects))
+	for _, project := range item.Projects {
+		names = append(names, project.Name)
+	}
+	return strings.Join(names, ", ")
 }
 
 type upcomingEntry struct {

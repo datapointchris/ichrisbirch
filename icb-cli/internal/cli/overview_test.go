@@ -47,8 +47,13 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 		BlockedItems: []api.ProjectItem{{ID: "b", Title: "Newer item"}},
 		Countdowns:   []api.Countdown{{ID: 1, Name: "Lease renewal", DueDate: "2026-08-05"}},
 		Events:       []api.Event{{ID: 1, Name: "Hike", Date: fixedNow.AddDate(0, 0, 3)}},
+		UnreadArticles: []api.Article{
+			{ID: 5, Title: "The one being read"},
+			{ID: 6, Title: "Still queued"},
+		},
+		CurrentArticle: &api.Article{ID: 5, Title: "The one being read"},
 		Failures: []sectionFailure{
-			{Section: sectionReading, Label: "books", Err: &api.APIError{StatusCode: 500, Status: "500 Internal Server Error"}},
+			{Section: sectionBooks, Label: "books", Err: &api.APIError{StatusCode: 500, Status: "500 Internal Server Error"}},
 		},
 	}
 
@@ -69,11 +74,17 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 	if report.Habits.CurrentTotal != 2 {
 		t.Errorf("current habit total = %d, want 2", report.Habits.CurrentTotal)
 	}
-	if len(report.Reading.Reading) != 1 || report.Reading.Reading[0].Title != "Difficult Conversations" {
-		t.Errorf("reading = %+v", report.Reading.Reading)
+	if len(report.Books.Reading) != 1 || report.Books.Reading[0].Title != "Difficult Conversations" {
+		t.Errorf("books being read = %+v", report.Books.Reading)
 	}
-	if report.Reading.NextUpTotal != 1 {
-		t.Errorf("next up total = %d, want 1", report.Reading.NextUpTotal)
+	if report.Books.NextUpTotal != 1 {
+		t.Errorf("next up total = %d, want 1", report.Books.NextUpTotal)
+	}
+	if report.Articles.Current == nil || report.Articles.Current.ID != 5 {
+		t.Errorf("current article = %+v, want id 5", report.Articles.Current)
+	}
+	if report.Articles.UnreadTotal != 1 || report.Articles.Unread[0].ID != 6 {
+		t.Errorf("unread articles = %+v — the current one must not also be queued", report.Articles.Unread)
 	}
 	if len(report.ProjectItems.Next) != 1 || report.ProjectItems.Next[0].ID != "a" {
 		t.Errorf("next items = %+v, want only the unblocked, incomplete one", report.ProjectItems.Next)
@@ -84,8 +95,8 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 	if report.Countdowns.Total != 1 || report.Events.Total != 1 {
 		t.Errorf("countdowns/events totals = %d/%d, want 1/1", report.Countdowns.Total, report.Events.Total)
 	}
-	if len(report.Warnings) != 1 || report.Warnings[0].Section != sectionReading {
-		t.Fatalf("warnings = %+v, want one keyed to reading", report.Warnings)
+	if len(report.Warnings) != 1 || report.Warnings[0].Section != sectionBooks {
+		t.Fatalf("warnings = %+v, want one keyed to books", report.Warnings)
 	}
 	if !strings.Contains(report.Warnings[0].Message, "books") {
 		t.Errorf("warning message = %q, want the failing call labelled", report.Warnings[0].Message)
@@ -98,8 +109,8 @@ func TestBuildOverview_EmptyDataIsNotAFailure(t *testing.T) {
 	if report.Tasks.Total != 0 || len(report.Warnings) != 0 {
 		t.Errorf("empty data produced %d tasks and %d warnings", report.Tasks.Total, len(report.Warnings))
 	}
-	if report.Reading.CurrentArticle != nil {
-		t.Errorf("current article = %+v, want nil", report.Reading.CurrentArticle)
+	if report.Articles.Current != nil {
+		t.Errorf("current article = %+v, want nil", report.Articles.Current)
 	}
 }
 
@@ -250,8 +261,8 @@ func TestFetchOverview_PartialFailureIsIsolated(t *testing.T) {
 	if len(data.Failures) != 1 {
 		t.Fatalf("failures = %+v, want only the books call", data.Failures)
 	}
-	if data.Failures[0].Section != sectionReading {
-		t.Errorf("failure section = %q, want %q", data.Failures[0].Section, sectionReading)
+	if data.Failures[0].Section != sectionBooks {
+		t.Errorf("failure section = %q, want %q", data.Failures[0].Section, sectionBooks)
 	}
 	if err := systemicOverviewFailure(data.Failures, len(overviewFetches())); err != nil {
 		t.Errorf("systemic failure = %v, want a partial snapshot to survive", err)
@@ -284,7 +295,7 @@ func TestPrintOverview(t *testing.T) {
 		CurrentHabits:   []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
 		CompletedHabits: []api.HabitCompleted{{ID: 9, Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)}},
 		Failures: []sectionFailure{
-			{Section: sectionReading, Label: "books", Err: &api.APIError{StatusCode: 500, Status: "500 Internal Server Error"}},
+			{Section: sectionBooks, Label: "books", Err: &api.APIError{StatusCode: 500, Status: "500 Internal Server Error"}},
 		},
 	}, fixedNow, defaultOverviewLimit)
 
@@ -292,7 +303,7 @@ func TestPrintOverview(t *testing.T) {
 	printOverview(&out, report)
 	text := out.String()
 
-	for _, want := range []string{"Tasks (1 open)", "Renew passport", "due: Stretch", "Warnings", "reading: books"} {
+	for _, want := range []string{"Tasks (1 open)", "Renew passport", "due: Stretch", "Warnings", "books: books"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("printed overview missing %q:\n%s", want, text)
 		}
@@ -307,6 +318,54 @@ func TestPrintOverview_EmptyStates(t *testing.T) {
 	for _, want := range []string{"Tasks (0 open)", "(none)", "(all done)"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("empty overview missing %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestArticlesBehindCurrent_DropsTheOneBeingRead(t *testing.T) {
+	unread := []api.Article{{ID: 1, Title: "First"}, {ID: 2, Title: "Current"}, {ID: 3, Title: "Third"}}
+
+	queued := articlesBehindCurrent(unread, &api.Article{ID: 2, Title: "Current"})
+
+	if len(queued) != 2 || queued[0].ID != 1 || queued[1].ID != 3 {
+		t.Errorf("queued = %+v — the current article must not also be counted as waiting", queued)
+	}
+	if all := articlesBehindCurrent(unread, nil); len(all) != 3 {
+		t.Errorf("with no current article the whole queue stands, got %+v", all)
+	}
+}
+
+func TestProjectNames_LabelsAnItemWithItsWork(t *testing.T) {
+	item := api.ProjectItem{
+		Title:    "Glove 80",
+		Projects: []api.Project{{Name: "Sell Unused Shite"}, {Name: "Desk Setup"}},
+	}
+
+	if got := projectNames(item); got != "Sell Unused Shite, Desk Setup" {
+		t.Errorf("projectNames = %q, want both memberships named", got)
+	}
+	if got := projectNames(api.ProjectItem{Title: "Orphan"}); got != "" {
+		t.Errorf("projectNames with no membership = %q, want empty", got)
+	}
+}
+
+func TestPrintOverview_SeparatesBooksFromArticles(t *testing.T) {
+	report := buildOverview(overviewData{
+		OwnedBooks:     []api.Book{{ID: 1, Title: "A Book", Author: "Author", Progress: "reading"}},
+		CurrentArticle: &api.Article{ID: 5, Title: "An Article"},
+		UnreadArticles: []api.Article{{ID: 5, Title: "An Article"}, {ID: 6, Title: "A Queued Article"}},
+		Items: []api.ProjectItem{
+			{ID: "a", Title: "Glove 80", Projects: []api.Project{{Name: "Sell Unused Shite"}}, CreatedAt: fixedNow},
+		},
+	}, fixedNow, defaultOverviewLimit)
+
+	var out bytes.Buffer
+	printOverview(&out, report)
+	text := out.String()
+
+	for _, want := range []string{"Books (1 reading, 0 queued)", "A Book", "Articles (1 unread)", "An Article", "Sell Unused Shite"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("printed overview missing %q:\n%s", want, text)
 		}
 	}
 }
