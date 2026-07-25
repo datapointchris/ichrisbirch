@@ -40,16 +40,22 @@ Authelia config (see `~/homelab/pyinfra/templates/authelia/configuration.yml.j2`
 
 ## Build & install
 
+Run these from the repo root — the Taskfile lives there and enters `cli/` itself.
+
 ```bash
-make build      # -> ./bin/icb (local testing)
-make install    # -> $GOBIN/icb (on your PATH; defaults to ~/go/bin)
-make test       # go test ./...
-make lint       # go vet + gofmt check
-make fmt        # gofmt -w .
+task cli:build      # -> ./bin/icb (local testing)
+task cli:install    # -> $GOBIN/icb (falls back to $GOPATH/bin)
+task cli:test       # go test -race ./...
+task cli:lint       # go vet + gofmt check
+task cli:fmt        # gofmt -w .
 ```
 
 Install uses `go build -o`, not `go install`: the module path is `ichrisbirch/cli`,
 so `go install` would name the binary after the path's last segment (`cli`).
+
+These build from your working tree, version-stamped with `git describe`. Released
+binaries are built by CI on a `cli/v*` tag and published to GitHub Releases; that
+is what dotfiles installs on each machine.
 
 ## Auth
 

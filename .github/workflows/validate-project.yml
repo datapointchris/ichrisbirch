@@ -396,9 +396,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.cli == 'true'
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: cli
 
     steps:
       - name: Checkout repo
@@ -410,11 +407,19 @@ jobs:
           go-version-file: cli/go.mod
           cache-dependency-path: cli/go.sum
 
+      # The Taskfile lives at the repo root and enters cli/ itself, so these
+      # steps must run from the root rather than a working-directory of cli/.
+      - name: Setup Task
+        uses: go-task/setup-task@v1
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Lint (go vet + gofmt)
-        run: make lint
+        run: task cli:lint
 
       - name: Test
-        run: make test
+        run: task cli:test
 
       - name: Build
-        run: make build
+        run: task cli:build

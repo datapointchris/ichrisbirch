@@ -1,0 +1,57 @@
+version: '3'
+
+# Scope: the Go CLI in cli/ only. Everything else — dev/test containers, docker,
+# routing, ssl, db, logs — belongs to ops/icbops and is not duplicated here.
+
+vars:
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+  # GOBIN wins when set; resolving GOPATH first would install somewhere that is
+  # never on PATH on a machine that sets GOBIN.
+  INSTALL_DIR:
+    sh: gobin=$(go env GOBIN); [ -n "$gobin" ] || gobin="$(go env GOPATH)/bin"; echo "$gobin"
+
+tasks:
+  default:
+    desc: Show available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  cli:build:
+    desc: Build the icb CLI to bin/icb
+    dir: cli
+    cmds:
+      - go build -ldflags "-s -w -X ichrisbirch/cli/internal/cli.version={{.VERSION}}" -o ../bin/icb .
+
+  cli:install:
+    desc: Install the icb CLI to $GOBIN (falls back to $GOPATH/bin)
+    dir: cli
+    cmds:
+      - go build -ldflags "-s -w -X ichrisbirch/cli/internal/cli.version={{.VERSION}}" -o {{.INSTALL_DIR}}/icb .
+      - 'echo "installed icb {{.VERSION}} -> {{.INSTALL_DIR}}/icb"'
+
+  cli:test:
+    desc: Run the CLI test suite
+    # -race is not optional: `overview` fetches its sections concurrently off one
+    # shared token source, so a regression there is only visible to the detector.
+    dir: cli
+    cmds:
+      - go test -race ./...
+
+  cli:lint:
+    desc: Vet the CLI and fail on unformatted files
+    dir: cli
+    cmds:
+      - go vet ./...
+      - |
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "gofmt needed on:"; echo "$unformatted"; exit 1
+        fi
+
+  cli:fmt:
+    desc: Format the CLI sources
+    dir: cli
+    cmds:
+      - gofmt -w .
