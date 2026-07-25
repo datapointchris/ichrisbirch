@@ -29,6 +29,7 @@ type Habit struct {
 // HabitCompleted is a recorded completion of a habit on a date.
 type HabitCompleted struct {
 	ID           int           `json:"id"`
+	HabitID      *int          `json:"habit_id"`
 	Name         string        `json:"name"`
 	CategoryID   int           `json:"category_id"`
 	Category     HabitCategory `json:"category"`
@@ -51,8 +52,10 @@ type HabitUpdateInput struct {
 }
 
 // HabitCompletedCreateInput records a completion (POST /habits/completed/).
-// CompleteDate is a datetime string parsed server-side.
+// CompleteDate is a datetime string parsed server-side. HabitID is optional —
+// omitted, the completion is still recorded, just unlinkable to a live habit.
 type HabitCompletedCreateInput struct {
+	HabitID      *int   `json:"habit_id,omitempty"`
 	Name         string `json:"name"`
 	CategoryID   int    `json:"category_id"`
 	CompleteDate string `json:"complete_date"`

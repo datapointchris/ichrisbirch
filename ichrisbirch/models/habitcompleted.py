@@ -17,13 +17,22 @@ if TYPE_CHECKING:
 
 
 class HabitCompleted(Base):
+    """A completion is a historical fact, not a view of the habit.
+
+    Name and category are denormalized on purpose: the record stays true after
+    the habit is renamed or deleted. habit_id sits alongside them so a live habit
+    can be identified without matching strings — nullable, because the habit it
+    named may no longer exist.
+    """
+
     __table_args__ = {'schema': 'habits'}
     __tablename__ = 'completed'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    habit_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('habits.habits.id', ondelete='SET NULL'), nullable=True, index=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
     category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='completed_habits')
     complete_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self):
-        return f'HabitCompleted(name={self.name!r}, category_id={self.category_id!r}, complete_date={self.complete_date!r})'
+        return f'HabitCompleted(habit_id={self.habit_id!r}, name={self.name!r}, complete_date={self.complete_date!r})'

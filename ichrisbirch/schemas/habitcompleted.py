@@ -12,6 +12,7 @@ class HabitConfig(BaseModel):
 
 class HabitCompleted(HabitConfig):
     id: int
+    habit_id: int | None = None
     name: str
     category_id: int
     category: HabitCategory
@@ -19,6 +20,10 @@ class HabitCompleted(HabitConfig):
 
 
 class HabitCompletedCreate(HabitConfig):
+    """habit_id is optional so historical imports and completions of a
+    since-deleted habit still record; a caller that knows the habit sends it."""
+
+    habit_id: int | None = None
     name: str
     category_id: int
     complete_date: datetime

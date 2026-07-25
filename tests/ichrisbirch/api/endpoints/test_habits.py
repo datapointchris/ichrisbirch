@@ -243,6 +243,68 @@ class TestHabitCategories:
             client.delete(endpoint)
 
 
+class TestCompletedHabitLinksToItsHabit:
+    """`habits.completed` carries habit_id alongside the denormalized name.
+
+    Matching a completion to its habit by name breaks on rename: the completion
+    stops matching and the habit reads as due again for the rest of the day.
+    """
+
+    ENDPOINT = '/habits/completed/'
+
+    def test_completion_round_trips_its_habit_id(self, habit_test_data):
+        client = habit_test_data
+        habit = client.get('/habits/').json()[0]
+
+        created = client.post(
+            self.ENDPOINT,
+            json={
+                'habit_id': habit['id'],
+                'name': habit['name'],
+                'category_id': habit['category_id'],
+                'complete_date': '2026-07-24T12:00:00Z',
+            },
+        )
+
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['habit_id'] == habit['id']
+
+    def test_completion_without_a_habit_id_still_records(self, habit_test_data):
+        """History predating the column, and completions of a deleted habit."""
+        client = habit_test_data
+        category_id = get_first_category_id(client)
+
+        created = client.post(
+            self.ENDPOINT,
+            json={'name': 'Some Historical Habit', 'category_id': category_id, 'complete_date': '2026-07-24T12:00:00Z'},
+        )
+
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['habit_id'] is None
+
+    def test_deleting_a_habit_keeps_the_completion(self, habit_test_data):
+        """A completion is a historical fact — it outlives the habit it names."""
+        client = habit_test_data
+        habit = client.get('/habits/').json()[0]
+        completion = client.post(
+            self.ENDPOINT,
+            json={
+                'habit_id': habit['id'],
+                'name': habit['name'],
+                'category_id': habit['category_id'],
+                'complete_date': '2026-07-24T12:00:00Z',
+            },
+        ).json()
+
+        deleted = client.delete(f'/habits/{habit["id"]}/')
+        assert deleted.status_code in (status.HTTP_200_OK, status.HTTP_204_NO_CONTENT), show_status_and_response(deleted)
+
+        survivor = client.get(f'{self.ENDPOINT}{completion["id"]}/')
+        assert survivor.status_code == status.HTTP_200_OK, show_status_and_response(survivor)
+        assert survivor.json()['name'] == habit['name'], 'the denormalized name is what makes it survive'
+        assert survivor.json()['habit_id'] is None, 'the link clears, the record does not'
+
+
 class TestCompletedHabits:
     ENDPOINT = '/habits/completed/'
     # Completed habits sorted by date for first/last queries

@@ -378,3 +378,51 @@ func TestTruncateTitle_CollapsesScrapedWhitespace(t *testing.T) {
 		t.Errorf("truncateTitle = %q, want inner runs collapsed too", got)
 	}
 }
+
+func habitID(v int) *int { return &v }
+
+func TestSplitHabitsByCompletion_MatchesOnHabitIDWhenPresent(t *testing.T) {
+	// A rename no longer resurrects a habit already done today.
+	current := []api.Habit{{ID: 1, Name: "Stretch daily", CategoryID: 2}}
+	completed := []api.HabitCompleted{
+		{ID: 10, HabitID: habitID(1), Name: "Stretch", CategoryID: 2, CompleteDate: habitAt(8, 0)},
+	}
+
+	due, doneToday := splitHabitsByCompletion(current, completed, fixedNow)
+
+	if len(due) != 0 {
+		t.Errorf("due = %+v — the id matches even though the name changed", due)
+	}
+	if len(doneToday) != 1 {
+		t.Errorf("done today = %+v, want the completion reported", doneToday)
+	}
+}
+
+func TestSplitHabitsByCompletion_FallsBackToNameWithoutAnID(t *testing.T) {
+	// Completions predating habit_id have only a name to match on.
+	current := []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}, {ID: 2, Name: "Read", CategoryID: 2}}
+	completed := []api.HabitCompleted{
+		{ID: 10, Name: "Stretch", CategoryID: 2, CompleteDate: habitAt(8, 0)},
+	}
+
+	due, _ := splitHabitsByCompletion(current, completed, fixedNow)
+
+	if len(due) != 1 || due[0].Name != "Read" {
+		t.Errorf("due = %+v, want only Read — the legacy row still matches by name", due)
+	}
+}
+
+func TestSplitHabitsByCompletion_IDMatchDoesNotStrandADifferentHabit(t *testing.T) {
+	// An id-matched completion must not also silence a same-named habit in
+	// another category.
+	current := []api.Habit{{ID: 1, Name: "Read", CategoryID: 2}, {ID: 2, Name: "Read", CategoryID: 5}}
+	completed := []api.HabitCompleted{
+		{ID: 10, HabitID: habitID(1), Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)},
+	}
+
+	due, _ := splitHabitsByCompletion(current, completed, fixedNow)
+
+	if len(due) != 1 || due[0].ID != 2 {
+		t.Errorf("due = %+v, want the other category's Read still outstanding", due)
+	}
+}

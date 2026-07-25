@@ -241,7 +241,7 @@ func newHabitsCompleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "complete <habit-id>",
 		Short:   "Record a completion of a habit (now)",
-		Long:    "Mark a habit done as of now. Fetches the habit for its name and category,\nthen records a completion.",
+		Long:    "Mark a habit done as of now. Fetches the habit, then records a completion\ncarrying its id alongside the name and category it had at the time.",
 		Example: "  icb habits complete 5",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -258,6 +258,7 @@ func newHabitsCompleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			completed, err := client.CompleteHabit(cmd.Context(), api.HabitCompletedCreateInput{
+				HabitID:      &habit.ID,
 				Name:         habit.Name,
 				CategoryID:   habit.CategoryID,
 				CompleteDate: time.Now().Format(time.RFC3339),

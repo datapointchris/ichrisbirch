@@ -362,25 +362,32 @@ func localDayWindow(now time.Time) (string, string) {
 // splitHabitsByCompletion separates the current habits into those still due
 // today and today's completions.
 //
-// Completions carry no habit id, so they are matched on name and category. A
-// habit renamed after being completed today therefore reads as due again until
-// its next completion — an API shape limitation, not a bug to work around here.
+// A completion carrying habit_id is matched by it, so renaming a habit no longer
+// makes it read as due again. Completions predating that column — and those of a
+// since-deleted habit — still fall back to name + category, which is all they
+// have.
 func splitHabitsByCompletion(current []api.Habit, completed []api.HabitCompleted, now time.Time) ([]api.Habit, []api.HabitCompleted) {
 	var doneToday []api.HabitCompleted
-	done := make(map[string]bool)
+	doneByID := make(map[int]bool)
+	doneByName := make(map[string]bool)
 	for _, completion := range completed {
 		if !sameLocalDay(completion.CompleteDate, now) {
 			continue
 		}
 		doneToday = append(doneToday, completion)
-		done[habitKey(completion.Name, completion.CategoryID)] = true
+		if completion.HabitID != nil {
+			doneByID[*completion.HabitID] = true
+		} else {
+			doneByName[habitKey(completion.Name, completion.CategoryID)] = true
+		}
 	}
 
 	var due []api.Habit
 	for _, habit := range current {
-		if !done[habitKey(habit.Name, habit.CategoryID)] {
-			due = append(due, habit)
+		if doneByID[habit.ID] || doneByName[habitKey(habit.Name, habit.CategoryID)] {
+			continue
 		}
+		due = append(due, habit)
 	}
 	return due, doneToday
 }
