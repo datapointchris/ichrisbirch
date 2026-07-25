@@ -505,7 +505,6 @@ func printTaskSection(out io.Writer, section taskSection) {
 		fmt.Fprintf(tw, "  %d\t%s\t%s\n", task.Priority, truncateTitle(task.Name), task.Category)
 	}
 	_ = tw.Flush()
-	printMore(out, len(section.Items), section.Total)
 }
 
 func printHabitSection(out io.Writer, section habitSection) {
@@ -538,7 +537,6 @@ func printBookSection(out io.Writer, section bookSection) {
 		fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(book.Title), book.Author)
 	}
 	_ = tw.Flush()
-	printMore(out, len(section.NextUp), section.NextUpTotal)
 }
 
 func printArticleSection(out io.Writer, section articleSection) {
@@ -558,7 +556,6 @@ func printArticleSection(out io.Writer, section articleSection) {
 		fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(article.Title))
 	}
 	_ = tw.Flush()
-	printMore(out, len(section.Unread), section.UnreadTotal)
 }
 
 func printProjectItemSection(out io.Writer, section projectItemSection) {
@@ -581,7 +578,6 @@ func printProjectItemSection(out io.Writer, section projectItemSection) {
 		fmt.Fprintf(tw, "  blocked:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
 	}
 	_ = tw.Flush()
-	printMore(out, len(section.Next), section.NextTotal)
 }
 
 // printUpcomingSection interleaves countdowns and events chronologically. They
@@ -612,7 +608,6 @@ func printUpcomingSection(out io.Writer, countdowns countdownSection, events eve
 		fmt.Fprintf(tw, "  %s\t%s\t%s\n", entry.date, truncateTitle(entry.name), entry.kind)
 	}
 	_ = tw.Flush()
-	printMore(out, len(entries), len(entries))
 }
 
 // projectNames labels an item with the work it belongs to. An item can sit in
@@ -629,15 +624,6 @@ type upcomingEntry struct {
 	date string
 	name string
 	kind string
-}
-
-func printMore(out io.Writer, shown int, total int) {
-	if shown > printListCap {
-		shown = printListCap
-	}
-	if total > shown {
-		fmt.Fprintf(out, "  … and %d more\n", total-shown)
-	}
 }
 
 func truncateTitle(title string) string {
