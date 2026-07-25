@@ -105,13 +105,13 @@ The test environment uses a "clean start" strategy for reliability:
 
 ```bash
 # Run all tests (starts fresh containers each time)
-./cli/icbops test run
+./ops/icbops test run
 
 # Run specific tests
-./cli/icbops test run tests/ichrisbirch/api/endpoints/test_tasks.py
+./ops/icbops test run tests/ichrisbirch/api/endpoints/test_tasks.py
 
 # Run with verbose output
-./cli/icbops test run -v
+./ops/icbops test run -v
 
 ```
 
@@ -149,13 +149,13 @@ For extended debugging sessions, you can manage the environment manually:
 
 ```bash
 # Start containers manually (stays running)
-./cli/icbops testing start
+./ops/icbops testing start
 
 # Run pytest directly (uses existing containers)
 uv run pytest tests/ichrisbirch/api/endpoints/test_tasks.py::test_create -v
 
 # Stop when done
-./cli/icbops testing stop
+./ops/icbops testing stop
 ```
 
 ### Direct Docker Compose Commands

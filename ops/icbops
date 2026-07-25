@@ -49,7 +49,7 @@ get_active_color() {
 }
 
 # Script paths
-HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/cli/health-check.sh"
+HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/ops/health-check.sh"
 SSL_MANAGER_SCRIPT="$ICHRISBIRCH_HOME/deploy-containers/traefik/scripts/ssl-manager.sh"
 
 # Colors
@@ -71,10 +71,10 @@ orange=$(tput setaf 208)
 reset=$(tput sgr0)
 
 # Source command modules
-# shellcheck source=cli/stats
-source "$ICHRISBIRCH_HOME/cli/stats"
-# shellcheck source=cli/db
-source "$ICHRISBIRCH_HOME/cli/db"
+# shellcheck source=ops/stats
+source "$ICHRISBIRCH_HOME/ops/stats"
+# shellcheck source=ops/db
+source "$ICHRISBIRCH_HOME/ops/db"
 
 function dev-credentials() {
   local env_file="$ICHRISBIRCH_HOME/.env"
@@ -159,8 +159,8 @@ function colored-status() {
 function install() {
   local target="$HOME/.local/bin/icbops"
   mkdir -p "$(dirname "$target")"
-  ln -sf "$ICHRISBIRCH_HOME/cli/icbops" "$target"
-  echo "${green}Installed:${reset} $target -> $ICHRISBIRCH_HOME/cli/icbops"
+  ln -sf "$ICHRISBIRCH_HOME/ops/icbops" "$target"
+  echo "${green}Installed:${reset} $target -> $ICHRISBIRCH_HOME/ops/icbops"
 }
 
 function wait-for-healthy() {

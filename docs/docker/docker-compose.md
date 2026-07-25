@@ -157,13 +157,13 @@ volumes:
 - Running `npm install` on the host writes to a root-owned dir and usually fails with EACCES. Pre-create as your user (`mkdir frontend/node_modules`) before bringing up containers if you need host-side installs.
 - Nothing in `docker-compose.*.yml` can change this — it's Linux mount semantics.
 
-**Recovery for corrupted volumes:** Partial install state in the named volume (e.g., npm install interrupted mid-run) can cause persistent ENOTEMPTY errors. Use `./cli/icbops testing rebuild --all --volumes` (or `dev rebuild --all --volumes`) to wipe the named volume and start fresh. See [Docker troubleshooting](../troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for the full crash-loop recovery procedure.
+**Recovery for corrupted volumes:** Partial install state in the named volume (e.g., npm install interrupted mid-run) can cause persistent ENOTEMPTY errors. Use `./ops/icbops testing rebuild --all --volumes` (or `dev rebuild --all --volumes`) to wipe the named volume and start fresh. See [Docker troubleshooting](../troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for the full crash-loop recovery procedure.
 
 ### Usage
 
 ```bash
 # Via CLI (recommended)
-./cli/icbops dev start
+./ops/icbops dev start
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
@@ -208,15 +208,15 @@ postgres:
 
 ```bash
 # Recommended: Ephemeral test run (starts fresh, runs tests, stops)
-./cli/icbops test run
+./ops/icbops test run
 
 # Keep containers for debugging
-./cli/icbops test run --keep
+./ops/icbops test run --keep
 
 # Manual management (for extended debugging)
-./cli/icbops testing start
+./ops/icbops testing start
 uv run pytest
-./cli/icbops testing stop
+./ops/icbops testing stop
 
 # Direct Docker Compose
 docker compose -f docker-compose.yml -f docker-compose.test.yml \
@@ -353,20 +353,20 @@ engine = create_engine('postgresql://postgres:5432/ichrisbirch')
 
 ```bash
 # Development
-./cli/icbops dev start
+./ops/icbops dev start
 
 # Testing
-./cli/icbops testing start
+./ops/icbops testing start
 
 # Production
-./cli/icbops prod start
+./ops/icbops prod start
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-./cli/icbops dev logs
+./ops/icbops dev logs
 
 # Specific service
 docker compose logs -f api
@@ -379,7 +379,7 @@ docker compose logs -f --timestamps api
 
 ```bash
 # Rebuild and restart
-./cli/icbops dev rebuild
+./ops/icbops dev rebuild
 
 # Rebuild specific service
 docker compose build api
@@ -420,7 +420,7 @@ If ports are in use:
 lsof -i :8000
 
 # Use testing ports instead
-./cli/icbops testing start  # Uses 8001, 5001, etc.
+./ops/icbops testing start  # Uses 8001, 5001, etc.
 ```
 
 ### Database Connection Issues
@@ -452,8 +452,8 @@ docker network create proxy
 
 ## Best Practices
 
-1. **Use the CLI:** `./cli/icbops dev start` handles complexity
+1. **Use the CLI:** `./ops/icbops dev start` handles complexity
 2. **Don't mix environments:** Use testing ports when dev is running
-3. **Check health first:** `./cli/icbops dev health` before debugging
+3. **Check health first:** `./ops/icbops dev health` before debugging
 4. **Read logs:** Most issues are visible in container logs
 5. **Rebuild after Dockerfile changes:** Images don't auto-update

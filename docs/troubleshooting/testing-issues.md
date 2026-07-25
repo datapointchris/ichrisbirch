@@ -35,7 +35,7 @@ This silently suppressed cleanup errors, so failed cleanup operations went unnot
 
 **Resolution:** Implemented container reuse strategy with database reset:
 
-**Test run command** (`cli/icbops:208-259`):
+**Test run command** (`ops/icbops:208-259`):
 
 ```bash
 function test-run() {
@@ -91,7 +91,7 @@ function test-run() {
 
 ```bash
 # Stop and remove all test containers and volumes
-./cli/icbops testing stop
+./ops/icbops testing stop
 
 # Full Docker cleanup if issues persist
 docker compose -f docker-compose.yml -f docker-compose.test.yml \

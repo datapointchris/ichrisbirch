@@ -41,6 +41,8 @@ jobs:
               - 'ichrisbirch/**'
               - 'tests/**'
               - 'scripts/**'
+              - 'ops/**'
+              - 'stats/**'
               - 'secrets/**'
               - 'pyproject.toml'
               - 'uv.lock'
@@ -56,7 +58,7 @@ jobs:
               - 'deploy-containers/**'
               - '.github/workflows/**'
             cli:
-              - 'icb-cli/**'
+              - 'cli/**'
               - '.github/workflows/**'
 
   # ── Python ──────────────────────────────────────────────────────
@@ -386,7 +388,7 @@ jobs:
           docker compose -f docker-compose.yml down -v 2>/dev/null || true
 
   # ── icb resource CLI (Go) ───────────────────────────────────────
-  # Standalone gate for the icb-cli Go module. Intentionally NOT in any deploy
+  # Standalone gate for the cli/ Go module. Intentionally NOT in any deploy
   # or image job's `needs`: the CLI is a local binary, not a deployed container,
   # so a CLI failure must never block the app deploy.
   test-cli:
@@ -396,7 +398,7 @@ jobs:
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: icb-cli
+        working-directory: cli
 
     steps:
       - name: Checkout repo
@@ -405,8 +407,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: icb-cli/go.mod
-          cache-dependency-path: icb-cli/go.sum
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
 
       - name: Lint (go vet + gofmt)
         run: make lint

@@ -68,7 +68,7 @@ git clone https://github.com/datapointchris/ichrisbirch.git
 cd ichrisbirch
 
 # Install CLI
-sudo ln -sf /srv/ichrisbirch/cli/icbops /usr/local/bin/icb
+sudo ln -sf /srv/ichrisbirch/ops/icbops /usr/local/bin/icb
 
 # Set up AWS credentials
 mkdir -p ~/.aws

@@ -1,6 +1,6 @@
 """Data loading layer for stats CLI visualizations.
 
-Replaces all jq pipelines in cli/stats with Python equivalents.
+Replaces all jq pipelines in ops/stats with Python equivalents.
 Functions read events.jsonl line-by-line with early filtering,
 and load snapshot JSON files for the dashboard views.
 """

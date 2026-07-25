@@ -12,33 +12,33 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 
 ```bash
 # Development
-./cli/icbops dev start|stop|restart|rebuild|status|health|logs
-./cli/icbops dev rebuild --all          # Full rebuild including infra (traefik, postgres, redis)
-./cli/icbops dev rebuild --volumes      # Wipe named volumes and rebuild (stackable with --all)
+./ops/icbops dev start|stop|restart|rebuild|status|health|logs
+./ops/icbops dev rebuild --all          # Full rebuild including infra (traefik, postgres, redis)
+./ops/icbops dev rebuild --volumes      # Wipe named volumes and rebuild (stackable with --all)
 
 # Testing (reuses containers, cleans database each run)
-./cli/icbops test run              # All tests (auto-starts containers if needed)
-./cli/icbops test run <path> -v    # Specific test (auto-starts containers if needed)
-./cli/icbops testing start|stop|health|logs  # Container management
-./cli/icbops testing rebuild --volumes  # Step 2 of the code-change escalation ladder (see Must Follow)
-./cli/icbops testing rebuild --all      # Full rebuild including infra
+./ops/icbops test run              # All tests (auto-starts containers if needed)
+./ops/icbops test run <path> -v    # Specific test (auto-starts containers if needed)
+./ops/icbops testing start|stop|health|logs  # Container management
+./ops/icbops testing rebuild --volumes  # Step 2 of the code-change escalation ladder (see Must Follow)
+./ops/icbops testing rebuild --all      # Full rebuild including infra
 
 # Database lifecycle (dev + testing; production is rejected)
-./cli/icbops dev db init           # First-time: schemas + migrations + users
-./cli/icbops dev db reset          # Nuclear: drop + recreate everything
-./cli/icbops testing db init       # Same, for test environment
-./cli/icbops testing db reset      # Same, for test environment
+./ops/icbops dev db init           # First-time: schemas + migrations + users
+./ops/icbops dev db reset          # Nuclear: drop + recreate everything
+./ops/icbops testing db init       # Same, for test environment
+./ops/icbops testing db reset      # Same, for test environment
 
 # Vue frontend
 cd frontend && npm test                 # Build check + unit tests
 cd frontend && npm run test:e2e         # Playwright E2E through Traefik
 
 # Traefik routing (after adding a Vue page path)
-./cli/icbops routing generate
+./ops/icbops routing generate
 
 # Merged Docker Compose config (debug overrides)
-./cli/icbops dev docker config [service]
-./cli/icbops testing docker config [service]
+./ops/icbops dev docker config [service]
+./ops/icbops testing docker config [service]
 
 # Database
 alembic revision --autogenerate -m "description"
@@ -87,14 +87,14 @@ ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 | Chat | Streamlit | AI chat interface with OpenAI |
 | Scheduler | APScheduler | Daily jobs (task priorities, autotasks) |
 
-Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite), `cli/` (the `icbops` bash ops/deploy tool), `icb-cli/` (the `icb` Go resource CLI). See the filesystem for the full structure.
+Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite), `ops/` (the `icbops` bash ops/deploy tool and its helpers), `cli/` (the `icb` Go resource CLI). See the filesystem for the full structure.
 
 ### CLIs — `icbops` (ops) and `icb` (data)
 
 Two separate command-line tools with distinct concerns:
 
-- **`cli/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./cli/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
-- **`icb-cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It **replaced the retired MCP server** (2026-07-24) with full parity across the ~78-tool surface. Copied from nomad's `cli/` (own Go module `ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` uses Authelia edge-authorized bearer tokens in the OS keychain (targets the cookie-gated `ichrisbirch.com` host, audience `https://ichrisbirch.com`) — **not** the FastAPI JWT/PAK code. Build/install/auth details in `icb-cli/README.md`; design and phased plan in `.planning/icb-cli.md`.
+- **`ops/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./ops/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
+- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It **replaced the retired MCP server** (2026-07-24) with full parity across the ~78-tool surface. Copied from nomad's `cli/` (own Go module `ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` uses Authelia edge-authorized bearer tokens in the OS keychain (targets the cookie-gated `ichrisbirch.com` host, audience `https://ichrisbirch.com`) — **not** the FastAPI JWT/PAK code. Build/install/auth details in `cli/README.md`; design and phased plan in `.planning/icb-cli.md`. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
 ### Vue Frontend
 
@@ -152,9 +152,9 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 **If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
 
 ```bash
-./cli/icbops testing rebuild --all --volumes   # down --volumes + rebuild all + up
+./ops/icbops testing rebuild --all --volumes   # down --volumes + rebuild all + up
 # or for dev:
-./cli/icbops dev rebuild --all --volumes
+./ops/icbops dev rebuild --all --volumes
 ```
 
 Fallback when the CLI is wedged or docker itself has crashed (restart-looping vue container brought down the daemon):
@@ -166,7 +166,7 @@ docker volume rm icb-test-vue-node-modules 2>/dev/null
 docker ps -a --filter "name=icb-test" -q | xargs -r docker rm -f
 docker volume ls --filter "name=icb-test" -q | xargs -r docker volume rm
 docker network ls --filter "name=icb-test" -q | xargs -r docker network rm
-./cli/icbops testing start
+./ops/icbops testing start
 ```
 
 Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" state problems. If fresh containers from a clean wipe still fail, THEN investigate.
@@ -204,7 +204,7 @@ Multi-stage Dockerfile: `base` → `development-builder` → `development` | `te
 
 **Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider: `routing.yml` (git-tracked routers) + `services.yml` (generated, points to active color). Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
 
-Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is generated from `deploy-containers/traefik/vue-paths.txt` via `icbops routing generate`. CORS and security headers are separate middlewares per environment (`cors-*` and `security-headers-*`). Use `icbops {dev,testing,prod} docker config [service]` to see fully merged compose output. SSL certs managed via `./cli/icbops ssl-manager`.
+Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is generated from `deploy-containers/traefik/vue-paths.txt` via `icbops routing generate`. CORS and security headers are separate middlewares per environment (`cors-*` and `security-headers-*`). Use `icbops {dev,testing,prod} docker config [service]` to see fully merged compose output. SSL certs managed via `./ops/icbops ssl-manager`.
 
 ## Conventions
 
@@ -217,11 +217,11 @@ To read or write the **local dev** stack, hit the dev API directly (it injects `
 ### Must Follow
 
 - **Container code-change escalation ladder** (⚠️ MANDATORY): When edits aren't taking effect in running containers — new/renamed API routes, new dependencies, migrations, schema changes, Vue package.json changes, Python imports — follow THIS sequence in order. Do NOT skip steps. Do NOT substitute manual `docker` subcommands for these CLI steps:
-  1. **`./cli/icbops testing stop && ./cli/icbops testing start`** (~30s). Fixes most issues — accumulated DB state, FastAPI not having re-registered routes, stale module imports. Test containers are ephemeral and should be killed freely.
-  2. **`./cli/icbops testing rebuild --volumes`** (~60–90s). Use if step 1 didn't resolve it. Fixes stale `.venv` contents, dependency changes (pyproject.toml additions), anonymous-volume staleness, ENOTEMPTY errors, vue node_modules corruption.
+  1. **`./ops/icbops testing stop && ./ops/icbops testing start`** (~30s). Fixes most issues — accumulated DB state, FastAPI not having re-registered routes, stale module imports. Test containers are ephemeral and should be killed freely.
+  2. **`./ops/icbops testing rebuild --volumes`** (~60–90s). Use if step 1 didn't resolve it. Fixes stale `.venv` contents, dependency changes (pyproject.toml additions), anonymous-volume staleness, ENOTEMPTY errors, vue node_modules corruption.
   3. **ONLY NOW** reach for `docker logs`, `docker inspect`, `docker exec`, `docker restart`, or any manual docker subcommand. Fresh containers from step 2 still failing is a real bug; containers that haven't been through steps 1–2 aren't.
 
-  The same ladder applies to dev via `./cli/icbops dev stop && start` then `./cli/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow — an hour of "investigating" that a 90-second CLI escalation would have resolved. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
+  The same ladder applies to dev via `./ops/icbops dev stop && start` then `./ops/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow — an hour of "investigating" that a 90-second CLI escalation would have resolved. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
 - **Pre-commit hooks** run automatically: Ruff, mypy, codespell, bandit, ESLint, Prettier, TypeScript checking, and more. Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
 - **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
@@ -310,8 +310,8 @@ Follow the Articles/Tasks stats pattern. Every stats page uses the shared kit.
 **Vue**: consola with structured reporters matching structlog key=value format. JSON for Loki in production. Use `createLogger('ModuleName')`.
 
 ```bash
-./cli/icbops dev logs [service]     # Dev logs
-./cli/icbops testing logs [service] # Test logs
+./ops/icbops dev logs [service]     # Dev logs
+./ops/icbops testing logs [service] # Test logs
 ```
 
 ## Documentation

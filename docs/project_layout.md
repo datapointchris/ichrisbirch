@@ -42,8 +42,8 @@ ichrisbirch/
 │       └── scripts/          # Certificate management
 ├── docs/                     # MkDocs documentation
 ├── scripts/                  # Utility scripts (backup, restore)
-├── cli/                      # `icbops` bash ops/deploy tool (dev/test/docker/routing/ssl)
-├── icb-cli/                  # `icb` Go resource CLI — REST client, replaced the retired MCP
+├── ops/                      # `icbops` bash ops/deploy tool (dev/test/docker/routing/ssl)
+├── cli/                      # `icb` Go resource CLI — REST client, replaced the retired MCP
 ├── docker-compose.yml        # Production config
 ├── docker-compose.dev.yml    # Development overrides (incl. Vue + path routing)
 ├── docker-compose.test.yml   # Testing overrides

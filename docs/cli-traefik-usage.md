@@ -552,10 +552,10 @@ icbops ssl-manager generate dev    # Regenerate if needed
 
    ```bash
    # Make CLI executable
-   chmod +x ./cli/icbops
+   chmod +x ./ops/icbops
 
    # Use absolute path
-   ./cli/icbops dev start
+   ./ops/icbops dev start
    ```
 
 2. **Port conflicts**
@@ -614,7 +614,7 @@ icbops ssl-manager generate dev    # Regenerate if needed
    A corrupted named volume (usually `icb-test-vue-node-modules` from an interrupted `npm install`) causes the container to crash-loop forever. Use `--volumes` to wipe and rebuild:
 
    ```bash
-   ./cli/icbops testing rebuild --all --volumes
+   ./ops/icbops testing rebuild --all --volumes
    ```
 
    If the loop has already crashed `dockerd` itself (see `systemctl status docker` showing `inactive (dead)`):
@@ -624,7 +624,7 @@ icbops ssl-manager generate dev    # Regenerate if needed
    sudo systemctl start docker
    docker rm -f icb-test-vue 2>/dev/null       # kill the loop immediately
    docker volume rm icb-test-vue-node-modules 2>/dev/null
-   ./cli/icbops testing rebuild --all --volumes
+   ./ops/icbops testing rebuild --all --volumes
    ```
 
    See [Docker troubleshooting](troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd) for full recovery procedure.

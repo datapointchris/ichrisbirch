@@ -31,7 +31,7 @@ language; the two share no code.
   `api.ichrisbirch.com` bypass is kept — it is the Personal API Key access path,
   not MCP-specific (icb targets the cookie-gated `ichrisbirch.com` host instead).
 - **Phase 4 (done):** `Makefile` (build/install/test/lint/fmt) + a CI **Test CLI**
-  job gated on the `icb-cli/**` path filter (not in the deploy gate).
+  job gated on the `cli/**` path filter (not in the deploy gate).
 
 The homelab Authelia `icb-cli-<host>` public clients are deployed (audience
 `https://ichrisbirch.com`, loopback ports 8270-8272) and `icb auth login` works

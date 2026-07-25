@@ -1,7 +1,7 @@
 import json
 import re
 
-from cli import log_viewer
+from ops import log_viewer
 
 
 def test_parse_prefix_strips_icb_env_prefix():

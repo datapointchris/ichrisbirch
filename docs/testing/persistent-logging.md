@@ -12,16 +12,16 @@ The CLI provides persistent log viewing that automatically reconnects when conta
 
 ```bash
 # View all test service logs
-./cli/icbops testing logs
+./ops/icbops testing logs
 
 # View specific service logs
-./cli/icbops testing logs api
-./cli/icbops testing logs app
-./cli/icbops testing logs chat
-./cli/icbops testing logs scheduler
+./ops/icbops testing logs api
+./ops/icbops testing logs app
+./ops/icbops testing logs chat
+./ops/icbops testing logs scheduler
 ```
 
-The logs command uses a watch loop (`cli/icbops:316-324`) that:
+The logs command uses a watch loop (`ops/icbops:316-324`) that:
 
 - Follows logs in real-time
 - Automatically reconnects when containers restart
@@ -70,7 +70,7 @@ curl -v https://api.test.localhost:8443/tasks/
 # Response includes: X-Request-ID: abc12345
 
 # Search logs for that request
-./cli/icbops testing logs | grep abc12345
+./ops/icbops testing logs | grep abc12345
 ```
 
 ## Log Persistence
@@ -104,10 +104,10 @@ When using `test run`, containers stay running after tests complete. View logs i
 
 ```bash
 # Run tests
-./cli/icbops test run tests/ichrisbirch/api/test_tasks.py
+./ops/icbops test run tests/ichrisbirch/api/test_tasks.py
 
 # View logs after failure
-./cli/icbops testing logs api
+./ops/icbops testing logs api
 ```
 
 ### Correlating Test Failures with Logs
@@ -115,7 +115,7 @@ When using `test run`, containers stay running after tests complete. View logs i
 1. Run tests with verbose output to get timestamps:
 
    ```bash
-   ./cli/icbops test run -v
+   ./ops/icbops test run -v
    ```
 
 2. View logs around the failure time:
@@ -127,7 +127,7 @@ When using `test run`, containers stay running after tests complete. View logs i
 3. Search for error events:
 
    ```bash
-   ./cli/icbops testing logs | grep -i error
+   ./ops/icbops testing logs | grep -i error
    ```
 
 ## Configuration
@@ -150,7 +150,7 @@ services:
 Tests typically run with `LOG_LEVEL=DEBUG` to capture all diagnostic information. Override for less verbose output:
 
 ```bash
-LOG_LEVEL=INFO ./cli/icbops test run
+LOG_LEVEL=INFO ./ops/icbops test run
 ```
 
 ## Comparison with Development

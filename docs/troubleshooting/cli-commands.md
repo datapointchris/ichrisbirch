@@ -192,33 +192,33 @@ icbops dev health
 
 ```bash
 # Verify CLI is executable
-ls -la ./cli/icbops
+ls -la ./ops/icbops
 
 # Make executable if needed
-chmod +x ./cli/icbops
+chmod +x ./ops/icbops
 
 # Test basic functionality
-./cli/icbops help
+./ops/icbops help
 ```
 
 ### Verify Current CLI Version
 
 ```bash
 # Check CLI script for version information
-head -20 ./cli/icbops
+head -20 ./ops/icbops
 
 # Look for the function definitions to confirm simplified interface
-grep -n "function.*start\|function.*traefik" ./cli/icbops
+grep -n "function.*start\|function.*traefik" ./ops/icbops
 ```
 
 ### Debug Command Parsing
 
 ```bash
 # Enable bash debugging to see command parsing
-bash -x ./cli/icbops dev start
+bash -x ./ops/icbops dev start
 
 # Check if commands are being recognized
-./cli/icbops dev help
+./ops/icbops dev help
 ```
 
 ## 🚀 CLI Migration Guide

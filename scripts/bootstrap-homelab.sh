@@ -121,7 +121,7 @@ clone_repository() {
 
 install_cli() {
   log_info "Installing ichrisbirch CLI..."
-  ln -sf "$INSTALL_DIR/cli/icbops" /usr/local/bin/icbops
+  ln -sf "$INSTALL_DIR/ops/icbops" /usr/local/bin/icbops
   log_success "CLI installed: icbops"
 }
 
@@ -272,7 +272,7 @@ start_services() {
 
   if ! command -v icbops &>/dev/null; then
     log_error "CLI not in PATH, using direct path"
-    "$INSTALL_DIR/cli/icbops" prod start
+    "$INSTALL_DIR/ops/icbops" prod start
   else
     icbops prod start
   fi

@@ -352,5 +352,5 @@ Every deploy sends a Slack notification with:
 | `deploy-containers/traefik/dynamic/prod/routing.yml` | Traefik routers — rules, middleware, priorities (git-tracked) |
 | `deploy-containers/traefik/dynamic/prod/services.yml` | Traefik services — active color's container URLs (generated per deploy) |
 | `deploy-containers/traefik/dynamic/prod/middlewares.yml` | Traefik middleware definitions |
-| `cli/icbops` | CLI with blue/green-aware commands |
-| `cli/health-check.sh` | Health check script (reads active color from state file) |
+| `ops/icbops` | CLI with blue/green-aware commands |
+| `ops/health-check.sh` | Health check script (reads active color from state file) |
