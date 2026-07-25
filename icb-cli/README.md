@@ -84,8 +84,8 @@ Contract notes for consumers (`menu dashboard` in dotfiles is the first):
 
 - `schema_version` is the compatibility signal. Additive changes do not bump it;
   read fields defensively and it stays stable.
-- Every capped section reports its pre-cap `total`, so "… and N more" is truthful
-  without a second call.
+- Every capped section reports its pre-cap `total`, so a consumer knows the real
+  size of a pile without a second call.
 - `warnings` is always an array, each entry keyed by `section`, so one dead
   endpoint degrades one lane instead of the whole snapshot. A rejected session or
   a total failure is *not* a warning — it fails the command, because a partial

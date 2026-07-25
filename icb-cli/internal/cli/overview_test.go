@@ -369,3 +369,12 @@ func TestPrintOverview_SeparatesBooksFromArticles(t *testing.T) {
 		}
 	}
 }
+
+func TestTruncateTitle_CollapsesScrapedWhitespace(t *testing.T) {
+	if got := truncateTitle("\n\tRAG on structured data with PostgreSQL\n"); got != "RAG on structured data with PostgreSQL" {
+		t.Errorf("truncateTitle = %q — a wrapped title breaks tabwriter alignment", got)
+	}
+	if got := truncateTitle("  spaced   out  "); got != "spaced out" {
+		t.Errorf("truncateTitle = %q, want inner runs collapsed too", got)
+	}
+}

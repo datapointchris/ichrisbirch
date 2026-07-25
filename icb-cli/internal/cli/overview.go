@@ -626,8 +626,12 @@ type upcomingEntry struct {
 	kind string
 }
 
+// truncateTitle fits a title into the column, collapsing it onto one line first:
+// scraped article titles carry the source page's newlines and tabs, which would
+// otherwise break the tabwriter's alignment and defeat the width limit.
 func truncateTitle(title string) string {
 	const titleWidth = 60
+	title = strings.Join(strings.Fields(title), " ")
 	runes := []rune(title)
 	if len(runes) <= titleWidth {
 		return title
