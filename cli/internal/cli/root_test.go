@@ -67,22 +67,23 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 		{"projects create without --name is usage error", []string{"projects", "create"}, 2},
 		{"projects edit with no fields is usage error", []string{"projects", "edit", "018f"}, 2},
 		{"projects delete without an id is usage error", []string{"projects", "delete"}, 2},
-		{"projects items without an id is usage error", []string{"projects", "items"}, 2},
-		{"bare items shows help (success)", []string{"items"}, 0},
-		{"unknown items subcommand is usage error", []string{"items", "nope"}, 2},
-		{"items view without an id is usage error", []string{"items", "view"}, 2},
-		{"items search without a query is usage error", []string{"items", "search"}, 2},
-		{"items create without --title is usage error", []string{"items", "create", "--project", "p1"}, 2},
-		{"items create without --project is usage error", []string{"items", "create", "--title", "x"}, 2},
-		{"items edit with no fields is usage error", []string{"items", "edit", "018f"}, 2},
-		{"items complete without an id is usage error", []string{"items", "complete"}, 2},
-		{"items reorder without --project is usage error", []string{"items", "reorder", "018f", "--position", "1"}, 2},
-		{"items add-project without --project is usage error", []string{"items", "add-project", "018f"}, 2},
-		{"items add-dependency without --depends-on is usage error", []string{"items", "add-dependency", "018f"}, 2},
-		{"items add-task without --title is usage error", []string{"items", "add-task", "018f"}, 2},
-		{"items complete-task needs two ids", []string{"items", "complete-task", "018f"}, 2},
-		{"items edit-task with no fields is usage error", []string{"items", "edit-task", "018f", "018g"}, 2},
-		{"items remove-task needs two ids", []string{"items", "remove-task", "018f"}, 2},
+		{"bare projects items shows help (success)", []string{"projects", "items"}, 0},
+		{"items is no longer a root command", []string{"items"}, 2},
+		{"unknown projects items subcommand is usage error", []string{"projects", "items", "nope"}, 2},
+		{"projects items list --archived without --project is usage error", []string{"projects", "items", "list", "--archived"}, 2},
+		{"projects items view without an id is usage error", []string{"projects", "items", "view"}, 2},
+		{"projects items search without a query is usage error", []string{"projects", "items", "search"}, 2},
+		{"projects items create without --title is usage error", []string{"projects", "items", "create", "--project", "p1"}, 2},
+		{"projects items create without --project is usage error", []string{"projects", "items", "create", "--title", "x"}, 2},
+		{"projects items edit with no fields is usage error", []string{"projects", "items", "edit", "018f"}, 2},
+		{"projects items complete without an id is usage error", []string{"projects", "items", "complete"}, 2},
+		{"projects items reorder without --project is usage error", []string{"projects", "items", "reorder", "018f", "--position", "1"}, 2},
+		{"projects items add-project without --project is usage error", []string{"projects", "items", "add-project", "018f"}, 2},
+		{"projects items add-dependency without --depends-on is usage error", []string{"projects", "items", "add-dependency", "018f"}, 2},
+		{"projects items add-task without --title is usage error", []string{"projects", "items", "add-task", "018f"}, 2},
+		{"projects items complete-task needs two ids", []string{"projects", "items", "complete-task", "018f"}, 2},
+		{"projects items edit-task with no fields is usage error", []string{"projects", "items", "edit-task", "018f", "018g"}, 2},
+		{"projects items remove-task needs two ids", []string{"projects", "items", "remove-task", "018f"}, 2},
 		{"bare tasks shows help (success)", []string{"tasks"}, 0},
 		{"unknown tasks subcommand is usage error", []string{"tasks", "nope"}, 2},
 		{"tasks view without an id is usage error", []string{"tasks", "view"}, 2},
@@ -137,10 +138,14 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 
 func TestRootCommand_WiresResourceGroups(t *testing.T) {
 	root := NewRootCommand()
-	for _, name := range []string{"auth", "projects", "items", "tasks", "countdowns", "events", "habits", "books", "articles"} {
+	for _, name := range []string{"auth", "projects", "tasks", "countdowns", "events", "habits", "books", "articles"} {
 		cmd, _, err := root.Find([]string{name})
 		if err != nil || cmd.Name() != name {
 			t.Errorf("expected %q command wired into root, got %v (err %v)", name, cmd, err)
 		}
+	}
+	cmd, _, err := root.Find([]string{"projects", "items"})
+	if err != nil || cmd.Name() != "items" {
+		t.Errorf("expected items wired under projects, got %v (err %v)", cmd, err)
 	}
 }

@@ -82,7 +82,6 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newAuthCommand())
 	root.AddCommand(newOverviewCommand())
 	root.AddCommand(newProjectsCommand())
-	root.AddCommand(newItemsCommand())
 	root.AddCommand(newTasksCommand())
 	root.AddCommand(newAutotasksCommand())
 	root.AddCommand(newCountdownsCommand())

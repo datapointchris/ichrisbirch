@@ -17,8 +17,8 @@ func newProjectsCommand() *cobra.Command {
 		Use:   "projects",
 		Short: "List, inspect, and manage your projects",
 		Long: "Work with the structured projects stored in the ichrisbirch API as\n" +
-			"yourself. Projects hold ordered work items (see `icb items`). Requires a\n" +
-			"logged-in session (`icb auth login`).",
+			"yourself. Projects hold ordered work items (see `icb projects items`).\n" +
+			"Requires a logged-in session (`icb auth login`).",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(
@@ -27,7 +27,7 @@ func newProjectsCommand() *cobra.Command {
 		newProjectsCreateCommand(),
 		newProjectsEditCommand(),
 		newProjectsDeleteCommand(),
-		newProjectsItemsCommand(),
+		newItemsCommand(),
 	)
 	return cmd
 }
@@ -234,37 +234,6 @@ func newProjectsDeleteCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Skip the confirmation prompt")
-	return cmd
-}
-
-func newProjectsItemsCommand() *cobra.Command {
-	var (
-		asJSON   bool
-		archived bool
-	)
-	cmd := &cobra.Command{
-		Use:     "items <project-id>",
-		Short:   "List a project's items in order",
-		Example: "  icb projects items 018f...\n  icb projects items 018f... --archived --json",
-		Args:    usageArgs(cobra.ExactArgs(1)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := newAPIClient(cmd.Context())
-			if err != nil {
-				return handleAPIError(err)
-			}
-			items, err := client.ListProjectItems(cmd.Context(), args[0], archived)
-			if err != nil {
-				return handleAPIError(err)
-			}
-			if asJSON {
-				return encodeJSON(cmd.OutOrStdout(), items)
-			}
-			printProjectItemsTable(cmd.OutOrStdout(), items)
-			return nil
-		},
-	}
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
-	cmd.Flags().BoolVar(&archived, "archived", false, "Include archived items")
 	return cmd
 }
 
