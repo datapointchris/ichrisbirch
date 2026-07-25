@@ -60,6 +60,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -68,7 +72,25 @@ jobs:
       - name: Generate checksums
         run: cd dist && sha256sum ./*.tar.gz > checksums.txt
 
+      # Not `generate_release_notes` — that lists merged PRs since the last
+      # published release, and trunk-based development means there are none to
+      # list (cli/v0.1.0 surfaced a stale 2023 PR as its entire changelog).
+      - name: Build release notes
+        run: |
+          previous=$(git tag --list 'cli/v*' --sort=-version:refname | sed -n '2p')
+          range="${previous:+${previous}..}${GITHUB_REF_NAME}"
+          {
+            echo '## Changes'
+            echo
+            git log --no-merges --pretty='- %s (%h)' "$range" -- cli
+            if [ -n "$previous" ]; then
+              echo
+              echo "**Full changelog**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${previous}...${GITHUB_REF_NAME}"
+            fi
+          } > release-notes.md
+          cat release-notes.md
+
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          generate_release_notes: true
+          body_path: release-notes.md
