@@ -77,6 +77,17 @@ class ProjectItem(Base):
 
     __table_args__ = (Index('idx_pi_active', 'archived', postgresql_where=(archived == False)),)  # noqa: E712
 
+    @property
+    def dependency_ids(self) -> list[UUID]:
+        """Flatten the dependency edges to the ids consumers actually want.
+
+        Exists so the read schemas can pick this up through `from_attributes`
+        instead of every endpoint hand-building the list. Eager-load
+        `dependencies` wherever this is serialized in bulk or it lazy-loads
+        once per item.
+        """
+        return [dependency.depends_on_id for dependency in self.dependencies]
+
     def __repr__(self):
         return f'ProjectItem(id={self.id!r}, title={self.title!r}, completed={self.completed!r})'
 

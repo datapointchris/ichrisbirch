@@ -22,6 +22,16 @@ from ichrisbirch.models.project import ProjectItemMembership
 logger = structlog.get_logger()
 router = APIRouter()
 
+# schemas.ProjectItem embeds memberships, dependency ids, and tasks, so every
+# endpoint returning it must load all three up front or serialization lazy-loads
+# three times per item — the N+1 this embedding exists to remove, moved from HTTP
+# into SQL. Applied as one name so a new list endpoint cannot pick a subset.
+PROJECT_ITEM_LOAD_OPTIONS = (
+    selectinload(models.ProjectItem.projects),
+    selectinload(models.ProjectItem.dependencies),
+    selectinload(models.ProjectItem.tasks),
+)
+
 
 def _get_item_or_404(session: Session, item_id: UUID) -> models.ProjectItem:
     item = session.get(models.ProjectItem, item_id)
@@ -61,7 +71,7 @@ async def read_many(session: DbSession):
     """List all active (non-archived) project items."""
     query = (
         select(models.ProjectItem)
-        .options(selectinload(models.ProjectItem.projects))
+        .options(*PROJECT_ITEM_LOAD_OPTIONS)
         .where(models.ProjectItem.archived == False)  # noqa: E712
         .order_by(models.ProjectItem.created_at.desc())
     )
@@ -73,7 +83,7 @@ async def list_blocked(session: DbSession):
     """List items that have at least one incomplete dependency."""
     query = (
         select(models.ProjectItem)
-        .options(selectinload(models.ProjectItem.projects))
+        .options(*PROJECT_ITEM_LOAD_OPTIONS)
         .where(
             models.ProjectItem.id.in_(
                 select(ProjectItemDependency.item_id)
@@ -92,7 +102,7 @@ async def search(q: str, session: DbSession):
     logger.debug('project_item_search', query=q)
     query = (
         select(models.ProjectItem)
-        .options(selectinload(models.ProjectItem.projects))
+        .options(*PROJECT_ITEM_LOAD_OPTIONS)
         .where(models.ProjectItem.title.ilike(f'%{q}%') | models.ProjectItem.notes.ilike(f'%{q}%'))
         .order_by(models.ProjectItem.created_at.desc())
     )
@@ -379,7 +389,7 @@ async def get_blockers(id: UUID, session: DbSession):
 
     query = (
         select(models.ProjectItem)
-        .options(selectinload(models.ProjectItem.projects))
+        .options(*PROJECT_ITEM_LOAD_OPTIONS)
         .join(ProjectItemDependency, models.ProjectItem.id == ProjectItemDependency.depends_on_id)
         .where(ProjectItemDependency.item_id == id)
         .where(models.ProjectItem.completed == False)  # noqa: E712

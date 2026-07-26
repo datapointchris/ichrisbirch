@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 
 from ichrisbirch.schemas.project import Project
+from ichrisbirch.schemas.project_item_task import ProjectItemTask
 
 
 class ProjectItemConfig(BaseModel):
@@ -27,6 +28,12 @@ class ProjectItem(ProjectItemConfig):
     An item title on its own ("Glove 80") names a thing without saying what work
     it is part of, so every list response carries its membership rather than
     making each consumer fetch it per item.
+
+    Dependencies and sub-tasks ride along for the same reason, and because the
+    alternative is quadratic: a client reconciling the whole list had to issue
+    two requests per item to collect them, which was 122 serial round trips and
+    six seconds for todoui at 60 items. Eager-load `dependencies` and `tasks` in
+    any endpoint that returns a list of these.
     """
 
     id: UUID
@@ -38,6 +45,8 @@ class ProjectItem(ProjectItemConfig):
     created_at: datetime
     updated_at: datetime
     projects: list[Project] = []
+    dependency_ids: list[UUID] = []
+    tasks: list[ProjectItemTask] = []
 
 
 class ProjectItemUpdate(ProjectItemConfig):

@@ -1,5 +1,7 @@
 import pytest
 from fastapi import status
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 from ichrisbirch import schemas
 from tests.util import show_status_and_response
@@ -284,3 +286,103 @@ class TestProjectItemCompletionGuard:
         response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/', json={'completed': True})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['completed'] is True
+
+
+class TestProjectItemListEmbedsDetail:
+    """GET /project-items/ — one request carries everything a sync needs.
+
+    A client reconciling the whole list previously issued two follow-up requests
+    per item to collect dependencies and tasks. At 60 items that was 122 serial
+    round trips and six seconds, so the list response embeds them instead.
+    """
+
+    @pytest.fixture
+    def item_with_dependency_and_task(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        project_id = client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+        blocker = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Blocker', 'project_ids': [project_id]})
+        blocked = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Blocked', 'project_ids': [project_id]})
+        assert blocker.status_code == status.HTTP_201_CREATED, show_status_and_response(blocker)
+        assert blocked.status_code == status.HTTP_201_CREATED, show_status_and_response(blocked)
+        blocker_id = blocker.json()['id']
+        blocked_id = blocked.json()['id']
+
+        dependency = client.post(
+            f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/dependencies/',
+            json={'depends_on_id': blocker_id},
+        )
+        assert dependency.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED), show_status_and_response(dependency)
+
+        task = client.post(f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/tasks/', json={'title': 'Embedded task'})
+        assert task.status_code == status.HTTP_201_CREATED, show_status_and_response(task)
+
+        return client, blocker_id, blocked_id
+
+    def test_list_embeds_dependency_ids(self, item_with_dependency_and_task):
+        client, blocker_id, blocked_id = item_with_dependency_and_task
+
+        listed = client.get(PROJECT_ITEMS_ENDPOINT)
+        assert listed.status_code == status.HTTP_200_OK, show_status_and_response(listed)
+        by_id = {item['id']: item for item in listed.json()}
+
+        assert by_id[blocked_id]['dependency_ids'] == [blocker_id]
+        # Present and empty, never absent — a client tells "no dependencies"
+        # from "this server predates the field" by whether the key exists.
+        assert by_id[blocker_id]['dependency_ids'] == []
+
+    def test_list_embeds_tasks(self, item_with_dependency_and_task):
+        client, blocker_id, blocked_id = item_with_dependency_and_task
+
+        by_id = {item['id']: item for item in client.get(PROJECT_ITEMS_ENDPOINT).json()}
+
+        assert [task['title'] for task in by_id[blocked_id]['tasks']] == ['Embedded task']
+        assert by_id[blocker_id]['tasks'] == []
+
+    def test_list_matches_the_detail_endpoint(self, item_with_dependency_and_task):
+        """The embedded values must agree with the per-item endpoint they replace."""
+        client, _, blocked_id = item_with_dependency_and_task
+
+        listed = {item['id']: item for item in client.get(PROJECT_ITEMS_ENDPOINT).json()}[blocked_id]
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/').json()
+
+        assert listed['dependency_ids'] == detail['dependency_ids']
+        assert [p['id'] for p in listed['projects']] == [p['id'] for p in detail['projects']]
+
+    def test_list_query_count_does_not_grow_with_item_count(self, item_with_dependency_and_task):
+        """Guards the reason this exists: embedding must not move the N+1 into SQL.
+
+        Asserts flatness rather than a threshold. The absolute count depends on
+        auth and fixture queries, but a missing selectinload is what makes the
+        count scale with the number of items — measuring the same request at two
+        different item counts isolates exactly that.
+        """
+        client, _, _ = item_with_dependency_and_task
+
+        def selects_issued_listing_items() -> int:
+            statements: list[str] = []
+
+            def record(conn, cursor, statement, parameters, context, executemany):
+                statements.append(statement)
+
+            # Listening on the Engine class rather than an instance catches
+            # whichever engine the transactional fixture bound the session to.
+            event.listen(Engine, 'before_cursor_execute', record)
+            try:
+                response = client.get(PROJECT_ITEMS_ENDPOINT)
+                assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+            finally:
+                event.remove(Engine, 'before_cursor_execute', record)
+            return len([s for s in statements if s.lstrip().upper().startswith('SELECT')])
+
+        baseline = selects_issued_listing_items()
+
+        project_id = client.get(PROJECTS_ENDPOINT).json()[0]['id']
+        for n in range(8):
+            created = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': f'Extra {n}', 'project_ids': [project_id]})
+            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+            client.post(f'{PROJECT_ITEMS_ENDPOINT}{created.json()["id"]}/tasks/', json={'title': f'task {n}'})
+
+        grown = selects_issued_listing_items()
+        assert grown == baseline, f'{baseline} SELECTs became {grown} after adding 8 items — eager loading is not applied'
