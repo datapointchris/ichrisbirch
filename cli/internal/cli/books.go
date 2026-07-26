@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 // bookFlagVars holds the flag targets shared by `books create` and `books edit`.

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"ichrisbirch/cli/internal/cli"
+	"github.com/datapointchris/ichrisbirch/cli/internal/cli"
 )
 
 func main() {

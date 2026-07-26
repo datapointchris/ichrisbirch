@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
-	"ichrisbirch/cli/internal/auth"
-	"ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/ichrisbirch/cli/internal/auth"
+	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
 // loginTimeout bounds how long the CLI waits for the browser round-trip before

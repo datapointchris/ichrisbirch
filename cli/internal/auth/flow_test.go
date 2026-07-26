@@ -14,7 +14,7 @@ import (
 	"sync"
 	"testing"
 
-	"ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
 // mockIDP is a minimal Authelia stand-in implementing the native bearer.authz

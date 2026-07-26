@@ -24,13 +24,13 @@ tasks:
     desc: Build the icb CLI to bin/icb
     dir: cli
     cmds:
-      - go build -ldflags "-s -w -X ichrisbirch/cli/internal/cli.version={{.VERSION}}" -o ../bin/icb .
+      - go build -ldflags "-s -w -X github.com/datapointchris/ichrisbirch/cli/internal/cli.version={{.VERSION}}" -o ../bin/icb .
 
   cli:install:
     desc: Install the icb CLI to ~/.local/bin (over the released binary)
     dir: cli
     cmds:
-      - go build -ldflags "-s -w -X ichrisbirch/cli/internal/cli.version={{.VERSION}}" -o {{.INSTALL_DIR}}/icb .
+      - go build -ldflags "-s -w -X github.com/datapointchris/ichrisbirch/cli/internal/cli.version={{.VERSION}}" -o {{.INSTALL_DIR}}/icb .
       - 'echo "installed icb {{.VERSION}} -> {{.INSTALL_DIR}}/icb"'
 
   cli:test:

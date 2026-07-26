@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 func newRecipesCommand() *cobra.Command {

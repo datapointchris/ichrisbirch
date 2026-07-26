@@ -149,3 +149,18 @@ func TestRootCommand_WiresResourceGroups(t *testing.T) {
 		t.Errorf("expected items wired under projects, got %v (err %v)", cmd, err)
 	}
 }
+
+// The update command has to carry a tag prefix. Without one it asks GitHub for
+// the repository-wide latest release, which is the application's, not this
+// binary's — and that fails as "not a semantic version" rather than visibly.
+func TestRootCommand_WiresUpdate(t *testing.T) {
+	root := NewRootCommand()
+
+	cmd, _, err := root.Find([]string{"update"})
+	if err != nil || cmd.Name() != "update" {
+		t.Fatalf("update not wired into root: %v (err %v)", cmd, err)
+	}
+	if cmd.Flags().Lookup("check") == nil {
+		t.Error("update should carry --check for reporting without installing")
+	}
+}

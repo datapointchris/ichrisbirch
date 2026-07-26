@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"ichrisbirch/cli/internal/api"
-	"ichrisbirch/cli/internal/auth"
-	"ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/auth"
+	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
 // errNeedsLogin is returned by newAPIClient when there is no stored token. The

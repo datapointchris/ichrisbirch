@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
 // providerMetadata is the subset of the OIDC discovery document the CLI needs.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/datapointchris/goselfupdate/cobracmd"
 	"github.com/spf13/cobra"
 )
 
@@ -80,6 +81,7 @@ func NewRootCommand() *cobra.Command {
 	}
 
 	root.AddCommand(newAuthCommand())
+	root.AddCommand(newUpdateCommand())
 	root.AddCommand(newOverviewCommand())
 	root.AddCommand(newProjectsCommand())
 	root.AddCommand(newTasksCommand())
@@ -103,8 +105,10 @@ func Execute() int {
 	// An exitCode carries its own code and an empty message, so it is not printed
 	// as an "error:" line — it reports a valid non-success state (e.g. "not logged
 	// in") rather than a failure.
+	// `update` writes its own ✓/✗ line, so printing here would report the same
+	// failure twice.
 	var ec exitCode
-	if err != nil && !errors.As(err, &ec) {
+	if err != nil && !errors.As(err, &ec) && !errors.Is(err, cobracmd.ErrReported) {
 		fmt.Fprintln(os.Stderr, "error:", err)
 	}
 	return exitCodeFor(err)
