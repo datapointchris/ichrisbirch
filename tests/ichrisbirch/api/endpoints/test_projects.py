@@ -386,3 +386,96 @@ class TestProjectItemListEmbedsDetail:
 
         grown = selects_issued_listing_items()
         assert grown == baseline, f'{baseline} SELECTs became {grown} after adding 8 items — eager loading is not applied'
+
+
+class TestProjectItemReorder:
+    """PATCH /project-items/{id}/reorder/ — moving an item shifts its siblings.
+
+    `position` carries no unique constraint, so a bare assignment left two items
+    claiming the same slot and the list order fell back to whatever the database
+    returned. Every move dense-ranks the project to 0..N-1.
+    """
+
+    @pytest.fixture
+    def project_with_ordered_items(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        project_id = client.get(PROJECTS_ENDPOINT).json()[0]['id']
+        for title in ('First', 'Second', 'Third', 'Fourth'):
+            created = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [project_id]})
+            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        return client, project_id
+
+    def titles_in_order(self, client, project_id):
+        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return [row['title'] for row in response.json()]
+
+    def positions_in_order(self, client, project_id):
+        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/')
+        return [row['position'] for row in response.json()]
+
+    def item_id_by_title(self, client, project_id, title):
+        rows = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/').json()
+        return next(row['id'] for row in rows if row['title'] == title)
+
+    def test_moving_to_the_front_shifts_everything_else_back(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        before = self.titles_in_order(client, project_id)
+        target = self.item_id_by_title(client, project_id, before[-1])
+
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert self.titles_in_order(client, project_id) == [before[-1], *before[:-1]]
+
+    def test_positions_stay_dense_and_unique_after_a_move(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        target = self.item_id_by_title(client, project_id, self.titles_in_order(client, project_id)[2])
+
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+
+        positions = self.positions_in_order(client, project_id)
+        assert positions == list(range(len(positions))), f'expected a dense 0..N-1 sequence, got {positions}'
+
+    def test_repeated_moves_to_the_front_do_not_collide(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        # The reported bug: three moves to position 0 left three items at 0.
+        for title in ('Second', 'Third', 'Fourth'):
+            target = self.item_id_by_title(client, project_id, title)
+            client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+
+        positions = self.positions_in_order(client, project_id)
+        assert len(set(positions)) == len(positions), f'positions collided: {positions}'
+        assert self.titles_in_order(client, project_id) == ['Fourth', 'Third', 'Second', 'First']
+
+    def test_moving_within_the_middle_reorders_without_gaps(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        target = self.item_id_by_title(client, project_id, 'First')
+
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 2})
+
+        assert self.titles_in_order(client, project_id) == ['Second', 'Third', 'First', 'Fourth']
+        assert self.positions_in_order(client, project_id) == [0, 1, 2, 3]
+
+    def test_position_past_the_end_clamps_to_last(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        target = self.item_id_by_title(client, project_id, 'First')
+
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 99})
+
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert self.titles_in_order(client, project_id) == ['Second', 'Third', 'Fourth', 'First']
+        assert self.positions_in_order(client, project_id) == [0, 1, 2, 3]
+
+    def test_reordering_one_project_leaves_another_untouched(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        other = client.post(PROJECTS_ENDPOINT, json={'name': 'Untouched Project'}).json()
+        for title in ('Alpha', 'Beta'):
+            client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [other['id']]})
+
+        target = self.item_id_by_title(client, project_id, 'Fourth')
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+
+        assert self.titles_in_order(client, other['id']) == ['Alpha', 'Beta']
+        assert self.positions_in_order(client, other['id']) == [0, 1]

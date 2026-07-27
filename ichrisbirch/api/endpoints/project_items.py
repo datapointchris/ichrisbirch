@@ -18,6 +18,7 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.services.project_item_positions import move_membership_to_position
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -250,9 +251,10 @@ async def reorder(id: UUID, reorder: schemas.ProjectItemReorder, session: DbSess
             detail=f'Item {id} is not in project {reorder.project_id}',
         )
 
-    membership.position = reorder.position
+    move_membership_to_position(session, reorder.project_id, id, reorder.position)
     session.commit()
     session.refresh(item)
+    session.refresh(membership)
 
     return schemas.ProjectItemInProject(
         id=item.id,

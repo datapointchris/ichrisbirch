@@ -143,7 +143,9 @@ async def list_items(
     if not archived:
         query = query.where(models.ProjectItem.archived == False)  # noqa: E712
 
-    query = query.order_by(ProjectItemMembership.position.asc())
+    # position has no unique constraint, so a collision would otherwise order by
+    # whatever the database returned
+    query = query.order_by(ProjectItemMembership.position.asc(), models.ProjectItem.created_at.asc())
 
     return [
         schemas.ProjectItemInProject(
