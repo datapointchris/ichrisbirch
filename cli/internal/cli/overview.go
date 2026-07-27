@@ -403,9 +403,17 @@ func sameLocalDay(moment time.Time, now time.Time) bool {
 }
 
 // nextProjectItems returns the actionable items — not completed, not archived,
-// not blocked — oldest first. There is no cross-project priority in the API
-// (project positions are unset and per-item positions would cost one call per
-// project), so longest-outstanding is the ordering that at least means something.
+// not blocked — interleaved a project at a time so no single project can fill
+// the overview cap.
+//
+// Ordering the whole set by age let the oldest project take every slot: five
+// Home Building items and three Sell Unused Shite items held eight of the ten
+// rows while an active rollout had nothing on the board at all. Age is still how
+// a project picks which item represents it; it just no longer decides how many
+// slots that project gets.
+//
+// Per-item positions within a project would still cost one call per project, so
+// they remain deliberately unconsulted.
 func nextProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.ProjectItem {
 	isBlocked := make(map[string]bool, len(blocked))
 	for _, item := range blocked {
@@ -420,7 +428,67 @@ func nextProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.Pr
 		next = append(next, item)
 	}
 	sort.SliceStable(next, func(a, b int) bool { return next[a].CreatedAt.Before(next[b].CreatedAt) })
-	return next
+	return interleaveByProject(next)
+}
+
+// interleaveByProject takes one item from each project in turn, so a project
+// with twenty queued items and one with a single item are equally represented in
+// the first round. Items arrive in the order they should be drawn within their
+// own project and keep it.
+func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
+	queues := make(map[string][]api.ProjectItem)
+	var order []api.Project
+	longest := 0
+
+	for _, item := range items {
+		project := primaryProject(item)
+		if _, seen := queues[project.ID]; !seen {
+			order = append(order, project)
+		}
+		queues[project.ID] = append(queues[project.ID], item)
+		if queued := len(queues[project.ID]); queued > longest {
+			longest = queued
+		}
+	}
+	sort.SliceStable(order, func(a, b int) bool { return outranks(order[a], order[b]) })
+
+	interleaved := make([]api.ProjectItem, 0, len(items))
+	for round := range longest {
+		for _, project := range order {
+			if queue := queues[project.ID]; round < len(queue) {
+				interleaved = append(interleaved, queue[round])
+			}
+		}
+	}
+	return interleaved
+}
+
+// primaryProject is the project an item is drawn under. An item can belong to
+// several, so it competes in the round of the highest-priority one rather than
+// once per membership — otherwise multi-project items get a slot per project.
+// Items belonging to no project share the zero value, which keeps them in one
+// queue instead of making each its own round.
+func primaryProject(item api.ProjectItem) api.Project {
+	var primary api.Project
+	for i, project := range item.Projects {
+		if i == 0 || outranks(project, primary) {
+			primary = project
+		}
+	}
+	return primary
+}
+
+// outranks orders projects by the position the API already exposes. Positions
+// are largely unset, so creation time then id break the tie — arbitrary, but
+// stable, which is what keeps the board from reshuffling between refreshes.
+func outranks(a api.Project, b api.Project) bool {
+	if a.Position != b.Position {
+		return a.Position < b.Position
+	}
+	if !a.CreatedAt.Equal(b.CreatedAt) {
+		return a.CreatedAt.Before(b.CreatedAt)
+	}
+	return a.ID < b.ID
 }
 
 // articlesBehindCurrent is the unread queue with the one being read removed, so

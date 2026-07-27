@@ -183,6 +183,59 @@ func TestNextProjectItems_ExcludesAndOrders(t *testing.T) {
 	}
 }
 
+func TestNextProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
+	hoard := api.Project{ID: "hoard", Name: "Sell Unused Shite", CreatedAt: fixedNow.AddDate(0, 0, -100)}
+	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", CreatedAt: fixedNow.AddDate(0, 0, -1)}
+
+	all := []api.ProjectItem{
+		{ID: "sell-1", CreatedAt: fixedNow.AddDate(0, 0, -90), Projects: []api.Project{hoard}},
+		{ID: "sell-2", CreatedAt: fixedNow.AddDate(0, 0, -89), Projects: []api.Project{hoard}},
+		{ID: "sell-3", CreatedAt: fixedNow.AddDate(0, 0, -88), Projects: []api.Project{hoard}},
+		{ID: "rollout-1", CreatedAt: fixedNow, Projects: []api.Project{rollout}},
+	}
+
+	next := nextProjectItems(all, nil)
+
+	// The youngest project's only item takes the second row. Under a plain
+	// oldest-first sort it came last and fell off the far side of the cap.
+	want := []string{"sell-1", "rollout-1", "sell-2", "sell-3"}
+	for i, id := range want {
+		if next[i].ID != id {
+			t.Fatalf("next = %s, want %s — one item per project per round", itemIDs(next), want)
+		}
+	}
+}
+
+func TestNextProjectItems_MultiProjectItemTakesOneSlot(t *testing.T) {
+	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", CreatedAt: fixedNow.AddDate(0, 0, -100)}
+	linux := api.Project{ID: "linux", Name: "Linux-first", CreatedAt: fixedNow.AddDate(0, 0, -50)}
+
+	all := []api.ProjectItem{
+		{ID: "mac-mini", CreatedAt: fixedNow, Projects: []api.Project{linux, selling}},
+		{ID: "monitors", CreatedAt: fixedNow.AddDate(0, 0, -1), Projects: []api.Project{selling}},
+	}
+
+	next := nextProjectItems(all, nil)
+
+	if len(next) != 2 {
+		t.Fatalf("next = %s, want each item once however many projects it is in", itemIDs(next))
+	}
+	// mac-mini belongs to both, so it competes under selling — the older, and
+	// therefore higher-ranked, of its two projects — and loses row one to the
+	// older item already queued there.
+	if next[0].ID != "monitors" || next[1].ID != "mac-mini" {
+		t.Errorf("next = %s, want monitors then mac-mini", itemIDs(next))
+	}
+}
+
+func itemIDs(items []api.ProjectItem) []string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	return ids
+}
+
 func TestBooksByProgress_PreservesServerOrder(t *testing.T) {
 	books := []api.Book{
 		{ID: 1, Title: "First unread", Progress: "unread"},
