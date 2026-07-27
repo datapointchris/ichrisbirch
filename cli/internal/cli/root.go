@@ -2,10 +2,12 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/datapointchris/goselfupdate/autoupdate"
 	"github.com/datapointchris/goselfupdate/cobracmd"
 	"github.com/spf13/cobra"
 )
@@ -100,7 +102,7 @@ func NewRootCommand() *cobra.Command {
 // process exit code.
 func Execute() int {
 	root := NewRootCommand()
-	err := root.Execute()
+	err := cobracmd.Execute(context.Background(), root, autoupdate.Config{Update: updateConfig()})
 
 	// An exitCode carries its own code and an empty message, so it is not printed
 	// as an "error:" line — it reports a valid non-success state (e.g. "not logged

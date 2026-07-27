@@ -21,15 +21,24 @@ import (
 // A locally built binary refuses to update: git describe returns the prefixed
 // tag, which is not a semantic version, so it reports as a development build.
 // Only CI strips the prefix, so only a released binary can replace itself.
-func newUpdateCommand() *cobra.Command {
-	return cobracmd.New(goselfupdate.Config{
+func updateConfig() goselfupdate.Config {
+	return goselfupdate.Config{
 		Owner:     "datapointchris",
 		Repo:      "ichrisbirch",
 		Binary:    "icb",
 		Version:   version,
 		TagPrefix: "cli/",
-		Token:     githubToken(),
-	})
+		// TokenFunc, not Token: Execute builds this config on every invocation
+		// to run the daily update check's gate, and that gate is designed to
+		// cost nothing. Calling githubToken() here would put a `gh auth token`
+		// subprocess in front of every `icb` command, including the ~364 out of
+		// 365 that decline to check at all.
+		TokenFunc: githubToken,
+	}
+}
+
+func newUpdateCommand() *cobra.Command {
+	return cobracmd.New(updateConfig())
 }
 
 // githubToken resolves a GitHub credential the way the dotfiles installer does:
