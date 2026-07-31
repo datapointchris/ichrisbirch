@@ -170,30 +170,20 @@ max_blank_lines = 1
 [tool.mypy]
 pretty = true
 ignore_missing_imports = true
-# strict = true
 check_untyped_defs = false
-plugins = ["pydantic.mypy"]
 warn_return_any = false
 
+# `standard` replaces the per-rule opt-outs repos used to accumulate; basedpyright
+# defaults to `recommended`, which turns every one of them back on. Named
+# `pyright` so both basedpyright and Pylance read it.
 
 [tool.pyright]
-analyzeUnannotatedFunctions = true    # needed or pylance does not work in vscode
-reportAny = false
-reportImplicitOverride = false
-reportMissingParameterType = false
-reportMissingTypeArgument = false
-reportMissingTypeStubs = false
-reportPossiblyUnboundVariable = false
-reportUnknownArgumentType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUnusedCallResult = false
-
+typeCheckingMode = "standard"
+analyzeUnannotatedFunctions = true  # or pylance stops analyzing in vscode
 
 [tool.pytest.ini_options]
 addopts = "-vv"
-minversion = "6.0"
+minversion = "8.0"
 testpaths = ["tests"]
 markers = ["seed: seed system tests (not run by default)", "integration: integration tests requiring running services"]
 
@@ -218,13 +208,24 @@ exclude = [
   "dist",
 ]
 
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = [
-  "fastapi.Depends",
-  "fastapi.params.Depends",
-  "fastapi.Query",
-  "fastapi.params.Query",
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "I",    # isort
 ]
+ignore = [
+    "SIM108",  # ternary operator — often less readable
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -232,33 +233,6 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = true
-
-[tool.ruff.lint]
-select = [
-  # pycodestyle
-  "E",
-  # Pyflakes
-  "F",
-  # pyupgrade
-  "UP",
-  # flake8-bugbear
-  "B",
-  # flake8-simplify
-  "SIM",
-  # isort
-  "I",
-]
-ignore = ["SIM108"]
-
-[tool.ruff.lint.isort]
-force-single-line = true
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
-"env.py" = ["F401"]
-
-# ---------- DevStats (Event-Sourced Stats Collection) ---------- #
-
 
 [tool.devstats]
 project = "ichrisbirch"
