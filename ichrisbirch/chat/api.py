@@ -29,8 +29,7 @@ class ChatAPIClient:
 
         Known issue with SQLAchemy, other workarounds are more verbose and involve metaprogramming.
         """
-        if chat.messages:
-            messages = [models.ChatMessage(**message.model_dump()) for message in chat.messages]
+        messages = [models.ChatMessage(**message.model_dump()) for message in chat.messages]
         return models.Chat(**(chat.model_dump() | {'messages': messages}))
 
     def get_chat(self, name: str):

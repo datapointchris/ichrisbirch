@@ -82,15 +82,15 @@ async def goodreads(request: Request, settings: Settings = Depends(get_settings)
     logger.debug('goodreads_retrieved', isbn=isbn)
     # TODO: Fix the typing errors for this POS
     soup = BeautifulSoup(response.content, 'html.parser')
-    if title := soup.find('h1', class_='Text Text__title1'):
-        title = title.text.strip()  # type: ignore
+    if title_tag := soup.find('h1', class_='Text Text__title1'):
+        title = title_tag.text.strip()
     else:
-        title = 'Not found'  # type: ignore
+        title = 'Not found'
         logger.error('goodreads_title_not_found')
-    if author := soup.find('span', class_='ContributorLink__name'):
-        author = author.text.strip()  # type: ignore
+    if author_tag := soup.find('span', class_='ContributorLink__name'):
+        author = author_tag.text.strip()
     else:
-        author = 'Not found'  # type: ignore
+        author = 'Not found'
         logger.error('goodreads_author_not_found')
     if genre_section := soup.find('div', class_='BookPageMetadataSection__genres'):
         genres = [g.text for g in genre_section.find_all('span', class_='Button__labelItem')][:-1]  # type: ignore

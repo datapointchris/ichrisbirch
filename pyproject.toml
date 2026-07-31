@@ -172,6 +172,7 @@ pretty = true
 ignore_missing_imports = true
 check_untyped_defs = false
 warn_return_any = false
+plugins = ["pydantic.mypy"]
 
 # `standard` replaces the per-rule opt-outs repos used to accumulate; basedpyright
 # defaults to `recommended`, which turns every one of them back on. Named
@@ -221,11 +222,21 @@ ignore = [
     "SIM108",  # ternary operator — often less readable
 ]
 
+# B008 flags call-in-default-argument, which is how FastAPI declares dependencies
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.params.Depends",
+  "fastapi.Query",
+  "fastapi.params.Query",
+]
+
 [tool.ruff.lint.isort]
 force-single-line = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"env.py" = ["F401"]
 
 [tool.ruff.format]
 quote-style = "single"
