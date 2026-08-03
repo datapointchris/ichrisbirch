@@ -87,14 +87,11 @@ def create_docker_container(client: docker.APIClient, config: dict[str, Any]):
         try:
             logger.info(f'pulling Docker image: {image} (attempt {attempt + 1}/3)')
             pull_output = client.pull(image)
-            # Handle the output which might be bytes or string
             if pull_output:
-                if isinstance(pull_output, bytes):
-                    for line in pull_output.splitlines():
-                        logger.debug(line.decode())
-                elif isinstance(pull_output, str):
-                    for line in pull_output.splitlines():
-                        logger.debug(line)
+                # The client returns bytes or str depending on the call.
+                text = pull_output.decode() if isinstance(pull_output, bytes) else pull_output
+                for line in text.splitlines():
+                    logger.debug(line)
             break
         except DockerException as e:
             logger.error(f'failed to pull Docker image (attempt {attempt + 1}/3): {e}')

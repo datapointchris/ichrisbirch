@@ -254,7 +254,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     beans = []
     for bean_data in BEANS:
         data = bean_data.copy()
-        roaster = data.get('roaster', '')
+        roaster = str(data.get('roaster', ''))
         if roaster in shop_by_name and 'purchase_source' not in data:
             data['coffee_shop_id'] = shop_by_name[roaster].id
         data['purchase_date'] = random_past_datetime(365) if random.random() > 0.3 else None
