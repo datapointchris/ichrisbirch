@@ -1,0 +1,152 @@
+# forge-toolchain: 11
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v7
+
+      # generated:python
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - run: uv sync --all-extras --dev
+
+      # uvx, not `uv run` — the latter resolves ruff from the repo's own
+      # dependencies, and a repo treating ruff as a fleet tool rather than a
+      # project dependency does not declare it. The version is the one the
+      # pre-commit hook pins, so the two cannot disagree about a finding.
+      - run: uvx ruff@0.12.5 check .
+
+      - run: uvx ruff@0.12.5 format --check .
+
+      # Declaring mypy as a dependency is the opt-in, and `uv run` is the same
+      # invocation the pre-commit hook uses, so a repo passing locally passes
+      # here. This used to test for a [tool.mypy] section, which stopped
+      # meaning anything once the standard pyproject template wrote that
+      # section into every repo — including infra repos that are not Python
+      # projects and have nothing importable to check.
+      # Tested by import rather than `mypy --version`: `uv run` falls back to
+      # PATH, so a machine with mypy installed globally reports it present in a
+      # repo that never declared it, and the check would pass locally while
+      # behaving differently on a clean runner.
+      - name: Type check
+        run: |
+          if uv run python -c "import mypy" >/dev/null 2>&1; then
+            uv run mypy . --install-types --non-interactive
+          else
+            echo "mypy not a project dependency; skipping"
+          fi
+
+      # --with pytest, unlike the mypy step above, because skipping is the wrong
+      # answer here: a repo with a real test suite that never declared pytest as
+      # a dependency would silently stop being tested. Supplying the runner runs
+      # the tests; a suite needing plugins still declares those itself.
+      #
+      # pytest exits 5 when it collects nothing, which is not a failure for a
+      # repo that has no tests yet. Written explicitly rather than as an && chain
+      # because the runner uses `bash -e`, where the concise form depends on
+      # subtle errexit-exemption rules.
+      - name: Test
+        run: |
+          set +e
+          uv run --with pytest pytest
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ] || [ "$code" -eq 5 ]; then exit 0; fi
+          exit 1
+
+  go-cli:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+
+      - uses: actions/checkout@v7
+
+      # generated:go-cli
+      - uses: actions/setup-go@v7
+        with:
+          # Action inputs resolve from the workspace root, not the job's
+          # working-directory, so this needs the component path.
+          go-version-file: "cli/go.mod"
+
+      - run: go build ./...
+
+      - run: go vet ./...
+
+      - run: go test ./...
+
+      - name: Lint
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+          golangci-lint run
+
+      # Two advisories found by hand on 2026-07-26 that this would have caught:
+      # GO-2026-5932 (x/crypto/openpgp, unmaintained and unfixed) reached three
+      # repos through go-selfupdate, and GO-2026-5856 (crypto/tls) shipped
+      # because a stale `go` directive picks the toolchain that compiles the
+      # binary, so the stdlib goes stale with it.
+      - name: Vulnerabilities
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
+          govulncheck ./...
+
+  vue-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+
+      - uses: actions/checkout@v7
+
+      # generated:vue-frontend
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          # Action inputs resolve from the workspace root, not the job's
+          # working-directory, so this needs the component path.
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - run: npm ci
+
+      # Not every frontend defines lint yet; --if-present keeps the rollout
+      # from hard-failing on a missing script.
+      - run: npm run lint --if-present
+
+      - run: npm run build
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v7
+
+      # generated:terraform
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - run: terraform fmt -check -recursive
+
+      # init without a backend: validate needs the providers resolved, and no
+      # PR check should be touching real state.
+      - run: terraform init -backend=false
+
+      - run: terraform validate
