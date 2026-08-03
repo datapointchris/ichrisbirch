@@ -33,8 +33,6 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: sops decrypt secrets/secrets.test.enc.env > .env
 
-      - uses: actions/checkout@v7
-
       # generated:python
       - uses: astral-sh/setup-uv@v7
         with:
