@@ -14,23 +14,23 @@ function db-env-vars() {
   # here takes precedence over .env values.
   local env="$1"
   case "$env" in
-  development)
-    export ENVIRONMENT=development
-    export POSTGRES_HOST=localhost
-    export POSTGRES_PORT=5432
-    ;;
-  testing)
-    export ENVIRONMENT=testing
-    export POSTGRES_HOST=localhost
-    export POSTGRES_PORT=5434
-    ;;
-  production)
-    export ENVIRONMENT=production
-    ;;
-  *)
-    echo "${red}Unknown environment: $env${reset}"
-    return 1
-    ;;
+    development)
+      export ENVIRONMENT=development
+      export POSTGRES_HOST=localhost
+      export POSTGRES_PORT=5432
+      ;;
+    testing)
+      export ENVIRONMENT=testing
+      export POSTGRES_HOST=localhost
+      export POSTGRES_PORT=5434
+      ;;
+    production)
+      export ENVIRONMENT=production
+      ;;
+    *)
+      echo "${red}Unknown environment: $env${reset}"
+      return 1
+      ;;
   esac
 }
 
@@ -38,9 +38,9 @@ function db-container-prefix() {
   # Map environment name to Docker container prefix
   local env="$1"
   case "$env" in
-  development) echo "icb-dev" ;;
-  testing) echo "icb-test" ;;
-  production) echo "icb-prod" ;;
+    development) echo "icb-dev" ;;
+    testing) echo "icb-test" ;;
+    production) echo "icb-prod" ;;
   esac
 }
 
@@ -95,22 +95,22 @@ function env-db() {
   shift 2
 
   case "$subcmd" in
-  seed)
-    db-seed "$env" "$@"
-    ;;
-  init)
-    db-init "$env"
-    ;;
-  reset)
-    db-reset "$env"
-    ;;
-  "")
-    db-usage
-    ;;
-  *)
-    echo "${red}Unknown db command: $subcmd${reset}"
-    db-usage
-    ;;
+    seed)
+      db-seed "$env" "$@"
+      ;;
+    init)
+      db-init "$env"
+      ;;
+    reset)
+      db-reset "$env"
+      ;;
+    "")
+      db-usage
+      ;;
+    *)
+      echo "${red}Unknown db command: $subcmd${reset}"
+      db-usage
+      ;;
   esac
 }
 
