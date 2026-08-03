@@ -33,6 +33,36 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: sops decrypt secrets/secrets.test.enc.env > .env
 
+      # The suite is integration-only: tests/environment.py aborts the session
+      # in CI unless the services are already up, and there is no runner-safe
+      # subset to fall back to — the guard fires during setup, before markers
+      # could deselect anything. Same stack validate-project.yml stands up.
+      - name: Setup Docker Compose
+        uses: docker/setup-compose-action@v2
+        with:
+          version: "latest"
+
+      - name: Create Docker network
+        run: docker network create proxy || true
+
+      - name: Start test services
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name icb-test up -d --build --wait --wait-timeout 180 api chat scheduler
+
+      # setup-uv again here, ahead of the generated block's own copy: a
+      # before: section runs before every generated step, and the database
+      # initialization below is a `uv run`. The action is cached, so the
+      # second call costs nothing.
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Initialize test database
+        run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
+
       # generated:python
       - uses: astral-sh/setup-uv@v7
         with:

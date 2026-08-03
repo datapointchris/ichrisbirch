@@ -4,11 +4,7 @@ const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
 /** Helper: open the add countdown modal, fill in fields, and submit */
-async function createCountdown(
-  page: import('@playwright/test').Page,
-  name: string,
-  dueDate = '2028-06-15',
-) {
+async function createCountdown(page: import('@playwright/test').Page, name: string, dueDate = '2028-06-15') {
   await page.getByTestId('countdown-add-button').click()
   await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('countdown-name-input').fill(name)

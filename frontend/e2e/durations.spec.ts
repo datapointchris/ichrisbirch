@@ -4,11 +4,7 @@ const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
 /** Helper: open the add duration modal, fill in fields, and submit */
-async function createDuration(
-  page: import('@playwright/test').Page,
-  name: string,
-  startDate = '2020-01-01',
-) {
+async function createDuration(page: import('@playwright/test').Page, name: string, startDate = '2020-01-01') {
   await page.getByTestId('duration-add-button').click()
   await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('duration-name-input').fill(name)

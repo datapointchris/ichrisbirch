@@ -4,12 +4,7 @@ const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
 /** Helper: open the add box modal, fill in fields, and submit */
-async function createBox(
-  page: import('@playwright/test').Page,
-  name: string,
-  boxNumber: string,
-  size = 'Medium',
-) {
+async function createBox(page: import('@playwright/test').Page, name: string, boxNumber: string, size = 'Medium') {
   await page.getByTestId('box-add-button').click()
   await expect(page.getByTestId('box-name-input')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('box-name-input').fill(name)
