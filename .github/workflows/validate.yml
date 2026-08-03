@@ -33,6 +33,21 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: sops decrypt secrets/secrets.test.enc.env > .env
 
+      # uv before the containers, matching validate-project.yml's order and not
+      # by preference: `up --build` runs as root over the mounted workspace and
+      # leaves .venv root-owned, after which `uv run` dies with EACCES on
+      # .venv/CACHEDIR.TAG. Creating the venv first means it is already the
+      # runner's.
+      #
+      # Repeated ahead of the generated block's own setup-uv because a before:
+      # section runs before every generated step, including that one. The
+      # action is cached, so the second call costs nothing.
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - run: uv sync --all-extras --dev
+
       # The suite is integration-only: tests/environment.py aborts the session
       # in CI unless the services are already up, and there is no runner-safe
       # subset to fall back to — the guard fires during setup, before markers
@@ -51,14 +66,6 @@ jobs:
             --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
             --project-name icb-test up -d --build --wait --wait-timeout 180 api chat scheduler
-
-      # setup-uv again here, ahead of the generated block's own copy: a
-      # before: section runs before every generated step, and the database
-      # initialization below is a `uv run`. The action is cached, so the
-      # second call costs nothing.
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
 
       - name: Initialize test database
         run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
