@@ -232,7 +232,7 @@ func newRecipesCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), recipe)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created recipe %q (id %d)\n", recipe.Name, recipe.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created recipe %q (id %d)\n", recipe.Name, recipe.ID)
 			return nil
 		},
 	}
@@ -321,7 +321,7 @@ func newRecipesEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), recipe)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated recipe %q (id %d)\n", recipe.Name, recipe.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated recipe %q (id %d)\n", recipe.Name, recipe.ID)
 			return nil
 		},
 	}
@@ -362,14 +362,14 @@ func newRecipesDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteRecipe(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted recipe %q (id %d)\n", recipe.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted recipe %q (id %d)\n", recipe.Name, id)
 			return nil
 		},
 	}
@@ -400,7 +400,7 @@ func newRecipesMadeCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), recipe)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Marked %q made (id %d, %d× total)\n", recipe.Name, recipe.ID, recipe.TimesMade)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Marked %q made (id %d, %d× total)\n", recipe.Name, recipe.ID, recipe.TimesMade)
 			return nil
 		},
 	}
@@ -476,7 +476,7 @@ func newRecipesAISaveCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), recipe)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Saved recipe %q (id %d)\n", recipe.Name, recipe.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Saved recipe %q (id %d)\n", recipe.Name, recipe.ID)
 			return nil
 		},
 	}
@@ -551,10 +551,10 @@ func newRecipesAISaveImportCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), result)
 			}
 			if result.Recipe != nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "Saved recipe %q (id %d)\n", result.Recipe.Name, result.Recipe.ID)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Saved recipe %q (id %d)\n", result.Recipe.Name, result.Recipe.ID)
 			}
 			if result.Technique != nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "Saved technique %q (id %d)\n", result.Technique.Name, result.Technique.ID)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Saved technique %q (id %d)\n", result.Technique.Name, result.Technique.ID)
 			}
 			return nil
 		},
@@ -631,13 +631,13 @@ func runRecipeList(cmd *cobra.Command, asJSON bool, fetch func(*api.Client) ([]a
 
 func printRecipesTable(out io.Writer, recipes []api.Recipe) {
 	if len(recipes) == 0 {
-		fmt.Fprintln(out, "No recipes.")
+		_, _ = fmt.Fprintln(out, "No recipes.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tRATING\tCUISINE\tMEAL\tTIME\tMADE\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tRATING\tCUISINE\tMEAL\tTIME\tMADE\tNAME")
 	for _, r := range recipes {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%d\t%s\n",
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%d\t%s\n",
 			r.ID, ratingStars(r.Rating), orNone(strValue(r.Cuisine)), orNone(strValue(r.MealType)),
 			minutesLabel(r.TotalTimeMinutes), r.TimesMade, r.Name)
 	}
@@ -646,40 +646,40 @@ func printRecipesTable(out io.Writer, recipes []api.Recipe) {
 
 func printIngredientSearchTable(out io.Writer, results []api.RecipeIngredientSearchResult) {
 	if len(results) == 0 {
-		fmt.Fprintln(out, "No matching recipes.")
+		_, _ = fmt.Fprintln(out, "No matching recipes.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tMATCHED\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tMATCHED\tNAME")
 	for _, r := range results {
-		fmt.Fprintf(tw, "%d\t%d/%d\t%s\n", r.Recipe.ID, r.Coverage, r.TotalIngredients, r.Recipe.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%d/%d\t%s\n", r.Recipe.ID, r.Coverage, r.TotalIngredients, r.Recipe.Name)
 	}
 	_ = tw.Flush()
 }
 
 func printRecipeDetail(out io.Writer, r api.Recipe) {
-	fmt.Fprintf(out, "%s\n", r.Name)
-	fmt.Fprintf(out, "  id:        %d\n", r.ID)
-	fmt.Fprintf(out, "  rating:    %s\n", ratingStars(r.Rating))
-	fmt.Fprintf(out, "  servings:  %d\n", r.Servings)
-	fmt.Fprintf(out, "  cuisine:   %s\n", orNone(strValue(r.Cuisine)))
-	fmt.Fprintf(out, "  meal:      %s\n", orNone(strValue(r.MealType)))
-	fmt.Fprintf(out, "  time:      %s\n", minutesLabel(r.TotalTimeMinutes))
-	fmt.Fprintf(out, "  made:      %d×\n", r.TimesMade)
-	fmt.Fprintf(out, "  tags:      %s\n", orNone(strings.Join(r.Tags, ", ")))
+	_, _ = fmt.Fprintf(out, "%s\n", r.Name)
+	_, _ = fmt.Fprintf(out, "  id:        %d\n", r.ID)
+	_, _ = fmt.Fprintf(out, "  rating:    %s\n", ratingStars(r.Rating))
+	_, _ = fmt.Fprintf(out, "  servings:  %d\n", r.Servings)
+	_, _ = fmt.Fprintf(out, "  cuisine:   %s\n", orNone(strValue(r.Cuisine)))
+	_, _ = fmt.Fprintf(out, "  meal:      %s\n", orNone(strValue(r.MealType)))
+	_, _ = fmt.Fprintf(out, "  time:      %s\n", minutesLabel(r.TotalTimeMinutes))
+	_, _ = fmt.Fprintf(out, "  made:      %d×\n", r.TimesMade)
+	_, _ = fmt.Fprintf(out, "  tags:      %s\n", orNone(strings.Join(r.Tags, ", ")))
 	if s := strValue(r.SourceName); s != "" {
-		fmt.Fprintf(out, "  source:    %s\n", s)
+		_, _ = fmt.Fprintf(out, "  source:    %s\n", s)
 	}
 	if s := strValue(r.Description); s != "" {
-		fmt.Fprintf(out, "  desc:      %s\n", s)
+		_, _ = fmt.Fprintf(out, "  desc:      %s\n", s)
 	}
-	fmt.Fprintln(out, "  ingredients:")
+	_, _ = fmt.Fprintln(out, "  ingredients:")
 	for _, ing := range r.Ingredients {
-		fmt.Fprintf(out, "    - %s\n", ingredientLine(ing))
+		_, _ = fmt.Fprintf(out, "    - %s\n", ingredientLine(ing))
 	}
-	fmt.Fprintf(out, "\n%s\n", r.Instructions)
+	_, _ = fmt.Fprintf(out, "\n%s\n", r.Instructions)
 	if s := strValue(r.Notes); s != "" {
-		fmt.Fprintf(out, "\nnotes: %s\n", s)
+		_, _ = fmt.Fprintf(out, "\nnotes: %s\n", s)
 	}
 }
 
@@ -713,19 +713,19 @@ func ingredientLine(ing api.RecipeIngredient) string {
 // pointer to --json for the full objects needed by ai-save.
 func printCandidates(out io.Writer, candidates []json.RawMessage) {
 	if len(candidates) == 0 {
-		fmt.Fprintln(out, "No candidates.")
+		_, _ = fmt.Fprintln(out, "No candidates.")
 		return
 	}
-	fmt.Fprintf(out, "%d candidate(s):\n", len(candidates))
+	_, _ = fmt.Fprintf(out, "%d candidate(s):\n", len(candidates))
 	for i, raw := range candidates {
 		var peek struct {
 			Name    string `json:"name"`
 			Cuisine string `json:"cuisine"`
 		}
 		_ = json.Unmarshal(raw, &peek)
-		fmt.Fprintf(out, "  %d. %s (%s)\n", i+1, peek.Name, orNone(peek.Cuisine))
+		_, _ = fmt.Fprintf(out, "  %d. %s (%s)\n", i+1, peek.Name, orNone(peek.Cuisine))
 	}
-	fmt.Fprintln(out, "Re-run with --json to get the full candidate objects for `ai-save`.")
+	_, _ = fmt.Fprintln(out, "Re-run with --json to get the full candidate objects for `ai-save`.")
 }
 
 // printImportCandidate summarizes a URL-import candidate; the full object (needed
@@ -737,14 +737,14 @@ func printImportCandidate(out io.Writer, raw json.RawMessage) {
 		Technique *struct{ Name string } `json:"technique"`
 	}
 	_ = json.Unmarshal(raw, &peek)
-	fmt.Fprintf(out, "kind: %s\n", peek.Kind)
+	_, _ = fmt.Fprintf(out, "kind: %s\n", peek.Kind)
 	if peek.Recipe != nil {
-		fmt.Fprintf(out, "  recipe:    %s\n", peek.Recipe.Name)
+		_, _ = fmt.Fprintf(out, "  recipe:    %s\n", peek.Recipe.Name)
 	}
 	if peek.Technique != nil {
-		fmt.Fprintf(out, "  technique: %s\n", peek.Technique.Name)
+		_, _ = fmt.Fprintf(out, "  technique: %s\n", peek.Technique.Name)
 	}
-	fmt.Fprintln(out, "Re-run with --json to get the full candidate for `ai-save-import`.")
+	_, _ = fmt.Fprintln(out, "Re-run with --json to get the full candidate for `ai-save-import`.")
 }
 
 // minutesLabel renders an optional minute count.

@@ -135,9 +135,9 @@ func newCookingTechniquesCategoriesCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), categories)
 			}
 			tw := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "COUNT\tCATEGORY")
+			_, _ = fmt.Fprintln(tw, "COUNT\tCATEGORY")
 			for _, cat := range categories {
-				fmt.Fprintf(tw, "%d\t%s\n", cat.Count, cat.Name)
+				_, _ = fmt.Fprintf(tw, "%d\t%s\n", cat.Count, cat.Name)
 			}
 			_ = tw.Flush()
 			return nil
@@ -195,7 +195,7 @@ func newCookingTechniquesCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), technique)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created technique %q (id %d, slug %s)\n", technique.Name, technique.ID, technique.Slug)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created technique %q (id %d, slug %s)\n", technique.Name, technique.ID, technique.Slug)
 			return nil
 		},
 	}
@@ -262,7 +262,7 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), technique)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated technique %q (id %d)\n", technique.Name, technique.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated technique %q (id %d)\n", technique.Name, technique.ID)
 			return nil
 		},
 	}
@@ -299,14 +299,14 @@ func newCookingTechniquesDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteCookingTechnique(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted technique %q (id %d)\n", technique.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted technique %q (id %d)\n", technique.Name, id)
 			return nil
 		},
 	}
@@ -369,38 +369,38 @@ func runTechniqueDetail(cmd *cobra.Command, asJSON bool, fetch func(*api.Client)
 
 func printTechniquesTable(out io.Writer, techniques []api.CookingTechnique) {
 	if len(techniques) == 0 {
-		fmt.Fprintln(out, "No techniques.")
+		_, _ = fmt.Fprintln(out, "No techniques.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tRATING\tCATEGORY\tNAME\tSLUG")
+	_, _ = fmt.Fprintln(tw, "ID\tRATING\tCATEGORY\tNAME\tSLUG")
 	for _, t := range techniques {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", t.ID, ratingStars(t.Rating), t.Category, t.Name, t.Slug)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", t.ID, ratingStars(t.Rating), t.Category, t.Name, t.Slug)
 	}
 	_ = tw.Flush()
 }
 
 func printTechniqueDetail(out io.Writer, t api.CookingTechnique) {
-	fmt.Fprintf(out, "%s\n", t.Name)
-	fmt.Fprintf(out, "  id:        %d\n", t.ID)
-	fmt.Fprintf(out, "  slug:      %s\n", t.Slug)
-	fmt.Fprintf(out, "  category:  %s\n", t.Category)
-	fmt.Fprintf(out, "  rating:    %s\n", ratingStars(t.Rating))
-	fmt.Fprintf(out, "  tags:      %s\n", orNone(strings.Join(t.Tags, ", ")))
+	_, _ = fmt.Fprintf(out, "%s\n", t.Name)
+	_, _ = fmt.Fprintf(out, "  id:        %d\n", t.ID)
+	_, _ = fmt.Fprintf(out, "  slug:      %s\n", t.Slug)
+	_, _ = fmt.Fprintf(out, "  category:  %s\n", t.Category)
+	_, _ = fmt.Fprintf(out, "  rating:    %s\n", ratingStars(t.Rating))
+	_, _ = fmt.Fprintf(out, "  tags:      %s\n", orNone(strings.Join(t.Tags, ", ")))
 	if s := strValue(t.SourceName); s != "" {
-		fmt.Fprintf(out, "  source:    %s\n", s)
+		_, _ = fmt.Fprintf(out, "  source:    %s\n", s)
 	}
 	if s := strValue(t.SourceURL); s != "" {
-		fmt.Fprintf(out, "  url:       %s\n", s)
+		_, _ = fmt.Fprintf(out, "  url:       %s\n", s)
 	}
-	fmt.Fprintf(out, "  summary:   %s\n", t.Summary)
+	_, _ = fmt.Fprintf(out, "  summary:   %s\n", t.Summary)
 	if s := strValue(t.WhyItWorks); s != "" {
-		fmt.Fprintf(out, "  why:       %s\n", s)
+		_, _ = fmt.Fprintf(out, "  why:       %s\n", s)
 	}
 	if s := strValue(t.CommonPitfalls); s != "" {
-		fmt.Fprintf(out, "  pitfalls:  %s\n", s)
+		_, _ = fmt.Fprintf(out, "  pitfalls:  %s\n", s)
 	}
-	fmt.Fprintf(out, "\n%s\n", t.Body)
+	_, _ = fmt.Fprintf(out, "\n%s\n", t.Body)
 }
 
 // ratingStars renders a nullable 1-5 rating; nil is a dash.

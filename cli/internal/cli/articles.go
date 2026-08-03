@@ -57,8 +57,8 @@ func newArticlesImportCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), batch)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Queued %d URL(s) as batch %s (status: %s)\n", batch.Total, batch.BatchID, batch.Status)
-			fmt.Fprintf(cmd.OutOrStdout(), "Poll with: icb articles import-status %s\n", batch.BatchID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Queued %d URL(s) as batch %s (status: %s)\n", batch.Total, batch.BatchID, batch.Status)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Poll with: icb articles import-status %s\n", batch.BatchID)
 			return nil
 		},
 	}
@@ -121,28 +121,28 @@ func newArticlesFailedImportsCommand() *cobra.Command {
 }
 
 func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
-	fmt.Fprintf(out, "batch %s\n", s.BatchID)
-	fmt.Fprintf(out, "  status:    %s\n", s.Status)
-	fmt.Fprintf(out, "  progress:  %d/%d processed\n", s.Processed, s.Total)
-	fmt.Fprintf(out, "  succeeded: %d\n", s.Succeeded)
-	fmt.Fprintf(out, "  failed:    %d\n", s.FailedCount)
+	_, _ = fmt.Fprintf(out, "batch %s\n", s.BatchID)
+	_, _ = fmt.Fprintf(out, "  status:    %s\n", s.Status)
+	_, _ = fmt.Fprintf(out, "  progress:  %d/%d processed\n", s.Processed, s.Total)
+	_, _ = fmt.Fprintf(out, "  succeeded: %d\n", s.Succeeded)
+	_, _ = fmt.Fprintf(out, "  failed:    %d\n", s.FailedCount)
 	for _, r := range s.Results {
-		fmt.Fprintf(out, "  + %s (%s)\n", r.Title, r.URL)
+		_, _ = fmt.Fprintf(out, "  + %s (%s)\n", r.Title, r.URL)
 	}
 	for _, e := range s.Errors {
-		fmt.Fprintf(out, "  x %s — %s\n", e.URL, firstLine(e.Error))
+		_, _ = fmt.Fprintf(out, "  x %s — %s\n", e.URL, firstLine(e.Error))
 	}
 }
 
 func printFailedImportsTable(out io.Writer, failed []api.ArticleFailedImport) {
 	if len(failed) == 0 {
-		fmt.Fprintln(out, "No failed imports.")
+		_, _ = fmt.Fprintln(out, "No failed imports.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tFAILED\tURL\tERROR")
+	_, _ = fmt.Fprintln(tw, "ID\tFAILED\tURL\tERROR")
 	for _, f := range failed {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
 			f.ID, f.FailedAt.Format("2006-01-02"), f.URL, firstLine(f.ErrorMessage))
 	}
 	_ = tw.Flush()
@@ -254,7 +254,7 @@ func newArticlesCurrentCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), article)
 			}
 			if article == nil {
-				fmt.Fprintln(cmd.OutOrStdout(), "No current article.")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No current article.")
 				return nil
 			}
 			printArticleDetail(cmd.OutOrStdout(), *article)
@@ -296,7 +296,7 @@ func newArticlesCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), article)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Saved article %q (id %d)\n", article.Title, article.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Saved article %q (id %d)\n", article.Title, article.ID)
 			return nil
 		},
 	}
@@ -361,7 +361,7 @@ func newArticlesEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), article)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated article %q (id %d)\n", article.Title, article.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated article %q (id %d)\n", article.Title, article.ID)
 			return nil
 		},
 	}
@@ -414,7 +414,7 @@ func newArticlesReadCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), updated)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Marked article %q read (id %d, read %d×)\n",
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Marked article %q read (id %d, read %d×)\n",
 				updated.Title, updated.ID, updated.ReadCount)
 			return nil
 		},
@@ -450,14 +450,14 @@ func newArticlesDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteArticle(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted article %q (id %d)\n", article.Title, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted article %q (id %d)\n", article.Title, id)
 			return nil
 		},
 	}
@@ -490,38 +490,38 @@ func runArticleList(cmd *cobra.Command, asJSON bool, fetch func(*api.Client) ([]
 
 func printArticlesTable(out io.Writer, articles []api.Article) {
 	if len(articles) == 0 {
-		fmt.Fprintln(out, "No articles.")
+		_, _ = fmt.Fprintln(out, "No articles.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tFAV\tARCH\tREADS\tTITLE\tTAGS")
+	_, _ = fmt.Fprintln(tw, "ID\tFAV\tARCH\tREADS\tTITLE\tTAGS")
 	for _, a := range articles {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%d\t%s\t%s\n",
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%d\t%s\t%s\n",
 			a.ID, yesNo(a.IsFavorite), yesNo(a.IsArchived), a.ReadCount, a.Title, strings.Join(a.Tags, ", "))
 	}
 	_ = tw.Flush()
 }
 
 func printArticleDetail(out io.Writer, a api.Article) {
-	fmt.Fprintf(out, "%s\n", a.Title)
-	fmt.Fprintf(out, "  id:        %d\n", a.ID)
-	fmt.Fprintf(out, "  url:       %s\n", a.URL)
-	fmt.Fprintf(out, "  tags:      %s\n", orNone(strings.Join(a.Tags, ", ")))
-	fmt.Fprintf(out, "  favorite:  %s\n", yesNo(a.IsFavorite))
-	fmt.Fprintf(out, "  current:   %s\n", yesNo(a.IsCurrent))
-	fmt.Fprintf(out, "  archived:  %s\n", yesNo(a.IsArchived))
-	fmt.Fprintf(out, "  reads:     %d\n", a.ReadCount)
-	fmt.Fprintf(out, "  saved:     %s\n", a.SaveDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "%s\n", a.Title)
+	_, _ = fmt.Fprintf(out, "  id:        %d\n", a.ID)
+	_, _ = fmt.Fprintf(out, "  url:       %s\n", a.URL)
+	_, _ = fmt.Fprintf(out, "  tags:      %s\n", orNone(strings.Join(a.Tags, ", ")))
+	_, _ = fmt.Fprintf(out, "  favorite:  %s\n", yesNo(a.IsFavorite))
+	_, _ = fmt.Fprintf(out, "  current:   %s\n", yesNo(a.IsCurrent))
+	_, _ = fmt.Fprintf(out, "  archived:  %s\n", yesNo(a.IsArchived))
+	_, _ = fmt.Fprintf(out, "  reads:     %d\n", a.ReadCount)
+	_, _ = fmt.Fprintf(out, "  saved:     %s\n", a.SaveDate.Format("2006-01-02"))
 	if a.LastReadDate != nil {
-		fmt.Fprintf(out, "  last read: %s\n", a.LastReadDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  last read: %s\n", a.LastReadDate.Format("2006-01-02"))
 	}
 	if a.ReviewDays != nil {
-		fmt.Fprintf(out, "  review:    every %d days\n", *a.ReviewDays)
+		_, _ = fmt.Fprintf(out, "  review:    every %d days\n", *a.ReviewDays)
 	}
 	if a.Summary != "" {
-		fmt.Fprintf(out, "  summary:   %s\n", a.Summary)
+		_, _ = fmt.Fprintf(out, "  summary:   %s\n", a.Summary)
 	}
 	if s := strValue(a.Notes); s != "" {
-		fmt.Fprintf(out, "  notes:     %s\n", s)
+		_, _ = fmt.Fprintf(out, "  notes:     %s\n", s)
 	}
 }

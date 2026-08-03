@@ -11,42 +11,43 @@
 
 # Escape special JSON characters in a string
 _json_escape() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/\\r}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "$s"
 }
 
 # Core JSON logging function
 # Args: level event [key value ...]
 log_json() {
-    local level="$1"
-    local event="$2"
+  local level="$1"
+  local event="$2"
+  shift 2
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  # Build JSON with optional key-value pairs
+  local json
+  json="{\"timestamp\":\"$timestamp\",\"level\":\"$level\",\"event\":\"$(_json_escape "$event")\""
+
+  while [[ $# -ge 2 ]]; do
+    local key="$1"
+    local value="$2"
+    json+=",\"$(_json_escape "$key")\":\"$(_json_escape "$value")\""
     shift 2
-    local timestamp
-    timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  done
+  json+="}"
 
-    # Build JSON with optional key-value pairs
-    local json="{\"timestamp\":\"$timestamp\",\"level\":\"$level\",\"event\":\"$(_json_escape "$event")\""
-
-    while [[ $# -ge 2 ]]; do
-        local key="$1"
-        local value="$2"
-        json+=",\"$(_json_escape "$key")\":\"$(_json_escape "$value")\""
-        shift 2
-    done
-    json+="}"
-
-    echo "$json"
+  echo "$json"
 }
 
 # Convenience functions for each log level
 log_debug() { log_json "debug" "$@"; }
-log_info()  { log_json "info"  "$@"; }
-log_warn()  { log_json "warn"  "$@"; }
+log_info() { log_json "info" "$@"; }
+log_warn() { log_json "warn" "$@"; }
 log_error() { log_json "error" "$@"; }
 
 # Send Slack notification with rich formatting
@@ -55,46 +56,46 @@ log_error() { log_json "error" "$@"; }
 # message: Main message content (supports Slack mrkdwn)
 # context: Optional additional context (supports Slack mrkdwn)
 notify_slack() {
-    local status="$1"
-    local message="$2"
-    local context="${3:-}"
+  local status="$1"
+  local message="$2"
+  local context="${3:-}"
 
-    # SLACK_WEBHOOK_URL should be set by the calling script (from .env file)
-    if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
-        return 0
-    fi
+  # SLACK_WEBHOOK_URL should be set by the calling script (from .env file)
+  if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
+    return 0
+  fi
 
-    local color icon title
-    if [[ "$status" == "success" ]]; then
-        color="good"
-        icon="✅"
-        title="ichrisbirch deployment succeeded"
-    else
-        color="danger"
-        icon="🔴"
-        title="ichrisbirch deployment failed"
-    fi
+  local color icon title
+  if [[ "$status" == "success" ]]; then
+    color="good"
+    icon="✅"
+    title="ichrisbirch deployment succeeded"
+  else
+    color="danger"
+    icon="🔴"
+    title="ichrisbirch deployment failed"
+  fi
 
-    # Escape special characters for JSON
-    message="${message//\\/\\\\}"
-    message="${message//\"/\\\"}"
-    context="${context//\\/\\\\}"
-    context="${context//\"/\\\"}"
+  # Escape special characters for JSON
+  message="${message//\\/\\\\}"
+  message="${message//\"/\\\"}"
+  context="${context//\\/\\\\}"
+  context="${context//\"/\\\"}"
 
-    # Build payload - use attachments for colored sidebar
-    local payload
-    payload="{\"attachments\":[{\"color\":\"$color\",\"blocks\":["
-    payload+="{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"$icon $title\",\"emoji\":true}},"
-    payload+="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"$message\"}}"
+  # Build payload - use attachments for colored sidebar
+  local payload
+  payload="{\"attachments\":[{\"color\":\"$color\",\"blocks\":["
+  payload+="{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"$icon $title\",\"emoji\":true}},"
+  payload+="{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"$message\"}}"
 
-    # Add context block if provided
-    if [[ -n "$context" ]]; then
-        payload+=",{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"$context\"}}"
-    fi
+  # Add context block if provided
+  if [[ -n "$context" ]]; then
+    payload+=",{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"$context\"}}"
+  fi
 
-    payload+="]}]}"
+  payload+="]}]}"
 
-    curl -s -X POST "$SLACK_WEBHOOK_URL" \
-        -H "Content-Type: application/json" \
-        -d "$payload" >/dev/null 2>&1 || true
+  curl -s -X POST "$SLACK_WEBHOOK_URL" \
+    -H "Content-Type: application/json" \
+    -d "$payload" >/dev/null 2>&1 || true
 }

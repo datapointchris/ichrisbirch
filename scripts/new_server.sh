@@ -61,7 +61,7 @@ install_project() {
 }
 
 decrypt_secrets() {
-  cd /var/www/ichrisbirch && sops decrypt secrets/secrets.prod.enc.env > .env
+  cd /var/www/ichrisbirch && sops decrypt secrets/secrets.prod.enc.env >.env
 }
 
 make_log_files() {

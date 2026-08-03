@@ -86,29 +86,29 @@ func newAutotasksViewCommand() *cobra.Command {
 
 func printAutotasksTable(out io.Writer, autotasks []api.AutoTask) {
 	if len(autotasks) == 0 {
-		fmt.Fprintln(out, "No auto-tasks.")
+		_, _ = fmt.Fprintln(out, "No auto-tasks.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tPRIORITY\tFREQUENCY\tMAX\tRUNS\tNAME\tCATEGORY")
+	_, _ = fmt.Fprintln(tw, "ID\tPRIORITY\tFREQUENCY\tMAX\tRUNS\tNAME\tCATEGORY")
 	for _, a := range autotasks {
-		fmt.Fprintf(tw, "%d\t%d\t%s\t%d\t%d\t%s\t%s\n",
+		_, _ = fmt.Fprintf(tw, "%d\t%d\t%s\t%d\t%d\t%s\t%s\n",
 			a.ID, a.Priority, a.Frequency, a.MaxConcurrent, a.RunCount, a.Name, a.Category)
 	}
 	_ = tw.Flush()
 }
 
 func printAutotaskDetail(out io.Writer, a api.AutoTask) {
-	fmt.Fprintf(out, "%s\n", a.Name)
-	fmt.Fprintf(out, "  id:          %d\n", a.ID)
-	fmt.Fprintf(out, "  category:    %s\n", a.Category)
-	fmt.Fprintf(out, "  priority:    %d\n", a.Priority)
-	fmt.Fprintf(out, "  frequency:   %s\n", a.Frequency)
-	fmt.Fprintf(out, "  max concur.: %d\n", a.MaxConcurrent)
-	fmt.Fprintf(out, "  run count:   %d\n", a.RunCount)
-	fmt.Fprintf(out, "  first run:   %s\n", a.FirstRunDate.Format("2006-01-02"))
-	fmt.Fprintf(out, "  last run:    %s\n", a.LastRunDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "%s\n", a.Name)
+	_, _ = fmt.Fprintf(out, "  id:          %d\n", a.ID)
+	_, _ = fmt.Fprintf(out, "  category:    %s\n", a.Category)
+	_, _ = fmt.Fprintf(out, "  priority:    %d\n", a.Priority)
+	_, _ = fmt.Fprintf(out, "  frequency:   %s\n", a.Frequency)
+	_, _ = fmt.Fprintf(out, "  max concur.: %d\n", a.MaxConcurrent)
+	_, _ = fmt.Fprintf(out, "  run count:   %d\n", a.RunCount)
+	_, _ = fmt.Fprintf(out, "  first run:   %s\n", a.FirstRunDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "  last run:    %s\n", a.LastRunDate.Format("2006-01-02"))
 	if s := strValue(a.Notes); s != "" {
-		fmt.Fprintf(out, "  notes:       %s\n", s)
+		_, _ = fmt.Fprintf(out, "  notes:       %s\n", s)
 	}
 }

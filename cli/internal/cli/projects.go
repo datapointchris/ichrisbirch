@@ -132,7 +132,7 @@ func newProjectsCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), project)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created project %q (%s)\n", project.Name, project.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created project %q (%s)\n", project.Name, project.ID)
 			return nil
 		},
 	}
@@ -183,7 +183,7 @@ func newProjectsEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), project)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated project %q (%s)\n", project.Name, project.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated project %q (%s)\n", project.Name, project.ID)
 			return nil
 		},
 	}
@@ -222,14 +222,14 @@ func newProjectsDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteProject(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted project %q (%s)\n", project.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted project %q (%s)\n", project.Name, id)
 			return nil
 		},
 	}
@@ -247,29 +247,29 @@ func encodeJSON(out io.Writer, v any) error {
 
 func printProjectsTable(out io.Writer, projects []api.Project) {
 	if len(projects) == 0 {
-		fmt.Fprintln(out, "No projects yet. Create one with `icb projects create --name ...`.")
+		_, _ = fmt.Fprintln(out, "No projects yet. Create one with `icb projects create --name ...`.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tNAME\tITEMS\tPOS")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tITEMS\tPOS")
 	for _, p := range projects {
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%d\n", p.ID, p.Name, itemCount(p), p.Position)
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%d\n", p.ID, p.Name, itemCount(p), p.Position)
 	}
 	_ = tw.Flush()
 }
 
 func printProjectDetail(out io.Writer, p api.Project, items []api.ProjectItemInProject) {
-	fmt.Fprintf(out, "%s\n", p.Name)
-	fmt.Fprintf(out, "  id:        %s\n", p.ID)
+	_, _ = fmt.Fprintf(out, "%s\n", p.Name)
+	_, _ = fmt.Fprintf(out, "  id:        %s\n", p.ID)
 	if d := strValue(p.Description); d != "" {
-		fmt.Fprintf(out, "  desc:      %s\n", d)
+		_, _ = fmt.Fprintf(out, "  desc:      %s\n", d)
 	}
-	fmt.Fprintf(out, "  position:  %d\n", p.Position)
-	fmt.Fprintf(out, "  items:     %s\n", itemCount(p))
+	_, _ = fmt.Fprintf(out, "  position:  %d\n", p.Position)
+	_, _ = fmt.Fprintf(out, "  items:     %s\n", itemCount(p))
 
-	fmt.Fprintf(out, "\nItems (%d):\n", len(items))
+	_, _ = fmt.Fprintf(out, "\nItems (%d):\n", len(items))
 	if len(items) == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 		return
 	}
 	printProjectItemsTable(out, items)
@@ -277,13 +277,13 @@ func printProjectDetail(out io.Writer, p api.Project, items []api.ProjectItemInP
 
 func printProjectItemsTable(out io.Writer, items []api.ProjectItemInProject) {
 	if len(items) == 0 {
-		fmt.Fprintln(out, "No items.")
+		_, _ = fmt.Fprintln(out, "No items.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "  #\tSTATUS\tTITLE\tID")
+	_, _ = fmt.Fprintln(tw, "  #\tSTATUS\tTITLE\tID")
 	for _, it := range items {
-		fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\n", it.Position, itemStatus(it), it.Title, it.ID)
+		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\n", it.Position, itemStatus(it), it.Title, it.ID)
 	}
 	_ = tw.Flush()
 }

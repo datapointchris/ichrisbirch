@@ -559,17 +559,17 @@ func printOverview(out io.Writer, r overviewReport) {
 	printUpcomingSection(out, r.Countdowns, r.Events, r.GeneratedAt)
 
 	if len(r.Warnings) > 0 {
-		fmt.Fprintln(out, "\nWarnings")
+		_, _ = fmt.Fprintln(out, "\nWarnings")
 		for _, warning := range r.Warnings {
-			fmt.Fprintf(out, "  %s: %s\n", warning.Section, warning.Message)
+			_, _ = fmt.Fprintf(out, "  %s: %s\n", warning.Section, warning.Message)
 		}
 	}
 }
 
 func printTaskSection(out io.Writer, section taskSection) {
-	fmt.Fprintf(out, "Tasks (%d open)\n", section.Total)
+	_, _ = fmt.Fprintf(out, "Tasks (%d open)\n", section.Total)
 	if len(section.Items) == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
@@ -577,66 +577,66 @@ func printTaskSection(out io.Writer, section taskSection) {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  %d\t%s\t%s\n", task.Priority, truncateTitle(task.Name), task.Category)
+		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\n", task.Priority, truncateTitle(task.Name), task.Category)
 	}
 	_ = tw.Flush()
 }
 
 func printHabitSection(out io.Writer, section habitSection) {
-	fmt.Fprintf(out, "\nHabits (%d of %d done today)\n", len(section.CompletedToday), section.CurrentTotal)
+	_, _ = fmt.Fprintf(out, "\nHabits (%d of %d done today)\n", len(section.CompletedToday), section.CurrentTotal)
 	if len(section.DueToday) == 0 {
-		fmt.Fprintln(out, "  (all done)")
+		_, _ = fmt.Fprintln(out, "  (all done)")
 		return
 	}
 	names := make([]string, 0, len(section.DueToday))
 	for _, habit := range section.DueToday {
 		names = append(names, habit.Name)
 	}
-	fmt.Fprintf(out, "  due: %s\n", strings.Join(names, ", "))
+	_, _ = fmt.Fprintf(out, "  due: %s\n", strings.Join(names, ", "))
 }
 
 func printBookSection(out io.Writer, section bookSection) {
-	fmt.Fprintf(out, "\nBooks (%d reading, %d queued)\n", len(section.Reading), section.NextUpTotal)
+	_, _ = fmt.Fprintf(out, "\nBooks (%d reading, %d queued)\n", len(section.Reading), section.NextUpTotal)
 	if len(section.Reading) == 0 && len(section.NextUp) == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	for _, book := range section.Reading {
-		fmt.Fprintf(tw, "  reading:\t%s\t%s\n", truncateTitle(book.Title), book.Author)
+		_, _ = fmt.Fprintf(tw, "  reading:\t%s\t%s\n", truncateTitle(book.Title), book.Author)
 	}
 	for i, book := range section.NextUp {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(book.Title), book.Author)
+		_, _ = fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(book.Title), book.Author)
 	}
 	_ = tw.Flush()
 }
 
 func printArticleSection(out io.Writer, section articleSection) {
-	fmt.Fprintf(out, "\nArticles (%d unread)\n", section.UnreadTotal)
+	_, _ = fmt.Fprintf(out, "\nArticles (%d unread)\n", section.UnreadTotal)
 	if section.Current == nil && len(section.Unread) == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	if section.Current != nil {
-		fmt.Fprintf(tw, "  reading:\t%s\n", truncateTitle(section.Current.Title))
+		_, _ = fmt.Fprintf(tw, "  reading:\t%s\n", truncateTitle(section.Current.Title))
 	}
 	for i, article := range section.Unread {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(article.Title))
+		_, _ = fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(article.Title))
 	}
 	_ = tw.Flush()
 }
 
 func printProjectItemSection(out io.Writer, section projectItemSection) {
-	fmt.Fprintf(out, "\nProject items (%d next, %d blocked)\n", section.NextTotal, section.BlockedTotal)
+	_, _ = fmt.Fprintf(out, "\nProject items (%d next, %d blocked)\n", section.NextTotal, section.BlockedTotal)
 	if section.NextTotal == 0 && section.BlockedTotal == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
@@ -644,13 +644,13 @@ func printProjectItemSection(out io.Writer, section projectItemSection) {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
+		_, _ = fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
 	}
 	for i, item := range section.Blocked {
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  blocked:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
+		_, _ = fmt.Fprintf(tw, "  blocked:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
 	}
 	_ = tw.Flush()
 }
@@ -659,9 +659,9 @@ func printProjectItemSection(out io.Writer, section projectItemSection) {
 // stay separate in the JSON — a consumer may want one without the other — but
 // what is coming up next is a single question, so the human view merges them.
 func printUpcomingSection(out io.Writer, countdowns countdownSection, events eventSection, now time.Time) {
-	fmt.Fprintln(out, "\nUpcoming")
+	_, _ = fmt.Fprintln(out, "\nUpcoming")
 	if countdowns.Total == 0 && events.Total == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 		return
 	}
 
@@ -680,7 +680,7 @@ func printUpcomingSection(out io.Writer, countdowns countdownSection, events eve
 		if i >= printListCap {
 			break
 		}
-		fmt.Fprintf(tw, "  %s\t%s\t%s\n", entry.date, truncateTitle(entry.name), entry.kind)
+		_, _ = fmt.Fprintf(tw, "  %s\t%s\t%s\n", entry.date, truncateTitle(entry.name), entry.kind)
 	}
 	_ = tw.Flush()
 }

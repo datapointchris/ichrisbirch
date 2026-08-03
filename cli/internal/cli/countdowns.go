@@ -123,7 +123,7 @@ func newCountdownsCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), countdown)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created countdown %q due %s (id %d)\n", countdown.Name, countdown.DueDate, countdown.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created countdown %q due %s (id %d)\n", countdown.Name, countdown.DueDate, countdown.ID)
 			return nil
 		},
 	}
@@ -180,7 +180,7 @@ func newCountdownsEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), countdown)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated countdown %q (id %d)\n", countdown.Name, countdown.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated countdown %q (id %d)\n", countdown.Name, countdown.ID)
 			return nil
 		},
 	}
@@ -218,14 +218,14 @@ func newCountdownsDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteCountdown(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted countdown %q (id %d)\n", countdown.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted countdown %q (id %d)\n", countdown.Name, id)
 			return nil
 		},
 	}
@@ -235,23 +235,23 @@ func newCountdownsDeleteCommand() *cobra.Command {
 
 func printCountdownsTable(out io.Writer, countdowns []api.Countdown) {
 	if len(countdowns) == 0 {
-		fmt.Fprintln(out, "No countdowns.")
+		_, _ = fmt.Fprintln(out, "No countdowns.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tDUE\tIN\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tDUE\tIN\tNAME")
 	for _, c := range countdowns {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.DueDate, daysUntil(c.DueDate), c.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.DueDate, daysUntil(c.DueDate), c.Name)
 	}
 	_ = tw.Flush()
 }
 
 func printCountdownDetail(out io.Writer, c api.Countdown) {
-	fmt.Fprintf(out, "%s\n", c.Name)
-	fmt.Fprintf(out, "  id:   %d\n", c.ID)
-	fmt.Fprintf(out, "  due:  %s (%s)\n", c.DueDate, daysUntil(c.DueDate))
+	_, _ = fmt.Fprintf(out, "%s\n", c.Name)
+	_, _ = fmt.Fprintf(out, "  id:   %d\n", c.ID)
+	_, _ = fmt.Fprintf(out, "  due:  %s (%s)\n", c.DueDate, daysUntil(c.DueDate))
 	if n := strValue(c.Notes); n != "" {
-		fmt.Fprintf(out, "  notes: %s\n", n)
+		_, _ = fmt.Fprintf(out, "  notes: %s\n", n)
 	}
 }
 

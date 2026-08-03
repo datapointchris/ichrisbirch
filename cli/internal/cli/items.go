@@ -245,7 +245,7 @@ func newItemsCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), item)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created item %q (%s)\n", item.Title, item.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created item %q (%s)\n", item.Title, item.ID)
 			return nil
 		},
 	}
@@ -345,7 +345,7 @@ func runItemUpdate(cmd *cobra.Command, id string, in api.ProjectItemUpdateInput,
 	if asJSON {
 		return encodeJSON(cmd.OutOrStdout(), item)
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "%s item %q → %s (%s)\n", verb, item.Title, flatItemStatus(item), item.ID)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s item %q → %s (%s)\n", verb, item.Title, flatItemStatus(item), item.ID)
 	return nil
 }
 
@@ -374,14 +374,14 @@ func newItemsDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteItem(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted item %q (%s)\n", item.Title, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted item %q (%s)\n", item.Title, id)
 			return nil
 		},
 	}
@@ -418,7 +418,7 @@ func newItemsReorderCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), item)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Moved item %q to position %d (%s)\n", item.Title, item.Position, item.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Moved item %q to position %d (%s)\n", item.Title, item.Position, item.ID)
 			return nil
 		},
 	}
@@ -455,7 +455,7 @@ func newItemsAddProjectCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), p)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Added item %s to project %q (%s)\n", args[0], p.Name, p.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Added item %s to project %q (%s)\n", args[0], p.Name, p.ID)
 			return nil
 		},
 	}
@@ -486,7 +486,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
@@ -497,7 +497,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 			if err := client.RemoveItemFromProject(cmd.Context(), args[0], project); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Removed item %s from project %s\n", args[0], project)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removed item %s from project %s\n", args[0], project)
 			return nil
 		},
 	}
@@ -534,7 +534,7 @@ func newItemsAddDependencyCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), detail)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Item %q now depends on %s (%d total dependencies)\n", detail.Title, dependsOn, len(detail.DependencyIDs))
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Item %q now depends on %s (%d total dependencies)\n", detail.Title, dependsOn, len(detail.DependencyIDs))
 			return nil
 		},
 	}
@@ -564,7 +564,7 @@ func newItemsRemoveDependencyCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
@@ -575,7 +575,7 @@ func newItemsRemoveDependencyCommand() *cobra.Command {
 			if err := client.RemoveDependency(cmd.Context(), args[0], dependsOn); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Removed dependency %s → %s\n", args[0], dependsOn)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Removed dependency %s → %s\n", args[0], dependsOn)
 			return nil
 		},
 	}
@@ -643,7 +643,7 @@ func newItemsAddTaskCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Added task %q (%s)\n", task.Title, task.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Added task %q (%s)\n", task.Title, task.ID)
 			return nil
 		},
 	}
@@ -720,7 +720,7 @@ func runTaskUpdate(cmd *cobra.Command, itemID, taskID string, in api.ProjectItem
 	if asJSON {
 		return encodeJSON(cmd.OutOrStdout(), task)
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Updated task %q → %s (%s)\n", task.Title, taskState(task), task.ID)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated task %q → %s (%s)\n", task.Title, taskState(task), task.ID)
 	return nil
 }
 
@@ -739,7 +739,7 @@ func newItemsRemoveTaskCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
@@ -750,7 +750,7 @@ func newItemsRemoveTaskCommand() *cobra.Command {
 			if err := client.DeleteItemTask(cmd.Context(), args[0], args[1]); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted task %s\n", args[1])
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted task %s\n", args[1])
 			return nil
 		},
 	}
@@ -762,57 +762,57 @@ func newItemsRemoveTaskCommand() *cobra.Command {
 
 func printItemsTable(out io.Writer, items []api.ProjectItem) {
 	if len(items) == 0 {
-		fmt.Fprintln(out, "No items.")
+		_, _ = fmt.Fprintln(out, "No items.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "STATUS\tTITLE\tID")
+	_, _ = fmt.Fprintln(tw, "STATUS\tTITLE\tID")
 	for _, it := range items {
-		fmt.Fprintf(tw, "%s\t%s\t%s\n", flatItemStatus(it), it.Title, it.ID)
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\n", flatItemStatus(it), it.Title, it.ID)
 	}
 	_ = tw.Flush()
 }
 
 func printItemDetail(out io.Writer, d api.ProjectItemDetail, tasks []api.ProjectItemTask, blockers []api.ProjectItem) {
-	fmt.Fprintf(out, "%s\n", d.Title)
-	fmt.Fprintf(out, "  id:      %s\n", d.ID)
-	fmt.Fprintf(out, "  status:  %s\n", detailStatus(d))
+	_, _ = fmt.Fprintf(out, "%s\n", d.Title)
+	_, _ = fmt.Fprintf(out, "  id:      %s\n", d.ID)
+	_, _ = fmt.Fprintf(out, "  status:  %s\n", detailStatus(d))
 	if r := strValue(d.Repo); r != "" {
-		fmt.Fprintf(out, "  repo:    %s\n", r)
+		_, _ = fmt.Fprintf(out, "  repo:    %s\n", r)
 	}
 	if n := strValue(d.Notes); n != "" {
-		fmt.Fprintf(out, "  notes:   %s\n", n)
+		_, _ = fmt.Fprintf(out, "  notes:   %s\n", n)
 	}
 
 	projectNames := make([]string, 0, len(d.Projects))
 	for _, p := range d.Projects {
 		projectNames = append(projectNames, p.Name)
 	}
-	fmt.Fprintf(out, "  projects: %s\n", orNone(strings.Join(projectNames, ", ")))
-	fmt.Fprintf(out, "  depends on: %d item(s)\n", len(d.DependencyIDs))
+	_, _ = fmt.Fprintf(out, "  projects: %s\n", orNone(strings.Join(projectNames, ", ")))
+	_, _ = fmt.Fprintf(out, "  depends on: %d item(s)\n", len(d.DependencyIDs))
 
-	fmt.Fprintf(out, "\nTasks (%d):\n", len(tasks))
+	_, _ = fmt.Fprintf(out, "\nTasks (%d):\n", len(tasks))
 	if len(tasks) == 0 {
-		fmt.Fprintln(out, "  (none)")
+		_, _ = fmt.Fprintln(out, "  (none)")
 	} else {
 		printTasksTable(out, tasks)
 	}
 
 	if len(blockers) > 0 {
-		fmt.Fprintf(out, "\nBlocked by %d incomplete item(s):\n", len(blockers))
+		_, _ = fmt.Fprintf(out, "\nBlocked by %d incomplete item(s):\n", len(blockers))
 		printItemsTable(out, blockers)
 	}
 }
 
 func printTasksTable(out io.Writer, tasks []api.ProjectItemTask) {
 	if len(tasks) == 0 {
-		fmt.Fprintln(out, "No tasks.")
+		_, _ = fmt.Fprintln(out, "No tasks.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "  #\tSTATUS\tTITLE\tID")
+	_, _ = fmt.Fprintln(tw, "  #\tSTATUS\tTITLE\tID")
 	for _, t := range tasks {
-		fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\n", t.Position, taskState(t), t.Title, t.ID)
+		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\n", t.Position, taskState(t), t.Title, t.ID)
 	}
 	_ = tw.Flush()
 }

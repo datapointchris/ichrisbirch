@@ -99,7 +99,7 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 		t.Fatalf("warnings = %+v, want one keyed to books", report.Warnings)
 	}
 	if !strings.Contains(report.Warnings[0].Message, "books") {
-		t.Errorf("warning message = %q, want the failing call labelled", report.Warnings[0].Message)
+		t.Errorf("warning message = %q, want the failing call labeled", report.Warnings[0].Message)
 	}
 }
 

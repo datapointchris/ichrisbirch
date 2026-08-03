@@ -189,7 +189,7 @@ decrypt_production_secrets() {
   fi
 
   log_info "Decrypting production secrets..."
-  if sops decrypt secrets/secrets.prod.enc.env > .env 2>/dev/null; then
+  if sops decrypt secrets/secrets.prod.enc.env >.env 2>/dev/null; then
     log_success "Production secrets decrypted to .env"
   else
     log_error "Failed to decrypt secrets - check age key"
@@ -244,25 +244,25 @@ initialize_database() {
   echo
 
   case $db_option in
-  1)
-    log_info "Will initialize fresh database after containers start"
-    echo "fresh" >/tmp/ichrisbirch_db_init
-    ;;
-  2)
-    read -rp "Enter backup file path: " backup_path
-    if [[ -f "$backup_path" ]]; then
-      echo "$backup_path" >/tmp/ichrisbirch_db_restore
-      log_info "Will restore from $backup_path after containers start"
-    else
-      log_error "Backup file not found: $backup_path"
-    fi
-    ;;
-  3)
-    log_info "Skipping database initialization"
-    ;;
-  *)
-    log_warn "Invalid option, skipping database initialization"
-    ;;
+    1)
+      log_info "Will initialize fresh database after containers start"
+      echo "fresh" >/tmp/ichrisbirch_db_init
+      ;;
+    2)
+      read -rp "Enter backup file path: " backup_path
+      if [[ -f "$backup_path" ]]; then
+        echo "$backup_path" >/tmp/ichrisbirch_db_restore
+        log_info "Will restore from $backup_path after containers start"
+      else
+        log_error "Backup file not found: $backup_path"
+      fi
+      ;;
+    3)
+      log_info "Skipping database initialization"
+      ;;
+    *)
+      log_warn "Invalid option, skipping database initialization"
+      ;;
   esac
 }
 

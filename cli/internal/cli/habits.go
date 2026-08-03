@@ -129,7 +129,7 @@ func newHabitsCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), habit)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created habit %q (id %d)\n", habit.Name, habit.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created habit %q (id %d)\n", habit.Name, habit.ID)
 			return nil
 		},
 	}
@@ -183,7 +183,7 @@ func newHabitsEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), habit)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated habit %q (id %d)\n", habit.Name, habit.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated habit %q (id %d)\n", habit.Name, habit.ID)
 			return nil
 		},
 	}
@@ -221,14 +221,14 @@ func newHabitsDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteHabit(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted habit %q (id %d)\n", habit.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted habit %q (id %d)\n", habit.Name, id)
 			return nil
 		},
 	}
@@ -269,7 +269,7 @@ func newHabitsCompleteCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), completed)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Completed habit %q on %s (completion id %d)\n",
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Completed habit %q on %s (completion id %d)\n",
 				completed.Name, completed.CompleteDate.Format("2006-01-02"), completed.ID)
 			return nil
 		},
@@ -360,46 +360,46 @@ func boolFlagPtr(cmd *cobra.Command, name string) *bool {
 
 func printHabitsTable(out io.Writer, habits []api.Habit) {
 	if len(habits) == 0 {
-		fmt.Fprintln(out, "No habits.")
+		_, _ = fmt.Fprintln(out, "No habits.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tCURRENT\tCATEGORY\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tCURRENT\tCATEGORY\tNAME")
 	for _, h := range habits {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", h.ID, yesNo(h.IsCurrent), h.Category.Name, h.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", h.ID, yesNo(h.IsCurrent), h.Category.Name, h.Name)
 	}
 	_ = tw.Flush()
 }
 
 func printHabitDetail(out io.Writer, h api.Habit) {
-	fmt.Fprintf(out, "%s\n", h.Name)
-	fmt.Fprintf(out, "  id:       %d\n", h.ID)
-	fmt.Fprintf(out, "  category: %s (id %d)\n", h.Category.Name, h.CategoryID)
-	fmt.Fprintf(out, "  current:  %s\n", yesNo(h.IsCurrent))
+	_, _ = fmt.Fprintf(out, "%s\n", h.Name)
+	_, _ = fmt.Fprintf(out, "  id:       %d\n", h.ID)
+	_, _ = fmt.Fprintf(out, "  category: %s (id %d)\n", h.Category.Name, h.CategoryID)
+	_, _ = fmt.Fprintf(out, "  current:  %s\n", yesNo(h.IsCurrent))
 }
 
 func printHabitCategoriesTable(out io.Writer, categories []api.HabitCategory) {
 	if len(categories) == 0 {
-		fmt.Fprintln(out, "No habit categories.")
+		_, _ = fmt.Fprintln(out, "No habit categories.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tCURRENT\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tCURRENT\tNAME")
 	for _, c := range categories {
-		fmt.Fprintf(tw, "%d\t%s\t%s\n", c.ID, yesNo(c.IsCurrent), c.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\n", c.ID, yesNo(c.IsCurrent), c.Name)
 	}
 	_ = tw.Flush()
 }
 
 func printHabitCompletedTable(out io.Writer, completed []api.HabitCompleted) {
 	if len(completed) == 0 {
-		fmt.Fprintln(out, "No completions.")
+		_, _ = fmt.Fprintln(out, "No completions.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tDATE\tCATEGORY\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tDATE\tCATEGORY\tNAME")
 	for _, c := range completed {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.CompleteDate.Format("2006-01-02"), c.Category.Name, c.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.CompleteDate.Format("2006-01-02"), c.Category.Name, c.Name)
 	}
 	_ = tw.Flush()
 }

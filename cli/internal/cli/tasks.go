@@ -193,7 +193,7 @@ func newTasksCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created task %q (id %d, priority %d)\n", task.Name, task.ID, task.Priority)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created task %q (id %d, priority %d)\n", task.Name, task.ID, task.Priority)
 			return nil
 		},
 	}
@@ -252,7 +252,7 @@ func newTasksEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated task %q (id %d)\n", task.Name, task.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated task %q (id %d)\n", task.Name, task.ID)
 			return nil
 		},
 	}
@@ -287,7 +287,7 @@ func newTasksCompleteCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Completed task %q (id %d)\n", task.Name, task.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Completed task %q (id %d)\n", task.Name, task.ID)
 			return nil
 		},
 	}
@@ -323,7 +323,7 @@ func newTasksShiftCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Shifted task %q to priority %d (id %d)\n", task.Name, task.Priority, task.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Shifted task %q to priority %d (id %d)\n", task.Name, task.Priority, task.ID)
 			return nil
 		},
 	}
@@ -347,7 +347,7 @@ func newTasksReorderCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), message)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), message)
 			return nil
 		},
 	}
@@ -381,14 +381,14 @@ func newTasksDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteTask(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted task %q (id %d)\n", task.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted task %q (id %d)\n", task.Name, id)
 			return nil
 		},
 	}
@@ -436,29 +436,29 @@ func parseIntArg(name, s string) (int, error) {
 
 func printTaskList(out io.Writer, tasks []api.Task) {
 	if len(tasks) == 0 {
-		fmt.Fprintln(out, "No tasks.")
+		_, _ = fmt.Fprintln(out, "No tasks.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tPRI\tSTATUS\tCATEGORY\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tPRI\tSTATUS\tCATEGORY\tNAME")
 	for _, t := range tasks {
-		fmt.Fprintf(tw, "%d\t%d\t%s\t%s\t%s\n", t.ID, t.Priority, taskStatus(t), t.Category, t.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%d\t%s\t%s\t%s\n", t.ID, t.Priority, taskStatus(t), t.Category, t.Name)
 	}
 	_ = tw.Flush()
 }
 
 func printTaskDetail(out io.Writer, t api.Task) {
-	fmt.Fprintf(out, "%s\n", t.Name)
-	fmt.Fprintf(out, "  id:        %d\n", t.ID)
-	fmt.Fprintf(out, "  category:  %s\n", t.Category)
-	fmt.Fprintf(out, "  priority:  %d\n", t.Priority)
-	fmt.Fprintf(out, "  status:    %s\n", taskStatus(t))
-	fmt.Fprintf(out, "  added:     %s\n", t.AddDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "%s\n", t.Name)
+	_, _ = fmt.Fprintf(out, "  id:        %d\n", t.ID)
+	_, _ = fmt.Fprintf(out, "  category:  %s\n", t.Category)
+	_, _ = fmt.Fprintf(out, "  priority:  %d\n", t.Priority)
+	_, _ = fmt.Fprintf(out, "  status:    %s\n", taskStatus(t))
+	_, _ = fmt.Fprintf(out, "  added:     %s\n", t.AddDate.Format("2006-01-02"))
 	if t.CompleteDate != nil {
-		fmt.Fprintf(out, "  completed: %s\n", t.CompleteDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  completed: %s\n", t.CompleteDate.Format("2006-01-02"))
 	}
 	if n := strValue(t.Notes); n != "" {
-		fmt.Fprintf(out, "  notes:     %s\n", n)
+		_, _ = fmt.Fprintf(out, "  notes:     %s\n", n)
 	}
 }
 

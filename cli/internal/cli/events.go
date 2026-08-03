@@ -130,7 +130,7 @@ func newEventsCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), event)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created event %q at %s (id %d)\n", event.Name, event.Date.Format("2006-01-02 15:04"), event.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created event %q at %s (id %d)\n", event.Name, event.Date.Format("2006-01-02 15:04"), event.ID)
 			return nil
 		},
 	}
@@ -204,7 +204,7 @@ func newEventsEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), event)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated event %q (id %d)\n", event.Name, event.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated event %q (id %d)\n", event.Name, event.ID)
 			return nil
 		},
 	}
@@ -242,7 +242,7 @@ func newEventsAttendCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), event)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Attending event %q (id %d)\n", event.Name, event.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Attending event %q (id %d)\n", event.Name, event.ID)
 			return nil
 		},
 	}
@@ -277,14 +277,14 @@ func newEventsDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteEvent(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted event %q (id %d)\n", event.Name, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted event %q (id %d)\n", event.Name, id)
 			return nil
 		},
 	}
@@ -294,29 +294,29 @@ func newEventsDeleteCommand() *cobra.Command {
 
 func printEventsTable(out io.Writer, events []api.Event) {
 	if len(events) == 0 {
-		fmt.Fprintln(out, "No events.")
+		_, _ = fmt.Fprintln(out, "No events.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tDATE\tGOING\tVENUE\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tDATE\tGOING\tVENUE\tNAME")
 	for _, e := range events {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", e.ID, e.Date.Format("2006-01-02 15:04"), yesNo(e.Attending), e.Venue, e.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", e.ID, e.Date.Format("2006-01-02 15:04"), yesNo(e.Attending), e.Venue, e.Name)
 	}
 	_ = tw.Flush()
 }
 
 func printEventDetail(out io.Writer, e api.Event) {
-	fmt.Fprintf(out, "%s\n", e.Name)
-	fmt.Fprintf(out, "  id:        %d\n", e.ID)
-	fmt.Fprintf(out, "  date:      %s\n", e.Date.Format("2006-01-02 15:04"))
-	fmt.Fprintf(out, "  venue:     %s\n", e.Venue)
-	fmt.Fprintf(out, "  cost:      %.2f\n", e.Cost)
-	fmt.Fprintf(out, "  attending: %s\n", yesNo(e.Attending))
+	_, _ = fmt.Fprintf(out, "%s\n", e.Name)
+	_, _ = fmt.Fprintf(out, "  id:        %d\n", e.ID)
+	_, _ = fmt.Fprintf(out, "  date:      %s\n", e.Date.Format("2006-01-02 15:04"))
+	_, _ = fmt.Fprintf(out, "  venue:     %s\n", e.Venue)
+	_, _ = fmt.Fprintf(out, "  cost:      %.2f\n", e.Cost)
+	_, _ = fmt.Fprintf(out, "  attending: %s\n", yesNo(e.Attending))
 	if u := strValue(e.URL); u != "" {
-		fmt.Fprintf(out, "  url:       %s\n", u)
+		_, _ = fmt.Fprintf(out, "  url:       %s\n", u)
 	}
 	if n := strValue(e.Notes); n != "" {
-		fmt.Fprintf(out, "  notes:     %s\n", n)
+		_, _ = fmt.Fprintf(out, "  notes:     %s\n", n)
 	}
 }
 

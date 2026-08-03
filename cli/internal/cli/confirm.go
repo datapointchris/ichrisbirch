@@ -11,7 +11,7 @@ import (
 // (case-insensitive) approves; EOF or anything else declines. Destructive verbs
 // call this unless a --yes flag bypasses it (for non-interactive use).
 func confirm(out io.Writer, in io.Reader, prompt string) (bool, error) {
-	fmt.Fprintf(out, "%s [y/N] ", prompt)
+	_, _ = fmt.Fprintf(out, "%s [y/N] ", prompt)
 	line, err := bufio.NewReader(in).ReadString('\n')
 	if err != nil && err != io.EOF {
 		return false, err

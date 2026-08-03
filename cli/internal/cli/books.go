@@ -186,7 +186,7 @@ func newBooksCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), book)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Created book %q by %s (id %d)\n", book.Title, book.Author, book.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created book %q by %s (id %d)\n", book.Title, book.Author, book.ID)
 			return nil
 		},
 	}
@@ -250,7 +250,7 @@ func newBooksEditCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), book)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Updated book %q (id %d)\n", book.Title, book.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Updated book %q (id %d)\n", book.Title, book.ID)
 			return nil
 		},
 	}
@@ -286,14 +286,14 @@ func newBooksDeleteCommand() *cobra.Command {
 					return err
 				}
 				if !ok {
-					fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Aborted.")
 					return nil
 				}
 			}
 			if err := client.DeleteBook(cmd.Context(), id); err != nil {
 				return handleAPIError(err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleted book %q (id %d)\n", book.Title, id)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted book %q (id %d)\n", book.Title, id)
 			return nil
 		},
 	}
@@ -376,47 +376,47 @@ func runBookList(cmd *cobra.Command, asJSON bool, fetch func(*api.Client) ([]api
 
 func printBooksTable(out io.Writer, books []api.Book) {
 	if len(books) == 0 {
-		fmt.Fprintln(out, "No books.")
+		_, _ = fmt.Fprintln(out, "No books.")
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(tw, "ID\tPROGRESS\tOWNED\tRATING\tTITLE\tAUTHOR")
+	_, _ = fmt.Fprintln(tw, "ID\tPROGRESS\tOWNED\tRATING\tTITLE\tAUTHOR")
 	for _, b := range books {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\n", b.ID, b.Progress, b.Ownership, intOrDash(b.Rating), b.Title, b.Author)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\n", b.ID, b.Progress, b.Ownership, intOrDash(b.Rating), b.Title, b.Author)
 	}
 	_ = tw.Flush()
 }
 
 func printBookDetail(out io.Writer, b api.Book) {
-	fmt.Fprintf(out, "%s\n", b.Title)
-	fmt.Fprintf(out, "  id:       %d\n", b.ID)
-	fmt.Fprintf(out, "  author:   %s\n", b.Author)
-	fmt.Fprintf(out, "  tags:     %s\n", orNone(strings.Join(b.Tags, ", ")))
-	fmt.Fprintf(out, "  ownership: %s\n", b.Ownership)
-	fmt.Fprintf(out, "  progress: %s\n", b.Progress)
+	_, _ = fmt.Fprintf(out, "%s\n", b.Title)
+	_, _ = fmt.Fprintf(out, "  id:       %d\n", b.ID)
+	_, _ = fmt.Fprintf(out, "  author:   %s\n", b.Author)
+	_, _ = fmt.Fprintf(out, "  tags:     %s\n", orNone(strings.Join(b.Tags, ", ")))
+	_, _ = fmt.Fprintf(out, "  ownership: %s\n", b.Ownership)
+	_, _ = fmt.Fprintf(out, "  progress: %s\n", b.Progress)
 	if b.Rating != nil {
-		fmt.Fprintf(out, "  rating:   %d\n", *b.Rating)
+		_, _ = fmt.Fprintf(out, "  rating:   %d\n", *b.Rating)
 	}
 	if b.Priority != nil {
-		fmt.Fprintf(out, "  priority: %d\n", *b.Priority)
+		_, _ = fmt.Fprintf(out, "  priority: %d\n", *b.Priority)
 	}
 	if s := strValue(b.ISBN); s != "" {
-		fmt.Fprintf(out, "  isbn:     %s\n", s)
+		_, _ = fmt.Fprintf(out, "  isbn:     %s\n", s)
 	}
 	if s := strValue(b.Location); s != "" {
-		fmt.Fprintf(out, "  location: %s\n", s)
+		_, _ = fmt.Fprintf(out, "  location: %s\n", s)
 	}
 	if b.ReadStartDate != nil {
-		fmt.Fprintf(out, "  reading:  started %s\n", b.ReadStartDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  reading:  started %s\n", b.ReadStartDate.Format("2006-01-02"))
 	}
 	if b.ReadFinishDate != nil {
-		fmt.Fprintf(out, "  finished: %s\n", b.ReadFinishDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  finished: %s\n", b.ReadFinishDate.Format("2006-01-02"))
 	}
 	if s := strValue(b.Notes); s != "" {
-		fmt.Fprintf(out, "  notes:    %s\n", s)
+		_, _ = fmt.Fprintf(out, "  notes:    %s\n", s)
 	}
 	if s := strValue(b.Review); s != "" {
-		fmt.Fprintf(out, "  review:   %s\n", s)
+		_, _ = fmt.Fprintf(out, "  review:   %s\n", s)
 	}
 }
 
