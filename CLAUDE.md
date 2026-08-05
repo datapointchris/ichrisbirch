@@ -177,7 +177,7 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
-**Vue four-layer strategy**: `test:build` (TypeScript + Vite), `test:unit` (Vitest store/composable tests), `test:component` (Vitest + `@pinia/testing` view integration tests), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
+**Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
 
 **Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`). These run in ~2s and cover behavior that E2E previously tested.
 
