@@ -149,6 +149,34 @@ def test_update_book(book_crud_tester):
     assert final['title'] == original['title'], 'Untouched fields should be unchanged'
 
 
+def test_read_many_filtered_by_progress(book_crud_tester):
+    """The progress filter is what answers 'what am I reading right now'."""
+    client, crud_tester = book_crud_tester
+    book_id = crud_tester.item_id_by_position(client, position=1)
+    client.patch(f'/books/{book_id}/', json={'progress': 'reading'})
+
+    response = client.get(ENDPOINT, params={'progress': 'reading'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    reading = response.json()
+    assert [book['id'] for book in reading] == [book_id]
+
+    unfiltered = client.get(ENDPOINT).json()
+    assert len(unfiltered) > len(reading), 'Filter must narrow the unfiltered set'
+
+    assert client.get(ENDPOINT, params={'progress': 'abandoned'}).json() == []
+
+
+def test_read_many_filters_combine(book_crud_tester):
+    """ownership and progress narrow together, not one overriding the other."""
+    client, crud_tester = book_crud_tester
+    book_id = crud_tester.item_id_by_position(client, position=1)
+    client.patch(f'/books/{book_id}/', json={'progress': 'reading', 'ownership': 'sold'})
+
+    response = client.get(ENDPOINT, params={'progress': 'reading', 'ownership': 'owned'})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json() == []
+
+
 @patch('httpx.get')
 def test_goodreads_info(mock_get, book_crud_tester):
     client, _ = book_crud_tester

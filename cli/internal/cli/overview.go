@@ -211,7 +211,7 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionBooks, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			books, err := c.ListBooks(ctx, "owned")
+			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"})
 			d.OwnedBooks = books
 			return err
 		}},

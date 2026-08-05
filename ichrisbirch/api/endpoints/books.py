@@ -27,10 +27,13 @@ router = APIRouter()
 async def read_many(
     session: DbSession,
     ownership: str | None = Query(None),
+    progress: str | None = Query(None),
 ):
     query = select(models.Book).order_by(models.Book.priority.asc())
     if ownership:
         query = query.filter(models.Book.ownership == ownership)
+    if progress:
+        query = query.filter(models.Book.progress == progress)
     return list(session.scalars(query).all())
 
 

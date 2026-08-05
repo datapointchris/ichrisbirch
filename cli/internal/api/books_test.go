@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestListBooks_OwnershipFilter(t *testing.T) {
+func TestListBooks_Filters(t *testing.T) {
 	var gotQuery string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.RawQuery
@@ -19,7 +19,7 @@ func TestListBooks_OwnershipFilter(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	books, err := client.ListBooks(context.Background(), "owned")
+	books, err := client.ListBooks(context.Background(), BookFilter{Ownership: "owned"})
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}
@@ -30,9 +30,23 @@ func TestListBooks_OwnershipFilter(t *testing.T) {
 		t.Errorf("books = %+v", books)
 	}
 
-	_, _ = client.ListBooks(context.Background(), "")
-	if gotQuery != "" {
-		t.Errorf("query = %q, want empty for no ownership", gotQuery)
+	for _, tc := range []struct {
+		name   string
+		filter BookFilter
+		want   string
+	}{
+		{"progress alone", BookFilter{Progress: "reading"}, "progress=reading"},
+		{"both narrow together", BookFilter{Ownership: "owned", Progress: "reading"}, "ownership=owned&progress=reading"},
+		{"zero value sends nothing", BookFilter{}, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := client.ListBooks(context.Background(), tc.filter); err != nil {
+				t.Fatalf("ListBooks: %v", err)
+			}
+			if gotQuery != tc.want {
+				t.Errorf("query = %q, want %q", gotQuery, tc.want)
+			}
+		})
 	}
 }
 

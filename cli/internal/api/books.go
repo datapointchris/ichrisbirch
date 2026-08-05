@@ -83,12 +83,31 @@ type BookUpdateInput struct {
 	Review         *string  `json:"review,omitempty"`
 }
 
-// ListBooks returns books ordered by priority (GET /books/). A non-empty
-// ownership filters to that ownership value.
-func (c *Client) ListBooks(ctx context.Context, ownership string) ([]Book, error) {
+// BookFilter narrows a listing. An empty field is not sent, so the zero value
+// lists everything. A struct rather than positional strings because the filters
+// are same-typed and a call site reading ListBooks(ctx, "", "reading") cannot
+// be checked by eye.
+type BookFilter struct {
+	Ownership string
+	Progress  string
+}
+
+func (f BookFilter) query() url.Values {
+	params := url.Values{}
+	if f.Ownership != "" {
+		params.Set("ownership", f.Ownership)
+	}
+	if f.Progress != "" {
+		params.Set("progress", f.Progress)
+	}
+	return params
+}
+
+// ListBooks returns books ordered by priority (GET /books/), narrowed by filter.
+func (c *Client) ListBooks(ctx context.Context, filter BookFilter) ([]Book, error) {
 	path := "/books/"
-	if ownership != "" {
-		path += "?" + url.Values{"ownership": {ownership}}.Encode()
+	if params := filter.query(); len(params) > 0 {
+		path += "?" + params.Encode()
 	}
 	var books []Book
 	if err := c.get(ctx, path, &books); err != nil {
