@@ -222,9 +222,9 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit <technique-id> [flags]",
 		Short: "Change fields on an existing technique",
-		Long: "Update only the fields whose flags you pass. --clear <field> sets a field to\n" +
-			"null (repeatable, API field names) — use it for the rating an empty string\n" +
-			"cannot clear.",
+		Long: "Update only the fields whose flags you pass. --clear <field> empties a field\n" +
+			"(repeatable) — use it for the rating, which an empty string cannot clear.\n" +
+			"It takes the underscored field name, not the flag spelling.",
 		Example: "  icb cooking-techniques edit 3 --rating 4 --tag legumes\n  icb cooking-techniques edit 3 --clear rating",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -267,7 +267,7 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 		},
 	}
 	addTechniqueContentFlags(cmd, &name, &category, &summary, &body, &whyItWorks, &commonPitfalls, &sourceURL, &sourceName, &tags, &rating)
-	cmd.Flags().StringArrayVar(&clear, "clear", nil, "Field to set to null, e.g. --clear rating (repeatable, API field names)")
+	cmd.Flags().StringArrayVar(&clear, "clear", nil, "Empty a field, e.g. --clear rating (repeatable; underscored field name)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated technique as JSON to stdout")
 	return cmd
 }

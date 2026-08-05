@@ -198,9 +198,9 @@ func newProjectsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <project-id>",
 		Short: "Delete a project",
-		Long: "Permanently delete a project. The API auto-removes completed items that\n" +
-			"belong only to this project, and refuses (409) if incomplete items would be\n" +
-			"orphaned. Prompts for confirmation unless --yes.",
+		Long: "Permanently delete a project. Completed items belonging only to this project\n" +
+			"go with it. If incomplete items would be left with no project, the delete is\n" +
+			"refused — move them first. Prompts for confirmation unless --yes.",
 		Example: "  icb projects delete 018f...\n  icb projects delete 018f... --yes",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {

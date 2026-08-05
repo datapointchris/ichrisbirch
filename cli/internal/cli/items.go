@@ -471,7 +471,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "remove-project <item-id> --project <project-id>",
 		Short:   "Remove an item from a project",
-		Long:    "Remove an item from a project. The API refuses (409) to remove it from its\nlast project — delete the item instead.",
+		Long:    "Remove an item from a project. An item always belongs to at least one\nproject, so removing it from its last one is refused — delete the item instead.",
 		Example: "  icb projects items remove-project 018f... --project 018e...",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -515,7 +515,7 @@ func newItemsAddDependencyCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add-dependency <item-id> --depends-on <other-item-id>",
 		Short:   "Record that an item depends on another item",
-		Long:    "The API rejects self-dependencies (422) and cycles (409).",
+		Long:    "An item cannot depend on itself, and a dependency that would close a cycle\nis refused.",
 		Example: "  icb projects items add-dependency 018f... --depends-on 018e...",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {

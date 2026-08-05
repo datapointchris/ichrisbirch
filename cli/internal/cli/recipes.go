@@ -330,7 +330,7 @@ func newRecipesEditCommand() *cobra.Command {
 	cmd.Flags().StringVar(&instructions, "instructions", "", "Instructions (markdown)")
 	cmd.Flags().StringVar(&ingredientsJSON, "ingredients-json", "", "JSON array of ingredient objects (replaces the list)")
 	cmd.Flags().IntVar(&servings, "servings", 0, "Number of servings")
-	cmd.Flags().StringArrayVar(&clear, "clear", nil, "Field to set to null, e.g. --clear rating (repeatable, API field names)")
+	cmd.Flags().StringArrayVar(&clear, "clear", nil, "Empty a field, e.g. --clear rating (repeatable; underscored field name)")
 	addRecipeScalarFlags(cmd, &description, &sourceURL, &sourceName, &prepTime, &cookTime, &totalTime, &difficulty, &cuisine, &mealType, &tags, &notes, &rating)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated recipe as JSON to stdout")
 	return cmd
