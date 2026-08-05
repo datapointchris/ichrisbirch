@@ -260,6 +260,30 @@ resource "aws_iam_policy" "cloud_developer" {
   })
 }
 
+resource "aws_iam_policy" "deny_dynamodb_autoscaling" {
+  name        = "deny-dynamodb-autoscaling"
+  description = "Deny DynamoDB auto scaling: it registers eight CloudWatch alarms per table, and the tables in this account stay inside the always-free 25 read/write units without it"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Deny"
+        Action = [
+          "application-autoscaling:RegisterScalableTarget",
+          "application-autoscaling:PutScalingPolicy"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "application-autoscaling:service-namespace" = "dynamodb"
+          }
+        }
+      }
+    ]
+  })
+}
+
 
 # --- ROLE POLICY ATTACHMENTS ---------------------------------------- #
 
@@ -302,6 +326,23 @@ resource "aws_iam_role_policy_attachment" "admin_administrator_access" {
 resource "aws_iam_role_policy_attachment" "admin_view_cost_and_usage" {
   role       = aws_iam_role.admin.name
   policy_arn = data.aws_iam_policy.billing.arn
+}
+
+# --- Deny DynamoDB auto scaling --- #
+# An explicit Deny overrides the AdministratorAccess that makes this reachable.
+resource "aws_iam_role_policy_attachment" "admin_deny_dynamodb_autoscaling" {
+  role       = aws_iam_role.admin.name
+  policy_arn = aws_iam_policy.deny_dynamodb_autoscaling.arn
+}
+
+resource "aws_iam_role_policy_attachment" "terraform_role_deny_dynamodb_autoscaling" {
+  role       = aws_iam_role.terraform.name
+  policy_arn = aws_iam_policy.deny_dynamodb_autoscaling.arn
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_deny_dynamodb_autoscaling" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.deny_dynamodb_autoscaling.arn
 }
 
 
