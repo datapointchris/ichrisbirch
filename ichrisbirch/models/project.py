@@ -19,12 +19,31 @@ from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.base import Base
 
+PROJECT_KINDS = ['build', 'chore', 'life']
+
+
+class ProjectKind(Base):
+    """Lookup table for what sort of work a project is, replacing a PostgreSQL ENUM type."""
+
+    __tablename__ = 'project_kinds'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
+
 
 class Project(Base):
+    """An ongoing initiative holding an ordered list of work items.
+
+    `kind` separates making something new from the work that merely has to
+    happen, so a consumer asking "what should I build next" is not handed the
+    next errand. It defaults to `build` rather than being required: nearly every
+    project is one, and a wrong kind is one `PATCH` away, whereas a required
+    field breaks every existing caller of the create endpoint.
+    """
+
     __tablename__ = 'projects'
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
     name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    kind: Mapped[str] = mapped_column(Text, ForeignKey('project_kinds.name'), nullable=False, server_default='build')
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 

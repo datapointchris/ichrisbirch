@@ -56,6 +56,11 @@
               <i class="fa-solid fa-grip-vertical"></i>
             </div>
             <span class="projects-page__project-name">{{ project.name }}</span>
+            <span
+              data-testid="project-kind"
+              class="projects-page__project-kind"
+              >{{ project.kind }}</span
+            >
             <span class="projects-page__project-count">{{ project.item_count }}</span>
             <button
               class="projects-page__multi-select-btn"
@@ -484,6 +489,7 @@ import type {
   Project,
   ProjectWithItemCount,
   ProjectCreate,
+  ProjectKind,
   ProjectUpdate,
   ProjectItemInProject,
   ProjectItemCreate,
@@ -522,7 +528,12 @@ watch(
 
 // --- Project modal state ---
 const showProjectModal = ref(false)
-const editProjectTarget = ref<{ id: string; name: string; description?: string } | null>(null)
+const editProjectTarget = ref<{
+  id: string
+  name: string
+  description?: string
+  kind: ProjectKind
+} | null>(null)
 
 // --- Item modal state ---
 const showItemModal = ref(false)
@@ -651,7 +662,12 @@ async function handleBlockerClick(blockerId: string) {
 // --- Project handlers ---
 
 function openEditProject(project: ProjectWithItemCount) {
-  editProjectTarget.value = { id: project.id, name: project.name, description: project.description }
+  editProjectTarget.value = {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    kind: project.kind,
+  }
   showProjectModal.value = true
 }
 
@@ -938,6 +954,13 @@ function clearSearch() {
   &__project-name {
     flex: 1;
     font-weight: 500;
+  }
+
+  &__project-kind {
+    color: var(--clr-gray-500);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
 
   &__project-count {

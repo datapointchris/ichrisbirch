@@ -13,6 +13,7 @@ class ProjectCreate(ProjectConfig):
     id: UUID | None = None
     name: str
     description: str | None = None
+    kind: str = 'build'
     position: int = 0
 
 
@@ -20,6 +21,7 @@ class Project(ProjectConfig):
     id: UUID
     name: str
     description: str | None = None
+    kind: str
     position: int
     created_at: datetime
 
@@ -27,6 +29,7 @@ class Project(ProjectConfig):
 class ProjectUpdate(ProjectConfig):
     name: str | None = None
     description: str | None = None
+    kind: str | None = None
     position: int | None = None
 
 
@@ -34,6 +37,7 @@ class ProjectWithItemCount(ProjectConfig):
     id: UUID
     name: str
     description: str | None = None
+    kind: str
     position: int
     created_at: datetime
     item_count: int

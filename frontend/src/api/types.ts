@@ -576,10 +576,14 @@ export interface MoneyWastedUpdate {
 
 // --- Project ---
 
+/** Values come from the project_kinds lookup table; adding one is an insert plus this union. */
+export type ProjectKind = 'build' | 'chore' | 'life'
+
 export interface Project {
   id: string
   name: string
   description?: string
+  kind: ProjectKind
   position: number
   created_at: string
 }
@@ -587,12 +591,14 @@ export interface Project {
 export interface ProjectCreate {
   name: string
   description?: string
+  kind?: ProjectKind
   position?: number
 }
 
 export interface ProjectUpdate {
   name?: string
   description?: string | null
+  kind?: ProjectKind
   position?: number
 }
 

@@ -26,6 +26,16 @@
         </div>
 
         <div class="add-edit-modal__form-item">
+          <label for="project-kind">Kind</label>
+          <NeuSelect
+            :model-value="form.kind"
+            :options="kindOptions"
+            data-testid="project-kind-input"
+            @update:model-value="form.kind = $event as ProjectKind"
+          />
+        </div>
+
+        <div class="add-edit-modal__form-item">
           <label for="project-description">Description</label>
           <textarea
             id="project-description"
@@ -60,12 +70,13 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { ProjectCreate, ProjectUpdate } from '@/api/client'
+import type { ProjectCreate, ProjectKind, ProjectUpdate } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const props = defineProps<{
   visible: boolean
-  editData?: { id: string; name: string; description?: string } | null
+  editData?: { id: string; name: string; description?: string; kind: ProjectKind } | null
 }>()
 
 const emit = defineEmits<{
@@ -76,9 +87,18 @@ const emit = defineEmits<{
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
+const kindOptions = [
+  { value: 'build', label: 'Build — making something that did not exist' },
+  { value: 'chore', label: 'Chore — has to happen, produces nothing new' },
+  { value: 'life', label: 'Life — everything that is neither' },
+]
+
+const DEFAULT_KIND: ProjectKind = 'build'
+
 const form = reactive({
   name: '',
   description: '',
+  kind: DEFAULT_KIND as ProjectKind,
 })
 
 watch(
@@ -87,6 +107,7 @@ watch(
     if (val && props.editData) {
       form.name = props.editData.name
       form.description = props.editData.description ?? ''
+      form.kind = props.editData.kind
     }
   }
 )
@@ -94,6 +115,7 @@ watch(
 function resetForm() {
   form.name = ''
   form.description = ''
+  form.kind = DEFAULT_KIND
 }
 
 function handleModalClose() {
@@ -107,11 +129,13 @@ function handleSubmit(handleSuccess: () => void) {
     emit('update', props.editData.id, {
       name: form.name.trim(),
       description: form.description.trim() || null,
+      kind: form.kind,
     })
   } else {
     emit('create', {
       name: form.name.trim(),
       description: form.description.trim() || undefined,
+      kind: form.kind,
     })
   }
   handleSuccess()

@@ -31,6 +31,7 @@ const testProjects: ProjectWithItemCount[] = [
     id: PROJ_1_ID,
     name: 'Music Setup',
     description: 'Setting up the studio',
+    kind: 'build',
     position: 0,
     created_at: '2026-01-01T00:00:00Z',
     item_count: 3,
@@ -39,6 +40,7 @@ const testProjects: ProjectWithItemCount[] = [
     id: PROJ_2_ID,
     name: 'Home Renovation',
     description: undefined,
+    kind: 'chore',
     position: 1,
     created_at: '2026-02-01T00:00:00Z',
     item_count: 2,
@@ -153,6 +155,12 @@ describe('ProjectsView', () => {
     expect(items[0]!.text()).toContain('Music Setup')
     expect(items[0]!.text()).toContain('3')
     expect(items[1]!.text()).toContain('Home Renovation')
+  })
+
+  it('labels each project row with its kind', () => {
+    const wrapper = createWrapper({ projects: testProjects })
+    const kinds = wrapper.findAll('[data-testid="project-kind"]')
+    expect(kinds.map((k) => k.text())).toEqual(['build', 'chore'])
   })
 
   it('shows "Select a project" when none selected', () => {
@@ -304,6 +312,15 @@ describe('ProjectsView', () => {
     const modal = wrapper.findComponent({ name: 'AddEditProjectModal' })
     expect(modal.props('visible')).toBe(true)
     expect(modal.props('editData')).toMatchObject({ id: PROJ_1_ID, name: 'Music Setup' })
+  })
+
+  it('hands the current kind to the edit modal so it is not reset to the default', async () => {
+    const wrapper = createWrapper(selectedState())
+
+    await wrapper.find('[data-testid="project-edit-button"]').trigger('click')
+
+    const modal = wrapper.findComponent({ name: 'AddEditProjectModal' })
+    expect(modal.props('editData')).toMatchObject({ kind: 'build' })
   })
 
   it('opens item add modal on add item button click', async () => {

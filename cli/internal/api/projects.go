@@ -16,6 +16,7 @@ type Project struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description"`
+	Kind        string    `json:"kind"`
 	Position    int       `json:"position"`
 	CreatedAt   time.Time `json:"created_at"`
 	ItemCount   *int      `json:"item_count,omitempty"`
@@ -41,6 +42,7 @@ type ProjectItemInProject struct {
 type ProjectCreateInput struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
+	Kind        *string `json:"kind,omitempty"`
 	Position    *int    `json:"position,omitempty"`
 }
 
@@ -50,6 +52,7 @@ type ProjectCreateInput struct {
 type ProjectUpdateInput struct {
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
+	Kind        *string `json:"kind,omitempty"`
 	Position    *int    `json:"position,omitempty"`
 }
 

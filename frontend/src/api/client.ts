@@ -138,6 +138,7 @@ export type {
   MoneyWastedUpdate,
   Project,
   ProjectCreate,
+  ProjectKind,
   ProjectUpdate,
   ProjectWithItemCount,
   ProjectItem,

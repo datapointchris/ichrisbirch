@@ -100,6 +100,63 @@ class TestProjectUpdate:
         assert response.json()['description'] is None, 'description must be null after explicit null patch'
 
 
+class TestProjectKind:
+    """`kind` — what sort of work a project is, from the project_kinds lookup table.
+
+    Exists so a consumer asking "what should I build next" is not handed the next
+    errand. Defaults to `build` rather than being required, so every caller that
+    predates the column keeps working.
+    """
+
+    @pytest.fixture
+    def client_with_projects(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client
+
+    def test_kind_defaults_to_build_when_omitted(self, client_with_projects):
+        response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Unclassified project'})
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        assert response.json()['kind'] == 'build'
+
+    def test_kind_round_trips_through_create_and_read(self, client_with_projects):
+        created = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Sell the old keyboard', 'kind': 'chore'})
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['kind'] == 'chore', 'create response must echo the kind it stored'
+
+        fetched = client_with_projects.get(f'{PROJECTS_ENDPOINT}{created.json()["id"]}/')
+        assert fetched.json()['kind'] == 'chore', 'read must return the stored kind'
+
+    def test_read_many_carries_kind(self, client_with_projects):
+        projects = client_with_projects.get(PROJECTS_ENDPOINT).json()
+        assert {p['kind'] for p in projects} == {'build', 'chore', 'life'}
+
+    def test_kind_can_be_changed_by_patch(self, client_with_projects):
+        project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
+
+        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'kind': 'chore'})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['kind'] == 'chore'
+
+    def test_partial_patch_leaves_kind_unchanged(self, client_with_projects):
+        project = next(p for p in client_with_projects.get(PROJECTS_ENDPOINT).json() if p['kind'] == 'life')
+
+        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'name': 'Renamed'})
+        assert response.json()['kind'] == 'life', 'omitting kind must not reset it to the default'
+
+    def test_unknown_kind_is_rejected_on_create(self, client_with_projects):
+        """422 rather than the foreign key's 500, and the message names the valid kinds."""
+        response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad kind', 'kind': 'errand'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'build' in response.json()['detail']
+
+    def test_unknown_kind_is_rejected_on_patch(self, client_with_projects):
+        project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
+
+        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'kind': 'errand'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+
 class TestProjectItemUpdate:
     """PATCH /project-items/{id}/ — null-clearing behaviour for optional fields."""
 

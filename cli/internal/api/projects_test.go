@@ -85,6 +85,62 @@ func TestUpdateProject_SendsPatchPartialBody(t *testing.T) {
 	}
 }
 
+func TestProjectKind_OmittedWhenUnsetAndDecodedFromTheResponse(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(
+			`{"id":"018f-new","name":"New","description":null,"kind":"build","position":0,"created_at":"2026-07-24T00:00:00Z"}`,
+		))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	project, err := client.CreateProject(context.Background(), ProjectCreateInput{Name: "New"})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+
+	// Unset means "let the server default it", so the field must not be sent —
+	// an empty string would fail the lookup-table foreign key.
+	if _, ok := gotBody["kind"]; ok {
+		t.Errorf("kind should be omitted when unset, body = %v", gotBody)
+	}
+	if project.Kind != "build" {
+		t.Errorf("kind = %q, want build from the response", project.Kind)
+	}
+}
+
+func TestProjectKind_SentWhenSet(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(
+			`{"id":"018f-a","name":"A","description":null,"kind":"chore","position":0,"created_at":"2026-07-24T00:00:00Z"}`,
+		))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	kind := "chore"
+	project, err := client.UpdateProject(context.Background(), "018f-a", ProjectUpdateInput{Kind: &kind})
+	if err != nil {
+		t.Fatalf("UpdateProject: %v", err)
+	}
+
+	if gotBody["kind"] != "chore" || len(gotBody) != 1 {
+		t.Errorf("partial update should send kind alone, body = %v", gotBody)
+	}
+	if project.Kind != "chore" {
+		t.Errorf("kind = %q, want chore", project.Kind)
+	}
+}
+
 func TestDeleteProject_Sends204Delete(t *testing.T) {
 	var gotMethod string
 	var gotPath string

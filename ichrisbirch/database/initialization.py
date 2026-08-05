@@ -30,6 +30,7 @@ from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
+from ichrisbirch.models.project import PROJECT_KINDS
 from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
 from ichrisbirch.models.recipe import RECIPE_CUISINES
 from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
@@ -130,6 +131,7 @@ LOOKUP_DATA = {
         'Research',
         'Work',
     ],
+    'project_kinds': PROJECT_KINDS,
     'book_ownership': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
     'book_progress': ['abandoned', 'read', 'reading', 'unread'],
     'coffee.roast_levels': ['light', 'medium-light', 'medium', 'medium-dark', 'dark'],

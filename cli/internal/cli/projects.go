@@ -100,14 +100,16 @@ func newProjectsCreateCommand() *cobra.Command {
 	var (
 		name        string
 		description string
+		kind        string
 		position    int
 		asJSON      bool
 	)
 	cmd := &cobra.Command{
-		Use:     "create --name <name> [flags]",
-		Short:   "Create a new project",
-		Example: "  icb projects create --name \"Personal OS unification\"",
-		Args:    usageArgs(cobra.NoArgs),
+		Use:   "create --name <name> [flags]",
+		Short: "Create a new project",
+		Example: "  icb projects create --name \"Personal OS unification\"\n" +
+			"  icb projects create --name \"Sell Unused Shite\" --kind chore",
+		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
 				return usageError{errors.New("--name is required")}
@@ -115,6 +117,9 @@ func newProjectsCreateCommand() *cobra.Command {
 			in := api.ProjectCreateInput{Name: name}
 			if cmd.Flags().Changed("description") {
 				in.Description = &description
+			}
+			if cmd.Flags().Changed("kind") {
+				in.Kind = &kind
 			}
 			if cmd.Flags().Changed("position") {
 				in.Position = &position
@@ -137,6 +142,7 @@ func newProjectsCreateCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Project name (required)")
 	cmd.Flags().StringVar(&description, "description", "", "Project description")
+	cmd.Flags().StringVar(&kind, "kind", "", "What sort of work this is: build, chore, life (default build)")
 	cmd.Flags().IntVar(&position, "position", 0, "Sort position among projects")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created project as JSON to stdout")
 	return cmd
@@ -146,15 +152,17 @@ func newProjectsEditCommand() *cobra.Command {
 	var (
 		name        string
 		description string
+		kind        string
 		position    int
 		asJSON      bool
 	)
 	cmd := &cobra.Command{
-		Use:     "edit <project-id> [flags]",
-		Short:   "Change fields on an existing project",
-		Long:    "Update only the fields whose flags you pass; everything else is left unchanged.",
-		Example: "  icb projects edit 018f... --name \"New name\" --position 2",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Use:   "edit <project-id> [flags]",
+		Short: "Change fields on an existing project",
+		Long:  "Update only the fields whose flags you pass; everything else is left unchanged.",
+		Example: "  icb projects edit 018f... --name \"New name\" --position 2\n" +
+			"  icb projects edit 018f... --kind chore",
+		Args: usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.ProjectUpdateInput{}
@@ -164,11 +172,14 @@ func newProjectsEditCommand() *cobra.Command {
 			if f.Changed("description") {
 				in.Description = &description
 			}
+			if f.Changed("kind") {
+				in.Kind = &kind
+			}
 			if f.Changed("position") {
 				in.Position = &position
 			}
 			if in == (api.ProjectUpdateInput{}) {
-				return usageError{errors.New("nothing to change — pass at least one of --name/--description/--position")}
+				return usageError{errors.New("nothing to change — pass at least one of --name/--description/--kind/--position")}
 			}
 
 			client, err := newAPIClient(cmd.Context())
@@ -188,6 +199,7 @@ func newProjectsEditCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "New project name")
 	cmd.Flags().StringVar(&description, "description", "", "New project description")
+	cmd.Flags().StringVar(&kind, "kind", "", "New kind: build, chore, life")
 	cmd.Flags().IntVar(&position, "position", 0, "New sort position")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated project as JSON to stdout")
 	return cmd
@@ -250,9 +262,9 @@ func printProjectsTable(out io.Writer, projects []api.Project) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tNAME\tITEMS\tPOS")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tKIND\tITEMS\tPOS")
 	for _, p := range projects {
-		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%d\n", p.ID, p.Name, itemCount(p), p.Position)
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%d\n", p.ID, p.Name, p.Kind, itemCount(p), p.Position)
 	}
 	_ = tw.Flush()
 }
@@ -263,6 +275,7 @@ func printProjectDetail(out io.Writer, p api.Project, items []api.ProjectItemInP
 	if d := strValue(p.Description); d != "" {
 		_, _ = fmt.Fprintf(out, "  desc:      %s\n", d)
 	}
+	_, _ = fmt.Fprintf(out, "  kind:      %s\n", p.Kind)
 	_, _ = fmt.Fprintf(out, "  position:  %d\n", p.Position)
 	_, _ = fmt.Fprintf(out, "  items:     %s\n", itemCount(p))
 

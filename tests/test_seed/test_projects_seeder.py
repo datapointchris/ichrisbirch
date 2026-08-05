@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pytest
 
+from ichrisbirch.models.project import PROJECT_KINDS
+from ichrisbirch.models.project import Project
 from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.models.project import ProjectItemTask
@@ -20,6 +22,12 @@ class TestProjectSeeder:
         for item in items:
             memberships = db.query(ProjectItemMembership).filter(ProjectItemMembership.item_id == item.id).count()
             assert memberships >= 1, f'Item {item.id} has no project membership'
+
+    def test_every_kind_is_represented(self, db):
+        """A kind with no seeded project cannot be exercised in the UI or a filtered read."""
+        projects.clear(db)
+        projects.seed(db, scale=1)
+        assert {project.kind for project in db.query(Project).all()} == set(PROJECT_KINDS)
 
     def test_every_task_has_parent_item(self, db):
         projects.clear(db)

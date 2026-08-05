@@ -22,6 +22,7 @@ func newItemsCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newItemsListCommand(),
+		newItemsNextCommand(),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
 		newItemsViewCommand(),
@@ -91,6 +92,81 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Include archived items (requires --project)")
 	return cmd
+}
+
+// newItemsNextCommand exposes the ordering `icb overview` already computes for
+// its project-items section, so a caller that wants only the head of the queue
+// does not have to fetch the whole snapshot and re-derive it.
+//
+// --kind is what makes it useful to `menu next`: a pursuit weighted for making
+// things must not resolve to the oldest errand that happens to be filed as a
+// project. The filter runs client-side because every item already carries its
+// projects, so kind rides along and the alternative would be a query parameter
+// that saves no round trip.
+func newItemsNextCommand() *cobra.Command {
+	var (
+		asJSON bool
+		kind   string
+		limit  int
+	)
+	cmd := &cobra.Command{
+		Use:   "next",
+		Short: "The actionable items, in the order to take them",
+		Long: "Not completed, not archived, not blocked — oldest first within a project and\n" +
+			"interleaved a project at a time, so no single project fills the list. This is\n" +
+			"the same ordering `icb overview` shows.",
+		Example: "  icb projects items next\n" +
+			"  icb projects items next --kind build\n" +
+			"  icb projects items next --kind build --limit 1 --json",
+		Args: usageArgs(cobra.NoArgs),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			all, err := client.ListItems(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			blocked, err := client.ListBlockedItems(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			items := capItems(nextProjectItems(itemsOfKind(all, kind), blocked), limit)
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), items)
+			}
+			if len(items) == 0 && kind != "" {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items in %s projects.\n", kind)
+				return nil
+			}
+			printItemsTable(cmd.OutOrStdout(), items)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
+	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: build, chore, life")
+	cmd.Flags().IntVar(&limit, "limit", 10, "Max items to return (0 for no cap)")
+	return cmd
+}
+
+// itemsOfKind keeps the items belonging to at least one project of the given
+// kind. An empty kind is no filter at all, which is what makes --kind optional
+// without a second code path.
+func itemsOfKind(items []api.ProjectItem, kind string) []api.ProjectItem {
+	if kind == "" {
+		return items
+	}
+	var kept []api.ProjectItem
+	for _, item := range items {
+		for _, project := range item.Projects {
+			if project.Kind == kind {
+				kept = append(kept, item)
+				break
+			}
+		}
+	}
+	return kept
 }
 
 func newItemsBlockedCommand() *cobra.Command {

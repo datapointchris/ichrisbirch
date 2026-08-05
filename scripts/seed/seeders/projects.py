@@ -17,12 +17,12 @@ from ichrisbirch.models.project import ProjectItemTask
 from scripts.seed.base import SeedResult
 
 PROJECT_DATA = [
-    ('Home Renovation', 'Kitchen and bathroom remodel planning'),
-    ('Learn Kubernetes', 'Self-study track for container orchestration'),
-    ('Career Development', 'Skills growth and networking goals'),
-    ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking'),
-    ('Fitness Goals 2026', 'Strength training and running milestones'),
-    ('Portland Trip Planning', 'Research neighborhoods, flights, and activities'),
+    ('Home Renovation', 'Kitchen and bathroom remodel planning', 'build'),
+    ('Learn Kubernetes', 'Self-study track for container orchestration', 'life'),
+    ('Career Development', 'Skills growth and networking goals', 'life'),
+    ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking', 'build'),
+    ('Fitness Goals 2026', 'Strength training and running milestones', 'life'),
+    ('Portland Trip Planning', 'Research neighborhoods, flights, and activities', 'chore'),
 ]
 
 ITEM_TITLES = [
@@ -89,9 +89,9 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     # Create projects
     projects = []
     for rep in range(scale):
-        for i, (name, description) in enumerate(PROJECT_DATA):
+        for i, (name, description, kind) in enumerate(PROJECT_DATA):
             proj_name = name if scale == 1 else f'{name} #{rep + 1}'
-            projects.append(Project(name=proj_name, description=description, position=i))
+            projects.append(Project(name=proj_name, description=description, kind=kind, position=i))
     session.add_all(projects)
     session.flush()
 

@@ -9,6 +9,7 @@ from fastapi import status
 from sqlalchemy import func
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -36,6 +37,7 @@ async def read_many(session: DbSession):
             id=project.id,
             name=project.name,
             description=project.description,
+            kind=project.kind,
             position=project.position,
             created_at=project.created_at,
             item_count=item_count,
@@ -44,8 +46,24 @@ async def read_many(session: DbSession):
     ]
 
 
+def validate_kind(kind: str, session: Session) -> None:
+    """Reject an unknown kind here rather than letting the FK raise.
+
+    Checked against the lookup table instead of a `Literal` so adding a kind
+    stays an insert — which is the whole reason the categorical is a table and
+    not an enum type.
+    """
+    if session.get(models.ProjectKind, kind) is None:
+        known = session.scalars(select(models.ProjectKind.name).order_by(models.ProjectKind.name)).all()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'Unknown project kind {kind!r}. Known kinds: {", ".join(known)}',
+        )
+
+
 @router.post('/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
 async def create(project: schemas.ProjectCreate, session: DbSession):
+    validate_kind(project.kind, session)
     db_obj = models.Project(**project.model_dump(exclude={'id'}))
     if project.id is not None:
         db_obj.id = project.id
@@ -70,6 +88,7 @@ async def read_one(id: UUID, session: DbSession):
         id=project.id,
         name=project.name,
         description=project.description,
+        kind=project.kind,
         position=project.position,
         created_at=project.created_at,
         item_count=item_count or 0,
@@ -80,6 +99,8 @@ async def read_one(id: UUID, session: DbSession):
 async def update(id: UUID, update: schemas.ProjectUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_update', project_id=id, update_data=update_data)
+    if (kind := update_data.get('kind')) is not None:
+        validate_kind(kind, session)
 
     if project := session.get(models.Project, id):
         for attr, value in update_data.items():
