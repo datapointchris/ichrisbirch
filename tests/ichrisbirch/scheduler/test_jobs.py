@@ -88,3 +88,29 @@ def test_check_and_run_autotasks_max_concurrent(test_api_logged_in):
         no_add_tasks = test_api_logged_in.get('/tasks/')
         assert no_add_tasks.status_code == 200, show_status_and_response(no_add_tasks)
         assert len(no_add_tasks.json()) == 9, no_add_tasks.json()
+
+
+def test_check_and_run_autotasks_completing_frees_a_slot(test_api_logged_in):
+    """max_concurrent counts open tasks, not lifetime runs.
+
+    Counting completed rows too turned it into a cap on how many times a template
+    could ever fire, and every autotask stalled once its history reached the cap.
+    """
+    baseline_ids = {task['id'] for task in test_api_logged_in.get('/tasks/').json()}
+    with freeze_time('2021-03-20'):
+        jobs.check_and_run_autotasks(test_settings)
+    with freeze_time('2022-03-20'):
+        jobs.check_and_run_autotasks(test_settings)
+    at_max = test_api_logged_in.get('/tasks/').json()
+    assert len(at_max) == 9, at_max
+
+    spawned = [task for task in at_max if task['id'] not in baseline_ids]
+    assert spawned, at_max
+    for task in spawned:
+        completed = test_api_logged_in.patch(f'/tasks/{task["id"]}/complete/')
+        assert completed.status_code == 200, show_status_and_response(completed)
+
+    with freeze_time('2023-03-20'):
+        jobs.check_and_run_autotasks(test_settings)
+    after = test_api_logged_in.get('/tasks/').json()
+    assert len(after) == 12, after

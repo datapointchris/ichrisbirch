@@ -163,13 +163,15 @@ def compact_task_priorities(settings: Settings) -> None:
 def check_and_run_autotasks(settings: Settings) -> None:
     """Check if any autotasks should run today and create tasks if not at max concurrent."""
     with create_session(settings) as session:
-        tasks_count_by_name: dict[str, int] = defaultdict(int)
-        for task in session.scalars(select(models.Task)).all():
-            tasks_count_by_name[task.name] += 1
+        # Open tasks only. Counting completed rows too made max_concurrent a
+        # lifetime cap, and every template stalled once its history reached it.
+        open_tasks_by_name: dict[str, int] = defaultdict(int)
+        for task in session.scalars(select(models.Task).where(models.Task.complete_date.is_(None))).all():
+            open_tasks_by_name[task.name] += 1
         for autotask in session.scalars(select(models.AutoTask)).all():
             if not autotask.should_run_today:
                 continue
-            concurrent = tasks_count_by_name.get(autotask.name, 0)
+            concurrent = open_tasks_by_name.get(autotask.name, 0)
             logger.info('autotask_concurrent_count', autotask_name=autotask.name, concurrent=concurrent)
             if concurrent >= autotask.max_concurrent:
                 logger.info(
