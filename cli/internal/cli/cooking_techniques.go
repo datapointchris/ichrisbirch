@@ -15,8 +15,8 @@ func newCookingTechniquesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cooking-techniques",
 		Short: "List, inspect, search, and manage cooking techniques",
-		Long: "Work with the cooking-technique catalog (the how-and-why writeups nested\n" +
-			"under the recipes domain). Requires a logged-in session (`icb auth login`).",
+		Long: "The how-and-why writeups behind the recipes — searing, emulsifying, laminating\n" +
+			"— kept separately from any one recipe that uses them.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(

@@ -17,8 +17,9 @@ func newRecipesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "recipes",
 		Short: "List, inspect, search, cook, and AI-import recipes",
-		Long: "Work with the recipe catalog in the ichrisbirch API as yourself, including\n" +
-			"the AI suggest/import flows. Requires a logged-in session (`icb auth login`).",
+		Long: "Your recipe catalog: what you can cook, what you have cooked, and what you\n" +
+			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
+			"for review and never save on their own.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(

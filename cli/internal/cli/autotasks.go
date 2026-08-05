@@ -14,9 +14,8 @@ func newAutotasksCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "autotasks",
 		Short: "Inspect your recurring task templates",
-		Long: "View the auto-tasks the scheduler uses to spawn recurring tasks. This group\n" +
-			"is read-only — the scheduler owns creation and run bookkeeping. Requires a\n" +
-			"logged-in session (`icb auth login`).",
+		Long: "The templates behind your recurring tasks: what respawns, how often, and when\n" +
+			"each last ran. Read-only — the scheduler is what creates and completes them.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(

@@ -16,8 +16,9 @@ func newArticlesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "articles",
 		Short: "List, inspect, search, and manage your saved articles",
-		Long:  "Work with the reading list in the ichrisbirch API as yourself. Requires a\nlogged-in session (`icb auth login`).",
-		RunE:  requireSubcommand,
+		Long: "Your saved-article reading list: what is unread, what is archived, and the\n" +
+			"favorites due for a re-read.",
+		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(
 		newArticlesListCommand(),

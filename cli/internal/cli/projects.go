@@ -16,9 +16,8 @@ func newProjectsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "projects",
 		Short: "List, inspect, and manage your projects",
-		Long: "Work with the structured projects stored in the ichrisbirch API as\n" +
-			"yourself. Projects hold ordered work items (see `icb projects items`).\n" +
-			"Requires a logged-in session (`icb auth login`).",
+		Long: "Ongoing initiatives, each holding an ordered list of work items. The project\n" +
+			"is the container; the work itself is in `icb projects items`.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(

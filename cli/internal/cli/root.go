@@ -56,10 +56,15 @@ func NewRootCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "icb",
 		Short: "icb — the ichrisbirch data CLI",
-		Long: "icb is the command-line client for the ichrisbirch personal-productivity\n" +
-			"apps (tasks, projects, countdowns, books, articles, habits, events).\n" +
-			"Authenticate once with `icb auth login`, then run commands against the API\n" +
-			"as yourself.",
+		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
+			"projects, books, articles, habits, recipes, countdowns, and events.\n" +
+			"\n" +
+			"The noun comes first and the verb last, so moving from reading a resource\n" +
+			"to acting on it changes only the final word: `icb books list` becomes\n" +
+			"`icb books edit`. Every read verb takes --json.\n" +
+			"\n" +
+			"Run any partial command with no arguments or --help to see what comes\n" +
+			"next. Authenticate once with `icb auth login`.",
 		Version:       version,
 		SilenceUsage:  true, // usage is shown deliberately, not on every runtime error
 		SilenceErrors: true, // Execute prints errors itself, to stderr

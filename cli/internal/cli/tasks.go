@@ -15,9 +15,8 @@ func newTasksCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tasks",
 		Short: "List, inspect, and manage your tasks",
-		Long: "Work with the standalone Tasks app — the flat, priority-ranked maintenance\n" +
-			"list (distinct from project items). Requires a logged-in session\n" +
-			"(`icb auth login`).",
+		Long: "The flat, priority-ranked maintenance list — chores and one-offs that belong\n" +
+			"to no project. Structured work lives in `icb projects items` instead.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(

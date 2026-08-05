@@ -15,7 +15,7 @@ func newHabitsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "habits",
 		Short: "List, inspect, complete, and manage your habits",
-		Long:  "Work with habits, their categories, and completions in the ichrisbirch API\nas yourself. Requires a logged-in session (`icb auth login`).",
+		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
 		RunE:  requireSubcommand,
 	}
 	cmd.AddCommand(

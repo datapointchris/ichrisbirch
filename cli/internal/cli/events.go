@@ -14,7 +14,7 @@ func newEventsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "events",
 		Short: "List, inspect, and manage your events",
-		Long:  "Work with events — dated happenings with a venue, cost, and RSVP — in the\nichrisbirch API as yourself. Requires a logged-in session (`icb auth login`).",
+		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
 		RunE:  requireSubcommand,
 	}
 	cmd.AddCommand(

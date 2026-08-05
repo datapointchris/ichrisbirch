@@ -15,10 +15,9 @@ func newItemsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "items",
 		Short: "Work with project items — the structured to-do units in projects",
-		Long: "Project items are the ordered work units inside projects (todoui's items),\n" +
-			"each with sub-tasks, dependencies, and multi-project membership. This is a\n" +
-			"different system from the standalone `icb tasks` app. Requires a logged-in\n" +
-			"session (`icb auth login`).",
+		Long: "The ordered work units inside a project, each with sub-tasks, dependencies,\n" +
+			"and membership in one or more projects. Unstructured chores go in\n" +
+			"`icb tasks` instead.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(

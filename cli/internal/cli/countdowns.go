@@ -15,7 +15,7 @@ func newCountdownsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "countdowns",
 		Short: "List, inspect, and manage your countdowns",
-		Long:  "Work with countdowns — named future dates — in the ichrisbirch API as\nyourself. Requires a logged-in session (`icb auth login`).",
+		Long:  "Named future dates and how long is left on each — birthdays, deadlines,\nanniversaries, anything you are counting down to.",
 		RunE:  requireSubcommand,
 	}
 	cmd.AddCommand(
