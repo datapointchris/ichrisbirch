@@ -71,9 +71,7 @@ orange=$(tput setaf 208)
 reset=$(tput sgr0)
 
 # Source command modules
-# shellcheck source=ops/stats
 source "$ICHRISBIRCH_HOME/ops/stats"
-# shellcheck source=ops/db
 source "$ICHRISBIRCH_HOME/ops/db"
 
 function dev-credentials() {

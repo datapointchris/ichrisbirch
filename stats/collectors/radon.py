@@ -8,11 +8,29 @@ import time
 from contextlib import suppress
 from datetime import UTC
 from datetime import datetime
-from pathlib import Path
 
+from stats.collectors.walk import iter_files
 from stats.schemas.collectors.radon import FileComplexity
 from stats.schemas.collectors.radon import FunctionComplexity
 from stats.schemas.collectors.radon import RadonCollectEvent
+
+
+def _start_radon(subcommand: str, python_files: list[str]) -> subprocess.Popen[str]:
+    return subprocess.Popen(  # nosec B603 B607
+        ['uv', 'run', 'radon', subcommand, '-j', *python_files],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+
+def _read_json(process: subprocess.Popen[str]) -> dict:
+    stdout, _ = process.communicate()
+    if process.returncode != 0 or not stdout:
+        return {}
+    with suppress(json.JSONDecodeError):
+        return json.loads(stdout)
+    return {}
 
 
 def run(branch: str, project: str, root_path: str = '.') -> RadonCollectEvent | None:
@@ -28,36 +46,19 @@ def run(branch: str, project: str, root_path: str = '.') -> RadonCollectEvent | 
     """
     start_time = time.perf_counter()
 
-    # Find Python files to analyze
-    all_py_files = list(Path(root_path).rglob('*.py'))
-    python_files = [str(f) for f in all_py_files if '.venv' not in str(f) and '__pycache__' not in str(f) and 'alembic' not in str(f)]
+    # Migrations are generated, so their complexity says nothing about the code
+    # anyone writes.
+    python_files = [str(f) for f in iter_files(root_path, '.py') if 'alembic' not in str(f)]
 
     if not python_files:
         return None
 
-    # Get cyclomatic complexity
-    cc_result = subprocess.run(  # nosec B603 B607
-        ['uv', 'run', 'radon', 'cc', '-j', *python_files],
-        capture_output=True,
-        text=True,
-    )
-
-    cc_data: dict = {}
-    if cc_result.returncode == 0 and cc_result.stdout:
-        with suppress(json.JSONDecodeError):
-            cc_data = json.loads(cc_result.stdout)
-
-    # Get maintainability index
-    mi_result = subprocess.run(  # nosec B603 B607
-        ['uv', 'run', 'radon', 'mi', '-j', *python_files],
-        capture_output=True,
-        text=True,
-    )
-
-    mi_data: dict = {}
-    if mi_result.returncode == 0 and mi_result.stdout:
-        with suppress(json.JSONDecodeError):
-            mi_data = json.loads(mi_result.stdout)
+    # Both passes parse the same files and neither needs the other's output, so
+    # they run concurrently — radon's own parse is the whole cost here.
+    cc_process = _start_radon('cc', python_files)
+    mi_process = _start_radon('mi', python_files)
+    cc_data = _read_json(cc_process)
+    mi_data = _read_json(mi_process)
 
     # Combine into file complexity records
     files: list[FileComplexity] = []

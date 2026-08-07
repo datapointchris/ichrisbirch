@@ -41,7 +41,6 @@ mkdir -p "$LOG_DIR"
 mkdir -p "$STATE_DIR"
 
 # Source structured logging library
-# shellcheck source=bash-lib/logging.sh
 source "${SCRIPT_DIR}/bash-lib/logging.sh"
 
 # Track deployment state for cleanup

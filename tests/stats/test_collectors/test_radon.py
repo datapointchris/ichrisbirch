@@ -101,10 +101,12 @@ class TestRadonRunner:
             cc_output = f'{{"{test_file}": [{{"name": "main", "complexity": 1, "rank": "A", "lineno": 1}}]}}'
             mi_output = f'{{"{test_file}": {{"mi": 100.0, "rank": "A"}}}}'
 
-            with patch('subprocess.run') as mock_run:
-                mock_run.side_effect = [
-                    MagicMock(returncode=0, stdout=cc_output),
-                    MagicMock(returncode=0, stdout=mi_output),
+            # cc and mi are started together and read afterwards, so the mock has
+            # to hand back processes rather than finished results.
+            with patch('subprocess.Popen') as mock_popen:
+                mock_popen.side_effect = [
+                    MagicMock(returncode=0, communicate=MagicMock(return_value=(cc_output, ''))),
+                    MagicMock(returncode=0, communicate=MagicMock(return_value=(mi_output, ''))),
                 ]
 
                 event = run('master', 'ichrisbirch', tmpdir)

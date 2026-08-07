@@ -6,8 +6,8 @@ import time
 from collections import defaultdict
 from datetime import UTC
 from datetime import datetime
-from pathlib import Path
 
+from stats.collectors.walk import iter_files
 from stats.schemas.collectors.files import FilesCollectEvent
 from stats.schemas.collectors.files import FileTypeStats
 
@@ -29,18 +29,16 @@ def run(branch: str, project: str, root_path: str = '.') -> FilesCollectEvent:
     total_files = 0
     total_size = 0
 
-    root = Path(root_path)
-    for path in root.rglob('*'):
-        if path.is_file() and not _should_skip(path):
-            ext = path.suffix or '(no extension)'
-            try:
-                size = path.stat().st_size
-                stats_by_ext[ext]['count'] += 1
-                stats_by_ext[ext]['size'] += size
-                total_files += 1
-                total_size += size
-            except OSError:
-                continue
+    for path in iter_files(root_path):
+        ext = path.suffix or '(no extension)'
+        try:
+            size = path.stat().st_size
+        except OSError:  # a broken symlink is a name, not a file
+            continue
+        stats_by_ext[ext]['count'] += 1
+        stats_by_ext[ext]['size'] += size
+        total_files += 1
+        total_size += size
 
     duration = time.perf_counter() - start_time
 
@@ -62,9 +60,3 @@ def run(branch: str, project: str, root_path: str = '.') -> FilesCollectEvent:
         total_size_bytes=total_size,
         duration_seconds=round(duration, 3),
     )
-
-
-def _should_skip(path: Path) -> bool:
-    """Check if a path should be skipped."""
-    skip_dirs = {'.git', '.venv', 'node_modules', '__pycache__', '.pytest_cache', '.mypy_cache'}
-    return any(part in skip_dirs for part in path.parts)
