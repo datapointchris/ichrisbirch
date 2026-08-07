@@ -259,7 +259,7 @@
               v-model="keyName"
               type="text"
               class="textbox"
-              placeholder="e.g., Claude Code MCP"
+              placeholder="e.g., icb CLI on macmini"
               required
             />
             <button

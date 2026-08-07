@@ -287,9 +287,10 @@ func (c *Client) AISaveURLImport(ctx context.Context, candidate json.RawMessage)
 }
 
 // mergeClearNulls marshals a typed partial-update body to a JSON object and adds
-// an explicit null for each field named in clear (API JSON keys). This is the
-// wire form of the MCP null_fields param — the only way to clear a field the
-// typed omitempty struct would otherwise drop.
+// an explicit null for each field named in clear (API JSON keys). Sending an
+// explicit null is the only way to clear a field, because the typed struct's
+// omitempty drops it from the payload entirely and the API reads an absent
+// field as "leave it alone".
 func mergeClearNulls(input any, clear []string) (map[string]json.RawMessage, error) {
 	raw, err := json.Marshal(input)
 	if err != nil {

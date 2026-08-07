@@ -48,7 +48,6 @@ SERVICE_STYLE = {
     'redis': 'red',
     'postgres': 'green',
     'db': 'green',
-    'mcp': 'magenta',
 }
 
 ANSI_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
