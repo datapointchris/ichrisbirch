@@ -86,9 +86,9 @@ type DependencyInput struct {
 }
 
 // ListItems returns all active (non-archived) project items (GET /project-items/).
-func (c *Client) ListItems(ctx context.Context) ([]ProjectItem, error) {
+func (c *Client) ListItems(ctx context.Context, repo *string) ([]ProjectItem, error) {
 	var items []ProjectItem
-	if err := c.get(ctx, "/project-items/", &items); err != nil {
+	if err := c.get(ctx, withQuery("/project-items/", repoQuery(repo)), &items); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -96,9 +96,9 @@ func (c *Client) ListItems(ctx context.Context) ([]ProjectItem, error) {
 
 // ListBlockedItems returns items with at least one incomplete dependency
 // (GET /project-items/blocked/).
-func (c *Client) ListBlockedItems(ctx context.Context) ([]ProjectItem, error) {
+func (c *Client) ListBlockedItems(ctx context.Context, repo *string) ([]ProjectItem, error) {
 	var items []ProjectItem
-	if err := c.get(ctx, "/project-items/blocked/", &items); err != nil {
+	if err := c.get(ctx, withQuery("/project-items/blocked/", repoQuery(repo)), &items); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -106,13 +106,32 @@ func (c *Client) ListBlockedItems(ctx context.Context) ([]ProjectItem, error) {
 
 // SearchItems returns items whose title or notes match q
 // (GET /project-items/search/?q=).
-func (c *Client) SearchItems(ctx context.Context, q string) ([]ProjectItem, error) {
-	path := "/project-items/search/?" + url.Values{"q": {q}}.Encode()
+func (c *Client) SearchItems(ctx context.Context, q string, repo *string) ([]ProjectItem, error) {
+	query := repoQuery(repo)
+	query.Set("q", q)
 	var items []ProjectItem
-	if err := c.get(ctx, path, &items); err != nil {
+	if err := c.get(ctx, withQuery("/project-items/search/", query), &items); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+// repoQuery renders the repo filter. A nil pointer asks for everything; a
+// pointer to "" asks for the untagged items, which is a different question and
+// so has to survive as an explicit empty parameter rather than being dropped.
+func repoQuery(repo *string) url.Values {
+	query := url.Values{}
+	if repo != nil {
+		query.Set("repo", *repo)
+	}
+	return query
+}
+
+func withQuery(path string, query url.Values) string {
+	if len(query) == 0 {
+		return path
+	}
+	return path + "?" + query.Encode()
 }
 
 // GetItem returns a single item's detail (GET /project-items/{id}/). A missing

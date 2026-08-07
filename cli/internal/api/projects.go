@@ -15,6 +15,10 @@ import (
 //
 // OpenCount and CompletedCount exclude archived items, so they sum to ItemCount
 // only when nothing in the project is archived.
+//
+// Repos is derived server-side from the items' repo tags, not a column on the
+// project — one source of truth, and a project spanning an API, a CLI, and a TUI
+// lists all three.
 type Project struct {
 	ID             string    `json:"id"`
 	Name           string    `json:"name"`
@@ -25,6 +29,7 @@ type Project struct {
 	ItemCount      *int      `json:"item_count,omitempty"`
 	OpenCount      *int      `json:"open_count,omitempty"`
 	CompletedCount *int      `json:"completed_count,omitempty"`
+	Repos          []string  `json:"repos,omitempty"`
 }
 
 // ProjectItemInProject is a project item as seen within a project's ordered
@@ -64,9 +69,9 @@ type ProjectUpdateInput struct {
 
 // ListProjects returns every project with its item count (GET /projects/),
 // ordered by position.
-func (c *Client) ListProjects(ctx context.Context) ([]Project, error) {
+func (c *Client) ListProjects(ctx context.Context, repo *string) ([]Project, error) {
 	var projects []Project
-	if err := c.get(ctx, "/projects/", &projects); err != nil {
+	if err := c.get(ctx, withQuery("/projects/", repoQuery(repo)), &projects); err != nil {
 		return nil, err
 	}
 	return projects, nil

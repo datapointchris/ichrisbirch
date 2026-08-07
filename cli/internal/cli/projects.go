@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -33,29 +34,42 @@ func newProjectsCommand() *cobra.Command {
 }
 
 func newProjectsListCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		asJSON bool
+		repo   string
+	)
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "List all projects",
-		Example: "  icb projects list\n  icb projects list --json",
+		Use:   "list",
+		Short: "List all projects",
+		Long: "Every project, with the repos its items touch. --repo narrows to the projects\n" +
+			"holding work on one repo — the efforts that span it, however they are named.",
+		Example: "  icb projects list\n  icb projects list --repo dotfiles\n  icb projects list --json",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			projects, err := client.ListProjects(cmd.Context())
+			filter := repoFlagValue(cmd, repo)
+			projects, err := client.ListProjects(cmd.Context(), filter)
 			if err != nil {
 				return handleAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), projects)
 			}
+			// "No projects yet, create one" is true of an empty database and a
+			// lie about a filter that matched nothing.
+			if len(projects) == 0 && filter != nil {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No projects hold work on repo %s.\n", *filter)
+				return nil
+			}
 			printProjectsTable(cmd.OutOrStdout(), projects)
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output projects as JSON to stdout")
+	cmd.Flags().StringVar(&repo, "repo", "", "Only projects holding work on this repo")
 	return cmd
 }
 
@@ -263,14 +277,23 @@ func printProjectsTable(out io.Writer, projects []api.Project) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tNAME\tKIND\tOPEN\tDONE\tITEMS\tPOS")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tKIND\tOPEN\tDONE\tITEMS\tPOS\tREPOS")
 	for _, p := range projects {
 		_, _ = fmt.Fprintf(
-			tw, "%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
-			p.ID, p.Name, p.Kind, count(p.OpenCount), count(p.CompletedCount), count(p.ItemCount), p.Position,
+			tw, "%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\n",
+			p.ID, p.Name, p.Kind, count(p.OpenCount), count(p.CompletedCount), count(p.ItemCount), p.Position, repoList(p.Repos),
 		)
 	}
 	_ = tw.Flush()
+}
+
+// repoList renders a project's derived repos. An em dash rather than a blank
+// keeps the column readable for the projects that are not repo work at all.
+func repoList(repos []string) string {
+	if len(repos) == 0 {
+		return "—"
+	}
+	return strings.Join(repos, ",")
 }
 
 func printProjectDetail(out io.Writer, p api.Project, items []api.ProjectItemInProject) {
@@ -281,6 +304,7 @@ func printProjectDetail(out io.Writer, p api.Project, items []api.ProjectItemInP
 	}
 	_, _ = fmt.Fprintf(out, "  kind:      %s\n", p.Kind)
 	_, _ = fmt.Fprintf(out, "  position:  %d\n", p.Position)
+	_, _ = fmt.Fprintf(out, "  repos:     %s\n", repoList(p.Repos))
 	_, _ = fmt.Fprintf(out, "  items:     %s (%s open, %s done)\n", count(p.ItemCount), count(p.OpenCount), count(p.CompletedCount))
 
 	_, _ = fmt.Fprintf(out, "\nItems (%d):\n", len(items))

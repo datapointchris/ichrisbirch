@@ -321,6 +321,87 @@ class TestProjectItemRepoLink:
         assert response.json()['repo'] == 'forge', 'omitting repo must not clear it'
 
 
+class TestRepoAsAReadAxis:
+    """`repo` filters every collection read, and projects report the repos they touch.
+
+    The repo tag outlives the project an item was filed under, so it is the axis
+    that answers "what work has this repo accumulated" across finished and live
+    efforts alike. Before this it was write-only, and the question needed jq.
+    """
+
+    @pytest.fixture
+    def seeded(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        projects = client.get(PROJECTS_ENDPOINT).json()
+        first, second = projects[0]['id'], projects[1]['id']
+        for title, repo, project in [
+            ('Filter items by repo', 'forge', first),
+            ('Validate the repo tag', 'forge', first),
+            ('Index the notes', 'indy', second),
+            ('Build the microwave cart', None, second),
+        ]:
+            body: dict = {'title': title, 'project_ids': [project]}
+            if repo is not None:
+                body['repo'] = repo
+            created = client.post(PROJECT_ITEMS_ENDPOINT, json=body)
+            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        return client, first, second
+
+    def test_item_list_filters_to_one_repo(self, seeded):
+        client, _, _ = seeded
+        response = client.get(PROJECT_ITEMS_ENDPOINT, params={'repo': 'forge'})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert {item['repo'] for item in response.json()} == {'forge'}
+        assert len(response.json()) == 2
+
+    def test_empty_repo_asks_for_the_untagged_items(self, seeded):
+        client, _, _ = seeded
+        response = client.get(PROJECT_ITEMS_ENDPOINT, params={'repo': ''})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert all(item['repo'] is None for item in response.json())
+        titles = {item['title'] for item in response.json()}
+        assert 'Build the microwave cart' in titles, 'non-repo work has to stay reachable'
+
+    def test_omitting_repo_returns_everything(self, seeded):
+        client, _, _ = seeded
+        unfiltered = client.get(PROJECT_ITEMS_ENDPOINT).json()
+        assert len(unfiltered) >= 4, 'no repo param must not narrow the list'
+        assert any(item['repo'] is None for item in unfiltered)
+        assert any(item['repo'] == 'forge' for item in unfiltered)
+
+    def test_search_narrows_by_repo(self, seeded):
+        client, _, _ = seeded
+        both = client.get(f'{PROJECT_ITEMS_ENDPOINT}search/', params={'q': 'the'})
+        narrowed = client.get(f'{PROJECT_ITEMS_ENDPOINT}search/', params={'q': 'the', 'repo': 'indy'})
+        assert narrowed.status_code == status.HTTP_200_OK, show_status_and_response(narrowed)
+        assert {item['repo'] for item in narrowed.json()} == {'indy'}
+        assert len(narrowed.json()) < len(both.json())
+
+    def test_project_reports_the_repos_its_items_touch(self, seeded):
+        client, first, _ = seeded
+        project = client.get(f'{PROJECTS_ENDPOINT}{first}/').json()
+        assert project['repos'] == ['forge'], 'deduplicated, and never the null of untagged work'
+
+    def test_a_project_with_no_repo_work_reports_no_repos(self, seeded):
+        client, _, second = seeded
+        project = client.get(f'{PROJECTS_ENDPOINT}{second}/').json()
+        assert project['repos'] == ['indy'], 'the untagged sibling item must not add a null entry'
+
+    def test_project_list_filters_to_projects_touching_a_repo(self, seeded):
+        client, first, _ = seeded
+        response = client.get(PROJECTS_ENDPOINT, params={'repo': 'forge'})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert [project['id'] for project in response.json()] == [first]
+
+    def test_filtering_projects_by_repo_does_not_shrink_their_counts(self, seeded):
+        client, first, _ = seeded
+        unfiltered = client.get(f'{PROJECTS_ENDPOINT}{first}/').json()
+        filtered = next(p for p in client.get(PROJECTS_ENDPOINT, params={'repo': 'forge'}).json() if p['id'] == first)
+        assert filtered['item_count'] == unfiltered['item_count'], 'HAVING must not double as a row filter'
+        assert filtered['open_count'] == unfiltered['open_count']
+
+
 class TestProjectItemMembershipOnLists:
     """The list endpoints carry each item's projects.
 

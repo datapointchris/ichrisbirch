@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/repos"
 )
 
 func newItemsCommand() *cobra.Command {
@@ -54,6 +55,7 @@ func newItemsListCommand() *cobra.Command {
 	var (
 		asJSON   bool
 		project  string
+		repo     string
 		archived bool
 	)
 	cmd := &cobra.Command{
@@ -61,6 +63,7 @@ func newItemsListCommand() *cobra.Command {
 		Short: "List all active (non-archived) items, or one project's items in order",
 		Example: "  icb projects items list\n" +
 			"  icb projects items list --json\n" +
+			"  icb projects items list --repo dotfiles\n" +
 			"  icb projects items list --project todoui\n" +
 			"  icb projects items list --project todoui --archived",
 		Args: usageArgs(cobra.NoArgs),
@@ -69,9 +72,13 @@ func newItemsListCommand() *cobra.Command {
 				if archived {
 					return usageError{fmt.Errorf("--archived requires --project")}
 				}
+				filter := repoFlagValue(cmd, repo)
 				return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context())
+					return c.ListItems(cmd.Context(), filter)
 				})
+			}
+			if cmd.Flags().Changed("repo") {
+				return usageError{fmt.Errorf("--repo and --project are different questions — pass one")}
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -90,8 +97,39 @@ func newItemsListCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
+	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Include archived items (requires --project)")
 	return cmd
+}
+
+// validateRepoFlag rejects a --repo the registry does not know, on the writes
+// only. A typo'd tag is invisible rather than wrong — the item silently drops
+// out of every repo view — so it is worth catching at the moment it is typed.
+// Reads stay unvalidated: filtering by a name nothing carries is a legitimate
+// question with an empty answer.
+func validateRepoFlag(cmd *cobra.Command, repo string) error {
+	if !cmd.Flags().Changed("repo") {
+		return nil
+	}
+	registry, err := repos.Load(repos.DefaultPath())
+	if err != nil {
+		return err
+	}
+	if err := registry.Validate(repo); err != nil {
+		return usageError{err}
+	}
+	return nil
+}
+
+// repoFlagValue renders --repo for the API client. Absent is nil (no filter);
+// present-but-empty is a pointer to "", which asks for the items that are not
+// repo work at all. Collapsing those two would make the untagged work — errands,
+// home projects — unreachable.
+func repoFlagValue(cmd *cobra.Command, repo string) *string {
+	if !cmd.Flags().Changed("repo") {
+		return nil
+	}
+	return &repo
 }
 
 // newItemsNextCommand exposes the ordering `icb overview` already computes for
@@ -107,6 +145,7 @@ func newItemsNextCommand() *cobra.Command {
 	var (
 		asJSON bool
 		kind   string
+		repo   string
 		limit  int
 	)
 	cmd := &cobra.Command{
@@ -117,6 +156,7 @@ func newItemsNextCommand() *cobra.Command {
 			"the same ordering `icb overview` shows.",
 		Example: "  icb projects items next\n" +
 			"  icb projects items next --kind build\n" +
+			"  icb projects items next --repo dotfiles\n" +
 			"  icb projects items next --kind build --limit 1 --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -124,11 +164,15 @@ func newItemsNextCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			all, err := client.ListItems(cmd.Context())
+			filter := repoFlagValue(cmd, repo)
+			all, err := client.ListItems(cmd.Context(), filter)
 			if err != nil {
 				return handleAPIError(err)
 			}
-			blocked, err := client.ListBlockedItems(cmd.Context())
+			// Blocked is deliberately unfiltered: an item is blocked by whatever
+			// blocks it, and a blocker in another repo still blocks. Filtering
+			// here would present blocked work as actionable.
+			blocked, err := client.ListBlockedItems(cmd.Context(), nil)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -140,12 +184,17 @@ func newItemsNextCommand() *cobra.Command {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items in %s projects.\n", kind)
 				return nil
 			}
+			if len(items) == 0 && filter != nil {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items for repo %s.\n", *filter)
+				return nil
+			}
 			printItemsTable(cmd.OutOrStdout(), items)
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
 	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: build, chore, life")
+	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().IntVar(&limit, "limit", 10, "Max items to return (0 for no cap)")
 	return cmd
 }
@@ -170,36 +219,46 @@ func itemsOfKind(items []api.ProjectItem, kind string) []api.ProjectItem {
 }
 
 func newItemsBlockedCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		asJSON bool
+		repo   string
+	)
 	cmd := &cobra.Command{
 		Use:     "blocked",
 		Short:   "List items with at least one incomplete dependency",
-		Example: "  icb projects items blocked",
+		Example: "  icb projects items blocked\n  icb projects items blocked --repo homelab",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			filter := repoFlagValue(cmd, repo)
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-				return c.ListBlockedItems(cmd.Context())
+				return c.ListBlockedItems(cmd.Context(), filter)
 			})
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
+	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
 	return cmd
 }
 
 func newItemsSearchCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		asJSON bool
+		repo   string
+	)
 	cmd := &cobra.Command{
 		Use:     "search <query>",
 		Short:   "Search items by title or notes",
-		Example: "  icb projects items search kitchen",
+		Example: "  icb projects items search kitchen\n  icb projects items search sync --repo todoui",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			filter := repoFlagValue(cmd, repo)
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-				return c.SearchItems(cmd.Context(), args[0])
+				return c.SearchItems(cmd.Context(), args[0], filter)
 			})
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
+	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
 	return cmd
 }
 
@@ -301,6 +360,9 @@ func newItemsCreateCommand() *cobra.Command {
 			if len(projects) == 0 {
 				return usageError{fmt.Errorf("at least one --project is required")}
 			}
+			if err := validateRepoFlag(cmd, repo); err != nil {
+				return err
+			}
 			in := api.ProjectItemCreateInput{Title: title, ProjectIDs: projects}
 			if cmd.Flags().Changed("notes") {
 				in.Notes = &notes
@@ -326,7 +388,7 @@ func newItemsCreateCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&title, "title", "", "Item title (required)")
 	cmd.Flags().StringVar(&notes, "notes", "", "Markdown notes for the item")
-	cmd.Flags().StringVar(&repo, "repo", "", "Repo this item is work on, by ~/dev/repos.json name (optional)")
+	cmd.Flags().StringVar(&repo, "repo", "", "Repo this item is work on, by registry name (optional)")
 	cmd.Flags().StringArrayVar(&projects, "project", nil, "Project name or id to add the item to (repeatable; at least one)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created item as JSON to stdout")
 	return cmd
@@ -355,6 +417,9 @@ func newItemsEditCommand() *cobra.Command {
 				in.Notes = &notes
 			}
 			if f.Changed("repo") {
+				if err := validateRepoFlag(cmd, repo); err != nil {
+					return err
+				}
 				in.Repo = &repo
 			}
 			if in == (api.ProjectItemUpdateInput{}) {
@@ -365,7 +430,7 @@ func newItemsEditCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&title, "title", "", "New item title")
 	cmd.Flags().StringVar(&notes, "notes", "", "New markdown notes")
-	cmd.Flags().StringVar(&repo, "repo", "", "Repo this item is work on, by ~/dev/repos.json name (empty string unlinks)")
+	cmd.Flags().StringVar(&repo, "repo", "", "Repo this item is work on, by registry name (empty string unlinks)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated item as JSON to stdout")
 	return cmd
 }

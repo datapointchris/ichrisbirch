@@ -39,7 +39,30 @@ func TestPrintProjectsTable_DashesCountsTheServerOmitted(t *testing.T) {
 	var out bytes.Buffer
 	printProjectsTable(&out, []api.Project{{ID: "018f-a", Name: "Fresh", Kind: "build"}})
 
-	if strings.Count(out.String(), "—") != 3 {
-		t.Errorf("want a dash for each absent count, got:\n%s", out.String())
+	// Counted per column rather than over the whole row: a bare total silently
+	// absorbs the next column added and stops testing anything.
+	row := strings.Fields(strings.Split(out.String(), "\n")[1])
+	for _, column := range []struct {
+		index int
+		name  string
+	}{{3, "open"}, {4, "done"}, {5, "items"}} {
+		if row[column.index] != "—" {
+			t.Errorf("want a dash for the absent %s count, got %q in:\n%s", column.name, row[column.index], out.String())
+		}
+	}
+}
+
+func TestPrintProjectsTable_ShowsTheReposAProjectTouches(t *testing.T) {
+	var out bytes.Buffer
+	printProjectsTable(&out, []api.Project{
+		{ID: "018f-a", Name: "Spans three", Kind: "build", Repos: []string{"ichrisbirch", "icb", "todoui"}},
+		{ID: "018f-b", Name: "Not repo work", Kind: "life"},
+	})
+
+	if !strings.Contains(out.String(), "ichrisbirch,icb,todoui") {
+		t.Errorf("a project spanning repos must list all of them, got:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "Not repo work") || !strings.Contains(out.String(), "—") {
+		t.Errorf("a project with no repo work must render a dash, got:\n%s", out.String())
 	}
 }

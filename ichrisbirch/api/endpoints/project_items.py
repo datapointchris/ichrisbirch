@@ -7,12 +7,14 @@ import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
+from fastapi import Query
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import Select
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -35,6 +37,26 @@ PROJECT_ITEM_LOAD_OPTIONS = (
     selectinload(models.ProjectItem.dependencies),
     selectinload(models.ProjectItem.tasks),
 )
+
+
+# The repo tag is the axis that crosses projects: it outlives the project an item
+# was filed under, so it is the only way to ask what work a repo has accumulated
+# across finished and live efforts alike. Every collection read takes it.
+RepoFilter = Annotated[str | None, Query(description='Only items tagged with this repo registry name')]
+
+
+def apply_repo_filter(query: Select, repo: str | None) -> Select:
+    """Narrow a project-item query to one repo, or leave it alone when unset.
+
+    An explicit `repo=` (empty string) means the untagged items — the ones that
+    are not repo work at all — which is a different question from "any repo" and
+    has to stay askable.
+    """
+    if repo is None:
+        return query
+    if repo == '':
+        return query.where(models.ProjectItem.repo.is_(None))
+    return query.where(models.ProjectItem.repo == repo)
 
 
 def path_item(id: str, session: DbSession) -> models.ProjectItem:
@@ -123,7 +145,7 @@ def _next_position_in_project(session: Session, project_id: UUID) -> int:
 
 
 @router.get('/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession):
+async def read_many(session: DbSession, repo: RepoFilter = None):
     """List all active (non-archived) project items."""
     query = (
         select(models.ProjectItem)
@@ -131,11 +153,12 @@ async def read_many(session: DbSession):
         .where(models.ProjectItem.archived == False)  # noqa: E712
         .order_by(models.ProjectItem.created_at.desc())
     )
+    query = apply_repo_filter(query, repo)
     return list(session.scalars(query).all())
 
 
 @router.get('/blocked/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def list_blocked(session: DbSession):
+async def list_blocked(session: DbSession, repo: RepoFilter = None):
     """List items that have at least one incomplete dependency."""
     query = (
         select(models.ProjectItem)
@@ -150,11 +173,12 @@ async def list_blocked(session: DbSession):
         .where(models.ProjectItem.completed == False)  # noqa: E712
         .where(models.ProjectItem.archived == False)  # noqa: E712
     )
+    query = apply_repo_filter(query, repo)
     return list(session.scalars(query).all())
 
 
 @router.get('/search/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+async def search(q: str, session: DbSession, repo: RepoFilter = None):
     logger.debug('project_item_search', query=q)
     query = (
         select(models.ProjectItem)
@@ -162,6 +186,7 @@ async def search(q: str, session: DbSession):
         .where(models.ProjectItem.title.ilike(f'%{q}%') | models.ProjectItem.notes.ilike(f'%{q}%'))
         .order_by(models.ProjectItem.created_at.desc())
     )
+    query = apply_repo_filter(query, repo)
     results = list(session.scalars(query).all())
     logger.debug('project_item_search_results', count=len(results))
     return results

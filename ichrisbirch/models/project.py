@@ -72,7 +72,7 @@ class ProjectItem(Base):
     number: Mapped[int] = mapped_column(BigInteger, Identity(always=False), nullable=False, unique=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # Registry name from ~/dev/repos.json. Nullable: most items are not repo work.
+    # Repo registry name. Nullable: most items are not repo work.
     repo: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

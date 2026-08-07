@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
 from fastapi import status
+from sqlalchemy import distinct
 from sqlalchemy import func
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -35,9 +36,9 @@ ProjectFromPath = Annotated[models.Project, Depends(path_project)]
 
 
 def item_count_columns():
-    """Total, open, and completed counts, aggregated in one pass over the join.
+    """Total, open, and completed counts plus the repos, in one pass over the join.
 
-    Conditional aggregation rather than three queries: a caller listing every
+    Conditional aggregation rather than four queries: a caller listing every
     project needs the breakdown for all of them, and the counts are what make
     the list answer "which of these still has work in it".
     """
@@ -46,11 +47,20 @@ def item_count_columns():
         func.count(ProjectItemMembership.item_id).label('item_count'),
         func.count(ProjectItemMembership.item_id).filter(not_archived, models.ProjectItem.completed.is_(False)).label('open_count'),
         func.count(ProjectItemMembership.item_id).filter(not_archived, models.ProjectItem.completed.is_(True)).label('completed_count'),
+        func.array_agg(distinct(models.ProjectItem.repo)).filter(not_archived, models.ProjectItem.repo.isnot(None)).label('repos'),
     )
 
 
+def repo_list(aggregated: list[str] | None) -> list[str]:
+    """Normalize the repos aggregate, which is NULL for a project with no items."""
+    return sorted(aggregated) if aggregated else []
+
+
 @router.get('/', response_model=list[schemas.ProjectWithItemCount], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession):
+async def read_many(
+    session: DbSession,
+    repo: str | None = Query(None, description='Only projects holding at least one item tagged with this repo'),
+):
     query = (
         select(models.Project, *item_count_columns())
         .outerjoin(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
@@ -58,6 +68,10 @@ async def read_many(session: DbSession):
         .group_by(models.Project.id)
         .order_by(models.Project.position.asc())
     )
+    if repo is not None:
+        # HAVING, not WHERE: filtering the join would also shrink the counts, so
+        # a project matching on one item would report only that item.
+        query = query.having(func.count(ProjectItemMembership.item_id).filter(models.ProjectItem.repo == repo) > 0)
     return [
         schemas.ProjectWithItemCount(
             id=project.id,
@@ -69,8 +83,9 @@ async def read_many(session: DbSession):
             item_count=item_count,
             open_count=open_count,
             completed_count=completed_count,
+            repos=repo_list(repos),
         )
-        for project, item_count, open_count, completed_count in session.execute(query).all()
+        for project, item_count, open_count, completed_count, repos in session.execute(query).all()
     ]
 
 
@@ -113,7 +128,7 @@ async def read_one(project: ProjectFromPath, session: DbSession):
         .outerjoin(models.ProjectItem, ProjectItemMembership.item_id == models.ProjectItem.id)
         .where(ProjectItemMembership.project_id == project.id)
     )
-    item_count, open_count, completed_count = session.execute(counts).one()
+    item_count, open_count, completed_count, repos = session.execute(counts).one()
     return schemas.ProjectWithItemCount(
         id=project.id,
         name=project.name,
@@ -124,6 +139,7 @@ async def read_one(project: ProjectFromPath, session: DbSession):
         item_count=item_count,
         open_count=open_count,
         completed_count=completed_count,
+        repos=repo_list(repos),
     )
 
 

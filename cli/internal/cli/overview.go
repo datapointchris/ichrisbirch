@@ -227,12 +227,12 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			items, err := c.ListItems(ctx)
+			items, err := c.ListItems(ctx, nil)
 			d.Items = items
 			return err
 		}},
 		{sectionProjectItems, "blocked items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			blocked, err := c.ListBlockedItems(ctx)
+			blocked, err := c.ListBlockedItems(ctx, nil)
 			d.BlockedItems = blocked
 			return err
 		}},

@@ -174,7 +174,7 @@ func TestListProjects_DecodesOpenAndCompletedCounts(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	projects, err := client.ListProjects(context.Background())
+	projects, err := client.ListProjects(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}

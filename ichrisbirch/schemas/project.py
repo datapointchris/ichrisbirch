@@ -39,6 +39,11 @@ class ProjectWithItemCount(ProjectConfig):
     The three counts partition `item_count`: archived beats completed, so an
     archived item is neither open nor completed and
     `item_count - open_count - completed_count` is the archived remainder.
+
+    `repos` is derived from the items, never stored: the item's `repo` tag is the
+    single source of truth for what code a piece of work touches, and a project
+    column beside it would be a second copy free to drift. A project spanning an
+    API, a CLI, and a TUI lists all three.
     """
 
     id: UUID
@@ -50,3 +55,4 @@ class ProjectWithItemCount(ProjectConfig):
     item_count: int
     open_count: int
     completed_count: int
+    repos: list[str] = []
