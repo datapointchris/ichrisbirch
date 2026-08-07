@@ -14,6 +14,7 @@ from ichrisbirch.api.endpoints import github_issues
 from ichrisbirch.api.endpoints import habits
 from ichrisbirch.api.endpoints import home
 from ichrisbirch.api.endpoints import money_wasted
+from ichrisbirch.api.endpoints import patterns
 from ichrisbirch.api.endpoints import personal_api_keys
 from ichrisbirch.api.endpoints import project_item_tasks
 from ichrisbirch.api.endpoints import project_items
@@ -43,6 +44,7 @@ __all__ = [
     'personal_api_keys',
     'project_item_tasks',
     'project_items',
+    'patterns',
     'projects',
     'recipes',
     'server',

@@ -25,6 +25,7 @@ from ichrisbirch.models.habitcategory import HabitCategory
 from ichrisbirch.models.habitcompleted import HabitCompleted
 from ichrisbirch.models.jwt_refresh_token import JWTRefreshToken
 from ichrisbirch.models.money_wasted import MoneyWasted
+from ichrisbirch.models.pattern import Pattern
 from ichrisbirch.models.personal_api_key import PersonalAPIKey
 from ichrisbirch.models.project import Project
 from ichrisbirch.models.project import ProjectItem
@@ -74,6 +75,7 @@ __all__ = [
     'JWTRefreshToken',
     'MoneyWasted',
     'PersonalAPIKey',
+    'Pattern',
     'Project',
     'ProjectItem',
     'ProjectItemDependency',

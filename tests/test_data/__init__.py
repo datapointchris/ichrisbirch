@@ -12,6 +12,7 @@ from tests.test_data import durations
 from tests.test_data import events
 from tests.test_data import habitcategories
 from tests.test_data import money_wasted
+from tests.test_data import patterns
 from tests.test_data import projects
 from tests.test_data import recipes
 from tests.test_data import scheduler
@@ -30,6 +31,7 @@ __all__ = [
     'chats',
     'cooking_techniques',
     'countdowns',
+    'patterns',
     'durations',
     # 'duration_notes' - inserted via Duration.duration_notes relationship
     'events',

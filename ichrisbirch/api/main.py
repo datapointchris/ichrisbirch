@@ -86,6 +86,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.box_packing.router, prefix='/box-packing', dependencies=deps)
     api.include_router(endpoints.countdowns.router, prefix='/countdowns', dependencies=deps)
     api.include_router(endpoints.durations.router, prefix='/durations', dependencies=deps)
+    api.include_router(endpoints.patterns.router, prefix='/patterns', dependencies=deps)
     # Chat routes accept both user auth and internal service auth (for Streamlit chat app)
     from ichrisbirch.api.endpoints.auth import require_user_or_internal_service
 
