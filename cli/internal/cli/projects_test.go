@@ -142,3 +142,53 @@ func lineContaining(t *testing.T, output, needle string) string {
 	t.Fatalf("no line containing %q in:\n%s", needle, output)
 	return ""
 }
+
+// --- The repo-named-project ban ---
+
+func TestRefuseRepoNamedProject(t *testing.T) {
+	withRegistry(t, `{"repos":[{"name":"todoui"},{"name":"dotfiles"}]}`)
+
+	for _, name := range []string{"todoui", "Dotfiles", " todoui "} {
+		if err := refuseRepoNamedProject(name); err == nil {
+			t.Errorf("%q names a repo and must be refused", name)
+		}
+	}
+	// The test is whether the thing ENDS, not whether the repo name appears.
+	for _, name := range []string{"todoui sync improvements", "Extract xx from dotfiles", "k3s migration"} {
+		if err := refuseRepoNamedProject(name); err != nil {
+			t.Errorf("%q is bounded work and must be allowed: %v", name, err)
+		}
+	}
+}
+
+func TestRefuseRepoNamedProjectPointsAtTheAlternative(t *testing.T) {
+	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
+
+	err := refuseRepoNamedProject("dotfiles")
+
+	if err == nil {
+		t.Fatal("expected a refusal")
+	}
+	if !strings.Contains(err.Error(), "--repo dotfiles") {
+		t.Errorf("the refusal must name what to do instead, got: %v", err)
+	}
+}
+
+func TestRefuseRepoNamedProjectIsAUsageError(t *testing.T) {
+	withRegistry(t, `{"repos":[{"name":"todoui"}]}`)
+
+	// Exit code 2, not 1: the name is wrong, nothing failed at runtime.
+	if got := exitCodeFor(refuseRepoNamedProject("todoui")); got != 2 {
+		t.Errorf("exit code = %d, want 2", got)
+	}
+}
+
+// Same policy validateRepoFlag follows: refusing to file work on a machine
+// without a registry is worse than the wrong name.
+func TestWithoutARegistryNoProjectNameIsBanned(t *testing.T) {
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+
+	if err := refuseRepoNamedProject("todoui"); err != nil {
+		t.Errorf("a missing registry must ban nothing: %v", err)
+	}
+}

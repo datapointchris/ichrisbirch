@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/repos"
 )
 
 func newProjectsCommand() *cobra.Command {
@@ -209,6 +210,32 @@ func newProjectsViewCommand() *cobra.Command {
 	return cmd
 }
 
+// refuseRepoNamedProject rejects a project name the repo registry knows.
+//
+// A project name must be bounded work — something that ends. A repo does not
+// end, so a project named after one silently becomes the bucket every later
+// papercut falls into: it starts as the finite effort of building the thing,
+// that effort finishes, and the name outlives it. The repo association is the
+// item's `--repo` tag, which already crosses project boundaries and outlives
+// any single project, so "what is the dotfiles work" is
+// `projects items list --repo dotfiles` rather than a project called dotfiles.
+//
+// A missing registry bans nothing, matching validateRepoFlag: refusing to file
+// work on a machine without a registry is worse than the wrong name.
+func refuseRepoNamedProject(name string) error {
+	registry, err := repos.Load(repos.DefaultPath())
+	if err != nil {
+		return err
+	}
+	if !registry.Knows(name) {
+		return nil
+	}
+	return usageError{fmt.Errorf(
+		"%q names a repo, which never ends — name the bounded work instead (\"%s sync improvements\", \"Extract x from %s\") and tag the items with --repo %s",
+		name, name, name, name,
+	)}
+}
+
 func newProjectsCreateCommand() *cobra.Command {
 	var (
 		name        string
@@ -226,6 +253,9 @@ func newProjectsCreateCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
 				return usageError{errors.New("--name is required")}
+			}
+			if err := refuseRepoNamedProject(name); err != nil {
+				return err
 			}
 			in := api.ProjectCreateInput{Name: name}
 			if cmd.Flags().Changed("description") {
@@ -280,6 +310,10 @@ func newProjectsEditCommand() *cobra.Command {
 			f := cmd.Flags()
 			in := api.ProjectUpdateInput{}
 			if f.Changed("name") {
+				// Checked on rename too: a ban one `edit` walks around is decoration.
+				if err := refuseRepoNamedProject(name); err != nil {
+					return err
+				}
 				in.Name = &name
 			}
 			if f.Changed("description") {

@@ -17,7 +17,9 @@ language; the two share no code.
 
 - **Phase 0 (done):** module scaffold + `icb auth {login,logout,status,token}`.
 - **Phase 1 (done):** the Projects domain — `icb projects`
-  ({list,view,create,edit,complete,drop,reopen,delete}) and `icb projects items`
+  ({list,view,create,edit,complete,drop,reopen,delete}; create and edit refuse a
+  name the repo registry knows, since a project name is bounded work and a repo
+  does not end) and `icb projects items`
   (project-item CRUD, complete/reopen, archive/unarchive, reorder,
   multi-project membership,
   dependencies + blockers, and sub-task verbs). Items are only meaningful inside

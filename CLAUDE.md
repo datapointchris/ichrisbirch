@@ -214,6 +214,40 @@ The MCP server was retired (2026-07-24); the `icb` CLI is the programmatic data 
 
 To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/tasks/`. Override the CLI's target per-invocation with `ICB_API_BASE` / `ICB_OIDC_AUDIENCE` if you need `icb` itself pointed at dev.
 
+### A project name is bounded work, never a repo
+
+`projects create` refuses a name the repo registry knows, and so does a rename.
+The test is whether the thing ENDS, not whether the name reads like a verb
+phrase:
+
+    "todoui sync improvements"    OK — the sync improvements end
+    "Extract xx from dotfiles"    OK
+    "Migrate neovim to vim.pack"  OK
+    "todoui"                      banned — names a thing that exists
+
+The failure it prevents: a repo gets a project while it is being BUILT, which is
+finite and does complete. The repo then keeps existing, the next papercut has
+nowhere else to go, and the finished effort silently becomes the eternal bucket.
+The tell was dotfiles' own description, which had grown a hand-written BOUNDARY
+paragraph explaining which work belonged to it — a modelling gap patched with
+prose.
+
+The repo association is the item's `--repo` tag, which already crosses project
+boundaries and outlives any single project. "What is the dotfiles work" is a
+`--repo dotfiles` query spanning live projects, finished ones, and whatever is
+filed elsewhere.
+
+A one-item project is the floor, not the target: fifteen papercuts are four or
+five small thematic projects, not fifteen projects. If the ban produced one
+project per item the list would read like items, which is the complaint that
+started this.
+
+A missing registry bans nothing, the same policy `--repo` validation follows.
+
+Enforcement is client-side, in `icb projects create`/`edit`, because the repo
+registry is a fleet file that the API container cannot see. The Vue page is
+therefore not covered — it has no registry either.
+
 ### Must Follow
 
 - **Container code-change escalation ladder** (⚠️ MANDATORY): When edits aren't taking effect in running containers — new/renamed API routes, new dependencies, migrations, schema changes, Vue package.json changes, Python imports — follow THIS sequence in order. Do NOT skip steps. Do NOT substitute manual `docker` subcommands for these CLI steps:
