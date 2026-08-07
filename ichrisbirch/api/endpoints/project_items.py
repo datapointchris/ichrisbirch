@@ -1,9 +1,11 @@
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import structlog
 from fastapi import APIRouter
+from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
@@ -19,6 +21,8 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.services.project_item_positions import move_membership_to_position
+from ichrisbirch.services.project_refs import resolve_item
+from ichrisbirch.services.project_refs import resolve_project
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -34,11 +38,26 @@ PROJECT_ITEM_LOAD_OPTIONS = (
 )
 
 
-def _get_item_or_404(session: Session, item_id: UUID) -> models.ProjectItem:
-    item = session.get(models.ProjectItem, item_id)
-    if not item:
-        raise NotFoundException('project_item', item_id, logger)
-    return item
+def path_item(id: str, session: DbSession) -> models.ProjectItem:
+    """Resolve the `{id}` segment, which is a UUID or an item number."""
+    return resolve_item(session, id)
+
+
+def path_dependency_item(dep_id: str, session: DbSession) -> models.ProjectItem:
+    return resolve_item(session, dep_id)
+
+
+def path_project(project_id: str, session: DbSession) -> models.Project:
+    """Resolve the `{project_id}` segment, which is a UUID or a project name."""
+    return resolve_project(session, project_id)
+
+
+# Endpoints take the resolved row rather than the raw segment: every one of them
+# had to fetch it anyway, and taking the id would mean each deciding for itself
+# whether the caller had handed over a key or a handle.
+ItemFromPath = Annotated[models.ProjectItem, Depends(path_item)]
+DependencyItemFromPath = Annotated[models.ProjectItem, Depends(path_dependency_item)]
+ProjectFromPath = Annotated[models.Project, Depends(path_project)]
 
 
 def _detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUID) -> bool:
@@ -62,6 +81,43 @@ def _detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUI
         queue.extend(deps)
 
     return False
+
+
+def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDetail:
+    projects = list(
+        session.scalars(
+            select(models.Project)
+            .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
+            .where(ProjectItemMembership.item_id == item.id)
+        ).all()
+    )
+    dependency_ids = list(
+        session.execute(select(ProjectItemDependency.depends_on_id).where(ProjectItemDependency.item_id == item.id)).scalars().all()
+    )
+
+    return schemas.ProjectItemDetail(
+        id=item.id,
+        number=item.number,
+        title=item.title,
+        notes=item.notes,
+        repo=item.repo,
+        completed=item.completed,
+        archived=item.archived,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+        projects=[schemas.Project.model_validate(p) for p in projects],
+        dependency_ids=dependency_ids,
+    )
+
+
+def _next_position_in_project(session: Session, project_id: UUID) -> int:
+    max_pos = session.scalar(
+        select(ProjectItemMembership.position)
+        .where(ProjectItemMembership.project_id == project_id)
+        .order_by(ProjectItemMembership.position.desc())
+        .limit(1)
+    )
+    return (max_pos or 0) + 1 if max_pos is not None else 0
 
 
 # --- List and filters (must be before /{id}/ routes) ---
@@ -139,78 +195,28 @@ async def create(item: schemas.ProjectItemCreate, session: DbSession):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Project item with id {item.id} already exists') from None
 
     for pid in item.project_ids:
-        # Auto-assign position as next in project
-        max_pos = session.scalar(
-            select(ProjectItemMembership.position)
-            .where(ProjectItemMembership.project_id == pid)
-            .order_by(ProjectItemMembership.position.desc())
-            .limit(1)
-        )
-        next_pos = (max_pos or 0) + 1 if max_pos is not None else 0
-
-        membership = ProjectItemMembership(item_id=db_item.id, project_id=pid, position=next_pos)
+        membership = ProjectItemMembership(item_id=db_item.id, project_id=pid, position=_next_position_in_project(session, pid))
         session.add(membership)
 
     session.commit()
+    # The number comes from the database, not from the client, so the row has to
+    # be read back before the response can carry it. It is the handle the caller
+    # will use for every subsequent command, and todoui writes it into the local
+    # row it just created, so leaving it to the next pull is not good enough.
     session.refresh(db_item)
 
-    projects = list(
-        session.scalars(
-            select(models.Project)
-            .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
-            .where(ProjectItemMembership.item_id == db_item.id)
-        ).all()
-    )
-
-    return schemas.ProjectItemDetail(
-        id=db_item.id,
-        title=db_item.title,
-        notes=db_item.notes,
-        repo=db_item.repo,
-        completed=db_item.completed,
-        archived=db_item.archived,
-        created_at=db_item.created_at,
-        updated_at=db_item.updated_at,
-        projects=[schemas.Project.model_validate(p) for p in projects],
-        dependency_ids=[],
-    )
+    return _detail(session, db_item)
 
 
 @router.get('/{id}/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_200_OK)
-async def read_one(id: UUID, session: DbSession):
-    item = _get_item_or_404(session, id)
-
-    projects = list(
-        session.scalars(
-            select(models.Project)
-            .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
-            .where(ProjectItemMembership.item_id == id)
-        ).all()
-    )
-    dependency_ids = list(
-        session.execute(select(ProjectItemDependency.depends_on_id).where(ProjectItemDependency.item_id == id)).scalars().all()
-    )
-
-    return schemas.ProjectItemDetail(
-        id=item.id,
-        title=item.title,
-        notes=item.notes,
-        repo=item.repo,
-        completed=item.completed,
-        archived=item.archived,
-        created_at=item.created_at,
-        updated_at=item.updated_at,
-        projects=[schemas.Project.model_validate(p) for p in projects],
-        dependency_ids=dependency_ids,
-    )
+async def read_one(item: ItemFromPath, session: DbSession):
+    return _detail(session, item)
 
 
 @router.patch('/{id}/', response_model=schemas.ProjectItem, status_code=status.HTTP_200_OK)
-async def update(id: UUID, update: schemas.ProjectItemUpdate, session: DbSession):
+async def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug('project_item_update', item_id=id, update_data=update_data)
-
-    item = _get_item_or_404(session, id)
+    logger.debug('project_item_update', item_id=item.id, update_data=update_data)
 
     # Guard: cannot complete an item that has incomplete tasks
     if update_data.get('completed') is True and not item.completed:
@@ -230,8 +236,7 @@ async def update(id: UUID, update: schemas.ProjectItemUpdate, session: DbSession
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: UUID, session: DbSession):
-    item = _get_item_or_404(session, id)
+async def delete(item: ItemFromPath, session: DbSession):
     session.delete(item)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -241,23 +246,24 @@ async def delete(id: UUID, session: DbSession):
 
 
 @router.patch('/{id}/reorder/', response_model=schemas.ProjectItemInProject, status_code=status.HTTP_200_OK)
-async def reorder(id: UUID, reorder: schemas.ProjectItemReorder, session: DbSession):
-    item = _get_item_or_404(session, id)
+async def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, session: DbSession):
+    project = resolve_project(session, reorder.project_id)
 
-    membership = session.get(ProjectItemMembership, (id, reorder.project_id))
+    membership = session.get(ProjectItemMembership, (item.id, project.id))
     if not membership:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Item {id} is not in project {reorder.project_id}',
+            detail=f'Item {item.number} is not in project {project.name}',
         )
 
-    move_membership_to_position(session, reorder.project_id, id, reorder.position)
+    move_membership_to_position(session, project.id, item.id, reorder.position)
     session.commit()
     session.refresh(item)
     session.refresh(membership)
 
     return schemas.ProjectItemInProject(
         id=item.id,
+        number=item.number,
         title=item.title,
         notes=item.notes,
         repo=item.repo,
@@ -273,60 +279,44 @@ async def reorder(id: UUID, reorder: schemas.ProjectItemReorder, session: DbSess
 
 
 @router.get('/{id}/projects/', response_model=list[schemas.Project], status_code=status.HTTP_200_OK)
-async def list_projects(id: UUID, session: DbSession):
-    _get_item_or_404(session, id)
-
+async def list_projects(item: ItemFromPath, session: DbSession):
     query = (
         select(models.Project)
         .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
-        .where(ProjectItemMembership.item_id == id)
+        .where(ProjectItemMembership.item_id == item.id)
         .order_by(models.Project.position.asc())
     )
     return list(session.scalars(query).all())
 
 
 @router.post('/{id}/projects/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
-async def add_to_project(id: UUID, membership: schemas.ProjectItemMembershipCreate, session: DbSession):
-    _get_item_or_404(session, id)
+async def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembershipCreate, session: DbSession):
+    project = resolve_project(session, membership.project_id)
 
-    if not session.get(models.Project, membership.project_id):
-        raise NotFoundException('project', membership.project_id, logger)
-
-    existing = session.get(ProjectItemMembership, (id, membership.project_id))
-    if existing:
+    if session.get(ProjectItemMembership, (item.id, project.id)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f'Item {id} is already in project {membership.project_id}',
+            detail=f'Item {item.number} is already in project {project.name}',
         )
 
-    max_pos = session.scalar(
-        select(ProjectItemMembership.position)
-        .where(ProjectItemMembership.project_id == membership.project_id)
-        .order_by(ProjectItemMembership.position.desc())
-        .limit(1)
-    )
-    next_pos = (max_pos or 0) + 1 if max_pos is not None else 0
-
-    db_membership = ProjectItemMembership(item_id=id, project_id=membership.project_id, position=next_pos)
+    db_membership = ProjectItemMembership(item_id=item.id, project_id=project.id, position=_next_position_in_project(session, project.id))
     session.add(db_membership)
     session.commit()
 
-    return session.get(models.Project, membership.project_id)
+    return project
 
 
 @router.delete('/{id}/projects/{project_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_from_project(id: UUID, project_id: UUID, session: DbSession):
-    _get_item_or_404(session, id)
-
-    membership = session.get(ProjectItemMembership, (id, project_id))
+async def remove_from_project(item: ItemFromPath, project: ProjectFromPath, session: DbSession):
+    membership = session.get(ProjectItemMembership, (item.id, project.id))
     if not membership:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Item {id} is not in project {project_id}',
+            detail=f'Item {item.number} is not in project {project.name}',
         )
 
     # Must stay in at least one project
-    total = len(session.execute(select(ProjectItemMembership.project_id).where(ProjectItemMembership.item_id == id)).all())
+    total = len(session.execute(select(ProjectItemMembership.project_id).where(ProjectItemMembership.item_id == item.id)).all())
     if total <= 1:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -342,41 +332,37 @@ async def remove_from_project(id: UUID, project_id: UUID, session: DbSession):
 
 
 @router.post('/{id}/dependencies/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
-async def add_dependency(id: UUID, dep: schemas.ProjectItemDependencyCreate, session: DbSession):
-    _get_item_or_404(session, id)
-    _get_item_or_404(session, dep.depends_on_id)
+async def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate, session: DbSession):
+    depends_on = resolve_item(session, dep.depends_on_id)
 
-    if id == dep.depends_on_id:
+    if item.id == depends_on.id:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='An item cannot depend on itself')
 
-    existing = session.get(ProjectItemDependency, (id, dep.depends_on_id))
-    if existing:
+    if session.get(ProjectItemDependency, (item.id, depends_on.id)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f'Dependency already exists: item {id} depends on {dep.depends_on_id}',
+            detail=f'Dependency already exists: item {item.number} depends on {depends_on.number}',
         )
 
-    if _detect_dependency_cycle(session, id, dep.depends_on_id):
+    if _detect_dependency_cycle(session, item.id, depends_on.id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f'Adding dependency would create a cycle: {id} -> {dep.depends_on_id}',
+            detail=f'Adding dependency would create a cycle: {item.number} -> {depends_on.number}',
         )
 
-    db_dep = ProjectItemDependency(item_id=id, depends_on_id=dep.depends_on_id)
-    session.add(db_dep)
+    session.add(ProjectItemDependency(item_id=item.id, depends_on_id=depends_on.id))
     session.commit()
 
-    # Return full detail
-    return await read_one(id, session)
+    return _detail(session, item)
 
 
 @router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_dependency(id: UUID, dep_id: UUID, session: DbSession):
-    dep = session.get(ProjectItemDependency, (id, dep_id))
+async def remove_dependency(item: ItemFromPath, depends_on: DependencyItemFromPath, session: DbSession):
+    dep = session.get(ProjectItemDependency, (item.id, depends_on.id))
     if not dep:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'No dependency: item {id} -> {dep_id}',
+            detail=f'No dependency: item {item.number} -> {depends_on.number}',
         )
 
     session.delete(dep)
@@ -385,15 +371,13 @@ async def remove_dependency(id: UUID, dep_id: UUID, session: DbSession):
 
 
 @router.get('/{id}/blockers/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def get_blockers(id: UUID, session: DbSession):
+async def get_blockers(item: ItemFromPath, session: DbSession):
     """Get incomplete dependencies (items that block this item)."""
-    _get_item_or_404(session, id)
-
     query = (
         select(models.ProjectItem)
         .options(*PROJECT_ITEM_LOAD_OPTIONS)
         .join(ProjectItemDependency, models.ProjectItem.id == ProjectItemDependency.depends_on_id)
-        .where(ProjectItemDependency.item_id == id)
+        .where(ProjectItemDependency.item_id == item.id)
         .where(models.ProjectItem.completed == False)  # noqa: E712
     )
     return list(session.scalars(query).all())

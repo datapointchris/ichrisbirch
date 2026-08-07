@@ -612,6 +612,9 @@ export interface ProjectWithItemCount extends Project {
 
 export interface ProjectItem {
   id: string
+  // Server-assigned handle. `id` is the key and is never shown to anyone; this
+  // is what a row displays and what `icb` and todoui take on the command line.
+  number: number
   title: string
   notes?: string
   completed: boolean

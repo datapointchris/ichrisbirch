@@ -603,3 +603,152 @@ class TestProjectItemReorder:
 
         assert self.titles_in_order(client, other['id']) == ['Alpha', 'Beta']
         assert self.positions_in_order(client, other['id']) == [0, 1]
+
+
+class TestProjectItemNumber:
+    """The short handle: `number` is what gets printed and typed, `id` is the key.
+
+    Items are created offline in todoui and pushed, so the primary key has to be
+    collision-free without a round trip — which is what the UUID buys and why it
+    stays. It is a bad handle for the same reason it is a good key: 36 characters
+    nobody can retype. The number is server-assigned and every endpoint that
+    takes a UUID takes it too.
+    """
+
+    @pytest.fixture
+    def project_and_client(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client, client.get(PROJECTS_ENDPOINT).json()[0]
+
+    def create_item(self, client, project_id, title='Numbered work'):
+        response = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [project_id]})
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        return response.json()
+
+    def test_create_response_carries_the_assigned_number(self, project_and_client):
+        client, project = project_and_client
+        created = self.create_item(client, project['id'])
+        assert isinstance(created['number'], int), 'the create response is where the caller learns its handle'
+        assert created['number'] > 0
+
+    def test_each_item_gets_its_own_number(self, project_and_client):
+        client, project = project_and_client
+        numbers = [self.create_item(client, project['id'], title)['number'] for title in ('One', 'Two', 'Three')]
+        assert len(set(numbers)) == 3, f'numbers collided: {numbers}'
+
+    def test_every_read_shape_carries_the_number(self, project_and_client):
+        client, project = project_and_client
+        created = self.create_item(client, project['id'], 'Visible everywhere')
+
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["id"]}/').json()
+        listed = next(row for row in client.get(PROJECT_ITEMS_ENDPOINT).json() if row['id'] == created['id'])
+        in_project = next(row for row in client.get(f'{PROJECTS_ENDPOINT}{project["id"]}/items/').json() if row['id'] == created['id'])
+
+        assert detail['number'] == created['number']
+        assert listed['number'] == created['number']
+        assert in_project['number'] == created['number']
+
+    def test_read_patch_and_delete_accept_the_number(self, project_and_client):
+        client, project = project_and_client
+        created = self.create_item(client, project['id'], 'Reachable by number')
+        number = created['number']
+
+        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}{number}/')
+        assert fetched.status_code == status.HTTP_200_OK, show_status_and_response(fetched)
+        assert fetched.json()['id'] == created['id']
+
+        patched = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{number}/', json={'title': 'Renamed by number'})
+        assert patched.status_code == status.HTTP_200_OK, show_status_and_response(patched)
+        assert patched.json()['title'] == 'Renamed by number'
+
+        deleted = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{number}/')
+        assert deleted.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(deleted)
+        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["id"]}/').status_code == status.HTTP_404_NOT_FOUND
+
+    def test_the_uuid_still_works_everywhere_the_number_does(self, project_and_client):
+        """Agents hold UUIDs from --json and pass them straight back."""
+        client, project = project_and_client
+        created = self.create_item(client, project['id'], 'Reachable by uuid')
+
+        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["id"]}/')
+        assert fetched.status_code == status.HTTP_200_OK, show_status_and_response(fetched)
+        assert fetched.json()['number'] == created['number']
+
+    def test_sub_resources_accept_the_number(self, project_and_client):
+        client, project = project_and_client
+        created = self.create_item(client, project['id'], 'Has sub-resources')
+        number = created['number']
+
+        task = client.post(f'{PROJECT_ITEMS_ENDPOINT}{number}/tasks/', json={'title': 'A sub-task'})
+        assert task.status_code == status.HTTP_201_CREATED, show_status_and_response(task)
+        listed = client.get(f'{PROJECT_ITEMS_ENDPOINT}{number}/tasks/')
+        assert [row['title'] for row in listed.json()] == ['A sub-task']
+
+        reordered = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{number}/reorder/', json={'project_id': project['id'], 'position': 0})
+        assert reordered.status_code == status.HTTP_200_OK, show_status_and_response(reordered)
+
+        projects = client.get(f'{PROJECT_ITEMS_ENDPOINT}{number}/projects/')
+        assert projects.status_code == status.HTTP_200_OK, show_status_and_response(projects)
+
+    def test_a_dependency_can_be_named_by_number_on_both_sides(self, project_and_client):
+        client, project = project_and_client
+        blocked = self.create_item(client, project['id'], 'Blocked')
+        blocker = self.create_item(client, project['id'], 'Blocker')
+
+        linked = client.post(
+            f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/',
+            json={'depends_on_id': blocker['number']},
+        )
+        assert linked.status_code == status.HTTP_201_CREATED, show_status_and_response(linked)
+        assert linked.json()['dependency_ids'] == [blocker['id']]
+
+        unlinked = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/{blocker["number"]}/')
+        assert unlinked.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(unlinked)
+
+    def test_an_unknown_number_is_a_404_and_a_non_reference_is_a_422(self, project_and_client):
+        client, _ = project_and_client
+        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}999999999/').status_code == status.HTTP_404_NOT_FOUND
+        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}not-an-item/').status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+class TestProjectNameAsReference:
+    """A project answers to its name as well as its UUID.
+
+    Projects get no number because `name` is already unique, so the fix for the
+    same unreadable-handle problem is to accept what a person would type.
+    """
+
+    @pytest.fixture
+    def project_and_client(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client, client.get(PROJECTS_ENDPOINT).json()[0]
+
+    def test_read_one_accepts_the_name(self, project_and_client):
+        client, project = project_and_client
+        response = client.get(f'{PROJECTS_ENDPOINT}{project["name"]}/')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['id'] == project['id']
+
+    def test_items_and_patch_accept_the_name(self, project_and_client):
+        client, project = project_and_client
+        items = client.get(f'{PROJECTS_ENDPOINT}{project["name"]}/items/')
+        assert items.status_code == status.HTTP_200_OK, show_status_and_response(items)
+
+        patched = client.patch(f'{PROJECTS_ENDPOINT}{project["name"]}/', json={'description': 'Named, not keyed'})
+        assert patched.status_code == status.HTTP_200_OK, show_status_and_response(patched)
+        assert patched.json()['description'] == 'Named, not keyed'
+
+    def test_membership_body_accepts_a_project_name(self, project_and_client):
+        client, project = project_and_client
+        other = client.post(PROJECTS_ENDPOINT, json={'name': 'Named Target'}).json()
+        item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Moves by name', 'project_ids': [project['id']]}).json()
+
+        added = client.post(f'{PROJECT_ITEMS_ENDPOINT}{item["number"]}/projects/', json={'project_id': 'Named Target'})
+        assert added.status_code == status.HTTP_201_CREATED, show_status_and_response(added)
+        assert added.json()['id'] == other['id']
+
+    def test_an_unknown_name_is_a_404(self, project_and_client):
+        client, _ = project_and_client
+        assert client.get(f'{PROJECTS_ENDPOINT}no-such-project/').status_code == status.HTTP_404_NOT_FOUND

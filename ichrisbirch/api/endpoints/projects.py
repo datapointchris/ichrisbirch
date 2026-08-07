@@ -1,7 +1,8 @@
-from uuid import UUID
+from typing import Annotated
 
 import structlog
 from fastapi import APIRouter
+from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
@@ -14,11 +15,23 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
-from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.services.project_refs import resolve_project
 
 logger = structlog.get_logger()
 router = APIRouter()
+
+
+def path_project(id: str, session: DbSession) -> models.Project:
+    """Resolve the `{id}` segment, which is a UUID or the project's unique name.
+
+    Projects get no short number the way items do — `name` is already unique and
+    is what anyone types.
+    """
+    return resolve_project(session, id)
+
+
+ProjectFromPath = Annotated[models.Project, Depends(path_project)]
 
 
 def item_count_columns():
@@ -93,16 +106,12 @@ async def create(project: schemas.ProjectCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
-async def read_one(id: UUID, session: DbSession):
-    project = session.get(models.Project, id)
-    if not project:
-        raise NotFoundException('project', id, logger)
-
+async def read_one(project: ProjectFromPath, session: DbSession):
     counts = (
         select(*item_count_columns())
         .select_from(ProjectItemMembership)
         .outerjoin(models.ProjectItem, ProjectItemMembership.item_id == models.ProjectItem.id)
-        .where(ProjectItemMembership.project_id == id)
+        .where(ProjectItemMembership.project_id == project.id)
     )
     item_count, open_count, completed_count = session.execute(counts).one()
     return schemas.ProjectWithItemCount(
@@ -119,34 +128,27 @@ async def read_one(id: UUID, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
-async def update(id: UUID, update: schemas.ProjectUpdate, session: DbSession):
+async def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
-    logger.debug('project_update', project_id=id, update_data=update_data)
+    logger.debug('project_update', project_id=project.id, update_data=update_data)
     if (kind := update_data.get('kind')) is not None:
         validate_kind(kind, session)
 
-    if project := session.get(models.Project, id):
-        for attr, value in update_data.items():
-            setattr(project, attr, value)
-        session.commit()
-        session.refresh(project)
-        return project
-
-    raise NotFoundException('project', id, logger)
+    for attr, value in update_data.items():
+        setattr(project, attr, value)
+    session.commit()
+    session.refresh(project)
+    return project
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: UUID, session: DbSession):
-    project = session.get(models.Project, id)
-    if not project:
-        raise NotFoundException('project', id, logger)
-
+async def delete(project: ProjectFromPath, session: DbSession):
     # Find items that only belong to this project (would become orphans)
-    multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != id)
+    multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != project.id)
     orphan_query = (
         select(models.ProjectItem)
         .join(ProjectItemMembership, models.ProjectItem.id == ProjectItemMembership.item_id)
-        .where(ProjectItemMembership.project_id == id)
+        .where(ProjectItemMembership.project_id == project.id)
         .where(~models.ProjectItem.id.in_(multi_project_items))
     )
     orphan_items = session.execute(orphan_query).scalars().all()
@@ -172,17 +174,14 @@ async def delete(id: UUID, session: DbSession):
 
 @router.get('/{id}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
 async def list_items(
-    id: UUID,
+    project: ProjectFromPath,
     session: DbSession,
     archived: bool = Query(False, description='Include archived items'),
 ):
-    if not session.get(models.Project, id):
-        raise NotFoundException('project', id, logger)
-
     query = (
         select(models.ProjectItem, ProjectItemMembership.position)
         .join(ProjectItemMembership, models.ProjectItem.id == ProjectItemMembership.item_id)
-        .where(ProjectItemMembership.project_id == id)
+        .where(ProjectItemMembership.project_id == project.id)
     )
     if not archived:
         query = query.where(models.ProjectItem.archived == False)  # noqa: E712
@@ -194,6 +193,7 @@ async def list_items(
     return [
         schemas.ProjectItemInProject(
             id=item.id,
+            number=item.number,
             title=item.title,
             notes=item.notes,
             repo=item.repo,

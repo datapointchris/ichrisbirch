@@ -14,6 +14,13 @@ class ProjectItemConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# What a caller may pass where an item or a project is named. An item answers to
+# its UUID or its number, a project to its UUID or its unique name, and the API
+# resolves either — see ichrisbirch.services.project_refs.
+ItemRef = UUID | int
+ProjectRef = UUID | str
+
+
 class ProjectItemCreate(ProjectItemConfig):
     id: UUID | None = None
     title: str
@@ -37,6 +44,7 @@ class ProjectItem(ProjectItemConfig):
     """
 
     id: UUID
+    number: int
     title: str
     notes: str | None = None
     repo: str | None = None
@@ -61,6 +69,7 @@ class ProjectItemDetail(ProjectItemConfig):
     """Extended view with membership and dependency info."""
 
     id: UUID
+    number: int
     title: str
     notes: str | None = None
     repo: str | None = None
@@ -76,6 +85,7 @@ class ProjectItemInProject(ProjectItemConfig):
     """Item as seen within a project context, includes position."""
 
     id: UUID
+    number: int
     title: str
     notes: str | None = None
     repo: str | None = None
@@ -87,13 +97,13 @@ class ProjectItemInProject(ProjectItemConfig):
 
 
 class ProjectItemReorder(ProjectItemConfig):
-    project_id: UUID
+    project_id: ProjectRef
     position: int
 
 
 class ProjectItemMembershipCreate(ProjectItemConfig):
-    project_id: UUID
+    project_id: ProjectRef
 
 
 class ProjectItemDependencyCreate(ProjectItemConfig):
-    depends_on_id: UUID
+    depends_on_id: ItemRef
