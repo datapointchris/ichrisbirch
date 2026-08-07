@@ -100,7 +100,7 @@ describe('useProjectsStore', () => {
 
     await store.fetchProjects()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/')
+    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'active' } })
     expect(store.projects).toEqual(testProjects)
     expect(store.loading).toBe(false)
   })
@@ -138,7 +138,7 @@ describe('useProjectsStore', () => {
     await store.createProject({ name: 'New' })
 
     expect(mockApi.post).toHaveBeenCalledWith('/projects/', { name: 'New' })
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/')
+    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'active' } })
   })
 
   it('sets error on create failure', async () => {
@@ -475,7 +475,7 @@ describe('useProjectsStore', () => {
     await store.addToProject(10, { project_id: 2 })
 
     expect(mockApi.post).toHaveBeenCalledWith('/project-items/10/projects/', { project_id: 2 })
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/')
+    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'active' } })
   })
 
   it('removes item from project and refetches', async () => {
@@ -538,5 +538,88 @@ describe('useProjectsStore', () => {
     await expect(store.fetchProjects()).rejects.toThrow(ApiError)
     expect(store.error!.isNetworkError).toBe(true)
     expect(store.error!.userMessage).toBe('Unable to reach the server. Check your connection.')
+  })
+
+  // --- Project status ---
+
+  it('sends the chosen filter and refetches when it changes', async () => {
+    mockApi.get.mockResolvedValue({ data: testProjects })
+    const store = useProjectsStore()
+
+    await store.setStatusFilter('all')
+
+    expect(store.statusFilter).toBe('all')
+    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'all' } })
+  })
+
+  it('does not refetch when the filter is already what was asked for', async () => {
+    const store = useProjectsStore()
+
+    await store.setStatusFilter('active')
+
+    expect(mockApi.get).not.toHaveBeenCalled()
+  })
+
+  it('forgets a selected project the new filter no longer shows', async () => {
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useProjectsStore()
+    store.projects = [...testProjects] as never
+    store.selectedProjectId = 1 as never
+    store.selectedProjectIds = [1] as never
+
+    await store.setStatusFilter('done')
+
+    // A selection pointing at an absent project renders an empty pane with no
+    // way back to it.
+    expect(store.selectedProjectId).toBeNull()
+    expect(store.selectedProjectIds).toEqual([])
+  })
+
+  it('completes a project through PATCH rather than an action endpoint', async () => {
+    mockApi.patch.mockResolvedValue({ data: {} })
+    mockApi.get.mockResolvedValue({ data: testProjects })
+    const store = useProjectsStore()
+
+    await store.setProjectStatus(1 as never, 'done')
+
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', { status: 'done' })
+  })
+
+  it('sends the reason when dropping', async () => {
+    mockApi.patch.mockResolvedValue({ data: {} })
+    mockApi.get.mockResolvedValue({ data: testProjects })
+    const store = useProjectsStore()
+
+    await store.setProjectStatus(1 as never, 'dropped', 'Go covers it')
+
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', {
+      status: 'dropped',
+      status_reason: 'Go covers it',
+    })
+  })
+
+  it('clears the selection when the closed project drops out of the list', async () => {
+    mockApi.patch.mockResolvedValue({ data: {} })
+    mockApi.get.mockResolvedValue({ data: testProjects.slice(1) })
+    const store = useProjectsStore()
+    store.selectedProjectId = 1 as never
+    store.selectedProjectIds = [1] as never
+
+    await store.setProjectStatus(1 as never, 'done')
+
+    expect(store.selectedProjectId).toBeNull()
+  })
+
+  it('keeps the selection when the filter still shows the closed project', async () => {
+    mockApi.patch.mockResolvedValue({ data: {} })
+    mockApi.get.mockResolvedValue({ data: testProjects })
+    const store = useProjectsStore()
+    store.statusFilter = 'all'
+    store.selectedProjectId = 1 as never
+    store.selectedProjectIds = [1] as never
+
+    await store.setProjectStatus(1 as never, 'done')
+
+    expect(store.selectedProjectId).toBe(1)
   })
 })

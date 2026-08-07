@@ -15,6 +15,7 @@ from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import Uuid
+from sqlalchemy import text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
@@ -22,12 +23,21 @@ from sqlalchemy.orm import relationship
 from ichrisbirch.database.base import Base
 
 PROJECT_KINDS = ['build', 'chore', 'life']
+PROJECT_STATUSES = ['active', 'done', 'dropped']
+TERMINAL_PROJECT_STATUSES = ['done', 'dropped']
 
 
 class ProjectKind(Base):
     """Lookup table for what sort of work a project is, replacing a PostgreSQL ENUM type."""
 
     __tablename__ = 'project_kinds'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
+
+
+class ProjectStatus(Base):
+    """Lookup table for where a project is in its lifecycle, replacing a PostgreSQL ENUM type."""
+
+    __tablename__ = 'project_statuses'
     name: Mapped[str] = mapped_column(Text, primary_key=True)
 
 
@@ -39,13 +49,33 @@ class Project(Base):
     next errand. It defaults to `build` rather than being required: nearly every
     project is one, and a wrong kind is one `PATCH` away, whereas a required
     field breaks every existing caller of the create endpoint.
+
+    `status` is a field rather than the `archived` boolean items carry, because
+    for a project completion and hiding are the same event: a project is a
+    finite effort with a definition of done, so there is nothing to archive
+    separately. One terminal state would not be enough — `done` alone forces you
+    to lie about anything you merely stopped caring about — so `dropped` exists
+    beside it and requires a reason, which is what stops a dropped project
+    reading as deferred and being re-proposed.
+
+    Closing a project deliberately does NOT cascade to its items. An item still
+    open when the project was dropped WAS still open, and 'shipped 8 of 11,
+    dropped with 3 open' is the useful fact; archiving all eleven rewrites what
+    happened. Visibility is derived from the project instead.
     """
 
     __tablename__ = 'projects'
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
-    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    # Unique among ACTIVE projects only — see uq_projects_name_active below.
+    name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     kind: Mapped[str] = mapped_column(Text, ForeignKey('project_kinds.name'), nullable=False, server_default='build')
+    status: Mapped[str] = mapped_column(Text, ForeignKey('project_statuses.name'), nullable=False, server_default='active')
+    status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # When the project reached a terminal state. `created_at` orders by when work
+    # started, which is the wrong axis for a list of finished things, and
+    # `position` stops being meaningful once a project is out of the running.
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
@@ -53,8 +83,20 @@ class Project(Base):
         'ProjectItemMembership', back_populates='project', cascade='all, delete-orphan'
     )
 
+    __table_args__ = (
+        CheckConstraint("status <> 'dropped' OR status_reason IS NOT NULL", name='dropped_requires_reason'),
+        # Partial, so a finished project stops owning its name and the next
+        # effort by that name can be created. A global UNIQUE would fail the
+        # insert before any name-resolution rule was consulted.
+        Index('uq_projects_name_active', 'name', unique=True, postgresql_where=text("status = 'active'")),
+    )
+
+    @property
+    def is_terminal(self) -> bool:
+        return self.status in TERMINAL_PROJECT_STATUSES
+
     def __repr__(self):
-        return f'Project(id={self.id!r}, name={self.name!r}, position={self.position!r})'
+        return f'Project(id={self.id!r}, name={self.name!r}, status={self.status!r}, position={self.position!r})'
 
 
 class ProjectItem(Base):

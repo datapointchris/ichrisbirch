@@ -13,6 +13,16 @@
         </button>
       </div>
 
+      <!-- Its own row: the header has no width left for a third control, and a
+           select that overflows it lands on top of the items pane. -->
+      <NeuSelect
+        :model-value="store.statusFilter"
+        :options="statusFilterOptions"
+        data-testid="project-status-filter"
+        class="projects-page__status-filter"
+        @update:model-value="store.setStatusFilter($event as ProjectStatusFilter)"
+      />
+
       <!-- All Projects shortcut -->
       <div
         class="projects-page__project projects-page__project--all"
@@ -56,6 +66,13 @@
               <i class="fa-solid fa-grip-vertical"></i>
             </div>
             <span class="projects-page__project-name">{{ project.name }}</span>
+            <span
+              v-if="project.status !== 'active'"
+              data-testid="project-status"
+              class="projects-page__project-status"
+              :title="project.status_reason ?? undefined"
+              >{{ project.status }}</span
+            >
             <span
               data-testid="project-kind"
               class="projects-page__project-kind"
@@ -193,6 +210,13 @@
                 :class="{ 'projects-page__project-desc--open': descOpen }"
                 >{{ store.selectedProject!.description }}</span
               >
+              <span
+                v-if="store.selectedProject && store.selectedProject.status !== 'active'"
+                data-testid="project-closure"
+                class="projects-page__project-closure"
+                >{{ store.selectedProject.status
+                }}{{ store.selectedProject.status_reason ? ` — ${store.selectedProject.status_reason}` : '' }}</span
+              >
             </div>
             <div class="projects-page__header-actions">
               <ActionButton
@@ -208,6 +232,30 @@
                 variant="warning"
                 title="Edit project"
                 @click="store.selectedProject && openEditProject(store.selectedProject)"
+              />
+              <ActionButton
+                v-if="store.selectedProject?.status === 'active'"
+                data-testid="project-complete-button"
+                icon="fa-solid fa-check"
+                variant="success"
+                title="Complete project — finished, and hidden from the list"
+                @click="store.selectedProject && handleCompleteProject(store.selectedProject)"
+              />
+              <ActionButton
+                v-if="store.selectedProject?.status === 'active'"
+                data-testid="project-drop-button"
+                icon="fa-solid fa-ban"
+                variant="warning"
+                title="Drop project — closed without being finished"
+                @click="openDropProject()"
+              />
+              <ActionButton
+                v-else
+                data-testid="project-reopen-button"
+                icon="fa-solid fa-rotate-left"
+                variant="success"
+                title="Reopen project"
+                @click="store.selectedProject && handleReopenProject(store.selectedProject)"
               />
               <ActionButton
                 data-testid="project-delete-button"
@@ -468,6 +516,13 @@
       @updated="onDepsUpdated"
     />
 
+    <DropProjectModal
+      :visible="showDropModal"
+      :project-name="store.selectedProject?.name ?? ''"
+      @close="showDropModal = false"
+      @drop="handleDropProject"
+    />
+
     <ManageProjectsModal
       :visible="showProjectsModal"
       :item-id="projectsTargetId"
@@ -490,6 +545,8 @@ import type {
   ProjectWithItemCount,
   ProjectCreate,
   ProjectKind,
+  ProjectStatus,
+  ProjectStatusFilter,
   ProjectUpdate,
   ProjectItemInProject,
   ProjectItemCreate,
@@ -497,11 +554,20 @@ import type {
   ProjectItem,
 } from '@/api/client'
 import AddEditProjectModal from '@/components/projects/AddEditProjectModal.vue'
+import DropProjectModal from '@/components/projects/DropProjectModal.vue'
 import AddEditProjectItemModal from '@/components/projects/AddEditProjectItemModal.vue'
 import ManageDependenciesModal from '@/components/projects/ManageDependenciesModal.vue'
 import ManageProjectsModal from '@/components/projects/ManageProjectsModal.vue'
 import ProjectItemTasks from '@/components/projects/ProjectItemTasks.vue'
 import ActionButton from '@/components/ActionButton.vue'
+import NeuSelect from '@/components/NeuSelect.vue'
+
+const statusFilterOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'done', label: 'Done' },
+  { value: 'dropped', label: 'Dropped' },
+  { value: 'all', label: 'All' },
+]
 
 const store = useProjectsStore()
 const { show: notify } = useNotifications()
@@ -534,6 +600,8 @@ const editProjectTarget = ref<{
   description?: string
   kind: ProjectKind
 } | null>(null)
+
+const showDropModal = ref(false)
 
 // --- Item modal state ---
 const showItemModal = ref(false)
@@ -684,6 +752,34 @@ async function handleCreateProject(data: ProjectCreate) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to add project: ${detail}`, 'error')
   }
+}
+
+function openDropProject() {
+  showDropModal.value = true
+}
+
+async function changeProjectStatus(project: ProjectWithItemCount, status: ProjectStatus, verb: string, reason?: string) {
+  try {
+    await store.setProjectStatus(project.id, status, reason)
+    notify(`${project.name} ${verb}`, 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to ${verb.replace(/ed$/, '')} project: ${detail}`, 'error')
+  }
+}
+
+function handleCompleteProject(project: ProjectWithItemCount) {
+  return changeProjectStatus(project, 'done', 'completed')
+}
+
+function handleReopenProject(project: ProjectWithItemCount) {
+  return changeProjectStatus(project, 'active', 'reopened')
+}
+
+async function handleDropProject(reason: string) {
+  showDropModal.value = false
+  if (!store.selectedProject) return
+  await changeProjectStatus(store.selectedProject, 'dropped', 'dropped', reason)
 }
 
 async function handleUpdateProject(id: string, data: ProjectUpdate) {
@@ -961,6 +1057,22 @@ function clearSearch() {
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  &__project-status {
+    color: var(--clr-warning);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__project-closure {
+    color: var(--clr-gray-500);
+    font-style: italic;
+  }
+
+  &__status-filter {
+    width: 100%;
   }
 
   &__project-count {

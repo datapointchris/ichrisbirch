@@ -17,8 +17,9 @@ language; the two share no code.
 
 - **Phase 0 (done):** module scaffold + `icb auth {login,logout,status,token}`.
 - **Phase 1 (done):** the Projects domain — `icb projects`
-  ({list,view,create,edit,delete}) and `icb projects items` (project-item CRUD,
-  complete/reopen, archive/unarchive, reorder, multi-project membership,
+  ({list,view,create,edit,complete,drop,reopen,delete}) and `icb projects items`
+  (project-item CRUD, complete/reopen, archive/unarchive, reorder,
+  multi-project membership,
   dependencies + blockers, and sub-task verbs). Items are only meaningful inside
   a project, so the group is nested rather than a root noun; `icb projects items
   list --project <id>` is the in-order listing for one project.

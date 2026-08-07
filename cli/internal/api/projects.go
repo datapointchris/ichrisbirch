@@ -19,17 +19,23 @@ import (
 // Repos is derived server-side from the items' repo tags, not a column on the
 // project — one source of truth, and a project spanning an API, a CLI, and a TUI
 // lists all three.
+//
+// Status is active/done/dropped. ClosedAt and StatusReason are set by the
+// server as consequences of the transition, never sent by the client.
 type Project struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	Description    *string   `json:"description"`
-	Kind           string    `json:"kind"`
-	Position       int       `json:"position"`
-	CreatedAt      time.Time `json:"created_at"`
-	ItemCount      *int      `json:"item_count,omitempty"`
-	OpenCount      *int      `json:"open_count,omitempty"`
-	CompletedCount *int      `json:"completed_count,omitempty"`
-	Repos          []string  `json:"repos,omitempty"`
+	ID             string     `json:"id"`
+	Name           string     `json:"name"`
+	Description    *string    `json:"description"`
+	Kind           string     `json:"kind"`
+	Status         string     `json:"status"`
+	StatusReason   *string    `json:"status_reason"`
+	ClosedAt       *time.Time `json:"closed_at"`
+	Position       int        `json:"position"`
+	CreatedAt      time.Time  `json:"created_at"`
+	ItemCount      *int       `json:"item_count,omitempty"`
+	OpenCount      *int       `json:"open_count,omitempty"`
+	CompletedCount *int       `json:"completed_count,omitempty"`
+	Repos          []string   `json:"repos,omitempty"`
 }
 
 // ProjectItemInProject is a project item as seen within a project's ordered
@@ -60,18 +66,34 @@ type ProjectCreateInput struct {
 // ProjectUpdateInput is a partial update (PATCH /projects/{id}/): every field is
 // a pointer with omitempty, so only the fields the user actually changed are
 // sent and the server leaves the rest untouched.
+//
+// ClosedAt is absent deliberately — the server stamps it on the transition into
+// a terminal status and clears it on reopen, so it cannot drift from the status
+// it describes.
 type ProjectUpdateInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Kind        *string `json:"kind,omitempty"`
-	Position    *int    `json:"position,omitempty"`
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	Kind         *string `json:"kind,omitempty"`
+	Status       *string `json:"status,omitempty"`
+	StatusReason *string `json:"status_reason,omitempty"`
+	Position     *int    `json:"position,omitempty"`
 }
 
-// ListProjects returns every project with its item count (GET /projects/),
-// ordered by position.
-func (c *Client) ListProjects(ctx context.Context, repo *string) ([]Project, error) {
+// AllProjectStatuses asks for every project regardless of status. Not a status
+// itself — it is the absence of the filter, which is why the server keeps it out
+// of the lookup table.
+const AllProjectStatuses = "all"
+
+// ListProjects returns projects with their item counts (GET /projects/). An
+// empty projectStatus takes the server's default, which is the active projects
+// only; pass a status name or AllProjectStatuses to see the closed ones.
+func (c *Client) ListProjects(ctx context.Context, repo *string, projectStatus string) ([]Project, error) {
+	query := repoQuery(repo)
+	if projectStatus != "" {
+		query.Set("status", projectStatus)
+	}
 	var projects []Project
-	if err := c.get(ctx, withQuery("/projects/", repoQuery(repo)), &projects); err != nil {
+	if err := c.get(ctx, withQuery("/projects/", query), &projects); err != nil {
 		return nil, err
 	}
 	return projects, nil

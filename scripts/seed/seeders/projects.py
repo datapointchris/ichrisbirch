@@ -6,6 +6,10 @@ the right pattern (explicit, coordinated multi-table insertion).
 
 from __future__ import annotations
 
+from datetime import UTC
+from datetime import datetime
+from datetime import timedelta
+
 import sqlalchemy
 from sqlalchemy.orm import Session
 
@@ -16,13 +20,20 @@ from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.models.project import ProjectItemTask
 from scripts.seed.base import SeedResult
 
+# (name, description, kind, status, status_reason)
 PROJECT_DATA = [
-    ('Home Renovation', 'Kitchen and bathroom remodel planning', 'build'),
-    ('Learn Kubernetes', 'Self-study track for container orchestration', 'life'),
-    ('Career Development', 'Skills growth and networking goals', 'life'),
-    ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking', 'build'),
-    ('Fitness Goals 2026', 'Strength training and running milestones', 'life'),
-    ('Portland Trip Planning', 'Research neighborhoods, flights, and activities', 'chore'),
+    ('Home Renovation', 'Kitchen and bathroom remodel planning', 'build', 'active', None),
+    ('Learn Kubernetes', 'Self-study track for container orchestration', 'life', 'active', None),
+    ('Career Development', 'Skills growth and networking goals', 'life', 'active', None),
+    ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking', 'build', 'active', None),
+    ('Fitness Goals 2026', 'Strength training and running milestones', 'life', 'active', None),
+    ('Portland Trip Planning', 'Research neighborhoods, flights, and activities', 'chore', 'active', None),
+    ('Garage Shelving', 'Build out storage along the back wall', 'build', 'done', None),
+    ('Learn Elixir', 'Work through the language and OTP', 'life', 'dropped', 'Kubernetes is the one that pays'),
+    # Deliberately reuses an active project's name: only active projects hold a
+    # name, so a seeded database exercises the partial unique index and the
+    # resolution rule rather than passing because nothing ever collides.
+    ('Home Renovation', 'The 2024 attempt, abandoned', 'build', 'dropped', 'Quoted at twice the budget'),
 ]
 
 ITEM_TITLES = [
@@ -87,14 +98,28 @@ def clear(session: Session) -> None:
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     # Create projects
+    closed_at = datetime.now(UTC) - timedelta(days=30)
     projects = []
     for rep in range(scale):
-        for i, (name, description, kind) in enumerate(PROJECT_DATA):
+        for i, (name, description, kind, project_status, reason) in enumerate(PROJECT_DATA):
             proj_name = name if scale == 1 else f'{name} #{rep + 1}'
-            projects.append(Project(name=proj_name, description=description, kind=kind, position=i))
+            projects.append(
+                Project(
+                    name=proj_name,
+                    description=description,
+                    kind=kind,
+                    status=project_status,
+                    status_reason=reason,
+                    closed_at=None if project_status == 'active' else closed_at,
+                    position=i,
+                )
+            )
     session.add_all(projects)
     session.flush()
 
+    # Every project, terminal ones included: closing a project does not cascade
+    # to its items, so a closed project holding a mix of done and still-open work
+    # is exactly the state the counts have to describe.
     project_ids = [p.id for p in projects]
 
     # Create items with explicit state coverage
@@ -176,11 +201,12 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     session.flush()
 
     active = sum(1 for item in items if not item.completed and not item.archived)
+    active_projects = sum(1 for project in projects if project.status == 'active')
     return SeedResult(
         model='Project',
         count=len(projects) + len(items) + task_count,
         details=(
-            f'{len(projects)} projects, {len(items)} items ({active} active), '
+            f'{len(projects)} projects ({active_projects} active), {len(items)} items ({active} active), '
             f'{membership_count} memberships, {dep_count} deps, {task_count} tasks'
         ),
     )

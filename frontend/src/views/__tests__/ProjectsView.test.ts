@@ -32,6 +32,7 @@ const testProjects: ProjectWithItemCount[] = [
     name: 'Music Setup',
     description: 'Setting up the studio',
     kind: 'build',
+    status: 'active',
     position: 0,
     created_at: '2026-01-01T00:00:00Z',
     // Matches testItems below: one open, one completed, one archived.
@@ -44,6 +45,7 @@ const testProjects: ProjectWithItemCount[] = [
     name: 'Home Renovation',
     description: undefined,
     kind: 'chore',
+    status: 'active',
     position: 1,
     created_at: '2026-02-01T00:00:00Z',
     item_count: 2,
@@ -93,6 +95,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
           initialState: {
             projects: {
               projects: [],
+              statusFilter: 'active',
               items: [],
               selectedProjectId: null,
               // selectedProjectIds drives all template conditions — always provide it
@@ -115,6 +118,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         draggable: DraggableStub,
         Teleport: true,
         AddEditProjectModal: true,
+        DropProjectModal: true,
         AddEditProjectItemModal: true,
         ManageDependenciesModal: true,
         ManageProjectsModal: true,
@@ -441,5 +445,97 @@ describe('ProjectsView', () => {
     await wrapper.find('form').trigger('submit')
 
     expect(store.searchItems).not.toHaveBeenCalled()
+  })
+
+  // --- Project status ---
+
+  const closedProject: ProjectWithItemCount = {
+    ...testProjects[0]!,
+    status: 'dropped',
+    status_reason: 'Superseded by the other one',
+    closed_at: '2026-08-01T12:00:00Z',
+  }
+
+  /** State for a single selected project that has already been closed. */
+  function closedState() {
+    return {
+      projects: [closedProject],
+      selectedProjectId: closedProject.id,
+      selectedProjectIds: [closedProject.id],
+      items: testItems,
+      statusFilter: 'all',
+    }
+  }
+
+  it('does not label an active project row with a status', () => {
+    // Every row in the default list is active, so a badge on each says nothing.
+    const wrapper = createWrapper({ projects: testProjects })
+    expect(wrapper.findAll('[data-testid="project-status"]')).toHaveLength(0)
+  })
+
+  it('labels a closed project row with its status', () => {
+    const wrapper = createWrapper({ projects: [closedProject], statusFilter: 'all' })
+    expect(wrapper.find('[data-testid="project-status"]').text()).toBe('dropped')
+  })
+
+  it('changes the status filter through the store', async () => {
+    const wrapper = createWrapper({ projects: testProjects })
+    const store = useProjectsStore()
+
+    wrapper.findComponent({ name: 'NeuSelect' }).vm.$emit('update:modelValue', 'all')
+
+    expect(store.setStatusFilter).toHaveBeenCalledWith('all')
+  })
+
+  it('completes the selected project', async () => {
+    const wrapper = createWrapper(selectedState())
+    const store = useProjectsStore()
+
+    await wrapper.find('[data-testid="project-complete-button"]').trigger('click')
+
+    expect(store.setProjectStatus).toHaveBeenCalledWith(PROJ_1_ID, 'done', undefined)
+  })
+
+  it('offers reopen instead of complete once a project is closed', () => {
+    const wrapper = createWrapper(closedState())
+
+    expect(wrapper.find('[data-testid="project-complete-button"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="project-drop-button"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="project-reopen-button"]').exists()).toBe(true)
+  })
+
+  it('reopens a closed project', async () => {
+    const wrapper = createWrapper(closedState())
+    const store = useProjectsStore()
+
+    await wrapper.find('[data-testid="project-reopen-button"]').trigger('click')
+
+    expect(store.setProjectStatus).toHaveBeenCalledWith(closedProject.id, 'active', undefined)
+  })
+
+  it('drops the project with the reason the modal collected', async () => {
+    const wrapper = createWrapper(selectedState())
+    const store = useProjectsStore()
+
+    await wrapper.find('[data-testid="project-drop-button"]').trigger('click')
+    const modal = wrapper.findComponent({ name: 'DropProjectModal' })
+    expect(modal.props('visible')).toBe(true)
+    modal.vm.$emit('drop', 'Go covers it')
+    await wrapper.vm.$nextTick()
+
+    expect(store.setProjectStatus).toHaveBeenCalledWith(PROJ_1_ID, 'dropped', 'Go covers it')
+  })
+
+  it('names the closure and its reason in the project header', () => {
+    const wrapper = createWrapper(closedState())
+
+    const closure = wrapper.find('[data-testid="project-closure"]').text()
+    expect(closure).toContain('dropped')
+    expect(closure).toContain('Superseded by the other one')
+  })
+
+  it('shows no closure line while the project is active', () => {
+    const wrapper = createWrapper(selectedState())
+    expect(wrapper.find('[data-testid="project-closure"]').exists()).toBe(false)
   })
 })

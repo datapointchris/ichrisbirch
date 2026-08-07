@@ -79,7 +79,7 @@ func TestListBlockedItems_SendsTheRepoParam(t *testing.T) {
 
 func TestListProjects_SendsTheRepoParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListProjects(context.Background(), strptr("indy")); err != nil {
+	if _, err := client.ListProjects(context.Background(), strptr("indy"), ""); err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
 	if *query != "repo=indy" {
@@ -96,7 +96,7 @@ func TestListProjects_DecodesTheDerivedRepos(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil)
+	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil, "")
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}

@@ -157,6 +157,233 @@ class TestProjectKind:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
+class TestProjectStatus:
+    """`status` — active / done / dropped, from the project_statuses lookup table.
+
+    A project is a finite effort with a definition of done, so completion IS the
+    hide signal and there is no separate archive flag the way items have one. Two
+    terminal states rather than one, because `done` alone forces you to lie about
+    anything you merely stopped caring about.
+    """
+
+    @pytest.fixture
+    def client_with_projects(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client
+
+    def create(self, client, **body):
+        response = client.post(PROJECTS_ENDPOINT, json=body)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        return response.json()
+
+    def patch(self, client, project_id, **body):
+        return client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json=body)
+
+    def names(self, client, **params):
+        response = client.get(PROJECTS_ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return {p['name'] for p in response.json()}
+
+    def test_status_defaults_to_active_when_omitted(self, client_with_projects):
+        created = self.create(client_with_projects, name='Unstated project')
+        assert created['status'] == 'active'
+        assert created['closed_at'] is None, 'an active project has not been closed'
+
+    def test_completing_hides_the_project_from_the_default_list(self, client_with_projects):
+        project = self.create(client_with_projects, name='Finite effort')
+
+        response = self.patch(client_with_projects, project['id'], status='done')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+        assert 'Finite effort' not in self.names(client_with_projects)
+        assert 'Finite effort' in self.names(client_with_projects, status='done')
+        assert 'Finite effort' in self.names(client_with_projects, status='all')
+
+    def test_completing_stamps_closed_at(self, client_with_projects):
+        """`created_at` orders by when work started, which is the wrong axis for a finished list."""
+        project = self.create(client_with_projects, name='Finite effort')
+
+        completed = self.patch(client_with_projects, project['id'], status='done').json()
+
+        assert completed['closed_at'] is not None
+
+    def test_dropping_without_a_reason_is_refused(self, client_with_projects):
+        """'Deferred' invites re-proposal; the reason is what closes the question."""
+        project = self.create(client_with_projects, name='Abandoned effort')
+
+        response = self.patch(client_with_projects, project['id'], status='dropped')
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'reason' in response.json()['detail'].lower()
+
+    def test_dropping_with_a_reason_stores_it(self, client_with_projects):
+        project = self.create(client_with_projects, name='Abandoned effort')
+
+        dropped = self.patch(client_with_projects, project['id'], status='dropped', status_reason='Superseded by the other one').json()
+
+        assert dropped['status'] == 'dropped'
+        assert dropped['status_reason'] == 'Superseded by the other one'
+        assert dropped['closed_at'] is not None
+
+    def test_clearing_the_reason_on_a_dropped_project_is_refused(self, client_with_projects):
+        """The CHECK constraint says the same thing; this is the 422 instead of its 500."""
+        project = self.create(client_with_projects, name='Abandoned effort')
+        self.patch(client_with_projects, project['id'], status='dropped', status_reason='Not worth it')
+
+        response = self.patch(client_with_projects, project['id'], status_reason=None)
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    def test_reopening_clears_the_closure(self, client_with_projects):
+        project = self.create(client_with_projects, name='Revived effort')
+        self.patch(client_with_projects, project['id'], status='dropped', status_reason='Not worth it')
+
+        reopened = self.patch(client_with_projects, project['id'], status='active').json()
+
+        assert reopened['status'] == 'active'
+        assert reopened['status_reason'] is None, 'a live project carries no reason for having been closed'
+        assert reopened['closed_at'] is None
+
+    def test_unknown_status_is_rejected_on_create(self, client_with_projects):
+        response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad status', 'status': 'finished'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'dropped' in response.json()['detail']
+
+    def test_unknown_status_is_rejected_on_patch(self, client_with_projects):
+        project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
+
+        response = self.patch(client_with_projects, project['id'], status='finished')
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    def test_unknown_status_is_rejected_as_a_filter(self, client_with_projects):
+        response = client_with_projects.get(PROJECTS_ENDPOINT, params={'status': 'finished'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    def test_status_round_trips_through_create(self, client_with_projects):
+        """todoui creates offline and pushes later; a project it finished must not come back active."""
+        created = self.create(client_with_projects, name='Finished elsewhere', status='done')
+
+        assert created['status'] == 'done'
+        assert created['closed_at'] is not None
+
+    def test_closing_a_project_does_not_touch_its_items(self, client_with_projects):
+        """'Shipped 8 of 11, dropped with 3 open' is a real signal; eleven archived items is not."""
+        project = self.create(client_with_projects, name='Half finished')
+        for title, done in (('shipped', True), ('never started', False)):
+            item = client_with_projects.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [project['id']]}).json()
+            if done:
+                client_with_projects.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+
+        self.patch(client_with_projects, project['id'], status='dropped', status_reason='Ran out of road')
+
+        closed = client_with_projects.get(f'{PROJECTS_ENDPOINT}{project["id"]}/').json()
+        assert (closed['open_count'], closed['completed_count']) == (1, 1), (
+            'the open item was open when the project closed, and that is the useful fact'
+        )
+
+
+class TestProjectNameOwnership:
+    """A name is held by the ACTIVE project that bears it, and by nothing else.
+
+    Without the partial unique index a completed `clisteno` owns the name
+    forever and the next `clisteno` effort fails on the constraint before any
+    resolution rule is consulted.
+    """
+
+    @pytest.fixture
+    def client_with_projects(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client
+
+    def create(self, client, **body):
+        return client.post(PROJECTS_ENDPOINT, json=body)
+
+    def close(self, client, project_id, **body):
+        response = client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json={'status': 'done', **body})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return response.json()
+
+    def test_two_active_projects_cannot_share_a_name(self, client_with_projects):
+        first = self.create(client_with_projects, name='clisteno')
+        assert first.status_code == status.HTTP_201_CREATED, show_status_and_response(first)
+
+        second = self.create(client_with_projects, name='clisteno')
+
+        assert second.status_code == status.HTTP_409_CONFLICT, show_status_and_response(second)
+        assert first.json()['id'] in second.json()['detail'], 'the conflict must name what already holds it'
+
+    def test_a_finished_project_gives_its_name_back(self, client_with_projects):
+        first = self.create(client_with_projects, name='clisteno').json()
+        self.close(client_with_projects, first['id'])
+
+        second = self.create(client_with_projects, name='clisteno')
+
+        assert second.status_code == status.HTTP_201_CREATED, show_status_and_response(second)
+        assert second.json()['id'] != first['id']
+
+    def test_the_active_project_wins_the_name(self, client_with_projects):
+        finished = self.create(client_with_projects, name='clisteno').json()
+        self.close(client_with_projects, finished['id'])
+        live = self.create(client_with_projects, name='clisteno').json()
+
+        resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}clisteno/')
+
+        assert resolved.status_code == status.HTTP_200_OK, show_status_and_response(resolved)
+        assert resolved.json()['id'] == live['id']
+
+    def test_a_lone_closed_project_is_still_addressable_by_name(self, client_with_projects):
+        """Otherwise `icb projects reopen ifiles` cannot name the thing it exists to reopen."""
+        finished = self.create(client_with_projects, name='ifiles').json()
+        self.close(client_with_projects, finished['id'])
+
+        reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}ifiles/', json={'status': 'active'})
+
+        assert reopened.status_code == status.HTTP_200_OK, show_status_and_response(reopened)
+        assert reopened.json()['id'] == finished['id']
+
+    def test_several_closed_projects_sharing_a_name_are_ambiguous(self, client_with_projects):
+        ids = []
+        for _ in range(2):
+            project = self.create(client_with_projects, name='clisteno').json()
+            self.close(client_with_projects, project['id'])
+            ids.append(project['id'])
+
+        resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}clisteno/')
+
+        assert resolved.status_code == status.HTTP_409_CONFLICT, show_status_and_response(resolved)
+        detail = resolved.json()['detail']
+        assert all(project_id in detail for project_id in ids), 'the caller needs the ids to disambiguate'
+
+    def test_reopening_into_a_taken_name_is_refused(self, client_with_projects):
+        finished = self.create(client_with_projects, name='clisteno').json()
+        self.close(client_with_projects, finished['id'])
+        self.create(client_with_projects, name='clisteno')
+
+        reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{finished["id"]}/', json={'status': 'active'})
+
+        assert reopened.status_code == status.HTTP_409_CONFLICT, show_status_and_response(reopened)
+
+    def test_renaming_onto_an_active_name_is_refused(self, client_with_projects):
+        self.create(client_with_projects, name='clisteno')
+        other = self.create(client_with_projects, name='theme').json()
+
+        renamed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{other["id"]}/', json={'name': 'clisteno'})
+
+        assert renamed.status_code == status.HTTP_409_CONFLICT, show_status_and_response(renamed)
+
+    def test_renaming_onto_a_closed_name_is_allowed(self, client_with_projects):
+        finished = self.create(client_with_projects, name='clisteno').json()
+        self.close(client_with_projects, finished['id'])
+        other = self.create(client_with_projects, name='theme').json()
+
+        renamed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{other["id"]}/', json={'name': 'clisteno'})
+
+        assert renamed.status_code == status.HTTP_200_OK, show_status_and_response(renamed)
+
+
 class TestProjectItemCounts:
     """`open_count` / `completed_count` — whether a project still has work in it.
 

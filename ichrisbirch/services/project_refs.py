@@ -58,10 +58,35 @@ def resolve_item(session: Session, ref: str | UUID | int) -> models.ProjectItem:
     return item
 
 
+def _project_by_name(session: Session, name: str) -> models.Project | None:
+    """Resolve a project name, which is unique only among ACTIVE projects.
+
+    The active one wins outright — the live effort is what a name means while
+    one exists. Falling back to a lone terminal match is what makes
+    `icb projects reopen ifiles` addressable at all, since by then no active
+    project holds the name. Several terminal projects sharing it is genuinely
+    ambiguous and says so, listing the ids, rather than picking one.
+    """
+    matches = session.scalars(select(models.Project).where(models.Project.name == name)).all()
+    active = [project for project in matches if project.status == 'active']
+    if active:
+        return active[0]
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        candidates = ', '.join(f'{project.id} ({project.status})' for project in sorted(matches, key=lambda p: p.status))
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'{name!r} names {len(matches)} closed projects and no active one. Use an id: {candidates}',
+        )
+    return None
+
+
 def resolve_project(session: Session, ref: str | UUID) -> models.Project:
     """Fetch a project by its UUID or its name.
 
-    Projects get no number: `name` is already unique and is what anyone types.
+    Projects get no number: `name` is what anyone types, and it is unique among
+    the active projects, which is as unique as it needs to be.
     """
     project: models.Project | None
     if isinstance(ref, UUID):
@@ -69,7 +94,7 @@ def resolve_project(session: Session, ref: str | UUID) -> models.Project:
     elif (project_id := _parse_uuid(ref)) is not None:
         project = session.get(models.Project, project_id)
     else:
-        project = session.scalar(select(models.Project).where(models.Project.name == ref))
+        project = _project_by_name(session, ref)
     if project is None:
         raise NotFoundException('project', str(ref), logger)
     return project

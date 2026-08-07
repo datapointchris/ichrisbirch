@@ -579,11 +579,26 @@ export interface MoneyWastedUpdate {
 /** Values come from the project_kinds lookup table; adding one is an insert plus this union. */
 export type ProjectKind = 'build' | 'chore' | 'life'
 
+/**
+ * Where a project is in its lifecycle, from the project_statuses lookup table.
+ * A project is a finite effort, so completing it is what hides it — there is no
+ * separate archive flag the way items have one. `dropped` exists beside `done`
+ * because `done` alone would force you to lie about anything you merely stopped
+ * caring about, and it always carries a reason.
+ */
+export type ProjectStatus = 'active' | 'done' | 'dropped'
+
+/** `all` is the absence of the filter, not a status a project can be in. */
+export type ProjectStatusFilter = ProjectStatus | 'all'
+
 export interface Project {
   id: string
   name: string
   description?: string
   kind: ProjectKind
+  status: ProjectStatus
+  status_reason?: string | null
+  closed_at?: string | null
   position: number
   created_at: string
 }
@@ -595,10 +610,17 @@ export interface ProjectCreate {
   position?: number
 }
 
+/**
+ * `closed_at` is absent deliberately — the server stamps it on the transition
+ * into a terminal status and clears it on reopen, so it cannot drift from the
+ * status it describes.
+ */
 export interface ProjectUpdate {
   name?: string
   description?: string | null
   kind?: ProjectKind
+  status?: ProjectStatus
+  status_reason?: string | null
   position?: number
 }
 

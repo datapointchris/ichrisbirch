@@ -139,6 +139,8 @@ export type {
   Project,
   ProjectCreate,
   ProjectKind,
+  ProjectStatus,
+  ProjectStatusFilter,
   ProjectUpdate,
   ProjectWithItemCount,
   ProjectItem,

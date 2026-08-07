@@ -174,7 +174,7 @@ func TestListProjects_DecodesOpenAndCompletedCounts(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	projects, err := client.ListProjects(context.Background(), nil)
+	projects, err := client.ListProjects(context.Background(), nil, "")
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
@@ -243,5 +243,71 @@ func TestListProjectItems_ArchivedQueryParam(t *testing.T) {
 	_, _ = client.ListProjectItems(context.Background(), "018f-a", false)
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty when archived=false", gotQuery)
+	}
+}
+
+func TestListProjects_OmitsTheStatusParamWhenUnset(t *testing.T) {
+	// The server's own default is the active projects; sending status=active
+	// would make the CLI the place that decision lives.
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListProjects(context.Background(), nil, ""); err != nil {
+		t.Fatalf("ListProjects: %v", err)
+	}
+	if *query != "" {
+		t.Errorf("query = %q, want no parameters", *query)
+	}
+}
+
+func TestListProjects_SendsTheStatusParam(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListProjects(context.Background(), nil, AllProjectStatuses); err != nil {
+		t.Fatalf("ListProjects: %v", err)
+	}
+	if *query != "status=all" {
+		t.Errorf("query = %q, want status=all", *query)
+	}
+}
+
+func TestListProjects_DecodesTheClosure(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[
+			{"id":"018f-a","name":"Rewrite in Rust","description":null,"kind":"build","status":"dropped","status_reason":"Go covers it","closed_at":"2026-08-01T12:00:00Z","position":0,"created_at":"2026-07-24T00:00:00Z","item_count":3,"open_count":1,"completed_count":2}
+		]`))
+	}))
+	defer srv.Close()
+
+	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil, AllProjectStatuses)
+	if err != nil {
+		t.Fatalf("ListProjects: %v", err)
+	}
+	p := projects[0]
+	if p.Status != "dropped" {
+		t.Errorf("status = %q, want dropped", p.Status)
+	}
+	if p.StatusReason == nil || *p.StatusReason != "Go covers it" {
+		t.Errorf("status_reason = %v, want the reason it was dropped", p.StatusReason)
+	}
+	if p.ClosedAt == nil || p.ClosedAt.Year() != 2026 {
+		t.Errorf("closed_at = %v, want the closing timestamp", p.ClosedAt)
+	}
+	if p.OpenCount == nil || *p.OpenCount != 1 {
+		t.Errorf("open_count = %v — closing a project must not zero its open items", p.OpenCount)
+	}
+}
+
+func TestProject_LeavesTheClosureNilWhileActive(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"018f-a","name":"Live","description":null,"kind":"build","status":"active","status_reason":null,"closed_at":null,"position":0,"created_at":"2026-07-24T00:00:00Z","item_count":0,"open_count":0,"completed_count":0}`))
+	}))
+	defer srv.Close()
+
+	project, err := New(srv.URL, staticTokenClient("t")).GetProject(context.Background(), "018f-a")
+	if err != nil {
+		t.Fatalf("GetProject: %v", err)
+	}
+	if project.ClosedAt != nil || project.StatusReason != nil {
+		t.Errorf("an active project carries no closure, got closed_at=%v reason=%v", project.ClosedAt, project.StatusReason)
 	}
 }

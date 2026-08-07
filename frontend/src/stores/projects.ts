@@ -7,6 +7,8 @@ import type {
   ProjectWithItemCount,
   ProjectCreate,
   ProjectUpdate,
+  ProjectStatus,
+  ProjectStatusFilter,
   ProjectItem,
   ProjectItemCreate,
   ProjectItemUpdate,
@@ -25,6 +27,7 @@ const logger = createLogger('ProjectsStore')
 export const useProjectsStore = defineStore('projects', () => {
   // --- Project state ---
   const projects = ref<ProjectWithItemCount[]>([])
+  const statusFilter = ref<ProjectStatusFilter>('active')
   const selectedProjectId = ref<string | null>(null)
   const selectedProjectIds = ref<string[]>([])
   const loading = ref(false)
@@ -56,9 +59,14 @@ export const useProjectsStore = defineStore('projects', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<ProjectWithItemCount[]>('/projects/')
+      // Always explicit, unlike the CLI: the filter is a control on the page, so
+      // leaving it to the server's default would make the select's `active`
+      // position mean something the store never said.
+      const response = await api.get<ProjectWithItemCount[]>('/projects/', {
+        params: { status: statusFilter.value },
+      })
       projects.value = response.data
-      logger.info('projects_fetched', { count: response.data.length })
+      logger.info('projects_fetched', { count: response.data.length, status: statusFilter.value })
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
@@ -97,16 +105,45 @@ export const useProjectsStore = defineStore('projects', () => {
     }
   }
 
+  async function setStatusFilter(status: ProjectStatusFilter) {
+    if (statusFilter.value === status) return
+    statusFilter.value = status
+    await fetchProjects()
+    // Whatever was selected may no longer be in the list the filter now shows,
+    // and a selection pointing at an absent project renders an empty pane with
+    // no way back to it.
+    for (const id of [...selectedProjectIds.value]) {
+      if (!projects.value.some((p) => p.id === id)) dropSelection(id)
+    }
+  }
+
+  /** Forget a project the list no longer holds, whether closed, filtered out, or deleted. */
+  function dropSelection(id: string) {
+    projects.value = projects.value.filter((p) => p.id !== id)
+    selectedProjectIds.value = selectedProjectIds.value.filter((x) => x !== id)
+    if (selectedProjectId.value === id) {
+      selectedProjectId.value = selectedProjectIds.value[0] ?? null
+      if (selectedProjectIds.value.length === 0) items.value = []
+    }
+  }
+
+  /**
+   * Status transitions, all of them a PATCH — there are no complete/drop/reopen
+   * action endpoints, so the server validates the transition in one place.
+   * Dropping requires a reason, which is what distinguishes it from deferring.
+   */
+  async function setProjectStatus(id: string, status: ProjectStatus, reason?: string) {
+    const update: ProjectUpdate = { status }
+    if (reason !== undefined) update.status_reason = reason
+    await updateProject(id, update)
+    if (!projects.value.some((p) => p.id === id)) dropSelection(id)
+  }
+
   async function removeProject(id: string) {
     error.value = null
     try {
       await api.delete(`/projects/${id}/`)
-      projects.value = projects.value.filter((p) => p.id !== id)
-      selectedProjectIds.value = selectedProjectIds.value.filter((x) => x !== id)
-      if (selectedProjectId.value === id) {
-        selectedProjectId.value = selectedProjectIds.value[0] ?? null
-        if (selectedProjectIds.value.length === 0) items.value = []
-      }
+      dropSelection(id)
       logger.info('project_deleted', { id })
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -566,6 +603,7 @@ export const useProjectsStore = defineStore('projects', () => {
   return {
     // Project state
     projects,
+    statusFilter,
     selectedProjectId,
     selectedProjectIds,
     loading,
@@ -586,6 +624,8 @@ export const useProjectsStore = defineStore('projects', () => {
     fetchProjects,
     createProject,
     updateProject,
+    setStatusFilter,
+    setProjectStatus,
     removeProject,
     fetchItems,
     fetchItemsForProjects,
