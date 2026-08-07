@@ -4,7 +4,6 @@ This module analyzes the actual test fixtures in the project's codebase and gene
 """
 
 import ast
-import os
 from pathlib import Path
 
 from ...utils import find_project_root
@@ -80,11 +79,10 @@ def analyze_fixtures_in_directory(dir_path: str) -> dict:
     """
     all_fixtures = {}
 
-    for root, _dirs, files in os.walk(dir_path):
+    for root, _dirs, files in Path(dir_path).walk():
         for file in files:
             if file.endswith('.py'):
-                file_path = Path(root) / file
-                fixtures = analyze_fixtures_in_file(file_path)
+                fixtures = analyze_fixtures_in_file(root / file)
                 all_fixtures.update(fixtures)
 
     return all_fixtures
