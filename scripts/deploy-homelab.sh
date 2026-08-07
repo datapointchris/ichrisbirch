@@ -54,10 +54,25 @@ FAILURE_OUTPUT=""
 LIVE_COLOR=""
 DEPLOY_COLOR=""
 
+# --remove-orphans on every up and down, because removing a service from
+# docker-compose.app.yml otherwise leaves its container running forever: neither
+# verb reaps what the compose file no longer mentions. The MCP server was retired
+# on 2026-07-24 and icb-blue-mcp was still up two weeks later, restart=always,
+# invisible to every deploy since. Scoped to one colour's project, so it can only
+# ever touch that colour — icb-infra is a different project and is not reachable
+# from here.
 compose_app() {
   local color="$1"
   shift
   DEPLOY_COLOR="$color" docker compose --project-name "icb-${color}" -f docker-compose.app.yml "$@"
+}
+
+compose_app_up() {
+  compose_app "$1" up -d --remove-orphans
+}
+
+compose_app_down() {
+  compose_app "$1" down --remove-orphans
 }
 
 cleanup() {
@@ -81,7 +96,7 @@ cleanup() {
     # Clean up failed deploy containers (live containers stay untouched)
     if [[ -n "$DEPLOY_COLOR" ]]; then
       log_info "cleaning_up_failed_deploy" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
-      compose_app "$DEPLOY_COLOR" down 2>/dev/null || true
+      compose_app_down "$DEPLOY_COLOR" 2>/dev/null || true
     fi
 
     local message="*Commit:* \`${NEW_SHA:0:7}\`"
@@ -269,7 +284,7 @@ start_new_containers() {
   log_info "containers_starting" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
   cd "$INSTALL_DIR"
 
-  if ! compose_app "$DEPLOY_COLOR" up -d 2>&1 | tee -a "$LOG_FILE"; then
+  if ! compose_app_up "$DEPLOY_COLOR" 2>&1 | tee -a "$LOG_FILE"; then
     FAILURE_OUTPUT="Failed to start ${DEPLOY_COLOR} containers"
     log_error "containers_start_failed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
     exit 1
@@ -457,7 +472,7 @@ stop_old_containers() {
   sleep "$GRACE_PERIOD"
 
   log_info "stopping_old_containers" "color" "$LIVE_COLOR" | tee -a "$LOG_FILE"
-  compose_app "$LIVE_COLOR" down 2>&1 | tee -a "$LOG_FILE" || true
+  compose_app_down "$LIVE_COLOR" 2>&1 | tee -a "$LOG_FILE" || true
 
   log_info "old_containers_stopped" "color" "$LIVE_COLOR" | tee -a "$LOG_FILE"
 }
