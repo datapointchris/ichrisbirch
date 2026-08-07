@@ -48,6 +48,29 @@ get_active_color() {
   fi
 }
 
+# Production install directory, which only exists on the production host.
+PROD_INSTALL_DIR="/srv/ichrisbirch"
+
+# Every prod verb that reads the local Docker daemon or the blue/green state
+# file is meaningless anywhere else, and silently wrong rather than merely
+# useless: off-host there is no state file, so get_active_color returns empty,
+# the caller takes the legacy single-compose path, and a healthy production is
+# reported as seven missing containers. That is the worst available failure for
+# the command you reach for when you think something is down.
+require_prod_host() {
+  if [[ -d "$PROD_INSTALL_DIR" ]]; then
+    return 0
+  fi
+  echo "${red}icbops prod $1 inspects the production host's Docker daemon and must run there.${reset}" >&2
+  echo "" >&2
+  echo "  ssh chris@10.0.20.11 'cd ${PROD_INSTALL_DIR} && ./ops/icbops prod $1'" >&2
+  echo "" >&2
+  echo "From a workstation, these reach production over HTTPS and work anywhere:" >&2
+  echo "  icbops prod apihealth    # the API's own health endpoint" >&2
+  echo "  icbops prod smoke        # smoke tests against the public URLs" >&2
+  exit 2
+}
+
 # Script paths
 HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/ops/health-check.sh"
 SSL_MANAGER_SCRIPT="$ICHRISBIRCH_HOME/deploy-containers/traefik/scripts/ssl-manager.sh"
@@ -904,7 +927,10 @@ function prod-health() {
 }
 
 function prod-apihealth() {
-  curl --silent "$PROD_API_URL/health/" | jq
+  # /health, not /health/ — the trailing slash 307s and --silent without
+  # --location swallowed the redirect, so this printed nothing and exited 0.
+  # --fail-with-body makes a real outage a non-zero exit rather than silence.
+  curl --silent --show-error --location --fail-with-body "$PROD_API_URL/health" | jq
 }
 
 function prod-smoke() {
@@ -1118,29 +1144,32 @@ case $1 in
   prod)
     case "$2" in
       "" | -h | --help | help) prod-usage ;;
-      start) prod-start ;;
-      stop) prod-stop ;;
-      restart) prod-restart ;;
-      rebuild) prod-rebuild ;;
-      status) prod-status ;;
+      start) require_prod_host start && prod-start ;;
+      stop) require_prod_host stop && prod-stop ;;
+      restart) require_prod_host restart && prod-restart ;;
+      rebuild) require_prod_host rebuild && prod-rebuild ;;
+      status) require_prod_host status && prod-status ;;
       smoke) prod-smoke ;;
       apihealth) prod-apihealth ;;
-      health) prod-health ;;
+      health) require_prod_host health && prod-health ;;
       logs)
+        require_prod_host logs
         shift 2
         prod-logs "$@"
         ;;
       db)
+        require_prod_host db
         shift 2
         env-db production "$@"
         ;;
       docker)
+        require_prod_host docker
         shift 2
         env-docker-config production "$@"
         ;;
-      deploy-status) prod-deploy-status ;;
-      rollback) prod-rollback ;;
-      legacy-rebuild) prod-legacy-rebuild ;;
+      deploy-status) require_prod_host deploy-status && prod-deploy-status ;;
+      rollback) require_prod_host rollback && prod-rollback ;;
+      legacy-rebuild) require_prod_host legacy-rebuild && prod-legacy-rebuild ;;
       build-test) prod-build-test ;;
       *)
         echo "${red}Unknown prod command: $2${reset}"
