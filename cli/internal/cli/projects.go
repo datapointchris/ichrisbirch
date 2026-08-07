@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -227,7 +228,7 @@ func newProjectsDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				prompt := fmt.Sprintf("Delete project %q (%s items)? This cannot be undone.", project.Name, itemCount(project))
+				prompt := fmt.Sprintf("Delete project %q (%s items)? This cannot be undone.", project.Name, count(project.ItemCount))
 				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(), prompt)
 				if err != nil {
 					return err
@@ -262,9 +263,12 @@ func printProjectsTable(out io.Writer, projects []api.Project) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tNAME\tKIND\tITEMS\tPOS")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tKIND\tOPEN\tDONE\tITEMS\tPOS")
 	for _, p := range projects {
-		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%d\n", p.ID, p.Name, p.Kind, itemCount(p), p.Position)
+		_, _ = fmt.Fprintf(
+			tw, "%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
+			p.ID, p.Name, p.Kind, count(p.OpenCount), count(p.CompletedCount), count(p.ItemCount), p.Position,
+		)
 	}
 	_ = tw.Flush()
 }
@@ -277,7 +281,7 @@ func printProjectDetail(out io.Writer, p api.Project, items []api.ProjectItemInP
 	}
 	_, _ = fmt.Fprintf(out, "  kind:      %s\n", p.Kind)
 	_, _ = fmt.Fprintf(out, "  position:  %d\n", p.Position)
-	_, _ = fmt.Fprintf(out, "  items:     %s\n", itemCount(p))
+	_, _ = fmt.Fprintf(out, "  items:     %s (%s open, %s done)\n", count(p.ItemCount), count(p.OpenCount), count(p.CompletedCount))
 
 	_, _ = fmt.Fprintf(out, "\nItems (%d):\n", len(items))
 	if len(items) == 0 {
@@ -311,13 +315,13 @@ func itemStatus(it api.ProjectItemInProject) string {
 	}
 }
 
-// itemCount renders a project's item count, or "—" when the server omitted it
-// (create/update responses carry no count).
-func itemCount(p api.Project) string {
-	if p.ItemCount == nil {
+// count renders one of a project's item counts, or "—" when the server omitted
+// it (create/update responses carry no counts).
+func count(n *int) string {
+	if n == nil {
 		return "—"
 	}
-	return fmt.Sprintf("%d", *p.ItemCount)
+	return strconv.Itoa(*n)
 }
 
 // strValue dereferences a nullable string field to its value, or "" when nil.

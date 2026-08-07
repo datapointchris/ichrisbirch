@@ -21,14 +21,27 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
+def item_count_columns():
+    """Total, open, and completed counts, aggregated in one pass over the join.
+
+    Conditional aggregation rather than three queries: a caller listing every
+    project needs the breakdown for all of them, and the counts are what make
+    the list answer "which of these still has work in it".
+    """
+    not_archived = models.ProjectItem.archived.is_(False)
+    return (
+        func.count(ProjectItemMembership.item_id).label('item_count'),
+        func.count(ProjectItemMembership.item_id).filter(not_archived, models.ProjectItem.completed.is_(False)).label('open_count'),
+        func.count(ProjectItemMembership.item_id).filter(not_archived, models.ProjectItem.completed.is_(True)).label('completed_count'),
+    )
+
+
 @router.get('/', response_model=list[schemas.ProjectWithItemCount], status_code=status.HTTP_200_OK)
 async def read_many(session: DbSession):
     query = (
-        select(
-            models.Project,
-            func.count(ProjectItemMembership.item_id).label('item_count'),
-        )
+        select(models.Project, *item_count_columns())
         .outerjoin(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
+        .outerjoin(models.ProjectItem, ProjectItemMembership.item_id == models.ProjectItem.id)
         .group_by(models.Project.id)
         .order_by(models.Project.position.asc())
     )
@@ -41,8 +54,10 @@ async def read_many(session: DbSession):
             position=project.position,
             created_at=project.created_at,
             item_count=item_count,
+            open_count=open_count,
+            completed_count=completed_count,
         )
-        for project, item_count in session.execute(query).all()
+        for project, item_count, open_count, completed_count in session.execute(query).all()
     ]
 
 
@@ -83,7 +98,13 @@ async def read_one(id: UUID, session: DbSession):
     if not project:
         raise NotFoundException('project', id, logger)
 
-    item_count = session.scalar(select(func.count(ProjectItemMembership.item_id)).where(ProjectItemMembership.project_id == id))
+    counts = (
+        select(*item_count_columns())
+        .select_from(ProjectItemMembership)
+        .outerjoin(models.ProjectItem, ProjectItemMembership.item_id == models.ProjectItem.id)
+        .where(ProjectItemMembership.project_id == id)
+    )
+    item_count, open_count, completed_count = session.execute(counts).one()
     return schemas.ProjectWithItemCount(
         id=project.id,
         name=project.name,
@@ -91,7 +112,9 @@ async def read_one(id: UUID, session: DbSession):
         kind=project.kind,
         position=project.position,
         created_at=project.created_at,
-        item_count=item_count or 0,
+        item_count=item_count,
+        open_count=open_count,
+        completed_count=completed_count,
     )
 
 

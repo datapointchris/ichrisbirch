@@ -602,8 +602,12 @@ export interface ProjectUpdate {
   position?: number
 }
 
+// open_count and completed_count exclude archived items, so they sum to
+// item_count only when nothing in the project is archived.
 export interface ProjectWithItemCount extends Project {
   item_count: number
+  open_count: number
+  completed_count: number
 }
 
 export interface ProjectItem {

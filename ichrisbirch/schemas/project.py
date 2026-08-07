@@ -34,6 +34,13 @@ class ProjectUpdate(ProjectConfig):
 
 
 class ProjectWithItemCount(ProjectConfig):
+    """A project plus the counts that say whether it still has work in it.
+
+    The three counts partition `item_count`: archived beats completed, so an
+    archived item is neither open nor completed and
+    `item_count - open_count - completed_count` is the archived remainder.
+    """
+
     id: UUID
     name: str
     description: str | None = None
@@ -41,3 +48,5 @@ class ProjectWithItemCount(ProjectConfig):
     position: int
     created_at: datetime
     item_count: int
+    open_count: int
+    completed_count: int

@@ -9,17 +9,22 @@ import (
 
 // Project mirrors the API's project JSON. Only the fields the CLI renders are
 // decoded; unknown fields are ignored, so the server can add columns without
-// breaking the client. ItemCount is a pointer because the list/read endpoints
-// include it but create/update responses omit it — omitempty keeps `--json`
+// breaking the client. The counts are pointers because the list/read endpoints
+// include them but create/update responses omit them — omitempty keeps `--json`
 // faithful to what the server actually sent. Description is nullable.
+//
+// OpenCount and CompletedCount exclude archived items, so they sum to ItemCount
+// only when nothing in the project is archived.
 type Project struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description *string   `json:"description"`
-	Kind        string    `json:"kind"`
-	Position    int       `json:"position"`
-	CreatedAt   time.Time `json:"created_at"`
-	ItemCount   *int      `json:"item_count,omitempty"`
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	Description    *string   `json:"description"`
+	Kind           string    `json:"kind"`
+	Position       int       `json:"position"`
+	CreatedAt      time.Time `json:"created_at"`
+	ItemCount      *int      `json:"item_count,omitempty"`
+	OpenCount      *int      `json:"open_count,omitempty"`
+	CompletedCount *int      `json:"completed_count,omitempty"`
 }
 
 // ProjectItemInProject is a project item as seen within a project's ordered

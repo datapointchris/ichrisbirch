@@ -163,6 +163,55 @@ func TestDeleteProject_Sends204Delete(t *testing.T) {
 	}
 }
 
+func TestListProjects_DecodesOpenAndCompletedCounts(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Two archived items, so the counts deliberately do not sum to item_count.
+		_, _ = w.Write([]byte(`[
+			{"id":"018f-a","name":"Personal OS","description":null,"kind":"build","position":0,"created_at":"2026-07-24T00:00:00Z","item_count":9,"open_count":3,"completed_count":4}
+		]`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	projects, err := client.ListProjects(context.Background())
+	if err != nil {
+		t.Fatalf("ListProjects: %v", err)
+	}
+
+	if len(projects) != 1 {
+		t.Fatalf("got %d projects, want 1", len(projects))
+	}
+	p := projects[0]
+	if p.OpenCount == nil || *p.OpenCount != 3 {
+		t.Errorf("open_count = %v, want 3", p.OpenCount)
+	}
+	if p.CompletedCount == nil || *p.CompletedCount != 4 {
+		t.Errorf("completed_count = %v, want 4", p.CompletedCount)
+	}
+}
+
+func TestCreateProject_LeavesCountsNilWhenTheServerOmitsThem(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"id":"018f-new","name":"New","description":null,"kind":"build","position":0,"created_at":"2026-07-24T00:00:00Z"}`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	project, err := client.CreateProject(context.Background(), ProjectCreateInput{Name: "New"})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+
+	// nil, not 0 — the create response says nothing about the counts, and a
+	// rendered "0 open" would be a claim the server never made.
+	if project.OpenCount != nil || project.CompletedCount != nil || project.ItemCount != nil {
+		t.Errorf("counts = %v/%v/%v, want all nil", project.ItemCount, project.OpenCount, project.CompletedCount)
+	}
+}
+
 func TestListProjectItems_ArchivedQueryParam(t *testing.T) {
 	var gotPath string
 	var gotQuery string

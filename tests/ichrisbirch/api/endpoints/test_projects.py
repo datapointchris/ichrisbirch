@@ -157,6 +157,73 @@ class TestProjectKind:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
+class TestProjectItemCounts:
+    """`open_count` / `completed_count` — whether a project still has work in it.
+
+    A total alone cannot answer that: a project with twenty finished items and a
+    project with twenty untouched ones both read as "20" in `icb projects list`.
+    """
+
+    @pytest.fixture
+    def project_with_mixed_items(self, txn_api_logged_in):
+        """One project holding an open, a completed, and an archived item."""
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        project_id = client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+        created = {}
+        for title in ('open one', 'completed one', 'archived one'):
+            response = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [project_id]})
+            assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+            created[title] = response.json()['id']
+
+        for title, patch in (('completed one', {'completed': True}), ('archived one', {'archived': True})):
+            response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created[title]}/', json=patch)
+            assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+        return client, project_id
+
+    def project_from_list(self, client, project_id):
+        return next(p for p in client.get(PROJECTS_ENDPOINT).json() if p['id'] == project_id)
+
+    def test_list_splits_items_into_open_and_completed(self, project_with_mixed_items):
+        client, project_id = project_with_mixed_items
+
+        project = self.project_from_list(client, project_id)
+
+        assert project['open_count'] == 1
+        assert project['completed_count'] == 1
+
+    def test_archived_items_count_toward_neither(self, project_with_mixed_items):
+        """Archived beats completed, matching how the clients label a single item."""
+        client, project_id = project_with_mixed_items
+
+        project = self.project_from_list(client, project_id)
+
+        assert project['item_count'] == 3, 'the total still counts every membership'
+        assert project['item_count'] - project['open_count'] - project['completed_count'] == 1, (
+            'the archived item must be the remainder, in neither bucket'
+        )
+
+    def test_read_one_agrees_with_the_list(self, project_with_mixed_items):
+        client, project_id = project_with_mixed_items
+
+        listed = self.project_from_list(client, project_id)
+        detail = client.get(f'{PROJECTS_ENDPOINT}{project_id}/').json()
+
+        counts = ('item_count', 'open_count', 'completed_count')
+        assert {k: detail[k] for k in counts} == {k: listed[k] for k in counts}
+
+    def test_project_with_no_items_counts_zero(self, project_with_mixed_items):
+        """The outer join must yield 0, not drop the project or return null."""
+        client, project_id = project_with_mixed_items
+        created = client.post(PROJECTS_ENDPOINT, json={'name': 'Empty project'})
+
+        project = self.project_from_list(client, created.json()['id'])
+
+        assert (project['item_count'], project['open_count'], project['completed_count']) == (0, 0, 0)
+
+
 class TestProjectItemUpdate:
     """PATCH /project-items/{id}/ — null-clearing behaviour for optional fields."""
 

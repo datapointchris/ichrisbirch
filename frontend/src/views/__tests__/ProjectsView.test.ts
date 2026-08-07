@@ -34,7 +34,10 @@ const testProjects: ProjectWithItemCount[] = [
     kind: 'build',
     position: 0,
     created_at: '2026-01-01T00:00:00Z',
+    // Matches testItems below: one open, one completed, one archived.
     item_count: 3,
+    open_count: 1,
+    completed_count: 1,
   },
   {
     id: PROJ_2_ID,
@@ -44,6 +47,8 @@ const testProjects: ProjectWithItemCount[] = [
     position: 1,
     created_at: '2026-02-01T00:00:00Z',
     item_count: 2,
+    open_count: 2,
+    completed_count: 0,
   },
 ]
 
