@@ -31,7 +31,7 @@ class ProjectItemCreate(ProjectItemConfig):
     title: str
     notes: str | None = None
     repo: str | None = None
-    project_ids: list[UUID]
+    project_ids: list[ProjectRef]
 
 
 class ProjectItem(ProjectItemConfig):

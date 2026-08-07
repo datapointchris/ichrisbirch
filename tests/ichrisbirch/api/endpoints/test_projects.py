@@ -762,6 +762,23 @@ class TestProjectNameAsReference:
         assert added.status_code == status.HTTP_201_CREATED, show_status_and_response(added)
         assert added.json()['id'] == other['id']
 
+    def test_create_accepts_a_project_name(self, project_and_client):
+        """`--project todoui` is the commonest write there is; demanding a UUID
+        there while every read prints a name made the CLI unusable by hand."""
+        client, project = project_and_client
+
+        created = client.post(
+            PROJECT_ITEMS_ENDPOINT,
+            json={'title': 'Filed by name', 'project_ids': [project['name']]},
+        )
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert [p['id'] for p in created.json()['projects']] == [project['id']]
+
+    def test_create_against_an_unknown_project_is_a_404(self, project_and_client):
+        client, _ = project_and_client
+        response = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Nowhere', 'project_ids': ['no-such-project']})
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
     def test_an_unknown_name_is_a_404(self, project_and_client):
         client, _ = project_and_client
         assert client.get(f'{PROJECTS_ENDPOINT}no-such-project/').status_code == status.HTTP_404_NOT_FOUND

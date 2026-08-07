@@ -17,7 +17,6 @@ from sqlalchemy.orm import selectinload
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
-from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.services.project_item_positions import move_membership_to_position
@@ -179,10 +178,9 @@ async def create(item: schemas.ProjectItemCreate, session: DbSession):
             detail='At least one project_id is required',
         )
 
-    # Verify all projects exist
-    for pid in item.project_ids:
-        if not session.get(models.Project, pid):
-            raise NotFoundException('project', pid, logger)
+    # Resolves names as well as UUIDs, and 404s here rather than letting the
+    # foreign key raise after the item row is already in the transaction.
+    projects = [resolve_project(session, ref) for ref in item.project_ids]
 
     db_item = models.ProjectItem(title=item.title, notes=item.notes, repo=item.repo)
     if item.id is not None:
@@ -194,8 +192,10 @@ async def create(item: schemas.ProjectItemCreate, session: DbSession):
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Project item with id {item.id} already exists') from None
 
-    for pid in item.project_ids:
-        membership = ProjectItemMembership(item_id=db_item.id, project_id=pid, position=_next_position_in_project(session, pid))
+    for project in projects:
+        membership = ProjectItemMembership(
+            item_id=db_item.id, project_id=project.id, position=_next_position_in_project(session, project.id)
+        )
         session.add(membership)
 
     session.commit()
