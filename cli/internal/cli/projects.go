@@ -65,9 +65,9 @@ func newProjectsViewCommand() *cobra.Command {
 		archived bool
 	)
 	cmd := &cobra.Command{
-		Use:     "view <project-id>",
+		Use:     "view <project>",
 		Short:   "Show a project and its items",
-		Example: "  icb projects view 018f...\n  icb projects view 018f... --archived --json",
+		Example: "  icb projects view todoui\n  icb projects view todoui --archived --json",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -158,11 +158,11 @@ func newProjectsEditCommand() *cobra.Command {
 		asJSON      bool
 	)
 	cmd := &cobra.Command{
-		Use:   "edit <project-id> [flags]",
+		Use:   "edit <project> [flags]",
 		Short: "Change fields on an existing project",
 		Long:  "Update only the fields whose flags you pass; everything else is left unchanged.",
-		Example: "  icb projects edit 018f... --name \"New name\" --position 2\n" +
-			"  icb projects edit 018f... --kind chore",
+		Example: "  icb projects edit todoui --name \"New name\" --position 2\n" +
+			"  icb projects edit todoui --kind chore",
 		Args: usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
@@ -209,12 +209,12 @@ func newProjectsEditCommand() *cobra.Command {
 func newProjectsDeleteCommand() *cobra.Command {
 	var yes bool
 	cmd := &cobra.Command{
-		Use:   "delete <project-id>",
+		Use:   "delete <project>",
 		Short: "Delete a project",
 		Long: "Permanently delete a project. Completed items belonging only to this project\n" +
 			"go with it. If incomplete items would be left with no project, the delete is\n" +
 			"refused — move them first. Prompts for confirmation unless --yes.",
-		Example: "  icb projects delete 018f...\n  icb projects delete 018f... --yes",
+		Example: "  icb projects delete todoui\n  icb projects delete todoui --yes",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
@@ -299,7 +299,7 @@ func printProjectItemsTable(out io.Writer, items []api.ProjectItemInProject) {
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "  #\tSTATUS\tTITLE\tID")
 	for _, it := range items {
-		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\t%s\n", it.Position, itemStatus(it), it.Title, it.ID)
+		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\t%d\n", it.Position, itemStatus(it), it.Title, it.Number)
 	}
 	_ = tw.Flush()
 }

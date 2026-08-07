@@ -706,6 +706,19 @@ class TestProjectItemNumber:
         unlinked = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/{blocker["number"]}/')
         assert unlinked.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(unlinked)
 
+    def test_a_body_reference_may_arrive_as_a_string(self, project_and_client):
+        """A CLI forwards what the user typed, so a number reaches the body quoted."""
+        client, project = project_and_client
+        blocked = self.create_item(client, project['id'], 'Blocked by a string')
+        blocker = self.create_item(client, project['id'], 'Blocker named by string')
+
+        linked = client.post(
+            f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/',
+            json={'depends_on_id': str(blocker['number'])},
+        )
+        assert linked.status_code == status.HTTP_201_CREATED, show_status_and_response(linked)
+        assert linked.json()['dependency_ids'] == [blocker['id']]
+
     def test_an_unknown_number_is_a_404_and_a_non_reference_is_a_422(self, project_and_client):
         client, _ = project_and_client
         assert client.get(f'{PROJECT_ITEMS_ENDPOINT}999999999/').status_code == status.HTTP_404_NOT_FOUND

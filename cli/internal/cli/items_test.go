@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -74,5 +75,39 @@ func TestItemsOfKind_UnknownKindReturnsNothing(t *testing.T) {
 
 	if kept := itemsOfKind(all, "errand"); len(kept) != 0 {
 		t.Errorf("itemsOfKind(unknown) = %s, want nothing", itemIDs(kept))
+	}
+}
+
+// The row has to carry the handle you can type. It printed the UUID, which is
+// the key: 36 characters that resolve nothing a reader can retype.
+func TestPrintItemsTable_ShowsTheNumberNotTheUUID(t *testing.T) {
+	var out strings.Builder
+	printItemsTable(&out, []api.ProjectItem{
+		{ID: "019fdd05-1686-7571-8a27-9f73c1e9f20f", Number: 118, Title: "Give items a number"},
+	})
+
+	rendered := out.String()
+	if !strings.Contains(rendered, "118") {
+		t.Errorf("table = %q, want the item number in the ID column", rendered)
+	}
+	if strings.Contains(rendered, "019fdd05-1686-7571-8a27-9f73c1e9f20f") {
+		t.Errorf("table = %q, want no UUID — it is the key, not the handle", rendered)
+	}
+}
+
+func TestPrintItemDetail_ShowsTheNumberNotTheUUID(t *testing.T) {
+	var out strings.Builder
+	printItemDetail(&out, api.ProjectItemDetail{
+		ID:     "019fdd05-1686-7571-8a27-9f73c1e9f20f",
+		Number: 118,
+		Title:  "Give items a number",
+	}, nil, nil)
+
+	rendered := out.String()
+	if !strings.Contains(rendered, "id:      118") {
+		t.Errorf("detail = %q, want the number on the id line", rendered)
+	}
+	if strings.Contains(rendered, "019fdd05-1686-7571-8a27-9f73c1e9f20f") {
+		t.Errorf("detail = %q, want no UUID — --json is where a caller gets the key", rendered)
 	}
 }

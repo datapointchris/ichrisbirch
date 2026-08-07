@@ -31,6 +31,7 @@ type Project struct {
 // list (GET /projects/{id}/items/), carrying its position in that project.
 type ProjectItemInProject struct {
 	ID        string    `json:"id"`
+	Number    int       `json:"number"`
 	Title     string    `json:"title"`
 	Notes     *string   `json:"notes"`
 	Repo      *string   `json:"repo"`

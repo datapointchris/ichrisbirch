@@ -14,7 +14,11 @@ import (
 // Projects rides along on every list response: an item title alone names a thing
 // without saying what work it belongs to.
 type ProjectItem struct {
-	ID        string    `json:"id"`
+	ID string `json:"id"`
+	// Number is the handle: server-assigned, short, and what every command
+	// prints and accepts. ID stays the key and is only useful to a caller
+	// holding it from --json.
+	Number    int       `json:"number"`
 	Title     string    `json:"title"`
 	Notes     *string   `json:"notes"`
 	Repo      *string   `json:"repo"`
@@ -30,6 +34,7 @@ type ProjectItem struct {
 // and the ids of the items it depends on.
 type ProjectItemDetail struct {
 	ID            string    `json:"id"`
+	Number        int       `json:"number"`
 	Title         string    `json:"title"`
 	Notes         *string   `json:"notes"`
 	Repo          *string   `json:"repo"`

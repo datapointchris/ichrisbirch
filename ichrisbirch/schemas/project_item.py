@@ -17,7 +17,12 @@ class ProjectItemConfig(BaseModel):
 # What a caller may pass where an item or a project is named. An item answers to
 # its UUID or its number, a project to its UUID or its unique name, and the API
 # resolves either — see ichrisbirch.services.project_refs.
-ItemRef = UUID | int
+#
+# `str` is in the item union deliberately: a CLI forwards whatever the user typed
+# without parsing it, so a number arrives as "42" rather than 42. Widening here
+# rather than in each client keeps the one place that tells a key from a handle
+# in the resolver.
+ItemRef = UUID | int | str
 ProjectRef = UUID | str
 
 
