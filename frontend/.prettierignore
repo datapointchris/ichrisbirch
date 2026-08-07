@@ -1,0 +1,16 @@
+# Prettier walks everything except node_modules unless it is told otherwise, and
+# it does not read .gitignore. A stale frontend/.mypy_cache sat here from March
+# to August: 8,589 JSON files that prettier rewrote on every commit, four and a
+# half minutes of it, invisible to rg and fd because git ignores the directory.
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.vite/
+
+# Build and test output. Formatting a minified bundle is slow and pointless, and
+# rewriting it makes the artifact differ from what the build produced.
+dist/
+coverage/
+test-results/
+playwright-report/
+public/fonts/
