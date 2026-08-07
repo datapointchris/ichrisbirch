@@ -225,6 +225,9 @@ The diagram at the top of this page is generated dynamically from the actual fix
 - [Fixture Scope Hierarchy](../images/generated/fixture_scopes.svg) - Shows the pytest fixture scope levels
 - [Fixture Dependencies](../images/generated/fixture_dependencies.svg) - Dependencies between fixtures
 - [Comprehensive Fixture View](../images/generated/fixtures_comprehensive.svg) - Complete view of all fixtures
+- [Session-scoped Dependencies](../images/generated/fixture_dependencies_session.svg) - Docker orchestration, table lifecycle, and test users
+- [Module-scoped Dependencies](../images/generated/fixture_dependencies_module.svg) - The `test_api` clients and the scheduler
+- [Function-scoped Dependencies](../images/generated/fixture_dependencies_function.svg) - The `*_function` fixtures that isolate a single test
 
 ## Best Practices
 

@@ -9,42 +9,54 @@ from pathlib import Path
 from ...utils import find_project_root
 
 
+def is_fixture_decorator(decorator: ast.expr) -> bool:
+    """Match every spelling of the fixture decorator.
+
+    `@pytest.fixture` is an Attribute, `@pytest.fixture(scope=...)` is a Call
+    wrapping one, and a `from pytest import fixture` import makes it a bare
+    Name. An earlier version tested `Name.id == 'pytest.fixture'`, which no AST
+    can satisfy — a Name never holds a dotted string — so nothing ever matched
+    and two of the generated diagrams have been empty since.
+    """
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    if isinstance(target, ast.Attribute):
+        return target.attr == 'fixture'
+    return isinstance(target, ast.Name) and target.id == 'fixture'
+
+
 class FixtureVisitor(ast.NodeVisitor):
     """AST visitor that extracts pytest fixture information."""
 
     def __init__(self):
         self.fixtures = {}
-        self.current_fixture = None
 
     def visit_FunctionDef(self, node):
         """Visit function definition nodes to find fixtures."""
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name) and decorator.func.id == 'pytest.fixture':
-                scope = 'function'
-                autouse = False
+            if not is_fixture_decorator(decorator):
+                continue
 
-                for keyword in decorator.keywords:
-                    if keyword.arg == 'scope' and isinstance(keyword.value, ast.Constant):
-                        scope = keyword.value.value
-                    elif keyword.arg == 'autouse' and isinstance(keyword.value, ast.Constant):
-                        autouse = keyword.value.value
+            scope = 'function'
+            autouse = False
+            keywords = decorator.keywords if isinstance(decorator, ast.Call) else []
+            for keyword in keywords:
+                if keyword.arg == 'scope' and isinstance(keyword.value, ast.Constant):
+                    scope = keyword.value.value
+                elif keyword.arg == 'autouse' and isinstance(keyword.value, ast.Constant):
+                    autouse = keyword.value.value
 
-                self.current_fixture = node.name
-                self.fixtures[node.name] = {
-                    'name': node.name,
-                    'scope': scope,
-                    'autouse': autouse,
-                    'dependencies': [],
-                    'docstring': ast.get_docstring(node) or '',
-                    'code': None,
-                }
-
-                for arg in node.args.args:
-                    if arg.arg != 'self' and arg.arg != 'cls':
-                        self.fixtures[node.name]['dependencies'].append(arg.arg)
+            self.fixtures[node.name] = {
+                'name': node.name,
+                'scope': scope,
+                'autouse': autouse,
+                'dependencies': [arg.arg for arg in node.args.args if arg.arg not in ('self', 'cls')],
+                'docstring': ast.get_docstring(node) or '',
+                'code': None,
+            }
 
         self.generic_visit(node)
-        self.current_fixture = None
+
+    visit_AsyncFunctionDef = visit_FunctionDef
 
 
 def analyze_fixtures_in_file(file_path: str | Path) -> dict:

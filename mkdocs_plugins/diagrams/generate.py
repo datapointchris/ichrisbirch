@@ -88,10 +88,13 @@ def update_hash_cache(component: str, file_patterns: list[str]) -> None:
 
 def generate_fixture_diagrams(output_dir: str, force: bool = False) -> None:
     """Generate fixture diagrams based on code analysis."""
+    # The whole package, not just the renderer: a fix to the analyzer changes the
+    # output as surely as a new fixture does, and naming one of the two generator
+    # files meant the analyzer could be corrected without the diagrams noticing.
     fixture_file_patterns = [
         'tests/conftest.py',
         'tests/utils/**/*.py',
-        'mkdocs_plugins/diagrams/renderers/fixture_diagram_renderer.py',
+        'mkdocs_plugins/diagrams/**/*.py',
     ]
 
     if not force and not has_code_changed('fixtures', fixture_file_patterns):
