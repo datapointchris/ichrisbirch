@@ -352,20 +352,26 @@ func TestPrintOverview(t *testing.T) {
 		},
 	}, fixedNow, defaultOverviewLimit)
 
-	var out bytes.Buffer
-	printOverview(&out, report)
+	var out, errOut bytes.Buffer
+	printOverview(&out, &errOut, report)
 	text := out.String()
 
-	for _, want := range []string{"Tasks (1 open)", "Renew passport", "due: Stretch", "Warnings", "books: books"} {
+	for _, want := range []string{"Tasks (1 open)", "Renew passport", "due: Stretch"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("printed overview missing %q:\n%s", want, text)
 		}
 	}
+	if !strings.Contains(errOut.String(), "warning: books: books") {
+		t.Errorf("degraded section not warned on stderr:\n%s", errOut.String())
+	}
+	if strings.Contains(text, "books: books") {
+		t.Errorf("a warning reached stdout, which corrupts the snapshot stream:\n%s", text)
+	}
 }
 
 func TestPrintOverview_EmptyStates(t *testing.T) {
-	var out bytes.Buffer
-	printOverview(&out, buildOverview(overviewData{}, fixedNow, defaultOverviewLimit))
+	var out, errOut bytes.Buffer
+	printOverview(&out, &errOut, buildOverview(overviewData{}, fixedNow, defaultOverviewLimit))
 	text := out.String()
 
 	for _, want := range []string{"Tasks (0 open)", "(none)", "(all done)"} {
@@ -412,8 +418,8 @@ func TestPrintOverview_SeparatesBooksFromArticles(t *testing.T) {
 		},
 	}, fixedNow, defaultOverviewLimit)
 
-	var out bytes.Buffer
-	printOverview(&out, report)
+	var out, errOut bytes.Buffer
+	printOverview(&out, &errOut, report)
 	text := out.String()
 
 	for _, want := range []string{"Books (1 reading, 0 queued)", "A Book", "Articles (1 unread)", "An Article", "Sell Unused Shite"} {

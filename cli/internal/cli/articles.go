@@ -59,7 +59,7 @@ func newArticlesImportCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), batch)
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Queued %d URL(s) as batch %s (status: %s)\n", batch.Total, batch.BatchID, batch.Status)
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Poll with: icb articles import-status %s\n", batch.BatchID)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Poll with: icb articles import-status %s\n", batch.BatchID)
 			return nil
 		},
 	}

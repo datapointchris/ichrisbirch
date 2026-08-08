@@ -76,7 +76,7 @@ func newProjectsListCommand() *cobra.Command {
 			// it, which the flag decides — no second request to find out.
 			printProjectsTable(cmd.OutOrStdout(), projects, projectStatus != "")
 			if projectStatus == "" {
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nClosed projects are hidden: icb projects list --status all")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nClosed projects are hidden: icb projects list --status all")
 			}
 			return nil
 		},

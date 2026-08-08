@@ -178,7 +178,7 @@ func newOverviewCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), report)
 			}
-			printOverview(cmd.OutOrStdout(), report)
+			printOverview(cmd.OutOrStdout(), cmd.ErrOrStderr(), report)
 			return nil
 		},
 	}
@@ -550,7 +550,11 @@ func capItems[T any](items []T, limit int) []T {
 	return items[:limit]
 }
 
-func printOverview(out io.Writer, r overviewReport) {
+// printOverview renders the report for a human. Warnings go to errOut, not out:
+// a degraded section is a diagnostic about the fetch, and mixing it into the
+// snapshot corrupts the stream for anything reading the plain output. In --json
+// mode they stay in the payload, where they are part of the schema.
+func printOverview(out, errOut io.Writer, r overviewReport) {
 	printTaskSection(out, r.Tasks)
 	printHabitSection(out, r.Habits)
 	printBookSection(out, r.Books)
@@ -558,11 +562,8 @@ func printOverview(out io.Writer, r overviewReport) {
 	printProjectItemSection(out, r.ProjectItems)
 	printUpcomingSection(out, r.Countdowns, r.Events, r.GeneratedAt)
 
-	if len(r.Warnings) > 0 {
-		_, _ = fmt.Fprintln(out, "\nWarnings")
-		for _, warning := range r.Warnings {
-			_, _ = fmt.Fprintf(out, "  %s: %s\n", warning.Section, warning.Message)
-		}
+	for _, warning := range r.Warnings {
+		_, _ = fmt.Fprintf(errOut, "warning: %s: %s\n", warning.Section, warning.Message)
 	}
 }
 

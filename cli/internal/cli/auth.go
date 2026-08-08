@@ -45,6 +45,12 @@ func newAuthLoginCommand() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), loginTimeout)
 			defer cancel()
 
+			// pkg/browser hands the launcher subprocess os.Stdout, so xdg-open's
+			// chatter would land in the data stream. Package-level vars are the
+			// library's only knob for it.
+			browser.Stdout = cmd.ErrOrStderr()
+			browser.Stderr = cmd.ErrOrStderr()
+
 			token, err := auth.Login(ctx, cfg, browser.OpenURL, cmd.ErrOrStderr())
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
