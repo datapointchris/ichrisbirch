@@ -77,6 +77,9 @@ func NewRootCommand() *cobra.Command {
 		RunE: requireSubcommand,
 	}
 	// Flag mistakes become usageError → exit 2. Inherited by subcommands.
+	// cobracmd.Execute composes with this rather than replacing it, and keeping
+	// it here is what makes the tree self-classifying for anything driving
+	// NewRootCommand directly.
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return usageError{err} })
 
 	// Free -v for a future --verbose flag: cobra's auto version flag claims -v,
@@ -135,6 +138,11 @@ func exitCodeFor(err error) int {
 	}
 	var usageErr usageError
 	if errors.As(err, &usageErr) {
+		return 2
+	}
+	// The library's classification, for a usage mistake cobra rejects before
+	// any RunE runs and the tree therefore never marks itself.
+	if errors.Is(err, cobracmd.ErrUsage) {
 		return 2
 	}
 	return 1
