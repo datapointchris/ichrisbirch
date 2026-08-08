@@ -215,7 +215,7 @@ func newHabitsDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete habit %q (id %d)?", habit.Name, habit.ID))
 				if err != nil {
 					return err

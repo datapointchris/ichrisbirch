@@ -375,7 +375,7 @@ func newProjectsDeleteCommand() *cobra.Command {
 			}
 			if !yes {
 				prompt := fmt.Sprintf("Delete project %q (%s items)? This cannot be undone.", project.Name, count(project.ItemCount))
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(), prompt)
+				ok, err := confirm(cmd, prompt)
 				if err != nil {
 					return err
 				}

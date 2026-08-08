@@ -293,7 +293,7 @@ func newCookingTechniquesDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete technique %q (id %d)?", technique.Name, technique.ID))
 				if err != nil {
 					return err

@@ -445,7 +445,7 @@ func newArticlesDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete article %q (id %d)?", article.Title, article.ID))
 				if err != nil {
 					return err

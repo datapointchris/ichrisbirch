@@ -288,7 +288,7 @@ func newBooksDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete book %q by %s (id %d)?", book.Title, book.Author, book.ID))
 				if err != nil {
 					return err

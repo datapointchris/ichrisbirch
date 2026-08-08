@@ -508,7 +508,7 @@ func newItemsDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete item %q? This cannot be undone.", item.Title))
 				if err != nil {
 					return err
@@ -620,7 +620,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 				return usageError{fmt.Errorf("--project is required")}
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Remove item %s from project %s?", args[0], project))
 				if err != nil {
 					return err
@@ -698,7 +698,7 @@ func newItemsRemoveDependencyCommand() *cobra.Command {
 				return usageError{fmt.Errorf("--depends-on is required")}
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Remove dependency %s → %s?", args[0], dependsOn))
 				if err != nil {
 					return err
@@ -873,7 +873,7 @@ func newItemsRemoveTaskCommand() *cobra.Command {
 		Args:    usageArgs(cobra.ExactArgs(2)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete task %s?", args[1]))
 				if err != nil {
 					return err

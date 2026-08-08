@@ -212,7 +212,7 @@ func newCountdownsDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete countdown %q (id %d)?", countdown.Name, countdown.ID))
 				if err != nil {
 					return err

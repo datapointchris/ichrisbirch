@@ -206,7 +206,7 @@ func newPatternsDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete pattern %d (%s)?", pattern.ID, truncate(pattern.Message, 60)))
 				if err != nil {
 					return err

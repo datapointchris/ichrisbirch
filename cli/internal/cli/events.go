@@ -271,7 +271,7 @@ func newEventsDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete event %q (id %d)?", event.Name, event.ID))
 				if err != nil {
 					return err

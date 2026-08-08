@@ -374,7 +374,7 @@ func newTasksDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete task %q (id %d)? This cannot be undone.", task.Name, task.ID))
 				if err != nil {
 					return err

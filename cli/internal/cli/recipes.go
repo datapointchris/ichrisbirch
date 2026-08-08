@@ -357,7 +357,7 @@ func newRecipesDeleteCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if !yes {
-				ok, err := confirm(cmd.ErrOrStderr(), cmd.InOrStdin(),
+				ok, err := confirm(cmd,
 					fmt.Sprintf("Delete recipe %q (id %d)?", recipe.Name, recipe.ID))
 				if err != nil {
 					return err
