@@ -20,7 +20,7 @@ func newAutotasksCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newAutotasksListCommand(),
-		newAutotasksViewCommand(),
+		newAutotasksShowCommand(),
 	)
 	return cmd
 }
@@ -52,12 +52,12 @@ func newAutotasksListCommand() *cobra.Command {
 	return cmd
 }
 
-func newAutotasksViewCommand() *cobra.Command {
+func newAutotasksShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <autotask-id>",
+		Use:     "show <autotask-id>",
 		Short:   "Show a single recurring task template",
-		Example: "  icb autotasks view 2",
+		Example: "  icb autotasks show 2",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("autotask id", args[0])

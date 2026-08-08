@@ -25,7 +25,7 @@ func newProjectsCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newProjectsListCommand(),
-		newProjectsViewCommand(),
+		newProjectsShowCommand(),
 		newProjectsCreateCommand(),
 		newProjectsEditCommand(),
 		newProjectsCompleteCommand(),
@@ -172,15 +172,15 @@ func runProjectUpdate(cmd *cobra.Command, ref string, in api.ProjectUpdateInput,
 	return nil
 }
 
-func newProjectsViewCommand() *cobra.Command {
+func newProjectsShowCommand() *cobra.Command {
 	var (
 		asJSON   bool
 		archived bool
 	)
 	cmd := &cobra.Command{
-		Use:     "view <project>",
+		Use:     "show <project>",
 		Short:   "Show a project and its items",
-		Example: "  icb projects view todoui\n  icb projects view todoui --archived --json",
+		Example: "  icb projects show todoui\n  icb projects show todoui --archived --json",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())

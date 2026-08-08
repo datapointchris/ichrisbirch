@@ -17,7 +17,7 @@ language; the two share no code.
 
 - **Phase 0 (done):** module scaffold + `icb auth {login,logout,status,token}`.
 - **Phase 1 (done):** the Projects domain — `icb projects`
-  ({list,view,create,edit,complete,drop,reopen,delete}; create and edit refuse a
+  ({list,show,create,edit,complete,drop,reopen,delete}; create and edit refuse a
   name the repo registry knows, since a project name is bounded work and a repo
   does not end) and `icb projects items`
   (project-item CRUD, complete/reopen, archive/unarchive, reorder,
@@ -26,7 +26,7 @@ language; the two share no code.
   a project, so the group is nested rather than a root noun; `icb projects items
   list --project <id>` is the in-order listing for one project.
 - **Phase 2 (done):** the standalone apps — `tasks`, `countdowns`, `events`,
-  `habits`, `books`, and `articles` ({list,view,search,create,edit,delete} plus
+  `habits`, `books`, and `articles` ({list,show,search,create,edit,delete} plus
   resource-specific verbs: `articles current`/`read`, `habits complete`, etc.).
 - **Phase 3 (done, 2026-07-24):** MCP parity + retirement. `icb` covers the full
   ~78-tool surface (parity additions: `autotasks`, `articles` bulk-import,

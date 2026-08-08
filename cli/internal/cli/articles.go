@@ -22,7 +22,7 @@ func newArticlesCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newArticlesListCommand(),
-		newArticlesViewCommand(),
+		newArticlesShowCommand(),
 		newArticlesCurrentCommand(),
 		newArticlesSearchCommand(),
 		newArticlesCreateCommand(),
@@ -204,12 +204,12 @@ func newArticlesSearchCommand() *cobra.Command {
 	return cmd
 }
 
-func newArticlesViewCommand() *cobra.Command {
+func newArticlesShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <article-id>",
+		Use:     "show <article-id>",
 		Short:   "Show a single article",
-		Example: "  icb articles view 42",
+		Example: "  icb articles show 42",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])

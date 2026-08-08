@@ -20,7 +20,7 @@ func newPatternsCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newPatternsListCommand(),
-		newPatternsViewCommand(),
+		newPatternsShowCommand(),
 		newPatternsCreateCommand(),
 		newPatternsEditCommand(),
 		newPatternsDeleteCommand(),
@@ -61,12 +61,12 @@ func newPatternsListCommand() *cobra.Command {
 	return cmd
 }
 
-func newPatternsViewCommand() *cobra.Command {
+func newPatternsShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <pattern-id>",
+		Use:     "show <pattern-id>",
 		Short:   "Show a single pattern",
-		Example: "  icb patterns view 12",
+		Example: "  icb patterns show 12",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])

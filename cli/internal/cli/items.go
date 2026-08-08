@@ -26,7 +26,7 @@ func newItemsCommand() *cobra.Command {
 		newItemsNextCommand(),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
-		newItemsViewCommand(),
+		newItemsShowCommand(),
 		newItemsCreateCommand(),
 		newItemsEditCommand(),
 		newItemsCompletionCommand("complete", "Mark an item completed", true),
@@ -297,14 +297,14 @@ func runItemsCollection(cmd *cobra.Command, asJSON bool, fetch func(*api.Client)
 	return nil
 }
 
-// --- View ---
+// --- Show ---
 
-func newItemsViewCommand() *cobra.Command {
+func newItemsShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <item>",
+		Use:     "show <item>",
 		Short:   "Show an item with its projects, dependencies, tasks, and blockers",
-		Example: "  icb projects items view 118\n  icb projects items view 118 --json",
+		Example: "  icb projects items show 118\n  icb projects items show 118 --json",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())

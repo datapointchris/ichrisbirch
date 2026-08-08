@@ -21,7 +21,7 @@ func newCookingTechniquesCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newCookingTechniquesListCommand(),
-		newCookingTechniquesViewCommand(),
+		newCookingTechniquesShowCommand(),
 		newCookingTechniquesSlugCommand(),
 		newCookingTechniquesSearchCommand(),
 		newCookingTechniquesCategoriesCommand(),
@@ -77,12 +77,12 @@ func newCookingTechniquesSearchCommand() *cobra.Command {
 	return cmd
 }
 
-func newCookingTechniquesViewCommand() *cobra.Command {
+func newCookingTechniquesShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <technique-id>",
+		Use:     "show <technique-id>",
 		Short:   "Show a single technique by id",
-		Example: "  icb cooking-techniques view 3",
+		Example: "  icb cooking-techniques show 3",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])

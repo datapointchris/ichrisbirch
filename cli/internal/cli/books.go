@@ -33,7 +33,7 @@ func newBooksCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newBooksListCommand(),
-		newBooksViewCommand(),
+		newBooksShowCommand(),
 		newBooksISBNCommand(),
 		newBooksSearchCommand(),
 		newBooksCreateCommand(),
@@ -89,12 +89,12 @@ func newBooksSearchCommand() *cobra.Command {
 	return cmd
 }
 
-func newBooksViewCommand() *cobra.Command {
+func newBooksShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <book-id>",
+		Use:     "show <book-id>",
 		Short:   "Show a single book",
-		Example: "  icb books view 140",
+		Example: "  icb books show 140",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])

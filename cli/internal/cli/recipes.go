@@ -24,7 +24,7 @@ func newRecipesCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newRecipesListCommand(),
-		newRecipesViewCommand(),
+		newRecipesShowCommand(),
 		newRecipesSearchCommand(),
 		newRecipesSearchIngredientsCommand(),
 		newRecipesCreateCommand(),
@@ -73,16 +73,16 @@ func newRecipesListCommand() *cobra.Command {
 	return cmd
 }
 
-func newRecipesViewCommand() *cobra.Command {
+func newRecipesShowCommand() *cobra.Command {
 	var (
 		servings int
 		asJSON   bool
 	)
 	cmd := &cobra.Command{
-		Use:     "view <recipe-id>",
+		Use:     "show <recipe-id>",
 		Short:   "Show a single recipe with ingredients",
 		Long:    "Pass --servings to scale each ingredient (scaled_quantity in the output).",
-		Example: "  icb recipes view 2\n  icb recipes view 2 --servings 12",
+		Example: "  icb recipes show 2\n  icb recipes show 2 --servings 12",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])

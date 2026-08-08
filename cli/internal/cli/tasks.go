@@ -24,7 +24,7 @@ func newTasksCommand() *cobra.Command {
 		newTasksTodoCommand(),
 		newTasksCompletedCommand(),
 		newTasksSearchCommand(),
-		newTasksViewCommand(),
+		newTasksShowCommand(),
 		newTasksCreateCommand(),
 		newTasksEditCommand(),
 		newTasksCompleteCommand(),
@@ -123,12 +123,12 @@ func newTasksSearchCommand() *cobra.Command {
 	return cmd
 }
 
-func newTasksViewCommand() *cobra.Command {
+func newTasksShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <task-id>",
+		Use:     "show <task-id>",
 		Short:   "Show a single task",
-		Example: "  icb tasks view 42",
+		Example: "  icb tasks show 42",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])

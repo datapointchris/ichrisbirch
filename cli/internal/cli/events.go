@@ -19,7 +19,7 @@ func newEventsCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newEventsListCommand(),
-		newEventsViewCommand(),
+		newEventsShowCommand(),
 		newEventsCreateCommand(),
 		newEventsEditCommand(),
 		newEventsAttendCommand(),
@@ -55,12 +55,12 @@ func newEventsListCommand() *cobra.Command {
 	return cmd
 }
 
-func newEventsViewCommand() *cobra.Command {
+func newEventsShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <event-id>",
+		Use:     "show <event-id>",
 		Short:   "Show a single event",
-		Example: "  icb events view 7",
+		Example: "  icb events show 7",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])

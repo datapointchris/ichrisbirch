@@ -20,7 +20,7 @@ func newCountdownsCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newCountdownsListCommand(),
-		newCountdownsViewCommand(),
+		newCountdownsShowCommand(),
 		newCountdownsCreateCommand(),
 		newCountdownsEditCommand(),
 		newCountdownsDeleteCommand(),
@@ -55,12 +55,12 @@ func newCountdownsListCommand() *cobra.Command {
 	return cmd
 }
 
-func newCountdownsViewCommand() *cobra.Command {
+func newCountdownsShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <countdown-id>",
+		Use:     "show <countdown-id>",
 		Short:   "Show a single countdown",
-		Example: "  icb countdowns view 3",
+		Example: "  icb countdowns show 3",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])

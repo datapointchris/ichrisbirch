@@ -20,7 +20,7 @@ func newHabitsCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newHabitsListCommand(),
-		newHabitsViewCommand(),
+		newHabitsShowCommand(),
 		newHabitsCreateCommand(),
 		newHabitsEditCommand(),
 		newHabitsDeleteCommand(),
@@ -64,12 +64,12 @@ func newHabitsListCommand() *cobra.Command {
 	return cmd
 }
 
-func newHabitsViewCommand() *cobra.Command {
+func newHabitsShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "view <habit-id>",
+		Use:     "show <habit-id>",
 		Short:   "Show a single habit",
-		Example: "  icb habits view 5",
+		Example: "  icb habits show 5",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
