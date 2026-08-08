@@ -267,7 +267,10 @@ def main():
     import argparse
     import os
 
-    parser = argparse.ArgumentParser(description='Initialize database with schemas and default users')
+    parser = argparse.ArgumentParser(
+        description='Initialize database with schemas and default users',
+        epilog='No password flag: flag values land in ps output and shell history. Set POSTGRES_PASSWORD in the environment.',
+    )
     parser.add_argument(
         '--env',
         type=str,
@@ -282,7 +285,6 @@ def main():
     parser.add_argument('--db-host', type=str, help='Database host (overrides POSTGRES_HOST)')
     parser.add_argument('--db-port', type=str, help='Database port (overrides POSTGRES_PORT)')
     parser.add_argument('--db-user', type=str, help='Database username (overrides POSTGRES_USERNAME)')
-    parser.add_argument('--db-password', type=str, help='Database password (overrides POSTGRES_PASSWORD)')
     parser.add_argument('--db-name', type=str, help='Database name (overrides POSTGRES_DB)')
 
     args = parser.parse_args()
@@ -301,9 +303,6 @@ def main():
     if args.db_user:
         os.environ['POSTGRES_USERNAME'] = args.db_user
         logger.info('db_user_override', user=args.db_user)
-    if args.db_password:
-        os.environ['POSTGRES_PASSWORD'] = args.db_password
-        logger.info('db_password_override')
     if args.db_name:
         os.environ['POSTGRES_DB'] = args.db_name
         logger.info('db_name_override', name=args.db_name)
