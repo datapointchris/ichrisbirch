@@ -344,7 +344,7 @@ function dev-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Viewing ${blue}DEV${reset} logs (Ctrl+C to exit)"
   echo ""
-  uv run cli/log_viewer.py dev "$@"
+  uv run ops/log_viewer.py dev "$@"
 }
 
 function dev-status() {
@@ -565,7 +565,7 @@ function testing-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Viewing ${blue}TESTING${reset} logs (Ctrl+C to exit)"
   echo ""
-  uv run cli/log_viewer.py testing "$@"
+  uv run ops/log_viewer.py testing "$@"
 }
 
 function testing-status() {
@@ -890,7 +890,7 @@ function prod-logs() {
         echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
       fi
       echo ""
-      uv run cli/log_viewer.py prod "$@"
+      uv run ops/log_viewer.py prod "$@"
       ;;
   esac
 }

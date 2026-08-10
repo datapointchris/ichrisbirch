@@ -5,12 +5,12 @@ renders with filtering and color. Non-JSON lines (postgres, redis, traefik,
 uvicorn startup) fall through with service-name colorization.
 
 Usage examples:
-    uv run cli/log_viewer.py dev
-    uv run cli/log_viewer.py dev api
-    uv run cli/log_viewer.py dev --level WARNING
-    uv run cli/log_viewer.py dev --request-id a1b2c3d4
-    uv run cli/log_viewer.py dev --module TasksStore --event 'task_'
-    uv run cli/log_viewer.py dev --json | jq 'select(.level == "error")'
+    uv run ops/log_viewer.py dev
+    uv run ops/log_viewer.py dev api
+    uv run ops/log_viewer.py dev --level WARNING
+    uv run ops/log_viewer.py dev --request-id a1b2c3d4
+    uv run ops/log_viewer.py dev --module TasksStore --event 'task_'
+    uv run ops/log_viewer.py dev --json | jq 'select(.level == "error")'
 """
 
 from __future__ import annotations

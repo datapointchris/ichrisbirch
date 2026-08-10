@@ -26,7 +26,7 @@ Controls the output format for log messages.
 | `json` | Structured JSON output |
 
 `json` is the default for dev, test, and production and is required by the
-CLI viewer (`cli/log_viewer.py`) and by Loki's pipeline. The dev and test
+CLI viewer (`ops/log_viewer.py`) and by Loki's pipeline. The dev and test
 compose files set `LOG_FORMAT=${LOG_FORMAT:-json}` so the viewer always
 receives structured input. Override per-service by exporting
 `LOG_FORMAT=console` for raw colored output without the viewer.

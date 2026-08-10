@@ -7,7 +7,7 @@ countdowns, books, articles, habits, events, recipes, cooking-techniques) and th
 driven by Claude via Bash or by a person at the terminal.
 
 It is a per-machine developer tool, not one of the deployed containers. The bash
-ops/deploy tool lives at `../cli/icbops` — a different concern in a different
+ops/deploy tool lives at `../ops/icbops` — a different concern in a different
 language; the two share no code.
 
 > Design, phased plan, and the reusable build checklist: `.planning/icb-cli.md`.

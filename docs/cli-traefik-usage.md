@@ -392,7 +392,7 @@ Health Check for dev Environment
 
 ### `icbops {dev|testing|prod} logs [service] [flags]`
 
-View logs for all services or a specific service. Backed by `cli/log_viewer.py`,
+View logs for all services or a specific service. Backed by `ops/log_viewer.py`,
 a structured renderer that JSON-decodes structlog lines from ichrisbirch
 containers and falls through to passthrough rendering for third-party services
 (traefik, postgres, redis).
