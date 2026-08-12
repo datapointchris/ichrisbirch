@@ -586,7 +586,7 @@ export type ProjectKind = 'build' | 'chore' | 'life'
  * because `done` alone would force you to lie about anything you merely stopped
  * caring about, and it always carries a reason.
  */
-export type ProjectStatus = 'active' | 'done' | 'dropped'
+export type ProjectStatus = 'active' | 'completed' | 'dropped'
 
 /** `all` is the absence of the filter, not a status a project can be in. */
 export type ProjectStatusFilter = ProjectStatus | 'all'

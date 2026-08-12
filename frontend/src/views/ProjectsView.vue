@@ -564,7 +564,7 @@ import NeuSelect from '@/components/NeuSelect.vue'
 
 const statusFilterOptions = [
   { value: 'active', label: 'Active' },
-  { value: 'done', label: 'Done' },
+  { value: 'completed', label: 'Completed' },
   { value: 'dropped', label: 'Dropped' },
   { value: 'all', label: 'All' },
 ]
@@ -769,7 +769,7 @@ async function changeProjectStatus(project: ProjectWithItemCount, status: Projec
 }
 
 function handleCompleteProject(project: ProjectWithItemCount) {
-  return changeProjectStatus(project, 'done', 'completed')
+  return changeProjectStatus(project, 'completed', 'completed')
 }
 
 function handleReopenProject(project: ProjectWithItemCount) {

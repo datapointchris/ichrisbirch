@@ -567,7 +567,7 @@ describe('useProjectsStore', () => {
     store.selectedProjectId = 1 as never
     store.selectedProjectIds = [1] as never
 
-    await store.setStatusFilter('done')
+    await store.setStatusFilter('completed')
 
     // A selection pointing at an absent project renders an empty pane with no
     // way back to it.
@@ -580,9 +580,9 @@ describe('useProjectsStore', () => {
     mockApi.get.mockResolvedValue({ data: testProjects })
     const store = useProjectsStore()
 
-    await store.setProjectStatus(1 as never, 'done')
+    await store.setProjectStatus(1 as never, 'completed')
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', { status: 'done' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', { status: 'completed' })
   })
 
   it('sends the reason when dropping', async () => {
@@ -605,7 +605,7 @@ describe('useProjectsStore', () => {
     store.selectedProjectId = 1 as never
     store.selectedProjectIds = [1] as never
 
-    await store.setProjectStatus(1 as never, 'done')
+    await store.setProjectStatus(1 as never, 'completed')
 
     expect(store.selectedProjectId).toBeNull()
   })
@@ -618,7 +618,7 @@ describe('useProjectsStore', () => {
     store.selectedProjectId = 1 as never
     store.selectedProjectIds = [1] as never
 
-    await store.setProjectStatus(1 as never, 'done')
+    await store.setProjectStatus(1 as never, 'completed')
 
     expect(store.selectedProjectId).toBe(1)
   })

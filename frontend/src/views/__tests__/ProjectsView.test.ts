@@ -493,7 +493,7 @@ describe('ProjectsView', () => {
 
     await wrapper.find('[data-testid="project-complete-button"]').trigger('click')
 
-    expect(store.setProjectStatus).toHaveBeenCalledWith(PROJ_1_ID, 'done', undefined)
+    expect(store.setProjectStatus).toHaveBeenCalledWith(PROJ_1_ID, 'completed', undefined)
   })
 
   it('offers reopen instead of complete once a project is closed', () => {
