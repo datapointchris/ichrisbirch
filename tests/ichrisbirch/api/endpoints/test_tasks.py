@@ -22,7 +22,9 @@ def task_crud_tester(txn_api_logged_in):
     """Provide ApiCrudTester with transactional test data."""
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'tasks')
-    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
+    # status=all because these measure create and delete, not the filter:
+    # the list defaults to open, and the seed holds one completed task.
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, list_params={'status': 'all'})
     return client, crud_tester
 
 
@@ -222,3 +224,63 @@ def test_todo_with_limit(task_crud_tester):
     # The returned task should be the one with lowest priority (1)
     tasks = response_limited.json()
     assert tasks[0]['priority'] == 1, 'Expected task with priority 1 (lowest) to be returned first'
+
+
+class TestTaskStatusFilter:
+    """GET /tasks/?status= — one list that can express every status.
+
+    `/todo/` and `/completed/` answer narrower versions of the same question and
+    stay for the web app. The CLI asks this one, so it has to reach every status
+    rather than one per path.
+
+    The default narrows to open because completed tasks accumulate without
+    bound, per cli-design.md § "A default narrows only where the hidden class
+    grows without bound". The seed holds 2 open and 1 completed.
+    """
+
+    def names(self, client, params=None):
+        response = client.get(ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return response.json()
+
+    def test_the_default_is_open_only(self, task_crud_tester):
+        client, _ = task_crud_tester
+        tasks = self.names(client)
+        assert len(tasks) == 2
+        assert all(task['complete_date'] is None for task in tasks)
+
+    def test_completed_returns_the_finished_one(self, task_crud_tester):
+        client, _ = task_crud_tester
+        tasks = self.names(client, {'status': 'completed'})
+        assert len(tasks) == 1
+        assert tasks[0]['complete_date'] is not None
+
+    def test_all_returns_every_task(self, task_crud_tester):
+        client, _ = task_crud_tester
+        assert len(self.names(client, {'status': 'all'})) == 3
+
+    def test_open_and_completed_partition_all(self, task_crud_tester):
+        client, _ = task_crud_tester
+        ids = {s: {t['id'] for t in self.names(client, {'status': s})} for s in ('open', 'completed')}
+        every = {t['id'] for t in self.names(client, {'status': 'all'})}
+
+        assert ids['open'] | ids['completed'] == every
+        assert not ids['open'] & ids['completed'], 'a task cannot be both'
+
+    def test_completed_orders_by_when_it_was_finished(self, task_crud_tester):
+        """Priority stopped meaning anything the moment the task left the queue."""
+        client, _ = task_crud_tester
+        tasks = self.names(client, {'status': 'completed'})
+        dates = [t['complete_date'] for t in tasks]
+        assert dates == sorted(dates, reverse=True)
+
+    def test_an_unknown_status_names_the_known_ones(self, task_crud_tester):
+        client, _ = task_crud_tester
+        response = client.get(ENDPOINT, params={'status': 'todo'})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert 'open' in response.json()['detail'], 'the error must name the word that was meant'
+
+    def test_limit_still_applies(self, task_crud_tester):
+        client, _ = task_crud_tester
+        assert len(self.names(client, {'status': 'all', 'limit': 1})) == 1

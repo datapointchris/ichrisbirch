@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 import structlog
 from fastapi import APIRouter
 from fastapi import HTTPException
+from fastapi import Query
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -18,10 +19,51 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
+# A task is open or completed and nothing else — `complete_date` carries the
+# whole state. `all` is the absence of the filter rather than a third state.
+TASK_STATUSES = ['open', 'completed']
+ALL_STATUSES = 'all'
+
+
 @router.get('/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, limit: int | None = None):
-    query = select(models.Task).order_by(models.Task.priority.asc(), models.Task.add_date.asc()).limit(limit)
-    return list(session.scalars(query).all())
+async def read_many(
+    session: DbSession,
+    limit: int | None = None,
+    task_status: str = Query(
+        'open',
+        alias='status',
+        description="A task status, or 'all'. Completed tasks are hidden by default.",
+    ),
+):
+    """List open tasks by priority.
+
+    The default narrows because completed tasks accumulate without bound, per
+    `cli-design.md` § "A default narrows only where the hidden class grows
+    without bound". Completed tasks are ordered by when they were finished, most
+    recent first — priority stopped meaning anything the moment they left the
+    queue, which is the same reason a closed project orders by `closed_at`.
+
+    `/todo/` and `/completed/` answer narrower versions of this and remain for
+    the web app. This is the one the CLI asks, so it has to be able to express
+    every status rather than one per path.
+    """
+    if task_status not in (*TASK_STATUSES, ALL_STATUSES):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f'Unknown task status {task_status!r}. Known statuses: {", ".join(TASK_STATUSES)}, all',
+        )
+
+    query = select(models.Task)
+    if task_status == 'open':
+        query = query.filter(models.Task.complete_date.is_(None))
+    elif task_status == 'completed':
+        query = query.filter(models.Task.complete_date.is_not(None))
+
+    if task_status == 'completed':
+        query = query.order_by(models.Task.complete_date.desc())
+    else:
+        query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
+    return list(session.scalars(query.limit(limit)).all())
 
 
 @router.get('/todo/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)

@@ -6,11 +6,26 @@ from tests.util import show_status_and_response
 
 
 class ApiCrudTester[SchemaType: BaseModel]:
-    def __init__(self, endpoint: str, new_obj: SchemaType, verify_attr: str = 'name', expected_length: int = 3):
+    def __init__(
+        self,
+        endpoint: str,
+        new_obj: SchemaType,
+        verify_attr: str = 'name',
+        expected_length: int = 3,
+        list_params: dict | None = None,
+    ):
         self.endpoint = endpoint
         self.new_obj = new_obj
         self.verify_attr = verify_attr
         self.expected_length = expected_length
+        # Sent on the collection reads only, so a resource whose list narrows by
+        # default can still be CRUD-tested against every row it holds. Without
+        # it the counts here measure the filter rather than the create or the
+        # delete. Not sent to the item reads, which take a path and no query.
+        self.list_params = list_params
+
+    def _list(self, test_api_client: TestClient):
+        return test_api_client.get(self.endpoint, params=self.list_params)
 
     def _verify_length(self, response, expected_length: int):
         r_json = response.json()
@@ -35,13 +50,13 @@ class ApiCrudTester[SchemaType: BaseModel]:
 
         This assumes the endpoint supports listing all items.
         """
-        all_obj = test_api_client.get(self.endpoint)
+        all_obj = self._list(test_api_client)
         assert all_obj.status_code == status.HTTP_200_OK, show_status_and_response(all_obj)
         return all_obj.json()[position - 1]['id']
 
     def get_item_by_attribute(self, test_api_client: TestClient, attr_name: str, attr_value: str) -> dict | None:
         """Get item by matching an attribute value - useful for finding specific items."""
-        all_obj = test_api_client.get(self.endpoint)
+        all_obj = self._list(test_api_client)
         if all_obj.status_code == status.HTTP_200_OK:
             items = all_obj.json()
             for item in items:
@@ -55,7 +70,7 @@ class ApiCrudTester[SchemaType: BaseModel]:
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     def test_read_many(self, test_api_client: TestClient):
-        response = test_api_client.get(self.endpoint)
+        response = self._list(test_api_client)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         self._verify_length(response, self.expected_length)
 
@@ -64,12 +79,12 @@ class ApiCrudTester[SchemaType: BaseModel]:
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         self._verify_attribute(created, self.verify_attr)
 
-        all = test_api_client.get(self.endpoint)
+        all = self._list(test_api_client)
         assert all.status_code == status.HTTP_200_OK, show_status_and_response(all)
         self._verify_length(all, self.expected_length + 1)
 
     def test_delete(self, test_api_client: TestClient):
-        all_before_delete = test_api_client.get(self.endpoint)
+        all_before_delete = self._list(test_api_client)
         assert all_before_delete.status_code == status.HTTP_200_OK, show_status_and_response(all_before_delete)
         self._verify_length(all_before_delete, self.expected_length)
 
@@ -77,12 +92,12 @@ class ApiCrudTester[SchemaType: BaseModel]:
         response = test_api_client.delete(f'{self.endpoint}{first_id}/')
         assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
 
-        all_after_delete = test_api_client.get(self.endpoint)
+        all_after_delete = self._list(test_api_client)
         assert all_after_delete.status_code == status.HTTP_200_OK, show_status_and_response(all_after_delete)
         self._verify_length(all_after_delete, self.expected_length - 1)
 
     def test_lifecycle(self, test_api_client: TestClient):
-        original_objects = test_api_client.get(self.endpoint)
+        original_objects = self._list(test_api_client)
         assert original_objects.status_code == status.HTTP_200_OK, show_status_and_response(original_objects)
         self._verify_length(original_objects, self.expected_length)
 
@@ -95,13 +110,13 @@ class ApiCrudTester[SchemaType: BaseModel]:
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         self._verify_attribute(response, self.verify_attr)
 
-        all_obj_new = test_api_client.get(self.endpoint)
+        all_obj_new = self._list(test_api_client)
         assert all_obj_new.status_code == status.HTTP_200_OK, show_status_and_response(all_obj_new)
         self._verify_length(all_obj_new, self.expected_length + 1)
 
         deleted = test_api_client.delete(f'{self.endpoint}{created_id}/')
         assert deleted.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(deleted)
 
-        all_obj_after_delete = test_api_client.get(self.endpoint)
+        all_obj_after_delete = self._list(test_api_client)
         assert all_obj_after_delete.status_code == status.HTTP_200_OK, show_status_and_response(all_obj_after_delete)
         self._verify_length(all_obj_after_delete, self.expected_length)
