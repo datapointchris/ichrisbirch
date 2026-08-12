@@ -51,7 +51,7 @@ func newProjectsListCommand() *cobra.Command {
 			"named. Completed and dropped projects are hidden until you ask for them by\n" +
 			"--status; that is the whole point of closing one.",
 		Example: "  icb projects list\n  icb projects list --repo dotfiles\n" +
-			"  icb projects list --status done\n  icb projects list --status all --json",
+			"  icb projects list --status completed\n  icb projects list --status all --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -83,7 +83,7 @@ func newProjectsListCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output projects as JSON to stdout")
 	cmd.Flags().StringVar(&repo, "repo", "", "Only projects holding work on this repo")
-	cmd.Flags().StringVar(&projectStatus, "status", "", "active, done, dropped, or all (default active)")
+	cmd.Flags().StringVar(&projectStatus, "status", "", "One of: "+strings.Join(api.ProjectStatuses, ", ")+" (default active)")
 	return cmd
 }
 
@@ -102,8 +102,8 @@ func newProjectsCompleteCommand() *cobra.Command {
 		Example: "  icb projects complete clisteno",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			done := "done"
-			return runProjectUpdate(cmd, args[0], api.ProjectUpdateInput{Status: &done}, asJSON, "Completed")
+			completed := api.ProjectStatusCompleted
+			return runProjectUpdate(cmd, args[0], api.ProjectUpdateInput{Status: &completed}, asJSON, "Completed")
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated project as JSON to stdout")
@@ -490,14 +490,7 @@ func printProjectItemsTable(out io.Writer, items []api.ProjectItemInProject) {
 }
 
 func itemStatus(it api.ProjectItemInProject) string {
-	switch {
-	case it.Archived:
-		return "archived"
-	case it.Completed:
-		return "done"
-	default:
-		return "open"
-	}
+	return itemStatusWord(it.Archived, it.Completed)
 }
 
 // count renders one of a project's item counts, or "—" when the server omitted

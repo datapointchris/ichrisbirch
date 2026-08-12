@@ -3,7 +3,9 @@ package cli
 import (
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -21,8 +23,6 @@ func newTasksCommand() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newTasksListCommand(),
-		newTasksTodoCommand(),
-		newTasksCompletedCommand(),
 		newTasksSearchCommand(),
 		newTasksShowCommand(),
 		newTasksCreateCommand(),
@@ -37,71 +37,39 @@ func newTasksCommand() *cobra.Command {
 
 func newTasksListCommand() *cobra.Command {
 	var (
-		limit  int
-		asJSON bool
+		limit      int
+		asJSON     bool
+		taskStatus string
 	)
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "List all tasks by priority",
-		Example: "  icb tasks list\n  icb tasks list --limit 10 --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Use:   "list",
+		Short: "List open tasks by priority",
+		Long: "Open is the default because completed tasks accumulate without bound.\n" +
+			"\n" +
+			"--status takes one of: " + strings.Join(api.TaskStatuses, ", ") + ". Completed tasks come\n" +
+			"back most-recently-finished first — priority stopped meaning anything the\n" +
+			"moment they left the queue.",
+		Example: "  icb tasks list\n" +
+			"  icb tasks list --status completed\n" +
+			"  icb tasks list --status all --limit 10 --json",
+		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTasks(cmd.Context(), limitFlag(cmd))
-			})
+			if cmd.Flags().Changed("status") && !slices.Contains(api.TaskStatuses, taskStatus) {
+				return usageError{fmt.Errorf("unknown status %q — one of: %s", taskStatus, strings.Join(api.TaskStatuses, ", "))}
+			}
+			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
+				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus)
+			}); err != nil {
+				return err
+			}
+			if !asJSON && !cmd.Flags().Changed("status") {
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted tasks are hidden: icb tasks list --status all")
+			}
+			return nil
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of tasks to return")
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
-	return cmd
-}
-
-func newTasksTodoCommand() *cobra.Command {
-	var (
-		limit  int
-		asJSON bool
-	)
-	cmd := &cobra.Command{
-		Use:     "todo",
-		Short:   "List incomplete tasks by priority",
-		Example: "  icb tasks todo\n  icb tasks todo --limit 5",
-		Args:    usageArgs(cobra.NoArgs),
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTodoTasks(cmd.Context(), limitFlag(cmd))
-			})
-		},
-	}
-	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of tasks to return")
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
-	return cmd
-}
-
-func newTasksCompletedCommand() *cobra.Command {
-	var (
-		start  string
-		end    string
-		first  bool
-		last   bool
-		asJSON bool
-	)
-	cmd := &cobra.Command{
-		Use:     "completed",
-		Short:   "List completed tasks",
-		Long:    "List completed tasks. With no flags, all are returned; --first/--last give\nthe single earliest/most-recent; --start/--end bound a date range (ISO 8601).",
-		Example: "  icb tasks completed --last\n  icb tasks completed --start 2026-01-01 --end 2026-07-01",
-		Args:    usageArgs(cobra.NoArgs),
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			q := api.CompletedTasksQuery{StartDate: start, EndDate: end, First: first, Last: last}
-			return runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListCompletedTasks(cmd.Context(), q)
-			})
-		},
-	}
-	cmd.Flags().StringVar(&start, "start", "", "Range start (ISO 8601, e.g. 2026-01-01)")
-	cmd.Flags().StringVar(&end, "end", "", "Range end (ISO 8601)")
-	cmd.Flags().BoolVar(&first, "first", false, "Only the earliest completed task")
-	cmd.Flags().BoolVar(&last, "last", false, "Only the most recently completed task")
+	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
 	return cmd
 }
@@ -461,9 +429,4 @@ func printTaskDetail(out io.Writer, t api.Task) {
 	}
 }
 
-func taskStatus(t api.Task) string {
-	if t.Completed() {
-		return "done"
-	}
-	return "open"
-}
+func taskStatus(t api.Task) string { return itemStatusWord(false, t.Completed()) }

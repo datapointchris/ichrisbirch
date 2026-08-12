@@ -55,23 +55,32 @@ type CompletedTasksQuery struct {
 	Last      bool
 }
 
-// ListTasks returns tasks ordered by priority (GET /tasks/). A nil limit fetches
-// all; a non-nil limit caps the count.
-func (c *Client) ListTasks(ctx context.Context, limit *int) ([]Task, error) {
-	return c.listTasks(ctx, "/tasks/", limit)
-}
+// A task is open or completed and nothing else. The same two words items use,
+// minus the one a task has no state for.
+const (
+	TaskStatusOpen      = "open"
+	TaskStatusCompleted = "completed"
+	TaskStatusAll       = "all"
+)
 
-// ListTodoTasks returns incomplete tasks ordered by priority (GET /tasks/todo/).
-func (c *Client) ListTodoTasks(ctx context.Context, limit *int) ([]Task, error) {
-	return c.listTasks(ctx, "/tasks/todo/", limit)
-}
+// TaskStatuses is what --status accepts, lifecycle first then the escape hatch.
+var TaskStatuses = []string{TaskStatusOpen, TaskStatusCompleted, TaskStatusAll}
 
-func (c *Client) listTasks(ctx context.Context, base string, limit *int) ([]Task, error) {
+// ListTasks returns tasks in one status (GET /tasks/). A nil limit fetches all;
+// a non-nil limit caps the count. An empty status takes the API's default, open.
+//
+// Completed tasks come back ordered by when they were finished rather than by
+// priority, which stops meaning anything once a task leaves the queue.
+func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus string) ([]Task, error) {
+	query := url.Values{}
 	if limit != nil {
-		base += "?" + url.Values{"limit": {strconv.Itoa(*limit)}}.Encode()
+		query.Set("limit", strconv.Itoa(*limit))
+	}
+	if taskStatus != "" {
+		query.Set("status", taskStatus)
 	}
 	var tasks []Task
-	if err := c.get(ctx, base, &tasks); err != nil {
+	if err := c.get(ctx, withQuery("/tasks/", query), &tasks); err != nil {
 		return nil, err
 	}
 	return tasks, nil

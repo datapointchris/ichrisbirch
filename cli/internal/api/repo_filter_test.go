@@ -26,7 +26,7 @@ func strptr(s string) *string { return &s }
 
 func TestListItems_OmitsTheRepoParamWhenUnfiltered(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), nil); err != nil {
+	if _, err := client.ListItems(context.Background(), nil, ""); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "" {
@@ -36,7 +36,7 @@ func TestListItems_OmitsTheRepoParamWhenUnfiltered(t *testing.T) {
 
 func TestListItems_SendsTheRepoParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), strptr("dotfiles")); err != nil {
+	if _, err := client.ListItems(context.Background(), strptr("dotfiles"), ""); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "repo=dotfiles" {
@@ -49,7 +49,7 @@ func TestListItems_SendsTheRepoParam(t *testing.T) {
 // into "everything".
 func TestListItems_SendsAnEmptyRepoForUntaggedWork(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), strptr("")); err != nil {
+	if _, err := client.ListItems(context.Background(), strptr(""), ""); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "repo=" {
@@ -102,5 +102,25 @@ func TestListProjects_DecodesTheDerivedRepos(t *testing.T) {
 	}
 	if len(projects[0].Repos) != 3 || projects[0].Repos[0] != "icb" {
 		t.Errorf("repos = %v, want all three in order", projects[0].Repos)
+	}
+}
+
+func TestListItems_OmitsTheStatusParamByDefault(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListItems(context.Background(), nil, ""); err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	if *query != "" {
+		t.Errorf("query = %q, want no parameters at all", *query)
+	}
+}
+
+func TestListItems_CarriesBothTheRepoAndTheStatus(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListItems(context.Background(), strptr("dotfiles"), ItemStatusAll); err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+	if *query != "repo=dotfiles&status=all" {
+		t.Errorf("query = %q, want repo=dotfiles&status=all", *query)
 	}
 }

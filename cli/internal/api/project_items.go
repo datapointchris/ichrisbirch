@@ -85,10 +85,17 @@ type DependencyInput struct {
 	DependsOnID string `json:"depends_on_id"`
 }
 
-// ListItems returns all active (non-archived) project items (GET /project-items/).
-func (c *Client) ListItems(ctx context.Context, repo *string) ([]ProjectItem, error) {
+// ListItems returns project items in one status (GET /project-items/).
+//
+// An empty status takes the API's default, which is open. Pass a status to ask
+// for another, or ItemStatusAll for every one.
+func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string) ([]ProjectItem, error) {
+	query := repoQuery(repo)
+	if itemStatus != "" {
+		query.Set("status", itemStatus)
+	}
 	var items []ProjectItem
-	if err := c.get(ctx, withQuery("/project-items/", repoQuery(repo)), &items); err != nil {
+	if err := c.get(ctx, withQuery("/project-items/", query), &items); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -115,6 +122,20 @@ func (c *Client) SearchItems(ctx context.Context, q string, repo *string) ([]Pro
 	}
 	return items, nil
 }
+
+// The statuses an item can be asked for. Derived from `completed` and
+// `archived` server-side, with archived beating completed, so the three
+// partition every item and no combination answers to two of them.
+const (
+	ItemStatusOpen      = "open"
+	ItemStatusCompleted = "completed"
+	ItemStatusArchived  = "archived"
+	ItemStatusAll       = "all"
+)
+
+// ItemStatuses is what --status accepts, in the order help should list them:
+// the lifecycle in order, then the escape hatch.
+var ItemStatuses = []string{ItemStatusOpen, ItemStatusCompleted, ItemStatusArchived, ItemStatusAll}
 
 // repoQuery renders the repo filter. A nil pointer asks for everything; a
 // pointer to "" asks for the untagged items, which is a different question and

@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -53,16 +54,25 @@ func newItemsCommand() *cobra.Command {
 
 func newItemsListCommand() *cobra.Command {
 	var (
-		asJSON   bool
-		project  string
-		repo     string
-		archived bool
+		asJSON     bool
+		project    string
+		repo       string
+		archived   bool
+		itemStatus string
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List all active (non-archived) items, or one project's items in order",
+		Short: "List open items, or one project's items in order",
+		Long: "Open means not completed and not archived, and it is the default because\n" +
+			"completed items accumulate without bound — at the time this was added they\n" +
+			"had reached parity with open ones, so the whole list read half history.\n" +
+			"\n" +
+			"--status takes one of: " + strings.Join(api.ItemStatuses, ", ") + ". They partition every\n" +
+			"item, because archived beats completed: an item completed and then archived\n" +
+			"answers to archived alone.",
 		Example: "  icb projects items list\n" +
-			"  icb projects items list --json\n" +
+			"  icb projects items list --status completed\n" +
+			"  icb projects items list --status all --json\n" +
 			"  icb projects items list --repo dotfiles\n" +
 			"  icb projects items list --project todoui\n" +
 			"  icb projects items list --project todoui --archived",
@@ -70,12 +80,22 @@ func newItemsListCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if project == "" {
 				if archived {
-					return usageError{fmt.Errorf("--archived requires --project")}
+					return usageError{fmt.Errorf("--archived requires --project; the unscoped list takes --status archived")}
+				}
+				if err := validateItemStatus(cmd, itemStatus); err != nil {
+					return err
 				}
 				filter := repoFlagValue(cmd, repo)
-				return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context(), filter)
-				})
+				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
+					return c.ListItems(cmd.Context(), filter, itemStatus)
+				}); err != nil {
+					return err
+				}
+				hintHiddenItems(cmd, asJSON, itemStatus)
+				return nil
+			}
+			if cmd.Flags().Changed("status") {
+				return usageError{fmt.Errorf("--status and --project are different questions — a project's list carries every item, in order")}
 			}
 			if cmd.Flags().Changed("repo") {
 				return usageError{fmt.Errorf("--repo and --project are different questions — pass one")}
@@ -99,7 +119,34 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
 	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Include archived items (requires --project)")
+	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	return cmd
+}
+
+// validateItemStatus rejects an unknown status here rather than letting the API
+// answer 422, so the message names the valid words at the moment they are typed.
+func validateItemStatus(cmd *cobra.Command, itemStatus string) error {
+	if !cmd.Flags().Changed("status") {
+		return nil
+	}
+	if slices.Contains(api.ItemStatuses, itemStatus) {
+		return nil
+	}
+	return usageError{fmt.Errorf("unknown status %q — one of: %s", itemStatus, strings.Join(api.ItemStatuses, ", "))}
+}
+
+// hintHiddenItems says the default hid something, and names the flag that shows
+// it. Required by cli-design.md § "A default narrows only where the hidden class
+// grows without bound" — the narrowing is allowed precisely because it announces
+// itself.
+//
+// stderr, so a person sees it and --json does not. Silent when a status was
+// asked for, because then nothing was hidden the caller did not choose.
+func hintHiddenItems(cmd *cobra.Command, asJSON bool, itemStatus string) {
+	if asJSON || cmd.Flags().Changed("status") {
+		return
+	}
+	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and archived items are hidden: icb projects items list --status all")
 }
 
 // validateRepoFlag rejects a --repo the registry does not know, on the writes
@@ -165,7 +212,7 @@ func newItemsNextCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			filter := repoFlagValue(cmd, repo)
-			all, err := client.ListItems(cmd.Context(), filter)
+			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -801,8 +848,8 @@ func newItemsCompleteTaskCommand() *cobra.Command {
 		Example: "  icb projects items complete-task 118 018g...",
 		Args:    usageArgs(cobra.ExactArgs(2)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			done := true
-			return runTaskUpdate(cmd, args[0], args[1], api.ProjectItemTaskUpdateInput{Completed: &done}, asJSON)
+			completed := true
+			return runTaskUpdate(cmd, args[0], args[1], api.ProjectItemTaskUpdateInput{Completed: &completed}, asJSON)
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated task as JSON to stdout")
@@ -957,34 +1004,26 @@ func printTasksTable(out io.Writer, tasks []api.ProjectItemTask) {
 	_ = tw.Flush()
 }
 
-func flatItemStatus(it api.ProjectItem) string {
+// itemStatusWord renders the two booleans as the word --status accepts, so what
+// a row shows is what you can filter on. Archived beats completed, which is the
+// precedence the API applies and the item counts partition by.
+func itemStatusWord(archived, completed bool) string {
 	switch {
-	case it.Archived:
-		return "archived"
-	case it.Completed:
-		return "done"
+	case archived:
+		return api.ItemStatusArchived
+	case completed:
+		return api.ItemStatusCompleted
 	default:
-		return "open"
+		return api.ItemStatusOpen
 	}
 }
 
-func detailStatus(d api.ProjectItemDetail) string {
-	switch {
-	case d.Archived:
-		return "archived"
-	case d.Completed:
-		return "done"
-	default:
-		return "open"
-	}
-}
+func flatItemStatus(it api.ProjectItem) string { return itemStatusWord(it.Archived, it.Completed) }
 
-func taskState(t api.ProjectItemTask) string {
-	if t.Completed {
-		return "done"
-	}
-	return "open"
-}
+func detailStatus(d api.ProjectItemDetail) string { return itemStatusWord(d.Archived, d.Completed) }
+
+// A task has no archived state, so it is the same vocabulary minus one word.
+func taskState(t api.ProjectItemTask) string { return itemStatusWord(false, t.Completed) }
 
 // orNone renders an empty string as "(none)" for list-style detail fields.
 func orNone(s string) string {

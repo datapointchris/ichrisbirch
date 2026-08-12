@@ -194,7 +194,7 @@ func newOverviewCommand() *cobra.Command {
 func overviewFetches() []overviewFetch {
 	return []overviewFetch{
 		{sectionTasks, "tasks", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			tasks, err := c.ListTodoTasks(ctx, nil)
+			tasks, err := c.ListTasks(ctx, nil, api.TaskStatusOpen)
 			d.Tasks = tasks
 			return err
 		}},
@@ -227,7 +227,7 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			items, err := c.ListItems(ctx, nil)
+			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen)
 			d.Items = items
 			return err
 		}},

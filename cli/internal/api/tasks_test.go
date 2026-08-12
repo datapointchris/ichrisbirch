@@ -23,7 +23,7 @@ func TestListTasks_LimitQueryParam(t *testing.T) {
 	client := New(srv.URL, staticTokenClient("t"))
 
 	limit := 5
-	tasks, err := client.ListTasks(context.Background(), &limit)
+	tasks, err := client.ListTasks(context.Background(), &limit, "")
 	if err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestListTasks_LimitQueryParam(t *testing.T) {
 	}
 
 	// nil limit omits the query string entirely.
-	_, _ = client.ListTasks(context.Background(), nil)
+	_, _ = client.ListTasks(context.Background(), nil, "")
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty for nil limit", gotQuery)
 	}
@@ -123,5 +123,38 @@ func TestReorderTasks_ReturnsMessage(t *testing.T) {
 	}
 	if msg != "Reordered 7 tasks" {
 		t.Errorf("msg = %q", msg)
+	}
+}
+
+// The common call must send no status at all rather than status=open — an
+// explicit default in every URL makes the server's default unchangeable.
+func TestListTasks_OmitsTheStatusParamByDefault(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListTasks(context.Background(), nil, ""); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "" {
+		t.Errorf("query = %q, want no parameters at all", *query)
+	}
+}
+
+func TestListTasks_SendsTheStatus(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "status=completed" {
+		t.Errorf("query = %q, want status=completed", *query)
+	}
+}
+
+func TestListTasks_CarriesBothLimitAndStatus(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	limit := 5
+	if _, err := client.ListTasks(context.Background(), &limit, TaskStatusAll); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "limit=5&status=all" {
+		t.Errorf("query = %q, want limit=5&status=all", *query)
 	}
 }

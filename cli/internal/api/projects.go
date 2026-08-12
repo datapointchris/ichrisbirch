@@ -135,6 +135,25 @@ func (c *Client) DeleteProject(ctx context.Context, id string) error {
 	return c.send(ctx, http.MethodDelete, "/projects/"+id+"/", nil, nil)
 }
 
+// The statuses a project can be in. Stored, unlike an item's, because for a
+// project completion and hiding are the same event — so there is nothing to
+// archive separately and `dropped` carries what was abandoned rather than
+// finished.
+//
+// `completed` and not `done`: an item stores a `completed` boolean and every
+// reader renders that word, so one concept spelled two ways on a resource and
+// its own children was the mismatch this removed.
+const (
+	ProjectStatusActive    = "active"
+	ProjectStatusCompleted = "completed"
+	ProjectStatusDropped   = "dropped"
+	ProjectStatusAll       = "all"
+)
+
+// ProjectStatuses is what --status accepts: the lifecycle in order, then the
+// escape hatch.
+var ProjectStatuses = []string{ProjectStatusActive, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll}
+
 // ListProjectItems returns a project's items in order (GET /projects/{id}/items/).
 // When archived is true, archived items are included. A missing id is a 404.
 func (c *Client) ListProjectItems(ctx context.Context, id string, archived bool) ([]ProjectItemInProject, error) {
