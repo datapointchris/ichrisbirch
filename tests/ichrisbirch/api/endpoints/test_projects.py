@@ -193,18 +193,18 @@ class TestProjectStatus:
     def test_completing_hides_the_project_from_the_default_list(self, client_with_projects):
         project = self.create(client_with_projects, name='Finite effort')
 
-        response = self.patch(client_with_projects, project['id'], status='done')
+        response = self.patch(client_with_projects, project['id'], status='completed')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
         assert 'Finite effort' not in self.names(client_with_projects)
-        assert 'Finite effort' in self.names(client_with_projects, status='done')
+        assert 'Finite effort' in self.names(client_with_projects, status='completed')
         assert 'Finite effort' in self.names(client_with_projects, status='all')
 
     def test_completing_stamps_closed_at(self, client_with_projects):
         """`created_at` orders by when work started, which is the wrong axis for a finished list."""
         project = self.create(client_with_projects, name='Finite effort')
 
-        completed = self.patch(client_with_projects, project['id'], status='done').json()
+        completed = self.patch(client_with_projects, project['id'], status='completed').json()
 
         assert completed['closed_at'] is not None
 
@@ -263,9 +263,9 @@ class TestProjectStatus:
 
     def test_status_round_trips_through_create(self, client_with_projects):
         """todoui creates offline and pushes later; a project it finished must not come back active."""
-        created = self.create(client_with_projects, name='Finished elsewhere', status='done')
+        created = self.create(client_with_projects, name='Finished elsewhere', status='completed')
 
-        assert created['status'] == 'done'
+        assert created['status'] == 'completed'
         assert created['closed_at'] is not None
 
     def test_closing_a_project_does_not_touch_its_items(self, client_with_projects):
@@ -302,7 +302,7 @@ class TestProjectNameOwnership:
         return client.post(PROJECTS_ENDPOINT, json=body)
 
     def close(self, client, project_id, **body):
-        response = client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json={'status': 'done', **body})
+        response = client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json={'status': 'completed', **body})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         return response.json()
 
@@ -718,6 +718,84 @@ class TestProjectItemCompletionGuard:
         response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/', json={'completed': True})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['completed'] is True
+
+
+class TestProjectItemStatusFilter:
+    """GET /project-items/?status= — three derived states over two booleans.
+
+    An item stores `completed` and `archived` independently. The status filter
+    collapses them with archived beating completed, which is the precedence the
+    item counts and every client already render — so no combination is reachable
+    under two different names.
+
+    The default narrows to open because completed items accumulate without bound.
+    Measured 2026-08-12, before this existed: 213 completed against 213 open.
+    """
+
+    @pytest.fixture
+    def one_of_each_state(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        project_id = client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+        created = {}
+        for title in ('still open', 'finished', 'abandoned', 'finished then filed'):
+            response = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [project_id]})
+            assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+            created[title] = response.json()['id']
+
+        for title, patch in (
+            ('finished', {'completed': True}),
+            ('abandoned', {'archived': True}),
+            ('finished then filed', {'completed': True, 'archived': True}),
+        ):
+            response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created[title]}/', json=patch)
+            assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+        return client
+
+    def titles(self, client, params=None):
+        response = client.get(PROJECT_ITEMS_ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return {item['title'] for item in response.json()}
+
+    def test_the_default_is_open_only(self, one_of_each_state):
+        assert self.titles(one_of_each_state) == {'still open'}
+
+    def test_completed_excludes_the_archived_one(self, one_of_each_state):
+        """Archived beats completed, so an item that is both answers to archived alone."""
+        assert self.titles(one_of_each_state, {'status': 'completed'}) == {'finished'}
+
+    def test_archived_carries_both_archived_items(self, one_of_each_state):
+        assert self.titles(one_of_each_state, {'status': 'archived'}) == {'abandoned', 'finished then filed'}
+
+    def test_all_includes_archived(self, one_of_each_state):
+        assert self.titles(one_of_each_state, {'status': 'all'}) == {
+            'still open',
+            'finished',
+            'abandoned',
+            'finished then filed',
+        }
+
+    def test_the_three_statuses_partition_all(self, one_of_each_state):
+        """No item is reachable under two statuses, and none is unreachable."""
+        client = one_of_each_state
+        buckets = [self.titles(client, {'status': s}) for s in ('open', 'completed', 'archived')]
+
+        assert set.union(*buckets) == self.titles(client, {'status': 'all'})
+        assert sum(len(b) for b in buckets) == len(set.union(*buckets)), 'the buckets overlap'
+
+    def test_an_unknown_status_names_the_known_ones(self, one_of_each_state):
+        """An empty list would read as a real answer to a question nobody asked."""
+        response = one_of_each_state.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'done'})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'completed' in response.json()['detail'], 'the error must name the word that was meant'
+
+    def test_status_composes_with_repo(self, one_of_each_state):
+        """Two narrowing filters both apply, rather than the last one winning."""
+        client = one_of_each_state
+        assert self.titles(client, {'status': 'all', 'repo': 'dotfiles'}) == set()
 
 
 class TestProjectItemListEmbedsDetail:

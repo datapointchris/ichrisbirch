@@ -23,8 +23,21 @@ from sqlalchemy.orm import relationship
 from ichrisbirch.database.base import Base
 
 PROJECT_KINDS = ['build', 'chore', 'life']
-PROJECT_STATUSES = ['active', 'done', 'dropped']
-TERMINAL_PROJECT_STATUSES = ['done', 'dropped']
+# 'completed' rather than 'done' so one word covers the concept on a project and
+# on its items, which store a `completed` boolean. `complete` is the verb on
+# both, and it wrote a value called `done` until 2026-08-12.
+PROJECT_STATUSES = ['active', 'completed', 'dropped']
+TERMINAL_PROJECT_STATUSES = ['completed', 'dropped']
+
+# An item's status is derived from its two booleans rather than stored, so this
+# is not a lookup table and there is no FK to it. The precedence is archived over
+# completed, which is what the item counts and every client already render.
+#
+# Deliberately not the same vocabulary as PROJECT_STATUSES. A project is a finite
+# effort, so `active` says it is still running; an item is a unit of work, so
+# `open` says nobody has done it. They share `completed` because that is the same
+# event on both.
+ITEM_STATUSES = ['open', 'completed', 'archived']
 
 
 class ProjectKind(Base):

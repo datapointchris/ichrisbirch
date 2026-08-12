@@ -19,6 +19,7 @@ from sqlalchemy.sql import Select
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.models.project import ITEM_STATUSES
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.services.project_item_positions import move_membership_to_position
@@ -144,15 +145,61 @@ def _next_position_in_project(session: Session, project_id: UUID) -> int:
 # --- List and filters (must be before /{id}/ routes) ---
 
 
+# Not a status, so it is not in ITEM_STATUSES: `all` is the absence of the
+# filter, and including it would make it look assignable to an item.
+ALL_STATUSES = 'all'
+
+
+def apply_status_filter(query: Select, item_status: str) -> Select:
+    """Narrow to one derived status, or leave the query alone for `all`.
+
+    `archived` beats `completed`, matching the precedence the item counts and
+    every client render — so `completed` means finished and still in view, and an
+    item that was completed and then archived answers to `archived` alone. Two
+    booleans, three states, and no combination is reachable twice.
+    """
+    if item_status == ALL_STATUSES:
+        return query
+    if item_status == 'archived':
+        return query.where(models.ProjectItem.archived == True)  # noqa: E712
+    query = query.where(models.ProjectItem.archived == False)  # noqa: E712
+    return query.where(models.ProjectItem.completed == (item_status == 'completed'))
+
+
+def validate_item_status(item_status: str) -> None:
+    """Reject an unknown status by name rather than answering with an empty list.
+
+    No lookup table to check against, unlike a project's: an item's status is
+    derived from booleans, so the vocabulary is a constant.
+    """
+    if item_status not in (*ITEM_STATUSES, ALL_STATUSES):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'Unknown item status {item_status!r}. Known statuses: {", ".join(ITEM_STATUSES)}, all',
+        )
+
+
 @router.get('/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, repo: RepoFilter = None):
-    """List all active (non-archived) project items."""
-    query = (
-        select(models.ProjectItem)
-        .options(*PROJECT_ITEM_LOAD_OPTIONS)
-        .where(models.ProjectItem.archived == False)  # noqa: E712
-        .order_by(models.ProjectItem.created_at.desc())
-    )
+async def read_many(
+    session: DbSession,
+    repo: RepoFilter = None,
+    item_status: str = Query(
+        'open',
+        alias='status',
+        description="An item status, or 'all'. Completed and archived items are hidden by default.",
+    ),
+):
+    """List open project items — not completed, not archived.
+
+    The default narrows because completed items accumulate without bound, which
+    is the test `cli-design.md` § "A default narrows only where the hidden class
+    grows without bound" applies. Measured 2026-08-12, before this existed: 213
+    completed against 213 open, so the default read of the store was half
+    history and nothing was going to stop that growing.
+    """
+    validate_item_status(item_status)
+    query = select(models.ProjectItem).options(*PROJECT_ITEM_LOAD_OPTIONS).order_by(models.ProjectItem.created_at.desc())
+    query = apply_status_filter(query, item_status)
     query = apply_repo_filter(query, repo)
     return list(session.scalars(query).all())
 

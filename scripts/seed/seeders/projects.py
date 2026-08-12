@@ -28,7 +28,7 @@ PROJECT_DATA = [
     ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking', 'build', 'active', None),
     ('Fitness Goals 2026', 'Strength training and running milestones', 'life', 'active', None),
     ('Portland Trip Planning', 'Research neighborhoods, flights, and activities', 'chore', 'active', None),
-    ('Garage Shelving', 'Build out storage along the back wall', 'build', 'done', None),
+    ('Garage Shelving', 'Build out storage along the back wall', 'build', 'completed', None),
     ('Learn Elixir', 'Work through the language and OTP', 'life', 'dropped', 'Kubernetes is the one that pays'),
     # Deliberately reuses an active project's name: only active projects hold a
     # name, so a seeded database exercises the partial unique index and the
