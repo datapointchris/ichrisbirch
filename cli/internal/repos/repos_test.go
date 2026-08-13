@@ -78,25 +78,106 @@ func TestMalformedRegistryIsAnError(t *testing.T) {
 	}
 }
 
+// withoutMachineConfig points XDG_CONFIG_HOME at an empty tree, so a resolution
+// test sees no config file whatever this machine actually declares. Without it
+// the test reads the developer's real config and fails for a reason unrelated to
+// the code.
+func withoutMachineConfig(t *testing.T) {
+	t.Helper()
+	t.Setenv("ICB_REPOS_REGISTRY", "")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+}
+
+// withMachineConfig writes icb's config file with the given body and points
+// XDG_CONFIG_HOME at the tree holding it.
+func withMachineConfig(t *testing.T, body string) {
+	t.Helper()
+	t.Setenv("ICB_REPOS_REGISTRY", "")
+	root := t.TempDir()
+	dir := filepath.Join(root, "icb")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatalf("creating config dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "config.yml"), []byte(body), 0o600); err != nil {
+		t.Fatalf("writing config: %v", err)
+	}
+	t.Setenv("XDG_CONFIG_HOME", root)
+}
+
 // The compiled default names nothing outside the tool's own XDG data directory,
-// which is what keeps a generic tool generic. $REPOS_JSON is cleared explicitly:
-// it is set on any machine that maintains a registry, so without this the test
-// reads that machine's real path and fails for a reason unrelated to the code.
+// which is what keeps a generic tool generic.
 func TestDefaultPathIsTheToolsOwnDataDirectory(t *testing.T) {
-	t.Setenv("REPOS_JSON", "")
+	withoutMachineConfig(t)
 	t.Setenv("XDG_DATA_HOME", "/tmp/xdg")
 	if got, want := DefaultPath(), "/tmp/xdg/icb/repos.json"; got != want {
 		t.Errorf("DefaultPath() = %q, want %q", got, want)
 	}
 }
 
-// A machine that maintains its registry elsewhere says so once, and every tool
-// reading that registry consults the same name. This replaced a hand-made
-// symlink from the tool's data directory, which was declared nowhere.
-func TestTheDeclaredPathBeatsTheToolsOwnDirectory(t *testing.T) {
+// $REPOS_JSON was the rung between the config and the default, shared unprefixed
+// by every tool that read the registry. It is gone, and this is the assertion
+// that it stays gone: a variable set in ~/.env is invisible to a process that
+// sources no profile, so the rung was empty in exactly the unattended runs it
+// existed to serve. icb reads no variable that is not ICB_-prefixed.
+func TestTheUnprefixedSharedVariableIsNeverConsulted(t *testing.T) {
+	withoutMachineConfig(t)
+	t.Setenv("REPOS_JSON", "/shared/repos.json")
 	t.Setenv("XDG_DATA_HOME", "/tmp/xdg")
-	t.Setenv("REPOS_JSON", "/declared/repos.json")
+	if got, want := DefaultPath(), "/tmp/xdg/icb/repos.json"; got != want {
+		t.Errorf("DefaultPath() = %q, want %q — $REPOS_JSON must not be read", got, want)
+	}
+}
+
+// A machine that maintains its registry elsewhere says so in its config, which
+// is the layer that reaches an unattended process. This replaced a hand-made
+// symlink from the tool's data directory, which was declared nowhere.
+func TestTheConfigKeyBeatsTheToolsOwnDirectory(t *testing.T) {
+	withMachineConfig(t, "repos_registry: /declared/repos.json\n")
+	t.Setenv("XDG_DATA_HOME", "/tmp/xdg")
 	if got, want := DefaultPath(), "/declared/repos.json"; got != want {
+		t.Errorf("DefaultPath() = %q, want %q", got, want)
+	}
+}
+
+// The variable is this shell and the config is this machine, so the variable
+// wins — which is what makes a one-off run against another registry possible
+// without editing the machine's config.
+func TestThePrefixedVariableBeatsTheConfigKey(t *testing.T) {
+	withMachineConfig(t, "repos_registry: /declared/repos.json\n")
+	t.Setenv("ICB_REPOS_REGISTRY", "/from/env/repos.json")
+	t.Setenv("XDG_DATA_HOME", "/tmp/xdg")
+	if got, want := DefaultPath(), "/from/env/repos.json"; got != want {
+		t.Errorf("DefaultPath() = %q, want %q", got, want)
+	}
+}
+
+// A config file is hand-edited, so it carries ~ rather than an absolute path.
+// The variable gets the same treatment: it is typed by hand too.
+func TestALeadingTildeExpandsInBothDeclaredLayers(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skipf("no home directory: %v", err)
+	}
+	want := filepath.Join(home, "dev", "repos.json")
+
+	withMachineConfig(t, "repos_registry: ~/dev/repos.json\n")
+	if got := DefaultPath(); got != want {
+		t.Errorf("config key: DefaultPath() = %q, want %q", got, want)
+	}
+
+	t.Setenv("ICB_REPOS_REGISTRY", "~/dev/repos.json")
+	if got := DefaultPath(); got != want {
+		t.Errorf("env var: DefaultPath() = %q, want %q", got, want)
+	}
+}
+
+// An unreadable or malformed config is not an error: the file is optional, and
+// failing here would break the machine that keeps its registry exactly where icb
+// expects it — the case that needs no config at all.
+func TestAMalformedConfigFallsThroughToTheDefault(t *testing.T) {
+	withMachineConfig(t, "repos_registry: [not, a, string\n")
+	t.Setenv("XDG_DATA_HOME", "/tmp/xdg")
+	if got, want := DefaultPath(), "/tmp/xdg/icb/repos.json"; got != want {
 		t.Errorf("DefaultPath() = %q, want %q", got, want)
 	}
 }

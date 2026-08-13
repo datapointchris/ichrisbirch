@@ -1,5 +1,10 @@
-// Package config resolves the icb CLI's OIDC and API settings from environment
-// overrides layered over homelab defaults.
+// Package config resolves the icb CLI's settings, of which there are two kinds.
+//
+// Config is which deployment to talk to — OIDC and API settings, environment
+// overrides layered over homelab defaults. MachineConfig is what this machine
+// says about its own layout, read from a config file, and it is the middle rung
+// of the order every shared path resolves through: the ICB_-prefixed variable,
+// then the config key, then a default under icb's own XDG directory.
 package config
 
 import (

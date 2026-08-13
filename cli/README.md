@@ -105,20 +105,40 @@ Contract notes for consumers (`menu dashboard` in dotfiles is the first):
   category. A habit renamed after being completed today reads as due again until
   its next completion.
 
-## Config (env over default)
+## Config (env over config file over default)
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `ICB_OIDC_ISSUER` | `https://auth.ichrisbirch.com` | Authelia OIDC issuer |
 | `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id |
-| `ICB_OIDC_AUDIENCE` | `https://api.ichrisbirch.com` | token audience (edge-authorized) |
-| `ICB_API_BASE` | `https://api.ichrisbirch.com` | API base URL |
+| `ICB_OIDC_AUDIENCE` | `https://ichrisbirch.com` | token audience (edge-authorized) |
+| `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
+| `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
+
+The registry is the one file icb reads that other tools also read, so it resolves
+through three rungs rather than two: `$ICB_REPOS_REGISTRY`, then `repos_registry`
+in `$XDG_CONFIG_HOME/icb/config.yml`, then the default above. A leading `~`
+expands in either declared layer.
+
+```yaml
+# $XDG_CONFIG_HOME/icb/config.yml
+repos_registry: ~/dev/repos.json
+```
+
+The config file is optional. A machine keeping the registry where icb expects it
+needs none, and an unreadable or malformed one falls through to the default
+rather than failing the command.
+
+No unprefixed variable is read. `$REPOS_JSON` was the rung below the config and
+came out: it is exported from a shell profile, so a process that sources none —
+a systemd timer, anything unattended — never saw it, and the rung was empty in
+exactly the runs it existed to serve.
 
 ## Structure
 
 ```text
 main.go                    → cli.Execute()
-internal/config/           → env-over-default OIDC + API settings
+internal/config/           → OIDC + API settings, and the machine config file
 internal/auth/             → OAuth login flow + OS-keychain token store
 internal/cli/              → cobra command tree (root, auth; resources to come)
 internal/api/              → REST client + wire-contract DTOs (added with Phase 1)

@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
 type registry struct {
@@ -30,12 +32,12 @@ type Registry struct {
 	path  string
 }
 
-// DefaultPath is where this machine keeps the registry: $REPOS_JSON, else the
-// CLI's own XDG data directory.
+// DefaultPath is where this machine keeps the registry: $ICB_REPOS_REGISTRY,
+// then repos_registry in icb's config, then the CLI's own XDG data directory.
 //
-// The second half is the compiled default and names nothing outside this tool's
-// own directories, which is what keeps a generic tool generic. The first half is
-// how a machine says the file is maintained elsewhere.
+// The last rung is the compiled default and names nothing outside this tool's
+// own directories, which is what keeps a generic tool generic. The two above it
+// are how a machine says the file is maintained elsewhere.
 //
 // It used to be the data directory alone, and this comment said "point it at a
 // shared registry with a symlink". That instruction is what produced one: a
@@ -44,12 +46,24 @@ type Registry struct {
 // link pointed at another link — so a single clobbered symlink two hops away
 // forked the registry silently, with both copies still parsing.
 //
-// $REPOS_JSON is that arrangement written down instead. dotfiles declares it in
-// install/flags.yml under `required:`, so `dotfiles check` fails while it is
-// unset rather than letting the CLI quietly accept any --repo value.
+// The written-down version of that arrangement was $REPOS_JSON, one unprefixed
+// variable every tool read. It came out because ~/.env is where that variable is
+// set and a process that sources no profile never sees it: run the way a systemd
+// timer runs it, a reader resolved this to a data directory that does not exist,
+// said so, and exited 0. The rung was empty in exactly the unattended runs it
+// existed to serve. A config file is the machine layer already and it reaches
+// every process, and icb now reads no variable that is not ICB_-prefixed — the
+// prefix being what stops one fleet's vocabulary compiling into a generic tool.
+//
+// See standards/data.md § "A shared file is named in config; only the tool's own
+// default is compiled in".
 func DefaultPath() string {
-	if p := os.Getenv("REPOS_JSON"); p != "" {
-		return p
+	declared := os.Getenv("ICB_REPOS_REGISTRY")
+	if declared == "" {
+		declared = config.ReposRegistry()
+	}
+	if declared != "" {
+		return config.ExpandTilde(declared)
 	}
 	if dir := os.Getenv("XDG_DATA_HOME"); dir != "" {
 		return filepath.Join(dir, "icb", "repos.json")
