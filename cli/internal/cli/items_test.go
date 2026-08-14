@@ -181,3 +181,33 @@ func TestProjectsShow_TakesStatusNotArchived(t *testing.T) {
 		t.Error("--status is missing from projects show")
 	}
 }
+
+func TestShellQuote_LeavesAPlainWordAloneAndQuotesTheRest(t *testing.T) {
+	for input, want := range map[string]string{
+		"todoui":                  "todoui",
+		"Forge toolchain rollout": "'Forge toolchain rollout'",
+		"it's":                    `'it'\''s'`,
+		"":                        "''",
+	} {
+		if got := shellQuote(input); got != want {
+			t.Errorf("shellQuote(%q) = %s, want %s", input, got, want)
+		}
+	}
+}
+
+func TestHintHiddenItems_QuotesAProjectNameWithSpaces(t *testing.T) {
+	cmd := newItemsListCommand()
+	root := &cobra.Command{Use: "icb"}
+	root.AddCommand(cmd)
+	if err := cmd.Flags().Parse([]string{"--project", "Forge toolchain rollout"}); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	var stderr bytes.Buffer
+	cmd.SetErr(&stderr)
+
+	hintHiddenItems(cmd, false, "")
+
+	if !strings.Contains(stderr.String(), "--project 'Forge toolchain rollout' --status all") {
+		t.Errorf("hint = %q, want the project name quoted so it pastes back as one argument", stderr.String())
+	}
+}

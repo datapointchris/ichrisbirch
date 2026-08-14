@@ -141,16 +141,25 @@ func validateItemStatus(cmd *cobra.Command, itemStatus string) error {
 // The hint names the command that was actually run, so the scoped reads quote
 // themselves back rather than pointing at the unscoped list and losing the
 // caller's --project.
+// A hint is printed to be typed, and most project names carry spaces, so an
+// unquoted one pastes back as several arguments and resolves to nothing.
+func shellQuote(s string) string {
+	if s != "" && !strings.ContainsAny(s, " \t'\"\\$`") {
+		return s
+	}
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
 func hintHiddenItems(cmd *cobra.Command, asJSON bool, itemStatus string) {
 	if asJSON || cmd.Flags().Changed("status") {
 		return
 	}
 	widen := cmd.CommandPath()
 	for _, arg := range cmd.Flags().Args() {
-		widen += " " + arg
+		widen += " " + shellQuote(arg)
 	}
 	if project, err := cmd.Flags().GetString("project"); err == nil && project != "" {
-		widen += " --project " + project
+		widen += " --project " + shellQuote(project)
 	}
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\nCompleted and archived items are hidden: %s --status all\n", widen)
 }
