@@ -49,6 +49,27 @@ class AuthSettings:
         self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']
 
 
+class OIDCSettings:
+    """Settings for verifying the RFC 9068 access tokens Authelia issues to the `icb` CLI.
+
+    `cli_client_id_prefix` is the per-product half of the CLI client naming
+    (`icb-cli-macmini`), and it is what stops another product's token being accepted here:
+    Authelia does not populate the audience claim through the device authorization grant, so
+    `aud` comes back empty and cannot carry that isolation.
+
+    `cli_user_email` is the local user a verified CLI token resolves to. The access token
+    carries only `sub`, `client_id` and the standard registered claims — no claims policy is
+    bound to the CLI clients — so there is no email or username on the wire to look up.
+    """
+
+    def __init__(self) -> None:
+        # `or` rather than a get() default: a key present but empty in a .env file is how a
+        # deployment says "use the default", and it must not blank the setting.
+        self.issuer: str = os.environ.get('OIDC_ISSUER') or 'https://auth.ichrisbirch.com'
+        self.cli_client_id_prefix: str = os.environ.get('OIDC_CLI_CLIENT_ID_PREFIX') or 'icb-cli-'
+        self.cli_user_email: str = os.environ.get('OIDC_CLI_USER_EMAIL') or os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
+
+
 class ChatSettings:
     def __init__(self) -> None:
         self.host: str = os.environ['CHAT_HOST']
@@ -163,6 +184,7 @@ class Settings:
         self.chat = ChatSettings()
         self.fastapi = FastAPISettings()
         self.github = GithubSettings()
+        self.oidc = OIDCSettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()
         self.redis = RedisSettings()

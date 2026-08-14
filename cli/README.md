@@ -34,14 +34,14 @@ language; the two share no code.
   homelab Authelia `icb-cli-{host}` clients are deployed, `icb auth login` works
   end-to-end against production, and the **MCP server has been retired**. The
   `api.ichrisbirch.com` bypass is kept — it is the Personal API Key access path,
-  not MCP-specific (icb targets the cookie-gated `ichrisbirch.com` host instead).
+  not MCP-specific, and it is now also the host `icb` itself targets.
 - **Phase 4 (done):** `Makefile` (build/install/test/lint/fmt) + a CI **Test CLI**
   job gated on the `cli/**` path filter (not in the deploy gate).
 
-The homelab Authelia `icb-cli-<host>` public clients are deployed (audience
-`https://ichrisbirch.com`, loopback ports 8270-8272) and `icb auth login` works
-end-to-end; a fresh machine only needs its `icb-cli-<host>` client added to the
-Authelia config (see `~/homelab/pyinfra/templates/authelia/configuration.yml.j2`).
+The homelab Authelia `icb-cli-<host>` public clients are deployed and `icb auth
+login` works end-to-end; a fresh machine only needs its `icb-cli-<host>` client
+added to the Authelia config (see
+`~/homelab/pyinfra/templates/authelia/configuration.yml.j2`).
 
 ## Build & install
 
@@ -64,12 +64,24 @@ is what dotfiles installs on each machine.
 
 ## Auth
 
-`icb auth login` runs Authelia's native OAuth 2.0 Bearer Authorization
-(Authorization Code + PKCE + PAR + `form_post` loopback, `gh`-style browser
-login). The resulting token is **opaque**, authorized at the Traefik ForwardAuth
-edge by audience — the API validates nothing in-process. Tokens live in the OS
-keychain (go-keyring), never on disk, and auto-refresh (90-day Authelia `cli`
-lifespan). `icb auth token` prints the current access token for scripting:
+`icb auth login` runs the OAuth 2.0 device authorization grant (RFC 8628). The
+CLI prints a code and a URL; approval happens in any browser on any device,
+which is what makes login work over SSH — a loopback redirect needs a browser
+that can reach a listener on this machine, and there is none.
+
+The resulting access token is an **RFC 9068 JWT** (`typ: at+jwt`, RS256, `kid:
+main`) that the FastAPI verifies itself against Authelia's JWKS. It is not
+authorized at the Traefik edge: Authelia forbids the `authelia.bearer.authz`
+scope alongside the device grant, so the CLI targets `api.ichrisbirch.com`,
+which bypasses ForwardAuth and reaches FastAPI directly.
+
+Authelia does not carry the audience through the device grant — `aud` comes
+back empty — so cross-product isolation rests on the `client_id` claim, and the
+API requires it to start with `icb-cli-`.
+
+Tokens live in the OS keychain (go-keyring), never on disk, and auto-refresh
+(90-day Authelia `cli` lifespan). `icb auth token` prints the current access
+token for scripting:
 
 ```bash
 curl -H "Authorization: Bearer $(icb auth token)" https://api.ichrisbirch.com/tasks/
@@ -111,8 +123,7 @@ Contract notes for consumers (`menu dashboard` in dotfiles is the first):
 | --- | --- | --- |
 | `ICB_OIDC_ISSUER` | `https://auth.ichrisbirch.com` | Authelia OIDC issuer |
 | `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id |
-| `ICB_OIDC_AUDIENCE` | `https://ichrisbirch.com` | token audience (edge-authorized) |
-| `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
+| `ICB_API_BASE` | `https://api.ichrisbirch.com` | API base URL |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
 
 The registry is the one file icb reads that other tools also read, so it resolves

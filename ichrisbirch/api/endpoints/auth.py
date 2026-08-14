@@ -18,6 +18,9 @@ from ichrisbirch import models
 from ichrisbirch.api.exceptions import ForbiddenException
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
+from ichrisbirch.api.oidc_auth import UNAUTHORIZED_DETAIL
+from ichrisbirch.api.oidc_auth import OIDCIdentity
+from ichrisbirch.api.oidc_auth import get_oidc_identity
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
@@ -102,6 +105,33 @@ def get_token_handler(settings: Settings = Depends(get_settings), session: Sessi
 # =============================================================================
 # AUTHENTICATION METHODS (FastAPI Dependencies)
 # =============================================================================
+
+
+def authenticate_with_oidc_bearer(
+    identity: Annotated[OIDCIdentity | None, Depends(get_oidc_identity)],
+    session: Session = Depends(get_sqlalchemy_session),
+    settings: Settings = Depends(get_settings),
+) -> str | None:
+    """FastAPI dependency for the `icb` CLI's Authelia access token.
+
+    `get_oidc_identity` has already verified the signature, issuer, expiry and client_id against
+    Authelia's JWKS, or raised 401 — a token that reaches here is trusted. The access token carries
+    no email, so the local user comes from settings rather than from the wire.
+
+    Returns the user's alternative_id (as string) if valid, None otherwise.
+    """
+    if identity is None:
+        return None
+
+    user = validate_user_email(settings.oidc.cli_user_email, session)
+    if not user:
+        # Returning None would drop a token that passed every cryptographic check into the weaker
+        # strategies below, where a forged Remote-User header could still carry it.
+        logger.error('oidc_cli_user_not_found', client_id=identity.client_id, email=settings.oidc.cli_user_email)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=UNAUTHORIZED_DETAIL)
+
+    logger.debug('auth_method_oidc_bearer', client_id=identity.client_id, subject=identity.subject)
+    return user.get_id()
 
 
 def authenticate_with_authelia_headers(
@@ -242,6 +272,7 @@ def authenticate_with_personal_api_key(
 
 
 def get_current_user(
+    oidc_user_id=Depends(authenticate_with_oidc_bearer),
     authelia_user_id=Depends(authenticate_with_authelia_headers),
     app_headers=Depends(authenticate_with_application_headers),
     api_key_user_id=Depends(authenticate_with_personal_api_key),
@@ -252,14 +283,17 @@ def get_current_user(
     """Main authentication dependency that tries multiple auth methods.
 
     Priority order:
-    0. Authelia ForwardAuth headers (browser SSO via Remote-User/Remote-Email)
-    1. Application headers (internal services)
-    2. Personal API key (external tools / programmatic clients)
-    3. JWT token (API clients)
-    4. OAuth2 form data (web forms)
+    0. Authelia OIDC access token (the `icb` CLI, verified in-process against Authelia's JWKS)
+    1. Authelia ForwardAuth headers (browser SSO via Remote-User/Remote-Email)
+    2. Application headers (internal services)
+    3. Personal API key (external tools / programmatic clients)
+    4. JWT token (API clients)
+    5. OAuth2 form data (web forms)
 
     Returns the authenticated user or raises UnauthorizedException.
     """
+    if oidc_user_id:
+        logger.debug('auth_method_oidc_bearer')
     if authelia_user_id:
         logger.debug('auth_method_authelia')
     if app_headers:
@@ -271,7 +305,7 @@ def get_current_user(
     if auth_oauth2:
         logger.debug('auth_method_oauth2')
 
-    if not (user_id := authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
+    if not (user_id := oidc_user_id or authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
         raise UnauthorizedException('Invalid credentials', logger)
 
     if not (user := validate_user_id(user_id, session)):
@@ -292,6 +326,7 @@ def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> m
 
 
 def get_current_user_or_none(
+    oidc_user_id=Depends(authenticate_with_oidc_bearer),
     authelia_user_id=Depends(authenticate_with_authelia_headers),
     app_headers=Depends(authenticate_with_application_headers),
     api_key_user_id=Depends(authenticate_with_personal_api_key),
@@ -301,9 +336,13 @@ def get_current_user_or_none(
 ) -> models.User | None:
     """Same as get_current_user but returns None instead of raising exception.
 
+    A presented-but-invalid access token is the one case that still raises: `get_oidc_identity`
+    rejects it before this runs, because a caller must not be able to pair a junk token with
+    another strategy's credentials and have the token quietly ignored.
+
     Used for dependencies that support multiple auth methods.
     """
-    if not (user_id := authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
+    if not (user_id := oidc_user_id or authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
         return None
 
     if not (user := validate_user_id(user_id, session)):

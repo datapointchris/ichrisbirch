@@ -94,7 +94,7 @@ Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tes
 Two separate command-line tools with distinct concerns:
 
 - **`ops/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./ops/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
-- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It **replaced the retired MCP server** (2026-07-24) with full parity across the ~78-tool surface. Copied from nomad's `cli/` (own Go module `github.com/datapointchris/ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` uses Authelia edge-authorized bearer tokens in the OS keychain (targets the cookie-gated `ichrisbirch.com` host, audience `https://ichrisbirch.com`) — **not** the FastAPI JWT/PAK code. Build/install/auth details in `cli/README.md`; design and phased plan in `.planning/icb-cli.md`. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
+- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It **replaced the retired MCP server** (2026-07-24) with full parity across the ~78-tool surface. Copied from nomad's `cli/` (own Go module `github.com/datapointchris/ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` runs the OAuth 2.0 device authorization grant and stores the resulting RFC 9068 JWT in the OS keychain; it targets `api.ichrisbirch.com`, which bypasses ForwardAuth, and the FastAPI verifies the token itself against Authelia's JWKS — **not** the legacy JWT/PAK code. Build/install/auth details in `cli/README.md`; design and phased plan in `.planning/icb-cli.md`. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
 ### Vue Frontend
 
@@ -113,13 +113,15 @@ Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
 
 ### Authentication
 
-**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers — content-negotiates cookie (browser) vs bearer (the `icb` CLI's opaque `authelia.bearer.authz` token, edge-validated by audience). `api.ichrisbirch.com` bypasses ForwardAuth for Personal API Key clients hitting the API directly. Config in `~/homelab`.
+**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. `api.ichrisbirch.com` bypasses ForwardAuth — that is the host both Personal API Key clients and the `icb` CLI hit directly. Config in `~/homelab`.
+
+**OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `sub` non-empty, `client_id` starts with `icb-cli-`, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
 
 **Vue (Production):** Same-origin proxy — Vue calls `/api/...`, Traefik `api-proxy` router (priority 200) strips `/api` prefix and forwards to FastAPI. No CORS needed.
 
 **Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: admin@icb.com`.
 
-**FastAPI:** JWT tokens (access 15min, refresh 7d) + Authelia `Remote-User` header (highest priority) + Personal API Keys. Protected routes use `Depends(auth.get_current_user)`.
+**FastAPI:** verified Authelia OIDC access tokens (highest priority) + Authelia `Remote-User` header + Personal API Keys + local JWT tokens (access 15min, refresh 7d). Protected routes use `Depends(auth.get_current_user)`.
 
 ### Configuration & Secrets
 
@@ -210,9 +212,9 @@ Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is gener
 
 ### `icb` CLI — dev vs prod (data access)
 
-The MCP server was retired (2026-07-24); the `icb` CLI is the programmatic data surface. Unlike the old repo-level `.mcp.json` override, the installed `icb` binary is **not** repo-aware: it always targets **production** (`https://ichrisbirch.com`, Authelia bearer auth) regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
+The MCP server was retired (2026-07-24); the `icb` CLI is the programmatic data surface. Unlike the old repo-level `.mcp.json` override, the installed `icb` binary is **not** repo-aware: it always targets **production** (`https://api.ichrisbirch.com`, Authelia OIDC bearer token) regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
 
-To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/tasks/`. Override the CLI's target per-invocation with `ICB_API_BASE` / `ICB_OIDC_AUDIENCE` if you need `icb` itself pointed at dev.
+To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/tasks/`. Override the CLI's target per-invocation with `ICB_API_BASE` if you need `icb` itself pointed at dev.
 
 ### A project name is bounded work, never a repo
 

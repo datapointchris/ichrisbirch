@@ -10,7 +10,6 @@ import (
 func TestLoad_EnvOverrides(t *testing.T) {
 	t.Setenv("ICB_OIDC_ISSUER", "https://idp.example")
 	t.Setenv("ICB_CLIENT_ID", "icb-cli-ci")
-	t.Setenv("ICB_OIDC_AUDIENCE", "https://aud.example")
 	t.Setenv("ICB_API_BASE", "https://api.example")
 
 	cfg := Load()
@@ -21,11 +20,23 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	if cfg.ClientID != "icb-cli-ci" {
 		t.Errorf("ClientID = %q", cfg.ClientID)
 	}
-	if cfg.Audience != "https://aud.example" {
-		t.Errorf("Audience = %q", cfg.Audience)
-	}
 	if cfg.APIBase != "https://api.example" {
 		t.Errorf("APIBase = %q", cfg.APIBase)
+	}
+}
+
+// The device grant carries no audience, so the scope set is the plain OIDC one.
+// authelia.bearer.authz would be rejected: Authelia forbids it alongside the
+// device grant.
+func TestScopesAreTheDeviceGrantSet(t *testing.T) {
+	want := []string{"openid", "profile", "offline_access"}
+	if len(Scopes) != len(want) {
+		t.Fatalf("Scopes = %v, want %v", Scopes, want)
+	}
+	for i, scope := range want {
+		if Scopes[i] != scope {
+			t.Errorf("Scopes[%d] = %q, want %q", i, Scopes[i], scope)
+		}
 	}
 }
 
@@ -33,16 +44,12 @@ func TestLoad_EnvOverrides(t *testing.T) {
 // the field — getEnv treats "" as unset.
 func TestLoad_EmptyEnvFallsThroughToDefault(t *testing.T) {
 	t.Setenv("ICB_OIDC_ISSUER", "")
-	t.Setenv("ICB_OIDC_AUDIENCE", "")
 	t.Setenv("ICB_API_BASE", "")
 
 	cfg := Load()
 
 	if cfg.Issuer != defaultIssuer {
 		t.Errorf("Issuer = %q, want default %q", cfg.Issuer, defaultIssuer)
-	}
-	if cfg.Audience != defaultAudience {
-		t.Errorf("Audience = %q, want default %q", cfg.Audience, defaultAudience)
 	}
 	if cfg.APIBase != defaultAPIBase {
 		t.Errorf("APIBase = %q, want default %q", cfg.APIBase, defaultAPIBase)

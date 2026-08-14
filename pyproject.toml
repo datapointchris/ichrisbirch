@@ -28,7 +28,9 @@ dependencies = [
   "pyarrow>=16.1.0",
   "pydantic>=2.7.1",
   "pygtail>=0.14.0",
-  "pyjwt>=2.8.0",
+  # [crypto] pulls `cryptography`, which PyJWT needs to verify the RS256 access
+  # tokens Authelia issues to the icb CLI.
+  "pyjwt[crypto]>=2.8.0",
   "python-dotenv>=1.0.1",
   "python-json-logger>=2.0.7",
   "python-multipart>=0.0.9",
