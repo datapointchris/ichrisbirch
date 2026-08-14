@@ -212,7 +212,7 @@ func TestCreateProject_LeavesCountsNilWhenTheServerOmitsThem(t *testing.T) {
 	}
 }
 
-func TestListProjectItems_ArchivedQueryParam(t *testing.T) {
+func TestListProjectItems_StatusQueryParam(t *testing.T) {
 	var gotPath string
 	var gotQuery string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -225,24 +225,25 @@ func TestListProjectItems_ArchivedQueryParam(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 
-	items, err := client.ListProjectItems(context.Background(), "018f-a", true)
+	items, err := client.ListProjectItems(context.Background(), "018f-a", "all")
 	if err != nil {
 		t.Fatalf("ListProjectItems: %v", err)
 	}
 	if gotPath != "/projects/018f-a/items/" {
 		t.Errorf("path = %s, want /projects/018f-a/items/", gotPath)
 	}
-	if gotQuery != "archived=true" {
-		t.Errorf("query = %q, want archived=true", gotQuery)
+	if gotQuery != "status=all" {
+		t.Errorf("query = %q, want status=all", gotQuery)
 	}
 	if len(items) != 1 || items[0].Title != "First" {
 		t.Errorf("items = %+v", items)
 	}
 
-	// Without archived, no query string should be sent.
-	_, _ = client.ListProjectItems(context.Background(), "018f-a", false)
+	// An empty status sends nothing, leaving the server's default rather than
+	// spelling it client-side where it would drift from the API.
+	_, _ = client.ListProjectItems(context.Background(), "018f-a", "")
 	if gotQuery != "" {
-		t.Errorf("query = %q, want empty when archived=false", gotQuery)
+		t.Errorf("query = %q, want empty when no status is given", gotQuery)
 	}
 }
 

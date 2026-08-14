@@ -24,6 +24,14 @@ import type {
 
 const logger = createLogger('ProjectsStore')
 
+// The API narrows this list to open items, so the board asks for the rest back
+// explicitly. It renders every state — a completed row keeps the toggle that
+// reopens it, and an archived row has styling of its own — and none of that is
+// reachable if the default decides for it.
+function projectItemsPath(projectId: string) {
+  return `/projects/${projectId}/items/?status=all`
+}
+
 export const useProjectsStore = defineStore('projects', () => {
   // --- Project state ---
   const projects = ref<ProjectWithItemCount[]>([])
@@ -163,7 +171,7 @@ export const useProjectsStore = defineStore('projects', () => {
     itemBlockers.value = {}
     error.value = null
     try {
-      const response = await api.get<ProjectItemInProject[]>(`/projects/${projectId}/items/`)
+      const response = await api.get<ProjectItemInProject[]>(projectItemsPath(projectId))
       items.value = response.data
       logger.info('items_fetched', { project_id: projectId, count: response.data.length })
       fetchItemBlockers()
@@ -193,7 +201,7 @@ export const useProjectsStore = defineStore('projects', () => {
       const projectsToFetch = sortedProjects.value.filter((p) => ids.includes(p.id))
       const groups = await Promise.all(
         projectsToFetch.map(async (project) => {
-          const response = await api.get<ProjectItemInProject[]>(`/projects/${project.id}/items/`)
+          const response = await api.get<ProjectItemInProject[]>(projectItemsPath(project.id))
           return { project, items: response.data }
         })
       )
@@ -250,7 +258,7 @@ export const useProjectsStore = defineStore('projects', () => {
       if (projects.value.length === 0) await fetchProjects()
       const groups = await Promise.all(
         sortedProjects.value.map(async (project) => {
-          const response = await api.get<ProjectItemInProject[]>(`/projects/${project.id}/items/`)
+          const response = await api.get<ProjectItemInProject[]>(projectItemsPath(project.id))
           return { project, items: response.data }
         })
       )

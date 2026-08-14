@@ -174,15 +174,18 @@ func runProjectUpdate(cmd *cobra.Command, ref string, in api.ProjectUpdateInput,
 
 func newProjectsShowCommand() *cobra.Command {
 	var (
-		asJSON   bool
-		archived bool
+		asJSON     bool
+		itemStatus string
 	)
 	cmd := &cobra.Command{
 		Use:     "show <project>",
-		Short:   "Show a project and its items",
-		Example: "  icb projects show todoui\n  icb projects show todoui --archived --json",
+		Short:   "Show a project and its open items",
+		Example: "  icb projects show todoui\n  icb projects show todoui --status all --json",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := validateItemStatus(cmd, itemStatus); err != nil {
+				return err
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
@@ -191,7 +194,7 @@ func newProjectsShowCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), args[0], archived)
+			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -202,11 +205,12 @@ func newProjectsShowCommand() *cobra.Command {
 				}{Project: project, Items: items})
 			}
 			printProjectDetail(cmd.OutOrStdout(), project, items)
+			hintHiddenItems(cmd, asJSON, itemStatus)
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the project and items as JSON to stdout")
-	cmd.Flags().BoolVar(&archived, "archived", false, "Include archived items")
+	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	return cmd
 }
 

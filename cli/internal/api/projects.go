@@ -154,12 +154,14 @@ const (
 // escape hatch.
 var ProjectStatuses = []string{ProjectStatusActive, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll}
 
-// ListProjectItems returns a project's items in order (GET /projects/{id}/items/).
-// When archived is true, archived items are included. A missing id is a 404.
-func (c *Client) ListProjectItems(ctx context.Context, id string, archived bool) ([]ProjectItemInProject, error) {
+// ListProjectItems returns a project's items in order (GET /projects/{id}/items/),
+// narrowed to one derived status. It takes the same vocabulary as ListItems
+// because scoping to a project picks which rows come back and not which states.
+// An empty itemStatus leaves the server's default. A missing id is a 404.
+func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string) ([]ProjectItemInProject, error) {
 	path := "/projects/" + id + "/items/"
-	if archived {
-		path += "?" + url.Values{"archived": {"true"}}.Encode()
+	if itemStatus != "" {
+		path += "?" + url.Values{"status": {itemStatus}}.Encode()
 	}
 	var items []ProjectItemInProject
 	if err := c.get(ctx, path, &items); err != nil {

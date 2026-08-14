@@ -21,6 +21,8 @@ from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.models.project import TERMINAL_PROJECT_STATUSES
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.services.project_item_status import apply_status_filter
+from ichrisbirch.services.project_item_status import validate_item_status
 from ichrisbirch.services.project_refs import resolve_project
 
 logger = structlog.get_logger()
@@ -299,15 +301,28 @@ async def delete(project: ProjectFromPath, session: DbSession):
 async def list_items(
     project: ProjectFromPath,
     session: DbSession,
-    archived: bool = Query(False, description='Include archived items'),
+    item_status: str = Query(
+        'open',
+        alias='status',
+        description="An item status, or 'all'. Completed and archived items are hidden by default.",
+    ),
 ):
+    """List one project's open items, in project order.
+
+    Scoping to a project selects which rows come back, not which states, so the
+    default matches the flat `/project-items/` list rather than widening because
+    the caller named a project. Completed items pile up inside one project for the
+    same reason they pile up across all of them. Measured 2026-08-14, before this
+    existed: one 29-row project list carried 6 finished items. See `cli-design.md`
+    § "A scope selects which rows, not which states".
+    """
+    validate_item_status(item_status)
     query = (
         select(models.ProjectItem, ProjectItemMembership.position)
         .join(ProjectItemMembership, models.ProjectItem.id == ProjectItemMembership.item_id)
         .where(ProjectItemMembership.project_id == project.id)
     )
-    if not archived:
-        query = query.where(models.ProjectItem.archived == False)  # noqa: E712
+    query = apply_status_filter(query, item_status)
 
     # position has no unique constraint, so a collision would otherwise order by
     # whatever the database returned

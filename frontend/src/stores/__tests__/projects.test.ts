@@ -229,7 +229,7 @@ describe('useProjectsStore', () => {
 
   it('fetches items for a project and sets state', async () => {
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/projects/1/items/') return Promise.resolve({ data: testItems })
+      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -243,7 +243,7 @@ describe('useProjectsStore', () => {
 
   it('clears blockers when fetching new items', async () => {
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/projects/1/items/') return Promise.resolve({ data: testItems })
+      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -284,7 +284,7 @@ describe('useProjectsStore', () => {
     mockApi.post.mockResolvedValue({ data: newItemDetail })
     mockApi.get.mockImplementation((url: string) => {
       if (url === '/projects/') return Promise.resolve({ data: testProjects })
-      if (url === '/projects/1/items/') return Promise.resolve({ data: testItems })
+      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -482,7 +482,7 @@ describe('useProjectsStore', () => {
     mockApi.delete.mockResolvedValue({})
     mockApi.get.mockImplementation((url: string) => {
       if (url === '/projects/') return Promise.resolve({ data: testProjects })
-      if (url === '/projects/1/items/') return Promise.resolve({ data: testItems })
+      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()

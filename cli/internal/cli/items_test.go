@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
@@ -109,5 +112,72 @@ func TestPrintItemDetail_ShowsTheNumberNotTheUUID(t *testing.T) {
 	}
 	if strings.Contains(rendered, "019fdd05-1686-7571-8a27-9f73c1e9f20f") {
 		t.Errorf("detail = %q, want no UUID — --json is where a caller gets the key", rendered)
+	}
+}
+
+// --archived was a second spelling of --status archived, which cli-design.md
+// § "A lifecycle is one --status enum" rules out as a question-shaped alias
+// beside the enum. Its removal is the point, so the flag's absence is pinned.
+func TestItemsList_HasNoArchivedAliasBesideStatus(t *testing.T) {
+	cmd := newItemsListCommand()
+	if cmd.Flags().Lookup("archived") != nil {
+		t.Error("--archived is back; --status archived and --status all already say it")
+	}
+	if cmd.Flags().Lookup("status") == nil {
+		t.Fatal("--status is missing from the list command")
+	}
+}
+
+// A scope selects which rows come back, not which states, so --project takes
+// --status rather than refusing it.
+func TestItemsList_ProjectAcceptsStatus(t *testing.T) {
+	cmd := newItemsListCommand()
+	if err := cmd.Flags().Parse([]string{"--project", "todoui", "--status", "completed"}); err != nil {
+		t.Fatalf("--status alongside --project: %v", err)
+	}
+}
+
+func TestHintHiddenItems_NamesTheCommandThatRan(t *testing.T) {
+	cmd := newItemsListCommand()
+	root := &cobra.Command{Use: "icb"}
+	root.AddCommand(cmd)
+	if err := cmd.Flags().Parse([]string{"--project", "todoui"}); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	var stderr bytes.Buffer
+	cmd.SetErr(&stderr)
+
+	hintHiddenItems(cmd, false, "")
+
+	got := stderr.String()
+	// The scoped read quotes itself back; dropping --project would hand over a
+	// command that answers a different question from the one just asked.
+	if !strings.Contains(got, "icb list --project todoui --status all") {
+		t.Errorf("hint = %q, want it to carry --project todoui and --status all", got)
+	}
+}
+
+func TestHintHiddenItems_SilentWhenTheCallerChoseAStatus(t *testing.T) {
+	cmd := newItemsListCommand()
+	if err := cmd.Flags().Parse([]string{"--status", "all"}); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	var stderr bytes.Buffer
+	cmd.SetErr(&stderr)
+
+	hintHiddenItems(cmd, false, "all")
+
+	if stderr.String() != "" {
+		t.Errorf("hint = %q, want silence when the status was asked for", stderr.String())
+	}
+}
+
+func TestProjectsShow_TakesStatusNotArchived(t *testing.T) {
+	cmd := newProjectsShowCommand()
+	if cmd.Flags().Lookup("archived") != nil {
+		t.Error("--archived is back on projects show")
+	}
+	if cmd.Flags().Lookup("status") == nil {
+		t.Error("--status is missing from projects show")
 	}
 }

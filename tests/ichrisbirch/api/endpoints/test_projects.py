@@ -450,6 +450,54 @@ class TestProjectItemCounts:
 
         assert (project['item_count'], project['open_count'], project['completed_count']) == (0, 0, 0)
 
+    def scoped_titles(self, client, project_id, query=''):
+        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/{query}')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return {row['title'] for row in response.json()}
+
+    def test_scoped_list_defaults_to_open(self, project_with_mixed_items):
+        """Naming a project selects which rows come back, not which states.
+
+        The scoped read used to filter on `archived` alone, so it answered with
+        every finished item while the flat list next to it had already narrowed.
+        """
+        client, project_id = project_with_mixed_items
+
+        assert self.scoped_titles(client, project_id) == {'open one'}
+
+    @pytest.mark.parametrize(
+        'item_status, expected',
+        [
+            ('open', {'open one'}),
+            ('completed', {'completed one'}),
+            ('archived', {'archived one'}),
+            ('all', {'open one', 'completed one', 'archived one'}),
+        ],
+    )
+    def test_scoped_list_takes_the_same_status_vocabulary(self, project_with_mixed_items, item_status, expected):
+        client, project_id = project_with_mixed_items
+
+        assert self.scoped_titles(client, project_id, f'?status={item_status}') == expected
+
+    def test_scoped_list_rejects_an_unknown_status_by_name(self, project_with_mixed_items):
+        """A 422 naming the vocabulary, rather than an empty list that reads as no data."""
+        client, project_id = project_with_mixed_items
+
+        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/?status=finished')
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'finished' in response.json()['detail']
+
+    def test_scoped_and_flat_lists_agree_on_every_status(self, project_with_mixed_items):
+        """One filter implementation behind both reads, so they cannot drift apart."""
+        client, project_id = project_with_mixed_items
+
+        for item_status in ('open', 'completed', 'archived', 'all'):
+            scoped = self.scoped_titles(client, project_id, f'?status={item_status}')
+            flat = client.get(f'{PROJECT_ITEMS_ENDPOINT}?status={item_status}').json()
+            flat_titles = {row['title'] for row in flat} & {'open one', 'completed one', 'archived one'}
+            assert scoped == flat_titles, f'the two lists disagree on {item_status}'
+
 
 class TestProjectItemUpdate:
     """PATCH /project-items/{id}/ — null-clearing behaviour for optional fields."""

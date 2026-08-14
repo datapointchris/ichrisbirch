@@ -57,7 +57,6 @@ func newItemsListCommand() *cobra.Command {
 		asJSON     bool
 		project    string
 		repo       string
-		archived   bool
 		itemStatus string
 	)
 	cmd := &cobra.Command{
@@ -69,22 +68,22 @@ func newItemsListCommand() *cobra.Command {
 			"\n" +
 			"--status takes one of: " + strings.Join(api.ItemStatuses, ", ") + ". They partition every\n" +
 			"item, because archived beats completed: an item completed and then archived\n" +
-			"answers to archived alone.",
+			"answers to archived alone.\n" +
+			"\n" +
+			"--project selects which rows come back, not which states, so it narrows to\n" +
+			"open the same way the unscoped list does and takes the same --status.",
 		Example: "  icb projects items list\n" +
 			"  icb projects items list --status completed\n" +
 			"  icb projects items list --status all --json\n" +
 			"  icb projects items list --repo dotfiles\n" +
 			"  icb projects items list --project todoui\n" +
-			"  icb projects items list --project todoui --archived",
+			"  icb projects items list --project todoui --status all",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if err := validateItemStatus(cmd, itemStatus); err != nil {
+				return err
+			}
 			if project == "" {
-				if archived {
-					return usageError{fmt.Errorf("--archived requires --project; the unscoped list takes --status archived")}
-				}
-				if err := validateItemStatus(cmd, itemStatus); err != nil {
-					return err
-				}
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
 					return c.ListItems(cmd.Context(), filter, itemStatus)
@@ -94,9 +93,6 @@ func newItemsListCommand() *cobra.Command {
 				hintHiddenItems(cmd, asJSON, itemStatus)
 				return nil
 			}
-			if cmd.Flags().Changed("status") {
-				return usageError{fmt.Errorf("--status and --project are different questions — a project's list carries every item, in order")}
-			}
 			if cmd.Flags().Changed("repo") {
 				return usageError{fmt.Errorf("--repo and --project are different questions — pass one")}
 			}
@@ -104,7 +100,7 @@ func newItemsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), project, archived)
+			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -112,13 +108,13 @@ func newItemsListCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), items)
 			}
 			printProjectItemsTable(cmd.OutOrStdout(), items)
+			hintHiddenItems(cmd, asJSON, itemStatus)
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
 	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
-	cmd.Flags().BoolVar(&archived, "archived", false, "Include archived items (requires --project)")
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	return cmd
 }
@@ -142,11 +138,21 @@ func validateItemStatus(cmd *cobra.Command, itemStatus string) error {
 //
 // stderr, so a person sees it and --json does not. Silent when a status was
 // asked for, because then nothing was hidden the caller did not choose.
+// The hint names the command that was actually run, so the scoped reads quote
+// themselves back rather than pointing at the unscoped list and losing the
+// caller's --project.
 func hintHiddenItems(cmd *cobra.Command, asJSON bool, itemStatus string) {
 	if asJSON || cmd.Flags().Changed("status") {
 		return
 	}
-	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and archived items are hidden: icb projects items list --status all")
+	widen := cmd.CommandPath()
+	for _, arg := range cmd.Flags().Args() {
+		widen += " " + arg
+	}
+	if project, err := cmd.Flags().GetString("project"); err == nil && project != "" {
+		widen += " --project " + project
+	}
+	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\nCompleted and archived items are hidden: %s --status all\n", widen)
 }
 
 // validateRepoFlag rejects a --repo the registry does not know, on the writes
