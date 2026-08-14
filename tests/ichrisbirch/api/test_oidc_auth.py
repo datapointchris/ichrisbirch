@@ -24,6 +24,7 @@ from ichrisbirch.api.oidc_auth import OIDCTokenVerifier
 from ichrisbirch.api.oidc_auth import OIDCVerificationError
 from ichrisbirch.api.oidc_auth import bearer_token
 from ichrisbirch.api.oidc_auth import build_verifier
+from ichrisbirch.api.oidc_auth import discover_jwks_uri
 from ichrisbirch.api.oidc_auth import get_oidc_identity
 from ichrisbirch.api.oidc_auth import is_access_token
 
@@ -132,7 +133,7 @@ def make_request(authorization: str | None = None) -> Request:
 
 
 def oidc_settings(idp: IdentityProviderStub) -> SimpleNamespace:
-    return SimpleNamespace(oidc=SimpleNamespace(issuer=idp.url, cli_client_id_prefix=CLI_CLIENT_ID_PREFIX))
+    return SimpleNamespace(oidc=SimpleNamespace(issuer=idp.url, cli_client_id_prefix=CLI_CLIENT_ID_PREFIX, internal_url=''))
 
 
 class TestVerifyAccessToken:
@@ -280,3 +281,37 @@ class TestGetOIDCIdentity:
                 get_oidc_identity(make_request(f'Bearer {token}'), oidc_settings(idp))
             details.add(exc_info.value.detail)
         assert len(details) == 1
+
+
+class TestInternalURL:
+    """The JWKS fetch can be routed off the public hostname without changing the issuer."""
+
+    def test_discovery_and_jwks_move_to_the_internal_host(self):
+        """Cloudflare answers 403 to PyJWKClient's user agent on the public name, so production
+        reaches Authelia directly. The issuer keeps its public value — it is matched against the
+        `iss` claim, never fetched."""
+        public_issuer = 'https://auth.example.com'
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802
+                body = json.dumps({'issuer': public_issuer, 'jwks_uri': f'{public_issuer}/jwks.json'}).encode()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *_args):  # noqa: ANN002
+                pass
+
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        internal_url = f'http://127.0.0.1:{server.server_port}'
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            jwks_uri = discover_jwks_uri(public_issuer, internal_url=internal_url)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+        assert jwks_uri == f'{internal_url}/jwks.json'

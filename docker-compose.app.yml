@@ -35,6 +35,11 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_COLORS=${LOG_COLORS:-false}
       - LOG_FILE=/var/log/ichrisbirch/api.log
+      # Reach Authelia directly for discovery and JWKS. The public hostname resolves to
+      # Cloudflare, which answers 403 to the user agent PyJWKClient fetches with, so token
+      # verification would depend on a bot rule nobody here controls. OIDC_ISSUER keeps its
+      # public value — it is matched against the `iss` claim, never fetched.
+      - OIDC_INTERNAL_URL=${OIDC_INTERNAL_URL:-http://10.0.20.23:9091}
     ports: []
     volumes:
       - ichrisbirch_logs:/var/log/ichrisbirch
