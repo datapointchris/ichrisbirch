@@ -93,7 +93,11 @@ def discover_jwks_uri(issuer: str, internal_url: str = '', timeout: float = DISC
     response.raise_for_status()
     document = response.json()
 
-    if document.get('issuer') != issuer:
+    # Authelia builds the document's URLs from the request host, so fetching internally makes it
+    # report the internal address. Comparing them then always fails. This is a sanity check on
+    # configuration, never the security control — that is the `iss` claim on the token, which is
+    # matched against the configured public issuer in `verify`.
+    if not internal_url and document.get('issuer') != issuer:
         raise ValueError(f'issuer {issuer!r} advertises itself as {document.get("issuer")!r}')
     if not (jwks_uri := document.get('jwks_uri')):
         raise ValueError(f'issuer {issuer!r} advertises no jwks_uri')
