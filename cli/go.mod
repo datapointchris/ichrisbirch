@@ -1,6 +1,6 @@
 module github.com/datapointchris/ichrisbirch/cli
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/datapointchris/goselfupdate v0.7.0
