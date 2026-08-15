@@ -68,7 +68,6 @@ class OIDCSettings:
         self.issuer: str = os.environ.get('OIDC_ISSUER') or 'https://auth.ichrisbirch.com'
         self.cli_client_id_prefix: str = os.environ.get('OIDC_CLI_CLIENT_ID_PREFIX') or 'icb-cli-'
         self.cli_user_email: str = os.environ.get('OIDC_CLI_USER_EMAIL') or os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
-        self.internal_url: str = os.environ.get('OIDC_INTERNAL_URL') or ''
 
 
 class ChatSettings:

@@ -8,7 +8,6 @@ Key retrieval, caching and rotation are PyJWT's `PyJWKClient`. Nothing here pars
 """
 
 import functools
-from urllib.parse import urlparse
 
 import httpx
 import jwt
@@ -28,6 +27,12 @@ ACCESS_TOKEN_TYPE = 'at+jwt'
 SIGNING_ALGORITHM = 'RS256'
 DISCOVERY_PATH = '/.well-known/openid-configuration'
 DISCOVERY_TIMEOUT_SECONDS = 10.0
+
+# Cloudflare fronts the issuer's public hostname and answers 403 to an unidentified client.
+# Measured 2026-08-14: `Python-urllib/3.12` — what urllib and therefore PyJWKClient send by
+# default — is refused, while a named agent is served. Identifying the caller is the fix; reaching
+# the provider by an internal address instead would tie token verification to one network layout.
+USER_AGENT = 'ichrisbirch-api (+https://ichrisbirch.com)'
 
 # Every rejection returns this, so a probe cannot use the response to learn which check it failed.
 # The reason is logged instead.
@@ -77,32 +82,16 @@ def is_access_token(token: str) -> bool:
     return str(header.get('typ', '')).lower() == ACCESS_TOKEN_TYPE
 
 
-def discover_jwks_uri(issuer: str, internal_url: str = '', timeout: float = DISCOVERY_TIMEOUT_SECONDS) -> str:
-    """Resolve the issuer's JWKS endpoint from its OIDC discovery document.
-
-    `internal_url` reaches the provider without leaving the network. The public hostname resolves
-    to Cloudflare, which answers 403 to `Python-urllib` — the user agent PyJWKClient fetches with —
-    while allowing Go's and curl's. Measured 2026-08-14. Routing a service-to-service call out to
-    the internet and back also makes token verification depend on a bot rule nobody here controls.
-
-    The issuer string is unchanged either way: it identifies the provider and must keep matching
-    the `iss` claim, so only the transport moves.
-    """
-    base = (internal_url or issuer).rstrip('/')
-    response = httpx.get(base + DISCOVERY_PATH, timeout=timeout)
+def discover_jwks_uri(issuer: str, timeout: float = DISCOVERY_TIMEOUT_SECONDS) -> str:
+    """Resolve the issuer's JWKS endpoint from its OIDC discovery document."""
+    response = httpx.get(issuer.rstrip('/') + DISCOVERY_PATH, timeout=timeout, headers={'User-Agent': USER_AGENT})
     response.raise_for_status()
     document = response.json()
 
-    # Authelia builds the document's URLs from the request host, so fetching internally makes it
-    # report the internal address. Comparing them then always fails. This is a sanity check on
-    # configuration, never the security control — that is the `iss` claim on the token, which is
-    # matched against the configured public issuer in `verify`.
-    if not internal_url and document.get('issuer') != issuer:
+    if document.get('issuer') != issuer:
         raise ValueError(f'issuer {issuer!r} advertises itself as {document.get("issuer")!r}')
     if not (jwks_uri := document.get('jwks_uri')):
         raise ValueError(f'issuer {issuer!r} advertises no jwks_uri')
-    if internal_url:
-        jwks_uri = base + urlparse(jwks_uri).path
     return jwks_uri
 
 
@@ -115,9 +104,10 @@ class OIDCTokenVerifier:
         self.jwk_client = jwk_client
 
     @classmethod
-    def from_discovery(cls, issuer: str, cli_client_id_prefix: str, internal_url: str = '') -> 'OIDCTokenVerifier':
-        jwks_uri = discover_jwks_uri(issuer, internal_url)
-        return cls(issuer, cli_client_id_prefix, jwt.PyJWKClient(jwks_uri, cache_keys=True))
+    def from_discovery(cls, issuer: str, cli_client_id_prefix: str) -> 'OIDCTokenVerifier':
+        jwks_uri = discover_jwks_uri(issuer)
+        client = jwt.PyJWKClient(jwks_uri, cache_keys=True, headers={'User-Agent': USER_AGENT})
+        return cls(issuer, cli_client_id_prefix, client)
 
     def verify(self, token: str) -> OIDCIdentity:
         """Verify a token and return the identity it establishes, or raise OIDCVerificationError."""
@@ -173,14 +163,14 @@ class OIDCTokenVerifier:
 
 
 @functools.cache
-def build_verifier(issuer: str, cli_client_id_prefix: str, internal_url: str = '') -> OIDCTokenVerifier:
+def build_verifier(issuer: str, cli_client_id_prefix: str) -> OIDCTokenVerifier:
     """Return the process-wide verifier for an issuer, resolving discovery on first use.
 
     Cached on the two strings rather than on Settings so a failed discovery is not memoised —
     `functools.cache` stores results, not exceptions, so Authelia being down at the first request
     does not poison every later one.
     """
-    return OIDCTokenVerifier.from_discovery(issuer, cli_client_id_prefix, internal_url)
+    return OIDCTokenVerifier.from_discovery(issuer, cli_client_id_prefix)
 
 
 def get_oidc_identity(request: Request, settings: Settings = Depends(get_settings)) -> OIDCIdentity | None:
@@ -196,7 +186,7 @@ def get_oidc_identity(request: Request, settings: Settings = Depends(get_setting
         return None
 
     try:
-        verifier = build_verifier(settings.oidc.issuer, settings.oidc.cli_client_id_prefix, settings.oidc.internal_url)
+        verifier = build_verifier(settings.oidc.issuer, settings.oidc.cli_client_id_prefix)
         identity = verifier.verify(token)
     except (OIDCProviderUnavailable, httpx.HTTPError) as exc:
         logger.error('oidc_provider_unreachable', error=str(exc), path=request.url.path)

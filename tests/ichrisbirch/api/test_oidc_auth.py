@@ -20,6 +20,7 @@ from fastapi import Request
 from fastapi import status
 from jwt.algorithms import RSAAlgorithm
 
+from ichrisbirch.api import oidc_auth
 from ichrisbirch.api.oidc_auth import OIDCTokenVerifier
 from ichrisbirch.api.oidc_auth import OIDCVerificationError
 from ichrisbirch.api.oidc_auth import bearer_token
@@ -133,7 +134,7 @@ def make_request(authorization: str | None = None) -> Request:
 
 
 def oidc_settings(idp: IdentityProviderStub) -> SimpleNamespace:
-    return SimpleNamespace(oidc=SimpleNamespace(issuer=idp.url, cli_client_id_prefix=CLI_CLIENT_ID_PREFIX, internal_url=''))
+    return SimpleNamespace(oidc=SimpleNamespace(issuer=idp.url, cli_client_id_prefix=CLI_CLIENT_ID_PREFIX))
 
 
 class TestVerifyAccessToken:
@@ -283,18 +284,20 @@ class TestGetOIDCIdentity:
         assert len(details) == 1
 
 
-class TestInternalURL:
-    """The JWKS fetch can be routed off the public hostname without changing the issuer."""
+class TestUserAgent:
+    """Cloudflare fronts the issuer and refuses an unidentified client."""
 
-    def test_discovery_and_jwks_move_to_the_internal_host(self):
-        """Cloudflare answers 403 to PyJWKClient's user agent on the public name, so production
-        reaches Authelia directly. The issuer keeps its public value — it is matched against the
-        `iss` claim, never fetched."""
-        public_issuer = 'https://auth.example.com'
+    def test_discovery_and_jwks_identify_themselves(self):
+        """Measured 2026-08-14: the public hostname answers 403 to `Python-urllib/3.12`, which is
+        what urllib and therefore PyJWKClient send by default, and 200 to a named agent. Reaching
+        the provider by an internal address instead would tie verification to one network layout.
+        """
+        seen: list[str] = []
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):  # noqa: N802
-                body = json.dumps({'issuer': public_issuer, 'jwks_uri': f'{public_issuer}/jwks.json'}).encode()
+                seen.append(self.headers.get('User-Agent', ''))
+                body = json.dumps({'issuer': self.server.issuer, 'jwks_uri': f'{self.server.issuer}/jwks.json'}).encode()
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.send_header('Content-Length', str(len(body)))
@@ -305,13 +308,15 @@ class TestInternalURL:
                 pass
 
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
-        internal_url = f'http://127.0.0.1:{server.server_port}'
+        server.issuer = f'http://127.0.0.1:{server.server_port}'
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
-            jwks_uri = discover_jwks_uri(public_issuer, internal_url=internal_url)
+            discover_jwks_uri(server.issuer)
         finally:
             server.shutdown()
             server.server_close()
 
-        assert jwks_uri == f'{internal_url}/jwks.json'
+        assert seen, 'discovery was never fetched'
+        assert seen[0] == oidc_auth.USER_AGENT
+        assert 'urllib' not in seen[0].lower()
