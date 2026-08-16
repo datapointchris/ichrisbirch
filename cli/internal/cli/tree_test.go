@@ -91,7 +91,8 @@ func TestTreeLine_MarksASubtreeAlreadyDrawnHigherUp(t *testing.T) {
 	}
 }
 
-// The 7 edges of 121 that no single project's list can show.
+// The edges no single project's list can show, because neither end of them is
+// visible from the other's project.
 func TestCrossProjectTag_NamesOnlyTheEdgeThatLeavesItsParentsProjects(t *testing.T) {
 	items := treeItems()
 	child, parent := items[1], items[0] // 179 in day, under 181 in Home Assistant

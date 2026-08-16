@@ -75,9 +75,10 @@ func newItemsTreeCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			// Always every item, whatever the flags narrow to. An edge crosses
-			// the status and project boundaries freely — 3 finished items sit
-			// mid-chain under open work today — so fetching a subset severs
-			// edges and silently splits one tree into several.
+			// the status and project boundaries freely, and a finished item
+			// sitting mid-chain is what joins the two halves either side of it,
+			// so fetching a subset severs edges and splits one tree into
+			// several without saying it did.
 			items, err := client.ListItems(cmd.Context(), nil, api.ItemStatusAll)
 			if err != nil {
 				return handleAPIError(err)
@@ -270,7 +271,7 @@ func itemMark(item api.ProjectItem) string {
 
 // crossProjectTag names where a dependency lands when it shares no project with
 // the item waiting on it. Those edges are the ones neither project's own list
-// can show, and there are 7 of them against 121 today.
+// can show, and they are rare enough that tagging every edge would bury them.
 func crossProjectTag(item, parent api.ProjectItem, hasParent bool) string {
 	if !hasParent || len(item.Projects) == 0 {
 		return ""
