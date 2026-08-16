@@ -22,7 +22,8 @@ language; the two share no code.
   does not end) and `icb projects items`
   (project-item CRUD, complete/reopen, archive/unarchive, reorder,
   multi-project membership,
-  dependencies + blockers, and sub-task verbs). Items are only meaningful inside
+  dependencies + blockers, `tree` for the dependency graph as a drawing or as
+  nodes and edges in `--json`, and sub-task verbs). Items are only meaningful inside
   a project, so the group is nested rather than a root noun; `icb projects items
   list --project <id>` is the in-order listing for one project.
 - **Phase 2 (done):** the standalone apps — `tasks`, `countdowns`, `events`,

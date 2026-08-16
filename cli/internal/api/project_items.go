@@ -27,6 +27,11 @@ type ProjectItem struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Projects  []Project `json:"projects"`
+	// DependencyIDs rides along on every row, so the whole dependency graph
+	// arrives in one request. Reaching it through the detail endpoint instead
+	// costs a request per item, and answering "what blocks what" then scales
+	// with the store rather than with the question.
+	DependencyIDs []string `json:"dependency_ids"`
 }
 
 // ProjectItemDetail is the extended view (GET /project-items/{id}/, and the

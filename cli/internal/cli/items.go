@@ -41,6 +41,7 @@ func newItemsCommand() *cobra.Command {
 		newItemsAddDependencyCommand(),
 		newItemsRemoveDependencyCommand(),
 		newItemsBlockersCommand(),
+		newItemsTreeCommand(),
 		newItemsTasksCommand(),
 		newItemsAddTaskCommand(),
 		newItemsCompleteTaskCommand(),
