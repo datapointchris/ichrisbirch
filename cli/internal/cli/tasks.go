@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -11,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
 )
 
 func newTasksCommand() *cobra.Command {
@@ -122,31 +124,83 @@ func newTasksShowCommand() *cobra.Command {
 	return cmd
 }
 
+// taskCategory validates a category against the lookup table and returns it
+// spelled the way the table spells it. One validator serves the flag and the
+// prompt, so a category neither door accepts is refused the same way through
+// both — with the list of what would have worked.
+var taskCategory = prompt.OneOf(api.TaskCategories)
+
+// taskCreateFields is the record `tasks create` builds, in the order it asks.
+// The same list drives both doors: unanswered fields become the form, and the
+// flags are checked against these validators before anything is sent.
+func taskCreateFields() []prompt.Field {
+	return []prompt.Field{
+		{Key: "name", Label: "Name"},
+		{
+			Key:      "category",
+			Label:    "Category",
+			Choices:  api.TaskCategories,
+			Validate: taskCategory,
+		},
+		{
+			Key:      "priority",
+			Label:    "Priority",
+			Hint:     "Priority is a rank — lower comes first.",
+			Default:  "1",
+			Validate: prompt.Int,
+		},
+		{Key: "notes", Label: "Notes", Optional: true},
+	}
+}
+
 func newTasksCreateCommand() *cobra.Command {
-	var (
-		name     string
-		notes    string
-		category string
-		priority int
-		asJSON   bool
-	)
+	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "create --name <name> --category <category> [flags]",
-		Short:   "Create a new task",
-		Example: "  icb tasks create --name \"Renew registration\" --category chore --priority 3",
-		Args:    usageArgs(cobra.NoArgs),
+		Use:   "create [flags]",
+		Short: "Create a new task",
+		Long: "Pass every field as a flag to create in one shot. Leave --name or\n" +
+			"--category out at a terminal and the rest are asked for one at a time,\n" +
+			"with the categories listed and Tab cycling them. A flag already passed\n" +
+			"is never asked about.\n" +
+			"\n" +
+			"An answer the field rejects comes back for editing and nothing already\n" +
+			"entered is lost. Ctrl-C abandons the task.",
+		Example: "  icb tasks create\n" +
+			"  icb tasks create --name \"Renew registration\" --category chore --priority 3",
+		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if name == "" {
-				return usageError{fmt.Errorf("--name is required")}
+			fields := taskCreateFields()
+			answers := flagAnswers(cmd, "name", "category", "priority", "notes")
+			if err := validateAnswers(answers, fields); err != nil {
+				return usageError{err}
 			}
-			if category == "" {
-				return usageError{fmt.Errorf("--category is required")}
+			if missing := missingFlags(answers, "name", "category"); len(missing) > 0 {
+				if !interactive(cmd) {
+					return usageError{fmt.Errorf("%s required — pass them, or run from a terminal to be asked",
+						strings.Join(missing, " and "))}
+				}
+				asked, err := runForm(cmd, prompt.Form{
+					Intro:  "Creating a task. Ctrl-C to abandon it.",
+					Fields: unanswered(fields, answers),
+				})
+				if errors.Is(err, errAborted) {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nAborted.")
+					return nil
+				}
+				if err != nil {
+					return err
+				}
+				answers.Merge(asked)
 			}
-			in := api.TaskCreateInput{Name: name, Category: category}
-			if cmd.Flags().Changed("notes") {
+			in := api.TaskCreateInput{Name: answers.Get("name"), Category: answers.Get("category")}
+			if answers.Has("notes") {
+				notes := answers.Get("notes")
 				in.Notes = &notes
 			}
-			if cmd.Flags().Changed("priority") {
+			if answers.Has("priority") {
+				// Unfailable: pflag parses the flag as an int and prompt.Int
+				// parses the typed answer, so nothing unparsed reaches here.
+				priority, _ := strconv.Atoi(answers.Get("priority"))
 				in.Priority = &priority
 			}
 			client, err := newAPIClient(cmd.Context())
@@ -164,10 +218,10 @@ func newTasksCreateCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&name, "name", "", "Task name (required)")
-	cmd.Flags().StringVar(&notes, "notes", "", "Markdown notes")
-	cmd.Flags().StringVar(&category, "category", "", "Task category (required)")
-	cmd.Flags().IntVar(&priority, "priority", 1, "Priority rank (lower = higher priority)")
+	cmd.Flags().String("name", "", "Task name (asked for when omitted)")
+	cmd.Flags().String("notes", "", "Markdown notes")
+	cmd.Flags().String("category", "", "One of: "+strings.Join(api.TaskCategories, ", ")+" (asked for when omitted)")
+	cmd.Flags().Int("priority", 1, "Priority rank (lower = higher priority)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created task as JSON to stdout")
 	return cmd
 }
@@ -200,7 +254,11 @@ func newTasksEditCommand() *cobra.Command {
 				in.Notes = &notes
 			}
 			if f.Changed("category") {
-				in.Category = &category
+				canonical, err := taskCategory(category)
+				if err != nil {
+					return usageError{fmt.Errorf("--category: %w", err)}
+				}
+				in.Category = &canonical
 			}
 			if f.Changed("priority") {
 				in.Priority = &priority

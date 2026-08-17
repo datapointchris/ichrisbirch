@@ -10,7 +10,6 @@ It is a per-machine developer tool, not one of the deployed containers. The bash
 ops/deploy tool lives at `../ops/icbops` — a different concern in a different
 language; the two share no code.
 
-> Design, phased plan, and the reusable build checklist: `.planning/icb-cli.md`.
 > Reference build: `~/webapps/nomad/cli/` (this module is copied from it).
 
 ## Status
@@ -118,6 +117,54 @@ Contract notes for consumers (`menu dashboard` in dotfiles is the first):
   category. A habit renamed after being completed today reads as due again until
   its next completion.
 
+## Guided create — `internal/prompt`
+
+`icb tasks create` with `--name` or `--category` missing asks for the rest of the
+record one field at a time, rather than refusing:
+
+```text
+Creating a task. Ctrl-C to abandon it.
+
+Name: Renew registration
+Category is one of:
+  Automotive  Chore     Computer  Dingo
+  Financial   Home      Kitchen   Learn
+  Personal    Purchase  Research  Work
+  Tab cycles the matches.
+Category: chorre
+  unknown value "chorre" — one of: Automotive, Chore, Computer, ...
+Category: chore
+Priority is a rank — lower comes first.
+Priority [1]: 3
+Notes (optional):
+```
+
+The rejected answer comes back on the line for editing, so a typo in the fifth
+field never costs the four already typed. Tab walks the choices that match what
+has been typed; on an empty line it browses the whole list. A category is matched
+case-insensitively and stored the way the lookup table spells it.
+
+A flag already passed is never asked about, so `create --category Chore` asks for
+name, priority, and notes only. Without a terminal — a pipe, a script, or
+`--no-input` — nothing is asked and the command names the flags that would have
+answered.
+
+**The pattern, for the next resource.** One `[]prompt.Field` describes the record:
+its label, whether it is optional, its default, its choices, and its validator.
+That list drives both doors — the fields nothing answered become the form, and the
+flags are run through the same validators, so a bad value reads identically
+whichever way it arrived (`standards/cli-design.md` § "One failure, one
+diagnosis, whichever door you came in"). `taskCreateFields` in
+`internal/cli/tasks.go` is the worked example; `flagAnswers`, `unanswered`,
+`missingFlags`, `validateAnswers`, and `runForm` in `internal/cli/interactive.go`
+are the shared plumbing, and none of them know anything about tasks.
+
+`internal/prompt` imports nothing from this repo and depends only on
+`golang.org/x/term`, so copying the directory is the whole port to another
+project. Line editing, Tab completion, and the returned-answer prefill are all
+`x/term`; there is no TUI framework underneath. Extract it to its own module —
+the `goselfupdate` pattern — when a second project wants it.
+
 ## Config (env over config file over default)
 
 | Variable | Default | Purpose |
@@ -152,8 +199,11 @@ exactly the runs it existed to serve.
 main.go                    → cli.Execute()
 internal/config/           → OIDC + API settings, and the machine config file
 internal/auth/             → OAuth login flow + OS-keychain token store
-internal/cli/              → cobra command tree (root, auth; resources to come)
-internal/api/              → REST client + wire-contract DTOs (added with Phase 1)
+internal/cli/              → cobra command tree
+internal/api/              → REST client + wire-contract DTOs
+internal/prompt/           → the guided-create form (§ Guided create)
+internal/graph/            → dependency-graph layout for `projects items tree`
+internal/repos/            → the machine's repo registry, for --repo validation
 ```
 
 The client depends on the JSON **wire contract**, not the server's Python types —

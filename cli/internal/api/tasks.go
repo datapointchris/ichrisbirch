@@ -66,6 +66,27 @@ const (
 // TaskStatuses is what --status accepts, lifecycle first then the escape hatch.
 var TaskStatuses = []string{TaskStatusOpen, TaskStatusCompleted, TaskStatusAll}
 
+// TaskCategories mirrors the task_categories lookup table, whose rows the API
+// exposes through no endpoint of its own. The spelling is the table's, because
+// tasks.category is a foreign key onto it — a category this list gets wrong
+// reaches the server as a constraint violation rather than a validation error.
+//
+// The Vue stores hold the same list for the same reason.
+var TaskCategories = []string{
+	"Automotive",
+	"Chore",
+	"Computer",
+	"Dingo",
+	"Financial",
+	"Home",
+	"Kitchen",
+	"Learn",
+	"Personal",
+	"Purchase",
+	"Research",
+	"Work",
+}
+
 // ListTasks returns tasks in one status (GET /tasks/). A nil limit fetches all;
 // a non-nil limit caps the count. An empty status takes the API's default, open.
 //
