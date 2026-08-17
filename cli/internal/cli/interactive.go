@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
 )
@@ -46,18 +47,36 @@ func runForm(cmd *cobra.Command, form prompt.Form) (prompt.Answers, error) {
 // a form returns. Merging the two leaves one source of values, so nothing
 // downstream has to ask which door a field came in through.
 //
-// A flag set to the empty string counts as unset: there is no field it could
-// answer, and treating it as an answer would send a task with no name.
+// A repeatable flag contributes every value it was given, which is why an
+// answer is a list. A flag set to the empty string counts as unset: there is no
+// field it could answer, and treating it as one would send a task with no name.
 func flagAnswers(cmd *cobra.Command, keys ...string) prompt.Answers {
 	answers := prompt.Answers{}
 	for _, key := range keys {
 		flag := cmd.Flags().Lookup(key)
-		if flag == nil || !flag.Changed || flag.Value.String() == "" {
+		if flag == nil || !flag.Changed {
 			continue
 		}
-		answers[key] = flag.Value.String()
+		if values := flagValues(flag); len(values) > 0 {
+			answers[key] = values
+		}
 	}
 	return answers
+}
+
+// flagValues reads one flag as the list of non-empty values it holds.
+func flagValues(flag *pflag.Flag) []string {
+	raw := []string{flag.Value.String()}
+	if slice, ok := flag.Value.(pflag.SliceValue); ok {
+		raw = slice.GetSlice()
+	}
+	var values []string
+	for _, value := range raw {
+		if value != "" {
+			values = append(values, value)
+		}
+	}
+	return values
 }
 
 // unanswered returns the fields nothing has answered yet, which is the form to
@@ -85,20 +104,24 @@ func missingFlags(answers prompt.Answers, keys ...string) []string {
 	return missing
 }
 
-// validateAnswers applies each field's Validate to whatever answered it,
-// rewriting the answer to the canonical spelling. Running the form's own
-// validators over the flags is what keeps one bad value reading the same
-// through either door.
+// validateAnswers applies each field's Validate to every value that answered it,
+// rewriting each to the canonical spelling. Running the form's own validators
+// over the flags is what keeps one bad value reading the same through either
+// door.
 func validateAnswers(answers prompt.Answers, fields []prompt.Field) error {
 	for _, field := range fields {
 		if field.Validate == nil || !answers.Has(field.Key) {
 			continue
 		}
-		value, err := field.Validate(answers.Get(field.Key))
-		if err != nil {
-			return fmt.Errorf("--%s: %w", field.Key, err)
+		values := append([]string(nil), answers.All(field.Key)...)
+		for i, value := range values {
+			canonical, err := field.Validate(value)
+			if err != nil {
+				return fmt.Errorf("--%s: %w", field.Key, err)
+			}
+			values[i] = canonical
 		}
-		answers[field.Key] = value
+		answers[field.Key] = values
 	}
 	return nil
 }

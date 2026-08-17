@@ -3,6 +3,7 @@ package prompt
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -36,7 +37,7 @@ func taskForm() Form {
 func TestForm_AsksEveryFieldInOrder(t *testing.T) {
 	answers, out := run(t, taskForm(), "Renew registration\nChore\n3\nby friday\n")
 
-	want := Answers{"name": "Renew registration", "category": "Chore", "priority": "3", "notes": "by friday"}
+	want := map[string]string{"name": "Renew registration", "category": "Chore", "priority": "3", "notes": "by friday"}
 	for key, value := range want {
 		if answers.Get(key) != value {
 			t.Errorf("answers[%q] = %q, want %q", key, answers.Get(key), value)
@@ -140,8 +141,8 @@ func TestForm_IntRejectsAWordAndKeepsIt(t *testing.T) {
 }
 
 func TestAnswers_MergeKeepsWhatIsAlreadyThere(t *testing.T) {
-	answers := Answers{"name": "from the flag"}
-	answers.Merge(Answers{"name": "from the prompt", "category": "Chore"})
+	answers := Answers{"name": {"from the flag"}}
+	answers.Merge(Answers{"name": {"from the prompt"}, "category": {"Chore"}})
 
 	if answers.Get("name") != "from the flag" {
 		t.Errorf("name = %q, want the flag to outrank the prompt", answers.Get("name"))
@@ -180,5 +181,111 @@ func TestInt_TrimsToTheParsedNumber(t *testing.T) {
 	}
 	if value != "7" {
 		t.Errorf("value = %q, want the parsed form", value)
+	}
+}
+
+func TestForm_RepeatKeepsAskingUntilAnEmptyAnswer(t *testing.T) {
+	form := Form{Fields: []Field{{Key: "project", Label: "Project", Repeat: true}}}
+
+	answers, out := run(t, form, "one\ntwo\nthree\n\n")
+
+	got := strings.Join(answers.All("project"), ",")
+	if got != "one,two,three" {
+		t.Errorf("project = %q, want every answer in order", got)
+	}
+	if !strings.Contains(out, "Project (another, or Enter to move on):") {
+		t.Errorf("the prompt did not say what Enter does after the first answer:\n%s", out)
+	}
+}
+
+func TestForm_RepeatStillNeedsItsFirstAnswer(t *testing.T) {
+	form := Form{Fields: []Field{{Key: "project", Label: "Project", Repeat: true}}}
+
+	answers, out := run(t, form, "\none\n\n")
+
+	if strings.Join(answers.All("project"), ",") != "one" {
+		t.Errorf("project = %v, want the answer given after the empty one", answers.All("project"))
+	}
+	if !strings.Contains(out, "Project is required.") {
+		t.Errorf("an empty first answer was accepted:\n%s", out)
+	}
+}
+
+func TestForm_RepeatValidatesEveryAnswerAndKeepsTheEarlierOnes(t *testing.T) {
+	form := Form{Fields: []Field{
+		{Key: "project", Label: "Project", Repeat: true, Validate: OneOf(categories)},
+	}}
+
+	answers, out := run(t, form, "Chore\nDingoo\nDingo\n\n")
+
+	got := strings.Join(answers.All("project"), ",")
+	if got != "Chore,Dingo" {
+		t.Errorf("project = %q, want the first answer kept and the second corrected", got)
+	}
+	if !strings.Contains(out, `(was "Dingoo")`) {
+		t.Errorf("the rejected answer was not offered back:\n%s", out)
+	}
+}
+
+func TestForm_MultilineReadsUntilABlankLine(t *testing.T) {
+	form := Form{Fields: []Field{{Key: "notes", Label: "Notes", Multiline: true, Optional: true}}}
+
+	answers, out := run(t, form, "first line\nsecond line\n\n")
+
+	if answers.Get("notes") != "first line\nsecond line" {
+		t.Errorf("notes = %q, want the lines joined with newlines", answers.Get("notes"))
+	}
+	if !strings.Contains(out, "blank line ends it") {
+		t.Errorf("the prompt did not say how to finish:\n%s", out)
+	}
+}
+
+func TestForm_MultilineSkippedWhenOptional(t *testing.T) {
+	form := Form{Fields: []Field{{Key: "notes", Label: "Notes", Multiline: true, Optional: true}}}
+
+	answers, _ := run(t, form, "\n")
+
+	if answers.Has("notes") {
+		t.Errorf("notes = %q, want it absent", answers.Get("notes"))
+	}
+}
+
+func TestForm_ALongChoiceListIsCountedRatherThanPrinted(t *testing.T) {
+	many := make([]string, maxListedChoices+1)
+	for i := range many {
+		many[i] = fmt.Sprintf("choice-%02d", i)
+	}
+	form := Form{Fields: []Field{{Key: "pick", Label: "Pick", Choices: many}}}
+
+	_, out := run(t, form, "choice-00\n")
+
+	if strings.Contains(out, "choice-07") {
+		t.Errorf("a list past the readable limit was printed in full:\n%s", out)
+	}
+	if !strings.Contains(out, fmt.Sprintf("%d to choose from", len(many))) {
+		t.Errorf("the count stood in for nothing:\n%s", out)
+	}
+}
+
+func TestOneOf_ALongListSuggestsTheNearMissesInstead(t *testing.T) {
+	many := make([]string, maxListedChoices+1)
+	for i := range many {
+		many[i] = fmt.Sprintf("choice-%02d", i)
+	}
+
+	_, err := OneOf(many)("CHOICE-03x")
+	if err == nil {
+		t.Fatal("OneOf accepted a value not in the list")
+	}
+	if strings.Contains(err.Error(), "choice-01") {
+		t.Errorf("error = %q, want it not to print the whole list", err)
+	}
+
+	_, err = OneOf(many)("ice-03")
+	if err == nil {
+		t.Fatal("OneOf accepted a substring that is not a whole value")
+	}
+	if !strings.Contains(err.Error(), "choice-03") {
+		t.Errorf("error = %q, want the near miss named", err)
 	}
 }

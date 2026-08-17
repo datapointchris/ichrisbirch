@@ -49,7 +49,7 @@ func TestFlagAnswers_AnEmptyFlagIsNotAnAnswer(t *testing.T) {
 }
 
 func TestValidateAnswers_RewritesToTheCanonicalSpelling(t *testing.T) {
-	answers := prompt.Answers{"category": "chore"}
+	answers := prompt.Answers{"category": {"chore"}}
 
 	if err := validateAnswers(answers, taskCreateFields()); err != nil {
 		t.Fatalf("validateAnswers rejected a known category: %v", err)
@@ -60,7 +60,7 @@ func TestValidateAnswers_RewritesToTheCanonicalSpelling(t *testing.T) {
 }
 
 func TestValidateAnswers_RejectionNamesTheFlagAndTheAcceptedValues(t *testing.T) {
-	err := validateAnswers(prompt.Answers{"category": "chorre"}, taskCreateFields())
+	err := validateAnswers(prompt.Answers{"category": {"chorre"}}, taskCreateFields())
 
 	if err == nil {
 		t.Fatal("validateAnswers accepted a category the lookup table does not hold")
@@ -74,7 +74,7 @@ func TestValidateAnswers_RejectionNamesTheFlagAndTheAcceptedValues(t *testing.T)
 }
 
 func TestUnanswered_DropsWhatTheFlagsSupplied(t *testing.T) {
-	fields := unanswered(taskCreateFields(), prompt.Answers{"name": "Renew", "priority": "3"})
+	fields := unanswered(taskCreateFields(), prompt.Answers{"name": {"Renew"}, "priority": {"3"}})
 
 	var keys []string
 	for _, field := range fields {
@@ -87,7 +87,7 @@ func TestUnanswered_DropsWhatTheFlagsSupplied(t *testing.T) {
 }
 
 func TestMissingFlags_NamesEveryRequiredFieldNobodyAnswered(t *testing.T) {
-	missing := missingFlags(prompt.Answers{"name": "Renew"}, "name", "category")
+	missing := missingFlags(prompt.Answers{"name": {"Renew"}}, "name", "category")
 
 	if strings.Join(missing, ",") != "--category" {
 		t.Errorf("missing = %v, want just --category", missing)
@@ -139,5 +139,93 @@ func TestTasksCreate_RejectsABadCategoryBeforeReachingTheAPI(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "Chore") {
 		t.Errorf("error = %q, want it to list the accepted categories", err)
+	}
+}
+
+func TestFlagAnswers_ARepeatableFlagContributesEveryValue(t *testing.T) {
+	cmd := &cobra.Command{Use: "test"}
+	cmd.Flags().StringArray("project", nil, "")
+	if err := cmd.ParseFlags([]string{"--project", "todoui", "--project", "fleet facts"}); err != nil {
+		t.Fatalf("ParseFlags: %v", err)
+	}
+
+	got := strings.Join(flagAnswers(cmd, "project").All("project"), "|")
+
+	if got != "todoui|fleet facts" {
+		t.Errorf("project = %q, want both values in order", got)
+	}
+}
+
+func TestProjectRef_AcceptsANameCaseInsensitivelyAndAUUIDUntouched(t *testing.T) {
+	validate := projectRef([]string{"fleet facts — the measurement layer"})
+
+	name, err := validate("FLEET FACTS — THE MEASUREMENT LAYER")
+	if err != nil {
+		t.Fatalf("a known project name was rejected: %v", err)
+	}
+	if name != "fleet facts — the measurement layer" {
+		t.Errorf("name = %q, want the API's spelling", name)
+	}
+
+	id := "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+	got, err := validate(id)
+	if err != nil {
+		t.Fatalf("a project id was rejected: %v — the API resolves either", err)
+	}
+	if got != id {
+		t.Errorf("id = %q, want it passed through", got)
+	}
+}
+
+func TestProjectRef_RejectsAnUnknownName(t *testing.T) {
+	if _, err := projectRef([]string{"todoui sync"})("nope"); err == nil {
+		t.Error("an unknown project name was accepted")
+	}
+}
+
+func TestLooksLikeUUID(t *testing.T) {
+	cases := map[string]bool{
+		"3f2504e0-4f89-11d3-9a0c-0305e82c3301": true,
+		"3F2504E0-4F89-11D3-9A0C-0305E82C3301": true,
+		"3f2504e0-4f89-11d3-9a0c-0305e82c330":  false, // too short
+		"3f2504e04f8911d39a0c0305e82c3301":     false, // no dashes
+		"zf2504e0-4f89-11d3-9a0c-0305e82c3301": false, // not hex
+		"todoui":                               false,
+	}
+	for value, want := range cases {
+		if got := looksLikeUUID(value); got != want {
+			t.Errorf("looksLikeUUID(%q) = %v, want %v", value, got, want)
+		}
+	}
+}
+
+func TestItemsCreate_WithoutATerminalRefusesBeforeReachingTheAPI(t *testing.T) {
+	noInput = false
+	t.Setenv("ICB_API_BASE", "http://127.0.0.1:9") // any call here would fail loudly
+	root := NewRootCommand()
+	var out bytes.Buffer
+	root.SetOut(&out)
+	root.SetErr(&bytes.Buffer{})
+	root.SetIn(strings.NewReader(""))
+	root.SetArgs([]string{"projects", "items", "create"})
+
+	err := root.Execute()
+
+	if err == nil {
+		t.Fatal("create returned no error without a terminal")
+	}
+	if exitCodeFor(err) != 2 {
+		t.Errorf("exit code = %d, want 2 — a missing flag is a usage mistake, not an API failure", exitCodeFor(err))
+	}
+	for _, flag := range []string{"--title", "--project"} {
+		if !strings.Contains(err.Error(), flag) {
+			t.Errorf("error = %q, want it to name %s", err, flag)
+		}
+	}
+	if strings.Contains(err.Error(), "127.0.0.1") {
+		t.Errorf("error = %q, want the local refusal to come before any request", err)
+	}
+	if out.Len() != 0 {
+		t.Errorf("stdout = %q, want nothing written before the refusal", out.String())
 	}
 }

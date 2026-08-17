@@ -140,24 +140,52 @@ Notes (optional):
 ```
 
 The rejected answer comes back on the line for editing, so a typo in the fifth
-field never costs the four already typed. Tab walks the choices that match what
-has been typed; on an empty line it browses the whole list. A category is matched
-case-insensitively and stored the way the lookup table spells it.
+field never costs the four already typed. Tab walks the choices matching what has
+been typed; on an empty line it browses the whole list. A match is a substring
+with prefixes ranked first, so `ho` reaches `Home` before `Chore`, and a project
+called `Convert theme and font from bash to Go` is reached by typing `theme`. A
+value is matched case-insensitively and stored the way its source spells it.
 
 A flag already passed is never asked about, so `create --category Chore` asks for
 name, priority, and notes only. Without a terminal — a pipe, a script, or
 `--no-input` — nothing is asked and the command names the flags that would have
 answered.
 
+`icb projects items create` is the same form over fetched choices. Its 54
+projects and 82 repos are both past the point where listing helps, so it prints
+the count and leaves finding one to Tab:
+
+```text
+Project — 54 to choose from; type any part of one and Tab cycles the matches.
+Project: fleet facts — the measurement layer
+Project (another, or Enter to move on):
+Repo — 82 to choose from; type any part of one and Tab cycles the matches.
+Repo (optional): dotfiles
+Notes — one or more lines, blank line ends it:
+  > the reasoning that has to outlive the commit
+  >
+```
+
+`Project` repeats because `--project` is repeatable — Enter on an empty one moves
+on. `Notes` takes as many lines as it is given, which is where an item's
+reasoning goes. A project is accepted by name or by id, since the API resolves
+either and only the names can be offered as choices.
+
 **The pattern, for the next resource.** One `[]prompt.Field` describes the record:
-its label, whether it is optional, its default, its choices, and its validator.
-That list drives both doors — the fields nothing answered become the form, and the
-flags are run through the same validators, so a bad value reads identically
-whichever way it arrived (`standards/cli-design.md` § "One failure, one
-diagnosis, whichever door you came in"). `taskCreateFields` in
-`internal/cli/tasks.go` is the worked example; `flagAnswers`, `unanswered`,
-`missingFlags`, `validateAnswers`, and `runForm` in `internal/cli/interactive.go`
-are the shared plumbing, and none of them know anything about tasks.
+its label, whether it is optional, whether it repeats or takes prose, its default,
+its choices, and its validator. That list drives both doors — the fields nothing
+answered become the form, and the flags are run through the same validators, so a
+bad value reads identically whichever way it arrived
+(`standards/cli-design.md` § "One failure, one diagnosis, whichever door you came
+in"). `taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
+example and `itemCreateFields` in `internal/cli/items.go` is the fetched one;
+`flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers`, and `runForm` in
+`internal/cli/interactive.go` are the shared plumbing, and none of them know
+anything about tasks or items.
+
+Where the choices come from an API call, build the client first and check the
+required flags before it. A caller that cannot be asked should be told which flag
+it left out, not that the API is unreachable.
 
 `internal/prompt` imports nothing from this repo and depends only on
 `golang.org/x/term`, so copying the directory is the whole port to another

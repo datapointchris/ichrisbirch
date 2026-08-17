@@ -108,3 +108,22 @@ func TestCycler_KeepsWhatFollowsTheCursor(t *testing.T) {
 		t.Errorf("cursor at %d, want it after the completion", pos)
 	}
 }
+
+func TestCycler_FindsAPhraseByAWordInsideIt(t *testing.T) {
+	c := &cycler{choices: []string{"fleet facts", "Convert theme and font from bash to Go"}}
+
+	if got := tab(t, c, "theme"); got != "Convert theme and font from bash to Go" {
+		t.Errorf("Tab on %q = %q, want the phrase found by a word inside it", "theme", got)
+	}
+}
+
+func TestCycler_APrefixMatchComesBeforeAMerelyContainedOne(t *testing.T) {
+	c := &cycler{choices: []string{"Chore", "Home"}}
+
+	if got := tab(t, c, "ho"); got != "Home" {
+		t.Errorf("first Tab = %q, want Home — a prefix outranks a substring", got)
+	}
+	if got := tab(t, c, "Home"); got != "Chore" {
+		t.Errorf("second Tab = %q, want the substring match after it", got)
+	}
+}
