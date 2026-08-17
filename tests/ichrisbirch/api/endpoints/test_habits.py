@@ -373,6 +373,22 @@ class TestCompletedHabits:
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == expected_count
 
+    @pytest.mark.parametrize(
+        'params, expected_count',
+        [
+            ({'start_date': '2024-01-02'}, 2),
+            ({'end_date': '2024-01-02'}, 2),
+            ({}, 3),
+        ],
+    )
+    def test_read_many_completed_habits_one_bound_is_open_ended(self, txn_api_logged_in, params, expected_count):
+        """One bound narrows on its own; a half-specified range never widens to everything."""
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'habitcategories')
+        response = client.get(self.ENDPOINT, params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == expected_count
+
 
 class TestHabitsQueryParameters:
     """Test query parameter filtering on habits endpoints.

@@ -185,6 +185,25 @@ def test_completed_with_date_filter(task_crud_tester):
     assert len(response_no_match.json()) == 0, 'Expected 0 completed tasks in 2025 date range'
 
 
+def test_completed_with_one_bound_is_open_ended(task_crud_tester):
+    """One bound narrows on its own; a half-specified range never widens to everything.
+
+    The test data has one completed task with complete_date=2020-04-20.
+    """
+    client, _ = task_crud_tester
+
+    cases = [
+        ({'start_date': '2020-01-01T00:00:00'}, 1),
+        ({'start_date': '2025-01-01T00:00:00'}, 0),
+        ({'end_date': '2020-12-31T23:59:59'}, 1),
+        ({'end_date': '2019-12-31T23:59:59'}, 0),
+    ]
+    for params, expected in cases:
+        response = client.get('/tasks/completed/', params=params)
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert len(response.json()) == expected, f'{params} expected {expected} completed tasks'
+
+
 def test_completed_with_invalid_dates(task_crud_tester):
     """Test /tasks/completed/ endpoint with invalid date formats.
 

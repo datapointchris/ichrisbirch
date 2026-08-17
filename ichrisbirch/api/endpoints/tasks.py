@@ -97,20 +97,18 @@ async def completed(
     elif last:  # most recent (last) completed task
         query = query.order_by(models.Task.complete_date.desc()).limit(1)
 
-    elif start_date is None or end_date is None:  # return all if no start or end date
-        query = query.order_by(models.Task.complete_date.desc())
-
-    else:  # filtered by start and end date
-        # Explicit parsing - dates come as strings from query params
+    else:
+        # Each bound narrows on its own, so one without the other is an open-ended range.
         try:
-            start_dt = datetime.fromisoformat(start_date)
-            end_dt = datetime.fromisoformat(end_date)
+            if start_date is not None:
+                query = query.filter(models.Task.complete_date >= datetime.fromisoformat(start_date))
+            if end_date is not None:
+                query = query.filter(models.Task.complete_date <= datetime.fromisoformat(end_date))
         except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f'Invalid date format: {e}. Expected ISO format (e.g., 2020-04-01T00:00:00)',
             ) from e
-        query = query.filter(models.Task.complete_date >= start_dt, models.Task.complete_date <= end_dt)
         query = query.order_by(models.Task.complete_date.desc())
 
     return list(session.scalars(query).all())

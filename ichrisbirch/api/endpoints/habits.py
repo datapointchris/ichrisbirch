@@ -82,22 +82,18 @@ async def read_many_completed(
     elif last:  # most recent (last) completed
         query = query.order_by(models.HabitCompleted.complete_date.desc()).limit(1)
 
-    elif start_date is None or end_date is None:  # return all if no start or end date
-        query = query.order_by(models.HabitCompleted.complete_date.desc())
-
-    else:  # filtered by start and end date
+    else:
+        # Each bound narrows on its own, so one without the other is an open-ended range.
         try:
-            parsed_start = pendulum.parse(str(start_date))
-            parsed_end = pendulum.parse(str(end_date))
+            if start_date is not None:
+                query = query.filter(models.HabitCompleted.complete_date >= pendulum.parse(str(start_date)))
+            if end_date is not None:
+                query = query.filter(models.HabitCompleted.complete_date <= pendulum.parse(str(end_date)))
         except ParserError as e:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f'Invalid date format: {e}',
             ) from e
-        query = query.filter(
-            models.HabitCompleted.complete_date >= parsed_start,
-            models.HabitCompleted.complete_date <= parsed_end,
-        )
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 
     return list(session.scalars(query).all())
