@@ -81,6 +81,9 @@ markdown_extensions:
   - toc:
       permalink: true
 
+hooks:
+  - hooks/cachebust.py
+
 plugins:
   - search
   - code_sync:
