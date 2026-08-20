@@ -236,10 +236,15 @@ required flags before it. A caller that cannot be asked should be told which fla
 it left out, not that the API is unreachable.
 
 `internal/prompt` imports nothing from this repo and depends only on
-`golang.org/x/term`, so copying the directory is the whole port to another
-project. Line editing, Tab completion, and the returned-answer prefill are all
-`x/term`; there is no TUI framework underneath. Extract it to its own module —
-the `goselfupdate` pattern — when a second project wants it.
+`golang.org/x/term`. Line editing, Tab completion, and the returned-answer
+prefill are all `x/term`; there is no TUI framework underneath.
+
+It is not going anywhere, though. The fleet's other CLIs were surveyed on
+2026-08-19 and none of them wants this — see `.planning/status.md` § "Not
+Doing", which carries the survey so it is not run again. Copying the directory
+would not have been the whole port in any case: `internal/cli/interactive.go`
+is what makes the flags and the form one door, it depends on nothing in this
+repo either, and it sits in the wrong package to travel with a directory copy.
 
 ## Config (env over config file over default)
 
