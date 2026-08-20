@@ -146,8 +146,8 @@ called `Convert theme and font from bash to Go` is reached by typing `theme`. A
 value is matched case-insensitively and stored the way its source spells it.
 
 A list is laid out in as many columns as its longest entry fits into the
-terminal. A dozen one-word categories waste most of a screen stacked four wide,
-and a project whose name is a sentence wraps in that many.
+terminal. Under any fixed count, a dozen one-word categories waste most of a
+screen and a project whose name is a sentence wraps.
 
 A flag already passed is never asked about, so `create --category Chore` asks for
 name, priority, and notes only. Without a terminal — a pipe, a script, or
@@ -159,7 +159,7 @@ more projects and more repos than fit above a prompt, so neither list is printed
 unasked — the field says how many there are and Tab is what shows them:
 
 ```text
-Project — 54 to choose from; Tab lists them, or type any part of one first to narrow it.
+Project — 54 to choose from. Tab lists them; type part of one to narrow.
   + makes a new project.
 Project: ⇥
   Adjust the wooden dingo run              Blue green hardening
@@ -168,7 +168,7 @@ Project: ⇥
 Project: theme⇥
 Project: Convert theme and font from bash to Go
 Project (another, or Enter to move on):
-Repo — 82 to choose from; Tab lists them, or type any part of one first to narrow it.
+Repo — 82 to choose from. Tab lists them; type part of one to narrow.
 Repo (optional): dotfiles
 Notes — one or more lines, blank line ends it:
   > the reasoning that has to outlive the commit
@@ -194,7 +194,8 @@ on filing:
 ```text
 Project: +
 New project. Enter on an empty name goes back to picking one.
-Name: Zebra crossing overhaul
+
+Name (optional): Zebra crossing overhaul
 What the effort covers. A project without one collects the wrong items later.
 Description (optional): the crossing rebuild and everything it drags in
 Kind is one of:
@@ -207,9 +208,17 @@ Project (another, or Enter to move on):
 
 The missing project is discovered while filing an item, which is the worst
 moment to leave: quitting to run `projects create` loses the half-typed item. An
-empty name backs out and makes nothing, so a `+` pressed by mistake is not a
-Ctrl-C that abandons the item too. The repo-named-project ban runs on the name
-here exactly as it does behind `--name` — a form is not a way around it.
+empty name prints `No project made.` and goes back to `Project:`, so a `+`
+pressed by mistake is not a Ctrl-C that abandons the item too. The
+repo-named-project ban runs on the name here exactly as it does behind
+`--name` — a form is not a way around it.
+
+A project is written the moment it is made, and the item can still be abandoned
+after that. Aborting says which projects were created and kept, because an
+item-less project nobody was told about is the thing that sends the next item to
+the wrong place. A failed create re-asks with all three answers already on their
+lines, so a duplicate name or an expired token costs a keystroke rather than the
+description you were just talked into writing.
 
 This is `prompt.Escape`, and it is the general shape rather than a project
 thing: a `Trigger` answer, a `Hint` printed with the choices, and a `Run` that
@@ -225,7 +234,8 @@ fields nothing answered become the form, and the flags are run through the same
 validators, so a bad value reads identically whichever way it arrived
 (`standards/cli-design.md` § "One failure, one diagnosis, whichever door you came
 in"). The escape is the one part only the form has: `--project` still refuses a
-name that does not exist, because a flag has nobody to ask what kind it is. `taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
+name that does not exist, because a flag has nobody to ask what kind it is.
+`taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
 example and `itemCreateFields` in `internal/cli/items.go` is the fetched one;
 `flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers`, and `runForm` in
 `internal/cli/interactive.go` are the shared plumbing, and none of them know
@@ -239,12 +249,14 @@ it left out, not that the API is unreachable.
 `golang.org/x/term`. Line editing, Tab completion, and the returned-answer
 prefill are all `x/term`; there is no TUI framework underneath.
 
-It is not going anywhere, though. The fleet's other CLIs were surveyed on
-2026-08-19 and none of them wants this — see `.planning/status.md` § "Not
-Doing", which carries the survey so it is not run again. Copying the directory
-would not have been the whole port in any case: `internal/cli/interactive.go`
-is what makes the flags and the form one door, it depends on nothing in this
-repo either, and it sits in the wrong package to travel with a directory copy.
+It is staying here. There is no second consumer, and the package is not being
+extracted to a shared module.
+
+Copying the directory would not be the whole port in any case.
+`internal/cli/interactive.go` is what makes a flag and a prompt one door —
+`flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers` and `runForm`.
+It depends on nothing in this repo but `internal/prompt` itself, and it sits in
+the wrong package to travel with a copy of that directory.
 
 ## Config (env over config file over default)
 
