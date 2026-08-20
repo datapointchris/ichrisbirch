@@ -10,6 +10,24 @@ import (
 	"time"
 )
 
+// The lookup tables --difficulty, --cuisine and --meal-type accept. The API's
+// recipe_difficulty, recipe_cuisine and recipe_meal_type tables are the
+// authority and reject anything else; these are what the flag help names, so a
+// reader learns the vocabulary from the flag rather than from a rejection.
+var (
+	RecipeDifficulties = []string{"easy", "medium", "hard"}
+
+	RecipeCuisines = []string{
+		"american", "italian", "mexican", "asian",
+		"indian", "mediterranean", "french", "other",
+	}
+
+	RecipeMealTypes = []string{
+		"breakfast", "lunch", "dinner", "snack",
+		"dessert", "side", "sauce", "drink",
+	}
+)
+
 // RecipeIngredient mirrors an ingredient row on a recipe. scaled_quantity is
 // populated only when the recipe was fetched with a servings override.
 type RecipeIngredient struct {
