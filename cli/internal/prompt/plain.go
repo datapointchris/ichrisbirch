@@ -26,12 +26,17 @@ func (s *PlainSession) Write(p []byte) (int, error) { return s.out.Write(p) }
 // Completes reports that Tab does nothing here.
 func (s *PlainSession) Completes() bool { return false }
 
+// Width is the terminal width a stream does not have. Eighty is what every tool
+// falls back to and what a captured transcript is read at.
+func (s *PlainSession) Width() int { return 80 }
+
 // ReadLine writes the label and reads one line. A stream cannot be edited, so
 // the seed is shown in the prompt rather than placed on the line — the value
 // being corrected is still in front of the reader either way.
-func (s *PlainSession) ReadLine(label, seed string, _ []string) (string, error) {
-	if seed != "" {
-		label = fmt.Sprintf("%s(was %q) ", label, seed)
+func (s *PlainSession) ReadLine(q Question) (string, error) {
+	label := q.Label
+	if q.Seed != "" {
+		label = fmt.Sprintf("%s(was %q) ", label, q.Seed)
 	}
 	_, _ = fmt.Fprint(s.out, label)
 	line, err := s.in.ReadString('\n')

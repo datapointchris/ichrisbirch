@@ -134,7 +134,7 @@ func newHabitsCreateCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Habit name (required)")
-	cmd.Flags().IntVar(&category, "category", 0, "Category id (required)")
+	cmd.Flags().IntVar(&category, "category", 0, "Category id (required) — icb habits categories prints them")
 	cmd.Flags().BoolVar(&isCurrent, "is-current", true, "Whether the habit is currently tracked")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created habit as JSON to stdout")
 	return cmd
@@ -188,7 +188,7 @@ func newHabitsEditCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "New habit name")
-	cmd.Flags().IntVar(&category, "category", 0, "New category id")
+	cmd.Flags().IntVar(&category, "category", 0, "New category id — icb habits categories prints them")
 	cmd.Flags().BoolVar(&isCurrent, "is-current", true, "Set current-tracking status")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated habit as JSON to stdout")
 	return cmd

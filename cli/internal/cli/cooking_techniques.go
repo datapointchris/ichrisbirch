@@ -53,7 +53,7 @@ func newCookingTechniquesListCommand() *cobra.Command {
 			})
 		},
 	}
-	cmd.Flags().StringVar(&category, "category", "", "Filter by category")
+	cmd.Flags().StringVar(&category, "category", "", "Filter by category — icb cooking-techniques categories prints them")
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output techniques as JSON to stdout")
 	return cmd
@@ -318,7 +318,7 @@ func newCookingTechniquesDeleteCommand() *cobra.Command {
 // two commands stay in lockstep.
 func addTechniqueContentFlags(cmd *cobra.Command, name, category, summary, body, whyItWorks, commonPitfalls, sourceURL, sourceName *string, tags *[]string, rating *int) {
 	cmd.Flags().StringVar(name, "name", "", "Technique name")
-	cmd.Flags().StringVar(category, "category", "", "Category (one of the 9 fixed categories)")
+	cmd.Flags().StringVar(category, "category", "", "Category — icb cooking-techniques categories prints them")
 	cmd.Flags().StringVar(summary, "summary", "", "One-paragraph summary")
 	cmd.Flags().StringVar(body, "body", "", "Full markdown body")
 	cmd.Flags().StringVar(whyItWorks, "why-it-works", "", "Why-it-works explanation")

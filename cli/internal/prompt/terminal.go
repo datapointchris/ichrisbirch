@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -57,12 +58,30 @@ func (s *TerminalSession) Write(p []byte) (int, error) { return s.terminal.Write
 // Completes reports that Tab works here.
 func (s *TerminalSession) Completes() bool { return true }
 
-// ReadLine asks one question, with seed already on the line and Tab cycling
-// choices.
-func (s *TerminalSession) ReadLine(label, seed string, choices []string) (string, error) {
-	s.terminal.SetPrompt(label)
-	s.terminal.AutoCompleteCallback = (&cycler{choices: choices}).complete
-	s.input.seed(seed)
+// Width is the terminal's current width, re-read each time because a pane can
+// be resized part-way through a form. Eighty is the fallback x/term itself uses.
+func (s *TerminalSession) Width() int {
+	if width, _, err := term.GetSize(s.fd); err == nil && width > 0 {
+		return width
+	}
+	return 80
+}
+
+// ReadLine asks one question, with the seed already on the line and Tab
+// completing the choices.
+func (s *TerminalSession) ReadLine(q Question) (string, error) {
+	s.terminal.SetPrompt(q.Label)
+	completer := &cycler{choices: q.Choices}
+	// A list short enough to print unasked is on the screen already, and
+	// reprinting it under the prompt is noise. A list too long for that was
+	// never shown at all, which leaves Tab as the only way to find out what is
+	// in it — and walking 54 projects one keypress at a time is not finding
+	// out. The form decides which of those this field is.
+	if q.ListChoices {
+		completer.session = s
+	}
+	s.terminal.AutoCompleteCallback = completer.complete
+	s.input.seed(q.Seed)
 	return s.terminal.ReadLine()
 }
 
@@ -93,12 +112,18 @@ func (r *seedReader) Read(p []byte) (int, error) {
 // Cycling beats completing to the common prefix for a closed vocabulary of a
 // dozen short words: Tab on an empty line browses the whole list, which is the
 // case a prefix completer answers with nothing at all.
+//
+// Where session is set the first Tab on a given base prints the matches instead
+// of walking them, the way a shell does. That is for a list the field never got
+// to introduce — see [Question.ListChoices].
 type cycler struct {
 	choices []string
+	session Session
 	base    string
 	last    string
 	index   int
 	active  bool
+	listed  bool
 }
 
 // complete is an x/term AutoCompleteCallback. Any key other than Tab ends the
@@ -114,16 +139,47 @@ func (c *cycler) complete(line string, pos int, key rune) (string, int, bool) {
 		c.base = typed
 		c.index = 0
 		c.active = true
+		c.listed = false
 	}
 	matches := matching(c.choices, c.base)
 	if len(matches) == 0 {
 		c.active = false
 		return "", 0, false
 	}
+	// One match is not a list, so printing it and making the reader press Tab
+	// again to accept it is a step that buys nothing.
+	if c.session != nil && !c.listed && len(matches) > 1 {
+		c.listed = true
+		// The line is left exactly as it was, so record that rather than a
+		// completion — otherwise the next Tab reads it as newly typed and lists
+		// again forever instead of starting the walk.
+		c.last = typed
+		c.list(matches)
+		return "", 0, false
+	}
 	completed := matches[c.index%len(matches)]
 	c.index++
 	c.last = completed
 	return completed + line[pos:], len(completed), true
+}
+
+// list prints the matches above the prompt, in one Write.
+//
+// One Write, because [TerminalSession.Write] erases the prompt line, writes,
+// and repaints the prompt — so every call is a repaint. Handing it a tabwriter
+// directly costs one per cell and per pad, which measured 123 for 54 choices.
+// A repaint against a row that already fills the terminal wraps, and the
+// wrapped remnant survives the next chunk's erase, so the listing came back
+// with fragments of the prompt sewn through it. Buffering makes it one repaint
+// against text the terminal has entirely.
+//
+// The width is read here rather than when the read began. A pane resized while
+// the prompt was up would otherwise lay the listing out to the width it had
+// before the question was asked.
+func (c *cycler) list(matches []string) {
+	var listing bytes.Buffer
+	writeColumns(&listing, c.session.Width(), matches)
+	_, _ = c.session.Write(listing.Bytes())
 }
 
 // matching returns the choices containing typed, case-insensitively, with the

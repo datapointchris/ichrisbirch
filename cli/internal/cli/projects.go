@@ -289,7 +289,7 @@ func newProjectsCreateCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Project name (required)")
 	cmd.Flags().StringVar(&description, "description", "", "Project description")
-	cmd.Flags().StringVar(&kind, "kind", "", "What sort of work this is: build, chore, life (default build)")
+	cmd.Flags().StringVar(&kind, "kind", "", "What sort of work this is: "+strings.Join(api.ProjectKinds, ", ")+" (default "+api.ProjectKindBuild+")")
 	cmd.Flags().IntVar(&position, "position", 0, "Sort position among projects")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created project as JSON to stdout")
 	return cmd
@@ -350,7 +350,7 @@ func newProjectsEditCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "New project name")
 	cmd.Flags().StringVar(&description, "description", "", "New project description")
-	cmd.Flags().StringVar(&kind, "kind", "", "New kind: build, chore, life")
+	cmd.Flags().StringVar(&kind, "kind", "", "New kind: "+strings.Join(api.ProjectKinds, ", "))
 	cmd.Flags().IntVar(&position, "position", 0, "New sort position")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated project as JSON to stdout")
 	return cmd

@@ -154,6 +154,22 @@ const (
 // escape hatch.
 var ProjectStatuses = []string{ProjectStatusActive, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll}
 
+// What sort of work a project is. `kind` separates making something new from
+// the work that merely has to happen, which is what lets `items next` weight a
+// build differently from a chore.
+//
+// The API's project_kinds table is the authority and rejects anything else.
+// These are here so the flag help, the guided form, and its default all read
+// one list.
+const (
+	ProjectKindBuild = "build"
+	ProjectKindChore = "chore"
+	ProjectKindLife  = "life"
+)
+
+// ProjectKinds is what --kind accepts, in the order the form offers them.
+var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
+
 // ListProjectItems returns a project's items in order (GET /projects/{id}/items/),
 // narrowed to one derived status. It takes the same vocabulary as ListItems
 // because scoping to a project picks which rows come back and not which states.

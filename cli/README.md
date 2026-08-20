@@ -127,9 +127,8 @@ Creating a task. Ctrl-C to abandon it.
 
 Name: Renew registration
 Category is one of:
-  Automotive  Chore     Computer  Dingo
-  Financial   Home      Kitchen   Learn
-  Personal    Purchase  Research  Work
+  Automotive  Chore  Computer  Dingo     Financial  Home
+  Kitchen     Learn  Personal  Purchase  Research   Work
   Tab cycles the matches.
 Category: chorre
   unknown value "chorre" — one of: Automotive, Chore, Computer, ...
@@ -141,43 +140,102 @@ Notes (optional):
 
 The rejected answer comes back on the line for editing, so a typo in the fifth
 field never costs the four already typed. Tab walks the choices matching what has
-been typed; on an empty line it browses the whole list. A match is a substring
+been typed; on an empty line it walks the whole list. A match is a substring
 with prefixes ranked first, so `ho` reaches `Home` before `Chore`, and a project
 called `Convert theme and font from bash to Go` is reached by typing `theme`. A
 value is matched case-insensitively and stored the way its source spells it.
+
+A list is laid out in as many columns as its longest entry fits into the
+terminal. Under any fixed count, a dozen one-word categories waste most of a
+screen and a project whose name is a sentence wraps.
 
 A flag already passed is never asked about, so `create --category Chore` asks for
 name, priority, and notes only. Without a terminal — a pipe, a script, or
 `--no-input` — nothing is asked and the command names the flags that would have
 answered.
 
-`icb projects items create` is the same form over fetched choices. Its 54
-projects and 82 repos are both past the point where listing helps, so it prints
-the count and leaves finding one to Tab:
+`icb projects items create` is the same form over fetched choices. There are
+more projects and more repos than fit above a prompt, so neither list is printed
+unasked — the field says how many there are and Tab is what shows them:
 
 ```text
-Project — 54 to choose from; type any part of one and Tab cycles the matches.
-Project: fleet facts — the measurement layer
+Project — 54 to choose from. Tab lists them; type part of one to narrow.
+  + makes a new project.
+Project: ⇥
+  Adjust the wooden dingo run              Blue green hardening
+  Convert theme and font from bash to Go   fleet facts — the measurement layer
+  ⋮
+Project: theme⇥
+Project: Convert theme and font from bash to Go
 Project (another, or Enter to move on):
-Repo — 82 to choose from; type any part of one and Tab cycles the matches.
+Repo — 82 to choose from. Tab lists them; type part of one to narrow.
 Repo (optional): dotfiles
 Notes — one or more lines, blank line ends it:
   > the reasoning that has to outlive the commit
   >
 ```
 
+The first Tab on what is typed prints the matches; the next presses walk them
+one at a time. That is the shell's habit and it is the only way to read a list
+this long — cycling it a keypress at a time shows one project per press and
+never the shape of the whole. A short vocabulary is already printed above the
+prompt, so there Tab walks from the first press. `maxListedChoices` decides
+both: what the field could not introduce is what Tab introduces.
+
 `Project` repeats because `--project` is repeatable — Enter on an empty one moves
 on. `Notes` takes as many lines as it is given, which is where an item's
 reasoning goes. A project is accepted by name or by id, since the API resolves
 either and only the names can be offered as choices.
 
+**Making the missing project without losing the item.** Answering `Project` with
+`+` asks for a name, a description and a kind, creates the project, and carries
+on filing:
+
+```text
+Project: +
+New project. Enter on an empty name goes back to picking one.
+
+Name (optional): Zebra crossing overhaul
+What the effort covers. A project without one collects the wrong items later.
+Description (optional): the crossing rebuild and everything it drags in
+Kind is one of:
+  build  chore  life
+  Tab cycles the matches.
+Kind [build]: build
+  Created project "Zebra crossing overhaul".
+Project (another, or Enter to move on):
+```
+
+The missing project is discovered while filing an item, which is the worst
+moment to leave: quitting to run `projects create` loses the half-typed item. An
+empty name prints `No project made.` and goes back to `Project:`, so a `+`
+pressed by mistake is not a Ctrl-C that abandons the item too. The
+repo-named-project ban runs on the name here exactly as it does behind
+`--name` — a form is not a way around it.
+
+A project is written the moment it is made, and the item can still be abandoned
+after that. Aborting says which projects were created and kept, because an
+item-less project nobody was told about is the thing that sends the next item to
+the wrong place. A failed create re-asks with all three answers already on their
+lines, so a duplicate name or an expired token costs a keystroke rather than the
+description you were just talked into writing.
+
+This is `prompt.Escape`, and it is the general shape rather than a project
+thing: a `Trigger` answer, a `Hint` printed with the choices, and a `Run` that
+makes the value. What `Run` returns is the answer unvalidated, joins the field's
+choices for the next repeat, and is accepted case-insensitively if it is typed
+again — the escape made the value, so it is the authority on it, and a validator
+built before it existed has nothing to say.
+
 **The pattern, for the next resource.** One `[]prompt.Field` describes the record:
 its label, whether it is optional, whether it repeats or takes prose, its default,
-its choices, and its validator. That list drives both doors — the fields nothing
-answered become the form, and the flags are run through the same validators, so a
-bad value reads identically whichever way it arrived
+its choices, its validator, and its escape. That list drives both doors — the
+fields nothing answered become the form, and the flags are run through the same
+validators, so a bad value reads identically whichever way it arrived
 (`standards/cli-design.md` § "One failure, one diagnosis, whichever door you came
-in"). `taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
+in"). The escape is the one part only the form has: `--project` still refuses a
+name that does not exist, because a flag has nobody to ask what kind it is.
+`taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
 example and `itemCreateFields` in `internal/cli/items.go` is the fetched one;
 `flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers`, and `runForm` in
 `internal/cli/interactive.go` are the shared plumbing, and none of them know
@@ -188,10 +246,17 @@ required flags before it. A caller that cannot be asked should be told which fla
 it left out, not that the API is unreachable.
 
 `internal/prompt` imports nothing from this repo and depends only on
-`golang.org/x/term`, so copying the directory is the whole port to another
-project. Line editing, Tab completion, and the returned-answer prefill are all
-`x/term`; there is no TUI framework underneath. Extract it to its own module —
-the `goselfupdate` pattern — when a second project wants it.
+`golang.org/x/term`. Line editing, Tab completion, and the returned-answer
+prefill are all `x/term`; there is no TUI framework underneath.
+
+It is staying here. There is no second consumer, and the package is not being
+extracted to a shared module.
+
+Copying the directory would not be the whole port in any case.
+`internal/cli/interactive.go` is what makes a flag and a prompt one door —
+`flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers` and `runForm`.
+It depends on nothing in this repo but `internal/prompt` itself, and it sits in
+the wrong package to travel with a copy of that directory.
 
 ## Config (env over config file over default)
 
