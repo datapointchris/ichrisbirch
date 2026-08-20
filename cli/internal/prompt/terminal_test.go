@@ -111,10 +111,38 @@ func TestCycler_KeepsWhatFollowsTheCursor(t *testing.T) {
 	}
 }
 
-// listing drives a cycler that prints, and returns everything it printed.
-func listing(choices []string) (*cycler, *bytes.Buffer) {
-	var out bytes.Buffer
-	return &cycler{choices: choices, out: &out, width: 80}, &out
+// fakeSession is a [Session] that counts the calls its Write took.
+//
+// The count is the point. TerminalSession.Write erases the prompt line, writes,
+// and repaints the prompt, so every call is a repaint and a listing that
+// arrives in pieces is a listing sewn through with fragments of the prompt. A
+// bytes.Buffer cannot see that, which is how the fault got shipped: a plain
+// append behaves identically at one Write and at 123.
+type fakeSession struct {
+	bytes.Buffer
+	writes int
+	width  int
+}
+
+func (s *fakeSession) Write(p []byte) (int, error) {
+	s.writes++
+	return s.Buffer.Write(p)
+}
+
+func (s *fakeSession) ReadLine(Question) (string, error) { return "", io.EOF }
+func (s *fakeSession) Completes() bool                   { return true }
+
+func (s *fakeSession) Width() int {
+	if s.width > 0 {
+		return s.width
+	}
+	return 80
+}
+
+// listing drives a cycler that prints, and returns the session it printed to.
+func listing(choices []string) (*cycler, *fakeSession) {
+	session := &fakeSession{}
+	return &cycler{choices: choices, session: session}, session
 }
 
 func TestCycler_TabOnAnEmptyLinePrintsEveryChoice(t *testing.T) {
@@ -151,8 +179,41 @@ func TestCycler_ListsOnlyWhatMatchesWhatIsTyped(t *testing.T) {
 
 	c.complete("c", 1, '\t')
 
+	// Both halves, because the absence alone is satisfied by a listing that
+	// never happened — which is exactly what this test used to allow.
+	for _, want := range []string{"Chore", "Computer"} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("match %q was not listed:\n%s", want, out.String())
+		}
+	}
 	if strings.Contains(out.String(), "Dingo") {
-		t.Errorf("a choice that does not match was listed:\n%s", out)
+		t.Errorf("a choice that does not match was listed:\n%s", out.String())
+	}
+}
+
+func TestCycler_TheListingArrivesInOneWrite(t *testing.T) {
+	choices := make([]string, 54)
+	for i := range choices {
+		choices[i] = fmt.Sprintf("project number %02d in the list", i)
+	}
+	c, out := listing(choices)
+
+	c.complete("", 0, '\t')
+
+	if out.writes != 1 {
+		t.Errorf("the listing took %d writes, want 1 — every one repaints the prompt on a real terminal", out.writes)
+	}
+}
+
+func TestCycler_TheListingIsLaidOutToTheWidthAtTheTimeItPrints(t *testing.T) {
+	c, out := listing([]string{"alpha", "bravo", "charlie", "delta"})
+	// The pane narrows while the prompt is up, after the read began.
+	out.width = 12
+
+	c.complete("", 0, '\t')
+
+	if got := strings.Count(strings.TrimRight(out.String(), "\n"), "\n") + 1; got != 4 {
+		t.Errorf("%d rows, want 4 — the listing used a width the pane no longer has:\n%s", got, out.String())
 	}
 }
 
@@ -183,7 +244,7 @@ func TestCycler_TypingAfterAListingListsTheNarrowedMatches(t *testing.T) {
 	}
 }
 
-func TestCycler_WithoutAWriterTabWalksFromTheFirstPress(t *testing.T) {
+func TestCycler_WithoutASessionTabWalksFromTheFirstPress(t *testing.T) {
 	c := &cycler{choices: []string{"Chore", "Computer"}}
 
 	if got := tab(t, c, ""); got != "Chore" {
@@ -191,16 +252,16 @@ func TestCycler_WithoutAWriterTabWalksFromTheFirstPress(t *testing.T) {
 	}
 }
 
-func TestListsOnTab_OnlyWhereTheChoicesWereTooManyToPrintUnasked(t *testing.T) {
+func TestTooManyToList_IsWhereTheFieldStopsPrintingItsChoicesUnasked(t *testing.T) {
 	short := make([]string, maxListedChoices)
 	for i := range short {
 		short[i] = fmt.Sprintf("choice-%02d", i)
 	}
 
-	if listsOnTab(short) {
+	if tooManyToList(short) {
 		t.Error("a list already printed above the prompt would be printed again under it")
 	}
-	if !listsOnTab(append(short, "one more")) {
+	if !tooManyToList(append(short, "one more")) {
 		t.Error("a list the field never showed has no other way to be seen")
 	}
 }

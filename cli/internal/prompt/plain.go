@@ -33,9 +33,10 @@ func (s *PlainSession) Width() int { return 80 }
 // ReadLine writes the label and reads one line. A stream cannot be edited, so
 // the seed is shown in the prompt rather than placed on the line — the value
 // being corrected is still in front of the reader either way.
-func (s *PlainSession) ReadLine(label, seed string, _ []string) (string, error) {
-	if seed != "" {
-		label = fmt.Sprintf("%s(was %q) ", label, seed)
+func (s *PlainSession) ReadLine(q Question) (string, error) {
+	label := q.Label
+	if q.Seed != "" {
+		label = fmt.Sprintf("%s(was %q) ", label, q.Seed)
 	}
 	_, _ = fmt.Fprint(s.out, label)
 	line, err := s.in.ReadString('\n')

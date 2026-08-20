@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -66,29 +67,23 @@ func (s *TerminalSession) Width() int {
 	return 80
 }
 
-// ReadLine asks one question, with seed already on the line and Tab completing
-// choices.
-func (s *TerminalSession) ReadLine(label, seed string, choices []string) (string, error) {
-	s.terminal.SetPrompt(label)
-	completer := &cycler{choices: choices, width: s.Width()}
-	if listsOnTab(choices) {
-		completer.out = s
+// ReadLine asks one question, with the seed already on the line and Tab
+// completing the choices.
+func (s *TerminalSession) ReadLine(q Question) (string, error) {
+	s.terminal.SetPrompt(q.Label)
+	completer := &cycler{choices: q.Choices}
+	// A list short enough to print unasked is on the screen already, and
+	// reprinting it under the prompt is noise. A list too long for that was
+	// never shown at all, which leaves Tab as the only way to find out what is
+	// in it — and walking 54 projects one keypress at a time is not finding
+	// out. The form decides which of those this field is.
+	if q.ListChoices {
+		completer.session = s
 	}
 	s.terminal.AutoCompleteCallback = completer.complete
-	s.input.seed(seed)
+	s.input.seed(q.Seed)
 	return s.terminal.ReadLine()
 }
-
-// listsOnTab reports whether Tab should print the matches before it starts
-// walking them.
-//
-// It is the same question maxListedChoices already answers once: a list short
-// enough to print unasked is on the screen already, and reprinting it under the
-// prompt is noise. A list too long for that never got shown at all, which
-// leaves Tab as the only way to find out what is in it — and cycling 54
-// projects one keypress at a time is not finding out. So the field that could
-// not introduce itself is the field where Tab lists.
-func listsOnTab(choices []string) bool { return len(choices) > maxListedChoices }
 
 // seedReader hands the terminal a string as though it had been typed, then goes
 // back to reading the keyboard.
@@ -118,13 +113,12 @@ func (r *seedReader) Read(p []byte) (int, error) {
 // dozen short words: Tab on an empty line browses the whole list, which is the
 // case a prefix completer answers with nothing at all.
 //
-// Where out is set the first Tab on a given base prints the matches instead of
-// walking them, the way a shell does. That is for a list the field never got to
-// introduce — see listsOnTab.
+// Where session is set the first Tab on a given base prints the matches instead
+// of walking them, the way a shell does. That is for a list the field never got
+// to introduce — see [Question.ListChoices].
 type cycler struct {
 	choices []string
-	out     io.Writer
-	width   int
+	session Session
 	base    string
 	last    string
 	index   int
@@ -154,19 +148,38 @@ func (c *cycler) complete(line string, pos int, key rune) (string, int, bool) {
 	}
 	// One match is not a list, so printing it and making the reader press Tab
 	// again to accept it is a step that buys nothing.
-	if c.out != nil && !c.listed && len(matches) > 1 {
+	if c.session != nil && !c.listed && len(matches) > 1 {
 		c.listed = true
 		// The line is left exactly as it was, so record that rather than a
 		// completion — otherwise the next Tab reads it as newly typed and lists
 		// again forever instead of starting the walk.
 		c.last = typed
-		writeColumns(c.out, c.width, matches)
+		c.list(matches)
 		return "", 0, false
 	}
 	completed := matches[c.index%len(matches)]
 	c.index++
 	c.last = completed
 	return completed + line[pos:], len(completed), true
+}
+
+// list prints the matches above the prompt, in one Write.
+//
+// One Write, because [TerminalSession.Write] erases the prompt line, writes,
+// and repaints the prompt — so every call is a repaint. Handing it a tabwriter
+// directly costs one per cell and per pad, which measured 123 for 54 choices.
+// A repaint against a row that already fills the terminal wraps, and the
+// wrapped remnant survives the next chunk's erase, so the listing came back
+// with fragments of the prompt sewn through it. Buffering makes it one repaint
+// against text the terminal has entirely.
+//
+// The width is read here rather than when the read began. A pane resized while
+// the prompt was up would otherwise lay the listing out to the width it had
+// before the question was asked.
+func (c *cycler) list(matches []string) {
+	var listing bytes.Buffer
+	writeColumns(&listing, c.session.Width(), matches)
+	_, _ = c.session.Write(listing.Bytes())
 }
 
 // matching returns the choices containing typed, case-insensitively, with the

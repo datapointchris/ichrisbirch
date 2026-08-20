@@ -19,9 +19,9 @@ type recordingSession struct {
 	offered [][]string
 }
 
-func (s *recordingSession) ReadLine(label, seed string, choices []string) (string, error) {
-	s.offered = append(s.offered, choices)
-	return s.PlainSession.ReadLine(label, seed, choices)
+func (s *recordingSession) ReadLine(q Question) (string, error) {
+	s.offered = append(s.offered, q.Choices)
+	return s.PlainSession.ReadLine(q)
 }
 
 // run drives a form with typed lines and returns the answers plus everything the
@@ -340,6 +340,29 @@ func TestForm_AValueTheEscapeMadeIsNotPutToTheValidator(t *testing.T) {
 	}
 	if strings.Contains(out, "unknown value") {
 		t.Errorf("the field rejected a choice it was offering:\n%s", out)
+	}
+}
+
+func TestForm_RunningOneFormTwiceDoesNotCarryTheFirstRunsEscapeOver(t *testing.T) {
+	form := escapeForm(func(Session) (string, error) { return "Brand new", nil })
+
+	if _, err := form.Run(NewPlainSession(strings.NewReader("+\n\n"), io.Discard)); err != nil {
+		t.Fatalf("first Run: %v", err)
+	}
+	session := &recordingSession{PlainSession: NewPlainSession(strings.NewReader("brand NEW\nChore\n\n"), io.Discard)}
+	answers, err := form.Run(session)
+	if err != nil {
+		t.Fatalf("second Run: %v", err)
+	}
+
+	// askValue takes a *Field so runEscape can grow Choices and made. What keeps
+	// that mutation inside one run is Form.Run's range copy and ask's value
+	// parameter — a convention the type-checker no longer enforces.
+	if slices.Contains(session.offered[0], "Brand new") {
+		t.Errorf("the second run offered %v, want the first run's escape forgotten", session.offered[0])
+	}
+	if strings.Join(answers.All("project"), ",") != "Chore" {
+		t.Errorf("project = %v, want the first run's made value refused by the validator", answers.All("project"))
 	}
 }
 

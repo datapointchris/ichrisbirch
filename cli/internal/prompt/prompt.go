@@ -25,11 +25,9 @@ import (
 type Session interface {
 	io.Writer
 
-	// ReadLine writes label and returns the line typed after it. seed is placed
-	// in the editable buffer before the first keystroke, which is how a rejected
-	// answer comes back for correction rather than being retyped. choices, when
-	// non-empty, complete on Tab. A canceled read returns io.EOF.
-	ReadLine(label, seed string, choices []string) (string, error)
+	// ReadLine asks one [Question] and returns the line typed after it. A
+	// canceled read returns io.EOF.
+	ReadLine(Question) (string, error)
 
 	// Completes reports whether ReadLine honors choices, so a form only
 	// advertises Tab where pressing it does something.
@@ -39,6 +37,29 @@ type Session interface {
 	// name is a phrase rather than a word, so a fixed column count either wraps
 	// the long lists or wastes the screen on the short ones.
 	Width() int
+}
+
+// Question is one ask: what to print, what to put on the line, and what Tab
+// does about the choices.
+type Question struct {
+	// Label is the text the answer is typed after.
+	Label string
+
+	// Seed goes in the editable buffer before the first keystroke, which is how
+	// a rejected answer comes back for correction rather than being retyped.
+	Seed string
+
+	// Choices complete on Tab when non-empty.
+	Choices []string
+
+	// ListChoices asks Tab to print the matches before it starts walking them.
+	//
+	// The form settles this once, before the first ask, because it is a fact
+	// about how the field introduced itself rather than about how many choices
+	// it currently holds. An [Escape] grows Choices mid-form, and a field that
+	// printed its list up front must not start reprinting it because the count
+	// crossed a threshold between two answers.
+	ListChoices bool
 }
 
 // Field is one question in a form.
@@ -88,6 +109,10 @@ type Field struct {
 	// made is what Escape has produced so far, which Validate is not asked
 	// about — see escaped.
 	made []string
+
+	// listChoices is settled once in ask and carried to every Question the
+	// field asks — see [Question.ListChoices].
+	listChoices bool
 }
 
 // Escape turns a field's dead end into a way forward: the answer the choices
@@ -200,6 +225,10 @@ func (f Form) Run(s Session) (Answers, error) {
 		_, _ = fmt.Fprintf(s, "%s\n\n", f.Intro)
 	}
 	answers := Answers{}
+	// By value, and ask takes it by value too. That is what keeps an Escape's
+	// mutation of Choices and made inside the run that made it, so a Form value
+	// can be run twice. TestForm_RunningOneFormTwiceDoesNotCarryTheFirstRunsEscapeOver
+	// is what holds it.
 	for _, field := range f.Fields {
 		values, err := ask(s, field)
 		if err != nil {
@@ -225,6 +254,9 @@ func ask(s Session, field Field) ([]string, error) {
 	if field.Escape != nil && field.Escape.Hint != "" {
 		_, _ = fmt.Fprintf(s, "  %s\n", field.Escape.Hint)
 	}
+	// Settled here, ahead of every answer, so an Escape growing Choices cannot
+	// change what Tab does half way through the field.
+	field.listChoices = tooManyToList(field.Choices)
 	if field.Multiline {
 		return askProse(s, field)
 	}
@@ -258,7 +290,12 @@ func ask(s Session, field Field) ([]string, error) {
 func askValue(s Session, field *Field, collected int) (string, error) {
 	seed := ""
 	for {
-		answer, err := s.ReadLine(field.prompt(collected), seed, field.Choices)
+		answer, err := s.ReadLine(Question{
+			Label:       field.prompt(collected),
+			Seed:        seed,
+			Choices:     field.Choices,
+			ListChoices: field.listChoices,
+		})
 		if err != nil {
 			return "", err
 		}
@@ -333,7 +370,7 @@ func askProse(s Session, field Field) ([]string, error) {
 		_, _ = fmt.Fprintf(s, "%s — one or more lines, blank line ends it:\n", field.Label)
 		var lines []string
 		for {
-			line, err := s.ReadLine(proseGutter, "", nil)
+			line, err := s.ReadLine(Question{Label: proseGutter})
 			if err != nil {
 				return nil, err
 			}
@@ -357,8 +394,12 @@ func askProse(s Session, field Field) ([]string, error) {
 // repo names unasked is the wall of text this form exists to replace.
 //
 // It is also what decides whether Tab lists: what the field could not show up
-// front is what Tab is there to show. See listsOnTab in terminal.go.
+// front is what Tab is there to show. See tooManyToList.
 const maxListedChoices = 24
+
+// tooManyToList reports that a list is past the point of printing unasked, which
+// is the same fact as Tab being the only way to see it.
+func tooManyToList(choices []string) bool { return len(choices) > maxListedChoices }
 
 // choiceIndent sets a listing in from the prompts around it.
 const choiceIndent = "  "
@@ -368,7 +409,7 @@ const choiceGap = 2
 
 // writeChoices says what the field accepts, above the first ask.
 func writeChoices(s Session, field Field) {
-	if len(field.Choices) > maxListedChoices {
+	if tooManyToList(field.Choices) {
 		writeChoiceCount(s, field)
 		return
 	}
@@ -383,7 +424,10 @@ func writeChoices(s Session, field Field) {
 // reaches those choices, so a session without it gets the count and nothing else.
 func writeChoiceCount(s Session, field Field) {
 	if s.Completes() {
-		_, _ = fmt.Fprintf(s, "%s — %d to choose from; Tab lists them, or type any part of one first to narrow it.\n",
+		// Kept inside 80 columns: it prints directly above the prompt, and a
+		// field whose introduction wraps to two lines is a poor advertisement
+		// for a change about fitting output to the width.
+		_, _ = fmt.Fprintf(s, "%s — %d to choose from. Tab lists them; type part of one to narrow.\n",
 			field.Label, len(field.Choices))
 		return
 	}
@@ -395,8 +439,12 @@ func writeChoiceCount(s Session, field Field) {
 //
 // The column count is measured rather than fixed because the two kinds of
 // vocabulary are nothing alike: a dozen one-word categories waste most of a
-// screen in four columns, and a project called "Convert theme and font from
-// bash to Go" wraps in them.
+// screen under a fixed count, and a project called "Convert theme and font
+// from bash to Go" wraps under the same one.
+//
+// The last cell on a row carries no trailing tab. tabwriter pads every celled
+// column to its widest entry, so a trailing one spends real columns on the
+// right margin — which is where a row stops fitting.
 func writeColumns(w io.Writer, width int, choices []string) {
 	longest := 0
 	for _, choice := range choices {
@@ -410,13 +458,11 @@ func writeColumns(w io.Writer, width int, choices []string) {
 		if i%columns == 0 {
 			_, _ = fmt.Fprint(tw, choiceIndent)
 		}
-		_, _ = fmt.Fprintf(tw, "%s\t", choice)
-		if (i+1)%columns == 0 {
-			_, _ = fmt.Fprintln(tw)
+		if (i+1)%columns == 0 || i == len(choices)-1 {
+			_, _ = fmt.Fprintln(tw, choice)
+			continue
 		}
-	}
-	if len(choices)%columns != 0 {
-		_, _ = fmt.Fprintln(tw)
+		_, _ = fmt.Fprintf(tw, "%s\t", choice)
 	}
 	_ = tw.Flush()
 }
