@@ -283,7 +283,7 @@ func newTasksEditCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "New task name")
 	cmd.Flags().StringVar(&notes, "notes", "", "New markdown notes")
-	cmd.Flags().StringVar(&category, "category", "", "New category")
+	cmd.Flags().StringVar(&category, "category", "", "New category, one of: "+strings.Join(api.TaskCategories, ", "))
 	cmd.Flags().IntVar(&priority, "priority", 1, "New priority rank")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated task as JSON to stdout")
 	return cmd
