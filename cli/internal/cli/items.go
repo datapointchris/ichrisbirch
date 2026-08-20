@@ -414,7 +414,7 @@ func newItemsShowCommand() *cobra.Command {
 // The choices are fetched rather than declared, because a project list and a
 // repo registry both change without this file changing. That is also why the
 // client is built before the form rather than after it.
-func itemCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field, error) {
+func itemCreateFields(ctx context.Context, client *api.Client, made *createdProjects) ([]prompt.Field, error) {
 	projects, err := client.ListProjects(ctx, nil, "")
 	if err != nil {
 		return nil, err
@@ -442,7 +442,11 @@ func itemCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field, 
 				Trigger: newProjectTrigger,
 				Hint:    newProjectTrigger + " makes a new project.",
 				Run: func(session prompt.Session) (string, error) {
-					return createProjectFromForm(ctx, client, session)
+					name, err := createProjectFromForm(ctx, client, session)
+					if name != "" {
+						made.add(name)
+					}
+					return name, err
 				},
 			},
 		},
@@ -463,6 +467,26 @@ func itemCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field, 
 // called "+".
 const newProjectTrigger = "+"
 
+// createdProjects is what the Project field's escape committed during a form.
+//
+// A project is written the moment it is made, and the item it was made for can
+// still be abandoned afterwards — by Ctrl-C at Repo or Notes, or by the item's
+// own create failing. The project is kept either way, since making it was
+// deliberate. What cannot stand is saying nothing: an item-less project is what
+// this repo's CLAUDE.md records as the thing that sends later items to the
+// wrong place, and the reader has to know one is there to go and use it.
+type createdProjects struct{ names []string }
+
+func (c *createdProjects) add(name string) { c.names = append(c.names, name) }
+
+// report names what outlived the form. It prints nothing when the escape was
+// never used, which is the ordinary case.
+func (c *createdProjects) report(out io.Writer) {
+	for _, name := range c.names {
+		_, _ = fmt.Fprintf(out, "Project %q was created and kept.\n", name)
+	}
+}
+
 // createProjectFromForm makes a project without leaving the item being filed,
 // and returns its name for the field that ran it.
 //
@@ -470,10 +494,48 @@ const newProjectTrigger = "+"
 // worst moment to have to go and make one: the item is half typed and quitting
 // to run `projects create` loses it. So the fork is offered where it is found.
 //
-// An empty name backs out and makes nothing. Otherwise a "+" pressed by mistake
-// would leave only Ctrl-C, and that abandons the item as well.
+// An empty name backs out and makes nothing, and says so. Otherwise a "+"
+// pressed by mistake would leave only Ctrl-C, and that abandons the item as
+// well — and a silent return to Project: reads exactly like a project that was
+// created.
+//
+// A failed create re-asks with all three answers already on their lines. The
+// escape exists because quitting to run `projects create` loses the half-typed
+// item; a failure path that discards the half-typed project spends the same
+// cost one level down.
 func createProjectFromForm(ctx context.Context, client *api.Client, session prompt.Session) (string, error) {
-	named, err := prompt.Form{
+	name, err := askProjectName(session)
+	if name == "" || err != nil {
+		return "", err
+	}
+	in := api.ProjectCreateInput{Name: name}
+	for {
+		answers, err := prompt.Form{Fields: newProjectFields(in)}.Run(session)
+		if err != nil {
+			return "", err
+		}
+		if description := answers.Get("description"); description != "" {
+			in.Description = &description
+		}
+		if kind := answers.Get("kind"); kind != "" {
+			in.Kind = &kind
+		}
+		project, err := client.CreateProject(ctx, in)
+		if err == nil {
+			_, _ = fmt.Fprintf(session, "  Created project %q.\n", project.Name)
+			return project.Name, nil
+		}
+		// Reported here rather than returned, so the next pass can put the
+		// answers back. handleAPIError is what turns a 401 into the sentence
+		// naming `icb auth login`, the same as every other door onto this API.
+		_, _ = fmt.Fprintf(session, "  %v\n", handleAPIError(err))
+	}
+}
+
+// askProjectName asks for the name on its own, so an empty one backs out before
+// the description and the kind are asked for a project that will not exist.
+func askProjectName(session prompt.Session) (string, error) {
+	answers, err := prompt.Form{
 		Intro: "New project. Enter on an empty name goes back to picking one.",
 		Fields: []prompt.Field{
 			{Key: "name", Label: "Name", Optional: true, Validate: boundedProjectName},
@@ -482,43 +544,40 @@ func createProjectFromForm(ctx context.Context, client *api.Client, session prom
 	if err != nil {
 		return "", err
 	}
-	name := named.Get("name")
-	if name == "" {
+	if answers.Get("name") == "" {
+		_, _ = fmt.Fprintln(session, "  No project made.")
 		return "", nil
 	}
-	rest, err := prompt.Form{
-		Fields: []prompt.Field{
-			{
-				Key:      "description",
-				Label:    "Description",
-				Hint:     "What the effort covers. A project without one collects the wrong items later.",
-				Optional: true,
-			},
-			{
-				Key:      "kind",
-				Label:    "Kind",
-				Default:  api.ProjectKindBuild,
-				Choices:  api.ProjectKinds,
-				Validate: prompt.OneOf(api.ProjectKinds),
-			},
+	return answers.Get("name"), nil
+}
+
+// newProjectFields is the rest of the record, with whatever a failed attempt
+// already collected as the defaults — so a retry is Enter three times.
+func newProjectFields(in api.ProjectCreateInput) []prompt.Field {
+	kind := api.ProjectKindBuild
+	if in.Kind != nil {
+		kind = *in.Kind
+	}
+	description := ""
+	if in.Description != nil {
+		description = *in.Description
+	}
+	return []prompt.Field{
+		{
+			Key:      "description",
+			Label:    "Description",
+			Hint:     "What the effort covers. A project without one collects the wrong items later.",
+			Default:  description,
+			Optional: true,
 		},
-	}.Run(session)
-	if err != nil {
-		return "", err
+		{
+			Key:      "kind",
+			Label:    "Kind",
+			Default:  kind,
+			Choices:  api.ProjectKinds,
+			Validate: prompt.OneOf(api.ProjectKinds),
+		},
 	}
-	in := api.ProjectCreateInput{Name: name}
-	if description := rest.Get("description"); description != "" {
-		in.Description = &description
-	}
-	if kind := rest.Get("kind"); kind != "" {
-		in.Kind = &kind
-	}
-	project, err := client.CreateProject(ctx, in)
-	if err != nil {
-		return "", err
-	}
-	_, _ = fmt.Fprintf(session, "  Created project %q.\n", project.Name)
-	return project.Name, nil
 }
 
 // boundedProjectName is refuseRepoNamedProject as a form validator, so the ban
@@ -610,7 +669,8 @@ func newItemsCreateCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			fields, err := itemCreateFields(cmd.Context(), client)
+			made := &createdProjects{}
+			fields, err := itemCreateFields(cmd.Context(), client, made)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -624,9 +684,11 @@ func newItemsCreateCommand() *cobra.Command {
 				})
 				if errors.Is(err, errAborted) {
 					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nAborted.")
+					made.report(cmd.ErrOrStderr())
 					return nil
 				}
 				if err != nil {
+					made.report(cmd.ErrOrStderr())
 					return err
 				}
 				answers.Merge(asked)
@@ -645,6 +707,7 @@ func newItemsCreateCommand() *cobra.Command {
 			}
 			item, err := client.CreateItem(cmd.Context(), in)
 			if err != nil {
+				made.report(cmd.ErrOrStderr())
 				return handleAPIError(err)
 			}
 			if asJSON {
