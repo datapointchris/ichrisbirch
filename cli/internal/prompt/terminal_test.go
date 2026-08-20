@@ -1,6 +1,8 @@
 package prompt
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -106,6 +108,121 @@ func TestCycler_KeepsWhatFollowsTheCursor(t *testing.T) {
 	}
 	if pos != len("Chore") {
 		t.Errorf("cursor at %d, want it after the completion", pos)
+	}
+}
+
+// listing drives a cycler that prints, and returns everything it printed.
+func listing(choices []string) (*cycler, *bytes.Buffer) {
+	var out bytes.Buffer
+	return &cycler{choices: choices, out: &out, width: 80}, &out
+}
+
+func TestCycler_TabOnAnEmptyLinePrintsEveryChoice(t *testing.T) {
+	c, out := listing([]string{"Chore", "Computer", "Dingo"})
+
+	if _, _, ok := c.complete("", 0, '\t'); ok {
+		t.Error("the line was changed — a listing is a look, not a choice")
+	}
+	for _, choice := range c.choices {
+		if !strings.Contains(out.String(), choice) {
+			t.Errorf("choice %q was not printed:\n%s", choice, out)
+		}
+	}
+}
+
+func TestCycler_ATabAfterTheListingWalksTheMatches(t *testing.T) {
+	c, out := listing([]string{"Chore", "Computer", "Dingo"})
+	c.complete("c", 1, '\t')
+	printed := out.String()
+
+	if got := tab(t, c, "c"); got != "Chore" {
+		t.Errorf("Tab after the listing = %q, want the walk started", got)
+	}
+	if got := tab(t, c, "Chore"); got != "Computer" {
+		t.Errorf("the next Tab = %q, want the next match", got)
+	}
+	if out.String() != printed {
+		t.Errorf("the list was printed again instead of walked:\n%s", out)
+	}
+}
+
+func TestCycler_ListsOnlyWhatMatchesWhatIsTyped(t *testing.T) {
+	c, out := listing([]string{"Chore", "Computer", "Dingo"})
+
+	c.complete("c", 1, '\t')
+
+	if strings.Contains(out.String(), "Dingo") {
+		t.Errorf("a choice that does not match was listed:\n%s", out)
+	}
+}
+
+func TestCycler_ASingleMatchIsCompletedRatherThanListed(t *testing.T) {
+	c, out := listing([]string{"Chore", "Dingo"})
+
+	if got := tab(t, c, "d"); got != "Dingo" {
+		t.Errorf("Tab = %q, want the only match completed", got)
+	}
+	if out.Len() > 0 {
+		t.Errorf("one match was printed as a list, which is a keypress that buys nothing:\n%s", out)
+	}
+}
+
+func TestCycler_TypingAfterAListingListsTheNarrowedMatches(t *testing.T) {
+	c, out := listing([]string{"Chore", "Computer", "Dingo"})
+	c.complete("", 0, '\t')
+	out.Reset()
+
+	c.complete("c", 1, 'c')
+	c.complete("c", 1, '\t')
+
+	if !strings.Contains(out.String(), "Computer") {
+		t.Errorf("the narrowed matches were not listed:\n%s", out)
+	}
+	if strings.Contains(out.String(), "Dingo") {
+		t.Errorf("the listing was not narrowed by what was typed:\n%s", out)
+	}
+}
+
+func TestCycler_WithoutAWriterTabWalksFromTheFirstPress(t *testing.T) {
+	c := &cycler{choices: []string{"Chore", "Computer"}}
+
+	if got := tab(t, c, ""); got != "Chore" {
+		t.Errorf("Tab = %q, want the walk — a field that listed its choices up front does not list again", got)
+	}
+}
+
+func TestListsOnTab_OnlyWhereTheChoicesWereTooManyToPrintUnasked(t *testing.T) {
+	short := make([]string, maxListedChoices)
+	for i := range short {
+		short[i] = fmt.Sprintf("choice-%02d", i)
+	}
+
+	if listsOnTab(short) {
+		t.Error("a list already printed above the prompt would be printed again under it")
+	}
+	if !listsOnTab(append(short, "one more")) {
+		t.Error("a list the field never showed has no other way to be seen")
+	}
+}
+
+func TestWriteColumns_ANarrowWidthPutsOneChoicePerLine(t *testing.T) {
+	var out bytes.Buffer
+	choices := []string{"Convert theme and font from bash to Go", "fleet facts", "ifiles"}
+
+	writeColumns(&out, 40, choices)
+
+	if got := strings.Count(strings.TrimRight(out.String(), "\n"), "\n") + 1; got != len(choices) {
+		t.Errorf("%d lines for %d choices, want one each — a phrase wraps in a column:\n%s", got, len(choices), out.String())
+	}
+}
+
+func TestWriteColumns_ShortChoicesShareALine(t *testing.T) {
+	var out bytes.Buffer
+
+	writeColumns(&out, 80, []string{"build", "chore", "life"})
+
+	if got := strings.Count(out.String(), "\n"); got != 1 {
+		t.Errorf("%d lines, want one — three short words waste a screen stacked:\n%s", got, out.String())
 	}
 }
 

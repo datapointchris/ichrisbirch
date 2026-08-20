@@ -260,7 +260,7 @@ func newItemsNextCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
-	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: build, chore, life")
+	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: "+strings.Join(api.ProjectKinds, ", "))
 	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().IntVar(&limit, "limit", 10, "Max items to return (0 for no cap)")
 	return cmd
@@ -438,6 +438,13 @@ func itemCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field, 
 			Choices:  names,
 			Repeat:   true,
 			Validate: projectRef(names),
+			Escape: &prompt.Escape{
+				Trigger: newProjectTrigger,
+				Hint:    newProjectTrigger + " makes a new project.",
+				Run: func(session prompt.Session) (string, error) {
+					return createProjectFromForm(ctx, client, session)
+				},
+			},
 		},
 		{
 			Key:      "repo",
@@ -449,6 +456,79 @@ func itemCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field, 
 		},
 		{Key: "notes", Label: "Notes", Optional: true, Multiline: true},
 	}, nil
+}
+
+// newProjectTrigger is the answer to Project that makes one instead of picking
+// one. A single character keeps it clear of every real name, and no project is
+// called "+".
+const newProjectTrigger = "+"
+
+// createProjectFromForm makes a project without leaving the item being filed,
+// and returns its name for the field that ran it.
+//
+// Filing an item is where the missing project is discovered, and it is the
+// worst moment to have to go and make one: the item is half typed and quitting
+// to run `projects create` loses it. So the fork is offered where it is found.
+//
+// An empty name backs out and makes nothing. Otherwise a "+" pressed by mistake
+// would leave only Ctrl-C, and that abandons the item as well.
+func createProjectFromForm(ctx context.Context, client *api.Client, session prompt.Session) (string, error) {
+	named, err := prompt.Form{
+		Intro: "New project. Enter on an empty name goes back to picking one.",
+		Fields: []prompt.Field{
+			{Key: "name", Label: "Name", Optional: true, Validate: boundedProjectName},
+		},
+	}.Run(session)
+	if err != nil {
+		return "", err
+	}
+	name := named.Get("name")
+	if name == "" {
+		return "", nil
+	}
+	rest, err := prompt.Form{
+		Fields: []prompt.Field{
+			{
+				Key:      "description",
+				Label:    "Description",
+				Hint:     "What the effort covers. A project without one collects the wrong items later.",
+				Optional: true,
+			},
+			{
+				Key:      "kind",
+				Label:    "Kind",
+				Default:  api.ProjectKindBuild,
+				Choices:  api.ProjectKinds,
+				Validate: prompt.OneOf(api.ProjectKinds),
+			},
+		},
+	}.Run(session)
+	if err != nil {
+		return "", err
+	}
+	in := api.ProjectCreateInput{Name: name}
+	if description := rest.Get("description"); description != "" {
+		in.Description = &description
+	}
+	if kind := rest.Get("kind"); kind != "" {
+		in.Kind = &kind
+	}
+	project, err := client.CreateProject(ctx, in)
+	if err != nil {
+		return "", err
+	}
+	_, _ = fmt.Fprintf(session, "  Created project %q.\n", project.Name)
+	return project.Name, nil
+}
+
+// boundedProjectName is refuseRepoNamedProject as a form validator, so the ban
+// reads the same at the prompt as it does behind --name. A form is not a way
+// around it.
+func boundedProjectName(answer string) (string, error) {
+	if err := refuseRepoNamedProject(answer); err != nil {
+		return "", err
+	}
+	return answer, nil
 }
 
 // projectRef accepts a project by name, case-insensitively, returning the name
@@ -504,7 +584,11 @@ func newItemsCreateCommand() *cobra.Command {
 		Long: "Pass every field as a flag to create in one shot. Leave --title or\n" +
 			"--project out at a terminal and the rest are asked for one at a time.\n" +
 			"There are more projects and repos than fit on a screen, so neither is\n" +
-			"listed — type any part of a name and Tab cycles what matches.\n" +
+			"listed up front. Tab prints them, and typing any part of a name first\n" +
+			"narrows what it prints; Tab again walks the matches one at a time.\n" +
+			"\n" +
+			"Answer Project with + to make a new one without leaving the item. It\n" +
+			"asks for a name, a description and a kind, then goes on filing.\n" +
 			"\n" +
 			"Project repeats until you press Enter on an empty one, so an item can\n" +
 			"join several. Notes take as many lines as you want and end on a blank\n" +

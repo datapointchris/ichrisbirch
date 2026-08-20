@@ -5,11 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"testing"
 )
 
 var categories = []string{"Automotive", "Chore", "Computer", "Dingo"}
+
+// recordingSession keeps the choices each ask was handed, which is what Tab
+// would have had to work with at that point in the form.
+type recordingSession struct {
+	*PlainSession
+	offered [][]string
+}
+
+func (s *recordingSession) ReadLine(label, seed string, choices []string) (string, error) {
+	s.offered = append(s.offered, choices)
+	return s.PlainSession.ReadLine(label, seed, choices)
+}
 
 // run drives a form with typed lines and returns the answers plus everything the
 // form said.
@@ -264,6 +277,127 @@ func TestForm_ALongChoiceListIsCountedRatherThanPrinted(t *testing.T) {
 	}
 	if !strings.Contains(out, fmt.Sprintf("%d to choose from", len(many))) {
 		t.Errorf("the count stood in for nothing:\n%s", out)
+	}
+}
+
+// escapeForm is one field whose choices do not cover everything, with a way to
+// add what is missing.
+func escapeForm(make func(Session) (string, error)) Form {
+	return Form{Fields: []Field{{
+		Key:      "project",
+		Label:    "Project",
+		Choices:  []string{"Chore"},
+		Repeat:   true,
+		Validate: OneOf([]string{"Chore"}),
+		Escape:   &Escape{Trigger: "+", Hint: "+ makes a new one.", Run: make},
+	}}}
+}
+
+func TestForm_TheEscapeAnswersTheFieldWithWhatItMade(t *testing.T) {
+	runs := 0
+	answers, out := run(t, escapeForm(func(Session) (string, error) {
+		runs++
+		return "Brand new", nil
+	}), "+\n\n")
+
+	if got := strings.Join(answers.All("project"), ","); got != "Brand new" {
+		t.Errorf("project = %q, want what the escape made — it made the value, so nothing validates it", got)
+	}
+	if runs != 1 {
+		t.Errorf("the escape ran %d times, want once", runs)
+	}
+	if !strings.Contains(out, "+ makes a new one.") {
+		t.Errorf("the hint was not printed — a trigger nothing mentions is a trigger nobody presses:\n%s", out)
+	}
+}
+
+func TestForm_WhatTheEscapeMadeJoinsTheChoices(t *testing.T) {
+	session := &recordingSession{PlainSession: NewPlainSession(strings.NewReader("+\n\n"), io.Discard)}
+
+	if _, err := escapeForm(func(Session) (string, error) { return "Brand new", nil }).Run(session); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	if len(session.offered) < 2 {
+		t.Fatalf("the field was asked %d times, want the repeat after the escape", len(session.offered))
+	}
+	if !slices.Contains(session.offered[1], "Brand new") {
+		t.Errorf("the next ask offered %v, want the new project among them — Tab has to reach it", session.offered[1])
+	}
+	if slices.Contains(session.offered[0], "Brand new") {
+		t.Error("the first ask offered a project that did not exist yet")
+	}
+}
+
+func TestForm_AValueTheEscapeMadeIsNotPutToTheValidator(t *testing.T) {
+	answers, out := run(t, escapeForm(func(Session) (string, error) {
+		return "Brand new", nil
+	}), "+\nbrand NEW\n\n")
+
+	got := strings.Join(answers.All("project"), ",")
+	if got != "Brand new,Brand new" {
+		t.Errorf("project = %q, want the made value accepted again and spelled the way it was made", got)
+	}
+	if strings.Contains(out, "unknown value") {
+		t.Errorf("the field rejected a choice it was offering:\n%s", out)
+	}
+}
+
+func TestForm_AnEscapeThatMakesNothingAsksTheFieldAgain(t *testing.T) {
+	answers, _ := run(t, escapeForm(func(Session) (string, error) { return "", nil }), "+\nChore\n\n")
+
+	if got := strings.Join(answers.All("project"), ","); got != "Chore" {
+		t.Errorf("project = %q, want the answer given after backing out", got)
+	}
+}
+
+func TestForm_AFailedEscapeIsReportedAndTheFieldAskedAgain(t *testing.T) {
+	answers, out := run(t, escapeForm(func(Session) (string, error) {
+		return "", errors.New("the API refused it")
+	}), "+\nChore\n\n")
+
+	if got := strings.Join(answers.All("project"), ","); got != "Chore" {
+		t.Errorf("project = %q, want the field still answerable — a choice on the list is still a good answer", got)
+	}
+	if !strings.Contains(out, "the API refused it") {
+		t.Errorf("the failure was not reported:\n%s", out)
+	}
+}
+
+func TestForm_ACanceledEscapeAbandonsTheRecord(t *testing.T) {
+	var out bytes.Buffer
+	form := escapeForm(func(Session) (string, error) { return "", io.EOF })
+
+	answers, err := form.Run(NewPlainSession(strings.NewReader("+\n"), &out))
+
+	if !errors.Is(err, io.EOF) {
+		t.Fatalf("err = %v, want io.EOF — a cancel travels however deep it happened", err)
+	}
+	if answers != nil {
+		t.Errorf("answers = %v, want none", answers)
+	}
+}
+
+// completingSession claims Tab works, for the lines a form prints only where
+// pressing it does something.
+type completingSession struct{ *PlainSession }
+
+func (completingSession) Completes() bool { return true }
+
+func TestForm_ALongChoiceListSaysTabWillPrintIt(t *testing.T) {
+	many := make([]string, maxListedChoices+1)
+	for i := range many {
+		many[i] = fmt.Sprintf("choice-%02d", i)
+	}
+	var out bytes.Buffer
+	form := Form{Fields: []Field{{Key: "pick", Label: "Pick", Choices: many}}}
+
+	if _, err := form.Run(completingSession{NewPlainSession(strings.NewReader("choice-00\n"), &out)}); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	if !strings.Contains(out.String(), "Tab lists them") {
+		t.Errorf("the only way to see the list was not named:\n%s", out.String())
 	}
 }
 

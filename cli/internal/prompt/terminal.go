@@ -57,14 +57,38 @@ func (s *TerminalSession) Write(p []byte) (int, error) { return s.terminal.Write
 // Completes reports that Tab works here.
 func (s *TerminalSession) Completes() bool { return true }
 
-// ReadLine asks one question, with seed already on the line and Tab cycling
+// Width is the terminal's current width, re-read each time because a pane can
+// be resized part-way through a form. Eighty is the fallback x/term itself uses.
+func (s *TerminalSession) Width() int {
+	if width, _, err := term.GetSize(s.fd); err == nil && width > 0 {
+		return width
+	}
+	return 80
+}
+
+// ReadLine asks one question, with seed already on the line and Tab completing
 // choices.
 func (s *TerminalSession) ReadLine(label, seed string, choices []string) (string, error) {
 	s.terminal.SetPrompt(label)
-	s.terminal.AutoCompleteCallback = (&cycler{choices: choices}).complete
+	completer := &cycler{choices: choices, width: s.Width()}
+	if listsOnTab(choices) {
+		completer.out = s
+	}
+	s.terminal.AutoCompleteCallback = completer.complete
 	s.input.seed(seed)
 	return s.terminal.ReadLine()
 }
+
+// listsOnTab reports whether Tab should print the matches before it starts
+// walking them.
+//
+// It is the same question maxListedChoices already answers once: a list short
+// enough to print unasked is on the screen already, and reprinting it under the
+// prompt is noise. A list too long for that never got shown at all, which
+// leaves Tab as the only way to find out what is in it — and cycling 54
+// projects one keypress at a time is not finding out. So the field that could
+// not introduce itself is the field where Tab lists.
+func listsOnTab(choices []string) bool { return len(choices) > maxListedChoices }
 
 // seedReader hands the terminal a string as though it had been typed, then goes
 // back to reading the keyboard.
@@ -93,12 +117,19 @@ func (r *seedReader) Read(p []byte) (int, error) {
 // Cycling beats completing to the common prefix for a closed vocabulary of a
 // dozen short words: Tab on an empty line browses the whole list, which is the
 // case a prefix completer answers with nothing at all.
+//
+// Where out is set the first Tab on a given base prints the matches instead of
+// walking them, the way a shell does. That is for a list the field never got to
+// introduce — see listsOnTab.
 type cycler struct {
 	choices []string
+	out     io.Writer
+	width   int
 	base    string
 	last    string
 	index   int
 	active  bool
+	listed  bool
 }
 
 // complete is an x/term AutoCompleteCallback. Any key other than Tab ends the
@@ -114,10 +145,22 @@ func (c *cycler) complete(line string, pos int, key rune) (string, int, bool) {
 		c.base = typed
 		c.index = 0
 		c.active = true
+		c.listed = false
 	}
 	matches := matching(c.choices, c.base)
 	if len(matches) == 0 {
 		c.active = false
+		return "", 0, false
+	}
+	// One match is not a list, so printing it and making the reader press Tab
+	// again to accept it is a step that buys nothing.
+	if c.out != nil && !c.listed && len(matches) > 1 {
+		c.listed = true
+		// The line is left exactly as it was, so record that rather than a
+		// completion — otherwise the next Tab reads it as newly typed and lists
+		// again forever instead of starting the walk.
+		c.last = typed
+		writeColumns(c.out, c.width, matches)
 		return "", 0, false
 	}
 	completed := matches[c.index%len(matches)]
