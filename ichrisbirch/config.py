@@ -21,7 +21,7 @@ class AISettings:
     class AnthropicSettings:
         def __init__(self) -> None:
             self.api_key: str = os.environ.get('AI_ANTHROPIC_API_KEY', '')
-            self.model: str = os.environ.get('AI_ANTHROPIC_DEFAULT_MODEL', 'claude-haiku-4-5-20251001')
+            self.model: str = os.environ.get('AI_ANTHROPIC_DEFAULT_MODEL', 'claude-haiku-4-5')
 
     class PromptSettings:
         PROMPT_DIR = find_project_root() / 'ichrisbirch' / 'ai' / 'prompts'
