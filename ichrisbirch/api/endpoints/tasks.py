@@ -13,6 +13,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.models.task import TASK_CATEGORIES
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
@@ -37,6 +38,10 @@ async def read_many(
         alias='status',
         description="A task status, or 'all'. Completed tasks are hidden by default.",
     ),
+    category: str | None = Query(
+        None,
+        description='One task category. Omitted, every category is listed.',
+    ),
     start_date: StartDate = None,
     end_date: EndDate = None,
 ):
@@ -57,14 +62,25 @@ async def read_many(
     `status` does: this is the read the CLI makes, and it has to be able to
     express the whole question rather than sending the caller to another path
     that answers a different response model and ignores `limit`.
+
+    `category` narrows here rather than in the caller, per `cli-design.md`
+    § "Filtering is server-side" — a client filtering after the fact has to pull
+    every row to find a handful, and `limit` would then cap the wrong set.
     """
     if task_status not in (*TASK_STATUSES, ALL_STATUSES):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f'Unknown task status {task_status!r}. Known statuses: {", ".join(TASK_STATUSES)}, all',
         )
+    if category is not None and category not in TASK_CATEGORIES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f'Unknown task category {category!r}. Known categories: {", ".join(TASK_CATEGORIES)}',
+        )
 
     query = select(models.Task)
+    if category is not None:
+        query = query.filter(models.Task.category == category)
     if task_status == 'open':
         query = query.filter(models.Task.complete_date.is_(None))
     elif task_status == 'completed':

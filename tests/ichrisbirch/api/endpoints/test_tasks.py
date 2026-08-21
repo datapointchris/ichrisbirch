@@ -303,3 +303,43 @@ class TestTaskStatusFilter:
     def test_limit_still_applies(self, task_crud_tester):
         client, _ = task_crud_tester
         assert len(self.names(client, {'status': 'all', 'limit': 1})) == 1
+
+    def test_a_category_narrows_to_that_category(self, task_crud_tester):
+        """The seed holds one Chore and two Home, one of the Home ones done."""
+        client, _ = task_crud_tester
+        tasks = self.names(client, {'category': 'Home'})
+
+        assert [task['category'] for task in tasks] == ['Home']
+
+    def test_a_category_composes_with_the_status(self, task_crud_tester):
+        client, _ = task_crud_tester
+
+        assert len(self.names(client, {'category': 'Home', 'status': 'all'})) == 2
+        assert len(self.names(client, {'category': 'Chore', 'status': 'all'})) == 1
+
+    def test_limit_caps_the_category_rather_than_the_whole_list(self, task_crud_tester):
+        """The property `cli-design.md` § "Filtering is server-side" is about: a
+        caller filtering after the fact would have limit cap the wrong set, and
+        get back nothing while rows it asked for sat past the cap."""
+        client, _ = task_crud_tester
+        tasks = self.names(client, {'category': 'Home', 'status': 'all', 'limit': 1})
+
+        assert len(tasks) == 1
+        assert tasks[0]['category'] == 'Home'
+
+    def test_a_known_category_with_nothing_in_it_is_empty_not_an_error(self, task_crud_tester):
+        client, _ = task_crud_tester
+
+        assert self.names(client, {'category': 'Learn', 'status': 'all'}) == []
+
+    def test_an_unknown_category_names_the_known_ones(self, task_crud_tester):
+        client, _ = task_crud_tester
+        response = client.get(ENDPOINT, params={'category': 'Personel'})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert 'Personal' in response.json()['detail'], 'the error must name the word that was meant'
+
+    def test_omitting_the_category_lists_every_one(self, task_crud_tester):
+        client, _ = task_crud_tester
+
+        assert len(self.names(client, {'status': 'all'})) == 3

@@ -42,6 +42,7 @@ func newTasksListCommand() *cobra.Command {
 		limit      int
 		asJSON     bool
 		taskStatus string
+		category   string
 		bounds     api.DateBounds
 	)
 	cmd := &cobra.Command{
@@ -56,8 +57,13 @@ func newTasksListCommand() *cobra.Command {
 			"--start/--end bound when a task was completed, inclusive on both ends, and\n" +
 			"either works without the other. An open task has no completion date, so it\n" +
 			"falls outside every range — pair them with --status completed to read a\n" +
-			"week's finished work.",
+			"week's finished work.\n" +
+			"\n" +
+			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
+			"It is matched by the API, so --limit caps the category rather than the\n" +
+			"whole list.",
 		Example: "  icb tasks list\n" +
+			"  icb tasks list --category Personal\n" +
 			"  icb tasks list --status completed\n" +
 			"  icb tasks list --status completed --start 2026-08-17 --end 2026-08-23\n" +
 			"  icb tasks list --status all --limit 10 --json",
@@ -66,8 +72,17 @@ func newTasksListCommand() *cobra.Command {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.TaskStatuses, taskStatus) {
 				return usageError{fmt.Errorf("unknown status %q — one of: %s", taskStatus, strings.Join(api.TaskStatuses, ", "))}
 			}
+			if cmd.Flags().Changed("category") {
+				// The same validator `create` and `edit` use, so a category one door
+				// accepts is accepted by all three and the spelling is corrected once.
+				canonical, err := taskCategory(category)
+				if err != nil {
+					return usageError{err}
+				}
+				category = canonical
+			}
 			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, bounds)
+				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category, bounds)
 			}); err != nil {
 				return err
 			}
@@ -79,6 +94,7 @@ func newTasksListCommand() *cobra.Command {
 	}
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of tasks to return")
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
+	cmd.Flags().StringVar(&category, "category", "", "Only tasks in this category: "+strings.Join(api.TaskCategories, ", "))
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only tasks completed on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only tasks completed on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
