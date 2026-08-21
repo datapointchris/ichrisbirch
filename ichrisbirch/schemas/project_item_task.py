@@ -20,6 +20,7 @@ class ProjectItemTask(ProjectItemTaskConfig):
     item_id: UUID
     title: str
     completed: bool
+    completed_at: datetime | None = None
     position: int
     created_at: datetime
 

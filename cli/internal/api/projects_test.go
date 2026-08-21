@@ -225,7 +225,7 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 
-	items, err := client.ListProjectItems(context.Background(), "018f-a", "all")
+	items, err := client.ListProjectItems(context.Background(), "018f-a", "all", DateBounds{})
 	if err != nil {
 		t.Fatalf("ListProjectItems: %v", err)
 	}
@@ -241,9 +241,16 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 
 	// An empty status sends nothing, leaving the server's default rather than
 	// spelling it client-side where it would drift from the API.
-	_, _ = client.ListProjectItems(context.Background(), "018f-a", "")
+	_, _ = client.ListProjectItems(context.Background(), "018f-a", "", DateBounds{})
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty when no status is given", gotQuery)
+	}
+
+	// A scope picks the rows, never what a filter means, so the bounds reach the
+	// project-scoped path under the same names the flat list uses.
+	_, _ = client.ListProjectItems(context.Background(), "018f-a", "completed", DateBounds{Start: "2026-08-17"})
+	if gotQuery != "start_date=2026-08-17&status=completed" {
+		t.Errorf("query = %q, want the bound beside the status", gotQuery)
 	}
 }
 

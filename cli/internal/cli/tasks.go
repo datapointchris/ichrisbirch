@@ -42,6 +42,7 @@ func newTasksListCommand() *cobra.Command {
 		limit      int
 		asJSON     bool
 		taskStatus string
+		bounds     api.DateBounds
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -50,9 +51,15 @@ func newTasksListCommand() *cobra.Command {
 			"\n" +
 			"--status takes one of: " + strings.Join(api.TaskStatuses, ", ") + ". Completed tasks come\n" +
 			"back most-recently-finished first — priority stopped meaning anything the\n" +
-			"moment they left the queue.",
+			"moment they left the queue.\n" +
+			"\n" +
+			"--start/--end bound when a task was completed, inclusive on both ends, and\n" +
+			"either works without the other. An open task has no completion date, so it\n" +
+			"falls outside every range — pair them with --status completed to read a\n" +
+			"week's finished work.",
 		Example: "  icb tasks list\n" +
 			"  icb tasks list --status completed\n" +
+			"  icb tasks list --status completed --start 2026-08-17 --end 2026-08-23\n" +
 			"  icb tasks list --status all --limit 10 --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -60,7 +67,7 @@ func newTasksListCommand() *cobra.Command {
 				return usageError{fmt.Errorf("unknown status %q — one of: %s", taskStatus, strings.Join(api.TaskStatuses, ", "))}
 			}
 			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus)
+				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, bounds)
 			}); err != nil {
 				return err
 			}
@@ -72,6 +79,8 @@ func newTasksListCommand() *cobra.Command {
 	}
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of tasks to return")
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
+	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only tasks completed on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&bounds.End, "end", "", "Only tasks completed on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
 	return cmd
 }

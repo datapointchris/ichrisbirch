@@ -36,3 +36,22 @@ class TestProjectSeeder:
         for task in tasks:
             item = db.query(ProjectItem).filter(ProjectItem.id == task.item_id).first()
             assert item is not None, f'Task {task.id} has no parent item'
+
+    def test_completion_dates_match_completion(self, db):
+        """A seeded row with no completion date cannot exercise a date-bounded read."""
+        projects.clear(db)
+        projects.seed(db, scale=1)
+
+        for item in db.query(ProjectItem).all():
+            assert (item.completed_at is not None) == item.completed, f'Item {item.id} disagrees with its own state'
+        for task in db.query(ProjectItemTask).all():
+            assert (task.completed_at is not None) == task.completed, f'Task {task.id} disagrees with its own state'
+
+    def test_completion_dates_are_spread(self, db):
+        """One instant for every finished row makes a range filter untestable by hand."""
+        projects.clear(db)
+        projects.seed(db, scale=1)
+
+        finished = [item.completed_at for item in db.query(ProjectItem).all() if item.completed]
+        assert len(finished) > 1, 'precondition: the seeder makes more than one finished item'
+        assert len({stamp.date() for stamp in finished}) > 1

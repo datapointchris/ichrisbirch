@@ -54,6 +54,9 @@ class ProjectItem(ProjectItemConfig):
     notes: str | None = None
     repo: str | None = None
     completed: bool
+    # Null where the completion time is unknown: never finished, or finished by a
+    # write that recorded none. Every reader handles it.
+    completed_at: datetime | None = None
     archived: bool
     created_at: datetime
     updated_at: datetime
@@ -79,6 +82,7 @@ class ProjectItemDetail(ProjectItemConfig):
     notes: str | None = None
     repo: str | None = None
     completed: bool
+    completed_at: datetime | None = None
     archived: bool
     created_at: datetime
     updated_at: datetime
@@ -95,6 +99,7 @@ class ProjectItemInProject(ProjectItemConfig):
     notes: str | None = None
     repo: str | None = None
     completed: bool
+    completed_at: datetime | None = None
     archived: bool
     created_at: datetime
     updated_at: datetime

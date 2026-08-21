@@ -46,6 +46,7 @@ func newBooksCommand() *cobra.Command {
 func newBooksListCommand() *cobra.Command {
 	var (
 		filter api.BookFilter
+		bounds api.DateBounds
 		asJSON bool
 	)
 	cmd := &cobra.Command{
@@ -53,20 +54,27 @@ func newBooksListCommand() *cobra.Command {
 		Short: "List books by priority",
 		Long: "List the catalog in reading-priority order. The two filters narrow\n" +
 			"together: --progress asks where a book is in the reading cycle,\n" +
-			"--ownership asks whether it is on the shelf.",
+			"--ownership asks whether it is on the shelf.\n" +
+			"\n" +
+			"--start/--end bound when a book was finished, inclusive on both ends, and\n" +
+			"either works without the other. Anything unread, in progress, or abandoned\n" +
+			"has no finish date, so it falls outside every range.",
 		Example: "  icb books list                      the whole catalog, highest priority first\n" +
 			"  icb books list --progress reading   what you are reading right now\n" +
 			"  icb books list --progress unread --ownership owned\n" +
-			"                                      owned but not started — what to pick up next",
+			"                                      owned but not started — what to pick up next\n" +
+			"  icb books list --start 2026-01-01   what you have finished this year",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
-				return c.ListBooks(cmd.Context(), filter)
+				return c.ListBooks(cmd.Context(), filter, bounds)
 			})
 		},
 	}
 	cmd.Flags().StringVar(&filter.Ownership, "ownership", "", "Filter by ownership: owned, to_purchase, sold, donated, rejected")
 	cmd.Flags().StringVar(&filter.Progress, "progress", "", "Filter by reading progress: unread, reading, read, abandoned")
+	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only books finished on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&bounds.End, "end", "", "Only books finished on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output books as JSON to stdout")
 	return cmd
 }

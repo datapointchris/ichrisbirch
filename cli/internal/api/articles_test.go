@@ -20,7 +20,7 @@ func TestListArticles_TriStateFilters(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 	unread := true
-	articles, err := client.ListArticles(context.Background(), nil, nil, &unread)
+	articles, err := client.ListArticles(context.Background(), nil, nil, &unread, DateBounds{})
 	if err != nil {
 		t.Fatalf("ListArticles: %v", err)
 	}
@@ -33,14 +33,42 @@ func TestListArticles_TriStateFilters(t *testing.T) {
 
 	favorites := false
 	archived := true
-	_, _ = client.ListArticles(context.Background(), &favorites, &archived, nil)
+	_, _ = client.ListArticles(context.Background(), &favorites, &archived, nil, DateBounds{})
 	if gotQuery != "archived=true&favorites=false" {
 		t.Errorf("query = %q, want both non-nil filters encoded", gotQuery)
 	}
 
-	_, _ = client.ListArticles(context.Background(), nil, nil, nil)
+	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{})
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty when all filters are nil", gotQuery)
+	}
+}
+
+func TestListArticles_DateBounds(t *testing.T) {
+	var gotQuery string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+
+	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{Start: "2026-08-01", End: "2026-08-31"})
+	if gotQuery != "end_date=2026-08-31&start_date=2026-08-01" {
+		t.Errorf("query = %q, want both bounds encoded", gotQuery)
+	}
+
+	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{Start: "2026-08-01"})
+	if gotQuery != "start_date=2026-08-01" {
+		t.Errorf("query = %q, want one bound to narrow on its own", gotQuery)
+	}
+
+	unread := true
+	_, _ = client.ListArticles(context.Background(), nil, nil, &unread, DateBounds{End: "2026-08-31"})
+	if gotQuery != "end_date=2026-08-31&unread=true" {
+		t.Errorf("query = %q, want the bound to compose with the tri-state filters", gotQuery)
 	}
 }
 

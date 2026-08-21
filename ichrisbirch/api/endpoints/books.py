@@ -18,6 +18,9 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.date_bounds import EndDate
+from ichrisbirch.services.date_bounds import StartDate
+from ichrisbirch.services.date_bounds import apply_date_bounds
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -28,12 +31,21 @@ async def read_many(
     session: DbSession,
     ownership: str | None = Query(None),
     progress: str | None = Query(None),
+    start_date: StartDate = None,
+    end_date: EndDate = None,
 ):
+    """List the catalog in reading-priority order, narrowed by the filters and a finish-date range.
+
+    The bounds narrow on `read_finish_date`, so anything unread, in progress, or
+    abandoned is outside every range — a book with no finish date was not
+    finished in any week.
+    """
     query = select(models.Book).order_by(models.Book.priority.asc())
     if ownership:
         query = query.filter(models.Book.ownership == ownership)
     if progress:
         query = query.filter(models.Book.progress == progress)
+    query = apply_date_bounds(query, models.Book.read_finish_date, start_date, end_date)
     return list(session.scalars(query).all())
 
 

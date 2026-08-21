@@ -163,25 +163,35 @@ func newArticlesListCommand() *cobra.Command {
 		archived  bool
 		unread    bool
 		asJSON    bool
+		bounds    api.DateBounds
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List articles",
 		Long: "List articles ordered by title. The filters are tri-state: pass --favorites\n" +
 			"for favorites due for re-read, --favorites=false to exclude favorites, or\n" +
-			"omit it to ignore the filter. Same for --archived and --unread.",
-		Example: "  icb articles list\n  icb articles list --unread\n  icb articles list --archived=false",
-		Args:    usageArgs(cobra.NoArgs),
+			"omit it to ignore the filter. Same for --archived and --unread.\n" +
+			"\n" +
+			"--start/--end bound when an article was last read, inclusive on both ends,\n" +
+			"and either works without the other. A never-read article has no such date,\n" +
+			"so it falls outside every range.",
+		Example: "  icb articles list\n" +
+			"  icb articles list --unread\n" +
+			"  icb articles list --archived=false\n" +
+			"  icb articles list --start 2026-08-01 --end 2026-08-31",
+		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
-					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"))
+					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"), bounds)
 			})
 		},
 	}
 	cmd.Flags().BoolVar(&favorites, "favorites", false, "Filter by favorite status (favorites due for re-read)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Filter by archived status")
 	cmd.Flags().BoolVar(&unread, "unread", false, "Filter by never-read status")
+	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only articles last read on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&bounds.End, "end", "", "Only articles last read on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output articles as JSON to stdout")
 	return cmd
 }

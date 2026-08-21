@@ -130,6 +130,13 @@ class ProjectItem(Base):
     # Repo registry name. Nullable: most items are not repo work.
     repo: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # When the item was finished. `updated_at` is bumped by complete, edit,
+    # reopen, archive and unarchive alike, so it cannot answer "what did I finish
+    # this week" — it says when the row last moved, not what happened to it.
+    # Null means the time is unknown: either the item was never finished, or it
+    # was finished by a write that recorded none. Inferring one from `updated_at`
+    # would manufacture it, so every reader handles the null instead.
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
@@ -222,6 +229,8 @@ class ProjectItemTask(Base):
     item_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('project_items.id', ondelete='CASCADE'), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Same reason as the item's, and null under the same two conditions.
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 

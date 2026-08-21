@@ -131,7 +131,11 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             title = f'{title} #{idx // len(ITEM_TITLES) + 1}'
         completed, archived = STATE_CYCLE[idx % len(STATE_CYCLE)]
         notes = ITEM_NOTES[idx % len(ITEM_NOTES)] if idx % 3 != 0 else None
-        items.append(ProjectItem(title=title, notes=notes, completed=completed, archived=archived))
+        # Spread across the last few months so a date-bounded read has something
+        # to narrow. Seeded rows are generated, not history, so stamping them
+        # invents nothing.
+        finished_at = datetime.now(UTC) - timedelta(days=idx % 90) if completed else None
+        items.append(ProjectItem(title=title, notes=notes, completed=completed, completed_at=finished_at, archived=archived))
 
     session.add_all(items)
     session.flush()
@@ -189,11 +193,13 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
         if i % 5 < 3:
             num_tasks = (i % 3) + 1
             for t in range(num_tasks):
+                task_completed = t == 0 and i % 2 == 0
                 session.add(
                     ProjectItemTask(
                         item_id=item.id,
                         title=TASK_TITLES[t % len(TASK_TITLES)],
-                        completed=(t == 0 and i % 2 == 0),
+                        completed=task_completed,
+                        completed_at=datetime.now(UTC) - timedelta(days=i % 90) if task_completed else None,
                         position=t,
                     )
                 )

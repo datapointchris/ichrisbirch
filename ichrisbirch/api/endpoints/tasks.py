@@ -13,6 +13,9 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.date_bounds import EndDate
+from ichrisbirch.services.date_bounds import StartDate
+from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
 
 logger = structlog.get_logger()
@@ -34,6 +37,8 @@ async def read_many(
         alias='status',
         description="A task status, or 'all'. Completed tasks are hidden by default.",
     ),
+    start_date: StartDate = None,
+    end_date: EndDate = None,
 ):
     """List open tasks by priority.
 
@@ -46,6 +51,12 @@ async def read_many(
     `/todo/` and `/completed/` answer narrower versions of this and remain for
     the web app. This is the one the CLI asks, so it has to be able to express
     every status rather than one per path.
+
+    The date bounds narrow on `complete_date`, so an open task is outside every
+    range. They live here rather than only on `/completed/` for the same reason
+    `status` does: this is the read the CLI makes, and it has to be able to
+    express the whole question rather than sending the caller to another path
+    that answers a different response model and ignores `limit`.
     """
     if task_status not in (*TASK_STATUSES, ALL_STATUSES):
         raise HTTPException(
@@ -63,6 +74,8 @@ async def read_many(
         query = query.order_by(models.Task.complete_date.desc())
     else:
         query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
+
+    query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date)
     return list(session.scalars(query.limit(limit)).all())
 
 

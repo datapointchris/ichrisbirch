@@ -63,6 +63,7 @@ func newItemsListCommand() *cobra.Command {
 		project    string
 		repo       string
 		itemStatus string
+		bounds     api.DateBounds
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -76,9 +77,15 @@ func newItemsListCommand() *cobra.Command {
 			"answers to archived alone.\n" +
 			"\n" +
 			"--project selects which rows come back, not which states, so it narrows to\n" +
-			"open the same way the unscoped list does and takes the same --status.",
+			"open the same way the unscoped list does and takes the same --status.\n" +
+			"\n" +
+			"--start/--end bound when an item was finished, inclusive on both ends, and\n" +
+			"either works without the other. An item that was never completed has no\n" +
+			"such date, so it falls outside every range — pair them with\n" +
+			"--status completed to read a week's finished work.",
 		Example: "  icb projects items list\n" +
 			"  icb projects items list --status completed\n" +
+			"  icb projects items list --status completed --start 2026-08-17\n" +
 			"  icb projects items list --status all --json\n" +
 			"  icb projects items list --repo dotfiles\n" +
 			"  icb projects items list --project todoui\n" +
@@ -91,7 +98,7 @@ func newItemsListCommand() *cobra.Command {
 			if project == "" {
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context(), filter, itemStatus)
+					return c.ListItems(cmd.Context(), filter, itemStatus, bounds)
 				}); err != nil {
 					return err
 				}
@@ -105,7 +112,7 @@ func newItemsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus)
+			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, bounds)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -121,6 +128,8 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
 	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
+	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only items completed on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&bounds.End, "end", "", "Only items completed on or before this ISO 8601 date")
 	return cmd
 }
 
@@ -232,7 +241,7 @@ func newItemsNextCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			filter := repoFlagValue(cmd, repo)
-			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen)
+			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, api.DateBounds{})
 			if err != nil {
 				return handleAPIError(err)
 			}

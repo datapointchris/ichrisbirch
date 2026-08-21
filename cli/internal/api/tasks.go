@@ -89,10 +89,12 @@ var TaskCategories = []string{
 
 // ListTasks returns tasks in one status (GET /tasks/). A nil limit fetches all;
 // a non-nil limit caps the count. An empty status takes the API's default, open.
+// bounds narrows to tasks completed within a date range; a zero DateBounds
+// narrows nothing.
 //
 // Completed tasks come back ordered by when they were finished rather than by
 // priority, which stops meaning anything once a task leaves the queue.
-func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus string) ([]Task, error) {
+func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus string, bounds DateBounds) ([]Task, error) {
 	query := url.Values{}
 	if limit != nil {
 		query.Set("limit", strconv.Itoa(*limit))
@@ -100,6 +102,7 @@ func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus string) (
 	if taskStatus != "" {
 		query.Set("status", taskStatus)
 	}
+	bounds.apply(query)
 	var tasks []Task
 	if err := c.get(ctx, withQuery("/tasks/", query), &tasks); err != nil {
 		return nil, err

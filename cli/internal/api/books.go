@@ -103,12 +103,13 @@ func (f BookFilter) query() url.Values {
 	return params
 }
 
-// ListBooks returns books ordered by priority (GET /books/), narrowed by filter.
-func (c *Client) ListBooks(ctx context.Context, filter BookFilter) ([]Book, error) {
-	path := "/books/"
-	if params := filter.query(); len(params) > 0 {
-		path += "?" + params.Encode()
-	}
+// ListBooks returns books ordered by priority (GET /books/), narrowed by filter
+// and by bounds — a range over when a book was finished. A zero DateBounds
+// narrows nothing.
+func (c *Client) ListBooks(ctx context.Context, filter BookFilter, bounds DateBounds) ([]Book, error) {
+	params := filter.query()
+	bounds.apply(params)
+	path := withQuery("/books/", params)
 	var books []Book
 	if err := c.get(ctx, path, &books); err != nil {
 		return nil, err

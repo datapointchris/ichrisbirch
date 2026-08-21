@@ -41,16 +41,17 @@ type Project struct {
 // ProjectItemInProject is a project item as seen within a project's ordered
 // list (GET /projects/{id}/items/), carrying its position in that project.
 type ProjectItemInProject struct {
-	ID        string    `json:"id"`
-	Number    int       `json:"number"`
-	Title     string    `json:"title"`
-	Notes     *string   `json:"notes"`
-	Repo      *string   `json:"repo"`
-	Completed bool      `json:"completed"`
-	Archived  bool      `json:"archived"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Position  int       `json:"position"`
+	ID          string     `json:"id"`
+	Number      int        `json:"number"`
+	Title       string     `json:"title"`
+	Notes       *string    `json:"notes"`
+	Repo        *string    `json:"repo"`
+	Completed   bool       `json:"completed"`
+	CompletedAt *time.Time `json:"completed_at"`
+	Archived    bool       `json:"archived"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	Position    int        `json:"position"`
 }
 
 // ProjectCreateInput is the body for creating a project. Only Name is required;
@@ -173,12 +174,16 @@ var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
 // ListProjectItems returns a project's items in order (GET /projects/{id}/items/),
 // narrowed to one derived status. It takes the same vocabulary as ListItems
 // because scoping to a project picks which rows come back and not which states.
-// An empty itemStatus leaves the server's default. A missing id is a 404.
-func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string) ([]ProjectItemInProject, error) {
-	path := "/projects/" + id + "/items/"
+// An empty itemStatus leaves the server's default. A missing id is a 404. bounds
+// narrows to items finished within a date range, the same column and semantics
+// the flat list uses — a scope picks the rows, never what a filter means.
+func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, bounds DateBounds) ([]ProjectItemInProject, error) {
+	query := url.Values{}
 	if itemStatus != "" {
-		path += "?" + url.Values{"status": {itemStatus}}.Encode()
+		query.Set("status", itemStatus)
 	}
+	bounds.apply(query)
+	path := withQuery("/projects/"+id+"/items/", query)
 	var items []ProjectItemInProject
 	if err := c.get(ctx, path, &items); err != nil {
 		return nil, err

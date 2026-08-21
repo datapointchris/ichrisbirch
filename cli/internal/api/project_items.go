@@ -18,15 +18,19 @@ type ProjectItem struct {
 	// Number is the handle: server-assigned, short, and what every command
 	// prints and accepts. ID stays the key and is only useful to a caller
 	// holding it from --json.
-	Number    int       `json:"number"`
-	Title     string    `json:"title"`
-	Notes     *string   `json:"notes"`
-	Repo      *string   `json:"repo"`
-	Completed bool      `json:"completed"`
-	Archived  bool      `json:"archived"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Projects  []Project `json:"projects"`
+	Number    int     `json:"number"`
+	Title     string  `json:"title"`
+	Notes     *string `json:"notes"`
+	Repo      *string `json:"repo"`
+	Completed bool    `json:"completed"`
+	// CompletedAt is when the item was finished, and a pointer because the API
+	// sends null where that time is unknown. UpdatedAt cannot stand in for it:
+	// edit, reopen, archive and unarchive all bump that one.
+	CompletedAt *time.Time `json:"completed_at"`
+	Archived    bool       `json:"archived"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	Projects    []Project  `json:"projects"`
 	// DependencyIDs rides along on every row, so the whole dependency graph
 	// arrives in one request. Reaching it through the detail endpoint instead
 	// costs a request per item, and answering "what blocks what" then scales
@@ -38,17 +42,18 @@ type ProjectItem struct {
 // create / add-dependency responses): the item plus the projects it belongs to
 // and the ids of the items it depends on.
 type ProjectItemDetail struct {
-	ID            string    `json:"id"`
-	Number        int       `json:"number"`
-	Title         string    `json:"title"`
-	Notes         *string   `json:"notes"`
-	Repo          *string   `json:"repo"`
-	Completed     bool      `json:"completed"`
-	Archived      bool      `json:"archived"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	Projects      []Project `json:"projects"`
-	DependencyIDs []string  `json:"dependency_ids"`
+	ID            string     `json:"id"`
+	Number        int        `json:"number"`
+	Title         string     `json:"title"`
+	Notes         *string    `json:"notes"`
+	Repo          *string    `json:"repo"`
+	Completed     bool       `json:"completed"`
+	CompletedAt   *time.Time `json:"completed_at"`
+	Archived      bool       `json:"archived"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	Projects      []Project  `json:"projects"`
+	DependencyIDs []string   `json:"dependency_ids"`
 }
 
 // ProjectItemCreateInput is the body for creating a project item. Title and at
@@ -93,12 +98,14 @@ type DependencyInput struct {
 // ListItems returns project items in one status (GET /project-items/).
 //
 // An empty status takes the API's default, which is open. Pass a status to ask
-// for another, or ItemStatusAll for every one.
-func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string) ([]ProjectItem, error) {
+// for another, or ItemStatusAll for every one. bounds narrows to items finished
+// within a date range; a zero DateBounds narrows nothing.
+func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string, bounds DateBounds) ([]ProjectItem, error) {
 	query := repoQuery(repo)
 	if itemStatus != "" {
 		query.Set("status", itemStatus)
 	}
+	bounds.apply(query)
 	var items []ProjectItem
 	if err := c.get(ctx, withQuery("/project-items/", query), &items); err != nil {
 		return nil, err

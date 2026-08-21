@@ -10,12 +10,13 @@ import (
 // tasks under a project item (distinct from the standalone Tasks app). An item
 // cannot be completed while it has incomplete tasks.
 type ProjectItemTask struct {
-	ID        string    `json:"id"`
-	ItemID    string    `json:"item_id"`
-	Title     string    `json:"title"`
-	Completed bool      `json:"completed"`
-	Position  int       `json:"position"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          string     `json:"id"`
+	ItemID      string     `json:"item_id"`
+	Title       string     `json:"title"`
+	Completed   bool       `json:"completed"`
+	CompletedAt *time.Time `json:"completed_at"`
+	Position    int        `json:"position"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 // ProjectItemTaskCreateInput is the body for creating a task on an item. Only

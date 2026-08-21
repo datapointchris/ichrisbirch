@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from fastapi import status
 from sqlalchemy import event
@@ -1216,3 +1218,112 @@ class TestProjectNameAsReference:
     def test_an_unknown_name_is_a_404(self, project_and_client):
         client, _ = project_and_client
         assert client.get(f'{PROJECTS_ENDPOINT}no-such-project/').status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestProjectItemCompletedAt:
+    """A completed item records when, on `completed_at`.
+
+    `updated_at` is bumped by complete, edit, reopen, archive and unarchive
+    alike, so "what did I finish this week" could only be approximated from it —
+    and the approximation counted every later edit as a fresh completion.
+    """
+
+    @pytest.fixture
+    def project_id(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        return client, client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+    def new_item(self, client, pid, title='Finish me'):
+        response = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [pid]})
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        return response.json()
+
+    def test_a_new_item_has_no_completion_date(self, project_id):
+        client, pid = project_id
+        assert self.new_item(client, pid)['completed_at'] is None
+
+    def test_completing_stamps_it(self, project_id):
+        client, pid = project_id
+        item = self.new_item(client, pid)
+
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['completed_at'] is not None, 'completing must record when'
+        datetime.fromisoformat(response.json()['completed_at'])
+
+    def test_reopening_clears_it(self, project_id):
+        client, pid = project_id
+        item = self.new_item(client, pid)
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': False})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['completed_at'] is None, 'reopening un-finishes the item, so the date goes with it'
+
+    def test_completing_twice_keeps_the_first_date(self, project_id):
+        """The second call finished nothing, so it must not move the record."""
+        client, pid = project_id
+        item = self.new_item(client, pid)
+        first = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True}).json()['completed_at']
+
+        again = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+        assert again.json()['completed_at'] == first
+
+    def test_an_unrelated_patch_leaves_it_alone(self, project_id):
+        client, pid = project_id
+        item = self.new_item(client, pid)
+        stamped = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True}).json()['completed_at']
+
+        renamed = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'title': 'Renamed after finishing'})
+        assert renamed.json()['completed_at'] == stamped, 'editing a finished item does not re-finish it'
+
+    def test_archiving_does_not_stamp_it(self, project_id):
+        """Archived and completed are independent, and only one of them is finishing."""
+        client, pid = project_id
+        item = self.new_item(client, pid)
+
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'archived': True})
+        assert response.json()['completed_at'] is None
+
+    def test_every_item_read_carries_it(self, project_id):
+        """The list, the detail, and the project-scoped list answer the same question."""
+        client, pid = project_id
+        item = self.new_item(client, pid)
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+
+        listed = client.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'completed'}).json()
+        assert listed[0]['completed_at'] is not None
+
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/').json()
+        assert detail['completed_at'] == listed[0]['completed_at']
+
+        in_project = client.get(f'{PROJECTS_ENDPOINT}{pid}/items/', params={'status': 'completed'}).json()
+        assert in_project[0]['completed_at'] == listed[0]['completed_at']
+
+    def test_a_task_records_when_it_was_finished(self, project_id):
+        client, pid = project_id
+        item = self.new_item(client, pid)
+        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/tasks/'
+
+        created = client.post(tasks_endpoint, json={'title': 'Step one'})
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['completed_at'] is None
+
+        done = client.patch(f'{tasks_endpoint}{created.json()["id"]}/', json={'completed': True})
+        assert done.status_code == status.HTTP_200_OK, show_status_and_response(done)
+        assert done.json()['completed_at'] is not None
+
+        reopened = client.patch(f'{tasks_endpoint}{created.json()["id"]}/', json={'completed': False})
+        assert reopened.json()['completed_at'] is None
+
+    def test_a_tasks_date_rides_along_on_the_item_list(self, project_id):
+        client, pid = project_id
+        item = self.new_item(client, pid)
+        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/tasks/'
+        task = client.post(tasks_endpoint, json={'title': 'Step one'}).json()
+        client.patch(f'{tasks_endpoint}{task["id"]}/', json={'completed': True})
+
+        listed = client.get(PROJECT_ITEMS_ENDPOINT).json()
+        embedded = next(i for i in listed if i['id'] == item['id'])
+        assert embedded['tasks'][0]['completed_at'] is not None

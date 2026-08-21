@@ -18,6 +18,7 @@ from ichrisbirch.models.project import ProjectItemTask
 from ichrisbirch.schemas.project_item_task import ProjectItemTask as ProjectItemTaskSchema
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskCreate
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskUpdate
+from ichrisbirch.services.project_item_completion import stamp_completion
 from ichrisbirch.services.project_refs import resolve_item
 
 logger = structlog.get_logger()
@@ -75,8 +76,11 @@ async def create_task(item: ItemFromPath, task: ProjectItemTaskCreate, session: 
 async def update_task(item: ItemFromPath, task_id: UUID, update: ProjectItemTaskUpdate, session: DbSession):
     """Update a project item task."""
     task = _get_task_or_404(session, item.id, task_id)
-    for attr, value in update.model_dump(exclude_unset=True).items():
+    update_data = update.model_dump(exclude_unset=True)
+    was_completed = task.completed
+    for attr, value in update_data.items():
         setattr(task, attr, value)
+    stamp_completion(task, was_completed, update_data)
     session.commit()
     session.refresh(task)
     return task

@@ -21,6 +21,10 @@ from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.services.date_bounds import EndDate
+from ichrisbirch.services.date_bounds import StartDate
+from ichrisbirch.services.date_bounds import apply_date_bounds
+from ichrisbirch.services.project_item_completion import stamp_completion
 from ichrisbirch.services.project_item_positions import move_membership_to_position
 from ichrisbirch.services.project_item_status import apply_status_filter
 from ichrisbirch.services.project_item_status import validate_item_status
@@ -125,6 +129,7 @@ def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDe
         notes=item.notes,
         repo=item.repo,
         completed=item.completed,
+        completed_at=item.completed_at,
         archived=item.archived,
         created_at=item.created_at,
         updated_at=item.updated_at,
@@ -155,6 +160,8 @@ async def read_many(
         alias='status',
         description="An item status, or 'all'. Completed and archived items are hidden by default.",
     ),
+    start_date: StartDate = None,
+    end_date: EndDate = None,
 ):
     """List open project items — not completed, not archived.
 
@@ -163,11 +170,16 @@ async def read_many(
     grows without bound" applies. Measured 2026-08-12, before this existed: 213
     completed against 213 open, so the default read of the store was half
     history and nothing was going to stop that growing.
+
+    The date bounds narrow on `completed_at`, which is the only date on an item
+    that records an event rather than a revision. An item with none — never
+    finished, or finished before the column existed — is outside every range.
     """
     validate_item_status(item_status)
     query = select(models.ProjectItem).options(*PROJECT_ITEM_LOAD_OPTIONS).order_by(models.ProjectItem.created_at.desc())
     query = apply_status_filter(query, item_status)
     query = apply_repo_filter(query, repo)
+    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date)
     return list(session.scalars(query).all())
 
 
@@ -266,8 +278,10 @@ async def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session:
                 detail=f'Cannot complete item with {len(incomplete_tasks)} incomplete task(s). Finish all tasks first.',
             )
 
+    was_completed = item.completed
     for attr, value in update_data.items():
         setattr(item, attr, value)
+    stamp_completion(item, was_completed, update_data)
     item.updated_at = datetime.now(tz=ZoneInfo('UTC'))
     session.commit()
     session.refresh(item)
@@ -307,6 +321,7 @@ async def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, sessi
         notes=item.notes,
         repo=item.repo,
         completed=item.completed,
+        completed_at=item.completed_at,
         archived=item.archived,
         created_at=item.created_at,
         updated_at=item.updated_at,

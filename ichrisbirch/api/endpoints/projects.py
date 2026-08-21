@@ -21,6 +21,9 @@ from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.models.project import TERMINAL_PROJECT_STATUSES
 from ichrisbirch.models.project import ProjectItemMembership
+from ichrisbirch.services.date_bounds import EndDate
+from ichrisbirch.services.date_bounds import StartDate
+from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.project_item_status import apply_status_filter
 from ichrisbirch.services.project_item_status import validate_item_status
 from ichrisbirch.services.project_refs import resolve_project
@@ -306,6 +309,8 @@ async def list_items(
         alias='status',
         description="An item status, or 'all'. Completed and archived items are hidden by default.",
     ),
+    start_date: StartDate = None,
+    end_date: EndDate = None,
 ):
     """List one project's open items, in project order.
 
@@ -315,6 +320,10 @@ async def list_items(
     same reason they pile up across all of them. Measured 2026-08-14, before this
     existed: one 29-row project list carried 6 finished items. See `cli-design.md`
     § "A scope selects which rows, not which states".
+
+    The date bounds narrow on `completed_at`, the same column and the same
+    semantics as the flat list, for the same reason the status vocabulary is
+    shared: a scope picks the rows, never what a filter means.
     """
     validate_item_status(item_status)
     query = (
@@ -323,6 +332,7 @@ async def list_items(
         .where(ProjectItemMembership.project_id == project.id)
     )
     query = apply_status_filter(query, item_status)
+    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date)
 
     # position has no unique constraint, so a collision would otherwise order by
     # whatever the database returned
@@ -336,6 +346,7 @@ async def list_items(
             notes=item.notes,
             repo=item.repo,
             completed=item.completed,
+            completed_at=item.completed_at,
             archived=item.archived,
             created_at=item.created_at,
             updated_at=item.updated_at,
