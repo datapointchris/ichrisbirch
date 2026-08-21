@@ -37,6 +37,12 @@ const (
 	// overviewTimeout bounds the whole fan-out: the injected oauth2 client sets no
 	// timeout of its own, so without this a hung handshake hangs the command.
 	overviewTimeout = 15 * time.Second
+
+	// articleReadWindow is how far back read_last_30_days counts. The window is in
+	// the field name rather than beside it, so a consumer cannot label a count it
+	// has mislabelled: change the window and the field a renderer reads disappears
+	// rather than quietly meaning something else.
+	articleReadWindow = 30 * 24 * time.Hour
 )
 
 // Section names, shared by the fetch table and the warnings so a consumer can
@@ -90,6 +96,13 @@ type articleSection struct {
 	Current     *api.Article  `json:"current"`
 	Unread      []api.Article `json:"unread"`
 	UnreadTotal int           `json:"unread_total"`
+
+	// An unread count only ever climbs, so on its own it cannot answer whether any
+	// of the pile is being read. These two say when one last was and how many were
+	// inside the window, which is the question a saved-article backlog is kept to
+	// answer. Null when nothing has ever been read.
+	LastReadAt     *time.Time `json:"last_read_at"`
+	ReadLast30Days int        `json:"read_last_30_days"`
 }
 
 type projectItemSection struct {
@@ -125,6 +138,7 @@ type overviewData struct {
 	OwnedBooks      []api.Book
 	CurrentArticle  *api.Article
 	UnreadArticles  []api.Article
+	ReadArticles    []api.Article
 	Items           []api.ProjectItem
 	BlockedItems    []api.ProjectItem
 	Countdowns      []api.Countdown
@@ -226,6 +240,14 @@ func overviewFetches() []overviewFetch {
 			d.UnreadArticles = articles
 			return err
 		}},
+		// Archived is the read set. Marking an article read archives it in the same
+		// call, so there is no separate read filter to ask for and no third state.
+		{sectionArticles, "read articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
+			archived := true
+			articles, err := c.ListArticles(ctx, nil, &archived, nil)
+			d.ReadArticles = articles
+			return err
+		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen)
 			d.Items = items
@@ -298,6 +320,7 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	nextItems := nextProjectItems(data.Items, data.BlockedItems)
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
+	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
 	countdowns := upcomingCountdowns(data.Countdowns, now)
 	events := upcomingEvents(data.Events, now)
 
@@ -319,9 +342,11 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			NextUpTotal: len(nextBooks),
 		},
 		Articles: articleSection{
-			Current:     data.CurrentArticle,
-			Unread:      capItems(queuedArticles, limit),
-			UnreadTotal: len(queuedArticles),
+			Current:        data.CurrentArticle,
+			Unread:         capItems(queuedArticles, limit),
+			UnreadTotal:    len(queuedArticles),
+			LastReadAt:     lastArticleRead,
+			ReadLast30Days: articlesReadInWindow,
 		},
 		ProjectItems: projectItemSection{
 			Next:         capItems(nextItems, limit),
@@ -491,6 +516,30 @@ func outranks(a api.Project, b api.Project) bool {
 	return a.ID < b.ID
 }
 
+// articleReadActivity is when an article was last read and how many were read
+// inside articleReadWindow.
+//
+// An archived article with no LastReadDate is skipped rather than counted, so a
+// row archived by some other route cannot report itself as reading that happened.
+func articleReadActivity(read []api.Article, now time.Time) (*time.Time, int) {
+	var last *time.Time
+	inWindow := 0
+	cutoff := now.Add(-articleReadWindow)
+	for i := range read {
+		when := read[i].LastReadDate
+		if when == nil {
+			continue
+		}
+		if last == nil || when.After(*last) {
+			last = when
+		}
+		if when.After(cutoff) {
+			inWindow++
+		}
+	}
+	return last, inWindow
+}
+
 // articlesBehindCurrent is the unread queue with the one being read removed, so
 // the current article is never also counted as waiting.
 func articlesBehindCurrent(unread []api.Article, current *api.Article) []api.Article {
@@ -615,8 +664,19 @@ func printBookSection(out io.Writer, section bookSection) {
 	_ = tw.Flush()
 }
 
+// articleReadSummary is the clause that says whether the pile is moving. Empty
+// when nothing has ever been read: "0 read" beside a list nobody has touched adds
+// no fact the unread count did not already carry.
+func articleReadSummary(section articleSection) string {
+	if section.LastReadAt == nil {
+		return ""
+	}
+	return fmt.Sprintf(", %d read in 30d, last %s",
+		section.ReadLast30Days, section.LastReadAt.Format("2006-01-02"))
+}
+
 func printArticleSection(out io.Writer, section articleSection) {
-	_, _ = fmt.Fprintf(out, "\nArticles (%d unread)\n", section.UnreadTotal)
+	_, _ = fmt.Fprintf(out, "\nArticles (%d unread%s)\n", section.UnreadTotal, articleReadSummary(section))
 	if section.Current == nil && len(section.Unread) == 0 {
 		_, _ = fmt.Fprintln(out, "  (none)")
 		return

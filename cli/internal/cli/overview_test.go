@@ -394,6 +394,81 @@ func TestArticlesBehindCurrent_DropsTheOneBeingRead(t *testing.T) {
 	}
 }
 
+func readAt(daysAgo int) *time.Time {
+	when := fixedNow.AddDate(0, 0, -daysAgo)
+	return &when
+}
+
+func TestArticleReadActivity_CountsTheWindowAndKeepsTheLatest(t *testing.T) {
+	read := []api.Article{
+		{ID: 1, LastReadDate: readAt(10)},
+		{ID: 2, LastReadDate: readAt(2)},
+		{ID: 3, LastReadDate: readAt(60)},
+	}
+
+	last, inWindow := articleReadActivity(read, fixedNow)
+
+	if inWindow != 2 {
+		t.Errorf("read in window = %d, want 2 — the 60-day-old read is outside it", inWindow)
+	}
+	if last == nil || !last.Equal(*readAt(2)) {
+		t.Errorf("last read = %v, want the most recent of the three", last)
+	}
+}
+
+func TestArticleReadActivity_AnArchivedRowWithNoReadDateIsNotReading(t *testing.T) {
+	read := []api.Article{{ID: 1, IsArchived: true, LastReadDate: nil}}
+
+	last, inWindow := articleReadActivity(read, fixedNow)
+
+	if last != nil || inWindow != 0 {
+		t.Errorf("last = %v, inWindow = %d — an archive with no read date is not evidence of reading", last, inWindow)
+	}
+}
+
+func TestArticleReadActivity_NothingEverReadHasNoDate(t *testing.T) {
+	last, inWindow := articleReadActivity(nil, fixedNow)
+
+	if last != nil || inWindow != 0 {
+		t.Errorf("last = %v, inWindow = %d — an untouched list must report no date", last, inWindow)
+	}
+}
+
+func TestPrintOverview_ArticlesSayWhetherThePileIsMoving(t *testing.T) {
+	report := buildOverview(overviewData{
+		UnreadArticles: []api.Article{{ID: 6, Title: "A Queued Article"}},
+		ReadArticles: []api.Article{
+			{ID: 1, Title: "Read Recently", IsArchived: true, LastReadDate: readAt(3)},
+			{ID: 2, Title: "Read Long Ago", IsArchived: true, LastReadDate: readAt(90)},
+		},
+	}, fixedNow, defaultOverviewLimit)
+
+	if report.Articles.ReadLast30Days != 1 {
+		t.Errorf("read_last_30_days = %d, want 1", report.Articles.ReadLast30Days)
+	}
+
+	var out, errOut bytes.Buffer
+	printOverview(&out, &errOut, report)
+
+	want := "Articles (1 unread, 1 read in 30d, last 2026-07-21)"
+	if !strings.Contains(out.String(), want) {
+		t.Errorf("printed overview missing %q:\n%s", want, out.String())
+	}
+}
+
+func TestPrintOverview_AnUntouchedArticleListSaysOnlyItsCount(t *testing.T) {
+	report := buildOverview(overviewData{
+		UnreadArticles: []api.Article{{ID: 6, Title: "A Queued Article"}},
+	}, fixedNow, defaultOverviewLimit)
+
+	var out, errOut bytes.Buffer
+	printOverview(&out, &errOut, report)
+
+	if !strings.Contains(out.String(), "Articles (1 unread)") {
+		t.Errorf("a list nobody has read must not claim 0 read:\n%s", out.String())
+	}
+}
+
 func TestProjectNames_LabelsAnItemWithItsWork(t *testing.T) {
 	item := api.ProjectItem{
 		Title:    "Glove 80",
