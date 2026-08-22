@@ -216,6 +216,12 @@ The MCP server was retired (2026-07-24); the `icb` CLI is the programmatic data 
 
 To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/tasks/`. Override the CLI's target per-invocation with `ICB_API_BASE` if you need `icb` itself pointed at dev.
 
+### Always "Cooking Technique", never the bare word "technique"
+
+`CookingTechnique`, `cooking_technique`, `cooking-techniques` — the full noun at every layer, in the model, the route, the URL and the prose. Chris flagged the bare word as too generic during review, and it is: "technique" alone reads as a name for anything.
+
+Cooking techniques are part of the Recipes domain and not a separate entity, so the code lives inside the recipes files at every layer — `models/recipe.py` holds the model, and the routes hang under `/recipes/` in `api/endpoints/recipes.py`.
+
 ### A project name is bounded work, never a repo
 
 `projects create` refuses a name the repo registry knows, and so does a rename.
@@ -257,7 +263,9 @@ therefore not covered — it has no registry either.
   2. **`./ops/icbops testing rebuild --volumes`** (~60–90s). Use if step 1 didn't resolve it. Fixes stale `.venv` contents, dependency changes (pyproject.toml additions), anonymous-volume staleness, ENOTEMPTY errors, vue node_modules corruption.
   3. **ONLY NOW** reach for `docker logs`, `docker inspect`, `docker exec`, `docker restart`, or any manual docker subcommand. Fresh containers from step 2 still failing is a real bug; containers that haven't been through steps 1–2 aren't.
 
-  The same ladder applies to dev via `./ops/icbops dev stop && start` then `./ops/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow — an hour of "investigating" that a 90-second CLI escalation would have resolved. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
+  The same ladder applies to dev via `./ops/icbops dev stop && start` then `./ops/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
+
+  **Measured 2026-04-24.** Ten docker subcommands were run before Chris stopped it — `exec`, `restart`, `logs`, `images`, `image inspect`, `run --rm`, `volume ls`, `inspect --format`, a `sudo ls` on a volume path, and a `testing rebuild` without `--volumes`. Step 2 with `--volumes` then fixed it in 90 seconds. Every one of those subcommands felt like progress and all of it was archaeology. The tell that it has gone wrong is proposing a workaround rather than an escalation: the session that day suggested baking the venv into the image, and Chris's answer was "remove this bullshit".
 - **Pre-commit hooks** run automatically; the set is generated from `~/tools/forge/pre-commit/toolchain.yml` (see `standards/ci.md`). Repo-specific detail: Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
 - **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`. (The general rule is in `standards/python.md`; `find_project_root()` is the ichrisbirch-specific affordance.)
