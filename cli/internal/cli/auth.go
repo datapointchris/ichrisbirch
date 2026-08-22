@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/auth"
 	"github.com/datapointchris/ichrisbirch/cli/internal/config"
@@ -45,11 +47,15 @@ func newAuthLoginCommand() *cobra.Command {
 			ctx, cancel := context.WithTimeout(cmd.Context(), loginTimeout)
 			defer cancel()
 
-			// pkg/browser hands the launcher subprocess os.Stdout, so xdg-open's
-			// chatter would land in the data stream. Package-level vars are the
-			// library's only knob for it.
-			browser.Stdout = cmd.ErrOrStderr()
-			browser.Stderr = cmd.ErrOrStderr()
+			// pkg/browser hands the launcher subprocess os.Stdout and os.Stderr,
+			// which puts whatever the browser writes at startup — GPU warnings,
+			// favicon decode failures, a dbus complaint — in the middle of the
+			// user code and the verification URL. A launcher that fails is
+			// reported by OpenURL's error instead, so nothing diagnostic is lost
+			// by dropping the stream. Package-level vars are the library's only
+			// knob for it.
+			browser.Stdout = io.Discard
+			browser.Stderr = io.Discard
 
 			token, err := auth.Login(ctx, cfg, browser.OpenURL, cmd.ErrOrStderr())
 			if err != nil {
@@ -132,7 +138,18 @@ type statusReport struct {
 	Issuer    string `json:"issuer"`
 	ExpiresAt string `json:"expires_at,omitempty"`
 	Expired   bool   `json:"expired"`
+	Session   string `json:"session"`
 }
+
+// The three answers `session` carries. A stored token says only what this
+// machine holds, and an expired access token is refreshed on the next call, so
+// holding one is not the same as being able to use it: the refresh token behind
+// it may have been revoked, and only the issuer knows.
+const (
+	sessionLive       = "live"       // a usable access token was obtained
+	sessionRejected   = "rejected"   // the issuer refused the refresh; only a login fixes it
+	sessionUnverified = "unverified" // the issuer could not be reached to ask
+)
 
 func newAuthStatusCommand() *cobra.Command {
 	var asJSON bool
@@ -159,6 +176,16 @@ func newAuthStatusCommand() *cobra.Command {
 					report.ExpiresAt = token.Expiry.Format(time.RFC3339)
 					report.Expired = time.Now().After(token.Expiry)
 				}
+				// Ask for a token the way a resource command does, which is the
+				// only thing that separates a soft expiry from a revoked grant.
+				// A live access token answers locally; an expired one performs
+				// the refresh the next call would have performed anyway, so the
+				// answer costs nothing that was not already due.
+				report.Session, token = verifySession(cmd.Context(), cfg, store)
+				if token != nil && !token.Expiry.IsZero() {
+					report.ExpiresAt = token.Expiry.Format(time.RFC3339)
+					report.Expired = time.Now().After(token.Expiry)
+				}
 			}
 
 			if asJSON {
@@ -171,7 +198,10 @@ func newAuthStatusCommand() *cobra.Command {
 				printStatus(cmd, report)
 			}
 
-			if !report.LoggedIn {
+			// A rejected session exits non-zero for the same reason being logged
+			// out does: nothing the caller runs next will work until they log in.
+			// An unverified one exits zero, because nothing established it is bad.
+			if !report.LoggedIn || report.Session == sessionRejected {
 				return exitCode(1)
 			}
 			return nil
@@ -181,10 +211,42 @@ func newAuthStatusCommand() *cobra.Command {
 	return cmd
 }
 
+// verifySession obtains a token through the same path a resource command uses
+// and reports which of the three states the session is in, along with whatever
+// token it ended up holding. A refusal at the token endpoint is the issuer
+// saying the grant is gone; anything else is this machine failing to ask.
+func verifySession(ctx context.Context, cfg config.Config, store *auth.TokenStore) (string, *oauth2.Token) {
+	source, err := auth.TokenSource(ctx, cfg, store)
+	if err != nil {
+		return sessionUnverified, nil
+	}
+	return classifySession(source.Token())
+}
+
+// classifySession reads the outcome of asking for a token. A refusal at the
+// token endpoint is the issuer saying the grant is gone, which only a login
+// fixes; every other error is this machine failing to ask, which proves nothing
+// about the grant and must not be reported as though it did.
+func classifySession(token *oauth2.Token, err error) (string, *oauth2.Token) {
+	if err == nil {
+		return sessionLive, token
+	}
+	var retrieveErr *oauth2.RetrieveError
+	if errors.As(err, &retrieveErr) {
+		return sessionRejected, nil
+	}
+	return sessionUnverified, nil
+}
+
 func printStatus(cmd *cobra.Command, r statusReport) {
 	out := cmd.OutOrStdout()
 	if !r.LoggedIn {
 		_, _ = fmt.Fprintf(out, "Not logged in as %s.\nRun `icb auth login` to authenticate.\n", r.ClientID)
+		return
+	}
+	if r.Session == sessionRejected {
+		_, _ = fmt.Fprintf(out, "Session rejected by %s.\nRun `icb auth login` to authenticate.\n", r.Issuer)
+		_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
 		return
 	}
 	_, _ = fmt.Fprintf(out, "Logged in\n")
@@ -193,8 +255,11 @@ func printStatus(cmd *cobra.Command, r statusReport) {
 	if r.ExpiresAt != "" {
 		state := "valid"
 		if r.Expired {
-			state = "expired — will refresh on next use"
+			state = "expired"
 		}
 		_, _ = fmt.Fprintf(out, "  token:    %s (expires %s)\n", state, r.ExpiresAt)
+	}
+	if r.Session == sessionUnverified {
+		_, _ = fmt.Fprintf(out, "  session:  unverified — %s could not be reached\n", r.Issuer)
 	}
 }
