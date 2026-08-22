@@ -37,12 +37,19 @@ func newAPIClient(ctx context.Context) (*api.Client, error) {
 }
 
 // handleAPIError maps an error from a resource command to a message and exit
-// code: not-logged-in and 401 both point at `icb auth login` (exit 1);
-// everything else is a runtime error (exit 1 via Execute). Returns the error to
-// return from RunE.
+// code: not-logged-in, a token endpoint that refused the refresh, and 401 all
+// point at `icb auth login` (exit 1); everything else is a runtime error (exit 1
+// via Execute). Returns the error to return from RunE.
 func handleAPIError(err error) error {
 	if errors.Is(err, errNeedsLogin) {
 		return fmt.Errorf("not logged in — run `icb auth login`")
+	}
+	// A refusal at the token endpoint arrives as the transport error of the
+	// request that triggered the refresh, so the URL and the raw OAuth error
+	// description are what reach the terminal unless they are named here.
+	var retrieveErr *oauth2.RetrieveError
+	if errors.As(err, &retrieveErr) {
+		return fmt.Errorf("session expired — run `icb auth login`")
 	}
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) && apiErr.Unauthorized() {

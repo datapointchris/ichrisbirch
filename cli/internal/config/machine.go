@@ -80,3 +80,20 @@ func ExpandTilde(path string) string {
 	}
 	return filepath.Join(home, path[2:])
 }
+
+// StatePath resolves a path under icb's own XDG state directory —
+// $XDG_STATE_HOME/icb, falling back to ~/.local/state/icb. State is what the
+// tool writes and the user does not: coordination files, run history, cached
+// timestamps. Returns "" when the home directory cannot be resolved, which
+// callers treat as "no state directory available" rather than as an error.
+func StatePath(parts ...string) string {
+	base := os.Getenv("XDG_STATE_HOME")
+	if base == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		base = filepath.Join(home, ".local", "state")
+	}
+	return filepath.Join(append([]string{base, "icb"}, parts...)...)
+}

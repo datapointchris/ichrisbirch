@@ -113,34 +113,61 @@ func writeInstructions(progress io.Writer, clientID string, d *oauth2.DeviceAuth
 	_, _ = fmt.Fprintln(progress, "Waiting for approval...")
 }
 
-// persistingTokenSource wraps a refreshing oauth2.TokenSource and writes any
-// newly-refreshed token back to the keychain, so a refresh performed on one
-// invocation persists for the next.
-type persistingTokenSource struct {
-	base     oauth2.TokenSource
+// lockingTokenSource refreshes at most one token at a time per machine and
+// writes the result back to the keychain, so a refresh performed by one icb
+// process is the one every other process goes on to use.
+//
+// Authelia rotates the refresh token on every use and revokes the whole grant
+// when a consumed one is presented again, which it reads as a stolen token.
+// Two icb processes refreshing from the same stored token therefore cost a
+// re-login rather than a retry: one rotates, the other replays the token that
+// rotation consumed, and Authelia drops the pair. Several run at once in normal
+// use — doit resolves each pursuit's evidence in its own process — so the
+// serialization has to hold across processes, not merely across goroutines.
+type lockingTokenSource struct {
+	ctx      context.Context
+	oauthCfg *oauth2.Config
 	store    *TokenStore
 	clientID string
+	lockPath string
 
-	// mu guards lastPersist: `overview` fetches every section concurrently off a
-	// single token source, so the compare-and-store below has parallel callers.
-	mu          sync.Mutex
-	lastPersist string
+	// mu serializes the goroutines inside one process; the file lock serializes
+	// the processes. `overview` fetches every section concurrently off a single
+	// token source, so both layers carry real traffic.
+	mu  sync.Mutex
+	tok *oauth2.Token
 }
 
-func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
-	tok, err := p.base.Token()
+func (l *lockingTokenSource) Token() (*oauth2.Token, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.tok.Valid() {
+		return l.tok, nil
+	}
+
+	release := lockRefresh(l.lockPath)
+	defer release()
+
+	// Whoever held the lock may have refreshed while this process waited for it.
+	// Their token is then the live one, and refreshing again would present the
+	// token their rotation already consumed.
+	if stored, err := l.store.Load(l.clientID); err == nil {
+		l.tok = stored
+		if stored.Valid() {
+			return stored, nil
+		}
+	}
+
+	refreshed, err := l.oauthCfg.TokenSource(l.ctx, l.tok).Token()
 	if err != nil {
 		return nil, err
 	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if tok.AccessToken != p.lastPersist {
-		if saveErr := p.store.Save(p.clientID, tok); saveErr != nil {
-			return tok, fmt.Errorf("persist refreshed token: %w", saveErr)
-		}
-		p.lastPersist = tok.AccessToken
+	l.tok = refreshed
+	if err := l.store.Save(l.clientID, refreshed); err != nil {
+		return refreshed, fmt.Errorf("persist refreshed token: %w", err)
 	}
-	return tok, nil
+	return refreshed, nil
 }
 
 // TokenSource returns an auto-refreshing, keychain-persisting token source for
@@ -154,12 +181,12 @@ func TokenSource(ctx context.Context, cfg config.Config, store *TokenStore) (oau
 	if err != nil {
 		return nil, err
 	}
-	oauthCfg := oauthConfig(cfg, meta)
-	base := oauthCfg.TokenSource(ctx, tok)
-	return &persistingTokenSource{
-		base:        base,
-		store:       store,
-		clientID:    cfg.ClientID,
-		lastPersist: tok.AccessToken,
+	return &lockingTokenSource{
+		ctx:      ctx,
+		oauthCfg: oauthConfig(cfg, meta),
+		store:    store,
+		clientID: cfg.ClientID,
+		lockPath: refreshLockPath(cfg.ClientID),
+		tok:      tok,
 	}, nil
 }

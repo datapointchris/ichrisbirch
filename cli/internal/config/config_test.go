@@ -134,3 +134,21 @@ func TestExpandTildeResolvesALeadingHome(t *testing.T) {
 		}
 	}
 }
+
+func TestStatePathIsTheToolsOwnStateDirectory(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", "/tmp/xdgstate")
+	if got, want := StatePath(), "/tmp/xdgstate/icb"; got != want {
+		t.Errorf("StatePath() = %q, want %q", got, want)
+	}
+	if got, want := StatePath("icb-cli-archlinux.refresh.lock"), "/tmp/xdgstate/icb/icb-cli-archlinux.refresh.lock"; got != want {
+		t.Errorf("StatePath(name) = %q, want %q", got, want)
+	}
+}
+
+func TestStatePathFallsBackToLocalState(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", "")
+	t.Setenv("HOME", "/home/tester")
+	if got, want := StatePath(), "/home/tester/.local/state/icb"; got != want {
+		t.Errorf("StatePath() = %q, want %q", got, want)
+	}
+}

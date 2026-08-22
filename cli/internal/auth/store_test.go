@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,7 +13,10 @@ import (
 // fakeKeyring is an in-memory stand-in for the OS keychain. go-keyring's own
 // MockInit is process-global and unsafe under parallel tests, so the store
 // depends on the keyringStore seam and tests inject this.
+// The real keychain is shared by every process on the machine, so the fake is
+// guarded too — the refresh tests read and write it from several goroutines.
 type fakeKeyring struct {
+	mu      sync.Mutex
 	entries map[string]string
 }
 
@@ -21,11 +25,15 @@ func newFakeKeyring() *fakeKeyring { return &fakeKeyring{entries: map[string]str
 func key(service, user string) string { return service + "\x00" + user }
 
 func (f *fakeKeyring) Set(service, user, password string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.entries[key(service, user)] = password
 	return nil
 }
 
 func (f *fakeKeyring) Get(service, user string) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	v, ok := f.entries[key(service, user)]
 	if !ok {
 		return "", keyring.ErrNotFound
@@ -34,6 +42,8 @@ func (f *fakeKeyring) Get(service, user string) (string, error) {
 }
 
 func (f *fakeKeyring) Delete(service, user string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if _, ok := f.entries[key(service, user)]; !ok {
 		return keyring.ErrNotFound
 	}
