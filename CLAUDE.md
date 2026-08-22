@@ -98,7 +98,7 @@ Two separate command-line tools with distinct concerns:
 
 ### Vue Frontend
 
-Vue serves all pages. Flask was fully removed after all 14 pages were migrated.
+Vue serves all pages and Flask is fully removed — `pyproject.toml` declares no Flask dependency and `ichrisbirch/app/` holds only `static`. The migration finished at 14 pages; the app has grown well past that since, so `rg -c "path: '/" frontend/src/router.ts` is the current route count rather than a number written here.
 
 **Key patterns:**
 
@@ -175,7 +175,7 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Bind mount + named volume overlap creates root-owned empty host dirs** (expected, not a bug): The vue services mount `./frontend:/app` (bind) AND `vue_*_node_modules:/app/node_modules` (named volume). Docker needs `./frontend/node_modules/` to exist on the host as a mount point — if it doesn't, the Docker daemon auto-creates it, which means `root:root` ownership. At runtime the named volume shadows it, so container writes go to the volume, NOT the host directory. Host-side `npm install` writes are therefore invisible to the container. Don't try to "fix" the ownership in compose — either accept the empty host dir, or `mkdir frontend/node_modules` as your user BEFORE bringing up containers if you need host-side node_modules for pre-commit typecheck.
 
-**Dual iptables backends can block Docker egress** (Arch gotcha): If containers on a NEWER Docker network can ping their gateway but not the internet, while older networks work fine, the cause is orphan `iptables-legacy` rules referencing dead bridge IDs. The Linux kernel loads both netfilter backends simultaneously and evaluates both; Docker only maintains rules in its current backend (nft). Diagnose: `sudo iptables-legacy -t nat -L POSTROUTING -n -v` — stale bridge IDs are the signal. Recovery: `sudo iptables-legacy -F && sudo iptables-legacy -t nat -F && sudo systemctl restart docker`. See `project_docker_iptables_gotcha.md` in memory for full forensics.
+**Dual iptables backends can block Docker egress** (Arch gotcha): If containers on a NEWER Docker network can ping their gateway but not the internet, while older networks work fine, the cause is orphan `iptables-legacy` rules referencing dead bridge IDs. The Linux kernel loads both netfilter backends simultaneously and evaluates both; Docker only maintains rules in its current backend (nft). Diagnose: `sudo iptables-legacy -t nat -L POSTROUTING -n -v` — stale bridge IDs are the signal. Recovery: `sudo iptables-legacy -F && sudo iptables-legacy -t nat -F && sudo systemctl restart docker`. Full forensics are the `project-docker-iptables-gotcha` memory. It is a fault in the Arch workstation rather than in this repo, so it surfaces whichever project is open.
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
