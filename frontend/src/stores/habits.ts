@@ -33,7 +33,7 @@ function todayKey(): string {
   return toDayKey(new Date())
 }
 
-/** The half-open range covering one local day, matching the filter ranges above. */
+/** The range covering one local day: this day's midnight to the next day's. */
 function dayRange(dayKey: string): Record<string, string> {
   const [y, m, d] = dayKey.split('-').map(Number)
   const start = new Date(y!, m! - 1, d!)
@@ -41,11 +41,30 @@ function dayRange(dayKey: string): Record<string, string> {
   return { start_date: start.toISOString(), end_date: end.toISOString() }
 }
 
+// A day key is YYYY-MM-DD naming a real calendar day, no later than today. Throws
+// rather than substituting, so a caller can tell "showed your day" from "showed
+// another one". `new Date` rolls a bad component over instead of refusing — day 0
+// is the previous month's last day, 2026-02-31 is 3 March — so the parsed date is
+// compared back against what was asked for.
+function assertSelectableDay(dayKey: string, today: string): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
+    throw new RangeError(`habit day must be YYYY-MM-DD, got "${dayKey}"`)
+  }
+  const [y, m, d] = dayKey.split('-').map(Number)
+  const parsed = new Date(y!, m! - 1, d!)
+  if (parsed.getFullYear() !== y || parsed.getMonth() !== m! - 1 || parsed.getDate() !== d) {
+    throw new RangeError(`habit day "${dayKey}" is not a calendar day`)
+  }
+  if (dayKey > today) {
+    throw new RangeError(`habit day "${dayKey}" is after today — a habit cannot be completed ahead of time`)
+  }
+}
+
 // Completing today records the moment of the click. A day being filled in after the
 // fact has no such moment, so it lands at local noon — far enough from either edge
 // that the completion still reads as that day under a nearby UTC offset.
-function completionTimestamp(dayKey: string): string {
-  if (dayKey === todayKey()) return new Date().toISOString()
+function completionTimestamp(dayKey: string, today: string): string {
+  if (dayKey === today) return new Date().toISOString()
   const [y, m, d] = dayKey.split('-').map(Number)
   return new Date(y!, m! - 1, d!, 12).toISOString()
 }
@@ -131,7 +150,17 @@ export const useHabitsStore = defineStore('habits', () => {
   const selectedFilter = ref<DateFilter>('this_week')
   const selectedDate = ref<string>(todayKey())
 
-  const isToday = computed(() => selectedDate.value === todayKey())
+  // The wall clock is not reactive, so today has to be a ref that something
+  // refreshes. Left as a plain call it freezes at setup, and a tab open across
+  // midnight then reports every control — arrows, picker bound, Today button — as
+  // if yesterday were still today.
+  const today = ref<string>(todayKey())
+
+  function refreshToday() {
+    today.value = todayKey()
+  }
+
+  const isToday = computed(() => selectedDate.value === today.value)
 
   const currentHabits = computed(() => habits.value.filter((h) => h.is_current))
   const hibernatingHabits = computed(() => habits.value.filter((h) => !h.is_current))
@@ -140,9 +169,14 @@ export const useHabitsStore = defineStore('habits', () => {
 
   const habitsByCategory = computed(() => groupByCategory(currentHabits.value))
 
+  // A completion denormalizes the name on purpose, so a habit renamed since is not
+  // findable by it. habit_id is the identity where the row carries one; the name is
+  // the fallback only for rows that do not, which is every completion recorded
+  // before the web client started sending the id.
   const todoHabits = computed(() => {
-    const completedNames = new Set(completedHabits.value.map((c) => c.name))
-    const todo = currentHabits.value.filter((h) => !completedNames.has(h.name))
+    const completedIds = new Set(completedHabits.value.map((c) => c.habit_id).filter((id): id is number => id !== null && id !== undefined))
+    const unlinkedNames = new Set(completedHabits.value.filter((c) => c.habit_id == null).map((c) => c.name))
+    const todo = currentHabits.value.filter((h) => !completedIds.has(h.id) && !unlinkedNames.has(h.name))
     return groupByCategory(todo)
   })
 
@@ -188,18 +222,26 @@ export const useHabitsStore = defineStore('habits', () => {
 
   // --- Habits ---
 
-  async function fetchHabits(params?: Record<string, string | boolean>) {
-    loading.value = true
-    error.value = null
+  // loadHabits returns rather than assigns, so a caller racing two requests can
+  // decide which answer wins before anything reaches the state.
+  async function loadHabits(params?: Record<string, string | boolean>) {
     try {
       const response = await api.get<Habit[]>('/habits/', { params })
-      habits.value = response.data
       logger.info('habits_fetched', { count: response.data.length })
+      return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
       logger.error('habits_fetch_failed', { detail: apiError.detail, status: apiError.status })
       throw apiError
+    }
+  }
+
+  async function fetchHabits(params?: Record<string, string | boolean>) {
+    loading.value = true
+    error.value = null
+    try {
+      habits.value = await loadHabits(params)
     } finally {
       loading.value = false
     }
@@ -333,12 +375,12 @@ export const useHabitsStore = defineStore('habits', () => {
 
   // --- Completed ---
 
-  async function fetchCompleted(params?: Record<string, string>) {
-    error.value = null
+  /** The returning counterpart to fetchCompleted, for the same reason as loadHabits. */
+  async function loadCompleted(params?: Record<string, string>) {
     try {
       const response = await api.get<HabitCompleted[]>('/habits/completed/', { params })
-      completedHabits.value = response.data
       logger.info('completed_fetched', { count: response.data.length })
+      return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
@@ -347,15 +389,23 @@ export const useHabitsStore = defineStore('habits', () => {
     }
   }
 
+  async function fetchCompleted(params?: Record<string, string>) {
+    error.value = null
+    completedHabits.value = await loadCompleted(params)
+  }
+
+  /** Records a completion. Throws a RangeError for a day the CLI would also refuse. */
   async function completeHabit(habit: Habit, dayKey?: string) {
     error.value = null
+    refreshToday()
     const day = dayKey ?? selectedDate.value
+    assertSelectableDay(day, today.value)
     try {
       const payload: HabitCompletedCreate = {
         habit_id: habit.id,
         name: habit.name,
         category_id: habit.category_id,
-        complete_date: completionTimestamp(day),
+        complete_date: completionTimestamp(day, today.value),
       }
       const response = await api.post<HabitCompleted>('/habits/completed/', payload)
       completedHabits.value.push(response.data)
@@ -385,27 +435,49 @@ export const useHabitsStore = defineStore('habits', () => {
 
   // --- Compound fetchers ---
 
+  // Two day loads can be in flight at once — the arrows sit outside the loading
+  // block, and the picker emits per keystroke. Without a token the slower response
+  // lands last and puts one day's completions under another day's heading.
+  let dayRequest = 0
+
+  /**
+   * Load one day's habits and completions. Throws a RangeError for a key that is
+   * not a calendar day on or before today; the day on screen is left alone.
+   */
   async function fetchDailyData(dayKey?: string) {
+    refreshToday()
+    const day = dayKey ?? selectedDate.value
+    assertSelectableDay(day, today.value)
+
+    const token = ++dayRequest
     loading.value = true
     error.value = null
-    if (dayKey) selectedDate.value = dayKey
     try {
-      await Promise.all([fetchHabits({ current: true }), fetchCompleted(dayRange(selectedDate.value))])
+      const [habitList, completedList] = await Promise.all([loadHabits({ current: true }), loadCompleted(dayRange(day))])
+      if (token !== dayRequest) return
+      selectedDate.value = day
+      habits.value = habitList
+      completedHabits.value = completedList
     } catch {
-      // errors already set by individual fetchers
+      // errors already set by the loaders; the day on screen does not move
     } finally {
-      loading.value = false
+      if (token === dayRequest) loading.value = false
     }
   }
 
-  /** Show a day's habits. A day past today is refused — it cannot have been done yet. */
+  /**
+   * Show a day, ignoring one that is not selectable. The UI cannot offer such a day
+   * — the next arrow stops at today and the picker will not open past it — so this
+   * is the floor under a caller that bypasses both, and it logs rather than throws
+   * because the arrows are wired fire-and-forget from the template.
+   */
   async function selectDay(dayKey: string) {
-    const today = todayKey()
-    const day = dayKey > today ? today : dayKey
-    if (day !== dayKey) {
-      logger.warning('habit_day_clamped', { requested: dayKey, showing: day })
+    try {
+      await fetchDailyData(dayKey)
+    } catch (e) {
+      if (!(e instanceof RangeError)) throw e
+      logger.warning('habit_day_refused', { requested: dayKey, showing: selectedDate.value, reason: e.message })
     }
-    await fetchDailyData(day)
   }
 
   async function stepDay(delta: number) {
@@ -414,7 +486,22 @@ export const useHabitsStore = defineStore('habits', () => {
   }
 
   async function goToToday() {
-    await selectDay(todayKey())
+    refreshToday()
+    await selectDay(today.value)
+  }
+
+  /**
+   * Follow the clock past midnight. A page sitting on what was today moves to the
+   * new today and reloads; a page parked on an earlier day stays where it is, since
+   * the reader chose that day deliberately.
+   */
+  async function syncToday() {
+    const next = todayKey()
+    if (next === today.value) return
+    const wasOnToday = selectedDate.value === today.value
+    today.value = next
+    logger.info('habit_day_rolled_over', { to: next, followed: wasOnToday })
+    if (wasOnToday) await selectDay(next)
   }
 
   async function fetchManageData() {
@@ -447,7 +534,10 @@ export const useHabitsStore = defineStore('habits', () => {
     error,
     selectedFilter,
     selectedDate,
+    today,
     isToday,
+    refreshToday,
+    syncToday,
     currentHabits,
     hibernatingHabits,
     currentCategories,

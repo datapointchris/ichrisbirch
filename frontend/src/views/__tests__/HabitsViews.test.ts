@@ -196,6 +196,49 @@ describe('HabitsView (Daily)', () => {
     expect(wrapper.findComponent(DatePicker).props('max')).toBe(todayKey())
   })
 
+  it('hides the picker Clear controls, which this page cannot act on', () => {
+    const wrapper = createDailyWrapper({ selectedDate: '2026-03-11' })
+    expect(wrapper.findComponent(DatePicker).props('clearable')).toBe(false)
+  })
+
+  it('follows the clock when the tab comes back into view', async () => {
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+    vi.mocked(store.syncToday).mockResolvedValue(undefined)
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await wrapper.vm.$nextTick()
+
+    expect(store.syncToday).toHaveBeenCalled()
+  })
+
+  it('follows the clock while the tab stays open', async () => {
+    vi.useFakeTimers()
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+    vi.mocked(store.syncToday).mockResolvedValue(undefined)
+
+    vi.advanceTimersByTime(60_000)
+    await wrapper.vm.$nextTick()
+
+    expect(store.syncToday).toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('stops polling once the page is gone', async () => {
+    vi.useFakeTimers()
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+    vi.mocked(store.syncToday).mockResolvedValue(undefined)
+
+    wrapper.unmount()
+    vi.advanceTimersByTime(180_000)
+
+    expect(store.syncToday).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
   it('names the day rather than "today" in the empty states when off today', () => {
     const wrapper = createDailyWrapper({
       selectedDate: '2026-03-11',

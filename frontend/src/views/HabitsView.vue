@@ -28,7 +28,8 @@
         <DatePicker
           class="habits__date-picker"
           :model-value="store.selectedDate"
-          :max="today"
+          :max="store.today"
+          :clearable="false"
           data-testid="habits-date-picker"
           @update:model-value="handleDatePicked"
         />
@@ -113,8 +114,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useHabitsStore, todayKey } from '@/stores/habits'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { useHabitsStore } from '@/stores/habits'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import AppSubnav from '@/components/AppSubnav.vue'
@@ -128,13 +129,30 @@ import { formatDate } from '@/composables/formatDate'
 const store = useHabitsStore()
 const { show: notify } = useNotifications()
 
-const today = todayKey()
 const longDate = computed(() => formatDate(store.selectedDate, 'weekdayDate'))
 const todoEmptyText = computed(() => (store.isToday ? 'All done for today!' : 'All done for that day.'))
 const doneEmptyText = computed(() => (store.isToday ? 'Nothing completed yet.' : 'Nothing completed that day.'))
 
+// A tab left open overnight would otherwise keep yesterday's date, its arrows, its
+// picker bound and its completion stamps. The poll covers a tab that stayed visible
+// and the listener covers one that was hidden and came back; both are cheap because
+// syncToday returns immediately unless the day actually changed.
+const ROLLOVER_POLL_MS = 60_000
+let rolloverTimer: ReturnType<typeof setInterval> | undefined
+
+function syncTodayOnReturn() {
+  if (document.visibilityState === 'visible') void store.syncToday()
+}
+
 onMounted(() => {
   store.fetchDailyData()
+  rolloverTimer = setInterval(() => void store.syncToday(), ROLLOVER_POLL_MS)
+  document.addEventListener('visibilitychange', syncTodayOnReturn)
+})
+
+onUnmounted(() => {
+  clearInterval(rolloverTimer)
+  document.removeEventListener('visibilitychange', syncTodayOnReturn)
 })
 
 function handleDatePicked(day: string) {

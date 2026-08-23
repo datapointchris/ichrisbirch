@@ -376,7 +376,7 @@ describe('useHabitsStore', () => {
     vi.useRealTimers()
   })
 
-  it('refuses to move past today', async () => {
+  it('refuses to move past today and does not fetch', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
     mockApi.get.mockResolvedValue({ data: [] })
@@ -386,6 +386,129 @@ describe('useHabitsStore', () => {
     await store.selectDay('2026-04-01')
 
     expect(store.selectedDate).toBe('2026-03-14')
+    expect(mockApi.get).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('refuses a key that is not a calendar day', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useHabitsStore()
+
+    // new Date rolls both of these over rather than rejecting them: day 0 is the
+    // previous month's last day, and 2026-02-31 is 3 March.
+    await store.selectDay('2026-03-00')
+    await store.selectDay('2026-02-31')
+    await store.selectDay('not-a-day')
+
+    expect(store.selectedDate).toBe('2026-03-14')
+    expect(mockApi.get).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('throws rather than posting when a widened caller passes a future day', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    const store = useHabitsStore()
+
+    await expect(store.completeHabit(testHabits[0]!, '2099-01-01')).rejects.toThrow(RangeError)
+    await expect(store.fetchDailyData('2099-01-01')).rejects.toThrow(RangeError)
+
+    expect(mockApi.post).not.toHaveBeenCalled()
+    expect(store.selectedDate).toBe('2026-03-14')
+    vi.useRealTimers()
+  })
+
+  it('keeps the day and its completions together when two loads overlap', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    const store = useHabitsStore()
+
+    const rowFor = (day: string) => [{ ...testCompleted[0]!, id: Number(day.slice(-2)), complete_date: `${day}T12:00:00Z` }]
+    const pending: Array<(rows: unknown) => void> = []
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === '/habits/') return Promise.resolve({ data: [] })
+      return new Promise((resolve) => pending.push((rows) => resolve({ data: rows })))
+    })
+
+    const first = store.selectDay('2026-03-13')
+    const second = store.selectDay('2026-03-12')
+
+    // The older request answers last, which is the ordering that used to win.
+    pending[1]!(rowFor('2026-03-12'))
+    pending[0]!(rowFor('2026-03-13'))
+    await Promise.all([first, second])
+
+    expect(store.selectedDate).toBe('2026-03-12')
+    expect(store.completedHabits.map((c) => c.complete_date)).toEqual(['2026-03-12T12:00:00Z'])
+    vi.useRealTimers()
+  })
+
+  it('leaves the day on screen alone when its fetch fails', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    const store = useHabitsStore()
+
+    mockApi.get.mockResolvedValue({ data: [testCompleted[0]] })
+    await store.selectDay('2026-03-13')
+
+    mockApi.get.mockRejectedValue(new ApiError({ message: 'boom', detail: 'boom', status: 500 }))
+    await store.selectDay('2026-03-12')
+
+    expect(store.selectedDate).toBe('2026-03-13')
+    expect(store.loading).toBe(false)
+    vi.useRealTimers()
+  })
+
+  it('tracks today across midnight once it is refreshed', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 23, 50))
+    const store = useHabitsStore()
+    expect(store.isToday).toBe(true)
+
+    vi.setSystemTime(new Date(2026, 2, 15, 0, 10))
+    store.refreshToday()
+
+    expect(store.today).toBe('2026-03-15')
+    expect(store.isToday).toBe(false)
+    vi.useRealTimers()
+  })
+
+  it('follows the clock past midnight and stamps the new day', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 23, 50))
+    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.post.mockResolvedValue({ data: testCompleted[0] })
+    const store = useHabitsStore()
+    await store.fetchDailyData()
+    expect(store.selectedDate).toBe('2026-03-14')
+
+    vi.setSystemTime(new Date(2026, 2, 15, 0, 10))
+    await store.syncToday()
+    await store.completeHabit(testHabits[0]!)
+
+    expect(store.selectedDate).toBe('2026-03-15')
+    expect(store.isToday).toBe(true)
+    const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
+    const stamped = new Date(payload.complete_date)
+    expect(stamped.getDate()).toBe(15)
+    expect(stamped.getHours()).toBe(0)
+    vi.useRealTimers()
+  })
+
+  it('leaves a deliberately chosen earlier day alone at midnight', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 23, 50))
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useHabitsStore()
+    await store.selectDay('2026-03-09')
+
+    vi.setSystemTime(new Date(2026, 2, 15, 0, 10))
+    await store.syncToday()
+
+    expect(store.selectedDate).toBe('2026-03-09')
+    expect(store.today).toBe('2026-03-15')
     vi.useRealTimers()
   })
 
@@ -478,6 +601,20 @@ describe('useHabitsStore', () => {
       .map((h) => h.name)
     expect(allTodoNames).not.toContain('Meditate')
     expect(allTodoNames).toContain('Read')
+  })
+
+  it('marks a habit done by habit_id after it has been renamed', () => {
+    const store = useHabitsStore()
+    store.habits = [{ id: 1, name: 'Meditation', category_id: 1, category: testCategory, is_current: true }]
+    // The completion denormalized the old name; only the id still matches.
+    store.completedHabits = [
+      { id: 10, habit_id: 1, name: 'Meditate', category_id: 1, category: testCategory, complete_date: '2026-03-11T12:00:00Z' },
+    ]
+
+    const todoNames = Object.values(store.todoHabits)
+      .flat()
+      .map((h) => h.name)
+    expect(todoNames).not.toContain('Meditation')
   })
 
   // --- Computed: chartData ---
