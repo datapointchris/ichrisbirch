@@ -86,7 +86,9 @@
               'datepicker__day--other-month': !day.currentMonth,
               'datepicker__day--selected': day.selected,
               'datepicker__day--today': day.today,
+              'datepicker__day--disabled': day.disabled,
             }"
+            :disabled="day.disabled"
             @click="selectDay(day)"
           >
             {{ day.date }}
@@ -95,6 +97,7 @@
 
         <div class="datepicker__footer">
           <button
+            v-if="todayInRange"
             type="button"
             class="datepicker__today-btn"
             @click="selectToday"
@@ -123,12 +126,14 @@ interface Props {
   placeholder?: string
   id?: string
   required?: boolean
+  max?: string // YYYY-MM-DD — latest selectable day, inclusive
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'YYYY-MM-DD',
   id: undefined,
   required: false,
+  max: undefined,
 })
 
 const emit = defineEmits<{
@@ -176,6 +181,12 @@ interface CalendarDay {
   currentMonth: boolean
   selected: boolean
   today: boolean
+  disabled: boolean
+}
+
+// Zero-padded YYYY-MM-DD sorts lexicographically, so a string compare is the bound check.
+function outOfRange(dateStr: string): boolean {
+  return !!props.max && dateStr > props.max
 }
 
 const calendarDays = computed((): CalendarDay[] => {
@@ -200,6 +211,7 @@ const calendarDays = computed((): CalendarDay[] => {
       currentMonth: false,
       selected: dateStr === props.modelValue,
       today: dateStr === todayStr,
+      disabled: outOfRange(dateStr),
     })
   }
 
@@ -213,6 +225,7 @@ const calendarDays = computed((): CalendarDay[] => {
       currentMonth: true,
       selected: dateStr === props.modelValue,
       today: dateStr === todayStr,
+      disabled: outOfRange(dateStr),
     })
   }
 
@@ -229,6 +242,7 @@ const calendarDays = computed((): CalendarDay[] => {
       currentMonth: false,
       selected: dateStr === props.modelValue,
       today: dateStr === todayStr,
+      disabled: outOfRange(dateStr),
     })
   }
 
@@ -239,13 +253,15 @@ function formatDate(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
+// Returns the YYYY-MM-DD form of a typed date, or null when it cannot be parsed or
+// falls past max — either way nothing is emitted and the field keeps what it had.
 function parseInputDate(input: string): string | null {
   // Try YYYY-MM-DD
   const isoMatch = input.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
   if (isoMatch) {
     const [, y, m, d] = isoMatch
     const date = new Date(Number(y), Number(m) - 1, Number(d))
-    if (!isNaN(date.getTime())) return formatDate(Number(y), Number(m), Number(d))
+    if (!isNaN(date.getTime())) return inRangeOrNull(formatDate(Number(y), Number(m), Number(d)))
   }
 
   // Try MM/DD/YYYY or M/D/YYYY
@@ -253,10 +269,14 @@ function parseInputDate(input: string): string | null {
   if (usMatch) {
     const [, m, d, y] = usMatch
     const date = new Date(Number(y), Number(m) - 1, Number(d))
-    if (!isNaN(date.getTime())) return formatDate(Number(y), Number(m), Number(d))
+    if (!isNaN(date.getTime())) return inRangeOrNull(formatDate(Number(y), Number(m), Number(d)))
   }
 
   return null
+}
+
+function inRangeOrNull(dateStr: string): string | null {
+  return outOfRange(dateStr) ? null : dateStr
 }
 
 function positionDropdown() {
@@ -309,9 +329,15 @@ function toggleCalendar() {
 }
 
 function selectDay(day: CalendarDay) {
+  if (day.disabled) return
   emit('update:modelValue', formatDate(day.year, day.month, day.date))
   closeCalendar()
 }
+
+const todayInRange = computed(() => {
+  const now = new Date()
+  return !outOfRange(formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate()))
+})
 
 function selectToday() {
   const now = new Date()
@@ -342,6 +368,10 @@ function handleBlur() {
     const parsed = parseInputDate(val)
     if (parsed) {
       emit('update:modelValue', parsed)
+    } else {
+      // Nothing was emitted, so modelValue is unchanged and no re-render will clear
+      // the rejected text. Put the accepted value back so the field never lies.
+      inputRef.value.value = displayValue.value
     }
   }
   closeCalendar()
