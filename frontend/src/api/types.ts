@@ -464,6 +464,8 @@ export interface HabitUpdate {
 
 export interface HabitCompleted {
   id: number
+  /** Null when the habit it named has since been deleted. */
+  habit_id: number | null
   name: string
   category_id: number
   category: HabitCategory
@@ -481,6 +483,8 @@ export interface HabitCategoryUpdate {
 }
 
 export interface HabitCompletedCreate {
+  /** Optional so a historical import records without a live habit to point at. */
+  habit_id?: number
   name: string
   category_id: number
   complete_date: string

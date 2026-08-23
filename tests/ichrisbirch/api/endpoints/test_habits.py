@@ -305,6 +305,47 @@ class TestCompletedHabitLinksToItsHabit:
         assert survivor.json()['habit_id'] is None, 'the link clears, the record does not'
 
 
+class TestCompletedHabitRefusesAFutureDate:
+    """A habit cannot be recorded before it has been done.
+
+    Both clients enforce this on the way in, which leaves a third one — a script,
+    a scheduler job — with no rule at all. It is checked where the row is written
+    so every caller gets the same answer.
+    """
+
+    ENDPOINT = '/habits/completed/'
+
+    def _payload(self, category_id: int, complete_date: str) -> dict:
+        return {'name': 'Way Ahead Of Myself', 'category_id': category_id, 'complete_date': complete_date}
+
+    def test_a_date_years_out_is_refused(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
+
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, '2099-01-01T12:00:00Z'))
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert 'future' in response.text
+
+    def test_a_past_date_still_records(self, habit_test_data):
+        client = habit_test_data
+        category_id = get_first_category_id(client)
+
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, '2024-06-01T12:00:00Z'))
+
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+
+    def test_todays_noon_records_from_a_zone_ahead_of_utc(self, habit_test_data):
+        """Local noon east of UTC can sit ahead of UTC now and still be that client's today."""
+        client = habit_test_data
+        category_id = get_first_category_id(client)
+        soon = dt.datetime.now(dt.UTC) + dt.timedelta(hours=13)
+
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, soon.isoformat()))
+
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+
+
 class TestCompletedHabits:
     ENDPOINT = '/habits/completed/'
     # Completed habits sorted by date for first/last queries

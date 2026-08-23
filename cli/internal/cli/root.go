@@ -27,6 +27,10 @@ type usageError struct{ err error }
 
 func (u usageError) Error() string { return u.err.Error() }
 
+// Unwrap exposes the wrapped cause, so a caller can branch on a sentinel with
+// errors.Is instead of matching the rendered message.
+func (u usageError) Unwrap() error { return u.err }
+
 // exitCode lets a command choose the process exit code without Execute printing
 // an "error:" line — used by `auth status` to report "not logged in" (exit 1) as
 // a valid state, not a failure.

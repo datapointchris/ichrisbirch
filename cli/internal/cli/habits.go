@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"text/tabwriter"
@@ -237,15 +238,27 @@ func newHabitsDeleteCommand() *cobra.Command {
 }
 
 func newHabitsCompleteCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		date   string
+		asJSON bool
+	)
 	cmd := &cobra.Command{
-		Use:     "complete <habit-id>",
-		Short:   "Record a completion of a habit (now)",
-		Long:    "Mark a habit done as of now. Fetches the habit, then records a completion\ncarrying its id alongside the name and category it had at the time.",
-		Example: "  icb habits complete 5",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Use:   "complete <habit-id> [--date YYYY-MM-DD]",
+		Short: "Record a completion of a habit",
+		Long: "Mark a habit done, by default as of now. Fetches the habit, then records a\n" +
+			"completion carrying its id alongside the name and category it had at the time.\n\n" +
+			"--date fills in a day you forgot. An earlier day lands at local noon, since a\n" +
+			"day recorded after the fact has no time of its own; today keeps the current\n" +
+			"time. A future day is rejected.",
+		Example: "  # done just now\n  icb habits complete 5\n\n" +
+			"  # a day you forgot to record\n  icb habits complete 5 --date 2026-08-21",
+		Args: usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
+			if err != nil {
+				return err
+			}
+			completeDate, err := habitCompleteDate(date, time.Now())
 			if err != nil {
 				return err
 			}
@@ -261,7 +274,7 @@ func newHabitsCompleteCommand() *cobra.Command {
 				HabitID:      &habit.ID,
 				Name:         habit.Name,
 				CategoryID:   habit.CategoryID,
-				CompleteDate: time.Now().Format(time.RFC3339),
+				CompleteDate: completeDate.Format(time.RFC3339),
 			})
 			if err != nil {
 				return handleAPIError(err)
@@ -274,8 +287,43 @@ func newHabitsCompleteCommand() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&date, "date", "", "Day the habit was done (YYYY-MM-DD); defaults to now")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the completion as JSON to stdout")
 	return cmd
+}
+
+// errDateFormat and errDateInFuture are the two ways --date is refused. They are
+// sentinels so a caller branches on which refusal it hit rather than on the wording.
+var (
+	errDateFormat   = errors.New("--date is not a calendar day")
+	errDateInFuture = errors.New("--date is in the future")
+)
+
+// habitCompleteDate resolves --date against now. Empty, or today, means now — the
+// moment is real and worth keeping. An earlier day has no moment of its own, so it
+// is stamped at local noon, inside the day under any nearby UTC offset. A day after
+// today is refused, because a habit cannot have been done yet.
+//
+// Noon is constructed with time.Date rather than reached by adding twelve hours to
+// midnight. A duration is absolute, so on a day the zone shifts its offset the sum
+// lands an hour off the wall clock the help promises.
+func habitCompleteDate(date string, now time.Time) (time.Time, error) {
+	if date == "" {
+		return now, nil
+	}
+	day, err := time.ParseInLocation("2006-01-02", date, now.Location())
+	if err != nil {
+		return time.Time{}, usageError{fmt.Errorf("%w: %q — expected YYYY-MM-DD", errDateFormat, date)}
+	}
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	switch {
+	case day.After(today):
+		return time.Time{}, usageError{fmt.Errorf("%w: %s — a habit cannot be completed ahead of time", errDateInFuture, date)}
+	case day.Equal(today):
+		return now, nil
+	default:
+		return time.Date(day.Year(), day.Month(), day.Day(), 12, 0, 0, 0, now.Location()), nil
+	}
 }
 
 func newHabitsCategoriesCommand() *cobra.Command {

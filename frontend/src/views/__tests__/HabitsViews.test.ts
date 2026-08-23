@@ -4,7 +4,8 @@ import { createTestingPinia } from '@pinia/testing'
 import HabitsView from '../HabitsView.vue'
 import HabitsManageView from '../HabitsManageView.vue'
 import HabitsCompletedView from '../HabitsCompletedView.vue'
-import { useHabitsStore } from '@/stores/habits'
+import { useHabitsStore, todayKey } from '@/stores/habits'
+import DatePicker from '@/components/DatePicker.vue'
 import type { Habit, HabitCategory, HabitCompleted } from '@/api/client'
 
 vi.mock('@/composables/useNotifications', () => ({
@@ -145,6 +146,110 @@ describe('HabitsView (Daily)', () => {
     await checkButton.trigger('click')
 
     expect(store.completeHabit).toHaveBeenCalledOnce()
+  })
+
+  it('steps back a day when the previous arrow is clicked', async () => {
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+
+    await wrapper.find('[data-testid="habits-prev-day"]').trigger('click')
+
+    expect(store.stepDay).toHaveBeenCalledWith(-1)
+  })
+
+  it('disables the next arrow on today and enables it on an earlier day', async () => {
+    const onToday = createDailyWrapper({ selectedDate: todayKey() })
+    expect(onToday.find('[data-testid="habits-next-day"]').attributes('disabled')).toBeDefined()
+
+    const earlier = createDailyWrapper({ selectedDate: '2026-03-11' })
+    expect(earlier.find('[data-testid="habits-next-day"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('offers a return to today only when off today', () => {
+    const onToday = createDailyWrapper({ selectedDate: todayKey() })
+    expect(onToday.find('[data-testid="habits-today"]').exists()).toBe(false)
+
+    const earlier = createDailyWrapper({ selectedDate: '2026-03-11' })
+    expect(earlier.find('[data-testid="habits-today"]').exists()).toBe(true)
+  })
+
+  it('selects the day the picker emits', async () => {
+    const wrapper = createDailyWrapper({ selectedDate: todayKey() })
+    const store = useHabitsStore()
+
+    await wrapper.findComponent(DatePicker).vm.$emit('update:modelValue', '2026-03-11')
+
+    expect(store.selectDay).toHaveBeenCalledWith('2026-03-11')
+  })
+
+  it('ignores a cleared picker rather than selecting an empty day', async () => {
+    const wrapper = createDailyWrapper({ selectedDate: '2026-03-11' })
+    const store = useHabitsStore()
+
+    await wrapper.findComponent(DatePicker).vm.$emit('update:modelValue', '')
+
+    expect(store.selectDay).not.toHaveBeenCalled()
+  })
+
+  it('caps the picker at today so a future day cannot be filled in', () => {
+    const wrapper = createDailyWrapper({ selectedDate: '2026-03-11' })
+    expect(wrapper.findComponent(DatePicker).props('max')).toBe(todayKey())
+  })
+
+  it('hides the picker Clear controls, which this page cannot act on', () => {
+    const wrapper = createDailyWrapper({ selectedDate: '2026-03-11' })
+    expect(wrapper.findComponent(DatePicker).props('clearable')).toBe(false)
+  })
+
+  it('follows the clock when the tab comes back into view', async () => {
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+    vi.mocked(store.syncToday).mockResolvedValue(undefined)
+
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await wrapper.vm.$nextTick()
+
+    expect(store.syncToday).toHaveBeenCalled()
+  })
+
+  it('follows the clock while the tab stays open', async () => {
+    vi.useFakeTimers()
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+    vi.mocked(store.syncToday).mockResolvedValue(undefined)
+
+    vi.advanceTimersByTime(60_000)
+    await wrapper.vm.$nextTick()
+
+    expect(store.syncToday).toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('stops polling once the page is gone', async () => {
+    vi.useFakeTimers()
+    const wrapper = createDailyWrapper()
+    const store = useHabitsStore()
+    vi.mocked(store.syncToday).mockResolvedValue(undefined)
+
+    wrapper.unmount()
+    vi.advanceTimersByTime(180_000)
+
+    expect(store.syncToday).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('names the day rather than "today" in the empty states when off today', () => {
+    const wrapper = createDailyWrapper({
+      selectedDate: '2026-03-11',
+      habits: testHabits,
+      completedHabits: [
+        { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-11T12:00:00Z' },
+        { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-11T12:00:00Z' },
+      ],
+    })
+    expect(wrapper.text()).toContain('All done for that day.')
+    expect(wrapper.text()).not.toContain('All done for today!')
   })
 })
 

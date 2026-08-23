@@ -153,6 +153,13 @@
   &--selected {
     color: var(--clr-accent);
   }
+
+  // pointer-events, not :disabled — neu-button's hover shadow and scale still apply
+  // to a disabled button, and a day that lifts under the cursor reads as clickable.
+  &--disabled {
+    opacity: 0.2;
+    pointer-events: none;
+  }
 }
 
 .datepicker__footer {
