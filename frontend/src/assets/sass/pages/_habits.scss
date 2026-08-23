@@ -2,10 +2,40 @@
 @use '../components/list_item';
 
 .habits {
+  &__date-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    flex-wrap: wrap;
+  }
+
   &__date {
     color: var(--clr-gray-300);
     font-size: var(--fs-500);
     font-weight: 400;
+    // Wide enough for the longest weekday, so the arrows hold position day to day.
+    min-width: 22ch;
+    text-align: center;
+  }
+
+  &__day-step {
+    color: var(--clr-primary-400);
+    font-size: var(--fs-500);
+    cursor: pointer;
+    transition: color 0.15s;
+
+    &:hover:not(:disabled) {
+      color: var(--clr-accent);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+  }
+
+  &__date-picker {
+    max-width: 16rem;
   }
 
   &__daily {

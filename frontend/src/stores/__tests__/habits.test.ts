@@ -294,6 +294,128 @@ describe('useHabitsStore', () => {
     expect(store.completedHabits).toHaveLength(1)
   })
 
+  it('sends habit_id so the completion points back at a live habit', async () => {
+    mockApi.post.mockResolvedValue({ data: { ...testCompleted[0]!, habit_id: 1 } })
+    const store = useHabitsStore()
+
+    await store.completeHabit(testHabits[0]!)
+
+    expect(mockApi.post).toHaveBeenCalledWith('/habits/completed/', expect.objectContaining({ habit_id: 1 }))
+  })
+
+  it('stamps a completion on today with the current moment', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 21, 30))
+    mockApi.post.mockResolvedValue({ data: testCompleted[0] })
+    const store = useHabitsStore()
+
+    await store.completeHabit(testHabits[0]!, '2026-03-14')
+
+    const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
+    expect(new Date(payload.complete_date).getHours()).toBe(21)
+    vi.useRealTimers()
+  })
+
+  it('stamps a backfilled day at local noon, not at the current time', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 21, 30))
+    mockApi.post.mockResolvedValue({ data: testCompleted[2] })
+    const store = useHabitsStore()
+
+    await store.completeHabit(testHabits[0]!, '2026-03-11')
+
+    const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
+    const stamped = new Date(payload.complete_date)
+    expect(stamped.getFullYear()).toBe(2026)
+    expect(stamped.getMonth()).toBe(2)
+    expect(stamped.getDate()).toBe(11)
+    expect(stamped.getHours()).toBe(12)
+    vi.useRealTimers()
+  })
+
+  it('completes against the selected day when no day is passed', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.post.mockResolvedValue({ data: testCompleted[2] })
+    const store = useHabitsStore()
+
+    await store.selectDay('2026-03-11')
+    await store.completeHabit(testHabits[0]!)
+
+    const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
+    expect(new Date(payload.complete_date).getDate()).toBe(11)
+    vi.useRealTimers()
+  })
+
+  // --- day selection ---
+
+  it('starts on today', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    const store = useHabitsStore()
+    expect(store.selectedDate).toBe('2026-03-14')
+    expect(store.isToday).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('fetches only the selected day when stepping back', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useHabitsStore()
+
+    await store.stepDay(-1)
+
+    expect(store.selectedDate).toBe('2026-03-13')
+    expect(store.isToday).toBe(false)
+    const completedCall = mockApi.get.mock.calls.find((c) => c[0] === '/habits/completed/')!
+    const params = (completedCall[1] as { params: { start_date: string; end_date: string } }).params
+    expect(new Date(params.start_date).getDate()).toBe(13)
+    expect(new Date(params.end_date).getDate()).toBe(14)
+    vi.useRealTimers()
+  })
+
+  it('refuses to move past today', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useHabitsStore()
+
+    await store.stepDay(1)
+    await store.selectDay('2026-04-01')
+
+    expect(store.selectedDate).toBe('2026-03-14')
+    vi.useRealTimers()
+  })
+
+  it('returns to today from an earlier day', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useHabitsStore()
+
+    await store.selectDay('2026-03-09')
+    await store.goToToday()
+
+    expect(store.selectedDate).toBe('2026-03-14')
+    expect(store.isToday).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('steps across a month boundary', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: [] })
+    const store = useHabitsStore()
+
+    await store.selectDay('2026-03-01')
+    await store.stepDay(-1)
+
+    expect(store.selectedDate).toBe('2026-02-28')
+    vi.useRealTimers()
+  })
+
   // --- deleteCompleted ---
 
   it('deletes a completed habit entry', async () => {
