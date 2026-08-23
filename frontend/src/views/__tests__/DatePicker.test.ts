@@ -95,3 +95,93 @@ describe('DatePicker max bound', () => {
     expect(document.querySelector('.datepicker__today-btn')).not.toBeNull()
   })
 })
+
+describe('DatePicker typed-date validation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+  })
+
+  afterEach(() => {
+    while (mounted.length) mounted.pop()!.unmount()
+    vi.useRealTimers()
+  })
+
+  // new Date rolls these over instead of rejecting them, so isNaN alone lets both
+  // through and formatDate then re-emits the components that were typed.
+  it.each(['2026-03-0', '2026-02-31', '2026-13-01', '2026-00-10'])('refuses %s while it is being typed', async (typed) => {
+    const wrapper = await openOn({})
+    const input = wrapper.find('input')
+
+    await input.setValue(typed)
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('emits nothing for the partial days on the way to a full one', async () => {
+    const wrapper = await openOn({ modelValue: '2026-03-14', max: '2026-03-14' })
+    const input = wrapper.find('input')
+
+    for (const partial of ['2', '20', '202', '2026', '2026-', '2026-0', '2026-03', '2026-03-', '2026-03-0']) {
+      await input.setValue(partial)
+    }
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+
+    await input.setValue('2026-03-09')
+    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual(['2026-03-09'])
+  })
+
+  it('still accepts a real end-of-month day', async () => {
+    const wrapper = await openOn({})
+    const input = wrapper.find('input')
+
+    await input.setValue('2026-02-28')
+
+    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual(['2026-02-28'])
+  })
+})
+
+describe('DatePicker clearable', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+  })
+
+  afterEach(() => {
+    while (mounted.length) mounted.pop()!.unmount()
+    vi.useRealTimers()
+  })
+
+  it('offers both Clear controls by default', async () => {
+    const wrapper = await openOn({})
+    expect(wrapper.find('.datepicker__clear').exists()).toBe(true)
+    expect(document.querySelector('.datepicker__clear-btn')).not.toBeNull()
+  })
+
+  it('hides both Clear controls when clearable is false', async () => {
+    const wrapper = await openOn({ clearable: false })
+    expect(wrapper.find('.datepicker__clear').exists()).toBe(false)
+    expect(document.querySelector('.datepicker__clear-btn')).toBeNull()
+  })
+
+  it('does not clear on an emptied field when clearable is false', async () => {
+    const wrapper = await openOn({ clearable: false })
+    const input = wrapper.find('input')
+
+    await input.setValue('')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect((input.element as HTMLInputElement).value).toBe('Mar 14, 2026')
+  })
+
+  it('still clears on an emptied field by default', async () => {
+    const wrapper = await openOn({})
+    const input = wrapper.find('input')
+
+    await input.setValue('')
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual([''])
+  })
+})

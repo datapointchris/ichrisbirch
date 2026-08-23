@@ -19,7 +19,7 @@
         @keydown.enter.prevent="commitTextInput"
       />
       <button
-        v-if="modelValue"
+        v-if="modelValue && clearable"
         type="button"
         class="datepicker__clear"
         title="Clear date"
@@ -105,7 +105,7 @@
             Today
           </button>
           <button
-            v-if="modelValue"
+            v-if="modelValue && clearable"
             type="button"
             class="datepicker__clear-btn"
             @click="clearDate"
@@ -127,6 +127,7 @@ interface Props {
   id?: string
   required?: boolean
   max?: string // YYYY-MM-DD — latest selectable day, inclusive
+  clearable?: boolean // false hides both Clear controls, for a caller with no empty state
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -134,6 +135,7 @@ const props = withDefaults(defineProps<Props>(), {
   id: undefined,
   required: false,
   max: undefined,
+  clearable: true,
 })
 
 const emit = defineEmits<{
@@ -260,22 +262,27 @@ function parseInputDate(input: string): string | null {
   const isoMatch = input.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
   if (isoMatch) {
     const [, y, m, d] = isoMatch
-    const date = new Date(Number(y), Number(m) - 1, Number(d))
-    if (!isNaN(date.getTime())) return inRangeOrNull(formatDate(Number(y), Number(m), Number(d)))
+    return acceptedDay(Number(y), Number(m), Number(d))
   }
 
   // Try MM/DD/YYYY or M/D/YYYY
   const usMatch = input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
   if (usMatch) {
     const [, m, d, y] = usMatch
-    const date = new Date(Number(y), Number(m) - 1, Number(d))
-    if (!isNaN(date.getTime())) return inRangeOrNull(formatDate(Number(y), Number(m), Number(d)))
+    return acceptedDay(Number(y), Number(m), Number(d))
   }
 
   return null
 }
 
-function inRangeOrNull(dateStr: string): string | null {
+// `new Date` rolls an out-of-range component over rather than refusing: day 0 is the
+// previous month's last day, and 2026-02-31 is 3 March. Both are non-NaN, so the
+// components are compared back to catch a half-typed date before it is emitted.
+function acceptedDay(y: number, m: number, d: number): string | null {
+  const date = new Date(y, m - 1, d)
+  if (isNaN(date.getTime())) return null
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null
+  const dateStr = formatDate(y, m, d)
   return outOfRange(dateStr) ? null : dateStr
 }
 
@@ -363,7 +370,11 @@ function handleBlur() {
   if (!inputRef.value) return
   const val = inputRef.value.value.trim()
   if (!val) {
-    emit('update:modelValue', '')
+    // Emptying the field is a clear, so a caller that has no empty state keeps
+    // its value here too — otherwise deleting the text does what the hidden
+    // Clear button would have.
+    if (props.clearable) emit('update:modelValue', '')
+    else inputRef.value.value = displayValue.value
   } else {
     const parsed = parseInputDate(val)
     if (parsed) {
