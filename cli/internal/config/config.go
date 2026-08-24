@@ -9,7 +9,8 @@ package config
 
 import (
 	"os"
-	"strings"
+
+	"github.com/datapointchris/goclilogin"
 )
 
 const (
@@ -23,17 +24,31 @@ const (
 	defaultAPIBase = "https://ichrisbirch.com/api"
 )
 
-// Scopes requested at login. offline_access yields the refresh token; openid
-// and profile make the access token a standard OIDC one. The bearer.authz
-// scope is deliberately absent — Authelia permits only authorization_code,
-// refresh_token and client_credentials alongside it, which rules out the
-// device grant this CLI logs in with.
-var Scopes = []string{"openid", "profile", "offline_access"}
+// keyringService namespaces icb's entries in the OS keychain. It is a deployed
+// identifier rather than a path-derived one, so it keeps its spelling
+// independently of the module or binary name.
+const keyringService = "icb-cli"
 
 type Config struct {
 	Issuer   string
 	ClientID string
 	APIBase  string
+}
+
+// Login is the goclilogin view of this config: which provider to authenticate
+// against, as which client, and where the token and its refresh lock live.
+//
+// LockDir is passed rather than left to goclilogin's default, which would put
+// it under the keyring service name. Naming icb's own state directory keeps the
+// lock where earlier versions wrote it, so two versions running during an
+// upgrade contend for the same file rather than each taking its own.
+func (c Config) Login() goclilogin.Config {
+	return goclilogin.Config{
+		Issuer:         c.Issuer,
+		ClientID:       c.ClientID,
+		KeyringService: keyringService,
+		LockDir:        StatePath(),
+	}
 }
 
 // Load resolves settings. Precedence per CLI conventions: env var > default.
@@ -51,12 +66,7 @@ func Load() Config {
 // registered in the Authelia template. Machines whose hostname differs from
 // their logical name override with ICB_CLIENT_ID (pyinfra can template this).
 func defaultClientID() string {
-	host, err := os.Hostname()
-	if err != nil || host == "" {
-		return "icb-cli"
-	}
-	short := strings.ToLower(strings.SplitN(host, ".", 2)[0])
-	return "icb-cli-" + short
+	return goclilogin.ClientID("icb")
 }
 
 func getEnv(key, fallback string) string {

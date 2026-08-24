@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/datapointchris/goclilogin"
 	"golang.org/x/oauth2"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
-	"github.com/datapointchris/ichrisbirch/cli/internal/auth"
 	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
@@ -19,13 +19,13 @@ var errNeedsLogin = errors.New("not logged in")
 
 // newAPIClient builds an authenticated API client for the logged-in machine. The
 // oauth2 client injects (and refreshes) the bearer token on every request via
-// the persisting token source, so resource commands never touch tokens directly.
+// goclilogin's token source, so resource commands never touch tokens directly.
 func newAPIClient(ctx context.Context) (*api.Client, error) {
 	cfg := config.Load()
-	store := auth.NewTokenStore()
+	store := goclilogin.NewTokenStore(cfg.Login().KeyringService)
 
-	source, err := auth.TokenSource(ctx, cfg, store)
-	if errors.Is(err, auth.ErrNotLoggedIn) {
+	source, err := goclilogin.TokenSource(ctx, cfg.Login(), store)
+	if errors.Is(err, goclilogin.ErrNotLoggedIn) {
 		return nil, errNeedsLogin
 	}
 	if err != nil {
@@ -47,8 +47,7 @@ func handleAPIError(err error) error {
 	// A refusal at the token endpoint arrives as the transport error of the
 	// request that triggered the refresh, so the URL and the raw OAuth error
 	// description are what reach the terminal unless they are named here.
-	var retrieveErr *oauth2.RetrieveError
-	if errors.As(err, &retrieveErr) {
+	if goclilogin.IsSessionRejected(err) {
 		return fmt.Errorf("session expired — run `icb auth login`")
 	}
 	var apiErr *api.APIError

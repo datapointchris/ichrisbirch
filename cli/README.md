@@ -79,9 +79,18 @@ Authelia does not carry the audience through the device grant — `aud` comes
 back empty — so cross-product isolation rests on the `client_id` claim, and the
 API requires it to start with `icb-cli-`.
 
-Tokens live in the OS keychain (go-keyring), never on disk, and auto-refresh
-(90-day Authelia `cli` lifespan). `icb auth token` prints the current access
-token for scripting:
+The login flow, the keychain store and the refresh are
+[goclilogin](https://github.com/datapointchris/goclilogin), shared with the
+other product CLIs. Tokens live in the OS keychain, never on disk, and refresh
+automatically. That refresh takes a machine-wide lock, because Authelia revokes
+the whole grant when two processes replay the same rotated refresh token — the
+library's README carries the mechanism.
+
+`icb auth status` reports `live`, `rejected` or `unverified` rather than
+predicting a refresh, since a stored token says what this machine holds and not
+what Authelia will honor. A rejected session exits 1.
+
+`icb auth token` prints the current access token for scripting:
 
 ```bash
 curl -H "Authorization: Bearer $(icb auth token)" https://api.ichrisbirch.com/tasks/
@@ -291,7 +300,6 @@ exactly the runs it existed to serve.
 ```text
 main.go                    → cli.Execute()
 internal/config/           → OIDC + API settings, and the machine config file
-internal/auth/             → OAuth login flow + OS-keychain token store
 internal/cli/              → cobra command tree
 internal/api/              → REST client + wire-contract DTOs
 internal/prompt/           → the guided-create form (§ Guided create)

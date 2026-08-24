@@ -8,11 +8,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/datapointchris/goclilogin"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/auth"
 	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
@@ -42,7 +41,8 @@ func newAuthLoginCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			store := auth.NewTokenStore()
+			login := cfg.Login()
+			store := goclilogin.NewTokenStore(login.KeyringService)
 
 			ctx, cancel := context.WithTimeout(cmd.Context(), loginTimeout)
 			defer cancel()
@@ -57,7 +57,12 @@ func newAuthLoginCommand() *cobra.Command {
 			browser.Stdout = io.Discard
 			browser.Stderr = io.Discard
 
-			token, err := auth.Login(ctx, cfg, browser.OpenURL, cmd.ErrOrStderr())
+			token, err := goclilogin.Login(ctx, login, func(p goclilogin.DevicePrompt) {
+				goclilogin.WriteInstructions(cmd.ErrOrStderr(), login.ClientID, p)
+				if openErr := browser.OpenURL(p.BrowserURL()); openErr != nil {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "(could not open a browser here: %v)\n", openErr)
+				}
+			})
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
 					return fmt.Errorf("timed out waiting for approval after %s; run `icb auth login` again", loginTimeout)
@@ -82,10 +87,10 @@ func newAuthLogoutCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			store := auth.NewTokenStore()
+			store := goclilogin.NewTokenStore(cfg.Login().KeyringService)
 
 			if err := store.Delete(cfg.ClientID); err != nil {
-				if errors.Is(err, auth.ErrNotLoggedIn) {
+				if errors.Is(err, goclilogin.ErrNotLoggedIn) {
 					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Not logged in — nothing to remove.")
 					return nil
 				}
@@ -108,10 +113,10 @@ func newAuthTokenCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			store := auth.NewTokenStore()
+			store := goclilogin.NewTokenStore(cfg.Login().KeyringService)
 
-			source, err := auth.TokenSource(cmd.Context(), cfg, store)
-			if errors.Is(err, auth.ErrNotLoggedIn) {
+			source, err := goclilogin.TokenSource(cmd.Context(), cfg.Login(), store)
+			if errors.Is(err, goclilogin.ErrNotLoggedIn) {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Not logged in as %s. Run `icb auth login`.\n", cfg.ClientID)
 				return exitCode(1)
 			}
@@ -133,23 +138,13 @@ func newAuthTokenCommand() *cobra.Command {
 // to verify against Authelia's JWKS, and a local reading of them would only say
 // what an unverified token claims about itself.
 type statusReport struct {
-	LoggedIn  bool   `json:"logged_in"`
-	ClientID  string `json:"client_id"`
-	Issuer    string `json:"issuer"`
-	ExpiresAt string `json:"expires_at,omitempty"`
-	Expired   bool   `json:"expired"`
-	Session   string `json:"session"`
+	LoggedIn  bool                    `json:"logged_in"`
+	ClientID  string                  `json:"client_id"`
+	Issuer    string                  `json:"issuer"`
+	ExpiresAt string                  `json:"expires_at,omitempty"`
+	Expired   bool                    `json:"expired"`
+	Session   goclilogin.SessionState `json:"session"`
 }
-
-// The three answers `session` carries. A stored token says only what this
-// machine holds, and an expired access token is refreshed on the next call, so
-// holding one is not the same as being able to use it: the refresh token behind
-// it may have been revoked, and only the issuer knows.
-const (
-	sessionLive       = "live"       // a usable access token was obtained
-	sessionRejected   = "rejected"   // the issuer refused the refresh; only a login fixes it
-	sessionUnverified = "unverified" // the issuer could not be reached to ask
-)
 
 func newAuthStatusCommand() *cobra.Command {
 	var asJSON bool
@@ -160,13 +155,13 @@ func newAuthStatusCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			store := auth.NewTokenStore()
+			store := goclilogin.NewTokenStore(cfg.Login().KeyringService)
 
 			report := statusReport{ClientID: cfg.ClientID, Issuer: cfg.Issuer}
 
 			token, err := store.Load(cfg.ClientID)
 			switch {
-			case errors.Is(err, auth.ErrNotLoggedIn):
+			case errors.Is(err, goclilogin.ErrNotLoggedIn):
 				// logged out is a valid state, reported on stdout, exit 1 (like gh)
 			case err != nil:
 				return fmt.Errorf("read token from keychain: %w", err)
@@ -181,7 +176,7 @@ func newAuthStatusCommand() *cobra.Command {
 				// A live access token answers locally; an expired one performs
 				// the refresh the next call would have performed anyway, so the
 				// answer costs nothing that was not already due.
-				report.Session, token = verifySession(cmd.Context(), cfg, store)
+				report.Session, token = goclilogin.VerifySession(cmd.Context(), cfg.Login(), store)
 				if token != nil && !token.Expiry.IsZero() {
 					report.ExpiresAt = token.Expiry.Format(time.RFC3339)
 					report.Expired = time.Now().After(token.Expiry)
@@ -201,7 +196,7 @@ func newAuthStatusCommand() *cobra.Command {
 			// A rejected session exits non-zero for the same reason being logged
 			// out does: nothing the caller runs next will work until they log in.
 			// An unverified one exits zero, because nothing established it is bad.
-			if !report.LoggedIn || report.Session == sessionRejected {
+			if !report.LoggedIn || report.Session == goclilogin.SessionRejected {
 				return exitCode(1)
 			}
 			return nil
@@ -211,40 +206,13 @@ func newAuthStatusCommand() *cobra.Command {
 	return cmd
 }
 
-// verifySession obtains a token through the same path a resource command uses
-// and reports which of the three states the session is in, along with whatever
-// token it ended up holding. A refusal at the token endpoint is the issuer
-// saying the grant is gone; anything else is this machine failing to ask.
-func verifySession(ctx context.Context, cfg config.Config, store *auth.TokenStore) (string, *oauth2.Token) {
-	source, err := auth.TokenSource(ctx, cfg, store)
-	if err != nil {
-		return sessionUnverified, nil
-	}
-	return classifySession(source.Token())
-}
-
-// classifySession reads the outcome of asking for a token. A refusal at the
-// token endpoint is the issuer saying the grant is gone, which only a login
-// fixes; every other error is this machine failing to ask, which proves nothing
-// about the grant and must not be reported as though it did.
-func classifySession(token *oauth2.Token, err error) (string, *oauth2.Token) {
-	if err == nil {
-		return sessionLive, token
-	}
-	var retrieveErr *oauth2.RetrieveError
-	if errors.As(err, &retrieveErr) {
-		return sessionRejected, nil
-	}
-	return sessionUnverified, nil
-}
-
 func printStatus(cmd *cobra.Command, r statusReport) {
 	out := cmd.OutOrStdout()
 	if !r.LoggedIn {
 		_, _ = fmt.Fprintf(out, "Not logged in as %s.\nRun `icb auth login` to authenticate.\n", r.ClientID)
 		return
 	}
-	if r.Session == sessionRejected {
+	if r.Session == goclilogin.SessionRejected {
 		_, _ = fmt.Fprintf(out, "Session rejected by %s.\nRun `icb auth login` to authenticate.\n", r.Issuer)
 		_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
 		return
@@ -259,7 +227,7 @@ func printStatus(cmd *cobra.Command, r statusReport) {
 		}
 		_, _ = fmt.Fprintf(out, "  token:    %s (expires %s)\n", state, r.ExpiresAt)
 	}
-	if r.Session == sessionUnverified {
+	if r.Session == goclilogin.SessionUnverified {
 		_, _ = fmt.Fprintf(out, "  session:  unverified — %s could not be reached\n", r.Issuer)
 	}
 }

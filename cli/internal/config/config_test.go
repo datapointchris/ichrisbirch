@@ -25,18 +25,39 @@ func TestLoad_EnvOverrides(t *testing.T) {
 	}
 }
 
-// The device grant carries no audience, so the scope set is the plain OIDC one.
-// authelia.bearer.authz would be rejected: Authelia forbids it alongside the
-// device grant.
-func TestScopesAreTheDeviceGrantSet(t *testing.T) {
-	want := []string{"openid", "profile", "offline_access"}
-	if len(Scopes) != len(want) {
-		t.Fatalf("Scopes = %v, want %v", Scopes, want)
+// Login is the seam between icb's settings and goclilogin's, so what it carries
+// across is worth pinning. The keyring service is a deployed identifier that
+// several released versions already wrote under, and LockDir has to stay on
+// icb's own state directory rather than take goclilogin's default — two
+// versions naming different lock files would not exclude each other during an
+// upgrade.
+func TestLoginCarriesTheDeployedIdentifiers(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", "/tmp/xdgstate")
+	t.Setenv("ICB_OIDC_ISSUER", "https://auth.example.com")
+	t.Setenv("ICB_CLIENT_ID", "icb-cli-somehost")
+
+	login := Load().Login()
+	if login.Issuer != "https://auth.example.com" {
+		t.Errorf("Issuer = %q", login.Issuer)
 	}
-	for i, scope := range want {
-		if Scopes[i] != scope {
-			t.Errorf("Scopes[%d] = %q, want %q", i, Scopes[i], scope)
-		}
+	if login.ClientID != "icb-cli-somehost" {
+		t.Errorf("ClientID = %q", login.ClientID)
+	}
+	if login.KeyringService != "icb-cli" {
+		t.Errorf("KeyringService = %q, want icb-cli", login.KeyringService)
+	}
+	if login.LockDir != "/tmp/xdgstate/icb" {
+		t.Errorf("LockDir = %q, want icb's own state directory", login.LockDir)
+	}
+}
+
+// The client id spells the machine into it, so one machine's token is revocable
+// without touching another's.
+func TestDefaultClientIDIsPerMachine(t *testing.T) {
+	t.Setenv("ICB_CLIENT_ID", "")
+	got := Load().ClientID
+	if !strings.HasPrefix(got, "icb-cli-") {
+		t.Errorf("ClientID = %q, want an icb-cli-<host> spelling", got)
 	}
 }
 
