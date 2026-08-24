@@ -4,6 +4,7 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
+import { compareWallClocks, wallClockIsPast } from '@/composables/useWallClock'
 
 const logger = createLogger('EventsStore')
 
@@ -12,13 +13,16 @@ export const useEventsStore = defineStore('events', () => {
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
+  // date is a reading on a clock at the venue, so it is resolved against the
+  // event's own zone before anything is compared. Comparing the readings puts a
+  // 09:00 in Tokyo after an 08:00 in New York, which is thirteen hours backwards.
   const sortedEvents = computed(() => {
-    const now = new Date().toISOString()
+    const now = Date.now()
     return [...events.value].sort((a, b) => {
-      const aPast = a.date < now
-      const bPast = b.date < now
+      const aPast = wallClockIsPast(a, now)
+      const bPast = wallClockIsPast(b, now)
       if (aPast !== bPast) return aPast ? 1 : -1
-      return a.date.localeCompare(b.date)
+      return compareWallClocks(a, b)
     })
   })
 

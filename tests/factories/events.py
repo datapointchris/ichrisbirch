@@ -25,7 +25,10 @@ class EventFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Test Event {n + 1}')
-    date = factory.LazyFunction(lambda: now_utc() + timedelta(days=14))
+    # The column is a wall clock at the venue, so the offset comes off. The zone
+    # cycles so a suite never sees only one.
+    date = factory.LazyFunction(lambda: (now_utc() + timedelta(days=14)).replace(tzinfo=None))
+    timezone = factory.Iterator(['America/New_York', 'Asia/Tokyo', 'Europe/Berlin', 'UTC'])
     venue = factory.Sequence(lambda n: f'Venue {n + 1}')
     url = factory.Sequence(lambda n: f'https://events.com/event/{n + 1}')
     cost = factory.Sequence(lambda n: (n + 1) * 25.0)  # 25, 50, 75...

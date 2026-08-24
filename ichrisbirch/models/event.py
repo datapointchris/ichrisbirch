@@ -16,7 +16,11 @@ class Event(Base):
     __tablename__ = 'events'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # An event is a wall clock at a place, not an instant. Doors at 19:00 stay 19:00
+    # whoever is reading and whatever a government later does to the offset, so the
+    # local reading is stored and the zone is stored beside it to resolve one.
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default='UTC')
     venue: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=True)
     cost: Mapped[float] = mapped_column(Float, nullable=False)
@@ -24,5 +28,5 @@ class Event(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     def __repr__(self):
-        return f"""Event(name={self.name}, date={self.date}, url={self.url}, venue={self.venue},
-            cost={self.cost}, attending={self.attending}, notes={self.notes}"""
+        return f"""Event(name={self.name}, date={self.date}, timezone={self.timezone}, url={self.url},
+            venue={self.venue}, cost={self.cost}, attending={self.attending}, notes={self.notes}"""

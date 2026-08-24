@@ -30,15 +30,21 @@
           data-testid="event-item"
           class="grid__item"
           :class="{
-            'grid__item--highlighted': event.attending && !isPast(event.date),
-            'grid__item--past': isPast(event.date),
+            'grid__item--highlighted': event.attending && !wallClockIsPast(event),
+            'grid__item--past': wallClockIsPast(event),
           }"
         >
           <h2>{{ event.name }}</h2>
           <ul class="event">
             <li class="event__item">
-              {{ formatDate(event.date, 'weekdayDateTime') }} | {{ event.venue }}
-              <span class="event__time-until">({{ timeUntil(event.date) }})</span>
+              {{ formatDate(event.date, 'weekdayDateTime')
+              }}<span
+                v-if="event.timezone !== readerTimezone"
+                class="event__timezone"
+                >&nbsp;{{ event.timezone }}</span
+              >
+              | {{ event.venue }}
+              <span class="event__time-until">({{ timeUntilEvent(event) }})</span>
             </li>
             <li class="event__item">
               <a
@@ -110,7 +116,18 @@ import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditEventModal from '@/components/events/AddEditEventModal.vue'
-import { formatDate, timeUntil, isPast } from '@/composables/formatDate'
+import { formatDate, timeUntil } from '@/composables/formatDate'
+import { browserTimezone, wallClockInstant, wallClockIsPast } from '@/composables/useWallClock'
+
+// The reading is printed verbatim, because that is the clock at the venue. The zone
+// is named whenever it is not the reader's own, or a 9:00 elsewhere reads as 9:00
+// here and says nothing about which 9:00. Everything that compares against now goes
+// through the resolver instead.
+const readerTimezone = browserTimezone()
+
+function timeUntilEvent(event: Event): string {
+  return timeUntil(new Date(wallClockInstant(event)).toISOString())
+}
 
 const store = useEventsStore()
 const { show: notify } = useNotifications()

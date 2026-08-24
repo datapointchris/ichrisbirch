@@ -15,7 +15,11 @@ router = APIRouter()
 
 @router.get('/', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
 async def read_many(session: DbSession):
-    query = select(models.Event).order_by(models.Event.date.asc())
+    # Ordering resolves the reading against each event's own zone. `date` alone is a
+    # wall clock somewhere else, so ordering by it puts a 09:00 in Tokyo after an
+    # 08:00 in New York, thirteen hours the wrong way.
+    resolved = models.Event.date.op('AT TIME ZONE')(models.Event.timezone)
+    query = select(models.Event).order_by(resolved.asc())
     return list(session.scalars(query).all())
 
 

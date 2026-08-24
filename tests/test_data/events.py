@@ -6,6 +6,7 @@ BASE_DATA: list[Event] = [
     Event(
         name='Event 1',
         date=datetime(2022, 10, 1, 10, 0).isoformat(),
+        timezone='America/New_York',
         venue='Venue 1',
         url='https://example.com/event1',
         cost=10.0,
@@ -15,6 +16,7 @@ BASE_DATA: list[Event] = [
     Event(
         name='Event 2',
         date=datetime(2022, 10, 2, 14, 0).isoformat(),
+        timezone='Asia/Tokyo',
         venue='Venue 2',
         url='https://example.com/event2',
         cost=20.0,
@@ -24,6 +26,7 @@ BASE_DATA: list[Event] = [
     Event(
         name='Event 3',
         date=datetime(2022, 10, 3, 18, 0).isoformat(),
+        timezone='UTC',
         venue='Venue 3',
         url='https://example.com/event3',
         cost=30.0,

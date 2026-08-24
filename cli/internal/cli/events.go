@@ -130,7 +130,7 @@ func newEventsCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), event)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created event %q at %s (id %d)\n", event.Name, event.Date.Format("2006-01-02 15:04"), event.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created event %q at %s (id %d)\n", event.Name, api.EventWhen(event), event.ID)
 			return nil
 		},
 	}
@@ -300,7 +300,7 @@ func printEventsTable(out io.Writer, events []api.Event) {
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "ID\tDATE\tGOING\tVENUE\tNAME")
 	for _, e := range events {
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", e.ID, e.Date.Format("2006-01-02 15:04"), yesNo(e.Attending), e.Venue, e.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", e.ID, api.EventWhen(e), yesNo(e.Attending), e.Venue, e.Name)
 	}
 	_ = tw.Flush()
 }
@@ -308,7 +308,7 @@ func printEventsTable(out io.Writer, events []api.Event) {
 func printEventDetail(out io.Writer, e api.Event) {
 	_, _ = fmt.Fprintf(out, "%s\n", e.Name)
 	_, _ = fmt.Fprintf(out, "  id:        %d\n", e.ID)
-	_, _ = fmt.Fprintf(out, "  date:      %s\n", e.Date.Format("2006-01-02 15:04"))
+	_, _ = fmt.Fprintf(out, "  date:      %s\n", api.EventWhen(e))
 	_, _ = fmt.Fprintf(out, "  venue:     %s\n", e.Venue)
 	_, _ = fmt.Fprintf(out, "  cost:      %.2f\n", e.Cost)
 	_, _ = fmt.Fprintf(out, "  attending: %s\n", yesNo(e.Attending))

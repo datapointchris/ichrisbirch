@@ -37,6 +37,18 @@
             />
           </div>
           <div class="add-edit-modal__form-item">
+            <label for="event-timezone">Timezone</label>
+            <NeuSelect
+              id="event-timezone"
+              v-model="form.timezone"
+              data-testid="event-timezone-input"
+              :options="timezoneOptions"
+            />
+          </div>
+        </div>
+
+        <div class="add-edit-modal__form-row">
+          <div class="add-edit-modal__form-item">
             <label for="event-venue">Venue</label>
             <input
               id="event-venue"
@@ -118,9 +130,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
+import { browserTimezone } from '@/composables/useWallClock'
+import NeuSelect from '@/components/NeuSelect.vue'
+import type { NeuSelectOption } from '@/components/NeuSelect.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -135,9 +150,26 @@ const emit = defineEmits<{
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
+// The date input is a wall clock at the venue, so the zone has to be stated rather
+// than inferred. The reader's own zone is the right default — most events are local
+// — and Intl carries every IANA name the backend will accept.
+const readerTimezone = browserTimezone()
+
+// supportedValuesOf is ES2022 and not in the lib target, so it is read off a narrowed
+// view of Intl rather than by widening the global. Where it is missing there is still
+// a usable list — the reader's own zone and UTC cover the cases that are not travel.
+const intlWithZones = Intl as typeof Intl & { supportedValuesOf?: (key: 'timeZone') => string[] }
+
+const timezoneOptions = computed<NeuSelectOption<string>[]>(() => {
+  const names = intlWithZones.supportedValuesOf?.('timeZone') ?? [readerTimezone, 'UTC']
+  const all = names.includes(readerTimezone) ? names : [readerTimezone, ...names]
+  return all.map((tz) => ({ value: tz, label: tz === readerTimezone ? `${tz} (yours)` : tz }))
+})
+
 const form = reactive({
   name: '',
   date: '',
+  timezone: readerTimezone,
   venue: '',
   url: '',
   cost: 0,
@@ -151,6 +183,7 @@ watch(
     if (val && props.editData) {
       form.name = props.editData.name
       form.date = props.editData.date
+      form.timezone = props.editData.timezone
       form.venue = props.editData.venue
       form.url = props.editData.url ?? ''
       form.cost = props.editData.cost
@@ -163,6 +196,7 @@ watch(
 function resetForm() {
   form.name = ''
   form.date = ''
+  form.timezone = readerTimezone
   form.venue = ''
   form.url = ''
   form.cost = 0
@@ -180,6 +214,7 @@ function handleSubmit(handleSuccess: () => void) {
   const data = {
     name: form.name.trim(),
     date: form.date,
+    timezone: form.timezone,
     venue: form.venue.trim(),
     url: form.url.trim() || undefined,
     cost: Number(form.cost),

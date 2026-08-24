@@ -57,15 +57,18 @@ def test_lifecycle(event_crud_tester):
     crud_tester.test_lifecycle(client)
 
 
+# The reading on the clock at the venue is what is stored, whatever shape it arrives
+# in. An offset describes the same wall time, so it is dropped rather than converted —
+# converting would display a 19:00 event as 15:00 four hours west.
 @pytest.mark.parametrize(
     ['event_date', 'output'],
     [
-        (datetime(2022, 10, 4), '2022-10-04T00:00:00Z'),
-        (datetime(2022, 10, 4, 12), '2022-10-04T12:00:00Z'),
-        (datetime(2022, 10, 4, 12, tzinfo=ZoneInfo('America/Chicago')), '2022-10-04T17:00:00Z'),
-        ('2022-10-04', '2022-10-04T00:00:00Z'),
-        ('2022-10-04T12:00:00', '2022-10-04T12:00:00Z'),
-        ('2022-10-04T12:00:00-05:00', '2022-10-04T17:00:00Z'),
+        (datetime(2022, 10, 4), '2022-10-04T00:00:00'),
+        (datetime(2022, 10, 4, 12), '2022-10-04T12:00:00'),
+        (datetime(2022, 10, 4, 12, tzinfo=ZoneInfo('America/Chicago')), '2022-10-04T12:00:00'),
+        ('2022-10-04', '2022-10-04T00:00:00'),
+        ('2022-10-04T12:00:00', '2022-10-04T12:00:00'),
+        ('2022-10-04T12:00:00-05:00', '2022-10-04T12:00:00'),
     ],
 )
 def test_create_event_date_formats(txn_api_logged_in, event_date, output):
@@ -144,3 +147,122 @@ class TestEventsNotFound:
         client, _ = event_crud_tester
         response = client.patch(f'{ENDPOINT}99999/attend/')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+
+class TestEventWallClock:
+    """The date is a reading on a clock at the venue, and timezone resolves it.
+
+    Storing an instant makes the reading depend on who is looking: a 19:00 event
+    entered on a machine four hours west of UTC comes back as 15:00.
+    """
+
+    def test_a_non_utc_event_round_trips_its_zone(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        payload = {
+            'name': 'Tokyo Show',
+            'date': '2026-09-28T19:00:00',
+            'timezone': 'Asia/Tokyo',
+            'venue': 'Budokan',
+            'cost': 0.0,
+            'attending': True,
+        }
+
+        created = client.post(ENDPOINT, json=payload)
+
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        body = created.json()
+        assert body['date'] == '2026-09-28T19:00:00', 'the reading is stored, not an instant'
+        assert body['timezone'] == 'Asia/Tokyo'
+
+    def test_an_offset_on_the_date_is_dropped_not_converted(self, txn_api_logged_in):
+        """An offset describes the same reading, so the reading survives it."""
+        client, session = txn_api_logged_in
+        payload = {
+            'name': 'Offset Sent',
+            'date': '2026-09-28T19:00:00-04:00',
+            'timezone': 'America/New_York',
+            'venue': 'Hall',
+            'cost': 0.0,
+            'attending': False,
+        }
+
+        created = client.post(ENDPOINT, json=payload)
+
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        assert created.json()['date'] == '2026-09-28T19:00:00'
+
+    def test_an_offset_is_refused_as_a_timezone(self, txn_api_logged_in):
+        """An offset cannot say what the local time will be on a future date."""
+        client, session = txn_api_logged_in
+        payload = {
+            'name': 'Bad Zone',
+            'date': '2026-09-28T19:00:00',
+            'timezone': '-04:00',
+            'venue': 'Hall',
+            'cost': 0.0,
+            'attending': False,
+        }
+
+        response = client.post(ENDPOINT, json=payload)
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'IANA' in response.text
+
+    def test_an_explicit_null_timezone_is_a_422_not_a_500(self, txn_api_logged_in):
+        """exclude_unset covers the omitted case, so a null can only be deliberate."""
+        client, session = txn_api_logged_in
+        created = client.post(
+            ENDPOINT,
+            json={
+                'name': 'Nullable',
+                'date': '2026-09-28T19:00:00',
+                'timezone': 'UTC',
+                'venue': 'Hall',
+                'cost': 0.0,
+                'attending': False,
+            },
+        )
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+        response = client.patch(f'{ENDPOINT}{created.json()["id"]}/', json={'timezone': None})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    def test_an_omitted_timezone_leaves_it_unchanged(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        created = client.post(
+            ENDPOINT,
+            json={
+                'name': 'Unchanged',
+                'date': '2026-09-28T19:00:00',
+                'timezone': 'Asia/Tokyo',
+                'venue': 'Hall',
+                'cost': 0.0,
+                'attending': False,
+            },
+        )
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+        updated = client.patch(f'{ENDPOINT}{created.json()["id"]}/', json={'name': 'Renamed'})
+
+        assert updated.status_code == status.HTTP_200_OK, show_status_and_response(updated)
+        assert updated.json()['timezone'] == 'Asia/Tokyo'
+
+    def test_listing_orders_by_the_resolved_instant_not_the_reading(self, txn_api_logged_in):
+        """09:00 in Tokyo is thirteen hours before 08:00 in New York."""
+        client, session = txn_api_logged_in
+        for name, zone, reading in [
+            ('New York morning', 'America/New_York', '2026-09-28T08:00:00'),
+            ('Tokyo morning', 'Asia/Tokyo', '2026-09-28T09:00:00'),
+        ]:
+            created = client.post(
+                ENDPOINT,
+                json={'name': name, 'date': reading, 'timezone': zone, 'venue': 'V', 'cost': 0.0, 'attending': False},
+            )
+            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+        listed = client.get(ENDPOINT)
+
+        assert listed.status_code == status.HTTP_200_OK, show_status_and_response(listed)
+        names = [e['name'] for e in listed.json() if e['name'].endswith('morning')]
+        assert names == ['Tokyo morning', 'New York morning']
