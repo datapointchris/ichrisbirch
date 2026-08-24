@@ -1,7 +1,7 @@
+from datetime import UTC
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 import structlog
 from fastapi import APIRouter
@@ -282,7 +282,7 @@ async def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session:
     for attr, value in update_data.items():
         setattr(item, attr, value)
     stamp_completion(item, was_completed, update_data)
-    item.updated_at = datetime.now(tz=ZoneInfo('UTC'))
+    item.updated_at = datetime.now(UTC)
     session.commit()
     session.refresh(item)
     return item

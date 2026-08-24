@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 
 import structlog
@@ -68,7 +69,7 @@ async def run(id: int, session: DbSession):
     if autotask := session.get(models.AutoTask, id):
         task = models.Task(name=autotask.name, notes=autotask.notes, priority=autotask.priority, category=autotask.category)
         session.add(task)
-        autotask.last_run_date = datetime.now()
+        autotask.last_run_date = datetime.now(UTC)
         autotask.run_count += 1
         session.commit()
         session.refresh(autotask)

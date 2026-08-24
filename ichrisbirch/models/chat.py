@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -29,7 +30,7 @@ class Chat(Base):
         order_by='ChatMessage.created_at',
         cascade='all, delete-orphan',  # This ensures child messages are deleted when a chat is deleted
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"""Chat(

@@ -297,27 +297,29 @@ Resource clients work seamlessly with Pydantic models:
 ### Input Validation
 
 ```python
-# Models validate input data
-task_data = TaskModel(
-    title="New task",
-    priority="high",
-    due_date=datetime.now() + timedelta(days=7)
+# Schemas validate input data
+task_data = schemas.TaskCreate(
+    name='New task',
+    category='Chore',
+    priority=5,
 )
 
-# Create using model data
+# Create using schema data
 new_task = tasks.create(task_data.model_dump())
 ```
 
 ### Output Parsing
 
 ```python
-# Responses are parsed into model instances
+# Responses are parsed into schema instances
 task = tasks.get(123)
 
 # Access typed attributes
-print(task.title)  # String
-print(task.created_at)  # datetime
-print(task.priority)  # Enum value
+print(task.name)  # str
+print(task.category)  # str, a row in task_categories
+print(task.priority)  # int, lower sorts first
+print(task.add_date)  # timezone-aware datetime in UTC
+print(task.complete_date)  # the same, or None while the task is open
 ```
 
 ### Relationship Loading

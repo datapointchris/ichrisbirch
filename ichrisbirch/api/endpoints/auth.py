@@ -1,3 +1,5 @@
+from datetime import UTC
+from datetime import datetime
 from typing import Annotated
 
 import jwt
@@ -250,10 +252,7 @@ def authenticate_with_personal_api_key(
         logger.warning('personal_api_key_invalid')
         return None
 
-    # Update last_used_at
-    from datetime import datetime
-
-    api_key.last_used_at = datetime.now()
+    api_key.last_used_at = datetime.now(UTC)
     session.commit()
 
     # Return the user's alternative_id (what get_id() returns) for validate_user_id
