@@ -1,4 +1,4 @@
-"""Store a day as a day, and an event as a wall clock with its zone
+"""Store a calendar day as a date
 
 Six columns held a calendar day in a `timestamptz`. The value entered was a bare
 `YYYY-MM-DD`, which Pydantic filled out to naive midnight and Postgres stored as
@@ -10,16 +10,11 @@ The conversion pins UTC rather than relying on the session `TimeZone`, so it
 recovers the day that was typed whatever the connection is set to. Every existing
 value is exactly midnight UTC, so nothing is truncated.
 
-`events.date` is the other case. An event is a wall clock at a place — doors at
-19:00 stay 19:00 for every reader, and stay 19:00 if a government moves the offset
-before the date arrives. Storing an instant cannot express that. The column becomes
-naive and a `timezone` column holds the IANA name that resolves it.
-
-Existing events keep the wall clock that was typed: the old schema forced the
-naive form value to UTC, so `AT TIME ZONE 'UTC'` returns the reading the user
-actually entered. Their `timezone` becomes 'UTC' because the migration has no way
-to know which zone was meant — the time shown is right and the label may not be,
-which is correctable per row and was not correctable before.
+Deployable alongside the previous release. A `Mapped[datetime]` model reading a
+`date` column gets a `datetime.date`, which Pydantic promotes to midnight, and a
+`datetime` written back is truncated to its day. The meaning of the column does
+not change, which is what makes one deploy safe here — `events.date` changing from
+an instant to a venue wall clock does change meaning, and ships separately.
 
 Revision ID: b1c2d3e4f5a6
 Revises: a2b3c4d5e6f7
@@ -56,16 +51,6 @@ def upgrade() -> None:
                 postgresql_using=f'({column} AT TIME ZONE \'UTC\')::date',
             )
 
-    op.add_column('events', sa.Column('timezone', sa.Text(), nullable=False, server_default='UTC'))
-    op.alter_column(
-        'events',
-        'date',
-        type_=sa.DateTime(timezone=False),
-        existing_type=sa.DateTime(timezone=True),
-        existing_nullable=False,
-        postgresql_using="date AT TIME ZONE 'UTC'",
-    )
-
 
 def downgrade() -> None:
     # A day has no time of its own, so it goes back as midnight UTC — which is the
@@ -81,13 +66,3 @@ def downgrade() -> None:
                 existing_nullable=True,
                 postgresql_using=f"{column}::timestamp AT TIME ZONE 'UTC'",
             )
-
-    op.alter_column(
-        'events',
-        'date',
-        type_=sa.DateTime(timezone=True),
-        existing_type=sa.DateTime(timezone=False),
-        existing_nullable=False,
-        postgresql_using="date AT TIME ZONE 'UTC'",
-    )
-    op.drop_column('events', 'timezone')

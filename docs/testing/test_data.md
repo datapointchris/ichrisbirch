@@ -23,9 +23,7 @@ from ichrisbirch.models import Event
 BASE_DATA: list[Event] = [
     Event(
         name='Event 1',
-        # A wall clock at the venue, with no offset; timezone resolves it.
         date=datetime(2022, 10, 1, 10, 0).isoformat(),
-        timezone='America/New_York',
         venue='Venue 1',
         url='https://example.com/event1',
         cost=10.0,

@@ -23,27 +23,14 @@ vi.mock('@/composables/formatDate', () => ({
 // Dates are relative to "now": the view highlights an event only when it is both
 // attending AND not past, and orders via sortedEvents (future ascending). Hardcoded
 // calendar dates would rot into the past as the wall clock advances.
-// event.date is a wall clock with no offset, which is what the API now returns.
-const daysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString().replace(/\.\d+Z$/, '')
-
-const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+const daysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString()
 
 const testEvents: Event[] = [
-  {
-    id: 1,
-    name: 'Concert',
-    date: daysFromNow(10),
-    timezone: browserTimezone,
-    venue: 'Arena',
-    cost: 50,
-    attending: true,
-    url: 'https://example.com',
-  },
+  { id: 1, name: 'Concert', date: daysFromNow(10), venue: 'Arena', cost: 50, attending: true, url: 'https://example.com' },
   {
     id: 2,
     name: 'Conference',
     date: daysFromNow(20),
-    timezone: 'Asia/Tokyo',
     venue: 'Convention Center',
     cost: 200,
     attending: false,
@@ -174,15 +161,5 @@ describe('EventsView', () => {
     const modal = wrapper.findComponent({ name: 'AddEditEventModal' })
     expect(modal.props('visible')).toBe(true)
     expect(modal.props('editData')).toEqual(testEvents[0])
-  })
-
-  it('names the zone for an event that is not on the reader’s clock', () => {
-    const wrapper = createWrapper({ events: testEvents })
-    expect(wrapper.text()).toContain('Asia/Tokyo')
-  })
-
-  it('stays quiet about the zone when it is the reader’s own', () => {
-    const wrapper = createWrapper({ events: [testEvents[0]] })
-    expect(wrapper.text()).not.toContain(browserTimezone)
   })
 })

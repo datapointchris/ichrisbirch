@@ -5,6 +5,7 @@ Tests that the Event, EventCreate, and EventUpdate schemas properly validate dat
 
 import datetime
 
+import pendulum
 import pytest
 from pydantic import ValidationError
 
@@ -58,38 +59,16 @@ class TestEventSchema:
         assert event.date.month == 6
         assert event.date.day == 15
 
-    def test_event_create_keeps_the_wall_clock_and_drops_the_offset(self):
-        """An offset describes the same reading, so the reading survives it.
-
-        Converting is what made a 20:00 event display four hours early. The zone
-        that resolves the reading is the `timezone` field, not an offset on the date.
-        """
+    def test_event_create_with_timezone_string(self):
+        """Test creating an event with a timezone string that gets converted."""
         event_data = {'name': 'Concert', 'date': '2023-06-15T20:00:00-05:00', 'venue': 'Stadium', 'cost': 75.50, 'attending': True}
         event = EventCreate(**event_data)
-        assert event.date.tzinfo is None
-        assert event.date.hour == 20
-        assert event.date.day == 15
-
-    def test_event_create_defaults_the_timezone_to_utc(self):
-        event = EventCreate(name='Concert', date='2023-06-15T20:00:00', venue='Stadium', cost=75.50, attending=True)
-        assert event.timezone == 'UTC'
-
-    def test_event_create_rejects_an_offset_as_a_timezone(self):
-        """An offset cannot answer what the local time will be on a future date."""
-        with pytest.raises(ValidationError) as exc_info:
-            EventCreate(name='Concert', date='2023-06-15T20:00:00', timezone='-05:00', venue='Stadium', cost=75.50, attending=True)
-        assert 'IANA' in str(exc_info.value)
-
-    def test_event_create_accepts_an_iana_name(self):
-        event = EventCreate(
-            name='Concert',
-            date='2023-06-15T20:00:00',
-            timezone='America/New_York',
-            venue='Stadium',
-            cost=75.50,
-            attending=True,
-        )
-        assert event.timezone == 'America/New_York'
+        # Should be converted to UTC
+        dt = pendulum.instance(event.date)
+        assert dt.timezone_name == 'UTC'
+        # Original was 20:00 -05:00, which is 01:00 UTC next day
+        assert dt.hour == 1
+        assert dt.day == 16  # Next day in UTC
 
     def test_event_create_invalid_missing_fields(self):
         """Test EventCreate fails with missing required fields."""
@@ -111,7 +90,6 @@ class TestEventSchema:
             'id': 1,
             'name': 'Concert',
             'date': now,
-            'timezone': 'America/New_York',
             'venue': 'Stadium',
             'url': 'https://example.com/concert',
             'cost': 75.50,

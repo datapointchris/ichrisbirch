@@ -70,7 +70,7 @@ func TestCreateEvent_SendsRequiredFields(t *testing.T) {
 		_ = json.Unmarshal(raw, &gotBody)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"id":7,"name":"Show","date":"2026-09-01T20:00:00","timezone":"America/New_York","venue":"Hall","url":null,"cost":45,"attending":true,"notes":null}`))
+		_, _ = w.Write([]byte(`{"id":7,"name":"Show","date":"2026-09-01T20:00:00Z","venue":"Hall","url":null,"cost":45,"attending":true,"notes":null}`))
 	}))
 	defer srv.Close()
 
@@ -86,7 +86,7 @@ func TestCreateEvent_SendsRequiredFields(t *testing.T) {
 	if gotBody["date"] != "2026-09-01 20:00" {
 		t.Errorf("date should be sent as the raw string for server-side parsing, got %v", gotBody["date"])
 	}
-	if !event.Attending || event.Date == "" || event.Timezone == "" {
+	if !event.Attending || event.Date.IsZero() {
 		t.Errorf("event = %+v", event)
 	}
 }
@@ -98,7 +98,7 @@ func TestAttendEvent_PatchPath(t *testing.T) {
 		gotMethod = r.Method
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"id":7,"name":"Show","date":"2026-09-01T20:00:00","timezone":"America/New_York","venue":"Hall","url":null,"cost":45,"attending":true,"notes":null}`))
+		_, _ = w.Write([]byte(`{"id":7,"name":"Show","date":"2026-09-01T20:00:00Z","venue":"Hall","url":null,"cost":45,"attending":true,"notes":null}`))
 	}))
 	defer srv.Close()
 

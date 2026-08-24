@@ -19,6 +19,7 @@ import datetime as dt
 from typing import Annotated
 
 import pendulum
+import sqlalchemy as sa
 from fastapi import HTTPException
 from fastapi import Query
 from fastapi import status
@@ -46,10 +47,24 @@ def _parse_bound(value: str) -> dt.datetime:
     return parsed
 
 
+def _bound_for(column: InstrumentedAttribute, value: str) -> dt.datetime | dt.date:
+    """Match the bound to the column's own type.
+
+    A `Date` column compared against an aware `datetime` makes Postgres cast the
+    bound in the session `TimeZone`, so `2026-08-20` resolves to the 19th on any
+    session west of UTC and the inclusive range this module promises silently
+    loses a day at each end. Comparing a date against a date has no zone in it.
+    """
+    parsed = _parse_bound(value)
+    if isinstance(column.type, sa.Date) and not isinstance(column.type, sa.DateTime):
+        return parsed.date()
+    return parsed
+
+
 def apply_date_bounds(query: Select, column: InstrumentedAttribute, start_date: str | None, end_date: str | None) -> Select:
     """Narrow to rows whose `column` falls within the bounds, or leave it alone."""
     if start_date is not None:
-        query = query.where(column >= _parse_bound(start_date))
+        query = query.where(column >= _bound_for(column, start_date))
     if end_date is not None:
-        query = query.where(column <= _parse_bound(end_date))
+        query = query.where(column <= _bound_for(column, end_date))
     return query

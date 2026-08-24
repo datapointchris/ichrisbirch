@@ -57,18 +57,15 @@ def test_lifecycle(event_crud_tester):
     crud_tester.test_lifecycle(client)
 
 
-# The reading on the clock at the venue is what is stored, whatever shape it arrives
-# in. An offset describes the same wall time, so it is dropped rather than converted —
-# converting is what made 19:00 display as 15:00.
 @pytest.mark.parametrize(
     ['event_date', 'output'],
     [
-        (datetime(2022, 10, 4), '2022-10-04T00:00:00'),
-        (datetime(2022, 10, 4, 12), '2022-10-04T12:00:00'),
-        (datetime(2022, 10, 4, 12, tzinfo=ZoneInfo('America/Chicago')), '2022-10-04T12:00:00'),
-        ('2022-10-04', '2022-10-04T00:00:00'),
-        ('2022-10-04T12:00:00', '2022-10-04T12:00:00'),
-        ('2022-10-04T12:00:00-05:00', '2022-10-04T12:00:00'),
+        (datetime(2022, 10, 4), '2022-10-04T00:00:00Z'),
+        (datetime(2022, 10, 4, 12), '2022-10-04T12:00:00Z'),
+        (datetime(2022, 10, 4, 12, tzinfo=ZoneInfo('America/Chicago')), '2022-10-04T17:00:00Z'),
+        ('2022-10-04', '2022-10-04T00:00:00Z'),
+        ('2022-10-04T12:00:00', '2022-10-04T12:00:00Z'),
+        ('2022-10-04T12:00:00-05:00', '2022-10-04T17:00:00Z'),
     ],
 )
 def test_create_event_date_formats(txn_api_logged_in, event_date, output):
