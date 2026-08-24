@@ -24,7 +24,7 @@ require (
 
 require (
 	github.com/danieljoos/wincred v1.2.3 // indirect
-	github.com/datapointchris/goclilogin v0.1.0
+	github.com/datapointchris/goclilogin v0.2.0
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 )

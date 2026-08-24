@@ -38,7 +38,7 @@ type Config struct {
 // Login is the goclilogin view of this config: which provider to authenticate
 // against, as which client, and where the token and its refresh lock live.
 //
-// LockDir is passed rather than left to goclilogin's default, which would put
+// StateDir is passed rather than left to goclilogin's default, which would put
 // it under the keyring service name. Naming icb's own state directory keeps the
 // lock where earlier versions wrote it, so two versions running during an
 // upgrade contend for the same file rather than each taking its own.
@@ -47,7 +47,7 @@ func (c Config) Login() goclilogin.Config {
 		Issuer:         c.Issuer,
 		ClientID:       c.ClientID,
 		KeyringService: keyringService,
-		LockDir:        StatePath(),
+		StateDir:       StatePath(),
 	}
 }
 

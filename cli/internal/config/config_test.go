@@ -27,7 +27,7 @@ func TestLoad_EnvOverrides(t *testing.T) {
 
 // Login is the seam between icb's settings and goclilogin's, so what it carries
 // across is worth pinning. The keyring service is a deployed identifier that
-// several released versions already wrote under, and LockDir has to stay on
+// several released versions already wrote under, and StateDir has to stay on
 // icb's own state directory rather than take goclilogin's default — two
 // versions naming different lock files would not exclude each other during an
 // upgrade.
@@ -46,8 +46,8 @@ func TestLoginCarriesTheDeployedIdentifiers(t *testing.T) {
 	if login.KeyringService != "icb-cli" {
 		t.Errorf("KeyringService = %q, want icb-cli", login.KeyringService)
 	}
-	if login.LockDir != "/tmp/xdgstate/icb" {
-		t.Errorf("LockDir = %q, want icb's own state directory", login.LockDir)
+	if login.StateDir != "/tmp/xdgstate/icb" {
+		t.Errorf("StateDir = %q, want icb's own state directory", login.StateDir)
 	}
 }
 
