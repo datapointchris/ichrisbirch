@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch.models.coffee import CoffeeBean
 from ichrisbirch.models.coffee import CoffeeShop
 from scripts.seed.base import SeedResult
+from scripts.seed.base import random_past_date
 from scripts.seed.base import random_past_datetime
 
 SHOPS = [
@@ -242,7 +243,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for shop_data in SHOPS:
         shop = CoffeeShop(
             **shop_data,
-            date_visited=random_past_datetime(730) if random.random() > 0.2 else None,
+            date_visited=random_past_date(730) if random.random() > 0.2 else None,
             created_at=random_past_datetime(365),
         )
         shops.append(shop)
@@ -257,7 +258,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
         roaster = str(data.get('roaster', ''))
         if roaster in shop_by_name and 'purchase_source' not in data:
             data['coffee_shop_id'] = shop_by_name[roaster].id
-        data['purchase_date'] = random_past_datetime(365) if random.random() > 0.3 else None
+        data['purchase_date'] = random_past_date(365) if random.random() > 0.3 else None
         data['created_at'] = random_past_datetime(365)
         beans.append(CoffeeBean(**data))
 
@@ -267,7 +268,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             name='Mystery Sample from Farmers Market',
             roaster='Unknown',
             origin='Unknown',
-            purchase_date=random_past_datetime(30),
+            purchase_date=random_past_date(30),
             created_at=random_past_datetime(30),
             notes='Grabbed this on impulse, no label on the bag',
         )
@@ -290,7 +291,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     brew_method=random.choice(extra_methods),
                     rating=round(random.uniform(3.0, 5.0), 1),
                     price=round(random.uniform(12.0, 28.0), 2),
-                    purchase_date=random_past_datetime(365),
+                    purchase_date=random_past_date(365),
                     created_at=random_past_datetime(365),
                 )
             )

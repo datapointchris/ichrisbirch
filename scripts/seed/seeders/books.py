@@ -8,8 +8,7 @@ data instead of buried in conditional logic.
 from __future__ import annotations
 
 import random
-from datetime import UTC
-from datetime import datetime
+from datetime import date
 from datetime import timedelta
 
 import sqlalchemy
@@ -115,8 +114,9 @@ BOOK_STATES = [
 ]
 
 
-def _random_past_dt(days_back: int = 365) -> datetime:
-    return datetime.now(UTC) - timedelta(days=random.randint(1, days_back))
+def _random_past_day(days_back: int = 365) -> date:
+    """A book date is a day — no time was ever entered for one."""
+    return date.today() - timedelta(days=random.randint(1, days_back))
 
 
 def clear(session: Session) -> None:
@@ -135,18 +135,18 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             if scale > 1:
                 title = f'{title} #{rep + 1}'
 
-            read_start = _random_past_dt(730) if has_read else None
+            read_start = _random_past_day(730) if has_read else None
             read_finish = None
             if has_read and progress == 'read' and read_start is not None:
                 read_finish = read_start + timedelta(days=random.randint(7, 90))
 
-            purchase_date = _random_past_dt(1095) if has_purchase else None
+            purchase_date = _random_past_day(1095) if has_purchase else None
             purchase_price = round(random.uniform(9.99, 49.99), 2) if has_purchase else None
 
             sell_date = None
             sell_price = None
             if ownership == 'sold':
-                sell_date = _random_past_dt(180)
+                sell_date = _random_past_day(180)
                 sell_price = round(random.uniform(5.00, 30.00), 2)
 
             books.append(

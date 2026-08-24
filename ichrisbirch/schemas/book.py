@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -17,12 +17,12 @@ class BookCreate(BookConfig):
     tags: list[str]
     goodreads_url: str | None = None
     priority: int | None = None
-    purchase_date: datetime | None = None
+    purchase_date: date | None = None
     purchase_price: float | None = None
-    sell_date: datetime | None = None
+    sell_date: date | None = None
     sell_price: float | None = None
-    read_start_date: datetime | None = None
-    read_finish_date: datetime | None = None
+    read_start_date: date | None = None
+    read_finish_date: date | None = None
     rating: int | None = None
     location: str | None = None
     notes: str | None = None
@@ -55,12 +55,12 @@ class Book(BookConfig):
     tags: list[str]
     goodreads_url: str | None = None
     priority: int | None = None
-    purchase_date: datetime | None = None
+    purchase_date: date | None = None
     purchase_price: float | None = None
-    sell_date: datetime | None = None
+    sell_date: date | None = None
     sell_price: float | None = None
-    read_start_date: datetime | None = None
-    read_finish_date: datetime | None = None
+    read_start_date: date | None = None
+    read_finish_date: date | None = None
     rating: int | None = None
     location: str | None = None
     notes: str | None = None
@@ -77,12 +77,12 @@ class BookUpdate(BookConfig):
     tags: list[str] = []
     goodreads_url: str | None = None
     priority: int | None = None
-    purchase_date: datetime | None = None
+    purchase_date: date | None = None
     purchase_price: float | None = None
-    sell_date: datetime | None = None
+    sell_date: date | None = None
     sell_price: float | None = None
-    read_start_date: datetime | None = None
-    read_finish_date: datetime | None = None
+    read_start_date: date | None = None
+    read_finish_date: date | None = None
     rating: int | None = None
     location: str | None = None
     notes: str | None = None

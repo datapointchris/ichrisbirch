@@ -37,7 +37,13 @@
           <h2>{{ event.name }}</h2>
           <ul class="event">
             <li class="event__item">
-              {{ formatDate(event.date, 'weekdayDateTime') }} | {{ event.venue }}
+              {{ formatDate(event.date, 'weekdayDateTime')
+              }}<span
+                v-if="event.timezone !== browserTimezone"
+                class="event__timezone"
+                >&nbsp;{{ event.timezone }}</span
+              >
+              | {{ event.venue }}
               <span class="event__time-until">({{ timeUntil(event.date) }})</span>
             </li>
             <li class="event__item">
@@ -111,6 +117,11 @@ import { ApiError } from '@/api/errors'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditEventModal from '@/components/events/AddEditEventModal.vue'
 import { formatDate, timeUntil, isPast } from '@/composables/formatDate'
+
+// event.date is a wall clock with no offset, so formatDate renders its components
+// verbatim. That is the venue's clock — name it whenever it is not the reader's own,
+// or 9:00 in Fort Wayne reads as 9:00 here and says nothing about which 9:00.
+const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
 const store = useEventsStore()
 const { show: notify } = useNotifications()
