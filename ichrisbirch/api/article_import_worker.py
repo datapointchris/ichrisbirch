@@ -11,6 +11,7 @@ Batch status (Redis hash at article_import:batch:{batch_id}):
 import json
 import threading
 import uuid
+from datetime import UTC
 from datetime import datetime
 
 import pendulum
@@ -48,7 +49,7 @@ def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: d
         pipeline.rpush(QUEUE_KEY, item)
 
     batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
-    now = datetime.now().isoformat()
+    now = datetime.now(UTC).isoformat()
     pipeline.hset(
         batch_key,
         mapping={
@@ -133,7 +134,7 @@ class ArticleImportWorker:
 
         # Mark batch as processing
         self.redis_client.hset(batch_key, 'status', 'processing')
-        self.redis_client.hset(batch_key, 'updated_at', datetime.now().isoformat())
+        self.redis_client.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
 
         try:
             with create_session(self.settings) as session:
@@ -164,7 +165,7 @@ class ArticleImportWorker:
         pipeline = self.redis_client.pipeline()
         pipeline.hincrby(batch_key, 'processed', 1)
         pipeline.hincrby(batch_key, 'succeeded', 1)
-        pipeline.hset(batch_key, 'updated_at', datetime.now().isoformat())
+        pipeline.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
         pipeline.execute()
 
         # Append to results list
@@ -178,7 +179,7 @@ class ArticleImportWorker:
         pipeline = self.redis_client.pipeline()
         pipeline.hincrby(batch_key, 'processed', 1)
         pipeline.hincrby(batch_key, 'failed_count', 1)
-        pipeline.hset(batch_key, 'updated_at', datetime.now().isoformat())
+        pipeline.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
         pipeline.execute()
 
         # Append to errors list
@@ -206,5 +207,5 @@ class ArticleImportWorker:
         data = self.redis_client.hgetall(batch_key)
         if int(data.get('processed', 0)) >= int(data.get('total', 0)):
             self.redis_client.hset(batch_key, 'status', 'completed')
-            self.redis_client.hset(batch_key, 'updated_at', datetime.now().isoformat())
+            self.redis_client.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
             logger.info('bulk_import_batch_completed', batch_key=batch_key)

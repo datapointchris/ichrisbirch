@@ -1,5 +1,7 @@
+from datetime import date
 from datetime import datetime
 
+from sqlalchemy import Date
 from sqlalchemy import DateTime
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
@@ -47,7 +49,7 @@ class CoffeeShop(Base):
     rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     review: Mapped[str | None] = mapped_column(Text, nullable=True)
-    date_visited: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    date_visited: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     beans: Mapped[list['CoffeeBean']] = relationship('CoffeeBean', back_populates='coffee_shop')
 
@@ -71,7 +73,7 @@ class CoffeeBean(Base):
     review: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     price: Mapped[float | None] = mapped_column(Float, nullable=True)
-    purchase_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    purchase_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     # Either a known shop or a free-text source (e.g. "Trade Coffee subscription") — mutually exclusive
     coffee_shop_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('coffee.coffee_shops.id', ondelete='SET NULL'), nullable=True)
     purchase_source: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -14,6 +14,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import asdict
 from dataclasses import dataclass
+from datetime import UTC
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -189,7 +190,7 @@ def check_and_run_autotasks(settings: Settings) -> None:
                         notes=autotask.notes,
                     )
                 )
-                autotask.last_run_date = datetime.now()
+                autotask.last_run_date = datetime.now(UTC)
                 autotask.run_count += 1
         session.commit()
 
@@ -231,7 +232,7 @@ def check_and_run_autofun(settings: Settings) -> None:
                 fun_item = session.get(models.AutoFun, record.fun_item_id)
                 if fun_item:
                     fun_item.is_completed = True
-                    fun_item.completed_date = datetime.now()
+                    fun_item.completed_date = datetime.now(UTC)
                 session.delete(record)
                 logger.info('autofun_item_completed', fun_item_id=record.fun_item_id)
 

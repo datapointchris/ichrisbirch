@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 
 from sqlalchemy import DateTime
@@ -48,7 +49,7 @@ class Task(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(Text, ForeignKey('task_categories.name'), nullable=False)
     priority: Mapped[int] = mapped_column(Integer)
-    add_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
+    add_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     complete_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self):

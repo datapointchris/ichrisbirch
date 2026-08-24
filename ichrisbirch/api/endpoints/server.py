@@ -1,4 +1,5 @@
 import os
+from datetime import UTC
 from datetime import datetime
 
 import structlog
@@ -22,5 +23,5 @@ def health(settings: Settings = Depends(get_settings)) -> schemas.ServerStats:
         environment=os.getenv('ENVIRONMENT', 'NOT SET'),
         api_url=os.getenv('API_URL', 'NOT SET'),
         log_level=os.getenv('LOG_LEVEL', 'NOT SET'),
-        server_time=datetime.now().isoformat(),
+        server_time=datetime.now(UTC).isoformat(),
     )

@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -24,7 +25,7 @@ class ChatMessage(Base):
     chat: Mapped[Chat] = relationship(back_populates='messages')
     role: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC))
 
     def __repr__(self) -> str:
         return f"""ChatMessage(

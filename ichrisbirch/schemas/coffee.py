@@ -1,3 +1,4 @@
+from datetime import date
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ class CoffeeShopCreate(CoffeeShopConfig):
     rating: float | None = None
     notes: str | None = None
     review: str | None = None
-    date_visited: datetime | None = None
+    date_visited: date | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -42,7 +43,7 @@ class CoffeeShop(CoffeeShopConfig):
     rating: float | None = None
     notes: str | None = None
     review: str | None = None
-    date_visited: datetime | None = None
+    date_visited: date | None = None
     created_at: datetime
 
 
@@ -57,7 +58,7 @@ class CoffeeShopUpdate(CoffeeShopConfig):
     rating: float | None = None
     notes: str | None = None
     review: str | None = None
-    date_visited: datetime | None = None
+    date_visited: date | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -83,7 +84,7 @@ class CoffeeBeanCreate(CoffeeBeanConfig):
     review: str | None = None
     notes: str | None = None
     price: float | None = None
-    purchase_date: datetime | None = None
+    purchase_date: date | None = None
     coffee_shop_id: int | None = None
     purchase_source: str | None = None
     purchase_url: str | None = None
@@ -109,7 +110,7 @@ class CoffeeBean(CoffeeBeanConfig):
     review: str | None = None
     notes: str | None = None
     price: float | None = None
-    purchase_date: datetime | None = None
+    purchase_date: date | None = None
     coffee_shop_id: int | None = None
     purchase_source: str | None = None
     purchase_url: str | None = None
@@ -128,7 +129,7 @@ class CoffeeBeanUpdate(CoffeeBeanConfig):
     review: str | None = None
     notes: str | None = None
     price: float | None = None
-    purchase_date: datetime | None = None
+    purchase_date: date | None = None
     coffee_shop_id: int | None = None
     purchase_source: str | None = None
     purchase_url: str | None = None

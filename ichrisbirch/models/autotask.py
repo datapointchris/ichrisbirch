@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import date
 from datetime import datetime
 
@@ -76,5 +77,5 @@ class AutoTask(Base):
     @property
     def should_run_today(self):
         """Returns true if the task should be run today."""
-        today = datetime.now().date()
+        today = datetime.now(UTC).date()
         return self.next_run_date <= today and self.last_run_date.date() != today

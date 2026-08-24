@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date
 
-from sqlalchemy import DateTime
+from sqlalchemy import Date
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Identity
@@ -53,12 +53,12 @@ class Book(Base):
     tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)
     goodreads_url: Mapped[str] = mapped_column(Text, unique=True, nullable=True)
     priority: Mapped[int] = mapped_column(Integer, nullable=True)
-    purchase_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    purchase_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     purchase_price: Mapped[float] = mapped_column(Float, nullable=True)
-    sell_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    sell_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     sell_price: Mapped[float] = mapped_column(Float, nullable=True)
-    read_start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    read_finish_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    read_start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    read_finish_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     rating: Mapped[int] = mapped_column(Integer, nullable=True)
     location: Mapped[str] = mapped_column(Text, nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)

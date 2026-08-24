@@ -1,5 +1,6 @@
 import enum
 import random
+from datetime import UTC
 from datetime import datetime
 from typing import Any
 
@@ -175,8 +176,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     password: Mapped[str] = mapped_column(Text, primary_key=False, unique=False, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, primary_key=False, unique=False, nullable=False, default=False)
-    created_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
-    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
+    created_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     preferences: Mapped[Any] = mapped_column(MutableJSONB, index=False, unique=False, default=default_preferences)
 
     @staticmethod

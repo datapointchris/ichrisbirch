@@ -1,0 +1,6 @@
+# devstats writes one snapshot per commit into stats/data, keyed by timestamp
+# and commit sha, each holding a pytest node ID per test collected at that
+# commit. A snapshot naming a file that existed at that commit is correct, so
+# refcheck must not read one as a live reference.
+[scan]
+exclude = ["stats/data/**"]

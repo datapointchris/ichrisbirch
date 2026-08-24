@@ -131,7 +131,9 @@ export interface DurationUpdate {
 export interface Event {
   id: number
   name: string
+  /** Wall clock at the venue, with no offset. `timezone` says which clock. */
   date: string
+  timezone: string
   venue: string
   url?: string
   cost: number
@@ -141,7 +143,10 @@ export interface Event {
 
 export interface EventCreate {
   name: string
+  /** Wall clock at the venue, e.g. '2026-09-28T19:00'. Any offset sent is discarded. */
   date: string
+  /** IANA name, e.g. 'America/New_York'. Defaults to UTC server-side. */
+  timezone?: string
   venue: string
   url?: string
   cost: number
@@ -152,6 +157,7 @@ export interface EventCreate {
 export interface EventUpdate {
   name?: string
   date?: string
+  timezone?: string
   venue?: string
   url?: string
   cost?: number
