@@ -119,7 +119,7 @@ Vue serves all pages and Flask is fully removed — `pyproject.toml` declares no
 
 **Login and token lifecycle are `goclilogin`, not this repo** (⚠️ MANDATORY): `github.com/datapointchris/goclilogin` owns the device grant, the keychain store, and the refresh. The CLI holds only the mapping — `config.Config.Login()` — plus its own cobra commands. Do not reintroduce an `internal/auth` here; the reason the library exists is that four CLIs each had one and a fix to any one left the others broken.
 
-The mapping passes `LockDir` explicitly rather than taking goclilogin's default, which would put the lock under the keyring service name. Released versions of `icb` already write `$XDG_STATE_HOME/icb/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
+The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. Released versions of `icb` already write `$XDG_STATE_HOME/icb/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
 
 Why the refresh is serialized at all, and why a mutex cannot do it, is `goclilogin`'s package documentation and README. The short form: Authelia rotates the refresh token on every use and revokes the whole grant when a consumed one is replayed, and `doit` resolves each pursuit's evidence in its own `icb` invocation, so several processes refresh at once in ordinary use.
 
