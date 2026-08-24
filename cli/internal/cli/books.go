@@ -423,10 +423,10 @@ func printBookDetail(out io.Writer, b api.Book) {
 		_, _ = fmt.Fprintf(out, "  location: %s\n", s)
 	}
 	if b.ReadStartDate != nil {
-		_, _ = fmt.Fprintf(out, "  reading:  started %s\n", b.ReadStartDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  reading:  started %s\n", *b.ReadStartDate)
 	}
 	if b.ReadFinishDate != nil {
-		_, _ = fmt.Fprintf(out, "  finished: %s\n", b.ReadFinishDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  finished: %s\n", *b.ReadFinishDate)
 	}
 	if s := strValue(b.Notes); s != "" {
 		_, _ = fmt.Fprintf(out, "  notes:    %s\n", s)

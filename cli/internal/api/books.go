@@ -5,33 +5,34 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 )
 
-// Book mirrors the books JSON — a rich catalog row. Nullable fields are pointers;
-// date fields are full datetimes (RFC3339). Only the fields the CLI renders are
-// necessarily used, but the whole contract is decoded so --json is faithful.
+// Book mirrors the books JSON — a rich catalog row. Nullable fields are pointers.
+// The date fields are calendar days ("2006-01-02") and stay strings, because Go's
+// time.Time JSON decode requires RFC3339 and rejects a bare date — the same reason
+// Countdown.DueDate is a string. Only the fields the CLI renders are necessarily
+// used, but the whole contract is decoded so --json is faithful.
 type Book struct {
-	ID             int        `json:"id"`
-	ISBN           *string    `json:"isbn"`
-	Title          string     `json:"title"`
-	Author         string     `json:"author"`
-	Tags           []string   `json:"tags"`
-	GoodreadsURL   *string    `json:"goodreads_url"`
-	Priority       *int       `json:"priority"`
-	PurchaseDate   *time.Time `json:"purchase_date"`
-	PurchasePrice  *float64   `json:"purchase_price"`
-	SellDate       *time.Time `json:"sell_date"`
-	SellPrice      *float64   `json:"sell_price"`
-	ReadStartDate  *time.Time `json:"read_start_date"`
-	ReadFinishDate *time.Time `json:"read_finish_date"`
-	Rating         *int       `json:"rating"`
-	Location       *string    `json:"location"`
-	Notes          *string    `json:"notes"`
-	Ownership      string     `json:"ownership"`
-	Progress       string     `json:"progress"`
-	RejectReason   *string    `json:"reject_reason"`
-	Review         *string    `json:"review"`
+	ID             int      `json:"id"`
+	ISBN           *string  `json:"isbn"`
+	Title          string   `json:"title"`
+	Author         string   `json:"author"`
+	Tags           []string `json:"tags"`
+	GoodreadsURL   *string  `json:"goodreads_url"`
+	Priority       *int     `json:"priority"`
+	PurchaseDate   *string  `json:"purchase_date"`
+	PurchasePrice  *float64 `json:"purchase_price"`
+	SellDate       *string  `json:"sell_date"`
+	SellPrice      *float64 `json:"sell_price"`
+	ReadStartDate  *string  `json:"read_start_date"`
+	ReadFinishDate *string  `json:"read_finish_date"`
+	Rating         *int     `json:"rating"`
+	Location       *string  `json:"location"`
+	Notes          *string  `json:"notes"`
+	Ownership      string   `json:"ownership"`
+	Progress       string   `json:"progress"`
+	RejectReason   *string  `json:"reject_reason"`
+	Review         *string  `json:"review"`
 }
 
 // BookCreateInput is the body for creating a book. Title, Author, and a non-empty
