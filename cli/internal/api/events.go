@@ -4,20 +4,22 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 )
 
-// Event mirrors the events JSON. Date is a full datetime (RFC3339). URL and Notes
-// are nullable.
+// Event mirrors the events JSON. URL and Notes are nullable.
 type Event struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Date      time.Time `json:"date"`
-	Venue     string    `json:"venue"`
-	URL       *string   `json:"url"`
-	Cost      float64   `json:"cost"`
-	Attending bool      `json:"attending"`
-	Notes     *string   `json:"notes"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	// The wall clock at the venue ("2006-01-02T15:04:05"), with Timezone holding the
+	// IANA name that resolves it. A string rather than a time.Time: the value carries
+	// no offset, and Go's time.Time JSON decode requires RFC3339 and would reject it.
+	Date      string  `json:"date"`
+	Timezone  string  `json:"timezone"`
+	Venue     string  `json:"venue"`
+	URL       *string `json:"url"`
+	Cost      float64 `json:"cost"`
+	Attending bool    `json:"attending"`
+	Notes     *string `json:"notes"`
 }
 
 // EventCreateInput is the body for creating an event. Name, Date, Venue, Cost,

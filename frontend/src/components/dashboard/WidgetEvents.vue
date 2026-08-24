@@ -40,10 +40,12 @@ import { computed, onMounted } from 'vue'
 import { useEventsStore } from '@/stores/events'
 import type { Event } from '@/api/client'
 import { formatDate } from '@/composables/formatDate'
+import { wallClockIsPast } from '@/composables/useWallClock'
 
 const store = useEventsStore()
 
-const upcomingEvents = computed(() => store.sortedEvents.filter((e) => new Date(e.date) >= new Date()).slice(0, 8))
+// e.date is the venue's clock, so `new Date(e.date)` would read it as the reader's.
+const upcomingEvents = computed(() => store.sortedEvents.filter((e) => !wallClockIsPast(e)).slice(0, 8))
 
 async function toggleAttending(event: Event) {
   await store.update(event.id, { attending: !event.attending })

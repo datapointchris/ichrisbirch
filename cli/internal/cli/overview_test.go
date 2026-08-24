@@ -16,6 +16,10 @@ import (
 // local time, so same-day boundary cases are unambiguous.
 var fixedNow = time.Date(2026, 7, 24, 15, 0, 0, 0, time.Local)
 
+// An event's Date is the wall clock at the venue, so a fixture builds the string a
+// server would send and states the zone that resolves it.
+func eventWallClock(t time.Time) string { return t.Format(api.WallClockLayout) }
+
 func habitAt(hour int, minute int) time.Time {
 	return time.Date(2026, 7, 24, hour, minute, 0, 0, time.Local)
 }
@@ -46,7 +50,7 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 		},
 		BlockedItems: []api.ProjectItem{{ID: "b", Title: "Newer item"}},
 		Countdowns:   []api.Countdown{{ID: 1, Name: "Lease renewal", DueDate: "2026-08-05"}},
-		Events:       []api.Event{{ID: 1, Name: "Hike", Date: fixedNow.AddDate(0, 0, 3)}},
+		Events:       []api.Event{{ID: 1, Name: "Hike", Date: eventWallClock(fixedNow.AddDate(0, 0, 3)), Timezone: "Local"}},
 		UnreadArticles: []api.Article{
 			{ID: 5, Title: "The one being read"},
 			{ID: 6, Title: "Still queued"},
@@ -261,9 +265,9 @@ func TestUpcomingFiltersDropThePast(t *testing.T) {
 	}
 
 	events := upcomingEvents([]api.Event{
-		{ID: 1, Name: "Yesterday", Date: fixedNow.AddDate(0, 0, -1)},
-		{ID: 2, Name: "This morning", Date: habitAt(6, 0)},
-		{ID: 3, Name: "Next week", Date: fixedNow.AddDate(0, 0, 7)},
+		{ID: 1, Name: "Yesterday", Date: eventWallClock(fixedNow.AddDate(0, 0, -1)), Timezone: "Local"},
+		{ID: 2, Name: "This morning", Date: eventWallClock(habitAt(6, 0)), Timezone: "Local"},
+		{ID: 3, Name: "Next week", Date: eventWallClock(fixedNow.AddDate(0, 0, 7)), Timezone: "Local"},
 	}, fixedNow)
 	if len(events) != 2 || events[0].ID != 2 {
 		t.Errorf("events = %+v — earlier today must survive, yesterday must not", events)

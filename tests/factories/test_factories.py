@@ -6,6 +6,7 @@ These tests verify that the factories work correctly and demonstrate usage patte
 from datetime import UTC
 from datetime import date
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from . import ArticleFactory
 from . import AutoTaskFactory
@@ -260,7 +261,10 @@ class TestEventFactory:
         assert event.id is not None
         assert event.name.startswith('Test Event')
         assert event.attending is True
-        assert event.date > datetime.now(UTC)
+        # date is a reading on a clock at the venue, so it carries no offset and has
+        # to be resolved against its own zone before it means an instant.
+        assert event.date.tzinfo is None
+        assert event.date.replace(tzinfo=ZoneInfo(event.timezone)) > datetime.now(UTC)
 
     def test_not_attending_event(self, factory_session):
         """Test creating an event not attending."""

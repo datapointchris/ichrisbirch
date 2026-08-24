@@ -583,11 +583,11 @@ func upcomingEvents(events []api.Event, now time.Time) []api.Event {
 
 	var upcoming []api.Event
 	for _, event := range events {
-		if !event.Date.Before(startOfDay) {
+		if !api.EventInstant(event).Before(startOfDay) {
 			upcoming = append(upcoming, event)
 		}
 	}
-	sort.SliceStable(upcoming, func(a, b int) bool { return upcoming[a].Date.Before(upcoming[b].Date) })
+	sort.SliceStable(upcoming, func(a, b int) bool { return api.EventInstant(upcoming[a]).Before(api.EventInstant(upcoming[b])) })
 	return upcoming
 }
 
@@ -731,7 +731,7 @@ func printUpcomingSection(out io.Writer, countdowns countdownSection, events eve
 		entries = append(entries, upcomingEntry{countdown.DueDate, countdown.Name, "countdown"})
 	}
 	for _, event := range events.Items {
-		date := event.Date.In(now.Location()).Format("2006-01-02")
+		date := api.EventInstant(event).In(now.Location()).Format("2006-01-02")
 		entries = append(entries, upcomingEntry{date, event.Name, "event"})
 	}
 	sort.SliceStable(entries, func(a, b int) bool { return entries[a].date < entries[b].date })

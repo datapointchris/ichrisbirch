@@ -34,6 +34,10 @@ EVENTS = [
     ('Bike Tune-Up Drop-off', 'Clever Cycles', 45.00),
 ]
 
+# Varied on purpose: a page that only ever sees the reader's own zone never shows the
+# zone label, so seeded data that is all local hides the thing the column is there for.
+SEED_TIMEZONES = ['America/New_York', 'America/Chicago', 'Europe/Berlin', 'Asia/Tokyo', 'UTC']
+
 NOTES = [
     "Don't forget to RSVP",
     'Bring a friend',
@@ -66,7 +70,10 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             events.append(
                 Event(
                     name=title,
-                    date=event_date,
+                    # The column is a wall clock at the venue, so the offset comes off
+                    # and `timezone` carries the zone that resolves it.
+                    date=event_date.replace(tzinfo=None),
+                    timezone=SEED_TIMEZONES[i % len(SEED_TIMEZONES)],
                     venue=venue,
                     url=f'https://example.com/event/{i + rep * len(EVENTS)}' if i % 4 != 0 else None,
                     cost=cost,

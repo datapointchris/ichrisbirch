@@ -27,14 +27,32 @@ const testEvents = [
     id: 1,
     name: 'Concert',
     date: '2026-09-15T19:00:00',
+    timezone: 'America/New_York',
     venue: 'Madison Square Garden',
     url: 'https://example.com/concert',
     cost: 75.0,
     attending: true,
     notes: 'Bring earplugs',
   },
-  { id: 2, name: 'Conference', date: '2026-06-01T09:00:00', venue: 'Convention Center', cost: 250.0, attending: false },
-  { id: 3, name: 'Birthday Party', date: '2026-12-25T18:00:00', venue: 'Home', cost: 0, attending: true, notes: 'Bring gift' },
+  {
+    id: 2,
+    name: 'Conference',
+    date: '2026-06-01T09:00:00',
+    timezone: 'Asia/Tokyo',
+    venue: 'Convention Center',
+    cost: 250.0,
+    attending: false,
+  },
+  {
+    id: 3,
+    name: 'Birthday Party',
+    date: '2026-12-25T18:00:00',
+    timezone: 'Europe/Berlin',
+    venue: 'Home',
+    cost: 0,
+    attending: true,
+    notes: 'Bring gift',
+  },
 ]
 
 describe('useEventsStore', () => {
@@ -106,15 +124,31 @@ describe('useEventsStore', () => {
   // --- create ---
 
   it('creates an event and adds it to the list', async () => {
-    const newEvent = { id: 4, name: 'Workshop', date: '2027-03-10T10:00:00', venue: 'Library', cost: 15.0, attending: false }
+    const newEvent = {
+      id: 4,
+      name: 'Workshop',
+      date: '2027-03-10T10:00:00',
+      timezone: 'UTC',
+      venue: 'Library',
+      cost: 15.0,
+      attending: false,
+    }
     mockApi.post.mockResolvedValue({ data: newEvent })
     const store = useEventsStore()
 
-    const result = await store.create({ name: 'Workshop', date: '2027-03-10T10:00:00', venue: 'Library', cost: 15.0, attending: false })
+    const result = await store.create({
+      name: 'Workshop',
+      date: '2027-03-10T10:00:00',
+      timezone: 'UTC',
+      venue: 'Library',
+      cost: 15.0,
+      attending: false,
+    })
 
     expect(mockApi.post).toHaveBeenCalledWith('/events/', {
       name: 'Workshop',
       date: '2027-03-10T10:00:00',
+      timezone: 'UTC',
       venue: 'Library',
       cost: 15.0,
       attending: false,
@@ -146,6 +180,7 @@ describe('useEventsStore', () => {
       id: 1,
       name: 'Updated Concert',
       date: '2026-09-15T19:00:00',
+      timezone: 'Europe/Berlin',
       venue: 'MSG',
       url: 'https://example.com/concert',
       cost: 85.0,
