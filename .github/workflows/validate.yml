@@ -380,7 +380,11 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version-file: frontend/package.json
+          # The literal major, matching the generated vue job. package.json
+          # declares a range (">=24"), and pinning the same number in both
+          # places keeps a custom job from resolving a different Node than the
+          # one the build was checked against.
+          node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -419,7 +423,11 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version-file: frontend/package.json
+          # The literal major, matching the generated vue job. package.json
+          # declares a range (">=24"), and pinning the same number in both
+          # places keeps a custom job from resolving a different Node than the
+          # one the build was checked against.
+          node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
