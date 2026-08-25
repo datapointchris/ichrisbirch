@@ -1,11 +1,16 @@
 #!/bin/bash
 
-# Track the most recent "Validate Project" workflow run
+# Track the most recent workflow run
 # Usage: ./scripts/track-workflow.sh [watch]
+#
+# Release is the default because a push to main runs the validation as a job
+# inside it: release.yml calls validate.yml with `uses:`, and a called workflow
+# produces no run of its own. On a pull request validate.yml runs directly, so
+# set WORKFLOW_NAME=CI to follow that instead.
 
 set -e
 
-WORKFLOW_NAME="Validate Project"
+WORKFLOW_NAME="${WORKFLOW_NAME:-Release}"
 
 # Function to get the most recent workflow run
 get_latest_run() {
@@ -29,7 +34,7 @@ display_run_info() {
   url=$(echo "$run_info" | jq -r '.url')
 
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "Latest Validate Project Run"
+  echo "Latest $WORKFLOW_NAME Run"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "Run ID: $run_id"
   echo "Branch: $branch"
@@ -108,7 +113,7 @@ watch_run() {
 
 # Main execution
 main() {
-  echo "Fetching latest 'Validate Project' workflow run..."
+  echo "Fetching latest '$WORKFLOW_NAME' workflow run..."
   echo ""
 
   # Check if gh CLI is installed

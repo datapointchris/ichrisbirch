@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: [Validate Project]
-    types: [completed]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -11,9 +10,21 @@ env:
   OWNER: datapointchris
 
 jobs:
+  # Called rather than keyed off `workflow_run`, matching release-cli.yml: a
+  # call runs against the commit being released, while workflow_run fires on
+  # whatever commit finished CI. Publishing an image built from a different
+  # tree than the one that passed is the failure that distinction prevents.
+  #
+  # This is also what covers main. validate.yml emits no `push:` trigger
+  # because forge detects that a release workflow calls it, so a push to main
+  # is validated here and on no other path.
+  validate:
+    uses: ./.github/workflows/validate.yml
+    secrets: inherit
+
   build:
     name: Build ${{ matrix.image }}
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
+    needs: validate
     runs-on: ubuntu-24.04
     permissions:
       contents: read

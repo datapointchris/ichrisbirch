@@ -1,7 +1,7 @@
 {
     "github-actions.workflows.pinned.workflows": [
-        ".github/workflows/validate-project.yml",
-        ".github/workflows/deploy-project.yml"
+        ".github/workflows/validate.yml",
+        ".github/workflows/release.yml"
     ],
     "python.testing.pytestArgs": [
         "tests"
