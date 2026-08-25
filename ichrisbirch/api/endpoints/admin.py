@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import hmac
 import re
@@ -7,6 +8,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+import docker
 import pendulum
 import structlog
 from fastapi import APIRouter
@@ -147,8 +149,6 @@ async def websocket_endpoint_log(
     logger.debug('websocket_accepted')
 
     try:
-        import asyncio
-
         # Continuously stream logs until client disconnects
         while True:
             has_logs = False
@@ -282,8 +282,6 @@ SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
 def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
     """Get status of Docker containers, gracefully handling unavailability."""
     try:
-        import docker
-
         client = docker.from_env()
         containers = client.containers.list(all=True, filters={'name': 'icb-'})
         return [

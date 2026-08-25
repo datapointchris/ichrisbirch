@@ -15,6 +15,7 @@ import functools
 import logging
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import structlog
@@ -59,8 +60,6 @@ def _setup_file_handler() -> logging.Handler | None:
         return None
 
     try:
-        from logging.handlers import RotatingFileHandler
-
         handler = RotatingFileHandler(
             LOG_FILE,
             maxBytes=25 * 1024 * 1024,  # 25MB
