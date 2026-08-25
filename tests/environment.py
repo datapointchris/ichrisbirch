@@ -1,9 +1,9 @@
-"""Test environment management for running tests with Docker, FastAPI, and Flask.
+"""Test environment management for running tests with Docker and FastAPI.
 
 This module handles the setup and teardown of the test environment, including:
 - Docker container management for Postgres
-- Starting and stopping API and App servers
-- Creating test clients for API and App
+- Starting and stopping the API server
+- Creating test clients for the API
 - Docker Compose-based test environment setup
 """
 

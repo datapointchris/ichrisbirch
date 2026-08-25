@@ -1,21 +1,56 @@
 # iChrisBirch
 
-## [Chris Birch - Data Engineer](http://www.ichrisbirch.com)
-
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-## Project Goals
+A personal productivity web application. It tracks tasks, projects, habits,
+books, articles, events, countdowns and recipes, and exposes each of them
+through a REST API, a browser UI and a command-line client.
 
-1. Fully tested, practice a version of TDD
-2. Test the frontend as well
-3. Structured Logging, based on modules
-4. Zero downtime deployments
-5. Reproducible from server to server
-6. Performance Tested
-7. Documentation serving as learning points
-8. Integration and trial of advanced features
-9. Upgrade frontend to a modern framework (typescript maybe/probably)
+## What runs
 
-## Roadmap
+| Service | Framework | Purpose |
+| --- | --- | --- |
+| API | FastAPI | REST backend, JWT and Authelia OIDC auth |
+| Vue | Vue 3 + TypeScript | Single-page frontend, every page |
+| Chat | Streamlit | Chat interface backed by OpenAI |
+| Scheduler | APScheduler | Daily jobs — task priorities, autotasks |
 
-[TODO](TODO.md)
+All four share one PostgreSQL database and a Redis cache. Docker Compose runs
+them behind Traefik, which terminates TLS and routes by host.
+
+`cli/` is a separate Go module building `icb`, a REST client over the same API.
+`ops/icbops` is the bash tool that drives local environments and deploys.
+
+## First run
+
+Requires Docker, [uv](https://docs.astral.sh/uv/), Python 3.14 and Node 24.
+
+```bash
+./ops/icbops dev db init     # create schemas, run migrations, add users
+./ops/icbops dev start       # build and start every service
+./ops/icbops dev health      # confirm the containers are up
+```
+
+That serves the app at `https://app.docker.localhost/`, the API and its Swagger
+docs at `https://api.docker.localhost/`, and the chat interface at
+`https://chat.docker.localhost/`.
+
+`./ops/icbops dev db seed --scale 1` fills the database with sample data.
+
+## Tests
+
+```bash
+./ops/icbops test run        # Python suite; starts test containers if needed
+cd frontend && npm test      # TypeScript build check plus unit tests
+cd frontend && npm run test:e2e   # Playwright, through Traefik
+```
+
+The Python tests run against their own containers and database, isolated from
+the dev stack and reachable at `https://api.test.localhost:8443/`.
+
+## Documentation
+
+`mkdocs serve` builds the full documentation at `http://127.0.0.1:8000`. Start
+with [Quick Start](docs/quick-start.md), then
+[Testing](docs/testing/overview.md) and
+[Blue/Green Deployment](docs/blue-green-deployment.md).
