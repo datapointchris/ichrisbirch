@@ -140,6 +140,30 @@ Why the refresh is serialized at all, and why a mutex cannot do it, is `goclilog
 - Edit secrets: `sops secrets/secrets.prod.enc.env`
 - AWS (boto3) still used for S3 backups only, NOT for config/secrets
 
+### What a Dependency Can Reach
+
+Four dependencies see more than the code that calls them, so what each one
+reaches is written down here rather than inferred from the import.
+
+- **`openai` and `anthropic`** receive user content, not metadata. `ichrisbirch/ai/assistants/` wraps
+  both; the callers are `api/endpoints/articles.py`, `api/endpoints/recipes.py` and
+  `services/url_ingest.py`. What crosses the boundary is the full text of a saved article, a recipe
+  being imported, and the contents of any URL ingested. One compromised egress leaks whatever has
+  been read or cooked, which is personal but not credential-bearing — no secret, token or password
+  passes through either client.
+- **`docker`** is a *runtime* dependency, and `api/endpoints/admin.py` builds a client with
+  `docker.from_env()` to report container status on the admin page. That gives the API process a
+  handle on the host daemon, which is the widest reach in the list: a daemon socket is
+  root-equivalent on the host. It is narrow in use — status reads only — and the endpoint is behind
+  `get_admin_user`.
+- **`yt-dlp`** fetches YouTube metadata on the app's behalf from `services/url_extraction.py`,
+  alongside `youtube-transcript-api`. Both make outbound requests to a third party with whatever URL
+  a user saved. `yt-dlp` releases weekly to track site changes, so it carries a lower bound only.
+
+**One driver, not two.** `psycopg` (3) is what the connection URL names
+(`postgresql+psycopg://`). Anything in the docs still spelling an error
+`psycopg2.*` predates it.
+
 ### Database Patterns
 
 - SQLAlchemy 2.0 declarative base, `Mapped[type]` annotations
