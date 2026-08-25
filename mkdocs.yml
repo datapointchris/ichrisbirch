@@ -144,7 +144,6 @@ nav:
       - Traefik:
           - Deployment: traefik-deployment.md
           - CLI Usage: cli-traefik-usage.md
-          - Nginx Migration: nginx-to-traefik-migration-complete.md
       - New Server Setup: devops/new_server.md
       - New Database: devops/new_database.md
       - Nginx: devops/nginx.md

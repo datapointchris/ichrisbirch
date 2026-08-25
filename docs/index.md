@@ -30,7 +30,6 @@ Welcome to the iChrisBirch application documentation.
 
 - **[CLI Management Guide](cli-traefik-usage.md)** - Simplified CLI interface with eliminated command duplication
 - **[Traefik Deployment Guide](traefik-deployment.md)** - Modern reverse proxy with mkcert browser-trusted certificates
-- **[Migration Complete Summary](nginx-to-traefik-migration-complete.md)** - nginx→Traefik migration success with CLI simplification
 
 ## DevOps
 

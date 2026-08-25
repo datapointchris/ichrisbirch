@@ -10,7 +10,7 @@ iChrisBirch is a monorepo with a multi-service architecture: FastAPI backend (AP
 ichrisbirch/
 ├── ichrisbirch/              # Python application code
 │   ├── api/                  # FastAPI backend (endpoints, middleware, auth)
-│   ├── app/                  # (removed — Flask frontend fully replaced by Vue)
+│   ├── app/                  # static assets served by the backend
 │   ├── chat/                 # Streamlit chat interface
 │   ├── scheduler/            # APScheduler background jobs
 │   ├── models/               # SQLAlchemy ORM models (shared)
