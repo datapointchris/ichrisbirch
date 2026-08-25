@@ -37,26 +37,17 @@ type Registry struct {
 //
 // The last rung is the compiled default and names nothing outside this tool's
 // own directories, which is what keeps a generic tool generic. The two above it
-// are how a machine says the file is maintained elsewhere.
+// are how a machine says the file is maintained elsewhere. A machine sharing one
+// registry between tools declares that in config rather than linking icb's data
+// directory at it: a symlink is declared nowhere and reported by nothing, so a
+// clobbered link forks the registry silently with both copies still parsing.
 //
-// It used to be the data directory alone, and this comment said "point it at a
-// shared registry with a symlink". That instruction is what produced one: a
-// hand-made link from icb's data directory to the real file, on every machine,
-// declared nowhere and reported by nothing. Worse here than most, because the
-// link pointed at another link — so a single clobbered symlink two hops away
-// forked the registry silently, with both copies still parsing.
-//
-// The written-down version of that arrangement was $REPOS_JSON, one unprefixed
-// variable every tool read. It came out because ~/.env is where that variable is
-// set and a process that sources no profile never sees it: run the way a systemd
-// timer runs it, a reader resolved this to a data directory that does not exist,
-// said so, and exited 0. The rung was empty in exactly the unattended runs it
-// existed to serve. A config file is the machine layer already and it reaches
-// every process, and icb now reads no variable that is not ICB_-prefixed — the
-// prefix being what stops one fleet's vocabulary compiling into a generic tool.
-//
-// See standards/data.md § "A shared file is named in config; only the tool's own
-// default is compiled in".
+// Every variable read here is ICB_-prefixed, and an unprefixed one is not a rung.
+// A shared variable is set in a shell profile, so a process that sources none —
+// a systemd timer, anything unattended — resolves the default instead and exits
+// 0 having read a file nobody meant. That empties the rung in exactly the runs it
+// would exist to serve. Config reaches every process and is the machine layer
+// already.
 func DefaultPath() string {
 	declared := os.Getenv("ICB_REPOS_REGISTRY")
 	if declared == "" {

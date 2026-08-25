@@ -387,10 +387,9 @@ func localDayWindow(now time.Time) (string, string) {
 // splitHabitsByCompletion separates the current habits into those still due
 // today and today's completions.
 //
-// A completion carrying habit_id is matched by it, so renaming a habit no longer
-// makes it read as due again. Completions predating that column — and those of a
-// since-deleted habit — still fall back to name + category, which is all they
-// have.
+// A completion carrying habit_id is matched by it, so renaming a habit does not
+// make it read as due again. A completion without that column — and one whose
+// habit has been deleted — falls back to name + category, which is all it has.
 func splitHabitsByCompletion(current []api.Habit, completed []api.HabitCompleted, now time.Time) ([]api.Habit, []api.HabitCompleted) {
 	var doneToday []api.HabitCompleted
 	doneByID := make(map[int]bool)
@@ -431,11 +430,10 @@ func sameLocalDay(moment time.Time, now time.Time) bool {
 // not blocked — interleaved a project at a time so no single project can fill
 // the overview cap.
 //
-// Ordering the whole set by age let the oldest project take every slot: five
-// Home Building items and three Sell Unused Shite items held eight of the ten
-// rows while an active rollout had nothing on the board at all. Age is still how
-// a project picks which item represents it; it just no longer decides how many
-// slots that project gets.
+// Ordering the whole set by age instead lets the two oldest projects hold eight
+// of the ten rows, leaving an active project with nothing on the board. Age
+// picks which item represents a project; it does not decide how many slots that
+// project gets.
 //
 // Per-item positions within a project would still cost one call per project, so
 // they remain deliberately unconsulted.
