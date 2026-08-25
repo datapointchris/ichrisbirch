@@ -5,7 +5,6 @@ Used by `POST /recipes/import-from-url/`. Orchestrates content extraction
 labeled content to a Claude classifier that returns a UrlImportCandidate.
 """
 
-import httpx
 import structlog
 from bs4 import BeautifulSoup
 from pydantic import ValidationError
@@ -13,6 +12,7 @@ from pydantic import ValidationError
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.config import Settings
+from ichrisbirch.services.outbound_http import get_page
 from ichrisbirch.services.url_extraction import get_text_content_from_html
 from ichrisbirch.services.url_extraction import get_youtube_video_metadata
 from ichrisbirch.services.url_extraction import get_youtube_video_text_captions
@@ -59,7 +59,7 @@ def extract_content_for_classifier(url: str, settings: Settings) -> str:
             f'<transcript>{transcript}</transcript>\n'
         )
 
-    response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers, timeout=30.0)
+    response = get_page(url, settings)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, 'html.parser')
     return get_text_content_from_html(soup)

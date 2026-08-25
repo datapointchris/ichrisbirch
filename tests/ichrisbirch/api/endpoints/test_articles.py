@@ -94,16 +94,16 @@ def test_search(article_crud_tester):
     assert any(article['title'] == 'Searchable Article' for article in articles)
 
 
-@patch('ichrisbirch.api.endpoints.articles.httpx.get')
+@patch('ichrisbirch.api.endpoints.articles.get_page')
 @patch('youtube_transcript_api.YouTubeTranscriptApi')
 @patch('youtube_transcript_api.formatters.TextFormatter')
-def test_summarize(mock_text_formatter, mock_yt_api, mock_httpx_get, article_crud_tester):
+def test_summarize(mock_text_formatter, mock_yt_api, mock_get_page, article_crud_tester):
     client, _ = article_crud_tester
-    # Mock httpx.get response
+    # Mock the outbound page fetch
     mock_response = MagicMock()
     mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>Test content</p></body></html>'
     mock_response.raise_for_status.return_value = mock_response
-    mock_httpx_get.return_value = mock_response
+    mock_get_page.return_value = mock_response
 
     # Mock YouTube formatter (not used for non-YouTube URLs)
     mock_formatter = MagicMock()
@@ -127,15 +127,15 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_httpx_get, article_cru
             assert all(tag in data['tags'] for tag in expected_tags)
 
 
-@patch('ichrisbirch.api.endpoints.articles.httpx.get')
+@patch('ichrisbirch.api.endpoints.articles.get_page')
 @patch('youtube_transcript_api.YouTubeTranscriptApi.fetch')
-def test_insights(mock_youtube_transcript_fetch, mock_httpx_get, article_crud_tester):
+def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tester):
     client, _ = article_crud_tester
-    # Mock httpx.get response
+    # Mock the outbound page fetch
     mock_response = MagicMock()
     mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>Test content</p></body></html>'
     mock_response.raise_for_status.return_value = mock_response
-    mock_httpx_get.return_value = mock_response
+    mock_get_page.return_value = mock_response
 
     # Mock YouTube transcript
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
@@ -360,7 +360,7 @@ class TestCreateFromUrl:
     """Tests for POST /articles/create-from-url/ endpoint."""
 
     def _mock_externals(self):
-        """Return httpx and OpenAI patch context managers."""
+        """Return the page-fetch and OpenAI patch context managers."""
         mock_response = MagicMock()
         mock_response.content = b'<html><head><title>Test Article | Website</title></head><body><p>Content here.</p></body></html>'
         mock_response.raise_for_status.return_value = mock_response
@@ -373,15 +373,15 @@ class TestCreateFromUrl:
             }
         )
 
-        httpx_patch = patch('ichrisbirch.api.endpoints.articles.httpx.get', return_value=mock_response)
+        get_page_patch = patch('ichrisbirch.api.endpoints.articles.get_page', return_value=mock_response)
         openai_patch = patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant)
-        return httpx_patch, openai_patch
+        return get_page_patch, openai_patch
 
     def test_create_from_url(self, txn_api_logged_in):
         """Create article from URL: fetches, summarizes, persists."""
         client, _ = txn_api_logged_in
-        httpx_patch, openai_patch = self._mock_externals()
-        with httpx_patch, openai_patch:
+        get_page_patch, openai_patch = self._mock_externals()
+        with get_page_patch, openai_patch:
             response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/test'})
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
@@ -393,8 +393,8 @@ class TestCreateFromUrl:
     def test_create_from_url_duplicate_returns_409(self, txn_api_logged_in):
         """Duplicate URL returns 409 Conflict."""
         client, _ = txn_api_logged_in
-        httpx_patch, openai_patch = self._mock_externals()
-        with httpx_patch, openai_patch:
+        get_page_patch, openai_patch = self._mock_externals()
+        with get_page_patch, openai_patch:
             response1 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
             assert response1.status_code == status.HTTP_201_CREATED
             response2 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
@@ -403,8 +403,8 @@ class TestCreateFromUrl:
     def test_create_from_url_with_notes(self, txn_api_logged_in):
         """Notes are persisted alongside the auto-summary."""
         client, _ = txn_api_logged_in
-        httpx_patch, openai_patch = self._mock_externals()
-        with httpx_patch, openai_patch:
+        get_page_patch, openai_patch = self._mock_externals()
+        with get_page_patch, openai_patch:
             response = client.post(
                 f'{ENDPOINT}create-from-url/',
                 json={'url': 'https://example.com/noted', 'notes': 'Read later'},

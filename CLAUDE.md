@@ -140,6 +140,25 @@ Why the refresh is serialized at all, and why a mutex cannot do it, is `goclilog
 - Edit secrets: `sops secrets/secrets.prod.enc.env`
 - AWS (boto3) still used for S3 backups only, NOT for config/secrets
 
+### Outbound HTTP Goes Through One Function
+
+Fetching a page from a third party is `get_page` in
+`ichrisbirch/services/outbound_http.py`. It sets the browser user agent, follows
+redirects and applies a 30-second timeout — the combination five call sites used
+to repeat by hand, four of them leaving the timeout at httpx's five-second
+default. Never call `httpx.get` directly for an outside URL; add the case to
+`get_page` instead.
+
+Three callers are deliberately outside it, because they are not third-party
+page fetches:
+
+- **`ichrisbirch/api/client/`** — this app talking to its own API.
+- **`api/oidc_auth.py`** — OIDC discovery against the identity provider, with its
+  own user agent and a caller-supplied timeout.
+- **`gui/`** — posts to this app's own endpoints.
+
+The one sanctioned subprocess is in `scheduler/jobs.py`.
+
 ### What a Dependency Can Reach
 
 Four dependencies see more than the code that calls them, so what each one

@@ -1,6 +1,5 @@
 import json
 
-import httpx
 import markdown
 import pendulum
 import structlog
@@ -28,6 +27,7 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
+from ichrisbirch.services.outbound_http import get_page
 from ichrisbirch.services.url_extraction import get_text_content_from_html
 from ichrisbirch.services.url_extraction import get_youtube_video_text_captions
 from ichrisbirch.util import clean_url
@@ -129,7 +129,7 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Article already exists: {url}')
 
-    url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers)
+    url_response = get_page(url, settings)
     url_response.raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
@@ -240,7 +240,7 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     request_data = await request.json()
     logger.debug('article_summarize_request', data=request_data)
     url = clean_url(request_data.get('url'))
-    url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
+    url_response = get_page(url, settings).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
     logger.debug('article_title_retrieved', title=title)
@@ -271,7 +271,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     logger.debug('article_insights_request', data=request_data)
     url = clean_url(request_data.get('url'))
     logger.debug('article_insights_processing', url=url)
-    url_response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
+    url_response = get_page(url, settings).raise_for_status()
     soup = BeautifulSoup(url_response.content, 'html.parser')
     title = _get_formatted_title(soup)
 

@@ -1,4 +1,3 @@
-import httpx
 import structlog
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
@@ -21,6 +20,7 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
+from ichrisbirch.services.outbound_http import get_page
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -93,7 +93,7 @@ async def goodreads(request: Request, settings: Settings = Depends(get_settings)
     logger.debug('goodreads_request', data=request_data)
     isbn = request_data.get('isbn')
     url = f'https://www.goodreads.com/search?q={isbn}'
-    response = httpx.get(url, follow_redirects=True, headers=settings.mac_safari_request_headers).raise_for_status()
+    response = get_page(url, settings).raise_for_status()
     logger.debug('goodreads_retrieved', isbn=isbn)
     # TODO: Fix the typing errors for this POS
     soup = BeautifulSoup(response.content, 'html.parser')

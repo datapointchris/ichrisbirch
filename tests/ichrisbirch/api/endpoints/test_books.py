@@ -177,10 +177,10 @@ def test_read_many_filters_combine(book_crud_tester):
     assert response.json() == []
 
 
-@patch('httpx.get')
+@patch('ichrisbirch.api.endpoints.books.get_page')
 def test_goodreads_info(mock_get, book_crud_tester):
     client, _ = book_crud_tester
-    # Mock the httpx.get response
+    # Mock the outbound page fetch
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = mock_response
     mock_response.url = 'https://www.goodreads.com/book/show/12345'
