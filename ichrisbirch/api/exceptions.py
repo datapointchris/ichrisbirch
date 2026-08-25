@@ -1,8 +1,34 @@
+import enum
 from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException
 from fastapi import status
+
+
+class Refusal(enum.StrEnum):
+    """The reasons this API refuses a request, as keys rather than sentences.
+
+    A test asserting the sentence pins the wording, so rephrasing a refusal
+    breaks tests that were never about the words. Naming the member and keeping
+    the wording here means one edit moves both.
+
+    A refusal carrying a value the caller supplied is not a member — it cannot
+    be, since the text differs per call. Assert the interpolated value beside a
+    stable condition instead, the way the `can only {operation}` refusal in
+    `endpoints/users.py` is tested.
+    """
+
+    ADMIN_REQUIRED = 'Admin access required'
+    ADMIN_OR_INTERNAL_REQUIRED = 'Admin or internal service access required'
+    AUTH_REQUIRED = 'Authentication required'
+    CANNOT_DELETE_OWN_ACCOUNT = 'Cannot delete your own account'
+    INVALID_CREDENTIALS = 'Invalid credentials'
+    INVALID_INTERNAL_CREDENTIALS = 'Invalid internal service credentials'
+    INVALID_REFRESH_TOKEN = 'Invalid refresh token'
+    INVALID_TOKEN = 'Invalid token'
+    MISSING_TOKEN = 'Missing token'
+    USER_OR_INTERNAL_REQUIRED = 'User or internal service authentication required'
 
 
 class NotFoundException(HTTPException):

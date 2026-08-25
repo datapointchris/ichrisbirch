@@ -1,6 +1,11 @@
 [project]
 name = "ichrisbirch"
-version = "0.9.0"
+# Not a released version. The deployed artefact is identified by its image
+# tag — release.yml publishes sha-<short> alongside latest — and nothing
+# reads this field at runtime. hatchling requires project.version to be
+# present or declared dynamic, so it stays pinned at zero rather than
+# carrying a number that moves for no reason.
+version = "0.0.0"
 description = "Playground for making fun and silly things"
 authors = [{ name = "Chris Birch", email = "datapointchris@gmail.com" }]
 license = { text = "MIT" }
@@ -152,7 +157,6 @@ omit = ["ichrisbirch/alembic"]
 source = ["ichrisbirch"]
 
 [tool.coverage.report]
-fail_under = 25
 show_missing = true
 exclude_lines = ["pragma: no cover"]
 

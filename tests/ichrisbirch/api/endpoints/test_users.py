@@ -3,6 +3,7 @@ from fastapi import status
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from tests.factories import UserFactory
 from tests.util import show_status_and_response
@@ -382,7 +383,7 @@ def test_list_users_requires_admin_or_internal_service(users_test_context, test_
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.get('/users/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert 'Admin or internal service access required' in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
 
 
 def test_list_users_allows_admin(users_test_context, test_admin_user):
@@ -452,7 +453,7 @@ def test_read_user_by_email_requires_admin_or_internal_service(users_test_contex
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.get(f'/users/email/{test_regular_user.email}/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert 'Admin or internal service access required' in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
 
 
 def test_read_user_by_email_requires_internal_service_only(users_test_context, test_admin_user, test_regular_user):
@@ -524,7 +525,7 @@ def test_delete_user_requires_admin_or_internal_service(users_test_context, test
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.delete(f'/users/{test_regular_user.id}/', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'Admin access required' in response.json()['detail']
+    assert Refusal.ADMIN_REQUIRED in response.json()['detail']
 
 
 def test_delete_user_prevents_self_deletion(users_test_context, test_admin_user):
@@ -533,7 +534,7 @@ def test_delete_user_prevents_self_deletion(users_test_context, test_admin_user)
     headers = make_app_headers_for_user(test_admin_user)
     response = client.delete(f'/users/{test_admin_user.id}/', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'Cannot delete your own account' in response.json()['detail']
+    assert Refusal.CANNOT_DELETE_OWN_ACCOUNT in response.json()['detail']
 
 
 def test_update_user_preferences_requires_own_data_or_admin(users_test_context, test_regular_user_2, test_regular_user):
@@ -574,7 +575,7 @@ def test_internal_service_auth_invalid_key(users_test_context, test_regular_user
     headers = make_invalid_internal_service_headers()
     response = client.get(f'/users/{test_regular_user_2.id}/', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert 'Authentication required' in response.json()['detail']
+    assert Refusal.AUTH_REQUIRED in response.json()['detail']
 
 
 def test_no_authentication_returns_401(users_test_context, test_regular_user_2):

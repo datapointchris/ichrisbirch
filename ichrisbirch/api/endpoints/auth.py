@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.exceptions import ForbiddenException
+from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.api.oidc_auth import UNAUTHORIZED_DETAIL
@@ -305,10 +306,10 @@ def get_current_user(
         logger.debug('auth_method_oauth2')
 
     if not (user_id := oidc_user_id or authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
-        raise UnauthorizedException('Invalid credentials', logger)
+        raise UnauthorizedException(Refusal.INVALID_CREDENTIALS, logger)
 
     if not (user := validate_user_id(user_id, session)):
-        raise UnauthorizedException('Invalid credentials', logger)
+        raise UnauthorizedException(Refusal.INVALID_CREDENTIALS, logger)
 
     logger.debug('credentials_validated', email=user.email)
     return user
@@ -321,7 +322,7 @@ def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> m
     """
     if user.is_admin:
         return user
-    raise ForbiddenException('Admin access required', logger)
+    raise ForbiddenException(Refusal.ADMIN_REQUIRED, logger)
 
 
 def get_current_user_or_none(
@@ -378,7 +379,7 @@ def get_admin_or_internal_service_access(
             logger.debug('admin_auth_failed', error=str(exc))
 
     # Neither internal service nor valid admin user
-    raise UnauthorizedException('Admin or internal service access required', logger) from None
+    raise UnauthorizedException(Refusal.ADMIN_OR_INTERNAL_REQUIRED, logger) from None
 
 
 def require_user_or_internal_service(
@@ -402,7 +403,7 @@ def require_user_or_internal_service(
         else:
             logger.warning('internal_service_key_invalid', service=x_internal_service)
 
-    raise UnauthorizedException('User or internal service authentication required', logger) from None
+    raise UnauthorizedException(Refusal.USER_OR_INTERNAL_REQUIRED, logger) from None
 
 
 # Type aliases for cleaner endpoint signatures
@@ -448,10 +449,10 @@ async def validate_token(
     token = jwt_token or access_token
 
     if not token:
-        raise UnauthorizedException('Missing token', logger)
+        raise UnauthorizedException(Refusal.MISSING_TOKEN, logger)
 
     if not validate_jwt_token(token, settings):
-        raise UnauthorizedException('Invalid token', logger)
+        raise UnauthorizedException(Refusal.INVALID_TOKEN, logger)
 
     return Response(status_code=status.HTTP_200_OK)
 
@@ -471,11 +472,11 @@ async def refresh_token(
     refresh_token = jwt_token or refresh_token
 
     if not (user_id := validate_jwt_token(refresh_token, settings)):
-        raise UnauthorizedException('Invalid refresh token', logger)
+        raise UnauthorizedException(Refusal.INVALID_REFRESH_TOKEN, logger)
 
     logger.debug('token_refresh_validating', user_id=user_id)
     if not token_handler.verify_refresh_token(user_id, refresh_token):
-        raise UnauthorizedException('Invalid refresh token', logger)
+        raise UnauthorizedException(Refusal.INVALID_REFRESH_TOKEN, logger)
 
     logger.debug('token_refresh_validated', user_id=user_id)
     new_access_token = token_handler.create_access_token(user_id)

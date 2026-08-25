@@ -21,6 +21,7 @@ from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user_or_none
 from ichrisbirch.api.exceptions import ForbiddenException
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
@@ -100,7 +101,7 @@ async def require_user_access_or_admin_or_internal_service(
         return True
 
     # No valid authentication found
-    raise UnauthorizedException('Authentication required', logger)
+    raise UnauthorizedException(Refusal.AUTH_REQUIRED, logger)
 
 
 @router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
@@ -204,7 +205,7 @@ async def delete(id: int, session: DbSession, admin_user: models.User = Depends(
     """
     # Prevent self-deletion
     if admin_user.id == id:
-        raise ForbiddenException('Cannot delete your own account', logger)
+        raise ForbiddenException(Refusal.CANNOT_DELETE_OWN_ACCOUNT, logger)
 
     if user := session.get(models.User, id):
         session.delete(user)
@@ -242,7 +243,7 @@ async def require_update_access(
         return True
 
     # No valid authentication found
-    raise UnauthorizedException('Authentication required', logger)
+    raise UnauthorizedException(Refusal.AUTH_REQUIRED, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
@@ -291,11 +292,11 @@ async def read_by_alternative_id(
                 return db_user
             else:
                 logger.warning('internal_service_key_invalid', service=x_internal_service)
-                raise UnauthorizedException('Invalid internal service credentials', logger)
+                raise UnauthorizedException(Refusal.INVALID_INTERNAL_CREDENTIALS, logger)
 
         # If not internal service, require user authentication
         if current_user is None:
-            raise UnauthorizedException('Authentication required', logger)
+            raise UnauthorizedException(Refusal.AUTH_REQUIRED, logger)
 
         require_own_data_or_admin(current_user, target_alt_id=alternative_id)
         return db_user
