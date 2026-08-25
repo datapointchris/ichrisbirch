@@ -117,6 +117,10 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newArticlesCommand())
 	root.AddCommand(newRecipesCommand())
 	root.AddCommand(newCookingTechniquesCommand())
+
+	// After the tree is assembled: cobra only propagates a usage template to
+	// commands that already exist when it is set.
+	applyUsageTemplate(root)
 	return root
 }
 

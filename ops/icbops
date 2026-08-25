@@ -1049,6 +1049,18 @@ function usage() {
   echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
   echo "  ${blue}Test${reset}: $TEST_API_URL | $TEST_APP_URL"
   echo "  ${blue}Prod${reset}: $PROD_API_URL | $PROD_APP_URL"
+  echo
+  echo "${green}The grammar:${reset} ${blue}icbops <environment> <verb>${reset}, where the environment is"
+  echo "  dev, testing or prod. Run any environment with no verb to see its own."
+  echo "  ${blue}test${reset}, ${blue}stats${reset}, ${blue}routing${reset} and ${blue}ssl-manager${reset} are tools rather than environments."
+  echo
+  echo "${green}Examples:${reset}"
+  echo "  ${blue}icbops dev start${reset}              # bring the dev stack up"
+  echo "  ${blue}icbops dev logs api${reset}           # follow one service's logs"
+  echo "  ${blue}icbops test run${reset}               # run the suite, starting containers if needed"
+  echo "  ${blue}icbops test run tests/x.py -v${reset} # run one file"
+  echo "  ${blue}icbops testing rebuild --volumes${reset}  # when a code change is not taking effect"
+  echo "  ${blue}icbops prod deploy-status${reset}     # which color is live"
 }
 
 if [ -z "$1" ]; then
