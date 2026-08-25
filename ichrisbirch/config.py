@@ -11,6 +11,27 @@ from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
 
+TRUE_VALUES = frozenset({'1', 'true', 'yes', 'on'})
+FALSE_VALUES = frozenset({'0', 'false', 'no', 'off'})
+
+
+def env_bool(name: str) -> bool:
+    """Read a boolean environment variable by its value, not its emptiness.
+
+    `bool(os.environ[name])` is true for every non-empty string, so a variable
+    set to "False" reads as True and the flag it guards silently does nothing.
+
+    An unrecognized value raises rather than defaulting. A flag that gates
+    account creation should fail loudly on a typo, not pick a side.
+    """
+    raw = os.environ[name].strip().lower()
+    if raw in TRUE_VALUES:
+        return True
+    if raw in FALSE_VALUES:
+        return False
+    accepted = ', '.join(sorted(TRUE_VALUES | FALSE_VALUES))
+    raise ValueError(f'{name} is {os.environ[name]!r}; expected one of: {accepted}')
+
 
 class AISettings:
     class OpenAISettings:
@@ -44,7 +65,7 @@ class AuthSettings:
         self.jwt_signing_algorithm: str = os.environ['AUTH_JWT_SIGNING_ALGORITHM']
         self.refresh_token_expire = timedelta(days=30)
         self.access_token_expire = timedelta(minutes=30)
-        self.accepting_new_signups: bool = bool(os.environ['AUTH_ACCEPTING_NEW_SIGNUPS'])
+        self.accepting_new_signups: bool = env_bool('AUTH_ACCEPTING_NEW_SIGNUPS')
         self.no_new_signups_message = 'New signups for VIP users only.'
         self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']
 

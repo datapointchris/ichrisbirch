@@ -1,3 +1,4 @@
+import html as html_escaping
 import json
 
 import markdown
@@ -296,7 +297,15 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     assistant = OpenAIAssistant(name='Article Insights', settings=settings, instructions=settings.ai.prompts.article_insights)
     mkd = assistant.generate(text_content)
     full_mkd = f'# {title}\n{mkd}'
-    html = markdown.markdown(full_mkd)
+
+    # Escaped before rendering, because Python-Markdown passes raw HTML straight
+    # through and both consumers of this endpoint render the result as HTML —
+    # the Vue view binds it with v-html and the GUI calls display_html_response.
+    # The model is summarizing a page the caller supplied, so its output is
+    # attacker-influenced: a page that steers it into emitting a <script> tag
+    # would otherwise execute in the reader's browser. Escaping leaves markdown
+    # syntax untouched, since none of #, *, _, [ or ( is escaped.
+    html = markdown.markdown(html_escaping.escape(full_mkd))
 
     return Response(html)
 

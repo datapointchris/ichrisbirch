@@ -154,6 +154,38 @@ def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tes
             assert '<h2>Insights</h2>' in content
 
 
+@patch('ichrisbirch.api.endpoints.articles.get_page')
+@patch('youtube_transcript_api.YouTubeTranscriptApi.fetch')
+def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_fetch, mock_get_page, article_crud_tester):
+    """The model summarizes a page the caller supplied, so its output is attacker-influenced.
+
+    Both consumers render this response as HTML, so a <script> reaching the
+    response would execute in the reader's browser.
+    """
+    client, _ = article_crud_tester
+    mock_response = MagicMock()
+    mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>x</p></body></html>'
+    mock_response.raise_for_status.return_value = mock_response
+    mock_get_page.return_value = mock_response
+    mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
+
+    mock_assistant = MagicMock()
+    mock_assistant.generate.return_value = '## Insights\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>'
+
+    with patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant):
+        response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
+
+    content = response.content.decode('utf-8')
+    # The angle brackets are what make a tag a tag. Escaped, the payload is
+    # text the reader sees rather than markup the browser runs, so asserting on
+    # the substring 'onerror=' would fail on inert content.
+    assert '<script>' not in content, 'a script tag from the model reached the response'
+    assert '<img' not in content, 'an img tag from the model reached the response'
+    assert '&lt;script&gt;alert(1)&lt;/script&gt;' in content, 'the tag should survive as visible text'
+    assert '&lt;img src=x onerror=alert(1)&gt;' in content, 'the tag should survive as visible text'
+    assert '<h2>Insights</h2>' in content, 'markdown formatting must still render'
+
+
 def test_archive(article_crud_tester):
     client, crud_tester = article_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
