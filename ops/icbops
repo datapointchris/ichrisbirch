@@ -1071,8 +1071,9 @@ case $1 in
         test-run "$@"
         ;;
       *)
-        echo "${red}Unknown test command: $2${reset}"
-        test-usage
+        echo "${red}Unknown test command: $2${reset}" >&2
+        test-usage >&2
+        exit 2
         ;;
     esac
     ;;
@@ -1103,8 +1104,9 @@ case $1 in
         env-docker-config testing "$@"
         ;;
       *)
-        echo "${red}Unknown testing command: $2${reset}"
-        testing-usage
+        echo "${red}Unknown testing command: $2${reset}" >&2
+        testing-usage >&2
+        exit 2
         ;;
     esac
     ;;
@@ -1136,8 +1138,9 @@ case $1 in
         env-docker-config development "$@"
         ;;
       *)
-        echo "${red}Unknown dev command: $2${reset}"
-        dev-usage
+        echo "${red}Unknown dev command: $2${reset}" >&2
+        dev-usage >&2
+        exit 2
         ;;
     esac
     ;;
@@ -1172,8 +1175,9 @@ case $1 in
       legacy-rebuild) require_prod_host legacy-rebuild && prod-legacy-rebuild ;;
       build-test) prod-build-test ;;
       *)
-        echo "${red}Unknown prod command: $2${reset}"
-        prod-usage
+        echo "${red}Unknown prod command: $2${reset}" >&2
+        prod-usage >&2
+        exit 2
         ;;
     esac
     ;;
@@ -1213,14 +1217,16 @@ case $1 in
       churn) stats-churn "$3" ;;
       snapshot) stats-snapshot ;;
       *)
-        echo "${red}Unknown stats command: $2${reset}"
-        stats-usage
+        echo "${red}Unknown stats command: $2${reset}" >&2
+        stats-usage >&2
+        exit 2
         ;;
     esac
     ;;
   *)
-    echo "${red}Unknown command: $1${reset}"
-    echo ""
-    usage
+    echo "${red}Unknown command: $1${reset}" >&2
+    echo "" >&2
+    usage >&2
+    exit 2
     ;;
 esac
