@@ -34,20 +34,22 @@ class TestingArchitectureDiagramRenderer:
 
         with dot.subgraph(name='cluster_test_env') as c:
             c.attr(label='Test Environment', style='filled', color='#4682B4', fillcolor='#E8F7FF')
-            c.node('TE', 'TestEnvironment Class', shape='box')
+            c.node('TE', 'DockerComposeTestEnvironment', shape='box')
             c.node('DB', 'PostgreSQL in Docker', shape='cylinder')
+            c.node('REDIS', 'Redis in Docker', shape='cylinder')
             c.node('API', 'FastAPI Server', shape='box')
-            c.node('APP', 'Flask Server', shape='box')
+            c.node('CHAT', 'Streamlit Chat', shape='box')
             c.edge('TE', 'DB')
+            c.edge('TE', 'REDIS')
             c.edge('TE', 'API')
-            c.edge('TE', 'APP')
+            c.edge('TE', 'CHAT')
 
         with dot.subgraph(name='cluster_test_clients') as c:
             c.attr(label='Test Clients', style='filled', color='#228B22', fillcolor='#F0FFF0')
             c.node('TC1', 'API Test Client', shape='box')
-            c.node('TC2', 'App Test Client', shape='box')
+            c.node('TC2', 'Logged-in API Client', shape='box')
             c.edge('TC1', 'API')
-            c.edge('TC2', 'APP')
+            c.edge('TC2', 'API')
 
         with dot.subgraph(name='cluster_test_data') as c:
             c.attr(label='Test Data', style='filled', color='#B22222', fillcolor='#FFF0F0')
@@ -89,13 +91,14 @@ class TestingArchitectureDiagramRenderer:
 
         with dot.subgraph(name='cluster_test_session') as c:
             c.attr(label='Test Session', style='filled', color='#4682B4', fillcolor='#E8F7FF')
-            c.node('TE', 'TestEnvironment Class', shape='box')
+            c.node('TE', 'DockerComposeTestEnvironment', shape='box')
 
         with dot.subgraph(name='cluster_infrastructure') as c:
             c.attr(label='Infrastructure', style='filled', color='#228B22', fillcolor='#F0FFF0')
             c.node('DB', 'PostgreSQL in Docker', shape='cylinder')
+            c.node('REDIS', 'Redis in Docker', shape='cylinder')
             c.node('API', 'FastAPI Server', shape='box')
-            c.node('APP', 'Flask Server', shape='box')
+            c.node('CHAT', 'Streamlit Chat', shape='box')
 
         with dot.subgraph(name='cluster_test_execution') as c:
             c.attr(label='Test Execution', style='filled', color='#B22222', fillcolor='#FFF0F0')
@@ -104,13 +107,13 @@ class TestingArchitectureDiagramRenderer:
             c.node('TR', 'Test Running', shape='box')
 
         dot.edge('TE', 'DB', label='Creates')
+        dot.edge('TE', 'REDIS', label='Starts')
         dot.edge('TE', 'API', label='Starts')
-        dot.edge('TE', 'APP', label='Starts')
+        dot.edge('TE', 'CHAT', label='Starts')
 
         dot.edge('TS', 'TE', label='Uses')
         dot.edge('TT', 'TE', label='Cleans up')
         dot.edge('TR', 'API', label='Interacts with')
-        dot.edge('TR', 'APP', label='Interacts with')
         dot.edge('TR', 'DB', label='Queries')
 
         dot.render(output_path, format='svg', cleanup=True)
@@ -128,11 +131,11 @@ class TestingArchitectureDiagramRenderer:
 
         participants = [
             ('PyTest', 'PyTest'),
-            ('TE', 'TestEnvironment'),
-            ('Docker', 'Docker'),
+            ('TE', 'DockerComposeTestEnvironment'),
+            ('Docker', 'Docker Compose'),
             ('DB', 'PostgreSQL'),
             ('API', 'FastAPI Server'),
-            ('APP', 'Flask Server'),
+            ('CHAT', 'Streamlit Chat'),
         ]
 
         for id, label in participants:
@@ -158,8 +161,8 @@ class TestingArchitectureDiagramRenderer:
         self._add_sequence_edge(dot, 'DB', 'TE', 'Schemas created', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'API', 'Start FastAPI server', **edge_style['request'])
         self._add_sequence_edge(dot, 'API', 'TE', 'Server started', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'APP', 'Start Flask server', **edge_style['request'])
-        self._add_sequence_edge(dot, 'APP', 'TE', 'Server started', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'CHAT', 'Start Streamlit chat', **edge_style['request'])
+        self._add_sequence_edge(dot, 'CHAT', 'TE', 'Server started', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment ready', **edge_style['response'])
 
         dot.render(output_path, format='svg', cleanup=True)
@@ -177,11 +180,11 @@ class TestingArchitectureDiagramRenderer:
 
         participants = [
             ('PyTest', 'PyTest'),
-            ('TE', 'TestEnvironment'),
-            ('Docker', 'Docker'),
+            ('TE', 'DockerComposeTestEnvironment'),
+            ('Docker', 'Docker Compose'),
             ('DB', 'PostgreSQL'),
             ('API', 'FastAPI Server'),
-            ('APP', 'Flask Server'),
+            ('CHAT', 'Streamlit Chat'),
         ]
 
         for id, label in participants:
@@ -203,8 +206,8 @@ class TestingArchitectureDiagramRenderer:
         self._add_sequence_edge(dot, 'DB', 'Docker', 'Stopped', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'API', 'Kill FastAPI server process', **edge_style['request'])
         self._add_sequence_edge(dot, 'API', 'TE', 'Process terminated', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'APP', 'Kill Flask server process', **edge_style['request'])
-        self._add_sequence_edge(dot, 'APP', 'TE', 'Process terminated', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'CHAT', 'Stop Streamlit chat', **edge_style['request'])
+        self._add_sequence_edge(dot, 'CHAT', 'TE', 'Container stopped', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment cleaned up', **edge_style['response'])
 
         dot.render(output_path, format='svg', cleanup=True)

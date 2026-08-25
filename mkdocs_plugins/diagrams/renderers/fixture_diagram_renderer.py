@@ -197,14 +197,6 @@ class FixtureDiagramRenderer:
             c.edge('api_clients', 'test_api_logged_in', style='dotted')
             c.edge('api_clients', 'test_api_logged_in_admin', style='dotted')
 
-            c.node('app_clients', 'App Client Fixtures', shape='box', style='rounded')
-            c.node('test_app', 'test_app', shape='box')
-            c.node('test_app_logged_in', 'test_app_logged_in', shape='box')
-            c.node('test_app_logged_in_admin', 'test_app_logged_in_admin', shape='box')
-            c.edge('app_clients', 'test_app', style='dotted')
-            c.edge('app_clients', 'test_app_logged_in', style='dotted')
-            c.edge('app_clients', 'test_app_logged_in_admin', style='dotted')
-
             c.node('other_mod', 'Other Module Fixtures', shape='box', style='rounded')
             c.node('test_jobstore', 'test_jobstore', shape='box')
             c.edge('other_mod', 'test_jobstore', style='dotted')
@@ -220,14 +212,6 @@ class FixtureDiagramRenderer:
             c.edge('func_api', 'test_api_logged_in_function', style='dotted')
             c.edge('func_api', 'test_api_logged_in_admin_function', style='dotted')
 
-            c.node('func_app', 'App Function Clients', shape='box', style='rounded')
-            c.node('test_app_function', 'test_app_function', shape='box')
-            c.node('test_app_logged_in_function', 'test_app_logged_in_function', shape='box')
-            c.node('test_app_logged_in_admin_function', 'test_app_logged_in_admin_function', shape='box')
-            c.edge('func_app', 'test_app_function', style='dotted')
-            c.edge('func_app', 'test_app_logged_in_function', style='dotted')
-            c.edge('func_app', 'test_app_logged_in_admin_function', style='dotted')
-
         with dot.subgraph(name='cluster_test_data') as c:
             c.attr(label='Test Data Fixtures', style='filled', color='#ffa500', fillcolor='#fff8dc')
             c.node('insert_testing_data', 'insert_testing_data', shape='box')
@@ -238,15 +222,11 @@ class FixtureDiagramRenderer:
         dot.edge('SessionScope', 'setup_test_env', style='dashed', constraint='false')
         dot.edge('ModuleScope', 'truncate_tables', style='dashed', constraint='false')
         dot.edge('ModuleScope', 'api_clients', style='dashed', constraint='false')
-        dot.edge('ModuleScope', 'app_clients', style='dashed', constraint='false')
         dot.edge('ModuleScope', 'other_mod', style='dashed', constraint='false')
         dot.edge('FunctionScope', 'func_api', style='dashed', constraint='false')
-        dot.edge('FunctionScope', 'func_app', style='dashed', constraint='false')
 
         dot.edge('insert_users_for_login', 'test_api_logged_in')
         dot.edge('insert_users_for_login', 'test_api_logged_in_admin')
-        dot.edge('insert_users_for_login', 'test_app_logged_in')
-        dot.edge('insert_users_for_login', 'test_app_logged_in_admin')
 
         dot.render(output_path, format='svg', cleanup=True)
         return dot

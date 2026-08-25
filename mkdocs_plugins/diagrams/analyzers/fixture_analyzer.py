@@ -146,13 +146,11 @@ def analyze_fixture_categories(fixtures: dict) -> dict[str, list[str]]:
     Returns:
         Dictionary mapping categories to lists of fixture names
     """
-    categories: dict[str, list[str]] = {'api_clients': [], 'app_clients': [], 'database': [], 'test_data': [], 'other': []}
+    categories: dict[str, list[str]] = {'api_clients': [], 'database': [], 'test_data': [], 'other': []}
 
     for name in fixtures:
         if 'api' in name.lower() and 'client' in name.lower():
             categories['api_clients'].append(name)
-        elif 'app' in name.lower() and 'client' in name.lower():
-            categories['app_clients'].append(name)
         elif any(db_term in name.lower() for db_term in ('db', 'database', 'table', 'session')):
             categories['database'].append(name)
         elif any(data_term in name.lower() for data_term in ('data', 'test_data', 'insert')):
