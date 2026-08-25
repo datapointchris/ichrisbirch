@@ -543,7 +543,7 @@ class TestProjectItemUpdate:
 
 
 class TestProjectItemRepoLink:
-    """The optional `repo` link, by ~/dev/repos.json registry name.
+    """The optional `repo` link, by repo-registry name.
 
     Nullable on purpose: most items are not repo work (home projects, errands),
     and those stay first-class.

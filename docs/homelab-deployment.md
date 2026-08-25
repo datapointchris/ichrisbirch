@@ -15,7 +15,7 @@ Internet → Cloudflare (SSL/CDN) → Cloudflare Tunnel → Traefik (port 80) �
 
 ## Current Status
 
-- **Infrastructure**: Proxmox LXC container at `10.0.20.11` with Docker
+- **Infrastructure**: A self-hosted Linux container running Docker
 - **Database**: PostgreSQL restored from AWS backup, working
 - **Containers**: All services running (postgres, redis, api, app, chat, scheduler, traefik)
 - **External Access**: Via Cloudflare Tunnel
@@ -332,8 +332,8 @@ You may need to copy data between volumes or update the project name.
 
 ## Container Info
 
-- **LXC Host**: ichrisbirch-lxc @ `10.0.20.11`
-- **Webhook Server**: app-ops-lxc @ `10.0.20.15`
+- **Application host**: runs every container below; addressed as `$ICB_PROD_HOST`
+- **Webhook host**: receives the push notification and runs the deploy; addressed as `$ICB_WEBHOOK_HOST`
 - **Infrastructure** (project `icb-infra`, always running):
   - `icb-infra-traefik` (port 80, receives tunnel traffic)
   - `icb-infra-postgres` (5432, Docker internal)

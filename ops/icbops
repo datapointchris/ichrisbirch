@@ -63,7 +63,7 @@ require_prod_host() {
   fi
   echo "${red}icbops prod $1 inspects the production host's Docker daemon and must run there.${reset}" >&2
   echo "" >&2
-  echo "  ssh chris@10.0.20.11 'cd ${PROD_INSTALL_DIR} && ./ops/icbops prod $1'" >&2
+  echo "  ssh \"\$ICB_PROD_HOST\" 'cd ${PROD_INSTALL_DIR} && ./ops/icbops prod $1'" >&2
   echo "" >&2
   echo "From a workstation, these reach production over HTTPS and work anywhere:" >&2
   echo "  icbops prod apihealth    # the API's own health endpoint" >&2

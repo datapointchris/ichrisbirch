@@ -25,7 +25,7 @@ When migration history gets too long or messy, squash into a single baseline.
 
 ```bash
 # 1. Check what revision production is on
-ssh chris@10.0.20.11 "docker exec icb-prod-api python -c \"
+ssh "$ICB_PROD_HOST" "docker exec icb-prod-api python -c \"
 from sqlalchemy import text
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_db_engine

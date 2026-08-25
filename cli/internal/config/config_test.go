@@ -117,8 +117,8 @@ func TestMachineConfigPathIsTheToolsOwnConfigDirectory(t *testing.T) {
 }
 
 func TestLoadMachineConfigReadsReposRegistry(t *testing.T) {
-	writeMachineConfig(t, "repos_registry: ~/dev/repos.json\n")
-	if got, want := LoadMachineConfig().ReposRegistry, "~/dev/repos.json"; got != want {
+	writeMachineConfig(t, "repos_registry: ~/.local/share/repos.json\n")
+	if got, want := LoadMachineConfig().ReposRegistry, "~/.local/share/repos.json"; got != want {
 		t.Errorf("ReposRegistry = %q, want %q", got, want)
 	}
 }
@@ -146,7 +146,7 @@ func TestExpandTildeResolvesALeadingHome(t *testing.T) {
 	if err != nil {
 		t.Skipf("no home directory: %v", err)
 	}
-	if got, want := ExpandTilde("~/dev/repos.json"), filepath.Join(home, "dev", "repos.json"); got != want {
+	if got, want := ExpandTilde("~/.local/share/repos.json"), filepath.Join(home, ".local", "share", "repos.json"); got != want {
 		t.Errorf("ExpandTilde = %q, want %q", got, want)
 	}
 	for _, path := range []string{"/absolute/repos.json", "relative/repos.json", ""} {

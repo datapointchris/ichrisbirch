@@ -56,24 +56,28 @@ pre-commit run --all-files
 
 ## Production Environment
 
-**Production runs on the homelab, NOT locally.**
+**Production runs on a self-hosted server, NOT locally.**
 
-- **Production server**: `ssh chris@10.0.20.11` — path: `/srv/ichrisbirch/`
-- **Webhook server**: `ssh chris@10.0.20.15` — webhook code lives at `~/homelab`
-- **Deployment**: Push to main triggers webhook → blue/green deploy with zero downtime. Logs at `/srv/ichrisbirch/logs/`
+- **Application host**: installed at `/srv/ichrisbirch/`, logs at `/srv/ichrisbirch/logs/`
+- **Webhook host**: receives the push notification and runs the deploy; logs at `/opt/webhooks/logs/`
+- **Deployment**: Push to main triggers the webhook → blue/green deploy with zero downtime
 - **Blue/green**: Infrastructure (`icb-infra`) always running; app services alternate between `icb-blue`/`icb-green`. See `docs/blue-green-deployment.md`.
 
+The two hosts are named by `$ICB_PROD_HOST` and `$ICB_WEBHOOK_HOST`, which each
+operator sets for their own deployment. Reading logs and container status over
+SSH is fine; anything that changes production goes through the deploy pipeline.
+
 ```bash
-# View production logs (read-only SSH) — replace {color} with blue or green
-ssh chris@10.0.20.11 "docker logs icb-blue-api --tail=50 2>&1"
-ssh chris@10.0.20.11 "docker logs icb-blue-vue --tail=50 2>&1"
-ssh chris@10.0.20.11 "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+# View production logs (read-only) — replace blue with green as appropriate
+ssh "$ICB_PROD_HOST" "docker logs icb-blue-api --tail=50 2>&1"
+ssh "$ICB_PROD_HOST" "docker logs icb-blue-vue --tail=50 2>&1"
+ssh "$ICB_PROD_HOST" "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 
 # Check which color is active
-ssh chris@10.0.20.11 "cat /var/lib/ichrisbirch/bluegreen-state"
+ssh "$ICB_PROD_HOST" "cat /var/lib/ichrisbirch/bluegreen-state"
 
-# Webhook server logs (if containers never started)
-ssh chris@10.0.20.15 "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
+# Webhook logs (if containers never started)
+ssh "$ICB_WEBHOOK_HOST" "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 ```
 
 ## Architecture
@@ -94,7 +98,7 @@ Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tes
 Two separate command-line tools with distinct concerns:
 
 - **`ops/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./ops/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
-- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It **replaced the retired MCP server** (2026-07-24) with full parity across the ~78-tool surface. Copied from nomad's `cli/` (own Go module `github.com/datapointchris/ichrisbirch/cli`, binary `icb` on `$GOBIN`). `icb auth login` runs the OAuth 2.0 device authorization grant and stores the resulting RFC 9068 JWT in the OS keychain; it targets `ichrisbirch.com/api`, where the `ichrisbirch-bearer` router carries a bearer request past ForwardAuth, and the FastAPI verifies the token itself against Authelia's JWKS — **not** the legacy JWT/PAK code. Build/install/auth details in `cli/README.md`, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
+- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`), building the binary `icb` onto `$GOBIN`. `icb auth login` runs the OAuth 2.0 device authorization grant and stores the resulting RFC 9068 JWT in the OS keychain; it targets `ichrisbirch.com/api`, where the `ichrisbirch-bearer` router carries a bearer request past ForwardAuth, and the FastAPI verifies the token itself against Authelia's JWKS — **not** the legacy JWT/PAK code. Build/install/auth details in `cli/README.md`, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
 ### Vue Frontend
 
@@ -103,7 +107,7 @@ Vue serves all pages and Flask is fully removed — `pyproject.toml` declares no
 **Key patterns:**
 
 - Pinia stores with `ApiError`, structured logging via `createLogger()`, `error: ref<ApiError | null>`
-- `useTheme` composable: OKLCH color themes, named themes (from `~/tools/theme/`), accent hue slider, 14 fonts
+- `useTheme` composable: OKLCH color themes, named themes, accent hue slider, 14 fonts
 - E2E tests run through `app.docker.localhost` (not `vue.docker.localhost`) to catch CORS issues
 - Self-hosted fonts in `frontend/public/fonts/` (woff2)
 
@@ -224,7 +228,7 @@ To read or write the **local dev** stack, hit the dev API directly (it injects `
 
 ### Always "Cooking Technique", never the bare word "technique"
 
-`CookingTechnique`, `cooking_technique`, `cooking-techniques` — the full noun at every layer, in the model, the route, the URL and the prose. Chris flagged the bare word as too generic during review, and it is: "technique" alone reads as a name for anything.
+`CookingTechnique`, `cooking_technique`, `cooking-techniques` — the full noun at every layer, in the model, the route, the URL and the prose. The bare word is too generic: "technique" alone reads as a name for anything.
 
 Cooking techniques are part of the Recipes domain and not a separate entity, so the code lives inside the recipes files at every layer — `models/recipe.py` holds the model, and the routes hang under `/recipes/` in `api/endpoints/recipes.py`.
 
@@ -234,10 +238,10 @@ Cooking techniques are part of the Recipes domain and not a separate entity, so 
 The test is whether the thing ENDS, not whether the name reads like a verb
 phrase:
 
-    "todoui sync improvements"    OK — the sync improvements end
-    "Extract xx from dotfiles"    OK
+    "<repo> sync improvements"    OK — the sync improvements end
+    "Extract xx from <repo>"      OK
     "Migrate neovim to vim.pack"  OK
-    "todoui"                      banned — names a thing that exists
+    "<repo>"                      banned — names a thing that exists
 
 The failure it prevents: a repo gets a project while it is being BUILT, which is
 finite and does complete. The repo then keeps existing, the next papercut has
@@ -271,11 +275,15 @@ therefore not covered — it has no registry either.
 
   The same ladder applies to dev via `./ops/icbops dev stop && start` then `./ops/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
 
-  **Measured 2026-04-24.** Ten docker subcommands were run before Chris stopped it — `exec`, `restart`, `logs`, `images`, `image inspect`, `run --rm`, `volume ls`, `inspect --format`, a `sudo ls` on a volume path, and a `testing rebuild` without `--volumes`. Step 2 with `--volumes` then fixed it in 90 seconds. Every one of those subcommands felt like progress and all of it was archaeology. The tell that it has gone wrong is proposing a workaround rather than an escalation: the session that day suggested baking the venv into the image, and Chris's answer was "remove this bullshit".
-- **Pre-commit hooks** run automatically; the set is generated from `~/tools/forge/pre-commit/toolchain.yml` (see `standards/ci.md`). Repo-specific detail: Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
+  Ten manual docker subcommands — `exec`, `restart`, `logs`, `images`, `image inspect`, `run --rm`, `volume ls`, `inspect --format` and a `sudo ls` on a volume path — once failed to diagnose what step 2 with `--volumes` then fixed in 90 seconds. Each one feels like progress and all of it is archaeology. The tell that it has gone wrong is proposing a workaround rather than an escalation: baking the venv into the image is a workaround, and the ladder is the escalation.
+- **Pre-commit hooks** run automatically. `.pre-commit-config.yaml` and `.github/workflows/validate.yml` are both generated from a shared toolchain manifest and carry a `# forge-toolchain:` stamp; hand edits belong in a `# > custom:` block, which regeneration preserves. Repo-specific detail: Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
-- **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`. (The general rule is in `standards/python.md`; `find_project_root()` is the ichrisbirch-specific affordance.)
-- **Schema conventions** — `Text` columns, lookup tables not PG enums, PK strategy, nullability: see `standards/data.md`. ichrisbirch is the fleet's one sanctioned Postgres app.
+- **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
+- **Schema conventions**:
+  - **All text columns are `TEXT`**, never `varchar(n)`. A length limit is a validation rule wearing a storage costume — it buys nothing in Postgres and turns a product decision into a migration. Array columns are `NOT NULL DEFAULT '{}'` and normalized nil→`[]` on write, so reads are branch-free.
+  - **Lookup tables, never Postgres enum types.** A categorical is a `TEXT PRIMARY KEY` plus a foreign key, so adding a value is an insert. An enum type needs a migration to add a value and cannot be reordered or removed; a lookup table also gives somewhere to hang a label, a sort order and a description. A bounded sub-attribute of a join uses a `CHECK`, which is not an enum type.
+  - **Primary keys.** Catalog rows get `GENERATED ALWAYS AS IDENTITY` plus a `UNIQUE` natural key, so an import can upsert idempotently. User-generated rows get UUIDv7. Ordered-join rows get their own surrogate id plus `DEFERRABLE UNIQUE(parent_id, position)`, so a reorder can swap positions inside one transaction.
+  - **Nullability is consistent across an entity family.** One lone `NOT NULL DEFAULT ''` forces every editor and client to handle two shapes. Nullable is defensible where the link is genuinely optional — state the reason rather than defaulting either way.
 - **A time column is one of three kinds, and the kind decides the type**: pick before writing the column, because all three are spelled `datetime` in Python and only one of them should be.
   1. **A moment that happened** — a completion, a login, a row appearing. `DateTime(timezone=True)`, written as `datetime.now(UTC)`, `server_default=func.now()`, or `pendulum.now()`. Never bare `datetime.now()`: naive is interpreted using Postgres's session `TimeZone`, so it is correct only while every container happens to run UTC. The three accepted forms all carry an offset, which is the property that matters; `pendulum.now()` carries the machine's zone rather than UTC and is correct for the same reason.
   2. **A calendar day** — a purchase date, a day a habit was done, a due date. `Date`. Not a timestamp: a `YYYY-MM-DD` arriving as a timestamp becomes midnight UTC, and every reader west of UTC then renders the day before.

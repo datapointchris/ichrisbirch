@@ -1,6 +1,6 @@
 """Add repo link to project_items
 
-Links a project item to a repo in ~/dev/repos.json by registry name. Nullable
+Links a project item to a repo in ~/.local/share/repos.json by registry name. Nullable
 because most items are not repo work at all — home projects, things to sell,
 errands — and those must stay first-class.
 

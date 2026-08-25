@@ -57,7 +57,7 @@ func TestUnknownNameWithNoNearMatchPointsAtTheRegistry(t *testing.T) {
 	}
 }
 
-// A machine without ~/dev/ must still be able to file work — the registry is
+// A machine without a registry must still be able to file work — the registry is
 // advisory, so an absent one accepts anything rather than blocking the command.
 func TestMissingRegistryAcceptsAnything(t *testing.T) {
 	registry, err := Load(filepath.Join(t.TempDir(), "absent.json"))
@@ -158,14 +158,14 @@ func TestALeadingTildeExpandsInBothDeclaredLayers(t *testing.T) {
 	if err != nil {
 		t.Skipf("no home directory: %v", err)
 	}
-	want := filepath.Join(home, "dev", "repos.json")
+	want := filepath.Join(home, ".local", "share", "repos.json")
 
-	withMachineConfig(t, "repos_registry: ~/dev/repos.json\n")
+	withMachineConfig(t, "repos_registry: ~/.local/share/repos.json\n")
 	if got := DefaultPath(); got != want {
 		t.Errorf("config key: DefaultPath() = %q, want %q", got, want)
 	}
 
-	t.Setenv("ICB_REPOS_REGISTRY", "~/dev/repos.json")
+	t.Setenv("ICB_REPOS_REGISTRY", "~/.local/share/repos.json")
 	if got := DefaultPath(); got != want {
 		t.Errorf("env var: DefaultPath() = %q, want %q", got, want)
 	}
