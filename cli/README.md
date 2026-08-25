@@ -10,38 +10,25 @@ It is a per-machine developer tool, not one of the deployed containers. The bash
 ops/deploy tool lives at `../ops/icbops` — a different concern in a different
 language; the two share no code.
 
-> Reference build: `~/webapps/nomad/cli/` (this module is copied from it).
+## What it covers
 
-## Status
+`icb projects` is the Projects domain — `{list,show,create,edit,complete,drop,
+reopen,delete}`, where `create` and `edit` refuse a name the repo registry knows,
+since a project name is bounded work and a repo does not end. `icb projects
+items` nests under it, because an item is only meaningful inside a project:
+item CRUD, complete/reopen, archive/unarchive, reorder, multi-project membership,
+dependencies and blockers, sub-task verbs, and `tree` for the dependency graph as
+a drawing or as nodes and edges under `--json`.
 
-- **Phase 0 (done):** module scaffold + `icb auth {login,logout,status,token}`.
-- **Phase 1 (done):** the Projects domain — `icb projects`
-  ({list,show,create,edit,complete,drop,reopen,delete}; create and edit refuse a
-  name the repo registry knows, since a project name is bounded work and a repo
-  does not end) and `icb projects items`
-  (project-item CRUD, complete/reopen, archive/unarchive, reorder,
-  multi-project membership,
-  dependencies + blockers, `tree` for the dependency graph as a drawing or as
-  nodes and edges in `--json`, and sub-task verbs). Items are only meaningful inside
-  a project, so the group is nested rather than a root noun; `icb projects items
-  list --project <id>` is the in-order listing for one project.
-- **Phase 2 (done):** the standalone apps — `tasks`, `countdowns`, `events`,
-  `habits`, `books`, and `articles` ({list,show,search,create,edit,delete} plus
-  resource-specific verbs: `articles current`/`read`, `habits complete`, etc.).
-- **Phase 3 (done, 2026-07-24):** MCP parity + retirement. `icb` covers the full
-  ~78-tool surface (parity additions: `autotasks`, `articles` bulk-import,
-  `cooking-techniques`, and `recipes` incl. the AI suggest/import flows). The
-  homelab Authelia `icb-cli-{host}` clients are deployed, `icb auth login` works
-  end-to-end against production, and the **MCP server has been retired**. The
-  `api.ichrisbirch.com` bypass is kept — it is the Personal API Key access path,
-  not MCP-specific, and it is now also the host `icb` itself targets.
-- **Phase 4 (done):** `Makefile` (build/install/test/lint/fmt) + a CI **Test CLI**
-  job gated on the `cli/**` path filter (not in the deploy gate).
+The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
+`articles`, `autotasks`, `recipes` and `cooking-techniques`. Each takes
+`{list,show,search,create,edit,delete}` plus the verbs its own domain needs —
+`articles current` and `articles read`, `habits complete`, the recipe
+suggest/import flows.
 
-The homelab Authelia `icb-cli-<host>` public clients are deployed and `icb auth
-login` works end-to-end; a fresh machine only needs its `icb-cli-<host>` client
-added to the Authelia config (see
-`~/homelab/pyinfra/templates/authelia/configuration.yml.j2`).
+Each machine authenticates as its own Authelia public client, `icb-cli-<host>`.
+A new machine needs that client registered in the Authelia configuration before
+`icb auth login` will complete.
 
 ## Build & install
 
@@ -72,8 +59,11 @@ that can reach a listener on this machine, and there is none.
 The resulting access token is an **RFC 9068 JWT** (`typ: at+jwt`, RS256, `kid:
 main`) that the FastAPI verifies itself against Authelia's JWKS. It is not
 authorized at the Traefik edge: Authelia forbids the `authelia.bearer.authz`
-scope alongside the device grant, so the CLI targets `api.ichrisbirch.com`,
-which bypasses ForwardAuth and reaches FastAPI directly.
+scope alongside the device grant, so the CLI targets `ichrisbirch.com/api`. The
+`ichrisbirch-bearer` Traefik router carries a request holding an `Authorization`
+header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
+authorizing the token. `cli/internal/config/config.go` sets it as
+`defaultAPIBase`.
 
 Authelia does not carry the audience through the device grant — `aud` comes
 back empty — so cross-product isolation rests on the `client_id` claim, and the
@@ -93,7 +83,7 @@ what Authelia will honor. A rejected session exits 1.
 `icb auth token` prints the current access token for scripting:
 
 ```bash
-curl -H "Authorization: Bearer $(icb auth token)" https://api.ichrisbirch.com/tasks/
+curl -H "Authorization: Bearer $(icb auth token)" https://ichrisbirch.com/api/tasks/
 ```
 
 Client id is per (machine × app): `icb-cli-<shorthostname>`.
@@ -273,7 +263,7 @@ the wrong package to travel with a copy of that directory.
 | --- | --- | --- |
 | `ICB_OIDC_ISSUER` | `https://auth.ichrisbirch.com` | Authelia OIDC issuer |
 | `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id |
-| `ICB_API_BASE` | `https://api.ichrisbirch.com` | API base URL |
+| `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
 
 The registry is the one file icb reads that other tools also read, so it resolves
@@ -283,7 +273,7 @@ expands in either declared layer.
 
 ```yaml
 # $XDG_CONFIG_HOME/icb/config.yml
-repos_registry: ~/dev/repos.json
+repos_registry: ~/.local/share/repos.json
 ```
 
 The config file is optional. A machine keeping the registry where icb expects it
