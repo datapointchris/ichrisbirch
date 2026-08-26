@@ -124,7 +124,7 @@ docker exec icb-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
     -H "Remote-Email: ${admin_email}"
 ```
 
-The suite discovers its endpoints from the app's route table, so it covers every GET route that takes no required parameter. The deploy only proceeds if `all_critical_passed` is true and HTTP 200 is returned. Vue containers are also health-checked directly before the API smoke tests.
+The suite discovers its endpoints from the app's route table, so it covers every GET route that takes no required parameter. It skips three things by name: the smoke endpoint itself, the docs redirect, and every path under `/auth/`. The deploy only proceeds if `all_passed` is true and HTTP 200 is returned. Vue containers are also health-checked directly before the API smoke tests.
 
 ### Concurrent Deploy Protection
 

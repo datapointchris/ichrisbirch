@@ -148,13 +148,19 @@ to repeat by hand, four of them leaving the timeout at httpx's five-second
 default. Never call `httpx.get` directly for an outside URL; add the case to
 `get_page` instead.
 
-Three callers are deliberately outside it, because they are not third-party
+Two callers are deliberately outside it, because they are not third-party
 page fetches:
 
-- **`ichrisbirch/api/client/`** — this app talking to its own API.
 - **`api/oidc_auth.py`** — OIDC discovery against the identity provider, with its
   own user agent and a caller-supplied timeout.
 - **`gui/`** — posts to this app's own endpoints.
+
+**`ichrisbirch/api/client/` has no importers.** It is this app's own HTTP client
+for its own API, and nothing in the repo constructs one — check with `rg
+'ichrisbirch\.api\.client' --type py` before assuming a caller exists. It is
+kept because `docs/api/client/` documents it as the way a Python consumer talks
+to this API, and because `cli/` does the same job in Go over the same surface.
+Deciding whether a Python client is still wanted is what would retire it.
 
 The one sanctioned subprocess is in `scheduler/jobs.py`.
 

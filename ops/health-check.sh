@@ -263,20 +263,16 @@ main() {
   # Get URLs for the environment
   get_urls
 
-  # Check DNS resolution for localhost domains
+  # Check DNS resolution for localhost domains.
+  # icb_env_domain rather than icb_env_suffix: check_dns runs `host`, which
+  # takes a name and not a name:port.
   if [ "$ENVIRONMENT" = "dev" ] || [ "$ENVIRONMENT" = "test" ]; then
-    case "$ENVIRONMENT" in
-      dev)
-        domains=("api.docker.localhost" "app.docker.localhost" "dashboard.docker.localhost")
-        ;;
-      test)
-        domains=("api.test.localhost" "app.test.localhost" "dashboard.test.localhost")
-        ;;
-    esac
+    local domain_suffix service
+    domain_suffix=$(icb_env_domain "$ENVIRONMENT")
 
-    for domain in "${domains[@]}"; do
-      check_dns "$domain"
-    done
+    while read -r service; do
+      check_dns "${service}.${domain_suffix}"
+    done < <(icb_services)
     echo ""
   fi
 

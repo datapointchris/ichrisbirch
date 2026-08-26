@@ -486,7 +486,7 @@
 <text xml:space="preserve" text-anchor="middle" x="4826" y="-100.58" font-family="Times,serif" font-size="14.00">api_with_redis</text>
 </g>
 <!-- txn_api_logged_in&#45;&gt;api_with_redis -->
-<g id="edge38" class="edge">
+<g id="edge39" class="edge">
 <title>txn_api_logged_in&#45;&gt;api_with_redis</title>
 <path fill="none" stroke="black" d="M2639.1,-178.99C2761.83,-175.4 3053.33,-167.31 3298,-163.75 3318.43,-163.45 4749.85,-162.88 4769,-155.75 4782.21,-150.83 4794.45,-141.35 4804.16,-132.05"/>
 <polygon fill="black" stroke="black" points="4806.46,-134.71 4810.96,-125.12 4801.46,-129.81 4806.46,-134.71"/>
@@ -654,7 +654,7 @@
 <text xml:space="preserve" text-anchor="middle" x="3341" y="-176.32" font-family="Times,serif" font-size="14.00">test_redis</text>
 </g>
 <!-- test_redis&#45;&gt;api_with_redis -->
-<g id="edge39" class="edge">
+<g id="edge38" class="edge">
 <title>test_redis&#45;&gt;api_with_redis</title>
 <path fill="none" stroke="black" d="M3374.92,-166.02C3377.95,-165.11 3381.01,-164.33 3384,-163.75 3421.77,-156.44 4732.95,-169.18 4769,-155.75 4782.21,-150.83 4794.45,-141.35 4804.16,-132.05"/>
 <polygon fill="black" stroke="black" points="4806.46,-134.71 4810.96,-125.12 4801.46,-129.81 4806.46,-134.71"/>

@@ -6,9 +6,9 @@
 # state and live in the file this writes; Traefik merges both from the
 # directory provider.
 #
-# Both the deploy and the rollback path need this file and each used to carry
-# its own copy of the YAML. A service added to one and missed in the other
-# routes production traffic at a container that is not there.
+# Both the deploy and the rollback path write this file. A service added to one
+# copy and missed in the other routes production traffic at a container that is
+# not there, which is why there is one copy.
 #
 # The output path is an argument because the two callers resolve the install
 # directory differently — the deploy script hardcodes it, the CLI derives it

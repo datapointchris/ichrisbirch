@@ -29,10 +29,10 @@ PROJECT_ROOT = find_project_root()
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / 'docs' / 'images' / 'generated'
 HASH_CACHE_FILE = PROJECT_ROOT / '.diagram_hash_cache.json'
 
-# The whole package, not just one renderer: a fix to the analyzer changes the
-# output as surely as a new fixture does, and naming a single generator file
-# means the rest of the package can be corrected without the diagrams noticing.
-# Every component hashes this alongside the sources it reads.
+# Every diagram is drawn by this package, so a fix to a renderer or an analyzer
+# changes the output as surely as a new fixture does. component_hash_patterns
+# appends it to whatever a component declares, which is what keeps a component
+# from being keyed on its inputs and not on the code that reads them.
 GENERATOR_SOURCES = 'mkdocs_plugins/diagrams/**/*.py'
 
 
@@ -63,6 +63,11 @@ def calculate_hash_for_files(file_patterns: list[str]) -> str | None:
     return combined_hash.hexdigest()
 
 
+def component_hash_patterns(file_patterns: list[str]) -> list[str]:
+    """Return a component's own sources plus the generator package."""
+    return [*file_patterns, GENERATOR_SOURCES]
+
+
 def has_code_changed(component: str, file_patterns: list[str]) -> bool:
     """Check if relevant code has changed by comparing hashes."""
     try:
@@ -71,7 +76,7 @@ def has_code_changed(component: str, file_patterns: list[str]) -> bool:
 
         cache = json.loads(HASH_CACHE_FILE.read_text())
         old_hash = cache.get(component)
-        new_hash = calculate_hash_for_files(file_patterns)
+        new_hash = calculate_hash_for_files(component_hash_patterns(file_patterns))
 
         return old_hash != new_hash
     except Exception as e:
@@ -86,7 +91,7 @@ def update_hash_cache(component: str, file_patterns: list[str]) -> None:
         if HASH_CACHE_FILE.exists():
             cache = json.loads(HASH_CACHE_FILE.read_text())
 
-        cache[component] = calculate_hash_for_files(file_patterns)
+        cache[component] = calculate_hash_for_files(component_hash_patterns(file_patterns))
         HASH_CACHE_FILE.write_text(json.dumps(cache, indent=2))
     except Exception as e:
         logger.warning(f'Error updating hash cache: {e}')
@@ -97,7 +102,6 @@ def generate_fixture_diagrams(output_dir: str, force: bool = False) -> None:
     fixture_file_patterns = [
         'tests/conftest.py',
         'tests/utils/**/*.py',
-        GENERATOR_SOURCES,
     ]
 
     if not force and not has_code_changed('fixtures', fixture_file_patterns):
@@ -119,7 +123,7 @@ def generate_all_diagrams(output_dir: str = str(DEFAULT_OUTPUT_DIR), force: bool
 
     generate_fixture_diagrams(output_dir, force)
 
-    testing_file_patterns = ['tests/**/*.py', GENERATOR_SOURCES]
+    testing_file_patterns: list[str] = []
     if force or has_code_changed('testing', testing_file_patterns):
         generate_testing_diagrams(output_dir)
         update_hash_cache('testing', testing_file_patterns)

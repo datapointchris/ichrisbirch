@@ -16,8 +16,8 @@
 #   3. Determine which color to deploy (opposite of live)
 #   4. Ensure infrastructure (Traefik, PostgreSQL, Redis) is running
 #   5. Pull new images and start new color containers
-#   6. Wait for health checks + run smoke tests
-#   7. Run database migrations
+#   6. Wait for health checks, then run database migrations
+#   7. Run smoke tests, which need the migrated schema to pass
 #   8. Switch Traefik routing to new color
 #   9. Grace period, then tear down old color
 #
@@ -360,7 +360,7 @@ run_smoke_tests() {
   fi
   log_info "vue_smoke_passed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
 
-  # Run the full 32-endpoint smoke test suite via the API's built-in endpoint
+  # Run the full smoke test suite via the API's built-in endpoint
   # Use -s (silent) but NOT -f so we get the response body on errors
   local admin_email
   admin_email=$(grep '^USERS_DEFAULT_ADMIN_USER_EMAIL=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')

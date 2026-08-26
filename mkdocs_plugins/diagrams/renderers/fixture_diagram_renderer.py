@@ -115,7 +115,10 @@ class FixtureDiagramRenderer:
             if scope and fixtures.get(name, {}).get('scope') != scope:
                 continue
 
-            for dep in deps:
+            # sorted, because deps is a set of strings and its iteration order
+            # varies with PYTHONHASHSEED. Graphviz numbers edges in emission
+            # order, so an unsorted loop makes a tracked SVG differ run to run.
+            for dep in sorted(deps):
                 if dep in fixtures and (not scope or fixtures.get(dep, {}).get('scope') == scope):
                     dot.edge(dep, name)
 
@@ -151,7 +154,7 @@ class FixtureDiagramRenderer:
                     c.node(name, name, shape=shape)
 
         for name, deps in dependencies.items():
-            for dep in deps:
+            for dep in sorted(deps):
                 if dep in fixtures:
                     dot.edge(dep, name)
 
