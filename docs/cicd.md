@@ -82,7 +82,7 @@ docker compose ... up -d --build postgres redis
 sleep 10  # Wait for health checks
 
 # Phase 2: Start application services
-docker compose ... up -d --build api app chat scheduler
+docker compose ... up -d --build api app scheduler
 sleep 30  # Wait for services to initialize
 ```
 
@@ -194,7 +194,7 @@ Error: relation "apscheduler_jobs" does not exist
 Ensure scheduler container is started:
 
 ```yaml
-docker compose ... up -d --build api app chat scheduler
+docker compose ... up -d --build api app scheduler
 ```
 
 #### 3. MkDocs plugin not found

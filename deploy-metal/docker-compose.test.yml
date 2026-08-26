@@ -119,56 +119,6 @@ services:
         max-file: "3"
         tag: "api-test"
 
-  # Test chat service - needed for API tests
-  chat:
-    build:
-      context: .
-      target: testing
-    container_name: icb-metal-test-chat
-    command: >
-      uv run streamlit run ichrisbirch/chat/app.py
-      --server.address=0.0.0.0
-      --server.port=8505
-      --server.headless=true
-    environment:
-      - ENVIRONMENT=testing
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
-    volumes:
-      - type: bind
-        source: .
-        target: /app
-      - type: volume
-        source: venv_shared
-        target: /app/.venv
-      - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
-      - type: volume
-        source: uv_cache
-        target: /root/.cache/uv
-    ports:
-      - "8507:8505" # Different port to avoid conflicts
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 3
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_started  # Wait for API to initialize shared venv first
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "chat-test"
-
   # Test scheduler - enabled for scheduler tests
   scheduler:
     build:

@@ -17,7 +17,7 @@ Internet           │                                                 │
   → Cloudflare     │   Traefik ──→ services.yml ──→ icb-blue-api    │
     → Tunnel       │     :80          (file         icb-blue-vue     │
       → :80        │                  provider)                      │
-                   │   PostgreSQL                   icb-blue-chat    │
+                   │   PostgreSQL                                    │
                    │   Redis                                         │
                    │                                                 │
                    │              icb-green (standby, not receiving  │
@@ -29,7 +29,7 @@ The deploy cycle:
 
 1. Build new images and start the standby color
 2. Wait for Docker health checks to pass
-3. Run full smoke tests (32 endpoints) against the standby containers
+3. Run the full smoke suite against the standby containers
 4. Switch Traefik routing by generating `services.yml` (picked up in 1-2 seconds)
 5. Grace period, then tear down old color
 
@@ -42,7 +42,7 @@ If anything fails in steps 1-3, the live color is untouched. Zero downtime, zero
 | File | Project Name | Contains | Lifecycle |
 | --- | --- | --- | --- |
 | `docker-compose.infra.yml` | `icb-infra` | Traefik, PostgreSQL, Redis | Always running, never restarted during deploys |
-| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Chat, Scheduler | Created/destroyed per deploy |
+| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Scheduler | Created/destroyed per deploy |
 | `docker-compose.yml` | `icb-prod` | All services (legacy) | Emergency fallback only |
 
 Dev and test environments (`docker-compose.dev.yml`, `docker-compose.test.yml`) are completely unaffected.
@@ -71,13 +71,9 @@ http:
       loadBalancer:
         servers:
           - url: "http://icb-green-vue:80"
-    chat:
-      loadBalancer:
-        servers:
-          - url: "http://icb-green-chat:8505"
 ```
 
-To add a new Traefik-routed service: add it to `docker-compose.app.yml`, `routing.yml`, and `generate_services_file()` in `scripts/deploy-homelab.sh`.
+To add a new Traefik-routed service: add it to `docker-compose.app.yml`, `routing.yml`, and `scripts/generate-services-yml.sh`, which both the deploy and the rollback path call.
 
 Traefik has `--providers.file.watch=true`, so it hot-reloads within 1-2 seconds of the file changing. No restart needed.
 
@@ -105,7 +101,7 @@ The deploy script at `scripts/deploy-homelab.sh` runs this sequence:
  7. start_new_containers()      # docker compose up -d for DEPLOY color
  8. wait_for_healthy()          # Poll Docker healthchecks on DEPLOY containers (90s)
  9. run_migrations()            # alembic upgrade head on DEPLOY API container
-10. run_smoke_tests()           # Full 32-endpoint smoke suite on DEPLOY containers
+10. run_smoke_tests()           # Full smoke suite on DEPLOY containers
 11. switch_traffic()            # Generate services.yml → DEPLOY color, atomic mv
 12. update_state()              # Write DEPLOY color to bluegreen-state
 13. grace_period()              # Wait 30s (manual rollback window)
@@ -128,7 +124,7 @@ docker exec icb-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
     -H "Remote-Email: ${admin_email}"
 ```
 
-This tests 32 GET endpoints across critical, important, and secondary tiers. The deploy only proceeds if `all_critical_passed` is true and HTTP 200 is returned. Vue containers are also health-checked directly before the API smoke tests.
+The suite discovers its endpoints from the app's route table, so it covers every GET route that takes no required parameter. The deploy only proceeds if `all_critical_passed` is true and HTTP 200 is returned. Vue containers are also health-checked directly before the API smoke tests.
 
 ### Concurrent Deploy Protection
 

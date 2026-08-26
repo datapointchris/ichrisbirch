@@ -382,34 +382,9 @@ def get_admin_or_internal_service_access(
     raise UnauthorizedException(Refusal.ADMIN_OR_INTERNAL_REQUIRED, logger) from None
 
 
-def require_user_or_internal_service(
-    current_user: models.User | None = Depends(get_current_user_or_none),
-    x_internal_service: str | None = Header(None),
-    x_service_key: str | None = Header(None),
-    settings: Settings = Depends(get_settings),
-) -> models.User | None:
-    """Dependency that requires either a valid user OR valid internal service auth.
-
-    Returns the user if authenticated via user auth, None if authenticated via internal service.
-    Raises UnauthorizedException if neither auth method is valid.
-    """
-    if current_user:
-        return current_user
-
-    if x_internal_service and x_service_key:
-        if x_service_key == settings.auth.internal_service_key:
-            logger.debug('access_granted_internal_service', service=x_internal_service)
-            return None
-        else:
-            logger.warning('internal_service_key_invalid', service=x_internal_service)
-
-    raise UnauthorizedException(Refusal.USER_OR_INTERNAL_REQUIRED, logger) from None
-
-
 # Type aliases for cleaner endpoint signatures
 DbSession = Annotated[Session, Depends(get_sqlalchemy_session)]
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
-CurrentUserOrInternalService = Annotated[models.User | None, Depends(require_user_or_internal_service)]
 AdminUser = Annotated[models.User, Depends(get_admin_user)]
 AdminOrInternalServiceAccess = Annotated[bool, Depends(get_admin_or_internal_service_access)]
 

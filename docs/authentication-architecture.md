@@ -9,7 +9,7 @@ The iChrisBirch project has successfully migrated from database-based service ac
 ### Previous Architecture (Deprecated)
 
 - **Database service accounts**: `APIServiceAccount` class managing database users
-- **Mixed authentication patterns**: Inconsistent auth across different modules  
+- **Mixed authentication patterns**: Inconsistent auth across different modules
 - **Test infrastructure issues**: Broken imports and dependencies
 - **Circular dependencies**: Service account creation caused recursive loops
 
@@ -64,7 +64,7 @@ from ichrisbirch.api.client.logging_client import (
 with logging_internal_service_client() as client:
     # Service-to-service calls
 
-# User-specific operations  
+# User-specific operations
 with logging_user_client(user_token) as client:
     # User-specific API calls
 
@@ -89,7 +89,7 @@ Modern replacement for QueryAPI with identical interface:
 Authentication dependencies:
 
 - **`CurrentUser`**: Requires valid user authentication
-- **`AdminUser`**: Requires admin user authentication  
+- **`AdminUser`**: Requires admin user authentication
 - **`AdminOrInternalServiceAccess`**: Allows admin users OR internal service auth
 - **Internal service verification**: `verify_internal_service()` dependency
 
@@ -111,7 +111,7 @@ Required settings in all environments:
 # Internal service authentication
 AUTH_INTERNAL_SERVICE_KEY=<secure-api-key>
 
-# API endpoints  
+# API endpoints
 API_URL=http://localhost:8000  # or appropriate URL for environment
 ```
 
@@ -132,17 +132,6 @@ class Settings:
 
 ## Usage Patterns
 
-### Chat Authentication
-
-```python
-# ichrisbirch/chat/auth.py
-with logging_internal_service_client() as client:
-    users = client.resource('users', schemas.User)
-    if user_data := users.get_generic(['email', username]):
-        user = models.User(**user_data)
-        return user
-```
-
 ### Flask Login Integration
 
 ```python
@@ -150,7 +139,7 @@ with logging_internal_service_client() as client:
 def get_users_api():
     return logging_internal_service_client(base_url=settings.api_url)
 
-@login_manager.user_loader  
+@login_manager.user_loader
 def load_user(alternative_id):
     with get_users_api() as client:
         users = client.resource('users', schemas.User)
@@ -209,8 +198,7 @@ with logging_internal_service_client() as client:
 
 All components successfully migrated:
 
-- **Chat authentication**: ✅ Using modern internal service client
-- **Flask login system**: ✅ Integrated with LoggingAPIClient  
+- **Flask login system**: ✅ Integrated with LoggingAPIClient
 - **API endpoints**: ✅ Support internal service and user authentication
 - **Test infrastructure**: ✅ Clean test patterns without service account dependencies
 - **Configuration**: ✅ Simplified environment variable configuration

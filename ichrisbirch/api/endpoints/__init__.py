@@ -5,7 +5,6 @@ from ichrisbirch.api.endpoints import autofun
 from ichrisbirch.api.endpoints import autotasks
 from ichrisbirch.api.endpoints import books
 from ichrisbirch.api.endpoints import box_packing
-from ichrisbirch.api.endpoints import chat
 from ichrisbirch.api.endpoints import coffee
 from ichrisbirch.api.endpoints import countdowns
 from ichrisbirch.api.endpoints import durations
@@ -33,7 +32,6 @@ __all__ = [
     'books',
     'coffee',
     'box_packing',
-    'chat',
     'countdowns',
     'durations',
     'events',

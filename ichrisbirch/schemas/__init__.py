@@ -21,12 +21,6 @@ from ichrisbirch.schemas.box import BoxUpdate
 from ichrisbirch.schemas.boxitem import BoxItem
 from ichrisbirch.schemas.boxitem import BoxItemCreate
 from ichrisbirch.schemas.boxitem import BoxItemUpdate
-from ichrisbirch.schemas.chat import Chat
-from ichrisbirch.schemas.chat import ChatCreate
-from ichrisbirch.schemas.chat import ChatUpdate
-from ichrisbirch.schemas.chatmessage import ChatMessage
-from ichrisbirch.schemas.chatmessage import ChatMessageCreate
-from ichrisbirch.schemas.chatmessage import ChatMessageUpdate
 from ichrisbirch.schemas.coffee import CoffeeBean
 from ichrisbirch.schemas.coffee import CoffeeBeanCreate
 from ichrisbirch.schemas.coffee import CoffeeBeanUpdate
@@ -126,12 +120,6 @@ __all__ = [
     'AutoTask',
     'AutoTaskCreate',
     'AutoTaskUpdate',
-    'Chat',
-    'ChatCreate',
-    'ChatUpdate',
-    'ChatMessage',
-    'ChatMessageCreate',
-    'ChatMessageUpdate',
     'Book',
     'BookCreate',
     'BookGoodreadsInfo',

@@ -86,7 +86,6 @@ The base file defines production-ready services:
 | `redis` | Redis 7 cache | 6379 |
 | `api` | FastAPI backend | 8000 |
 | `vue` | Vue 3 frontend (SPA) | 5173 (dev) / 80 (prod via Caddy) |
-| `chat` | Streamlit chat interface | 8505 |
 | `scheduler` | APScheduler background jobs | N/A |
 
 ### Service Dependencies
@@ -94,7 +93,7 @@ The base file defines production-ready services:
 ```text
 postgres ─────┬───► api ──────► vue (Vue 3 SPA)
               │       │
-redis ────────┤       ├──────► chat
+redis ────────┤       │
               │       │
               └───────┴──────► scheduler
 ```
@@ -186,7 +185,6 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 | --- | --- | --- |
 | API | 8000 | 8001 |
 | Vue | 5173 | 5174 |
-| Chat | 8505 | 8507 |
 | PostgreSQL | 5432 | 5434 |
 | Redis | 6379 | 6380 |
 | Traefik HTTPS | 443 | 8443 |
@@ -268,7 +266,7 @@ docker compose ... up -d --build postgres redis
 sleep 10
 
 # Phase 2: Application services
-docker compose ... up -d --build api app chat scheduler
+docker compose ... up -d --build api app scheduler
 sleep 30
 ```
 
@@ -334,8 +332,7 @@ All HTTP(S) traffic flows through Traefik:
 
 ```text
 Internet ──► Traefik (:443) ──┬──► api.domain.com ──► API (:8000)
-                              ├──► app.domain.com + PathPrefixes ──► Vue (:5173)
-                              └──► chat.domain.com ──► Chat (:8505)
+                              └──► app.domain.com + PathPrefixes ──► Vue (:5173)
 ```
 
 ### Internal Communication

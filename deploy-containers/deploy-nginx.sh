@@ -26,7 +26,7 @@ NGINX_HOME="$ETC_DIR/nginx"
 SITES_AVAILABLE="$NGINX_HOME/sites-available"
 SITES_ENABLED="$NGINX_HOME/sites-enabled"
 
-CONFIG_FILES=("api.conf" "app.conf" "chat.conf")
+CONFIG_FILES=("api.conf" "app.conf")
 
 make_directories() {
   sudo mkdir -vp $SITES_AVAILABLE

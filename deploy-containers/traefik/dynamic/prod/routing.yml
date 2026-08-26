@@ -57,12 +57,3 @@ http:
         - rate-limit-prod@file
       entrypoints:
         - web
-
-    # Chat (Streamlit) — dedicated subdomain
-    chat:
-      rule: "Host(`chat.ichrisbirch.com`)"
-      service: chat
-      middlewares:
-        - cors-prod@file
-      entrypoints:
-        - web

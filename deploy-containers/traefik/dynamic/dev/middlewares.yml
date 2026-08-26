@@ -19,7 +19,6 @@ http:
         accessControlAllowOriginList:
           - "https://app.docker.localhost"
           - "https://api.docker.localhost"
-          - "https://chat.docker.localhost"
           - "http://localhost:3000"
         accessControlAllowHeaders:
           - "Accept"

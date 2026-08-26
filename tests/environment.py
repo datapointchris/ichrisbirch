@@ -111,7 +111,7 @@ class DockerComposeTestEnvironment:
     def docker_test_services_already_running(self, required_services=None) -> bool:
         """Returns True if all required Docker Compose services are running."""
         if required_services is None:
-            required_services = {'postgres', 'redis', 'api', 'chat'}
+            required_services = {'postgres', 'redis', 'api'}
         try:
             # Use docker ps with JSON format for clean parsing
             cmd = ['docker', 'ps', '--filter', 'status=running', '--format', 'json']
@@ -182,7 +182,6 @@ class DockerComposeTestEnvironment:
 
         http_services = {
             'api': f'{self.settings.api_url}/health',
-            'chat': f'{self.settings.protocol}://{self.settings.chat.host}:{self.settings.chat.port}',
         }
         for service_name, url in http_services.items():
             logger.info(f'Checking {service_name} readiness at {url}')
@@ -289,7 +288,7 @@ class DockerComposeTestEnvironment:
         except subprocess.TimeoutExpired:
             logger.warning('Docker Compose down timed out, forcing container removal')
             # Force kill any remaining containers
-            services = ['postgres', 'redis', 'api', 'chat', 'scheduler', 'traefik']
+            services = ['postgres', 'redis', 'api', 'scheduler', 'traefik']
             containers = [f'icb-test-{s}' for s in services]
             subprocess.run(['docker', 'rm', '-f'] + containers, capture_output=True, timeout=30)
         except Exception as e:

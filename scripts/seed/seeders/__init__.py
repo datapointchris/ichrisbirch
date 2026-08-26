@@ -10,7 +10,6 @@ from scripts.seed.seeders import autofun
 from scripts.seed.seeders import autotasks
 from scripts.seed.seeders import books
 from scripts.seed.seeders import boxes
-from scripts.seed.seeders import chats
 from scripts.seed.seeders import coffee
 from scripts.seed.seeders import cooking_techniques
 from scripts.seed.seeders import countdowns
@@ -39,7 +38,6 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('durations', durations),
     ('patterns', patterns),
     ('boxes', boxes),
-    ('chats', chats),
     ('projects', projects),
     ('recipes', recipes),
     ('cooking_techniques', cooking_techniques),

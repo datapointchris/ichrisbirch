@@ -45,13 +45,3 @@ http:
       middlewares:
         - dev-cors@file
         - dev-security@file
-
-    # Chat (Streamlit) — dedicated subdomain
-    chat:
-      rule: "Host(`chat.docker.localhost`)"
-      service: chat@docker
-      entrypoints:
-        - websecure
-      tls: {}
-      middlewares:
-        - dev-security@file

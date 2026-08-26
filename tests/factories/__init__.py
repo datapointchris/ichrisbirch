@@ -31,8 +31,6 @@ from .base import set_factory_session
 from .books import BookFactory
 from .boxes import BoxFactory
 from .boxes import BoxItemFactory
-from .chats import ChatFactory
-from .chats import ChatMessageFactory
 from .countdowns import CountdownFactory
 from .events import EventFactory
 from .habits import HabitCategoryFactory
@@ -56,8 +54,6 @@ __all__ = [
     'BookFactory',
     'BoxFactory',
     'BoxItemFactory',
-    'ChatFactory',
-    'ChatMessageFactory',
     'CountdownFactory',
     'EventFactory',
     'MoneyWastedFactory',

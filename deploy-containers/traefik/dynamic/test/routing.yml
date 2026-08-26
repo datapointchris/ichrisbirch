@@ -64,16 +64,3 @@ http:
       middlewares:
         - cors-test@file
         - security-headers-test@file
-
-    # Chat (Streamlit) — dedicated subdomain
-    chat:
-      rule: "Host(`chat.test.localhost`)"
-      service: chat@docker
-      entrypoints:
-        - websecure
-      tls:
-        options: test@file
-      middlewares:
-        - cors-test@file
-        - security-headers-test@file
-        - websocket-test@file

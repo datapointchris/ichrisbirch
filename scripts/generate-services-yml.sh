@@ -40,13 +40,6 @@ http:
       loadBalancer:
         servers:
           - url: "http://icb-${color}-vue:80"
-    chat:
-      loadBalancer:
-        servers:
-          - url: "http://icb-${color}-chat:8505"
-        sticky:
-          cookie:
-            name: chat-prod-session
 EOF
 
 # Atomic swap — Traefik watches the directory and reloads within 1-2 seconds

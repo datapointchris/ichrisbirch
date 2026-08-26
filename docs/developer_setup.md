@@ -33,7 +33,6 @@ pre-commit install
 
 - App: <https://app.docker.localhost/>
 - API: <https://api.docker.localhost/>
-- Chat: <https://chat.docker.localhost/>
 
 ## Secrets management
 

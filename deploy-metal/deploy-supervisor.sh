@@ -26,8 +26,8 @@ SUPERVISOR_HOME="$ETC_DIR/supervisor"
 SUPERVISOR_CONFIG_TARGET="$SUPERVISOR_HOME/conf.d"
 SUPERVISOR_LOG_TARGET="$OS_PREFIX/var/log/supervisor"
 
-CONFIG_FILES=("api.conf" "app.conf" "chat.conf" "scheduler.conf")
-LOG_FILES=("supervisord.log" "$PROJECT_NAME-api.log" "$PROJECT_NAME-app.log" "$PROJECT_NAME-chat.log" "$PROJECT_NAME-scheduler.log")
+CONFIG_FILES=("api.conf" "app.conf" "scheduler.conf")
+LOG_FILES=("supervisord.log" "$PROJECT_NAME-api.log" "$PROJECT_NAME-app.log" "$PROJECT_NAME-scheduler.log")
 
 make_directories() {
   sudo mkdir -vp $SUPERVISOR_HOME

@@ -17,7 +17,7 @@ The CLI provides persistent log viewing that automatically reconnects when conta
 # View specific service logs
 ./ops/icbops testing logs api
 ./ops/icbops testing logs app
-./ops/icbops testing logs chat
+./ops/icbops testing logs api
 ./ops/icbops testing logs scheduler
 ```
 

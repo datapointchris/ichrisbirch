@@ -114,17 +114,14 @@ graph TB
     Client[Client Browser] --> Traefik[Traefik Reverse Proxy]
     Traefik -->|"vue-paths (priority 100)"| VUE[Vue 3 Frontend]
     Traefik --> API[FastAPI Backend]
-    Traefik --> CHAT[Streamlit Chat]
     VUE -->|"cross-origin API calls"| API
     API --> DB[(PostgreSQL)]
     API --> CACHE[(Redis)]
-    CHAT --> API
 
     subgraph "Docker Networks"
         Traefik -.-> PROXY[proxy network]
         API -.-> DEFAULT[default network]
         VUE -.-> DEFAULT
-        CHAT -.-> DEFAULT
         DB -.-> DEFAULT
         CACHE -.-> DEFAULT
     end
@@ -159,14 +156,12 @@ This middleware is applied to the API router so Vue's cross-origin API calls are
 
 - **API**: <https://api.docker.localhost/>
 - **App**: <https://app.docker.localhost/>
-- **Chat**: <https://chat.docker.localhost/>
 - **Dashboard**: <https://dashboard.docker.localhost/> (dev/devpass)
 
 ### Testing Environment
 
 - **API**: <https://api.test.localhost:8443/>
 - **App**: <https://app.test.localhost:8443/>
-- **Chat**: <https://chat.test.localhost:8443/>
 - **Dashboard**: <https://dashboard.test.localhost:8443/> (test/testpass)
 
 ### Production Environment
@@ -175,7 +170,6 @@ Production uses **Cloudflare Tunnel** for secure external access without exposin
 
 - **API**: <https://api.ichrisbirch.com/>
 - **App**: <https://app.ichrisbirch.com/>
-- **Chat**: <https://chat.ichrisbirch.com/>
 
 Cloudflare handles TLS termination; Traefik receives HTTP internally and provides routing, CORS, security headers, and rate limiting.
 
@@ -252,13 +246,11 @@ For local development, add entries to `/etc/hosts`:
 # Development environment
 127.0.0.1 api.docker.localhost
 127.0.0.1 app.docker.localhost
-127.0.0.1 chat.docker.localhost
 127.0.0.1 dashboard.docker.localhost
 
 # Test environment
 127.0.0.1 api.test.localhost
 127.0.0.1 app.test.localhost
-127.0.0.1 chat.test.localhost
 127.0.0.1 dashboard.test.localhost
 ```
 
@@ -270,8 +262,7 @@ The health check system validates:
 
 - **Docker Containers**: Status and health checks
 - **DNS Resolution**: Local hosts and external domains
-- **HTTP Endpoints**: API health, app frontend, chat service
-- **WebSocket Support**: Streamlit WebSocket functionality
+- **HTTP Endpoints**: API health, app frontend
 - **Dashboard Access**: Authentication and API availability
 
 ### Health Check Output
@@ -286,7 +277,6 @@ Health Check for dev Environment
 [✓] Container: icb-dev-api (Up 5 minutes (healthy))
 [✓] DNS: api.docker.localhost found in /etc/hosts (127.0.0.1)
 [✓] API Health: HTTP 200 (OK)
-[✓] Chat Service WebSocket: HTTP 426 (WebSocket upgrade supported)
 ```
 
 ## 🔧 Troubleshooting

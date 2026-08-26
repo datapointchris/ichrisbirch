@@ -9,7 +9,7 @@
 #
 # Required env vars: DEPLOY_COLOR (blue|green), plus all vars from .env
 
-# Shared image reference for api, chat, scheduler — same image, different
+# Shared image reference for api, scheduler — same image, different
 # commands. Built by GHA and pushed to ghcr.io (see .github/workflows/release.yml).
 # Blue/green is the docker compose project name; the image tag is color-agnostic.
 x-app-image: &app-image
@@ -76,39 +76,6 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "${DEPLOY_COLOR}-vue"
-    labels:
-      - "traefik.enable=false"
-    networks:
-      - proxy
-      - icb-infra
-
-  # Chat Service (Streamlit)
-  chat:
-    <<: *app-image
-    container_name: icb-${DEPLOY_COLOR}-chat
-    depends_on:
-      - api
-    command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
-    env_file: .env
-    environment:
-      - ENVIRONMENT=production
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - LOG_COLORS=${LOG_COLORS:-false}
-      - LOG_FILE=/var/log/ichrisbirch/chat.log
-    ports: []
-    volumes:
-      - ichrisbirch_logs:/var/log/ichrisbirch
-    restart: always
-    healthcheck:
-      disable: true
-    working_dir: /app
-    logging:
-      <<: *logging
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "${DEPLOY_COLOR}-chat"
     labels:
       - "traefik.enable=false"
     networks:

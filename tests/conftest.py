@@ -344,8 +344,6 @@ SEQUENCES_TO_RESET = [
     'public.books_id_seq',
     'box_packing.boxes_id_seq',
     'box_packing.items_id_seq',
-    'chat.chats_id_seq',
-    'chat.messages_id_seq',
     'public.countdowns_id_seq',
     'public.events_id_seq',
     'habits.categories_id_seq',

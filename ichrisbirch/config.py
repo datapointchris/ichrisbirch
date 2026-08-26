@@ -91,12 +91,6 @@ class OIDCSettings:
         self.cli_user_email: str = os.environ.get('OIDC_CLI_USER_EMAIL') or os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
 
 
-class ChatSettings:
-    def __init__(self) -> None:
-        self.host: str = os.environ['CHAT_HOST']
-        self.port: int = int(os.environ['CHAT_PORT'])
-
-
 class FastAPISettings:
     def __init__(self) -> None:
         self.host: str = os.environ['FASTAPI_HOST']
@@ -106,16 +100,13 @@ class FastAPISettings:
         _protocol = os.environ['PROTOCOL']
         self.allowed_origins: list[str] = [
             '127.0.0.1',
-            '127.0.0.1:8505',
             'https://ichrisbirch.com',
             'https://www.ichrisbirch.com',
-            'https://chat.ichrisbirch.com',
             f'{_protocol}://localhost',
             f'{_protocol}://localhost:4200',
             f'{_protocol}://localhost:5500',
             f'{_protocol}://localhost:6200',
             f'{_protocol}://localhost:8000',
-            f'{_protocol}://localhost:8505',
         ]
 
 
@@ -202,7 +193,6 @@ class Settings:
 
         self.ai = AISettings()
         self.auth = AuthSettings()
-        self.chat = ChatSettings()
         self.fastapi = FastAPISettings()
         self.github = GithubSettings()
         self.oidc = OIDCSettings()
@@ -219,20 +209,9 @@ class Settings:
         return f'{self.protocol}://{self.fastapi.host}{port}'
 
     @property
-    def chat_url(self) -> str:
-        """Internal chat URL for service-to-service communication."""
-        port = f':{self.chat.port}' if self.chat.port else ''
-        return f'{self.protocol}://{self.chat.host}{port}'
-
-    @property
     def api_url_external(self) -> str:
         """External API URL for user-facing links."""
         return f'https://api.{self.domain}'
-
-    @property
-    def chat_url_external(self) -> str:
-        """External chat URL for user-facing links."""
-        return f'https://chat.{self.domain}'
 
 
 def _detect_environment() -> str:

@@ -41,22 +41,18 @@ get_urls() {
     dev | test)
       API_URL="$(icb_service_url "$ENVIRONMENT" api)"
       APP_URL="$(icb_service_url "$ENVIRONMENT" app)"
-      CHAT_URL="$(icb_service_url "$ENVIRONMENT" chat)"
       DASHBOARD_URL="$(icb_service_url "$ENVIRONMENT" dashboard)"
       API_HOST=""
       APP_HOST=""
-      CHAT_HOST=""
       ;;
     prod)
       # Production: hit Traefik locally with Host headers
       # Cloudflare Tunnel routes external traffic, but we can test via localhost
       API_URL="http://localhost:80"
       APP_URL="http://localhost:80"
-      CHAT_URL="http://localhost:80"
       DASHBOARD_URL=""
       API_HOST="$(icb_service_host prod api)"
       APP_HOST="$(icb_service_host prod app)"
-      CHAT_HOST="$(icb_service_host prod chat)"
       ;;
     *)
       print_error "Invalid environment: $ENVIRONMENT"
@@ -106,37 +102,6 @@ check_url() {
   fi
 }
 
-# Check WebSocket functionality
-check_websocket() {
-  local name="$1"
-  local url="$2"
-
-  print_info "Checking WebSocket support for $name"
-
-  local ws_url="${url}/_stcore/stream"
-  local status_code
-
-  if status_code=$(curl -k -s -o /dev/null -w '%{http_code}' \
-    -H "Connection: Upgrade" \
-    -H "Upgrade: websocket" \
-    -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
-    -H "Sec-WebSocket-Version: 13" \
-    --connect-timeout 10 --max-time 30 \
-    "$ws_url" 2>/dev/null); then
-
-    if [ "$status_code" = "426" ] || [ "$status_code" = "101" ]; then
-      print_success "$name WebSocket: HTTP $status_code (WebSocket upgrade supported)"
-      return 0
-    else
-      print_warning "$name WebSocket: HTTP $status_code (May not support WebSocket)"
-      return 1
-    fi
-  else
-    print_error "$name WebSocket: Connection failed"
-    return 1
-  fi
-}
-
 # Check DNS resolution
 check_dns() {
   local domain="$1"
@@ -176,7 +141,6 @@ check_containers() {
         "icb-dev-traefik"
         "icb-dev-api"
         "icb-dev-vue"
-        "icb-dev-chat"
         "icb-dev-postgres"
         "icb-dev-redis"
         "icb-dev-scheduler"
@@ -187,7 +151,6 @@ check_containers() {
         "icb-test-traefik"
         "icb-test-api"
         "icb-test-vue"
-        "icb-test-chat"
         "icb-test-postgres"
         "icb-test-redis"
         "icb-test-scheduler"
@@ -208,7 +171,6 @@ check_containers() {
           "icb-infra-redis"
           "icb-${active_color}-api"
           "icb-${active_color}-vue"
-          "icb-${active_color}-chat"
           "icb-${active_color}-scheduler"
         )
         print_info "Blue/green active color: $active_color"
@@ -218,7 +180,6 @@ check_containers() {
           "icb-prod-traefik"
           "icb-prod-api"
           "icb-prod-vue"
-          "icb-prod-chat"
           "icb-prod-postgres"
           "icb-prod-redis"
           "icb-prod-scheduler"
@@ -306,10 +267,10 @@ main() {
   if [ "$ENVIRONMENT" = "dev" ] || [ "$ENVIRONMENT" = "test" ]; then
     case "$ENVIRONMENT" in
       dev)
-        domains=("api.docker.localhost" "app.docker.localhost" "chat.docker.localhost" "dashboard.docker.localhost")
+        domains=("api.docker.localhost" "app.docker.localhost" "dashboard.docker.localhost")
         ;;
       test)
-        domains=("api.test.localhost" "app.test.localhost" "chat.test.localhost" "dashboard.test.localhost")
+        domains=("api.test.localhost" "app.test.localhost" "dashboard.test.localhost")
         ;;
     esac
 
@@ -322,15 +283,8 @@ main() {
   # Check service endpoints (pass host header for production)
   check_url "API Health" "$API_URL/health" "" "200" "$API_HOST"
   check_url "App Frontend" "$APP_URL/" "" "200" "$APP_HOST"
-  check_url "Chat Service" "$CHAT_URL/" "" "200" "$CHAT_HOST"
 
   echo ""
-
-  # Check WebSocket functionality for chat (skip for prod - requires more complex setup)
-  if [ "$ENVIRONMENT" != "prod" ]; then
-    check_websocket "Chat Service" "$CHAT_URL"
-    echo ""
-  fi
 
   # Check dashboard with authentication
   case "$ENVIRONMENT" in
@@ -363,8 +317,7 @@ show_help() {
   echo "This script checks:"
   echo "  • Docker container status"
   echo "  • DNS resolution (for dev/test)"
-  echo "  • Service endpoints (API, App, Chat)"
-  echo "  • WebSocket functionality"
+  echo "  • Service endpoints (API, App)"
   echo "  • Dashboard access (dev/test only)"
 }
 

@@ -28,7 +28,6 @@ class Refusal(enum.StrEnum):
     INVALID_REFRESH_TOKEN = 'Invalid refresh token'
     INVALID_TOKEN = 'Invalid token'
     MISSING_TOKEN = 'Missing token'
-    USER_OR_INTERNAL_REQUIRED = 'User or internal service authentication required'
 
 
 class NotFoundException(HTTPException):

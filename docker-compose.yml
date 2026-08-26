@@ -39,7 +39,6 @@ services:
       - default
     depends_on:
       - api
-      - chat
     restart: always
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
@@ -204,48 +203,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.vue.loadbalancer.server.port=80"
-
-  # Chat Service (Streamlit) - Production configuration
-  chat:
-    <<: *app-build
-    container_name: icb-prod-chat
-    # Production chat command
-    command: streamlit run ichrisbirch/chat/app.py --server.address=0.0.0.0 --server.port=8505 --server.headless=true
-    env_file: .env
-    environment:
-      - ENVIRONMENT=production
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - LOG_COLORS=${LOG_COLORS:-false}
-      - LOG_FILE=/var/log/ichrisbirch/chat.log
-    # Remove external ports for security (only accessible within Docker network)
-    ports: []
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ichrisbirch_logs:/var/log/ichrisbirch
-    restart: always
-    # Disable health check for chat (Streamlit doesn't have standard health endpoint)
-    healthcheck:
-      disable: true
-    working_dir: /app
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "chat"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.chat.loadbalancer.server.port=8505"
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=chat-session"
-    networks:
-      - proxy
-      - default
 
   # Scheduler Service - Production configuration
   scheduler:

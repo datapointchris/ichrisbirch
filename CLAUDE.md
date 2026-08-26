@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-iChrisBirch is a personal productivity web application with a **multi-service architecture**: FastAPI backend (API), Vue 3 SPA frontend, Streamlit chat interface, and APScheduler service. All services share a PostgreSQL database and Redis cache, orchestrated via Docker Compose with Traefik reverse proxy.
+iChrisBirch is a personal productivity web application with a **multi-service architecture**: FastAPI backend (API), Vue 3 SPA frontend, and APScheduler service. All services share a PostgreSQL database and Redis cache, orchestrated via Docker Compose with Traefik reverse proxy.
 
 **Package Management**: uv for Python (`uv.lock`), npm for Vue (`package-lock.json`)
 
@@ -50,7 +50,7 @@ uv run mypy ichrisbirch/
 pre-commit run --all-files
 ```
 
-**Dev URLs**: `https://app.docker.localhost/`, `https://api.docker.localhost/`, `https://chat.docker.localhost/`
+**Dev URLs**: `https://app.docker.localhost/`, `https://api.docker.localhost/`
 
 **Test URL**: `https://api.test.localhost:8443/`
 
@@ -88,7 +88,6 @@ ssh "$ICB_WEBHOOK_HOST" "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
 | --- | --- | --- |
 | API | FastAPI | RESTful backend, JWT + Authelia auth |
 | Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
-| Chat | Streamlit | AI chat interface with OpenAI |
 | Scheduler | APScheduler | Daily jobs (task priorities, autotasks) |
 
 Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite), `ops/` (the `icbops` bash ops/deploy tool and its helpers), `cli/` (the `icb` Go resource CLI). See the filesystem for the full structure.
@@ -202,7 +201,7 @@ reaches is written down here rather than inferred from the import.
 
 **Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icbops test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the postgres data volume is destroyed on `testing stop`. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
-**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/chat/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `streamlit`, `python -m …`) — **never** `uv run` at container startup. An earlier named-volume setup (`venv_shared`, `uv_cache`) combined with `uv run` caused stale venv state to persist across rebuilds, producing API containers stuck in "health: starting" while uv tried to resync packages at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
+**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. An earlier named-volume setup (`venv_shared`, `uv_cache`) combined with `uv run` caused stale venv state to persist across rebuilds, producing API containers stuck in "health: starting" while uv tried to resync packages at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
 
 **If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
 
