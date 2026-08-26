@@ -175,7 +175,6 @@ def configure_stdlib_logging():
         'httpx': logging.WARNING,
         'matplotlib': logging.INFO,
         'multipart.multipart': logging.INFO,
-        'openai': logging.INFO,
         'python_multipart': logging.INFO,
         'sqlalchemy_json': logging.INFO,
         'tzlocal': logging.INFO,

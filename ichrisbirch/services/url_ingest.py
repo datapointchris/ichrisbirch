@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
+from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.config import Settings
 from ichrisbirch.services.outbound_http import get_page
 from ichrisbirch.services.url_extraction import get_text_content_from_html
@@ -78,7 +79,12 @@ def classify_url_content(url: str, hint: str, content: str, settings: Settings) 
         settings=settings,
     )
     user_message = f'url: {url}\nhint: {hint}\n\n{content}'
-    raw_output = assistant.generate(user_message, max_tokens=8192)
+    try:
+        raw_output = assistant.generate(user_message, max_tokens=8192)
+    except AssistantOutputError as e:
+        # A truncated reply is the assistant's error type, and this endpoint
+        # answers 502 for a classifier that cannot be used at all.
+        raise ClassifierOutputError(str(e), e.raw_output) from e
 
     try:
         parsed = AnthropicAssistant.parse_json(raw_output)

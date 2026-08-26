@@ -34,11 +34,6 @@ def env_bool(name: str) -> bool:
 
 
 class AISettings:
-    class OpenAISettings:
-        def __init__(self) -> None:
-            self.api_key: str = os.environ['AI_OPENAI_API_KEY']
-            self.model = os.environ['AI_OPENAI_DEFAULT_MODEL']
-
     class AnthropicSettings:
         def __init__(self) -> None:
             self.api_key: str = os.environ.get('AI_ANTHROPIC_API_KEY', '')
@@ -54,7 +49,6 @@ class AISettings:
             self.url_import_classifier = (self.PROMPT_DIR / 'url_import_classifier.txt').read_text()
 
     def __init__(self) -> None:
-        self.openai = self.OpenAISettings()
         self.anthropic = self.AnthropicSettings()
         self.prompts = self.PromptSettings()
 
