@@ -29,6 +29,12 @@ PROJECT_ROOT = find_project_root()
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / 'docs' / 'images' / 'generated'
 HASH_CACHE_FILE = PROJECT_ROOT / '.diagram_hash_cache.json'
 
+# The whole package, not just one renderer: a fix to the analyzer changes the
+# output as surely as a new fixture does, and naming a single generator file
+# means the rest of the package can be corrected without the diagrams noticing.
+# Every component hashes this alongside the sources it reads.
+GENERATOR_SOURCES = 'mkdocs_plugins/diagrams/**/*.py'
+
 
 def ensure_output_directory(directory: Path) -> None:
     """Ensure the output directory exists."""
@@ -88,13 +94,10 @@ def update_hash_cache(component: str, file_patterns: list[str]) -> None:
 
 def generate_fixture_diagrams(output_dir: str, force: bool = False) -> None:
     """Generate fixture diagrams based on code analysis."""
-    # The whole package, not just the renderer: a fix to the analyzer changes the
-    # output as surely as a new fixture does, and naming one of the two generator
-    # files meant the analyzer could be corrected without the diagrams noticing.
     fixture_file_patterns = [
         'tests/conftest.py',
         'tests/utils/**/*.py',
-        'mkdocs_plugins/diagrams/**/*.py',
+        GENERATOR_SOURCES,
     ]
 
     if not force and not has_code_changed('fixtures', fixture_file_patterns):
@@ -116,7 +119,7 @@ def generate_all_diagrams(output_dir: str = str(DEFAULT_OUTPUT_DIR), force: bool
 
     generate_fixture_diagrams(output_dir, force)
 
-    testing_file_patterns = ['tests/**/*.py']
+    testing_file_patterns = ['tests/**/*.py', GENERATOR_SOURCES]
     if force or has_code_changed('testing', testing_file_patterns):
         generate_testing_diagrams(output_dir)
         update_hash_cache('testing', testing_file_patterns)
