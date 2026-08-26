@@ -1,21 +1,16 @@
 """Drop the chat schema
 
-`chat.chats` and `chat.messages` hold two tables no code can reach. The chat UI
-runs as its own service on a separate host, and nothing in this repo has read
-either table since the Streamlit app and its `/chat` routes were removed.
+`chat.chats` and `chat.messages` hold two tables nothing in this repo reads.
 
-The downgrade recreates nothing. The stored conversations are not carried to
-the replacement service and no export was taken, so an empty pair of tables
-would restore the shape without the content and read as a working rollback.
+There is no way back. The rows are not carried anywhere and no export was
+taken, so recovery is a database backup taken before this ran.
 
 This is destructive and it runs above the deploy's verification gate.
 `scripts/deploy-homelab.sh` calls `run_migrations`, then `run_smoke_tests`, and
-prints `POINT OF NO RETURN` below both — so a smoke failure tears down the
-deploy color and leaves the previous release serving, with the tables already
-gone. That ordering is unchanged. What makes this safe is that no running color
-reads the tables: a successful deploy removes the old color, so only one color
-serves at a time, and that color has carried no chat code since the removal
-shipped.
+prints `POINT OF NO RETURN` below both, so a smoke failure tears down the
+deploy color and leaves the previous release serving with the tables already
+gone. What makes that survivable is that no running color reads the tables: a
+successful deploy removes the old color, so one color serves at a time.
 
 Revision ID: d3e4f5a6b7c8
 Revises: c2d3e4f5a6b7
@@ -39,4 +34,12 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    pass
+    # Refuse here rather than let the next `upgrade head` fail. A `pass` lets
+    # alembic stamp c2d3e4f5a6b7 over a database whose chat schema is already
+    # gone, and the re-upgrade then dies on `drop_table` with nothing to drop —
+    # stuck below head with no way forward. Failing now leaves the database
+    # consistent and at head.
+    raise NotImplementedError(
+        'd3e4f5a6b7c8 drops the chat schema and its rows. There is no downgrade — '
+        'restore from a database backup taken before it ran.'
+    )

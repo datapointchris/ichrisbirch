@@ -191,6 +191,15 @@ These require two separate deploys:
 | Rename column | Add new column + backfill + update code to use new | Drop old column |
 | Drop column | Remove all code references | Drop column from schema |
 | Change column type | Add new column with new type + backfill | Drop old column |
+| Drop a table or schema | Remove all code references | Drop the table or schema |
+
+Phase 2 of a drop waits for a deploy that phase 1 has already completed. The
+migration runs before the smoke gate and `POINT OF NO RETURN` sits below both,
+so a smoke failure tears the deploy color down with the tables already gone and
+leaves the previous release serving. That release is safe only if it carries no
+reference to what was dropped, which is what phase 1 establishes. Read the
+active color before shipping phase 2 — a successful deploy removes the old
+color, so one color serves at a time and it is that color which must be clean.
 
 ### Example: Adding NOT NULL Constraint
 
