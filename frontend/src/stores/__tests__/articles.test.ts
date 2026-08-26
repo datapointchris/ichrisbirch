@@ -391,7 +391,7 @@ describe('useArticlesStore', () => {
   })
 
   it('sets error on summarize failure', async () => {
-    const apiError = new ApiError({ message: 'API 500', detail: 'OpenAI error', status: 500 })
+    const apiError = new ApiError({ message: 'API 500', detail: 'Assistant error', status: 500 })
     mockApi.post.mockRejectedValue(apiError)
     const store = useArticlesStore()
 

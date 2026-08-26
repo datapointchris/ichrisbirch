@@ -1,5 +1,4 @@
 import html as html_escaping
-import json
 
 import markdown
 import pendulum
@@ -20,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.ai.assistants.openai import OpenAIAssistant
+from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
@@ -35,6 +34,34 @@ from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 router = APIRouter()
+
+
+def _parse_article_json(raw: str, name: str) -> dict:
+    """Parse an assistant's reply as a JSON object, or fail with what it said.
+
+    The Messages API cannot constrain a reply to an object, so one that parses
+    to a list, or does not parse at all, arrives here. Both become a bad gateway
+    carrying the raw text, which is what makes prompt drift diagnosable without
+    a log dive. Without the check the caller reaches `.get` on a list and raises
+    AttributeError, which surfaces as a 500 saying nothing.
+    """
+    try:
+        parsed = AnthropicAssistant.parse_json(raw)
+    except Exception as e:
+        logger.error('article_assistant_output_not_json', assistant=name, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={'message': f'{name} returned non-JSON output: {e}', 'raw_assistant_output': raw},
+        ) from e
+
+    if not isinstance(parsed, dict):
+        logger.error('article_assistant_output_not_an_object', assistant=name, type=type(parsed).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={'message': f'{name} returned a non-object top-level value', 'raw_assistant_output': raw},
+        )
+
+    return parsed
 
 
 def _get_formatted_title(soup: BeautifulSoup) -> str:
@@ -121,7 +148,7 @@ async def create(article: schemas.ArticleCreate, session: DbSession):
 
 
 def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
-    """Fetch URL, summarize via OpenAI, create article.
+    """Fetch URL, summarize via Claude, create article.
 
     Used by create-from-url endpoint and bulk import worker.
     """
@@ -140,13 +167,12 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
     else:
         text_content = get_text_content_from_html(soup)
 
-    assistant = OpenAIAssistant(
+    assistant = AnthropicAssistant(
         name='Article Summary with Tags',
-        instructions=settings.ai.prompts.article_summary_tags,
-        response_format={'type': 'json_object'},
+        system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    data = json.loads(assistant.generate(text_content))
+    data = _parse_article_json(assistant.generate(text_content, max_tokens=8192), assistant.name)
 
     article = models.Article(
         title=title,
@@ -236,7 +262,7 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     """Summarize youtube video or article based on the url.
 
     Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video summary. If article,
-    use html content for summary. Using openai chat to summarize and provide tags.
+    use html content for summary. Claude produces the summary and the tags.
     """
     request_data = await request.json()
     logger.debug('article_summarize_request', data=request_data)
@@ -251,13 +277,12 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     else:
         text_content = get_text_content_from_html(soup)
 
-    assistant = OpenAIAssistant(
+    assistant = AnthropicAssistant(
         name='Article Summary with Tags',
-        instructions=settings.ai.prompts.article_summary_tags,
-        response_format={'type': 'json_object'},
-        settings=get_settings(),
+        system_prompt=settings.ai.prompts.article_summary_tags,
+        settings=settings,
     )
-    data = json.loads(assistant.generate(text_content))
+    data = _parse_article_json(assistant.generate(text_content, max_tokens=8192), assistant.name)
     return schemas.ArticleSummary(title=title, summary=data.get('summary'), tags=data.get('tags'))
 
 
@@ -266,7 +291,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     """Summarize youtube video or article based on the url.
 
     Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If article, use html content
-    for summary. Using openai chat to summarize and provide tags.
+    for summary. Claude produces the insights.
     """
     request_data = await request.json()
     logger.debug('article_insights_request', data=request_data)
@@ -294,8 +319,8 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     else:
         text_content = get_text_content_from_html(soup)
 
-    assistant = OpenAIAssistant(name='Article Insights', settings=settings, instructions=settings.ai.prompts.article_insights)
-    mkd = assistant.generate(text_content)
+    assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
+    mkd = assistant.generate(text_content, max_tokens=8192)
     full_mkd = f'# {title}\n{mkd}'
 
     # Escaped before rendering, because Python-Markdown passes raw HTML straight

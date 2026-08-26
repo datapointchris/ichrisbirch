@@ -8,6 +8,7 @@ import redis
 from fastapi import status
 
 from ichrisbirch import schemas
+from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -110,21 +111,23 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_get_page, article_crud
     mock_formatter.format_transcript.return_value = 'Test transcript text'
     mock_text_formatter.return_value = mock_formatter
 
-    # Mock OpenAIAssistant
-    with patch('ichrisbirch.ai.assistants.openai.OpenAIAssistant') as mock_assistant_class:
-        mock_assistant = MagicMock()
-        mock_assistant_class.return_value = mock_assistant
-        expected_summary = 'Test summary'
-        expected_tags = ['test', 'article']
-        mock_assistant.generate.return_value = json.dumps({'summary': expected_summary, 'tags': expected_tags})
+    mock_assistant = MagicMock()
+    expected_summary = 'Test summary'
+    expected_tags = ['test', 'article']
+    mock_assistant.generate.return_value = json.dumps({'summary': expected_summary, 'tags': expected_tags})
 
-        with patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant):
-            response = client.post(f'{ENDPOINT}summarize/', json={'url': 'https://ichrisbirch.com/test-article'})
-            assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-            data = response.json()
-            assert data['title'] == 'Test Article'
-            assert data['summary'] == expected_summary
-            assert all(tag in data['tags'] for tag in expected_tags)
+    with patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant') as mock_assistant_cls:
+        mock_assistant_cls.return_value = mock_assistant
+        # parse_json is a staticmethod reached through the class, so the mock
+        # must delegate to the real one or every reply parses to a MagicMock.
+        mock_assistant_cls.parse_json = AnthropicAssistant.parse_json
+
+        response = client.post(f'{ENDPOINT}summarize/', json={'url': 'https://ichrisbirch.com/test-article'})
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['title'] == 'Test Article'
+        assert data['summary'] == expected_summary
+        assert all(tag in data['tags'] for tag in expected_tags)
 
 
 @patch('ichrisbirch.api.endpoints.articles.get_page')
@@ -140,18 +143,15 @@ def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tes
     # Mock YouTube transcript
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
 
-    # Mock OpenAIAssistant
-    with patch('ichrisbirch.ai.assistants.openai.OpenAIAssistant') as mock_assistant_class:
-        mock_assistant = MagicMock()
-        mock_assistant.generate.return_value = '## Insights\n\nThis is a test insight.'
-        mock_assistant_class.return_value = mock_assistant
+    mock_assistant = MagicMock()
+    mock_assistant.generate.return_value = '## Insights\n\nThis is a test insight.'
 
-        with patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant):
-            response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
-            assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-            content = response.content.decode('utf-8')
-            assert '<h1>Test Article</h1>' in content
-            assert '<h2>Insights</h2>' in content
+    with patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant', return_value=mock_assistant):
+        response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        content = response.content.decode('utf-8')
+        assert '<h1>Test Article</h1>' in content
+        assert '<h2>Insights</h2>' in content
 
 
 @patch('ichrisbirch.api.endpoints.articles.get_page')
@@ -172,7 +172,7 @@ def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_f
     mock_assistant = MagicMock()
     mock_assistant.generate.return_value = '## Insights\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>'
 
-    with patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant):
+    with patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant', return_value=mock_assistant):
         response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
 
     content = response.content.decode('utf-8')
@@ -391,29 +391,38 @@ def test_create_article_without_save_date_returns_422(txn_api_logged_in):
 class TestCreateFromUrl:
     """Tests for POST /articles/create-from-url/ endpoint."""
 
-    def _mock_externals(self):
-        """Return the page-fetch and OpenAI patch context managers."""
+    def _mock_externals(self, generate_returns: str | None = None):
+        """Return the page-fetch and assistant patch context managers.
+
+        The assistant patch replaces the class, and the endpoint reaches
+        parse_json through it, so the mock delegates that to the real
+        staticmethod. Without it every reply parses to a MagicMock and the
+        endpoint reports a bad gateway.
+        """
         mock_response = MagicMock()
         mock_response.content = b'<html><head><title>Test Article | Website</title></head><body><p>Content here.</p></body></html>'
         mock_response.raise_for_status.return_value = mock_response
 
         mock_assistant = MagicMock()
-        mock_assistant.generate.return_value = json.dumps(
+        mock_assistant.generate.return_value = generate_returns or json.dumps(
             {
                 'summary': 'A test summary.',
                 'tags': ['python', 'testing'],
             }
         )
 
+        mock_assistant_cls = MagicMock(return_value=mock_assistant)
+        mock_assistant_cls.parse_json = AnthropicAssistant.parse_json
+
         get_page_patch = patch('ichrisbirch.api.endpoints.articles.get_page', return_value=mock_response)
-        openai_patch = patch('ichrisbirch.api.endpoints.articles.OpenAIAssistant', return_value=mock_assistant)
-        return get_page_patch, openai_patch
+        assistant_patch = patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant', mock_assistant_cls)
+        return get_page_patch, assistant_patch
 
     def test_create_from_url(self, txn_api_logged_in):
         """Create article from URL: fetches, summarizes, persists."""
         client, _ = txn_api_logged_in
-        get_page_patch, openai_patch = self._mock_externals()
-        with get_page_patch, openai_patch:
+        get_page_patch, assistant_patch = self._mock_externals()
+        with get_page_patch, assistant_patch:
             response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/test'})
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
@@ -425,8 +434,8 @@ class TestCreateFromUrl:
     def test_create_from_url_duplicate_returns_409(self, txn_api_logged_in):
         """Duplicate URL returns 409 Conflict."""
         client, _ = txn_api_logged_in
-        get_page_patch, openai_patch = self._mock_externals()
-        with get_page_patch, openai_patch:
+        get_page_patch, assistant_patch = self._mock_externals()
+        with get_page_patch, assistant_patch:
             response1 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
             assert response1.status_code == status.HTTP_201_CREATED
             response2 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
@@ -435,14 +444,48 @@ class TestCreateFromUrl:
     def test_create_from_url_with_notes(self, txn_api_logged_in):
         """Notes are persisted alongside the auto-summary."""
         client, _ = txn_api_logged_in
-        get_page_patch, openai_patch = self._mock_externals()
-        with get_page_patch, openai_patch:
+        get_page_patch, assistant_patch = self._mock_externals()
+        with get_page_patch, assistant_patch:
             response = client.post(
                 f'{ENDPOINT}create-from-url/',
                 json={'url': 'https://example.com/noted', 'notes': 'Read later'},
             )
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         assert response.json()['notes'] == 'Read later'
+
+    def test_create_from_url_reports_non_json_output_as_a_bad_gateway(self, txn_api_logged_in):
+        """The Messages API cannot pin a reply to JSON, so prose can arrive.
+
+        The raw text comes back in the response, which is what makes prompt
+        drift diagnosable without reading the logs.
+        """
+        client, _ = txn_api_logged_in
+        get_page_patch, assistant_patch = self._mock_externals(generate_returns='I could not summarize that page.')
+        with get_page_patch, assistant_patch:
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/prose'})
+        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        assert response.json()['detail']['raw_assistant_output'] == 'I could not summarize that page.'
+
+    def test_create_from_url_reports_a_json_list_as_a_bad_gateway(self, txn_api_logged_in):
+        """Valid JSON of the wrong shape reaches .get and would raise AttributeError."""
+        client, _ = txn_api_logged_in
+        get_page_patch, assistant_patch = self._mock_externals(generate_returns='["summary", "tags"]')
+        with get_page_patch, assistant_patch:
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/list'})
+        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        assert 'non-object' in response.json()['detail']['message']
+
+    def test_create_from_url_accepts_a_code_fenced_reply(self, txn_api_logged_in):
+        """Claude wraps JSON in a fence often enough that parse_json strips one."""
+        client, _ = txn_api_logged_in
+        fenced = '```json\n{"summary": "Fenced summary.", "tags": ["fenced"]}\n```'
+        get_page_patch, assistant_patch = self._mock_externals(generate_returns=fenced)
+        with get_page_patch, assistant_patch:
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/fenced'})
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+        data = response.json()
+        assert data['summary'] == 'Fenced summary.'
+        assert data['tags'] == ['fenced']
 
 
 # ---------------------------------------------------------------------------

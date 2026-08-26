@@ -169,12 +169,13 @@ The one sanctioned subprocess is in `scheduler/jobs.py`.
 Four dependencies see more than the code that calls them, so what each one
 reaches is written down here rather than inferred from the import.
 
-- **`openai` and `anthropic`** receive user content, not metadata. `ichrisbirch/ai/assistants/` wraps
-  both; the callers are `api/endpoints/articles.py`, `api/endpoints/recipes.py` and
-  `services/url_ingest.py`. What crosses the boundary is the full text of a saved article, a recipe
-  being imported, and the contents of any URL ingested. One compromised egress leaks whatever has
-  been read or cooked, which is personal but not credential-bearing — no secret, token or password
-  passes through either client.
+- **`anthropic`** receives user content, not metadata, and is the only model provider the app
+  talks to. `ichrisbirch/ai/assistants/anthropic.py` wraps it; the callers are
+  `api/endpoints/articles.py`, `api/endpoints/recipes.py` and `services/url_ingest.py`. What
+  crosses the boundary is the full text of a saved article, a recipe being imported, and the
+  contents of any URL ingested. One compromised egress leaks whatever has been read or cooked,
+  which is personal but not credential-bearing — no secret, token or password passes through the
+  client.
 - **`docker`** is a *runtime* dependency, and `api/endpoints/admin.py` builds a client with
   `docker.from_env()` to report container status on the admin page. That gives the API process a
   handle on the host daemon, which is the widest reach in the list: a daemon socket is
