@@ -13,8 +13,6 @@ from . import AutoTaskFactory
 from . import BookFactory
 from . import BoxFactory
 from . import BoxItemFactory
-from . import ChatFactory
-from . import ChatMessageFactory
 from . import CountdownFactory
 from . import EventFactory
 from . import HabitCategoryFactory
@@ -357,49 +355,6 @@ class TestArticleFactory:
         article = ArticleFactory(read=True)
         assert article.last_read_date is not None
         assert article.read_count == 1
-
-
-class TestChatFactory:
-    """Test ChatFactory functionality."""
-
-    def test_create_basic_chat(self, factory_session):
-        """Test creating a chat with defaults."""
-        chat = ChatFactory()
-        assert chat.id is not None
-        assert chat.name.startswith('Test Chat')
-        assert chat.category == 'General'
-
-    def test_chat_with_subcategory(self, factory_session):
-        """Test creating a chat with subcategory."""
-        chat = ChatFactory(with_subcategory=True)
-        assert chat.subcategory is not None
-
-
-class TestChatMessageFactory:
-    """Test ChatMessageFactory functionality."""
-
-    def test_create_message_with_chat(self, factory_session):
-        """Test creating a message with auto-generated chat."""
-        message = ChatMessageFactory()
-        assert message.id is not None
-        assert message.chat is not None
-        assert message.role == 'user'
-
-    def test_assistant_message(self, factory_session):
-        """Test creating an assistant message."""
-        message = ChatMessageFactory(assistant=True)
-        assert message.role == 'assistant'
-
-    def test_message_in_specific_chat(self, factory_session):
-        """Test creating messages in a specific chat."""
-        chat = ChatFactory(name='Python Help')
-        msg1 = ChatMessageFactory.user_message('How do I use decorators?', chat=chat)
-        msg2 = ChatMessageFactory.assistant_message('Decorators are...', chat=chat)
-
-        assert msg1.chat_id == chat.id
-        assert msg2.chat_id == chat.id
-        assert msg1.role == 'user'
-        assert msg2.role == 'assistant'
 
 
 class TestFactoryIntegration:

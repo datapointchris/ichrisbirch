@@ -35,7 +35,6 @@ Add these entries to your `/etc/hosts` file:
 # Add to /etc/hosts (one-time setup)
 echo "127.0.0.1 api.docker.localhost" | sudo tee -a /etc/hosts
 echo "127.0.0.1 app.docker.localhost" | sudo tee -a /etc/hosts
-echo "127.0.0.1 chat.docker.localhost" | sudo tee -a /etc/hosts
 echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 ```
 
@@ -74,7 +73,6 @@ Open these URLs in your browser (**no security warnings with mkcert**):
 
 - **API**: <https://api.docker.localhost/>
 - **App**: <https://app.docker.localhost/> (Vue 3 SPA)
-- **Chat**: <https://chat.docker.localhost/>
 - **Dashboard**: <https://dashboard.docker.localhost/> (dev/devpass)
 
 ## 🎯 What You Get
@@ -118,7 +116,6 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 - **FastAPI Backend**: `https://api.docker.localhost/`
 - **App Frontend**: `https://app.docker.localhost/` (Vue 3 SPA)
-- **Streamlit Chat**: `https://chat.docker.localhost/`
 - **Traefik Dashboard**: `https://dashboard.docker.localhost/` (dev/devpass)
 
 > **Note**: All 14 pages are served by Vue 3 at `app.docker.localhost`. Routing is controlled by `deploy-containers/traefik/vue-paths.txt`.
@@ -135,12 +132,10 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 # [✓] icb-dev-postgres   (Up 2 minutes (healthy))
 # [✓] icb-dev-api        (Up 2 minutes (healthy))
 # [✓] icb-dev-vue        (Up 2 minutes (healthy))
-# [✓] icb-dev-chat       (Up 2 minutes)
 #
 # Development environment URLs:
 #   API:       https://api.docker.localhost/
 #   APP:       https://app.docker.localhost/
-#   CHAT:      https://chat.docker.localhost/
 #   DASHBOARD: https://dashboard.docker.localhost/
 ```
 

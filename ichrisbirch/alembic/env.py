@@ -17,8 +17,6 @@ from ichrisbirch.models import BookProgress  # noqa
 from ichrisbirch.models import Box  # noqa
 from ichrisbirch.models import BoxItem  # noqa
 from ichrisbirch.models import BoxSize  # noqa
-from ichrisbirch.models import Chat  # noqa
-from ichrisbirch.models import ChatMessage  # noqa
 from ichrisbirch.models import Countdown  # noqa
 from ichrisbirch.models import Duration  # noqa
 from ichrisbirch.models import DurationNote  # noqa

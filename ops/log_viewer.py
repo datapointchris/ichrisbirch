@@ -42,7 +42,6 @@ LEVEL_STYLE = {
 SERVICE_STYLE = {
     'api': 'bright_green',
     'vue': 'bright_blue',
-    'chat': 'orange1',
     'scheduler': 'yellow',
     'traefik': 'cyan',
     'redis': 'red',

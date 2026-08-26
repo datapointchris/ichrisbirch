@@ -188,8 +188,6 @@ def get_test_runner_settings() -> Settings:
     test_settings.fastapi.port = 8001
     test_settings.redis.host = 'localhost'
     test_settings.redis.port = 6380
-    test_settings.chat.host = 'localhost'
-    test_settings.chat.port = 8507
     return test_settings
 
 
@@ -278,7 +276,6 @@ def get_test_data() -> dict[str, dict[str, Any]]:
     Note: Some child models are inserted via relationships (not directly):
     - boxitems: inserted via Box.items relationship
     - habits: inserted via HabitCategory.habits relationship
-    - chatmessages: inserted via Chat.messages relationship
     These have empty data but are kept for delete_test_data sequence resets.
     """
     return {
@@ -290,8 +287,6 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'coffee_shops': {'model': models.CoffeeShop, 'data': tests.test_data.coffee_shops.BASE_DATA},
         'coffee_beans': {'model': models.CoffeeBean, 'data': tests.test_data.coffee_beans.BASE_DATA},
         'boxitems': {'model': models.BoxItem, 'data': []},  # Inserted via Box.items relationship
-        'chats': {'model': models.Chat, 'data': tests.test_data.chats.BASE_DATA},
-        'chatmessages': {'model': models.ChatMessage, 'data': []},  # Inserted via Chat.messages relationship
         'cooking_techniques': {'model': models.CookingTechnique, 'data': tests.test_data.cooking_techniques.BASE_DATA},
         'countdowns': {'model': models.Countdown, 'data': tests.test_data.countdowns.BASE_DATA},
         'durations': {'model': models.Duration, 'data': tests.test_data.durations.BASE_DATA},

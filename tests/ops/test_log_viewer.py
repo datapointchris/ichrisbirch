@@ -7,7 +7,7 @@ from ops import log_viewer
 def test_parse_prefix_strips_icb_env_prefix():
     assert log_viewer.parse_prefix('icb-dev-api       | {"event":"test"}') == ('api', '{"event":"test"}')
     assert log_viewer.parse_prefix('icb-blue-api | {"event":"x"}') == ('api', '{"event":"x"}')
-    assert log_viewer.parse_prefix('icb-test-chat  | blah') == ('chat', 'blah')
+    assert log_viewer.parse_prefix('icb-test-scheduler  | blah') == ('scheduler', 'blah')
     assert log_viewer.parse_prefix('icb-infra-traefik | startup') == ('traefik', 'startup')
 
 

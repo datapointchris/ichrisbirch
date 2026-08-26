@@ -3,7 +3,6 @@ from tests.test_data import autofun
 from tests.test_data import autotasks
 from tests.test_data import books
 from tests.test_data import boxes
-from tests.test_data import chats
 from tests.test_data import coffee_beans
 from tests.test_data import coffee_shops
 from tests.test_data import cooking_techniques
@@ -28,7 +27,6 @@ __all__ = [
     'coffee_shops',
     'boxes',
     # 'boxitems' - now inserted via Box.items relationship
-    'chats',
     'cooking_techniques',
     'countdowns',
     'patterns',

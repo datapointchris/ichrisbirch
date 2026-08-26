@@ -38,11 +38,9 @@ class TestingArchitectureDiagramRenderer:
             c.node('DB', 'PostgreSQL in Docker', shape='cylinder')
             c.node('REDIS', 'Redis in Docker', shape='cylinder')
             c.node('API', 'FastAPI Server', shape='box')
-            c.node('CHAT', 'Streamlit Chat', shape='box')
             c.edge('TE', 'DB')
             c.edge('TE', 'REDIS')
             c.edge('TE', 'API')
-            c.edge('TE', 'CHAT')
 
         with dot.subgraph(name='cluster_test_clients') as c:
             c.attr(label='Test Clients', style='filled', color='#228B22', fillcolor='#F0FFF0')
@@ -98,7 +96,6 @@ class TestingArchitectureDiagramRenderer:
             c.node('DB', 'PostgreSQL in Docker', shape='cylinder')
             c.node('REDIS', 'Redis in Docker', shape='cylinder')
             c.node('API', 'FastAPI Server', shape='box')
-            c.node('CHAT', 'Streamlit Chat', shape='box')
 
         with dot.subgraph(name='cluster_test_execution') as c:
             c.attr(label='Test Execution', style='filled', color='#B22222', fillcolor='#FFF0F0')
@@ -109,7 +106,6 @@ class TestingArchitectureDiagramRenderer:
         dot.edge('TE', 'DB', label='Creates')
         dot.edge('TE', 'REDIS', label='Starts')
         dot.edge('TE', 'API', label='Starts')
-        dot.edge('TE', 'CHAT', label='Starts')
 
         dot.edge('TS', 'TE', label='Uses')
         dot.edge('TT', 'TE', label='Cleans up')
@@ -135,7 +131,6 @@ class TestingArchitectureDiagramRenderer:
             ('Docker', 'Docker Compose'),
             ('DB', 'PostgreSQL'),
             ('API', 'FastAPI Server'),
-            ('CHAT', 'Streamlit Chat'),
         ]
 
         for id, label in participants:
@@ -161,8 +156,6 @@ class TestingArchitectureDiagramRenderer:
         self._add_sequence_edge(dot, 'DB', 'TE', 'Schemas created', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'API', 'Start FastAPI server', **edge_style['request'])
         self._add_sequence_edge(dot, 'API', 'TE', 'Server started', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'CHAT', 'Start Streamlit chat', **edge_style['request'])
-        self._add_sequence_edge(dot, 'CHAT', 'TE', 'Server started', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment ready', **edge_style['response'])
 
         dot.render(output_path, format='svg', cleanup=True)
@@ -184,7 +177,6 @@ class TestingArchitectureDiagramRenderer:
             ('Docker', 'Docker Compose'),
             ('DB', 'PostgreSQL'),
             ('API', 'FastAPI Server'),
-            ('CHAT', 'Streamlit Chat'),
         ]
 
         for id, label in participants:
@@ -206,8 +198,6 @@ class TestingArchitectureDiagramRenderer:
         self._add_sequence_edge(dot, 'DB', 'Docker', 'Stopped', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'API', 'Kill FastAPI server process', **edge_style['request'])
         self._add_sequence_edge(dot, 'API', 'TE', 'Process terminated', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'CHAT', 'Stop Streamlit chat', **edge_style['request'])
-        self._add_sequence_edge(dot, 'CHAT', 'TE', 'Container stopped', **edge_style['response'])
         self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment cleaned up', **edge_style['response'])
 
         dot.render(output_path, format='svg', cleanup=True)

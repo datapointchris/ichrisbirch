@@ -22,7 +22,6 @@ http:
         accessControlAllowOriginList:
           - "https://api.test.localhost:8443"
           - "https://app.test.localhost:8443"
-          - "https://chat.test.localhost:8443"
           - "https://dashboard.test.localhost:8443"
         accessControlAllowHeaders:
           - "Accept"
@@ -58,16 +57,6 @@ http:
           X-Environment: "testing"
           Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.test.localhost:8443 wss: ws:; font-src 'self' data:;"
           Permissions-Policy: "geolocation=(), microphone=(), camera=()"
-
-    # WebSocket support for Streamlit chat service
-    websocket-test:
-      headers:
-        customRequestHeaders:
-          Connection: "upgrade"
-          Upgrade: "websocket"
-          Sec-WebSocket-Extensions: ""
-          Sec-WebSocket-Key: ""
-          Sec-WebSocket-Version: ""
 
     # Rate limiting (permissive for test)
     rate-limit-test:

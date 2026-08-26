@@ -19,10 +19,10 @@ The test environment uses Docker Compose to provide isolated, reproducible infra
 │       │             │             │             │               │
 │       └─────────────┴─────────────┴─────────────┘               │
 │                           │                                     │
-│  ┌──────────┐  ┌──────────┴───────┐  ┌──────────┐              │
-│  │   Chat   │  │    Scheduler     │  │ Traefik  │              │
-│  │  :8507   │  │  (creates jobs)  │  │  :8443   │              │
-│  └──────────┘  └──────────────────┘  └──────────┘              │
+│                ┌──────────┴───────┐  ┌──────────┐              │
+│                │    Scheduler     │  │ Traefik  │              │
+│                │  (creates jobs)  │  │  :8443   │              │
+│                └──────────────────┘  └──────────┘              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -176,7 +176,6 @@ The test and development environments can run simultaneously on different ports:
 | Redis | 6379 | 6380 |
 | API | 8000 | 8001 |
 | App | 5000 | 5001 |
-| Chat | 8505 | 8507 |
 | Traefik HTTPS | 443 | 8443 |
 
 This allows you to run tests without stopping your development environment.
@@ -194,7 +193,7 @@ The CI workflow starts containers before pytest runs:
   run: |
     docker compose ... up -d --build postgres redis
     sleep 10
-    docker compose ... up -d --build api app chat scheduler
+    docker compose ... up -d --build api app scheduler
     sleep 30
 ```
 

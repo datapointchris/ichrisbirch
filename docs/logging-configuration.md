@@ -393,12 +393,6 @@ scheduler:
     - LOG_FILE=/var/log/ichrisbirch/scheduler.log
   volumes:
     - ichrisbirch_logs:/var/log/ichrisbirch
-
-chat:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/chat.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
 ```
 
 All services share the same log volume, allowing the admin UI to aggregate logs from all services.

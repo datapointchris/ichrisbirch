@@ -10,8 +10,6 @@ from ichrisbirch.models.book import BookProgress
 from ichrisbirch.models.box import Box
 from ichrisbirch.models.box import BoxSize
 from ichrisbirch.models.boxitem import BoxItem
-from ichrisbirch.models.chat import Chat
-from ichrisbirch.models.chatmessage import ChatMessage
 from ichrisbirch.models.coffee import BrewMethod
 from ichrisbirch.models.coffee import CoffeeBean
 from ichrisbirch.models.coffee import CoffeeShop
@@ -61,11 +59,9 @@ __all__ = [
     'BoxItem',
     'BoxSize',
     'BrewMethod',
-    'Chat',
     'CoffeeBean',
     'CoffeeShop',
     'RoastLevel',
-    'ChatMessage',
     'Countdown',
     'Duration',
     'DurationNote',

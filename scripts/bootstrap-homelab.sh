@@ -298,7 +298,7 @@ DO \$\$
 DECLARE
     s TEXT;
 BEGIN
-    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','chat','habits'])
+    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','habits'])
     LOOP
         EXECUTE format('GRANT ALL ON SCHEMA %I TO icb_app', s);
         EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON TABLES TO icb_app', s);
@@ -320,7 +320,7 @@ END
     sleep 10
 
     # Stop app services during restore
-    docker stop icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler 2>/dev/null || true
+    docker stop icb-prod-api icb-prod-app icb-prod-scheduler 2>/dev/null || true
 
     # Create role if needed
     local pg_password
@@ -340,7 +340,7 @@ DO \$\$
 DECLARE
     s TEXT;
 BEGIN
-    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','chat','habits'])
+    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','habits'])
     LOOP
         EXECUTE format('GRANT ALL ON SCHEMA %I TO icb_app', s);
         EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON TABLES TO icb_app', s);
@@ -354,7 +354,7 @@ END
     docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner <"$backup_path" || true
 
     # Start services back up
-    docker start icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
+    docker start icb-prod-api icb-prod-app icb-prod-scheduler
 
     log_success "Database restored"
     rm /tmp/ichrisbirch_db_restore
@@ -383,7 +383,6 @@ print_summary() {
   echo "Configure tunnel routes in Cloudflare dashboard:"
   echo "  - ichrisbirch.com -> http://localhost:80"
   echo "  - api.ichrisbirch.com -> http://localhost:80"
-  echo "  - chat.ichrisbirch.com -> http://localhost:80"
   echo "  - www.ichrisbirch.com -> http://localhost:80"
   echo ""
   echo "Documentation: $INSTALL_DIR/docs/homelab-deployment.md"

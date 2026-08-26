@@ -17,7 +17,7 @@ Internet → Cloudflare (SSL/CDN) → Cloudflare Tunnel → Traefik (port 80) �
 
 - **Infrastructure**: A self-hosted Linux container running Docker
 - **Database**: PostgreSQL restored from AWS backup, working
-- **Containers**: All services running (postgres, redis, api, app, chat, scheduler, traefik)
+- **Containers**: All services running (postgres, redis, api, app, scheduler, traefik)
 - **External Access**: Via Cloudflare Tunnel
 
 ## Quick Start (Bootstrap Script)
@@ -129,14 +129,8 @@ All routes point to Traefik on port 80, which handles internal routing:
 | ichrisbirch.com | <http://localhost:80> | Flask app (root domain) |
 | <www.ichrisbirch.com> | <http://localhost:80> | Flask app (www redirect) |
 | api.ichrisbirch.com | <http://localhost:80> | FastAPI backend |
-| chat.ichrisbirch.com | <http://localhost:80> | Streamlit chat (enable WebSockets!) |
 
 Traefik routes based on the `Host` header to the appropriate service.
-
-For chat (WebSocket support):
-
-- Click the route → **Additional settings**
-- Enable **WebSockets**
 
 ## Deployment
 
@@ -199,7 +193,6 @@ Once tunnel is configured:
 
 - **App**: <https://ichrisbirch.com> (also <www.ichrisbirch.com>)
 - **API**: <https://api.ichrisbirch.com>
-- **Chat**: <https://chat.ichrisbirch.com>
 
 ## SSM Parameters
 
@@ -257,10 +250,6 @@ icbops prod status
 docker logs icb-prod-traefik
 ```
 
-### WebSocket Issues (Chat)
-
-Ensure WebSockets are enabled in the tunnel route settings for chat.ichrisbirch.com.
-
 ### Database Role Does Not Exist
 
 If you see `FATAL: role "icb_app" does not exist`:
@@ -280,7 +269,7 @@ If you need to restore from a `.dump` file:
 
 ```bash
 # Stop app services first
-docker stop icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
+docker stop icb-prod-api icb-prod-app icb-prod-scheduler
 
 # Terminate existing connections and recreate database
 docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
@@ -291,7 +280,7 @@ docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch 
 cat /path/to/backup.dump | docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner
 
 # Start services
-docker start icb-prod-api icb-prod-app icb-prod-chat icb-prod-scheduler
+docker start icb-prod-api icb-prod-app icb-prod-scheduler
 ```
 
 ### SSL/Protocol Errors
@@ -342,7 +331,6 @@ You may need to copy data between volumes or update the project name.
   - `icb-{color}-api` (8000, Docker internal)
   - `icb-{color}-app` (5000, Docker internal)
   - `icb-{color}-vue` (80, Docker internal)
-  - `icb-{color}-chat` (8505, Docker internal)
   - `icb-{color}-scheduler` (no port)
 - **System Services**:
   - cloudflared (tunnel daemon, systemd service)

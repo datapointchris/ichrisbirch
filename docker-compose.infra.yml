@@ -1,7 +1,7 @@
 # Infrastructure services for blue/green deployment
 #
 # These services are always running and never restarted during code deploys.
-# App services (API, App, Vue, Chat, Scheduler) are in docker-compose.app.yml
+# App services (API, Vue, Scheduler) are in docker-compose.app.yml
 # and deployed as separate blue/green projects.
 #
 # Usage:

@@ -12,10 +12,9 @@ through a REST API, a browser UI and a command-line client.
 | --- | --- | --- |
 | API | FastAPI | REST backend, JWT and Authelia OIDC auth |
 | Vue | Vue 3 + TypeScript | Single-page frontend, every page |
-| Chat | Streamlit | Chat interface backed by OpenAI |
 | Scheduler | APScheduler | Daily jobs — task priorities, autotasks |
 
-All four share one PostgreSQL database and a Redis cache. Docker Compose runs
+All three share one PostgreSQL database and a Redis cache. Docker Compose runs
 them behind Traefik, which terminates TLS and routes by host.
 
 `cli/` is a separate Go module building `icb`, a REST client over the same API.
@@ -31,9 +30,8 @@ Requires Docker, [uv](https://docs.astral.sh/uv/), Python 3.14 and Node 24.
 ./ops/icbops dev health      # confirm the containers are up
 ```
 
-That serves the app at `https://app.docker.localhost/`, the API and its Swagger
-docs at `https://api.docker.localhost/`, and the chat interface at
-`https://chat.docker.localhost/`.
+That serves the app at `https://app.docker.localhost/`, and the API with its
+Swagger docs at `https://api.docker.localhost/`.
 
 `./ops/icbops dev db seed --scale 1` fills the database with sample data.
 

@@ -15,7 +15,6 @@ The iChrisBirch project uses Docker Compose for containerized development with s
 - **Vue Frontend**: Port 5173 (Vite dev server)
 - **PostgreSQL**: Port 5432 (internal/external), persistent volumes
 - **Redis**: Port 6379 (internal/external), persistent volumes
-- **Chat Service**: Port 8505 (internal), auto-reload enabled
 - **Scheduler**: APScheduler background jobs
 
 **Test Environment (`docker-compose.test.yml`)**:
@@ -147,7 +146,7 @@ Each environment uses `.env` files:
 - Traefik: localhost:443 (HTTPS reverse proxy)
 - PostgreSQL: localhost:5432
 - Redis: localhost:6379
-- API/Vue/Chat: Through Traefik reverse proxy at `*.docker.localhost`
+- API/Vue: Through Traefik reverse proxy at `*.docker.localhost`
 
 **Testing** (isolated ports):
 

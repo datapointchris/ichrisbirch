@@ -72,13 +72,13 @@ generate_cert() {
     # Define domains for each environment
     case "$env" in
       dev)
-        local domains=("docker.localhost" "*.docker.localhost" "api.docker.localhost" "app.docker.localhost" "chat.docker.localhost" "dashboard.docker.localhost")
+        local domains=("docker.localhost" "*.docker.localhost" "api.docker.localhost" "app.docker.localhost" "dashboard.docker.localhost")
         ;;
       test)
-        local domains=("test.localhost" "*.test.localhost" "api.test.localhost" "app.test.localhost" "chat.test.localhost" "dashboard.test.localhost")
+        local domains=("test.localhost" "*.test.localhost" "api.test.localhost" "app.test.localhost" "dashboard.test.localhost")
         ;;
       prod)
-        local domains=("yourdomain.local" "*.yourdomain.local" "api.yourdomain.local" "app.yourdomain.local" "chat.yourdomain.local" "dashboard.yourdomain.local")
+        local domains=("yourdomain.local" "*.yourdomain.local" "api.yourdomain.local" "app.yourdomain.local" "dashboard.yourdomain.local")
         ;;
     esac
 
@@ -130,8 +130,7 @@ subjectAltName = @alt_names
 DNS.1 = $domain
 DNS.2 = api.${domain#*.}
 DNS.3 = app.${domain#*.}
-DNS.4 = chat.${domain#*.}
-DNS.5 = dashboard.${domain#*.}
+DNS.4 = dashboard.${domain#*.}
 EOF
       )
 

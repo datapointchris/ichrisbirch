@@ -5,25 +5,21 @@
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 ICHRISBIRCH_HOME="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
-# URLs for each environment
-DEV_API_URL="https://api.docker.localhost"
-DEV_APP_URL="https://app.docker.localhost"
-DEV_CHAT_URL="https://chat.docker.localhost"
-DEV_DASHBOARD_URL="https://dashboard.docker.localhost"
+# URLs for each environment, derived from the grid ops/health-check.sh also reads
+source "$ICHRISBIRCH_HOME/ops/lib/urls.sh"
+
+DEV_API_URL="$(icb_service_url dev api)"
+DEV_APP_URL="$(icb_service_url dev app)"
+DEV_DASHBOARD_URL="$(icb_service_url dev dashboard)"
 DEV_API_PORT="http://localhost:8000"
-DEV_CHAT_PORT="http://localhost:8505"
 
-TEST_API_URL="https://api.test.localhost:8443"
-TEST_APP_URL="https://app.test.localhost:8443"
-TEST_CHAT_URL="https://chat.test.localhost:8443"
-TEST_DASHBOARD_URL="https://dashboard.test.localhost:8443"
+TEST_API_URL="$(icb_service_url test api)"
+TEST_APP_URL="$(icb_service_url test app)"
+TEST_DASHBOARD_URL="$(icb_service_url test dashboard)"
 TEST_API_PORT="http://localhost:8001"
-TEST_CHAT_PORT="http://localhost:8507"
 
-PROD_DOMAIN="${DOMAIN:-ichrisbirch.com}"
-PROD_API_URL="https://api.${PROD_DOMAIN}"
-PROD_APP_URL="https://${PROD_DOMAIN}"
-PROD_CHAT_URL="https://chat.${PROD_DOMAIN}"
+PROD_API_URL="$(icb_service_url prod api)"
+PROD_APP_URL="$(icb_service_url prod app)"
 
 # Docker compose commands
 COMPOSE_DEV="docker compose --project-name icb-dev -f docker-compose.yml -f docker-compose.dev.yml"
@@ -121,7 +117,6 @@ function colored-logs() {
   local GREEN_POSTGRES="${green}postgres${reset}"
   local BRIGHT_GREEN_API="${bright_green}api${reset}"
   local BRIGHT_BLUE_VUE="${bright_blue}vue${reset}"
-  local ORANGE_CHAT="${orange}chat${reset}"
   local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
   local CYAN_TRAEFIK="${cyan}traefik${reset}"
 
@@ -137,7 +132,6 @@ function colored-logs() {
     -e 's/^vue[ ]*|/'"${BRIGHT_BLUE_VUE}"' |/' \
     -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
     -e 's/^postgres[ ]*|/'"${GREEN_POSTGRES}"' |/' \
-    -e 's/^chat[ ]*|/'"${ORANGE_CHAT}"' |/' \
     -e 's/^scheduler[ ]*|/'"${YELLOW_SCHEDULER}"' |/' \
     -e 's/^traefik[ ]*|/'"${CYAN_TRAEFIK}"' |/'
 }
@@ -262,12 +256,10 @@ function dev-start() {
   echo "Development environment started:"
   echo "  ${green}API${reset}:       ${cyan}${DEV_API_URL}${reset}"
   echo "  ${green}APP${reset}:       ${cyan}${DEV_APP_URL}${reset}"
-  echo "  ${green}CHAT${reset}:      ${cyan}${DEV_CHAT_URL}${reset}"
   echo "  ${green}DASHBOARD${reset}: ${cyan}${DEV_DASHBOARD_URL}${reset} (user: dev, pass: devpass)"
   echo ""
   echo "Direct ports (bypass Traefik):"
   echo "  ${green}API${reset}:  ${cyan}${DEV_API_PORT}${reset}"
-  echo "  ${green}CHAT${reset}: ${cyan}${DEV_CHAT_PORT}${reset}"
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5432${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
   dev-credentials
@@ -327,7 +319,7 @@ function dev-rebuild() {
     echo "Building app image..."
     $COMPOSE_DEV build api
     echo "Recreating app services..."
-    $COMPOSE_DEV up -d --force-recreate api chat scheduler vue
+    $COMPOSE_DEV up -d --force-recreate api scheduler vue
   fi
 
   echo "Waiting for API container..."
@@ -353,7 +345,7 @@ function dev-status() {
   echo ""
   $COMPOSE_DEV ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   echo ""
-  echo "${blue}URLs${reset}: $DEV_API_URL | $DEV_APP_URL | $DEV_CHAT_URL"
+  echo "${blue}URLs${reset}: $DEV_API_URL | $DEV_APP_URL"
   dev-credentials
 }
 
@@ -381,7 +373,7 @@ function dev-usage() {
   echo "  ${blue}dev start${reset}              Start dev containers"
   echo "  ${blue}dev stop${reset}               Stop dev containers"
   echo "  ${blue}dev restart${reset}            Restart dev containers"
-  echo "  ${blue}dev rebuild${reset}            Rebuild app services (api, chat, scheduler, vue)"
+  echo "  ${blue}dev rebuild${reset}            Rebuild app services (api, scheduler, vue)"
   echo "  ${blue}dev rebuild --all${reset}      Full rebuild including infra (traefik, postgres, redis)"
   echo "  ${blue}dev rebuild --volumes${reset}  Wipe named volumes and rebuild (combines with --all)"
   echo "  ${blue}dev status${reset}             Show container status"
@@ -495,12 +487,10 @@ function testing-start() {
   echo "Testing environment started:"
   echo "  ${green}API${reset}:       ${cyan}${TEST_API_URL}${reset}"
   echo "  ${green}APP${reset}:       ${cyan}${TEST_APP_URL}${reset}"
-  echo "  ${green}CHAT${reset}:      ${cyan}${TEST_CHAT_URL}${reset}"
   echo "  ${green}DASHBOARD${reset}: ${cyan}${TEST_DASHBOARD_URL}${reset} (user: test, pass: testpass)"
   echo ""
   echo "Direct ports (bypass Traefik):"
   echo "  ${green}API${reset}:  ${cyan}${TEST_API_PORT}${reset}"
-  echo "  ${green}CHAT${reset}: ${cyan}${TEST_CHAT_PORT}${reset}"
   echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
   echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
 }
@@ -557,7 +547,7 @@ function testing-rebuild() {
     echo "Building app image..."
     $COMPOSE_TEST build api
     echo "Recreating app services..."
-    $COMPOSE_TEST up -d --force-recreate api chat scheduler vue
+    $COMPOSE_TEST up -d --force-recreate api scheduler vue
   fi
 }
 
@@ -574,7 +564,7 @@ function testing-status() {
   echo ""
   $COMPOSE_TEST ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
   echo ""
-  echo "${blue}URLs${reset}: $TEST_API_URL | $TEST_APP_URL | $TEST_CHAT_URL"
+  echo "${blue}URLs${reset}: $TEST_API_URL | $TEST_APP_URL"
 }
 
 function testing-health() {
@@ -601,7 +591,7 @@ function testing-usage() {
   echo "  ${blue}testing start${reset}          Start test containers and reset database"
   echo "  ${blue}testing stop${reset}           Stop test containers and remove volumes"
   echo "  ${blue}testing restart${reset}        Restart test containers"
-  echo "  ${blue}testing rebuild${reset}        Rebuild app services (api, chat, scheduler, vue)"
+  echo "  ${blue}testing rebuild${reset}        Rebuild app services (api, scheduler, vue)"
   echo "  ${blue}testing rebuild --all${reset}  Full rebuild including infra (traefik, postgres, redis)"
   echo "  ${blue}testing rebuild --volumes${reset} Wipe named volumes and rebuild (combines with --all)"
   echo "  ${blue}testing status${reset}         Show container status"
@@ -651,7 +641,6 @@ function prod-start() {
   echo ""
   echo "  ${green}APP${reset}:  ${cyan}${PROD_APP_URL}${reset}"
   echo "  ${green}API${reset}:  ${cyan}${PROD_API_URL}${reset}"
-  echo "  ${green}CHAT${reset}: ${cyan}${PROD_CHAT_URL}${reset}"
 }
 
 function prod-stop() {
@@ -812,31 +801,8 @@ function prod-rollback() {
 
   # Switch routing by regenerating services.yml
   local services_file="$ICHRISBIRCH_HOME/deploy-containers/traefik/dynamic/prod/services.yml"
-  local services_tmp="${services_file}.tmp"
 
-  cat >"$services_tmp" <<EOF
-# Generated by CLI rollback — DO NOT EDIT
-# Active color: ${previous_color}
-
-http:
-  services:
-    api:
-      loadBalancer:
-        servers:
-          - url: "http://icb-${previous_color}-api:8000"
-    vue:
-      loadBalancer:
-        servers:
-          - url: "http://icb-${previous_color}-vue:80"
-    chat:
-      loadBalancer:
-        servers:
-          - url: "http://icb-${previous_color}-chat:8505"
-        sticky:
-          cookie:
-            name: chat-prod-session
-EOF
-  mv "$services_tmp" "$services_file"
+  "$ICHRISBIRCH_HOME/scripts/generate-services-yml.sh" "$previous_color" "$services_file" 'CLI rollback'
 
   echo "$previous_color" >"$BLUEGREEN_STATE_FILE"
 
@@ -917,7 +883,7 @@ function prod-status() {
   fi
 
   echo ""
-  echo "${magenta}URLs${reset}: $PROD_APP_URL | $PROD_API_URL | $PROD_CHAT_URL"
+  echo "${magenta}URLs${reset}: $PROD_APP_URL | $PROD_API_URL"
 }
 
 function prod-health() {

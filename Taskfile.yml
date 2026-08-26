@@ -36,7 +36,7 @@ tasks:
   # git directory, so --git-common-dir names it from anywhere, and running this in
   # the primary itself resolves to the same tree and no-ops.
   #
-  # The copied .env carries fixed ports (8000, 8505, 5432, 6379). Two worktrees
+  # The copied .env carries fixed ports (8000, 5432, 6379). Two worktrees
   # running servers at once collide on all of them — edit the copy when that
   # happens rather than assuming this handles it.
   setup-local:

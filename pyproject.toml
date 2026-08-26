@@ -43,8 +43,6 @@ dependencies = [
   "requests>=2.31.0",
   "sqlalchemy-json>=0.7.0",
   "sqlalchemy>=2.0.29",
-  "streamlit-cookies-controller>=0.0.4",
-  "streamlit>=1.41.1",
   "strenum>=0.4.15",
   "structlog>=24.0.0",
   "uvicorn[standard]>=0.29.0",
@@ -139,7 +137,7 @@ skips = ["B113", "B311", "B404", "B603"]
 
 
 [tool.codespell]
-skip = '*.css.map,*chat_history.json,tests/stats/fixtures/tool_outputs/codespell_with_issues.txt,frontend/package-lock.json'
+skip = '*.css.map,tests/stats/fixtures/tool_outputs/codespell_with_issues.txt,frontend/package-lock.json'
 ignore-words-list = "astroid,aNULL,ANULL,anull,dependant,iterm,te"
 exclude-file = "uv.lock"
 check-filenames = true

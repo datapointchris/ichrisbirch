@@ -38,8 +38,8 @@ generate_certificates() {
   print_info "Generating SSL certificates..."
   mkdir -p "$CERTS_DIR"
 
-  local domains_dev=("docker.localhost" "*.docker.localhost" "api.docker.localhost" "app.docker.localhost" "chat.docker.localhost" "dashboard.docker.localhost")
-  local domains_test=("test.localhost" "*.test.localhost" "api.test.localhost" "app.test.localhost" "chat.test.localhost" "dashboard.test.localhost")
+  local domains_dev=("docker.localhost" "*.docker.localhost" "api.docker.localhost" "app.docker.localhost" "dashboard.docker.localhost")
+  local domains_test=("test.localhost" "*.test.localhost" "api.test.localhost" "app.test.localhost" "dashboard.test.localhost")
 
   cd "$CERTS_DIR"
 

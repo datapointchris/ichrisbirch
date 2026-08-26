@@ -63,7 +63,7 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
             --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build --wait --wait-timeout 180 api chat scheduler
+            --project-name icb-test up -d --build --wait --wait-timeout 180 api scheduler
 
       - name: Initialize test database
         run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
@@ -515,7 +515,7 @@ jobs:
           EOF
 
           docker compose -f docker-compose.yml up -d --wait --wait-timeout 120 postgres redis
-          docker compose -f docker-compose.yml up -d api chat scheduler
+          docker compose -f docker-compose.yml up -d api scheduler
           sleep 15
           docker compose -f docker-compose.yml ps
 

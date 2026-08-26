@@ -48,7 +48,7 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 | `dev start` | Start development with HTTPS | `icbops dev start` |
 | `dev stop` | Stop development environment | `icbops dev stop` |
 | `dev restart` | Restart development environment | `icbops dev restart` |
-| `dev rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icbops dev rebuild` |
+| `dev rebuild` | Rebuild app image, recreate api/scheduler/vue (keeps infra running) | `icbops dev rebuild` |
 | `dev rebuild --all` | Full rebuild including infra (traefik, postgres, redis) | `icbops dev rebuild --all` |
 | `dev rebuild --volumes` | Wipe named volumes and rebuild (stackable with `--all`) | `icbops dev rebuild --all --volumes` |
 | `dev status` | Show service status, URLs, and credentials | `icbops dev status` |
@@ -81,7 +81,7 @@ Dev Credentials:
 | `testing status` | Show service status and HTTPS URLs | `icbops testing status` |
 | `testing logs` | View service logs | `icbops testing logs [service]` |
 | `testing health` | Run comprehensive health checks | `icbops testing health` |
-| `testing rebuild` | Rebuild app image, recreate api/chat/scheduler/vue (keeps infra running) | `icbops testing rebuild` |
+| `testing rebuild` | Rebuild app image, recreate api/scheduler/vue (keeps infra running) | `icbops testing rebuild` |
 | `testing rebuild --all` | Full rebuild including infra | `icbops testing rebuild --all` |
 | `testing rebuild --volumes` | Wipe named volumes and rebuild — step 2 of the code-change escalation ladder (see CLAUDE.md); covers stale `.venv`, deps, node_modules, ENOTEMPTY | `icbops testing rebuild --all --volumes` |
 | `testing is-ready` | Quick API health check (exit 0/1) | `icbops testing is-ready` |
@@ -167,7 +167,6 @@ The canonical path list is at `deploy-containers/traefik/vue-paths.txt`. After g
 
 - **API**: `https://api.docker.localhost/`
 - **App**: `https://app.docker.localhost/`
-- **Chat**: `https://chat.docker.localhost/`
 
 **Example Usage:**
 
@@ -200,7 +199,6 @@ icbops dev stop
 
 - **API**: `https://api.test.localhost:8443/`
 - **App**: `https://app.test.localhost:8443/`
-- **Chat**: `https://chat.test.localhost:8443/`
 
 ### Production Environment (`prod`)
 
@@ -215,7 +213,6 @@ icbops dev stop
 
 - **API**: `https://api.ichrisbirch.com/`
 - **App**: `https://ichrisbirch.com/`
-- **Chat**: `https://chat.ichrisbirch.com/`
 
 **Production Commands:**
 
@@ -276,7 +273,6 @@ icbops ssl-manager info dev
 - `*.docker.localhost`
 - `api.docker.localhost`
 - `app.docker.localhost`
-- `chat.docker.localhost`
 - `dashboard.docker.localhost`
 
 ## 🚀 Detailed Command Reference
@@ -303,13 +299,11 @@ Starting DEV environment with Docker Compose + Traefik (HTTPS)
  ✔ Container icb-dev-redis      Started
  ✔ Container icb-dev-api        Started
  ✔ Container icb-dev-vue        Started
- ✔ Container icb-dev-chat       Started
  ✔ Container icb-dev-traefik    Started
 
 Development environment started with HTTPS:
   API:       https://api.docker.localhost/
   APP:       https://app.docker.localhost/
-  CHAT:      https://chat.docker.localhost/
   DASHBOARD: https://dashboard.docker.localhost/ (user: dev, pass: devpass)
 
 Dev Credentials:
@@ -336,13 +330,11 @@ Container Status:
 [✓] icb-dev-redis      (Up 2 minutes (healthy))
 [✓] icb-dev-api        (Up 2 minutes (healthy))
 [✓] icb-dev-vue        (Up 2 minutes (healthy))
-[✓] icb-dev-chat       (Up 2 minutes)
 [✓] icb-dev-scheduler  (Up 2 minutes)
 
 Development environment URLs:
   API:       https://api.docker.localhost/
   APP:       https://app.docker.localhost/
-  CHAT:      https://chat.docker.localhost/
   DASHBOARD: https://dashboard.docker.localhost/
 
 Database Info:
@@ -359,7 +351,6 @@ Runs comprehensive health checks for the development environment.
 - Docker container status and health
 - DNS resolution for domains
 - HTTPS endpoint accessibility (with proper SSL validation)
-- WebSocket support (for chat service)
 - Database connectivity
 - API health endpoints
 
@@ -374,7 +365,6 @@ Health Check for dev Environment
 [✓] Container: icb-dev-traefik (Up 2 minutes)
 [✓] Container: icb-dev-api (Up 2 minutes (healthy))
 [✓] Container: icb-dev-vue (Up 2 minutes (healthy))
-[✓] Container: icb-dev-chat (Up 2 minutes)
 
 [INFO] Checking DNS resolution for api.docker.localhost
 [✓] DNS: api.docker.localhost found in /etc/hosts (127.0.0.1)
@@ -383,11 +373,6 @@ Health Check for dev Environment
 [✓] API Health: HTTP 200 (OK)
 [INFO] Checking App Frontend at https://app.docker.localhost/
 [✓] App Frontend: HTTP 200 (OK)
-[INFO] Checking Chat Service at https://chat.docker.localhost/
-[✓] Chat Service: HTTP 200 (OK)
-
-[INFO] Checking WebSocket support for Chat Service
-[!] Chat Service WebSocket: HTTP 400 (May not support WebSocket)
 ```
 
 ### `icbops {dev|testing|prod} logs [service] [flags]`
@@ -457,7 +442,6 @@ Created a new certificate valid for the following names 📜
  - "*.docker.localhost"
  - "api.docker.localhost"
  - "app.docker.localhost"
- - "chat.docker.localhost"
  - "dashboard.docker.localhost"
 
 The certificate is at "dev.crt" and the key at "dev.key" ✅
@@ -578,7 +562,6 @@ icbops ssl-manager generate dev    # Regenerate if needed
    # Add missing entries (for development)
    echo "127.0.0.1 api.docker.localhost" | sudo tee -a /etc/hosts
    echo "127.0.0.1 app.docker.localhost" | sudo tee -a /etc/hosts
-   echo "127.0.0.1 chat.docker.localhost" | sudo tee -a /etc/hosts
    echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
    ```
 

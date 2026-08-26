@@ -82,9 +82,6 @@ terraform.tfstate.*
 # Diagram generator cache
 .diagram_hash_cache.json
 
-# Chat history (contains personal conversations)
-ichrisbirch/chat/chat_history.json
-
 # Traefik secrets
 deploy-containers/traefik/certs/*.key
 deploy-containers/traefik/certs/*.crt

@@ -165,21 +165,18 @@ show_status() {
       print_info "Development URLs:"
       echo "  • API:       https://api.docker.localhost/"
       echo "  • App:       https://app.docker.localhost/"
-      echo "  • Chat:      https://chat.docker.localhost/"
       echo "  • Dashboard: https://dashboard.docker.localhost/ (user: dev, pass: devpass)"
       ;;
     test)
       print_info "Test URLs:"
       echo "  • API:       https://api.test.localhost:8443/"
       echo "  • App:       https://app.test.localhost:8443/"
-      echo "  • Chat:      https://chat.test.localhost:8443/"
       echo "  • Dashboard: https://dashboard.test.localhost:8443/ (user: test, pass: testpass)"
       ;;
     prod)
       print_info "Production URLs (replace yourdomain.local with your actual domain):"
       echo "  • API:       https://api.yourdomain.local/"
       echo "  • App:       https://app.yourdomain.local/"
-      echo "  • Chat:      https://chat.yourdomain.local/"
       ;;
   esac
 }
@@ -207,7 +204,6 @@ show_help() {
   echo "  traefik - Traefik reverse proxy"
   echo "  api     - FastAPI backend"
   echo "  app     - Flask frontend"
-  echo "  chat    - Streamlit chat service"
   echo "  postgres - PostgreSQL database"
   echo "  redis   - Redis cache"
   echo "  scheduler - Background scheduler"

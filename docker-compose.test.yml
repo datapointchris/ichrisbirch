@@ -160,53 +160,6 @@ services:
         max-file: "3"
         tag: "api-test"
 
-  chat:
-    <<: *app-build
-    container_name: icb-test-chat
-    command: >
-      streamlit run ichrisbirch/chat/app.py
-      --server.address=0.0.0.0
-      --server.port=8505
-      --server.headless=true
-    environment: !override
-      - ENVIRONMENT=testing
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
-      - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/chat.log
-    ports: !override
-      - "8507:8505"
-    volumes: !override
-      - .:/app
-      - /app/.venv
-      - ichrisbirch_logs:/var/log/ichrisbirch
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8505/_stcore/health"]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 3
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    labels: !override
-      - "traefik.environment=testing"
-      - "traefik.enable=true"
-      - "traefik.http.services.chat.loadbalancer.server.port=8505"
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.chat.loadbalancer.sticky.cookie.name=chat-test-session"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "chat-test"
-
   scheduler:
     <<: *app-build
     container_name: icb-test-scheduler
@@ -270,7 +223,7 @@ services:
         tag: "vue-test"
 
 # Test volumes — override base names to isolate from prod/dev
-# .venv is an anonymous volume on api/chat/scheduler (matches dev pattern) —
+# .venv is an anonymous volume on api/scheduler (matches dev pattern) —
 # Docker seeds it from the image layer on every new container, so rebuilding
 # the image always produces a fresh venv. A named volume would persist stale
 # contents across rebuilds and break runtime package resolution.
