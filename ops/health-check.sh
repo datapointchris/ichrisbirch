@@ -4,6 +4,10 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# The {environment × service} URL grid, shared with ops/icbops
+source "${SCRIPT_DIR}/lib/urls.sh"
+
 # Default values
 ENVIRONMENT="${1:-dev}"
 
@@ -34,20 +38,11 @@ print_error() {
 # Get URLs for environment
 get_urls() {
   case "$ENVIRONMENT" in
-    dev)
-      API_URL="https://api.docker.localhost"
-      APP_URL="https://app.docker.localhost"
-      CHAT_URL="https://chat.docker.localhost"
-      DASHBOARD_URL="https://dashboard.docker.localhost"
-      API_HOST=""
-      APP_HOST=""
-      CHAT_HOST=""
-      ;;
-    test)
-      API_URL="https://api.test.localhost:8443"
-      APP_URL="https://app.test.localhost:8443"
-      CHAT_URL="https://chat.test.localhost:8443"
-      DASHBOARD_URL="https://dashboard.test.localhost:8443"
+    dev | test)
+      API_URL="$(icb_service_url "$ENVIRONMENT" api)"
+      APP_URL="$(icb_service_url "$ENVIRONMENT" app)"
+      CHAT_URL="$(icb_service_url "$ENVIRONMENT" chat)"
+      DASHBOARD_URL="$(icb_service_url "$ENVIRONMENT" dashboard)"
       API_HOST=""
       APP_HOST=""
       CHAT_HOST=""
@@ -55,14 +50,13 @@ get_urls() {
     prod)
       # Production: hit Traefik locally with Host headers
       # Cloudflare Tunnel routes external traffic, but we can test via localhost
-      local domain="${DOMAIN:-ichrisbirch.com}"
       API_URL="http://localhost:80"
       APP_URL="http://localhost:80"
       CHAT_URL="http://localhost:80"
       DASHBOARD_URL=""
-      API_HOST="api.${domain}"
-      APP_HOST="${domain}"
-      CHAT_HOST="chat.${domain}"
+      API_HOST="$(icb_service_host prod api)"
+      APP_HOST="$(icb_service_host prod app)"
+      CHAT_HOST="$(icb_service_host prod chat)"
       ;;
     *)
       print_error "Invalid environment: $ENVIRONMENT"
