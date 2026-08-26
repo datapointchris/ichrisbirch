@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
+from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
@@ -36,32 +37,19 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-def _parse_article_json(raw: str, name: str) -> dict:
-    """Parse an assistant's reply as a JSON object, or fail with what it said.
+def _bad_gateway(e: AssistantOutputError) -> HTTPException:
+    """Translate an unusable reply into a 502 that names why and quotes the model.
 
-    The Messages API cannot constrain a reply to an object, so one that parses
-    to a list, or does not parse at all, arrives here. Both become a bad gateway
-    carrying the raw text, which is what makes prompt drift diagnosable without
-    a log dive. Without the check the caller reaches `.get` on a list and raises
-    AttributeError, which surfaces as a 500 saying nothing.
+    Only a request handler calls this. `_summarize_and_create_article` runs in
+    the bulk import worker as well, where an HTTPException's str() is
+    `'502: {…}'` — the whole detail dict, raw reply included, into a database
+    column and a Redis payload.
     """
-    try:
-        parsed = AnthropicAssistant.parse_json(raw)
-    except Exception as e:
-        logger.error('article_assistant_output_not_json', assistant=name, error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={'message': f'{name} returned non-JSON output: {e}', 'raw_assistant_output': raw},
-        ) from e
-
-    if not isinstance(parsed, dict):
-        logger.error('article_assistant_output_not_an_object', assistant=name, type=type(parsed).__name__)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={'message': f'{name} returned a non-object top-level value', 'raw_assistant_output': raw},
-        )
-
-    return parsed
+    logger.error('article_assistant_output_unusable', reason=str(e.reason), error=str(e))
+    return HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail={'reason': str(e.reason), 'message': str(e), 'raw_assistant_output': e.raw_output},
+    )
 
 
 def _get_formatted_title(soup: BeautifulSoup) -> str:
@@ -172,7 +160,7 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
         system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    data = _parse_article_json(assistant.generate(text_content, max_tokens=8192), assistant.name)
+    data = AnthropicAssistant.parse_json_object(assistant.generate(text_content, max_tokens=8192), assistant.name)
 
     article = models.Article(
         title=title,
@@ -200,7 +188,10 @@ async def create_from_url(
     settings: Settings = Depends(get_settings),
 ):
     """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
-    return _summarize_and_create_article(body.url, body.notes, session, settings)
+    try:
+        return _summarize_and_create_article(body.url, body.notes, session, settings)
+    except AssistantOutputError as e:
+        raise _bad_gateway(e) from e
 
 
 @router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
@@ -282,7 +273,10 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
         system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    data = _parse_article_json(assistant.generate(text_content, max_tokens=8192), assistant.name)
+    try:
+        data = AnthropicAssistant.parse_json_object(assistant.generate(text_content, max_tokens=8192), assistant.name)
+    except AssistantOutputError as e:
+        raise _bad_gateway(e) from e
     return schemas.ArticleSummary(title=title, summary=data.get('summary'), tags=data.get('tags'))
 
 
@@ -320,7 +314,10 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
         text_content = get_text_content_from_html(soup)
 
     assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
-    mkd = assistant.generate(text_content, max_tokens=8192)
+    try:
+        mkd = assistant.generate(text_content, max_tokens=8192)
+    except AssistantOutputError as e:
+        raise _bad_gateway(e) from e
     full_mkd = f'# {title}\n{mkd}'
 
     # Escaped before rendering, because Python-Markdown passes raw HTML straight

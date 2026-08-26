@@ -166,7 +166,7 @@ The one sanctioned subprocess is in `scheduler/jobs.py`.
 
 ### What a Dependency Can Reach
 
-Four dependencies see more than the code that calls them, so what each one
+These dependencies see more than the code that calls them, so what each one
 reaches is written down here rather than inferred from the import.
 
 - **`anthropic`** receives user content, not metadata, and is the only model provider the app
