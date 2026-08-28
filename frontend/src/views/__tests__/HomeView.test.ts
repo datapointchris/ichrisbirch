@@ -56,7 +56,15 @@ describe('HomeView', () => {
   it('renders project links for non-admin users', () => {
     const wrapper = createWrapper({ user: nonAdminUser })
     const labels = wrapper.findAll('.home-link-label').map((el) => el.text())
-    expect(labels).toEqual(['Code', 'Chat', 'API', 'Docs'])
+    expect(labels).toEqual(['Code', 'API', 'Docs'])
+  })
+
+  it('never exposes an authenticated service to a non-admin visitor', () => {
+    const wrapper = createWrapper({ user: nonAdminUser })
+    const hrefs = wrapper.findAll('.home-links a').map((el) => el.attributes('href'))
+    for (const href of hrefs) {
+      expect(href).not.toContain('chmod.ichrisbirch.com')
+    }
   })
 
   it('renders project and service links for admin users', () => {
@@ -77,9 +85,9 @@ describe('HomeView', () => {
     }
   })
 
-  it('renders 4 project links when no user loaded', () => {
+  it('renders 3 project links when no user loaded', () => {
     const wrapper = createWrapper()
     const labels = wrapper.findAll('.home-link-label').map((el) => el.text())
-    expect(labels).toEqual(['Code', 'Chat', 'API', 'Docs'])
+    expect(labels).toEqual(['Code', 'API', 'Docs'])
   })
 })

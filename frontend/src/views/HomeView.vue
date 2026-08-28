@@ -39,12 +39,12 @@ const authStore = useAuthStore()
 
 const projectLinks: HomeLink[] = [
   { label: 'Code', url: 'https://github.com/datapointchris/ichrisbirch', icon: 'fa-brands fa-github' },
-  { label: 'Chat', url: 'https://chat.ichrisbirch.com', icon: 'fa-regular fa-message' },
   { label: 'API', url: 'https://api.ichrisbirch.com', icon: 'fa-solid fa-server' },
   { label: 'Docs', url: 'https://docs.ichrisbirch.com', icon: 'fa-regular fa-folder-open' },
 ]
 
 const serviceLinks: HomeLink[] = [
+  { label: 'Chat', url: 'https://chmod.ichrisbirch.com', icon: 'fa-regular fa-message' },
   { label: 'Monitor', url: 'https://monitor.ichrisbirch.com', icon: 'fa-solid fa-chart-line' },
   { label: 'Files', url: 'https://files.ichrisbirch.com', icon: 'fa-solid fa-hard-drive' },
   { label: 'Vault', url: 'https://vault.ichrisbirch.com', icon: 'fa-solid fa-shield-halved' },
