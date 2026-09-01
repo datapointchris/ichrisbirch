@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -14,11 +13,15 @@ import (
 // valid id for the resource a command acts on.
 const notFoundHintsKey = "icb.not-found-hints"
 
+// notFoundWrappedKey marks a command whose RunE attachNotFoundHints has wrapped,
+// so a test can ask the real tree whether the wrapping happened.
+const notFoundWrappedKey = "icb.not-found-wrapped"
+
 // withNotFoundHints records on cmd the commands a 404 under it should name, and
 // returns cmd so it can be attached inline in an AddCommand list.
 //
 // Each hint is a sentence, a colon, and the command to run, matching the
-// "Closed projects are hidden: icb projects list --status all" line the list
+// "Completed tasks are hidden: icb tasks list --status all" line the list
 // commands already print when they hide rows.
 //
 // Cobra does not inherit annotations and the lookup takes the nearest ancestor
@@ -71,20 +74,21 @@ func (e *notFoundError) Unwrap() error { return e.cause }
 //
 // The "API request failed (404 Not Found)" prefix goes with it. That reports how
 // the answer arrived, and a 404 is an answer rather than a failure to get one.
+//
+// An empty Message is the case where it is not: a proxy error page or an
+// Authelia redirect decodes to a status and nothing else, and the resource was
+// never reached. The status line is the whole of what is known there, so it is
+// left alone rather than replaced with a resource claim nothing established.
 func hintNotFound(cmd *cobra.Command, err error) error {
 	var apiErr *api.APIError
-	if !errors.As(err, &apiErr) || !apiErr.NotFound() {
+	if !errors.As(err, &apiErr) || !apiErr.NotFound() || apiErr.Message == "" {
 		return err
 	}
 	hints := notFoundHintsFor(cmd)
 	if len(hints) == 0 {
 		return err
 	}
-	subject := apiErr.Message
-	if subject == "" {
-		subject = fmt.Sprintf("%s not found", cmd.Name())
-	}
-	return &notFoundError{subject: subject, hints: hints, cause: err}
+	return &notFoundError{subject: apiErr.Message, hints: hints, cause: err}
 }
 
 // attachNotFoundHints wraps every RunE in the tree so a 404 on its way out picks
@@ -95,6 +99,11 @@ func hintNotFound(cmd *cobra.Command, err error) error {
 // RunE the command that names it, and there are over two hundred of those call
 // sites to keep in step otherwise. It also reaches a 404 from a path that never
 // called handleAPIError at all.
+//
+// Each wrapped command is stamped with notFoundWrappedKey. Without it the whole
+// feature can be deleted by removing the one call in NewRootCommand and every
+// test still passes, because a test that calls hintNotFound directly never
+// observes whether anything calls it.
 func attachNotFoundHints(cmd *cobra.Command) {
 	for _, sub := range cmd.Commands() {
 		attachNotFoundHints(sub)
@@ -103,6 +112,10 @@ func attachNotFoundHints(cmd *cobra.Command) {
 	if inner == nil {
 		return
 	}
+	if cmd.Annotations == nil {
+		cmd.Annotations = map[string]string{}
+	}
+	cmd.Annotations[notFoundWrappedKey] = "yes"
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		return hintNotFound(c, inner(c, args))
 	}

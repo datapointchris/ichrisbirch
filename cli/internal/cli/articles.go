@@ -36,7 +36,13 @@ func newArticlesCommand() *cobra.Command {
 		newArticlesReadCommand(),
 		newArticlesDeleteCommand(),
 		newArticlesImportCommand(),
-		newArticlesImportStatusCommand(),
+		// A batch id is Redis-backed and expires 24 hours after its import, so
+		// a 404 here is usually age rather than a wrong id — and nothing in the
+		// tool lists batches, which is all the group's hints could offer.
+		withNotFoundHints(newArticlesImportStatusCommand(),
+			"A batch is kept for 24 hours — see what the import saved: icb articles list",
+			"Imports that failed are kept separately: icb articles failed-imports",
+		),
 		newArticlesFailedImportsCommand(),
 	)
 	return cmd
@@ -205,7 +211,7 @@ func newArticlesListCommand() *cobra.Command {
 func newArticlesSearchCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "search <query>",
+		Use:     "search <tag>",
 		Short:   "Search articles by tag",
 		Long:    "Comma-separated terms are matched independently (\"python,databases\" finds\narticles tagged with either).",
 		Example: "  icb articles search databases\n  icb articles search \"python,systems\"",

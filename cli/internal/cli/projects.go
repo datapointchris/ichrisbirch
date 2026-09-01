@@ -17,7 +17,10 @@ import (
 
 // projectHints is the command that finds a valid project name. The items
 // subcommands take a project name too, so their own hints name it as well.
-var projectHints = []string{"Closed projects are hidden: icb projects list --status all"}
+//
+// The two states are named rather than called "closed", because a reader
+// following a word --status does not accept gets a second refusal.
+var projectHints = []string{"Completed and dropped projects are hidden: icb projects list --status all"}
 
 func newProjectsCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -81,7 +84,7 @@ func newProjectsListCommand() *cobra.Command {
 			// it, which the flag decides — no second request to find out.
 			printProjectsTable(cmd.OutOrStdout(), projects, projectStatus != "")
 			if projectStatus == "" {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nClosed projects are hidden: icb projects list --status all")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and dropped projects are hidden: icb projects list --status all")
 			}
 			return nil
 		},

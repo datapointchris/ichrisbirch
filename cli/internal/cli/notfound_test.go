@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
@@ -68,11 +69,28 @@ func TestHintNotFound_AnItemDoesNotNameTheProjectRecovery(t *testing.T) {
 	}
 }
 
-func TestHintNotFound_AProjectNamesTheClosedOnes(t *testing.T) {
+func TestHintNotFound_AProjectNamesTheStatesThatHideOne(t *testing.T) {
 	err := hintNotFound(findCommand(t, "projects", "show"), notFound("project nope not found"))
 
 	if !strings.Contains(err.Error(), "icb projects list --status all") {
-		t.Errorf("error = %q, want the closed-projects hint", err)
+		t.Errorf("error = %q, want the widening hint", err)
+	}
+}
+
+// A proxy error page or an Authelia redirect decodes to a status and no
+// message, so the resource was never reached. Claiming one is missing would
+// send the caller searching for a row that is probably there, and the two
+// causes have different remedies.
+func TestHintNotFound_LeavesABodylessNotFoundAlone(t *testing.T) {
+	cause := &api.APIError{StatusCode: http.StatusNotFound, Status: "404 Not Found"}
+
+	got := hintNotFound(findCommand(t, "projects", "items", "show"), cause)
+
+	if got != error(cause) {
+		t.Fatalf("hintNotFound = %v, want the error returned untouched", got)
+	}
+	if !strings.Contains(got.Error(), "404 Not Found") {
+		t.Errorf("error = %q, want the status kept", got)
 	}
 }
 
@@ -161,13 +179,13 @@ func TestAttachNotFoundHints_WrapsEveryRunEInTheTree(t *testing.T) {
 }
 
 // resourceExempt names the top-level commands that take no resource id, so a
-// missing hint set on one of them is correct rather than an oversight.
+// missing hint set on one of them is correct rather than an oversight. Only
+// commands the tree actually holds: cobra adds help and completion at Execute,
+// so naming them here would read as a decision about commands that are absent.
 var resourceExempt = map[string]bool{
-	"auth":       true,
-	"update":     true,
-	"overview":   true,
-	"completion": true,
-	"help":       true,
+	"auth":     true,
+	"update":   true,
+	"overview": true,
 }
 
 // A resource added without hints is the way this regresses: the code keeps
@@ -200,4 +218,90 @@ func walkCommands(cmd *cobra.Command, visit func(*cobra.Command)) {
 	for _, sub := range cmd.Commands() {
 		walkCommands(sub, visit)
 	}
+}
+
+// The single attachNotFoundHints call in NewRootCommand is the whole feature
+// reaching a terminal, and every test that calls hintNotFound directly stays
+// green without it. This is what observes the call.
+func TestNewRootCommand_WrapsEveryRunEItAssembles(t *testing.T) {
+	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
+		if cmd.RunE == nil {
+			return
+		}
+		if cmd.Annotations[notFoundWrappedKey] != "yes" {
+			t.Errorf("%s has a RunE the not-found wrapper never reached", cmd.CommandPath())
+		}
+	})
+}
+
+// hintCommand returns the command half of a hint — everything after the colon.
+func hintCommand(t *testing.T, hint string) string {
+	t.Helper()
+	_, command, found := strings.Cut(hint, ": ")
+	if !found {
+		t.Fatalf("hint %q has no colon", hint)
+	}
+	return command
+}
+
+// childNamed returns the subcommand of cmd with this name, or nil.
+func childNamed(cmd *cobra.Command, name string) *cobra.Command {
+	for _, sub := range cmd.Commands() {
+		if sub.Name() == name {
+			return sub
+		}
+	}
+	return nil
+}
+
+// A hint names a command the reader is about to type, so it has to resolve
+// against the tree. Renaming a subcommand otherwise leaves the hint pointing at
+// nothing, and the shape check alone stays green.
+func TestEveryHintNamesACommandThatResolves(t *testing.T) {
+	root := NewRootCommand()
+	walkCommands(root, func(cmd *cobra.Command) {
+		for _, hint := range notFoundHintsFor(cmd) {
+			command := hintCommand(t, hint)
+			words := strings.Fields(strings.TrimPrefix(command, "icb "))
+			current, consumed := root, 0
+			for _, word := range words {
+				next := childNamed(current, word)
+				if next == nil {
+					break
+				}
+				current, consumed = next, consumed+1
+			}
+			if consumed == 0 {
+				t.Errorf("%s: hint %q names no command in the tree", cmd.CommandPath(), command)
+				continue
+			}
+			// What is left has to be a flag, its value, or a <placeholder> —
+			// anything else is a word that used to name a subcommand.
+			previousWasFlag := false
+			for _, word := range words[consumed:] {
+				isFlag := strings.HasPrefix(word, "-")
+				if !isFlag && !strings.HasPrefix(word, "<") && !previousWasFlag {
+					t.Errorf("%s: hint %q trails %q, which names no subcommand of %s",
+						cmd.CommandPath(), command, word, current.CommandPath())
+				}
+				previousWasFlag = isFlag
+			}
+		}
+	})
+}
+
+// A verb taking --project can 404 on the project, and the shape check cannot
+// see that: it asks whether a command has any hints, never whether they match
+// the nouns it can fail on. `items create` and `items tree` both shipped
+// without a project hint and both passed the shape check.
+func TestACommandTakingAProjectNamesHowToFindOne(t *testing.T) {
+	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
+		if cmd.Flags().Lookup("project") == nil {
+			return
+		}
+		hints := notFoundHintsFor(cmd)
+		if !slices.ContainsFunc(hints, func(h string) bool { return strings.Contains(h, "icb projects list") }) {
+			t.Errorf("%s takes --project, and its hints name no way to find one: %v", cmd.CommandPath(), hints)
+		}
+	})
 }
