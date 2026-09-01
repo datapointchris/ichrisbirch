@@ -187,6 +187,41 @@ func TestOneOf_RejectionNamesEveryAcceptedValue(t *testing.T) {
 	}
 }
 
+// A project title is the case that breaks a bare comma join: several carry
+// commas of their own, so the separator has to be told apart from the content.
+var commaCarryingTitles = []string{
+	"Fleet shape — survey, cross-examine, steer",
+	"fleet facts — the measurement layer",
+	"Standardize identifier naming across the fleet",
+}
+
+func TestOneOf_RejectionDelimitsACandidateThatCarriesCommas(t *testing.T) {
+	_, err := OneOf(commaCarryingTitles)("fleet")
+	if err == nil {
+		t.Fatal("OneOf accepted a value that is not in the list")
+	}
+	for _, title := range commaCarryingTitles {
+		if !strings.Contains(err.Error(), `"`+title+`"`) {
+			t.Errorf("error = %q, want %q delimited whole", err, title)
+		}
+	}
+	if strings.Contains(err.Error(), "steer, fleet facts") {
+		t.Errorf("error = %q, want a candidate's own comma not to read as the separator", err)
+	}
+}
+
+func TestOneOf_ShortListDelimitsEveryChoice(t *testing.T) {
+	_, err := OneOf(categories)("nope")
+	if err == nil {
+		t.Fatal("OneOf accepted a value that is not in the list")
+	}
+	for _, category := range categories {
+		if !strings.Contains(err.Error(), `"`+category+`"`) {
+			t.Errorf("error = %q, want %q delimited whole", err, category)
+		}
+	}
+}
+
 func TestInt_TrimsToTheParsedNumber(t *testing.T) {
 	value, err := Int("007")
 	if err != nil {

@@ -25,13 +25,27 @@ func OneOf(choices []string) func(string) (string, error) {
 			}
 		}
 		if near := matching(choices, answer); len(near) > 0 && len(near) <= maxListedChoices {
-			return "", fmt.Errorf("unknown value %q — did you mean %s?", answer, strings.Join(near, ", "))
+			return "", fmt.Errorf("unknown value %q — did you mean %s?", answer, listChoices(near))
 		}
 		if len(choices) <= maxListedChoices {
-			return "", fmt.Errorf("unknown value %q — one of: %s", answer, strings.Join(choices, ", "))
+			return "", fmt.Errorf("unknown value %q — one of: %s", answer, listChoices(choices))
 		}
 		return "", fmt.Errorf("unknown value %q — none of the %d known values match", answer, len(choices))
 	}
+}
+
+// listChoices renders candidates for an error that exists to say what to retry
+// with, so each one has to be distinguishable from the punctuation between them.
+// A project title carries commas and em-dashes of its own — "Fleet shape —
+// survey, cross-examine, steer" is one candidate — and a bare comma join leaves
+// no way to tell where it ends. Quoting also shows the shell quoting a value
+// with spaces needs.
+func listChoices(choices []string) string {
+	quoted := make([]string, len(choices))
+	for i, choice := range choices {
+		quoted[i] = strconv.Quote(choice)
+	}
+	return strings.Join(quoted, ", ")
 }
 
 // Int accepts a base-10 whole number.
