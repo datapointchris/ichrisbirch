@@ -15,6 +15,10 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/repos"
 )
 
+// projectHints is the command that finds a valid project name. The items
+// subcommands take a project name too, so their own hints name it as well.
+var projectHints = []string{"Closed projects are hidden: icb projects list --status all"}
+
 func newProjectsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "projects",
@@ -23,6 +27,7 @@ func newProjectsCommand() *cobra.Command {
 			"is the container; the work itself is in `icb projects items`.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd, projectHints...)
 	cmd.AddCommand(
 		newProjectsListCommand(),
 		newProjectsShowCommand(),

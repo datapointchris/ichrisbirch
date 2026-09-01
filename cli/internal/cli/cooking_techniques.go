@@ -19,6 +19,8 @@ func newCookingTechniquesCommand() *cobra.Command {
 			"— kept separately from any one recipe that uses them.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd,
+		"Search techniques by name, summary, body, or tags: icb cooking-techniques search <query>")
 	cmd.AddCommand(
 		newCookingTechniquesListCommand(),
 		newCookingTechniquesShowCommand(),

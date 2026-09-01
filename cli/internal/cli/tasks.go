@@ -23,6 +23,10 @@ func newTasksCommand() *cobra.Command {
 			"to no project. Structured work lives in `icb projects items` instead.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd,
+		"Search tasks by name or notes: icb tasks search <query>",
+		"Completed tasks are hidden: icb tasks list --status all",
+	)
 	cmd.AddCommand(
 		newTasksListCommand(),
 		newTasksSearchCommand(),

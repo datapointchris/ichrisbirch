@@ -17,6 +17,7 @@ func newEventsCommand() *cobra.Command {
 		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
 		RunE:  requireSubcommand,
 	}
+	withNotFoundHints(cmd, "List every event: icb events list")
 	cmd.AddCommand(
 		newEventsListCommand(),
 		newEventsShowCommand(),

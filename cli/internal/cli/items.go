@@ -17,6 +17,22 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/repos"
 )
 
+// itemHints and its two extensions are the commands that find a valid id for
+// each thing an items verb takes. An item id is the only one most of them take;
+// the membership verbs take a project name as well, and the task verbs a task
+// id.
+var (
+	itemHints = []string{
+		"Search items by title or notes: icb projects items search <query>",
+		"Completed and archived items are hidden: icb projects items list --status all",
+	}
+
+	itemAndProjectHints = append(slices.Clone(itemHints), projectHints...)
+
+	itemAndTaskHints = append(slices.Clone(itemHints),
+		"List an item's tasks: icb projects items tasks <item>")
+)
+
 func newItemsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "items",
@@ -26,8 +42,9 @@ func newItemsCommand() *cobra.Command {
 			"`icb tasks` instead.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd, itemHints...)
 	cmd.AddCommand(
-		newItemsListCommand(),
+		withNotFoundHints(newItemsListCommand(), itemAndProjectHints...),
 		newItemsNextCommand(),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
@@ -39,18 +56,20 @@ func newItemsCommand() *cobra.Command {
 		newItemsArchiveCommand("archive", "Archive an item", true),
 		newItemsArchiveCommand("unarchive", "Restore an archived item", false),
 		newItemsDeleteCommand(),
-		newItemsReorderCommand(),
-		newItemsAddProjectCommand(),
-		newItemsRemoveProjectCommand(),
+		// A verb taking a second kind of id names the way to find that one too:
+		// --project on the membership verbs, a task id on the task verbs.
+		withNotFoundHints(newItemsReorderCommand(), itemAndProjectHints...),
+		withNotFoundHints(newItemsAddProjectCommand(), itemAndProjectHints...),
+		withNotFoundHints(newItemsRemoveProjectCommand(), itemAndProjectHints...),
 		newItemsAddDependencyCommand(),
 		newItemsRemoveDependencyCommand(),
 		newItemsBlockersCommand(),
 		newItemsTreeCommand(),
 		newItemsTasksCommand(),
 		newItemsAddTaskCommand(),
-		newItemsCompleteTaskCommand(),
-		newItemsEditTaskCommand(),
-		newItemsRemoveTaskCommand(),
+		withNotFoundHints(newItemsCompleteTaskCommand(), itemAndTaskHints...),
+		withNotFoundHints(newItemsEditTaskCommand(), itemAndTaskHints...),
+		withNotFoundHints(newItemsRemoveTaskCommand(), itemAndTaskHints...),
 	)
 	return cmd
 }

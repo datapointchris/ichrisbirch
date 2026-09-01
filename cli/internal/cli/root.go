@@ -119,8 +119,10 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newCookingTechniquesCommand())
 
 	// After the tree is assembled: cobra only propagates a usage template to
-	// commands that already exist when it is set.
+	// commands that already exist when it is set, and the RunE wrapper has to
+	// see every command's own RunE.
 	applyUsageTemplate(root)
+	attachNotFoundHints(root)
 	return root
 }
 

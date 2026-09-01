@@ -20,6 +20,12 @@ func newArticlesCommand() *cobra.Command {
 			"favorites due for a re-read.",
 		RunE: requireSubcommand,
 	}
+	// Search matches tags only, so it cannot stand alone as the way to find an
+	// article whose tags you do not know.
+	withNotFoundHints(cmd,
+		"List every article: icb articles list",
+		"Search articles by tag: icb articles search <tag>",
+	)
 	cmd.AddCommand(
 		newArticlesListCommand(),
 		newArticlesShowCommand(),

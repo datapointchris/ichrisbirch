@@ -18,6 +18,7 @@ func newAutotasksCommand() *cobra.Command {
 			"each last ran. Read-only — the scheduler is what creates and completes them.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd, "List every autotask: icb autotasks list")
 	cmd.AddCommand(
 		newAutotasksListCommand(),
 		newAutotasksShowCommand(),

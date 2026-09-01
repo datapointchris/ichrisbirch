@@ -31,6 +31,7 @@ func newBooksCommand() *cobra.Command {
 			"and what is queued next. `list --progress reading` is the reading-now view.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd, "Search books by title, author, or tags: icb books search <query>")
 	cmd.AddCommand(
 		newBooksListCommand(),
 		newBooksShowCommand(),
