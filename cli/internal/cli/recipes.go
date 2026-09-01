@@ -22,6 +22,7 @@ func newRecipesCommand() *cobra.Command {
 			"for review and never save on their own.",
 		RunE: requireSubcommand,
 	}
+	withNotFoundHints(cmd, "Search recipes by name, instructions, or tags: icb recipes search <query>")
 	cmd.AddCommand(
 		newRecipesListCommand(),
 		newRecipesShowCommand(),

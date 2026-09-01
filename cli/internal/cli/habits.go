@@ -4,12 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+)
+
+// habitHints and habitAndCategoryHints are the commands that find a valid id
+// for the two things a habits verb takes.
+var (
+	habitHints = []string{"List every habit: icb habits list"}
+
+	habitAndCategoryHints = append(slices.Clone(habitHints),
+		"List the categories a habit can belong to: icb habits categories")
 )
 
 func newHabitsCommand() *cobra.Command {
@@ -19,11 +29,14 @@ func newHabitsCommand() *cobra.Command {
 		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
 		RunE:  requireSubcommand,
 	}
+	withNotFoundHints(cmd, habitHints...)
 	cmd.AddCommand(
 		newHabitsListCommand(),
 		newHabitsShowCommand(),
-		newHabitsCreateCommand(),
-		newHabitsEditCommand(),
+		// create and edit take a category id as well as a habit id, so a 404
+		// under either can be about a category the group's hints never mention.
+		withNotFoundHints(newHabitsCreateCommand(), habitAndCategoryHints...),
+		withNotFoundHints(newHabitsEditCommand(), habitAndCategoryHints...),
 		newHabitsDeleteCommand(),
 		newHabitsCompleteCommand(),
 		newHabitsCategoriesCommand(),

@@ -18,6 +18,7 @@ func newCountdownsCommand() *cobra.Command {
 		Long:  "Named future dates and how long is left on each — birthdays, deadlines,\nanniversaries, anything you are counting down to.",
 		RunE:  requireSubcommand,
 	}
+	withNotFoundHints(cmd, "List every countdown: icb countdowns list")
 	cmd.AddCommand(
 		newCountdownsListCommand(),
 		newCountdownsShowCommand(),
