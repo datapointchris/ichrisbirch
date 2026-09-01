@@ -37,25 +37,31 @@ func newCookingTechniquesListCommand() *cobra.Command {
 		category  string
 		ratingMin int
 		asJSON    bool
+		limit     int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List cooking techniques",
 		Long: "List techniques ordered by name. Optionally filter by --category (one of the\n" +
-			"9 fixed categories) and/or --rating-min (1-5).",
+			"9 fixed categories) and/or --rating-min (1-5).\n" +
+			"\n" +
+			"--limit caps what the filters left, so it takes the first names of the\n" +
+			"narrowed set rather than filtering a capped slice.",
 		Example: "  icb cooking-techniques list\n" +
+			"  icb cooking-techniques list --limit 10\n" +
 			"  icb cooking-techniques list --category flavor_development --rating-min 4",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			return runTechniqueList(cmd, asJSON, func(c *api.Client) ([]api.CookingTechnique, error) {
-				return c.ListCookingTechniques(cmd.Context(), strFlag(f, "category", &category), intFlag(f, "rating-min", &ratingMin))
+				return c.ListCookingTechniques(cmd.Context(), strFlag(f, "category", &category), intFlag(f, "rating-min", &ratingMin), limitFlag(cmd))
 			})
 		},
 	}
 	cmd.Flags().StringVar(&category, "category", "", "Filter by category — icb cooking-techniques categories prints them")
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output techniques as JSON to stdout")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

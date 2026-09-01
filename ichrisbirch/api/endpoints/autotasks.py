@@ -11,15 +11,17 @@ from sqlalchemy import select
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession):
+async def read_many(session: DbSession, limit: RowLimit = None):
     query = select(models.AutoTask).order_by(models.AutoTask.last_run_date.desc())
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)

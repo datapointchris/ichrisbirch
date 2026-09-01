@@ -19,7 +19,7 @@ func TestListBooks_Filters(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	books, err := client.ListBooks(context.Background(), BookFilter{Ownership: "owned"}, DateBounds{})
+	books, err := client.ListBooks(context.Background(), BookFilter{Ownership: "owned"}, DateBounds{}, nil)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestListBooks_Filters(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := client.ListBooks(context.Background(), tc.filter, tc.bounds); err != nil {
+			if _, err := client.ListBooks(context.Background(), tc.filter, tc.bounds, nil); err != nil {
 				t.Fatalf("ListBooks: %v", err)
 			}
 			if gotQuery != tc.want {

@@ -8,19 +8,19 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Pattern], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, search: str | None = None, limit: int | None = None):
+async def read_many(session: DbSession, search: str | None = None, limit: RowLimit = None):
     query = select(models.Pattern).order_by(models.Pattern.recorded_at.desc())
     if search:
         query = query.where(models.Pattern.message.ilike(f'%{search}%'))
-    if limit:
-        query = query.limit(limit)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/', response_model=schemas.Pattern, status_code=status.HTTP_201_CREATED)

@@ -18,11 +18,17 @@ type ProjectItem struct {
 	// Number is the handle: server-assigned, short, and what every command
 	// prints and accepts. ID stays the key and is only useful to a caller
 	// holding it from --json.
-	Number    int     `json:"number"`
-	Title     string  `json:"title"`
-	Notes     *string `json:"notes"`
-	Repo      *string `json:"repo"`
-	Completed bool    `json:"completed"`
+	Number int     `json:"number"`
+	Title  string  `json:"title"`
+	Notes  *string `json:"notes"`
+	Repo   *string `json:"repo"`
+	// Status is the one word --status accepts, derived from Completed and
+	// Archived by the server so a JSON consumer reads the same field the table
+	// prints. omitempty because an API that does not send it yet should leave
+	// the key absent rather than answer with a status of "" — the table falls
+	// back to the booleans, and a consumer branches on the missing key.
+	Status    string `json:"status,omitempty"`
+	Completed bool   `json:"completed"`
 	// CompletedAt is when the item was finished, and a pointer because the API
 	// sends null where that time is unknown. UpdatedAt cannot stand in for it:
 	// edit, reopen, archive and unarchive all bump that one.
@@ -47,6 +53,7 @@ type ProjectItemDetail struct {
 	Title         string     `json:"title"`
 	Notes         *string    `json:"notes"`
 	Repo          *string    `json:"repo"`
+	Status        string     `json:"status,omitempty"`
 	Completed     bool       `json:"completed"`
 	CompletedAt   *time.Time `json:"completed_at"`
 	Archived      bool       `json:"archived"`
@@ -99,13 +106,15 @@ type DependencyInput struct {
 //
 // An empty status takes the API's default, which is open. Pass a status to ask
 // for another, or ItemStatusAll for every one. bounds narrows to items finished
-// within a date range; a zero DateBounds narrows nothing.
-func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string, bounds DateBounds) ([]ProjectItem, error) {
+// within a date range; a zero DateBounds narrows nothing. A nil limit fetches
+// all; a non-nil limit caps the count.
+func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string, bounds DateBounds, limit *int) ([]ProjectItem, error) {
 	query := repoQuery(repo)
 	if itemStatus != "" {
 		query.Set("status", itemStatus)
 	}
 	bounds.apply(query)
+	applyLimit(query, limit)
 	var items []ProjectItem
 	if err := c.get(ctx, withQuery("/project-items/", query), &items); err != nil {
 		return nil, err

@@ -174,7 +174,7 @@ func TestListProjects_DecodesOpenAndCompletedCounts(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	projects, err := client.ListProjects(context.Background(), nil, "")
+	projects, err := client.ListProjects(context.Background(), nil, "", nil)
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 
-	items, err := client.ListProjectItems(context.Background(), "018f-a", "all", DateBounds{})
+	items, err := client.ListProjectItems(context.Background(), "018f-a", "all", DateBounds{}, nil)
 	if err != nil {
 		t.Fatalf("ListProjectItems: %v", err)
 	}
@@ -241,14 +241,14 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 
 	// An empty status sends nothing, leaving the server's default rather than
 	// spelling it client-side where it would drift from the API.
-	_, _ = client.ListProjectItems(context.Background(), "018f-a", "", DateBounds{})
+	_, _ = client.ListProjectItems(context.Background(), "018f-a", "", DateBounds{}, nil)
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty when no status is given", gotQuery)
 	}
 
 	// A scope picks the rows, never what a filter means, so the bounds reach the
 	// project-scoped path under the same names the flat list uses.
-	_, _ = client.ListProjectItems(context.Background(), "018f-a", "completed", DateBounds{Start: "2026-08-17"})
+	_, _ = client.ListProjectItems(context.Background(), "018f-a", "completed", DateBounds{Start: "2026-08-17"}, nil)
 	if gotQuery != "start_date=2026-08-17&status=completed" {
 		t.Errorf("query = %q, want the bound beside the status", gotQuery)
 	}
@@ -258,7 +258,7 @@ func TestListProjects_OmitsTheStatusParamWhenUnset(t *testing.T) {
 	// The server's own default is the active projects; sending status=active
 	// would make the CLI the place that decision lives.
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListProjects(context.Background(), nil, ""); err != nil {
+	if _, err := client.ListProjects(context.Background(), nil, "", nil); err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
 	if *query != "" {
@@ -268,7 +268,7 @@ func TestListProjects_OmitsTheStatusParamWhenUnset(t *testing.T) {
 
 func TestListProjects_SendsTheStatusParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListProjects(context.Background(), nil, AllProjectStatuses); err != nil {
+	if _, err := client.ListProjects(context.Background(), nil, AllProjectStatuses, nil); err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
 	if *query != "status=all" {
@@ -285,7 +285,7 @@ func TestListProjects_DecodesTheClosure(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil, AllProjectStatuses)
+	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil, AllProjectStatuses, nil)
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}

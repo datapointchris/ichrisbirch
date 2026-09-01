@@ -8,19 +8,21 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession):
+async def read_many(session: DbSession, limit: RowLimit = None):
     # Ordering resolves the reading against each event's own zone. `date` alone is a
     # wall clock somewhere else, so ordering by it puts a 09:00 in Tokyo after an
     # 08:00 in New York, thirteen hours the wrong way.
     resolved = models.Event.date.op('AT TIME ZONE')(models.Event.timezone)
     query = select(models.Event).order_by(resolved.asc())
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)

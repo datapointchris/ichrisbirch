@@ -27,6 +27,8 @@ from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.project_item_status import apply_status_filter
 from ichrisbirch.services.project_item_status import validate_item_status
 from ichrisbirch.services.project_refs import resolve_project
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -101,6 +103,7 @@ async def read_many(
         alias='status',
         description="A project status, or 'all'. Terminal projects are hidden by default.",
     ),
+    limit: RowLimit = None,
 ):
     if project_status != ALL_STATUSES:
         validate_status(project_status, session)
@@ -122,7 +125,7 @@ async def read_many(
         # HAVING, not WHERE: filtering the join would also shrink the counts, so
         # a project matching on one item would report only that item.
         query = query.having(func.count(ProjectItemMembership.item_id).filter(models.ProjectItem.repo == repo) > 0)
-    return [project_with_counts(*row) for row in session.execute(query).all()]
+    return [project_with_counts(*row) for row in session.execute(apply_row_limit(query, limit)).all()]
 
 
 def validate_kind(kind: str, session: Session) -> None:
@@ -311,6 +314,7 @@ async def list_items(
     ),
     start_date: StartDate = None,
     end_date: EndDate = None,
+    limit: RowLimit = None,
 ):
     """List one project's open items, in project order.
 
@@ -337,6 +341,7 @@ async def list_items(
     # position has no unique constraint, so a collision would otherwise order by
     # whatever the database returned
     query = query.order_by(ProjectItemMembership.position.asc(), models.ProjectItem.created_at.asc())
+    query = apply_row_limit(query, limit)
 
     return [
         schemas.ProjectItemInProject(

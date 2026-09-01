@@ -21,6 +21,8 @@ from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.outbound_http import get_page
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -33,12 +35,16 @@ async def read_many(
     progress: str | None = Query(None),
     start_date: StartDate = None,
     end_date: EndDate = None,
+    limit: RowLimit = None,
 ):
     """List the catalog in reading-priority order, narrowed by the filters and a finish-date range.
 
     The bounds narrow on `read_finish_date`, so anything unread, in progress, or
     abandoned is outside every range — a book with no finish date was not
     finished in any week.
+
+    `limit` caps last, so it takes the highest-priority books of whatever the
+    filters left rather than filtering a capped slice.
     """
     query = select(models.Book).order_by(models.Book.priority.asc())
     if ownership:
@@ -46,7 +52,7 @@ async def read_many(
     if progress:
         query = query.filter(models.Book.progress == progress)
     query = apply_date_bounds(query, models.Book.read_finish_date, start_date, end_date)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)

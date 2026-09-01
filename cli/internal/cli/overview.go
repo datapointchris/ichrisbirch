@@ -197,7 +197,7 @@ func newOverviewCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the overview as JSON to stdout")
-	cmd.Flags().IntVar(&limit, "limit", defaultOverviewLimit, "Max items per section (0 for no cap)")
+	cmd.Flags().IntVarP(&limit, "limit", "n", defaultOverviewLimit, "Max items per section (0 for no cap)")
 	return cmd
 }
 
@@ -205,6 +205,11 @@ func newOverviewCommand() *cobra.Command {
 // window that starts a day early and ends two days late, then narrowed to the
 // local day in Go: the API parses bare dates to midnight UTC instants, so
 // start=end=today would be a zero-width window that matches nothing.
+//
+// Every fetch passes a nil limit, and --limit is applied by capItems after the
+// sections are built. Several of them derive their rows — the next books, the
+// queued articles, the unblocked items — so a server-side cap would cap the set
+// before the derivation and take the wrong rows.
 func overviewFetches() []overviewFetch {
 	return []overviewFetch{
 		{sectionTasks, "tasks", func(ctx context.Context, c *api.Client, d *overviewData) error {
@@ -225,7 +230,7 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionBooks, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"}, api.DateBounds{})
+			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"}, api.DateBounds{}, nil)
 			d.OwnedBooks = books
 			return err
 		}},
@@ -236,7 +241,7 @@ func overviewFetches() []overviewFetch {
 		}},
 		{sectionArticles, "unread articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			unread := true
-			articles, err := c.ListArticles(ctx, nil, nil, &unread, api.DateBounds{})
+			articles, err := c.ListArticles(ctx, nil, nil, &unread, api.DateBounds{}, nil)
 			d.UnreadArticles = articles
 			return err
 		}},
@@ -244,12 +249,12 @@ func overviewFetches() []overviewFetch {
 		// call, so there is no separate read filter to ask for and no third state.
 		{sectionArticles, "read articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			archived := true
-			articles, err := c.ListArticles(ctx, nil, &archived, nil, api.DateBounds{})
+			articles, err := c.ListArticles(ctx, nil, &archived, nil, api.DateBounds{}, nil)
 			d.ReadArticles = articles
 			return err
 		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, api.DateBounds{})
+			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, api.DateBounds{}, nil)
 			d.Items = items
 			return err
 		}},
@@ -259,12 +264,12 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionCountdowns, "countdowns", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			countdowns, err := c.ListCountdowns(ctx)
+			countdowns, err := c.ListCountdowns(ctx, nil)
 			d.Countdowns = countdowns
 			return err
 		}},
 		{sectionEvents, "events", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			events, err := c.ListEvents(ctx)
+			events, err := c.ListEvents(ctx, nil)
 			d.Events = events
 			return err
 		}},

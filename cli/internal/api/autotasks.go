@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 )
 
@@ -22,10 +23,13 @@ type AutoTask struct {
 	RunCount      int       `json:"run_count"`
 }
 
-// ListAutoTasks returns all recurring task templates (GET /autotasks/).
-func (c *Client) ListAutoTasks(ctx context.Context) ([]AutoTask, error) {
+// ListAutoTasks returns recurring task templates, most recently run first
+// (GET /autotasks/). A nil limit fetches all; a non-nil limit caps the count.
+func (c *Client) ListAutoTasks(ctx context.Context, limit *int) ([]AutoTask, error) {
+	params := url.Values{}
+	applyLimit(params, limit)
 	var autotasks []AutoTask
-	if err := c.get(ctx, "/autotasks/", &autotasks); err != nil {
+	if err := c.get(ctx, withQuery("/autotasks/", params), &autotasks); err != nil {
 		return nil, err
 	}
 	return autotasks, nil

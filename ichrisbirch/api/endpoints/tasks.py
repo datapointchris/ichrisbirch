@@ -17,6 +17,8 @@ from ichrisbirch.models.task import TASK_CATEGORIES
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
 
 logger = structlog.get_logger()
@@ -32,7 +34,7 @@ ALL_STATUSES = 'all'
 @router.get('/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def read_many(
     session: DbSession,
-    limit: int | None = None,
+    limit: RowLimit = None,
     task_status: str = Query(
         'open',
         alias='status',
@@ -92,13 +94,13 @@ async def read_many(
         query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
 
     query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date)
-    return list(session.scalars(query.limit(limit)).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/todo/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def todo(
     session: DbSession,
-    limit: int | None = None,
+    limit: RowLimit = None,
     priority: tuple[int, int] | None = None,
 ):
     """Priority is a tuple of INCLUSIVE priority values."""
@@ -106,8 +108,8 @@ async def todo(
     if priority:
         query = query.filter(models.Task.priority >= priority[0], models.Task.priority <= priority[1])
 
-    query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc()).limit(limit)
-    return list(session.scalars(query).all())
+    query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/completed/', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)

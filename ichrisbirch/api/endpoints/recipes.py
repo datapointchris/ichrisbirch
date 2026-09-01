@@ -26,6 +26,8 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.services import url_ingest
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.url_ingest import ClassifierOutputError
 from ichrisbirch.util import slugify
 
@@ -68,6 +70,7 @@ async def read_many(
     difficulty: str | None = None,
     rating_min: int | None = Query(None, ge=1, le=5),
     max_total_time: int | None = Query(None, ge=0),
+    limit: RowLimit = None,
 ):
     query = select(models.Recipe).options(selectinload(models.Recipe.ingredients)).order_by(models.Recipe.name.asc())
     if cuisine:
@@ -80,7 +83,7 @@ async def read_many(
         query = query.filter(models.Recipe.rating >= rating_min)
     if max_total_time is not None:
         query = query.filter(models.Recipe.total_time_minutes <= max_total_time)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
@@ -434,13 +437,14 @@ async def list_cooking_techniques(
     session: DbSession,
     category: str | None = None,
     rating_min: int | None = Query(None, ge=1, le=5),
+    limit: RowLimit = None,
 ):
     query = select(models.CookingTechnique).order_by(models.CookingTechnique.name.asc())
     if category:
         query = query.filter(models.CookingTechnique.category == category)
     if rating_min is not None:
         query = query.filter(models.CookingTechnique.rating >= rating_min)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/cooking-techniques/', response_model=schemas.CookingTechnique, status_code=status.HTTP_201_CREATED)

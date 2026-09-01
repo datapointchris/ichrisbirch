@@ -29,18 +29,23 @@ func newCountdownsCommand() *cobra.Command {
 }
 
 func newCountdownsListCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		asJSON bool
+		limit  int
+	)
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "List all countdowns by due date",
-		Example: "  icb countdowns list\n  icb countdowns list --json",
+		Use:   "list",
+		Short: "List all countdowns by due date",
+		Long: "Countdowns come back soonest-due first, so --limit takes the ones about to\n" +
+			"arrive rather than an arbitrary slice.",
+		Example: "  icb countdowns list\n  icb countdowns list --limit 5\n  icb countdowns list --json",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			countdowns, err := client.ListCountdowns(cmd.Context())
+			countdowns, err := client.ListCountdowns(cmd.Context(), limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -52,6 +57,7 @@ func newCountdownsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output countdowns as JSON to stdout")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

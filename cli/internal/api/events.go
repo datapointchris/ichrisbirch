@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // Event mirrors the events JSON. URL and Notes are nullable.
@@ -47,10 +48,14 @@ type EventUpdateInput struct {
 	Notes     *string  `json:"notes,omitempty"`
 }
 
-// ListEvents returns events ordered by date (GET /events/).
-func (c *Client) ListEvents(ctx context.Context) ([]Event, error) {
+// ListEvents returns events ordered by date (GET /events/). A nil limit fetches
+// all; a non-nil limit caps the count, so it takes the soonest rather than an
+// arbitrary slice.
+func (c *Client) ListEvents(ctx context.Context, limit *int) ([]Event, error) {
+	params := url.Values{}
+	applyLimit(params, limit)
 	var events []Event
-	if err := c.get(ctx, "/events/", &events); err != nil {
+	if err := c.get(ctx, withQuery("/events/", params), &events); err != nil {
 		return nil, err
 	}
 	return events, nil

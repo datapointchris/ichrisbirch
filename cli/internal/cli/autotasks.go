@@ -26,18 +26,23 @@ func newAutotasksCommand() *cobra.Command {
 }
 
 func newAutotasksListCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		asJSON bool
+		limit  int
+	)
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "List recurring task templates",
-		Example: "  icb autotasks list\n  icb autotasks list --json",
+		Use:   "list",
+		Short: "List recurring task templates",
+		Long: "Templates come back most recently run first, so --limit takes the ones that\n" +
+			"fired last rather than an arbitrary slice.",
+		Example: "  icb autotasks list\n  icb autotasks list --limit 5\n  icb autotasks list --json",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			autotasks, err := client.ListAutoTasks(cmd.Context())
+			autotasks, err := client.ListAutoTasks(cmd.Context(), limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -49,6 +54,7 @@ func newAutotasksListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output auto-tasks as JSON to stdout")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

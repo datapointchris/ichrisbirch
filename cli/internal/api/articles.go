@@ -141,10 +141,11 @@ func (c *Client) ListFailedArticleImports(ctx context.Context) ([]ArticleFailedI
 // ListArticles returns articles ordered by title (GET /articles/). Each of
 // favorites/archived/unread, when non-nil, adds a tri-state filter query param
 // (favorites=true returns only favorites due for re-read). bounds narrows to
-// articles last read within a date range; a zero DateBounds narrows nothing.
-func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, bounds DateBounds) ([]Article, error) {
+// articles last read within a date range; a zero DateBounds narrows nothing. A
+// nil limit fetches all; a non-nil limit caps the count.
+func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, bounds DateBounds, limit *int) ([]Article, error) {
 	var articles []Article
-	if err := c.get(ctx, "/articles/"+articleListQuery(favorites, archived, unread, bounds), &articles); err != nil {
+	if err := c.get(ctx, "/articles/"+articleListQuery(favorites, archived, unread, bounds, limit), &articles); err != nil {
 		return nil, err
 	}
 	return articles, nil
@@ -207,7 +208,7 @@ func (c *Client) DeleteArticle(ctx context.Context, id int) error {
 
 // articleListQuery renders the tri-state list filters, omitting any that is nil
 // so an unset filter sends no param at all.
-func articleListQuery(favorites, archived, unread *bool, bounds DateBounds) string {
+func articleListQuery(favorites, archived, unread *bool, bounds DateBounds, limit *int) string {
 	params := url.Values{}
 	if favorites != nil {
 		params.Set("favorites", strconv.FormatBool(*favorites))
@@ -219,6 +220,7 @@ func articleListQuery(favorites, archived, unread *bool, bounds DateBounds) stri
 		params.Set("unread", strconv.FormatBool(*unread))
 	}
 	bounds.apply(params)
+	applyLimit(params, limit)
 	if encoded := params.Encode(); encoded != "" {
 		return "?" + encoded
 	}

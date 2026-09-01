@@ -64,6 +64,7 @@ func newItemsListCommand() *cobra.Command {
 		repo       string
 		itemStatus string
 		bounds     api.DateBounds
+		limit      int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -82,12 +83,15 @@ func newItemsListCommand() *cobra.Command {
 			"--start/--end bound when an item was finished, inclusive on both ends, and\n" +
 			"either works without the other. An item that was never completed has no\n" +
 			"such date, so it falls outside every range — pair them with\n" +
-			"--status completed to read a week's finished work.",
+			"--status completed to read a week's finished work.\n" +
+			"\n" +
+			"--limit caps what the filters left, and applies to either shape of the\n" +
+			"list: newest-first unscoped, project order under --project.",
 		Example: "  icb projects items list\n" +
 			"  icb projects items list --status completed\n" +
 			"  icb projects items list --status completed --start 2026-08-17\n" +
 			"  icb projects items list --status all --json\n" +
-			"  icb projects items list --repo dotfiles\n" +
+			"  icb projects items list --repo dotfiles --limit 10\n" +
 			"  icb projects items list --project todoui\n" +
 			"  icb projects items list --project todoui --status all",
 		Args: usageArgs(cobra.NoArgs),
@@ -98,7 +102,7 @@ func newItemsListCommand() *cobra.Command {
 			if project == "" {
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context(), filter, itemStatus, bounds)
+					return c.ListItems(cmd.Context(), filter, itemStatus, bounds, limitFlag(cmd))
 				}); err != nil {
 					return err
 				}
@@ -112,7 +116,7 @@ func newItemsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, bounds)
+			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, bounds, limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -130,6 +134,7 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only items completed on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only items completed on or before this ISO 8601 date")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 
@@ -241,7 +246,10 @@ func newItemsNextCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			filter := repoFlagValue(cmd, repo)
-			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, api.DateBounds{})
+			// Every open item, uncapped: the blocked set is computed from the
+			// whole graph, and --limit here caps what is printed rather than
+			// what is read.
+			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, api.DateBounds{}, nil)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -271,7 +279,7 @@ func newItemsNextCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
 	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: "+strings.Join(api.ProjectKinds, ", "))
 	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
-	cmd.Flags().IntVar(&limit, "limit", 10, "Max items to return (0 for no cap)")
+	cmd.Flags().IntVarP(&limit, "limit", "n", 10, "Max items to return (0 for no cap)")
 	return cmd
 }
 
@@ -424,7 +432,7 @@ func newItemsShowCommand() *cobra.Command {
 // repo registry both change without this file changing. That is also why the
 // client is built before the form rather than after it.
 func itemCreateFields(ctx context.Context, client *api.Client, made *createdProjects) ([]prompt.Field, error) {
-	projects, err := client.ListProjects(ctx, nil, "")
+	projects, err := client.ListProjects(ctx, nil, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1311,9 +1319,25 @@ func itemStatusWord(archived, completed bool) string {
 	}
 }
 
-func flatItemStatus(it api.ProjectItem) string { return itemStatusWord(it.Archived, it.Completed) }
+// serverStatus prefers the word the API derived, so the table and --json cannot
+// disagree about one item. An API that does not send the field yet leaves it
+// empty rather than absent once decoded, and the booleans still answer — see
+// `api-design.md` § "Clients branch on `nil`, never on \"empty\"", which is what
+// keeps deploy order between the two irrelevant.
+func serverStatus(status string, archived, completed bool) string {
+	if status != "" {
+		return status
+	}
+	return itemStatusWord(archived, completed)
+}
 
-func detailStatus(d api.ProjectItemDetail) string { return itemStatusWord(d.Archived, d.Completed) }
+func flatItemStatus(it api.ProjectItem) string {
+	return serverStatus(it.Status, it.Archived, it.Completed)
+}
+
+func detailStatus(d api.ProjectItemDetail) string {
+	return serverStatus(d.Status, d.Archived, d.Completed)
+}
 
 // A task has no archived state, so it is the same vocabulary minus one word.
 func taskState(t api.ProjectItemTask) string { return itemStatusWord(false, t.Completed) }

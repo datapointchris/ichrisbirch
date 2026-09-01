@@ -5,13 +5,33 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic import computed_field
 
 from ichrisbirch.schemas.project import Project
 from ichrisbirch.schemas.project_item_task import ProjectItemTask
+from ichrisbirch.services.project_item_status import derive_item_status
 
 
 class ProjectItemConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectItemStatusFields(ProjectItemConfig):
+    """The two stored booleans, and the one word every item view renders from them.
+
+    Each view deriving the word for itself is how the text output came to show a
+    `status` the JSON did not carry. Serializing it means both doors answer with
+    the same document, and a consumer reads a status without reimplementing the
+    archived-beats-completed precedence.
+    """
+
+    completed: bool
+    archived: bool
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def status(self) -> str:
+        return derive_item_status(self.archived, self.completed)
 
 
 # What a caller may pass where an item or a project is named. An item answers to
@@ -34,7 +54,7 @@ class ProjectItemCreate(ProjectItemConfig):
     project_ids: list[ProjectRef]
 
 
-class ProjectItem(ProjectItemConfig):
+class ProjectItem(ProjectItemStatusFields):
     """An item always travels with the projects it belongs to.
 
     An item title on its own ("Glove 80") names a thing without saying what work
@@ -53,11 +73,9 @@ class ProjectItem(ProjectItemConfig):
     title: str
     notes: str | None = None
     repo: str | None = None
-    completed: bool
     # Null where the completion time is unknown: never finished, or finished by a
     # write that recorded none. Every reader handles it.
     completed_at: datetime | None = None
-    archived: bool
     created_at: datetime
     updated_at: datetime
     projects: list[Project] = []
@@ -73,7 +91,7 @@ class ProjectItemUpdate(ProjectItemConfig):
     archived: bool | None = None
 
 
-class ProjectItemDetail(ProjectItemConfig):
+class ProjectItemDetail(ProjectItemStatusFields):
     """Extended view with membership and dependency info."""
 
     id: UUID
@@ -81,16 +99,14 @@ class ProjectItemDetail(ProjectItemConfig):
     title: str
     notes: str | None = None
     repo: str | None = None
-    completed: bool
     completed_at: datetime | None = None
-    archived: bool
     created_at: datetime
     updated_at: datetime
     projects: list[Project]
     dependency_ids: list[UUID]
 
 
-class ProjectItemInProject(ProjectItemConfig):
+class ProjectItemInProject(ProjectItemStatusFields):
     """Item as seen within a project context, includes position."""
 
     id: UUID
@@ -98,9 +114,7 @@ class ProjectItemInProject(ProjectItemConfig):
     title: str
     notes: str | None = None
     repo: str | None = None
-    completed: bool
     completed_at: datetime | None = None
-    archived: bool
     created_at: datetime
     updated_at: datetime
     position: int

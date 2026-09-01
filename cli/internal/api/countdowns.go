@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // Countdown mirrors the countdowns JSON. DueDate is a date-only field, kept as a
@@ -32,9 +33,13 @@ type CountdownUpdateInput struct {
 }
 
 // ListCountdowns returns countdowns ordered by due date (GET /countdowns/).
-func (c *Client) ListCountdowns(ctx context.Context) ([]Countdown, error) {
+// A nil limit fetches all; a non-nil limit caps the count, so it takes the
+// soonest due rather than an arbitrary slice.
+func (c *Client) ListCountdowns(ctx context.Context, limit *int) ([]Countdown, error) {
+	params := url.Values{}
+	applyLimit(params, limit)
 	var countdowns []Countdown
-	if err := c.get(ctx, "/countdowns/", &countdowns); err != nil {
+	if err := c.get(ctx, withQuery("/countdowns/", params), &countdowns); err != nil {
 		return nil, err
 	}
 	return countdowns, nil

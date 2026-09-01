@@ -14,6 +14,8 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -29,13 +31,13 @@ async def create_habit(habit: schemas.HabitCreate, session: DbSession):
 
 
 @router.get('/', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
-async def read_many_habits(session: DbSession, current: bool | None = None, limit: int | None = None):
-    query = select(models.Habit).limit(limit)
+async def read_many_habits(session: DbSession, current: bool | None = None, limit: RowLimit = None):
+    query = select(models.Habit)
     if current is True:
         query = query.filter(models.Habit.is_current.is_(True))
     if current is False:
         query = query.filter(models.Habit.is_current.is_(False))
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/categories/', response_model=schemas.HabitCategory, status_code=status.HTTP_201_CREATED)
@@ -48,13 +50,13 @@ async def create_category(category: schemas.HabitCategoryCreate, session: DbSess
 
 
 @router.get('/categories/', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
-async def read_many_categories(session: DbSession, current: bool | None = None, limit: int | None = None):
-    query = select(models.HabitCategory).limit(limit)
+async def read_many_categories(session: DbSession, current: bool | None = None, limit: RowLimit = None):
+    query = select(models.HabitCategory)
     if current is True:
         query = query.filter(models.HabitCategory.is_current.is_(True))
     if current is False:
         query = query.filter(models.HabitCategory.is_current.is_(False))
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/completed/', response_model=schemas.HabitCompleted, status_code=status.HTTP_201_CREATED)

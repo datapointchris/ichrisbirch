@@ -21,7 +21,7 @@ func TestListCookingTechniques_Filters(t *testing.T) {
 	client := New(srv.URL, staticTokenClient("t"))
 	cat := "flavor_development"
 	min := 4
-	techniques, err := client.ListCookingTechniques(context.Background(), &cat, &min)
+	techniques, err := client.ListCookingTechniques(context.Background(), &cat, &min, nil)
 	if err != nil {
 		t.Fatalf("ListCookingTechniques: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestListCookingTechniques_Filters(t *testing.T) {
 	}
 
 	// nil filters → no query string.
-	_, _ = client.ListCookingTechniques(context.Background(), nil, nil)
+	_, _ = client.ListCookingTechniques(context.Background(), nil, nil, nil)
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty", gotQuery)
 	}

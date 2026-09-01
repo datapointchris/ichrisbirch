@@ -69,7 +69,8 @@ type CookingTechniqueCategory struct {
 
 // ListCookingTechniques returns techniques ordered by name (GET
 // /recipes/cooking-techniques/). category and ratingMin, when non-nil, filter.
-func (c *Client) ListCookingTechniques(ctx context.Context, category *string, ratingMin *int) ([]CookingTechnique, error) {
+// A nil limit fetches all; a non-nil limit caps the count.
+func (c *Client) ListCookingTechniques(ctx context.Context, category *string, ratingMin, limit *int) ([]CookingTechnique, error) {
 	params := url.Values{}
 	if category != nil {
 		params.Set("category", *category)
@@ -77,6 +78,7 @@ func (c *Client) ListCookingTechniques(ctx context.Context, category *string, ra
 	if ratingMin != nil {
 		params.Set("rating_min", strconv.Itoa(*ratingMin))
 	}
+	applyLimit(params, limit)
 	path := "/recipes/cooking-techniques/"
 	if encoded := params.Encode(); encoded != "" {
 		path += "?" + encoded

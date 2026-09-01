@@ -42,6 +42,7 @@ func newProjectsListCommand() *cobra.Command {
 		asJSON        bool
 		repo          string
 		projectStatus string
+		limit         int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -49,8 +50,12 @@ func newProjectsListCommand() *cobra.Command {
 		Long: "The active projects, with the repos their items touch. --repo narrows to the\n" +
 			"projects holding work on one repo — the efforts that span it, however they are\n" +
 			"named. Completed and dropped projects are hidden until you ask for them by\n" +
-			"--status; that is the whole point of closing one.",
+			"--status; that is the whole point of closing one.\n" +
+			"\n" +
+			"--limit caps what the filters left, so it takes the first projects in\n" +
+			"position order rather than filtering a capped slice.",
 		Example: "  icb projects list\n  icb projects list --repo dotfiles\n" +
+			"  icb projects list --limit 5\n" +
 			"  icb projects list --status completed\n  icb projects list --status all --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -59,7 +64,7 @@ func newProjectsListCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			filter := repoFlagValue(cmd, repo)
-			projects, err := client.ListProjects(cmd.Context(), filter, projectStatus)
+			projects, err := client.ListProjects(cmd.Context(), filter, projectStatus, limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -84,6 +89,7 @@ func newProjectsListCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output projects as JSON to stdout")
 	cmd.Flags().StringVar(&repo, "repo", "", "Only projects holding work on this repo")
 	cmd.Flags().StringVar(&projectStatus, "status", "", "One of: "+strings.Join(api.ProjectStatuses, ", ")+" (default active)")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 
@@ -194,7 +200,7 @@ func newProjectsShowCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus, api.DateBounds{})
+			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus, api.DateBounds{}, nil)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -494,7 +500,7 @@ func printProjectItemsTable(out io.Writer, items []api.ProjectItemInProject) {
 }
 
 func itemStatus(it api.ProjectItemInProject) string {
-	return itemStatusWord(it.Archived, it.Completed)
+	return serverStatus(it.Status, it.Archived, it.Completed)
 }
 
 // count renders one of a project's item counts, or "—" when the server omitted

@@ -47,12 +47,17 @@ func newRecipesListCommand() *cobra.Command {
 		ratingMin    int
 		maxTotalTime int
 		asJSON       bool
+		limit        int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List recipes",
-		Long:  "List recipes ordered by name, optionally filtered.",
+		Long: "List recipes ordered by name, optionally filtered.\n" +
+			"\n" +
+			"--limit caps what the filters left, so it takes the first names of the\n" +
+			"narrowed set rather than filtering a capped slice.",
 		Example: "  icb recipes list\n" +
+			"  icb recipes list --limit 10\n" +
 			"  icb recipes list --cuisine italian --rating-min 4 --max-total-time 45",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -60,7 +65,7 @@ func newRecipesListCommand() *cobra.Command {
 			return runRecipeList(cmd, asJSON, func(c *api.Client) ([]api.Recipe, error) {
 				return c.ListRecipes(cmd.Context(),
 					strFlag(f, "cuisine", &cuisine), strFlag(f, "meal-type", &mealType), strFlag(f, "difficulty", &difficulty),
-					intFlag(f, "rating-min", &ratingMin), intFlag(f, "max-total-time", &maxTotalTime))
+					intFlag(f, "rating-min", &ratingMin), intFlag(f, "max-total-time", &maxTotalTime), limitFlag(cmd))
 			})
 		},
 	}
@@ -70,6 +75,7 @@ func newRecipesListCommand() *cobra.Command {
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().IntVar(&maxTotalTime, "max-total-time", 0, "Maximum total time in minutes")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output recipes as JSON to stdout")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 
