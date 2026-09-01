@@ -31,7 +31,13 @@ class Refusal(enum.StrEnum):
 
 
 class NotFoundException(HTTPException):
-    """Exception raised when a requested resource is not found."""
+    """Exception raised when a requested resource is not found.
+
+    `resource_type` is the noun a person reads, so it is written as words:
+    'project item', not 'project_item'. The detail reaches a caller who is
+    stuck — the `icb` CLI prints it verbatim, and the Vue app surfaces it — and
+    an internal spelling there names something they cannot look up or type.
+    """
 
     def __init__(self, resource_type: str, resource_id: str | int | UUID, logger: Any):
         logger.warning('resource_not_found', resource_type=resource_type, resource_id=resource_id)

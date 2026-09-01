@@ -80,7 +80,7 @@ async def update_note(id: int, note_id: int, update: schemas.DurationNoteUpdate,
         raise NotFoundException('duration', id, logger)
     note_obj = session.get(models.DurationNote, note_id)
     if not note_obj or note_obj.duration_id != id:
-        raise NotFoundException('duration_note', note_id, logger)
+        raise NotFoundException('duration note', note_id, logger)
 
     update_data = update.model_dump(exclude_unset=True)
     for attr, value in update_data.items():
@@ -96,7 +96,7 @@ async def delete_note(id: int, note_id: int, session: DbSession):
         raise NotFoundException('duration', id, logger)
     note_obj = session.get(models.DurationNote, note_id)
     if not note_obj or note_obj.duration_id != id:
-        raise NotFoundException('duration_note', note_id, logger)
+        raise NotFoundException('duration note', note_id, logger)
 
     session.delete(note_obj)
     session.commit()

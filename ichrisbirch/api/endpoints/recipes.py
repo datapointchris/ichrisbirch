@@ -498,7 +498,7 @@ async def list_cooking_technique_categories(session: DbSession):
 async def read_cooking_technique_by_slug(slug: str, session: DbSession):
     technique = session.scalar(select(models.CookingTechnique).where(models.CookingTechnique.slug == slug))
     if technique is None:
-        raise NotFoundException('cooking_technique', slug, logger)
+        raise NotFoundException('cooking technique', slug, logger)
     return technique
 
 
@@ -506,7 +506,7 @@ async def read_cooking_technique_by_slug(slug: str, session: DbSession):
 async def read_cooking_technique(id: int, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
-        raise NotFoundException('cooking_technique', id, logger)
+        raise NotFoundException('cooking technique', id, logger)
     return technique
 
 
@@ -514,7 +514,7 @@ async def read_cooking_technique(id: int, session: DbSession):
 async def delete_cooking_technique(id: int, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
-        raise NotFoundException('cooking_technique', id, logger)
+        raise NotFoundException('cooking technique', id, logger)
     session.delete(technique)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -524,7 +524,7 @@ async def delete_cooking_technique(id: int, session: DbSession):
 async def update_cooking_technique(id: int, technique_update: schemas.CookingTechniqueUpdate, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
-        raise NotFoundException('cooking_technique', id, logger)
+        raise NotFoundException('cooking technique', id, logger)
 
     update_data = technique_update.model_dump(exclude_unset=True)
     # Slug is server-owned — name changes do not alter the slug (preserves deep links).

@@ -36,7 +36,7 @@ ItemFromPath = Annotated[models.ProjectItem, Depends(path_item)]
 def _get_task_or_404(session: Session, item_id: UUID, task_id: UUID) -> ProjectItemTask:
     task = session.get(ProjectItemTask, task_id)
     if not task or task.item_id != item_id:
-        raise NotFoundException('project_item_task', task_id, logger)
+        raise NotFoundException('project item task', task_id, logger)
     return task
 
 

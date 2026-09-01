@@ -54,7 +54,7 @@ def resolve_item(session: Session, ref: str | UUID | int) -> models.ProjectItem:
             detail=f'{ref!r} is not a project item UUID or number',
         )
     if item is None:
-        raise NotFoundException('project_item', str(ref), logger)
+        raise NotFoundException('project item', str(ref), logger)
     return item
 
 
