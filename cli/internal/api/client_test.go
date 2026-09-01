@@ -37,7 +37,7 @@ func TestListProjects_DecodesAndAuthenticates(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("abc123"))
-	projects, err := client.ListProjects(context.Background(), nil, "")
+	projects, err := client.ListProjects(context.Background(), nil, "", nil)
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestSend_NonJSONErrorBody(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.ListProjects(context.Background(), nil, "")
+	_, err := client.ListProjects(context.Background(), nil, "", nil)
 
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
@@ -157,7 +157,7 @@ func TestDecodeAPIError_MessageFallback(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.ListProjects(context.Background(), nil, "")
+	_, err := client.ListProjects(context.Background(), nil, "", nil)
 
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {

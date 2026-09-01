@@ -17,7 +17,7 @@ func TestListAutoTasks_DecodesRows(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	autotasks, err := client.ListAutoTasks(context.Background())
+	autotasks, err := client.ListAutoTasks(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListAutoTasks: %v", err)
 	}

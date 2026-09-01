@@ -26,7 +26,7 @@ func strptr(s string) *string { return &s }
 
 func TestListItems_OmitsTheRepoParamWhenUnfiltered(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), nil, "", DateBounds{}); err != nil {
+	if _, err := client.ListItems(context.Background(), nil, "", DateBounds{}, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "" {
@@ -36,7 +36,7 @@ func TestListItems_OmitsTheRepoParamWhenUnfiltered(t *testing.T) {
 
 func TestListItems_SendsTheRepoParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), strptr("dotfiles"), "", DateBounds{}); err != nil {
+	if _, err := client.ListItems(context.Background(), strptr("dotfiles"), "", DateBounds{}, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "repo=dotfiles" {
@@ -49,7 +49,7 @@ func TestListItems_SendsTheRepoParam(t *testing.T) {
 // into "everything".
 func TestListItems_SendsAnEmptyRepoForUntaggedWork(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), strptr(""), "", DateBounds{}); err != nil {
+	if _, err := client.ListItems(context.Background(), strptr(""), "", DateBounds{}, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "repo=" {
@@ -79,7 +79,7 @@ func TestListBlockedItems_SendsTheRepoParam(t *testing.T) {
 
 func TestListProjects_SendsTheRepoParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListProjects(context.Background(), strptr("indy"), ""); err != nil {
+	if _, err := client.ListProjects(context.Background(), strptr("indy"), "", nil); err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
 	if *query != "repo=indy" {
@@ -96,7 +96,7 @@ func TestListProjects_DecodesTheDerivedRepos(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil, "")
+	projects, err := New(srv.URL, staticTokenClient("t")).ListProjects(context.Background(), nil, "", nil)
 	if err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestListProjects_DecodesTheDerivedRepos(t *testing.T) {
 
 func TestListItems_OmitsTheStatusParamByDefault(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), nil, "", DateBounds{}); err != nil {
+	if _, err := client.ListItems(context.Background(), nil, "", DateBounds{}, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "" {
@@ -117,7 +117,7 @@ func TestListItems_OmitsTheStatusParamByDefault(t *testing.T) {
 
 func TestListItems_CarriesBothTheRepoAndTheStatus(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), strptr("dotfiles"), ItemStatusAll, DateBounds{}); err != nil {
+	if _, err := client.ListItems(context.Background(), strptr("dotfiles"), ItemStatusAll, DateBounds{}, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "repo=dotfiles&status=all" {
@@ -128,7 +128,7 @@ func TestListItems_CarriesBothTheRepoAndTheStatus(t *testing.T) {
 func TestListItems_CarriesTheCompletionDateBounds(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
 	bounds := DateBounds{Start: "2026-08-17", End: "2026-08-23"}
-	if _, err := client.ListItems(context.Background(), nil, ItemStatusCompleted, bounds); err != nil {
+	if _, err := client.ListItems(context.Background(), nil, ItemStatusCompleted, bounds, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "end_date=2026-08-23&start_date=2026-08-17&status=completed" {
@@ -138,7 +138,7 @@ func TestListItems_CarriesTheCompletionDateBounds(t *testing.T) {
 
 func TestListItems_OneBoundNarrowsOnItsOwn(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListItems(context.Background(), nil, "", DateBounds{Start: "2026-08-17"}); err != nil {
+	if _, err := client.ListItems(context.Background(), nil, "", DateBounds{Start: "2026-08-17"}, nil); err != nil {
 		t.Fatalf("ListItems: %v", err)
 	}
 	if *query != "start_date=2026-08-17" {

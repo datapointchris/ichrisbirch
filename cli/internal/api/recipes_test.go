@@ -22,7 +22,7 @@ func TestListRecipes_Filters(t *testing.T) {
 	cuisine := "italian"
 	ratingMin := 4
 	maxTime := 45
-	recipes, err := client.ListRecipes(context.Background(), &cuisine, nil, nil, &ratingMin, &maxTime)
+	recipes, err := client.ListRecipes(context.Background(), &cuisine, nil, nil, &ratingMin, &maxTime, nil)
 	if err != nil {
 		t.Fatalf("ListRecipes: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestListRecipes_Filters(t *testing.T) {
 		t.Errorf("recipes = %+v", recipes)
 	}
 
-	_, _ = client.ListRecipes(context.Background(), nil, nil, nil, nil, nil)
+	_, _ = client.ListRecipes(context.Background(), nil, nil, nil, nil, nil, nil)
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty", gotQuery)
 	}

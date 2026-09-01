@@ -48,6 +48,7 @@ func newBooksListCommand() *cobra.Command {
 		filter api.BookFilter
 		bounds api.DateBounds
 		asJSON bool
+		limit  int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -58,16 +59,20 @@ func newBooksListCommand() *cobra.Command {
 			"\n" +
 			"--start/--end bound when a book was finished, inclusive on both ends, and\n" +
 			"either works without the other. Anything unread, in progress, or abandoned\n" +
-			"has no finish date, so it falls outside every range.",
+			"has no finish date, so it falls outside every range.\n" +
+			"\n" +
+			"--limit caps what the filters left, so it takes the highest-priority books\n" +
+			"of the narrowed set rather than filtering a capped slice.",
 		Example: "  icb books list                      the whole catalog, highest priority first\n" +
 			"  icb books list --progress reading   what you are reading right now\n" +
 			"  icb books list --progress unread --ownership owned\n" +
 			"                                      owned but not started — what to pick up next\n" +
+			"  icb books list --limit 10           the ten to read next\n" +
 			"  icb books list --start 2026-01-01   what you have finished this year",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
-				return c.ListBooks(cmd.Context(), filter, bounds)
+				return c.ListBooks(cmd.Context(), filter, bounds, limitFlag(cmd))
 			})
 		},
 	}
@@ -76,6 +81,7 @@ func newBooksListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only books finished on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only books finished on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output books as JSON to stdout")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

@@ -29,6 +29,8 @@ from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.outbound_http import get_page
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.url_extraction import get_text_content_from_html
 from ichrisbirch.services.url_extraction import get_youtube_video_text_captions
 from ichrisbirch.util import clean_url
@@ -83,12 +85,16 @@ async def read_many(
     unread: bool | None = None,
     start_date: StartDate = None,
     end_date: EndDate = None,
+    limit: RowLimit = None,
 ):
     """List articles by title, narrowed by the tri-state filters and a read-date range.
 
     The bounds narrow on `last_read_date`, so a never-read article is outside
     every range — the same answer `unread=false` gives, reached by the same
     column.
+
+    `limit` caps last, so it takes the first titles of whatever the filters left
+    rather than filtering a capped slice.
     """
     query = select(models.Article).order_by(models.Article.title.asc())
     if favorites is True:
@@ -109,7 +115,7 @@ async def read_many(
     if unread is False:
         query = query.where(models.Article.last_read_date.is_not(None))
     query = apply_date_bounds(query, models.Article.last_read_date, start_date, end_date)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/current/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)

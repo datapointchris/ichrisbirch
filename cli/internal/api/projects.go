@@ -46,6 +46,7 @@ type ProjectItemInProject struct {
 	Title       string     `json:"title"`
 	Notes       *string    `json:"notes"`
 	Repo        *string    `json:"repo"`
+	Status      string     `json:"status,omitempty"`
 	Completed   bool       `json:"completed"`
 	CompletedAt *time.Time `json:"completed_at"`
 	Archived    bool       `json:"archived"`
@@ -87,12 +88,14 @@ const AllProjectStatuses = "all"
 
 // ListProjects returns projects with their item counts (GET /projects/). An
 // empty projectStatus takes the server's default, which is the active projects
-// only; pass a status name or AllProjectStatuses to see the closed ones.
-func (c *Client) ListProjects(ctx context.Context, repo *string, projectStatus string) ([]Project, error) {
+// only; pass a status name or AllProjectStatuses to see the closed ones. A nil
+// limit fetches all; a non-nil limit caps the count.
+func (c *Client) ListProjects(ctx context.Context, repo *string, projectStatus string, limit *int) ([]Project, error) {
 	query := repoQuery(repo)
 	if projectStatus != "" {
 		query.Set("status", projectStatus)
 	}
+	applyLimit(query, limit)
 	var projects []Project
 	if err := c.get(ctx, withQuery("/projects/", query), &projects); err != nil {
 		return nil, err
@@ -176,13 +179,16 @@ var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
 // because scoping to a project picks which rows come back and not which states.
 // An empty itemStatus leaves the server's default. A missing id is a 404. bounds
 // narrows to items finished within a date range, the same column and semantics
-// the flat list uses — a scope picks the rows, never what a filter means.
-func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, bounds DateBounds) ([]ProjectItemInProject, error) {
+// the flat list uses — a scope picks the rows, never what a filter means. A nil
+// limit fetches all; a non-nil limit caps the count, so it takes the first items
+// in project order.
+func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, bounds DateBounds, limit *int) ([]ProjectItemInProject, error) {
 	query := url.Values{}
 	if itemStatus != "" {
 		query.Set("status", itemStatus)
 	}
 	bounds.apply(query)
+	applyLimit(query, limit)
 	path := withQuery("/projects/"+id+"/items/", query)
 	var items []ProjectItemInProject
 	if err := c.get(ctx, path, &items); err != nil {

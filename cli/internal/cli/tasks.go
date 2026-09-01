@@ -92,7 +92,7 @@ func newTasksListCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum number of tasks to return")
+	addLimitFlag(cmd, &limit)
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&category, "category", "", "Only tasks in this category: "+strings.Join(api.TaskCategories, ", "))
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only tasks completed on or after this ISO 8601 date")
@@ -462,16 +462,6 @@ func runTaskList(cmd *cobra.Command, asJSON bool, fetch func(*api.Client) ([]api
 	}
 	printTaskList(cmd.OutOrStdout(), tasks)
 	return nil
-}
-
-// limitFlag returns a *int for the --limit flag, or nil when it was not set (so
-// the client omits the query param and the API returns everything).
-func limitFlag(cmd *cobra.Command) *int {
-	if !cmd.Flags().Changed("limit") {
-		return nil
-	}
-	v, _ := cmd.Flags().GetInt("limit")
-	return &v
 }
 
 // parseIntArg converts a positional argument to an int, classifying a bad value

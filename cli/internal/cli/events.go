@@ -29,18 +29,24 @@ func newEventsCommand() *cobra.Command {
 }
 
 func newEventsListCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		asJSON bool
+		limit  int
+	)
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "List all events by date",
-		Example: "  icb events list\n  icb events list --json",
+		Use:   "list",
+		Short: "List all events by date",
+		Long: "Events come back soonest first, each ordered by its own wall clock resolved\n" +
+			"against its zone, so --limit takes the ones coming up rather than an\n" +
+			"arbitrary slice.",
+		Example: "  icb events list\n  icb events list --limit 5\n  icb events list --json",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			events, err := client.ListEvents(cmd.Context())
+			events, err := client.ListEvents(cmd.Context(), limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -52,6 +58,7 @@ func newEventsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output events as JSON to stdout")
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

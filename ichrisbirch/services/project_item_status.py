@@ -1,4 +1,4 @@
-"""Derived-status filtering for project items.
+"""The derived status of a project item, in both directions.
 
 Two stored booleans, `completed` and `archived`, present as three mutually
 exclusive states plus `all`. Both list endpoints read through here — the flat
@@ -6,6 +6,12 @@ exclusive states plus `all`. Both list endpoints read through here — the flat
 scope selects which rows it returns and not which states, so the two paths
 answer `status` identically. See `cli-design.md` § "A scope selects which rows,
 not which states".
+
+`apply_status_filter` narrows a query to one status and `derive_item_status`
+names one row's, so the set a filter returns is exactly the set whose derived
+status matches it. One precedence, written once, is what keeps that true —
+`api-design.md` § "Domain rules live with the domain; the renderer lays out what
+it is handed" is why it is here rather than in each client.
 """
 
 from fastapi import HTTPException
@@ -34,6 +40,19 @@ def apply_status_filter(query: Select, item_status: str) -> Select:
         return query.where(models.ProjectItem.archived == True)  # noqa: E712
     query = query.where(models.ProjectItem.archived == False)  # noqa: E712
     return query.where(models.ProjectItem.completed == (item_status == 'completed'))
+
+
+def derive_item_status(archived: bool, completed: bool) -> str:
+    """Name the status of one item, applying the same precedence as the filter.
+
+    `archived` beats `completed`, so an item that was finished and then archived
+    answers to `archived` alone and every item answers to exactly one word.
+    """
+    if archived:
+        return 'archived'
+    if completed:
+        return 'completed'
+    return 'open'
 
 
 def validate_item_status(item_status: str) -> None:

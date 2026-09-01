@@ -20,7 +20,7 @@ func TestListArticles_TriStateFilters(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 	unread := true
-	articles, err := client.ListArticles(context.Background(), nil, nil, &unread, DateBounds{})
+	articles, err := client.ListArticles(context.Background(), nil, nil, &unread, DateBounds{}, nil)
 	if err != nil {
 		t.Fatalf("ListArticles: %v", err)
 	}
@@ -33,12 +33,12 @@ func TestListArticles_TriStateFilters(t *testing.T) {
 
 	favorites := false
 	archived := true
-	_, _ = client.ListArticles(context.Background(), &favorites, &archived, nil, DateBounds{})
+	_, _ = client.ListArticles(context.Background(), &favorites, &archived, nil, DateBounds{}, nil)
 	if gotQuery != "archived=true&favorites=false" {
 		t.Errorf("query = %q, want both non-nil filters encoded", gotQuery)
 	}
 
-	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{})
+	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{}, nil)
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty when all filters are nil", gotQuery)
 	}
@@ -55,18 +55,18 @@ func TestListArticles_DateBounds(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 
-	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{Start: "2026-08-01", End: "2026-08-31"})
+	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{Start: "2026-08-01", End: "2026-08-31"}, nil)
 	if gotQuery != "end_date=2026-08-31&start_date=2026-08-01" {
 		t.Errorf("query = %q, want both bounds encoded", gotQuery)
 	}
 
-	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{Start: "2026-08-01"})
+	_, _ = client.ListArticles(context.Background(), nil, nil, nil, DateBounds{Start: "2026-08-01"}, nil)
 	if gotQuery != "start_date=2026-08-01" {
 		t.Errorf("query = %q, want one bound to narrow on its own", gotQuery)
 	}
 
 	unread := true
-	_, _ = client.ListArticles(context.Background(), nil, nil, &unread, DateBounds{End: "2026-08-31"})
+	_, _ = client.ListArticles(context.Background(), nil, nil, &unread, DateBounds{End: "2026-08-31"}, nil)
 	if gotQuery != "end_date=2026-08-31&unread=true" {
 		t.Errorf("query = %q, want the bound to compose with the tri-state filters", gotQuery)
 	}

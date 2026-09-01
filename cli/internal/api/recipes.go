@@ -152,8 +152,8 @@ type UrlImportSaveResult struct {
 }
 
 // ListRecipes returns recipes ordered by name (GET /recipes/). Non-nil filters
-// add query params.
-func (c *Client) ListRecipes(ctx context.Context, cuisine, mealType, difficulty *string, ratingMin, maxTotalTime *int) ([]Recipe, error) {
+// add query params. A nil limit fetches all; a non-nil limit caps the count.
+func (c *Client) ListRecipes(ctx context.Context, cuisine, mealType, difficulty *string, ratingMin, maxTotalTime, limit *int) ([]Recipe, error) {
 	params := url.Values{}
 	if cuisine != nil {
 		params.Set("cuisine", *cuisine)
@@ -170,6 +170,7 @@ func (c *Client) ListRecipes(ctx context.Context, cuisine, mealType, difficulty 
 	if maxTotalTime != nil {
 		params.Set("max_total_time", strconv.Itoa(*maxTotalTime))
 	}
+	applyLimit(params, limit)
 	path := "/recipes/"
 	if encoded := params.Encode(); encoded != "" {
 		path += "?" + encoded

@@ -30,6 +30,8 @@ from ichrisbirch.services.project_item_status import apply_status_filter
 from ichrisbirch.services.project_item_status import validate_item_status
 from ichrisbirch.services.project_refs import resolve_item
 from ichrisbirch.services.project_refs import resolve_project
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -162,6 +164,7 @@ async def read_many(
     ),
     start_date: StartDate = None,
     end_date: EndDate = None,
+    limit: RowLimit = None,
 ):
     """List open project items — not completed, not archived.
 
@@ -180,7 +183,7 @@ async def read_many(
     query = apply_status_filter(query, item_status)
     query = apply_repo_filter(query, repo)
     query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/blocked/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
