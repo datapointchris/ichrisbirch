@@ -1,6 +1,6 @@
 .swm
 
-# A hand-written checklist of completed work, kept as it was written. It
-# predates the linter and conforms to none of it, so linting it reports
-# hundreds of findings against prose nobody is editing.
+# Preventive: no release here writes a changelog. The entry stands so that one
+# arriving generated is never linted, since normalization of a generated file
+# is undone on the next release and returns as a conflict.
 CHANGELOG.md
