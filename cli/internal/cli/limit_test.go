@@ -3,29 +3,7 @@ package cli
 import (
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
-
-// findCommand walks the tree to the leaf named by path.
-func findCommand(t *testing.T, path ...string) *cobra.Command {
-	t.Helper()
-	cmd := NewRootCommand()
-	for _, name := range path {
-		var next *cobra.Command
-		for _, child := range cmd.Commands() {
-			if child.Name() == name {
-				next = child
-				break
-			}
-		}
-		if next == nil {
-			t.Fatalf("no command %q under %q", name, cmd.CommandPath())
-		}
-		cmd = next
-	}
-	return cmd
-}
 
 // Every command whose verb is `list` reads a collection that grows outside the
 // binary, so `cli-design.md` § "`--follow`/`-f` defaults to false; `--limit`/`-n`
