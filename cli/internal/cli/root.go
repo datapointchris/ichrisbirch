@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
-	"github.com/datapointchris/goselfupdate/cobracmd"
 	"github.com/spf13/cobra"
 )
 
@@ -87,7 +87,7 @@ func NewRootCommand() *cobra.Command {
 		RunE: requireSubcommand,
 	}
 	// Flag mistakes become usageError → exit 2. Inherited by subcommands.
-	// cobracmd.Execute composes with this rather than replacing it, and keeping
+	// goclikit.Execute composes with this rather than replacing it, and keeping
 	// it here is what makes the tree self-classifying for anything driving
 	// NewRootCommand directly.
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return usageError{err} })
@@ -119,18 +119,15 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newCookingTechniquesCommand())
 
 	// After the tree is assembled: cobra only propagates a usage template to
-	// commands that already exist when it is set, and the RunE wrapper has to
-	// see every command's own RunE.
+	// commands that already exist when it is set.
 	applyUsageTemplate(root)
-	attachNotFoundHints(root)
 	return root
 }
 
 // Execute runs the command tree, prints any error to stderr, and returns the
 // process exit code.
 func Execute() int {
-	root := NewRootCommand()
-	err := cobracmd.Execute(context.Background(), root, autoupdate.Config{Update: updateConfig()})
+	err := run(NewRootCommand(), autoupdate.Config{Update: updateConfig()})
 
 	// An exitCode carries its own code and an empty message, so it is not printed
 	// as an "error:" line — it reports a valid non-success state (e.g. "not logged
@@ -138,10 +135,21 @@ func Execute() int {
 	// `update` writes its own ✓/✗ line, so printing here would report the same
 	// failure twice.
 	var ec exitCode
-	if err != nil && !errors.As(err, &ec) && !errors.Is(err, cobracmd.ErrReported) {
+	if err != nil && !errors.As(err, &ec) && !errors.Is(err, goclikit.ErrReported) {
 		fmt.Fprintln(os.Stderr, "error:", err)
 	}
 	return exitCodeFor(err)
+}
+
+// run drives root through the shared bootstrap and returns its error.
+//
+// Separate from Execute, and taking the update config, so a test can drive the
+// real tree with the version check suppressed and read the error rather than an
+// exit code. WithNotFound is the whole of the not-found feature's wiring: drop
+// it and every 404 prints the API's status line again, which is what
+// TestA404FromTheRealTreeCarriesItsRecoveryHints catches.
+func run(root *cobra.Command, config autoupdate.Config) error {
+	return goclikit.Execute(context.Background(), root, config, goclikit.WithNotFound(notFound))
 }
 
 // exitCodeFor maps a command error to a process exit code: 0 success, 2 for a
@@ -161,7 +169,7 @@ func exitCodeFor(err error) int {
 	}
 	// The library's classification, for a usage mistake cobra rejects before
 	// any RunE runs and the tree therefore never marks itself.
-	if errors.Is(err, cobracmd.ErrUsage) {
+	if errors.Is(err, goclikit.ErrUsage) {
 		return 2
 	}
 	return 1

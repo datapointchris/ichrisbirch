@@ -5,8 +5,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate"
-	"github.com/datapointchris/goselfupdate/cobracmd"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +38,7 @@ func updateConfig() goselfupdate.Config {
 }
 
 func newUpdateCommand() *cobra.Command {
-	return cobracmd.New(updateConfig())
+	return goclikit.UpdateCommand(updateConfig())
 }
 
 // githubToken resolves a GitHub credential the way the dotfiles installer does:

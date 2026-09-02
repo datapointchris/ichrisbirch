@@ -2,20 +2,39 @@ package cli
 
 import (
 	"errors"
+	"io"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 
+	"github.com/datapointchris/goclikit"
+	"github.com/datapointchris/goselfupdate/autoupdate"
+
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
-// notFound is the error shape the api package produces for a 404, with the
+// apiNotFound is the error shape the api package produces for a 404, with the
 // subject the API reports.
-func notFound(subject string) error {
+func apiNotFound(subject string) error {
 	return &api.APIError{StatusCode: http.StatusNotFound, Status: "404 Not Found", Message: subject}
+}
+
+// hintsFor reads the recovery hints the nearest annotated ancestor carries.
+//
+// The test's own reader rather than the library's, so a sweep asserts on the
+// annotation this repo writes rather than on a function that would answer the
+// same whether or not the annotation was there.
+func hintsFor(cmd *cobra.Command) []string {
+	for current := cmd; current != nil; current = current.Parent() {
+		if joined := current.Annotations[goclikit.RecoveryHintsAnnotation]; joined != "" {
+			return strings.Split(joined, "\n")
+		}
+	}
+	return nil
 }
 
 // findCommand resolves a command path against the real assembled tree, so a
@@ -32,8 +51,44 @@ func findCommand(t *testing.T, path ...string) *cobra.Command {
 	return cmd
 }
 
-func TestHintNotFound_NamesTheSubjectAndBothWaysToFindAnItem(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "items", "show"), notFound("project item 999999 not found"))
+// runWith drives the real tree with the version check suppressed, standing the
+// leaf's RunE in for the API call so the failure under test is a 404 arriving
+// where a 404 really arrives.
+//
+// The leaf is whatever cobra resolves argv to, rather than a path the test
+// names separately. Any disagreement between the two would make the test
+// assert against a command the tool would not have run.
+func runWith(t *testing.T, failure error, argv ...string) error {
+	t.Helper()
+
+	original := os.Args
+	os.Args = append([]string{"icb"}, argv...)
+	t.Cleanup(func() { os.Args = original })
+
+	root := NewRootCommand()
+	root.SetOut(io.Discard)
+	root.SetErr(io.Discard)
+
+	leaf, _, err := root.Find(argv)
+	if err != nil {
+		t.Fatalf("Find(%v): %v", argv, err)
+	}
+	if leaf.RunE == nil {
+		t.Fatalf("Find(%v) resolved to %q, which has no RunE", argv, leaf.CommandPath())
+	}
+	leaf.RunE = func(*cobra.Command, []string) error { return failure }
+
+	return run(root, autoupdate.Config{Suppress: true})
+}
+
+// The one WithNotFound in run() is the whole feature reaching a terminal, and
+// every test of the classifier alone stays green without it.
+func TestA404FromTheRealTreeCarriesItsRecoveryHints(t *testing.T) {
+	err := runWith(t, apiNotFound("project item 999999 not found"),
+		"projects", "items", "show", "999999")
+	if err == nil {
+		t.Fatal("expected the 404")
+	}
 
 	got := err.Error()
 	for _, want := range []string{
@@ -50,8 +105,9 @@ func TestHintNotFound_NamesTheSubjectAndBothWaysToFindAnItem(t *testing.T) {
 // The transport prefix reports how the answer arrived. A 404 is an answer, and
 // the line is read by someone who wants the next command rather than the status
 // code that produced it.
-func TestHintNotFound_DropsTheTransportPrefix(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "items", "show"), notFound("project item 999999 not found"))
+func TestA404DropsTheTransportPrefix(t *testing.T) {
+	err := runWith(t, apiNotFound("project item 999999 not found"),
+		"projects", "items", "show", "999999")
 
 	if strings.Contains(err.Error(), "API request failed") {
 		t.Errorf("error = %q, want no transport prefix", err)
@@ -59,129 +115,102 @@ func TestHintNotFound_DropsTheTransportPrefix(t *testing.T) {
 }
 
 // `icb projects items` sits under `icb projects` and acts on a different
-// resource, so the closed-projects line would send the caller after the wrong
-// thing.
-func TestHintNotFound_AnItemDoesNotNameTheProjectRecovery(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "items", "show"), notFound("project item 999999 not found"))
+// resource, so the project recovery would send the reader after the wrong noun.
+func TestAnItemDoesNotNameTheProjectRecovery(t *testing.T) {
+	err := runWith(t, apiNotFound("project item 999999 not found"),
+		"projects", "items", "show", "999999")
 
-	if strings.Contains(err.Error(), "icb projects list") {
-		t.Errorf("error = %q, want the project hint left out", err)
+	if strings.Contains(err.Error(), "Completed and dropped projects are hidden") {
+		t.Errorf("an item 404 named the project recovery: %q", err)
 	}
 }
 
-func TestHintNotFound_AProjectNamesTheStatesThatHideOne(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "show"), notFound("project nope not found"))
-
-	if !strings.Contains(err.Error(), "icb projects list --status all") {
-		t.Errorf("error = %q, want the widening hint", err)
-	}
-}
-
-// A proxy error page or an Authelia redirect decodes to a status and no
-// message, so the resource was never reached. Claiming one is missing would
-// send the caller searching for a row that is probably there, and the two
-// causes have different remedies.
-func TestHintNotFound_LeavesABodylessNotFoundAlone(t *testing.T) {
-	cause := &api.APIError{StatusCode: http.StatusNotFound, Status: "404 Not Found"}
-
-	got := hintNotFound(findCommand(t, "projects", "items", "show"), cause)
-
-	if got != error(cause) {
-		t.Fatalf("hintNotFound = %v, want the error returned untouched", got)
-	}
-	if !strings.Contains(got.Error(), "404 Not Found") {
-		t.Errorf("error = %q, want the status kept", got)
-	}
-}
-
-// complete-task takes two ids and the API names which one was missing, so the
-// error has to carry the way in to both.
-func TestHintNotFound_ATaskVerbNamesTheItemAndTheTaskList(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "items", "complete-task"), notFound("project item task 4 not found"))
+// A verb taking both an item and one of its tasks can 404 on either number, so
+// it names both ways in.
+func TestATaskVerbNamesTheItemAndTheTaskList(t *testing.T) {
+	err := runWith(t, apiNotFound("project item task 4 not found"),
+		"projects", "items", "complete-task", "598", "4")
 
 	got := err.Error()
-	for _, want := range []string{
-		"icb projects items search <query>",
-		"icb projects items tasks <item>",
-	} {
+	for _, want := range []string{"icb projects items search <query>", "icb projects items tasks"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("error = %q, want it to name %q", got, want)
 		}
 	}
 }
 
-func TestHintNotFound_AMembershipVerbNamesTheProjectList(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "items", "add-project"), notFound("project nope not found"))
+func TestARuntimeFailureIsUntouched(t *testing.T) {
+	boom := errors.New("connection refused")
+	err := runWith(t, boom, "projects", "items", "show", "1")
 
-	if !strings.Contains(err.Error(), "icb projects list --status all") {
-		t.Errorf("error = %q, want the project hint on a verb that takes a project", err)
+	if !errors.Is(err, boom) {
+		t.Fatalf("a non-404 was rewritten: %v", err)
+	}
+	if err.Error() != boom.Error() {
+		t.Errorf("error = %q, want it left alone", err)
 	}
 }
 
-func TestHintNotFound_LeavesEverythingThatIsNotA404Alone(t *testing.T) {
-	cmd := findCommand(t, "projects", "items", "show")
-	for _, cause := range []error{
-		errors.New("boom"),
-		&api.APIError{StatusCode: http.StatusUnauthorized, Status: "401 Unauthorized", Message: "nope"},
-	} {
-		if got := hintNotFound(cmd, cause); got != cause {
-			t.Errorf("hintNotFound(%v) = %v, want the error returned untouched", cause, got)
-		}
+// A 401 has a different remedy, and rewriting it would bury the one command
+// that fixes it.
+func TestAnotherStatusIsUntouched(t *testing.T) {
+	unauthorized := &api.APIError{StatusCode: http.StatusUnauthorized, Status: "401 Unauthorized", Message: "nope"}
+	err := runWith(t, unauthorized, "projects", "items", "show", "1")
+
+	if err.Error() != unauthorized.Error() {
+		t.Errorf("error = %q, want the 401 left alone", err)
 	}
 }
 
-// auth has no id to look up, so a 404 there has no recovery command to name and
-// is left as it was.
-func TestHintNotFound_LeavesA404WithNoHintsAlone(t *testing.T) {
-	cause := notFound("thing 1 not found")
-	if got := hintNotFound(findCommand(t, "auth", "status"), cause); got != cause {
-		t.Errorf("hintNotFound = %v, want the error returned untouched", got)
+// A proxy error page or an Authelia redirect decodes to a status and nothing
+// else, and the resource was never reached. A wrong ICB_API_BASE and a missing
+// item have different remedies.
+func TestABodylessNotFoundKeepsItsStatusLine(t *testing.T) {
+	bare := &api.APIError{StatusCode: http.StatusNotFound, Status: "404 Not Found"}
+	err := runWith(t, bare, "projects", "items", "show", "1")
+
+	if err.Error() != bare.Error() {
+		t.Errorf("error = %q, want the bare status line", err)
 	}
 }
 
-// The rendered message replaces the API error, so a caller branching on the
-// status code has to still reach it.
-func TestHintNotFound_KeepsTheAPIErrorReachable(t *testing.T) {
-	err := hintNotFound(findCommand(t, "projects", "items", "show"), notFound("project item 1 not found"))
+// Callers branch on the status code, so the rewritten error has to keep the
+// original reachable rather than only rendering it.
+func TestTheAPIErrorStaysReachable(t *testing.T) {
+	err := runWith(t, apiNotFound("project item 999999 not found"),
+		"projects", "items", "show", "999999")
 
 	var apiErr *api.APIError
 	if !errors.As(err, &apiErr) {
-		t.Fatalf("errors.As did not reach the *api.APIError in %v", err)
+		t.Fatalf("errors.As no longer reaches the *api.APIError: %v", err)
 	}
 	if !apiErr.NotFound() {
-		t.Errorf("status = %d, want 404", apiErr.StatusCode)
-	}
-	if exitCodeFor(err) != 1 {
-		t.Errorf("exit code = %d, want 1", exitCodeFor(err))
+		t.Errorf("StatusCode = %d, want 404", apiErr.StatusCode)
 	}
 }
 
-// The hints reach the terminal by wrapping RunE once over the assembled tree,
-// so the wrapping itself is what has to be proved — a 404 returned from a RunE
-// comes back carrying them.
-func TestAttachNotFoundHints_WrapsEveryRunEInTheTree(t *testing.T) {
-	leaf := withNotFoundHints(&cobra.Command{
-		Use:  "leaf",
-		RunE: func(*cobra.Command, []string) error { return notFound("widget 7 not found") },
-	}, "List every widget: icb widgets list")
-	root := &cobra.Command{Use: "root", SilenceUsage: true, SilenceErrors: true}
-	root.AddCommand(leaf)
-	attachNotFoundHints(root)
-
-	root.SetArgs([]string{"leaf"})
-	err := root.Execute()
-	if err == nil {
-		t.Fatal("want the 404 to surface")
+// The classifier is the only half of the feature this repo owns.
+func TestTheClassifierReportsOnlyABodiedNotFound(t *testing.T) {
+	cases := map[string]struct {
+		err     error
+		subject string
+		ok      bool
+	}{
+		"a 404 with a message": {apiNotFound("item 7 not found"), "item 7 not found", true},
+		"a 404 with none":      {&api.APIError{StatusCode: 404, Status: "404 Not Found"}, "", true},
+		"a 401":                {&api.APIError{StatusCode: 401, Status: "401 Unauthorized"}, "", false},
+		"not an APIError":      {errors.New("connection refused"), "", false},
 	}
-	if !strings.Contains(err.Error(), "List every widget: icb widgets list") {
-		t.Errorf("error = %q, want the hint attached by the wrapper", err)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			subject, ok := notFound(tc.err)
+			if subject != tc.subject || ok != tc.ok {
+				t.Errorf("notFound = (%q, %v), want (%q, %v)", subject, ok, tc.subject, tc.ok)
+			}
+		})
 	}
 }
 
-// resourceExempt names the top-level commands that take no resource id, so a
-// missing hint set on one of them is correct rather than an oversight. Only
-// commands the tree actually holds: cobra adds help and completion at Execute,
-// so naming them here would read as a decision about commands that are absent.
 var resourceExempt = map[string]bool{
 	"auth":     true,
 	"update":   true,
@@ -197,7 +226,7 @@ func TestEveryResourceCommandCarriesNotFoundHints(t *testing.T) {
 			continue
 		}
 		walkCommands(group, func(cmd *cobra.Command) {
-			hints := notFoundHintsFor(cmd)
+			hints := hintsFor(cmd)
 			if len(hints) == 0 {
 				t.Errorf("%s has no not-found hints", cmd.CommandPath())
 				return
@@ -218,20 +247,6 @@ func walkCommands(cmd *cobra.Command, visit func(*cobra.Command)) {
 	for _, sub := range cmd.Commands() {
 		walkCommands(sub, visit)
 	}
-}
-
-// The single attachNotFoundHints call in NewRootCommand is the whole feature
-// reaching a terminal, and every test that calls hintNotFound directly stays
-// green without it. This is what observes the call.
-func TestNewRootCommand_WrapsEveryRunEItAssembles(t *testing.T) {
-	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
-		if cmd.RunE == nil {
-			return
-		}
-		if cmd.Annotations[notFoundWrappedKey] != "yes" {
-			t.Errorf("%s has a RunE the not-found wrapper never reached", cmd.CommandPath())
-		}
-	})
 }
 
 // hintCommand returns the command half of a hint — everything after the colon.
@@ -260,7 +275,7 @@ func childNamed(cmd *cobra.Command, name string) *cobra.Command {
 func TestEveryHintNamesACommandThatResolves(t *testing.T) {
 	root := NewRootCommand()
 	walkCommands(root, func(cmd *cobra.Command) {
-		for _, hint := range notFoundHintsFor(cmd) {
+		for _, hint := range hintsFor(cmd) {
 			command := hintCommand(t, hint)
 			words := strings.Fields(strings.TrimPrefix(command, "icb "))
 			current, consumed := root, 0
@@ -299,7 +314,7 @@ func TestACommandTakingAProjectNamesHowToFindOne(t *testing.T) {
 		if cmd.Flags().Lookup("project") == nil {
 			return
 		}
-		hints := notFoundHintsFor(cmd)
+		hints := hintsFor(cmd)
 		if !slices.ContainsFunc(hints, func(h string) bool { return strings.Contains(h, "icb projects list") }) {
 			t.Errorf("%s takes --project, and its hints name no way to find one: %v", cmd.CommandPath(), hints)
 		}
