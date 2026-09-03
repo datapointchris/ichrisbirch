@@ -296,7 +296,7 @@ The failure it prevents: a repo gets a project while it is being BUILT, which is
 finite and does complete. The repo then keeps existing, the next papercut has
 nowhere else to go, and the finished effort silently becomes the eternal bucket.
 The tell was dotfiles' own description, which had grown a hand-written BOUNDARY
-paragraph explaining which work belonged to it — a modelling gap patched with
+paragraph explaining which work belonged to it — a modeling gap patched with
 prose.
 
 The repo association is the item's `--repo` tag, which already crosses project

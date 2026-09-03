@@ -10,7 +10,7 @@ function days(): HTMLButtonElement[] {
 
 function dayInMonth(label: string): HTMLButtonElement {
   const match = days().find((d) => d.textContent?.trim() === label && !d.classList.contains('datepicker__day--other-month'))
-  if (!match) throw new Error(`no day button labelled ${label}`)
+  if (!match) throw new Error(`no day button labeled ${label}`)
   return match
 }
 

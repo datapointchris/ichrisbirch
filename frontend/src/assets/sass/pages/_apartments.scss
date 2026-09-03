@@ -256,7 +256,7 @@ input[type='submit'].manage-box {
   box-shadow: $shadow-3d;
 }
 
-/* On mouse-over, add a grey background color */
+/* On mouse-over, add a gray background color */
 .checkboxes:hover input ~ .checkmark {
   background-color: var(--clr-gray-400);
   border: 5px solid var(--clr-gray-800);

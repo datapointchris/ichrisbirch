@@ -1,6 +1,6 @@
 [project]
 name = "ichrisbirch"
-# Not a released version. The deployed artefact is identified by its image
+# Not a released version. The deployed artifact is identified by its image
 # tag — release.yml publishes sha-<short> alongside latest — and nothing
 # reads this field at runtime. hatchling requires project.version to be
 # present or declared dynamic, so it stays pinned at zero rather than

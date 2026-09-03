@@ -58,8 +58,8 @@ DEPLOY_COLOR=""
 # docker-compose.app.yml otherwise leaves its container running forever: neither
 # verb reaps what the compose file no longer mentions. The MCP server was retired
 # on 2026-07-24 and icb-blue-mcp was still up two weeks later, restart=always,
-# invisible to every deploy since. Scoped to one colour's project, so it can only
-# ever touch that colour — icb-infra is a different project and is not reachable
+# invisible to every deploy since. Scoped to one color's project, so it can only
+# ever touch that color — icb-infra is a different project and is not reachable
 # from here.
 compose_app() {
   local color="$1"

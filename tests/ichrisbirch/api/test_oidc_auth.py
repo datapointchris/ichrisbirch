@@ -220,7 +220,7 @@ class TestBearerToken:
 
 
 class TestIsAccessToken:
-    def test_recognises_an_access_token(self, idp):
+    def test_recognizes_an_access_token(self, idp):
         assert is_access_token(idp.sign(idp.valid_claims()))
 
     def test_rejects_an_id_token_and_anything_unparseable(self, idp):

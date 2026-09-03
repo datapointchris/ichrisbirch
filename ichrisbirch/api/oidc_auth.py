@@ -166,7 +166,7 @@ class OIDCTokenVerifier:
 def build_verifier(issuer: str, cli_client_id_prefix: str) -> OIDCTokenVerifier:
     """Return the process-wide verifier for an issuer, resolving discovery on first use.
 
-    Cached on the two strings rather than on Settings so a failed discovery is not memoised —
+    Cached on the two strings rather than on Settings so a failed discovery is not memoized —
     `functools.cache` stores results, not exceptions, so Authelia being down at the first request
     does not poison every later one.
     """

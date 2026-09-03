@@ -54,7 +54,7 @@ def test_lifecycle(project_crud_tester):
 
 
 class TestProjectUpdate:
-    """PATCH /projects/{id}/ — field update and null-clearing behaviour."""
+    """PATCH /projects/{id}/ — field update and null-clearing behavior."""
 
     def test_update_name(self, project_crud_tester):
         client, crud_tester = project_crud_tester
@@ -90,7 +90,7 @@ class TestProjectUpdate:
 
         This is the key regression test: sending null must be distinct from
         omitting the field. The frontend sends null (not undefined) when the
-        user clears the description textarea, so the API must honour it.
+        user clears the description textarea, so the API must honor it.
         """
         client, crud_tester = project_crud_tester
         all_projects = client.get(PROJECTS_ENDPOINT).json()
@@ -502,7 +502,7 @@ class TestProjectItemCounts:
 
 
 class TestProjectItemUpdate:
-    """PATCH /project-items/{id}/ — null-clearing behaviour for optional fields."""
+    """PATCH /project-items/{id}/ — null-clearing behavior for optional fields."""
 
     @pytest.fixture
     def project_with_item(self, txn_api_logged_in):

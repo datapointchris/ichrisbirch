@@ -53,7 +53,7 @@ def test_create_without_recorded_at_stamps_now(pattern_crud_tester):
     assert response.json()['recorded_at'] is not None
 
 
-def test_create_honours_a_supplied_recorded_at(pattern_crud_tester):
+def test_create_honors_a_supplied_recorded_at(pattern_crud_tester):
     """The dotfiles JSONL import needs entries filed at the time they were written."""
     client, _ = pattern_crud_tester
     response = client.post(ENDPOINT, json={'message': 'imported entry', 'recorded_at': '2025-12-11T22:34:40+00:00'})

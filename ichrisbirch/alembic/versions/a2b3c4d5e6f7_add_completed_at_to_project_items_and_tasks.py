@@ -9,7 +9,7 @@ Nullable, and left null for every row that already exists. A completion date
 inferred from `updated_at` would be a fabricated fact rather than a missing one,
 and a reader that has to handle null anyway gains nothing from the guess.
 
-Additive and backward-compatible, which blue/green requires: the colour still
+Additive and backward-compatible, which blue/green requires: the color still
 serving never selects the column, and the column has no default to conflict with.
 
 Revision ID: a2b3c4d5e6f7

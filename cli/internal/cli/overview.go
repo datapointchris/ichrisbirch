@@ -40,7 +40,7 @@ const (
 
 	// articleReadWindow is how far back read_last_30_days counts. The window is in
 	// the field name rather than beside it, so a consumer cannot label a count it
-	// has mislabelled: change the window and the field a renderer reads disappears
+	// has mislabeled: change the window and the field a renderer reads disappears
 	// rather than quietly meaning something else.
 	articleReadWindow = 30 * 24 * time.Hour
 )
