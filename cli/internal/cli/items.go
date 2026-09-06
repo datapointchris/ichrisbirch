@@ -111,7 +111,9 @@ func newItemsListCommand() *cobra.Command {
 			"  icb projects items list --status completed --start 2026-08-17\n" +
 			"  icb projects items list --status all --json\n" +
 			"  icb projects items list --repo dotfiles --limit 10\n" +
+			"  icb projects items list --repo dotfiles --json\n" +
 			"  icb projects items list --project todoui\n" +
+			"  icb projects items list --project \"Tool Improvement\" --json\n" +
 			"  icb projects items list --project todoui --status all",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -690,7 +692,8 @@ func newItemsCreateCommand() *cobra.Command {
 			"one. An answer the field rejects comes back for editing and nothing\n" +
 			"already entered is lost. Ctrl-C abandons the item.",
 		Example: "  icb projects items create\n" +
-			"  icb projects items create --title \"Ship the CLI\" --project todoui",
+			"  icb projects items create --project todoui --repo todoui --title \"Ship the CLI\"\n" +
+			"  icb projects items create --project todoui --title \"Ship it\" --notes \"$(cat b.md)\"",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			answers := flagAnswers(cmd, "title", "project", "repo", "notes")
@@ -769,11 +772,16 @@ func newItemsEditCommand() *cobra.Command {
 		asJSON bool
 	)
 	cmd := &cobra.Command{
-		Use:     "edit <item> [flags]",
-		Short:   "Change an item's title, notes, or repo",
-		Long:    "Update only the fields whose flags you pass. Use complete/reopen and\narchive/unarchive for those state changes.\n\nPass --repo \"\" to unlink an item from its repo.",
-		Example: "  icb projects items edit 118 --title \"New title\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Use:   "edit <item> [flags]",
+		Short: "Change an item's title, notes, or repo",
+		Long:  "Update only the fields whose flags you pass. Use complete/reopen and\narchive/unarchive for those state changes.\n\nPass --repo \"\" to unlink an item from its repo.",
+		// --notes first because it is what this verb is almost always reached for,
+		// and in the shape it is reached for: notes are markdown, so they arrive
+		// from a file rather than typed between quotes.
+		Example: "  icb projects items edit 118 --notes \"$(cat notes.md)\"\n" +
+			"  icb projects items edit 118 --title \"New title\"\n" +
+			"  icb projects items edit 118 --repo dotfiles --json",
+		Args: usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.ProjectItemUpdateInput{}

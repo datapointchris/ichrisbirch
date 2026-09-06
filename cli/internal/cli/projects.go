@@ -266,7 +266,9 @@ func newProjectsCreateCommand() *cobra.Command {
 		Use:   "create --name <name> [flags]",
 		Short: "Create a new project",
 		Example: "  icb projects create --name \"Personal OS unification\"\n" +
-			"  icb projects create --name \"Sell Unused Shite\" --kind chore",
+			"  icb projects create --name \"Sell Unused Shite\" --kind chore\n" +
+			"  icb projects create --name ifiles --description \"Go client for files.ichrisbirch.com\"\n" +
+			"  icb projects create --name \"bbkt\" --kind build --description \"$(cat brief.md)\" --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
