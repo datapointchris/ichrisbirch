@@ -17,6 +17,11 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/repos"
 )
 
+// defaultNextItemLimit caps what `items next` prints. The ordering is the
+// point of the verb, so the head of the list is the answer and the tail is
+// context; a caller who wants more names a larger number.
+const defaultNextItemLimit = 10
+
 // itemHints and its two extensions are the commands that find a valid id for
 // each thing an items verb takes. An item id is the only one most of them take;
 // the membership verbs take a project name as well, and the task verbs a task
@@ -155,7 +160,7 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only items completed on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only items completed on or before this ISO 8601 date")
-	addLimitFlag(cmd, &limit)
+	addLimitFlag(cmd, &limit, 0)
 	return cmd
 }
 
@@ -300,7 +305,7 @@ func newItemsNextCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
 	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: "+strings.Join(api.ProjectKinds, ", "))
 	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
-	cmd.Flags().IntVarP(&limit, "limit", "n", 10, "Max items to return (0 for no cap)")
+	addLimitFlag(cmd, &limit, defaultNextItemLimit)
 	return cmd
 }
 

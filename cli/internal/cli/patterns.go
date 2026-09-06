@@ -45,7 +45,7 @@ func newPatternsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			patterns, err := client.ListPatterns(cmd.Context(), api.PatternListOptions{Search: search, Limit: limit})
+			patterns, err := client.ListPatterns(cmd.Context(), api.PatternListOptions{Search: search, Limit: limitFlag(cmd)})
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -57,7 +57,7 @@ func newPatternsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&search, "search", "", "Only patterns whose message contains this text")
-	addLimitFlag(cmd, &limit)
+	addLimitFlag(cmd, &limit, 0)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output patterns as JSON to stdout")
 	return cmd
 }

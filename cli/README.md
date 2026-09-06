@@ -99,8 +99,12 @@ instead of nine.
 ```bash
 icb overview                 # the human glance
 icb overview --json          # the stable schema, for consumers
-icb overview --limit 0       # no per-section cap
+icb overview --limit 3       # a tighter per-section cap
 ```
+
+`--limit` is a row count everywhere it appears, so `--limit 0` returns nothing.
+On the list reads, omitting it is what returns every row. `overview` and
+`projects items next` cap what they print instead, and their default is ten.
 
 Contract notes for consumers (`menu dashboard` in dotfiles is the first):
 

@@ -173,7 +173,7 @@ func newOverviewCommand() *cobra.Command {
 			"project items with the projects they belong to, and approaching countdowns\n" +
 			"and events. Composed from those endpoints in one command so a dashboard\n" +
 			"needs a single call.",
-		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 0",
+		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -197,7 +197,7 @@ func newOverviewCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the overview as JSON to stdout")
-	cmd.Flags().IntVarP(&limit, "limit", "n", defaultOverviewLimit, "Max items per section (0 for no cap)")
+	addLimitFlag(cmd, &limit, defaultOverviewLimit)
 	return cmd
 }
 
@@ -594,9 +594,12 @@ func upcomingEvents(events []api.Event, now time.Time) []api.Event {
 	return upcoming
 }
 
-// capItems truncates to limit; a limit of zero or less means no cap.
+// capItems truncates to limit. Zero is a row count like any other and caps to
+// nothing, so it needs no branch of its own: len(items) <= 0 is false whenever
+// there is anything to cut. The parser refuses a negative, which is what stops
+// items[:limit] slicing from the far end.
 func capItems[T any](items []T, limit int) []T {
-	if limit <= 0 || len(items) <= limit {
+	if len(items) <= limit {
 		return items
 	}
 	return items[:limit]

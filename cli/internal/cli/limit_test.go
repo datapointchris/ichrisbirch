@@ -53,10 +53,10 @@ func TestClientSideCapsCarryTheSameFlag(t *testing.T) {
 	}
 }
 
-// An unset flag is nil so the client omits the parameter; an explicit zero is a
-// pointer to zero, which applyLimit then declines to send. Both mean every row,
-// and they have to stay distinguishable here because only the first leaves the
-// server free to apply its own default.
+// An unset flag is nil so the client omits the parameter and every row comes
+// back; an explicit zero is a pointer to zero, which is sent and answers with
+// nothing. The two are opposite answers, so the distinction is the whole
+// contract rather than an implementation detail.
 func TestLimitFlag_DistinguishesUnsetFromExplicitZero(t *testing.T) {
 	cmd := findCommand(t, "tasks", "list")
 	if got := limitFlag(cmd); got != nil {
@@ -84,5 +84,42 @@ func TestLimitFlag_CarriesAnExplicitCap(t *testing.T) {
 	got := limitFlag(cmd)
 	if got == nil || *got != 7 {
 		t.Fatalf("limitFlag after --limit 7 = %v, want 7", got)
+	}
+}
+
+// The parser is the only thing standing between a negative and a slice
+// expression, and `capItems` is where one would land: items[:-1] panics where a
+// usage error was the answer. Every --limit is declared through addLimitFlag,
+// so refusing here refuses everywhere.
+func TestLimitFlag_RefusesANegative(t *testing.T) {
+	for _, path := range [][]string{{"tasks", "list"}, {"overview"}, {"projects", "items", "next"}} {
+		t.Run(strings.Join(path, " "), func(t *testing.T) {
+			cmd := findCommand(t, path...)
+			err := cmd.Flags().Set("limit", "-1")
+			if err == nil {
+				t.Fatal("--limit -1 was accepted, want a usage error")
+			}
+			if !strings.Contains(err.Error(), "zero or more") {
+				t.Errorf("error = %q, want it to say what a row count may be", err)
+			}
+		})
+	}
+}
+
+// Every --limit carries the same default the command had before it was routed
+// through the shared factory: uncapped on the reads the API bounds, and a
+// screenful on the two that cap what they print.
+func TestLimitFlag_KeepsEachCommandsDefault(t *testing.T) {
+	defaults := map[string][]string{
+		"0":  {"tasks", "list"},
+		"10": {"overview"},
+	}
+	for want, path := range defaults {
+		t.Run(strings.Join(path, " "), func(t *testing.T) {
+			flag := findCommand(t, path...).Flags().Lookup("limit")
+			if flag.DefValue != want {
+				t.Errorf("%s --limit default = %q, want %q", strings.Join(path, " "), flag.DefValue, want)
+			}
+		})
 	}
 }

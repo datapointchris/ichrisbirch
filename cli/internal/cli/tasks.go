@@ -96,7 +96,7 @@ func newTasksListCommand() *cobra.Command {
 			return nil
 		},
 	}
-	addLimitFlag(cmd, &limit)
+	addLimitFlag(cmd, &limit, 0)
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&category, "category", "", "Only tasks in this category: "+strings.Join(api.TaskCategories, ", "))
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only tasks completed on or after this ISO 8601 date")

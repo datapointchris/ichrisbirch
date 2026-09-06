@@ -55,7 +55,7 @@ func newAutotasksListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output auto-tasks as JSON to stdout")
-	addLimitFlag(cmd, &limit)
+	addLimitFlag(cmd, &limit, 0)
 	return cmd
 }
 

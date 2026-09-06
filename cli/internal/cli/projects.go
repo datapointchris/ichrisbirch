@@ -97,7 +97,7 @@ func newProjectsListCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output projects as JSON to stdout")
 	cmd.Flags().StringVar(&repo, "repo", "", "Only projects holding work on this repo")
 	cmd.Flags().StringVar(&projectStatus, "status", "", "One of: "+strings.Join(api.ProjectStatuses, ", ")+" (default active)")
-	addLimitFlag(cmd, &limit)
+	addLimitFlag(cmd, &limit, 0)
 	return cmd
 }
 

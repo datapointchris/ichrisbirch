@@ -3,13 +3,14 @@
 One contract across every list endpoint, which is why this is one file rather
 than an addition to each: the semantics have to be identical or the shared
 `--limit` flag lies about what it does. A positive limit caps, an absent limit
-returns everything, and `limit=0` also returns everything — `cli-design.md`
-§ "A sentinel never steals a value the caller can mean" allows zero to stand for
-"all" on a limit, and `icb overview --limit 0` has always meant that.
+returns everything, and `limit=0` returns nothing — `cli-design.md` § "A
+sentinel never steals a value the caller can mean" is the rule, and a reserved
+value has to be one no caller could have meant.
 
-Zero is the case worth pinning. Passing it straight to `Select.limit` produces
-`LIMIT 0`, which answers with an empty list that reads as a real result, so the
-failure is silent in exactly the way an empty response always is.
+Zero is the case worth pinning, and a falsy test is what gets it wrong. `if not
+limit` treats it as absence and answers the caller that asked for nothing with
+the whole collection, which is a real number really used and nothing on screen
+separating it from the other reading.
 """
 
 import pytest
@@ -67,11 +68,15 @@ class TestEveryListReadTakesALimit:
         client = seed(dataset)
         assert len(rows(client.get(endpoint, params={'limit': 1}))) == 1
 
-    def test_zero_means_every_row(self, seed, endpoint, dataset):
-        """The sentinel. A bare LIMIT 0 would answer with an empty list instead."""
+    def test_zero_asks_for_no_rows(self, seed, endpoint, dataset):
+        """A falsy test would answer this with the whole collection instead."""
+        client = seed(dataset)
+        assert rows(client.get(endpoint, params={'limit': 0})) == []
+
+    def test_an_absent_limit_is_the_only_thing_that_returns_every_row(self, seed, endpoint, dataset):
         client = seed(dataset)
         uncapped = rows(client.get(endpoint))
-        assert rows(client.get(endpoint, params={'limit': 0})) == uncapped
+        assert len(uncapped) >= 2
 
     def test_a_negative_limit_is_a_422(self, seed, endpoint, dataset):
         """Rejected at the edge by name rather than reaching SQL as a negative."""
@@ -84,7 +89,7 @@ class TestProjectItemReadsTakeALimit:
     """`/project-items/` and `/projects/{id}/items/` are seeded through the API.
 
     A scope selects which rows come back, never what a filter means, so both
-    paths take the same parameter with the same sentinel.
+    paths take the same parameter and read zero the same way.
     """
 
     @pytest.fixture
@@ -102,17 +107,17 @@ class TestProjectItemReadsTakeALimit:
         client, _ = seeded_project
         assert len(rows(client.get('/project-items/', params={'limit': 2}))) == 2
 
-    def test_the_flat_list_reads_zero_as_every_row(self, seeded_project):
+    def test_the_flat_list_reads_zero_as_no_rows(self, seeded_project):
         client, _ = seeded_project
-        assert len(rows(client.get('/project-items/', params={'limit': 0}))) == 3
+        assert rows(client.get('/project-items/', params={'limit': 0})) == []
 
     def test_the_project_scoped_list_caps(self, seeded_project):
         client, project_id = seeded_project
         assert len(rows(client.get(f'/projects/{project_id}/items/', params={'limit': 2}))) == 2
 
-    def test_the_project_scoped_list_reads_zero_as_every_row(self, seeded_project):
+    def test_the_project_scoped_list_reads_zero_as_no_rows(self, seeded_project):
         client, project_id = seeded_project
-        assert len(rows(client.get(f'/projects/{project_id}/items/', params={'limit': 0}))) == 3
+        assert rows(client.get(f'/projects/{project_id}/items/', params={'limit': 0})) == []
 
     def test_the_limit_composes_with_status(self, seeded_project):
         """Two narrowing filters both apply, rather than the last one winning."""
