@@ -12,7 +12,7 @@ import (
 // thing everywhere in the binary: a caller who has read it once on `tasks list`
 // has read it everywhere, and a divergence between two commands is invisible in
 // help because both rows still read the same.
-const limitUsage = "Maximum number of rows to return"
+const limitUsage = "Maximum number of rows to return (default: every row)"
 
 // limitValue parses --limit and refuses a negative, which is the floor a row
 // count owes. pflag has no minimum, so the parser is this Set method: without
