@@ -9,12 +9,12 @@ import (
 // cap to apply. One helper across every list read because --limit means the
 // same thing on each: at most this many rows, server-side.
 //
-// A nil limit and a limit of zero or less are the same answer — every row — and
-// neither is sent. Not sending it is what makes `--limit 0` mean "all" against
-// any version of the API: an API that reads a bare `limit=0` as `LIMIT 0` would
-// answer with nothing, which is the opposite of what the flag was asked for.
+// A nil limit is the absence of a cap and is not sent, which is what asks for
+// every row. A limit of zero is a row count the caller can mean, so it is sent
+// as `limit=0` and the API answers with nothing. Folding the two together
+// answers a caller computing its own bound with the whole collection.
 func applyLimit(params url.Values, limit *int) {
-	if limit == nil || *limit <= 0 {
+	if limit == nil {
 		return
 	}
 	params.Set("limit", strconv.Itoa(*limit))

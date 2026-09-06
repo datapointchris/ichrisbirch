@@ -62,7 +62,7 @@ func TestListPatterns_EncodesSearchAndLimit(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	if _, err := client.ListPatterns(context.Background(), PatternListOptions{Search: "heart burn", Limit: 5}); err != nil {
+	if _, err := client.ListPatterns(context.Background(), PatternListOptions{Search: "heart burn", Limit: intptr(5)}); err != nil {
 		t.Fatalf("ListPatterns: %v", err)
 	}
 	if gotQuery != "limit=5&search=heart+burn" {

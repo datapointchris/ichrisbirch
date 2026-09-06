@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 // Pattern mirrors the patterns JSON.
@@ -29,10 +28,13 @@ type PatternUpdateInput struct {
 	RecordedAt *string `json:"recorded_at,omitempty"`
 }
 
-// PatternListOptions filters the list. Zero values mean unfiltered.
+// PatternListOptions filters the list. An empty search is unfiltered, and a nil
+// limit is uncapped. Limit is a pointer for the reason every other list read
+// takes one: a zero row count is a thing a caller can ask for, and an int has
+// no room to hold both that and "no cap".
 type PatternListOptions struct {
 	Search string
-	Limit  int
+	Limit  *int
 }
 
 // ListPatterns returns patterns newest first (GET /patterns/).
@@ -41,9 +43,7 @@ func (c *Client) ListPatterns(ctx context.Context, opts PatternListOptions) ([]P
 	if opts.Search != "" {
 		query.Set("search", opts.Search)
 	}
-	if opts.Limit > 0 {
-		query.Set("limit", strconv.Itoa(opts.Limit))
-	}
+	applyLimit(query, opts.Limit)
 
 	path := "/patterns/"
 	if encoded := query.Encode(); encoded != "" {

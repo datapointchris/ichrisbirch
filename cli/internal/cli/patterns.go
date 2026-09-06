@@ -45,7 +45,7 @@ func newPatternsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			patterns, err := client.ListPatterns(cmd.Context(), api.PatternListOptions{Search: search, Limit: limit})
+			patterns, err := client.ListPatterns(cmd.Context(), api.PatternListOptions{Search: search, Limit: limitFlag(cmd)})
 			if err != nil {
 				return handleAPIError(err)
 			}

@@ -280,8 +280,10 @@ func TestCapItems(t *testing.T) {
 	if got := capItems(items, 2); len(got) != 2 {
 		t.Errorf("capItems(4, 2) = %v", got)
 	}
-	if got := capItems(items, 0); len(got) != 4 {
-		t.Errorf("capItems(4, 0) = %v, want no cap", got)
+	// Zero is a row count, so it caps to nothing. Every row is what an absent
+	// --limit asks for, and the flag's default is what reaches here instead.
+	if got := capItems(items, 0); len(got) != 0 {
+		t.Errorf("capItems(4, 0) = %v, want nothing", got)
 	}
 	if got := capItems(items, 10); len(got) != 4 {
 		t.Errorf("capItems(4, 10) = %v", got)

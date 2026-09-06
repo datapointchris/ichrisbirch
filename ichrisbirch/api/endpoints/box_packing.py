@@ -9,6 +9,8 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -30,10 +32,9 @@ async def search(q: str, session: DbSession):
 
 
 @router.get('/boxes/', response_model=list[schemas.Box], status_code=status.HTTP_200_OK)
-async def read_many_boxes(session: DbSession, limit: int | None = None):
+async def read_many_boxes(session: DbSession, limit: RowLimit = None):
     query = select(models.Box).order_by(models.Box.number)
-    query = query.limit(limit) if limit else query
-    results = list(session.scalars(query).all())
+    results = list(session.scalars(apply_row_limit(query, limit)).all())
     return results
 
 
@@ -80,10 +81,9 @@ async def update_box(id: int, update: schemas.BoxUpdate, session: DbSession):
 
 
 @router.get('/items/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
-async def read_many_items(session: DbSession, limit: int | None = None):
+async def read_many_items(session: DbSession, limit: RowLimit = None):
     query = select(models.BoxItem).order_by(models.BoxItem.name)
-    query = query.limit(limit) if limit else query
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 def _update_box_details_based_on_contents(box: models.Box, session: Session):

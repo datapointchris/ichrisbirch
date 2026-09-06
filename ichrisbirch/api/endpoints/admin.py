@@ -37,6 +37,8 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.logger import LOG_DIR
 from ichrisbirch.scheduler.main import get_jobstore
+from ichrisbirch.services.row_limit import CappedRowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -250,14 +252,13 @@ async def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_set
 async def get_scheduler_history(
     session: DbSession,
     job_id: str | None = None,
-    limit: int = 50,
+    limit: CappedRowLimit = 50,
 ):
     """Get scheduler job run history, optionally filtered by job_id."""
     query = select(models.SchedulerJobRun).order_by(models.SchedulerJobRun.started_at.desc())
     if job_id:
         query = query.where(models.SchedulerJobRun.job_id == job_id)
-    query = query.limit(limit)
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 # --- Smoke tests ---

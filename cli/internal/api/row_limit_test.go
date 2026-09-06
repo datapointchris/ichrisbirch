@@ -27,26 +27,16 @@ func TestApplyLimit_OmitsAnAbsentCap(t *testing.T) {
 	}
 }
 
-// Zero means "no cap", so it has to reach the server as an absent parameter. A
-// bare limit=0 is a LIMIT 0 against any API that has not adopted the sentinel,
-// which answers with nothing — the opposite of what the caller asked for.
-func TestApplyLimit_SendsNothingForZero(t *testing.T) {
+// Zero is a row count a caller can mean, so it reaches the server as limit=0
+// and the API answers with nothing. Omitting it is what asks for every row, and
+// only an absent limit does that.
+func TestApplyLimit_SendsAnExplicitZero(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
 	if _, err := client.ListCountdowns(context.Background(), intptr(0)); err != nil {
 		t.Fatalf("ListCountdowns: %v", err)
 	}
-	if *query != "" {
-		t.Errorf("query = %q, want limit omitted so zero means every row", *query)
-	}
-}
-
-func TestApplyLimit_SendsNothingForANegativeCap(t *testing.T) {
-	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListCountdowns(context.Background(), intptr(-3)); err != nil {
-		t.Fatalf("ListCountdowns: %v", err)
-	}
-	if *query != "" {
-		t.Errorf("query = %q, want limit omitted rather than sent as a negative", *query)
+	if *query != "limit=0" {
+		t.Errorf("query = %q, want limit=0 so zero rows is what the caller gets", *query)
 	}
 }
 
