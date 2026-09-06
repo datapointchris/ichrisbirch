@@ -76,7 +76,7 @@ func newRecipesListCommand() *cobra.Command {
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().IntVar(&maxTotalTime, "max-total-time", 0, "Maximum total time in minutes")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output recipes as JSON to stdout")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

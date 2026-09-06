@@ -57,7 +57,7 @@ func newPatternsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&search, "search", "", "Only patterns whose message contains this text")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output patterns as JSON to stdout")
 	return cmd
 }

@@ -25,6 +25,8 @@ from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.row_limit import apply_row_limit
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -64,13 +66,13 @@ async def require_admin_or_internal_service(
 
 
 @router.get('/', response_model=list[schemas.User], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_service), limit: int | None = None):
+async def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_service), limit: RowLimit = None):
     """List all users.
 
     Requires admin user or internal service authentication.
     """
-    query = select(models.User).limit(limit)
-    return list(session.scalars(query).all())
+    query = select(models.User)
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 async def require_user_access_or_admin_or_internal_service(

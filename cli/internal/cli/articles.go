@@ -210,7 +210,7 @@ func newArticlesListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only articles last read on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only articles last read on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output articles as JSON to stdout")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

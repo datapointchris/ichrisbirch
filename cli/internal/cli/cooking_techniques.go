@@ -63,7 +63,7 @@ func newCookingTechniquesListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&category, "category", "", "Filter by category — icb cooking-techniques categories prints them")
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output techniques as JSON to stdout")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

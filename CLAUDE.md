@@ -393,6 +393,14 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
 6. **Register seeder in `scripts/seed/seeders/__init__.py`** — add to import list and `SEED_ORDER` (after its FK dependencies)
 7. Create test data in `tests/test_data/<name>.py` + register in `tests/test_data/__init__.py`
 8. Write API endpoint tests in `tests/ichrisbirch/api/endpoints/test_<name>.py`
+9. **A read answering with a list takes `RowLimit` and `apply_row_limit`** from
+   `ichrisbirch/services/row_limit.py` — `CappedRowLimit` where the subject grows
+   without end and a number is the right default. Declaring `limit: int | None`
+   by hand loses the floor, so a negative reaches SQL as `LIMIT -1`, and a falsy
+   test answers `limit=0` with the whole collection. Both are invisible in the
+   response. `test_every_read_that_takes_a_limit_declares_the_shared_one` walks
+   the routes and fails on either, and adding the endpoint to `LIMITED_READS` in
+   the same file is what gets it the five behavioral cases.
 
 ### Adding a Stats Page
 

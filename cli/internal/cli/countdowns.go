@@ -58,7 +58,7 @@ func newCountdownsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output countdowns as JSON to stdout")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

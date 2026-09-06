@@ -102,9 +102,10 @@ icb overview --json          # the stable schema, for consumers
 icb overview --limit 3       # a tighter per-section cap
 ```
 
-`--limit` is a row count everywhere it appears, so `--limit 0` returns nothing.
-On the list reads, omitting it is what returns every row. `overview` and
-`projects items next` cap what they print instead, and their default is ten.
+`--limit 0` returns nothing everywhere it appears, and a negative is a usage
+error. What it counts differs by command: a list read caps rows and omitting the
+flag returns every one of them, while `overview` caps each section separately and
+`projects items next` caps what it prints. Each `--help` names its own unit.
 
 Contract notes for consumers (`menu dashboard` in dotfiles is the first):
 
@@ -234,9 +235,9 @@ built before it existed has nothing to say.
 its label, whether it is optional, whether it repeats or takes prose, its default,
 its choices, its validator, and its escape. That list drives both doors — the
 fields nothing answered become the form, and the flags are run through the same
-validators, so a bad value reads identically whichever way it arrived
-(`standards/cli-design.md` § "One failure, one diagnosis, whichever door you came
-in"). The escape is the one part only the form has: `--project` still refuses a
+validators, so a bad value reads identically whichever way it arrived — one
+failure gets one diagnosis, whichever door it came in by. The escape is the one
+part only the form has: `--project` still refuses a
 name that does not exist, because a flag has nobody to ask what kind it is.
 `taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
 example and `itemCreateFields` in `internal/cli/items.go` is the fetched one;

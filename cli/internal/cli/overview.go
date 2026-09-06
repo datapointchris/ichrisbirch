@@ -197,7 +197,7 @@ func newOverviewCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the overview as JSON to stdout")
-	addLimitFlag(cmd, &limit, defaultOverviewLimit)
+	addCapFlag(cmd, &limit, defaultOverviewLimit, "Maximum number of items to show per section")
 	return cmd
 }
 
@@ -337,12 +337,12 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			Total: len(data.Tasks),
 		},
 		Habits: habitSection{
-			DueToday:       dueHabits,
-			CompletedToday: doneHabits,
+			DueToday:       capItems(dueHabits, limit),
+			CompletedToday: capItems(doneHabits, limit),
 			CurrentTotal:   len(data.CurrentHabits),
 		},
 		Books: bookSection{
-			Reading:     booksByProgress(data.OwnedBooks, "reading"),
+			Reading:     capItems(booksByProgress(data.OwnedBooks, "reading"), limit),
 			NextUp:      capItems(nextBooks, limit),
 			NextUpTotal: len(nextBooks),
 		},
@@ -596,9 +596,17 @@ func upcomingEvents(events []api.Event, now time.Time) []api.Event {
 
 // capItems truncates to limit. Zero is a row count like any other and caps to
 // nothing, so it needs no branch of its own: len(items) <= 0 is false whenever
-// there is anything to cut. The parser refuses a negative, which is what stops
-// items[:limit] slicing from the far end.
+// there is anything to cut.
+//
+// A negative caps to nothing rather than panicking. The two callers take their
+// limit from a flag whose parser refuses one, but that guard lives on a type
+// this signature never mentions, and a third caller passing a computed bound —
+// a remaining-space count, a subtraction against a section already printed —
+// would reach items[:-1] and a slice-bounds panic.
 func capItems[T any](items []T, limit int) []T {
+	if limit < 0 {
+		return nil
+	}
 	if len(items) <= limit {
 		return items
 	}

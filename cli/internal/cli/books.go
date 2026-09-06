@@ -82,7 +82,7 @@ func newBooksListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only books finished on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only books finished on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output books as JSON to stdout")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 

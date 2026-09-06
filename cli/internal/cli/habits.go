@@ -73,7 +73,7 @@ func newHabitsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&current, "current", false, "Filter by current status (--current or --current=false)")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output habits as JSON to stdout")
 	return cmd
 }

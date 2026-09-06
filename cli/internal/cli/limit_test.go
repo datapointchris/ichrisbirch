@@ -3,12 +3,15 @@ package cli
 import (
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // Every command whose verb is `list` reads a collection that grows outside the
-// binary, so `cli-design.md` § "`--follow`/`-f` defaults to false; `--limit`/`-n`
-// goes on every list" reaches all of them. Listing them here is what stops the
-// next one being added without the flag.
+// binary, so every one of them takes --limit/-n. Listing them here is what stops
+// the next one being added without the flag — the tree walk below cannot, since a
+// missing flag is a command the walk never sees.
 func TestEveryListCommandTakesLimit(t *testing.T) {
 	lists := [][]string{
 		{"articles", "list"},
@@ -25,22 +28,6 @@ func TestEveryListCommandTakesLimit(t *testing.T) {
 		{"tasks", "list"},
 	}
 	for _, path := range lists {
-		t.Run(strings.Join(path, " "), func(t *testing.T) {
-			flag := findCommand(t, path...).Flags().Lookup("limit")
-			if flag == nil {
-				t.Fatalf("%s has no --limit", strings.Join(path, " "))
-			}
-			if flag.Shorthand != "n" {
-				t.Errorf("--limit shorthand = %q, want n", flag.Shorthand)
-			}
-		})
-	}
-}
-
-// The two commands that cap client-side keep their own non-zero defaults, and
-// still answer to the same spelling.
-func TestClientSideCapsCarryTheSameFlag(t *testing.T) {
-	for _, path := range [][]string{{"overview"}, {"projects", "items", "next"}} {
 		t.Run(strings.Join(path, " "), func(t *testing.T) {
 			flag := findCommand(t, path...).Flags().Lookup("limit")
 			if flag == nil {
@@ -87,15 +74,47 @@ func TestLimitFlag_CarriesAnExplicitCap(t *testing.T) {
 	}
 }
 
-// The parser is the only thing standing between a negative and a slice
-// expression, and `capItems` is where one would land: items[:-1] panics where a
-// usage error was the answer. Every --limit is declared through addLimitFlag,
-// so refusing here refuses everywhere.
-func TestLimitFlag_RefusesANegative(t *testing.T) {
-	for _, path := range [][]string{{"tasks", "list"}, {"overview"}, {"projects", "items", "next"}} {
-		t.Run(strings.Join(path, " "), func(t *testing.T) {
-			cmd := findCommand(t, path...)
-			err := cmd.Flags().Set("limit", "-1")
+// limitCommands is every command in the tree carrying --limit, with the path a
+// failure names. Walked rather than listed: a command added with its own flag
+// declaration is covered by nothing when the population is written by hand, and
+// its absence from the list reads exactly like conformance.
+func limitCommands(t *testing.T) map[string]*pflag.Flag {
+	t.Helper()
+	found := map[string]*pflag.Flag{}
+	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
+		if flag := cmd.Flags().Lookup("limit"); flag != nil {
+			found[strings.TrimPrefix(cmd.CommandPath(), "icb ")] = flag
+		}
+	})
+	if len(found) == 0 {
+		t.Fatal("no command in the tree carries --limit, so every case below is vacuous")
+	}
+	return found
+}
+
+// Every --limit is declared by addLimitFlag or addCapFlag, which is what keeps
+// the floor and the usage text from diverging per command. The factories are
+// the only thing that builds a limitValue, so the type is the assertion.
+func TestEveryLimitFlagIsDeclaredByTheFactory(t *testing.T) {
+	for path, flag := range limitCommands(t) {
+		t.Run(path, func(t *testing.T) {
+			if flag.Shorthand != "n" {
+				t.Errorf("%s --limit shorthand = %q, want n", path, flag.Shorthand)
+			}
+			if _, ok := flag.Value.(limitValue); !ok {
+				t.Errorf("%s --limit is a %T, want limitValue — declare it with addLimitFlag or addCapFlag", path, flag.Value)
+			}
+		})
+	}
+}
+
+// Every --limit refuses a negative, at the parser rather than in RunE. Past it,
+// -1 reaches capItems as a slice bound and the API as a query parameter, and
+// both answer at exit 0.
+func TestEveryLimitFlagRefusesANegative(t *testing.T) {
+	for path, flag := range limitCommands(t) {
+		t.Run(path, func(t *testing.T) {
+			err := flag.Value.Set("-1")
 			if err == nil {
 				t.Fatal("--limit -1 was accepted, want a usage error")
 			}
@@ -106,19 +125,21 @@ func TestLimitFlag_RefusesANegative(t *testing.T) {
 	}
 }
 
-// Every --limit carries the same default the command had before it was routed
-// through the shared factory: uncapped on the reads the API bounds, and a
-// screenful on the two that cap what they print.
-func TestLimitFlag_KeepsEachCommandsDefault(t *testing.T) {
-	defaults := map[string][]string{
-		"0":  {"tasks", "list"},
-		"10": {"overview"},
-	}
-	for want, path := range defaults {
-		t.Run(strings.Join(path, " "), func(t *testing.T) {
-			flag := findCommand(t, path...).Flags().Lookup("limit")
+// The two commands that cap what they print carry a default; the reads the API
+// bounds carry none, because an unset --limit sends no parameter at all.
+func TestOnlyTheClientSideCapsCarryADefault(t *testing.T) {
+	capped := map[string]string{"overview": "10", "projects items next": "10"}
+	for path, flag := range limitCommands(t) {
+		t.Run(path, func(t *testing.T) {
+			want, isCapped := capped[path]
+			if !isCapped {
+				want = "0"
+			}
 			if flag.DefValue != want {
-				t.Errorf("%s --limit default = %q, want %q", strings.Join(path, " "), flag.DefValue, want)
+				t.Errorf("%s --limit default = %q, want %q", path, flag.DefValue, want)
+			}
+			if isCapped == strings.Contains(flag.Usage, "rows") {
+				t.Errorf("%s --limit usage = %q; a per-section cap must not call its unit rows", path, flag.Usage)
 			}
 		})
 	}

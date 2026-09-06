@@ -1,17 +1,14 @@
 """Row capping for the collection reads, with one meaning for zero.
 
-`cli-design.md` § "`--follow`/`-f` defaults to false; `--limit`/`-n` goes on
-every list" puts a limit on every list over data that grows outside the binary,
-which is every collection this API answers. Capping here rather than in each
-client is `data.md` § "Filtering is server-side": the rows the caller discards
-are rows nobody had to serialize.
+Every list over data that grows outside the binary takes a limit, which is every
+collection this API answers. It is applied here rather than in each client
+because the rows a caller discards are rows nobody had to serialize.
 
-**Absence means no cap and zero means no rows.** `cli-design.md` § "A sentinel
-never steals a value the caller can mean" is the rule: a reserved value has to
-be one no caller could have meant, and `tail -n 0` settles that a caller can
-mean zero rows. So `limit` omitted leaves the query uncapped, and `limit=0`
-reaches `LIMIT 0` and returns an empty set. One helper is what keeps every
-endpoint on the same side of that.
+**Absence means no cap and zero means no rows.** A reserved value has to be one
+no caller could have meant, and `tail -n 0` settles that a caller can mean zero
+rows. So `limit` omitted leaves the query uncapped, and `limit=0` reaches
+`LIMIT 0` and returns an empty set. One helper is what keeps every endpoint on
+the same side of that, and a test walks the routes rather than trusting it.
 
 A negative limit is rejected at the edge by `ge=0` rather than reaching SQL.
 """
@@ -24,6 +21,16 @@ from sqlalchemy import Select
 RowLimit = Annotated[
     int | None,
     Query(ge=0, description='Return at most this many rows. Omit for every row; 0 returns none.'),
+]
+
+# A read whose subject grows without end carries a number instead of absence, so
+# it has no way to spell "every row" and needs none. The test is whether the
+# hidden class outgrows the visible one left alone for a year, and a job run
+# history is the case that passes it. The floor is the half both share: a
+# negative reaches `Select.limit` as `LIMIT -1` wherever `ge=0` is missing.
+CappedRowLimit = Annotated[
+    int,
+    Query(ge=0, description='Return at most this many rows. 0 returns none.'),
 ]
 
 

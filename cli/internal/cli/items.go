@@ -160,7 +160,7 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only items completed on or after this ISO 8601 date")
 	cmd.Flags().StringVar(&bounds.End, "end", "", "Only items completed on or before this ISO 8601 date")
-	addLimitFlag(cmd, &limit, 0)
+	addLimitFlag(cmd, &limit)
 	return cmd
 }
 
@@ -177,9 +177,9 @@ func validateItemStatus(cmd *cobra.Command, itemStatus string) error {
 }
 
 // hintHiddenItems says the default hid something, and names the flag that shows
-// it. Required by cli-design.md § "A default narrows only where the hidden class
-// grows without bound" — the narrowing is allowed precisely because it announces
-// itself.
+// it. A default may hide a class that grows without bound, and this one does —
+// completed items reached parity with open ones — but only where it announces
+// itself, which is what this line is.
 //
 // stderr, so a person sees it and --json does not. Silent when a status was
 // asked for, because then nothing was hidden the caller did not choose.
@@ -286,16 +286,30 @@ func newItemsNextCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items := capItems(nextProjectItems(itemsOfKind(all, kind), blocked), limit)
+			actionable := nextProjectItems(itemsOfKind(all, kind), blocked)
+			items := capItems(actionable, limit)
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), items)
 			}
-			if len(items) == 0 && kind != "" {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items in %s projects.\n", kind)
+			// The sentences describe the data, so they read the uncapped set. A
+			// --limit the caller chose is not a fact about what is outstanding, and
+			// gating on the capped slice reported an empty subject for --limit 0
+			// against every open item there is.
+			if len(actionable) == 0 {
+				switch {
+				case kind != "":
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items in %s projects.\n", kind)
+				case filter != nil:
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items for repo %s.\n", *filter)
+				default:
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No items.")
+				}
 				return nil
 			}
-			if len(items) == 0 && filter != nil {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No open items for repo %s.\n", *filter)
+			// A zero cap prints nothing, the way `head -n 0` does. printItemsTable
+			// would answer the empty slice with "No items.", which is the same false
+			// claim one layer down.
+			if len(items) == 0 {
 				return nil
 			}
 			printItemsTable(cmd.OutOrStdout(), items)
@@ -305,7 +319,7 @@ func newItemsNextCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
 	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: "+strings.Join(api.ProjectKinds, ", "))
 	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
-	addLimitFlag(cmd, &limit, defaultNextItemLimit)
+	addCapFlag(cmd, &limit, defaultNextItemLimit, "Maximum number of items to show")
 	return cmd
 }
 
