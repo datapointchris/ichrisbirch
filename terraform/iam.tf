@@ -145,6 +145,7 @@ resource "aws_iam_policy" "terraform_execution" {
           "route53:*",
           "s3:*",
           "ssm:*",
+          "glue:*",
           "iam:*"
         ]
         Resource = "*"
@@ -228,6 +229,34 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
         Effect   = "Allow"
         Action   = "iam:PassRole"
         Resource = aws_iam_role.ichrisbirch_webserver.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "allow_pass_glue_testbed_role" {
+  name        = "allow-pass-glue-testbed-role"
+  description = "Allow passing a Glue testbed role to Glue, so live integration tests need no role assumption"
+
+  # `cloud-developer` already grants glue:*, but creating a Glue job means handing it a role, and
+  # that is an iam:PassRole the developer group does not otherwise have. This is the whole gap
+  # between a developer credential and running a suite that creates and deletes its own jobs.
+  #
+  # Deliberately not iam:CreateRole. A principal that can create a role and attach a policy to it
+  # can grant itself anything, so delegating that safely needs a permissions boundary and a name
+  # condition. Passing one inert role to one service needs neither.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/dectl-testbed-*"
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "glue.amazonaws.com"
+          }
+        }
       }
     ]
   })
@@ -415,6 +444,11 @@ resource "aws_iam_group_policy_attachment" "developer_pass_webserver_role" {
 resource "aws_iam_group_policy_attachment" "developer_cloud_developer" {
   group      = aws_iam_group.developer.name
   policy_arn = aws_iam_policy.cloud_developer.arn
+}
+
+resource "aws_iam_group_policy_attachment" "developer_pass_glue_testbed_role" {
+  group      = aws_iam_group.developer.name
+  policy_arn = aws_iam_policy.allow_pass_glue_testbed_role.arn
 }
 
 # --- Developer Admin --- #
