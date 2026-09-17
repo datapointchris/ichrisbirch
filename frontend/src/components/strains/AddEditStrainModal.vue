@@ -225,7 +225,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import type { Strain, StrainCreate, StrainUpdate } from '@/api/client'
-import { useStrainsStore, STRAIN_STATUS_LABELS } from '@/stores/strains'
+import { useStrainsStore, STRAIN_STATUS_LABELS, humanizeStrainValue as humanize } from '@/stores/strains'
 import AddEditModal from '@/components/AddEditModal.vue'
 import DatePicker from '@/components/DatePicker.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
@@ -257,10 +257,6 @@ const statusOptions = computed(() =>
     label: STRAIN_STATUS_LABELS[s.name as keyof typeof STRAIN_STATUS_LABELS] ?? humanize(s.name),
   }))
 )
-
-function humanize(value: string): string {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 function createEmptyForm() {
   return {

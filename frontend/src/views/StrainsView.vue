@@ -239,7 +239,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { Strain, StrainCreate, StrainUpdate } from '@/api/client'
-import { useStrainsStore, STRAIN_STATUS_LABELS } from '@/stores/strains'
+import { useStrainsStore, STRAIN_STATUS_LABELS, humanizeStrainValue as humanize } from '@/stores/strains'
 import { useNotifications } from '@/composables/useNotifications'
 import { formatDate } from '@/composables/formatDate'
 import { ApiError } from '@/api/errors'
@@ -263,11 +263,6 @@ const effectFilterOptions = computed(() => [
   { value: 'all', label: 'All Effects' },
   ...store.vocabulary.effects.map((e) => ({ value: e.name, label: `${humanize(e.name)} (${e.count})` })),
 ])
-
-function humanize(value?: string): string {
-  if (!value) return ''
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 function statusLabel(status: string): string {
   return STRAIN_STATUS_LABELS[status as keyof typeof STRAIN_STATUS_LABELS] ?? humanize(status)

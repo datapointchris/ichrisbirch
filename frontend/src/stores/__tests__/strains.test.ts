@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useStrainsStore } from '../strains'
+import { useStrainsStore, humanizeStrainValue } from '../strains'
 import { ApiError } from '@/api/errors'
 import type { Strain, StrainVocabulary } from '@/api/client'
 
@@ -82,6 +82,23 @@ const testVocabulary: StrainVocabulary = {
   flavors: [{ name: 'berry', count: 1 }],
   terpenes: [{ name: 'myrcene', count: 1 }],
 }
+
+describe('humanizeStrainValue', () => {
+  it('turns an underscored key into words', () => {
+    expect(humanizeStrainValue('sativa_dominant')).toBe('Sativa Dominant')
+    expect(humanizeStrainValue('indica')).toBe('Indica')
+  })
+
+  it('uppercases an acronym rather than title-casing it', () => {
+    expect(humanizeStrainValue('cbd')).toBe('CBD')
+    expect(humanizeStrainValue('thc')).toBe('THC')
+  })
+
+  it('renders an absent value as an empty string', () => {
+    expect(humanizeStrainValue(undefined)).toBe('')
+    expect(humanizeStrainValue('')).toBe('')
+  })
+})
 
 describe('useStrainsStore', () => {
   beforeEach(() => {

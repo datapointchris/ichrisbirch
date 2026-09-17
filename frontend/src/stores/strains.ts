@@ -14,6 +14,20 @@ export const STRAIN_STATUS_LABELS: Record<StrainStatus, string> = {
   want_to_try: 'Want to Try',
 }
 
+// A vocabulary value is a lowercase key, and a couple of them are acronyms that
+// title-casing mangles — 'cbd' reads as Cbd. The lookup tables carry no display
+// column, so the spelling is decided here rather than fetched.
+const STRAIN_ACRONYMS = new Set(['cbd', 'thc'])
+
+/** Render a vocabulary key for a person: `sativa_dominant` to Sativa Dominant. */
+export function humanizeStrainValue(value?: string): string {
+  if (!value) return ''
+  return value
+    .split('_')
+    .map((word) => (STRAIN_ACRONYMS.has(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(' ')
+}
+
 /** An empty vocabulary, so the view renders before the fetch lands. */
 const EMPTY_VOCABULARY: StrainVocabulary = {
   types: [],
