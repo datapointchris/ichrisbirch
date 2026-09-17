@@ -46,7 +46,7 @@ async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.
     headers = {'Remote-User': admin_email, 'Remote-Email': admin_email}
 
     transport = httpx2.ASGITransport(app=app)
-    async with httpx2.AsyncClient(transport=transport, base_url='http://smoke-test') as client:
+    async with httpx2.AsyncClient(transport=transport, base_url='http://smoke-test', timeout=5.0, follow_redirects=False) as client:
         for endpoint in endpoints:
             result = await _test_endpoint(client, endpoint, headers)
             results.append(result)

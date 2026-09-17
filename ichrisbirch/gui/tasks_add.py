@@ -31,7 +31,7 @@ def submit_form():
     data = {'name': name, 'category': category, 'priority': int(priority), 'notes': notes}
 
     try:
-        response = httpx2.post(url, headers=headers, json=data)
+        response = httpx2.post(url, headers=headers, json=data, timeout=5.0, follow_redirects=False)
         response.raise_for_status()
         messagebox.showinfo('Success', 'Task submitted successfully!')
         app.destroy()

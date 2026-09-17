@@ -84,7 +84,7 @@ def is_access_token(token: str) -> bool:
 
 def discover_jwks_uri(issuer: str, timeout: float = DISCOVERY_TIMEOUT_SECONDS) -> str:
     """Resolve the issuer's JWKS endpoint from its OIDC discovery document."""
-    response = httpx2.get(issuer.rstrip('/') + DISCOVERY_PATH, timeout=timeout, headers={'User-Agent': USER_AGENT})
+    response = httpx2.get(issuer.rstrip('/') + DISCOVERY_PATH, timeout=timeout, follow_redirects=False, headers={'User-Agent': USER_AGENT})
     response.raise_for_status()
     document = response.json()
 

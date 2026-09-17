@@ -190,7 +190,7 @@ class DockerComposeTestEnvironment:
             service_running = False
             while not service_running and attempts < max_attempts:
                 try:
-                    response = httpx2.get(url, timeout=5).raise_for_status()
+                    response = httpx2.get(url, timeout=5, follow_redirects=False).raise_for_status()
                     if service_running := response.status_code == 200:
                         logger.info(f'{service_name} is ready at {url}')
                         break

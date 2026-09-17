@@ -27,7 +27,7 @@ def submit_form():
 
     try:
         start = pendulum.now()
-        response = httpx2.post(insights_endpoint, headers=headers, json={'url': url}, timeout=60)
+        response = httpx2.post(insights_endpoint, headers=headers, json={'url': url}, timeout=60, follow_redirects=False)
         response.raise_for_status()
         elapsed = (pendulum.now() - start).in_words()
         article_insights = response.text

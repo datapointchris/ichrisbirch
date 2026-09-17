@@ -51,7 +51,7 @@ async def create_github_issue(
     logger.info('github_issue_creating', title=issue.title, labels=issue.labels)
 
     try:
-        async with httpx2.AsyncClient() as client:
+        async with httpx2.AsyncClient(timeout=5.0, follow_redirects=False) as client:
             response = await client.post(
                 settings.github.api_url_issues,
                 json=data,

@@ -27,7 +27,7 @@ class APISession:
         self.base_url = base_url or self._settings.api_url
         self.credential_provider = credential_provider or InternalServiceProvider(settings=self._settings)
         self.default_headers = default_headers or {}
-        self.client = httpx2.Client()
+        self.client = httpx2.Client(timeout=5.0, follow_redirects=False)
 
     def request(self, method: str, endpoint: str, **kwargs) -> Any:
         """Make authenticated request."""

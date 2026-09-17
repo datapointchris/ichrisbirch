@@ -312,7 +312,7 @@ class LoggingAPIClient:
         self._settings = _get_settings_with_fallback(settings)
         self.credential_provider = credential_provider
         self.base_url = base_url or self._settings.api_url
-        self.session = httpx2.Client(timeout=30.0)
+        self.session = httpx2.Client(timeout=30.0, follow_redirects=False)
 
         logger.debug('api_client_created', base_url=self.base_url, auth_provider=type(credential_provider).__name__)
 
