@@ -100,6 +100,11 @@ from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
 from ichrisbirch.schemas.server import ServerStats
+from ichrisbirch.schemas.strain import Strain
+from ichrisbirch.schemas.strain import StrainCreate
+from ichrisbirch.schemas.strain import StrainUpdate
+from ichrisbirch.schemas.strain import StrainVocabulary
+from ichrisbirch.schemas.strain import StrainVocabularyEntry
 from ichrisbirch.schemas.task import Task
 from ichrisbirch.schemas.task import TaskCompleted
 from ichrisbirch.schemas.task import TaskCreate
@@ -211,6 +216,11 @@ __all__ = [
     'CookingTechniqueCategoryBreakdown',
     'CookingTechniqueCreate',
     'CookingTechniqueUpdate',
+    'Strain',
+    'StrainCreate',
+    'StrainUpdate',
+    'StrainVocabulary',
+    'StrainVocabularyEntry',
     'Task',
     'TaskCompleted',
     'TaskCreate',

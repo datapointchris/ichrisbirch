@@ -122,6 +122,7 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=deps)
     api.include_router(endpoints.recipes.router, prefix='/recipes', dependencies=deps)
     api.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
+    api.include_router(endpoints.strains.router, prefix='/strains', dependencies=deps)
     api.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
     api.include_router(endpoints.users.router, prefix='/users')
     logger.info('routers_registered')

@@ -15,6 +15,7 @@ from tests.test_data import patterns
 from tests.test_data import projects
 from tests.test_data import recipes
 from tests.test_data import scheduler
+from tests.test_data import strains
 from tests.test_data import tasks
 from tests.test_data import users
 
@@ -40,6 +41,7 @@ __all__ = [
     'projects',
     'recipes',
     'scheduler',
+    'strains',
     'tasks',
     'users',
 ]
