@@ -128,7 +128,7 @@ session.request("GET", "/tasks", headers={"Accept": "application/json"})
 
 ### HTTP Client Management
 
-Sessions use httpx for HTTP requests with these features:
+Sessions use httpx2 for HTTP requests with these features:
 
 - **Connection pooling**: Reuses connections for better performance
 - **Timeout handling**: Configurable request timeouts
@@ -136,10 +136,10 @@ Sessions use httpx for HTTP requests with these features:
 - **JSON serialization**: Automatic JSON encoding/decoding
 
 ```python
-# The session manages httpx.Client lifecycle
+# The session manages httpx2.Client lifecycle
 class APISession:
     def __init__(self, ...):
-        self.client = httpx.Client()
+        self.client = httpx2.Client()
 
     def request(self, method: str, endpoint: str, **kwargs) -> Any:
         response = self.client.request(method, url, **merged_kwargs)
@@ -188,7 +188,7 @@ Override default authentication for specific needs:
 # Service authentication
 client = APIClient(credential_provider=InternalServiceProvider("background-job"))
 
-# User authentication  
+# User authentication
 client = APIClient(credential_provider=UserTokenProvider("user123"))
 
 # Custom authentication
@@ -242,7 +242,7 @@ Sessions handle errors at multiple levels:
 ```python
 try:
     response = session.request("GET", "/invalid-endpoint")
-except httpx.HTTPStatusError as e:
+except httpx2.HTTPStatusError as e:
     print(f"HTTP {e.response.status_code}: {e.response.text}")
 ```
 
@@ -251,7 +251,7 @@ except httpx.HTTPStatusError as e:
 ```python
 try:
     response = session.request("GET", "/tasks")
-except httpx.ConnectError:
+except httpx2.ConnectError:
     print("Could not connect to API server")
 ```
 
@@ -266,7 +266,7 @@ if not session.credential_provider.is_available():
 ## Performance Considerations
 
 1. **Connection Reuse**: Sessions maintain persistent connections
-2. **Request Pooling**: httpx handles connection pooling automatically
+2. **Request Pooling**: httpx2 handles connection pooling automatically
 3. **Memory Management**: Close sessions when done to free resources
 4. **Concurrent Requests**: Sessions are not thread-safe; use separate sessions per thread
 

@@ -211,7 +211,7 @@ Resource clients handle errors consistently:
 ```python
 try:
     task = tasks.get(999)  # Non-existent ID
-except httpx.HTTPStatusError as e:
+except httpx2.HTTPStatusError as e:
     if e.response.status_code == 404:
         print("Task not found")
     else:
@@ -223,7 +223,7 @@ except httpx.HTTPStatusError as e:
 ```python
 try:
     new_task = tasks.create({'invalid_field': 'value'})
-except httpx.HTTPStatusError as e:
+except httpx2.HTTPStatusError as e:
     if e.response.status_code == 422:
         errors = e.response.json()
         print(f"Validation errors: {errors}")
@@ -234,9 +234,9 @@ except httpx.HTTPStatusError as e:
 ```python
 try:
     tasks.list()
-except httpx.ConnectError:
+except httpx2.ConnectError:
     print("Could not connect to API")
-except httpx.TimeoutException:
+except httpx2.TimeoutException:
     print("Request timed out")
 ```
 

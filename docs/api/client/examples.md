@@ -61,7 +61,7 @@ def complete_task(task_id):
             flash('Task completed successfully', 'success')
             return redirect(url_for('dashboard'))
 
-        except httpx.HTTPStatusError as e:
+        except httpx2.HTTPStatusError as e:
             if e.response.status_code == 404:
                 flash('Task not found', 'error')
             elif e.response.status_code == 403:
@@ -94,7 +94,7 @@ def projects():
                 flash(f'Project "{new_project.name}" created', 'success')
                 return redirect(url_for('projects'))
 
-            except httpx.HTTPStatusError as e:
+            except httpx2.HTTPStatusError as e:
                 if e.response.status_code == 422:
                     errors = e.response.json()
                     flash(f'Validation errors: {errors}', 'error')
@@ -377,7 +377,7 @@ def robust_task_processing(task_id: int):
 
             return {'success': True, 'result': result}
 
-        except httpx.HTTPStatusError as e:
+        except httpx2.HTTPStatusError as e:
             if e.response.status_code == 404:
                 error_msg = f"Task {task_id} not found"
             elif e.response.status_code == 422:
@@ -391,12 +391,12 @@ def robust_task_processing(task_id: int):
             logger.error(error_msg)
             return {'success': False, 'error': error_msg}
 
-        except httpx.ConnectError:
+        except httpx2.ConnectError:
             error_msg = "Could not connect to API server"
             logger.error(error_msg)
             return {'success': False, 'error': error_msg}
 
-        except httpx.TimeoutException:
+        except httpx2.TimeoutException:
             error_msg = "Request timed out"
             logger.error(error_msg)
             return {'success': False, 'error': error_msg}
@@ -418,7 +418,7 @@ def with_retry(func: Callable, max_attempts: int = 3, delay: float = 1.0) -> Any
     for attempt in range(max_attempts):
         try:
             return func()
-        except (httpx.ConnectError, httpx.TimeoutException) as e:
+        except (httpx2.ConnectError, httpx2.TimeoutException) as e:
             if attempt == max_attempts - 1:
                 raise e
 

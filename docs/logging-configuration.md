@@ -247,16 +247,13 @@ processors = [
 
 ## Third-Party Logger Suppression
 
-Noisy third-party loggers are suppressed to reduce log noise:
+Noisy third-party loggers are raised to a quieter level. The loggers and their
+levels are the `third_party_levels` mapping in `configure_stdlib_logging`, in
+`ichrisbirch/logger.py`, and that mapping is the list.
 
-**Configuration**: `ichrisbirch/logger.py:78-101`
-
-| Logger | Level | Reason |
-| --- | --- | --- |
-| `apscheduler` | WARNING | Verbose job scheduling messages |
-| `httpx` | WARNING | HTTP client request details |
-| `boto3`, `botocore` | INFO | AWS SDK details |
-| `sqlalchemy_json` | INFO | JSON field operations |
+Both HTTP clients appear in it: `httpx2` and `httpcore2` for the app's own
+requests, and `httpx` and `httpcore` for the Anthropic SDK, which still sends
+through `httpx`.
 
 ## Usage Pattern
 

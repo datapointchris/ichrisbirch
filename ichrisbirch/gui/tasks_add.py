@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from tkinter import messagebox
 
 import customtkinter as ctk
-import httpx
+import httpx2
 import structlog
 
 from ichrisbirch.gui.utils import set_app_geometry
@@ -31,15 +31,15 @@ def submit_form():
     data = {'name': name, 'category': category, 'priority': int(priority), 'notes': notes}
 
     try:
-        response = httpx.post(url, headers=headers, json=data)
+        response = httpx2.post(url, headers=headers, json=data, timeout=5.0, follow_redirects=False)
         response.raise_for_status()
         messagebox.showinfo('Success', 'Task submitted successfully!')
         app.destroy()
-    except httpx.HTTPStatusError as e:
+    except httpx2.HTTPStatusError as e:
         message = f'Failed to submit task: {e}'
         logger.error('gui_task_submit_http_error', error=str(e))
         messagebox.showerror('Error', message)
-    except httpx.RequestError as e:
+    except httpx2.RequestError as e:
         message = f'An error occurred while making the request: {e}'
         logger.error('gui_task_submit_request_error', error=str(e))
         messagebox.showerror('Error', message)

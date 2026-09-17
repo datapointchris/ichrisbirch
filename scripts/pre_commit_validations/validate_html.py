@@ -6,7 +6,7 @@ from queue import Queue
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 
-import httpx
+import httpx2
 import pendulum
 from bs4 import BeautifulSoup
 
@@ -99,7 +99,7 @@ class ValidateWebsite:
             self.logprint(f'Visiting: {current_page}')
             self.total_visited_pages.add(current_page)
             try:
-                response = httpx.get(current_page, follow_redirects=True)
+                response = httpx2.get(current_page, timeout=5.0, follow_redirects=True)
                 if self.scrape_delay:
                     time.sleep(self.scrape_delay)
                 if response.status_code == 200 and response.headers.get('content-type', '').startswith('text/html'):

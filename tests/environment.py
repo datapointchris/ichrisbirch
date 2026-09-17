@@ -14,7 +14,7 @@ import socket
 import subprocess
 import time
 
-import httpx
+import httpx2
 import pytest
 from sqlalchemy import select
 from sqlalchemy.schema import CreateSchema
@@ -190,13 +190,13 @@ class DockerComposeTestEnvironment:
             service_running = False
             while not service_running and attempts < max_attempts:
                 try:
-                    response = httpx.get(url, timeout=5).raise_for_status()
+                    response = httpx2.get(url, timeout=5, follow_redirects=False).raise_for_status()
                     if service_running := response.status_code == 200:
                         logger.info(f'{service_name} is ready at {url}')
                         break
                     else:
                         logger.warning(f'{service_name} returned status {response.status_code} at {url}')
-                except httpx.RequestError as e:
+                except httpx2.RequestError as e:
                     logger.error(f'Error connecting to {service_name} at {url}: {e}')
                 attempts += 1
                 time.sleep(5)

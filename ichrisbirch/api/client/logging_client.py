@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
 
-import httpx
+import httpx2
 import structlog
 from pydantic import BaseModel
 
@@ -42,7 +42,7 @@ class LoggingResourceClient[ModelType]:
         self,
         endpoint: str,
         model_class: type[ModelType],
-        session: httpx.Client,
+        session: httpx2.Client,
         credential_provider: CredentialProvider,
         base_url: str | None = None,
         settings: Settings | None = None,
@@ -108,7 +108,7 @@ class LoggingResourceClient[ModelType]:
             **({k: v for k, v in kwargs.items() if k in ('json', 'data', 'params')} if kwargs else {}),
         )
 
-    def _handle_request(self, method: str, path: Any = None, **kwargs) -> httpx.Response:
+    def _handle_request(self, method: str, path: Any = None, **kwargs) -> httpx2.Response:
         """Make HTTP request with extensive logging. Raises exceptions on error.
 
         Raises:
@@ -132,14 +132,14 @@ class LoggingResourceClient[ModelType]:
             logger.debug('api_response_received', status=response.status_code)
             return response
 
-        except httpx.HTTPStatusError as e:
+        except httpx2.HTTPStatusError as e:
             logger.error('api_http_error', status=e.response.status_code, response_text=e.response.text)
             raise APIHTTPError(
                 f'API returned HTTP {e.response.status_code}',
                 status_code=e.response.status_code,
                 response_text=e.response.text,
             ) from e
-        except httpx.RequestError as e:
+        except httpx2.RequestError as e:
             logger.error('api_connection_error', error=str(e))
             raise APIConnectionError(f'Failed to connect to API: {e}') from e
 
@@ -239,7 +239,7 @@ class LoggingResourceClient[ModelType]:
             logger.error('api_parse_error_post', model=self.model_class.__name__, error=str(e))
             raise APIParseError(f'Failed to parse POST response as {self.model_class.__name__}: {e}') from e
 
-    def post_action(self, path: Any = None, **kwargs) -> httpx.Response:
+    def post_action(self, path: Any = None, **kwargs) -> httpx2.Response:
         """Post action request, matching QueryAPI.post_action().
 
         Raises:
@@ -271,7 +271,7 @@ class LoggingResourceClient[ModelType]:
             logger.error('api_parse_error_patch', model=self.model_class.__name__, error=str(e))
             raise APIParseError(f'Failed to parse PATCH response as {self.model_class.__name__}: {e}') from e
 
-    def delete(self, path: Any = None, **kwargs) -> httpx.Response:
+    def delete(self, path: Any = None, **kwargs) -> httpx2.Response:
         """Delete a resource, matching QueryAPI.delete().
 
         Raises:
@@ -312,7 +312,7 @@ class LoggingAPIClient:
         self._settings = _get_settings_with_fallback(settings)
         self.credential_provider = credential_provider
         self.base_url = base_url or self._settings.api_url
-        self.session = httpx.Client(timeout=30.0)
+        self.session = httpx2.Client(timeout=30.0, follow_redirects=False)
 
         logger.debug('api_client_created', base_url=self.base_url, auth_provider=type(credential_provider).__name__)
 
