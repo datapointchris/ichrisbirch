@@ -36,12 +36,14 @@ from ichrisbirch.services.row_limit import apply_row_limit
 logger = structlog.get_logger()
 router = APIRouter()
 
-# schemas.ProjectItem embeds memberships, dependency ids, and tasks, so every
-# endpoint returning it must load all three up front or serialization lazy-loads
-# three times per item — the N+1 this embedding exists to remove, moved from HTTP
-# into SQL. Applied as one name so a new list endpoint cannot pick a subset.
+# schemas.ProjectItem embeds relationships, so every endpoint returning it loads
+# each of them up front or serialization lazy-loads once per item per
+# relationship — the N+1 this embedding exists to remove, moved from HTTP into
+# SQL. This tuple is the list of what is embedded, applied as one name so a new
+# list endpoint cannot pick a subset.
 PROJECT_ITEM_LOAD_OPTIONS = (
     selectinload(models.ProjectItem.projects),
+    selectinload(models.ProjectItem.memberships),
     selectinload(models.ProjectItem.dependencies),
     selectinload(models.ProjectItem.tasks),
 )
@@ -113,13 +115,6 @@ def _detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUI
 
 
 def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDetail:
-    projects = list(
-        session.scalars(
-            select(models.Project)
-            .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
-            .where(ProjectItemMembership.item_id == item.id)
-        ).all()
-    )
     dependency_ids = list(
         session.execute(select(ProjectItemDependency.depends_on_id).where(ProjectItemDependency.item_id == item.id)).scalars().all()
     )
@@ -135,7 +130,8 @@ def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDe
         archived=item.archived,
         created_at=item.created_at,
         updated_at=item.updated_at,
-        projects=[schemas.Project.model_validate(p) for p in projects],
+        projects=[schemas.Project.model_validate(p) for p in item.projects],
+        memberships=[schemas.ProjectItemMembership.model_validate(m) for m in item.memberships],
         dependency_ids=dependency_ids,
     )
 

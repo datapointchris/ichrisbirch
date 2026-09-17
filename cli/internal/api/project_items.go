@@ -37,6 +37,10 @@ type ProjectItem struct {
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 	Projects    []Project  `json:"projects"`
+	// Memberships says where the item is queued in each of its projects, so the
+	// order work is taken in across projects is read from one list rather than
+	// from each project's. Empty from an API that predates the field.
+	Memberships []ProjectItemMembership `json:"memberships"`
 	// DependencyIDs rides along on every row, so the whole dependency graph
 	// arrives in one request. Reaching it through the detail endpoint instead
 	// costs a request per item, and answering "what blocks what" then scales
@@ -48,19 +52,28 @@ type ProjectItem struct {
 // create / add-dependency responses): the item plus the projects it belongs to
 // and the ids of the items it depends on.
 type ProjectItemDetail struct {
-	ID            string     `json:"id"`
-	Number        int        `json:"number"`
-	Title         string     `json:"title"`
-	Notes         *string    `json:"notes"`
-	Repo          *string    `json:"repo"`
-	Status        string     `json:"status,omitempty"`
-	Completed     bool       `json:"completed"`
-	CompletedAt   *time.Time `json:"completed_at"`
-	Archived      bool       `json:"archived"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
-	Projects      []Project  `json:"projects"`
-	DependencyIDs []string   `json:"dependency_ids"`
+	ID            string                  `json:"id"`
+	Number        int                     `json:"number"`
+	Title         string                  `json:"title"`
+	Notes         *string                 `json:"notes"`
+	Repo          *string                 `json:"repo"`
+	Status        string                  `json:"status,omitempty"`
+	Completed     bool                    `json:"completed"`
+	CompletedAt   *time.Time              `json:"completed_at"`
+	Archived      bool                    `json:"archived"`
+	CreatedAt     time.Time               `json:"created_at"`
+	UpdatedAt     time.Time               `json:"updated_at"`
+	Projects      []Project               `json:"projects"`
+	Memberships   []ProjectItemMembership `json:"memberships"`
+	DependencyIDs []string                `json:"dependency_ids"`
+}
+
+// ProjectItemMembership is where an item sits in one of its projects. Position
+// orders that project's queue, lowest first. Deleting an item or removing it
+// from the project leaves a gap, so the front of a queue is not always 0.
+type ProjectItemMembership struct {
+	ProjectID string `json:"project_id"`
+	Position  int    `json:"position"`
 }
 
 // ProjectItemCreateInput is the body for creating a project item. Title and at

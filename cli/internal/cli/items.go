@@ -239,12 +239,14 @@ func repoFlagValue(cmd *cobra.Command, repo string) *string {
 	return &repo
 }
 
-// newItemsNextCommand exposes the ordering `icb overview` already computes for
-// its project-items section, so a caller that wants only the head of the queue
-// does not have to fetch the whole snapshot and re-derive it.
+// newItemsNextCommand prints the actionable items in the order they are taken:
+// project by position, then each item by its position in that project. The head
+// of that queue is the next thing to do, which is what a caller asking for
+// `--limit 1` wants. `icb overview` shows the same queue interleaved a project
+// at a time.
 //
 // --kind is what makes it useful to `menu next`: a pursuit weighted for making
-// things must not resolve to the oldest errand that happens to be filed as a
+// things must not resolve to an errand that happens to be filed as a
 // project. The filter runs client-side because every item already carries its
 // projects, so kind rides along and the alternative would be a query parameter
 // that saves no round trip.
@@ -258,9 +260,10 @@ func newItemsNextCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "next",
 		Short: "The actionable items, in the order to take them",
-		Long: "Not completed, not archived, not blocked — oldest first within a project and\n" +
-			"interleaved a project at a time, so no single project fills the list. This is\n" +
-			"the same ordering `icb overview` shows.",
+		Long: "Not completed, not archived, not blocked — ordered by project position, then by\n" +
+			"each item's position in its project, so the first row is the next thing to do.\n" +
+			"An item in several projects is taken with the highest-ranked one. `icb overview`\n" +
+			"shows the same queue interleaved a project at a time.",
 		Example: "  icb projects items next\n" +
 			"  icb projects items next --kind build\n" +
 			"  icb projects items next --repo dotfiles\n" +
@@ -286,7 +289,7 @@ func newItemsNextCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			actionable := nextProjectItems(itemsOfKind(all, kind), blocked)
+			actionable := actionableItems(all, blocked, kind)
 			items := capItems(actionable, limit)
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), items)

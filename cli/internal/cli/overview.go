@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -322,7 +323,7 @@ func systemicOverviewFailure(failures []sectionFailure, total int) error {
 // filtering, ordering, and capping rules are directly testable.
 func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	dueHabits, doneHabits := splitHabitsByCompletion(data.CurrentHabits, data.CompletedHabits, now)
-	nextItems := nextProjectItems(data.Items, data.BlockedItems)
+	nextItems := overviewProjectItems(data.Items, data.BlockedItems)
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
 	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
@@ -431,32 +432,68 @@ func sameLocalDay(moment time.Time, now time.Time) bool {
 	return momentYear == nowYear && momentMonth == nowMonth && momentDay == nowDay
 }
 
-// nextProjectItems returns the actionable items — not completed, not archived,
-// not blocked — interleaved a project at a time so no single project can fill
-// the overview cap.
+// actionableItems returns the items that can be taken now — not completed, not
+// archived, not blocked — in the order they are taken: the whole queue of the
+// highest-ranked project, then the next project's, each queue in its own
+// position order. This is the order `projects items next` prints.
 //
-// Ordering the whole set by age instead lets the two oldest projects hold eight
-// of the ten rows, leaving an active project with nothing on the board. Age
-// picks which item represents a project; it does not decide how many slots that
-// project gets.
-//
-// Per-item positions within a project would still cost one call per project, so
-// they remain deliberately unconsulted.
-func nextProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.ProjectItem {
+// A kind narrows the queue as well as the items. Only projects of that kind
+// rank, so an item that is also in a higher-ranked project of another kind is
+// queued where it sits in its own kind's project. An empty kind is every project.
+func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind string) []api.ProjectItem {
 	isBlocked := make(map[string]bool, len(blocked))
 	for _, item := range blocked {
 		isBlocked[item.ID] = true
 	}
 
 	var next []api.ProjectItem
-	for _, item := range all {
+	for _, item := range itemsOfKind(all, kind) {
 		if item.Completed || item.Archived || isBlocked[item.ID] {
 			continue
 		}
 		next = append(next, item)
 	}
-	sort.SliceStable(next, func(a, b int) bool { return next[a].CreatedAt.Before(next[b].CreatedAt) })
-	return interleaveByProject(next)
+	sort.SliceStable(next, func(a, b int) bool { return takenBefore(next[a], next[b], kind) })
+	return next
+}
+
+// overviewProjectItems is the overview's view of the same queue, interleaved a
+// project at a time so no single project can fill the overview cap.
+//
+// Taking the queue in order lets the highest-ranked project hold every one of
+// the ten rows, leaving the next project with nothing on the board. Position
+// picks which item represents a project; it does not decide how many slots that
+// project gets.
+func overviewProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.ProjectItem {
+	return interleaveByProject(actionableItems(all, blocked, ""))
+}
+
+// takenBefore orders two items by the rank of the project each is drawn under,
+// then by where each is queued in that project. Creation time and id settle
+// what remains, which is also the whole order when the API sends no positions.
+func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
+	projectA, projectB := primaryProject(a, kind), primaryProject(b, kind)
+	if projectA.ID != projectB.ID {
+		return outranks(projectA, projectB)
+	}
+	if queuedA, queuedB := queuePosition(a, projectA.ID), queuePosition(b, projectB.ID); queuedA != queuedB {
+		return queuedA < queuedB
+	}
+	if !a.CreatedAt.Equal(b.CreatedAt) {
+		return a.CreatedAt.Before(b.CreatedAt)
+	}
+	return a.ID < b.ID
+}
+
+// queuePosition is where an item is queued in one project. An item with no
+// membership there sorts after every item that has one.
+func queuePosition(item api.ProjectItem, projectID string) int {
+	for _, membership := range item.Memberships {
+		if membership.ProjectID == projectID {
+			return membership.Position
+		}
+	}
+	return math.MaxInt
 }
 
 // interleaveByProject takes one item from each project in turn, so a project
@@ -469,7 +506,7 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 	longest := 0
 
 	for _, item := range items {
-		project := primaryProject(item)
+		project := primaryProject(item, "")
 		if _, seen := queues[project.ID]; !seen {
 			order = append(order, project)
 		}
@@ -495,12 +532,18 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 // several, so it competes in the round of the highest-priority one rather than
 // once per membership — otherwise multi-project items get a slot per project.
 // Items belonging to no project share the zero value, which keeps them in one
-// queue instead of making each its own round.
-func primaryProject(item api.ProjectItem) api.Project {
+// queue instead of making each its own round. A kind limits the candidates to
+// projects of that kind; an empty kind considers every project.
+func primaryProject(item api.ProjectItem, kind string) api.Project {
 	var primary api.Project
-	for i, project := range item.Projects {
-		if i == 0 || outranks(project, primary) {
+	found := false
+	for _, project := range item.Projects {
+		if kind != "" && project.Kind != kind {
+			continue
+		}
+		if !found || outranks(project, primary) {
 			primary = project
+			found = true
 		}
 	}
 	return primary

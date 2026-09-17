@@ -46,6 +46,19 @@ ItemRef = UUID | int | str
 ProjectRef = UUID | str
 
 
+class ProjectItemMembership(ProjectItemConfig):
+    """Where an item sits in one of its projects.
+
+    `projects` says which work an item belongs to and `position` says where it is
+    queued there, which is the order a reader takes the work in. Carrying it on
+    every item means a client ordering items across projects reads one list
+    rather than each project's.
+    """
+
+    project_id: UUID
+    position: int
+
+
 class ProjectItemCreate(ProjectItemConfig):
     id: UUID | None = None
     title: str
@@ -64,8 +77,9 @@ class ProjectItem(ProjectItemStatusFields):
     Dependencies and sub-tasks ride along for the same reason, and because the
     alternative is quadratic: a client reconciling the whole list had to issue
     two requests per item to collect them, which was 122 serial round trips and
-    six seconds for todoui at 60 items. Eager-load `dependencies` and `tasks` in
-    any endpoint that returns a list of these.
+    six seconds for todoui at 60 items. Any endpoint returning a list of these
+    loads with `PROJECT_ITEM_LOAD_OPTIONS` in `api/endpoints/project_items.py`,
+    which names every embedded relationship.
     """
 
     id: UUID
@@ -79,6 +93,7 @@ class ProjectItem(ProjectItemStatusFields):
     created_at: datetime
     updated_at: datetime
     projects: list[Project] = []
+    memberships: list[ProjectItemMembership] = []
     dependency_ids: list[UUID] = []
     tasks: list[ProjectItemTask] = []
 
@@ -103,6 +118,7 @@ class ProjectItemDetail(ProjectItemStatusFields):
     created_at: datetime
     updated_at: datetime
     projects: list[Project]
+    memberships: list[ProjectItemMembership]
     dependency_ids: list[UUID]
 
 
