@@ -91,77 +91,54 @@ def configure_structlog():
         structlog.processors.format_exc_info,
     ]
 
-    # Check if file logging is enabled
+    # structlog renders through the stdlib root logger, so records from stdlib
+    # loggers such as alembic's reach the same stderr handler.
+    logging.basicConfig(
+        format='%(message)s',
+        level=getattr(logging, LOG_LEVEL),
+        stream=sys.stderr,
+        force=True,
+    )
     file_handler = _setup_file_handler()
-
     if file_handler:
-        # Use stdlib logging backend to support both stderr and file
-        logging.basicConfig(
-            format='%(message)s',
-            level=getattr(logging, LOG_LEVEL),
-            stream=sys.stderr,
-            force=True,
-        )
         logging.root.addHandler(file_handler)
 
-        # For stdlib, we need to render to string then pass to stdlib
-        structlog.configure(
-            processors=shared_processors
-            + [
-                structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-            ],
-            wrapper_class=structlog.stdlib.BoundLogger,
-            context_class=dict,
-            logger_factory=structlog.stdlib.LoggerFactory(),
-            cache_logger_on_first_use=True,
+    structlog.configure(
+        processors=shared_processors
+        + [
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        wrapper_class=structlog.stdlib.BoundLogger,
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+
+    if LOG_FORMAT == 'json':
+        console_formatter = structlog.stdlib.ProcessorFormatter(
+            processor=structlog.processors.JSONRenderer(),
         )
-
-        # Configure formatters for stdlib handlers
-        if LOG_FORMAT == 'json':
-            console_formatter = structlog.stdlib.ProcessorFormatter(
-                processor=structlog.processors.JSONRenderer(),
-            )
-            file_formatter = console_formatter  # JSON is already plain text
-        else:
-            console_formatter = structlog.stdlib.ProcessorFormatter(
-                processor=structlog.dev.ConsoleRenderer(
-                    colors=_use_colors(),
-                    pad_level=True,
-                ),
-            )
-            # File handler gets plain text (no colors)
-            file_formatter = structlog.stdlib.ProcessorFormatter(
-                processor=structlog.dev.ConsoleRenderer(
-                    colors=False,
-                    pad_level=True,
-                ),
-            )
-
-        for handler in logging.root.handlers:
-            if handler.name == 'ichrisbirch_file':
-                handler.setFormatter(file_formatter)
-            else:
-                handler.setFormatter(console_formatter)
+        file_formatter = console_formatter  # JSON is already plain text
     else:
-        # No file logging - use simpler PrintLoggerFactory
-        processors = shared_processors.copy()
-        if LOG_FORMAT == 'json':
-            processors.append(structlog.processors.JSONRenderer())
-        else:
-            processors.append(
-                structlog.dev.ConsoleRenderer(
-                    colors=_use_colors(),
-                    pad_level=True,
-                )
-            )
-
-        structlog.configure(
-            processors=processors,
-            wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, LOG_LEVEL)),
-            context_class=dict,
-            logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
-            cache_logger_on_first_use=True,
+        console_formatter = structlog.stdlib.ProcessorFormatter(
+            processor=structlog.dev.ConsoleRenderer(
+                colors=_use_colors(),
+                pad_level=True,
+            ),
         )
+        # File handler gets plain text (no colors)
+        file_formatter = structlog.stdlib.ProcessorFormatter(
+            processor=structlog.dev.ConsoleRenderer(
+                colors=False,
+                pad_level=True,
+            ),
+        )
+
+    for handler in logging.root.handlers:
+        if handler.name == 'ichrisbirch_file':
+            handler.setFormatter(file_formatter)
+        else:
+            handler.setFormatter(console_formatter)
 
 
 def configure_stdlib_logging():

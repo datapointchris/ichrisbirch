@@ -1,18 +1,17 @@
-"""The chat tables stay gone, and the schema shell that outlives them stays empty.
+"""The chat schema and its tables stay gone.
 
-`d3e4f5a6b7c8` drops `chat.chats`, `chat.messages` and the schema. The schema
-comes back on the next `icbops dev start` or `testing start`, because
-`POSTGRES_DB_SCHEMAS` still lists `chat` and `create_schemas` runs ahead of
-alembic on every init. That entry is required — the baseline migration creates
-`chat.chats` inside the schema, so a replay from zero fails without it.
-
-What matters is the tables and their rows, and those do not come back:
-`create_schemas` issues `CREATE SCHEMA` and nothing else. These assert that,
-so a future change that reintroduces either table fails here rather than in
-production.
+`d3e4f5a6b7c8` drops `chat.chats`, `chat.messages` and the schema. The baseline
+revision creates the schema it writes into, so nothing ahead of alembic creates
+`chat` and initialization run again at head does not put it back. These assert
+that, so a change that reintroduces the schema or either table fails here
+rather than in production.
 """
 
 import sqlalchemy as sa
+
+from ichrisbirch.database.initialization import full_initialization
+from ichrisbirch.database.session import get_db_engine
+from tests.utils.database import test_settings
 
 DROPPED_TABLES = ('chats', 'messages')
 
@@ -23,8 +22,22 @@ def _tables_in_chat_schema(conn) -> list[str]:
 
 
 def test_the_chat_schema_holds_no_tables(factory_session):
-    """Present or absent, the schema is empty — the drop removed its contents."""
     assert _tables_in_chat_schema(factory_session.connection()) == []
+
+
+def test_initialization_at_head_does_not_recreate_the_chat_schema():
+    """Every checkout shares the test database, and older initializers recreated `chat`.
+
+    The drop is not CASCADE, so it refuses a `chat` that still holds tables.
+    """
+    engine = get_db_engine(test_settings)
+    with engine.begin() as conn:
+        conn.execute(sa.text('DROP SCHEMA IF EXISTS chat'))
+
+    full_initialization(test_settings)
+
+    with engine.connect() as conn:
+        assert 'chat' not in sa.inspect(conn).get_schema_names()
 
 
 def test_neither_dropped_table_exists_under_any_schema(factory_session):

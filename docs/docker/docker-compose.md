@@ -176,7 +176,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 - **Alternate ports:** Avoids conflicts with running dev environment
 - **tmpfs database:** In-memory PostgreSQL for speed
-- **No persistence:** Each test run starts fresh
+- **No persistence:** The database empties whenever the Postgres container stops or is recreated, and every `icbops` verb that brings it up initializes it again
 - **Optimized Postgres:** Disabled fsync/durability for performance
 
 ### Port Mapping
@@ -205,21 +205,16 @@ postgres:
 ### Testing Usage
 
 ```bash
-# Recommended: Ephemeral test run (starts fresh, runs tests, stops)
+# Recommended: reuses a healthy stack or starts one, and leaves it running
 ./ops/icbops test run
-
-# Keep containers for debugging
-./ops/icbops test run --keep
 
 # Manual management (for extended debugging)
 ./ops/icbops testing start
 uv run pytest
 ./ops/icbops testing stop
-
-# Direct Docker Compose
-docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name icb-test up -d
 ```
+
+Start the stack through `icbops` rather than `docker compose up`. A bare `up` leaves an empty database behind healthy containers, and only the `icbops` verbs initialize it. [Test Environment Configuration](../testing/environment.md) covers what a pytest session does against the stack.
 
 ## CI Override (`docker-compose.ci.yml`)
 
@@ -231,9 +226,9 @@ The CI environment differs from local development:
 
 | Difference | Local | CI | Solution |
 | --- | --- | --- | --- |
-| AWS credentials | `~/.config/aws` exists | Only env vars via OIDC | Remove bind mount |
+| Docker socket | Mounted into the API for the prune job | Not wanted on a runner | Drop the bind mount |
 | Proxy network | Pre-created externally | Doesn't exist | Create as bridge |
-| Project files | Full local checkout | GitHub checkout only | Use volumes not binds |
+| Vue image | Test override uses `node:24-alpine` | `--build` would build the production image | Reset `build`, extend health check start period |
 | Traefik dashboard | Useful for debugging | Not needed | Disable |
 
 ### CI-Specific Overrides
@@ -258,24 +253,7 @@ networks:
 
 ### Container Startup in CI
 
-The CI workflow pre-starts containers before pytest runs:
-
-```yaml
-# Phase 1: Database services
-docker compose ... up -d --build postgres redis
-sleep 10
-
-# Phase 2: Application services
-docker compose ... up -d --build api app scheduler
-sleep 30
-```
-
-**Why this order:**
-
-1. `postgres` and `redis` must pass health checks first
-2. `api` initializes the shared virtual environment
-3. `scheduler` creates `apscheduler_jobs` table
-4. Sleep allows health checks to complete
+The `Start test services` step in `.github/workflows/validate.yml` starts `postgres` and `redis`, then `api` and `scheduler`, each with `--wait`. `--wait` blocks until a service's health check passes, so the API starts against a healthy Postgres. The `Initialize test database` step then migrates the empty database before pytest or Playwright runs.
 
 ### Test Environment Detection
 

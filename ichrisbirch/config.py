@@ -128,7 +128,6 @@ class PostgresSettings:
         self.password: str = os.environ['POSTGRES_PASSWORD']
         self.port: int = int(os.environ['POSTGRES_PORT'])
         self.database: str = os.environ['POSTGRES_DB']
-        self.db_schemas: list[str] = [schema.strip() for schema in os.environ['POSTGRES_DB_SCHEMAS'].split(',')]
 
     @property
     def db_uri(self) -> str:

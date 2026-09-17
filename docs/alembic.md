@@ -38,18 +38,14 @@ with engine.connect() as c:
 # 2. Delete all migration files
 rm ichrisbirch/alembic/versions/*.py
 
-# 3. Drop test database and recreate schemas
-#    drop_all_tables now issues `DROP SCHEMA ... CASCADE` for every non-system
-#    schema via live introspection, then create_schemas recreates the configured set.
+# 3. Drop every schema in the test database
+#    drop_all_tables issues `DROP SCHEMA ... CASCADE` for every non-system
+#    schema via live introspection and recreates `public`.
 ENVIRONMENT=testing POSTGRES_HOST=localhost POSTGRES_PORT=5434 \
   python -c "
 from ichrisbirch.config import get_settings
-from ichrisbirch.database.initialization import drop_all_tables, create_schemas
-from ichrisbirch.database.session import create_session
-settings = get_settings()
-drop_all_tables(settings)
-with create_session(settings) as session:
-    create_schemas(session, settings)
+from ichrisbirch.database.initialization import drop_all_tables
+drop_all_tables(get_settings())
 "
 
 # 4. Generate new baseline
@@ -64,15 +60,20 @@ ENVIRONMENT=testing POSTGRES_HOST=localhost POSTGRES_PORT=5434 \
 #   revision = 'e010f859f025'  # whatever production is on
 # Also rename the file to match.
 
-# 6. Add INSERT statements for lookup table data
+# 6. Create every schema the baseline writes into, at the top of upgrade()
+# Autogenerate emits create_table(..., schema='x') but never CREATE SCHEMA, and
+# nothing creates schemas ahead of alembic:
+#   op.execute('CREATE SCHEMA IF NOT EXISTS x')
+
+# 7. Add INSERT statements for lookup table data
 # Autogenerate only handles DDL (CREATE TABLE), not DML (INSERT).
 # Lookup tables need their rows inserted in the migration.
 
-# 7. Verify from clean database
+# 8. Verify from clean database
 alembic upgrade head
 alembic check  # should say "No new upgrade operations detected"
 
-# 8. Run full test suite, then deploy
+# 9. Run full test suite, then deploy
 ```
 
 ### Why this works
@@ -84,6 +85,7 @@ Production's `alembic_version` table contains `e010f859f025`. The new baseline m
 - **Using a new random revision ID**: Production can't find its current revision in the new chain → deploy fails with "Can't locate revision"
 - **Deleting migrations before stamping production**: Same failure — production references a revision that no longer exists
 - **Forgetting INSERT statements**: Autogenerate only creates tables, not data. Lookup tables need their rows inserted in the migration
+- **Forgetting CREATE SCHEMA**: Autogenerate never creates a schema. A replay from an empty database then fails on the first table in a non-`public` schema
 - **Using `alembic stamp --purge` as a deployment strategy**: This is a recovery tool, not a workflow. If you need `--purge`, something already went wrong
 
 ## Lookup Tables (Replacing PostgreSQL ENUMs)

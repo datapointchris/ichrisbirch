@@ -326,7 +326,7 @@ REINDEX DATABASE ichrisbirch;
 
 **Resolution:**
 
-- **Testing:** Between test runs, pytest automatically truncates tables (preserving schema), which keeps the API container's connections valid. Only use `icbops testing db reset` when migrations have changed or the schema is corrupt — and restart the containers afterward (`icbops testing stop && icbops testing start`).
+- **Testing:** Between test runs, pytest automatically truncates tables (preserving schema), which keeps the API container's connections valid. A new migration needs no reset, because every start, rebuild and pytest session migrates the test database to head. Only use `icbops testing db reset` when the schema is corrupt or a migration was edited after it was applied — and restart the containers afterward (`icbops testing stop && icbops testing start`).
 - **Dev:** After `icbops dev db reset`, restart the API container so the pool re-establishes (`icbops dev restart`, or `docker restart icb-dev-api`).
 
 ## Environment-Specific Issues

@@ -25,8 +25,7 @@ them behind Traefik, which terminates TLS and routes by host.
 Requires Docker, [uv](https://docs.astral.sh/uv/), Python 3.14 and Node 24.
 
 ```bash
-./ops/icbops dev db init     # create schemas, run migrations, add users
-./ops/icbops dev start       # build and start every service
+./ops/icbops dev start       # build and start every service, then migrate and add users
 ./ops/icbops dev health      # confirm the containers are up
 ```
 

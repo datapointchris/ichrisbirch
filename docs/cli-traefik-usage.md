@@ -60,6 +60,8 @@ The CLI has been **completely refactored** to eliminate confusing command duplic
 | `dev docker [service]` | Show merged Docker Compose config | `icbops dev docker api` |
 | `dev db ...` | Database commands (seed, init, reset) | `icbops dev db reset` |
 
+`dev start`, `dev restart` and every `dev rebuild` variant end by initializing the database. Initialization is idempotent, so an existing database only receives pending migrations. `dev rebuild` also seeds it.
+
 **Dev Credentials Display:**
 
 The `dev start`, `dev status`, and `dev rebuild` commands now display development credentials from the `.env` file:
@@ -89,12 +91,14 @@ Dev Credentials:
 | `testing docker [service]` | Show merged Docker Compose config | `icbops testing docker api` |
 | `testing db ...` | Database commands (seed, init, reset) | `icbops testing db reset` |
 
+`testing start`, `testing restart` and every `testing rebuild` variant end by initializing the database. The test Postgres keeps its data on tmpfs, so any recreate of it starts empty, and a rebuild hands back a database the suite can run against with no second step.
+
 **Test Run Behavior:**
 
 The `test run` command reuses running containers for fast iteration:
 
-1. **Reuses containers** - Starts test containers only if not already running
-2. **Database cleaning** - Handled automatically by pytest's `truncate_tables` fixture (not by the CLI)
+1. **Reuses containers** - Reuses the stack when `icb-test-api` is healthy, otherwise recreates it with `testing start`
+2. **Database readiness and cleaning** - pytest's session setup migrates the database to head, then the `truncate_tables` fixture truncates it (not the CLI)
 3. **No stale connections** - API container's connection pool stays valid across test runs
 4. **Fast** - Sub-second database clean vs seconds for drop/recreate
 
