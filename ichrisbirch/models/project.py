@@ -141,16 +141,21 @@ class ProjectItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
+    # Ordered by project id so every response lists an item's memberships the same
+    # way. A membership names its project, so a reader pairs it with `projects` by
+    # id, never by index.
     memberships: Mapped[list[ProjectItemMembership]] = relationship(
-        'ProjectItemMembership', back_populates='item', cascade='all, delete-orphan'
+        'ProjectItemMembership', back_populates='item', cascade='all, delete-orphan', order_by='ProjectItemMembership.project_id'
     )
     # Read path only. Writes go through ProjectItemMembership, which carries the
     # item's position within each project — a writable secondary would drop it.
+    # Creation time and id settle projects sharing a position, the same tiebreak
+    # the icb CLI ranks projects by.
     projects: Mapped[list[Project]] = relationship(
         'Project',
         secondary='project_item_memberships',
         viewonly=True,
-        order_by='Project.position',
+        order_by=(Project.position, Project.created_at, Project.id),
     )
     dependencies: Mapped[list[ProjectItemDependency]] = relationship(
         'ProjectItemDependency',

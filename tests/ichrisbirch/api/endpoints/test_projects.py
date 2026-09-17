@@ -924,6 +924,22 @@ class TestProjectItemListEmbedsDetail:
         assert [p['id'] for p in listed['projects']] == [p['id'] for p in detail['projects']]
         assert listed['memberships'] == detail['memberships']
 
+    def test_an_item_in_two_projects_orders_both_arrays_the_same_on_every_path(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        first = client.post(PROJECTS_ENDPOINT, json={'name': 'Ordering First'}).json()
+        second = client.post(PROJECTS_ENDPOINT, json={'name': 'Ordering Second'}).json()
+        # Joined second project first, so insertion order disagrees with id order.
+        created = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'In both', 'project_ids': [second['id'], first['id']]})
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        item_id = created.json()['id']
+
+        listed = {item['id']: item for item in client.get(PROJECT_ITEMS_ENDPOINT).json()}[item_id]
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/').json()
+
+        assert [project['id'] for project in listed['projects']] == [project['id'] for project in detail['projects']]
+        assert listed['memberships'] == detail['memberships']
+        assert [membership['project_id'] for membership in listed['memberships']] == sorted([first['id'], second['id']])
+
     def test_list_query_count_does_not_grow_with_item_count(self, item_with_dependency_and_task):
         """Guards the reason this exists: embedding must not move the N+1 into SQL.
 

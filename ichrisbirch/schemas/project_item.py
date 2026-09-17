@@ -77,8 +77,9 @@ class ProjectItem(ProjectItemStatusFields):
     Dependencies and sub-tasks ride along for the same reason, and because the
     alternative is quadratic: a client reconciling the whole list had to issue
     two requests per item to collect them, which was 122 serial round trips and
-    six seconds for todoui at 60 items. Eager-load `dependencies` and `tasks` in
-    any endpoint that returns a list of these.
+    six seconds for todoui at 60 items. Any endpoint returning a list of these
+    loads with `PROJECT_ITEM_LOAD_OPTIONS` in `api/endpoints/project_items.py`,
+    which names every embedded relationship.
     """
 
     id: UUID
