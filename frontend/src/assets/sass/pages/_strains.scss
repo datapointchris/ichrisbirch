@@ -1,4 +1,5 @@
 @use '../components/card_row';
+@use '../components/sortable_table';
 
 :root {
   --strain-tried-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-success) calc(l * 0.6) c h / 0.8);
@@ -30,63 +31,20 @@
   $rating: 1fr;
   $status: 2fr;
   $actions: 2fr;
-  $columns: $name $type $thc $cbd $rating $status $actions;
 
-  &__header {
-    display: grid;
-    grid-template-columns: $columns;
-    gap: 0 var(--space-xs);
-    align-items: center;
-    padding-block: var(--space-xs);
-    padding-inline: var(--space-m);
-    font-size: var(--fs-400);
-    border-top: 3px solid var(--clr-accent);
-    border-bottom: 3px solid var(--clr-accent);
-    margin-bottom: var(--space-xs);
-
-    span:nth-child(2),
-    span:nth-child(3),
-    span:nth-child(4),
-    span:nth-child(5),
-    span:nth-child(6),
-    span:last-child {
-      text-align: center;
-    }
-  }
-
-  &__sortable {
-    cursor: pointer;
-    user-select: none;
-
-    &:hover {
-      color: var(--clr-accent-light);
-    }
-  }
-
-  &__sort-indicator {
-    font-size: var(--fs-300);
-    margin-left: var(--space-3xs);
-  }
+  @include sortable_table.sortable-table(
+    $columns: $name $type $thc $cbd $rating $status $actions,
+    $centered: (
+      2,
+      3,
+      4,
+      5,
+      6,
+    )
+  );
+  @include sortable_table.detail-panel;
 
   &__row {
-    grid-template-columns: $columns;
-    gap: 0 var(--space-xs);
-    font-size: var(--fs-300);
-
-    > span:not(.strains__actions) {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    > span:nth-child(2),
-    > span:nth-child(3),
-    > span:nth-child(4),
-    > span:nth-child(5),
-    > span:nth-child(6) {
-      text-align: center;
-    }
-
     &.strain--tried {
       box-shadow: var(--strain-tried-box-shadow), var(--floating-box);
       &:hover {
@@ -105,46 +63,12 @@
     font-size: var(--fs-400);
   }
 
-  &__detail {
-    display: none;
-    margin-bottom: var(--space-s);
-    margin-top: calc(var(--space-xs) * -1);
-    padding: var(--space-m);
-    padding-top: var(--space-s);
-    background-color: var(--clr-primary);
-    border-radius: 0 0 var(--button-border-radius) var(--button-border-radius);
-    border-top: 1px solid var(--clr-gray-600);
-
-    &--open {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: var(--space-s) var(--space-l);
-    }
-  }
-
-  &__detail-field {
+  // The descriptor lists render as chips, so this value is a row of them rather
+  // than one string.
+  &__detail-field-value {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: var(--space-3xs);
-
-    &-label {
-      font-size: var(--fs-300);
-      color: var(--clr-gray-400);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    &-value {
-      font-size: var(--fs-300);
-      color: var(--clr-text);
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-3xs);
-    }
-  }
-
-  &__detail-notes {
-    grid-column: 1 / -1;
   }
 
   &__chip {
@@ -154,28 +78,10 @@
     font-size: var(--fs-300);
     box-shadow: var(--floating-box);
   }
-
-  &__empty {
-    color: var(--clr-gray-500);
-    font-style: italic;
-  }
 }
 
 .strain-filter {
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.15s ease;
-
-  &:hover {
-    transform: scale(1.05);
-  }
-
-  &--active {
-    box-shadow:
-      inset 0 2px 4px var(--clr-black-trans-400),
-      0 0 12px var(--clr-shadow-highlight-sm);
-    transform: scale(1.08);
-  }
+  @include sortable_table.count-filter;
 }
 
 // The multi-select in the add/edit modal. A chip is pressed or raised, which is
@@ -212,6 +118,13 @@
       &:hover {
         box-shadow: var(--bubble-box-pressed);
       }
+    }
+
+    // A value the strain carries that the vocabulary does not define. Marked so
+    // it reads as the one chip to click off rather than as a choice.
+    &--undefined {
+      color: var(--clr-error);
+      font-style: italic;
     }
   }
 }

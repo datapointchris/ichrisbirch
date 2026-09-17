@@ -12,9 +12,11 @@ async function createStrain(page: import('@playwright/test').Page, name: string)
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 
-// Smoke tests only — interaction-heavy tests (edit, sort, filter, expand
-// detail, the descriptor chips) are covered by component integration tests in
-// src/views/__tests__/StrainsView.test.ts
+// Smoke tests only. The interaction-heavy cases live in component tests:
+// src/views/__tests__/StrainsView.test.ts covers the table, the detail panel,
+// the counters and the filter wiring, and
+// src/views/__tests__/AddEditStrainModal.test.ts covers the edit form and the
+// descriptor chips, including the payload each one produces.
 
 test.describe('Strains Page', () => {
   test('API calls succeed through Traefik routing (CORS check)', async ({ page }) => {
@@ -26,7 +28,7 @@ test.describe('Strains Page', () => {
     })
 
     await page.goto('/strains')
-    await expect(page.locator('.strains__header')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByTestId('strains-header')).toBeVisible({ timeout: 10000 })
     await expect(page.locator(ERROR)).not.toBeVisible()
     expect(apiErrors).toEqual([])
   })
@@ -34,12 +36,12 @@ test.describe('Strains Page', () => {
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/strains')
     await expect(page).toHaveTitle('Strains | iChrisBirch')
-    await expect(page.locator('.strains__header')).toBeVisible()
+    await expect(page.getByTestId('strains-header')).toBeVisible()
   })
 
   test('creates a new strain and verifies it appears in the table', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page.locator('.strains__header')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByTestId('strains-header')).toBeVisible({ timeout: 10000 })
 
     const name = `E2E Strain ${Date.now()}`
     await createStrain(page, name)
@@ -48,7 +50,7 @@ test.describe('Strains Page', () => {
 
   test('deletes a strain and verifies it is removed', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page.locator('.strains__header')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByTestId('strains-header')).toBeVisible({ timeout: 10000 })
 
     const name = `E2E Delete ${Date.now()}`
     await createStrain(page, name)
@@ -63,7 +65,7 @@ test.describe('Strains Page', () => {
 
   test('the vocabulary reaches the page, so a descriptor can be chosen', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page.locator('.strains__header')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByTestId('strains-header')).toBeVisible({ timeout: 10000 })
 
     await page.getByTestId('strain-add-button').click()
     await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
@@ -74,14 +76,15 @@ test.describe('Strains Page', () => {
 
   test('info bar is visible with status counters', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page.locator('.task-layout__info')).toBeVisible()
+    await expect(page.getByTestId('strains-info')).toBeVisible()
   })
 
   test('sidebar navigation to strains works', async ({ page }) => {
     await page.goto('/strains')
     await expect(page).toHaveTitle('Strains | iChrisBirch')
 
-    const sidebarLink = page.locator('.nav-link--active', { hasText: 'Strains' })
+    const sidebarLink = page.getByTestId('sidebar-/strains')
     await expect(sidebarLink).toBeVisible()
+    await expect(sidebarLink).toHaveAttribute('data-active', 'true')
   })
 })

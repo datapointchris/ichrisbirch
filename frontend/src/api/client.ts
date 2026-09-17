@@ -215,4 +215,5 @@ export type {
   StrainUpdate,
   StrainVocabularyEntry,
   StrainVocabulary,
+  StrainFilters,
 } from './types'

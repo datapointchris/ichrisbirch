@@ -64,12 +64,12 @@ const testStrains: Strain[] = [
 ]
 
 const testVocabulary: StrainVocabulary = {
-  types: [
+  strain_type: [
     { name: 'indica', count: 1 },
     { name: 'sativa_dominant', count: 1 },
     { name: 'hybrid', count: 0 },
   ],
-  statuses: [
+  status: [
     { name: 'tried', count: 2 },
     { name: 'want_to_try', count: 1 },
   ],
@@ -121,14 +121,14 @@ describe('useStrainsStore', () => {
   it('starts with an empty vocabulary so the view renders before the fetch lands', () => {
     const store = useStrainsStore()
     expect(store.vocabulary.effects).toEqual([])
-    expect(store.vocabulary.types).toEqual([])
+    expect(store.vocabulary.strain_type).toEqual([])
   })
 
   it('fetches strains from the API and sets state', async () => {
     mockApi.get.mockResolvedValue({ data: testStrains })
     const store = useStrainsStore()
     await store.fetchAll()
-    expect(mockApi.get).toHaveBeenCalledWith('/strains/')
+    expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: {} })
     expect(store.items).toEqual(testStrains)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -185,49 +185,70 @@ describe('useStrainsStore', () => {
   })
 
   describe('statusCounts', () => {
-    it('counts each status and the total', async () => {
-      mockApi.get.mockResolvedValue({ data: testStrains })
+    it('counts from the vocabulary, not from the loaded rows', async () => {
+      // The rows are a filtered page, so counting them would make each counter
+      // report the narrowing rather than the catalog.
+      mockApi.get.mockResolvedValue({ data: testVocabulary })
       const store = useStrainsStore()
-      await store.fetchAll()
+      await store.fetchVocabulary()
       expect(store.statusCounts).toEqual({ tried: 2, want_to_try: 1, total: 3 })
+    })
+
+    it('holds steady while a filter narrows the rows', async () => {
+      mockApi.get.mockResolvedValue({ data: testVocabulary })
+      const store = useStrainsStore()
+      await store.fetchVocabulary()
+
+      mockApi.get.mockResolvedValue({ data: [testStrains[2]!] })
+      await store.setStatusFilter('want_to_try')
+
+      expect(store.items).toHaveLength(1)
+      expect(store.statusCounts.total).toBe(3)
     })
   })
 
-  describe('filteredItems', () => {
-    beforeEach(async () => {
-      mockApi.get.mockResolvedValue({ data: testStrains })
+  describe('filtering is the server’s', () => {
+    // One definition of each filter, in SQL, which is the one the CLI uses too.
+    it('sends the status filter as a query parameter', async () => {
+      mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
-      await store.fetchAll()
+      await store.setStatusFilter('want_to_try')
+      expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: { status: 'want_to_try' } })
     })
 
-    it('returns everything with no filter', () => {
+    it('sends the type filter as a query parameter', async () => {
+      mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
-      expect(store.filteredItems).toHaveLength(3)
+      await store.setTypeFilter('indica')
+      expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: { strain_type: 'indica' } })
     })
 
-    it('narrows by status', () => {
+    it('sends the effect filter as a query parameter', async () => {
+      mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
-      store.setStatusFilter('want_to_try')
-      expect(store.filteredItems.map((s) => s.name)).toEqual(['Runtz'])
+      await store.setEffectFilter('relaxed')
+      expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: { effect: 'relaxed' } })
     })
 
-    it('narrows by type', () => {
+    it('sends every set filter together rather than the last one winning', async () => {
+      mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
-      store.setTypeFilter('indica')
-      expect(store.filteredItems.map((s) => s.name)).toEqual(['Granddaddy Purple'])
+      await store.setStatusFilter('tried')
+      await store.setEffectFilter('sleepy')
+      expect(store.filters()).toEqual({ status: 'tried', effect: 'sleepy' })
     })
 
-    it('narrows by an effect inside the array', () => {
+    it('sends nothing when every filter is all', () => {
       const store = useStrainsStore()
-      store.setEffectFilter('relaxed')
-      expect(store.filteredItems.map((s) => s.name)).toEqual(['Blue Dream', 'Granddaddy Purple'])
+      expect(store.filters()).toEqual({})
     })
 
-    it('applies two filters together rather than the last one winning', () => {
+    it('names the filters that narrowed an empty result', async () => {
+      mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
-      store.setStatusFilter('tried')
-      store.setEffectFilter('sleepy')
-      expect(store.filteredItems.map((s) => s.name)).toEqual(['Granddaddy Purple'])
+      await store.setStatusFilter('tried')
+      await store.setEffectFilter('sleepy')
+      expect(store.activeFilters).toEqual(['status tried', 'effect sleepy'])
     })
   })
 
@@ -261,6 +282,7 @@ describe('useStrainsStore', () => {
     it('appends a created strain', async () => {
       const created = { ...testStrains[2]!, id: 9, name: 'MAC 1' }
       mockApi.post.mockResolvedValue({ data: created })
+      mockApi.get.mockResolvedValue({ data: testVocabulary })
       const store = useStrainsStore()
       const result = await store.create({ name: 'MAC 1' })
       expect(mockApi.post).toHaveBeenCalledWith('/strains/', { name: 'MAC 1' })
@@ -268,8 +290,51 @@ describe('useStrainsStore', () => {
       expect(store.items).toContainEqual(created)
     })
 
+    describe('every write re-reads the counts', () => {
+      // Each count on the page comes from the vocabulary, so a write that
+      // changes one leaves the label stale until this runs.
+      it('after a create', async () => {
+        mockApi.post.mockResolvedValue({ data: testStrains[2] })
+        mockApi.get.mockResolvedValue({ data: testVocabulary })
+        const store = useStrainsStore()
+        await store.create({ name: 'MAC 1' })
+        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+      })
+
+      it('after an update', async () => {
+        mockApi.patch.mockResolvedValue({ data: testStrains[0] })
+        mockApi.get.mockResolvedValue({ data: testVocabulary })
+        const store = useStrainsStore()
+        await store.update(1, { rating: 10 })
+        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+      })
+
+      it('after a delete', async () => {
+        mockApi.delete.mockResolvedValue({ data: null })
+        mockApi.get.mockResolvedValue({ data: testVocabulary })
+        const store = useStrainsStore()
+        await store.remove(1)
+        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+      })
+
+      it('and a failed refresh does not fail the write', async () => {
+        mockApi.post.mockResolvedValue({ data: testStrains[2] })
+        mockApi.get.mockRejectedValue(new ApiError({ message: 'down', detail: 'down', status: 503 }))
+        const store = useStrainsStore()
+        await expect(store.create({ name: 'MAC 1' })).resolves.toBeTruthy()
+      })
+    })
+
+    // `api.get` serves two paths here, because every write re-reads the counts.
+    // One blanket mock would hand the vocabulary a list of strains.
+    function routeGetByPath() {
+      mockApi.get.mockImplementation((url: string) =>
+        Promise.resolve({ data: url === '/strains/vocabulary/' ? testVocabulary : testStrains })
+      )
+    }
+
     it('replaces the updated strain in place', async () => {
-      mockApi.get.mockResolvedValue({ data: testStrains })
+      routeGetByPath()
       const store = useStrainsStore()
       await store.fetchAll()
 
@@ -282,7 +347,7 @@ describe('useStrainsStore', () => {
     })
 
     it('drops the removed strain', async () => {
-      mockApi.get.mockResolvedValue({ data: testStrains })
+      routeGetByPath()
       const store = useStrainsStore()
       await store.fetchAll()
 

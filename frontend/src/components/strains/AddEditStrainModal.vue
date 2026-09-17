@@ -84,7 +84,7 @@
               class="textbox add-edit-modal__number-input"
               min="0"
               max="100"
-              step="0.1"
+              step="any"
             />
           </div>
           <div class="add-edit-modal__form-item">
@@ -97,7 +97,7 @@
               class="textbox add-edit-modal__number-input"
               min="0"
               max="100"
-              step="0.1"
+              step="any"
             />
           </div>
           <div class="add-edit-modal__form-item">
@@ -124,18 +124,22 @@
           <label>{{ group.label }}</label>
           <div class="strain-chips">
             <button
-              v-for="entry in group.entries"
-              :key="entry.name"
+              v-for="chip in group.chips"
+              :key="chip.name"
               type="button"
               class="strain-chips__chip"
-              :class="{ 'strain-chips__chip--on': group.selected.includes(entry.name) }"
-              :data-testid="`strain-${group.key}-${entry.name}`"
-              @click="toggle(group.selected, entry.name)"
+              :class="{
+                'strain-chips__chip--on': group.selected.includes(chip.name),
+                'strain-chips__chip--undefined': chip.orphan,
+              }"
+              :data-testid="`strain-${group.key}-${chip.name}`"
+              :title="chip.orphan ? 'Not in the vocabulary — click to remove it' : undefined"
+              @click="toggle(group.selected, chip.name)"
             >
-              {{ entry.name }}
+              {{ chip.name }}
             </button>
             <span
-              v-if="group.entries.length === 0"
+              v-if="group.chips.length === 0"
               class="strains__empty"
               >No {{ group.label.toLowerCase() }} defined.</span
             >
@@ -248,11 +252,11 @@ const nameInput = ref<HTMLInputElement | null>(null)
 // table on the server shows up here without this file changing.
 const typeOptions = computed(() => [
   { value: '', label: '— none —' },
-  ...store.vocabulary.types.map((t) => ({ value: t.name, label: humanize(t.name) })),
+  ...store.vocabulary.strain_type.map((t) => ({ value: t.name, label: humanize(t.name) })),
 ])
 
 const statusOptions = computed(() =>
-  store.vocabulary.statuses.map((s) => ({
+  store.vocabulary.status.map((s) => ({
     value: s.name,
     label: STRAIN_STATUS_LABELS[s.name as keyof typeof STRAIN_STATUS_LABELS] ?? humanize(s.name),
   }))
@@ -281,10 +285,26 @@ function createEmptyForm() {
 
 const form = reactive(createEmptyForm())
 
+/**
+ * A chip for every vocabulary value, plus one for any value the strain carries
+ * that the vocabulary does not define.
+ *
+ * That second group is what keeps such a strain editable. The payload resends
+ * the whole array, and the API refuses a value outside the vocabulary, so a
+ * value with no chip is one the form can neither keep nor remove — and the
+ * record cannot be saved at all. An undefined value renders marked, and
+ * clicking it off is the way out.
+ */
+function chipsFor(entries: { name: string }[], selected: string[]) {
+  const known = entries.map((entry) => ({ name: entry.name, orphan: false }))
+  const orphans = selected.filter((value) => !entries.some((entry) => entry.name === value)).map((name) => ({ name, orphan: true }))
+  return [...known, ...orphans]
+}
+
 const chipGroups = computed(() => [
-  { key: 'effect', label: 'Effects', entries: store.vocabulary.effects, selected: form.effects },
-  { key: 'flavor', label: 'Flavors', entries: store.vocabulary.flavors, selected: form.flavors },
-  { key: 'terpene', label: 'Terpenes', entries: store.vocabulary.terpenes, selected: form.terpenes },
+  { key: 'effect', label: 'Effects', chips: chipsFor(store.vocabulary.effects, form.effects), selected: form.effects },
+  { key: 'flavor', label: 'Flavors', chips: chipsFor(store.vocabulary.flavors, form.flavors), selected: form.flavors },
+  { key: 'terpene', label: 'Terpenes', chips: chipsFor(store.vocabulary.terpenes, form.terpenes), selected: form.terpenes },
 ])
 
 function toggle(selected: string[], value: string) {

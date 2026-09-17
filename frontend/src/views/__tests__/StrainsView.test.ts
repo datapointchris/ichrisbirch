@@ -51,11 +51,11 @@ const testStrains: Strain[] = [
 ]
 
 const testVocabulary: StrainVocabulary = {
-  types: [
+  strain_type: [
     { name: 'indica', count: 0 },
     { name: 'sativa_dominant', count: 1 },
   ],
-  statuses: [
+  status: [
     { name: 'tried', count: 1 },
     { name: 'want_to_try', count: 1 },
   ],
@@ -117,9 +117,18 @@ describe('StrainsView', () => {
     expect(wrapper.text()).toContain('Loading...')
   })
 
-  it('shows an empty line when nothing matches', () => {
+  it('invites a first strain when the catalog is empty and nothing is filtered', () => {
     const wrapper = createWrapper({ items: [] })
-    expect(wrapper.text()).toContain('No strains match the selected filter.')
+    expect(wrapper.find('[data-testid="strain-empty"]').text()).toBe('No strains yet. Add one!')
+  })
+
+  // A count is measured under whatever narrowed it, so an empty result names
+  // the narrowing rather than reading as an empty catalog.
+  it('names the filters that narrowed an empty result', () => {
+    const wrapper = createWrapper({ items: [], statusFilter: 'tried', effectFilter: 'sleepy' })
+    const empty = wrapper.find('[data-testid="strain-empty"]').text()
+    expect(empty).toContain('status tried')
+    expect(empty).toContain('effect sleepy')
   })
 
   it('renders one row per strain', () => {
@@ -134,10 +143,19 @@ describe('StrainsView', () => {
     expect(rows[1]!.classes()).toContain('strain--want_to_try')
   })
 
-  it('renders the status counters', () => {
+  // Read from the vocabulary rather than from the loaded rows, which are a
+  // filtered page — counting those would make each counter report the
+  // narrowing, and clicking one would change the others.
+  it('renders the status counters from the vocabulary', () => {
     const wrapper = createWrapper({ items: testStrains })
     expect(wrapper.find('[data-testid="strain-filter-tried"]').text()).toContain('Tried: 1')
     expect(wrapper.find('[data-testid="strain-filter-want-to-try"]').text()).toContain('Want to Try: 1')
+    expect(wrapper.find('[data-testid="strain-filter-all"]').text()).toContain('Total: 2')
+  })
+
+  it('holds the counters steady when a filter narrows the rows', () => {
+    const wrapper = createWrapper({ items: [testStrains[1]!], statusFilter: 'want_to_try' })
+    expect(wrapper.findAll('[data-testid="strain-item"]')).toHaveLength(1)
     expect(wrapper.find('[data-testid="strain-filter-all"]').text()).toContain('Total: 2')
   })
 

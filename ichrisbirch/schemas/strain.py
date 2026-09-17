@@ -1,5 +1,4 @@
-from datetime import date
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -11,6 +10,25 @@ from pydantic import model_validator
 # wire would reach the column as None and fail the insert. Normalizing here
 # means a client may omit a list, send null, or send [] and get the same row.
 ARRAY_FIELDS = ('effects', 'flavors', 'terpenes', 'tags')
+
+# The columns a PATCH may leave alone but never empty. Both are NOT NULL, and a
+# blank reaching `setattr` fails at the column as a 500 rather than as a message
+# naming the field.
+REQUIRED_COLUMNS = ('name', 'status')
+
+
+def blank(value) -> bool:
+    """A value that would reach a NOT NULL column as null."""
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def deduplicated(value):
+    """Drop repeats, keeping each value at its first position.
+
+    A repeat stores twice in the array and counts twice in the vocabulary, and
+    nothing downstream has a reason to carry the same descriptor twice.
+    """
+    return list(dict.fromkeys(value))
 
 
 class StrainConfig(BaseModel):
@@ -33,12 +51,14 @@ class StrainBase(StrainConfig):
     source: str | None = None
     notes: str | None = None
     review: str | None = None
-    last_tried_date: date | None = None
+    last_tried_date: dt.date | None = None
 
     @field_validator(*ARRAY_FIELDS, mode='before')
     @classmethod
-    def none_to_empty_list(cls, value):
-        return [] if value is None else value
+    def normalize_array(cls, value):
+        if value is None:
+            return []
+        return deduplicated(value) if isinstance(value, list) else value
 
 
 class StrainCreate(StrainBase):
@@ -52,8 +72,8 @@ class StrainCreate(StrainBase):
 
 class Strain(StrainBase):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
 
 
 class StrainUpdate(StrainConfig):
@@ -72,24 +92,36 @@ class StrainUpdate(StrainConfig):
     source: str | None = None
     notes: str | None = None
     review: str | None = None
-    last_tried_date: date | None = None
+    last_tried_date: dt.date | None = None
 
     @model_validator(mode='before')
     @classmethod
     def empty_field_to_none(cls, data):
-        if isinstance(data, dict):
-            return {k: (None if v == '' else v) for k, v in data.items()}
-        return data
+        """Blank a nullable column with `''` or null; refuse to blank a required one.
+
+        The refusal runs before the conversion, because the conversion is what
+        makes the two indistinguishable: `{"name": ""}` and `{"name": null}`
+        both become None, and `exclude_unset=True` keeps the key because the
+        caller named it. Omitting the key is how a field is left alone.
+        """
+        if not isinstance(data, dict):
+            return data
+        for field in REQUIRED_COLUMNS:
+            if field in data and blank(data[field]):
+                raise ValueError(f'{field} cannot be blank — omit it to leave it unchanged')
+        return {k: (None if v == '' else v) for k, v in data.items()}
 
     @field_validator(*ARRAY_FIELDS, mode='before')
     @classmethod
-    def none_to_empty_list(cls, value):
+    def normalize_array(cls, value):
         """A null array clears the column rather than failing the update.
 
         `exclude_unset=True` already drops an array the caller never mentioned,
         so reaching here means the caller named it.
         """
-        return [] if value is None else value
+        if value is None:
+            return []
+        return deduplicated(value) if isinstance(value, list) else value
 
 
 class StrainVocabularyEntry(StrainConfig):
@@ -98,14 +130,15 @@ class StrainVocabularyEntry(StrainConfig):
 
 
 class StrainVocabulary(StrainConfig):
-    """Every defined value in each vocabulary, whether or not a strain uses it.
+    """Every value each vocabulary defines, keyed by the field it constrains.
 
-    Counted with a left join rather than read off the strains, so "what can I
-    record?" has an answer before anything has been recorded.
+    The lookup table decides the entries, so a value no strain carries is
+    present with a count of zero and "what can I record?" has an answer on an
+    empty catalog.
     """
 
-    types: list[StrainVocabularyEntry]
-    statuses: list[StrainVocabularyEntry]
+    strain_type: list[StrainVocabularyEntry]
+    status: list[StrainVocabularyEntry]
     effects: list[StrainVocabularyEntry]
     flavors: list[StrainVocabularyEntry]
     terpenes: list[StrainVocabularyEntry]

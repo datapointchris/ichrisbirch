@@ -45,6 +45,14 @@
   // prettier-ignore
   --box-shadow-highlighted:
         inset 0px 0px 10px 2px var(--clr-accent-light);
+
+  // The selected state of a count-and-filter chip, which the books and strains
+  // info bars both use. A variable rather than literal offsets, so a design
+  // style that changes shadow shape changes this one with the rest.
+  // prettier-ignore
+  --filter-chip-active:
+        inset 0 2px 4px var(--clr-black-trans-400),
+        0 0 12px var(--clr-shadow-highlight-sm);
 }
 
 @mixin grid-set-columns($columns) {

@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from typing import Any
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.strain import STRAIN_EFFECTS
@@ -35,8 +35,8 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['berry', 'sweet', 'earthy'],
         'terpenes': ['myrcene', 'pinene', 'caryophyllene'],
         'source': 'Green Thumb Dispensary',
-        'notes': 'The reliable daytime one. Never once made me anxious.',
-        'review': 'Does exactly what it says. Would keep in rotation permanently.',
+        'notes': 'Even and predictable; low reported anxiety.',
+        'review': 'Consistent batch to batch. A reasonable default daytime cultivar.',
     },
     {
         'name': 'Granddaddy Purple',
@@ -50,8 +50,8 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['grape', 'berry', 'sweet'],
         'terpenes': ['myrcene', 'caryophyllene', 'linalool'],
         'source': 'Green Thumb Dispensary',
-        'notes': 'Genuinely sedating. Not a before-anything strain.',
-        'review': 'Best sleep aid I have tried. The grape is not marketing, it is actually there.',
+        'notes': 'Strongly sedating; suited to evening.',
+        'review': 'The grape note is pronounced rather than nominal.',
     },
     {
         'name': 'Sour Diesel',
@@ -64,8 +64,8 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['diesel', 'citrus', 'skunk'],
         'terpenes': ['limonene', 'caryophyllene', 'myrcene'],
         'source': 'Riverside Cannabis',
-        'notes': 'Too much for me above about half a bowl.',
-        'review': 'Sharp and fast. Good for a specific mood, not a default.',
+        'notes': 'High potency; commonly reported as overwhelming at larger amounts.',
+        'review': 'Sharp onset. A situational cultivar rather than a default.',
     },
     {
         'name': 'Wedding Cake',
@@ -78,7 +78,7 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['vanilla', 'sweet', 'earthy'],
         'terpenes': ['limonene', 'caryophyllene', 'myrcene'],
         'source': 'Riverside Cannabis',
-        'notes': 'Strong. A little goes a long way.',
+        'notes': 'High THC for the type; potency is the defining trait.',
     },
     {
         'name': 'Jack Herer',
@@ -91,7 +91,7 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['pine', 'spicy', 'woody'],
         'terpenes': ['terpinolene', 'pinene', 'caryophyllene'],
         'source': 'Trailhead Provisions',
-        'notes': 'Clear-headed. The one that does not interrupt working.',
+        'notes': 'Clear-headed; low sedation for a cultivar at this THC level.',
     },
     {
         'name': 'Northern Lights',
@@ -116,7 +116,7 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['tropical', 'berry', 'sweet', 'citrus'],
         'terpenes': ['caryophyllene', 'humulene', 'linalool'],
         'source': 'Green Thumb Dispensary',
-        'review': 'The best-tasting thing on this list by a wide margin.',
+        'review': 'Unusually pronounced flavor profile for the type.',
     },
     {
         'name': 'Durban Poison',
@@ -129,7 +129,7 @@ TRIED: list[dict[str, Any]] = [
         'flavors': ['sweet', 'pine', 'spicy'],
         'terpenes': ['terpinolene', 'myrcene', 'ocimene'],
         'source': 'Riverside Cannabis',
-        'notes': 'Too racy. Fine in the morning, unusable after noon.',
+        'notes': 'Strongly stimulating; commonly described as a morning cultivar.',
     },
     {
         'name': 'Charlotte cutting',
@@ -141,7 +141,7 @@ TRIED: list[dict[str, Any]] = [
         'effects': ['relaxed', 'focused'],
         'flavors': ['earthy', 'pine'],
         'terpenes': ['myrcene', 'pinene', 'bisabolol'],
-        'notes': 'No head change at all. Useful, but not for the same reason as the rest.',
+        'notes': 'Negligible THC; the CBD row in the catalog.',
     },
 ]
 
@@ -154,7 +154,7 @@ WANT_TO_TRY: list[dict[str, Any]] = [
         'thc_percent': 24.0,
         'effects': ['euphoric', 'relaxed', 'creative'],
         'flavors': ['sweet', 'berry', 'citrus'],
-        'notes': 'Recommended twice now. Find it.',
+        'notes': 'Widely recommended; not yet sourced.',
     },
     {
         'name': 'Purple Punch',
@@ -185,7 +185,7 @@ WANT_TO_TRY: list[dict[str, Any]] = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM strains'))
+    session.execute(sa.text('DELETE FROM strains'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:

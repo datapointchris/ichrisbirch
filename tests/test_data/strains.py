@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 from ichrisbirch.models import Strain
 
@@ -16,7 +16,7 @@ BASE_DATA: list[Strain] = [
         status='tried',
         thc_percent=18.0,
         cbd_percent=0.1,
-        rating=8,
+        rating=10,
         effects=['creative', 'euphoric', 'relaxed'],
         flavors=['berry', 'sweet'],
         terpenes=['myrcene', 'pinene'],
@@ -24,7 +24,7 @@ BASE_DATA: list[Strain] = [
         source='Green Thumb Dispensary',
         notes='The reliable daytime one.',
         review='Does exactly what it says.',
-        last_tried_date=date(2026, 3, 14),
+        last_tried_date=dt.date(2026, 3, 14),
     ),
     Strain(
         name='Granddaddy Purple',
@@ -33,14 +33,14 @@ BASE_DATA: list[Strain] = [
         strain_type='indica',
         status='tried',
         thc_percent=20.5,
-        rating=3,
+        rating=1,
         effects=['relaxed', 'sleepy'],
         flavors=['grape', 'berry'],
         terpenes=['myrcene', 'linalool'],
         tags=['nighttime'],
         source='Green Thumb Dispensary',
         notes='Genuinely sedating.',
-        last_tried_date=date(2026, 1, 9),
+        last_tried_date=dt.date(2026, 1, 9),
     ),
     Strain(
         name='Runtz',

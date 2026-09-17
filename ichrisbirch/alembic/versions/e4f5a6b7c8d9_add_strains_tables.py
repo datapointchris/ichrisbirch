@@ -5,12 +5,7 @@ thing tried or waiting to be tried, rated once, and described well enough to
 recognize later. Almost every column is nullable, because a label carries
 whichever characteristics its producer felt like printing.
 
-`strain_type` and `status` are single-valued and carry real foreign keys. The
-three descriptor columns are arrays, and Postgres cannot reference a table from
-an array element, so their lookup tables exist to serve the vocabulary and the
-endpoint checks writes against them.
-
-Additive and backward-compatible. Nothing reads these tables before this ships.
+Additive and backward-compatible.
 
 Revision ID: e4f5a6b7c8d9
 Revises: d3e4f5a6b7c8
@@ -91,7 +86,7 @@ def upgrade() -> None:
         created = op.create_table(
             table,
             sa.Column('name', sa.Text(), nullable=False),
-            sa.PrimaryKeyConstraint('name'),
+            sa.PrimaryKeyConstraint('name', name=op.f(f'pk_{table}')),
         )
         op.bulk_insert(created, [{'name': value} for value in values])
 
@@ -117,9 +112,13 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 10)', name='rating_range'),
-        sa.ForeignKeyConstraint(['strain_type'], ['strain_types.name'], name='fk_strains_strain_type'),
-        sa.ForeignKeyConstraint(['status'], ['strain_statuses.name'], name='fk_strains_status'),
-        sa.PrimaryKeyConstraint('id'),
+        # NULLS NOT DISTINCT so two rows named the same with no breeder collide.
+        # Postgres treats nulls as distinct by default, which would let the
+        # unknown-breeder case duplicate freely — and that is the common case.
+        sa.UniqueConstraint('name', 'breeder', name=op.f('uq_strains_name'), postgresql_nulls_not_distinct=True),
+        sa.ForeignKeyConstraint(['strain_type'], ['strain_types.name'], name=op.f('fk_strains_strain_type_strain_types')),
+        sa.ForeignKeyConstraint(['status'], ['strain_statuses.name'], name=op.f('fk_strains_status_strain_statuses')),
+        sa.PrimaryKeyConstraint('id', name=op.f('pk_strains')),
     )
     op.create_index('ix_strains_strain_type', 'strains', ['strain_type'])
     op.create_index('ix_strains_status', 'strains', ['status'])

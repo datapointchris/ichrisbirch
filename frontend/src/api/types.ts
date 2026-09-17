@@ -1204,11 +1204,26 @@ export interface StrainVocabularyEntry {
   count: number
 }
 
-/** Every value each vocabulary defines, whether or not a strain carries it. */
+/**
+ * Every value each vocabulary defines, whether or not a strain carries it.
+ * Keyed by the record field each list constrains, so a 422 naming `strain_type`
+ * and the values it would have accepted are found under the same word.
+ */
 export interface StrainVocabulary {
-  types: StrainVocabularyEntry[]
-  statuses: StrainVocabularyEntry[]
+  strain_type: StrainVocabularyEntry[]
+  status: StrainVocabularyEntry[]
   effects: StrainVocabularyEntry[]
   flavors: StrainVocabularyEntry[]
   terpenes: StrainVocabularyEntry[]
+}
+
+/** The filters `GET /strains/` takes. Narrowing happens there, not on the page. */
+export interface StrainFilters {
+  strain_type?: string
+  status?: string
+  effect?: string
+  flavor?: string
+  terpene?: string
+  rating_min?: number
+  q?: string
 }

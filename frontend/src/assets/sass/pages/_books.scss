@@ -1,4 +1,5 @@
 @use '../components/card_row';
+@use '../components/sortable_table';
 
 :root {
   --book-read-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-success) calc(l * 0.6) c h / 0.8);
@@ -40,61 +41,19 @@
   $ownership: 2fr;
   $rating: 1fr;
   $actions: 2fr;
-  $columns: $title $author $priority $progress $ownership $rating $actions;
 
-  &__header {
-    display: grid;
-    grid-template-columns: $columns;
-    gap: 0 var(--space-xs);
-    align-items: center;
-    padding-block: var(--space-xs);
-    padding-inline: var(--space-m);
-    font-size: var(--fs-400);
-    border-top: 3px solid var(--clr-accent);
-    border-bottom: 3px solid var(--clr-accent);
-    margin-bottom: var(--space-xs);
-
-    span:nth-child(3),
-    span:nth-child(4),
-    span:nth-child(5),
-    span:nth-child(6),
-    span:last-child {
-      text-align: center;
-    }
-  }
-
-  &__sortable {
-    cursor: pointer;
-    user-select: none;
-
-    &:hover {
-      color: var(--clr-accent-light);
-    }
-  }
-
-  &__sort-indicator {
-    font-size: var(--fs-300);
-    margin-left: var(--space-3xs);
-  }
+  @include sortable_table.sortable-table(
+    $columns: $title $author $priority $progress $ownership $rating $actions,
+    $centered: (
+      3,
+      4,
+      5,
+      6,
+    )
+  );
+  @include sortable_table.detail-panel;
 
   &__row {
-    grid-template-columns: $columns;
-    gap: 0 var(--space-xs);
-    font-size: var(--fs-300);
-
-    > span:not(.books__actions) {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    > span:nth-child(3),
-    > span:nth-child(4),
-    > span:nth-child(5),
-    > span:nth-child(6) {
-      text-align: center;
-    }
-
     &.book--read {
       box-shadow: var(--book-read-box-shadow), var(--floating-box);
       &:hover {
@@ -138,45 +97,6 @@
     display: inline-block;
   }
 
-  &__detail {
-    display: none;
-    margin-bottom: var(--space-s);
-    margin-top: calc(var(--space-xs) * -1);
-    padding: var(--space-m);
-    padding-top: var(--space-s);
-    background-color: var(--clr-primary);
-    border-radius: 0 0 var(--button-border-radius) var(--button-border-radius);
-    border-top: 1px solid var(--clr-gray-600);
-
-    &--open {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: var(--space-s) var(--space-l);
-    }
-  }
-
-  &__detail-field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3xs);
-
-    &-label {
-      font-size: var(--fs-300);
-      color: var(--clr-gray-400);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    &-value {
-      font-size: var(--fs-300);
-      color: var(--clr-text);
-    }
-  }
-
-  &__detail-notes {
-    grid-column: 1 / -1;
-  }
-
   &__link {
     text-decoration: underline;
     color: var(--clr-accent-light);
@@ -201,29 +121,11 @@
     }
   }
 
-  &__empty {
-    color: var(--clr-gray-500);
-    font-style: italic;
-  }
-
   &__hidden {
     display: none !important;
   }
 }
 
 .book-filter {
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.15s ease;
-
-  &:hover {
-    transform: scale(1.05);
-  }
-
-  &--active {
-    box-shadow:
-      inset 0 2px 4px var(--clr-black-trans-400),
-      0 0 12px var(--clr-shadow-highlight-sm);
-    transform: scale(1.08);
-  }
+  @include sortable_table.count-filter;
 }

@@ -2,7 +2,10 @@
   <div>
     <!-- Info Bar -->
     <div class="grid grid--one-column grid--tight">
-      <div class="task-layout__info">
+      <div
+        class="task-layout__info"
+        data-testid="strains-info"
+      >
         <span
           class="task-layout__count strain--tried strain-filter"
           :class="{ 'strain-filter--active': store.statusFilter === 'tried' }"
@@ -59,7 +62,10 @@
           Loading...
         </div>
         <template v-else>
-          <div class="strains__header">
+          <div
+            class="strains__header"
+            data-testid="strains-header"
+          >
             <span
               class="strains__sortable"
               @click="store.setSort('name')"
@@ -93,12 +99,17 @@
             <span>Actions</span>
           </div>
 
-          <template v-if="store.filteredItems.length === 0">
-            <div class="strains__empty">No strains match the selected filter.</div>
+          <template v-if="store.sortedItems.length === 0">
+            <div
+              class="strains__empty"
+              data-testid="strain-empty"
+            >
+              {{ emptyMessage }}
+            </div>
           </template>
 
           <template
-            v-for="strain in store.filteredItems"
+            v-for="strain in store.sortedItems"
             :key="strain.id"
           >
             <div
@@ -256,13 +267,21 @@ const expandedStrainId = ref<number | null>(null)
 
 const typeFilterOptions = computed(() => [
   { value: 'all', label: 'All Types' },
-  ...store.vocabulary.types.map((t) => ({ value: t.name, label: `${humanize(t.name)} (${t.count})` })),
+  ...store.vocabulary.strain_type.map((t) => ({ value: t.name, label: `${humanize(t.name)} (${t.count})` })),
 ])
 
 const effectFilterOptions = computed(() => [
   { value: 'all', label: 'All Effects' },
   ...store.vocabulary.effects.map((e) => ({ value: e.name, label: `${humanize(e.name)} (${e.count})` })),
 ])
+
+// A count is measured under whatever narrowed it, so an empty result names the
+// narrowing rather than reading as an empty catalog.
+const emptyMessage = computed(() => {
+  const active = store.activeFilters
+  if (active.length === 0) return 'No strains yet. Add one!'
+  return `No strains match ${active.join(', ')}.`
+})
 
 function statusLabel(status: string): string {
   return STRAIN_STATUS_LABELS[status as keyof typeof STRAIN_STATUS_LABELS] ?? humanize(status)

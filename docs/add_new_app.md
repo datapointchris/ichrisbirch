@@ -1,14 +1,14 @@
 # Adding A New Application
 
-For this document example we will be creating a new app called `Items`
+For this document example we will be creating a new app called `Widgets`
 
 | Layer | Name |
 | --- | --- |
-| :material-database: db table | `items` |
-| :simple-sqlalchemy: sqlalchemy model | `Item` |
-| :simple-pydantic: pydantic schema | `Item` |
-| :material-api: api endpoint | `/items/` |
-| :material-application: frontend | `/items` |
+| :material-database: db table | `widgets` |
+| :simple-sqlalchemy: sqlalchemy model | `Widget` |
+| :simple-pydantic: pydantic schema | `Widget` |
+| :material-api: api endpoint | `/widgets/` |
+| :material-application: frontend | `/widgets` |
 
 ## Backend (Required for All Features)
 
@@ -20,7 +20,7 @@ For this document example we will be creating a new app called `Items`
 ```python
 from ichrisbirch import models
 
-item = models.Item(**data)
+widget = models.Widget(**data)
 ```
 
 ### 2. Pydantic Schema
@@ -30,23 +30,23 @@ item = models.Item(**data)
 ```python
 from ichrisbirch import schemas
 
-item = schemas.ItemCreate(**data)
+widget = schemas.WidgetCreate(**data)
 ```
 
 ### 3. API Router and Endpoints
 
-Create endpoint file in `ichrisbirch/api/endpoints/items.py`, register in `ichrisbirch/api/main.py`.
+Create endpoint file in `ichrisbirch/api/endpoints/widgets.py`, register in `ichrisbirch/api/main.py`.
 
 ### 4. Database Migration
 
 ```bash
-alembic revision --autogenerate -m "add items table"
+alembic revision --autogenerate -m "add widgets table"
 alembic upgrade head
 ```
 
 ### 5. Seeder (Required)
 
-:material-seed: Create `scripts/seed/seeders/items.py` implementing `seed(session, scale)` and `clear(session)`
+:material-seed: Create `scripts/seed/seeders/widgets.py` implementing `seed(session, scale)` and `clear(session)`
 :material-import: Register in `scripts/seed/seeders/__init__.py` — add to the imports and to `SEED_ORDER` after any FK dependencies
 
 If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add the lookup values to `LOOKUP_DATA` in `ichrisbirch/database/initialization.py` — that dict is re-seeded after every test truncate, separate from the Alembic migration seed.
@@ -58,7 +58,7 @@ If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add t
 
 ### 7. API Tests
 
-Create `tests/ichrisbirch/api/endpoints/test_items.py` using `ApiCrudTester` or direct assertions.
+Create `tests/ichrisbirch/api/endpoints/test_widgets.py` using `ApiCrudTester` or direct assertions.
 
 `ApiCrudTester` defaults `expected_length=3`, so the test data holds exactly
 three rows unless you pass a different count.
@@ -79,14 +79,14 @@ to get the five behavioral cases covering what zero means.
 
 For new pages being built in Vue (the standard going forward):
 
-### 1. Pinia Store (`frontend/src/stores/items.ts`)
+### 1. Pinia Store (`frontend/src/stores/widgets.ts`)
 
 - TypeScript interfaces matching Pydantic schemas
-- Use `createLogger('ItemsStore')` for structured logging
+- Use `createLogger('WidgetsStore')` for structured logging
 - Use `ApiError` / `extractApiError` for error handling
 - Expose reactive `error` ref as `ApiError | null`
 
-### 2. Vue View (`frontend/src/views/ItemsView.vue`)
+### 2. Vue View (`frontend/src/views/WidgetsView.vue`)
 
 - Use the store for data and actions
 - Display errors via `ApiError.userMessage`
@@ -101,14 +101,14 @@ Add link in `frontend/src/components/AppSidebar.vue`
 Add the new path to `deploy-containers/traefik/vue-paths.txt` and regenerate routing:
 
 ```bash
-echo "/items" >> deploy-containers/traefik/vue-paths.txt
+echo "/widgets" >> deploy-containers/traefik/vue-paths.txt
 ./ops/icbops routing generate
 ```
 
 ### 5. Tests
 
-- **Unit tests**: `frontend/src/stores/__tests__/items.test.ts` — mock API, test CRUD + error paths
-- **E2E tests**: `frontend/e2e/items.spec.ts` — Playwright through `app.docker.localhost`
+- **Unit tests**: `frontend/src/stores/__tests__/widgets.test.ts` — mock API, test CRUD + error paths
+- **E2E tests**: `frontend/e2e/widgets.spec.ts` — Playwright through `app.docker.localhost`
 
 ### 6. Verify
 
@@ -124,9 +124,9 @@ The Go resource CLI in `cli/` is the programmatic front door to the same API, so
 a new endpoint group reaches it too. A resource adds two files and two test
 files; everything else is shared plumbing.
 
-### 1. Wire contract (`cli/internal/api/items.go`)
+### 1. Wire contract (`cli/internal/api/widgets.go`)
 
-- `Item`, `ItemCreateInput`, `ItemUpdateInput`, and an `ItemFilter` with a
+- `Widget`, `WidgetCreateInput`, `WidgetUpdateInput`, and a `WidgetFilter` with a
   `query()` where the list read narrows.
 - Nullable columns are pointers. Optional create fields and every update field
   carry `,omitempty`, so an unset flag is omitted rather than sent as `null`.
@@ -137,38 +137,59 @@ files; everything else is shared plumbing.
   `http.NewRequest`. `applyLimit(params, limit)` from `row_limit.go` puts the
   cap on.
 
-### 2. Commands (`cli/internal/cli/items.go`)
+### 2. Commands (`cli/internal/cli/widgets.go`)
 
-`newItemsCommand()` with `list`, `show`, `search`, `create`, `edit`, `delete`.
+`newWidgetsCommand()` with `list`, `show`, `search`, `create`, `edit`, `delete`.
 The verbs are `show` and `edit`, not `get` and `update`.
 
 - `withNotFoundHints(cmd, ...)` — a tree walk fails without it.
 - `addLimitFlag(cmd, &limit)` rather than registering `--limit` by hand.
 - `--json` on every read, short-circuiting to `encodeJSON`.
-- `create` and `edit` share one flag struct and one `addItemFlags` function.
+- `create` and `edit` share one flag struct and one `addWidgetFlags` function.
 - `delete` fetches first, so the confirmation names the row.
 
 A resource with a closed vocabulary follows `[]prompt.Field` for its guided
-create — `tasks.go` declares the choices, `items.go` and `strains.go` fetch
-them. Fetch where the values come from a lookup table, so adding one stays an
-insert on the server rather than a release of this binary.
+create. Both ways of supplying the choices are in the tree and they answer
+different questions, so pick deliberately rather than by whichever file you
+opened.
+
+**Declared** — `tasks.go` holds `api.TaskCategories` as a `[]string`. Usage
+errors never depend on the network, the values appear in `--help`, and a display
+label can be spelled beside each one. The cost is that the list is copied per
+client: `task_categories` is a lookup table whose values also sit in Python, in
+TypeScript and in Go, and nothing keeps the three level.
+
+**Fetched** — `strains.go` reads them from the API on create and edit, and
+`items.go` reads a project list the same way. Adding a value stays an insert on
+the server. Three things come with it:
+
+- The fetch has to run after every refusal that needs no server state, or a
+  usage error becomes exit 1 whenever the API is unreachable.
+- Display labels stay compiled into each client, because a lookup table carries
+  a name and no label column.
+- A value added in production still needs a migration, so that the insert is
+  replayed wherever the database is rebuilt from zero.
+
+Fetch where the vocabulary is an open set that grows. Declare where it is a
+closed lifecycle each client has to render differently — `strains` does both,
+and `ichrisbirch/models/strain.py` says which is which and why.
 
 ### 3. Register
 
-`newItemsCommand()` in `NewRootCommand` (`cli/internal/cli/root.go`), keeping
-`applyUsageTemplate(root)` last. Add `{"items", "list"}` to the roster in
+`newWidgetsCommand()` in `NewRootCommand` (`cli/internal/cli/root.go`), keeping
+`applyUsageTemplate(root)` last. Add `{"widgets", "list"}` to the roster in
 `cli/internal/cli/limit_test.go`. Update the resource lists in `cli/README.md`
 and in `root.go`'s own `Long`.
 
 ### 4. Tests and verify
 
-`cli/internal/api/items_test.go` drives an `httptest` server and asserts the
-captured query string and request body. `cli/internal/cli/items_test.go` runs
+`cli/internal/api/widgets_test.go` drives an `httptest` server and asserts the
+captured query string and request body. `cli/internal/cli/widgets_test.go` runs
 the real command tree through `runTree` and asserts exit codes.
 
 ```bash
 task cli:lint && task cli:test
-ICB_API_BASE=https://api.docker.localhost icb items list
+ICB_API_BASE=https://api.docker.localhost icb widgets list
 ```
 
 The installed `icb` always targets production regardless of working directory,

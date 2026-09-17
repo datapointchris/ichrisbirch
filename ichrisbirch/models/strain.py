@@ -1,5 +1,22 @@
-from datetime import date
-from datetime import datetime
+"""Strains, and the five lookup tables that supply their vocabularies.
+
+`strain_type` and `status` are single-valued and carry real foreign keys. The
+three descriptor columns hold several values each, and Postgres cannot reference
+a table from an array element, so their lookup tables supply the vocabulary
+while `api/endpoints/strains.py` enforces it on both reads and writes.
+
+**Four of the five vocabularies are open sets served to the clients**, so adding
+a value is an insert here plus a line in `LOOKUP_DATA`, with no client release.
+The Vue store and the `icb` CLI both read `GET /strains/vocabulary/`.
+
+**`status` is the exception and is a closed lifecycle.** Its two values are
+compiled into both clients, because each one needs a counter, a filter, a row
+color and a label that a lookup table carrying only a name cannot supply.
+Inserting a third would list and validate, and would get none of those. Adding
+a status is a code change in three places, and that is the trade taken.
+"""
+
+import datetime as dt
 
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Date
@@ -9,6 +26,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
+from sqlalchemy import UniqueConstraint
 from sqlalchemy import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped
@@ -94,12 +112,7 @@ class StrainStatus(Base):
 
 
 class StrainEffect(Base):
-    """Lookup table for the effects a strain produces.
-
-    `strains.effects` is an array and carries no foreign key onto this, because
-    Postgres cannot reference a table from an array element. The endpoint checks
-    a write against these rows, and `GET /strains/vocabulary/` serves them.
-    """
+    """Lookup table for the effects a strain produces."""
 
     __tablename__ = 'strain_effects'
     name: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -121,7 +134,14 @@ class StrainTerpene(Base):
 
 class Strain(Base):
     __tablename__ = 'strains'
-    __table_args__ = (CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 10)', name='rating_range'),)
+    __table_args__ = (
+        CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 10)', name='rating_range'),
+        # A catalog row needs a natural key an import can upsert on. NULLS NOT
+        # DISTINCT so two rows named the same with no breeder collide — Postgres
+        # treats nulls as distinct by default, and the unknown breeder is the
+        # common case.
+        UniqueConstraint('name', 'breeder', postgresql_nulls_not_distinct=True),
+    )
 
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
@@ -139,9 +159,9 @@ class Strain(Base):
     source: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     review: Mapped[str | None] = mapped_column(Text, nullable=True)
-    last_tried_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    last_tried_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     def __repr__(self) -> str:
         return f'Strain(id={self.id!r}, name={self.name!r}, strain_type={self.strain_type!r}, status={self.status!r})'
