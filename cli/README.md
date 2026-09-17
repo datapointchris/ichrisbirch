@@ -2,7 +2,8 @@
 
 `icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
 programmatic front door to the personal-productivity apps (tasks, projects,
-countdowns, books, articles, habits, events, recipes, cooking-techniques) and the
+countdowns, books, articles, habits, events, recipes, cooking-techniques,
+strains) and the
 **replacement for the retired MCP server** — the agent and power-user surface,
 driven by Claude via Bash or by a person at the terminal.
 
@@ -21,10 +22,17 @@ dependencies and blockers, sub-task verbs, and `tree` for the dependency graph a
 a drawing or as nodes and edges under `--json`.
 
 The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
-`articles`, `autotasks`, `recipes` and `cooking-techniques`. Each takes
-`{list,show,search,create,edit,delete}` plus the verbs its own domain needs —
-`articles current` and `articles read`, `habits complete`, the recipe
-suggest/import flows.
+`articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
+takes `{list,show,search,create,edit,delete}` plus the verbs its own domain needs
+— `articles current` and `articles read`, `habits complete`, the recipe
+suggest/import flows, `strains vocabulary`.
+
+`strains` is the one whose closed vocabularies are fetched rather than compiled
+in. `--type`, `--status`, `--effect`, `--flavor` and `--terpene` are all lookup
+tables, so their values are read from the server on every create and edit and a
+wrong one is refused with the list of what would have worked. Adding a value is
+an insert on the server, not a release of this binary. `icb strains vocabulary`
+prints every value with how many strains carry it.
 
 Each machine authenticates as its own Authelia public client, `icb-cli-<host>`.
 A new machine needs that client registered in the Authelia configuration before
