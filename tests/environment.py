@@ -1,10 +1,8 @@
-"""Test environment management for running tests with Docker and FastAPI.
+"""The Docker Compose test environment a pytest session runs against.
 
-This module handles the setup and teardown of the test environment, including:
-- Docker container management for Postgres
-- Starting and stopping the API server
-- Creating test clients for the API
-- Docker Compose-based test environment setup
+`DockerComposeTestEnvironment` starts the test containers or reuses running
+ones, waits for Postgres, Redis and the API, and initializes the database.
+Resetting the data between sessions is the `truncate_tables` fixture's job.
 """
 
 import json
@@ -19,18 +17,14 @@ import pytest
 
 from ichrisbirch.config import Settings
 from ichrisbirch.database.initialization import full_initialization
-from ichrisbirch.database.initialization import insert_default_users
-from ichrisbirch.database.initialization import insert_lookup_table_data
-from ichrisbirch.database.initialization import truncate_all_tables
-from ichrisbirch.database.session import create_session
 
 logger = logging.getLogger(__name__)
 
 
 class DockerComposeTestEnvironment:
-    """Context manager for Docker Compose-based test environment.
+    """Context manager for the Docker Compose test environment.
 
-    This is the new preferred approach that:
+    It:
     - Uses Docker Compose to start test services
     - Services use ENVIRONMENT=testing for test-specific configuration
     - Runs on different ports to avoid conflicts with dev environment
@@ -71,7 +65,7 @@ class DockerComposeTestEnvironment:
 
         In CI: containers are pre-started by workflow, just wait for them.
         Locally: reuse running containers for fast iteration, start if needed.
-        Then bring the database to the current schema and truncate it.
+        Then bring the database to the current schema.
         """
         try:
             if self.is_ci:
@@ -97,10 +91,6 @@ class DockerComposeTestEnvironment:
             # unchanged.
             full_initialization(self.settings)
 
-            # Truncate tables, re-insert lookup data and users.
-            # Preserves schema so the API container's connection pool stays valid.
-            self.truncate_test_database()
-
         except Exception as e:
             logger.error(f'Error during setup: {e}')
             pytest.exit(f'Exiting due to setup failure: {e}', returncode=1)
@@ -108,7 +98,7 @@ class DockerComposeTestEnvironment:
     def teardown(self) -> None:
         """Leave containers running for fast iteration."""
         logger.info('Leaving test containers running for fast iteration')
-        logger.info('Stop manually with: icb testing stop')
+        logger.info('Stop manually with: icbops testing stop')
 
     def docker_test_services_already_running(self, required_services=None) -> bool:
         """Returns True if all required Docker Compose services are running."""
@@ -188,7 +178,7 @@ class DockerComposeTestEnvironment:
         for service_name, url in http_services.items():
             logger.info(f'Checking {service_name} readiness at {url}')
             attempts = 0
-            max_attempts = 6  # Increased from 6 to allow 60 seconds total
+            max_attempts = 6
             service_running = False
             while not service_running and attempts < max_attempts:
                 try:
@@ -205,19 +195,6 @@ class DockerComposeTestEnvironment:
             if attempts >= max_attempts:
                 self._log_container_debug_info(f'icb-test-{service_name}')
                 raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
-
-    def truncate_test_database(self) -> None:
-        """Truncate all tables and re-insert lookup data and default users.
-
-        Uses TRUNCATE (not DROP) so the API container's SQLAlchemy connection pool
-        stays valid — no container restart needed.
-        """
-        logger.info('Truncating test database')
-        truncate_all_tables(self.settings)
-        insert_lookup_table_data(self.settings)
-        with create_session(self.settings) as session:
-            insert_default_users(session, self.settings)
-        logger.info('Test database truncate complete')
 
     def stop_docker_compose(self) -> None:
         """Stop Docker Compose test services completely.
