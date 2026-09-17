@@ -21,6 +21,9 @@ import structlog
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.services.outbound_http import PageStatusError
+from ichrisbirch.services.url_extraction import CaptionsBlocked
+from ichrisbirch.services.url_extraction import PageUnreadable
 from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
@@ -29,6 +32,21 @@ QUEUE_KEY = 'article_import:queue'
 BATCH_KEY_PREFIX = 'article_import:batch:'
 BATCH_TTL = 86400  # 24 hours
 MAX_ATTEMPTS = 2
+
+
+def _worth_retrying(error: Exception) -> bool:
+    """Whether asking again at once could give a different answer.
+
+    A page that is not the article, a duplicate and a 4xx stay the same on a
+    second request. A site refusing because of how many requests it has had gets
+    a second one, which is what keeps the refusal going. A dropped connection or a
+    5xx can pass, so those are retried.
+    """
+    from ichrisbirch.api.endpoints.articles import ArticleAlreadyExists
+
+    if isinstance(error, PageUnreadable | CaptionsBlocked | ArticleAlreadyExists):
+        return False
+    return not (isinstance(error, PageStatusError) and error.status_code < 500)
 
 
 def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: dict[str, str] | None = None) -> str:
@@ -146,7 +164,7 @@ class ArticleImportWorker:
             error_msg = str(e)
             logger.warning('article_import_item_failed', url=url, attempt=attempt, error=error_msg)
 
-            if attempt < MAX_ATTEMPTS:
+            if attempt < MAX_ATTEMPTS and _worth_retrying(e):
                 # Re-queue with incremented attempt
                 retry_item = json.dumps(
                     {

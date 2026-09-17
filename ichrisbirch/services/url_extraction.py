@@ -23,6 +23,8 @@ from bs4 import BeautifulSoup
 from bs4 import Tag
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
+from youtube_transcript_api import CouldNotRetrieveTranscript
+from youtube_transcript_api import RequestBlocked
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 
@@ -57,6 +59,26 @@ class PageUnreadable(Exception):
 
     def __init__(self, url: str, message: str):
         super().__init__(message)
+        self.url = url
+
+
+class VideoHasNoCaptions(PageUnreadable):
+    """The video has no transcript to summarize: captions are off, missing, or the video cannot be played."""
+
+    def __init__(self, url: str, reason: str):
+        super().__init__(url, f'{url} has no captions to summarize ({reason})')
+        self.reason = reason
+
+
+class CaptionsBlocked(Exception):
+    """YouTube refused the caption request, which it does to an IP that has made too many.
+
+    Not a property of the video, so nothing about it is permanent, but asking
+    again while the block holds is what extends it.
+    """
+
+    def __init__(self, url: str):
+        super().__init__(f'YouTube is refusing caption requests from this server, so {url} was not read')
         self.url = url
 
 
@@ -264,6 +286,16 @@ def redirected_away(requested_url: str, final_url: str) -> bool:
     return final_path == '' or requested_path.startswith(final_path + '/')
 
 
+def _video_captions(url: str) -> str:
+    """A video's captions as text, with the transcript library's failures named for callers."""
+    try:
+        return get_youtube_video_text_captions(url)
+    except RequestBlocked as e:
+        raise CaptionsBlocked(url) from e
+    except CouldNotRetrieveTranscript as e:
+        raise VideoHasNoCaptions(url, type(e).__name__) from e
+
+
 def read_article_page(url: str) -> ArticlePage:
     """Fetch a saved page and return its title and the text to summarize.
 
@@ -282,7 +314,7 @@ def read_article_page(url: str) -> ArticlePage:
         if (challenge := bot_challenge_title(soup)) is not None:
             raise PageIsBotChallenge(url, challenge)
         title = get_page_title(soup)
-        text = get_youtube_video_text_captions(url) if is_youtube_url(url) else extract_main_text(page.content, page.url)
+        text = _video_captions(url) if is_youtube_url(url) else extract_main_text(page.content, page.url)
 
     word_count = len(text.split())
     if word_count < MIN_READABLE_WORDS:
