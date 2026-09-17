@@ -147,15 +147,13 @@ class TestingArchitectureDiagramRenderer:
         }
 
         self._add_sequence_edge(dot, 'PyTest', 'TE', 'setup_test_environment fixture', **edge_style['request'])
-        self._add_sequence_edge(dot, 'TE', 'Docker', 'Create PostgreSQL container', **edge_style['request'])
-        self._add_sequence_edge(dot, 'Docker', 'TE', 'Container created', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'Docker', 'Start container', **edge_style['request'])
-        self._add_sequence_edge(dot, 'Docker', 'DB', 'Start PostgreSQL', **edge_style['request'])
-        self._add_sequence_edge(dot, 'DB', 'Docker', 'Started', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'DB', 'Create database schemas', **edge_style['request'])
-        self._add_sequence_edge(dot, 'DB', 'TE', 'Schemas created', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'API', 'Start FastAPI server', **edge_style['request'])
-        self._add_sequence_edge(dot, 'API', 'TE', 'Server started', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'Docker', 'docker compose up -d (only when not running)', **edge_style['request'])
+        self._add_sequence_edge(dot, 'Docker', 'TE', 'Containers running', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'DB', 'Socket check on :5434', **edge_style['request'])
+        self._add_sequence_edge(dot, 'TE', 'API', 'GET /health', **edge_style['request'])
+        self._add_sequence_edge(dot, 'API', 'TE', '200', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'DB', 'full_initialization: schemas, migrate to head, users', **edge_style['request'])
+        self._add_sequence_edge(dot, 'TE', 'DB', 'TRUNCATE, lookup data, default users', **edge_style['request'])
         self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment ready', **edge_style['response'])
 
         dot.render(output_path, format='svg', cleanup=True)
@@ -193,12 +191,7 @@ class TestingArchitectureDiagramRenderer:
         }
 
         self._add_sequence_edge(dot, 'PyTest', 'TE', 'Teardown test environment', **edge_style['request'])
-        self._add_sequence_edge(dot, 'TE', 'Docker', 'Stop PostgreSQL container', **edge_style['request'])
-        self._add_sequence_edge(dot, 'Docker', 'DB', 'Stop PostgreSQL', **edge_style['request'])
-        self._add_sequence_edge(dot, 'DB', 'Docker', 'Stopped', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'API', 'Kill FastAPI server process', **edge_style['request'])
-        self._add_sequence_edge(dot, 'API', 'TE', 'Process terminated', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment cleaned up', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'PyTest', 'Containers left running for the next session', **edge_style['response'])
 
         dot.render(output_path, format='svg', cleanup=True)
         return dot

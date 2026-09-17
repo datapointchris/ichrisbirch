@@ -16,17 +16,13 @@ import time
 
 import httpx
 import pytest
-from sqlalchemy import select
-from sqlalchemy.schema import CreateSchema
 
-from ichrisbirch import models
 from ichrisbirch.config import Settings
+from ichrisbirch.database.initialization import full_initialization
 from ichrisbirch.database.initialization import insert_default_users
 from ichrisbirch.database.initialization import insert_lookup_table_data
-from ichrisbirch.database.initialization import run_alembic_migrations
 from ichrisbirch.database.initialization import truncate_all_tables
 from ichrisbirch.database.session import create_session
-from tests.utils.database import get_test_login_users
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +71,7 @@ class DockerComposeTestEnvironment:
 
         In CI: containers are pre-started by workflow, just wait for them.
         Locally: reuse running containers for fast iteration, start if needed.
-        Always reset database to ensure clean state.
+        Then bring the database to the current schema and truncate it.
         """
         try:
             if self.is_ci:
@@ -94,6 +90,12 @@ class DockerComposeTestEnvironment:
                 else:
                     logger.info('Starting Docker Compose test services')
                     self.setup_test_services()
+
+            # Healthy containers can hold an empty database: the test Postgres
+            # keeps its data on tmpfs, so every recreate of it starts blank.
+            # Initialization is idempotent and leaves an initialized database
+            # unchanged.
+            full_initialization(self.settings)
 
             # Truncate tables, re-insert lookup data and users.
             # Preserves schema so the API container's connection pool stays valid.
@@ -204,18 +206,6 @@ class DockerComposeTestEnvironment:
                 self._log_container_debug_info(f'icb-test-{service_name}')
                 raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
 
-    def create_database_schemas(self) -> None:
-        """Create database schemas (idempotent - uses IF NOT EXISTS)."""
-        with create_session(self.settings) as session:
-            for schema_name in self.settings.postgres.db_schemas:
-                try:
-                    session.execute(CreateSchema(schema_name, if_not_exists=True))
-                    logger.info(f'Ensured schema exists: {schema_name}')
-                except Exception as e:
-                    logger.error(f'Failed to create schema {schema_name}: {e}')
-                    raise
-            session.commit()
-
     def truncate_test_database(self) -> None:
         """Truncate all tables and re-insert lookup data and default users.
 
@@ -228,36 +218,6 @@ class DockerComposeTestEnvironment:
         with create_session(self.settings) as session:
             insert_default_users(session, self.settings)
         logger.info('Test database truncate complete')
-
-    def ensure_database_ready(self) -> None:
-        """Ensure database is in a known good state (idempotent).
-
-        This runs whether services were just started or already running.
-        It ensures:
-        1. Schemas exist
-        2. Tables exist (via alembic migrations)
-        3. Login users exist
-
-        All operations are idempotent - safe to run multiple times.
-        """
-        # 1. Create schemas (idempotent via IF NOT EXISTS)
-        self.create_database_schemas()
-
-        # 2. Run alembic migrations (idempotent — skips already-applied migrations)
-        run_alembic_migrations(self.settings)
-        logger.info('Ensured all tables exist via alembic')
-
-        # 3. Ensure login users exist (check before insert)
-        with create_session(self.settings) as session:
-            for user_data in get_test_login_users():
-                existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
-                if not existing:
-                    session.add(models.User(**user_data))
-                    logger.info(f'Inserted login user: {user_data["email"]}')
-                else:
-                    logger.debug(f'Login user already exists: {user_data["email"]}')
-            session.commit()
-        logger.info('Database is ready')
 
     def stop_docker_compose(self) -> None:
         """Stop Docker Compose test services completely.

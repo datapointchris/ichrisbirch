@@ -43,10 +43,14 @@ logger = structlog.get_logger()
 
 
 def _get_alembic_config(settings) -> Config:
-    """Create an Alembic Config with correct paths resolved."""
+    """Create an Alembic Config with correct paths resolved.
+
+    Every caller runs migrations inside a process that has already configured
+    logging, so the config tells env.py to leave logging alone.
+    """
     project_root = find_project_root()
     alembic_ini = project_root / 'ichrisbirch' / 'alembic.ini'
-    cfg = Config(str(alembic_ini))
+    cfg = Config(str(alembic_ini), attributes={'configure_logger': False})
     cfg.set_main_option('script_location', str(project_root / 'ichrisbirch' / 'alembic'))
     cfg.set_main_option('sqlalchemy.url', settings.sqlalchemy.db_uri)
     return cfg

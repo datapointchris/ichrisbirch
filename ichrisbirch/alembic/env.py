@@ -43,9 +43,11 @@ from ichrisbirch.models import User  # noqa
 # access to the values within the .ini file in use.
 alembic_config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if alembic_config.config_file_name is not None:
+# Logging comes from alembic.ini only for the bare `alembic` command. fileConfig
+# disables every logger that already exists, so a process running migrations
+# in-process, such as the pytest session, passes configure_logger=False to keep
+# its own.
+if alembic_config.config_file_name is not None and alembic_config.attributes.get('configure_logger', True):
     fileConfig(alembic_config.config_file_name)
 
 # for 'autogenerate' support
