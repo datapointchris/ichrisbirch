@@ -167,7 +167,7 @@ func TestLocalDayWindow_SpansTheLocalDayWithSlack(t *testing.T) {
 	}
 }
 
-func TestNextProjectItems_ExcludesAndOrders(t *testing.T) {
+func TestActionableItems_ExcludesWhatCannotBeTakenNow(t *testing.T) {
 	all := []api.ProjectItem{
 		{ID: "new", Title: "Newest", CreatedAt: fixedNow},
 		{ID: "old", Title: "Oldest", CreatedAt: fixedNow.AddDate(0, 0, -10)},
@@ -177,17 +177,74 @@ func TestNextProjectItems_ExcludesAndOrders(t *testing.T) {
 	}
 	blocked := []api.ProjectItem{{ID: "blocked"}}
 
-	next := nextProjectItems(all, blocked)
+	next := actionableItems(all, blocked)
 
 	if len(next) != 2 {
 		t.Fatalf("next = %+v, want the two actionable items", next)
 	}
+	// Neither carries a position, so age is the whole order.
 	if next[0].ID != "old" || next[1].ID != "new" {
 		t.Errorf("next order = %s,%s — want oldest first", next[0].ID, next[1].ID)
 	}
 }
 
-func TestNextProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
+func TestActionableItems_TakesProjectsByPositionThenItemsByPosition(t *testing.T) {
+	first := api.Project{ID: "first", Position: 1, CreatedAt: fixedNow}
+	second := api.Project{ID: "second", Position: 2, CreatedAt: fixedNow.AddDate(0, 0, -100)}
+
+	all := []api.ProjectItem{
+		{
+			ID: "second-front", CreatedAt: fixedNow.AddDate(0, 0, -90), Projects: []api.Project{second},
+			Memberships: []api.ProjectItemMembership{{ProjectID: "second", Position: 0}},
+		},
+		{
+			ID: "first-back", CreatedAt: fixedNow.AddDate(0, 0, -20), Projects: []api.Project{first},
+			Memberships: []api.ProjectItemMembership{{ProjectID: "first", Position: 1}},
+		},
+		{
+			ID: "first-front", CreatedAt: fixedNow, Projects: []api.Project{first},
+			Memberships: []api.ProjectItemMembership{{ProjectID: "first", Position: 0}},
+		},
+	}
+
+	next := actionableItems(all, nil)
+
+	// The older project and the older items lose: position decides, and the
+	// first project's whole queue comes before the second project's head.
+	want := []string{"first-front", "first-back", "second-front"}
+	if got := itemIDs(next); strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("next = %s, want %s", got, want)
+	}
+}
+
+func TestActionableItems_AnItemIsQueuedByItsPlaceInItsHighestRankedProject(t *testing.T) {
+	first := api.Project{ID: "first", Position: 1}
+	second := api.Project{ID: "second", Position: 2}
+
+	all := []api.ProjectItem{
+		{
+			ID: "shared", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: []api.Project{second, first},
+			Memberships: []api.ProjectItemMembership{
+				{ProjectID: "second", Position: 0},
+				{ProjectID: "first", Position: 3},
+			},
+		},
+		{
+			ID: "first-only", CreatedAt: fixedNow, Projects: []api.Project{first},
+			Memberships: []api.ProjectItemMembership{{ProjectID: "first", Position: 2}},
+		},
+	}
+
+	next := actionableItems(all, nil)
+
+	// shared is drawn under first, where it sits behind first-only. Its place at
+	// the front of second does not carry across.
+	if got := itemIDs(next); strings.Join(got, ",") != "first-only,shared" {
+		t.Errorf("next = %s, want first-only then shared", got)
+	}
+}
+
+func TestOverviewProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
 	hoard := api.Project{ID: "hoard", Name: "Sell Unused Shite", CreatedAt: fixedNow.AddDate(0, 0, -100)}
 	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", CreatedAt: fixedNow.AddDate(0, 0, -1)}
 
@@ -198,10 +255,10 @@ func TestNextProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
 		{ID: "rollout-1", CreatedAt: fixedNow, Projects: []api.Project{rollout}},
 	}
 
-	next := nextProjectItems(all, nil)
+	next := overviewProjectItems(all, nil)
 
-	// The youngest project's only item takes the second row. Under a plain
-	// oldest-first sort it came last and fell off the far side of the cap.
+	// The lower-ranked project's only item takes the second row. Taking the queue
+	// in order puts it last, where it falls off the far side of the cap.
 	want := []string{"sell-1", "rollout-1", "sell-2", "sell-3"}
 	for i, id := range want {
 		if next[i].ID != id {
@@ -210,7 +267,7 @@ func TestNextProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
 	}
 }
 
-func TestNextProjectItems_MultiProjectItemTakesOneSlot(t *testing.T) {
+func TestOverviewProjectItems_MultiProjectItemTakesOneSlot(t *testing.T) {
 	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", CreatedAt: fixedNow.AddDate(0, 0, -100)}
 	linux := api.Project{ID: "linux", Name: "Linux-first", CreatedAt: fixedNow.AddDate(0, 0, -50)}
 
@@ -219,7 +276,7 @@ func TestNextProjectItems_MultiProjectItemTakesOneSlot(t *testing.T) {
 		{ID: "monitors", CreatedAt: fixedNow.AddDate(0, 0, -1), Projects: []api.Project{selling}},
 	}
 
-	next := nextProjectItems(all, nil)
+	next := overviewProjectItems(all, nil)
 
 	if len(next) != 2 {
 		t.Fatalf("next = %s, want each item once however many projects it is in", itemIDs(next))

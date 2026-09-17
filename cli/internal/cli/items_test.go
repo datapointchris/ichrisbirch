@@ -62,11 +62,11 @@ func TestNextProjectItems_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
 		{ID: "exit-code", CreatedAt: fixedNow.AddDate(0, 0, -9), Projects: []api.Project{rollout}},
 	}
 
-	if unfiltered := nextProjectItems(all, nil); unfiltered[0].ID != "glove-80" {
-		t.Fatalf("precondition: unfiltered next = %s, want the oldest item first", itemIDs(unfiltered))
+	if unfiltered := actionableItems(all, nil); unfiltered[0].ID != "glove-80" {
+		t.Fatalf("precondition: unfiltered next = %s, want the errand first", itemIDs(unfiltered))
 	}
 
-	next := nextProjectItems(itemsOfKind(all, "build"), nil)
+	next := actionableItems(itemsOfKind(all, "build"), nil)
 
 	if len(next) != 1 || next[0].ID != "exit-code" {
 		t.Errorf("next(build) = %s, want only exit-code", itemIDs(next))
