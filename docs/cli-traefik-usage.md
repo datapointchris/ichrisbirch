@@ -98,7 +98,7 @@ Dev Credentials:
 The `test run` command reuses running containers for fast iteration:
 
 1. **Reuses containers** - Reuses the stack when `icb-test-api` is healthy, otherwise recreates it with `testing start`
-2. **Database readiness and cleaning** - pytest's session setup migrates the database to head, then truncates it (not the CLI)
+2. **Database readiness and cleaning** - pytest's session setup migrates the database to head, then the `truncate_tables` fixture truncates it (not the CLI)
 3. **No stale connections** - API container's connection pool stays valid across test runs
 4. **Fast** - Sub-second database clean vs seconds for drop/recreate
 

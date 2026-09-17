@@ -24,7 +24,7 @@ iChrisBirch is a personal productivity web application with a **multi-service ar
 ./ops/icbops testing rebuild --all      # Full rebuild including infra
 
 # Database lifecycle (dev + testing; production is rejected)
-./ops/icbops dev db init           # First-time: schemas + migrations + users
+./ops/icbops dev db init           # Migrations + users, idempotent; every start and rebuild runs it
 ./ops/icbops dev db reset          # Nuclear: drop + recreate everything
 ./ops/icbops testing db init       # Same, for test environment
 ./ops/icbops testing db reset      # Same, for test environment
@@ -213,11 +213,11 @@ reaches is written down here rather than inferred from the import.
   | Tests | Transactional fixtures (`test_settings`) | Session-scoped fixtures in `conftest.py` |
 
 - Pydantic schemas: `*Create` (POST), base (GET), `*Update` (PATCH, all optional), `ConfigDict(from_attributes=True)`
-- Migrations: Alembic (`ichrisbirch/alembic/`). Run migrations before tests if schema changes.
+- Migrations: Alembic (`ichrisbirch/alembic/`). A migration creates any schema it writes into, as `e1f2a3b4c5d6_add_coffee_tables` does, because nothing creates schemas ahead of alembic. pytest's session setup migrates the test database to head.
 
 ## Testing
 
-**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icbops test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the test Postgres keeps its data on tmpfs, so every stop or recreate of that container empties the database. Every verb that brings the test containers up (`testing start`, `testing restart`, `testing rebuild` with any flags, and `test run`'s cold start) ends by initializing the database, and pytest's session setup migrates it to head before truncating, so a healthy container over an empty database still runs the suite. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
+**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icbops test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the test Postgres keeps its data on tmpfs, so every stop or recreate of that container empties the database. Every verb that brings the test containers up (`testing start`, `testing restart`, `testing rebuild` with any flags, and `test run`'s cold start) ends by initializing the database, and pytest's session setup migrates it to head before its fixtures truncate it, so a healthy container over an empty database still runs the suite. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
 **Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. An earlier named-volume setup (`venv_shared`, `uv_cache`) combined with `uv run` caused stale venv state to persist across rebuilds, producing API containers stuck in "health: starting" while uv tried to resync packages at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
 
@@ -436,7 +436,7 @@ Follow the Articles/Tasks stats pattern. Every stats page uses the shared kit.
 
 ### Logging
 
-**Python**: structlog with stdout-only. `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL`, `LOG_COLORS` env vars. Request tracing via `X-Request-ID`.
+**Python**: structlog rendered through the stdlib root logger to stderr, plus a file when `LOG_FILE` is set. `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL`, `LOG_COLORS` env vars. Request tracing via `X-Request-ID`.
 
 **Vue**: consola with structured reporters matching structlog key=value format. JSON for Loki in production. Use `createLogger('ModuleName')`.
 

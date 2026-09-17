@@ -429,7 +429,7 @@ function test-run() {
 
   # Container health is the only readiness checked here. A healthy API can sit
   # over an empty database, so pytest's session setup brings the schema to head
-  # before it truncates.
+  # before its fixtures truncate it.
   local api_health
   api_health=$(docker inspect --format='{{.State.Health.Status}}' icb-test-api 2>/dev/null)
   if [[ "$api_health" == "healthy" ]]; then

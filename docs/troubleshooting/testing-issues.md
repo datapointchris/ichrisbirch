@@ -37,7 +37,7 @@ This silently suppressed cleanup errors, so failed cleanup operations went unnot
 
 1. **Container reuse**: Reuses the stack when `icb-test-api` reports `healthy`
 2. **Unhealthy recovery**: Otherwise removes any existing test containers and runs `testing start`, which initializes the database
-3. **Database readiness**: pytest's session setup migrates the database to head, then truncates it
+3. **Database readiness**: pytest's session setup migrates the database to head, then the `truncate_tables` fixture truncates it
 4. **Fast iteration**: Leaves containers running after tests for quick re-runs
 
 **Prevention:** The container reuse approach prevents network conflicts because containers are not constantly being created and destroyed. Truncation at session start gives each run a clean database without the overhead of container recreation.
@@ -56,28 +56,29 @@ docker network prune -f
 
 ## Test Database Setup Issues
 
-### Schema Creation Failures
+### Setup Exits Before Any Test Runs
 
-**Problem:** pytest stops in session setup before any test runs, because the database has no schema.
+pytest's session setup runs `full_initialization()` against the test database before any test. A failure there ends the session with `Exiting due to setup failure:` followed by the initializer's own exception.
 
-**Error Messages:**
+**Error: the database is at a revision this checkout does not have**
 
 ```text
-_pytest.outcomes.Exit: Exiting due to setup failure: (psycopg.errors.InvalidSchemaName) schema "admin" does not exist
-[SQL: TRUNCATE "admin"."scheduler_job_runs", ... RESTART IDENTITY CASCADE]
+_pytest.outcomes.Exit: Exiting due to setup failure: Can't locate revision identified by '<revision>'
 ```
 
-**Root Cause:** The test Postgres keeps its data on tmpfs, so stopping or recreating that container leaves an empty database. Its health check and the API's `/health` both pass over an empty database.
+**Root Cause:** Every checkout on a machine shares one test stack. A session from a checkout carrying a newer migration upgraded the database, and this checkout's migration history does not contain that revision.
 
-**Resolution:** Every verb that brings the test containers up initializes the database, through `env-initialize` in `ops/icbops`. pytest's session setup also runs `full_initialization()` before truncating. Both are idempotent.
-
-If the error still appears, initialization itself is failing. Its output ends the `testing start` run:
+**Resolution:** Recreate the stack from the checkout you are testing. Its initialization then migrates the empty database with this checkout's history:
 
 ```bash
 ./ops/icbops testing stop && ./ops/icbops testing start
 ```
 
-`./ops/icbops testing db init` runs the same initialization on its own against the running stack.
+**Any other initialization error**
+
+`testing start` runs the same initialization and prints its output, so the failing migration or connection error appears there. `./ops/icbops testing db init` runs it on its own against the running stack.
+
+The test Postgres keeps its data on tmpfs, so an empty database behind healthy containers is expected after any stop or recreate. Every `icbops` verb that brings the containers up and every pytest session initializes it.
 
 ### Test Data Isolation Issues
 
