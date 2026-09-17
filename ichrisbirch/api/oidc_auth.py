@@ -9,7 +9,7 @@ Key retrieval, caching and rotation are PyJWT's `PyJWKClient`. Nothing here pars
 
 import functools
 
-import httpx
+import httpx2
 import jwt
 import structlog
 from fastapi import Depends
@@ -84,7 +84,7 @@ def is_access_token(token: str) -> bool:
 
 def discover_jwks_uri(issuer: str, timeout: float = DISCOVERY_TIMEOUT_SECONDS) -> str:
     """Resolve the issuer's JWKS endpoint from its OIDC discovery document."""
-    response = httpx.get(issuer.rstrip('/') + DISCOVERY_PATH, timeout=timeout, headers={'User-Agent': USER_AGENT})
+    response = httpx2.get(issuer.rstrip('/') + DISCOVERY_PATH, timeout=timeout, headers={'User-Agent': USER_AGENT})
     response.raise_for_status()
     document = response.json()
 
@@ -188,7 +188,7 @@ def get_oidc_identity(request: Request, settings: Settings = Depends(get_setting
     try:
         verifier = build_verifier(settings.oidc.issuer, settings.oidc.cli_client_id_prefix)
         identity = verifier.verify(token)
-    except (OIDCProviderUnavailable, httpx.HTTPError) as exc:
+    except (OIDCProviderUnavailable, httpx2.HTTPError) as exc:
         logger.error('oidc_provider_unreachable', error=str(exc), path=request.url.path)
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=PROVIDER_UNAVAILABLE_DETAIL) from None
     except (OIDCVerificationError, ValueError) as exc:

@@ -249,12 +249,12 @@ processors = [
 
 Noisy third-party loggers are suppressed to reduce log noise:
 
-**Configuration**: `ichrisbirch/logger.py:78-101`
+**Configuration**: `configure_stdlib_logging` in `ichrisbirch/logger.py`
 
 | Logger | Level | Reason |
 | --- | --- | --- |
 | `apscheduler` | WARNING | Verbose job scheduling messages |
-| `httpx` | WARNING | HTTP client request details |
+| `httpx2`, `httpx` | WARNING | HTTP client request details — `httpx2` is the app's client, `httpx` is the Anthropic SDK's |
 | `boto3`, `botocore` | INFO | AWS SDK details |
 | `sqlalchemy_json` | INFO | JSON field operations |
 

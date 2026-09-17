@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from typing import Any
 
-import httpx
+import httpx2
 
 from ichrisbirch import util as utils
 
@@ -27,7 +27,7 @@ class APISession:
         self.base_url = base_url or self._settings.api_url
         self.credential_provider = credential_provider or InternalServiceProvider(settings=self._settings)
         self.default_headers = default_headers or {}
-        self.client = httpx.Client()
+        self.client = httpx2.Client()
 
     def request(self, method: str, endpoint: str, **kwargs) -> Any:
         """Make authenticated request."""

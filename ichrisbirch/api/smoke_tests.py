@@ -1,7 +1,7 @@
 import operator
 from time import perf_counter
 
-import httpx
+import httpx2
 import pendulum
 import structlog
 from fastapi.routing import APIRoute
@@ -45,8 +45,8 @@ async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.
     start = perf_counter()
     headers = {'Remote-User': admin_email, 'Remote-Email': admin_email}
 
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url='http://smoke-test') as client:
+    transport = httpx2.ASGITransport(app=app)
+    async with httpx2.AsyncClient(transport=transport, base_url='http://smoke-test') as client:
         for endpoint in endpoints:
             result = await _test_endpoint(client, endpoint, headers)
             results.append(result)
@@ -70,7 +70,7 @@ async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.
     return report
 
 
-async def _test_endpoint(client: httpx.AsyncClient, endpoint: dict, headers: dict[str, str]) -> schemas.admin.SmokeTestResult:
+async def _test_endpoint(client: httpx2.AsyncClient, endpoint: dict, headers: dict[str, str]) -> schemas.admin.SmokeTestResult:
     """Test a single endpoint and return the result."""
     start = perf_counter()
     try:

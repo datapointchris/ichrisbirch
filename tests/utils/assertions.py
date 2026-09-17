@@ -7,12 +7,12 @@ import logging
 import re
 from typing import Any
 
-import httpx
+import httpx2
 
 logger = logging.getLogger(__name__)
 
 
-def show_status_and_response(response: httpx.Response) -> dict[str, Any]:
+def show_status_and_response(response: httpx2.Response) -> dict[str, Any]:
     """Format status code with description and response content for debugging.
 
     Args:
@@ -33,7 +33,7 @@ def show_status_and_response(response: httpx.Response) -> dict[str, Any]:
     # Extract content safely
     try:
         content = response.json()
-    except (httpx.DecodingError, TypeError) as e:
+    except (httpx2.DecodingError, TypeError) as e:
         logger.warning(f'Error decoding response content: {e}')
         content = '<no response content>'
 

@@ -1,6 +1,6 @@
 import re
 
-import httpx
+import httpx2
 import pendulum
 import structlog
 from fastapi import APIRouter
@@ -51,20 +51,20 @@ async def create_github_issue(
     logger.info('github_issue_creating', title=issue.title, labels=issue.labels)
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             response = await client.post(
                 settings.github.api_url_issues,
                 json=data,
                 headers=settings.github.api_headers,
             )
             response.raise_for_status()
-    except httpx.HTTPStatusError as e:
+    except httpx2.HTTPStatusError as e:
         logger.error('github_issue_api_error', status=e.response.status_code, body=e.response.text)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f'GitHub API error: {e.response.status_code}',
         ) from e
-    except httpx.HTTPError as e:
+    except httpx2.HTTPError as e:
         logger.error('github_issue_request_error', error=str(e))
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

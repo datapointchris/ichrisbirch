@@ -3,7 +3,7 @@
 import logging
 import re
 
-import httpx
+import httpx2
 from fastapi import status
 from sqlalchemy.sql import select
 
@@ -21,7 +21,7 @@ def log_all_table_items(table_name, model, settings: Settings, model_attribute=N
         logger.warning(f'ALL {table_name.upper()}: {", ".join(items)}')
 
 
-def show_status_and_response(response: httpx.Response) -> dict[str, str]:
+def show_status_and_response(response: httpx2.Response) -> dict[str, str]:
     """Convert status code to description and return response if any."""
     d = {}
     try:
@@ -33,7 +33,7 @@ def show_status_and_response(response: httpx.Response) -> dict[str, str]:
         d = {response.status_code: 'UNKNOWN'}
     try:
         content = response.json()
-    except (httpx.DecodingError, TypeError) as e:
+    except (httpx2.DecodingError, TypeError) as e:
         logger.warning(f'error decoding response content: {e}')
         content = '<no response content>'
 

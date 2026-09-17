@@ -270,15 +270,15 @@ def test_invalid_input(test_api_logged_in):
 Use `unittest.mock` or `pytest-mock` to mock external dependencies:
 
 ```python
-@patch('httpx.get')
-def test_external_api(mock_httpx_get, test_api_logged_in):
+@patch('httpx2.get')
+def test_external_api(mock_get, test_api_logged_in):
     # Configure the mock
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {'key': 'value'}
-    mock_httpx_get.return_value = mock_response
+    mock_get.return_value = mock_response
 
-    # Test the function that uses httpx.get
+    # Test the function that uses httpx2.get
     response = test_api_logged_in.get('/endpoint-using-external-api/')
     assert response.status_code == status.HTTP_200_OK
 ```

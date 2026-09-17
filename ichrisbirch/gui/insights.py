@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from tkinter import messagebox
 
 import customtkinter as ctk
-import httpx
+import httpx2
 import pendulum
 import structlog
 from tkhtmlview import HTMLText
@@ -27,18 +27,18 @@ def submit_form():
 
     try:
         start = pendulum.now()
-        response = httpx.post(insights_endpoint, headers=headers, json={'url': url}, timeout=60)
+        response = httpx2.post(insights_endpoint, headers=headers, json={'url': url}, timeout=60)
         response.raise_for_status()
         elapsed = (pendulum.now() - start).in_words()
         article_insights = response.text
         display_elapsed_time(elapsed)
         display_html_response(article_insights)
 
-    except httpx.HTTPStatusError as e:
+    except httpx2.HTTPStatusError as e:
         message = f'Failed to submit task: {e}'
         logger.error('gui_insights_http_error', error=str(e))
         messagebox.showerror('Error', message)
-    except httpx.RequestError as e:
+    except httpx2.RequestError as e:
         message = f'An error occurred while making the request: {e}'
         logger.error('gui_insights_request_error', error=str(e))
         messagebox.showerror('Error', message)
