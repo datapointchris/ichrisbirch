@@ -393,7 +393,7 @@ def factory_session(truncate_tables):
     set_test_connection(connection)
 
     # Create session bound to this connection
-    session = Session(bind=connection)
+    session = Session(bind=connection, join_transaction_mode='create_savepoint')
 
     # Configure factories to use this session
     set_factory_session(session)
@@ -439,7 +439,7 @@ def create_transactional_api_client(login=False, admin=False):
     set_test_connection(connection)
 
     # Create session bound to this connection
-    session = Session(bind=connection)
+    session = Session(bind=connection, join_transaction_mode='create_savepoint')
 
     # Configure factories to use this session
     set_factory_session(session)
@@ -552,7 +552,7 @@ def create_multi_client_transactional_context():
     set_test_connection(connection)
 
     # Create session bound to this connection
-    session = Session(bind=connection)
+    session = Session(bind=connection, join_transaction_mode='create_savepoint')
 
     # Configure factories to use this session
     set_factory_session(session)

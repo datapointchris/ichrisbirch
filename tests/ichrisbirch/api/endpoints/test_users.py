@@ -362,7 +362,7 @@ def test_update_user_preferences_invalid_key(users_logged_in_context):
     client, _, _ = users_logged_in_context
     invalid_preferences = {'invalid_key': 'value'}
     response = client.patch('/users/me/preferences/', json=invalid_preferences)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     error_data = response.json()
     assert 'detail' in error_data
 
@@ -372,7 +372,7 @@ def test_update_user_preferences_invalid_value(users_logged_in_context):
     client, _, _ = users_logged_in_context
     invalid_preferences = {'theme': 'invalid_theme', 'notifications': True}
     response = client.patch('/users/me/preferences/', json=invalid_preferences)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     error_data = response.json()
     assert 'detail' in error_data
 

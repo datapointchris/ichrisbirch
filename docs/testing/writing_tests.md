@@ -262,7 +262,7 @@ def test_task_categories(test_api_logged_in, category):
 def test_invalid_input(test_api_logged_in):
     invalid_data = {'incomplete': 'data'}
     response = test_api_logged_in.post('/endpoint/', json=invalid_data)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 ```
 
 ## Mocking External Dependencies

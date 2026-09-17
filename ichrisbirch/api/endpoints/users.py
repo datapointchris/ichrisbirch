@@ -156,7 +156,7 @@ async def _update_user_preferences_helper(db_user: models.User, update_data: dic
         db_user.preferences = deep_merge(db_user.preferences, update_data)
     except ValueError as e:
         logger.error('preferences_update_failed', error=str(e))
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
     except Exception as e:
         logger.error('preferences_update_error', error=str(e), error_type=type(e).__name__)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='An unexpected error occurred') from e

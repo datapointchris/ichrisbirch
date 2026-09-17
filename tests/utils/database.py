@@ -136,7 +136,7 @@ def get_transactional_session() -> Generator[Session]:
         raise RuntimeError(
             'No test connection configured. Use the db_transaction fixture or ensure transaction isolation is set up before calling this.'
         )
-    session = Session(bind=_test_connection)
+    session = Session(bind=_test_connection, join_transaction_mode='create_savepoint')
     try:
         yield session
     finally:
@@ -159,7 +159,7 @@ def transactional_test_context(settings: Settings):
     transaction = connection.begin()
 
     set_test_connection(connection)
-    session = Session(bind=connection)
+    session = Session(bind=connection, join_transaction_mode='create_savepoint')
 
     try:
         yield session

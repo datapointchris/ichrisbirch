@@ -93,7 +93,7 @@ async def read_many_completed(
                 query = query.filter(models.HabitCompleted.complete_date <= pendulum.parse(str(end_date)))
         except ParserError as e:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f'Invalid date format: {e}',
             ) from e
         query = query.order_by(models.HabitCompleted.complete_date.desc())

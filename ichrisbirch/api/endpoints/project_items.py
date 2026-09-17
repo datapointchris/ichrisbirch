@@ -228,7 +228,7 @@ async def search(q: str, session: DbSession, repo: RepoFilter = None):
 async def create(item: schemas.ProjectItemCreate, session: DbSession):
     if not item.project_ids:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail='At least one project_id is required',
         )
 
@@ -393,7 +393,7 @@ async def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyC
     depends_on = resolve_item(session, dep.depends_on_id)
 
     if item.id == depends_on.id:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='An item cannot depend on itself')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail='An item cannot depend on itself')
 
     if session.get(ProjectItemDependency, (item.id, depends_on.id)):
         raise HTTPException(

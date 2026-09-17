@@ -219,7 +219,7 @@ def test_completed_with_invalid_dates(task_crud_tester):
             'end_date': '2020-04-30T23:59:59',
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
 def test_todo_with_limit(task_crud_tester):
@@ -297,7 +297,7 @@ class TestTaskStatusFilter:
         client, _ = task_crud_tester
         response = client.get(ENDPOINT, params={'status': 'todo'})
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
         assert 'open' in response.json()['detail'], 'the error must name the word that was meant'
 
     def test_limit_still_applies(self, task_crud_tester):
@@ -336,7 +336,7 @@ class TestTaskStatusFilter:
         client, _ = task_crud_tester
         response = client.get(ENDPOINT, params={'category': 'Personel'})
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
         assert 'Personal' in response.json()['detail'], 'the error must name the word that was meant'
 
     def test_omitting_the_category_lists_every_one(self, task_crud_tester):

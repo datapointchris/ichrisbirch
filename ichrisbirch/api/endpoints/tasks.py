@@ -71,12 +71,12 @@ async def read_many(
     """
     if task_status not in (*TASK_STATUSES, ALL_STATUSES):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f'Unknown task status {task_status!r}. Known statuses: {", ".join(TASK_STATUSES)}, all',
         )
     if category is not None and category not in TASK_CATEGORIES:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f'Unknown task category {category!r}. Known categories: {", ".join(TASK_CATEGORIES)}',
         )
 
@@ -137,7 +137,7 @@ async def completed(
                 query = query.filter(models.Task.complete_date <= datetime.fromisoformat(end_date))
         except ValueError as e:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f'Invalid date format: {e}. Expected ISO format (e.g., 2020-04-01T00:00:00)',
             ) from e
         query = query.order_by(models.Task.complete_date.desc())

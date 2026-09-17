@@ -48,7 +48,7 @@ class TestAPIErrorHandling:
             'priority': 1,
         }
         response = test_api_logged_in.post('/tasks/', json=invalid_task)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
         # Check error details
         error_data = response.json()
@@ -82,8 +82,8 @@ class TestAPIErrorHandling:
         """Test handling of malformed JSON."""
         # Send malformed JSON in request body
         headers = {'Content-Type': 'application/json'}
-        response = test_api_logged_in.post('/tasks/', headers=headers, data='{invalid-json:')
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        response = test_api_logged_in.post('/tasks/', headers=headers, content='{invalid-json:')
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_invalid_query_parameters(self, test_api_logged_in):
         """Test handling of invalid query parameters."""
@@ -91,7 +91,7 @@ class TestAPIErrorHandling:
         response = test_api_logged_in.get('/tasks/?priority=not_a_number')
 
         # Should either return 422 for validation error or empty results
-        assert response.status_code in (status.HTTP_422_UNPROCESSABLE_ENTITY, status.HTTP_200_OK)
+        assert response.status_code in (status.HTTP_422_UNPROCESSABLE_CONTENT, status.HTTP_200_OK)
 
         if response.status_code == status.HTTP_200_OK:
             # If API validates params but returns empty results, that's valid too

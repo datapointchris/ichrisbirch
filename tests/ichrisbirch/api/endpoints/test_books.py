@@ -288,7 +288,7 @@ class TestBookTagsValidation:
             'tags': [],
         }
         response = client.post(ENDPOINT, json=book_data)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
     def test_create_book_with_one_tag(self, book_crud_tester):
         """A single tag should be valid."""

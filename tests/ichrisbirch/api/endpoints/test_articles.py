@@ -402,7 +402,7 @@ def test_create_article_without_summary_returns_422(txn_api_logged_in):
     client, _ = txn_api_logged_in
     payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(datetime.now())}
     response = client.post(ENDPOINT, json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
 def test_create_article_without_save_date_returns_422(txn_api_logged_in):
@@ -410,7 +410,7 @@ def test_create_article_without_save_date_returns_422(txn_api_logged_in):
     client, _ = txn_api_logged_in
     payload = {'title': 'No Date', 'url': 'http://nodate.com', 'summary': 'Some summary'}
     response = client.post(ENDPOINT, json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, show_status_and_response(response)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
 # ---------------------------------------------------------------------------
