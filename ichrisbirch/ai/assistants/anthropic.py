@@ -5,8 +5,9 @@ the subscription OAuth token in `AI_ANTHROPIC_OAUTH_TOKEN`, so it draws on the
 Claude plan rather than API credits. That token authenticates only through Claude
 Code, which is why the call is a CLI session and not a Messages API request.
 
-Claude Code ranks `ANTHROPIC_API_KEY` above the OAuth token, so that variable
-must never be set in the environment of a process that imports this module.
+The CLI inherits this process's environment. Claude Code ranks `ANTHROPIC_API_KEY`
+and `ANTHROPIC_AUTH_TOKEN` above the OAuth token, so `options()` blanks both on
+every call rather than trusting the environment to leave them unset.
 """
 
 import dataclasses
@@ -18,11 +19,19 @@ import structlog
 from claude_agent_sdk import AssistantMessage
 from claude_agent_sdk import ClaudeAgentOptions
 from claude_agent_sdk import ClaudeSDKError
+from claude_agent_sdk import HookCallback
+from claude_agent_sdk import HookContext
+from claude_agent_sdk import HookInput
+from claude_agent_sdk import HookJSONOutput
+from claude_agent_sdk import HookMatcher
 from claude_agent_sdk import RateLimitEvent
 from claude_agent_sdk import RateLimitInfo
 from claude_agent_sdk import ResultError
 from claude_agent_sdk import ResultMessage
+from claude_agent_sdk import ToolResultBlock
+from claude_agent_sdk import UserMessage
 from claude_agent_sdk import query
+from claude_agent_sdk.types import HookEvent
 from pydantic import BaseModel
 from pydantic import ValidationError
 
@@ -37,6 +46,38 @@ STRUCTURED_OUTPUT_RETRIES_EXHAUSTED = 'error_max_structured_output_retries'
 LIMIT_REJECTED = 'rejected'
 
 MESSAGE_EXCERPT_CHARS = 160
+
+# A tool-less call takes one or two turns and a recipe search four to six. A model
+# that kept retrying a denied search ran to twenty, spending the plan's usage limit
+# on every turn, and this ceiling ends such a session first.
+MAX_TURNS = 16
+
+# A bare denial reads to the model as a passing refusal, and it retries the tool.
+# Saying the tool is gone and asking for the answer is what ends the searching.
+TOOL_LIMIT_REACHED = (
+    'This tool is no longer available for this request because its call limit is reached. '
+    'Do not call it again. Answer now with what you have already found.'
+)
+
+
+def deny_tool_calls_past(limit: int) -> HookCallback:
+    """A PreToolUse hook that allows `limit` tool calls in one session and denies every later one."""
+    calls = 0
+
+    async def hook(input_data: HookInput, tool_use_id: str | None, context: HookContext) -> HookJSONOutput:
+        nonlocal calls
+        calls += 1
+        if calls <= limit:
+            return {}
+        return {
+            'hookSpecificOutput': {
+                'hookEventName': 'PreToolUse',
+                'permissionDecision': 'deny',
+                'permissionDecisionReason': TOOL_LIMIT_REACHED,
+            }
+        }
+
+    return hook
 
 
 class AssistantFailure(enum.StrEnum):
@@ -89,12 +130,24 @@ class SessionSignals:
     truncated: bool = False
 
     def observe(self, message: object) -> None:
+        """Record what `message` says about how the session ended.
+
+        A reply that reaches the output cap is resumed rather than ended: Claude Code
+        adds a user turn telling the model to carry on, and the result then holds only
+        the part after that turn, reported as a success. Every other user turn in a
+        session carries tool results, so a user turn without them is the cap. The
+        `max_output_tokens` error arrives only when the resumes run out too.
+        """
         match message:
             case RateLimitEvent():
                 self.limit = message.rate_limit_info
             case AssistantMessage(error=error) if error is not None:
                 self.rate_limited = self.rate_limited or error == RATE_LIMITED
                 self.truncated = self.truncated or error == OUTPUT_TOKEN_CAP_REACHED
+            case UserMessage(content=list() as blocks) if all(isinstance(block, ToolResultBlock) for block in blocks):
+                pass
+            case UserMessage():
+                self.truncated = True
 
     @property
     def usage_limit_reached(self) -> bool:
@@ -109,30 +162,51 @@ class SessionSignals:
 class AnthropicAssistant:
     """A one-shot Claude call: a system prompt, the content, and the tools the caller names.
 
-    Each call is a fresh Claude Code session that loads nothing from disk — no
-    CLAUDE.md, settings or skills — so the reply depends on the system prompt and
-    the content alone. `tools` are the only tools the model has, and they run
-    without a permission prompt because nobody is present to answer one.
+    Each call is a fresh Claude Code session that loads nothing from disk or from
+    the account — no CLAUDE.md, settings, skills or MCP servers — so the reply
+    depends on the system prompt and the content alone. `tools` are the only tools
+    the model has, and they run without a permission prompt because nobody is
+    present to answer one. `max_tool_uses` caps how many times the model may call
+    them, and `MAX_TURNS` ends any session that keeps going.
     """
 
-    def __init__(self, name: str, system_prompt: str, settings: Settings, tools: list[str] | None = None):
+    def __init__(
+        self,
+        name: str,
+        system_prompt: str,
+        settings: Settings,
+        tools: list[str] | None = None,
+        max_tool_uses: int | None = None,
+    ):
         self.name = name
         self.system_prompt = system_prompt
         self.settings = settings
         self.tools = tools or []
+        self.max_tool_uses = max_tool_uses
 
     def options(self, max_tokens: int, output_format: dict | None) -> ClaudeAgentOptions:
+        """Build one session's options. The tool-call count lives in the hook, so a session gets its own."""
+        hooks: dict[HookEvent, list[HookMatcher]] | None = None
+        if self.tools and self.max_tool_uses is not None:
+            limit = HookMatcher(matcher='|'.join(self.tools), hooks=[deny_tool_calls_past(self.max_tool_uses)])
+            hooks = {'PreToolUse': [limit]}
         return ClaudeAgentOptions(
             model=self.settings.ai.anthropic.model,
             system_prompt=self.system_prompt,
             tools=self.tools,
             allowed_tools=self.tools,
             setting_sources=[],
+            strict_mcp_config=True,
             thinking={'type': 'disabled'},
+            max_turns=MAX_TURNS,
+            hooks=hooks,
             output_format=output_format,
             env={
                 'CLAUDE_CODE_OAUTH_TOKEN': self.settings.ai.anthropic.oauth_token,
                 'CLAUDE_CODE_MAX_OUTPUT_TOKENS': str(max_tokens),
+                'ANTHROPIC_API_KEY': '',
+                'ANTHROPIC_AUTH_TOKEN': '',
+                'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC': '1',
             },
             extra_args={'no-session-persistence': None},
         )
@@ -182,7 +256,7 @@ class AnthropicAssistant:
 
         if result is None:
             raise AssistantOutputError(AssistantFailure.FAILED, f'{self.name} ended without a result', '')
-        if result.is_error:
+        if result.is_error or signals.truncated:
             raise self.failure(result.subtype, result.api_error_status, result.result or '', signals, max_tokens)
 
         usage = result.usage or {}
@@ -208,11 +282,11 @@ class AnthropicAssistant:
         signals: SessionSignals,
         max_tokens: int,
     ) -> AssistantOutputError | AssistantUsageLimitReached:
-        """Classify a session that ended in an error.
+        """Classify a session that ended in an error or ran past the output cap.
 
         A capped reply is a fragment that reads as a whole one, so it is refused
-        rather than returned — /articles/insights/ would otherwise render half an
-        answer with a 200.
+        rather than returned — /articles/insights/ would otherwise render the resumed
+        tail of an answer with a 200.
         """
         if signals.usage_limit_reached:
             limit = signals.limit
