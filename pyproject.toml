@@ -123,9 +123,9 @@ test = [
   "pytest-md>=0.2.0",
   "filelock>=3.13.0",
   # FastAPI's TestClient is starlette's, and starlette builds it on httpx2 from
-  # 1.6.0. Below that it returns httpx responses, which the test helpers do not
+  # 1.2.0. Below that it returns httpx responses, which the test helpers do not
   # annotate for.
-  "starlette>=1.6.0",
+  "starlette>=1.2.0",
   # Test data generation and mocking
   "Faker>=25.0.1",
   "freezegun>=1.5.1",

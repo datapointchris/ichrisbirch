@@ -1369,7 +1369,7 @@ test = [
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "pytest-md", specifier = ">=0.2.0" },
     { name = "pytest-playwright", specifier = ">=0.4.4" },
-    { name = "starlette", specifier = ">=1.6.0" },
+    { name = "starlette", specifier = ">=1.2.0" },
 ]
 
 [[package]]
