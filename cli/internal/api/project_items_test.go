@@ -10,6 +10,25 @@ import (
 	"testing"
 )
 
+// A list row as the API sends it, so the field names the ordering reads are the
+// ones on the wire rather than the ones the struct tags assume.
+func TestProjectItemDecodes_ItsQueuePositionInEachProject(t *testing.T) {
+	body := `{"id":"01a0adc2-8e9b-75cf-938d-f6e392464e36","number":375,"title":"Back","status":"open",` +
+		`"completed":false,"archived":false,"created_at":"2026-09-17T05:06:43.990201Z",` +
+		`"projects":[{"id":"01a0adc2-8e5f-747b-aac5-708da2b5e07d","name":"Contract probe","kind":"build",` +
+		`"position":0,"created_at":"2026-09-17T05:06:43.916339Z"}],` +
+		`"memberships":[{"project_id":"01a0adc2-8e5f-747b-aac5-708da2b5e07d","position":1}],"dependency_ids":[]}`
+
+	var item ProjectItem
+	if err := json.Unmarshal([]byte(body), &item); err != nil {
+		t.Fatalf("decoding a list row: %v", err)
+	}
+	want := []ProjectItemMembership{{ProjectID: "01a0adc2-8e5f-747b-aac5-708da2b5e07d", Position: 1}}
+	if len(item.Memberships) != 1 || item.Memberships[0] != want[0] {
+		t.Errorf("memberships = %+v, want %+v", item.Memberships, want)
+	}
+}
+
 func TestCreateItem_SendsProjectIDs(t *testing.T) {
 	var gotPath string
 	var gotBody map[string]any
