@@ -900,6 +900,19 @@ class TestProjectItemListEmbedsDetail:
         assert [task['title'] for task in by_id[blocked_id]['tasks']] == ['Embedded task']
         assert by_id[blocker_id]['tasks'] == []
 
+    def test_list_embeds_each_membership_with_its_position(self, item_with_dependency_and_task):
+        client, blocker_id, blocked_id = item_with_dependency_and_task
+        project_id = client.get(PROJECTS_ENDPOINT).json()[0]['id']
+
+        by_id = {item['id']: item for item in client.get(PROJECT_ITEMS_ENDPOINT).json()}
+        blocker_memberships = by_id[blocker_id]['memberships']
+        blocked_memberships = by_id[blocked_id]['memberships']
+
+        assert [membership['project_id'] for membership in blocker_memberships] == [project_id]
+        assert [membership['project_id'] for membership in blocked_memberships] == [project_id]
+        # Created in this order, so the blocker is queued ahead of the item it blocks.
+        assert blocker_memberships[0]['position'] < blocked_memberships[0]['position']
+
     def test_list_matches_the_detail_endpoint(self, item_with_dependency_and_task):
         """The embedded values must agree with the per-item endpoint they replace."""
         client, _, blocked_id = item_with_dependency_and_task
@@ -909,6 +922,7 @@ class TestProjectItemListEmbedsDetail:
 
         assert listed['dependency_ids'] == detail['dependency_ids']
         assert [p['id'] for p in listed['projects']] == [p['id'] for p in detail['projects']]
+        assert listed['memberships'] == detail['memberships']
 
     def test_list_query_count_does_not_grow_with_item_count(self, item_with_dependency_and_task):
         """Guards the reason this exists: embedding must not move the N+1 into SQL.
@@ -1039,6 +1053,19 @@ class TestProjectItemReorder:
 
         assert self.titles_in_order(client, other['id']) == ['Alpha', 'Beta']
         assert self.positions_in_order(client, other['id']) == [0, 1]
+
+    def test_the_item_list_reports_the_position_the_project_orders_by(self, project_with_ordered_items):
+        client, project_id = project_with_ordered_items
+        target = self.item_id_by_title(client, project_id, 'Third')
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+
+        position_by_title = {}
+        for item in client.get(PROJECT_ITEMS_ENDPOINT).json():
+            for membership in item['memberships']:
+                if membership['project_id'] == project_id:
+                    position_by_title[item['title']] = membership['position']
+
+        assert sorted(position_by_title, key=position_by_title.__getitem__) == self.titles_in_order(client, project_id)
 
 
 class TestProjectItemNumber:

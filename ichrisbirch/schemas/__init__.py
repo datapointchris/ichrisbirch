@@ -67,6 +67,7 @@ from ichrisbirch.schemas.project_item import ProjectItemCreate
 from ichrisbirch.schemas.project_item import ProjectItemDependencyCreate
 from ichrisbirch.schemas.project_item import ProjectItemDetail
 from ichrisbirch.schemas.project_item import ProjectItemInProject
+from ichrisbirch.schemas.project_item import ProjectItemMembership
 from ichrisbirch.schemas.project_item import ProjectItemMembershipCreate
 from ichrisbirch.schemas.project_item import ProjectItemReorder
 from ichrisbirch.schemas.project_item import ProjectItemUpdate
@@ -176,6 +177,7 @@ __all__ = [
     'ProjectItemDependencyCreate',
     'ProjectItemDetail',
     'ProjectItemInProject',
+    'ProjectItemMembership',
     'ProjectItemMembershipCreate',
     'ProjectItemReorder',
     'ProjectItemUpdate',

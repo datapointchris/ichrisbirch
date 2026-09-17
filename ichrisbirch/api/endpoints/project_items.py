@@ -42,6 +42,7 @@ router = APIRouter()
 # into SQL. Applied as one name so a new list endpoint cannot pick a subset.
 PROJECT_ITEM_LOAD_OPTIONS = (
     selectinload(models.ProjectItem.projects),
+    selectinload(models.ProjectItem.memberships),
     selectinload(models.ProjectItem.dependencies),
     selectinload(models.ProjectItem.tasks),
 )
@@ -136,6 +137,7 @@ def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDe
         created_at=item.created_at,
         updated_at=item.updated_at,
         projects=[schemas.Project.model_validate(p) for p in projects],
+        memberships=[schemas.ProjectItemMembership.model_validate(m) for m in item.memberships],
         dependency_ids=dependency_ids,
     )
 

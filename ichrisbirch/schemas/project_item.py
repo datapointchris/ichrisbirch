@@ -46,6 +46,19 @@ ItemRef = UUID | int | str
 ProjectRef = UUID | str
 
 
+class ProjectItemMembership(ProjectItemConfig):
+    """Where an item sits in one of its projects.
+
+    `projects` says which work an item belongs to and `position` says where it is
+    queued there, which is the order a reader takes the work in. Carrying it on
+    every item means a client ordering items across projects reads one list
+    rather than each project's.
+    """
+
+    project_id: UUID
+    position: int
+
+
 class ProjectItemCreate(ProjectItemConfig):
     id: UUID | None = None
     title: str
@@ -79,6 +92,7 @@ class ProjectItem(ProjectItemStatusFields):
     created_at: datetime
     updated_at: datetime
     projects: list[Project] = []
+    memberships: list[ProjectItemMembership] = []
     dependency_ids: list[UUID] = []
     tasks: list[ProjectItemTask] = []
 
@@ -103,6 +117,7 @@ class ProjectItemDetail(ProjectItemStatusFields):
     created_at: datetime
     updated_at: datetime
     projects: list[Project]
+    memberships: list[ProjectItemMembership]
     dependency_ids: list[UUID]
 
 
