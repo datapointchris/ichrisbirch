@@ -13,8 +13,8 @@ The test environment uses Docker Compose to provide isolated, reproducible infra
 │                    Test Environment                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Postgres │  │  Redis   │  │   API    │  │   App    │        │
-│  │  :5434   │  │  :6380   │  │  :8001   │  │  :5001   │        │
+│  │ Postgres │  │  Redis   │  │   API    │  │   Vue    │        │
+│  │  :5434   │  │  :6380   │  │  :8001   │  │  :5174   │        │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘        │
 │       │             │             │             │               │
 │       └─────────────┴─────────────┴─────────────┘               │
@@ -32,79 +32,53 @@ Located in `tests/environment.py`, this class manages the Docker Compose test en
 
 ### Key Features
 
-- **Docker Compose orchestration:** Starts/stops all test containers
-- **CI detection:** Adjusts behavior when running in GitHub Actions
-- **Health checking:** Waits for services to be ready
-- **Database initialization:** Creates tables and test users
-
-### Class Structure
-
-```python
-class DockerComposeTestEnvironment:
-    # Compose file combinations
-    COMPOSE_FILES = '-f docker-compose.yml -f docker-compose.test.yml'
-    COMPOSE_FILES_CI = '-f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml'
-
-    @property
-    def is_ci(self) -> bool:
-        """Detect if running in CI environment."""
-        return os.environ.get('CI', '').lower() == 'true'
-
-    def setup(self):
-        """Start containers and initialize database."""
-
-    def teardown(self):
-        """Stop containers (skipped in CI)."""
-```
+- **Container reuse:** Reuses running test containers, starts them when they are not running
+- **CI detection:** Expects containers the workflow already started when running in GitHub Actions
+- **Health checking:** Waits for Postgres, Redis and the API to respond
+- **Database readiness:** Brings the database to the current schema, then truncates it
 
 ### Lifecycle Methods
 
 #### `setup()`
 
-Called at the start of the test session:
+Called once at the start of the test session by the `setup_test_environment` fixture:
 
-1. **CI check:** If in CI, verify containers are already running
-2. **Local:** Always do full cleanup and start fresh (handles back-to-back runs)
-3. **Database init:** Create tables and insert test users
+1. **CI:** Verify the containers the workflow started are running.
+2. **Local:** Reuse running `postgres`, `redis` and `api` containers, or run `docker compose up -d` and wait for them.
+3. **Initialize:** `full_initialization()` creates missing schemas, migrates to head, creates the APScheduler jobstore table, and inserts the default users.
+4. **Truncate:** Truncate every table, then re-insert lookup data and the default users.
 
 ```python
 def setup(self):
     if self.is_ci:
-        # CI: Containers pre-started by workflow
         if not self.docker_test_services_already_running():
-            raise RuntimeError('CI containers not running')
+            ...  # wait once, then raise
     else:
-        # Local: Always do full cleanup first (handles race conditions from back-to-back runs)
-        self.stop_docker_compose()
-        time.sleep(3)  # Wait for volumes/networks to be fully released
-        self.setup_test_services()
+        if self.docker_test_services_already_running():
+            self.verify_test_services()
+        else:
+            self.setup_test_services()
 
-    self.ensure_database_ready()
+    full_initialization(self.settings)
+    self.truncate_test_database()
 ```
 
-> **Note:** The local environment always does a full cleanup before starting. This ensures reliable behavior when running tests back-to-back (e.g., pre-commit hooks running affected tests then full suite). The time penalty (~50s for container restart) is accepted for reliability.
+Step 3 runs on every session. The test Postgres keeps its data on tmpfs, so a container that was stopped or recreated holds an empty database while every health check passes. Initialization is idempotent, so a database already at head passes through unchanged. A new migration is applied at the next session without restarting anything.
+
+Migrations run inside the pytest process. `_get_alembic_config()` passes `configure_logger=False`, so `alembic/env.py` skips `fileConfig`. That call would otherwise disable every logger the test process had already created.
+
+Any exception during setup ends the session through `pytest.exit`.
 
 #### `teardown()`
 
-Called at the end of the test session:
-
-```python
-def teardown(self):
-    if self.is_ci:
-        # CI: Cleanup handled by workflow
-        return
-    # Local: Stop containers
-    self.stop_docker_compose()
-```
+Leaves the containers running, so the next session reuses them. Stop them with `./ops/icbops testing stop`.
 
 ## Running Tests Locally
 
-### Clean Start Strategy
-
-The test environment uses a "clean start" strategy for reliability:
+### Container Reuse
 
 ```bash
-# Run all tests (starts fresh containers each time)
+# Run all tests (starts containers if needed)
 ./ops/icbops test run
 
 # Run specific tests
@@ -112,8 +86,9 @@ The test environment uses a "clean start" strategy for reliability:
 
 # Run with verbose output
 ./ops/icbops test run -v
-
 ```
+
+`icbops test run` reuses the stack when `icb-test-api` reports `healthy`. Otherwise it removes any existing test containers and runs `testing start`. Container health says nothing about the schema, so pytest's session setup initializes the database either way.
 
 This approach provides:
 
@@ -124,22 +99,23 @@ This approach provides:
 
 ### Database Lifecycle
 
-The test database has two CLI operations and one internal operation:
+The test database has two CLI operations and two internal operations:
 
 | Operation | What it does | When |
 | --- | --- | --- |
-| **Initialize** (`db init`) | Create schemas + run migrations + insert users | Container startup (DB is empty) |
-| **Reset** (`db reset`) | Drop everything + initialize from scratch | Manual only — when migrations change |
-| **Truncate** (pytest fixture) | TRUNCATE all tables, re-insert lookup data | Automatically between test runs |
+| **Initialize** (`db init`) | Create missing schemas, migrate to head, create the jobstore table, insert default users. Idempotent. | End of every `testing start`, `testing restart` and `testing rebuild` |
+| **Initialize** (pytest session setup) | The same `full_initialization()` | Start of every pytest session |
+| **Reset** (`db reset`) | Drop everything + initialize from scratch | Manual only — a corrupt schema, or a migration edited after it was applied |
+| **Truncate** (pytest session setup) | TRUNCATE all tables, re-insert lookup data and default users | Start of every pytest session |
 
-Truncation is handled internally by the pytest `truncate_tables` fixture. It preserves the schema so the API container's connection pool stays valid — no container restart needed.
+Truncation preserves the schema, so the API container's connection pool stays valid — no container restart needed.
 
 ### Network Isolation
 
 Test and dev environments use separate proxy networks to avoid conflicts:
 
-- **Development:** `proxy-dev` network
-- **Testing:** `proxy-test` network
+- **Development:** `icb-dev-proxy` network
+- **Testing:** `icb-test-proxy` network
 
 This allows both environments to run simultaneously without Traefik routing conflicts.
 
@@ -175,7 +151,7 @@ The test and development environments can run simultaneously on different ports:
 | PostgreSQL | 5432 | 5434 |
 | Redis | 6379 | 6380 |
 | API | 8000 | 8001 |
-| App | 5000 | 5001 |
+| Vue | 5173 | 5174 |
 | Traefik HTTPS | 443 | 8443 |
 
 This allows you to run tests without stopping your development environment.
@@ -186,32 +162,36 @@ In GitHub Actions, the environment behaves differently:
 
 ### Workflow Pre-starts Containers
 
-The CI workflow starts containers before pytest runs:
+The CI workflow starts containers and initializes the database before pytest runs:
 
 ```yaml
-- name: Start Docker Compose test environment
+- name: Start test services
   run: |
-    docker compose ... up -d --build postgres redis
-    sleep 10
-    docker compose ... up -d --build api app scheduler
-    sleep 30
+    docker compose ... --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
+    docker compose ... --project-name icb-test up -d --build --wait --wait-timeout 180 api scheduler
+
+- name: Initialize test database
+  run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
 ```
 
 ### Test Fixtures Skip Container Management
 
 ```python
 if self.is_ci:
-    logger.info('Running in CI - containers should be pre-started')
+    logger.info('Running in CI environment - containers should be pre-started by workflow')
     # Just verify they're running, don't try to start
 ```
 
+Session setup still initializes and truncates the database in CI. Initialization finds the database already at head.
+
 ### CI Override File
 
-The `docker-compose.ci.yml` file removes local-only configurations:
+The `docker-compose.ci.yml` file adjusts the test stack for the runner:
 
-- No AWS credentials bind mount (uses env vars)
-- Internal bridge network (not external)
-- Traefik dashboard disabled
+- The API drops the Docker socket bind mount
+- Vue skips the image build and allows a longer health check start period for a cold `npm install`
+- Traefik runs with the dashboard disabled
+- The proxy network is created by Compose rather than expected to exist
 
 ## Database Configuration
 
@@ -221,6 +201,8 @@ The test environment uses tmpfs for PostgreSQL:
 
 ```yaml
 postgres:
+  environment:
+    - PGDATA=/tmp/postgres
   tmpfs:
     - /tmp/postgres
   command: >
@@ -233,8 +215,8 @@ postgres:
 This provides:
 
 - Fast writes (no disk I/O)
-- Fresh database each run
-- No persistence between runs
+- An empty database whenever the container stops or is recreated
+- No persistence between container lifetimes
 
 ### Test Users
 
@@ -242,32 +224,24 @@ The fixture `insert_users_for_login` creates test users:
 
 | User | Email | Role | Purpose |
 | --- | --- | --- | --- |
-| Test User | <testlogin@test.com> | User | Regular user tests |
-| Test Admin | <testloginadmin@testadmin.com> | Admin | Admin-only tests |
+| Test User to be Sacrificed for Delete Test | <sacrifice@testgods.com> | User | Deleted by the users endpoint tests |
+| Test Login Regular User | <testloginregular@testuser.com> | User | Regular user tests |
+| Test Login Admin User | <testloginadmin@testadmin.com> | Admin | Admin-only tests |
 
 ## Health Checks
 
 ### Service Health Check
 
-The environment waits for services to be healthy:
+The environment checks that the containers it needs are running:
 
 ```python
-def docker_test_services_already_running(self, required_services=None):
-    """Check if required Docker services are running."""
+def docker_test_services_already_running(self, required_services=None) -> bool:
+    """Returns True if all required Docker Compose services are running."""
     if required_services is None:
-        required_services = ['postgres', 'redis', 'api', 'app']
-    # Check each service status
+        required_services = {'postgres', 'redis', 'api'}
 ```
 
-### Database Health Check
-
-```python
-def ensure_database_ready(self):
-    """Wait for database to accept connections and create tables."""
-    # Retry connection with backoff
-    # Create all SQLAlchemy tables
-    # Insert test users
-```
+`verify_test_services()` then waits for Postgres and Redis to accept a socket connection and for the API's `/health` to return 200. None of these checks read the schema, which is why setup initializes the database after them.
 
 ## Troubleshooting
 
@@ -275,22 +249,20 @@ def ensure_database_ready(self):
 
 ```bash
 # Check container status
-docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name icb-test ps
+./ops/icbops testing status
 
 # View logs
-docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name icb-test logs
+./ops/icbops testing logs
 ```
 
 ### Database Connection Issues
 
 ```bash
-# Test database connection
-docker compose exec postgres psql -U postgres -d ichrisbirch -c "SELECT 1"
+# Full diagnostic health check
+./ops/icbops testing health
 
-# Check postgres logs
-docker compose logs postgres
+# Postgres logs
+./ops/icbops testing logs --service postgres
 ```
 
 ### Port Conflicts
@@ -333,7 +305,7 @@ gh run view <run-id> --log-failed
 
 | Fixture | Purpose |
 | --- | --- |
-| `setup_test_environment` | Start Docker Compose, create tables |
+| `setup_test_environment` | Start or reuse containers, initialize and truncate the database |
 | `truncate_tables` | Manage table lifecycle |
 | `insert_users_for_login` | Create test users |
 
@@ -344,8 +316,6 @@ gh run view <run-id> --log-failed
 | `test_api` | Unauthenticated API client |
 | `test_api_logged_in` | Authenticated regular user |
 | `test_api_logged_in_admin` | Authenticated admin user |
-| `test_app` | Flask test client |
-| `test_app_logged_in` | Flask client with session |
 
 ### Function-Scoped (run once per test)
 

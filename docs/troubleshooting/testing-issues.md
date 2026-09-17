@@ -33,59 +33,14 @@ This silently suppressed cleanup errors, so failed cleanup operations went unnot
 - Checking for specific container names only - missed containers with dynamic names
 - Using docker-compose down without additional cleanup - didn't handle edge cases where compose cleanup failed
 
-**Resolution:** Implemented container reuse strategy with database reset:
+**Resolution:** Test containers are reused rather than recreated on every run. `test-run` in `ops/icbops` works in four steps:
 
-**Test run command** (`ops/icbops:208-259`):
-
-```bash
-function test-run() {
-  cd "$ICHRISBIRCH_HOME" || exit
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-  export ENVIRONMENT=testing
-
-  # Check if containers are already running and healthy
-  local containers_ready=false
-  if $COMPOSE_TEST ps --status running -q 2>/dev/null | grep -q .; then
-    echo "Test containers already running, checking health..."
-    if $COMPOSE_TEST ps | grep -q "healthy"; then
-      containers_ready=true
-      echo "Containers healthy, reusing them"
-    else
-      echo "Containers unhealthy, restarting..."
-      $COMPOSE_TEST down --volumes 2>/dev/null || true
-    fi
-  fi
-
-  if [ "$containers_ready" = false ]; then
-    ensure-proxy-network
-    echo "Starting test containers..."
-    $COMPOSE_TEST up -d
-    sleep 15
-  fi
-
-  # Always reset database to ensure clean state
-  echo "Initializing test database..."
-  ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization \
-    --env testing --db-host localhost --db-port 5434
-
-  # Run pytest
-  uv run pytest "$@"
-
-  # Leave containers running for fast iteration
-  echo "Containers left running for fast iteration."
-  echo "Stop them with: icbops testing stop"
-}
-```
-
-**Key improvements:**
-
-1. **Container reuse**: Reuses healthy containers instead of recreating them each run
-2. **Health checking**: Verifies container health before reusing
-3. **Database reset**: Always reinitializes database for clean test state
+1. **Container reuse**: Reuses the stack when `icb-test-api` reports `healthy`
+2. **Unhealthy recovery**: Otherwise removes any existing test containers and runs `testing start`, which initializes the database
+3. **Database readiness**: pytest's session setup migrates the database to head, then truncates it
 4. **Fast iteration**: Leaves containers running after tests for quick re-runs
-5. **Unhealthy recovery**: Restarts containers if they're unhealthy
 
-**Prevention:** The container reuse approach prevents network conflicts because containers are not constantly being created and destroyed. The database reset ensures clean state without the overhead of container recreation.
+**Prevention:** The container reuse approach prevents network conflicts because containers are not constantly being created and destroyed. Truncation at session start gives each run a clean database without the overhead of container recreation.
 
 **Manual cleanup when needed:**
 
@@ -103,53 +58,26 @@ docker network prune -f
 
 ### Schema Creation Failures
 
-**Problem:** Tests fail because the database schema doesn't exist.
+**Problem:** pytest stops in session setup before any test runs, because the database has no schema.
 
 **Error Messages:**
 
 ```text
-psycopg2.errors.InvalidSchemaName: schema "ichrisbirch_test" does not exist
-sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "users" does not exist
+_pytest.outcomes.Exit: Exiting due to setup failure: (psycopg.errors.InvalidSchemaName) schema "admin" does not exist
+[SQL: TRUNCATE "admin"."scheduler_job_runs", ... RESTART IDENTITY CASCADE]
 ```
 
-**Root Cause:** Test database doesn't have the required schema or tables created.
+**Root Cause:** The test Postgres keeps its data on tmpfs, so stopping or recreating that container leaves an empty database. Its health check and the API's `/health` both pass over an empty database.
 
-**Resolution:**
+**Resolution:** Every verb that brings the test containers up initializes the database, through `env-initialize` in `ops/icbops`. pytest's session setup also runs `full_initialization()` before truncating. Both are idempotent.
 
-1. **Ensure schema environment variable is set:**
-
-```yaml
-# docker-compose.test.yml
-services:
-  test-runner:
-    environment:
-      - POSTGRES_DB_SCHEMA=ichrisbirch_test
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ichrisbirch
-```
-
-1. **Run Alembic migrations in test setup:**
-
-```python
-# In your test configuration
-from alembic import command
-from alembic.config import Config
-from ichrisbirch.database import get_sqlalchemy_session
-
-def setup_test_database():
-    # Run migrations to create schema
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
-```
-
-1. **Verify database connection:**
+If the error still appears, initialization itself is failing. Its output ends the `testing start` run:
 
 ```bash
-# Test database connectivity
-docker-compose -f docker-compose.test.yml run test-runner uv run python -c "
-from ichrisbirch.config import settings
-print(f'Database URL: {settings.database_url}')
-"
+./ops/icbops testing stop && ./ops/icbops testing start
 ```
+
+`./ops/icbops testing db init` runs the same initialization on its own against the running stack.
 
 ### Test Data Isolation Issues
 
