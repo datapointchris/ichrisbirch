@@ -199,6 +199,27 @@ function wait-for-healthy() {
   return 1
 }
 
+# Every verb that brings an environment's containers up ends here. The test
+# Postgres keeps PGDATA on tmpfs, so a recreated container holds an empty
+# database, and a healthy container says nothing about its schema.
+# Initialization is idempotent, so a database that survived passes through
+# unchanged.
+function env-initialize() {
+  local env="$1"
+  local container
+  container="$(db-container-prefix "$env")-api"
+
+  echo "Waiting for ${container}..."
+  wait-for-healthy "$container" 60 || true
+
+  if db-init "$env"; then
+    echo "${green}Database initialized${reset}"
+  else
+    echo "${red}Database initialization failed${reset}"
+    return 1
+  fi
+}
+
 function env-docker-config() {
   local env="$1"
   shift
@@ -247,10 +268,7 @@ function dev-start() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Starting ${blue}DEV${reset} environment"
   $COMPOSE_DEV up -d
-
-  echo "Waiting for API container..."
-  wait-for-healthy icb-dev-api 30 || true
-  docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development 2>/dev/null || true
+  env-initialize development || return 1
 
   echo ""
   echo "Development environment started:"
@@ -275,6 +293,7 @@ function dev-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}DEV${reset} environment"
   $COMPOSE_DEV up -d
+  env-initialize development || return 1
   dev-credentials
 }
 
@@ -322,10 +341,7 @@ function dev-rebuild() {
     $COMPOSE_DEV up -d --force-recreate api scheduler vue
   fi
 
-  echo "Waiting for API container..."
-  wait-for-healthy icb-dev-api 60
-  echo "Initializing database..."
-  docker exec icb-dev-api python -m ichrisbirch.database.initialization --env development
+  env-initialize development || return 1
   echo "Seeding database..."
   db-seed development
   echo "${green}DEV environment rebuilt, initialized, and seeded${reset}"
@@ -411,28 +427,23 @@ function test-run() {
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
 
-  # Check if containers are already running and healthy
-  local containers_ready=false
-  if $COMPOSE_TEST ps --status running -q 2>/dev/null | grep -q .; then
-    echo "${blue}Test containers already running, checking health...${reset}"
-    if $COMPOSE_TEST ps | grep -q "healthy"; then
-      containers_ready=true
-      echo "${green}Containers healthy, reusing them${reset}"
-    else
-      echo "${yellow}Containers unhealthy, restarting...${reset}"
-      $COMPOSE_TEST down --volumes 2>/dev/null || true
+  # Container health is the only readiness checked here. A healthy API can sit
+  # over an empty database, so pytest's session setup brings the schema to head
+  # before it truncates.
+  local api_health
+  api_health=$(docker inspect --format='{{.State.Health.Status}}' icb-test-api 2>/dev/null)
+  if [[ "$api_health" == "healthy" ]]; then
+    echo "${green}Test containers healthy, reusing them${reset}"
+  else
+    if [[ -n "$api_health" ]]; then
+      echo "${yellow}icb-test-api is ${api_health}, recreating test containers...${reset}"
+      $COMPOSE_TEST down --volumes
     fi
+    testing-start || return 1
   fi
 
-  if [ "$containers_ready" = false ]; then
-    echo "${blue}Starting test containers...${reset}"
-    $COMPOSE_TEST up -d
-    echo "Waiting for API container..."
-    wait-for-healthy icb-test-api 60 || true
-  fi
-
-  # Database truncation is handled by pytest's truncate_tables fixture.
-  # Do NOT truncate here — double-truncate causes user count mismatches and FK violations.
+  # Do NOT truncate here — pytest truncates at session start, and a
+  # double-truncate causes user count mismatches and FK violations.
 
   # Run pytest
   echo ""
@@ -468,20 +479,7 @@ function testing-start() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Starting ${blue}TESTING${reset} environment"
   $COMPOSE_TEST up -d
-
-  echo "Waiting for API container..."
-  wait-for-healthy icb-test-api 60 || true
-
-  echo "Initializing test database..."
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
-
-  if ENVIRONMENT=testing uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434; then
-    echo "${green}Database initialized successfully${reset}"
-  else
-    echo "${red}Database initialization failed${reset}"
-    return 1
-  fi
+  env-initialize testing || return 1
 
   echo ""
   echo "Testing environment started:"
@@ -505,6 +503,7 @@ function testing-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}TESTING${reset} environment"
   $COMPOSE_TEST up -d
+  env-initialize testing
 }
 
 function testing-rebuild() {
@@ -549,6 +548,9 @@ function testing-rebuild() {
     echo "Recreating app services..."
     $COMPOSE_TEST up -d --force-recreate api scheduler vue
   fi
+
+  env-initialize testing || return 1
+  echo "${green}TESTING environment rebuilt and initialized${reset}"
 }
 
 function testing-logs() {
@@ -588,7 +590,7 @@ function testing-ensure() {
 
 function testing-usage() {
   echo "${green}Testing commands:${reset}"
-  echo "  ${blue}testing start${reset}          Start test containers and reset database"
+  echo "  ${blue}testing start${reset}          Start test containers and initialize the database"
   echo "  ${blue}testing stop${reset}           Stop test containers and remove volumes"
   echo "  ${blue}testing restart${reset}        Restart test containers"
   echo "  ${blue}testing rebuild${reset}        Rebuild app services (api, scheduler, vue)"
