@@ -32,8 +32,9 @@ from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.url_extraction import ArticlePage
+from ichrisbirch.services.url_extraction import CaptionsBlocked
 from ichrisbirch.services.url_extraction import PageUnreadable
-from ichrisbirch.services.url_extraction import is_youtube_url
+from ichrisbirch.services.url_extraction import VideoHasNoCaptions
 from ichrisbirch.services.url_extraction import read_article_page
 from ichrisbirch.util import clean_url
 
@@ -49,7 +50,11 @@ class ArticleAlreadyExists(Exception):
         self.url = url
 
 
-def _page_error(e: PageFetchError | PageStatusError | PageUnreadable) -> HTTPException:
+# Every way reading a saved URL fails that is not a fault in this app.
+PAGE_ERRORS = (PageFetchError, PageStatusError, PageUnreadable, CaptionsBlocked)
+
+
+def _page_error(e: PageFetchError | PageStatusError | PageUnreadable | CaptionsBlocked) -> HTTPException:
     """Translate a page that could not be read into a response for a request handler.
 
     The site failing is a bad gateway. A page that answered but is not the article
@@ -65,7 +70,7 @@ def _page_error(e: PageFetchError | PageStatusError | PageUnreadable) -> HTTPExc
 def _read_page_for_request(url: str) -> ArticlePage:
     try:
         return read_article_page(url)
-    except (PageFetchError, PageStatusError, PageUnreadable) as e:
+    except PAGE_ERRORS as e:
         raise _page_error(e) from e
 
 
@@ -199,7 +204,7 @@ async def create_from_url(
         return _summarize_and_create_article(body.url, body.notes, session, settings)
     except ArticleAlreadyExists as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
-    except (PageFetchError, PageStatusError, PageUnreadable) as e:
+    except PAGE_ERRORS as e:
         raise _page_error(e) from e
     except AssistantOutputError as e:
         raise _bad_gateway(e) from e
@@ -296,14 +301,10 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     url = clean_url(request_data.get('url'))
     logger.debug('article_insights_processing', url=url)
     try:
-        page = _read_page_for_request(url)
-    except HTTPException:
-        raise
-    except Exception as e:
+        page = read_article_page(url)
+    except (VideoHasNoCaptions, CaptionsBlocked) as e:
         # A YouTube caption failure is rendered as the answer, because the form
         # that calls this treats any non-200 as a script error.
-        if not is_youtube_url(url):
-            raise
         logger.error('youtube_captions_error', url=url, error=str(e))
         lines = []
         for i, line in enumerate(str(e).strip().split('\n')):
@@ -312,6 +313,8 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
             else:
                 lines.append(f'<p>{html_escaping.escape(line)}</p>')
         return Response(content=''.join(lines).replace('<p></p>', ''))
+    except PAGE_ERRORS as e:
+        raise _page_error(e) from e
 
     assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
     try:
