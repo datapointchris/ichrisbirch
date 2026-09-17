@@ -33,7 +33,7 @@ def show_status_and_response(response: httpx2.Response) -> dict[str, str]:
         d = {response.status_code: 'UNKNOWN'}
     try:
         content = response.json()
-    except (httpx2.DecodingError, TypeError) as e:
+    except (ValueError, TypeError) as e:
         logger.warning(f'error decoding response content: {e}')
         content = '<no response content>'
 
