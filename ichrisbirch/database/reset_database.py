@@ -38,7 +38,6 @@ def main():
     import structlog
 
     from ichrisbirch.config import get_settings
-    from ichrisbirch.database.initialization import create_schemas
     from ichrisbirch.database.initialization import create_tables
     from ichrisbirch.database.initialization import drop_all_tables
     from ichrisbirch.database.initialization import insert_default_users
@@ -66,9 +65,8 @@ def main():
 
     drop_all_tables(settings)
 
+    create_tables(settings)
     with create_session(settings) as session:
-        create_schemas(session, settings)
-        create_tables(settings)
         insert_default_users(session, settings)
 
     logger.info('db_reset_completed')

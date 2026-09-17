@@ -1,22 +1,17 @@
 """Database initialization for all environments.
 
-This should only be run when a new blank database is created.
-Schemas and default users should transfer over from backups if restoring.
-
-Consolidates logic previously scattered across:
-- ichrisbirch.startup (deprecated)
-- scripts.init_database
-- tests.environment.DockerComposeTestEnvironment
+`full_initialization` migrates a database to head, creates the APScheduler
+jobstore table, and inserts the default users. Every step is idempotent, so it
+runs against a blank database and a database already at head alike: every
+`icbops` start, restart and rebuild runs it, and so does each pytest session.
+A database restored from a backup already carries its schema and users.
 
 Usage:
-    from ichrisbirch.database.initialization import create_schemas, insert_default_users
+    from ichrisbirch.database.initialization import full_initialization
 
-    with create_session(settings) as session:
-        create_schemas(session, settings)
-        insert_default_users(session, settings)
+    full_initialization(settings)
 """
 
-import sqlalchemy
 import structlog
 from alembic import command
 from alembic.config import Config
@@ -174,21 +169,6 @@ def truncate_all_tables(settings) -> None:
     logger.info('truncate_all_tables_completed')
 
 
-def create_schemas(session: Session, settings) -> None:
-    """Create database schemas if they don't exist."""
-    inspector = sqlalchemy.inspect(get_db_engine(settings))
-    existing_schemas = inspector.get_schema_names()
-
-    for schema_name in settings.postgres.db_schemas:
-        if schema_name not in existing_schemas:
-            session.execute(CreateSchema(schema_name))
-            logger.info('schema_created', schema_name=schema_name)
-        else:
-            logger.info('schema_exists', schema_name=schema_name)
-
-    session.commit()
-
-
 def create_apscheduler_jobstore_table(settings) -> None:
     """Create the APScheduler jobstore table.
 
@@ -208,7 +188,11 @@ def create_apscheduler_jobstore_table(settings) -> None:
 
 
 def create_tables(settings, use_alembic: bool = True) -> None:
-    """Create database tables using alembic migrations (default) or create_all."""
+    """Create database tables using alembic migrations (default) or create_all.
+
+    The migrations create every schema they write into. create_all does not, so
+    that path creates the schemas the models declare first.
+    """
     if use_alembic:
         run_alembic_migrations(settings)
         create_apscheduler_jobstore_table(settings)
@@ -216,6 +200,10 @@ def create_tables(settings, use_alembic: bool = True) -> None:
 
     logger.info('tables_creating_with_create_all')
     engine = get_db_engine(settings)
+    model_schemas = sorted({table.schema for table in Base.metadata.tables.values() if table.schema})
+    with engine.begin() as conn:
+        for schema in model_schemas:
+            conn.execute(CreateSchema(schema, if_not_exists=True))
     Base.metadata.create_all(engine)
     create_apscheduler_jobstore_table(settings)
     logger.info('tables_created')
@@ -258,9 +246,8 @@ def full_initialization(settings, use_alembic: bool = True) -> None:
     """Perform complete database initialization."""
     logger.info('db_init_starting', environment=settings.ENVIRONMENT, use_alembic=use_alembic)
 
+    create_tables(settings, use_alembic=use_alembic)
     with create_session(settings) as session:
-        create_schemas(session, settings)
-        create_tables(settings, use_alembic=use_alembic)
         insert_default_users(session, settings)
 
     logger.info('db_init_completed')
