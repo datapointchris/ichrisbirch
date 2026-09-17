@@ -1132,3 +1132,83 @@ export interface UrlImportSaveResult {
   recipe: Recipe | null
   technique: CookingTechnique | null
 }
+
+// ---------------------------------------------------------------------------
+// Strains
+// ---------------------------------------------------------------------------
+
+export type StrainStatus = 'tried' | 'want_to_try'
+
+export interface Strain {
+  id: number
+  name: string
+  breeder?: string
+  lineage?: string
+  strain_type?: string
+  status: string
+  thc_percent?: number
+  cbd_percent?: number
+  rating?: number
+  effects: string[]
+  flavors: string[]
+  terpenes: string[]
+  tags: string[]
+  source?: string
+  notes?: string
+  review?: string
+  last_tried_date?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface StrainCreate {
+  name: string
+  breeder?: string
+  lineage?: string
+  strain_type?: string
+  status?: string
+  thc_percent?: number
+  cbd_percent?: number
+  rating?: number
+  effects?: string[]
+  flavors?: string[]
+  terpenes?: string[]
+  tags?: string[]
+  source?: string
+  notes?: string
+  review?: string
+  last_tried_date?: string
+}
+
+export interface StrainUpdate {
+  name?: string
+  breeder?: string | null
+  lineage?: string | null
+  strain_type?: string | null
+  status?: string
+  thc_percent?: number | null
+  cbd_percent?: number | null
+  rating?: number | null
+  effects?: string[]
+  flavors?: string[]
+  terpenes?: string[]
+  tags?: string[]
+  source?: string | null
+  notes?: string | null
+  review?: string | null
+  last_tried_date?: string | null
+}
+
+export interface StrainVocabularyEntry {
+  name: string
+  count: number
+}
+
+/** Every value each vocabulary defines, whether or not a strain carries it. */
+export interface StrainVocabulary {
+  types: StrainVocabularyEntry[]
+  statuses: StrainVocabularyEntry[]
+  effects: StrainVocabularyEntry[]
+  flavors: StrainVocabularyEntry[]
+  terpenes: StrainVocabularyEntry[]
+}

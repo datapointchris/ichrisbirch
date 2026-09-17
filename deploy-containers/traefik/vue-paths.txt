@@ -22,6 +22,7 @@
 /box-packing
 /projects
 /recipes
+/strains
 /tasks
 /profile
 /admin

@@ -22,6 +22,7 @@ export const DEFAULT_SIDEBAR_ORDER = [
   '/money-wasted',
   '/projects',
   '/recipes',
+  '/strains',
   '/tasks',
 ]
 
@@ -65,6 +66,7 @@ export const allMainLinks: NavLink[] = [
     migrated: true,
     activeNames: ['recipes', 'recipe-detail', 'recipes-stats', 'recipes-suggest'],
   },
+  { to: '/strains', label: 'Strains', icon: 'fa-solid fa-cannabis', migrated: true },
   {
     to: '/tasks',
     label: 'Tasks',
