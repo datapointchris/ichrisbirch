@@ -60,6 +60,21 @@ If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add t
 
 Create `tests/ichrisbirch/api/endpoints/test_items.py` using `ApiCrudTester` or direct assertions.
 
+`ApiCrudTester` defaults `expected_length=3`, so the test data holds exactly
+three rows unless you pass a different count.
+
+### 8. Row limit on every list read
+
+A read answering with a list takes `RowLimit` and `apply_row_limit` from
+`ichrisbirch/services/row_limit.py`, applied last so the cap takes the top of
+what the filters left. Declaring `limit: int | None` by hand loses the floor, so
+a negative reaches SQL as `LIMIT -1`, and a falsy test answers `limit=0` with
+the whole collection — both invisible in the response.
+
+`test_every_read_that_takes_a_limit_declares_the_shared_one` walks the live
+routes and fails on either. Add the endpoint to `LIMITED_READS` in the same file
+to get the five behavioral cases covering what zero means.
+
 ## Vue Frontend (Migrated Pages)
 
 For new pages being built in Vue (the standard going forward):
@@ -99,6 +114,62 @@ echo "/items" >> deploy-containers/traefik/vue-paths.txt
 
 ```bash
 cd frontend
-npm test           # Build check + 55 unit tests
+npm test           # Build check + unit tests
 npm run test:e2e   # E2E through Traefik (requires dev containers)
 ```
+
+## `icb` CLI
+
+The Go resource CLI in `cli/` is the programmatic front door to the same API, so
+a new endpoint group reaches it too. A resource adds two files and two test
+files; everything else is shared plumbing.
+
+### 1. Wire contract (`cli/internal/api/items.go`)
+
+- `Item`, `ItemCreateInput`, `ItemUpdateInput`, and an `ItemFilter` with a
+  `query()` where the list read narrows.
+- Nullable columns are pointers. Optional create fields and every update field
+  carry `,omitempty`, so an unset flag is omitted rather than sent as `null`.
+- A calendar day is a `string`, never a `time.Time` — Go's decode requires
+  RFC3339 and rejects a bare day, and the client decodes a whole slice in one
+  call, so one dated row would fail the entire command.
+- Client methods go through `c.get` / `c.send`; a resource file never touches
+  `http.NewRequest`. `applyLimit(params, limit)` from `row_limit.go` puts the
+  cap on.
+
+### 2. Commands (`cli/internal/cli/items.go`)
+
+`newItemsCommand()` with `list`, `show`, `search`, `create`, `edit`, `delete`.
+The verbs are `show` and `edit`, not `get` and `update`.
+
+- `withNotFoundHints(cmd, ...)` — a tree walk fails without it.
+- `addLimitFlag(cmd, &limit)` rather than registering `--limit` by hand.
+- `--json` on every read, short-circuiting to `encodeJSON`.
+- `create` and `edit` share one flag struct and one `addItemFlags` function.
+- `delete` fetches first, so the confirmation names the row.
+
+A resource with a closed vocabulary follows `[]prompt.Field` for its guided
+create — `tasks.go` declares the choices, `items.go` and `strains.go` fetch
+them. Fetch where the values come from a lookup table, so adding one stays an
+insert on the server rather than a release of this binary.
+
+### 3. Register
+
+`newItemsCommand()` in `NewRootCommand` (`cli/internal/cli/root.go`), keeping
+`applyUsageTemplate(root)` last. Add `{"items", "list"}` to the roster in
+`cli/internal/cli/limit_test.go`. Update the resource lists in `cli/README.md`
+and in `root.go`'s own `Long`.
+
+### 4. Tests and verify
+
+`cli/internal/api/items_test.go` drives an `httptest` server and asserts the
+captured query string and request body. `cli/internal/cli/items_test.go` runs
+the real command tree through `runTree` and asserts exit codes.
+
+```bash
+task cli:lint && task cli:test
+ICB_API_BASE=https://api.docker.localhost icb items list
+```
+
+The installed `icb` always targets production regardless of working directory,
+which is why a check against dev sets `ICB_API_BASE`.
