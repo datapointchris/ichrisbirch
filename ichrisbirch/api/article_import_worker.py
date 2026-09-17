@@ -5,7 +5,9 @@ Queue item format (JSON string in Redis list):
 
 Batch status (Redis hash at article_import:batch:{batch_id}):
     status, total, processed, succeeded, failed_count, errors (JSON), results (JSON),
-    created_at, updated_at
+    created_at, updated_at. It expires BATCH_TTL after the batch completes, so a
+    batch still waiting — behind a backlog, a paused queue or a stopped worker —
+    keeps its status for as long as the wait lasts.
 
 Pause (Redis string at article_import:paused_until):
     the ISO time the Claude usage limit resets, expiring at that time. While it
@@ -13,13 +15,11 @@ Pause (Redis string at article_import:paused_until):
 """
 
 import asyncio
+import datetime as dt
 import json
 import math
 import threading
 import uuid
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
 import pendulum
 import redis
@@ -42,7 +42,7 @@ PAUSE_KEY = 'article_import:paused_until'
 BATCH_TTL = 86400  # 24 hours
 MAX_ATTEMPTS = 2
 # How long to hold the queue when the usage limit gives no reset time.
-USAGE_LIMIT_RECHECK = timedelta(minutes=15)
+USAGE_LIMIT_RECHECK = dt.timedelta(minutes=15)
 
 
 def _worth_retrying(error: Exception) -> bool:
@@ -78,7 +78,7 @@ def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: d
         pipeline.rpush(QUEUE_KEY, item)
 
     batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
-    now = datetime.now(UTC).isoformat()
+    now = dt.datetime.now(dt.UTC).isoformat()
     pipeline.hset(
         batch_key,
         mapping={
@@ -93,7 +93,6 @@ def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: d
             'updated_at': now,
         },
     )
-    pipeline.expire(batch_key, BATCH_TTL)
     pipeline.execute()
 
     logger.info('bulk_import_enqueued', batch_id=batch_id, count=len(urls))
@@ -167,9 +166,10 @@ class ArticleImportWorker:
         notes = item.get('notes')
         batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
 
-        # Mark batch as processing
-        self.redis_client.hset(batch_key, 'status', 'processing')
-        self.redis_client.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
+        if self._batch_exists(batch_key):
+            self.redis_client.hset(batch_key, mapping={'status': 'processing', 'updated_at': dt.datetime.now(dt.UTC).isoformat()})
+        else:
+            logger.warning('article_import_batch_missing', batch_id=batch_id, url=url)
 
         try:
             with create_session(self.settings) as session:
@@ -198,34 +198,39 @@ class ArticleImportWorker:
                 # Permanent failure — write to DB
                 self._record_permanent_failure(batch_key, url, error_msg, batch_id)
 
+    def _batch_exists(self, batch_key: str) -> bool:
+        """Whether the batch's status hash is there to update.
+
+        A write to a missing hash creates one with no `total`, which reads as a
+        completed batch and fails every later status read, so the worker still
+        imports the URL but leaves a missing batch's status alone.
+        """
+        return bool(self.redis_client.exists(batch_key))
+
     def _hold_for_usage_limit(self, item: dict, limit: AssistantUsageLimitReached):
         """Put the item back at the head of the queue and pause the queue until the limit resets.
 
         The item keeps its attempt count, because the limit refused the call rather
         than the page or the reply failing. The pause lives in Redis and expires at
-        the reset, so a worker that restarts meanwhile holds too. Every batch with an
-        item still queued keeps its status for a day past the reset, so a weekly
-        limit does not expire the batches it is holding up.
+        the reset, so a worker that restarts meanwhile holds too.
         """
-        now = datetime.now(UTC)
+        now = dt.datetime.now(dt.UTC)
         resumes_at = limit.resets_at if limit.resets_at is not None and limit.resets_at > now else now + USAGE_LIMIT_RECHECK
         pause_seconds = math.ceil((resumes_at - now).total_seconds())
-        waiting_batch_ids = {json.loads(queued)['batch_id'] for queued in self.redis_client.lrange(QUEUE_KEY, 0, -1)}
-        waiting_batch_ids.add(item['batch_id'])
 
         pipeline = self.redis_client.pipeline()
         pipeline.lpush(QUEUE_KEY, json.dumps(item))
         pipeline.set(PAUSE_KEY, resumes_at.isoformat(), ex=pause_seconds)
-        for batch_id in waiting_batch_ids:
-            pipeline.expire(f'{BATCH_KEY_PREFIX}{batch_id}', pause_seconds + BATCH_TTL, gt=True)
         pipeline.execute()
         logger.warning('article_import_paused', url=item['url'], resumes_at=resumes_at.isoformat(), limit_type=limit.limit_type)
 
     def _record_success(self, batch_key: str, url: str, title: str):
+        if not self._batch_exists(batch_key):
+            return
         pipeline = self.redis_client.pipeline()
         pipeline.hincrby(batch_key, 'processed', 1)
         pipeline.hincrby(batch_key, 'succeeded', 1)
-        pipeline.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
+        pipeline.hset(batch_key, 'updated_at', dt.datetime.now(dt.UTC).isoformat())
         pipeline.execute()
 
         # Append to results list
@@ -236,17 +241,6 @@ class ArticleImportWorker:
         self._check_batch_complete(batch_key)
 
     def _record_permanent_failure(self, batch_key: str, url: str, error_msg: str, batch_id: str):
-        pipeline = self.redis_client.pipeline()
-        pipeline.hincrby(batch_key, 'processed', 1)
-        pipeline.hincrby(batch_key, 'failed_count', 1)
-        pipeline.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
-        pipeline.execute()
-
-        # Append to errors list
-        errors = json.loads(self.redis_client.hget(batch_key, 'errors') or '[]')
-        errors.append({'url': url, 'error': error_msg})
-        self.redis_client.hset(batch_key, 'errors', json.dumps(errors))
-
         # Write to persistent failed_article_imports table
         try:
             with create_session(self.settings) as session:
@@ -261,11 +255,26 @@ class ArticleImportWorker:
         except Exception:
             logger.exception('failed_article_import_db_write_error', url=url)
 
+        if not self._batch_exists(batch_key):
+            return
+        pipeline = self.redis_client.pipeline()
+        pipeline.hincrby(batch_key, 'processed', 1)
+        pipeline.hincrby(batch_key, 'failed_count', 1)
+        pipeline.hset(batch_key, 'updated_at', dt.datetime.now(dt.UTC).isoformat())
+        pipeline.execute()
+
+        # Append to errors list
+        errors = json.loads(self.redis_client.hget(batch_key, 'errors') or '[]')
+        errors.append({'url': url, 'error': error_msg})
+        self.redis_client.hset(batch_key, 'errors', json.dumps(errors))
+
         self._check_batch_complete(batch_key)
 
     def _check_batch_complete(self, batch_key: str):
         data = self.redis_client.hgetall(batch_key)
         if int(data.get('processed', 0)) >= int(data.get('total', 0)):
-            self.redis_client.hset(batch_key, 'status', 'completed')
-            self.redis_client.hset(batch_key, 'updated_at', datetime.now(UTC).isoformat())
+            pipeline = self.redis_client.pipeline()
+            pipeline.hset(batch_key, mapping={'status': 'completed', 'updated_at': dt.datetime.now(dt.UTC).isoformat()})
+            pipeline.expire(batch_key, BATCH_TTL)
+            pipeline.execute()
             logger.info('bulk_import_batch_completed', batch_key=batch_key)

@@ -1,9 +1,7 @@
 import asyncio
+import datetime as dt
 import json
 import time
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -35,7 +33,7 @@ NEW_OBJ = schemas.ArticleCreate(
     url='http://aiagents.com',
     tags=['ai agents', 'rag'],
     summary='AI agents are the future of computing.',
-    save_date=datetime.now(),
+    save_date=dt.datetime.now(),
 )
 
 ENDPOINT = '/articles/'
@@ -107,7 +105,7 @@ def test_search(article_crud_tester):
         url='http://search-test.com',
         tags=['test-search', 'findable'],
         summary='This article should be found by search',
-        save_date=datetime.now(),
+        save_date=dt.datetime.now(),
     )
     response = client.post(ENDPOINT, json=searchable_article.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
@@ -256,7 +254,7 @@ def test_read(article_crud_tester):
         json={
             'is_current': False,
             'is_archived': True,
-            'last_read_date': str(datetime.now()),
+            'last_read_date': str(dt.datetime.now()),
             'read_count': article.get('read_count') + 1,
         },
     )
@@ -306,7 +304,7 @@ class TestArticleQueryParameters:
         client, crud_tester = article_crud_tester
         # First mark one article as read
         first_id = crud_tester.item_id_by_position(client, position=1)
-        client.patch(f'{ENDPOINT}{first_id}/', json={'last_read_date': str(datetime.now())})
+        client.patch(f'{ENDPOINT}{first_id}/', json={'last_read_date': str(dt.datetime.now())})
 
         response = client.get(ENDPOINT, params={'unread': False})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -344,7 +342,7 @@ class TestArticleQueryParameters:
         # Mark as read with review_days set
         client.patch(
             f'{ENDPOINT}{favorite_article["id"]}/',
-            json={'last_read_date': str(datetime.now()), 'review_days': 30},
+            json={'last_read_date': str(dt.datetime.now()), 'review_days': 30},
         )
 
         # Now favorites=True should return empty (recently read, not due for review)
@@ -403,7 +401,7 @@ def test_read_many_returns_empty_list_when_no_articles(txn_api_logged_in):
 def test_create_article_without_summary_returns_422(txn_api_logged_in):
     """POST /articles/ without summary returns 422 (summary is required)."""
     client, _ = txn_api_logged_in
-    payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(datetime.now())}
+    payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(dt.datetime.now())}
     response = client.post(ENDPOINT, json=payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
@@ -515,7 +513,7 @@ class TestCreateFromUrl:
     def test_create_from_url_answers_a_usage_limit_with_when_to_retry(self, txn_api_logged_in):
         """A refused call succeeds once the plan resets, so the answer is a 503 that says when."""
         client, _ = txn_api_logged_in
-        resets_at = datetime(2026, 9, 18, 3, 0, tzinfo=UTC)
+        resets_at = dt.datetime(2026, 9, 18, 3, 0, tzinfo=dt.UTC)
         limit = AssistantUsageLimitReached('Article Summary with Tags', resets_at, 'five_hour')
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=limit)
         with get_page_patch, assistant_patch:
@@ -622,7 +620,7 @@ class TestBulkImportUsageLimit:
         batch_id = enqueue_bulk_import(test_redis, ['https://example.com/first', 'https://example.com/second'])
         worker = ArticleImportWorker(test_redis, get_settings())
         item = self.take_first_item(test_redis)
-        resets_at = datetime.now(UTC) + timedelta(hours=2)
+        resets_at = dt.datetime.now(dt.UTC) + dt.timedelta(hours=2)
         limit = AssistantUsageLimitReached('Article Summary with Tags', resets_at, 'five_hour')
 
         with patch(self.SUMMARIZE, side_effect=limit):
@@ -633,7 +631,7 @@ class TestBulkImportUsageLimit:
         assert test_redis.llen(QUEUE_KEY) == 2
         assert test_redis.get(PAUSE_KEY) == resets_at.isoformat()
         assert 7100 < test_redis.ttl(PAUSE_KEY) <= 7200, 'the pause expires when the limit resets'
-        assert test_redis.ttl(batch_key) > BATCH_TTL, 'the batch status outlives the wait'
+        assert test_redis.ttl(batch_key) == -1, 'a batch still waiting has no expiry for the pause to outlast'
         assert test_redis.hget(batch_key, 'failed_count') == '0', 'a refused call is not a failed import'
 
     def test_a_limit_with_no_reset_time_holds_the_queue_for_the_recheck_interval(self, test_redis):
@@ -647,10 +645,40 @@ class TestBulkImportUsageLimit:
         recheck_seconds = int(USAGE_LIMIT_RECHECK.total_seconds())
         assert recheck_seconds - 5 < test_redis.ttl(PAUSE_KEY) <= recheck_seconds
 
+    def test_a_batch_enqueued_during_a_long_pause_keeps_its_status_until_it_completes(self, test_redis):
+        """A weekly limit can hold the queue for days, longer than a completed batch's status is kept."""
+        pause_seconds = 3 * BATCH_TTL
+        test_redis.set(PAUSE_KEY, (dt.datetime.now(dt.UTC) + dt.timedelta(seconds=pause_seconds)).isoformat(), ex=pause_seconds)
+        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/late'])
+        batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
+        assert test_redis.ttl(batch_key) == -1, 'the batch would expire while its URL still waits'
+
+        worker = ArticleImportWorker(test_redis, get_settings())
+        item = self.take_first_item(test_redis)
+        with patch(self.SUMMARIZE, return_value=MagicMock(title='Late')):
+            worker._process_item(item)
+
+        assert test_redis.hget(batch_key, 'status') == 'completed'
+        assert BATCH_TTL - 5 < test_redis.ttl(batch_key) <= BATCH_TTL, 'a completed batch is kept for a day'
+
+    def test_an_item_whose_batch_is_gone_is_imported_without_recreating_the_batch(self, test_redis):
+        """A write to a missing hash creates one with no total, which reads as completed and fails every status read."""
+        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/orphan'])
+        batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
+        item = self.take_first_item(test_redis)
+        test_redis.delete(batch_key)
+        worker = ArticleImportWorker(test_redis, get_settings())
+
+        with patch(self.SUMMARIZE, return_value=MagicMock(title='Orphan')) as summarize:
+            worker._process_item(item)
+
+        summarize.assert_called_once()
+        assert test_redis.exists(batch_key) == 0
+
     def test_a_paused_worker_takes_nothing_from_the_queue(self, test_redis):
         """A pause in Redis holds every worker, including one started after the limit was hit."""
         enqueue_bulk_import(test_redis, ['https://example.com/waiting'])
-        test_redis.set(PAUSE_KEY, (datetime.now(UTC) + timedelta(minutes=1)).isoformat(), ex=60)
+        test_redis.set(PAUSE_KEY, (dt.datetime.now(dt.UTC) + dt.timedelta(minutes=1)).isoformat(), ex=60)
         worker = ArticleImportWorker(test_redis, get_settings())
 
         with patch(self.SUMMARIZE, return_value=MagicMock(title='Taken')):
@@ -664,7 +692,7 @@ class TestBulkImportUsageLimit:
     def test_a_paused_batch_reports_when_it_resumes(self, api_with_redis, test_redis):
         client, _ = api_with_redis
         batch_id = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://example.com/held']}).json()['batch_id']
-        resumes_at = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
+        resumes_at = (dt.datetime.now(dt.UTC) + dt.timedelta(hours=1)).isoformat()
         test_redis.set(PAUSE_KEY, resumes_at, ex=3600)
 
         data = client.get(f'{ENDPOINT}bulk-import/{batch_id}/').json()
@@ -676,7 +704,7 @@ class TestBulkImportUsageLimit:
         client, _ = api_with_redis
         batch_id = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://example.com/done']}).json()['batch_id']
         test_redis.hset(f'{BATCH_KEY_PREFIX}{batch_id}', 'status', 'completed')
-        test_redis.set(PAUSE_KEY, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), ex=3600)
+        test_redis.set(PAUSE_KEY, (dt.datetime.now(dt.UTC) + dt.timedelta(hours=1)).isoformat(), ex=3600)
 
         data = client.get(f'{ENDPOINT}bulk-import/{batch_id}/').json()
 
