@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ichrisbirch application uses **structlog** with a stdout-only architecture. All logs go to stdout, and Docker handles persistence via its logging driver. This is the industry-standard approach for containerized applications.
+The ichrisbirch application uses **structlog**, rendered through the stdlib root logger. All logs go to stderr, including records from stdlib loggers such as alembic's, and Docker handles persistence via its logging driver. This is the industry-standard approach for containerized applications.
 
 **Configuration**: `ichrisbirch/logger.py`
 
@@ -67,12 +67,12 @@ Controls whether colored output is used in console format.
 
 ### LOG_FILE
 
-Optional path to a log file for persistence. When set and the directory exists, logs are written to both stdout and the specified file.
+Optional path to a log file for persistence. When set and the directory exists, logs are written to both stderr and the specified file.
 
 | Value | Description |
 | --- | --- |
-| Empty (default) | No file logging, stdout only |
-| `/var/log/ichrisbirch/api.log` | Write logs to file (and stdout) |
+| Empty (default) | No file logging, stderr only |
+| `/var/log/ichrisbirch/api.log` | Write logs to file (and stderr) |
 
 **File logging features:**
 
