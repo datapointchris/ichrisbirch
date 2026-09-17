@@ -294,6 +294,7 @@ async def ai_suggest(
         system_prompt=settings.ai.prompts.recipe_suggestions,
         settings=settings,
         tools=['WebSearch'],
+        max_tool_uses=5,
     )
     user_message = (
         f'have: {", ".join(request.have) if request.have else "(none specified)"}\n'

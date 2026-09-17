@@ -398,6 +398,7 @@ class TestAISuggest:
 
         mock_assistant_cls.assert_called_once()
         assert mock_assistant_cls.call_args.kwargs['tools'] == ['WebSearch']
+        assert mock_assistant_cls.call_args.kwargs['max_tool_uses'] == 5, 'recipe discovery searches without a bound'
 
     @patch('ichrisbirch.api.endpoints.recipes.AnthropicAssistant')
     def test_ai_suggest_reports_invalid_output_as_a_bad_gateway(self, mock_assistant_cls, recipe_crud_tester):
