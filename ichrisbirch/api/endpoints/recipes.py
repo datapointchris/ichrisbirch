@@ -20,7 +20,6 @@ from sqlalchemy.orm import selectinload
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
-from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
@@ -31,7 +30,6 @@ from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.url_extraction import PageUnreadable
-from ichrisbirch.services.url_ingest import ClassifierOutputError
 from ichrisbirch.util import slugify
 
 logger = structlog.get_logger()
@@ -302,14 +300,7 @@ async def ai_suggest(
         f'want: {request.want or "(no preference)"}\n'
         f'count: {request.count}'
     )
-    try:
-        return await assistant.generate_structured(user_message, schemas.RecipeSuggestionResponse, max_tokens=8192)
-    except AssistantOutputError as e:
-        logger.error('recipe_suggestion_unusable', reason=str(e.reason), error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={'reason': str(e.reason), 'message': str(e), 'raw_assistant_output': e.raw_output},
-        ) from e
+    return await assistant.generate_structured(user_message, schemas.RecipeSuggestionResponse, max_tokens=8192)
 
 
 @router.post('/ai-save/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
@@ -343,7 +334,7 @@ async def import_from_url(
 
     Returns 409 if the URL is already ingested as a recipe or a technique (checks
     both tables — a single URL can legitimately back either entity). Returns 502 if
-    the classifier output fails to validate against the candidate schema, with the
+    the classifier produces no usable candidate, with the failure's reason and the
     raw output embedded for prompt-drift observability.
     """
     url = request.url
@@ -368,15 +359,7 @@ async def import_from_url(
             detail=f'Could not fetch URL content: {e}',
         ) from e
 
-    try:
-        candidate = await url_ingest.classify_url_content(url, request.hint, content, settings)
-    except ClassifierOutputError as e:
-        logger.error('url_import_classifier_validation_failed', url=url, error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={'message': str(e), 'raw_classifier_output': e.raw_output},
-        ) from e
-
+    candidate = await url_ingest.classify_url_content(url, request.hint, content, settings)
     return schemas.UrlImportResponse(candidate=candidate)
 
 

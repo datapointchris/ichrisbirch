@@ -12,6 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
@@ -33,6 +34,18 @@ async def http_exception_handler_logger(request, exc):
 async def request_validation_exception_handler_logger(request, exc):
     logger.error('api_validation_error', path=request.url.path, error=str(exc))
     return await request_validation_exception_handler(request, exc)
+
+
+async def assistant_output_error_handler(request, exc):
+    """Answer an unusable reply as a 502 that names why and carries what Claude Code returned.
+
+    The error stays a domain exception until it reaches here, because the bulk
+    import worker calls the same helpers and records `str(e)` in a database column
+    and a Redis payload, where a transport exception would put the whole reply.
+    """
+    logger.error('assistant_output_unusable', path=request.url.path, reason=str(exc.reason), error=str(exc))
+    detail = {'reason': str(exc.reason), 'message': str(exc), 'raw_assistant_output': exc.raw_output}
+    return JSONResponse(status_code=502, content={'detail': detail})
 
 
 async def assistant_usage_limit_handler(request, exc):
@@ -115,6 +128,7 @@ def create_api(settings: Settings) -> FastAPI:
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
     api.add_exception_handler(RequestValidationError, request_validation_exception_handler_logger)
+    api.add_exception_handler(AssistantOutputError, assistant_output_error_handler)
     api.add_exception_handler(AssistantUsageLimitReached, assistant_usage_limit_handler)
     api.add_exception_handler(Exception, api_exception_handler)
     logger.info('exception_handlers_registered')

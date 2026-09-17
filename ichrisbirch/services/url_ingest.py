@@ -9,7 +9,6 @@ import structlog
 
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
-from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.config import Settings
 from ichrisbirch.services.url_extraction import get_youtube_video_metadata
 from ichrisbirch.services.url_extraction import get_youtube_video_text_captions
@@ -17,18 +16,6 @@ from ichrisbirch.services.url_extraction import is_youtube_url
 from ichrisbirch.services.url_extraction import read_article_page
 
 logger = structlog.get_logger()
-
-
-class ClassifierOutputError(Exception):
-    """Raised when the classifier's output fails to validate.
-
-    Carries the raw classifier output so the endpoint can embed it in the 502
-    response — gives observability into prompt drift without a separate log dive.
-    """
-
-    def __init__(self, message: str, raw_output: str):
-        super().__init__(message)
-        self.raw_output = raw_output
 
 
 def extract_content_for_classifier(url: str) -> str:
@@ -61,9 +48,9 @@ def extract_content_for_classifier(url: str) -> str:
 async def classify_url_content(url: str, hint: str, content: str, settings: Settings) -> schemas.UrlImportCandidate:
     """Run the classifier and return its UrlImportCandidate.
 
-    Raises `ClassifierOutputError` with the raw output preserved when the
-    classifier produces no usable candidate. The endpoint layer translates that
-    to HTTP 502.
+    A classifier that produces no usable candidate raises the assistant's
+    `AssistantOutputError`, carrying its reason and raw output, and the API's
+    handler for that error answers HTTP 502.
     """
     assistant = AnthropicAssistant(
         name='URL Import Classifier',
@@ -71,10 +58,7 @@ async def classify_url_content(url: str, hint: str, content: str, settings: Sett
         settings=settings,
     )
     user_message = f'url: {url}\nhint: {hint}\n\n{content}'
-    try:
-        candidate = await assistant.generate_structured(user_message, schemas.UrlImportCandidate, max_tokens=8192)
-    except AssistantOutputError as e:
-        raise ClassifierOutputError(str(e), e.raw_output) from e
+    candidate = await assistant.generate_structured(user_message, schemas.UrlImportCandidate, max_tokens=8192)
 
     # Always pin source_url to the input URL — the classifier sometimes drops or
     # rewrites it, but the endpoint needs it for the duplicate check on re-ingest.

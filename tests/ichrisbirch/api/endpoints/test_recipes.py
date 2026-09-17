@@ -567,16 +567,16 @@ class TestUrlImport:
 
     @patch('ichrisbirch.services.url_ingest.classify_url_content')
     @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
-    def test_import_returns_502_on_classifier_output_error(self, mock_extract, mock_classify, recipe_crud_tester):
-        from ichrisbirch.services.url_ingest import ClassifierOutputError
-
+    def test_import_returns_502_naming_why_the_classifier_failed(self, mock_extract, mock_classify, recipe_crud_tester):
+        """An expired token and a drifted prompt both answer 502, and the reason tells them apart."""
         client, _ = recipe_crud_tester
         mock_extract.return_value = 'fake'
-        mock_classify.side_effect = ClassifierOutputError('malformed', raw_output='not json at all')
+        mock_classify.side_effect = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
         response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/broken'})
         assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
         detail = response.json()['detail']
-        assert detail['raw_classifier_output'] == 'not json at all'
+        assert detail['reason'] == AssistantFailure.FAILED
+        assert detail['raw_assistant_output'] == 'API Error: 401'
 
     def test_save_recipe_only_persists_recipe(self, recipe_crud_tester):
         client, _ = recipe_crud_tester

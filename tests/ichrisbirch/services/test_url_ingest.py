@@ -9,7 +9,6 @@ import pytest
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AssistantFailure
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
-from ichrisbirch.services.url_ingest import ClassifierOutputError
 from ichrisbirch.services.url_ingest import classify_url_content
 
 URL = 'https://www.youtube.com/watch?v=qEb96qFi2Tc'
@@ -22,11 +21,13 @@ def patched_assistant(generate_structured: AsyncMock):
 
 
 @pytest.mark.asyncio
-async def test_an_unusable_reply_becomes_a_classifier_error_carrying_the_raw_output():
-    invalid = AssistantOutputError(AssistantFailure.INVALID_OUTPUT, 'not a valid UrlImportCandidate', '{"kind": "both"}')
-    with patched_assistant(AsyncMock(side_effect=invalid)), pytest.raises(ClassifierOutputError) as caught:
+async def test_an_unusable_reply_reaches_the_caller_with_its_reason():
+    """The API's handler answers the 502 from the reason, so rewrapping the error would lose it."""
+    refused = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
+    with patched_assistant(AsyncMock(side_effect=refused)), pytest.raises(AssistantOutputError) as caught:
         await classify_url_content(URL, 'auto', 'content', MagicMock())
-    assert caught.value.raw_output == '{"kind": "both"}'
+    assert caught.value.reason == AssistantFailure.FAILED
+    assert caught.value.raw_output == 'API Error: 401'
 
 
 @pytest.mark.asyncio
@@ -41,5 +42,5 @@ async def test_the_candidate_source_url_is_pinned_to_the_url_imported():
     with patched_assistant(AsyncMock(return_value=candidate)):
         result = await classify_url_content(URL, 'auto', 'content', MagicMock())
 
-    assert result.recipe.source_url == URL
-    assert result.technique.source_url == URL
+    assert result.recipe is not None and result.recipe.source_url == URL
+    assert result.technique is not None and result.technique.source_url == URL
