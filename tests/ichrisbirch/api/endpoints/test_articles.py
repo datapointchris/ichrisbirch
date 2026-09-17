@@ -1,5 +1,10 @@
+import asyncio
 import json
+import time
+from datetime import UTC
 from datetime import datetime
+from datetime import timedelta
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -8,9 +13,16 @@ import redis
 from fastapi import status
 
 from ichrisbirch import schemas
-from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.ai.assistants.anthropic import AssistantFailure
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
+from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
+from ichrisbirch.api.article_import_worker import BATCH_KEY_PREFIX
+from ichrisbirch.api.article_import_worker import BATCH_TTL
+from ichrisbirch.api.article_import_worker import PAUSE_KEY
+from ichrisbirch.api.article_import_worker import QUEUE_KEY
+from ichrisbirch.api.article_import_worker import USAGE_LIMIT_RECHECK
+from ichrisbirch.api.article_import_worker import ArticleImportWorker
+from ichrisbirch.api.article_import_worker import enqueue_bulk_import
 from ichrisbirch.config import get_settings
 from ichrisbirch.services.url_extraction import ArticlePage
 from tests.util import show_status_and_response
@@ -32,17 +44,8 @@ PAGE = ArticlePage(url='https://example.com/test-article', title='Test Article',
 
 
 def _patched_assistant(mock_assistant):
-    """Patch AnthropicAssistant in the articles module, keeping its classmethods real.
-
-    The endpoints reach `parse_json_object` through the class rather than
-    through an instance. A bare MagicMock returns a MagicMock from it, which is
-    not a dict, so every reply fails the object check and no test exercises
-    parsing at all.
-    """
-    mock_cls = MagicMock(return_value=mock_assistant)
-    mock_cls.parse_json_object = AnthropicAssistant.parse_json_object
-    mock_cls.parse_json = AnthropicAssistant.parse_json
-    return patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant', mock_cls)
+    """Patch AnthropicAssistant in the articles module so every instance is `mock_assistant`."""
+    return patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant', MagicMock(return_value=mock_assistant))
 
 
 @pytest.fixture
@@ -131,7 +134,7 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_get_page, article_crud
     mock_assistant = MagicMock()
     expected_summary = 'Test summary'
     expected_tags = ['test', 'article']
-    mock_assistant.generate.return_value = json.dumps({'summary': expected_summary, 'tags': expected_tags})
+    mock_assistant.generate_structured = AsyncMock(return_value=schemas.ArticleSummaryAndTags(summary=expected_summary, tags=expected_tags))
 
     with _patched_assistant(mock_assistant):
         response = client.post(f'{ENDPOINT}summarize/', json={'url': 'https://ichrisbirch.com/test-article'})
@@ -153,7 +156,7 @@ def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tes
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
 
     mock_assistant = MagicMock()
-    mock_assistant.generate.return_value = '## Insights\n\nThis is a test insight.'
+    mock_assistant.generate = AsyncMock(return_value='## Insights\n\nThis is a test insight.')
 
     with _patched_assistant(mock_assistant):
         response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
@@ -176,8 +179,8 @@ def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
 
     mock_assistant = MagicMock()
-    mock_assistant.generate.side_effect = AssistantOutputError(
-        AssistantFailure.TRUNCATED, 'cap reached', '## Insights\n\nThe first one is that'
+    mock_assistant.generate = AsyncMock(
+        side_effect=AssistantOutputError(AssistantFailure.TRUNCATED, 'cap reached', '## Insights\n\nThe first one is that')
     )
 
     with _patched_assistant(mock_assistant):
@@ -200,7 +203,7 @@ def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_f
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
 
     mock_assistant = MagicMock()
-    mock_assistant.generate.return_value = '## Insights\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>'
+    mock_assistant.generate = AsyncMock(return_value='## Insights\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>')
 
     with _patched_assistant(mock_assistant):
         response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
@@ -421,18 +424,14 @@ def test_create_article_without_save_date_returns_422(txn_api_logged_in):
 class TestCreateFromUrl:
     """Tests for POST /articles/create-from-url/ endpoint."""
 
-    def _mock_externals(self, generate_returns: str | None = None, generate_raises: Exception | None = None):
+    def _mock_externals(self, generate_raises: Exception | None = None):
         """Return the page-fetch and assistant patch context managers."""
         mock_assistant = MagicMock()
         if generate_raises is not None:
-            mock_assistant.generate.side_effect = generate_raises
+            mock_assistant.generate_structured = AsyncMock(side_effect=generate_raises)
         else:
-            mock_assistant.generate.return_value = generate_returns or json.dumps(
-                {
-                    'summary': 'A test summary.',
-                    'tags': ['python', 'testing'],
-                }
-            )
+            written = schemas.ArticleSummaryAndTags(summary='A test summary.', tags=['python', 'testing'])
+            mock_assistant.generate_structured = AsyncMock(return_value=written)
 
         get_page_patch = patch('ichrisbirch.api.endpoints.articles.read_article_page', return_value=PAGE)
         return get_page_patch, _patched_assistant(mock_assistant)
@@ -472,24 +471,19 @@ class TestCreateFromUrl:
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         assert response.json()['notes'] == 'Read later'
 
-    def test_create_from_url_reports_non_json_output_as_a_bad_gateway(self, txn_api_logged_in):
-        """The raw text comes back, so prompt drift is diagnosable without the logs."""
+    def test_create_from_url_reports_invalid_output_as_a_bad_gateway(self, txn_api_logged_in):
+        """The raw output comes back, so prompt drift is diagnosable without the logs."""
         client, _ = txn_api_logged_in
-        get_page_patch, assistant_patch = self._mock_externals(generate_returns='I could not summarize that page.')
+        invalid = AssistantOutputError(
+            AssistantFailure.INVALID_OUTPUT, 'not a valid ArticleSummaryAndTags', 'I could not summarize that page.'
+        )
+        get_page_patch, assistant_patch = self._mock_externals(generate_raises=invalid)
         with get_page_patch, assistant_patch:
             response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/prose'})
         assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
         detail = response.json()['detail']
-        assert detail['reason'] == AssistantFailure.NOT_JSON
+        assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
         assert detail['raw_assistant_output'] == 'I could not summarize that page.'
-
-    def test_create_from_url_reports_a_json_list_as_a_bad_gateway(self, txn_api_logged_in):
-        client, _ = txn_api_logged_in
-        get_page_patch, assistant_patch = self._mock_externals(generate_returns='["summary", "tags"]')
-        with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/list'})
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
-        assert response.json()['detail']['reason'] == AssistantFailure.NOT_AN_OBJECT
 
     def test_create_from_url_reports_a_truncated_reply_as_a_bad_gateway(self, txn_api_logged_in):
         """A reply stopped at the cap is a fragment, and must not be saved as an article."""
@@ -511,23 +505,32 @@ class TestCreateFromUrl:
 
         client, session = txn_api_logged_in
         long_reply = 'x' * 4000
-        get_page_patch, assistant_patch = self._mock_externals(generate_returns=long_reply)
+        invalid = AssistantOutputError(AssistantFailure.INVALID_OUTPUT, 'not a valid ArticleSummaryAndTags', long_reply)
+        get_page_patch, assistant_patch = self._mock_externals(generate_raises=invalid)
         with get_page_patch, assistant_patch, pytest.raises(AssistantOutputError) as caught:
-            _summarize_and_create_article('https://example.com/worker', None, session, get_settings())
+            asyncio.run(_summarize_and_create_article('https://example.com/worker', None, session, get_settings()))
         assert len(str(caught.value)) < 200, 'the worker would record this whole string'
         assert caught.value.raw_output == long_reply, 'the raw reply is still reachable for a 502'
 
-    def test_create_from_url_accepts_a_code_fenced_reply(self, txn_api_logged_in):
-        """Claude wraps JSON in a fence often enough that parse_json strips one."""
+    def test_create_from_url_answers_a_usage_limit_with_when_to_retry(self, txn_api_logged_in):
+        """A refused call succeeds once the plan resets, so the answer is a 503 that says when."""
         client, _ = txn_api_logged_in
-        fenced = '```json\n{"summary": "Fenced summary.", "tags": ["fenced"]}\n```'
-        get_page_patch, assistant_patch = self._mock_externals(generate_returns=fenced)
+        resets_at = datetime(2026, 9, 18, 3, 0, tzinfo=UTC)
+        limit = AssistantUsageLimitReached('Article Summary with Tags', resets_at, 'five_hour')
+        get_page_patch, assistant_patch = self._mock_externals(generate_raises=limit)
         with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/fenced'})
-        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-        data = response.json()
-        assert data['summary'] == 'Fenced summary.'
-        assert data['tags'] == ['fenced']
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/limited'})
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, show_status_and_response(response)
+        assert response.headers['Retry-After'] == 'Fri, 18 Sep 2026 03:00:00 GMT'
+
+    def test_a_usage_limit_with_no_reset_time_sends_no_retry_after(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        limit = AssistantUsageLimitReached('Article Summary with Tags', None, None)
+        get_page_patch, assistant_patch = self._mock_externals(generate_raises=limit)
+        with get_page_patch, assistant_patch:
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/limited'})
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, show_status_and_response(response)
+        assert 'Retry-After' not in response.headers
 
 
 # ---------------------------------------------------------------------------
@@ -602,3 +605,80 @@ class TestBulkImport:
         response = client.get(f'{ENDPOINT}failed-imports/')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json() == []
+
+
+class TestBulkImportUsageLimit:
+    """The worker holds the queue when the Claude plan's usage limit refuses a call."""
+
+    SUMMARIZE = 'ichrisbirch.api.endpoints.articles._summarize_and_create_article'
+
+    def take_first_item(self, redis_client: redis.Redis) -> dict:
+        popped = redis_client.blpop(QUEUE_KEY, timeout=1)
+        assert popped is not None, 'the batch was not queued'
+        _, item_json = popped
+        return json.loads(item_json)
+
+    def test_the_refused_item_goes_back_first_and_the_queue_pauses_until_the_reset(self, test_redis):
+        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/first', 'https://example.com/second'])
+        worker = ArticleImportWorker(test_redis, get_settings())
+        item = self.take_first_item(test_redis)
+        resets_at = datetime.now(UTC) + timedelta(hours=2)
+        limit = AssistantUsageLimitReached('Article Summary with Tags', resets_at, 'five_hour')
+
+        with patch(self.SUMMARIZE, side_effect=limit):
+            worker._process_item(item)
+
+        batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
+        assert json.loads(test_redis.lindex(QUEUE_KEY, 0)) == item, 'the refused item keeps its place and its attempt count'
+        assert test_redis.llen(QUEUE_KEY) == 2
+        assert test_redis.get(PAUSE_KEY) == resets_at.isoformat()
+        assert 7100 < test_redis.ttl(PAUSE_KEY) <= 7200, 'the pause expires when the limit resets'
+        assert test_redis.ttl(batch_key) > BATCH_TTL, 'the batch status outlives the wait'
+        assert test_redis.hget(batch_key, 'failed_count') == '0', 'a refused call is not a failed import'
+
+    def test_a_limit_with_no_reset_time_holds_the_queue_for_the_recheck_interval(self, test_redis):
+        enqueue_bulk_import(test_redis, ['https://example.com/only'])
+        worker = ArticleImportWorker(test_redis, get_settings())
+        item = self.take_first_item(test_redis)
+
+        with patch(self.SUMMARIZE, side_effect=AssistantUsageLimitReached('Article Summary with Tags', None, None)):
+            worker._process_item(item)
+
+        recheck_seconds = int(USAGE_LIMIT_RECHECK.total_seconds())
+        assert recheck_seconds - 5 < test_redis.ttl(PAUSE_KEY) <= recheck_seconds
+
+    def test_a_paused_worker_takes_nothing_from_the_queue(self, test_redis):
+        """A pause in Redis holds every worker, including one started after the limit was hit."""
+        enqueue_bulk_import(test_redis, ['https://example.com/waiting'])
+        test_redis.set(PAUSE_KEY, (datetime.now(UTC) + timedelta(minutes=1)).isoformat(), ex=60)
+        worker = ArticleImportWorker(test_redis, get_settings())
+
+        with patch(self.SUMMARIZE, return_value=MagicMock(title='Taken')):
+            worker.start()
+            try:
+                time.sleep(0.5)
+                assert test_redis.llen(QUEUE_KEY) == 1, 'the worker took an item while paused'
+            finally:
+                worker.stop()
+
+    def test_a_paused_batch_reports_when_it_resumes(self, api_with_redis, test_redis):
+        client, _ = api_with_redis
+        batch_id = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://example.com/held']}).json()['batch_id']
+        resumes_at = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
+        test_redis.set(PAUSE_KEY, resumes_at, ex=3600)
+
+        data = client.get(f'{ENDPOINT}bulk-import/{batch_id}/').json()
+
+        assert data['status'] == 'paused'
+        assert data['resumes_at'] == resumes_at
+
+    def test_a_completed_batch_is_not_reported_paused(self, api_with_redis, test_redis):
+        client, _ = api_with_redis
+        batch_id = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://example.com/done']}).json()['batch_id']
+        test_redis.hset(f'{BATCH_KEY_PREFIX}{batch_id}', 'status', 'completed')
+        test_redis.set(PAUSE_KEY, (datetime.now(UTC) + timedelta(hours=1)).isoformat(), ex=3600)
+
+        data = client.get(f'{ENDPOINT}bulk-import/{batch_id}/').json()
+
+        assert data['status'] == 'completed'
+        assert data['resumes_at'] is None

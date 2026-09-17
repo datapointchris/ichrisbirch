@@ -4,6 +4,7 @@ from ichrisbirch.schemas.article import ArticleCreate
 from ichrisbirch.schemas.article import ArticleCreateFromUrl
 from ichrisbirch.schemas.article import ArticleFailedImport
 from ichrisbirch.schemas.article import ArticleSummary
+from ichrisbirch.schemas.article import ArticleSummaryAndTags
 from ichrisbirch.schemas.article import ArticleUpdate
 from ichrisbirch.schemas.autofun import AutoFun
 from ichrisbirch.schemas.autofun import AutoFunCreate
@@ -113,6 +114,7 @@ __all__ = [
     'ArticleCreate',
     'ArticleCreateFromUrl',
     'ArticleSummary',
+    'ArticleSummaryAndTags',
     'ArticleUpdate',
     'ArticleFailedImport',
     'AutoFun',

@@ -6,7 +6,6 @@ labeled content to a Claude classifier that returns a UrlImportCandidate.
 """
 
 import structlog
-from pydantic import ValidationError
 
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
@@ -59,12 +58,12 @@ def extract_content_for_classifier(url: str) -> str:
     return read_article_page(url).text
 
 
-def classify_url_content(url: str, hint: str, content: str, settings: Settings) -> schemas.UrlImportCandidate:
-    """Run the classifier and parse its output into a UrlImportCandidate.
+async def classify_url_content(url: str, hint: str, content: str, settings: Settings) -> schemas.UrlImportCandidate:
+    """Run the classifier and return its UrlImportCandidate.
 
     Raises `ClassifierOutputError` with the raw output preserved when the
-    classifier returns malformed or invalid JSON. The endpoint layer translates
-    that to HTTP 502.
+    classifier produces no usable candidate. The endpoint layer translates that
+    to HTTP 502.
     """
     assistant = AnthropicAssistant(
         name='URL Import Classifier',
@@ -73,24 +72,9 @@ def classify_url_content(url: str, hint: str, content: str, settings: Settings) 
     )
     user_message = f'url: {url}\nhint: {hint}\n\n{content}'
     try:
-        raw_output = assistant.generate(user_message, max_tokens=8192)
+        candidate = await assistant.generate_structured(user_message, schemas.UrlImportCandidate, max_tokens=8192)
     except AssistantOutputError as e:
-        # A truncated reply is the assistant's error type, and this endpoint
-        # answers 502 for a classifier that cannot be used at all.
         raise ClassifierOutputError(str(e), e.raw_output) from e
-
-    try:
-        parsed = AnthropicAssistant.parse_json(raw_output)
-    except Exception as e:
-        raise ClassifierOutputError(f'Classifier returned non-JSON output: {e}', raw_output) from e
-
-    if not isinstance(parsed, dict):
-        raise ClassifierOutputError('Classifier returned a non-object top-level value', raw_output)
-
-    try:
-        candidate = schemas.UrlImportCandidate.model_validate(parsed)
-    except ValidationError as e:
-        raise ClassifierOutputError(f'Candidate did not validate: {e}', raw_output) from e
 
     # Always pin source_url to the input URL — the classifier sometimes drops or
     # rewrites it, but the endpoint needs it for the duplicate check on re-ingest.

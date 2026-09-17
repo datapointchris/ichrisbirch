@@ -153,7 +153,7 @@ async def create(article: schemas.ArticleCreate, session: DbSession):
     return obj
 
 
-def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
+async def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
     """Fetch URL, summarize via Claude, create article.
 
     Used by create-from-url endpoint and bulk import worker, so it raises domain
@@ -172,13 +172,13 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
         system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    data = AnthropicAssistant.parse_json_object(assistant.generate(page.text, max_tokens=8192), assistant.name)
+    written = await assistant.generate_structured(page.text, schemas.ArticleSummaryAndTags, max_tokens=8192)
 
     article = models.Article(
         title=page.title,
         url=url,
-        tags=data.get('tags', []),
-        summary=data.get('summary', ''),
+        tags=written.tags,
+        summary=written.summary,
         notes=notes,
         save_date=pendulum.now(),
         read_count=0,
@@ -201,7 +201,7 @@ async def create_from_url(
 ):
     """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
     try:
-        return _summarize_and_create_article(body.url, body.notes, session, settings)
+        return await _summarize_and_create_article(body.url, body.notes, session, settings)
     except ArticleAlreadyExists as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
     except PAGE_ERRORS as e:
@@ -283,10 +283,10 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
         settings=settings,
     )
     try:
-        data = AnthropicAssistant.parse_json_object(assistant.generate(page.text, max_tokens=8192), assistant.name)
+        written = await assistant.generate_structured(page.text, schemas.ArticleSummaryAndTags, max_tokens=8192)
     except AssistantOutputError as e:
         raise _bad_gateway(e) from e
-    return schemas.ArticleSummary(title=page.title, summary=data.get('summary'), tags=data.get('tags'))
+    return schemas.ArticleSummary(title=page.title, summary=written.summary, tags=written.tags)
 
 
 @router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
@@ -318,7 +318,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
 
     assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
     try:
-        mkd = assistant.generate(page.text, max_tokens=8192)
+        mkd = await assistant.generate(page.text, max_tokens=8192)
     except AssistantOutputError as e:
         raise _bad_gateway(e) from e
     full_mkd = f'# {page.title}\n{mkd}'

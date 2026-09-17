@@ -1,3 +1,4 @@
+import email.utils
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -11,6 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.endpoints.auth import get_admin_user
@@ -31,6 +33,16 @@ async def http_exception_handler_logger(request, exc):
 async def request_validation_exception_handler_logger(request, exc):
     logger.error('api_validation_error', path=request.url.path, error=str(exc))
     return await request_validation_exception_handler(request, exc)
+
+
+async def assistant_usage_limit_handler(request, exc):
+    """Answer a call refused by the Claude plan's usage limit as a service that will be back.
+
+    `Retry-After` carries the reset time when Claude Code reported one.
+    """
+    logger.warning('assistant_usage_limit_reached', path=request.url.path, resets_at=exc.resets_at, limit_type=exc.limit_type)
+    headers = {'Retry-After': email.utils.format_datetime(exc.resets_at, usegmt=True)} if exc.resets_at else None
+    return JSONResponse(status_code=503, content={'detail': str(exc)}, headers=headers)
 
 
 async def api_exception_handler(request, exc):
@@ -103,6 +115,7 @@ def create_api(settings: Settings) -> FastAPI:
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
     api.add_exception_handler(RequestValidationError, request_validation_exception_handler_logger)
+    api.add_exception_handler(AssistantUsageLimitReached, assistant_usage_limit_handler)
     api.add_exception_handler(Exception, api_exception_handler)
     logger.info('exception_handlers_registered')
 

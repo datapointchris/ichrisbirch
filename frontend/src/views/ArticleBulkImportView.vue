@@ -104,6 +104,7 @@ import { ref, computed, onUnmounted } from 'vue'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { useNotifications } from '@/composables/useNotifications'
+import { formatDate } from '@/composables/formatDate'
 import ArticlesSubnav from '@/components/ArticlesSubnav.vue'
 import { createLogger } from '@/utils/logger'
 import type { BulkImportResponse, BulkImportStatus } from '@/api/client'
@@ -124,6 +125,9 @@ const statusText = computed(() => {
       return 'Import complete.'
     case 'processing':
       return 'Processing...'
+    case 'paused':
+      return `Paused: the Claude usage limit was reached. Resumes ${formatDate(batch.value.resumes_at, 'dateTime')}.`
+    case 'queued':
     default:
       return 'Queued... waiting for processing to begin.'
   }

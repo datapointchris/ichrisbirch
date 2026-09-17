@@ -36,7 +36,7 @@ def env_bool(name: str) -> bool:
 class AISettings:
     class AnthropicSettings:
         def __init__(self) -> None:
-            self.api_key: str = os.environ.get('AI_ANTHROPIC_API_KEY', '')
+            self.oauth_token: str = os.environ.get('AI_ANTHROPIC_OAUTH_TOKEN', '')
             self.model: str = os.environ.get('AI_ANTHROPIC_DEFAULT_MODEL', 'claude-haiku-4-5')
 
     class PromptSettings:

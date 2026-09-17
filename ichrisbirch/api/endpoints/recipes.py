@@ -20,6 +20,7 @@ from sqlalchemy.orm import selectinload
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
+from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
@@ -286,7 +287,7 @@ async def ai_suggest(
     request: schemas.RecipeSuggestionRequest,
     settings: Settings = Depends(get_settings),
 ):
-    """Ask Claude (with web_search) to find recipes matching the user's inputs.
+    """Ask Claude (with WebSearch) to find recipes matching the user's inputs.
 
     Returns candidates WITHOUT saving — the user reviews and saves via /ai-save/.
     """
@@ -294,24 +295,21 @@ async def ai_suggest(
         name='Recipe Suggestions',
         system_prompt=settings.ai.prompts.recipe_suggestions,
         settings=settings,
-        tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 5}],
+        tools=['WebSearch'],
     )
     user_message = (
         f'have: {", ".join(request.have) if request.have else "(none specified)"}\n'
         f'want: {request.want or "(no preference)"}\n'
         f'count: {request.count}'
     )
-    text = assistant.generate(user_message, max_tokens=8192)
-    parsed = AnthropicAssistant.parse_json(text)
-    if isinstance(parsed, dict) and 'candidates' in parsed:
-        candidates_raw = parsed['candidates']
-    elif isinstance(parsed, list):
-        candidates_raw = parsed
-    else:
-        logger.error('recipe_suggestion_parse_failed', payload_preview=text[:500])
-        return schemas.RecipeSuggestionResponse(candidates=[])
-    candidates = [schemas.RecipeCandidate.model_validate(c) for c in candidates_raw]
-    return schemas.RecipeSuggestionResponse(candidates=candidates)
+    try:
+        return await assistant.generate_structured(user_message, schemas.RecipeSuggestionResponse, max_tokens=8192)
+    except AssistantOutputError as e:
+        logger.error('recipe_suggestion_unusable', reason=str(e.reason), error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={'reason': str(e.reason), 'message': str(e), 'raw_assistant_output': e.raw_output},
+        ) from e
 
 
 @router.post('/ai-save/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
@@ -371,7 +369,7 @@ async def import_from_url(
         ) from e
 
     try:
-        candidate = url_ingest.classify_url_content(url, request.hint, content, settings)
+        candidate = await url_ingest.classify_url_content(url, request.hint, content, settings)
     except ClassifierOutputError as e:
         logger.error('url_import_classifier_validation_failed', url=url, error=str(e))
         raise HTTPException(

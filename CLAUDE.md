@@ -167,20 +167,25 @@ kept because `docs/api/client/` documents it as the way a Python consumer talks
 to this API, and because `cli/` does the same job in Go over the same surface.
 Deciding whether a Python client is still wanted is what would retire it.
 
-The one sanctioned subprocess is in `scheduler/jobs.py`.
+Two subprocesses are sanctioned: the one in `scheduler/jobs.py`, and the Claude
+Code CLI that `claude-agent-sdk` starts for each call from
+`ai/assistants/anthropic.py`.
 
 ### What a Dependency Can Reach
 
 These dependencies see more than the code that calls them, so what each one
 reaches is written down here rather than inferred from the import.
 
-- **`anthropic`** receives user content, not metadata, and is the only model provider the app
-  talks to. `ichrisbirch/ai/assistants/anthropic.py` wraps it; the callers are
-  `api/endpoints/articles.py`, `api/endpoints/recipes.py` and `services/url_ingest.py`. What
-  crosses the boundary is the full text of a saved article, a recipe being imported, and the
-  contents of any URL ingested. One compromised egress leaks whatever has been read or cooked,
-  which is personal but not credential-bearing — no secret, token or password passes through the
-  client.
+- **`claude-agent-sdk`** receives user content, not metadata, and is the only model provider the
+  app talks to. `ichrisbirch/ai/assistants/anthropic.py` wraps it; the callers are
+  `api/endpoints/articles.py`, `api/endpoints/recipes.py` and `services/url_ingest.py`. Each call
+  runs the Claude Code CLI bundled in the package, authenticated by the subscription OAuth token
+  in `AI_ANTHROPIC_OAUTH_TOKEN`, so usage draws on the Claude plan and never on API credits.
+  `ANTHROPIC_API_KEY` outranks that token inside Claude Code, so it is never set. What crosses the
+  boundary is the full text of a saved article, a recipe being imported, and the contents of any
+  URL ingested. The token sits in the CLI's environment and is a bearer credential for the plan. The
+  CLI loads no CLAUDE.md, settings or skills, and the only tool any call has is `WebSearch`, on
+  recipe discovery.
 - **`docker`** is a *runtime* dependency, and `api/endpoints/admin.py` builds a client with
   `docker.from_env()` to report container status on the admin page. That gives the API process a
   handle on the host daemon, which is the widest reach in the list: a daemon socket is

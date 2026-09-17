@@ -136,6 +136,9 @@ func newArticlesFailedImportsCommand() *cobra.Command {
 func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
 	_, _ = fmt.Fprintf(out, "batch %s\n", s.BatchID)
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", s.Status)
+	if s.ResumesAt != nil {
+		_, _ = fmt.Fprintf(out, "  resumes:   %s (Claude usage limit)\n", *s.ResumesAt)
+	}
 	_, _ = fmt.Fprintf(out, "  progress:  %d/%d processed\n", s.Processed, s.Total)
 	_, _ = fmt.Fprintf(out, "  succeeded: %d\n", s.Succeeded)
 	_, _ = fmt.Fprintf(out, "  failed:    %d\n", s.FailedCount)
