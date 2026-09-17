@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
-from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
@@ -72,21 +71,6 @@ def _read_page_for_request(url: str) -> ArticlePage:
         return read_article_page(url)
     except PAGE_ERRORS as e:
         raise _page_error(e) from e
-
-
-def _bad_gateway(e: AssistantOutputError) -> HTTPException:
-    """Translate an unusable reply into a 502 that names why and quotes the model.
-
-    Only a request handler calls this. `_summarize_and_create_article` runs in
-    the bulk import worker as well, where an HTTPException's str() is
-    `'502: {…}'` — the whole detail dict, raw reply included, into a database
-    column and a Redis payload.
-    """
-    logger.error('article_assistant_output_unusable', reason=str(e.reason), error=str(e))
-    return HTTPException(
-        status_code=status.HTTP_502_BAD_GATEWAY,
-        detail={'reason': str(e.reason), 'message': str(e), 'raw_assistant_output': e.raw_output},
-    )
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
@@ -153,7 +137,7 @@ async def create(article: schemas.ArticleCreate, session: DbSession):
     return obj
 
 
-def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
+async def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
     """Fetch URL, summarize via Claude, create article.
 
     Used by create-from-url endpoint and bulk import worker, so it raises domain
@@ -172,13 +156,13 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
         system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    data = AnthropicAssistant.parse_json_object(assistant.generate(page.text, max_tokens=8192), assistant.name)
+    written = await assistant.generate_structured(page.text, schemas.ArticleSummaryAndTags, max_tokens=8192)
 
     article = models.Article(
         title=page.title,
         url=url,
-        tags=data.get('tags', []),
-        summary=data.get('summary', ''),
+        tags=written.tags,
+        summary=written.summary,
         notes=notes,
         save_date=pendulum.now(),
         read_count=0,
@@ -201,13 +185,11 @@ async def create_from_url(
 ):
     """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
     try:
-        return _summarize_and_create_article(body.url, body.notes, session, settings)
+        return await _summarize_and_create_article(body.url, body.notes, session, settings)
     except ArticleAlreadyExists as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
     except PAGE_ERRORS as e:
         raise _page_error(e) from e
-    except AssistantOutputError as e:
-        raise _bad_gateway(e) from e
 
 
 @router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
@@ -282,11 +264,8 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
         system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    try:
-        data = AnthropicAssistant.parse_json_object(assistant.generate(page.text, max_tokens=8192), assistant.name)
-    except AssistantOutputError as e:
-        raise _bad_gateway(e) from e
-    return schemas.ArticleSummary(title=page.title, summary=data.get('summary'), tags=data.get('tags'))
+    written = await assistant.generate_structured(page.text, schemas.ArticleSummaryAndTags, max_tokens=8192)
+    return schemas.ArticleSummary(title=page.title, summary=written.summary, tags=written.tags)
 
 
 @router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
@@ -317,10 +296,7 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
         raise _page_error(e) from e
 
     assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
-    try:
-        mkd = assistant.generate(page.text, max_tokens=8192)
-    except AssistantOutputError as e:
-        raise _bad_gateway(e) from e
+    mkd = await assistant.generate(page.text, max_tokens=8192)
     full_mkd = f'# {page.title}\n{mkd}'
 
     # Escaped before rendering, because Python-Markdown passes raw HTML straight

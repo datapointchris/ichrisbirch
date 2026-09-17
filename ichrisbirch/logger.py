@@ -146,11 +146,10 @@ def configure_stdlib_logging():
     third_party_levels = {
         'apscheduler': logging.WARNING,
         'asyncio': logging.INFO,
+        'claude_agent_sdk': logging.WARNING,
         'faker': logging.INFO,
         'fsevents': logging.INFO,
-        'httpcore': logging.INFO,
         'httpcore2': logging.INFO,
-        'httpx': logging.WARNING,
         'httpx2': logging.WARNING,
         'matplotlib': logging.INFO,
         'multipart.multipart': logging.INFO,

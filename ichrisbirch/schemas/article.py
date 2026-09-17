@@ -62,6 +62,13 @@ class ArticleSummary(ArticleConfig):
     tags: list[str]
 
 
+class ArticleSummaryAndTags(ArticleConfig):
+    """What Claude writes for a page. The title comes from the page, not the model."""
+
+    summary: str
+    tags: list[str]
+
+
 class ArticleFailedImport(ArticleConfig):
     id: int
     url: str

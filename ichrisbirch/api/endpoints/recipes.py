@@ -30,7 +30,6 @@ from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.url_extraction import PageUnreadable
-from ichrisbirch.services.url_ingest import ClassifierOutputError
 from ichrisbirch.util import slugify
 
 logger = structlog.get_logger()
@@ -286,7 +285,7 @@ async def ai_suggest(
     request: schemas.RecipeSuggestionRequest,
     settings: Settings = Depends(get_settings),
 ):
-    """Ask Claude (with web_search) to find recipes matching the user's inputs.
+    """Ask Claude (with WebSearch) to find recipes matching the user's inputs.
 
     Returns candidates WITHOUT saving — the user reviews and saves via /ai-save/.
     """
@@ -294,24 +293,15 @@ async def ai_suggest(
         name='Recipe Suggestions',
         system_prompt=settings.ai.prompts.recipe_suggestions,
         settings=settings,
-        tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 5}],
+        tools=['WebSearch'],
+        max_tool_uses=5,
     )
     user_message = (
         f'have: {", ".join(request.have) if request.have else "(none specified)"}\n'
         f'want: {request.want or "(no preference)"}\n'
         f'count: {request.count}'
     )
-    text = assistant.generate(user_message, max_tokens=8192)
-    parsed = AnthropicAssistant.parse_json(text)
-    if isinstance(parsed, dict) and 'candidates' in parsed:
-        candidates_raw = parsed['candidates']
-    elif isinstance(parsed, list):
-        candidates_raw = parsed
-    else:
-        logger.error('recipe_suggestion_parse_failed', payload_preview=text[:500])
-        return schemas.RecipeSuggestionResponse(candidates=[])
-    candidates = [schemas.RecipeCandidate.model_validate(c) for c in candidates_raw]
-    return schemas.RecipeSuggestionResponse(candidates=candidates)
+    return await assistant.generate_structured(user_message, schemas.RecipeSuggestionResponse, max_tokens=8192)
 
 
 @router.post('/ai-save/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
@@ -345,7 +335,7 @@ async def import_from_url(
 
     Returns 409 if the URL is already ingested as a recipe or a technique (checks
     both tables — a single URL can legitimately back either entity). Returns 502 if
-    the classifier output fails to validate against the candidate schema, with the
+    the classifier produces no usable candidate, with the failure's reason and the
     raw output embedded for prompt-drift observability.
     """
     url = request.url
@@ -370,15 +360,7 @@ async def import_from_url(
             detail=f'Could not fetch URL content: {e}',
         ) from e
 
-    try:
-        candidate = url_ingest.classify_url_content(url, request.hint, content, settings)
-    except ClassifierOutputError as e:
-        logger.error('url_import_classifier_validation_failed', url=url, error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={'message': str(e), 'raw_classifier_output': e.raw_output},
-        ) from e
-
+    candidate = await url_ingest.classify_url_content(url, request.hint, content, settings)
     return schemas.UrlImportResponse(candidate=candidate)
 
 

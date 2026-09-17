@@ -1,4 +1,4 @@
-import json
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -6,7 +6,8 @@ import pytest
 from fastapi import status
 
 from ichrisbirch import schemas
-from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
+from ichrisbirch.ai.assistants.anthropic import AssistantFailure
+from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -335,8 +336,8 @@ class TestStats:
 
 class TestAISuggest:
     @patch('ichrisbirch.api.endpoints.recipes.AnthropicAssistant')
-    def test_ai_suggest_parses_candidates(self, mock_assistant_cls, recipe_crud_tester):
-        """Mock Claude's response and verify the endpoint parses/validates candidates correctly."""
+    def test_ai_suggest_returns_candidates_found_with_web_search(self, mock_assistant_cls, recipe_crud_tester):
+        """The endpoint returns Claude's validated candidates and gives it WebSearch to find them."""
         client, _ = recipe_crud_tester
 
         fake_candidates = {
@@ -380,11 +381,8 @@ class TestAISuggest:
         }
 
         mock_assistant = MagicMock()
-        mock_assistant.generate.return_value = json.dumps(fake_candidates)
+        mock_assistant.generate_structured = AsyncMock(return_value=schemas.RecipeSuggestionResponse.model_validate(fake_candidates))
         mock_assistant_cls.return_value = mock_assistant
-        # The endpoint calls AnthropicAssistant.parse_json (staticmethod) on the CLASS,
-        # so the mock class must delegate to the real staticmethod or parsing silently fails.
-        mock_assistant_cls.parse_json = AnthropicAssistant.parse_json
 
         response = client.post(
             f'{ENDPOINT}ai-suggest/',
@@ -398,12 +396,24 @@ class TestAISuggest:
         assert candidate['source_url'] == 'https://example.com/stir-fry'
         assert len(candidate['ingredients']) == 2
 
-        # Verify web_search tool was passed and the AnthropicAssistant was instantiated
         mock_assistant_cls.assert_called_once()
-        call_kwargs = mock_assistant_cls.call_args.kwargs
-        tools = call_kwargs.get('tools')
-        assert tools is not None
-        assert any(t.get('name') == 'web_search' for t in tools)
+        assert mock_assistant_cls.call_args.kwargs['tools'] == ['WebSearch']
+        assert mock_assistant_cls.call_args.kwargs['max_tool_uses'] == 5, 'recipe discovery searches without a bound'
+
+    @patch('ichrisbirch.api.endpoints.recipes.AnthropicAssistant')
+    def test_ai_suggest_reports_invalid_output_as_a_bad_gateway(self, mock_assistant_cls, recipe_crud_tester):
+        client, _ = recipe_crud_tester
+        mock_assistant = MagicMock()
+        invalid = AssistantOutputError(AssistantFailure.INVALID_OUTPUT, 'not a valid RecipeSuggestionResponse', '{"candidates": "none"}')
+        mock_assistant.generate_structured = AsyncMock(side_effect=invalid)
+        mock_assistant_cls.return_value = mock_assistant
+
+        response = client.post(f'{ENDPOINT}ai-suggest/', json={'have': ['chicken'], 'count': 1})
+
+        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        detail = response.json()['detail']
+        assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
+        assert detail['raw_assistant_output'] == '{"candidates": "none"}'
 
     def test_ai_save_persists_candidate(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
@@ -558,16 +568,16 @@ class TestUrlImport:
 
     @patch('ichrisbirch.services.url_ingest.classify_url_content')
     @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
-    def test_import_returns_502_on_classifier_output_error(self, mock_extract, mock_classify, recipe_crud_tester):
-        from ichrisbirch.services.url_ingest import ClassifierOutputError
-
+    def test_import_returns_502_naming_why_the_classifier_failed(self, mock_extract, mock_classify, recipe_crud_tester):
+        """An expired token and a drifted prompt both answer 502, and the reason tells them apart."""
         client, _ = recipe_crud_tester
         mock_extract.return_value = 'fake'
-        mock_classify.side_effect = ClassifierOutputError('malformed', raw_output='not json at all')
+        mock_classify.side_effect = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
         response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/broken'})
         assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
         detail = response.json()['detail']
-        assert detail['raw_classifier_output'] == 'not json at all'
+        assert detail['reason'] == AssistantFailure.FAILED
+        assert detail['raw_assistant_output'] == 'API Error: 401'
 
     def test_save_recipe_only_persists_recipe(self, recipe_crud_tester):
         client, _ = recipe_crud_tester

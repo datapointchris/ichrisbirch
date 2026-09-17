@@ -83,10 +83,12 @@ type ArticleImportResult struct {
 // ArticleBulkImportStatus is the batch progress payload (GET
 // /articles/bulk-import/{batch_id}/). The timestamps are Redis-stored naive
 // datetimes (no timezone), so they stay strings — Go's time.Time JSON decode
-// requires RFC3339 and would reject them.
+// requires RFC3339 and would reject them. ResumesAt is set only while the
+// status is "paused", when the Claude usage limit is holding the queue.
 type ArticleBulkImportStatus struct {
 	BatchID     string                `json:"batch_id"`
 	Status      string                `json:"status"`
+	ResumesAt   *string               `json:"resumes_at"`
 	Total       int                   `json:"total"`
 	Processed   int                   `json:"processed"`
 	Succeeded   int                   `json:"succeeded"`

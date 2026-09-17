@@ -251,9 +251,9 @@ Noisy third-party loggers are raised to a quieter level. The loggers and their
 levels are the `third_party_levels` mapping in `configure_stdlib_logging`, in
 `ichrisbirch/logger.py`, and that mapping is the list.
 
-Both HTTP clients appear in it: `httpx2` and `httpcore2` for the app's own
-requests, and `httpx` and `httpcore` for the Anthropic SDK, which still sends
-through `httpx`.
+`httpx2` and `httpcore2` cover the app's own requests. `claude_agent_sdk` is
+raised to `WARNING`, because it logs the path of the Claude Code CLI it starts
+at `INFO` on every model call.
 
 ## Usage Pattern
 

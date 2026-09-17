@@ -429,7 +429,8 @@ export interface BulkImportResponse {
 
 export interface BulkImportStatus {
   batch_id: string
-  status: 'queued' | 'processing' | 'completed'
+  status: 'queued' | 'processing' | 'paused' | 'completed'
+  resumes_at: string | null
   total: number
   processed: number
   succeeded: number
