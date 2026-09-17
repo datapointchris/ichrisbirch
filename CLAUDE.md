@@ -142,11 +142,16 @@ Why the refresh is serialized at all, and why a mutex cannot do it, is `goclilog
 ### Outbound HTTP Goes Through One Function
 
 Fetching a page from a third party is `get_page` in
-`ichrisbirch/services/outbound_http.py`. It sets the browser user agent, follows
-redirects and applies a 30-second timeout — the combination five call sites used
-to repeat by hand, four of them leaving the timeout at httpx's five-second
-default. Never call `httpx.get` directly for an outside URL; add the case to
+`ichrisbirch/services/outbound_http.py`. It sends a real browser's TLS fingerprint
+through `curl_cffi`, follows redirects, applies a 60-second timeout and returns a
+`FetchedPage`. Sites behind bot protection refuse a plain HTTP client whatever user
+agent it claims. Never fetch an outside URL any other way; add the case to
 `get_page` instead.
+
+Turning a saved URL into a title and text is `read_article_page` in
+`services/url_extraction.py`, used by the article endpoints, the bulk import worker
+and recipe import. It refuses a redirect to the homepage, a bot check and a page
+with too little text, each as its own exception.
 
 Two callers are deliberately outside it, because they are not third-party
 page fetches:
@@ -181,6 +186,12 @@ reaches is written down here rather than inferred from the import.
   handle on the host daemon, which is the widest reach in the list: a daemon socket is
   root-equivalent on the host. It is narrow in use — status reads only — and the endpoint is behind
   `get_admin_user`.
+- **`curl_cffi`** makes every third-party page request, from `services/outbound_http.py`. It
+  reaches whatever URL a user saved, the same as the HTTP client it replaced, and carries nothing
+  but the request.
+- **`trafilatura`** and **`pypdf`** parse page and PDF bytes already fetched, in
+  `services/url_extraction.py`. Neither makes a request: `trafilatura`'s own download helpers are
+  never called.
 - **`yt-dlp`** fetches YouTube metadata on the app's behalf from `services/url_extraction.py`,
   alongside `youtube-transcript-api`. Both make outbound requests to a third party with whatever URL
   a user saved. `yt-dlp` releases weekly to track site changes, so it carries a lower bound only.

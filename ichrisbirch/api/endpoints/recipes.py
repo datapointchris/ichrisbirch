@@ -1,7 +1,6 @@
 from datetime import UTC
 from datetime import datetime
 
-import httpx
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
@@ -26,8 +25,11 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.services import url_ingest
+from ichrisbirch.services.outbound_http import PageFetchError
+from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.url_extraction import PageUnreadable
 from ichrisbirch.services.url_ingest import ClassifierOutputError
 from ichrisbirch.util import slugify
 
@@ -360,8 +362,8 @@ async def import_from_url(
         )
 
     try:
-        content = url_ingest.extract_content_for_classifier(url, settings)
-    except httpx.HTTPError as e:
+        content = url_ingest.extract_content_for_classifier(url)
+    except (PageFetchError, PageStatusError, PageUnreadable) as e:
         logger.error('url_content_fetch_failed', url=url, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,

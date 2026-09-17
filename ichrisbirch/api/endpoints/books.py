@@ -1,7 +1,6 @@
 import structlog
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import Query
 from fastapi import Request
 from fastapi import Response
@@ -15,8 +14,6 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.config import Settings
-from ichrisbirch.config import get_settings
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
@@ -93,13 +90,13 @@ async def search(q: str, session: DbSession):
 
 
 @router.post('/goodreads/', response_model=schemas.BookGoodreadsInfo, status_code=status.HTTP_201_CREATED)
-async def goodreads(request: Request, settings: Settings = Depends(get_settings)):
+async def goodreads(request: Request):
     """Get book information from Goodreads using the ISBN."""
     request_data = await request.json()
     logger.debug('goodreads_request', data=request_data)
     isbn = request_data.get('isbn')
     url = f'https://www.goodreads.com/search?q={isbn}'
-    response = get_page(url, settings).raise_for_status()
+    response = get_page(url).raise_for_status()
     logger.debug('goodreads_retrieved', isbn=isbn)
     # TODO: Fix the typing errors for this POS
     soup = BeautifulSoup(response.content, 'html.parser')

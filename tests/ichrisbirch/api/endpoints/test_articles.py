@@ -12,6 +12,7 @@ from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.ai.assistants.anthropic import AssistantFailure
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.url_extraction import ArticlePage
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -26,6 +27,8 @@ NEW_OBJ = schemas.ArticleCreate(
 )
 
 ENDPOINT = '/articles/'
+
+PAGE = ArticlePage(url='https://example.com/test-article', title='Test Article', text='Test content')
 
 
 def _patched_assistant(mock_assistant):
@@ -112,16 +115,13 @@ def test_search(article_crud_tester):
     assert any(article['title'] == 'Searchable Article' for article in articles)
 
 
-@patch('ichrisbirch.api.endpoints.articles.get_page')
+@patch('ichrisbirch.api.endpoints.articles.read_article_page')
 @patch('youtube_transcript_api.YouTubeTranscriptApi')
 @patch('youtube_transcript_api.formatters.TextFormatter')
 def test_summarize(mock_text_formatter, mock_yt_api, mock_get_page, article_crud_tester):
     client, _ = article_crud_tester
     # Mock the outbound page fetch
-    mock_response = MagicMock()
-    mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>Test content</p></body></html>'
-    mock_response.raise_for_status.return_value = mock_response
-    mock_get_page.return_value = mock_response
+    mock_get_page.return_value = PAGE
 
     # Mock YouTube formatter (not used for non-YouTube URLs)
     mock_formatter = MagicMock()
@@ -142,15 +142,12 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_get_page, article_crud
         assert all(tag in data['tags'] for tag in expected_tags)
 
 
-@patch('ichrisbirch.api.endpoints.articles.get_page')
+@patch('ichrisbirch.api.endpoints.articles.read_article_page')
 @patch('youtube_transcript_api.YouTubeTranscriptApi.fetch')
 def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tester):
     client, _ = article_crud_tester
     # Mock the outbound page fetch
-    mock_response = MagicMock()
-    mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>Test content</p></body></html>'
-    mock_response.raise_for_status.return_value = mock_response
-    mock_get_page.return_value = mock_response
+    mock_get_page.return_value = PAGE
 
     # Mock YouTube transcript
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
@@ -166,7 +163,7 @@ def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tes
         assert '<h2>Insights</h2>' in content
 
 
-@patch('ichrisbirch.api.endpoints.articles.get_page')
+@patch('ichrisbirch.api.endpoints.articles.read_article_page')
 @patch('youtube_transcript_api.YouTubeTranscriptApi.fetch')
 def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_get_page, article_crud_tester):
     """Insights renders the reply without parsing it, so truncation has no other tell.
@@ -175,10 +172,7 @@ def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_
     a reply stopped at the cap renders as finished HTML.
     """
     client, _ = article_crud_tester
-    mock_response = MagicMock()
-    mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>x</p></body></html>'
-    mock_response.raise_for_status.return_value = mock_response
-    mock_get_page.return_value = mock_response
+    mock_get_page.return_value = PAGE
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
 
     mock_assistant = MagicMock()
@@ -193,7 +187,7 @@ def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_
     assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
 
 
-@patch('ichrisbirch.api.endpoints.articles.get_page')
+@patch('ichrisbirch.api.endpoints.articles.read_article_page')
 @patch('youtube_transcript_api.YouTubeTranscriptApi.fetch')
 def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_fetch, mock_get_page, article_crud_tester):
     """The model summarizes a page the caller supplied, so its output is attacker-influenced.
@@ -202,10 +196,7 @@ def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_f
     response would execute in the reader's browser.
     """
     client, _ = article_crud_tester
-    mock_response = MagicMock()
-    mock_response.content = '<html><head><title>Test Article | Website</title></head><body><p>x</p></body></html>'
-    mock_response.raise_for_status.return_value = mock_response
-    mock_get_page.return_value = mock_response
+    mock_get_page.return_value = PAGE
     mock_youtube_transcript_fetch.return_value = [{'text': 'Test transcript', 'duration': 10}]
 
     mock_assistant = MagicMock()
@@ -432,10 +423,6 @@ class TestCreateFromUrl:
 
     def _mock_externals(self, generate_returns: str | None = None, generate_raises: Exception | None = None):
         """Return the page-fetch and assistant patch context managers."""
-        mock_response = MagicMock()
-        mock_response.content = b'<html><head><title>Test Article | Website</title></head><body><p>Content here.</p></body></html>'
-        mock_response.raise_for_status.return_value = mock_response
-
         mock_assistant = MagicMock()
         if generate_raises is not None:
             mock_assistant.generate.side_effect = generate_raises
@@ -447,7 +434,7 @@ class TestCreateFromUrl:
                 }
             )
 
-        get_page_patch = patch('ichrisbirch.api.endpoints.articles.get_page', return_value=mock_response)
+        get_page_patch = patch('ichrisbirch.api.endpoints.articles.read_article_page', return_value=PAGE)
         return get_page_patch, _patched_assistant(mock_assistant)
 
     def test_create_from_url(self, txn_api_logged_in):
