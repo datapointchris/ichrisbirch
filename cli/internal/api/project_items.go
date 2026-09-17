@@ -68,8 +68,9 @@ type ProjectItemDetail struct {
 	DependencyIDs []string                `json:"dependency_ids"`
 }
 
-// ProjectItemMembership is where an item sits in one of its projects: Position
-// counts from 0 at the front of that project's queue.
+// ProjectItemMembership is where an item sits in one of its projects. Position
+// orders that project's queue, lowest first. Deleting an item or removing it
+// from the project leaves a gap, so the front of a queue is not always 0.
 type ProjectItemMembership struct {
 	ProjectID string `json:"project_id"`
 	Position  int    `json:"position"`
