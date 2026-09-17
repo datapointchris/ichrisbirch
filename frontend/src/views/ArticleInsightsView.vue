@@ -67,7 +67,7 @@ async function handleSubmit() {
   const startTime = Date.now()
 
   try {
-    const response = await api.post('/articles/insights/', { url: url.value.trim() })
+    const response = await api.post('/articles/insights/', { url: url.value.trim() }, { timeout: 180_000 })
     insightsHtml.value = response.data as string
     const seconds = ((Date.now() - startTime) / 1000).toFixed(1)
     elapsed.value = `${seconds}s`
