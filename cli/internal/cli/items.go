@@ -289,7 +289,7 @@ func newItemsNextCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			actionable := actionableItems(itemsOfKind(all, kind), blocked)
+			actionable := actionableItems(all, blocked, kind)
 			items := capItems(actionable, limit)
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), items)

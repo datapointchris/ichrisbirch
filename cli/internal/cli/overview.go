@@ -436,20 +436,24 @@ func sameLocalDay(moment time.Time, now time.Time) bool {
 // archived, not blocked — in the order they are taken: the whole queue of the
 // highest-ranked project, then the next project's, each queue in its own
 // position order. This is the order `projects items next` prints.
-func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.ProjectItem {
+//
+// A kind narrows the queue as well as the items. Only projects of that kind
+// rank, so an item that is also in a higher-ranked project of another kind is
+// queued where it sits in its own kind's project. An empty kind is every project.
+func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind string) []api.ProjectItem {
 	isBlocked := make(map[string]bool, len(blocked))
 	for _, item := range blocked {
 		isBlocked[item.ID] = true
 	}
 
 	var next []api.ProjectItem
-	for _, item := range all {
+	for _, item := range itemsOfKind(all, kind) {
 		if item.Completed || item.Archived || isBlocked[item.ID] {
 			continue
 		}
 		next = append(next, item)
 	}
-	sort.SliceStable(next, func(a, b int) bool { return takenBefore(next[a], next[b]) })
+	sort.SliceStable(next, func(a, b int) bool { return takenBefore(next[a], next[b], kind) })
 	return next
 }
 
@@ -461,14 +465,14 @@ func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.Pro
 // picks which item represents a project; it does not decide how many slots that
 // project gets.
 func overviewProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.ProjectItem {
-	return interleaveByProject(actionableItems(all, blocked))
+	return interleaveByProject(actionableItems(all, blocked, ""))
 }
 
 // takenBefore orders two items by the rank of the project each is drawn under,
 // then by where each is queued in that project. Creation time and id settle
 // what remains, which is also the whole order when the API sends no positions.
-func takenBefore(a api.ProjectItem, b api.ProjectItem) bool {
-	projectA, projectB := primaryProject(a), primaryProject(b)
+func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
+	projectA, projectB := primaryProject(a, kind), primaryProject(b, kind)
 	if projectA.ID != projectB.ID {
 		return outranks(projectA, projectB)
 	}
@@ -502,7 +506,7 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 	longest := 0
 
 	for _, item := range items {
-		project := primaryProject(item)
+		project := primaryProject(item, "")
 		if _, seen := queues[project.ID]; !seen {
 			order = append(order, project)
 		}
@@ -528,12 +532,18 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 // several, so it competes in the round of the highest-priority one rather than
 // once per membership — otherwise multi-project items get a slot per project.
 // Items belonging to no project share the zero value, which keeps them in one
-// queue instead of making each its own round.
-func primaryProject(item api.ProjectItem) api.Project {
+// queue instead of making each its own round. A kind limits the candidates to
+// projects of that kind; an empty kind considers every project.
+func primaryProject(item api.ProjectItem, kind string) api.Project {
 	var primary api.Project
-	for i, project := range item.Projects {
-		if i == 0 || outranks(project, primary) {
+	found := false
+	for _, project := range item.Projects {
+		if kind != "" && project.Kind != kind {
+			continue
+		}
+		if !found || outranks(project, primary) {
 			primary = project
+			found = true
 		}
 	}
 	return primary

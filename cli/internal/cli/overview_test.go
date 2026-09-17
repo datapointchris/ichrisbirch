@@ -177,7 +177,7 @@ func TestActionableItems_ExcludesWhatCannotBeTakenNow(t *testing.T) {
 	}
 	blocked := []api.ProjectItem{{ID: "blocked"}}
 
-	next := actionableItems(all, blocked)
+	next := actionableItems(all, blocked, "")
 
 	if len(next) != 2 {
 		t.Fatalf("next = %+v, want the two actionable items", next)
@@ -207,7 +207,7 @@ func TestActionableItems_TakesProjectsByPositionThenItemsByPosition(t *testing.T
 		},
 	}
 
-	next := actionableItems(all, nil)
+	next := actionableItems(all, nil, "")
 
 	// The older project and the older items lose: position decides, and the
 	// first project's whole queue comes before the second project's head.
@@ -235,7 +235,7 @@ func TestActionableItems_AnItemIsQueuedByItsPlaceInItsHighestRankedProject(t *te
 		},
 	}
 
-	next := actionableItems(all, nil)
+	next := actionableItems(all, nil, "")
 
 	// shared is drawn under first, where it sits behind first-only. Its place at
 	// the front of second does not carry across.
