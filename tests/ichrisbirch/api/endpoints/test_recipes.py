@@ -549,10 +549,10 @@ class TestUrlImport:
 
     @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
     def test_import_returns_422_on_fetch_failure(self, mock_extract, recipe_crud_tester):
-        import httpx
+        from ichrisbirch.services.outbound_http import PageFetchError
 
         client, _ = recipe_crud_tester
-        mock_extract.side_effect = httpx.RequestError('connection refused')
+        mock_extract.side_effect = PageFetchError('https://example.com/dead', 'connection refused')
         response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/dead'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 

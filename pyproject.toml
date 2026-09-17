@@ -19,6 +19,10 @@ dependencies = [
   "attrs>=23.2.0",
   "beautifulsoup4>=4.12.3",
   "colorama>=0.4.6",
+  # Fetches a saved page with a browser's TLS and HTTP/2 fingerprint. Sites
+  # behind bot protection answer a plain client's handshake with 403 whatever
+  # user agent it sends, so only the fingerprint gets the article.
+  "curl-cffi>=0.16.3",
   "docker>=7.0.0",
   "email_validator>=2.0.0",
   "fastapi>=0.111.0",
@@ -34,6 +38,8 @@ dependencies = [
   # [crypto] pulls `cryptography`, which PyJWT needs to verify the RS256 access
   # tokens Authelia issues to the icb CLI.
   "pyjwt[crypto]>=2.8.0",
+  # Reads the text of a saved link that is a PDF rather than a web page.
+  "pypdf>=6.19.0",
   "python-dotenv>=1.0.1",
   "python-json-logger>=2.0.7",
   "python-multipart>=0.0.9",
@@ -44,6 +50,10 @@ dependencies = [
   "sqlalchemy>=2.0.29",
   "strenum>=0.4.15",
   "structlog>=24.0.0",
+  # Finds the main text of an arbitrary saved page — the article body without
+  # navigation, share rows or related-post cards — across site layouts no
+  # per-site rule could enumerate.
+  "trafilatura>=2.2.0",
   "uvicorn[standard]>=0.29.0",
   "werkzeug>=3.0.0",
   "youtube-transcript-api>=0.6.2",

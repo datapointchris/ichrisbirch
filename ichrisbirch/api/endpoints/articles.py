@@ -3,7 +3,6 @@ import html as html_escaping
 import markdown
 import pendulum
 import structlog
-from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
@@ -28,15 +27,46 @@ from ichrisbirch.config import get_settings
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
-from ichrisbirch.services.outbound_http import get_page
+from ichrisbirch.services.outbound_http import PageFetchError
+from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
-from ichrisbirch.services.url_extraction import get_text_content_from_html
-from ichrisbirch.services.url_extraction import get_youtube_video_text_captions
+from ichrisbirch.services.url_extraction import ArticlePage
+from ichrisbirch.services.url_extraction import PageUnreadable
+from ichrisbirch.services.url_extraction import is_youtube_url
+from ichrisbirch.services.url_extraction import read_article_page
 from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 router = APIRouter()
+
+
+class ArticleAlreadyExists(Exception):
+    """An article with this URL is already saved."""
+
+    def __init__(self, url: str):
+        super().__init__(f'Article already exists: {url}')
+        self.url = url
+
+
+def _page_error(e: PageFetchError | PageStatusError | PageUnreadable) -> HTTPException:
+    """Translate a page that could not be read into a response for a request handler.
+
+    The site failing is a bad gateway. A page that answered but is not the article
+    — a redirect to the homepage, a bot check, no readable text — cannot be
+    processed as the article the caller named.
+    """
+    logger.warning('article_page_unreadable', error=str(e))
+    if isinstance(e, PageUnreadable):
+        return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
+    return HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+
+
+def _read_page_for_request(url: str) -> ArticlePage:
+    try:
+        return read_article_page(url)
+    except (PageFetchError, PageStatusError, PageUnreadable) as e:
+        raise _page_error(e) from e
 
 
 def _bad_gateway(e: AssistantOutputError) -> HTTPException:
@@ -52,29 +82,6 @@ def _bad_gateway(e: AssistantOutputError) -> HTTPException:
         status_code=status.HTTP_502_BAD_GATEWAY,
         detail={'reason': str(e.reason), 'message': str(e), 'raw_assistant_output': e.raw_output},
     )
-
-
-def _get_formatted_title(soup: BeautifulSoup) -> str:
-    """Extract and clean page title.
-
-    Strips common site name suffixes separated by | or - (takes the first segment).
-    """
-    if not (soup.title and soup.title.string):
-        logger.warning('article_title_parse_failed')
-        return 'Could not parse title'
-
-    title = soup.title.string.strip()
-
-    # Strip site name suffixes: "Article Title | Site Name" or "Article Title - Site Name"
-    # Split on the LAST separator to preserve titles that use these characters internally.
-    for sep in (' | ', ' - ', ' — ', ' · '):
-        if sep in title:
-            parts = title.rsplit(sep, 1)
-            if len(parts[1].split()) <= 4:
-                title = parts[0]
-            break
-
-    return title.removesuffix(' - YouTube').strip()
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
@@ -144,32 +151,26 @@ async def create(article: schemas.ArticleCreate, session: DbSession):
 def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
     """Fetch URL, summarize via Claude, create article.
 
-    Used by create-from-url endpoint and bulk import worker.
+    Used by create-from-url endpoint and bulk import worker, so it raises domain
+    exceptions and each caller decides what one means: the endpoint answers a
+    status, the worker records the message.
     """
     url = clean_url(url)
     existing = session.scalar(select(models.Article).where(models.Article.url == url))
     if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Article already exists: {url}')
+        raise ArticleAlreadyExists(url)
 
-    url_response = get_page(url, settings)
-    url_response.raise_for_status()
-    soup = BeautifulSoup(url_response.content, 'html.parser')
-    title = _get_formatted_title(soup)
-
-    if 'youtube.com' in url or 'youtu.be' in url:
-        text_content = get_youtube_video_text_captions(url)
-    else:
-        text_content = get_text_content_from_html(soup)
+    page = read_article_page(url)
 
     assistant = AnthropicAssistant(
         name='Article Summary with Tags',
         system_prompt=settings.ai.prompts.article_summary_tags,
         settings=settings,
     )
-    data = AnthropicAssistant.parse_json_object(assistant.generate(text_content, max_tokens=8192), assistant.name)
+    data = AnthropicAssistant.parse_json_object(assistant.generate(page.text, max_tokens=8192), assistant.name)
 
     article = models.Article(
-        title=title,
+        title=page.title,
         url=url,
         tags=data.get('tags', []),
         summary=data.get('summary', ''),
@@ -183,7 +184,7 @@ def _summarize_and_create_article(url: str, notes: str | None, session: Session,
     session.add(article)
     session.commit()
     session.refresh(article)
-    logger.info('article_created_from_url', url=url, title=title)
+    logger.info('article_created_from_url', url=url, title=page.title)
     return article
 
 
@@ -196,6 +197,10 @@ async def create_from_url(
     """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
     try:
         return _summarize_and_create_article(body.url, body.notes, session, settings)
+    except ArticleAlreadyExists as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    except (PageFetchError, PageStatusError, PageUnreadable) as e:
+        raise _page_error(e) from e
     except AssistantOutputError as e:
         raise _bad_gateway(e) from e
 
@@ -264,15 +269,8 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
     request_data = await request.json()
     logger.debug('article_summarize_request', data=request_data)
     url = clean_url(request_data.get('url'))
-    url_response = get_page(url, settings).raise_for_status()
-    soup = BeautifulSoup(url_response.content, 'html.parser')
-    title = _get_formatted_title(soup)
-    logger.debug('article_title_retrieved', title=title)
-
-    if 'youtube.com' in url or 'youtu.be' in url:
-        text_content = get_youtube_video_text_captions(url)
-    else:
-        text_content = get_text_content_from_html(soup)
+    page = _read_page_for_request(url)
+    logger.debug('article_title_retrieved', title=page.title)
 
     assistant = AnthropicAssistant(
         name='Article Summary with Tags',
@@ -280,10 +278,10 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
         settings=settings,
     )
     try:
-        data = AnthropicAssistant.parse_json_object(assistant.generate(text_content, max_tokens=8192), assistant.name)
+        data = AnthropicAssistant.parse_json_object(assistant.generate(page.text, max_tokens=8192), assistant.name)
     except AssistantOutputError as e:
         raise _bad_gateway(e) from e
-    return schemas.ArticleSummary(title=title, summary=data.get('summary'), tags=data.get('tags'))
+    return schemas.ArticleSummary(title=page.title, summary=data.get('summary'), tags=data.get('tags'))
 
 
 @router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
@@ -297,34 +295,30 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
     logger.debug('article_insights_request', data=request_data)
     url = clean_url(request_data.get('url'))
     logger.debug('article_insights_processing', url=url)
-    url_response = get_page(url, settings).raise_for_status()
-    soup = BeautifulSoup(url_response.content, 'html.parser')
-    title = _get_formatted_title(soup)
-
-    if 'youtube.com' in url or 'youtu.be' in url:
-        try:
-            logger.debug('youtube_captions_fetching')
-            text_content = get_youtube_video_text_captions(url)
-        except Exception as e:
-            logger.error('youtube_captions_error', url=url, error=str(e))
-            # format error response into html
-            lines = []
-            for i, line in enumerate(str(e).strip().split('\n')):
-                if i == 0:
-                    lines.append(f'<h3>{line}</h3>')
-                else:
-                    lines.append(f'<p>{line}</p>')
-            html = ''.join(lines).replace('<p></p>', '')
-            return Response(content=html)  # must return status code 200 to avoid error in form javascript
-    else:
-        text_content = get_text_content_from_html(soup)
+    try:
+        page = _read_page_for_request(url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # A YouTube caption failure is rendered as the answer, because the form
+        # that calls this treats any non-200 as a script error.
+        if not is_youtube_url(url):
+            raise
+        logger.error('youtube_captions_error', url=url, error=str(e))
+        lines = []
+        for i, line in enumerate(str(e).strip().split('\n')):
+            if i == 0:
+                lines.append(f'<h3>{html_escaping.escape(line)}</h3>')
+            else:
+                lines.append(f'<p>{html_escaping.escape(line)}</p>')
+        return Response(content=''.join(lines).replace('<p></p>', ''))
 
     assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
     try:
-        mkd = assistant.generate(text_content, max_tokens=8192)
+        mkd = assistant.generate(page.text, max_tokens=8192)
     except AssistantOutputError as e:
         raise _bad_gateway(e) from e
-    full_mkd = f'# {title}\n{mkd}'
+    full_mkd = f'# {page.title}\n{mkd}'
 
     # Escaped before rendering, because Python-Markdown passes raw HTML straight
     # through and both consumers of this endpoint render the result as HTML —
