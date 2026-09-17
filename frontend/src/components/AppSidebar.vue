@@ -52,6 +52,8 @@
             :to="link.to"
             class="nav-link"
             :class="{ 'nav-link--active': isActive(link) }"
+            :data-testid="`sidebar-${link.to}`"
+            :data-active="isActive(link)"
           >
             <i :class="link.icon"></i>
             <span class="nav-link__label">{{ link.label }}</span>
@@ -79,6 +81,8 @@
             :to="link.to"
             class="nav-link"
             :class="{ 'nav-link--active': isActive(link) }"
+            :data-testid="`sidebar-${link.to}`"
+            :data-active="isActive(link)"
           >
             <i :class="link.icon"></i>
             <span class="nav-link__label">{{ link.label }}</span>

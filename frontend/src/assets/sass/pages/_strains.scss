@@ -1,0 +1,130 @@
+@use '../components/card_row';
+@use '../components/sortable_table';
+
+:root {
+  --strain-tried-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-success) calc(l * 0.6) c h / 0.8);
+  --strain-want-to-try-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-info) calc(l * 0.6) c h / 0.8);
+  --strain-total-box-shadow: inset 0 0 8px 2px var(--clr-gray-400);
+}
+
+.strain {
+  &--tried {
+    box-shadow: var(--strain-tried-box-shadow), var(--floating-box);
+  }
+
+  &--want_to_try {
+    box-shadow: var(--strain-want-to-try-box-shadow), var(--floating-box);
+  }
+
+  &--total {
+    box-shadow: var(--strain-total-box-shadow), var(--floating-box);
+  }
+}
+
+.strains {
+  @include card_row.card-row;
+
+  $name: 5fr;
+  $type: 2fr;
+  $thc: 1fr;
+  $cbd: 1fr;
+  $rating: 1fr;
+  $status: 2fr;
+  $actions: 2fr;
+
+  @include sortable_table.sortable-table(
+    $columns: $name $type $thc $cbd $rating $status $actions,
+    $centered: (
+      2,
+      3,
+      4,
+      5,
+      6,
+    )
+  );
+  @include sortable_table.detail-panel;
+
+  &__row {
+    &.strain--tried {
+      box-shadow: var(--strain-tried-box-shadow), var(--floating-box);
+      &:hover {
+        box-shadow: var(--strain-tried-box-shadow), var(--bubble-box);
+      }
+    }
+    &.strain--want_to_try {
+      box-shadow: var(--strain-want-to-try-box-shadow), var(--floating-box);
+      &:hover {
+        box-shadow: var(--strain-want-to-try-box-shadow), var(--bubble-box);
+      }
+    }
+  }
+
+  &__name {
+    font-size: var(--fs-400);
+  }
+
+  // The descriptor lists render as chips, so this value is a row of them rather
+  // than one string.
+  &__detail-field-value {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+  }
+
+  &__chip {
+    padding-block: var(--space-3xs);
+    padding-inline: var(--space-xs);
+    border-radius: var(--button-border-radius);
+    font-size: var(--fs-300);
+    box-shadow: var(--floating-box);
+  }
+}
+
+.strain-filter {
+  @include sortable_table.count-filter;
+}
+
+// The multi-select in the add/edit modal. A chip is pressed or raised, which is
+// the neumorphic vocabulary for on and off, so the state is readable without a
+// checkbox beside it.
+.strain-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+
+  &__chip {
+    padding-block: var(--space-3xs);
+    padding-inline: var(--space-xs);
+    border: none;
+    border-radius: var(--button-border-radius);
+    background-color: var(--clr-primary);
+    color: var(--clr-gray-400);
+    font-family: inherit;
+    font-size: var(--fs-300);
+    cursor: pointer;
+    box-shadow: var(--floating-box);
+    transition:
+      box-shadow 0.15s ease,
+      color 0.15s ease;
+
+    &:hover {
+      box-shadow: var(--bubble-box);
+    }
+
+    &--on {
+      color: var(--clr-accent-light);
+      box-shadow: var(--floating-box-pressed);
+
+      &:hover {
+        box-shadow: var(--bubble-box-pressed);
+      }
+    }
+
+    // A value the strain carries that the vocabulary does not define. Marked so
+    // it reads as the one chip to click off rather than as a choice.
+    &--undefined {
+      color: var(--clr-error);
+      font-style: italic;
+    }
+  }
+}

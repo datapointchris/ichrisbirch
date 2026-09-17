@@ -25,6 +25,7 @@ func TestEveryListCommandTakesLimit(t *testing.T) {
 		{"projects", "list"},
 		{"projects", "items", "list"},
 		{"recipes", "list"},
+		{"strains", "list"},
 		{"tasks", "list"},
 	}
 	for _, path := range lists {

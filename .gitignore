@@ -82,6 +82,9 @@ terraform.tfstate.*
 # Diagram generator cache
 .diagram_hash_cache.json
 
+# Compiled icb binary (task cli:build)
+bin/
+
 # Traefik secrets
 deploy-containers/traefik/certs/*.key
 deploy-containers/traefik/certs/*.crt

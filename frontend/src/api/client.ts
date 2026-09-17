@@ -209,4 +209,11 @@ export type {
   UrlImportCandidate,
   UrlImportResponse,
   UrlImportSaveResult,
+  StrainStatus,
+  Strain,
+  StrainCreate,
+  StrainUpdate,
+  StrainVocabularyEntry,
+  StrainVocabulary,
+  StrainFilters,
 } from './types'

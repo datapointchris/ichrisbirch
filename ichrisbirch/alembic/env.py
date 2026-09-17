@@ -32,6 +32,12 @@ from ichrisbirch.models import ProjectItem  # noqa
 from ichrisbirch.models import ProjectItemDependency  # noqa
 from ichrisbirch.models import ProjectItemMembership  # noqa
 from ichrisbirch.models import SchedulerJobRun  # noqa
+from ichrisbirch.models import Strain
+from ichrisbirch.models import StrainEffect
+from ichrisbirch.models import StrainFlavor
+from ichrisbirch.models import StrainStatus
+from ichrisbirch.models import StrainTerpene
+from ichrisbirch.models import StrainType
 from ichrisbirch.models import Task  # noqa
 from ichrisbirch.models import TaskCategory  # noqa
 from ichrisbirch.models import User  # noqa

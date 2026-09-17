@@ -32,6 +32,11 @@ from ichrisbirch.models.recipe import RECIPE_CUISINES
 from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
 from ichrisbirch.models.recipe import RECIPE_MEAL_TYPES
 from ichrisbirch.models.recipe import RECIPE_UNITS
+from ichrisbirch.models.strain import STRAIN_EFFECTS
+from ichrisbirch.models.strain import STRAIN_FLAVORS
+from ichrisbirch.models.strain import STRAIN_STATUSES
+from ichrisbirch.models.strain import STRAIN_TERPENES
+from ichrisbirch.models.strain import STRAIN_TYPES
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -142,6 +147,11 @@ LOOKUP_DATA = {
     'recipe_cuisine': RECIPE_CUISINES,
     'recipe_meal_type': RECIPE_MEAL_TYPES,
     'cooking_technique_categories': COOKING_TECHNIQUE_CATEGORIES,
+    'strain_types': STRAIN_TYPES,
+    'strain_statuses': STRAIN_STATUSES,
+    'strain_effects': STRAIN_EFFECTS,
+    'strain_flavors': STRAIN_FLAVORS,
+    'strain_terpenes': STRAIN_TERPENES,
 }
 
 

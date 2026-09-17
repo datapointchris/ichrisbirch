@@ -299,6 +299,7 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'patterns': {'model': models.Pattern, 'data': tests.test_data.patterns.BASE_DATA},
         'projects': {'model': models.Project, 'data': tests.test_data.projects.BASE_DATA},
         'recipes': {'model': models.Recipe, 'data': tests.test_data.recipes.BASE_DATA},
+        'strains': {'model': models.Strain, 'data': tests.test_data.strains.BASE_DATA},
         'tasks': {'model': models.Task, 'data': tests.test_data.tasks.BASE_DATA},
         'users': {'model': models.User, 'data': tests.test_data.users.BASE_DATA},
     }

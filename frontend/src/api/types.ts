@@ -1132,3 +1132,98 @@ export interface UrlImportSaveResult {
   recipe: Recipe | null
   technique: CookingTechnique | null
 }
+
+// ---------------------------------------------------------------------------
+// Strains
+// ---------------------------------------------------------------------------
+
+export type StrainStatus = 'tried' | 'want_to_try'
+
+export interface Strain {
+  id: number
+  name: string
+  breeder?: string
+  lineage?: string
+  strain_type?: string
+  status: string
+  thc_percent?: number
+  cbd_percent?: number
+  rating?: number
+  effects: string[]
+  flavors: string[]
+  terpenes: string[]
+  tags: string[]
+  source?: string
+  notes?: string
+  review?: string
+  last_tried_date?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface StrainCreate {
+  name: string
+  breeder?: string
+  lineage?: string
+  strain_type?: string
+  status?: string
+  thc_percent?: number
+  cbd_percent?: number
+  rating?: number
+  effects?: string[]
+  flavors?: string[]
+  terpenes?: string[]
+  tags?: string[]
+  source?: string
+  notes?: string
+  review?: string
+  last_tried_date?: string
+}
+
+export interface StrainUpdate {
+  name?: string
+  breeder?: string | null
+  lineage?: string | null
+  strain_type?: string | null
+  status?: string
+  thc_percent?: number | null
+  cbd_percent?: number | null
+  rating?: number | null
+  effects?: string[]
+  flavors?: string[]
+  terpenes?: string[]
+  tags?: string[]
+  source?: string | null
+  notes?: string | null
+  review?: string | null
+  last_tried_date?: string | null
+}
+
+export interface StrainVocabularyEntry {
+  name: string
+  count: number
+}
+
+/**
+ * Every value each vocabulary defines, whether or not a strain carries it.
+ * Keyed by the record field each list constrains, so a 422 naming `strain_type`
+ * and the values it would have accepted are found under the same word.
+ */
+export interface StrainVocabulary {
+  strain_type: StrainVocabularyEntry[]
+  status: StrainVocabularyEntry[]
+  effects: StrainVocabularyEntry[]
+  flavors: StrainVocabularyEntry[]
+  terpenes: StrainVocabularyEntry[]
+}
+
+/** The filters `GET /strains/` takes. Narrowing happens there, not on the page. */
+export interface StrainFilters {
+  strain_type?: string
+  status?: string
+  effect?: string
+  flavor?: string
+  terpene?: string
+  rating_min?: number
+  q?: string
+}

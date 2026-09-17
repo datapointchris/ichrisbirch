@@ -1,0 +1,133 @@
+// A catalog table with sortable headers and a row that expands to a detail
+// panel. Consumers include it at entity level and pass their own columns.
+//
+// Compound like `card-row` and `data-table`: the mixin owns the whole visual
+// pattern, and a consumer supplies only what genuinely varies — the column
+// widths, which columns center, and its own status colors.
+
+/// A grid table whose header cells sort and whose rows carry a status color.
+///
+/// @param {List} $columns - the grid-template-columns track list
+/// @param {List} $centered - 1-based indices of the columns to center
+@mixin sortable-table($columns, $centered: ()) {
+  &__header {
+    display: grid;
+    grid-template-columns: $columns;
+    gap: 0 var(--space-xs);
+    align-items: center;
+    padding-block: var(--space-xs);
+    padding-inline: var(--space-m);
+    font-size: var(--fs-400);
+    border-top: 3px solid var(--clr-accent);
+    border-bottom: 3px solid var(--clr-accent);
+    margin-bottom: var(--space-xs);
+
+    @each $index in $centered {
+      span:nth-child(#{$index}) {
+        text-align: center;
+      }
+    }
+
+    span:last-child {
+      text-align: center;
+    }
+  }
+
+  &__sortable {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      color: var(--clr-accent-light);
+    }
+  }
+
+  &__sort-indicator {
+    font-size: var(--fs-300);
+    margin-left: var(--space-3xs);
+  }
+
+  &__row {
+    grid-template-columns: $columns;
+    gap: 0 var(--space-xs);
+    font-size: var(--fs-300);
+
+    // The actions cell is always last and holds buttons, so it is the one cell
+    // that must not clip.
+    > span:not(:last-child) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @each $index in $centered {
+      > span:nth-child(#{$index}) {
+        text-align: center;
+      }
+    }
+  }
+
+  &__empty {
+    color: var(--clr-gray-500);
+    font-style: italic;
+  }
+}
+
+/// The panel a row expands into, laid out as auto-filling label/value pairs.
+@mixin detail-panel {
+  &__detail {
+    display: none;
+    margin-bottom: var(--space-s);
+    margin-top: calc(var(--space-xs) * -1);
+    padding: var(--space-m);
+    padding-top: var(--space-s);
+    background-color: var(--clr-primary);
+    border-radius: 0 0 var(--button-border-radius) var(--button-border-radius);
+    border-top: 1px solid var(--clr-gray-600);
+
+    &--open {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-s) var(--space-l);
+    }
+  }
+
+  &__detail-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+
+    &-label {
+      font-size: var(--fs-300);
+      color: var(--clr-gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    &-value {
+      font-size: var(--fs-300);
+      color: var(--clr-text);
+    }
+  }
+
+  // Prose spans the panel rather than sitting in a 200px column.
+  &__detail-notes {
+    grid-column: 1 / -1;
+  }
+}
+
+/// A count that doubles as a filter toggle, in an info bar.
+@mixin count-filter {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &--active {
+    box-shadow: var(--filter-chip-active);
+    transform: scale(1.08);
+  }
+}

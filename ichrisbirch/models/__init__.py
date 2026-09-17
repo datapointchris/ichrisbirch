@@ -41,6 +41,12 @@ from ichrisbirch.models.recipe import RecipeIngredient
 from ichrisbirch.models.recipe import RecipeMealType
 from ichrisbirch.models.recipe import RecipeUnit
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
+from ichrisbirch.models.strain import Strain
+from ichrisbirch.models.strain import StrainEffect
+from ichrisbirch.models.strain import StrainFlavor
+from ichrisbirch.models.strain import StrainStatus
+from ichrisbirch.models.strain import StrainTerpene
+from ichrisbirch.models.strain import StrainType
 from ichrisbirch.models.task import Task
 from ichrisbirch.models.task import TaskCategory
 from ichrisbirch.models.user import User
@@ -89,6 +95,12 @@ __all__ = [
     'RecipeMealType',
     'RecipeUnit',
     'SchedulerJobRun',
+    'Strain',
+    'StrainEffect',
+    'StrainFlavor',
+    'StrainStatus',
+    'StrainTerpene',
+    'StrainType',
     'Task',
     'TaskCategory',
     'User',

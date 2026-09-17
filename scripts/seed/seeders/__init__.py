@@ -20,6 +20,7 @@ from scripts.seed.seeders import money_wasted
 from scripts.seed.seeders import patterns
 from scripts.seed.seeders import projects
 from scripts.seed.seeders import recipes
+from scripts.seed.seeders import strains
 from scripts.seed.seeders import tasks
 
 # Parents before children, independent models first
@@ -41,4 +42,5 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('projects', projects),
     ('recipes', recipes),
     ('cooking_techniques', cooking_techniques),
+    ('strains', strains),
 ]

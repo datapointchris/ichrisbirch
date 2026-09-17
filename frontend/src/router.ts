@@ -126,6 +126,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Tasks Stats' },
   },
   {
+    path: '/strains',
+    name: 'strains',
+    component: () => import('@/views/StrainsView.vue'),
+    meta: { title: 'Strains' },
+  },
+  {
     path: '/tasks',
     name: 'tasks',
     component: () => import('@/views/TasksView.vue'),

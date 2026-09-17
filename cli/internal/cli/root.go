@@ -67,7 +67,7 @@ func NewRootCommand() *cobra.Command {
 		Use:   "icb",
 		Short: "icb — the ichrisbirch data CLI",
 		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
-			"projects, books, articles, habits, recipes, countdowns, and events.\n" +
+			"projects, books, articles, habits, recipes, countdowns, events, and strains.\n" +
 			"\n" +
 			"The noun comes first and the verb last, so moving from reading a resource\n" +
 			"to acting on it changes only the final word: `icb books list` becomes\n" +
@@ -117,6 +117,7 @@ func NewRootCommand() *cobra.Command {
 	root.AddCommand(newArticlesCommand())
 	root.AddCommand(newRecipesCommand())
 	root.AddCommand(newCookingTechniquesCommand())
+	root.AddCommand(newStrainsCommand())
 
 	// After the tree is assembled: cobra only propagates a usage template to
 	// commands that already exist when it is set.
