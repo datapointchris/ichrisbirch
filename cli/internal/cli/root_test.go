@@ -3,6 +3,8 @@ package cli
 import (
 	"bytes"
 	"errors"
+	"slices"
+	"strings"
 	"testing"
 )
 
@@ -35,6 +37,27 @@ type wrapped struct{ err error }
 
 func (w wrapped) Error() string { return w.err.Error() }
 func (w wrapped) Unwrap() error { return w.err }
+
+// A word one slip from a subcommand is answered with the subcommand, at the
+// root and inside a group alike.
+func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
+	for _, c := range []struct {
+		args  []string
+		meant string
+	}{
+		{[]string{"tasjs"}, "tasks"},
+		{[]string{"tasks", "lisy"}, "list"},
+	} {
+		root := NewRootCommand()
+		root.SetOut(&bytes.Buffer{})
+		root.SetErr(&bytes.Buffer{})
+		root.SetArgs(c.args)
+		err := root.Execute()
+		if err == nil || !slices.Contains(strings.Fields(err.Error()), c.meant) {
+			t.Errorf("%v answered %v, want it to name %q", c.args, err, c.meant)
+		}
+	}
+}
 
 // runTree executes the command tree with args, discarding output, and returns
 // the classified exit code — the same path Execute() takes, minus os.Args.
