@@ -1,58 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-iChrisBirch is a personal productivity web application with a **multi-service architecture**: FastAPI backend (API), Vue 3 SPA frontend, and APScheduler service. All services share a PostgreSQL database and Redis cache, orchestrated via Docker Compose with Traefik reverse proxy.
+iChrisBirch is a personal productivity web application: a FastAPI backend, a Vue 3 SPA and an APScheduler service, sharing PostgreSQL and Redis behind Traefik and orchestrated with Docker Compose.
 
-**Package Management**: uv for Python (`uv.lock`), npm for Vue (`package-lock.json`)
-
-## Essential Commands
-
-```bash
-# Development
-./ops/icbops dev start|stop|restart|rebuild|status|health|logs
-./ops/icbops dev rebuild --all          # Full rebuild including infra (traefik, postgres, redis)
-./ops/icbops dev rebuild --volumes      # Wipe named volumes and rebuild (stackable with --all)
-
-# Testing (reuses containers, cleans database each run)
-./ops/icbops test run              # All tests (auto-starts containers if needed)
-./ops/icbops test run <path> -v    # Specific test (auto-starts containers if needed)
-./ops/icbops testing start|stop|health|logs  # Container management
-./ops/icbops testing rebuild --volumes  # Step 2 of the code-change escalation ladder (see Must Follow)
-./ops/icbops testing rebuild --all      # Full rebuild including infra
-
-# Database lifecycle (dev + testing; production is rejected)
-./ops/icbops dev db init           # Migrations + users, idempotent; every start and rebuild runs it
-./ops/icbops dev db reset          # Nuclear: drop + recreate everything
-./ops/icbops testing db init       # Same, for test environment
-./ops/icbops testing db reset      # Same, for test environment
-
-# Vue frontend
-cd frontend && npm test                 # Build check + unit tests
-cd frontend && npm run test:e2e         # Playwright E2E through Traefik
-
-# Traefik routing (after adding a Vue page path)
-./ops/icbops routing generate
-
-# Merged Docker Compose config (debug overrides)
-./ops/icbops dev docker config [service]
-./ops/icbops testing docker config [service]
-
-# Database
-alembic revision --autogenerate -m "description"
-alembic upgrade head
-
-# Code quality
-uv run ruff check . && uv run ruff format .
-uv run mypy ichrisbirch/
-pre-commit run --all-files
-```
-
-**Dev URLs**: `https://app.docker.localhost/`, `https://api.docker.localhost/`
-
-**Test URL**: `https://api.test.localhost:8443/`
+`./ops/icbops --help` is the command surface for dev, testing, database, routing and production. Dev is `https://app.docker.localhost/` with the API at `https://api.docker.localhost/`; tests run against `https://api.test.localhost:8443/`.
 
 ## Production Environment
 
@@ -66,48 +18,19 @@ pre-commit run --all-files
 The two hosts are named by `$ICB_PROD_HOST` and `$ICB_WEBHOOK_HOST`, which each
 operator sets for their own deployment. Reading logs and container status over
 SSH is fine; anything that changes production goes through the deploy pipeline.
-
-```bash
-# View production logs (read-only) — replace blue with green as appropriate
-ssh "$ICB_PROD_HOST" "docker logs icb-blue-api --tail=50 2>&1"
-ssh "$ICB_PROD_HOST" "docker logs icb-blue-vue --tail=50 2>&1"
-ssh "$ICB_PROD_HOST" "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
-
-# Check which color is active
-ssh "$ICB_PROD_HOST" "cat /var/lib/ichrisbirch/bluegreen-state"
-
-# Webhook logs (if containers never started)
-ssh "$ICB_WEBHOOK_HOST" "ls -lt /opt/webhooks/logs/ichrisbirch-*.log | head -5"
-```
+The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application host.
 
 ## Architecture
 
-### Services
-
-| Service | Framework | Purpose |
-| --- | --- | --- |
-| API | FastAPI | RESTful backend, JWT + Authelia auth |
-| Vue | Vue 3 + TypeScript | SPA frontend (all pages) |
-| Scheduler | APScheduler | Daily jobs (task priorities, autotasks) |
-
-Core directories: `ichrisbirch/` (Python backend), `frontend/` (Vue 3 SPA), `tests/` (Python test suite), `ops/` (the `icbops` bash ops/deploy tool and its helpers), `cli/` (the `icb` Go resource CLI). See the filesystem for the full structure.
-
 ### CLIs — `icbops` (ops) and `icb` (data)
 
-Two separate command-line tools with distinct concerns:
-
 - **`ops/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./ops/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
-- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`), building the binary `icb` onto `$GOBIN`. `icb auth login` runs the OAuth 2.0 device authorization grant and stores the resulting RFC 9068 JWT in the OS keychain; it targets `ichrisbirch.com/api`, where the `ichrisbirch-bearer` router carries a bearer request past ForwardAuth, and the FastAPI verifies the token itself against Authelia's JWKS — **not** the legacy JWT/PAK code. Build/install/auth details in `cli/README.md`, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
+- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`). `cli/README.md` covers build, install and auth, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
 ### Vue Frontend
 
-Vue serves all pages and Flask is fully removed — `pyproject.toml` declares no Flask dependency and `ichrisbirch/app/` holds only `static`. The migration finished at 14 pages; the app has grown well past that since, so `rg -c "path: '/" frontend/src/router.ts` is the current route count rather than a number written here.
-
-**Key patterns:**
-
 - Pinia stores with `ApiError`, structured logging via `createLogger()`, `error: ref<ApiError | null>`
-- `useTheme` composable: OKLCH color themes, named themes, accent hue slider, 14 fonts
-- E2E tests run through `app.docker.localhost` (not `vue.docker.localhost`) to catch CORS issues
+- `useTheme` composable: OKLCH color themes, named themes, accent hue slider, font choice
 - Self-hosted fonts in `frontend/public/fonts/` (woff2)
 
 **Critical:** Every new Vue path or static asset path must be added to `deploy-containers/traefik/vue-paths.txt`, then run `icbops routing generate` to update all three routing files (dev, test, prod).
@@ -120,11 +43,9 @@ Vue serves all pages and Flask is fully removed — `pyproject.toml` declares no
 
 **OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `sub` non-empty, `client_id` starts with `icb-cli-`, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
 
-**Login and token lifecycle are `goclilogin`, not this repo** (⚠️ MANDATORY): `github.com/datapointchris/goclilogin` owns the device grant, the keychain store, and the refresh. The CLI holds only the mapping — `config.Config.Login()` — plus its own cobra commands. Do not reintroduce an `internal/auth` here; the reason the library exists is that four CLIs each had one and a fix to any one left the others broken.
+**Login and token lifecycle belong to `github.com/datapointchris/goclilogin`**; the CLI holds only the mapping in `config.Config.Login()`, so do not reintroduce an `internal/auth` here.
 
 The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. Released versions of `icb` already write `$XDG_STATE_HOME/icb/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
-
-Why the refresh is serialized at all, and why a mutex cannot do it, is `goclilogin`'s package documentation and README. The short form: Authelia rotates the refresh token on every use and revokes the whole grant when a consumed one is replayed, and `doit` resolves each pursuit's evidence in its own `icb` invocation, so several processes refresh at once in ordinary use.
 
 **Vue (Production):** Same-origin proxy — Vue calls `/api/...`, Traefik `api-proxy` router (priority 200) strips `/api` prefix and forwards to FastAPI. No CORS needed.
 
@@ -134,10 +55,9 @@ Why the refresh is serialized at all, and why a mutex cannot do it, is `goclilog
 
 ### Configuration & Secrets
 
-- All environments use `.env` files (loaded via `python-dotenv`), set `ENVIRONMENT=development|testing|production`
-- **Secrets**: SOPS + age — encrypted at `secrets/secrets.prod.enc.env`, age key at `~/.config/sops/age/keys.txt`
-- Edit secrets: `sops secrets/secrets.prod.enc.env`
-- AWS (boto3) still used for S3 backups only, NOT for config/secrets
+- Every environment loads a `.env` file via `python-dotenv` and sets `ENVIRONMENT=development|testing|production`
+- Secrets are SOPS + age, encrypted at `secrets/secrets.prod.enc.env`; edit with `sops secrets/secrets.prod.enc.env`
+- AWS (boto3) is used for S3 backups only, NOT for config or secrets
 
 ### Outbound HTTP Goes Through One Function
 
@@ -160,56 +80,17 @@ page fetches:
   own user agent and a caller-supplied timeout.
 - **`gui/`** — posts to this app's own endpoints.
 
-**`ichrisbirch/api/client/` has no importers.** It is this app's own HTTP client
-for its own API, and nothing in the repo constructs one — check with `rg
-'ichrisbirch\.api\.client' --type py` before assuming a caller exists. It is
-kept because `docs/api/client/` documents it as the way a Python consumer talks
-to this API, and because `cli/` does the same job in Go over the same surface.
-Deciding whether a Python client is still wanted is what would retire it.
-
 Two subprocesses are sanctioned: the one in `scheduler/jobs.py`, and the Claude
 Code CLI that `claude-agent-sdk` starts for each call from
 `ai/assistants/anthropic.py`.
 
 ### What a Dependency Can Reach
 
-These dependencies see more than the code that calls them, so what each one
-reaches is written down here rather than inferred from the import.
+`docs/dependency-reach.md` records what each wide-reaching dependency sees; a new one that receives user content, makes outbound requests or touches the host gets an entry there.
+The Claude Code CLI that `claude-agent-sdk` starts inherits the API's whole decrypted `.env`, and that is accepted.
+`options()` blanks `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` on every call, because either outranks the subscription token inside Claude Code and usage must draw on the plan, never API credits.
 
-- **`claude-agent-sdk`** receives user content, not metadata, and is the only model provider the
-  app talks to. `ichrisbirch/ai/assistants/anthropic.py` wraps it; the callers are
-  `api/endpoints/articles.py`, `api/endpoints/recipes.py` and `services/url_ingest.py`. Each call
-  runs the Claude Code CLI bundled in the package, authenticated by the subscription OAuth token
-  in `AI_ANTHROPIC_OAUTH_TOKEN`, so usage draws on the Claude plan and never on API credits.
-  `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` outrank that token inside Claude Code, so
-  `options()` blanks both on every call. What crosses the boundary is the full text of a saved
-  article, a recipe being imported, and the contents of any URL ingested.
-
-  The CLI inherits the API process's whole environment, which is the decrypted `.env`: the
-  database and Redis passwords, the JWT and internal service keys, the GitHub token, the Slack
-  webhook and the default users' passwords, beside the OAuth token. That is accepted. The model has
-  no tool that reads the environment, and every library in the API process already holds the same
-  values, so a compromised CLI binary reaches what a compromised Python dependency would. The
-  CLI's nonessential traffic, analytics included, is switched off on every call. It loads no CLAUDE.md, settings, skills or MCP servers, and
-  the only tool any call has is `WebSearch`, on recipe discovery, capped at five calls.
-- **`docker`** is a *runtime* dependency, and `api/endpoints/admin.py` builds a client with
-  `docker.from_env()` to report container status on the admin page. That gives the API process a
-  handle on the host daemon, which is the widest reach in the list: a daemon socket is
-  root-equivalent on the host. It is narrow in use — status reads only — and the endpoint is behind
-  `get_admin_user`.
-- **`curl_cffi`** makes every third-party page request, from `services/outbound_http.py`. It
-  reaches whatever URL a user saved, the same as the HTTP client it replaced, and carries nothing
-  but the request.
-- **`trafilatura`** and **`pypdf`** parse page and PDF bytes already fetched, in
-  `services/url_extraction.py`. Neither makes a request: `trafilatura`'s own download helpers are
-  never called.
-- **`yt-dlp`** fetches YouTube metadata on the app's behalf from `services/url_extraction.py`,
-  alongside `youtube-transcript-api`. Both make outbound requests to a third party with whatever URL
-  a user saved. `yt-dlp` releases weekly to track site changes, so it carries a lower bound only.
-
-**One driver, not two.** `psycopg` (3) is what the connection URL names
-(`postgresql+psycopg://`). Anything in the docs still spelling an error
-`psycopg2.*` predates it.
+**One driver, not two.** `psycopg` (3) is what the connection URL names (`postgresql+psycopg://`); anything in the docs spelling an error `psycopg2.*` predates it.
 
 ### Database Patterns
 
@@ -230,7 +111,7 @@ reaches is written down here rather than inferred from the import.
 
 **Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icbops test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the test Postgres keeps its data on tmpfs, so every stop or recreate of that container empties the database. Every verb that brings the test containers up (`testing start`, `testing restart`, `testing rebuild` with any flags, and `test run`'s cold start) ends by initializing the database, and pytest's session setup migrates it to head before its fixtures truncate it, so a healthy container over an empty database still runs the suite. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
-**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. An earlier named-volume setup (`venv_shared`, `uv_cache`) combined with `uv run` caused stale venv state to persist across rebuilds, producing API containers stuck in "health: starting" while uv tried to resync packages at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
+**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. A named volume for `.venv` or the uv cache, combined with `uv run`, keeps stale venv state across rebuilds and leaves the API stuck in "health: starting" while uv resyncs at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
 
 **If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
 
@@ -256,13 +137,11 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Bind mount + named volume overlap creates root-owned empty host dirs** (expected, not a bug): The vue services mount `./frontend:/app` (bind) AND `vue_*_node_modules:/app/node_modules` (named volume). Docker needs `./frontend/node_modules/` to exist on the host as a mount point — if it doesn't, the Docker daemon auto-creates it, which means `root:root` ownership. At runtime the named volume shadows it, so container writes go to the volume, NOT the host directory. Host-side `npm install` writes are therefore invisible to the container. Don't try to "fix" the ownership in compose — either accept the empty host dir, or `mkdir frontend/node_modules` as your user BEFORE bringing up containers if you need host-side node_modules for pre-commit typecheck.
 
-**Dual iptables backends can block Docker egress** (Arch gotcha): If containers on a NEWER Docker network can ping their gateway but not the internet, while older networks work fine, the cause is orphan `iptables-legacy` rules referencing dead bridge IDs. The Linux kernel loads both netfilter backends simultaneously and evaluates both; Docker only maintains rules in its current backend (nft). Diagnose: `sudo iptables-legacy -t nat -L POSTROUTING -n -v` — stale bridge IDs are the signal. Recovery: `sudo iptables-legacy -F && sudo iptables-legacy -t nat -F && sudo systemctl restart docker`. Full forensics are the `project-docker-iptables-gotcha` memory. It is a fault in the Arch workstation rather than in this repo, so it surfaces whichever project is open.
-
 **Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
 **Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
 
-**Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`). These run in ~2s and cover behavior that E2E previously tested.
+**Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`).
 
 **E2E smoke-only pattern**: E2E tests are trimmed to smoke-level — each page keeps: CORS/API check, page load, sidebar nav, one CRUD roundtrip. Interaction-heavy tests (edit modals, toggles, filters, search) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 
@@ -272,22 +151,15 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icbops prod build-test`.
 
-**Test output files** (written on every pytest run — pre-commit and CLI):
-
-- `/tmp/ichrisbirch-pytest-output.log` — full terminal output (human-readable)
-- `/tmp/ichrisbirch-pytest-report.json` — structured JSON report with nodeids, tracebacks, durations
-
-When tests fail, read these files instead of re-running tests. The JSON report's `tests` array has `nodeid`, `outcome`, and `call.longrepr` (full traceback) for each failure.
+**Test output files**: every pytest run, from pre-commit or the CLI, writes `/tmp/ichrisbirch-pytest-output.log` (terminal output) and `/tmp/ichrisbirch-pytest-report.json` (whose `tests` array holds `nodeid`, `outcome` and `call.longrepr` per test). When tests fail, read these instead of re-running.
 
 **Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Symptoms: 500 errors on pages that import the new package, while other pages work fine. A new migration reaches pytest without a restart, because its session setup migrates the test database to head. The API container still needs step 1 of the escalation ladder to load changed models.
 
 ## Deployment
 
-Multi-stage Dockerfile: `base` → `development-builder` → `development` | `testing` | `production-builder` → `production`. Specify `--target`. Production image runs non-root with minimal deps.
-
-**Production uses blue/green deployment** with zero downtime. Infrastructure (`docker-compose.infra.yml`) is always running. App services (`docker-compose.app.yml`) deploy as alternating blue/green projects. Traefik file provider: `routing.yml` (git-tracked routers) + `services.yml` (generated, points to active color). Database migrations must be backward-compatible. See `docs/blue-green-deployment.md`.
-
-Traefik dynamic config at `deploy-containers/traefik/dynamic/`. Routing is generated from `deploy-containers/traefik/vue-paths.txt` via `icbops routing generate`. CORS and security headers are separate middlewares per environment (`cors-*` and `security-headers-*`). Use `icbops {dev,testing,prod} docker config [service]` to see fully merged compose output. SSL certs managed via `./ops/icbops ssl-manager`.
+The Dockerfile is multi-stage (`base` → `development` | `testing` | `production`), so always pass `--target`; the production image runs non-root.
+Production is blue/green: `docker-compose.infra.yml` always runs, `docker-compose.app.yml` deploys as alternating colors, and Traefik reads the git-tracked `routing.yml` plus a generated `services.yml` pointing at the active color. Migrations must be backward-compatible.
+Traefik dynamic config is `deploy-containers/traefik/dynamic/`, generated from `vue-paths.txt` by `icbops routing generate`, with CORS and security headers as separate middlewares per environment. `icbops {dev,testing,prod} docker config [service]` prints the merged compose; `./ops/icbops ssl-manager` manages certificates.
 
 ## Conventions
 
@@ -303,40 +175,6 @@ To read or write the **local dev** stack, hit the dev API directly (it injects `
 
 Cooking techniques are part of the Recipes domain and not a separate entity, so the code lives inside the recipes files at every layer — `models/recipe.py` holds the model, and the routes hang under `/recipes/` in `api/endpoints/recipes.py`.
 
-### A project name is bounded work, never a repo
-
-`projects create` refuses a name the repo registry knows, and so does a rename.
-The test is whether the thing ENDS, not whether the name reads like a verb
-phrase:
-
-    "<repo> sync improvements"    OK — the sync improvements end
-    "Extract xx from <repo>"      OK
-    "Migrate neovim to vim.pack"  OK
-    "<repo>"                      banned — names a thing that exists
-
-The failure it prevents: a repo gets a project while it is being BUILT, which is
-finite and does complete. The repo then keeps existing, the next papercut has
-nowhere else to go, and the finished effort silently becomes the eternal bucket.
-The tell was dotfiles' own description, which had grown a hand-written BOUNDARY
-paragraph explaining which work belonged to it — a modeling gap patched with
-prose.
-
-The repo association is the item's `--repo` tag, which already crosses project
-boundaries and outlives any single project. "What is the dotfiles work" is a
-`--repo dotfiles` query spanning live projects, finished ones, and whatever is
-filed elsewhere.
-
-A one-item project is the floor, not the target: fifteen papercuts are four or
-five small thematic projects, not fifteen projects. If the ban produced one
-project per item the list would read like items, which is the complaint that
-started this.
-
-A missing registry bans nothing, the same policy `--repo` validation follows.
-
-Enforcement is client-side, in `icb projects create`/`edit`, because the repo
-registry is a fleet file that the API container cannot see. The Vue page is
-therefore not covered — it has no registry either.
-
 ### Must Follow
 
 - **Container code-change escalation ladder** (⚠️ MANDATORY): When edits aren't taking effect in running containers — new/renamed API routes, new dependencies, migrations, schema changes, Vue package.json changes, Python imports — follow THIS sequence in order. Do NOT skip steps. Do NOT substitute manual `docker` subcommands for these CLI steps:
@@ -347,14 +185,8 @@ therefore not covered — it has no registry either.
   The same ladder applies to dev via `./ops/icbops dev stop && start` then `./ops/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
 
   Ten manual docker subcommands — `exec`, `restart`, `logs`, `images`, `image inspect`, `run --rm`, `volume ls`, `inspect --format` and a `sudo ls` on a volume path — once failed to diagnose what step 2 with `--volumes` then fixed in 90 seconds. Each one feels like progress and all of it is archaeology. The tell that it has gone wrong is proposing a workaround rather than an escalation: baking the venv into the image is a workaround, and the ladder is the escalation.
-- **Pre-commit hooks** run automatically. `.pre-commit-config.yaml` and `.github/workflows/validate.yml` are both generated from a shared toolchain manifest and carry a `# forge-toolchain:` stamp; hand edits belong in a `# > custom:` block, which regeneration preserves. Repo-specific detail: Vue hooks only trigger on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
+- **Pre-commit config is generated.** `.pre-commit-config.yaml` and `.github/workflows/validate.yml` carry a `# forge-toolchain:` stamp; hand edits belong in a `# > custom:` block, which regeneration preserves. Vue hooks trigger only on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
 - **Pre-commit "files were modified" failures**: When pre-commit reports `devstats capture...Failed - files were modified by this hook`, devstats is NOT the cause (its output is gitignored). The actual culprit is a later hook: `generate-fixture-diagrams` regenerating SVGs (triggered by `tests/conftest.py` or `mkdocs_plugins/diagrams/` changes), `ruff-check` auto-fixing code, or similar. Stage the generated files with `git add` and retry.
-- **NEVER modify `sys.path`** — use standard imports. Use `find_project_root()` from `ichrisbirch.util` instead of `Path(__file__).parent.parent.parent`.
-- **Schema conventions**:
-  - **All text columns are `TEXT`**, never `varchar(n)`. A length limit is a validation rule wearing a storage costume — it buys nothing in Postgres and turns a product decision into a migration. Array columns are `NOT NULL DEFAULT '{}'` and normalized nil→`[]` on write, so reads are branch-free.
-  - **Lookup tables, never Postgres enum types.** A categorical is a `TEXT PRIMARY KEY` plus a foreign key, so adding a value is an insert. An enum type needs a migration to add a value and cannot be reordered or removed; a lookup table also gives somewhere to hang a label, a sort order and a description. A bounded sub-attribute of a join uses a `CHECK`, which is not an enum type.
-  - **Primary keys.** Catalog rows get `GENERATED ALWAYS AS IDENTITY` plus a `UNIQUE` natural key, so an import can upsert idempotently. User-generated rows get UUIDv7. Ordered-join rows get their own surrogate id plus `DEFERRABLE UNIQUE(parent_id, position)`, so a reorder can swap positions inside one transaction.
-  - **Nullability is consistent across an entity family.** One lone `NOT NULL DEFAULT ''` forces every editor and client to handle two shapes. Nullable is defensible where the link is genuinely optional — state the reason rather than defaulting either way.
 - **A time column is one of three kinds, and the kind decides the type**: pick before writing the column, because all three are spelled `datetime` in Python and only one of them should be.
   1. **A moment that happened** — a completion, a login, a row appearing. `DateTime(timezone=True)`, written as `datetime.now(UTC)`, `server_default=func.now()`, or `pendulum.now()`. Never bare `datetime.now()`: naive is interpreted using Postgres's session `TimeZone`, so it is correct only while every container happens to run UTC. The three accepted forms all carry an offset, which is the property that matters; `pendulum.now()` carries the machine's zone rather than UTC and is correct for the same reason.
   2. **A calendar day** — a purchase date, a day a habit was done, a due date. `Date`. Not a timestamp: a `YYYY-MM-DD` arriving as a timestamp becomes midnight UTC, and every reader west of UTC then renders the day before.
@@ -362,31 +194,17 @@ therefore not covered — it has no registry either.
 - **A wall clock is resolved before it is compared, and printed without resolving.** The reading is what goes on the page, with the zone named beside it — converting it into the reader's zone moves the number and says nothing about where the event is. Sorting, "has it happened", and "how long until" all need the instant, so they resolve first. Comparing the readings puts a 09:00 in Tokyo after an 08:00 in New York, thirteen hours backwards.
 - **A day never travels as a `datetime`.** The Vue side holds a day as a `YYYY-MM-DD` string and `formatDate` parses a bare day as local; anything carrying a `Z` skips that branch and shifts. If a day-shaped value comes back with a `Z`, the column is the wrong type.
 - **The Go CLI decodes a day as a `string`, never a `time.Time`.** `time.Time`'s JSON decode requires RFC3339 and rejects a bare day, and `client.go` decodes a whole slice in one call — so one dated row fails the entire command. `api.Countdown.DueDate` is the shape to copy.
-- **Docker containers**: Prefixed `icb-{env}-{service}` (e.g., `icb-dev-api`). Production uses `icb-infra-{service}` for infrastructure and `icb-{blue|green}-{service}` for app services.
 - **Docker Compose overrides**: List fields (`ports`, `volumes`, `environment`) **merge by default** across compose files. When a test/dev compose redefines a list that exists in the base compose, use `!override` to replace instead of append (e.g., `ports: !override`). Without this, both port mappings apply and cause "port already allocated" errors.
-- **File naming**: Snake_case for DB tables/columns. (Markdown naming: see global CLAUDE.md.)
 
 ### Styling & Design Cohesion
 
-**Global over scoped**: Use the shared SCSS system (`frontend/src/assets/sass/`) for visual styling. Avoid duplicating shadow/effect/button styles in Vue scoped `<style>` blocks — scoped overrides create maintenance burden and drift from the site's visual language. Scoped styles should handle layout (flexbox, grid, spacing) not visual effects.
+**Global over scoped**: visual styling comes from the shared SCSS in `frontend/src/assets/sass/`; a scoped `<style>` block handles layout only (flexbox, grid, spacing).
 
-**Neumorphic shadow vocabulary** (defined in `layout/_grid.scss`):
+**Neumorphic shadow variables** (`layout/_grid.scss`): `--floating-box` is raised, `--floating-box-pressed` is sunken, and `--bubble-box` / `--bubble-box-pressed` are the hover states.
 
-- `--floating-box`: raised/resting state (cards, rows, nav links)
-- `--floating-box-pressed`: sunken/active state (selected items, pressed buttons)
-- `--bubble-box` / `--bubble-box-pressed`: hover states (lighter raise/press)
+**Shared mixins** (`components/`): `data-table`, `card-row` and `list-item` define the full visual pattern; a consumer includes one at entity level and sets only `grid-template-columns`. `double-bevel-button` takes `$button-size` and derives every other proportion, so never override proportions per caller.
 
-**Shared SCSS mixins** (`components/`): Compound mixins following the `search-results` pattern — consumers include at entity level and set `grid-template-columns`. Mixins are opinionated (define the full visual pattern); consumers only provide what genuinely varies.
-
-- `data-table` — flat grid table with header/row/cell/actions (Articles, Money Wasted)
-- `card-row` — neumorphic raised row with title/link/actions/chevron (Books, Box Packing compact)
-- `list-item` — bordered row with hover highlight and last-child cleanup (Habits, Box contents, Duration notes)
-
-**Empty-state convention**: All `{block}__empty` classes use exactly `color: var(--clr-gray-500); font-style: italic` — no padding, font-size, or display overrides. Empty states inherit layout from their container.
-
-**`double-bevel-button` mixin** (`components/_buttons.scss`): Circular neumorphic buttons with inner button + outer ring. Takes `$button-size` — everything else (outer ring at 1.5x, icon at 30% via `$content-ratio`, `position: relative`) is calculated automatically. Never override proportions per-caller.
-
-**Proportional sizing**: Buttons, icons, and text within shared components must scale proportionally from a single size parameter. Never use fixed font sizes inside scaled containers.
+**Empty states**: every `{block}__empty` is exactly `color: var(--clr-gray-500); font-style: italic`, with layout inherited from its container.
 
 **Design-style-switch readiness** (⚠️ MANDATORY): The site is being built toward a future design style switcher (neumorphic / jagged / bubbly / etc.) that changes shape, shadow, and border properties site-wide — the same way the color theme switcher changes all colors today. To keep this feasible:
 
@@ -395,13 +213,12 @@ therefore not covered — it has no registry either.
 - All visual effects must flow through CSS variables defined in the SCSS abstracts layer. Scoped styles handle **layout only** (flexbox, grid, gaps, padding).
 - When the switcher is built, it will toggle a `data-design` attribute on `<html>` and swap variable sets. Components that follow these rules will just work.
 
-**Stats page shared kit** (`frontend/src/components/stats/`, `frontend/src/composables/useStatsCharts.ts`): Reusable components for any entity's stats/analytics page. `StatsSummaryCards` (value + label card row), `StatsTable` + `StatsTableRow` (header + neumorphic rows), `useStatsCharts` (theme-aware Chart.js colors and option builders). All chart colors are derived from the active theme's CSS custom properties (`--clr-accent`, `--clr-secondary`, `--clr-tertiary`, `--clr-info`, `--clr-warning`, `--clr-success`).
+**Stats pages** use the shared kit in `frontend/src/components/stats/` and `frontend/src/composables/useStatsCharts.ts`, whose chart colors derive from the active theme's CSS custom properties.
 
 ### Component Architecture — Consistency Over Convenience
 
-**Every reusable pattern gets a wrapper per entity.** When a shared component exists (e.g., `AddEditModal`), every entity that uses it gets its own wrapper component (e.g., `AddEditTaskModal`, `AddEditCountdownModal`). The wrapper encapsulates all entity-specific form markup, state, and validation. The page just drops in the component with one line and handles the emitted event. No exceptions based on form complexity — a 2-field form gets a wrapper the same as a 10-field form.
-
-**No subjective "rule of thumb" thresholds.** Either ALL pages follow the pattern or NONE do. This applies to components, composables, shared SCSS, and any architectural pattern. Consistency makes the codebase predictable — the next developer knows exactly where to find things and how to add new pages.
+**Every reusable pattern gets a wrapper per entity**: every entity using `AddEditModal` gets its own wrapper (`AddEditTaskModal`, `AddEditCountdownModal`) holding its form markup, state and validation, whatever the form's size.
+Either every page follows a pattern or none does; there is no rule-of-thumb threshold for components, composables or shared SCSS.
 
 ### Adding a New API Endpoint (⚠️ MANDATORY checklist)
 
@@ -424,44 +241,15 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
    the routes and fails on either, and adding the endpoint to `LIMITED_READS` in
    the same file is what gets it the five behavioral cases.
 
-### Adding a Stats Page
-
-Follow the Articles/Tasks stats pattern. Every stats page uses the shared kit.
-
-1. **Backend**: Add stats Pydantic schemas to `ichrisbirch/schemas/<entity>.py` (SummaryStats, per-category/tag breakdown, time-series, notable items list) + export from `schemas/__init__.py`
-2. **Backend**: Add `GET /<entity>/stats/` endpoint with DB-level aggregation (use `func.count`, `func.avg`, `func.date_trunc`, `extract`). Place before `/{id}/` routes.
-3. **Frontend types**: Add TypeScript interfaces to `frontend/src/api/types.ts` + export from `client.ts`
-4. **Frontend view**: Create `<Entity>StatsView.vue` — import `StatsSummaryCards`, `StatsTable`, `StatsTableRow`, and chart builders from `useStatsCharts`. All chart colors via `getThemeColors()` / `paletteColors()`.
-5. **Route**: Add to `frontend/src/router.ts` (before parent route if it has path params)
-6. **Subnav**: Add Stats link to the entity's subnav component
-7. **Seed data**: Ensure the entity's seeder produces enough varied data to make charts meaningful (spread dates, varied categories, mix of completed/outstanding)
-
 ### Adding a Vue Page
 
-1. Create Pinia store with `createLogger`, `ApiError` handling, `error: ref<ApiError | null>`
-2. Create Vue view with `<script setup>`, `onMounted` fetch, `useNotifications()` for feedback
-3. Add route in `frontend/src/router.ts` (lazy-loaded)
-4. Update sidebar in `AppSidebar.vue`
-5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`
-6. Write unit tests (mock API with `vi.mock`) and E2E tests (Playwright through `app.docker.localhost`)
+A page is a Pinia store (`createLogger`, `ApiError`, `error: ref<ApiError | null>`), a `<script setup>` view that fetches in `onMounted` and reports through `useNotifications()`, a lazy-loaded route in `frontend/src/router.ts`, and an entry in `AppSidebar.vue`.
+Add its path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`.
+Unit tests mock the API with `vi.mock`; E2E runs through `app.docker.localhost`, never `vue.docker.localhost`, so CORS faults surface.
 
 ### Logging
 
-**Python**: structlog rendered through the stdlib root logger to stderr, plus a file when `LOG_FILE` is set. `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL`, `LOG_COLORS` env vars. Request tracing via `X-Request-ID`.
-
-**Vue**: consola with structured reporters matching structlog key=value format. JSON for Loki in production. Use `createLogger('ModuleName')`.
-
-```bash
-./ops/icbops dev logs [service]     # Dev logs
-./ops/icbops testing logs [service] # Test logs
-```
-
-## Documentation
-
-**Check docs first** before changing infrastructure, deployment, or migrations.
-
-**Serve locally**: `mkdocs serve` → `http://127.0.0.1:8000`
-
-Key docs: [Quick Start](docs/quick-start.md), [CLI Usage](docs/cli-traefik-usage.md), [Blue/Green Deployment](docs/blue-green-deployment.md), [Traefik Deployment](docs/traefik-deployment.md), [Alembic Migrations](docs/alembic.md), [Testing Guide](docs/testing/overview.md), [Troubleshooting](docs/troubleshooting.md)
-
-**API docs**: FastAPI Swagger at `https://api.docker.localhost/docs`
+Python logs through structlog into the stdlib root logger, to stderr plus a file when `LOG_FILE` is set; `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL` and `LOG_COLORS` configure it.
+Requests are traced by `X-Request-ID`.
+Vue logs through consola via `createLogger('ModuleName')`, in structlog's key=value shape, and as JSON for Loki in production.
+`./ops/icbops {dev,testing} logs [service]` reads a running environment's logs.

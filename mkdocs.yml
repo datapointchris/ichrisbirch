@@ -134,6 +134,7 @@ nav:
   - Architecture:
       - Configuration: configuration.md
       - Authentication: authentication-architecture.md
+      - Dependency Reach: dependency-reach.md
       - Logging: logging-configuration.md
       - Admin Dashboard: admin.md
       - Database: alembic.md
