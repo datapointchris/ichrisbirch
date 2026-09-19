@@ -18,6 +18,7 @@ from ichrisbirch.api import endpoints
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
+from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
 from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
@@ -37,7 +38,7 @@ async def request_validation_exception_handler_logger(request, exc):
 
 
 async def assistant_output_error_handler(request, exc):
-    """Answer an unusable reply as a 502 that names why and carries what Claude Code returned.
+    """Answer an unusable reply as a failed dependency that names why and carries what Claude Code returned.
 
     The error stays a domain exception until it reaches here, because the bulk
     import worker calls the same helpers and records `str(e)` in a database column
@@ -45,7 +46,7 @@ async def assistant_output_error_handler(request, exc):
     """
     logger.error('assistant_output_unusable', path=request.url.path, reason=str(exc.reason), error=str(exc))
     detail = {'reason': str(exc.reason), 'message': str(exc), 'raw_assistant_output': exc.raw_output}
-    return JSONResponse(status_code=502, content={'detail': detail})
+    return await http_exception_handler(request, FailedDependencyException(detail))
 
 
 async def assistant_usage_limit_handler(request, exc):

@@ -50,7 +50,7 @@ async def classify_url_content(url: str, hint: str, content: str, settings: Sett
 
     A classifier that produces no usable candidate raises the assistant's
     `AssistantOutputError`, carrying its reason and raw output, and the API's
-    handler for that error answers HTTP 502.
+    handler for that error answers HTTP 424.
     """
     assistant = AnthropicAssistant(
         name='URL Import Classifier',

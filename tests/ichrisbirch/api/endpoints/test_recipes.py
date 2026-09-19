@@ -401,7 +401,7 @@ class TestAISuggest:
         assert mock_assistant_cls.call_args.kwargs['max_tool_uses'] == 5, 'recipe discovery searches without a bound'
 
     @patch('ichrisbirch.api.endpoints.recipes.AnthropicAssistant')
-    def test_ai_suggest_reports_invalid_output_as_a_bad_gateway(self, mock_assistant_cls, recipe_crud_tester):
+    def test_ai_suggest_reports_invalid_output_as_a_failed_dependency(self, mock_assistant_cls, recipe_crud_tester):
         client, _ = recipe_crud_tester
         mock_assistant = MagicMock()
         invalid = AssistantOutputError(AssistantFailure.INVALID_OUTPUT, 'not a valid RecipeSuggestionResponse', '{"candidates": "none"}')
@@ -410,7 +410,7 @@ class TestAISuggest:
 
         response = client.post(f'{ENDPOINT}ai-suggest/', json={'have': ['chicken'], 'count': 1})
 
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         detail = response.json()['detail']
         assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
         assert detail['raw_assistant_output'] == '{"candidates": "none"}'
@@ -568,13 +568,13 @@ class TestUrlImport:
 
     @patch('ichrisbirch.services.url_ingest.classify_url_content')
     @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
-    def test_import_returns_502_naming_why_the_classifier_failed(self, mock_extract, mock_classify, recipe_crud_tester):
-        """An expired token and a drifted prompt both answer 502, and the reason tells them apart."""
+    def test_import_returns_424_naming_why_the_classifier_failed(self, mock_extract, mock_classify, recipe_crud_tester):
+        """An expired token and a drifted prompt both answer 424, and the reason tells them apart."""
         client, _ = recipe_crud_tester
         mock_extract.return_value = 'fake'
         mock_classify.side_effect = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
         response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/broken'})
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         detail = response.json()['detail']
         assert detail['reason'] == AssistantFailure.FAILED
         assert detail['raw_assistant_output'] == 'API Error: 401'

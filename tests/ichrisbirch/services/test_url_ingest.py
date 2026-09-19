@@ -22,7 +22,7 @@ def patched_assistant(generate_structured: AsyncMock):
 
 @pytest.mark.asyncio
 async def test_an_unusable_reply_reaches_the_caller_with_its_reason():
-    """The API's handler answers the 502 from the reason, so rewrapping the error would lose it."""
+    """The API's handler answers the 424 from the reason, so rewrapping the error would lose it."""
     refused = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
     with patched_assistant(AsyncMock(side_effect=refused)), pytest.raises(AssistantOutputError) as caught:
         await classify_url_content(URL, 'auto', 'content', MagicMock())

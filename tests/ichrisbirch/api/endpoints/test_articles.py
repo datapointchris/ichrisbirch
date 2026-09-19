@@ -22,7 +22,10 @@ from ichrisbirch.api.article_import_worker import USAGE_LIMIT_RECHECK
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.article_import_worker import enqueue_bulk_import
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.outbound_http import PageFetchError
+from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.url_extraction import ArticlePage
+from ichrisbirch.services.url_extraction import CaptionsBlocked
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -184,7 +187,7 @@ def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_
     with _patched_assistant(mock_assistant):
         response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
 
-    assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+    assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
     assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
 
 
@@ -469,7 +472,25 @@ class TestCreateFromUrl:
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         assert response.json()['notes'] == 'Read later'
 
-    def test_create_from_url_reports_invalid_output_as_a_bad_gateway(self, txn_api_logged_in):
+    @pytest.mark.parametrize(
+        'failure',
+        [
+            PageFetchError('https://example.com/dead', 'connection refused'),
+            PageStatusError('https://example.com/dead', 403),
+            CaptionsBlocked('https://www.youtube.com/watch?v=abc'),
+        ],
+        ids=['unreachable', 'refused', 'captions-blocked'],
+    )
+    def test_create_from_url_reports_a_failing_site_as_a_failed_dependency(self, txn_api_logged_in, failure):
+        """The detail names what failed, which is what a caller needs to decide whether to retry."""
+        client, _ = txn_api_logged_in
+        _, assistant_patch = self._mock_externals()
+        with patch('ichrisbirch.api.endpoints.articles.read_article_page', side_effect=failure), assistant_patch:
+            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dead'})
+        assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
+        assert response.json()['detail'] == str(failure)
+
+    def test_create_from_url_reports_invalid_output_as_a_failed_dependency(self, txn_api_logged_in):
         """The raw output comes back, so prompt drift is diagnosable without the logs."""
         client, _ = txn_api_logged_in
         invalid = AssistantOutputError(
@@ -478,25 +499,25 @@ class TestCreateFromUrl:
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=invalid)
         with get_page_patch, assistant_patch:
             response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/prose'})
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         detail = response.json()['detail']
         assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
         assert detail['raw_assistant_output'] == 'I could not summarize that page.'
 
-    def test_create_from_url_reports_a_truncated_reply_as_a_bad_gateway(self, txn_api_logged_in):
+    def test_create_from_url_reports_a_truncated_reply_as_a_failed_dependency(self, txn_api_logged_in):
         """A reply stopped at the cap is a fragment, and must not be saved as an article."""
         client, _ = txn_api_logged_in
         truncated = AssistantOutputError(AssistantFailure.TRUNCATED, 'cap reached', '{"summary": "half a sum')
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=truncated)
         with get_page_patch, assistant_patch:
             response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/truncated'})
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY, show_status_and_response(response)
+        assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
 
     def test_an_unusable_reply_gives_the_bulk_worker_a_short_message(self, txn_api_logged_in):
         """The worker records str(e) in a database column and a Redis payload.
 
-        An HTTPException stringifies as '502: {…}', so raising one from the
+        An HTTPException stringifies as '424: {…}', so raising one from the
         shared helper would put the model's whole reply in both.
         """
         from ichrisbirch.api.endpoints.articles import _summarize_and_create_article
@@ -508,7 +529,7 @@ class TestCreateFromUrl:
         with get_page_patch, assistant_patch, pytest.raises(AssistantOutputError) as caught:
             asyncio.run(_summarize_and_create_article('https://example.com/worker', None, session, get_settings()))
         assert len(str(caught.value)) < 200, 'the worker would record this whole string'
-        assert caught.value.raw_output == long_reply, 'the raw reply is still reachable for a 502'
+        assert caught.value.raw_output == long_reply, 'the raw reply is still reachable for a 424'
 
     def test_create_from_url_answers_a_usage_limit_with_when_to_retry(self, txn_api_logged_in):
         """A refused call succeeds once the plan resets, so the answer is a 503 that says when."""
