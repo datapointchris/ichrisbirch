@@ -58,3 +58,17 @@ class ForbiddenException(HTTPException):
     def __init__(self, reason: str, logger: Any):
         logger.warning('access_denied', reason=reason)
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=f'Access denied: {reason}')
+
+
+class FailedDependencyException(HTTPException):
+    """A service this API called failed, so the request could not be finished.
+
+    The detail names what failed: a site that could not be read, GitHub, or a
+    reply from Claude Code that could not be used. The status is 424 rather than
+    502 because Cloudflare sits in front of production. It replaces an origin's
+    502 or 504 with its own error page, which drops the detail, and it passes a
+    4xx through untouched.
+    """
+
+    def __init__(self, detail: Any):
+        super().__init__(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=detail)

@@ -20,6 +20,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
@@ -56,14 +57,14 @@ PAGE_ERRORS = (PageFetchError, PageStatusError, PageUnreadable, CaptionsBlocked)
 def _page_error(e: PageFetchError | PageStatusError | PageUnreadable | CaptionsBlocked) -> HTTPException:
     """Translate a page that could not be read into a response for a request handler.
 
-    The site failing is a bad gateway. A page that answered but is not the article
-    — a redirect to the homepage, a bot check, no readable text — cannot be
+    The site failing is a failed dependency. A page that answered but is not the
+    article — a redirect to the homepage, a bot check, no readable text — cannot be
     processed as the article the caller named.
     """
     logger.warning('article_page_unreadable', error=str(e))
     if isinstance(e, PageUnreadable):
         return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
-    return HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+    return FailedDependencyException(str(e))
 
 
 def _read_page_for_request(url: str) -> ArticlePage:

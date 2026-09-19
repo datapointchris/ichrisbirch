@@ -97,17 +97,17 @@ def test_a_created_issue_is_returned_and_github_receives_the_issue(github):
     assert github.received['headers']['Authorization'] == 'Bearer test-token'
 
 
-def test_a_github_rejection_is_a_bad_gateway_naming_githubs_status(github):
+def test_a_github_rejection_is_a_failed_dependency_naming_githubs_status(github):
     github.reply_status = status.HTTP_422_UNPROCESSABLE_CONTENT
 
     response = client_for(github.url).post('/github/issues/', json=ISSUE)
 
-    assert response.status_code == status.HTTP_502_BAD_GATEWAY
+    assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY
     assert response.json() == {'detail': 'GitHub API error: 422'}
 
 
-def test_an_unreachable_github_is_a_bad_gateway_saying_it_was_not_reached():
+def test_an_unreachable_github_is_a_failed_dependency_saying_it_was_not_reached():
     response = client_for(closed_port_url()).post('/github/issues/', json=ISSUE)
 
-    assert response.status_code == status.HTTP_502_BAD_GATEWAY
+    assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY
     assert response.json()['detail'].startswith('Failed to reach GitHub API')

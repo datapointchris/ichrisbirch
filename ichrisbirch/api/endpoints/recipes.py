@@ -334,7 +334,7 @@ async def import_from_url(
     """Extract content from a URL, classify via Claude, and return candidate(s) for review.
 
     Returns 409 if the URL is already ingested as a recipe or a technique (checks
-    both tables — a single URL can legitimately back either entity). Returns 502 if
+    both tables — a single URL can legitimately back either entity). Returns 424 if
     the classifier produces no usable candidate, with the failure's reason and the
     raw output embedded for prompt-drift observability.
     """

@@ -5,10 +5,10 @@ import pendulum
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Request
 from fastapi import status
 
+from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.schemas.github_issue import GithubIssueCreate
@@ -60,16 +60,10 @@ async def create_github_issue(
             response.raise_for_status()
     except httpx2.HTTPStatusError as e:
         logger.error('github_issue_api_error', status=e.response.status_code, body=e.response.text)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f'GitHub API error: {e.response.status_code}',
-        ) from e
+        raise FailedDependencyException(f'GitHub API error: {e.response.status_code}') from e
     except httpx2.HTTPError as e:
         logger.error('github_issue_request_error', error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f'Failed to reach GitHub API: {e}',
-        ) from e
+        raise FailedDependencyException(f'Failed to reach GitHub API: {e}') from e
 
     result = response.json()
     logger.info('github_issue_created', number=result['number'], url=result['html_url'])
