@@ -5,16 +5,22 @@
 - [New Server Setup](new_server.md) — apt packages, pyenv, supervisor and nginx on a fresh Ubuntu host
 - [New Database](new_database.md) — creating the schemas by hand, then the first alembic autogenerate
 - [pg_cron](pg_cron.md) — the Postgres job scheduler, kept for reference and replaced by APScheduler
-- [NGINX](nginx.md) — a stub; the How to Deploy section has nothing under it yet
-- [Supervisor](supervisor.md) — a stub; the How to Deploy section has nothing under it yet
+- [NGINX](nginx.md) — the bare-metal reverse proxy and its port layout, replaced by Traefik
+- [Supervisor](supervisor.md) — the bare-metal process manager and its worker counts, replaced by Docker
 
-## Scripts that Run periodically
+The last three describe how the app ran before it was containerized. Each says
+what replaced it, because the config files are still in the tree and reading one
+without that note leads to a deploy path that no longer exists.
 
-`scripts/postgres-snapshot-to-s3.sh`
-`scripts/create-project-stats.sh`
+## Scheduled work
 
-## Supervisor
+Jobs are APScheduler entries in a Postgres jobstore, added at runtime rather
+than declared in this repo, so the job list is read from the scheduler and not
+from a file here. `ichrisbirch/scheduler/main.py` is where the store is
+attached.
 
-## NGINX
+`icbops stats` is the project-statistics surface — `summary`, `code`, `tests`,
+`quality`, `activity`, `events`, `trends`, `churn` and `snapshot`.
 
-## New Server Setup
+`scripts/bootstrap-homelab.sh` restores a database dump into
+`icb-infra-postgres` with `pg_restore`.
