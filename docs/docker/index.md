@@ -1,157 +1,103 @@
-# Docker Documentation
+# Docker
 
-This section contains comprehensive documentation for Docker containerization of the iChrisBirch application.
+iChrisBirch runs as a set of containers in every environment, orchestrated with
+Docker Compose and fronted by Traefik.
 
-## Overview
+`./ops/icbops --help` is the command surface. It covers dev, testing and
+production, and it is what these pages point at rather than reproduce — a
+`docker compose` line copied into prose goes stale the first time a flag or a
+file name changes, and nothing fails when it does.
 
-The iChrisBirch application runs in a containerized environment using Docker and Docker Compose. This approach provides consistent development, testing, and production environments while simplifying deployment and scaling.
+## Services
 
-## Architecture
+Six services, defined in `docker-compose.yml`:
 
-The application consists of multiple services orchestrated through Docker Compose:
+| Service     | What it is                                    |
+| ----------- | --------------------------------------------- |
+| `traefik`   | Reverse proxy and TLS termination             |
+| `api`       | FastAPI backend                               |
+| `vue`       | Vue 3 SPA                                     |
+| `scheduler` | APScheduler background jobs                   |
+| `postgres`  | Application database                          |
+| `redis`     | Cache and session storage                     |
 
-- **API Service**: FastAPI backend service handling REST API requests
-- **Vue Service**: Vue 3 frontend SPA
-- **Scheduler Service**: Background job processing service
-- **PostgreSQL**: Database service for persistent storage
-- **Redis**: Caching and session storage service
+## Compose files
 
-## Documentation Structure
+`docker-compose.yml` is the base, and dev, test and CI layer over it. Its own
+defaults are production ones, down to the `icb-prod-` container names, so a
+service read out of the base alone is the production service. Blue/green does
+not use it: `docker-compose.infra.yml` and `docker-compose.app.yml` are
+standalone.
 
-### Core Documentation
+| File                       | Environment                                        |
+| -------------------------- | -------------------------------------------------- |
+| `docker-compose.dev.yml`   | Local development                                  |
+| `docker-compose.test.yml`  | The test stack, alongside dev on other ports       |
+| `docker-compose.ci.yml`    | GitHub Actions                                     |
+| `docker-compose.infra.yml` | Production Traefik, Postgres and Redis             |
+| `docker-compose.app.yml`   | Production api, vue and scheduler, one color       |
 
-- **[Docker Guide](docker.md)**: Complete Docker setup and usage guide
-- **[Docker Compose](docker-compose.md)**: Service orchestration and configuration
-- **[Quick Reference](docker-quick-reference.md)**: Essential commands and troubleshooting
+`icbops {dev,testing,prod} docker config [service]` prints the merged result for
+an environment, which is the one place the layering is resolved rather than
+described.
 
-### Key Features
+## Environments
 
-- **Multi-stage builds**: Optimized container images for different environments
-- **Environment-based configuration**: Separate configs for dev/test/prod
-- **Health checks**: Automatic service health monitoring
-- **Volume management**: Persistent data storage and development volumes
-- **Network isolation**: Secure service communication
-- **Dependency management**: Proper service startup ordering
+Development is `https://app.docker.localhost/` with the API at
+`https://api.docker.localhost/`. Tests run against
+`https://api.test.localhost:8443/`.
 
-## Quick Start
+Production runs on a self-hosted server, not locally. A push to `main` triggers
+a webhook that runs `scripts/deploy-homelab.sh`, which deploys the color that
+is not live and cuts Traefik over once it is healthy.
+`docker-compose.infra.yml` stays up as project `icb-infra`, and
+`docker-compose.app.yml` deploys as `icb-blue` or `icb-green`.
+[Blue/green deployment](../blue-green-deployment.md) covers the mechanism, and
+`icbops prod deploy-status` reports which color is live.
 
-### Development Environment
+Nothing deploys by hand. `icbops prod start` and `prod restart` bring the live
+color back up after a reboot, and they read the color rather than choosing one.
 
-```bash
-# Start all services
-docker-compose -f docker-compose.dev.yml up -d
+## Configuration
 
-# View logs
-docker-compose -f docker-compose.dev.yml logs -f
+Every environment loads a single `.env` and sets `ENVIRONMENT` to
+`development`, `testing` or `production`. `.env.example` lists the keys.
+Production secrets are encrypted with SOPS and age at
+`secrets/secrets.prod.enc.env`; `sops secrets/secrets.prod.enc.env` edits them
+in place. See [Configuration](../configuration.md).
 
-# Stop services
-docker-compose -f docker-compose.dev.yml down
-```
+## The images
 
-### Testing Environment
+Two Dockerfiles, because the Python services and the frontend are built
+differently.
 
-```bash
-# Start test environment
-docker-compose -f docker-compose.test.yml up -d
+`Dockerfile` at the root builds `api` and `scheduler`. It is multi-stage —
+`base`, `development`, `testing`, `production-builder`, `production` — so a
+build always passes `--target`. Dependencies are installed with `uv`. The
+`production` stage runs as a non-root user. `development` and `testing` run as
+root, because both bind-mount the source tree and run `uv` against it.
 
-# Run tests
-docker-compose -f docker-compose.test.yml exec api pytest
+`frontend/Dockerfile` builds `vue` for production only. Node builds the bundle
+and Caddy serves it on port 80. In dev and test there is no build: the `vue`
+service is a plain `node:24-alpine` running `npm install && npm run dev`, so
+the Vite dev server is what answers.
 
-# Cleanup
-docker-compose -f docker-compose.test.yml down -v
-```
+Dev and test read Python code from a bind mount rather than from the image, so
+a Dockerfile fault can pass both and fail the production build.
+`icbops prod build-test` builds the production target locally.
 
-### Production Environment
+## These pages
 
-```bash
-# Deploy to production
-docker-compose -f docker-compose.prod.yml up -d
+- [Docker Architecture and Build Process](docker.md) — the Dockerfile, its
+  stages and how an image reaches each environment.
+- [Docker Compose Architecture](docker-compose.md) — how the base and the
+  per-environment files layer, and the overrides that are not obvious.
+- [Quick Reference](docker-quick-reference.md) — the `icbops` verb for each
+  common task, and the raw `docker` commands that have no `icbops` equivalent.
 
-# Monitor services
-docker-compose -f docker-compose.prod.yml ps
+## Related
 
-# Update application
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-## Environment Configuration
-
-Each environment uses dedicated configuration files:
-
-- **Development**: `.dev.env` - Debug enabled, development database
-- **Testing**: `.test.env` - Test database, isolated environment
-- **Production**: `.prod.env` - Production database, optimized settings
-
-## Service Management
-
-### Individual Service Operations
-
-```bash
-# Start specific service
-docker-compose -f docker-compose.dev.yml up api
-
-# View service logs
-docker-compose -f docker-compose.dev.yml logs -f app
-
-# Execute commands in service
-docker-compose -f docker-compose.dev.yml exec api bash
-
-# Rebuild service
-docker-compose -f docker-compose.dev.yml build api
-```
-
-### Database Operations
-
-```bash
-# Run database migrations
-docker-compose -f docker-compose.dev.yml exec api alembic upgrade head
-
-# Access database
-docker-compose -f docker-compose.dev.yml exec postgres psql -U postgres -d ichrisbirch
-
-# Backup database
-docker-compose -f docker-compose.dev.yml exec postgres pg_dump -U postgres ichrisbirch > backup.sql
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port conflicts**: Ensure ports 5000, 8000, 5432, 6379 are available
-2. **Permission issues**: Check file permissions in mounted volumes
-3. **Service dependencies**: Verify services start in correct order
-4. **Environment variables**: Confirm all required env vars are set
-
-### Health Checks
-
-All services include health checks that can be monitored:
-
-```bash
-# Check service health
-docker-compose -f docker-compose.dev.yml ps
-
-# View detailed health status
-docker inspect --format='{{json .State.Health}}' container_name
-```
-
-## Security Considerations
-
-- **Non-root user**: All services run as non-root user
-- **Network isolation**: Services communicate through Docker networks
-- **Secret management**: Sensitive data managed through environment variables
-- **Image security**: Regular base image updates and security scanning
-
-## Performance Optimization
-
-- **Multi-stage builds**: Reduced image sizes
-- **Layer caching**: Optimized Dockerfile for build performance
-- **Resource limits**: Configured memory and CPU limits
-- **Volume optimization**: Efficient data persistence strategies
-
-## Related Documentation
-
-- [Configuration](../configuration.md): Application configuration management
-- [Testing](../testing/overview.md): Testing strategies and setup
-- [DevOps](../devops/index.md): Deployment and infrastructure
-- [Troubleshooting](../troubleshooting.md): Common issues and solutions
+- [Configuration](../configuration.md)
+- [Testing](../testing/overview.md)
+- [DevOps](../devops/index.md)
+- [Troubleshooting](../troubleshooting.md)

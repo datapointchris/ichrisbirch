@@ -1,307 +1,142 @@
 # Docker Quick Reference
 
-Quick commands and troubleshooting for the ichrisbirch Docker setup.
+The grammar is `icbops <environment> <verb>`, where the environment is `dev`,
+`testing` or `prod`. `test`, `stats`, `routing` and `ssl-manager` are tools
+rather than environments. Run any environment with no verb to see its own
+listing, and `icbops --help` for all of them.
 
-## Essential Commands
+This page covers the common cases. `--help` is the surface of record.
 
-### Development
+## URLs
+
+| Environment | App                               | API                               |
+| ----------- | --------------------------------- | --------------------------------- |
+| Development | `https://app.docker.localhost`    | `https://api.docker.localhost`    |
+| Testing     | `https://app.test.localhost:8443` | `https://api.test.localhost:8443` |
+| Production  | `https://ichrisbirch.com`         | `https://api.ichrisbirch.com`     |
+
+Every environment goes through Traefik, so these are the addresses to use.
+Hitting a container's port on `localhost` skips the proxy, which is where CORS
+and auth middleware live — a request that works there can still fail in the
+browser.
+
+## Development
 
 ```bash
-# Start development environment
 ./ops/icbops dev start
-
-# Stop development environment
 ./ops/icbops dev stop
-
-# Rebuild and start
-./ops/icbops dev rebuild --volumes
-
-# View logs
-./ops/icbops dev logs api
+./ops/icbops dev restart
+./ops/icbops dev logs api          # follow one service
+./ops/icbops dev status            # container state
+./ops/icbops dev health            # health checks
+./ops/icbops dev smoke             # hit every endpoint
+./ops/icbops dev db seed --scale 10
+./ops/icbops dev db init
 ```
 
-### Testing
+`dev logs` persists across restarts, so a container that died on startup still
+has readable logs.
+
+## Testing
 
 ```bash
-# Run all tests (starts the test containers if they are not up)
-./ops/icbops test run
-
-# Run specific test file
+./ops/icbops test run                                    # whole suite
 ./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py
-
-# Run with coverage
-./ops/icbops test run --cov=ichrisbirch --cov-report=html
+./ops/icbops test run tests/path.py -v -k some_case
+./ops/icbops testing start                               # leave the stack up
+./ops/icbops testing stop
+./ops/icbops testing logs api
+./ops/icbops testing db seed --scale 10
+./ops/icbops testing db reset                            # drop and recreate
 ```
 
-### Production
+`test run` starts the containers if they are not up and waits for health
+checks, so it never needs a manual start first.
+
+Every pytest run writes `/tmp/ichrisbirch-pytest-output.log` and
+`/tmp/ichrisbirch-pytest-report.json`. Read those after a failure instead of
+re-running the suite to capture different output. The JSON holds `nodeid`,
+`outcome` and `call.longrepr` per test.
+
+## Production
+
+Nothing here deploys. A push to `main` does that.
 
 ```bash
-# Deploy production
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# Check status
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml ps
-
-# View production logs
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml logs -f
+./ops/icbops prod deploy-status    # which color is live
+./ops/icbops prod status
+./ops/icbops prod health
+./ops/icbops prod apihealth
+./ops/icbops prod logs api
+./ops/icbops prod smoke
+./ops/icbops prod rollback         # switch traffic to the previous color
+./ops/icbops prod build-test       # build the production target locally
 ```
 
-## Debug Commands
+`prod start` and `prod restart` bring the live color back up, after a reboot
+for instance. Both read the active color rather than choosing one.
 
-### Container Inspection
+## Tools
 
 ```bash
-# Shell into running container
-docker-compose exec api bash
-
-# Run one-off command
-docker-compose run --rm api python -c "import ichrisbirch; print('OK')"
-
-# Check environment variables
-docker-compose exec api env | grep POSTGRES
+./ops/icbops routing generate      # after editing vue-paths.txt
+./ops/icbops ssl-manager <action> [env]
+./ops/icbops stats summary
+./ops/icbops install               # symlink to ~/.local/bin/icbops
 ```
 
-### Service Health
+`routing generate` rewrites all three routing files from
+`deploy-containers/traefik/vue-paths.txt`. A new Vue route needs an entry there
+first, or Traefik routes that path to the API and the page 404s.
+
+## When a change is not taking effect
+
+Work these in order. Do not substitute manual `docker` subcommands.
 
 ```bash
-# Check if services are running
-docker-compose ps
-
-# Test service connectivity
-docker-compose exec api ping postgres
-docker-compose exec api ping redis
-
-# Check port availability
-docker-compose exec api netstat -tlnp
+./ops/icbops testing stop && ./ops/icbops testing start   # ~30s
+./ops/icbops testing rebuild --volumes                    # ~60-90s
 ```
 
-### Database Access
+Step one clears accumulated database state, routes FastAPI has not
+re-registered, and stale module imports. Step two clears a stale `.venv`,
+dependency changes from `pyproject.toml`, and a corrupted `node_modules`.
+
+Only after both is `docker logs` or `docker exec` worth reaching for. Fresh
+containers still failing is a real bug. Containers that have not been through
+steps one and two are not evidence.
+
+`rebuild --all --volumes` is the heavier form, for an `ENOTEMPTY` restart loop
+in the Vue container.
+
+## Environment configuration
+
+One `.env` per environment, loaded by `python-dotenv`, with `ENVIRONMENT` set
+to `development`, `testing` or `production`. `.env.example` lists the keys.
+
+Production secrets are SOPS and age encrypted:
 
 ```bash
-# Connect to PostgreSQL
-docker-compose exec postgres psql -U postgres -d ichrisbirch_dev
-
-# Check database tables
-docker-compose exec postgres psql -U postgres -d ichrisbirch_dev -c "\\dt"
-
-# Connect to Redis
-docker-compose exec redis redis-cli
+sops secrets/secrets.prod.enc.env
 ```
 
-## Common Issues
+[Configuration](../configuration.md) covers precedence and what each key does.
 
-### Port Conflicts
+## Things `icbops` does not cover
 
-**Error**: `Port 8000 is already in use`
-
-**Solution**:
+Docker's own disk usage and cleanup:
 
 ```bash
-# Find process using port
-lsof -i :8000
-
-# Stop all containers
-docker-compose down
-
-# Start with different ports
-# Edit .env file to change FASTAPI_PORT
+docker system df                   # what is using space
+docker system prune -a             # remove unused images and build cache
+docker stats                       # live resource usage
 ```
 
-### Database Connection
+`prune -a` removes every image not backing a running container, so the next
+`dev start` rebuilds from scratch.
 
-**Error**: `psycopg.OperationalError: could not connect to server`
+## Related
 
-**Solution**:
-
-```bash
-# Check if PostgreSQL is running
-docker-compose ps postgres
-
-# Check network connectivity
-docker-compose exec api ping postgres
-
-# Verify environment variables
-docker-compose exec api env | grep POSTGRES
-```
-
-### Permission Issues
-
-**Error**: `Permission denied`
-
-**Solution**:
-
-```bash
-# Fix file ownership
-sudo chown -R $(id -u):$(id -g) .
-
-# Rebuild with correct permissions
-docker-compose build --no-cache
-```
-
-## Environment Files
-
-### Development (`.dev.env`)
-
-```bash
-ENVIRONMENT="development"
-POSTGRES_HOST="postgres"
-POSTGRES_PORT="5432"
-POSTGRES_DB="ichrisbirch_dev"
-FASTAPI_HOST="api"
-FASTAPI_PORT="8000"
-FLASK_HOST="app"
-FLASK_PORT="5000"
-```
-
-### Testing (`.test.env`)
-
-```bash
-ENVIRONMENT="testing"
-POSTGRES_HOST="postgres"
-POSTGRES_PORT="5432"
-POSTGRES_DB="ichrisbirch_test"
-FASTAPI_HOST="api"
-FASTAPI_PORT="8000"
-FLASK_HOST="app"
-FLASK_PORT="5000"
-```
-
-### Production (`.prod.env`)
-
-```bash
-ENVIRONMENT="production"
-POSTGRES_HOST="postgres"
-POSTGRES_PORT="5432"
-POSTGRES_DB="ichrisbirch"
-FASTAPI_HOST="api"
-FASTAPI_PORT="8000"
-FLASK_HOST="app"
-FLASK_PORT="5000"
-```
-
-## Build Targets
-
-### Development Build
-
-```bash
-# Build development image
-docker build --target development -t ichrisbirch:dev .
-
-# Features: hot-reload, dev dependencies, debugging
-```
-
-### Production Build
-
-```bash
-# Build production image
-docker build --target production -t ichrisbirch:prod .
-
-# Features: minimal size, security hardening, performance optimized
-```
-
-## Service URLs
-
-<http://localhost:8000/docs>
-
-### Development<http://localhost:5000>
-
-- **API Documentation**: <http://localhost:8000/docs>
-- **Web Application**: <http://localhost:5000>
-- **Database**: localhost:5432
-- **Redis**: localhost:6379
-<http://localhost:8001/docs>
-
-### Testing<http://localhost:5001>
-
-- **API**: <http://localhost:8001/docs>
-- **Web Application**: <http://localhost:5001>
-- **Database**: localhost:5434
-- **Redis**: localhost:6380
-<http://localhost:8000>
-
-### Production<http://localhost:5000>
-
-- **API**: <http://localhost:8000>
-- **Web Application**: <http://localhost:5000>
-- **Database**: localhost:5432 (if exposed)
-- **Redis**: localhost:6379 (if exposed)
-
-## Useful Docker Commands
-
-```bash
-# Clean up unused containers, networks, images
-docker system prune -a
-
-# View image sizes
-docker images
-
-# View container resource usage
-docker stats
-
-# Export container filesystem
-docker export <container_id> > backup.tar
-
-# Import container filesystem
-docker import backup.tar ichrisbirch:backup
-```
-
-## Monitoring
-
-### Health Checks
-
-```bash
-# Check health status
-docker-compose ps
-
-# Manual health check
-curl -f http://localhost:8000/health
-```
-
-### Resource Usage
-
-```bash
-# Container stats
-docker stats
-
-# Detailed container info
-docker inspect <container_id>
-
-# Process list in container
-docker-compose exec api ps aux
-```
-
-## Advanced Usage
-
-### Custom Commands
-
-```bash
-# Run database migrations
-docker-compose run --rm api alembic upgrade head
-
-# Create new migration
-docker-compose run --rm api alembic revision --autogenerate -m "description"
-
-# Run Python shell
-docker-compose run --rm api python
-
-# Install new package
-docker-compose run --rm api poetry add package-name
-```
-
-### Volume Management
-
-```bash
-# List volumes
-docker volume ls
-
-# Inspect volume
-docker volume inspect ichrisbirch_postgres_data
-
-# Backup volume
-docker run --rm -v ichrisbirch_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/backup.tar.gz /data
-
-# Restore volume
-docker run --rm -v ichrisbirch_postgres_data:/data -v $(pwd):/backup alpine sh -c "cd /data && tar xzf /backup/backup.tar.gz --strip 1"
-```
-
-This reference should help with day-to-day Docker operations and troubleshooting!
+- [Docker Architecture and Build Process](docker.md)
+- [Docker Compose Architecture](docker-compose.md)
+- [Docker troubleshooting](../troubleshooting/docker-issues.md)

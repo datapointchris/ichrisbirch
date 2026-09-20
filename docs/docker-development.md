@@ -63,7 +63,7 @@ icbops test logs     # Run tests with timestamped log output
 - Isolated database on port 5434 with tmpfs for performance
 - Redis on port 6380 with tmpfs storage
 - Services terminate automatically when tests complete
-- Cleanup via `docker-compose down -v` removes test containers/volumes
+- Cleanup via `docker compose down -v` removes test containers/volumes
 
 ### Production Commands
 
@@ -107,8 +107,9 @@ Each environment uses `.env` files:
 **Development**:
 
 - Source code bind-mounted for live editing (`.:/app`)
+- Anonymous `.venv` volume, re-seeded from the image on every new container
 - Persistent database and Redis volumes
-- AWS credentials mounted read-only
+- Docker socket mounted read-only into the API, for the prune job
 
 **Testing**:
 
@@ -135,7 +136,7 @@ Each environment uses `.env` files:
 - **Docker logs**: Infrastructure and startup information only
 - **JSON file driver**: Rotation and size limits configured
 - **Service tags**: Each service tagged for log identification
-- **Access via**: `docker-compose logs` for container-level debugging
+- **Access via**: `docker compose logs` for container-level debugging
 
 ## Port Configuration
 
@@ -199,10 +200,10 @@ icbops dev status
 
 ```bash
 # Check service status
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml ps
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
 # View specific service logs
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs api
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs api
 
 # Execute commands in running containers
 docker exec -it icb-dev-api /bin/bash

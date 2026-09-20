@@ -1,394 +1,120 @@
 # Docker Architecture and Build Process
 
-This document explains the Docker architecture for the ichrisbirch application, including multi-stage builds, environment-specific configurations, and integration with Docker Compose.
-
-- [Overview](#overview)
-- [Dockerfile Architecture](#dockerfile-architecture)
-  - [Multi-Stage Build Strategy](#multi-stage-build-strategy)
-  - [Why Multi-Stage?](#why-multi-stage)
-- [Build Stages](#build-stages)
-  - [1. Python Base Stage (`python-base`)](#1-python-base-stage-python-base)
-  - [2. Builder Stage (`builder`)](#2-builder-stage-builder)
-  - [Production Environment](#production-environment)
-  - [docker-compose.prod.yml](#docker-composeprodyml)
-- [Environment File Integration](#environment-file-integration)
-- [Build Commands](#build-commands)
-  - [Direct Docker Build](#direct-docker-build)
-  - [Docker Compose Build](#docker-compose-build)
-  - [Convenience Scripts](#convenience-scripts)
-- [Service-Specific Commands](#service-specific-commands)
-  - [Multiple Services from One Image](#multiple-services-from-one-image)
-  - [Why One Dockerfile for Multiple Services?](#why-one-dockerfile-for-multiple-services)
-- [Best Practices](#best-practices)
-  - [1. Layer Caching](#1-layer-caching)
-  - [4. Development Experience](#4-development-experience)
-  - [Common Issues](#common-issues)
-    - [4. Development Hot-Reload Not Working](#4-development-hot-reload-not-working)
-  - [Check running processes](#check-running-processes)
-  - [View logs](#view-logs)
-  - [Check environment variables](#check-environment-variables)
-- [Performance Optimization](#performance-optimization)
-- [Summary](#summary)
-
-## Overview
-
-The ichrisbirch application uses a **multi-stage Docker build** approach that creates optimized images for different environments:
-
-- **Development**: Full development environment with hot-reload and debugging tools
-- **Production**: Minimal, security-hardened runtime environment
-- **Testing**: Containerized testing environment with all dependencies
-
-All three environments share the same base image and dependencies but differ in configuration, installed packages, and runtime commands.
-
-## Dockerfile Architecture
-
-### Multi-Stage Build Strategy
-
-```dockerfile
-# Stage 1: python-base (shared foundation)
-FROM python:3.12-slim as python-base
-
-# Stage 2: builder (dependency compilation)
-FROM python-base as builder
-
-# Stage 3: development (dev tools + hot reload)
-FROM python-base as development
-
-# Stage 4: production (minimal runtime)
-FROM python-base as production
-```
-
-### Why Multi-Stage?
-
-1. **Shared Base**: All stages share the same Python runtime and basic configuration
-2. **Build Isolation**: Compilation tools are only in the builder stage
-3. **Size Optimization**: Production images exclude development dependencies
-4. **Security**: Production images have minimal attack surface
-5. **Consistency**: Same base ensures identical runtime behavior
-
-## Build Stages
-
-### 1. Python Base Stage (`python-base`)
-
-```dockerfile
-FROM python:3.12-slim as python-base
-```
-
-**Purpose**: Establishes the foundation for all other stages
-
-**Key Features**:
-
-**Environment Variables**:
-
-```dockerfile
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=1.8.3 \
-    POETRY_HOME="/opt/poetry" \
-    APP_PATH="/app"
-```
-
-### 2. Builder Stage (`builder`)
-
-```dockerfile
-
-**Purpose**: Compiles dependencies and creates the virtual environment
-
-```
-
-```dockerfile
-
-FROM python-base as development
-```
-
-**Key Features**:
-
-- Copies virtual environment from builder
-
-**Development-Specific**:
-
-```dockerfile
-RUN poetry install --no-root  # Includes dev dependencies
-### 4. Production Stage (`production`)
-FROM python-base as production
-```
-
-**Key Features**:
-
-- Only runtime dependencies (no build tools)
-- Minimal system packages
-
-- Security optimizations
-
-```dockerfile
-RUN poetry install --only=main --no-root  # No dev dependencies
-CMD ["gunicorn", "ichrisbirch.wsgi_api:api", "--bind", "0.0.0.0:8000", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "4"]
-
-## Environment Configurations
-
-
-### Development Environment
-
-
-**Image Target**: `development`
-
-
-
-- Hot-reload enabled
-
-- Volume mounts for live code editing
-
-
-# docker-compose.dev.yml
-services:
-  api:
-
-      context: .
-
-
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - .:/app
-```
-
-### Production Environment
-
-**Image Target**: `production`
-
-**Characteristics**:
-
-- Security hardening
-- Health checks
-**Docker Compose Usage**:
-
-### docker-compose.prod.yml
-
-  api:
-      context: .
-      target: production
-    command: gunicorn ichrisbirch.wsgi_api:api --bind 0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker --workers 4
-
-```yaml
-
-
-### Testing Environment
-
-**Image Target**: `development` (with test configuration)
-**Characteristics**:
-
-- Same as development but with test configuration
-
-- Test-specific environment variables
-- Isolated test networks
-
-## Docker Compose Integration
-
-
-### How Docker Compose Uses the Dockerfile
-
-Docker Compose extends the Dockerfile with:
-
-
-1. **Target Selection**: Chooses which stage to build
-2. **Environment Variables**: Injects configuration via `.env` files
-3. **Volume Mounts**: Overlays source code for development
-4. **Network Configuration**: Connects services
-5. **Command Overrides**: Customizes startup commands
-
-### Build Process Flow
-```mermaid
-graph TD
-    A[docker-compose build] --> B[Read Dockerfile]
-    B --> C[Build python-base stage]
-    D --> E{Target specified?}
-    E -->|development| F[Build development stage]
-    E -->|production| G[Build production stage]
-    F --> H[Apply docker-compose overrides]
-    G --> H
-    H --> I[Start services]
-```
-
-## Environment File Integration
-
-Each environment uses its own `.env` file:
+Two Dockerfiles build the application. `Dockerfile` at the repository root
+builds the Python services, and `frontend/Dockerfile` builds the Vue bundle for
+production.
+
+## The Python image is one multi-stage build
+
+`Dockerfile` has five stages. A build always passes `--target`, because there
+is no sensible default among them.
+
+| Stage                | From                          | Dependencies installed           |
+| -------------------- | ----------------------------- | -------------------------------- |
+| `base`               | `uv:python3.14-bookworm-slim` | System packages only             |
+| `development`        | `base`                        | Everything, including dev        |
+| `testing`            | `base`                        | Production plus the `test` group |
+| `production-builder` | `base`                        | Production only                  |
+| `production`         | `python:3.14-slim-bookworm`   | Copied from `production-builder` |
+
+`base` installs the system packages every stage needs, including the
+PostgreSQL 16 client. Debian 12 ships version 15, so the client comes from the
+PostgreSQL project's own apt repository rather than Debian's.
+
+Dependencies are installed with `uv sync --locked`, against `uv.lock`. Each
+stage mounts `uv.lock` and `pyproject.toml` rather than copying them, then
+copies the source afterwards, so editing application code does not invalidate
+the dependency layer.
+
+`production` starts from a plain Python image rather than the `uv` one and
+copies `/app` out of `production-builder`. That leaves `uv` itself, the build
+caches and the dev dependencies behind. It creates an `app` user and runs as
+it.
+
+`development` and `testing` run as root. Both bind-mount the source tree from
+the host and run `uv` against it at runtime, and a root process is what can
+write into a host-owned mount.
+
+## One image runs both Python services
+
+`docker-compose.yml` declares an `x-app-build` anchor and both `api` and
+`scheduler` merge it. They differ only in their `command`:
+
+- `api` — `uvicorn ichrisbirch.wsgi_api:api`, four workers in production,
+  `--reload` in dev.
+- `scheduler` — `python -m ichrisbirch.wsgi_scheduler`.
+
+One image rather than one per service is a deliberate trade. The services share
+a dependency set and a runtime, so a second image would duplicate every layer
+to no benefit. `docker images` shows what the shared build costs.
+
+Production disables uvicorn's access log. Request logging is middleware's job,
+and two loggers writing the same requests is two formats to parse.
+
+## The frontend is built for production and not for dev
+
+`frontend/Dockerfile` is two stages. `node:24-alpine` runs `npm ci` and
+`npm run build`, then `caddy:2-alpine` takes `/app/dist` and the repository's
+`frontend/Caddyfile` and serves the result on port 80. Caddy handles the SPA
+fallback, so a deep link renders rather than 404ing.
+
+`VITE_API_URL` is a build argument, not a runtime variable. Vite substitutes it
+into the bundle at build time, so changing it means rebuilding the image.
+Production passes `/api`, which is the same-origin path Traefik proxies.
+
+Dev and test never build this image. Their `vue` service is a plain
+`node:24-alpine` running `npm install && npm run dev`, so Vite's dev server
+answers on port 5173 with hot module replacement.
+
+That asymmetry is the one to remember: the frontend you develop against and the
+frontend you deploy are served by different programs.
+
+## Dev and test build locally; production pulls
+
+| Environment | Python target | Image                                | Source |
+| ----------- | ------------- | ------------------------------------ | ------ |
+| Development | `development` | `ichrisbirch:development`            | Built  |
+| Testing     | `testing`     | `ichrisbirch:testing`                | Built  |
+| CI          | `testing`     | `ichrisbirch:testing`                | Built  |
+| Production  | `production`  | `ghcr.io/datapointchris/ichrisbirch` | Pulled |
+
+Production never builds on the server. `.github/workflows/release.yml` builds
+both images on a matrix — the root `Dockerfile` at `--target production`, and
+`frontend/Dockerfile` with `VITE_API_URL=/api` — and pushes them to GHCR tagged
+`sha-<commit>` and `latest`. `docker-compose.app.yml` names those images and has
+no `build` section at all, so the deploy pulls a tested artifact rather than
+compiling one next to a live database.
+
+Dev and test mount `.:/app` over the image's own copy, so the code that runs is
+the code on disk. Both also mount `/app/.venv` as an anonymous volume, which
+shadows the bind mount at that one path and keeps the image's virtualenv rather
+than the host's. Docker re-seeds an anonymous volume from the image layer on
+every new container, so a rebuild picks up dependency changes.
+
+Do not replace that anonymous volume with a named one. A named volume survives
+rebuilds, so a stale virtualenv outlives the image that was supposed to fix it,
+and the API sits in `health: starting` while `uv` resyncs at runtime.
+
+## Building
+
+`icbops` builds through Compose, which is what selects the target and applies
+the overrides:
 
 ```bash
-# Development
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Testing
-docker-compose --env-file .test.env -f docker-compose.yml -f docker-compose.test.yml up
-
-# Production
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up
+./ops/icbops dev rebuild
+./ops/icbops testing rebuild
+./ops/icbops prod build-test
 ```
 
-## Build Commands
+`icbops --help` lists the flags each one takes.
 
-### Direct Docker Build
+`prod build-test` is the one worth knowing. Production is the only target that
+copies source into the image, so a `.dockerignore` mistake or an uncommitted
+file passes dev and test and then fails in CI. It builds that target locally,
+which is the same build `release.yml` runs.
 
-```bash
-# Build development image
-docker build --target development -t ichrisbirch:dev .
+## Related
 
-# Build production image
-docker build --target production -t ichrisbirch:prod .
-
-# Build with build arguments
-docker build --target production --build-arg POETRY_VERSION=1.8.3 -t ichrisbirch:prod .
-```
-
-### Docker Compose Build
-
-```bash
-# Build development environment
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-
-# Build production environment
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
-
-# Build with no cache
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --no-cache
-```
-
-### Convenience Scripts
-
-```bash
-# Development
-./ops/icbops dev start
-
-# Testing
-./ops/icbops test run
-
-# Production (manual)
-docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-## Service-Specific Commands
-
-### Multiple Services from One Image
-
-The same Docker image can run different services by overriding the command:
-
-```yaml
-# docker-compose.yml
-services:
-  # FastAPI Backend
-  api:
-    build: .
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000
-
-  # Flask Frontend
-  app:
-    build: .
-    command: flask --app ichrisbirch.wsgi_app:app run --host 0.0.0.0 --port 5000
-
-
-  # Scheduler
-  scheduler:
-    build: .
-    command: python -m ichrisbirch.wsgi_scheduler
-```
-
-### Why One Dockerfile for Multiple Services?
-
-1. **Consistency**: Same dependencies and runtime environment
-2. **Efficiency**: Single build process, shared layers
-3. **Maintainability**: One file to update for all services
-4. **Resource Optimization**: Shared base images reduce storage
-
-## Best Practices
-
-### 1. Layer Caching
-
-Dependencies are installed before copying source code:
-
-```dockerfile
-COPY pyproject.toml poetry.lock* ./
-
-
-COPY --chown=appuser:appuser ichrisbirch/ ./ichrisbirch/
-```
-
-- Non-root user for all processes
-
-- Proper file permissions
-
-- Multi-stage builds exclude build dependencies from production
-- Cleanup package caches after installation
-
-### 4. Development Experience
-
-- Volume mounts for live code editing
-
-### Common Issues
-
-```bash
-# Rebuild without cache
-docker-compose build --no-cache
-# Check Poetry version
-docker run --rm ichrisbirch:dev poetry --version
-
-
-**Solution**:
-```dockerfile
-# Or fix permissions
-
-docker run --rm ichrisbirch:dev python -c "import psycopg; print('OK')"
-
-# Verify service communication
-docker-compose exec api ping postgres
-```
-
-#### 4. Development Hot-Reload Not Working
-
-**Error**: Changes not reflected in running container
-
-**Solution**: Verify volume mounts in docker-compose.dev.yml:
-
-```yaml
-volumes:
-  - .:/app
-  - /app/.venv  # Exclude virtual environment
-```
-
-### Check running processes
-
-```bash
-docker-compose exec api ps aux
-```
-
-### View logs
-
-```bash
-docker-compose exec api bash
-```
-
-### Check environment variables
-
-```bash
-docker-compose exec api env | grep -E "(POSTGRES|REDIS|FASTAPI)"
-```
-
-## Performance Optimization
-
-```bash
-# Clean up unused images
-docker system prune -a
-
-# Check image sizes
-docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
-```
-
-## Summary
-
-This Docker architecture provides:
-
-- **Flexibility**: Same image, different configurations
-- **Security**: Non-root execution, minimal attack surface
-- **Efficiency**: Multi-stage builds, layer caching
-- **Consistency**: Identical environments across development, testing, and production
-
-- **Maintainability**: Single Dockerfile for all services
-
-The integration with Docker Compose allows for easy environment switching while maintaining consistency in the underlying application runtime.
+- [Docker Compose Architecture](docker-compose.md)
+- [Quick Reference](docker-quick-reference.md)
+- [Blue/green deployment](../blue-green-deployment.md)
