@@ -18,6 +18,7 @@ from typing import get_origin
 
 import pytest
 from fastapi import status
+from pydantic import BaseModel
 
 from ichrisbirch.services.row_limit import CappedRowLimit
 from ichrisbirch.services.row_limit import RowLimit
@@ -50,8 +51,16 @@ READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 
 # Collection reads that take no limit today. This is the backlog, not a blessing:
 # most of these answer with rows that grow outside the binary and should take
-# `RowLimit`, and a few genuinely should not — `/admin/config/` answers with a
-# config block rather than a paged collection, which is not a set a cap belongs on.
+# `RowLimit`. Four are decided rather than pending, and each answers something a
+# cap would make wrong rather than shorter:
+#
+#   /admin/config/         a config block, not a paged collection
+#   /admin/system/health/  one status report
+#   /strains/vocabulary/   the whole declared vocabulary, which a client reads to
+#                          build its dropdowns — a short one offers fewer values
+#   /habits/day/           one day's board, bounded by the habits you track. A cap
+#                          hides a habit you still owe, and `current_total` would
+#                          then disagree with the list beside it
 #
 # It is a ratchet. The walk below fails on a new uncapped read, so the set can
 # only shrink, and removing an entry is what capping that read looks like.
@@ -59,6 +68,7 @@ UNCAPPED_READS = {
     '/admin/config/',
     '/admin/scheduler/jobs/',
     '/admin/system/errors/',
+    '/admin/system/health/',
     '/api-keys/',
     '/articles/failed-imports/',
     '/articles/search/',
@@ -69,6 +79,7 @@ UNCAPPED_READS = {
     '/coffee/beans/',
     '/coffee/shops/',
     '/durations/',
+    '/habits/day/',
     '/money-wasted/',
     '/project-items/blocked/',
     '/project-items/search/',
@@ -79,6 +90,8 @@ UNCAPPED_READS = {
     '/recipes/cooking-techniques/search/',
     '/recipes/search-by-ingredients/',
     '/recipes/search/',
+    '/recipes/stats/',
+    '/strains/vocabulary/',
     '/tasks/completed/',
     '/tasks/search/',
 }
@@ -184,7 +197,7 @@ class TestProjectItemReadsTakeALimit:
 
 
 def collection_reads(api) -> dict:
-    """Every GET route answering with a list, read off the app rather than listed.
+    """Every GET route answering with rows, read off the app rather than listed.
 
     `LIMITED_READS` above is a written list, and nothing fails when an endpoint is
     missing from it — which is how two box-packing reads kept a falsy limit long
@@ -197,10 +210,40 @@ def collection_reads(api) -> dict:
     for route in api.routes:
         if not isinstance(route, APIRoute) or 'GET' not in route.methods:
             continue
-        model = route.response_model
-        if get_origin(model) is list:
+        if answers_with_rows(route.response_model):
             found[route.path] = route
     return found
+
+
+def answers_with_rows(model) -> bool:
+    """Whether a response model carries rows a caller would want to cap.
+
+    A bare `list[...]` is the common shape. An envelope holding lists beside its
+    scalars carries rows just the same, and a walk keyed on the outer type alone
+    stops seeing them the first time someone wraps a collection.
+
+    A model declaring `id` is one resource, and a list inside it is a part of
+    that row: a recipe's ingredients, a project's items. Capping those cuts a
+    relationship rather than a page. An envelope has no identity of its own, so
+    its lists are the whole answer.
+
+    A field spelled `list[X] | None` is a list too, so the union's arguments are
+    checked rather than only its origin.
+    """
+    if carries_rows(model):
+        return True
+    if not (isinstance(model, type) and issubclass(model, BaseModel)):
+        return False
+    if 'id' in model.model_fields:
+        return False
+    return any(carries_rows(field.annotation) for field in model.model_fields.values())
+
+
+def carries_rows(annotation) -> bool:
+    """Whether an annotation is a list, or a union with a list in it."""
+    if get_origin(annotation) is list:
+        return True
+    return any(get_origin(arg) is list for arg in typing.get_args(annotation))
 
 
 def limit_annotation(route) -> object | None:

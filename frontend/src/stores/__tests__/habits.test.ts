@@ -13,7 +13,14 @@ vi.mock('@/api/client', () => ({
 }))
 
 import { api } from '@/api/client'
+import type { HabitsDay } from '@/api/client'
 const mockApi = vi.mocked(api)
+
+// Every day load answers with a board, so a bare array reaches the store as one
+// with no `due` and the read of its length throws inside the loader.
+function board(overrides: Partial<HabitsDay> = {}): HabitsDay {
+  return { date: '2026-03-14', timezone: 'UTC', due: [], completed: [], current_total: 0, ...overrides }
+}
 
 const testCategory = { id: 1, name: 'Health', is_current: true }
 const testCategoryImportant = { id: 2, name: 'IMPORTANT', is_current: true }
@@ -44,6 +51,8 @@ describe('useHabitsStore', () => {
     expect(store.habits).toEqual([])
     expect(store.categories).toEqual([])
     expect(store.completedHabits).toEqual([])
+    expect(store.dayDue).toEqual([])
+    expect(store.dayCompleted).toEqual([])
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
     expect(store.selectedFilter).toBe('this_week')
@@ -270,16 +279,21 @@ describe('useHabitsStore', () => {
 
   // --- completeHabit ---
 
-  it('completes a habit and adds to completedHabits', async () => {
+  it('moves a ticked-off habit from due to done without reloading the day', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
     const completed = {
       id: 20,
+      habit_id: 1,
       name: 'Meditate',
       category_id: 1,
       category: testCategory,
       complete_date: '2026-03-14T12:00:00Z',
     }
+    mockApi.get.mockResolvedValue({ data: board({ due: [testHabits[0]!, testHabits[1]!], current_total: 2 }) })
     mockApi.post.mockResolvedValue({ data: completed })
     const store = useHabitsStore()
+    await store.fetchDailyData()
 
     const result = await store.completeHabit(testHabits[0]!)
 
@@ -291,7 +305,28 @@ describe('useHabitsStore', () => {
       })
     )
     expect(result).toEqual(completed)
-    expect(store.completedHabits).toHaveLength(1)
+    expect(store.dayDue.map((h) => h.name)).toEqual(['Read'])
+    expect(store.dayCompleted.map((c) => c.name)).toEqual(['Meditate'])
+    expect(mockApi.get).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
+  it('places a ticked-off habit by id rather than appending it', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    const already = { id: 30, habit_id: 5, name: 'Stretch', category_id: 1, category: testCategory, complete_date: '2026-03-14T08:00:00Z' }
+    const orphan = { id: 31, habit_id: null, name: 'Gone', category_id: 1, category: testCategory, complete_date: '2026-03-14T08:30:00Z' }
+    mockApi.get.mockResolvedValue({ data: board({ due: [testHabits[1]!], completed: [already, orphan], current_total: 3 }) })
+    mockApi.post.mockResolvedValue({
+      data: { id: 32, habit_id: 2, name: 'Read', category_id: 2, category: testCategoryImportant, complete_date: '2026-03-14T12:00:00Z' },
+    })
+    const store = useHabitsStore()
+    await store.fetchDailyData()
+
+    await store.completeHabit(testHabits[1]!)
+
+    expect(store.dayCompleted.map((c) => c.name)).toEqual(['Read', 'Stretch', 'Gone'])
+    vi.useRealTimers()
   })
 
   it('sends habit_id so the completion points back at a live habit', async () => {
@@ -336,7 +371,7 @@ describe('useHabitsStore', () => {
   it('completes against the selected day when no day is passed', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     mockApi.post.mockResolvedValue({ data: testCompleted[2] })
     const store = useHabitsStore()
 
@@ -359,27 +394,40 @@ describe('useHabitsStore', () => {
     vi.useRealTimers()
   })
 
-  it('fetches only the selected day when stepping back', async () => {
+  it('asks the server for the selected day when stepping back', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board({ date: '2026-03-13' }) })
     const store = useHabitsStore()
 
     await store.stepDay(-1)
 
     expect(store.selectedDate).toBe('2026-03-13')
     expect(store.isToday).toBe(false)
-    const completedCall = mockApi.get.mock.calls.find((c) => c[0] === '/habits/completed/')!
-    const params = (completedCall[1] as { params: { start_date: string; end_date: string } }).params
-    expect(new Date(params.start_date).getDate()).toBe(13)
-    expect(new Date(params.end_date).getDate()).toBe(14)
+    const dayCall = mockApi.get.mock.calls.find((c) => c[0] === '/habits/day/')!
+    expect((dayCall[1] as { params: { date: string } }).params.date).toBe('2026-03-13')
+    vi.useRealTimers()
+  })
+
+  // The server names the day against a zone it is told, so a reader west of UTC
+  // does not get yesterday's board all evening.
+  it('sends the reader zone the day is resolved against', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    mockApi.get.mockResolvedValue({ data: board() })
+    const store = useHabitsStore()
+
+    await store.fetchDailyData()
+
+    const params = (mockApi.get.mock.calls[0]![1] as { params: { timezone?: string } }).params
+    expect(params.timezone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone)
     vi.useRealTimers()
   })
 
   it('refuses to move past today and does not fetch', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     const store = useHabitsStore()
 
     await store.stepDay(1)
@@ -393,7 +441,7 @@ describe('useHabitsStore', () => {
   it('refuses a key that is not a calendar day', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     const store = useHabitsStore()
 
     // new Date rolls both of these over rather than rejecting them: day 0 is the
@@ -425,23 +473,21 @@ describe('useHabitsStore', () => {
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
     const store = useHabitsStore()
 
-    const rowFor = (day: string) => [{ ...testCompleted[0]!, id: Number(day.slice(-2)), complete_date: `${day}T12:00:00Z` }]
-    const pending: Array<(rows: unknown) => void> = []
-    mockApi.get.mockImplementation((url: string) => {
-      if (url === '/habits/') return Promise.resolve({ data: [] })
-      return new Promise((resolve) => pending.push((rows) => resolve({ data: rows })))
-    })
+    const boardFor = (day: string) =>
+      board({ date: day, completed: [{ ...testCompleted[0]!, habit_id: 1, id: Number(day.slice(-2)), complete_date: `${day}T12:00:00Z` }] })
+    const pending: Array<(b: HabitsDay) => void> = []
+    mockApi.get.mockImplementation(() => new Promise((resolve) => pending.push((b) => resolve({ data: b }))))
 
     const first = store.selectDay('2026-03-13')
     const second = store.selectDay('2026-03-12')
 
-    // The older request answers last, which is the ordering that used to win.
-    pending[1]!(rowFor('2026-03-12'))
-    pending[0]!(rowFor('2026-03-13'))
+    // The older request answers last, which is the ordering a token has to beat.
+    pending[1]!(boardFor('2026-03-12'))
+    pending[0]!(boardFor('2026-03-13'))
     await Promise.all([first, second])
 
     expect(store.selectedDate).toBe('2026-03-12')
-    expect(store.completedHabits.map((c) => c.complete_date)).toEqual(['2026-03-12T12:00:00Z'])
+    expect(store.dayCompleted.map((c) => c.complete_date)).toEqual(['2026-03-12T12:00:00Z'])
     vi.useRealTimers()
   })
 
@@ -450,7 +496,7 @@ describe('useHabitsStore', () => {
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
     const store = useHabitsStore()
 
-    mockApi.get.mockResolvedValue({ data: [testCompleted[0]] })
+    mockApi.get.mockResolvedValue({ data: board({ date: '2026-03-13', completed: [{ ...testCompleted[0]!, habit_id: 1 }] }) })
     await store.selectDay('2026-03-13')
 
     mockApi.get.mockRejectedValue(new ApiError({ message: 'boom', detail: 'boom', status: 500 }))
@@ -478,7 +524,7 @@ describe('useHabitsStore', () => {
   it('follows the clock past midnight and stamps the new day', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 23, 50))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     mockApi.post.mockResolvedValue({ data: testCompleted[0] })
     const store = useHabitsStore()
     await store.fetchDailyData()
@@ -500,7 +546,7 @@ describe('useHabitsStore', () => {
   it('leaves a deliberately chosen earlier day alone at midnight', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 23, 50))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     const store = useHabitsStore()
     await store.selectDay('2026-03-09')
 
@@ -515,7 +561,7 @@ describe('useHabitsStore', () => {
   it('returns to today from an earlier day', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     const store = useHabitsStore()
 
     await store.selectDay('2026-03-09')
@@ -529,7 +575,7 @@ describe('useHabitsStore', () => {
   it('steps across a month boundary', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    mockApi.get.mockResolvedValue({ data: [] })
+    mockApi.get.mockResolvedValue({ data: board() })
     const store = useHabitsStore()
 
     await store.selectDay('2026-03-01')
@@ -550,6 +596,28 @@ describe('useHabitsStore', () => {
 
     expect(mockApi.delete).toHaveBeenCalledWith('/habits/completed/10/')
     expect(store.completedHabits.find((c) => c.id === 10)).toBeUndefined()
+    expect(mockApi.get).not.toHaveBeenCalled()
+  })
+
+  // Putting the habit back under Due takes the habit row, and a completion
+  // carries only the name it was recorded under. Reloading is what gets a habit
+  // renamed in between back with its current name.
+  it('reloads the day when the deleted completion was on the board', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
+    const onTheBoard = { ...testCompleted[0]!, habit_id: 1 }
+    mockApi.get.mockResolvedValue({ data: board({ completed: [onTheBoard], current_total: 1 }) })
+    mockApi.delete.mockResolvedValue({})
+    const store = useHabitsStore()
+    await store.fetchDailyData()
+
+    mockApi.get.mockResolvedValue({ data: board({ due: [testHabits[0]!], current_total: 1 }) })
+    await store.deleteCompleted(10)
+
+    expect(mockApi.get).toHaveBeenCalledTimes(2)
+    expect(store.dayDue.map((h) => h.name)).toEqual(['Meditate'])
+    expect(store.dayCompleted).toEqual([])
+    vi.useRealTimers()
   })
 
   // --- Computed: currentHabits / hibernatingHabits ---
@@ -590,49 +658,41 @@ describe('useHabitsStore', () => {
 
   // --- Computed: todoHabits ---
 
-  it('excludes completed habit names from todo list', () => {
+  // Which habits a day's completions tick off is decided in
+  // `ichrisbirch/services/habit_day.py`, and `tests/ichrisbirch/services/
+  // test_habit_day.py` is where those rules are tested. The store groups the two
+  // halves it is handed and adds nothing.
+  it('groups the two halves of the board the server sent', () => {
     const store = useHabitsStore()
-    store.habits = [...testHabits]
-    store.completedHabits = [testCompleted[0]!] // Meditate is completed
+    store.dayDue = [testHabits[0]!, testHabits[1]!]
+    store.dayCompleted = [{ ...testCompleted[2]!, habit_id: 4 }]
 
-    const todo = store.todoHabits
-    const allTodoNames = Object.values(todo)
-      .flat()
-      .map((h) => h.name)
-    expect(allTodoNames).not.toContain('Meditate')
-    expect(allTodoNames).toContain('Read')
+    expect(Object.keys(store.todoHabits)[0]).toBe('IMPORTANT')
+    expect(
+      Object.values(store.todoHabits)
+        .flat()
+        .map((h) => h.name)
+    ).toEqual(['Read', 'Meditate'])
+    expect(
+      Object.values(store.doneHabits)
+        .flat()
+        .map((c) => c.name)
+    ).toEqual(['Meditate'])
   })
 
-  it('marks a habit done by habit_id after it has been renamed', () => {
+  // A completion sitting in `completedHabits` is a row from a range query, which
+  // the completed view reads. It says nothing about which habits are due today.
+  it('leaves the board alone when a range query fills completedHabits', () => {
     const store = useHabitsStore()
-    store.habits = [{ id: 1, name: 'Meditation', category_id: 1, category: testCategory, is_current: true }]
-    // The completion denormalized the old name; only the id still matches.
-    store.completedHabits = [
-      { id: 10, habit_id: 1, name: 'Meditate', category_id: 1, category: testCategory, complete_date: '2026-03-11T12:00:00Z' },
-    ]
+    store.dayDue = [testHabits[0]!]
+    store.completedHabits = [{ ...testCompleted[0]!, habit_id: 1 }]
 
-    const todoNames = Object.values(store.todoHabits)
-      .flat()
-      .map((h) => h.name)
-    expect(todoNames).not.toContain('Meditation')
-  })
-
-  // A completion with no habit_id falls back to name and category. Keying it on
-  // the name alone ticks off every habit sharing that name, in whichever category.
-  it('keeps a same-named habit in another category due when an unlinked completion lands', () => {
-    const store = useHabitsStore()
-    const mind = { id: 2, name: 'Mind', is_current: true }
-    store.habits = [
-      { id: 1, name: 'Read', category_id: 1, category: testCategory, is_current: true },
-      { id: 2, name: 'Read', category_id: 2, category: mind, is_current: true },
-    ]
-    store.completedHabits = [
-      { id: 10, habit_id: null, name: 'Read', category_id: 1, category: testCategory, complete_date: '2026-03-11T12:00:00Z' },
-    ]
-
-    const todo = Object.values(store.todoHabits).flat()
-    expect(todo).toHaveLength(1)
-    expect(todo[0]!.category_id).toBe(2)
+    expect(
+      Object.values(store.todoHabits)
+        .flat()
+        .map((h) => h.name)
+    ).toEqual(['Meditate'])
+    expect(store.doneHabits).toEqual({})
   })
 
   // --- Computed: chartData ---
@@ -686,15 +746,18 @@ describe('useHabitsStore', () => {
 
   // --- fetchDailyData ---
 
-  it('fetches daily data (current habits + today completed) in parallel', async () => {
-    mockApi.get
-      .mockResolvedValueOnce({ data: [testHabits[0], testHabits[1]] }) // habits with current=true
-      .mockResolvedValueOnce({ data: [testCompleted[0]] }) // today's completed
+  it('loads the day in one request rather than joining two', async () => {
+    mockApi.get.mockResolvedValue({
+      data: board({ due: [testHabits[0]!, testHabits[1]!], completed: [{ ...testCompleted[0]!, habit_id: 4 }], current_total: 3 }),
+    })
 
     const store = useHabitsStore()
     await store.fetchDailyData()
 
-    expect(mockApi.get).toHaveBeenCalledTimes(2)
+    expect(mockApi.get).toHaveBeenCalledTimes(1)
+    expect(mockApi.get.mock.calls[0]![0]).toBe('/habits/day/')
+    expect(store.dayDue).toHaveLength(2)
+    expect(store.dayCompleted).toHaveLength(1)
     expect(store.loading).toBe(false)
   })
 

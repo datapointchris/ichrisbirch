@@ -133,18 +133,17 @@ type overviewWarning struct {
 // overviewData is the raw fan-out result: every endpoint's payload plus the
 // failures that kept some of them empty.
 type overviewData struct {
-	Tasks           []api.Task
-	CurrentHabits   []api.Habit
-	CompletedHabits []api.HabitCompleted
-	OwnedBooks      []api.Book
-	CurrentArticle  *api.Article
-	UnreadArticles  []api.Article
-	ReadArticles    []api.Article
-	Items           []api.ProjectItem
-	BlockedItems    []api.ProjectItem
-	Countdowns      []api.Countdown
-	Events          []api.Event
-	Failures        []sectionFailure
+	Tasks          []api.Task
+	HabitsDay      api.HabitsDay
+	OwnedBooks     []api.Book
+	CurrentArticle *api.Article
+	UnreadArticles []api.Article
+	ReadArticles   []api.Article
+	Items          []api.ProjectItem
+	BlockedItems   []api.ProjectItem
+	Countdowns     []api.Countdown
+	Events         []api.Event
+	Failures       []sectionFailure
 }
 
 type sectionFailure struct {
@@ -219,15 +218,8 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionHabits, "habits", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			current := true
-			habits, err := c.ListHabits(ctx, &current, nil)
-			d.CurrentHabits = habits
-			return err
-		}},
-		{sectionHabits, "habit completions", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			start, end := localDayWindow(time.Now())
-			completed, err := c.ListCompletedHabits(ctx, api.CompletedTasksQuery{StartDate: start, EndDate: end})
-			d.CompletedHabits = completed
+			board, err := c.GetHabitsDay(ctx, "", LocalZoneName())
+			d.HabitsDay = board
 			return err
 		}},
 		{sectionBooks, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
@@ -322,10 +314,6 @@ func systemicOverviewFailure(failures []sectionFailure, total int) error {
 // buildOverview composes the report. It is pure — no clock, no network — so the
 // filtering, ordering, and capping rules are directly testable.
 func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
-	dueHabits, doneHabits := splitHabitsByCompletion(data.CurrentHabits, data.CompletedHabits, now)
-	// Ordered before the cap, so --limit takes the lowest ids rather than whatever
-	// order the API happened to answer in.
-	sortHabitsByID(dueHabits, doneHabits)
 	nextItems := overviewProjectItems(data.Items, data.BlockedItems)
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
@@ -341,9 +329,9 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			Total: len(data.Tasks),
 		},
 		Habits: habitSection{
-			DueToday:       capItems(dueHabits, limit),
-			CompletedToday: capItems(doneHabits, limit),
-			CurrentTotal:   len(data.CurrentHabits),
+			DueToday:       capItems(data.HabitsDay.Due, limit),
+			CompletedToday: capItems(data.HabitsDay.Completed, limit),
+			CurrentTotal:   data.HabitsDay.CurrentTotal,
 		},
 		Books: bookSection{
 			Reading:     capItems(booksByProgress(data.OwnedBooks, "reading"), limit),
@@ -382,61 +370,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 		})
 	}
 	return report
-}
-
-// localDayWindow returns bare-date bounds spanning the local day with a day of
-// slack on each side. The API parses these to midnight UTC instants, so the
-// slack is what guarantees the local day is inside the window whatever the
-// offset; callers narrow the result to the exact day themselves.
-func localDayWindow(now time.Time) (string, string) {
-	const dateLayout = "2006-01-02"
-	return now.AddDate(0, 0, -1).Format(dateLayout), now.AddDate(0, 0, 2).Format(dateLayout)
-}
-
-// splitHabitsByCompletion separates the current habits into those still due
-// today and today's completions.
-//
-// A completion carrying habit_id is matched by it, so renaming a habit does not
-// make it read as due again. A completion without that column — and one whose
-// habit has been deleted — falls back to name + category, which is all it has.
-//
-// Both halves are allocated rather than declared, so an empty one marshals as []
-// and never as null. Every caller of this puts its result straight into a --json
-// payload, where a null collection is a shape the reader has to branch on.
-func splitHabitsByCompletion(current []api.Habit, completed []api.HabitCompleted, now time.Time) ([]api.Habit, []api.HabitCompleted) {
-	doneToday := make([]api.HabitCompleted, 0, len(completed))
-	doneByID := make(map[int]bool)
-	doneByName := make(map[string]bool)
-	for _, completion := range completed {
-		if !sameLocalDay(completion.CompleteDate, now) {
-			continue
-		}
-		doneToday = append(doneToday, completion)
-		if completion.HabitID != nil {
-			doneByID[*completion.HabitID] = true
-		} else {
-			doneByName[habitKey(completion.Name, completion.CategoryID)] = true
-		}
-	}
-
-	due := make([]api.Habit, 0, len(current))
-	for _, habit := range current {
-		if doneByID[habit.ID] || doneByName[habitKey(habit.Name, habit.CategoryID)] {
-			continue
-		}
-		due = append(due, habit)
-	}
-	return due, doneToday
-}
-
-func habitKey(name string, categoryID int) string {
-	return fmt.Sprintf("%d\x00%s", categoryID, name)
-}
-
-func sameLocalDay(moment time.Time, now time.Time) bool {
-	momentYear, momentMonth, momentDay := moment.In(now.Location()).Date()
-	nowYear, nowMonth, nowDay := now.Date()
-	return momentYear == nowYear && momentMonth == nowMonth && momentDay == nowDay
 }
 
 // actionableItems returns the items that can be taken now — not completed, not
@@ -644,18 +577,21 @@ func upcomingEvents(events []api.Event, now time.Time) []api.Event {
 	return upcoming
 }
 
-// capItems truncates to limit. Zero is a row count like any other and caps to
-// nothing, so it needs no branch of its own: len(items) <= 0 is false whenever
-// there is anything to cut.
+// capItems truncates to limit and always answers an allocated slice.
 //
-// A negative caps to nothing rather than panicking. The two callers take their
-// limit from a flag whose parser refuses one, but that guard lives on a type
-// this signature never mentions, and a third caller passing a computed bound —
-// a remaining-space count, a subtraction against a section already printed —
-// would reach items[:-1] and a slice-bounds panic.
+// Every section reaches the JSON through here, and a nil slice marshals to
+// `null`. A section whose fetch failed has nothing to cap, so
+// `jq '.habits.due_today[]'` would meet a null and exit 5 while icb exited 0.
+//
+// Zero is a row count like any other and caps to nothing, so it needs no branch
+// of its own: len(items) <= 0 is false whenever there is anything to cut.
+//
+// A negative caps to nothing rather than panicking. The callers take their limit
+// from a flag whose parser refuses one, but that guard lives on a type this
+// signature never mentions, and a computed bound would reach items[:-1].
 func capItems[T any](items []T, limit int) []T {
-	if limit < 0 {
-		return nil
+	if limit < 0 || len(items) == 0 {
+		return []T{}
 	}
 	if len(items) <= limit {
 		return items

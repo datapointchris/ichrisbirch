@@ -1,4 +1,5 @@
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import pytest
 import sqlalchemy
@@ -545,3 +546,145 @@ class TestHabitsQueryParameters:
         client = habit_test_data
         response = client.get(f'{self.COMPLETED_ENDPOINT}99999/')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+
+
+class TestHabitsDay:
+    """The day's board, composed server-side.
+
+    The split it performs is unit-tested against the service beside it. These
+    cases are about the endpoint: which day it resolves, how it refuses a zone it
+    cannot read, and that the three fields agree with each other.
+    """
+
+    ENDPOINT = '/habits/day/'
+
+    def _complete(self, client, habit: dict, when: dt.datetime):
+        payload = {
+            'habit_id': habit['id'],
+            'name': habit['name'],
+            'category_id': habit['category_id'],
+            'complete_date': when.isoformat(),
+        }
+        response = client.post('/habits/completed/', json=payload)
+        assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+
+    def test_an_untouched_day_has_every_current_habit_due(self, habit_test_data):
+        client = habit_test_data
+
+        response = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'America/New_York'})
+
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        day = response.json()
+        assert day['completed'] == []
+        assert len(day['due']) == day['current_total']
+        assert day['current_total'] > 0, 'the seed gives this nothing to report'
+
+    def test_a_completion_moves_its_habit_out_of_due(self, habit_test_data):
+        client = habit_test_data
+        current = [h for h in client.get('/habits/', params={'current': True}).json()]
+        target = current[0]
+        self._complete(client, target, dt.datetime(2020, 1, 1, 12, 0, tzinfo=dt.UTC))
+
+        day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()
+
+        assert [c['habit_id'] for c in day['completed']] == [target['id']]
+        assert target['id'] not in [h['id'] for h in day['due']]
+        assert len(day['due']) + 1 == day['current_total']
+
+    def test_the_day_is_the_callers_zone_not_utc(self, habit_test_data):
+        """21:00 in New York is 01:00 the next day in UTC.
+
+        Read as a UTC day, that completion lands on the 2nd and the habit reads
+        as still due for the rest of the evening on the 1st.
+        """
+        client = habit_test_data
+        target = client.get('/habits/', params={'current': True}).json()[0]
+        evening = dt.datetime(2020, 1, 2, 2, 0, tzinfo=dt.UTC)  # 21:00 Jan 1 in New York
+        self._complete(client, target, evening)
+
+        in_new_york = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'America/New_York'}).json()
+        in_utc = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()
+
+        assert [c['habit_id'] for c in in_new_york['completed']] == [target['id']]
+        assert in_utc['completed'] == []
+
+    def test_the_response_echoes_the_day_it_resolved(self, habit_test_data):
+        client = habit_test_data
+
+        day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'America/New_York'}).json()
+
+        assert day['date'] == '2020-01-01'
+        assert day['timezone'] == 'America/New_York'
+
+    def test_an_absent_date_is_today_in_the_given_zone(self, habit_test_data):
+        """The caller sends its zone and the server names the day, so a client
+        that computes its own today cannot disagree with the split."""
+        client = habit_test_data
+
+        day = client.get(self.ENDPOINT, params={'timezone': 'Pacific/Kiritimati'}).json()
+
+        expected = dt.datetime.now(dt.UTC).astimezone(ZoneInfo('Pacific/Kiritimati')).date()
+        assert day['date'] == expected.isoformat()
+
+    def test_an_absent_timezone_is_utc(self, habit_test_data):
+        client = habit_test_data
+
+        day = client.get(self.ENDPOINT).json()
+
+        assert day['timezone'] == 'UTC'
+        assert day['date'] == dt.datetime.now(dt.UTC).date().isoformat()
+
+    def test_a_zone_that_is_not_an_iana_name_is_a_422(self, habit_test_data):
+        """Refused by name rather than silently falling back to UTC, which would
+        answer the wrong day and look like a working response."""
+        client = habit_test_data
+
+        response = client.get(self.ENDPOINT, params={'timezone': 'Not/AZone'})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'Not/AZone' in response.json()['detail']
+
+    def test_a_malformed_date_is_a_422(self, habit_test_data):
+        client = habit_test_data
+
+        response = client.get(self.ENDPOINT, params={'date': 'the 3rd'})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    def test_a_hibernating_habit_is_not_on_the_board(self, habit_test_data):
+        """`current_total` counts what you are tracking, so a hibernating habit is
+        neither due nor part of the denominator."""
+        client = habit_test_data
+        hibernating = client.get('/habits/', params={'current': False}).json()
+        assert hibernating, 'the seed gives this nothing to exclude'
+
+        day = client.get(self.ENDPOINT, params={'date': '2020-01-01'}).json()
+
+        board = {h['id'] for h in day['due']}
+        assert board.isdisjoint({h['id'] for h in hibernating})
+
+    def test_the_board_is_ordered_by_habit_id(self, habit_test_data):
+        client = habit_test_data
+
+        day = client.get(self.ENDPOINT, params={'date': '2020-01-01'}).json()
+
+        ids = [h['id'] for h in day['due']]
+        assert ids == sorted(ids)
+
+    def test_completions_carrying_no_habit_id_come_back_newest_first(self, habit_test_data):
+        """Every one of them ties on the sort key, so the query has to break it."""
+        client = habit_test_data
+        category_id = client.get('/habits/categories/').json()[0]['id']
+        for hour, name in ((8, 'earliest'), (12, 'middle'), (20, 'latest')):
+            payload = {
+                'name': name,
+                'category_id': category_id,
+                'complete_date': dt.datetime(2020, 1, 1, hour, tzinfo=dt.UTC).isoformat(),
+            }
+            created = client.post('/habits/completed/', json=payload)
+            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+        day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()
+
+        orphans = [c['name'] for c in day['completed'] if c['habit_id'] is None]
+        assert orphans == ['latest', 'middle', 'earliest']

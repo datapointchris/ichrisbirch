@@ -130,6 +130,7 @@ export type {
   HabitCategoryCreate,
   HabitCategoryUpdate,
   HabitCompletedCreate,
+  HabitsDay,
   AutoTask,
   AutoTaskCreate,
   AutoTaskUpdate,

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
@@ -110,65 +109,22 @@ func TestHabitCompleteDate_ARefusalIsAUsageError(t *testing.T) {
 	}
 }
 
-// The board is ordered by id, which never changes, so a habit sits in the same
-// row all day. The API answers in its own order, so the ordering is imposed here
-// rather than relied on.
-func TestBuildHabitsTodayBoard_OrdersByID(t *testing.T) {
-	current := []api.Habit{
-		{ID: 8, Name: "Yoga", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
-		{ID: 2, Name: "Read", CategoryID: 5, Category: api.HabitCategory{ID: 5, Name: "Mind"}},
-		{ID: 5, Name: "Floss", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
-	}
-
-	board := buildHabitsTodayBoard(current, nil, fixedNow)
-
-	var got []int
-	for _, habit := range board.DueToday {
-		got = append(got, habit.ID)
-	}
-	if want := []int{2, 5, 8}; !slices.Equal(got, want) {
-		t.Errorf("due order = %v, want %v", got, want)
-	}
-}
-
-// The header reads "N of M done today", and M is every current habit rather than
-// the ones still outstanding. Counting only the due ones would print "0 of 0" on
-// the day everything is finished.
-func TestBuildHabitsTodayBoard_CurrentTotalCountsEveryTrackedHabit(t *testing.T) {
-	current := []api.Habit{
-		{ID: 1, Name: "Yoga", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
-		{ID: 2, Name: "Floss", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
-	}
-	completed := []api.HabitCompleted{
-		{ID: 10, HabitID: intPtr(1), Name: "Yoga", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}, CompleteDate: habitAt(7, 0)},
-	}
-
-	board := buildHabitsTodayBoard(current, completed, fixedNow)
-
-	if board.CurrentTotal != 2 {
-		t.Errorf("current total = %d, want 2", board.CurrentTotal)
-	}
-	if len(board.CompletedToday) != 1 || len(board.DueToday) != 1 {
-		t.Errorf("board = %+v, want one done and one due", board)
-	}
-}
-
-// A done habit keeps its row. Moving the finished ones into a trailing block
-// would reshuffle the board every time one is ticked off, which is the thing the
-// ordering exists to prevent.
-func TestHabitsTodayRows_InterleavesDoneByID(t *testing.T) {
-	section := habitSection{
-		DueToday: []api.Habit{
+// The server sends both halves in habit-id order. Merging them on that id is
+// what keeps a finished habit in its row rather than moving it to a trailing
+// block, which would reshuffle the board every time one is ticked off.
+func TestHabitsDayRows_InterleavesDoneByID(t *testing.T) {
+	board := api.HabitsDay{
+		Due: []api.Habit{
 			{ID: 3, Name: "Floss", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 			{ID: 4, Name: "Read", CategoryID: 5, Category: api.HabitCategory{ID: 5, Name: "Mind"}},
 		},
-		CompletedToday: []api.HabitCompleted{
+		Completed: []api.HabitCompleted{
 			{ID: 10, HabitID: intPtr(1), Name: "Brush", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 		},
 		CurrentTotal: 3,
 	}
 
-	rows := habitsTodayRows(section)
+	rows := habitsDayRows(board)
 
 	var got []int
 	for _, row := range rows {
@@ -184,92 +140,76 @@ func TestHabitsTodayRows_InterleavesDoneByID(t *testing.T) {
 
 // An orphan completion has no habit id to place it by, so it goes last rather
 // than ahead of habit id 1.
-func TestHabitsTodayRows_AnOrphanCompletionSortsLast(t *testing.T) {
-	section := habitSection{
-		DueToday: []api.Habit{
+func TestHabitsDayRows_AnOrphanCompletionSortsLast(t *testing.T) {
+	board := api.HabitsDay{
+		Due: []api.Habit{
 			{ID: 1, Name: "Floss", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 		},
-		CompletedToday: []api.HabitCompleted{
+		Completed: []api.HabitCompleted{
 			{ID: 10, Name: "Deleted habit", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 		},
 		CurrentTotal: 1,
 	}
 
-	rows := habitsTodayRows(section)
+	rows := habitsDayRows(board)
 
 	if len(rows) != 2 || rows[1].Name != "Deleted habit" {
-		t.Errorf("rows = %+v, want the orphan last", rows)
+		t.Fatalf("rows = %+v, want the orphan last", rows)
+	}
+	if rows[1].ID != 0 {
+		t.Errorf("id = %d, want 0 — the completion's own id is not a habit id", rows[1].ID)
 	}
 }
 
-// A completion whose habit has been deleted still belongs on the board, and it is
-// the one row with no id to print. Printing the completion's own id there would
-// hand back a number `icb habits complete` rejects.
-func TestHabitsTodayRows_AnOrphanCompletionCarriesNoHabitID(t *testing.T) {
-	section := habitSection{
-		CompletedToday: []api.HabitCompleted{
-			{ID: 10, Name: "Old habit", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
-		},
-	}
-
-	rows := habitsTodayRows(section)
-
-	if len(rows) != 1 {
-		t.Fatalf("rows = %+v, want the orphan completion", rows)
-	}
-	if rows[0].ID != 0 {
-		t.Errorf("id = %d, want 0 — the completion's own id is not a habit id", rows[0].ID)
-	}
-}
-
-// Both halves marshal as [] when empty. A reader that branches on the array would
-// otherwise have to handle null as well, on exactly the day everything is done.
-func TestBuildHabitsTodayBoard_EmptyHalvesMarshalAsArrays(t *testing.T) {
-	board := buildHabitsTodayBoard(nil, nil, fixedNow)
-
-	encoded, err := json.Marshal(board)
-	if err != nil {
-		t.Fatalf("marshaling: %v", err)
-	}
-	if strings.Contains(string(encoded), "null") {
-		t.Errorf("json = %s, want [] for both halves", encoded)
-	}
-}
-
-func TestPrintHabitsToday_ShowsTheCountAndEveryRow(t *testing.T) {
-	section := habitSection{
-		DueToday: []api.Habit{
+func TestPrintHabitsDay_ShowsTheCountTheZoneAndEveryRow(t *testing.T) {
+	board := api.HabitsDay{
+		Date:     "2026-09-20",
+		Timezone: "America/New_York",
+		Due: []api.Habit{
 			{ID: 3, Name: "Floss", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 		},
-		CompletedToday: []api.HabitCompleted{
+		Completed: []api.HabitCompleted{
 			{ID: 10, HabitID: intPtr(1), Name: "Brush", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 		},
 		CurrentTotal: 2,
 	}
 
 	var out strings.Builder
-	printHabitsToday(&out, section)
+	printHabitsDay(&out, board)
 	got := out.String()
 
-	for _, want := range []string{"Habits (1 of 2 done today)", "Brush", "Floss", "icb habits complete <id>"} {
+	for _, want := range []string{"1 of 2 done today", "America/New_York", "Brush", "Floss", "icb habits complete <id>"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("output missing %q:\n%s", want, got)
 		}
 	}
 }
 
+// The zone decides which completions land on the board, so a day read in UTC
+// because the machine could not name its zone has to say so rather than look
+// like any other morning.
+func TestPrintHabitsDay_NamesTheZoneTheDayWasReadIn(t *testing.T) {
+	var out strings.Builder
+	printHabitsDay(&out, api.HabitsDay{Date: "2026-09-20", Timezone: "UTC", CurrentTotal: 0})
+
+	if !strings.Contains(out.String(), "UTC") {
+		t.Errorf("output does not name the zone:\n%s", out.String())
+	}
+}
+
 // Nothing due means nothing to type, so the command hint is left off rather than
 // pointing at a board with no outstanding row on it.
-func TestPrintHabitsToday_DropsTheHintWhenEverythingIsDone(t *testing.T) {
-	section := habitSection{
-		CompletedToday: []api.HabitCompleted{
+func TestPrintHabitsDay_DropsTheHintWhenEverythingIsDone(t *testing.T) {
+	board := api.HabitsDay{
+		Timezone: "UTC",
+		Completed: []api.HabitCompleted{
 			{ID: 10, HabitID: intPtr(1), Name: "Brush", CategoryID: 2, Category: api.HabitCategory{ID: 2, Name: "Health"}},
 		},
 		CurrentTotal: 1,
 	}
 
 	var out strings.Builder
-	printHabitsToday(&out, section)
+	printHabitsDay(&out, board)
 
 	if strings.Contains(out.String(), "icb habits complete") {
 		t.Errorf("output offers a completion with nothing due:\n%s", out.String())

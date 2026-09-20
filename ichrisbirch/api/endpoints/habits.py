@@ -1,4 +1,6 @@
 import datetime as dt
+from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfoNotFoundError
 
 import pendulum
 import structlog
@@ -14,6 +16,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services import habit_day
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 
@@ -105,6 +108,53 @@ async def read_many_completed(
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 
     return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.get('/day/', response_model=schemas.HabitsDay, status_code=status.HTTP_200_OK)
+async def read_day(session: DbSession, date: dt.date | None = None, timezone: str = 'UTC'):
+    """One day's habits: which are still due, and which were done.
+
+    `timezone` is the IANA name whose calendar day this is, because a day is not
+    a UTC day for anyone who does not live in UTC. `date` defaults to today in
+    that zone, and both are echoed back so a caller that sent neither can see
+    which day it got.
+
+    Declared above `/{id}/`: FastAPI matches in declaration order, so below it
+    `day` would be parsed as a habit id.
+    """
+    try:
+        zone = ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'Unknown timezone: {timezone!r} is not an IANA zone name',
+        ) from e
+
+    day = date if date is not None else dt.datetime.now(zone).date()
+    opens, closes = habit_day.day_bounds(day, zone)
+
+    # `placement` ties every completion carrying no `habit_id`, and `list.sort`
+    # is stable, so an unordered SELECT would leave their order to the planner.
+    # Newest first is what `/habits/completed/` already answers.
+    current = list(session.scalars(select(models.Habit).filter(models.Habit.is_current.is_(True)).order_by(models.Habit.id)).all())
+    completed = list(
+        session.scalars(
+            select(models.HabitCompleted)
+            .filter(models.HabitCompleted.complete_date >= opens)
+            .filter(models.HabitCompleted.complete_date < closes)
+            .order_by(models.HabitCompleted.complete_date.desc())
+        ).all()
+    )
+
+    due = sorted(habit_day.still_due(current, completed), key=lambda h: habit_day.placement(h.id))
+    completed.sort(key=lambda c: habit_day.placement(c.habit_id))
+    return schemas.HabitsDay(
+        date=day,
+        timezone=timezone,
+        due=due,
+        completed=completed,
+        current_total=len(current),
+    )
 
 
 @router.get('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)

@@ -479,6 +479,19 @@ export interface HabitCompleted {
   complete_date: string
 }
 
+/**
+ * One day's board: the current habits still due, and the completions recorded
+ * that day. `date` and `timezone` echo what the server resolved the day
+ * against, so a caller can see which day it got.
+ */
+export interface HabitsDay {
+  date: string
+  timezone: string
+  due: Habit[]
+  completed: HabitCompleted[]
+  current_total: number
+}
+
 export interface HabitCategoryCreate {
   name: string
   is_current?: boolean

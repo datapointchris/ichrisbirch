@@ -61,6 +61,42 @@ type HabitCompletedCreateInput struct {
 	CompleteDate string `json:"complete_date"`
 }
 
+// HabitsDay is one day's board: the habits still due, and the completions
+// recorded that day. Date is a string because time.Time's JSON decode requires
+// RFC3339 and rejects a bare day.
+type HabitsDay struct {
+	Date         string           `json:"date"`
+	Timezone     string           `json:"timezone"`
+	Due          []Habit          `json:"due"`
+	Completed    []HabitCompleted `json:"completed"`
+	CurrentTotal int              `json:"current_total"`
+}
+
+// GetHabitsDay returns one day's board (GET /habits/day/). An empty day asks for
+// today in the zone given. The client names the zone and the server names the
+// day, so the two cannot disagree about where the day ends.
+//
+// zone is an IANA name. An empty one leaves the parameter off, and the server
+// reads the day in UTC.
+func (c *Client) GetHabitsDay(ctx context.Context, day string, zone string) (HabitsDay, error) {
+	params := url.Values{}
+	if day != "" {
+		params.Set("date", day)
+	}
+	if zone != "" {
+		params.Set("timezone", zone)
+	}
+	path := "/habits/day/"
+	if encoded := params.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+	var board HabitsDay
+	if err := c.get(ctx, path, &board); err != nil {
+		return HabitsDay{}, err
+	}
+	return board, nil
+}
+
 // ListHabits returns habits (GET /habits/). current filters to current-only
 // (true) or non-current-only (false); nil returns all. limit caps the count.
 func (c *Client) ListHabits(ctx context.Context, current *bool, limit *int) ([]Habit, error) {
