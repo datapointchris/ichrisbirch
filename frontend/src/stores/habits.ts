@@ -35,8 +35,8 @@ function todayKey(): string {
 }
 
 // The IANA name of the reader's zone, which the server resolves the day
-// against. Every browser this app runs in reports one. A runtime that does not
-// leaves it off, the server reads the day in UTC, and the response says so.
+// against. Every browser reports one; a runtime that does not leaves the
+// parameter off and the server reads the day in UTC.
 function browserZoneName(): string | undefined {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
@@ -161,8 +161,8 @@ export const useHabitsStore = defineStore('habits', () => {
   const completedHabits = ref<HabitCompleted[]>([])
 
   // The day on screen, as the server split it. Which habits a day's completions
-  // tick off is decided in the API, and the CLI and the dashboard read the same
-  // endpoint, so all three answer the question the same way.
+  // tick off is decided in the API. The CLI and the dashboard read the same
+  // endpoint, so all three answer it the same way.
   const dayDue = ref<Habit[]>([])
   const dayCompleted = ref<HabitCompleted[]>([])
 

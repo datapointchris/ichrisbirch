@@ -1,9 +1,9 @@
 """The day's habits board, tested without a database or an HTTP client.
 
-The endpoint above this runs two queries and calls these four functions. Every
-rule worth pinning — which zone's day, which completion matches which habit,
-where an orphan sits — lives here, so a case costs a function call rather than a
-container.
+The endpoint above this runs two queries and calls the functions in this module.
+Every rule worth pinning — which zone's day, which completion matches which
+habit, where an orphan sits — lives here, so a case costs a function call rather
+than a container.
 """
 
 import datetime as dt

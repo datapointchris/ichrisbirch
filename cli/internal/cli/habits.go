@@ -127,8 +127,8 @@ func habitPlacementID(habitID int) int {
 }
 
 // printHabitsDay renders the board. The header names the zone the day was read
-// in, because that is what decides which completions land on it — and a zone the
-// machine could not name reads as UTC there rather than going unmentioned.
+// in, because the zone decides which completions land on it. A machine that
+// could not name its own zone reads as UTC there rather than going unmentioned.
 func printHabitsDay(out io.Writer, board api.HabitsDay) {
 	_, _ = fmt.Fprintf(out, "Habits (%d of %d done today, %s)\n", len(board.Completed), board.CurrentTotal, board.Timezone)
 	rows := habitsDayRows(board)

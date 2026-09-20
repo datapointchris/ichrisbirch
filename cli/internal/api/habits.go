@@ -73,8 +73,8 @@ type HabitsDay struct {
 }
 
 // GetHabitsDay returns one day's board (GET /habits/day/). An empty day asks for
-// today in zone, which the server resolves — the client names the zone and the
-// server names the day, so the two cannot disagree about where the day ends.
+// today in the zone given. The client names the zone and the server names the
+// day, so the two cannot disagree about where the day ends.
 //
 // zone is an IANA name. An empty one leaves the parameter off, and the server
 // reads the day in UTC.

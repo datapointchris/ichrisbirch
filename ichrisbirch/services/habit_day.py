@@ -1,10 +1,9 @@
 """One day's habits: which are still due, and which were done.
 
-The web client and the CLI each asked this of two raw collection reads and joined
-the answers locally. That is how their fallback keys drifted apart — one matched
-an unlinked completion by name, the other by name and category — and neither
-disagreement was visible in a response. The join is here so every door gets the
-same answer.
+Every client reads the split from here rather than joining two collection reads
+itself. A fallback key written once per client is a key each client can spell
+differently, and one that does disagrees with the others without anything
+failing.
 
 A day is a calendar day in a named zone, never a UTC day. A completion recorded
 at 21:00 in New York is 01:00 the next day in UTC, so a UTC window would report

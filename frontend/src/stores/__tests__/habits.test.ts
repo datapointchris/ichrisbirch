@@ -311,8 +311,6 @@ describe('useHabitsStore', () => {
     vi.useRealTimers()
   })
 
-  // The board arrives sorted by habit id. A row ticked off in the browser is
-  // placed into that order, so the list does not reshuffle on the next reload.
   it('places a ticked-off habit by id rather than appending it', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
