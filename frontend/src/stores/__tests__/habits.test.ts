@@ -617,6 +617,24 @@ describe('useHabitsStore', () => {
     expect(todoNames).not.toContain('Meditation')
   })
 
+  // A completion with no habit_id falls back to name and category. Keying it on
+  // the name alone ticks off every habit sharing that name, in whichever category.
+  it('keeps a same-named habit in another category due when an unlinked completion lands', () => {
+    const store = useHabitsStore()
+    const mind = { id: 2, name: 'Mind', is_current: true }
+    store.habits = [
+      { id: 1, name: 'Read', category_id: 1, category: testCategory, is_current: true },
+      { id: 2, name: 'Read', category_id: 2, category: mind, is_current: true },
+    ]
+    store.completedHabits = [
+      { id: 10, habit_id: null, name: 'Read', category_id: 1, category: testCategory, complete_date: '2026-03-11T12:00:00Z' },
+    ]
+
+    const todo = Object.values(store.todoHabits).flat()
+    expect(todo).toHaveLength(1)
+    expect(todo[0]!.category_id).toBe(2)
+  })
+
   // --- Computed: chartData ---
 
   it('generates chart data with zero-fill for missing dates', () => {

@@ -121,6 +121,13 @@ function getDateRange(filter: DateFilter): DateRange {
   return { start_date: start.toISOString(), end_date: tomorrow.toISOString() }
 }
 
+// habitKey identifies a habit by what a completion row without habit_id still
+// carries. The NUL separator keeps a category id from running into a name that
+// starts with a digit.
+function habitKey(name: string, categoryId: number): string {
+  return `${categoryId}\u0000${name}`
+}
+
 function groupByCategory<T extends { category: HabitCategory }>(items: T[]): Record<string, T[]> {
   const categoryNames = [...new Set(items.map((item) => item.category.name))].sort()
   const importantIdx = categoryNames.indexOf('IMPORTANT')
@@ -170,13 +177,18 @@ export const useHabitsStore = defineStore('habits', () => {
   const habitsByCategory = computed(() => groupByCategory(currentHabits.value))
 
   // A completion denormalizes the name on purpose, so a habit renamed since is not
-  // findable by it. habit_id is the identity where the row carries one; the name is
-  // the fallback only for rows that do not, which is every completion recorded
-  // before the web client started sending the id.
+  // findable by it. habit_id is the identity where the row carries one; name and
+  // category are the fallback only for rows that do not, which is every completion
+  // recorded before the web client started sending the id.
+  //
+  // The fallback key carries the category because a name alone is not unique — a
+  // `Read` under Health and a `Read` under Mind are two habits, and one completion
+  // would otherwise tick off both. `splitHabitsByCompletion` in the Go CLI keys it
+  // the same way, and this is the same question asked at another door.
   const todoHabits = computed(() => {
     const completedIds = new Set(completedHabits.value.map((c) => c.habit_id).filter((id): id is number => id !== null && id !== undefined))
-    const unlinkedNames = new Set(completedHabits.value.filter((c) => c.habit_id == null).map((c) => c.name))
-    const todo = currentHabits.value.filter((h) => !completedIds.has(h.id) && !unlinkedNames.has(h.name))
+    const unlinkedKeys = new Set(completedHabits.value.filter((c) => c.habit_id == null).map((c) => habitKey(c.name, c.category_id)))
+    const todo = currentHabits.value.filter((h) => !completedIds.has(h.id) && !unlinkedKeys.has(habitKey(h.name, h.category_id)))
     return groupByCategory(todo)
   })
 
