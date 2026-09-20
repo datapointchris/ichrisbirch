@@ -2,7 +2,6 @@ package cli
 
 import (
 	"cmp"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -59,9 +58,11 @@ func newHabitsTodayCommand() *cobra.Command {
 		Use:   "today",
 		Short: "Show today's habits — which are done and which are still due",
 		Long: "Every habit you are currently tracking, marked done or still due, ordered by\n" +
-			"category. The whole set, never an excerpt.\n\n" +
-			"A completion is matched to its habit by id. One recorded before that column\n" +
-			"existed falls back to name and category, which is all such a row carries.",
+			"id. The whole set, never an excerpt.\n\n" +
+			"The server composes the board and names the day. This sends the machine's IANA\n" +
+			"timezone, so the day ends where you are rather than at UTC midnight, and the\n" +
+			"header names the zone it was read in. A machine whose zone cannot be read falls\n" +
+			"back to UTC, which the header then says.",
 		Example: "  icb habits today\n  icb habits today --json",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -69,81 +70,19 @@ func newHabitsTodayCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			board, err := habitsTodayBoard(cmd.Context(), client, time.Now())
+			board, err := client.GetHabitsDay(cmd.Context(), "", LocalZoneName())
 			if err != nil {
 				return handleAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), board)
 			}
-			printHabitsToday(cmd.OutOrStdout(), board)
+			printHabitsDay(cmd.OutOrStdout(), board)
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output today's habits as JSON to stdout")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the day's habits as JSON to stdout")
 	return cmd
-}
-
-// habitsTodayBoard reads the two collections the board is composed from. The
-// completion window is wider than the day for the reason localDayWindow gives,
-// and splitHabitsByCompletion narrows it back to the local one.
-func habitsTodayBoard(ctx context.Context, client *api.Client, now time.Time) (habitSection, error) {
-	current := true
-	habits, err := client.ListHabits(ctx, &current, nil)
-	if err != nil {
-		return habitSection{}, err
-	}
-	start, end := localDayWindow(now)
-	completed, err := client.ListCompletedHabits(ctx, api.CompletedTasksQuery{StartDate: start, EndDate: end})
-	if err != nil {
-		return habitSection{}, err
-	}
-	return buildHabitsTodayBoard(habits, completed, now), nil
-}
-
-// buildHabitsTodayBoard is the pure half — no clock beyond now, no network.
-//
-// It emits habitSection, the same shape `icb overview` reports under `habits`,
-// built by the same split. A caller that learned the keys at one door reads them
-// at the other.
-func buildHabitsTodayBoard(current []api.Habit, completed []api.HabitCompleted, now time.Time) habitSection {
-	due, done := splitHabitsByCompletion(current, completed, now)
-	sortHabitsByID(due, done)
-	return habitSection{DueToday: due, CompletedToday: done, CurrentTotal: len(current)}
-}
-
-// sortHabitsByID orders both halves of a habits view by habit id. Every door that
-// reports habits calls it, so `icb habits today` and the habits section of `icb
-// overview` hand back the same rows in the same order.
-//
-// An id never changes, so a habit holds its place all day. Ticking one off moves
-// it between the halves without shuffling anything around it.
-func sortHabitsByID(due []api.Habit, done []api.HabitCompleted) {
-	slices.SortStableFunc(due, func(a, b api.Habit) int {
-		return cmp.Compare(habitPlacementID(a.ID), habitPlacementID(b.ID))
-	})
-	slices.SortStableFunc(done, func(a, b api.HabitCompleted) int {
-		return cmp.Compare(habitPlacementID(completionHabitID(a)), habitPlacementID(completionHabitID(b)))
-	})
-}
-
-// habitPlacementID is the sort key for a habit on the board. Zero means the row
-// records a completion carrying no habit_id, so there is no id to place it by and
-// it sorts after every row that has one.
-func habitPlacementID(habitID int) int {
-	if habitID == 0 {
-		return math.MaxInt
-	}
-	return habitID
-}
-
-// completionHabitID is the habit a completion records, or zero where the row
-// carries none.
-func completionHabitID(completion api.HabitCompleted) int {
-	if completion.HabitID == nil {
-		return 0
-	}
-	return *completion.HabitID
 }
 
 // habitTodayRow is one line of the board. ID is the habit's, and is zero for a
@@ -156,14 +95,15 @@ type habitTodayRow struct {
 	Done     bool
 }
 
-// habitsTodayRows interleaves the due and done halves into one board by id, so a
-// finished habit keeps its row rather than moving to a trailing block.
-func habitsTodayRows(section habitSection) []habitTodayRow {
-	rows := make([]habitTodayRow, 0, len(section.DueToday)+len(section.CompletedToday))
-	for _, habit := range section.DueToday {
+// habitsDayRows interleaves the due and done halves into one board. The server
+// sends both in habit-id order, and merging them on that id is what keeps a
+// finished habit in its row rather than moving it to a trailing block.
+func habitsDayRows(board api.HabitsDay) []habitTodayRow {
+	rows := make([]habitTodayRow, 0, len(board.Due)+len(board.Completed))
+	for _, habit := range board.Due {
 		rows = append(rows, habitTodayRow{ID: habit.ID, Category: habit.Category.Name, Name: habit.Name})
 	}
-	for _, completion := range section.CompletedToday {
+	for _, completion := range board.Completed {
 		row := habitTodayRow{Category: completion.Category.Name, Name: completion.Name, Done: true}
 		if completion.HabitID != nil {
 			row.ID = *completion.HabitID
@@ -176,11 +116,22 @@ func habitsTodayRows(section habitSection) []habitTodayRow {
 	return rows
 }
 
-// printHabitsToday renders the board. The header sentence is the one printHabitSection
-// prints inside `icb overview`, because it reports the same two numbers.
-func printHabitsToday(out io.Writer, section habitSection) {
-	_, _ = fmt.Fprintf(out, "Habits (%d of %d done today)\n", len(section.CompletedToday), section.CurrentTotal)
-	rows := habitsTodayRows(section)
+// habitPlacementID is the sort key for a board row. Zero means the row records a
+// completion carrying no habit_id, so there is no id to place it by and it sorts
+// after every row that has one.
+func habitPlacementID(habitID int) int {
+	if habitID == 0 {
+		return math.MaxInt
+	}
+	return habitID
+}
+
+// printHabitsDay renders the board. The header names the zone the day was read
+// in, because that is what decides which completions land on it — and a zone the
+// machine could not name reads as UTC there rather than going unmentioned.
+func printHabitsDay(out io.Writer, board api.HabitsDay) {
+	_, _ = fmt.Fprintf(out, "Habits (%d of %d done today, %s)\n", len(board.Completed), board.CurrentTotal, board.Timezone)
+	rows := habitsDayRows(board)
 	if len(rows) == 0 {
 		_, _ = fmt.Fprintln(out, "No current habits. Start one with `icb habits create --name ... --category ...`.")
 		return
@@ -196,7 +147,7 @@ func printHabitsToday(out io.Writer, section habitSection) {
 		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", id, row.Name, yesNo(row.Done), row.Category)
 	}
 	_ = tw.Flush()
-	if len(section.DueToday) > 0 {
+	if len(board.Due) > 0 {
 		_, _ = fmt.Fprintln(out, "\nComplete one with `icb habits complete <id>`.")
 	}
 }

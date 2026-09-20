@@ -31,12 +31,12 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 			{ID: 2, Name: "Call dentist", Category: "chore", Priority: 2},
 			{ID: 3, Name: "Fix garage door", Category: "home", Priority: 3},
 		},
-		CurrentHabits: []api.Habit{
-			{ID: 1, Name: "Stretch", CategoryID: 2},
-			{ID: 2, Name: "Read", CategoryID: 2},
-		},
-		CompletedHabits: []api.HabitCompleted{
-			{ID: 9, Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)},
+		HabitsDay: api.HabitsDay{
+			Date:         "2026-07-24",
+			Timezone:     "America/New_York",
+			Due:          []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
+			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)}},
+			CurrentTotal: 2,
 		},
 		OwnedBooks: []api.Book{
 			{ID: 1, Title: "Difficult Conversations", Author: "Stone", Progress: "reading"},
@@ -115,55 +115,6 @@ func TestBuildOverview_EmptyDataIsNotAFailure(t *testing.T) {
 	}
 	if report.Articles.Current != nil {
 		t.Errorf("current article = %+v, want nil", report.Articles.Current)
-	}
-}
-
-func TestSplitHabitsByCompletion(t *testing.T) {
-	current := []api.Habit{
-		{ID: 1, Name: "Stretch", CategoryID: 2},
-		{ID: 2, Name: "Read", CategoryID: 2},
-		{ID: 3, Name: "Read", CategoryID: 5},
-	}
-	completed := []api.HabitCompleted{
-		{ID: 10, Name: "Read", CategoryID: 2, CompleteDate: habitAt(23, 30)},
-		{ID: 11, Name: "Stretch", CategoryID: 2, CompleteDate: habitAt(9, 0).AddDate(0, 0, -1)},
-	}
-
-	due, doneToday := splitHabitsByCompletion(current, completed, fixedNow)
-
-	if len(doneToday) != 1 || doneToday[0].ID != 10 {
-		t.Errorf("done today = %+v, want only the 23:30 local completion", doneToday)
-	}
-	if len(due) != 2 {
-		t.Fatalf("due = %+v, want Stretch (done yesterday) and Read in the other category", due)
-	}
-	if due[0].Name != "Stretch" || due[1].CategoryID != 5 {
-		t.Errorf("due = %+v — category must be part of the match key", due)
-	}
-}
-
-func TestSplitHabitsByCompletion_RenameOrphansTodaysCompletion(t *testing.T) {
-	current := []api.Habit{{ID: 1, Name: "Stretch daily", CategoryID: 2}}
-	completed := []api.HabitCompleted{{ID: 10, Name: "Stretch", CategoryID: 2, CompleteDate: habitAt(8, 0)}}
-
-	due, doneToday := splitHabitsByCompletion(current, completed, fixedNow)
-
-	if len(due) != 1 {
-		t.Errorf("due = %+v — a renamed habit cannot match its completion, so it reads as due", due)
-	}
-	if len(doneToday) != 1 {
-		t.Errorf("done today = %+v, want the completion still reported", doneToday)
-	}
-}
-
-func TestLocalDayWindow_SpansTheLocalDayWithSlack(t *testing.T) {
-	start, end := localDayWindow(fixedNow)
-
-	if start != "2026-07-23" {
-		t.Errorf("start = %q, want the day before", start)
-	}
-	if end != "2026-07-26" {
-		t.Errorf("end = %q, want two days after — a zero-width window matches nothing", end)
 	}
 }
 
@@ -362,6 +313,10 @@ func overviewServer(t *testing.T, failures map[string]int) *httptest.Server {
 			_, _ = w.Write([]byte(`null`))
 			return
 		}
+		if r.URL.Path == "/habits/day/" {
+			_, _ = w.Write([]byte(`{"date":"2026-07-24","timezone":"UTC","due":[],"completed":[],"current_total":0}`))
+			return
+		}
 		_, _ = w.Write([]byte(`[]`))
 	}))
 	t.Cleanup(srv.Close)
@@ -407,9 +362,12 @@ func TestSystemicOverviewFailure(t *testing.T) {
 
 func TestPrintOverview(t *testing.T) {
 	report := buildOverview(overviewData{
-		Tasks:           []api.Task{{ID: 1, Name: "Renew passport", Category: "chore", Priority: 1}},
-		CurrentHabits:   []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
-		CompletedHabits: []api.HabitCompleted{{ID: 9, Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)}},
+		Tasks: []api.Task{{ID: 1, Name: "Renew passport", Category: "chore", Priority: 1}},
+		HabitsDay: api.HabitsDay{
+			Due:          []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
+			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)}},
+			CurrentTotal: 2,
+		},
 		Failures: []sectionFailure{
 			{Section: sectionBooks, Label: "books", Err: &api.APIError{StatusCode: 500, Status: "500 Internal Server Error"}},
 		},
@@ -577,49 +535,3 @@ func TestTruncateTitle_CollapsesScrapedWhitespace(t *testing.T) {
 }
 
 func habitID(v int) *int { return &v }
-
-func TestSplitHabitsByCompletion_MatchesOnHabitIDWhenPresent(t *testing.T) {
-	// A rename no longer resurrects a habit already done today.
-	current := []api.Habit{{ID: 1, Name: "Stretch daily", CategoryID: 2}}
-	completed := []api.HabitCompleted{
-		{ID: 10, HabitID: habitID(1), Name: "Stretch", CategoryID: 2, CompleteDate: habitAt(8, 0)},
-	}
-
-	due, doneToday := splitHabitsByCompletion(current, completed, fixedNow)
-
-	if len(due) != 0 {
-		t.Errorf("due = %+v — the id matches even though the name changed", due)
-	}
-	if len(doneToday) != 1 {
-		t.Errorf("done today = %+v, want the completion reported", doneToday)
-	}
-}
-
-func TestSplitHabitsByCompletion_FallsBackToNameWithoutAnID(t *testing.T) {
-	// Completions predating habit_id have only a name to match on.
-	current := []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}, {ID: 2, Name: "Read", CategoryID: 2}}
-	completed := []api.HabitCompleted{
-		{ID: 10, Name: "Stretch", CategoryID: 2, CompleteDate: habitAt(8, 0)},
-	}
-
-	due, _ := splitHabitsByCompletion(current, completed, fixedNow)
-
-	if len(due) != 1 || due[0].Name != "Read" {
-		t.Errorf("due = %+v, want only Read — the legacy row still matches by name", due)
-	}
-}
-
-func TestSplitHabitsByCompletion_IDMatchDoesNotStrandADifferentHabit(t *testing.T) {
-	// An id-matched completion must not also silence a same-named habit in
-	// another category.
-	current := []api.Habit{{ID: 1, Name: "Read", CategoryID: 2}, {ID: 2, Name: "Read", CategoryID: 5}}
-	completed := []api.HabitCompleted{
-		{ID: 10, HabitID: habitID(1), Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)},
-	}
-
-	due, _ := splitHabitsByCompletion(current, completed, fixedNow)
-
-	if len(due) != 1 || due[0].ID != 2 {
-		t.Errorf("due = %+v, want the other category's Read still outstanding", due)
-	}
-}
