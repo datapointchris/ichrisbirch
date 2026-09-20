@@ -47,6 +47,11 @@ pytest runs on the host, not in a container, so Docker DNS names like
 `postgres` do not resolve for it. It reaches each service through the port that
 `docker-compose.test.yml` publishes.
 
+These numbers mirror that file and have to agree with it.
+[Docker Compose Architecture](../docker/docker-compose.md#testing) carries the
+published ports, and a disagreement between the two shows up as a connection
+refused at session setup.
+
 `protocol` is `http` because the suite talks to the API directly on 8001 rather
 than through Traefik. Playwright's end-to-end tests are the exception: they go
 through Traefik on 8443, over HTTPS, which is what makes a CORS or middleware
@@ -62,16 +67,22 @@ and its container publishes only to localhost.
 ./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
 ```
 
-`ENVIRONMENT` does not need setting. `test_settings` sets it, and it sets it
-after the copy, so whatever the shell holds is irrelevant.
+`test run` exports `ENVIRONMENT=testing` and starts the containers if they are
+down.
 
-`test run` starts the containers if they are down and waits for health checks.
+Running pytest by hand, leave `ENVIRONMENT` unset. `_detect_environment` returns
+`testing` when pytest is in `sys.modules`, but an explicit `ENVIRONMENT` is
+checked first and wins.
+
+`test_settings` does not protect you from that. It sets `ENVIRONMENT` on its own
+copy, and a test calling `get_settings()` directly gets the cached object
+instead — which is whatever the shell said.
 
 ## What this buys
 
-A test run does not depend on the shell it was launched from, on a `.env` that
-may or may not be current, or on which environment was last brought up. The
-values are in version control, next to the fixtures that use them.
+Anything reading `test_settings` does not depend on a `.env` that may or may not
+be current, or on which environment was last brought up. The values are in
+version control, next to the fixtures that use them.
 
 It also means changing a test port is a two-file change:
 `docker-compose.test.yml` publishes it and `get_test_runner_settings` connects

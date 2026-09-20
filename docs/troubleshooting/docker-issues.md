@@ -58,7 +58,7 @@ either one without the other is what breaks this.
 ```yaml
 # docker-compose.yml
 services:
-  app:
+  api:
     environment:
       - DATABASE_URL=postgresql://user:pass@postgres:5432/db
       # Use service name 'postgres', not 'localhost'
@@ -230,7 +230,7 @@ RUN uv sync --frozen --group dev
 ```yaml
 # docker-compose.yml
 services:
-  app:
+  api:
     env_file:
       - .env
       - .env.local  # Optional overrides
@@ -240,7 +240,7 @@ services:
 
 ```yaml
 services:
-  app:
+  api:
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-ichrisbirch}
       - DEBUG=${DEBUG:-false}
@@ -302,7 +302,7 @@ Or in docker compose for development:
 
 ```yaml
 services:
-  app:
+  api:
     user: "${UID:-1000}:${GID:-1000}"
 ```
 
@@ -367,7 +367,7 @@ Use `depends_on` with health checks:
 
 ```yaml
 services:
-  app:
+  api:
     depends_on:
       postgres:
         condition: service_healthy
@@ -391,7 +391,7 @@ Set resource limits:
 
 ```yaml
 services:
-  app:
+  api:
     deploy:
       resources:
         limits:
@@ -409,15 +409,15 @@ services:
 docker compose ps
 
 # View logs
-docker compose logs app
-docker compose logs -f --tail=100 app
+docker compose logs api
+docker compose logs -f --tail=100 api
 
 # Execute commands in container
 docker compose exec api bash
 docker compose exec api uv run python -c "import sys; print(sys.path)"
 
 # Inspect container configuration
-docker inspect $(docker compose ps -q app)
+docker inspect $(docker compose ps -q api)
 ```
 
 ### Network Debugging

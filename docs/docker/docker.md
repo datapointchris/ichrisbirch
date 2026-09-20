@@ -6,8 +6,8 @@ production.
 
 ## The Python image is one multi-stage build
 
-`Dockerfile` has five stages. A build always passes `--target`, because there
-is no sensible default among them.
+A build always passes `--target`, because there is no sensible default among
+the stages.
 
 | Stage                | From                          | Dependencies installed           |
 | -------------------- | ----------------------------- | -------------------------------- |

@@ -25,13 +25,23 @@ when `/var/lib/ichrisbirch/bluegreen-state` names no active color, and
 
 ## Layering merges lists instead of replacing them
 
-Compose merges later files over earlier ones, but list-valued keys —
-`ports`, `volumes`, `environment`, `labels`, `command` — append rather than
-replace. So a dev override adding a port leaves the base's port mapping in
-place, and both bind. The symptom is `port already allocated` on a stack that
-looks correctly configured.
+Compose merges later files over earlier ones, and a field's type decides how.
 
-`!override` replaces the list instead:
+| Field                | How an override combines with the base |
+| -------------------- | -------------------------------------- |
+| `ports`              | Appended                               |
+| `volumes`            | Appended                               |
+| `environment`        | Merged per key                         |
+| `labels`             | Merged per key                         |
+| `command`            | Replaced whole                         |
+| `entrypoint`         | Replaced whole                         |
+| `healthcheck.test`   | Replaced whole                         |
+
+Appending is the one that surprises. A dev override adding a port leaves the
+base's mapping in place and both bind, which reads as `port already allocated`
+on a stack that looks correctly configured.
+
+`!override` replaces an appended list instead:
 
 ```yaml
 services:
@@ -41,10 +51,18 @@ services:
       - /app/.venv
 ```
 
-Every list an environment file redefines carries it. An `!override` list is a
-complete list, so anything the base contributed has to be written out again —
-that is why `docker-compose.ci.yml` repeats `/app/.venv` and the logs volume
-while dropping only the Docker socket.
+An `!override` list is a complete list, so anything the base contributed has to
+be written out again. That is why `docker-compose.ci.yml` repeats `.:/app`,
+`/app/.venv` and the logs volume while dropping only the Docker socket.
+
+It follows that `!override` belongs on `ports` and `volumes` and nowhere else.
+Putting it on `environment` replaces the whole block, so every variable the
+base set and the override did not name is gone — and those merge per key
+already, so there is nothing to suppress.
+
+`icbops {dev,testing,prod} docker config [service]` prints the resolved result.
+Read that rather than reasoning from the override file, because a field the
+base already set looks like the override's doing.
 
 ## Services
 
@@ -143,25 +161,25 @@ pytest session does against the stack.
 
 ## CI
 
-CI layers a third file over base and test, because a GitHub runner differs from
-a workstation in four ways.
+CI layers a third file over base and test. `.github/workflows/validate.yml`
+brings the stack up as project `icb-test`, the same name a workstation uses.
 
-| Difference        | Local                        | CI                         |
-| ----------------- | ---------------------------- | -------------------------- |
-| Docker socket     | Mounted in for the prune job | Dropped                    |
-| Proxy network     | Created externally           | Created as internal bridge |
-| Vue image         | `node:24-alpine`             | `build` reset to null      |
-| Traefik dashboard | Useful for debugging         | Disabled                   |
+What actually changes:
 
-So `docker-compose.ci.yml` drops the socket with an `!override` volume list and
-declares the proxy network as an internal bridge.
+- **The API's Docker socket is dropped.** The API mounts it to report container
+  status on the admin dashboard, through `_get_docker_containers()` in
+  `ichrisbirch/api/endpoints/admin.py`. A runner has no reason to hand that in.
+- **Traefik's dashboard is disabled** and its log level raised.
+- **The Vue health check's `start_period` is extended**, because `npm install`
+  runs from scratch on a fresh volume in CI.
 
-Resetting `build` on `vue` to null is the one that is not obvious. CI brings
-the stack up with `--build`, and the test override's `vue` is a plain
-`node:24-alpine` with a `build` section inherited from the base. Without the
-reset, `--build` would build `frontend/Dockerfile` and replace the dev server
-with the production Caddy image. That health check's `start_period` is extended
-too, because `npm install` runs from scratch on a fresh volume.
+`docker-compose.ci.yml` also resets `build` on `vue` and declares the proxy
+network as a bridge. Neither changes the resolved result:
+`docker-compose.test.yml` already carries `build: !reset null` and already
+declares `proxy` as a non-external bridge. Read
+`icbops testing docker config` before treating a line in the CI file as the
+reason for anything, because a field the test file already set looks like the
+CI file's doing.
 
 Do not add a named volume for `.venv` or the uv cache to any of these files.
 Named volumes survive rebuilds, so a stale virtualenv outlives the image meant
@@ -200,23 +218,9 @@ deployment](../blue-green-deployment.md) covers the sequence.
 
 Containers hold stale state in ways that look like application bugs — a route
 returning 404 after it was added, an import failing for a package that is in
-`pyproject.toml`. Work the ladder in order.
-
-1. `./ops/icbops testing stop && ./ops/icbops testing start`. Around 30
-   seconds. This clears accumulated database state, unregistered routes and
-   stale module imports.
-2. `./ops/icbops testing rebuild --volumes`. Around 60 to 90 seconds. This
-   clears stale `.venv` contents, dependency changes, anonymous-volume
-   staleness and a corrupted `node_modules`.
-3. Only now, `docker logs`, `docker inspect`, `docker exec`.
-
-The same ladder applies to dev through `icbops dev`.
-
-Reaching for a manual `docker` subcommand before steps 1 and 2 is the single
-largest time sink in this workflow. A container that has not been through them
-is not evidence of anything. The tell that it has gone wrong is proposing a
-workaround rather than an escalation — baking the virtualenv into the image is
-a workaround, and step 2 is the escalation.
+`pyproject.toml`. The escalation ladder is in
+[Testing troubleshooting](../troubleshooting/testing-issues.md#a-change-is-not-taking-effect),
+and it is what to work before reading any of this page's diagnostics.
 
 ## Related
 

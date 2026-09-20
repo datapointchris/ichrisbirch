@@ -148,7 +148,7 @@ vim .env
 ```yaml
 # docker-compose.yml
 services:
-  app:
+  api:
     env_file:
       - .env
     environment:
@@ -383,7 +383,7 @@ kill -9 $(lsof -t -i:8000)
 
 ```yaml
 services:
-  app:
+  api:
     ports:
       - "8001:8000"  # Use different external port
 ```
@@ -424,10 +424,10 @@ logger.debug(f"Database URL: {settings.database_url}")
 docker compose exec api bash
 
 # Run container with override
-docker compose run --rm app bash
+docker compose run --rm api bash
 
 # Debug specific service
-docker compose run --rm --entrypoint="" app bash
+docker compose run --rm --entrypoint="" api bash
 ```
 
 ### Network Debugging

@@ -22,23 +22,32 @@ We now have detailed documentation for the testing infrastructure:
 `test run` starts the test containers if they are down and waits for their
 health checks, so no manual start is needed first.
 
-`ENVIRONMENT` does not need setting. `test_settings` in
-`tests/utils/database.py` sets it to `testing` on a copy of the process
-settings, so whatever the shell holds is irrelevant.
-[Testing Configuration](test_configuration.md) covers the rest of what it
-overrides.
+`test run` exports `ENVIRONMENT=testing` itself, so nothing is needed from the
+shell.
+
+Running pytest by hand, leave `ENVIRONMENT` unset. `_detect_environment` in
+`ichrisbirch/config.py` returns `testing` when pytest is in `sys.modules`. An
+`ENVIRONMENT` already exported in your shell outranks that check, and every
+test calling `get_settings()` directly then gets that environment's settings.
+
+`test_settings` is not a defense against this. It renames the copy it builds,
+not the cached object `get_settings()` returns.
+[Testing Configuration](test_configuration.md) covers what it does override.
 
 ### Local DNS
 
-Traefik routes by host name, so the browser and Playwright need these
-resolving:
+Traefik routes by host name, so Playwright and the browser need the names
+resolving. pytest does not — it reaches the API on a published port rather than
+through Traefik.
 
 ```bash
-grep docker.localhost /etc/hosts
+grep -E 'docker\.localhost|test\.localhost' /etc/hosts
 ```
 
-[Quick Start](../quick-start.md) has the entries to add. pytest itself does not
-need them — it reaches the API on a published port rather than through Traefik.
+Playwright targets `*.test.localhost` by default, listed in
+[Traefik deployment](../traefik-deployment.md).
+[Quick Start](../quick-start.md) lists the `*.docker.localhost` entries, which
+are what `E2E_ENV=dev` needs.
 
 ### `pytest-xdist`
 

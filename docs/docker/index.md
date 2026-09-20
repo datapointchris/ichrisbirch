@@ -10,7 +10,7 @@ file name changes, and nothing fails when it does.
 
 ## Services
 
-Six services, defined in `docker-compose.yml`:
+The services defined in `docker-compose.yml`:
 
 | Service     | What it is                                    |
 | ----------- | --------------------------------------------- |

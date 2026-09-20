@@ -40,7 +40,7 @@ services:
       retries: 5
       start_period: 30s
 
-  app:
+  api:
     depends_on:
       postgres:
         condition: service_healthy

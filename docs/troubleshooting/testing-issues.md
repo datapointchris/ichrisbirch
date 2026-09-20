@@ -24,7 +24,7 @@ migrates the test database to head before its fixtures run.
 
 ## Read the output files instead of re-running
 
-Every pytest run — from the CLI or from pre-commit — writes two files:
+Every pytest run, from the CLI or from pre-commit, writes its output to `/tmp`:
 
 | File                                  | Contents                            |
 | ------------------------------------- | ----------------------------------- |
@@ -100,25 +100,28 @@ has the manual recovery.
 ## Port conflicts with the dev stack
 
 The two stacks are meant to run together, on different ports.
+[Docker Compose Architecture](../docker/docker-compose.md#testing) has the
+table.
 
-| Service       | Dev  | Test |
-| ------------- | ---- | ---- |
-| API           | 8000 | 8001 |
-| Vue           | 5173 | 5174 |
-| PostgreSQL    | 5432 | 5434 |
-| Redis         | 6379 | 6380 |
-| Traefik HTTPS | 443  | 8443 |
-
-`port already allocated` on a stack that looks correct usually means a compose
-list merged instead of replacing. Compose appends `ports`, `volumes` and
-`environment` across files unless the override carries `!override`.
+`port already allocated` on a stack that looks correct means a `ports` list
+appended instead of replacing. Compose appends `ports` and `volumes` across
+files unless the override carries `!override`. `icbops testing docker config`
+prints the resolved result, which is where a doubled mapping shows up.
 
 ## E2E tests
 
-They run against the test containers, never dev, and always through Traefik at
-`app.docker.localhost`. Hitting `vue.docker.localhost` bypasses the proxy, which
-is where CORS and the auth middleware live — a test that passes there can still
-fail in a browser.
+They run through Traefik, against `https://app.test.localhost:8443` by default.
+`E2E_ENV=dev` is the only thing that points them at `https://app.docker.localhost`
+instead, and `frontend/playwright.config.ts` is where that switch lives.
+
+Always through Traefik is the part that matters. Hitting the Vue container's
+port directly bypasses the proxy, which is where CORS and the auth middleware
+live — a test that passes there can still fail in a browser.
+
+Both host names have to resolve for Playwright to reach anything.
+[Traefik deployment](../traefik-deployment.md) lists the `*.test.localhost`
+entries, and [Quick Start](../quick-start.md) lists the `*.docker.localhost`
+ones.
 
 E2E is smoke-level by design. Each page keeps a CORS check, a page load, sidebar
 navigation and one CRUD roundtrip. Interaction-heavy cases live in the component
@@ -152,27 +155,21 @@ reports noise.
 Parallel mode writes one data file per worker. A report showing almost nothing
 usually means those files were never combined.
 
-## CI differs in four ways
-
-`docker-compose.ci.yml` layers over base and test.
-
-| Difference        | Local                        | CI                         |
-| ----------------- | ---------------------------- | -------------------------- |
-| Docker socket     | Mounted in for the prune job | Dropped                    |
-| Proxy network     | Created externally           | Created as internal bridge |
-| Vue image         | `node:24-alpine`             | `build` reset to null      |
-| Traefik dashboard | Enabled                      | Disabled                   |
-
-The Vue row is the one that bites. CI brings the stack up with `--build`, and
-without that reset the build would replace the dev server with the production
-Caddy image.
+## A test passes locally and fails in CI
 
 The fixtures detect CI through the `CI` environment variable and skip container
-management, because `.github/workflows/validate.yml` has already started them
-with `--wait`.
+management, because `.github/workflows/validate.yml` has already started the
+stack with `--wait`. So a CI-only failure is rarely about the containers
+themselves.
 
-A failure that reproduces locally but not in CI, or the reverse, is usually one
-of those four rows.
+[Docker Compose Architecture](../docker/docker-compose.md#ci) lists what
+`docker-compose.ci.yml` changes. Two of them can reach a test: the API has no
+Docker socket, so anything touching container status behaves differently, and
+Vue's health check waits longer because `npm install` runs from scratch.
+
+Read `icbops testing docker config` before blaming a line in the CI file. Most
+of what it declares is already set by `docker-compose.test.yml`, so a field
+that looks like CI's doing is not.
 
 ## Related
 

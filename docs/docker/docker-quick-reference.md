@@ -53,10 +53,10 @@ has readable logs.
 `test run` starts the containers if they are not up and waits for health
 checks, so it never needs a manual start first.
 
-Every pytest run writes `/tmp/ichrisbirch-pytest-output.log` and
-`/tmp/ichrisbirch-pytest-report.json`. Read those after a failure instead of
-re-running the suite to capture different output. The JSON holds `nodeid`,
-`outcome` and `call.longrepr` per test.
+Every run writes its output to two files under `/tmp`, which are what to read
+after a failure instead of re-running the suite. [Testing
+troubleshooting](../troubleshooting/testing-issues.md#read-the-output-files-instead-of-re-running)
+names them and says what each holds.
 
 ## Production
 
@@ -91,23 +91,16 @@ first, or Traefik routes that path to the API and the page 404s.
 
 ## When a change is not taking effect
 
-Work these in order. Do not substitute manual `docker` subcommands.
-
 ```bash
 ./ops/icbops testing stop && ./ops/icbops testing start   # ~30s
 ./ops/icbops testing rebuild --volumes                    # ~60-90s
 ```
 
-Step one clears accumulated database state, routes FastAPI has not
-re-registered, and stale module imports. Step two clears a stale `.venv`,
-dependency changes from `pyproject.toml`, and a corrupted `node_modules`.
-
-Only after both is `docker logs` or `docker exec` worth reaching for. Fresh
-containers still failing is a real bug. Containers that have not been through
-steps one and two are not evidence.
-
-`rebuild --all --volumes` is the heavier form, for an `ENOTEMPTY` restart loop
-in the Vue container.
+Work them in that order, and reach for a manual `docker` subcommand only after
+both.
+[Testing troubleshooting](../troubleshooting/testing-issues.md#a-change-is-not-taking-effect)
+says what each step clears and when the heavier `rebuild --all --volumes` is
+the right one.
 
 ## Environment configuration
 

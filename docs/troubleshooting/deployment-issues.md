@@ -39,21 +39,48 @@ icbops prod apihealth
 
 ## A deploy failed
 
-`scripts/deploy-homelab.sh` logs a structured `FAILURE_STEP` for every stage,
-so the deploy log names which one stopped it. The stages run in this order.
+`scripts/deploy-homelab.sh` logs a structured `FAILURE_STEP` for every stage, so
+the deploy log names which one stopped it. These are the literal values, in the
+order the script sets them, so each one greps the log directly.
 
 ```text
-determine_colors ──► pull images ──► start containers ──► wait for healthy
-                                                               │
-                        tear down old ◄── switch routing ◄── smoke tests
-                                                               ▲
-                                                          migrations
+  on the host, before any color is touched
+    prerequisites ──► decrypt_secrets ──► git_pull
+                                              │
+  the new color                               ▼
+    determine_colors ──► infra_startup ──► pull ──► start_containers
+                                                          │
+                                                          ▼
+    switch_traffic ◄── smoke_tests ◄── migrations ◄── health_check
+           │
+           ▼
+    tear down the old color, after a grace period
 ```
 
-A failure before the routing switch leaves the live color serving traffic
-untouched. The script tears down the half-started color and exits. The site
-stayed up, and the fix is to land a commit rather than to intervene on the
-host.
+`switch_traffic` is the line everything else sits before. A failure at any
+earlier stage leaves the live color serving traffic untouched — the script
+tears down the half-started color and exits, and the site never noticed. The
+fix is to land a commit, not to intervene on the host.
+
+The first three run before a color is chosen, and they are the ones a host
+problem fails at. A missing age key fails `decrypt_secrets`. A dirty checkout
+fails `git_pull`.
+
+### It failed before choosing a color
+
+`prerequisites`, `decrypt_secrets` and `git_pull` run on the host before
+blue/green begins, so a failure here means nothing was deployed and nothing
+changed.
+
+`decrypt_secrets` exits for three reasons and names which in `FAILURE_OUTPUT`:
+`sops` is not installed, `secrets/secrets.prod.enc.env` is missing, or the
+decrypt itself failed. The third means the age private key at
+`~/.config/sops/age/keys.txt` is absent or wrong, which is what a host rebuild
+leaves behind when the key was not copied across.
+
+`git_pull` exits when `git fetch origin main` or `git pull origin main` fails.
+A dirty checkout is the usual cause, and it means something edited a tracked
+file in `/srv/ichrisbirch/` by hand.
 
 ### Images failed to pull
 

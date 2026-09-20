@@ -14,7 +14,7 @@ equivalent of each step the script takes.
 
 ## What the script needs from you
 
-Three things have to come from somewhere else, and the script prompts for each.
+Some things have to come from somewhere else, and the script prompts for each.
 
 **AWS credentials.** Used for S3 database backups and nothing else. Either run
 `aws configure` when prompted or copy `~/.aws` from another machine.
