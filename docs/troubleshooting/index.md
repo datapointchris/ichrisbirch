@@ -25,8 +25,8 @@ The troubleshooting documentation is organized by component and includes:
 
 ### Start with the escalation ladder
 
-Most dev and test failures are stale container state rather than bugs. Two
-commands clear them, and they are cheaper than reading logs:
+Most dev and test failures are stale container state rather than bugs. Clearing
+them costs less than reading logs:
 
 ```bash
 ./ops/icbops testing stop && ./ops/icbops testing start   # ~30s

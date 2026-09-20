@@ -323,8 +323,8 @@ max-line-length = 88
 
 1. **Optimize Docker resources:**
 
-No compose file sets resource limits today. Add them to the dev override if
-Docker is starving the host:
+No compose file sets resource limits. Add them to the dev override if Docker is
+starving the host:
 
 ```yaml
 # docker-compose.dev.yml

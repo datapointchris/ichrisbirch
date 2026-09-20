@@ -3,10 +3,10 @@
 iChrisBirch runs as a set of containers in every environment, orchestrated with
 Docker Compose and fronted by Traefik.
 
-`./ops/icbops --help` is the command surface. It covers dev, testing and
-production, and it is what these pages point at rather than reproduce — a
-`docker compose` line copied into prose goes stale the first time a flag or a
-file name changes, and nothing fails when it does.
+`./ops/icbops --help` is the command surface, covering dev, testing and
+production. These pages point at it rather than reproduce it. A `docker compose`
+line copied into prose goes stale the first time a flag or a file name changes,
+and nothing fails when it does.
 
 ## Services
 
@@ -38,8 +38,8 @@ standalone.
 | `docker-compose.app.yml`   | Production api, vue and scheduler, one color       |
 
 `icbops {dev,testing,prod} docker config [service]` prints the merged result for
-an environment, which is the one place the layering is resolved rather than
-described.
+an environment. No single file shows that, because each one carries only its
+own overrides.
 
 ## Environments
 

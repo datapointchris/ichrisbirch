@@ -14,10 +14,9 @@ This document covers common Docker-related issues encountered during development
 - Commands work in builder stage but fail in runtime stage
 - Broken symlinks after `COPY --from=builder`
 
-**Root Cause:** A virtualenv records absolute paths. `uv sync` writes them
-against the directory it ran in, so a `COPY --from=` that lands the tree
-somewhere else leaves every console script pointing at a path that no longer
-exists.
+**Root Cause:** A virtualenv records absolute paths, and `uv sync` writes them
+against the directory it ran in. A `COPY --from=` landing the tree somewhere
+else leaves every console script pointing at a path that no longer exists.
 
 The root `Dockerfile` builds at `/app` in every stage, and `production` copies
 `/app` wholesale out of `production-builder`:

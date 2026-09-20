@@ -24,12 +24,12 @@ test_settings = get_test_runner_settings()
 
 That module-level `test_settings` is what every fixture imports. `conftest.py`
 passes it to `create_api`, to `DockerComposeTestEnvironment`, to
-`truncate_all_tables` and to `create_session`, so one object decides what the
+`truncate_all_tables` and to `create_session`. One object decides what the
 whole suite talks to.
 
-The deep copy matters. The overrides mutate a `Settings` instance, and without
-it they would reach back into the cached object `get_settings()` hands every
-other caller in the process.
+The overrides mutate a `Settings` instance in place. Without the deep copy they
+would reach back into the cached object `get_settings()` hands every other
+caller in the process.
 
 ## Everything points at published ports on localhost
 
@@ -49,8 +49,7 @@ pytest runs on the host, not in a container, so Docker DNS names like
 
 These numbers mirror that file and have to agree with it.
 [Docker Compose Architecture](../docker/docker-compose.md#testing) carries the
-published ports, and a disagreement between the two shows up as a connection
-refused at session setup.
+published ports.
 
 `protocol` is `http` because the suite talks to the API directly on 8001 rather
 than through Traefik. Playwright's end-to-end tests are the exception: they go
@@ -75,16 +74,16 @@ Running pytest by hand, leave `ENVIRONMENT` unset. `_detect_environment` returns
 checked first and wins.
 
 `test_settings` does not protect you from that. It sets `ENVIRONMENT` on its own
-copy, and a test calling `get_settings()` directly gets the cached object
-instead — which is whatever the shell said.
+copy. A test calling `get_settings()` directly gets the cached object instead,
+which carries whatever the shell said.
 
-## What this buys
+## The values are in version control, not in a `.env`
 
 Anything reading `test_settings` does not depend on a `.env` that may or may not
-be current, or on which environment was last brought up. The values are in
-version control, next to the fixtures that use them.
+be current, or on which environment was last brought up. The values sit next to
+the fixtures that use them.
 
-It also means changing a test port is a two-file change:
+Changing a test port is therefore a two-file change.
 `docker-compose.test.yml` publishes it and `get_test_runner_settings` connects
 to it. A mismatch shows up as a connection refused at session setup rather than
 as a failing assertion.

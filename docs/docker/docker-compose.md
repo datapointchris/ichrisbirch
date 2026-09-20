@@ -1,8 +1,8 @@
 # Docker Compose Architecture
 
-`docker-compose.yml` holds production defaults, and each environment layers a
-file over it. Blue/green production is the exception and does not use the base
-at all.
+`docker-compose.yml` holds production defaults. Each environment layers a file
+over it. Blue/green production is the exception and does not use the base at
+all.
 
 ## What each environment composes
 
@@ -15,13 +15,13 @@ at all.
 
 `ops/icbops` holds these combinations as `COMPOSE_DEV`, `COMPOSE_TEST`,
 `COMPOSE_INFRA` and a `compose_app` function. Read them there rather than
-assembling `-f` flags by hand — `icbops {dev,testing,prod} docker config` prints
-the merged result for any of them.
+assembling `-f` flags by hand.
 
 The base file is also runnable on its own, as project `icb-prod`. That is the
-single-color path blue/green replaced. `icbops prod start` falls back to it only
-when `/var/lib/ichrisbirch/bluegreen-state` names no active color, and
-`prod rebuild` refuses to run it because rebuilding in place means downtime.
+single-color path blue/green replaced. `icbops prod start` falls back to it
+only when `/var/lib/ichrisbirch/bluegreen-state` names no active color.
+`prod rebuild` refuses to run it at all, because rebuilding in place means
+downtime.
 
 ## Layering merges lists instead of replacing them
 
@@ -37,9 +37,9 @@ Compose merges later files over earlier ones, and a field's type decides how.
 | `entrypoint`         | Replaced whole                         |
 | `healthcheck.test`   | Replaced whole                         |
 
-Appending is the one that surprises. A dev override adding a port leaves the
-base's mapping in place and both bind, which reads as `port already allocated`
-on a stack that looks correctly configured.
+A dev override adding a port leaves the base's mapping in place and both bind.
+That reads as `port already allocated` on a stack that looks correctly
+configured.
 
 `!override` replaces an appended list instead:
 
@@ -55,10 +55,10 @@ An `!override` list is a complete list, so anything the base contributed has to
 be written out again. That is why `docker-compose.ci.yml` repeats `.:/app`,
 `/app/.venv` and the logs volume while dropping only the Docker socket.
 
-It follows that `!override` belongs on `ports` and `volumes` and nowhere else.
-Putting it on `environment` replaces the whole block, so every variable the
-base set and the override did not name is gone — and those merge per key
-already, so there is nothing to suppress.
+So `!override` belongs on `ports` and `volumes` and nowhere else. Putting it on
+`environment` replaces the whole block, and every variable the base set and the
+override did not name is gone. Those merge per key already, so there was
+nothing to suppress.
 
 `icbops {dev,testing,prod} docker config [service]` prints the resolved result.
 Read that rather than reasoning from the override file, because a field the
@@ -114,8 +114,8 @@ shadows that one subpath, so packages installed in the container land in
 Docker-managed storage.
 
 Docker needs `./frontend/node_modules/` to exist on the host as a mount point.
-Where it does not, the daemon creates it, and the daemon runs as root — so the
-directory ends up `root:root`. Three consequences follow:
+Where it does not, the daemon creates it, and the daemon runs as root. The
+directory ends up owned by `root:root`:
 
 - The host directory looks empty even after `npm install` ran in the container.
 - A host-side `npm install` writes into a root-owned directory and fails with
@@ -143,8 +143,8 @@ The test stack runs alongside dev on other ports, so both can be up at once.
 | Traefik HTTP  | 80   | 9080 |
 
 Its Postgres keeps data on tmpfs and runs with `fsync`, `synchronous_commit`
-and `full_page_writes` off. Durability is what tests do not need, and dropping
-it is most of the speed difference.
+and `full_page_writes` off. Tests do not need durability. Dropping it is most
+of the speed difference.
 
 The database therefore empties whenever that container stops or is recreated.
 Every `icbops` verb that brings the stack up initializes it afterwards, and
@@ -174,12 +174,9 @@ What actually changes:
   runs from scratch on a fresh volume in CI.
 
 `docker-compose.ci.yml` also resets `build` on `vue` and declares the proxy
-network as a bridge. Neither changes the resolved result:
+network as a bridge. Neither changes the resolved result.
 `docker-compose.test.yml` already carries `build: !reset null` and already
-declares `proxy` as a non-external bridge. Read
-`icbops testing docker config` before treating a line in the CI file as the
-reason for anything, because a field the test file already set looks like the
-CI file's doing.
+declares `proxy` as a non-external bridge.
 
 Do not add a named volume for `.venv` or the uv cache to any of these files.
 Named volumes survive rebuilds, so a stale virtualenv outlives the image meant
@@ -216,11 +213,11 @@ deployment](../blue-green-deployment.md) covers the sequence.
 
 ## When a change is not taking effect
 
-Containers hold stale state in ways that look like application bugs — a route
+Containers hold stale state in ways that look like application bugs: a route
 returning 404 after it was added, an import failing for a package that is in
-`pyproject.toml`. The escalation ladder is in
-[Testing troubleshooting](../troubleshooting/testing-issues.md#a-change-is-not-taking-effect),
-and it is what to work before reading any of this page's diagnostics.
+`pyproject.toml`. Work the escalation ladder in
+[Testing troubleshooting](../troubleshooting/testing-issues.md#a-change-is-not-taking-effect)
+before reading any of this page's diagnostics.
 
 ## Related
 

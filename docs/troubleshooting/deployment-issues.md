@@ -2,7 +2,7 @@
 
 Production is [blue/green](../blue-green-deployment.md). Infrastructure —
 Traefik, PostgreSQL, Redis — runs as `icb-infra` and stays up. App services run
-as `icb-blue` or `icb-green`, and a deploy starts the color that is not live.
+as `icb-blue` or `icb-green`. A deploy starts the color that is not live.
 
 Everything that changes production goes through the deploy pipeline. Reading
 logs and container status over SSH is fine. The manual sequences on this page
@@ -57,14 +57,12 @@ order the script sets them, so each one greps the log directly.
     tear down the old color, after a grace period
 ```
 
-`switch_traffic` is the line everything else sits before. A failure at any
-earlier stage leaves the live color serving traffic untouched — the script
-tears down the half-started color and exits, and the site never noticed. The
-fix is to land a commit, not to intervene on the host.
+A failure at any stage before `switch_traffic` leaves the live color serving
+traffic. The script tears down the half-started color and exits, and the site
+never noticed. The fix is to land a commit, not to intervene on the host.
 
-The first three run before a color is chosen, and they are the ones a host
-problem fails at. A missing age key fails `decrypt_secrets`. A dirty checkout
-fails `git_pull`.
+`migrations` is the one earlier stage that still touches shared state, because
+it runs against the same database the live color is using.
 
 ### It failed before choosing a color
 
@@ -120,7 +118,7 @@ every key `.env.example` lists.
 
 ### Migrations failed
 
-Migrations run after the new color is healthy and before routing switches, so a
+Migrations run after the new color is healthy and before routing switches. A
 failure here leaves the old color serving traffic against a database the new
 code may have partly migrated.
 
@@ -135,8 +133,8 @@ The second removes what nothing reads any more.
 ### Smoke tests failed
 
 `icbops prod smoke` runs the same checks by hand. They exercise the new color
-directly, before it takes traffic, so a failure here is the pipeline doing its
-job.
+directly, before it takes traffic. A failure here means the switch never
+happened and production is still serving the old color.
 
 ## Environment variables
 
@@ -198,9 +196,9 @@ icbops prod status             # is postgres healthy
 icbops prod logs postgres
 ```
 
-Infrastructure is a separate compose project from the app, so a color that
-cannot reach Postgres is a network problem rather than a dead database. Both
-projects attach to the same external network.
+Infrastructure is a separate compose project from the app, and both attach to
+the same external network. So a color that cannot reach Postgres is a network
+problem rather than a dead database.
 
 ### Restore
 

@@ -1,8 +1,8 @@
 # Testing Environment Troubleshooting
 
 The test stack is containerized and ephemeral. Most failures that look like
-test bugs are stale container state, and the ladder below clears them faster
-than reading logs does.
+test bugs are stale container state. A stop-and-start clears most of them, and
+a `rebuild --volumes` clears the rest. Both cost less than reading logs.
 
 ## A change is not taking effect
 
@@ -111,12 +111,14 @@ prints the resolved result, which is where a doubled mapping shows up.
 ## E2E tests
 
 They run through Traefik, against `https://app.test.localhost:8443` by default.
-`E2E_ENV=dev` is the only thing that points them at `https://app.docker.localhost`
-instead, and `frontend/playwright.config.ts` is where that switch lives.
+Setting `E2E_ENV=dev` points them at `https://app.docker.localhost` instead,
+which is what `npm run test:e2e:dev` does. `frontend/playwright.config.ts` and
+`frontend/e2e/global.setup.ts` are the two files that read it, and they have to
+agree.
 
-Always through Traefik is the part that matters. Hitting the Vue container's
-port directly bypasses the proxy, which is where CORS and the auth middleware
-live — a test that passes there can still fail in a browser.
+Hitting the Vue container's port directly bypasses the proxy. CORS and the auth
+middleware live in the proxy, so a test that passes there can still fail in a
+browser.
 
 Both host names have to resolve for Playwright to reach anything.
 [Traefik deployment](../traefik-deployment.md) lists the `*.test.localhost`
@@ -128,9 +130,9 @@ navigation and one CRUD roundtrip. Interaction-heavy cases live in the component
 tests under `frontend/src/views/__tests__/`, and every E2E file names its
 counterpart in a comment.
 
-Two conventions keep them from breaking on unrelated changes. Selectors are
-`data-testid`, never CSS classes or DOM structure. Assertions check generic
-keywords like `added` or `deleted`, never exact notification text.
+Selectors are `data-testid`, never CSS classes or DOM structure. Assertions
+check generic keywords like `added` or `deleted`, never exact notification
+text. Both keep a test from breaking on a restyle or a reworded message.
 
 ## Markers
 
@@ -163,9 +165,9 @@ stack with `--wait`. So a CI-only failure is rarely about the containers
 themselves.
 
 [Docker Compose Architecture](../docker/docker-compose.md#ci) lists what
-`docker-compose.ci.yml` changes. Two of them can reach a test: the API has no
-Docker socket, so anything touching container status behaves differently, and
-Vue's health check waits longer because `npm install` runs from scratch.
+`docker-compose.ci.yml` changes. Two of those can reach a test. The API has no
+Docker socket, so anything touching container status behaves differently. Vue's
+health check waits longer, because `npm install` runs from scratch.
 
 Read `icbops testing docker config` before blaming a line in the CI file. Most
 of what it declares is already set by `docker-compose.test.yml`, so a field

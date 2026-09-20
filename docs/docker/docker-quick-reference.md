@@ -3,7 +3,7 @@
 The grammar is `icbops <environment> <verb>`, where the environment is `dev`,
 `testing` or `prod`. `test`, `stats`, `routing` and `ssl-manager` are tools
 rather than environments. Run any environment with no verb to see its own
-listing, and `icbops --help` for all of them.
+listing. `icbops --help` lists all of them.
 
 This page covers the common cases. `--help` is the surface of record.
 
@@ -16,9 +16,9 @@ This page covers the common cases. `--help` is the surface of record.
 | Production  | `https://ichrisbirch.com`         | `https://api.ichrisbirch.com`     |
 
 Every environment goes through Traefik, so these are the addresses to use.
-Hitting a container's port on `localhost` skips the proxy, which is where CORS
-and auth middleware live — a request that works there can still fail in the
-browser.
+Hitting a container's port on `localhost` skips the proxy. CORS and the auth
+middleware live in the proxy, so a request that works there can still fail in
+the browser.
 
 ## Development
 

@@ -96,7 +96,7 @@ does not, and the fix belongs in that migration.
 
 The test Postgres keeps its data on tmpfs, so stopping the container empties it
 and starting it initializes it again. Never repair it with `psql`, an alembic
-stamp, or raw SQL — if that sequence cannot recover it, that is a CLI bug worth
+stamp, or raw SQL. If that sequence cannot recover it, that is a CLI bug worth
 fixing rather than working around.
 
 ## Migration Issues

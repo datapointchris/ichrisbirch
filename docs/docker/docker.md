@@ -32,8 +32,8 @@ caches and the dev dependencies behind. It creates an `app` user and runs as
 it.
 
 `development` and `testing` run as root. Both bind-mount the source tree from
-the host and run `uv` against it at runtime, and a root process is what can
-write into a host-owned mount.
+the host and run `uv` against it at runtime. Only a root process can write into
+a host-owned mount.
 
 ## One image runs both Python services
 
@@ -44,12 +44,11 @@ write into a host-owned mount.
   `--reload` in dev.
 - `scheduler` — `python -m ichrisbirch.wsgi_scheduler`.
 
-One image rather than one per service is a deliberate trade. The services share
-a dependency set and a runtime, so a second image would duplicate every layer
-to no benefit. `docker images` shows what the shared build costs.
+The two services share a dependency set and a runtime. A second image would
+duplicate every layer and change nothing, so they share one.
 
-Production disables uvicorn's access log. Request logging is middleware's job,
-and two loggers writing the same requests is two formats to parse.
+Production disables uvicorn's access log. Request logging is middleware's job.
+Two loggers writing the same requests is two formats to parse.
 
 ## The frontend is built for production and not for dev
 
@@ -66,8 +65,9 @@ Dev and test never build this image. Their `vue` service is a plain
 `node:24-alpine` running `npm install && npm run dev`, so Vite's dev server
 answers on port 5173 with hot module replacement.
 
-That asymmetry is the one to remember: the frontend you develop against and the
-frontend you deploy are served by different programs.
+Caddy serves the frontend you deploy and Vite serves the one you develop
+against. So a fault in the SPA fallback, or anywhere else in
+`frontend/Caddyfile`, cannot show up in dev.
 
 ## Dev and test build locally; production pulls
 
@@ -79,10 +79,10 @@ frontend you deploy are served by different programs.
 | Production  | `production`  | `ghcr.io/datapointchris/ichrisbirch` | Pulled |
 
 Production never builds on the server. `.github/workflows/release.yml` builds
-both images on a matrix — the root `Dockerfile` at `--target production`, and
-`frontend/Dockerfile` with `VITE_API_URL=/api` — and pushes them to GHCR tagged
+both images on a matrix: the root `Dockerfile` at `--target production`, and
+`frontend/Dockerfile` with `VITE_API_URL=/api`. It pushes them to GHCR tagged
 `sha-<commit>` and `latest`. `docker-compose.app.yml` names those images and has
-no `build` section at all, so the deploy pulls a tested artifact rather than
+no `build` section at all. So the deploy pulls a tested artifact rather than
 compiling one next to a live database.
 
 Dev and test mount `.:/app` over the image's own copy, so the code that runs is
@@ -108,10 +108,10 @@ the overrides:
 
 `icbops --help` lists the flags each one takes.
 
-`prod build-test` is the one worth knowing. Production is the only target that
-copies source into the image, so a `.dockerignore` mistake or an uncommitted
-file passes dev and test and then fails in CI. It builds that target locally,
-which is the same build `release.yml` runs.
+Production is the only target that copies source into the image, so a
+`.dockerignore` mistake or an uncommitted file passes dev and test and then
+fails in CI. `prod build-test` builds that target locally, which is the build
+`release.yml` runs.
 
 ## Related
 

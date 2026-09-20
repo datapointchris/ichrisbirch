@@ -14,7 +14,8 @@ equivalent of each step the script takes.
 
 ## What the script needs from you
 
-Some things have to come from somewhere else, and the script prompts for each.
+Three things cannot come from the container itself, and the script prompts for
+each: AWS credentials, the age private key, and a Cloudflare tunnel token.
 
 **AWS credentials.** Used for S3 database backups and nothing else. Either run
 `aws configure` when prompted or copy `~/.aws` from another machine.

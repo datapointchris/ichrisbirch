@@ -30,14 +30,14 @@ Running pytest by hand, leave `ENVIRONMENT` unset. `_detect_environment` in
 `ENVIRONMENT` already exported in your shell outranks that check, and every
 test calling `get_settings()` directly then gets that environment's settings.
 
-`test_settings` is not a defense against this. It renames the copy it builds,
-not the cached object `get_settings()` returns.
+`test_settings` is not a defense against this. It sets `ENVIRONMENT` on the copy
+it builds, never on the cached object `get_settings()` returns.
 [Testing Configuration](test_configuration.md) covers what it does override.
 
 ### Local DNS
 
 Traefik routes by host name, so Playwright and the browser need the names
-resolving. pytest does not — it reaches the API on a published port rather than
+resolving. pytest does not. It reaches the API on a published port rather than
 through Traefik.
 
 ```bash
@@ -51,5 +51,5 @@ are what `E2E_ENV=dev` needs.
 
 ### `pytest-xdist`
 
-Do not add it. The session fixture starts the Docker Compose stack once, and
-xdist would run that startup per worker against one set of ports.
+Do not add it. The session fixture starts the Docker Compose stack once. xdist
+would run that startup once per worker, against one set of ports.
