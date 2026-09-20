@@ -146,6 +146,7 @@ nav:
           - Deployment: traefik-deployment.md
           - CLI Usage: cli-traefik-usage.md
       - New Server Setup: devops/new_server.md
+      - Homelab Deployment: homelab-deployment.md
       - New Database: devops/new_database.md
       - Nginx: devops/nginx.md
       - Supervisor: devops/supervisor.md
@@ -170,7 +171,6 @@ nav:
       - Visualization: testing/visualization_options.md
   - Troubleshooting:
       - Overview: troubleshooting/index.md
-      - Poetry to UV Migration: troubleshooting/poetry-uv-migration.md
       - Docker Issues: troubleshooting/docker-issues.md
       - Testing Issues: troubleshooting/testing-issues.md
       - Database Issues: troubleshooting/database-issues.md

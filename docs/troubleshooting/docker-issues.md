@@ -14,28 +14,26 @@ This document covers common Docker-related issues encountered during development
 - Commands work in builder stage but fail in runtime stage
 - Broken symlinks after `COPY --from=builder`
 
-**Root Cause:** Package managers like Poetry create complex directory structures with symlinks that don't survive Docker layer copying.
+**Root Cause:** A virtualenv records absolute paths. `uv sync` writes them
+against the directory it ran in, so a `COPY --from=` that lands the tree
+somewhere else leaves every console script pointing at a path that no longer
+exists.
 
-**Resolution:**
-Use UV instead of Poetry for better Docker compatibility:
+The root `Dockerfile` builds at `/app` in every stage, and `production` copies
+`/app` wholesale out of `production-builder`:
 
 ```dockerfile
-# Good: UV creates self-contained installations
-FROM python:3.12-slim as builder
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
-
-FROM builder as development
-COPY . .
-RUN uv sync --frozen --group dev --group test
+COPY --from=production-builder --chown=app:app /app /app
 ```
+
+Both sides are `/app`, so the paths inside `.venv` stay correct. Changing
+either one without the other is what breaks this.
 
 **Prevention:**
 
-- Test each stage individually: `docker build --target=development .`
-- Verify executables exist: `docker run --rm image which pytest`
-- Use package managers designed for containers
+- Build one stage at a time: `docker build --target development .`
+- Check an executable resolves: `docker run --rm <image> which pytest`
+- Keep `WORKDIR` identical across any stage that copies a virtualenv
 
 ## Container Networking Issues
 
@@ -80,13 +78,13 @@ networks:
 
 ```bash
 # Check service connectivity
-docker-compose exec app ping postgres
+docker compose exec api ping postgres
 
 # Verify environment variables
-docker-compose exec app env | grep DATABASE
+docker compose exec api env | grep DATABASE
 
 # Check port availability
-docker-compose exec app nc -zv postgres 5432
+docker compose exec api nc -zv postgres 5432
 ```
 
 ### Containers on Newer Networks Have No Internet (Dual iptables Backends)
@@ -300,7 +298,7 @@ RUN groupadd -g $GID appgroup && \
 USER appuser
 ```
 
-Or in docker-compose for development:
+Or in docker compose for development:
 
 ```yaml
 services:
@@ -408,18 +406,18 @@ services:
 
 ```bash
 # Check running containers
-docker-compose ps
+docker compose ps
 
 # View logs
-docker-compose logs app
-docker-compose logs -f --tail=100 app
+docker compose logs app
+docker compose logs -f --tail=100 app
 
 # Execute commands in container
-docker-compose exec app bash
-docker-compose exec app uv run python -c "import sys; print(sys.path)"
+docker compose exec api bash
+docker compose exec api uv run python -c "import sys; print(sys.path)"
 
 # Inspect container configuration
-docker inspect $(docker-compose ps -q app)
+docker inspect $(docker compose ps -q app)
 ```
 
 ### Network Debugging
@@ -432,15 +430,15 @@ docker network ls
 docker network inspect ichrisbirch_default
 
 # Test connectivity between services
-docker-compose exec app ping postgres
-docker-compose exec app nc -zv postgres 5432
+docker compose exec api ping postgres
+docker compose exec api nc -zv postgres 5432
 ```
 
 ### Build Debugging
 
 ```bash
 # Build with verbose output
-docker-compose build --progress=plain --no-cache
+docker compose build --progress=plain --no-cache
 
 # Build specific stage
 docker build --target=development .
@@ -456,9 +454,13 @@ docker run -it <intermediate-id> bash
 
 **Error:** `/app/.venv/bin/pytest: No such file or directory`
 
-**Cause:** Broken symlinks in virtual environment after Docker layer copy.
+**Cause:** In dev or test, a stale anonymous `/app/.venv` volume. In a
+production build, a virtualenv copied to a path other than the one it was
+created at.
 
-**Fix:** Use UV instead of Poetry, ensure proper multi-stage build.
+**Fix:** For dev and test, `icbops testing rebuild --volumes`, which re-seeds
+the anonymous volume from the image layer. For a build, check that every stage
+copying `.venv` uses the same `WORKDIR`.
 
 ### "Connection refused"
 

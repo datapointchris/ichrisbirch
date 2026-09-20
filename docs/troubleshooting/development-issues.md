@@ -27,15 +27,14 @@ which python      # Verify correct Python binary
 
 ```bash
 # macOS with Homebrew
-brew install python@3.12
+brew install python@3.14
 
 # Ubuntu/Debian
 sudo apt update
-sudo apt install python3.12 python3.12-venv
+sudo apt install python3.14 python3.14-venv
 
-# Using pyenv (recommended)
-pyenv install 3.12.0
-pyenv local 3.12.0
+# Or let uv manage it
+uv python install 3.14
 ```
 
 ### UV Package Manager Setup
@@ -85,7 +84,7 @@ uv sync
 ```bash
 # Verify Docker installation
 docker --version
-docker-compose --version
+docker compose --version
 
 # Test Docker functionality
 docker run hello-world
@@ -128,7 +127,7 @@ sudo systemctl enable docker
 ls -la .env*
 
 # Verify environment variables are loaded
-docker-compose exec app env | grep -i postgres
+docker compose exec api env | grep -i postgres
 ```
 
 **Resolution:**
@@ -324,10 +323,13 @@ max-line-length = 88
 
 1. **Optimize Docker resources:**
 
+No compose file sets resource limits today. Add them to the dev override if
+Docker is starving the host:
+
 ```yaml
-# docker-compose.yml - limit resource usage
+# docker-compose.dev.yml
 services:
-  app:
+  api:
     deploy:
       resources:
         limits:
@@ -339,19 +341,24 @@ services:
 1. **Selective service startup:**
 
 ```bash
-# Start only essential services
-docker-compose up app postgres
+# Bring up the whole dev stack
+./ops/icbops dev start
 
-# Start additional services as needed
-docker-compose up redis nginx
+# Or one service and its health-check dependencies
+docker compose --project-name icb-dev \
+  -f docker-compose.yml -f docker-compose.dev.yml up api
 ```
+
+The services are `traefik`, `postgres`, `redis`, `api`, `vue` and `scheduler`.
+`api` and `scheduler` declare `depends_on` with `condition: service_healthy`,
+so starting either one brings up Postgres and Redis first.
 
 1. **Clean up logs:**
 
 ```bash
 # Rotate log files
-docker-compose logs --no-color > logs/app.log
-docker-compose down
+docker compose logs --no-color > logs/app.log
+docker compose down
 docker system prune -f
 ```
 
@@ -414,13 +421,13 @@ logger.debug(f"Database URL: {settings.database_url}")
 
 ```bash
 # Get shell in running container
-docker-compose exec app bash
+docker compose exec api bash
 
 # Run container with override
-docker-compose run --rm app bash
+docker compose run --rm app bash
 
 # Debug specific service
-docker-compose run --rm --entrypoint="" app bash
+docker compose run --rm --entrypoint="" app bash
 ```
 
 ### Network Debugging
@@ -432,10 +439,10 @@ docker-compose run --rm --entrypoint="" app bash
 curl http://localhost:8000/health
 
 # Test container to container
-docker-compose exec app curl http://api:8000/health
+docker compose exec api curl http://api:8000/health
 
 # Check DNS resolution
-docker-compose exec app nslookup postgres
+docker compose exec api nslookup postgres
 ```
 
 ## Environment Validation Script
@@ -561,24 +568,24 @@ For new developers, here's a quick setup checklist:
 git clone https://github.com/username/ichrisbirch.git
 cd ichrisbirch
 
-# 2. Copy environment files
+# 2. Copy the environment file and fill it in
 cp .env.example .env
-cp .env.test.example .env.test
 
 # 3. Install UV
-pip install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 4. Install dependencies
 uv sync
 
 # 5. Start development environment
-docker-compose up -d
+./ops/icbops dev start
 
-# 6. Run validation
-./scripts/validate_dev_env.py
+# 6. Check it came up
+./ops/icbops dev health
+./ops/icbops dev smoke
 
-# 7. Run tests to verify setup
-docker-compose -f docker-compose.test.yml up test-runner
+# 7. Run the suite
+./ops/icbops test run
 ```
 
 ## Common Development Commands
@@ -587,34 +594,35 @@ Keep these handy for daily development:
 
 ```bash
 # Start development environment
-docker-compose up -d
+./ops/icbops dev start
 
 # View logs
-docker-compose logs -f app
+./ops/icbops dev logs api
 
 # Run tests
-docker-compose -f docker-compose.test.yml up test-runner
+./ops/icbops test run
 
 # Access application shell
-docker-compose exec app bash
+docker compose exec api bash
 
-# Install new package
+# Install new package, then rebuild so the container picks it up
 uv add package-name
+./ops/icbops dev rebuild --volumes
 
 # Run database migrations
-docker-compose exec app uv run alembic upgrade head
+./ops/icbops dev db init
 
-# Format code
-uv run black ichrisbirch/
-uv run isort ichrisbirch/
+# Format and lint
+uv run ruff format ichrisbirch/
+uv run ruff check --fix ichrisbirch/
 
 # Lint code
 uv run pylint ichrisbirch/
 
 # Stop all services
-docker-compose down
+docker compose down
 
 # Clean up Docker resources
 docker system prune -f
-docker-compose down -v  # Remove volumes too
+docker compose down -v  # Remove volumes too
 ```

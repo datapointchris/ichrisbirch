@@ -16,38 +16,37 @@ The troubleshooting documentation is organized by component and includes:
 
 ### Common Issues by Component
 
-| Component | Common Issues | Quick Solutions |
-| --- | --- | --- |
-| [Docker](docker-issues.md) | Build failures, container networking | Check Dockerfile syntax, network configuration |
-| [Poetry to UV Migration](poetry-uv-migration.md) | Dependency management, virtual environments | Follow migration checklist |
-| [Testing](testing-issues.md) | Test failures, pytest not found, Docker issues | Verify test dependencies, rebuild images |
-| [Database](database-issues.md) | Connection errors, schema issues | Check connection strings, run migrations |
-| [Development Environment](development-issues.md) | Setup problems, tooling conflicts | Follow setup guide step-by-step |
+| Page                                   | Covers                               | First move                     |
+| -------------------------------------- | ------------------------------------ | ------------------------------ |
+| [Docker](docker-issues.md)             | Build failures, container networking | Check Dockerfile and networks  |
+| [Testing](testing-issues.md)           | Stale containers, an empty test DB   | Work the escalation ladder     |
+| [Database](database-issues.md)         | Connection errors, schema issues     | Check the connection string    |
+| [Development](development-issues.md)   | Setup problems, tooling conflicts    | Follow the setup guide         |
 
-### Recent Critical Issues (July 2025)
+### Start with the escalation ladder
 
-**Docker Network Conflicts During Testing:**
+Most dev and test failures are stale container state rather than bugs. Two
+commands clear them, and they are cheaper than reading logs:
 
-- **Issue**: Test runs fail with "failed to set up container networking: network not found" errors
-- **Resolution**: Implemented comprehensive cleanup function with pre/post cleanup and multiple fallback strategies
-- **Details**: [Docker Network Conflicts](testing-issues.md#docker-network-conflicts-during-testing)
+```bash
+./ops/icbops testing stop && ./ops/icbops testing start   # ~30s
+./ops/icbops testing rebuild --volumes                    # ~60-90s
+```
 
-**Testing Infrastructure Failures:**
+Only after both is a manual `docker` subcommand worth reaching for.
+[A change is not taking effect](testing-issues.md#a-change-is-not-taking-effect)
+covers what each step fixes.
 
-- `error: Failed to spawn: 'pytest'` → Missing `--group test` in Dockerfile
-- `service has neither an image nor a build context` → Add build directive to compose services
-- `ModuleNotFoundError: tests.utils.environment` → Fix import paths in conftest.py
-- Docker network conflicts → Run comprehensive Docker cleanup
+After a failed test run, read `/tmp/ichrisbirch-pytest-output.log` and
+`/tmp/ichrisbirch-pytest-report.json` rather than re-running the suite.
 
-See [Testing Issues - Recent Critical Issues](testing-issues.md#recent-critical-issues-july-2025) for detailed solutions.
-
-### Emergency Fixes
+### Emergency fixes
 
 For urgent production issues:
 
-1. **Service Down**: Check [deployment issues](deployment-issues.md#service-recovery)
-2. **Database Connection**: See [database troubleshooting](database-issues.md#connection-issues)
-3. **Test Failures**: Review [testing diagnostics](testing-issues.md#test-failure-diagnosis)
+1. **Service down**: [deployment issues](deployment-issues.md#service-recovery)
+2. **Database connection**: [database troubleshooting](database-issues.md#connection-issues)
+3. **A deploy failed**: [what the pipeline logs](deployment-issues.md#a-deploy-failed)
 
 ## Also in This Guide
 

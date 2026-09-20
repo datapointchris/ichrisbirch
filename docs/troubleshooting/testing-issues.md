@@ -1,691 +1,182 @@
 # Testing Environment Troubleshooting
 
-This document addresses issues encountered when setting up and running tests in the iChrisBirch project, particularly with Docker-based testing environments and database configuration.
+The test stack is containerized and ephemeral. Most failures that look like
+test bugs are stale container state, and the ladder below clears them faster
+than reading logs does.
 
-## Recent Critical Issues
+## A change is not taking effect
 
-### Docker Network Conflicts During Testing
+Work these in order. Do not substitute manual `docker` subcommands.
 
-**Problem:** Test runs fail with Docker networking errors like:
+1. **`./ops/icbops testing stop && ./ops/icbops testing start`** — around 30
+   seconds. Clears accumulated database state, routes FastAPI has not
+   re-registered, and stale module imports. A changed model needs this.
+2. **`./ops/icbops testing rebuild --volumes`** — around 60 to 90 seconds.
+   Clears a stale `.venv`, a dependency added to `pyproject.toml`,
+   anonymous-volume staleness, and a corrupted `node_modules`.
+3. **Only now** reach for `docker logs`, `docker inspect` or `docker exec`.
 
-```text
-Error response from daemon: failed to set up container networking: network [network-id] not found
-```
+Containers that have not been through steps 1 and 2 are not evidence of
+anything. A fresh container from step 2 still failing is a real bug.
 
-**Error Messages:**
+A new migration is the exception and needs neither step. pytest's session setup
+migrates the test database to head before its fixtures run.
 
-```text
-Error response from daemon: failed to set up container networking: network 0c3cd93080df5b4a0c4308df29659328a317c458853c34c473470e35abf5f31a not found
-✗ Tests failed (exit code: 1)
-```
+## Read the output files instead of re-running
 
-**Root Cause:** Previous test runs left orphaned Docker containers, networks, and volumes that weren't properly cleaned up. The original cleanup in the CLI script was:
+Every pytest run — from the CLI or from pre-commit — writes two files:
 
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.test.yml down -v >/dev/null 2>&1
-```
+| File                                  | Contents                            |
+| ------------------------------------- | ----------------------------------- |
+| `/tmp/ichrisbirch-pytest-output.log`  | Terminal output                     |
+| `/tmp/ichrisbirch-pytest-report.json` | A `tests` array, one entry per test |
 
-This silently suppressed cleanup errors, so failed cleanup operations went unnoticed, leading to resource conflicts on subsequent test runs.
+Each JSON entry carries `nodeid`, `outcome` and `call.longrepr`. Reading these
+beats re-running a long suite to capture different output.
 
-**Attempted Solutions (That Failed):**
+## The test database
 
-- Running `docker system prune` manually between tests - temporary fix but not automated
-- Checking for specific container names only - missed containers with dynamic names
-- Using docker-compose down without additional cleanup - didn't handle edge cases where compose cleanup failed
+It lives on tmpfs, so every stop or recreate of the Postgres container empties
+it. That is the design, not a fault.
 
-**Resolution:** Test containers are reused rather than recreated on every run. `test-run` in `ops/icbops` works in four steps:
+Every `icbops` verb that brings the stack up initializes the database
+afterwards — `testing start`, `testing restart`, `testing rebuild` with any
+flags, and `test run`'s cold start. pytest then migrates it to head, and its
+fixtures truncate between tests.
 
-1. **Container reuse**: Reuses the stack when `icb-test-api` reports `healthy`
-2. **Unhealthy recovery**: Otherwise removes any existing test containers and runs `testing start`, which initializes the database
-3. **Database readiness**: pytest's session setup migrates the database to head, then the `truncate_tables` fixture truncates it
-4. **Fast iteration**: Leaves containers running after tests for quick re-runs
+A bare `docker compose up` does none of that. It leaves an empty database
+behind healthy containers, which surfaces as `relation "..." does not exist` on
+the first query.
 
-**Prevention:** The container reuse approach prevents network conflicts because containers are not constantly being created and destroyed. Truncation at session start gives each run a clean database without the overhead of container recreation.
+**Never repair it by hand.** No `psql`, no alembic stamp, no raw SQL. The fix
+is `testing stop` then `testing start`. If that cannot recover it, that is a
+CLI bug worth fixing rather than routing around.
 
-**Manual cleanup when needed:**
+`testing db reset` drops and recreates everything. It is for a schema that is
+genuinely corrupt, or a migration edited after it was applied. Restart the
+containers afterwards so the API's connection pool stops pointing at dropped
+objects.
 
-```bash
-# Stop and remove all test containers and volumes
-./ops/icbops testing stop
+## The API is stuck in `health: starting`
 
-# Full Docker cleanup if issues persist
-docker compose -f docker-compose.yml -f docker-compose.test.yml \
-  --project-name icb-test down -v --remove-orphans
-docker network prune -f
-```
+The API container runs `uvicorn` directly rather than `uv run`, and `/app/.venv`
+is an anonymous volume that Docker re-seeds from the image layer on every new
+container.
 
-## Test Database Setup Issues
+A named volume for `.venv` or for the uv cache breaks both properties. The
+stale virtualenv outlives the image meant to replace it, and `uv` resyncs at
+runtime while the health check times out. Do not reintroduce one in the test,
+dev or CI compose files.
 
-### Setup Exits Before Any Test Runs
+Step 2 of the ladder is the fix when this happens anyway.
 
-pytest's session setup runs `full_initialization()` against the test database before any test. A failure there ends the session with `Exiting due to setup failure:` followed by the initializer's own exception.
+## A new npm package 500s on some pages
 
-**Error: the database is at a revision this checkout does not have**
-
-```text
-_pytest.outcomes.Exit: Exiting due to setup failure: Can't locate revision identified by '<revision>'
-```
-
-**Root Cause:** Every checkout on a machine shares one test stack. A session from a checkout carrying a newer migration upgraded the database, and this checkout's migration history does not contain that revision.
-
-**Resolution:** Recreate the stack from the checkout you are testing. Its initialization then migrates the empty database with this checkout's history:
+The test Vue container keeps `node_modules` in a named volume and runs
+`npm install && npm run dev` at startup. A package added to `package.json`
+while the container is running is not installed in that volume.
 
 ```bash
 ./ops/icbops testing stop && ./ops/icbops testing start
 ```
 
-**Any other initialization error**
+The symptom is specific: pages importing the new package return 500 while every
+other page works.
 
-`testing start` runs the same initialization and prints its output, so the failing migration or connection error appears there. `./ops/icbops testing db init` runs it on its own against the running stack.
+## `ENOTEMPTY` in a restart loop
 
-The test Postgres keeps its data on tmpfs, so an empty database behind healthy containers is expected after any stop or recreate. Every `icbops` verb that brings the containers up and every pytest session initializes it.
-
-### Test Data Isolation Issues
-
-**Problem:** Tests interfere with each other due to shared test data.
-
-**Symptoms:**
-
-- Tests pass individually but fail when run together
-- Inconsistent test results
-- Foreign key constraint violations
-
-**Resolution:**
-
-Use proper test fixtures with cleanup:
-
-```python
-@pytest.fixture(autouse=True)
-def insert_testing_data():
-    """Setup test data before each test module."""
-    from ichrisbirch.database.testing import insert_test_data, delete_test_data
-
-    # Setup
-    insert_test_data('users', 'habits', 'habitcategories')
-
-    yield
-
-    # Teardown
-    delete_test_data('habits', 'habitcategories', 'users')
-```
-
-## Docker Test Environment Issues
-
-### Container Startup Problems
-
-**Problem:** Test containers fail to start or exit immediately.
-
-**Common Causes:**
-
-1. **Missing test dependencies:**
-
-```dockerfile
-# Ensure test dependencies are installed
-FROM builder as development
-COPY . .
-RUN uv sync --frozen --group dev --group test
-```
-
-1. **Database service not ready:**
-
-```yaml
-# docker-compose.test.yml
-services:
-  test-runner:
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-```
-
-### Test Command Execution Issues
-
-**Problem:** Pytest command not found or fails to execute.
-
-**Error:** `/app/.venv/bin/pytest: No such file or directory`
-
-**Cause:** Virtual environment issues or missing test runner.
-
-**Resolution:**
-
-Use UV to run tests:
-
-```yaml
-# docker-compose.test.yml
-services:
-  test-runner:
-    command: ["uv", "run", "pytest", "-vv", "--cov=ichrisbirch"]
-```
-
-Verify pytest is available:
+Partial install state in `icb-test-vue-node-modules` — an `npm install`
+interrupted mid-run — produces `ENOTEMPTY: directory not empty` in a loop. Left
+running long enough, that loop has taken down `dockerd` itself.
 
 ```bash
-docker-compose -f docker-compose.test.yml run test-runner uv run which pytest
+./ops/icbops testing rebuild --all --volumes
 ```
 
-## Coverage and Reporting Issues
+If the daemon has already crashed, [Docker
+troubleshooting](docker-issues.md#container-crash-loop-that-crashes-dockerd)
+has the manual recovery.
 
-### Missing Coverage Reports
+## Port conflicts with the dev stack
 
-**Problem:** Coverage reports are not generated or are empty.
+The two stacks are meant to run together, on different ports.
 
-**Common Issues:**
+| Service       | Dev  | Test |
+| ------------- | ---- | ---- |
+| API           | 8000 | 8001 |
+| Vue           | 5173 | 5174 |
+| PostgreSQL    | 5432 | 5434 |
+| Redis         | 6379 | 6380 |
+| Traefik HTTPS | 443  | 8443 |
 
-1. **Missing coverage configuration:**
+`port already allocated` on a stack that looks correct usually means a compose
+list merged instead of replacing. Compose appends `ports`, `volumes` and
+`environment` across files unless the override carries `!override`.
 
-```toml
-# pyproject.toml
-[tool.coverage.run]
-source = ["ichrisbirch"]
-omit = [
-    "*/tests/*",
-    "*/venv/*",
-    "*/__pycache__/*"
-]
+## E2E tests
 
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError"
-]
-```
+They run against the test containers, never dev, and always through Traefik at
+`app.docker.localhost`. Hitting `vue.docker.localhost` bypasses the proxy, which
+is where CORS and the auth middleware live — a test that passes there can still
+fail in a browser.
 
-1. **Coverage data location issues:**
+E2E is smoke-level by design. Each page keeps a CORS check, a page load, sidebar
+navigation and one CRUD roundtrip. Interaction-heavy cases live in the component
+tests under `frontend/src/views/__tests__/`, and every E2E file names its
+counterpart in a comment.
+
+Two conventions keep them from breaking on unrelated changes. Selectors are
+`data-testid`, never CSS classes or DOM structure. Assertions check generic
+keywords like `added` or `deleted`, never exact notification text.
+
+## Markers
+
+Two markers are declared, and neither runs by default:
 
 ```bash
-# Ensure coverage data is in correct location
-docker-compose -f docker-compose.test.yml run test-runner uv run coverage report
+uv run pytest -m seed          # seed system tests
+uv run pytest -m integration   # tests requiring running services
 ```
 
-### HTML Coverage Reports
+## Coverage
 
-**Problem:** HTML coverage reports are not accessible.
-
-**Resolution:**
-
-Mount volume to access reports from host:
-
-```yaml
-# docker-compose.test.yml
-services:
-  test-runner:
-    volumes:
-      - ./test-results:/app/test-results
-    command: ["uv", "run", "pytest", "--cov=ichrisbirch", "--cov-report=html:test-results/coverage"]
-```
-
-## Performance and Timeout Issues
-
-### Slow Test Execution
-
-**Problem:** Tests take too long to run, causing timeouts.
-
-**Common Causes:**
-
-1. **Database connection overhead**
-1. **Inefficient test data setup**
-1. **Missing test database optimization**
-
-**Optimizations:**
-
-```python
-# Use database transactions for faster rollback
-@pytest.fixture(autouse=True)
-def db_transaction():
-    """Use transaction rollback instead of DELETE for cleanup."""
-    from ichrisbirch.database import get_sqlalchemy_session
-
-    with get_sqlalchemy_session() as session:
-        transaction = session.begin()
-        yield session
-        transaction.rollback()
-```
-
-### Memory Issues
-
-**Problem:** Tests fail due to memory limitations.
-
-**Resolution:**
-
-Set appropriate resource limits:
-
-```yaml
-# docker-compose.test.yml
-services:
-  test-runner:
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
-```
-
-## Environment-Specific Issues
-
-### Local vs Container Differences
-
-**Problem:** Tests pass locally but fail in containers.
-
-**Common Causes:**
-
-1. **Path differences:** Absolute vs relative paths
-1. **Environment variables:** Missing in container
-1. **File permissions:** User/group differences
-
-**Resolution:**
-
-1. **Standardize paths:**
-
-```python
-# Use pathlib for cross-platform compatibility
-from pathlib import Path
-
-BASE_DIR = Path(__file__).parent.parent
-TEST_DATA_DIR = BASE_DIR / "tests" / "data"
-```
-
-1. **Document required environment variables:**
-
-```yaml
-# .env.test
-POSTGRES_DB_SCHEMA=ichrisbirch_test
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ichrisbirch
-API_URL=http://api:8000
-FLASK_ENV=testing
-```
-
-### CI/CD Pipeline Issues
-
-**Problem:** Tests pass locally but fail in GitHub Actions.
-
-**Common Issues:**
-
-1. **Service dependencies not ready**
-1. **Different Python/dependency versions**
-1. **Missing environment setup**
-
-**Resolution:**
-
-```yaml
-# .github/workflows/test.yml
-name: Test
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up test environment
-        run: |
-          cp .env.test.example .env.test
-          docker-compose -f docker-compose.test.yml up -d postgres
-
-      - name: Wait for database
-        run: |
-          docker-compose -f docker-compose.test.yml run --rm test-runner \
-            sh -c 'until pg_isready -h postgres -p 5432; do sleep 1; done'
-
-      - name: Run tests
-        run: docker-compose -f docker-compose.test.yml up test-runner
-```
-
-## Debugging Test Issues
-
-### Test Failure Diagnosis
-
-**Steps to debug failing tests:**
-
-1. **Run single test in isolation:**
+Configured in `pyproject.toml` under `[tool.coverage.run]`: parallel, branch
+coverage, sourced from `ichrisbirch` with `ichrisbirch/alembic` omitted.
+Migrations are generated and exercised by running them, so measuring them
+reports noise.
 
 ```bash
-docker-compose -f docker-compose.test.yml run test-runner \
-  uv run pytest tests/specific_test.py::TestClass::test_method -vv
+./ops/icbops test run --cov=ichrisbirch --cov-report=html
 ```
 
-1. **Check database state:**
+Parallel mode writes one data file per worker. A report showing almost nothing
+usually means those files were never combined.
 
-```bash
-docker-compose -f docker-compose.test.yml run test-runner \
-  uv run python -c "
-from ichrisbirch.database import get_sqlalchemy_session
-with get_sqlalchemy_session() as session:
-    result = session.execute('SELECT COUNT(*) FROM users')
-    print(f'Users count: {result.scalar()}')
-"
-```
+## CI differs in four ways
 
-1. **Examine test logs:**
+`docker-compose.ci.yml` layers over base and test.
 
-```bash
-docker-compose -f docker-compose.test.yml logs test-runner
-docker-compose -f docker-compose.test.yml logs postgres
-```
+| Difference        | Local                        | CI                         |
+| ----------------- | ---------------------------- | -------------------------- |
+| Docker socket     | Mounted in for the prune job | Dropped                    |
+| Proxy network     | Created externally           | Created as internal bridge |
+| Vue image         | `node:24-alpine`             | `build` reset to null      |
+| Traefik dashboard | Enabled                      | Disabled                   |
 
-### Database Connection Debugging
+The Vue row is the one that bites. CI brings the stack up with `--build`, and
+without that reset the build would replace the dev server with the production
+Caddy image.
 
-**Test database connectivity:**
+The fixtures detect CI through the `CI` environment variable and skip container
+management, because `.github/workflows/validate.yml` has already started them
+with `--wait`.
 
-```python
-# debug_db.py
-from ichrisbirch.config import settings
-from ichrisbirch.database import get_sqlalchemy_session
+A failure that reproduces locally but not in CI, or the reverse, is usually one
+of those four rows.
 
-print(f"Database URL: {settings.database_url}")
+## Related
 
-try:
-    with get_sqlalchemy_session() as session:
-        result = session.execute("SELECT version()")
-        print(f"PostgreSQL version: {result.scalar()}")
-        print("Database connection successful!")
-except Exception as e:
-    print(f"Database connection failed: {e}")
-```
-
-Run with:
-
-```bash
-docker-compose -f docker-compose.test.yml run test-runner uv run python debug_db.py
-```
-
-## Prevention Strategies
-
-### Test Environment Validation
-
-Create a test environment validation script:
-
-```python
-# validate_test_env.py
-import sys
-from ichrisbirch.config import settings
-from ichrisbirch.database import get_sqlalchemy_session
-
-def validate_test_environment():
-    """Validate that test environment is properly configured."""
-    errors = []
-
-    # Check required environment variables
-    if not settings.database_url:
-        errors.append("DATABASE_URL not set")
-
-    if "test" not in settings.database_url:
-        errors.append("DATABASE_URL should contain 'test'")
-
-    # Test database connection
-    try:
-        with get_sqlalchemy_session() as session:
-            session.execute("SELECT 1")
-    except Exception as e:
-        errors.append(f"Database connection failed: {e}")
-
-    if errors:
-        print("Test environment validation failed:")
-        for error in errors:
-            print(f"  - {error}")
-        sys.exit(1)
-    else:
-        print("Test environment validation passed!")
-
-if __name__ == "__main__":
-    validate_test_environment()
-```
-
-### Automated Test Environment Setup
-
-```bash
-#!/bin/bash
-# scripts/setup_test_env.sh
-
-set -e
-
-echo "Setting up test environment..."
-
-# Copy test environment file
-cp .env.test.example .env.test
-
-# Build test images
-docker-compose -f docker-compose.test.yml build
-
-# Start database
-docker-compose -f docker-compose.test.yml up -d postgres
-
-# Wait for database to be ready
-echo "Waiting for database..."
-docker-compose -f docker-compose.test.yml run --rm test-runner \
-  sh -c 'until pg_isready -h postgres -p 5432; do sleep 1; done'
-
-# Run migrations
-docker-compose -f docker-compose.test.yml run --rm test-runner \
-  uv run alembic upgrade head
-
-# Validate environment
-docker-compose -f docker-compose.test.yml run --rm test-runner \
-  uv run python validate_test_env.py
-
-echo "Test environment setup complete!"
-```
-
-## Common Error Messages and Solutions
-
-| Error Message | Cause | Solution |
-| --- | --- | --- |
-| `schema "ichrisbirch_test" does not exist` | Missing schema environment variable | Set `POSTGRES_DB_SCHEMA=ichrisbirch_test` |
-| `relation "users" does not exist` | Database migrations not run | Run `alembic upgrade head` |
-| `pytest: not found` | Missing test dependencies | Install with `uv sync --group test` |
-| `Connection refused` | Database not ready | Add health check and depends_on |
-| `permission denied` | File permission issues | Set proper user/group in Docker |
-| `No module named 'ichrisbirch'` | Package not installed | Run `uv sync` to install package |
-| `error: Failed to spawn: 'pytest'` | Test dependencies not installed in Docker build | Add `--group test` to Dockerfile `uv sync` |
-| `service has neither an image nor a build context` | Missing build directive in compose file | Add build context to service definition |
-| `ModuleNotFoundError: No module named 'tests.utils.environment'` | Incorrect import path | Fix import path to correct module location |
-
-## Recent Critical Issues (July 2025)
-
-### Test Dependencies Missing in Docker Build
-
-**Problem:** Docker-based test runner fails with `error: Failed to spawn: 'pytest'` even though pytest is defined in pyproject.toml dependency groups.
-
-**Error Messages:**
-
-```bash
-test-runner-1  | error: Failed to spawn: `pytest`
-test-runner-1  |   Caused by: No such file or directory (os error 2)
-test-runner-1 exited with code 2
-```
-
-**Root Cause:** The Dockerfile development stage was not installing test dependency groups. The `uv sync --frozen` command only installs main dependencies, not test dependencies.
-
-**Attempted Solutions (That Failed):**
-
-- Manually running `uv sync --group test` in running container worked, but didn't persist in built image
-- Rebuilding without `--no-cache` didn't fix the issue
-- Installing pytest directly didn't address the underlying group installation problem
-
-**Resolution:**
-
-Update the Dockerfile development stage to include dependency groups:
-
-```dockerfile
-# Before (broken):
-RUN uv venv && \
-    uv sync --frozen && \
-    chown -R appuser:appuser /app/.venv /app
-
-# After (working):
-RUN uv venv && \
-    uv sync --frozen --group dev --group test && \
-    chown -R appuser:appuser /app/.venv /app
-```
-
-Then rebuild with `--no-cache`:
-
-```bash
-docker-compose -f docker-compose.test.yml build --no-cache test-runner
-```
-
-**Prevention:** Always include `--group dev --group test` flags when installing dependencies in development/test Docker stages.
-
-### Missing Build Context in Docker Compose Services
-
-**Problem:** Docker Compose fails with "service has neither an image nor a build context specified" for scheduler service.
-
-**Error Messages:**
-
-```text
-service "scheduler" has neither an image nor a build context specified: invalid compose project
-```
-
-**Root Cause:** The test compose file was overriding the scheduler service configuration but omitted the required `build` directive that was present in the base compose file.
-
-**Resolution:**
-
-Add build context to the problematic service in `docker-compose.test.yml`:
-
-```yaml
-# Before (broken):
-scheduler:
-  command: .venv/bin/python -m ichrisbirch.wsgi_scheduler
-  environment:
-    - ENVIRONMENT=testing
-    # ... other config
-
-# After (working):
-scheduler:
-  build:
-    context: .
-    target: development
-  command: .venv/bin/python -m ichrisbirch.wsgi_scheduler
-  environment:
-    - ENVIRONMENT=testing
-    # ... other config
-```
-
-**Prevention:** When overriding services in compose override files, ensure all required directives (build, image, etc.) are included.
-
-### Incorrect Module Import Paths
-
-**Problem:** Test runner fails with `ModuleNotFoundError` for test utility modules.
-
-**Error Messages:**
-
-```text
-ImportError while loading conftest '/app/tests/conftest.py'.
-tests/conftest.py:26: in <module>
-    from tests.utils.environment import TestEnvironment
-E   ModuleNotFoundError: No module named 'tests.utils.environment'
-```
-
-**Root Cause:** Import statement referenced wrong module path. The actual module was at `tests/environment.py`, not `tests/utils/environment.py`.
-
-**Resolution:**
-
-Fix the import path in `tests/conftest.py`:
-
-```python
-# Before (broken):
-from tests.utils.environment import TestEnvironment
-
-# After (working):
-from tests.environment import TestEnvironment
-```
-
-**Prevention:**
-
-- Use IDE auto-completion for imports
-- Verify module structure before adding imports
-- Add import validation to pre-commit hooks
-
-### Docker Network Conflicts
-
-**Problem:** Intermittent networking failures with "network not found" errors during test execution.
-
-**Error Messages:**
-
-```text
-Error response from daemon: failed to set up container networking: network 29c640af9598b69b0e85acbdc4c59293e181060841e68af175b51c13cd045f79 not found
-```
-
-**Root Cause:** Orphaned Docker networks and containers from previous failed runs interfering with new test executions.
-
-**Resolution:**
-
-Comprehensive Docker cleanup:
-
-```bash
-# Stop all test containers
-docker-compose -f docker-compose.yml -f docker-compose.test.yml down --remove-orphans
-
-# Clean up containers, networks, and build cache
-docker container prune -f
-docker network prune -f
-docker system prune -f  # Use with caution - removes unused images
-```
-
-**Prevention:**
-
-- Always use `--remove-orphans` flag when stopping compose
-- Regular cleanup of Docker resources
-- Add cleanup commands to test scripts
-
-### Complete Resolution Workflow
-
-For comprehensive testing issues, follow this workflow:
-
-1. **Clean Docker environment:**
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.test.yml down -v --remove-orphans
-docker network prune -f
-```
-
-1. **Verify and fix Dockerfile:**
-
-```bash
-# Check development stage includes test groups
-grep -A 5 "uv sync" Dockerfile
-# Should show: uv sync --frozen --group dev --group test
-```
-
-1. **Verify compose service definitions:**
-
-```bash
-# Check all services have build or image specified
-docker-compose -f docker-compose.yml -f docker-compose.test.yml config
-```
-
-1. **Fix import paths:**
-
-```bash
-# Verify module exists
-find tests/ -name "*.py" | grep -E "(environment|conftest)"
-```
-
-1. **Rebuild and test:**
-
-```bash
-docker-compose -f docker-compose.test.yml build --no-cache test-runner
-icbops test
-```
-
-## Test Checklist
-
-Before running tests, verify:
-
-- [ ] Test database is running and accessible
-- [ ] Schema exists and migrations are current
-- [ ] Test dependencies are installed
-- [ ] Environment variables are set correctly
-- [ ] Test data fixtures are working
-- [ ] Coverage configuration is correct
-- [ ] Resource limits are appropriate for test load
+- [Test Environment](../testing/environment.md)
+- [Testing Configuration](../testing/test_configuration.md)
+- [Docker Compose Architecture](../docker/docker-compose.md)
+- [Docker troubleshooting](docker-issues.md)
