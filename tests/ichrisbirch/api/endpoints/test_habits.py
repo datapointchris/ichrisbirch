@@ -398,6 +398,22 @@ class TestCompletedHabits:
         assert len(response.json()) == 1
         assert response.json()[0]['name'] == self.LAST_COMPLETED_HABIT
 
+    def test_first_and_last_still_answer_with_one_under_a_wider_limit(self, habit_test_data):
+        """`first` is a cap of one, so a limit above it cannot widen the answer."""
+        client = habit_test_data
+        for selector in ('first', 'last'):
+            response = client.get(self.ENDPOINT, params={selector: True, 'limit': 50})
+            assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+            assert len(response.json()) == 1, f'{selector} widened to {len(response.json())} rows'
+
+    def test_zero_outranks_first_and_last(self, habit_test_data):
+        """Zero is a row count a caller can mean, and it is tighter than one."""
+        client = habit_test_data
+        for selector in ('first', 'last'):
+            response = client.get(self.ENDPOINT, params={selector: True, 'limit': 0})
+            assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+            assert response.json() == [], f'{selector} answered a zero limit with rows'
+
     @pytest.mark.parametrize(
         'start_date, end_date, expected_count',
         [

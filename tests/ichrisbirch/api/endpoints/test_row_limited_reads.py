@@ -36,6 +36,7 @@ LIMITED_READS = [
     ('/events/', 'events'),
     ('/habits/', 'habitcategories'),
     ('/habits/categories/', 'habitcategories'),
+    ('/habits/completed/', 'habitcategories'),
     ('/patterns/', 'patterns'),
     ('/projects/', 'projects'),
     ('/recipes/', 'recipes'),

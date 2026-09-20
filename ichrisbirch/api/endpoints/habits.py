@@ -75,14 +75,20 @@ async def read_many_completed(
     end_date: dt.datetime | dt.date | str | None = None,
     first: bool | None = None,
     last: bool | None = None,
+    limit: RowLimit = None,
 ):
     query = select(models.HabitCompleted)
 
+    # `first` and `last` are a row cap of one written as a question, so they fold
+    # into `limit` rather than sitting beside it. An explicit limit can only
+    # tighten that, which is what keeps `first=true&limit=0` answering with none.
     if first:  # first completed
-        query = query.order_by(models.HabitCompleted.complete_date.asc()).limit(1)
+        query = query.order_by(models.HabitCompleted.complete_date.asc())
+        limit = 1 if limit is None else min(1, limit)
 
     elif last:  # most recent (last) completed
-        query = query.order_by(models.HabitCompleted.complete_date.desc()).limit(1)
+        query = query.order_by(models.HabitCompleted.complete_date.desc())
+        limit = 1 if limit is None else min(1, limit)
 
     else:
         # Each bound narrows on its own, so one without the other is an open-ended range.
@@ -98,7 +104,7 @@ async def read_many_completed(
             ) from e
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 
-    return list(session.scalars(query).all())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
