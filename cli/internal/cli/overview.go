@@ -577,18 +577,21 @@ func upcomingEvents(events []api.Event, now time.Time) []api.Event {
 	return upcoming
 }
 
-// capItems truncates to limit. Zero is a row count like any other and caps to
-// nothing, so it needs no branch of its own: len(items) <= 0 is false whenever
-// there is anything to cut.
+// capItems truncates to limit and always answers an allocated slice.
 //
-// A negative caps to nothing rather than panicking. The two callers take their
-// limit from a flag whose parser refuses one, but that guard lives on a type
-// this signature never mentions, and a third caller passing a computed bound —
-// a remaining-space count, a subtraction against a section already printed —
-// would reach items[:-1] and a slice-bounds panic.
+// Every section reaches the JSON through here, and a nil slice marshals to
+// `null`. A section whose fetch failed has nothing to cap, so
+// `jq '.habits.due_today[]'` would meet a null and exit 5 while icb exited 0.
+//
+// Zero is a row count like any other and caps to nothing, so it needs no branch
+// of its own: len(items) <= 0 is false whenever there is anything to cut.
+//
+// A negative caps to nothing rather than panicking. The callers take their limit
+// from a flag whose parser refuses one, but that guard lives on a type this
+// signature never mentions, and a computed bound would reach items[:-1].
 func capItems[T any](items []T, limit int) []T {
-	if limit < 0 {
-		return nil
+	if limit < 0 || len(items) == 0 {
+		return []T{}
 	}
 	if len(items) <= limit {
 		return items

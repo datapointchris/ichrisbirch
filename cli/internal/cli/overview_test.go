@@ -3,8 +3,10 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -295,6 +297,55 @@ func TestCapItems(t *testing.T) {
 	}
 	if got := capItems(items, 10); len(got) != 4 {
 		t.Errorf("capItems(4, 10) = %v", got)
+	}
+	// Why an empty answer is allocated is on capItems itself.
+	for name, got := range map[string][]int{
+		"nil in":       capItems([]int(nil), 20),
+		"empty in":     capItems([]int{}, 20),
+		"negative cap": capItems(items, -1),
+		"cap to zero":  capItems(items, 0),
+	} {
+		if got == nil {
+			t.Errorf("capItems(%s) = nil, want an allocated slice so it marshals as []", name)
+		}
+	}
+}
+
+// Reflection rather than a written list of fields, so a section added later is
+// covered by existing.
+func TestBuildOverview_EmptyDataLeavesNoSectionAsNull(t *testing.T) {
+	report := buildOverview(overviewData{}, fixedNow, defaultOverviewLimit)
+
+	assertNoNilSlices(t, reflect.ValueOf(report), "report")
+
+	encoded, err := json.Marshal(report)
+	if err != nil {
+		t.Fatalf("marshaling: %v", err)
+	}
+	// A nullable scalar is a different thing from an empty collection, so the
+	// two that are genuinely absent stay null and only the arrays are asserted.
+	for _, want := range []string{`"due_today":[]`, `"completed_today":[]`, `"items":[]`, `"unread":[]`, `"warnings":[]`} {
+		if !bytes.Contains(encoded, []byte(want)) {
+			t.Errorf("missing %s in:\n%s", want, encoded)
+		}
+	}
+}
+
+func assertNoNilSlices(t *testing.T, v reflect.Value, path string) {
+	t.Helper()
+	switch v.Kind() {
+	case reflect.Struct:
+		for i := range v.NumField() {
+			assertNoNilSlices(t, v.Field(i), path+"."+v.Type().Field(i).Name)
+		}
+	case reflect.Pointer:
+		if !v.IsNil() {
+			assertNoNilSlices(t, v.Elem(), path)
+		}
+	case reflect.Slice:
+		if v.IsNil() {
+			t.Errorf("%s is nil, so it marshals as null where a caller expects []", path)
+		}
 	}
 }
 
