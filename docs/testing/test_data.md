@@ -125,10 +125,8 @@ Note that when deleting related datasets, you must consider foreign key relation
 Special handling exists for test login users:
 
 ```python
-def get_test_login_users() -> List[Dict[str, Any]]:
+def get_test_login_users() -> list[dict]:
     """Return a list of test users for login testing."""
-    settings = get_test_settings()
-
     return [
         {
             'name': 'Test User to be Sacrificed for Delete Test',

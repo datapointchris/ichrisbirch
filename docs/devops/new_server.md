@@ -1,64 +1,66 @@
 # Setup a New Server
 
-## Installs
+Production runs in a Proxmox LXC container with Docker and a Cloudflare Tunnel.
+`scripts/bootstrap-homelab.sh` stands one up.
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-
-# base installs
-sudo apt install curl git -y
-
-# NOTE: Install the postgresql-client version that matches the database, this is for pg_dump backups with the scheduler.
-sudo apt install postgresql-client-16 tmux tldr supervisor nginx neovim pipx -y
-
-# for pyenv
-sudo apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
-
-# for building psycopg from source
-sudo apt install python3-dev libpq-dev -y
-
-# make sure
-pipx ensurepath
-
-# Install pyenv
-curl https://pyenv.run | bash
-
-echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-
-exec $SHELL
-
-# Install python
-pyenv install 3.12
-pyenv global 3.12
-
-# Install poetry making sure to use pyenv python
-pipx install --python $(/home/ubuntu/.pyenv/bin/pyenv which python) poetry
-
-sudo chown ubuntu /var/www
-
-##### AT THIS POINT THE AMI SHOULD BE MADE #####
-
-# Clone project
-git clone https://github.com/datapointchris/ichrisbirch /var/www/ichrisbirch
-cd /var/www/ichrisbirch
-
-# Decrypt secrets: sops decrypt secrets/secrets.prod.enc.env > .env
-
-# Install project
-poetry config virtualenvs.in-project true
-
-# Make log files for project
-./scripts/make_log_files.sh
-
-# Set up nginx and supervisor
-sudo rm /etc/nginx/sites-enabled/default
-
-cd deploy
-./deploy-nginx.sh
-
-./deploy-supervisor.sh
+# as root on the container
+curl -fsSL https://raw.githubusercontent.com/datapointchris/ichrisbirch/main/scripts/bootstrap-homelab.sh | bash
 ```
 
-Change the elastic IP to point to the new server (if only using one server and not load balancer).
+[Homelab Production Deployment](../homelab-deployment.md) covers the LXC
+settings the container needs, the tunnel configuration, and the manual
+equivalent of each step the script takes.
+
+## What the script needs from you
+
+Three things cannot come from the container itself, and the script prompts for
+each: AWS credentials, the age private key, and a Cloudflare tunnel token.
+
+**AWS credentials.** Used for S3 database backups and nothing else. Either run
+`aws configure` when prompted or copy `~/.aws` from another machine.
+`aws sts get-caller-identity` confirms it afterwards.
+
+**The age private key.** Production secrets are SOPS-encrypted at
+`secrets/secrets.prod.enc.env`, and the host cannot decrypt its own `.env`
+without this key:
+
+```bash
+scp ~/.config/sops/age/keys.txt <host>:~/.config/sops/age/keys.txt
+```
+
+**A Cloudflare tunnel token.** Create the tunnel in the Cloudflare dashboard
+under Zero Trust, Networks, Tunnels, then hand the script its token. The tunnel
+is what terminates TLS and reaches the container, so nothing on the host listens
+on a public port.
+
+## Database
+
+The script offers three paths: migrate a fresh database, restore from a dump
+file, or skip because the database is already set up.
+
+A restore runs `pg_restore` against the infrastructure Postgres:
+
+```bash
+docker exec -i icb-infra-postgres \
+  pg_restore -U icb_app -d ichrisbirch --no-owner < <dump-file>
+```
+
+## Afterwards
+
+```bash
+icbops prod deploy-status
+icbops prod health
+icbops prod smoke
+```
+
+Deploys then happen by pushing to `main`. The webhook host receives the push
+and runs the blue/green deploy. See [Blue/Green
+Deployment](../blue-green-deployment.md).
+
+## Related
+
+- [Homelab Production Deployment](../homelab-deployment.md)
+- [Blue/Green Deployment](../blue-green-deployment.md)
+- [NGINX](nginx.md) and [Supervisor](supervisor.md), which the bare-metal
+  deployment used

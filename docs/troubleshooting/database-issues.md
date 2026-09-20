@@ -40,7 +40,7 @@ services:
       retries: 5
       start_period: 30s
 
-  app:
+  api:
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,30 +69,35 @@ GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO icb_app;
 ### 1. Run Database Migrations
 
 ```bash
-# In development
-docker-compose exec app uv run alembic upgrade head
-
-# In testing
-docker-compose -f docker-compose.test.yml run test-runner uv run alembic upgrade head
+./ops/icbops dev db init
 ```
 
-### 2. Set Schema Environment Variable
+Testing needs no equivalent. pytest's session setup migrates the test database
+to head before its fixtures run, so a new migration reaches the suite without a
+restart.
 
-```yaml
-# docker-compose.test.yml
-services:
-  test-runner:
-    environment:
-      - POSTGRES_DB_SCHEMA=ichrisbirch_test
+### 2. Do Not Create the Schema by Hand
+
+A migration creates any schema it writes into. Nothing creates schemas ahead of
+alembic, so a migration that assumes one exists fails on a fresh database and
+passes on yours.
+
+`e1f2a3b4c5d6_add_coffee_tables` is the pattern to copy. It issues the
+`CREATE SCHEMA` itself before creating tables in it.
+
+A `does not exist` error for a schema means the migration that should create it
+does not, and the fix belongs in that migration.
+
+### 3. Reset a Corrupt Test Database
+
+```bash
+./ops/icbops testing stop && ./ops/icbops testing start
 ```
 
-### 3. Create Schema Manually
-
-```sql
--- Connect to database and create schema
-CREATE SCHEMA IF NOT EXISTS ichrisbirch_test;
-ALTER USER icb_app SET search_path TO ichrisbirch_test;
-```
+The test Postgres keeps its data on tmpfs, so stopping the container empties it
+and starting it initializes it again. Never repair it with `psql`, an alembic
+stamp, or raw SQL. If that sequence cannot recover it, that is a CLI bug worth
+fixing rather than working around.
 
 ## Migration Issues
 
@@ -138,15 +143,16 @@ uv run alembic revision --autogenerate -m "sync with manual changes"
 **Resolution:**
 
 ```bash
-# Reset test database to match development
-docker-compose -f docker-compose.test.yml down -v
-docker-compose -f docker-compose.test.yml up -d postgres
+./ops/icbops testing stop && ./ops/icbops testing start
+```
 
-# Wait for database to be ready
-sleep 10
+That empties the tmpfs database, brings it back up and initializes it. pytest
+then migrates it to head at session setup.
 
-# Run migrations
-docker-compose -f docker-compose.test.yml run test-runner uv run alembic upgrade head
+Dev is the persistent side, so it drifts rather than the test database:
+
+```bash
+./ops/icbops dev db init
 ```
 
 ## Performance Issues
@@ -316,10 +322,10 @@ SELECT conname, contype FROM pg_constraint WHERE contype = 'f';
 
 ```bash
 # Backup database before repairs
-docker-compose exec postgres pg_dump -U icb_app ichrisbirch > backup.sql
+docker compose exec postgres pg_dump -U icb_app ichrisbirch > backup.sql
 
 # Run integrity checks
-docker-compose exec postgres psql -U icb_app -d ichrisbirch -c "
+docker compose exec postgres psql -U icb_app -d ichrisbirch -c "
 VACUUM ANALYZE;
 REINDEX DATABASE ichrisbirch;
 "
@@ -346,20 +352,26 @@ REINDEX DATABASE ichrisbirch;
 
 #### 1. Environment Variable Differences
 
+Each environment loads its own `.env`, and `.env.example` lists every key. A
+key present in one file and absent from another is the usual cause.
+
+Production's `.env` comes from the SOPS-encrypted source, so compare against
+that rather than reading it off the host:
+
 ```bash
-# Check environment variables in containers
-docker-compose exec app env | grep -i postgres
-docker-compose -f docker-compose.prod.yml exec app env | grep -i postgres
+sops --decrypt secrets/secrets.prod.enc.env | rg -i postgres
+rg -i postgres .env.example
 ```
 
-#### 2. Different PostgreSQL Versions
+#### 2. PostgreSQL Version Drift
 
-```yaml
-# Pin PostgreSQL version in docker-compose
-services:
-  postgres:
-    image: postgres:15.4  # Specific version instead of 'latest'
-```
+Every compose file pins `postgres:16-alpine`, and the Dockerfiles install the
+matching `postgresql-client-16`. Debian 12 ships client 15, so that client
+comes from the PostgreSQL project's apt repository rather than Debian's.
+
+A version mismatch means one of those pins was changed alone. `pg_dump` from a
+client older than the server refuses to run, which is where it usually
+surfaces.
 
 #### 3. Missing Extensions
 
@@ -400,7 +412,7 @@ DATABASE_URL = "postgresql://user:pass@host:5432/db?sslmode=require&sslcert=clie
 
 ```bash
 # Create backup with custom format
-docker-compose exec postgres pg_dump \
+docker compose exec postgres pg_dump \
   -U icb_app \
   -d ichrisbirch \
   -f /backup/ichrisbirch_$(date +%Y%m%d_%H%M%S).dump \
@@ -408,7 +420,7 @@ docker-compose exec postgres pg_dump \
   --verbose
 
 # Create SQL backup
-docker-compose exec postgres pg_dump \
+docker compose exec postgres pg_dump \
   -U icb_app \
   -d ichrisbirch \
   -f /backup/ichrisbirch_$(date +%Y%m%d_%H%M%S).sql \
@@ -419,7 +431,7 @@ docker-compose exec postgres pg_dump \
 
 ```bash
 # Restore from custom format
-docker-compose exec postgres pg_restore \
+docker compose exec postgres pg_restore \
   -U icb_app \
   -d ichrisbirch_restored \
   --clean --create \
@@ -427,7 +439,7 @@ docker-compose exec postgres pg_restore \
   /backup/ichrisbirch_20231201_120000.dump
 
 # Restore from SQL
-docker-compose exec postgres psql \
+docker compose exec postgres psql \
   -U icb_app \
   -d ichrisbirch_restored \
   -f /backup/ichrisbirch_20231201_120000.sql

@@ -1,525 +1,277 @@
 # Deployment Troubleshooting
 
-This document covers issues encountered during deployment and production operations of the iChrisBirch project.
+Production is [blue/green](../blue-green-deployment.md). Infrastructure —
+Traefik, PostgreSQL, Redis — runs as `icb-infra` and stays up. App services run
+as `icb-blue` or `icb-green`. A deploy starts the color that is not live.
 
-## Service Recovery
+Everything that changes production goes through the deploy pipeline. Reading
+logs and container status over SSH is fine. The manual sequences on this page
+are for a host where the pipeline itself cannot run.
 
-Production uses [blue/green deployment](../blue-green-deployment.md). Infrastructure (Traefik, PostgreSQL, Redis) runs in `icb-infra`, app services run as `icb-blue` or `icb-green`.
+## Service recovery
 
-### Quick Service Recovery
-
-#### 1. Check Deployment State
+### Find out what is live
 
 ```bash
-# What color is active? What's running?
-icbops prod deploy-status
+icbops prod deploy-status      # which color, and the sha it is running
+icbops prod status             # container state
+icbops prod logs deploy        # what the last deploy did
+```
 
-# Check all containers
-docker ps -a | grep icb
+### Restart or roll back
 
-# Check deploy logs
+```bash
+icbops prod restart            # active color plus infrastructure
+icbops prod rollback           # switch traffic back to the previous color
+```
+
+`rollback` is the response to a deploy that passed its health checks and then
+broke something. The previous color's containers are still up during the grace
+period, so the switch is a routing change rather than a rebuild.
+
+### Verify
+
+```bash
+icbops prod health
+icbops prod smoke              # every endpoint
+icbops prod apihealth
+```
+
+## A deploy failed
+
+`scripts/deploy-homelab.sh` logs a structured `FAILURE_STEP` for every stage, so
+the deploy log names which one stopped it. These are the literal values, in the
+order the script sets them, so each one greps the log directly.
+
+```text
+  on the host, before any color is touched
+    prerequisites ──► decrypt_secrets ──► git_pull
+                                              │
+  the new color                               ▼
+    determine_colors ──► infra_startup ──► pull ──► start_containers
+                                                          │
+                                                          ▼
+    switch_traffic ◄── smoke_tests ◄── migrations ◄── health_check
+           │
+           ▼
+    tear down the old color, after a grace period
+```
+
+A failure at any stage before `switch_traffic` leaves the live color serving
+traffic. The script tears down the half-started color and exits, and the site
+never noticed. The fix is to land a commit, not to intervene on the host.
+
+`migrations` is the one earlier stage that still touches shared state, because
+it runs against the same database the live color is using.
+
+### It failed before choosing a color
+
+`prerequisites`, `decrypt_secrets` and `git_pull` run on the host before
+blue/green begins, so a failure here means nothing was deployed and nothing
+changed.
+
+`decrypt_secrets` exits for three reasons and names which in `FAILURE_OUTPUT`:
+`sops` is not installed, `secrets/secrets.prod.enc.env` is missing, or the
+decrypt itself failed. The third means the age private key at
+`~/.config/sops/age/keys.txt` is absent or wrong, which is what a host rebuild
+leaves behind when the key was not copied across.
+
+`git_pull` exits when `git fetch origin main` or `git pull origin main` fails.
+A dirty checkout is the usual cause, and it means something edited a tracked
+file in `/srv/ichrisbirch/` by hand.
+
+### Images failed to pull
+
+Production does not build. `.github/workflows/release.yml` builds both images
+and pushes them to `ghcr.io/datapointchris/`, tagged `sha-<commit>` and
+`latest`. A pull failure means that workflow did not finish, or the host cannot
+reach GHCR.
+
+Check the workflow run before looking at the host. A red `Release` run is the
+whole explanation.
+
+### The build failed in CI
+
+Dev and test read Python code from a bind mount, so they never exercise the
+`COPY . /app` that the production target does. A file missing from git, or
+excluded by `.dockerignore`, passes both and fails the release build.
+
+Reproduce it locally:
+
+```bash
+./ops/icbops prod build-test
+```
+
+### Containers never became healthy
+
+The script waits on Docker health checks. The API's is a `curl` against
+`/health`, which needs Postgres and Redis reachable first.
+
+```bash
+icbops prod logs api
 icbops prod logs deploy
 ```
 
-#### 2. Restart Services
+A container that starts and immediately exits is usually a configuration fault
+rather than a code fault. Check that `.env` on the host decrypts and holds
+every key `.env.example` lists.
+
+### Migrations failed
+
+Migrations run after the new color is healthy and before routing switches. A
+failure here leaves the old color serving traffic against a database the new
+code may have partly migrated.
+
+Migrations must be backward-compatible for exactly this reason. The old color
+is still running against the same database throughout. A migration that drops a
+column the live code reads takes the site down at the moment it succeeds, not
+at the moment it fails.
+
+Split a destructive change across two deploys. The first adds and backfills.
+The second removes what nothing reads any more.
+
+### Smoke tests failed
+
+`icbops prod smoke` runs the same checks by hand. They exercise the new color
+directly, before it takes traffic. A failure here means the switch never
+happened and production is still serving the old color.
+
+## Environment variables
+
+One `.env` per environment, loaded by `python-dotenv`. Production's is
+generated from the SOPS-encrypted `secrets/secrets.prod.enc.env`:
 
 ```bash
-# Restart active color + infrastructure
-icbops prod restart
-
-# If a deploy failed and left the site down, rollback:
-icbops prod rollback
-
-# Emergency: fall back to legacy single-compose (causes brief downtime)
-icbops prod legacy-rebuild
+sops secrets/secrets.prod.enc.env
 ```
 
-#### 3. Verify Recovery
+`.env.example` lists every key. A service that starts and exits immediately,
+with a traceback naming a settings field, is a missing key rather than a bug.
+
+[Configuration](../configuration.md) covers precedence and what each key does.
+
+## Certificates
+
+Production does not manage certificates. Cloudflare Tunnel terminates TLS and
+forwards plain HTTP to Traefik on port 80, so there is nothing on the host to
+renew and no Let's Encrypt account to expire.
+
+An HTTPS error in production is a Cloudflare problem, a DNS problem, or the
+tunnel being down. It is not a certificate on the application host.
+
+Dev and test do have local certificates, generated by mkcert:
 
 ```bash
-# Test health endpoint
-curl -f http://localhost:80/health -H "Host: api.ichrisbirch.com"
-
-# Run full smoke tests
-icbops prod smoke
-
-# Check container logs
-icbops prod logs
+icbops ssl-manager info dev
+icbops ssl-manager info testing
 ```
 
-## Build and Deployment Failures
+Those live in `deploy-containers/traefik/certs/`. A browser warning on
+`app.docker.localhost` means mkcert's CA is not installed in that browser's
+trust store.
 
-### Docker Build Failures
+## Routing
 
-**Problem:** Production builds fail during deployment.
+Traefik reads two sources. `routing.yml` is git-tracked and holds routers and
+middlewares. `services.yml` is generated by
+`scripts/generate-services-yml.sh` and points at the active color.
 
-**Common Causes:**
-
-1. **Dependency conflicts**
-2. **Missing environment variables**
-3. **Resource limitations**
-
-**Diagnosis:**
+A path that 404s in production but works in dev is usually a missing Vue path.
+Traefik decides between the SPA and the API by prefix, and the prefixes come
+from `deploy-containers/traefik/vue-paths.txt`:
 
 ```bash
-# Build with verbose output
-docker-compose -f docker-compose.prod.yml build --no-cache --progress=plain
-
-# Check build context
-docker build --dry-run .
-
-# Verify Dockerfile syntax
-docker build --target=production .
+# add the path to vue-paths.txt, then
+icbops routing generate
 ```
 
-**Resolution:**
+That regenerates all three environments' routing files. Commit them.
+
+## Database
+
+### Connectivity
 
 ```bash
-# Clear Docker cache
-docker system prune -f
-docker builder prune -f
-
-# Rebuild with no cache
-docker-compose -f docker-compose.prod.yml build --no-cache
-
-# Check resource usage
-docker system df
+icbops prod status             # is postgres healthy
+icbops prod logs postgres
 ```
 
-### Environment Variable Issues
+Infrastructure is a separate compose project from the app, and both attach to
+the same external network. So a color that cannot reach Postgres is a network
+problem rather than a dead database.
 
-**Problem:** Services fail due to missing or incorrect environment variables.
+### Restore
 
-**Diagnosis:**
+`scripts/bootstrap-homelab.sh` has the restore path, as part of standing a host
+up. It takes a dump file and runs `pg_restore` against the infrastructure
+Postgres:
 
 ```bash
-# Check environment in container
-docker-compose -f docker-compose.prod.yml exec app env | grep -i postgres
-
-# Verify environment file
-cat .env.prod
+docker exec -i icb-infra-postgres \
+  pg_restore -U icb_app -d ichrisbirch --no-owner < <dump-file>
 ```
 
-**Resolution:**
+Backups go to S3, which is the only thing this project uses AWS for. The AWS
+CLI is installed by the bootstrap script for that purpose, and
+`aws sts get-caller-identity` confirms the host's credentials work.
 
-Ensure all required variables are set:
+## Everything is down
+
+Use this only when `icbops` itself cannot run. It is the sequence
+`icbops prod start` performs.
 
 ```bash
-# .env.prod
-DATABASE_URL=postgresql://user:pass@postgres:5432/ichrisbirch
-API_URL=https://yourdomain.com/api
-FLASK_ENV=production
-SECRET_KEY=your-secret-key-here
-```
-
-## SSL/TLS Certificate Issues
-
-### Certificate Expiration
-
-**Problem:** SSL certificates expire causing HTTPS errors.
-
-**Diagnosis:**
-
-```bash
-# Check certificate expiration
-echo | openssl s_client -connect yourdomain.com:443 | openssl x509 -noout -dates
-
-# Check Let's Encrypt certificates
-sudo certbot certificates
-```
-
-**Resolution:**
-
-```bash
-# Renew certificates
-sudo certbot renew
-
-# Test renewal
-sudo certbot renew --dry-run
-
-# Restart nginx to load new certificates
-docker-compose -f docker-compose.prod.yml restart nginx
-```
-
-### Certificate Installation Issues
-
-**Problem:** New certificates not being recognized.
-
-**Resolution:**
-
-```bash
-# Update nginx configuration
-docker-compose -f docker-compose.prod.yml exec nginx nginx -t
-
-# Reload nginx configuration
-docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
-
-# Restart nginx service
-docker-compose -f docker-compose.prod.yml restart nginx
-```
-
-## Database Deployment Issues
-
-### Migration Failures
-
-**Problem:** Database migrations fail during deployment.
-
-**Safe Migration Process:**
-
-```bash
-# 1. Backup database first
-docker-compose -f docker-compose.prod.yml exec postgres pg_dump \
-  -U icb_app ichrisbirch > backup_$(date +%Y%m%d_%H%M%S).sql
-
-# 2. Test migrations on backup
-docker-compose -f docker-compose.test.yml run test-runner \
-  uv run alembic upgrade head
-
-# 3. Apply to production
-docker-compose -f docker-compose.prod.yml exec app \
-  uv run alembic upgrade head
-
-# 4. Verify migration
-docker-compose -f docker-compose.prod.yml exec app \
-  uv run python -c "
-from ichrisbirch.database import get_sqlalchemy_session
-with get_sqlalchemy_session() as session:
-    print('Migration successful')
-"
-```
-
-### Database Connection Issues
-
-**Problem:** Application cannot connect to production database.
-
-**Diagnosis:**
-
-```bash
-# Test database connectivity
-docker-compose -f docker-compose.prod.yml exec app \
-  pg_isready -h postgres -p 5432
-
-# Check database logs
-docker-compose -f docker-compose.prod.yml logs postgres
-```
-
-## Performance Issues
-
-### High Resource Usage
-
-**Problem:** Production services consuming too many resources.
-
-**Monitoring:**
-
-```bash
-# Check container resource usage
-docker stats
-
-# Check system resources
-htop
-df -h
-free -h
-```
-
-**Resolution:**
-
-```yaml
-# docker-compose.prod.yml - Set resource limits
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '0.5'
-        reservations:
-          memory: 512M
-          cpus: '0.25'
-```
-
-### Slow Response Times
-
-**Problem:** Application responding slowly to requests.
-
-**Diagnosis:**
-
-```bash
-# Check response times
-curl -w "@curl-format.txt" -o /dev/null -s http://yourdomain.com/
-
-# Where curl-format.txt contains:
-#     time_namelookup:  %{time_namelookup}\n
-#        time_connect:  %{time_connect}\n
-#     time_appconnect:  %{time_appconnect}\n
-#    time_pretransfer:  %{time_pretransfer}\n
-#       time_redirect:  %{time_redirect}\n
-#  time_starttransfer:  %{time_starttransfer}\n
-#                     ----------\n
-#          time_total:  %{time_total}\n
-```
-
-## Load Balancer and Proxy Issues
-
-### Nginx Configuration Problems
-
-**Problem:** Nginx proxy not routing requests correctly.
-
-**Common Issues:**
-
-1. **Upstream server unavailable**
-2. **Wrong proxy configuration**
-3. **SSL termination issues**
-
-**Diagnosis:**
-
-```bash
-# Test nginx configuration
-docker-compose -f docker-compose.prod.yml exec nginx nginx -t
-
-# Check nginx logs
-docker-compose -f docker-compose.prod.yml logs nginx
-
-# Test upstream connectivity
-docker-compose -f docker-compose.prod.yml exec nginx \
-  curl -f http://app:8000/health
-```
-
-## Backup and Recovery
-
-### Automated Backup Failures
-
-**Problem:** Scheduled backups are failing.
-
-**Check Backup Status:**
-
-```bash
-# Check backup cron job
-crontab -l
-
-# Check backup logs
-tail -f /var/log/backup.log
-
-# Test backup script manually
-./scripts/backup.sh
-```
-
-**Backup Recovery Process:**
-
-```bash
-# List available backups
-ls -la /backup/
-
-# Test backup integrity
-pg_restore --list backup_20231201_120000.dump
-
-# Restore from backup if needed
-docker-compose -f docker-compose.prod.yml down
-docker volume rm ichrisbirch_postgres_data
-docker-compose -f docker-compose.prod.yml up -d postgres
-
-# Wait for postgres to be ready
-sleep 30
-
-# Restore data
-docker-compose -f docker-compose.prod.yml exec postgres \
-  pg_restore -U icb_app -d ichrisbirch \
-  /backup/backup_20231201_120000.dump
-```
-
-## Monitoring and Alerting
-
-### Health Check Failures
-
-**Problem:** Health check endpoints returning errors.
-
-**Diagnosis:**
-
-```bash
-# Test health endpoints
-curl -f http://yourdomain.com/health
-curl -f http://yourdomain.com/api/health
-
-# Check internal health
-docker-compose -f docker-compose.prod.yml exec app \
-  curl -f http://localhost:8000/health
-```
-
-**Health Check Implementation:**
-
-```python
-# In your application
-from fastapi import FastAPI, HTTPException
-from ichrisbirch.database import get_sqlalchemy_session
-
-app = FastAPI()
-
-@app.get("/health")
-async def health_check():
-    """Comprehensive health check."""
-    try:
-        # Test database connection
-        with get_sqlalchemy_session() as session:
-            session.execute("SELECT 1")
-
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Unhealthy: {str(e)}")
-```
-
-### Log Management
-
-**Problem:** Logs growing too large or not being rotated.
-
-**Log Rotation Setup:**
-
-```bash
-# Create logrotate configuration
-sudo tee /etc/logrotate.d/ichrisbirch << EOF
-/var/log/ichrisbirch/*.log {
-    daily
-    rotate 30
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 0644 root root
-    postrotate
-        docker-compose -f docker-compose.prod.yml restart app
-    endscript
-}
-EOF
-```
-
-## Disaster Recovery Procedures
-
-### Complete Service Recovery
-
-**When everything is down:**
-
-```bash
-# 1. Check system resources
+# 1. Is it a resource problem
 df -h
 free -h
 docker system df
 
-# 2. Clean up if needed
+# 2. Reclaim space if needed
 docker system prune -f
 
-# 3. Start infrastructure first (postgres, redis, traefik)
+# 3. Infrastructure first
 cd /srv/ichrisbirch
 docker compose --project-name icb-infra -f docker-compose.infra.yml up -d
 
-# 4. Wait for postgres/redis to be healthy
+# 4. Wait for Postgres
 docker inspect --format='{{.State.Health.Status}}' icb-infra-postgres
 
-# 5. Start the active color's app services
+# 5. The active color's app services
 COLOR=$(cat /var/lib/ichrisbirch/bluegreen-state)
-DEPLOY_COLOR=$COLOR docker compose --project-name icb-$COLOR -f docker-compose.app.yml up -d
+DEPLOY_COLOR=$COLOR docker compose \
+  --project-name "icb-$COLOR" -f docker-compose.app.yml up -d
 
-# 6. Verify services
+# 6. Verify
 icbops prod health
 icbops prod smoke
 ```
 
-If blue/green state is missing or corrupted, use the legacy fallback:
+Where `/var/lib/ichrisbirch/bluegreen-state` is missing or unreadable, there is
+no active color to bring back. `icbops prod legacy-rebuild` runs the
+single-compose path instead, which causes downtime and is a last resort.
 
-```bash
-icbops prod legacy-rebuild
-```
+## Logs
 
-### Data Recovery
+Two hosts carry logs. The application host runs the containers, and the webhook
+host receives the push notification and triggers the deploy.
 
-**If data is corrupted or lost:**
+| What              | Where                                      |
+| ----------------- | ------------------------------------------ |
+| Application       | `/srv/ichrisbirch/logs/`, application host |
+| Deploy events     | `icbops prod logs deploy`                  |
+| Build output      | `icbops prod logs build`                   |
+| Webhook receipt   | `/opt/webhooks/logs/`, webhook host        |
+| One service, live | `icbops prod logs <service>`               |
 
-```bash
-# 1. Stop application immediately
-docker-compose -f docker-compose.prod.yml stop app
+A deploy that never started is a webhook-host question. A deploy that started
+and failed is an application-host one.
 
-# 2. Assess damage
-docker-compose -f docker-compose.prod.yml exec postgres \
-  psql -U icb_app -c "SELECT COUNT(*) FROM users;"
+Python logs through structlog, as JSON in production. Requests carry an
+`X-Request-ID`, so one request's path through the API is greppable by that id.
 
-# 3. Restore from most recent backup
-# (Use backup recovery procedure)
+## Related
 
-# 4. Verify data integrity
-# (Run data validation queries)
-
-# 5. Resume service
-docker-compose -f docker-compose.prod.yml start app
-```
-
-## Prevention and Monitoring
-
-### Deployment Checklist
-
-Before each deployment:
-
-- [ ] Run tests in staging environment
-- [ ] Backup production database
-- [ ] Verify environment variables
-- [ ] Test migration scripts
-- [ ] Check disk space and resources
-- [ ] Verify SSL certificate validity
-- [ ] Update deployment documentation
-
-### Monitoring Setup
-
-**Essential monitoring:**
-
-```bash
-# System monitoring
-htop
-iotop
-nethogs
-
-# Docker monitoring
-docker stats
-docker system df
-
-# Application monitoring
-curl -f http://yourdomain.com/health
-```
-
-**Automated monitoring script:**
-
-```bash
-#!/bin/bash
-# scripts/monitor.sh
-
-# Check service health
-check_service() {
-    if curl -f -s http://localhost/$1/health > /dev/null; then
-        echo "✓ $1 service healthy"
-    else
-        echo "✗ $1 service unhealthy"
-        # Send alert here
-    fi
-}
-
-check_service "api"
-check_service ""  # Main app
-
-# Check disk space
-DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
-if [ "$DISK_USAGE" -gt 80 ]; then
-    echo "⚠️  Disk usage high: ${DISK_USAGE}%"
-fi
-
-# Check memory
-MEMORY_USAGE=$(free | awk 'NR==2{print $3/$2 * 100.0}')
-if (( $(echo "$MEMORY_USAGE > 80" | bc -l) )); then
-    echo "⚠️  Memory usage high: ${MEMORY_USAGE}%"
-fi
-```
-
-Run monitoring periodically:
-
-```bash
-# Add to crontab
-*/5 * * * * /path/to/scripts/monitor.sh >> /var/log/monitoring.log 2>&1
-```
+- [Blue/green deployment](../blue-green-deployment.md)
+- [Docker troubleshooting](docker-issues.md)
+- [Database troubleshooting](database-issues.md)
+- [Configuration](../configuration.md)
