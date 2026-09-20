@@ -24,8 +24,12 @@ a drawing or as nodes and edges under `--json`.
 The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 `articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
 takes `{list,show,search,create,edit,delete}` plus the verbs its own domain needs
-— `articles current` and `articles read`, `habits complete`, the recipe
-suggest/import flows, `strains vocabulary`.
+— `articles current` and `articles read`, `habits complete` and `habits today`,
+the recipe suggest/import flows, `strains vocabulary`.
+
+`habits today` is the day's board: every habit you currently track, marked done
+or still due, ordered by category. It takes no `--limit`, because the set is
+what you owe today and a cap can only hide one of them.
 
 `strains` is the one whose closed vocabularies are fetched rather than compiled
 in. `--type`, `--status`, `--effect`, `--flavor` and `--terpene` are all lookup
@@ -98,11 +102,15 @@ Client id is per (machine × app): `icb-cli-<shorthostname>`.
 
 ## `icb overview` — the cross-cutting snapshot
 
-Every other command is `icb <resource> <verb>`. `overview` is the one composition
-command: open tasks, habits still due today, current and next reading, next and
-blocked project items, and approaching countdowns and events — fetched
-concurrently and returned as one payload, so a dashboard needs a single call
-instead of nine.
+Every other command is `icb <resource> <verb>`. `overview` is the composition
+that crosses every app: open tasks, habits still due today, current and next
+reading, next and blocked project items, and approaching countdowns and events —
+fetched concurrently and returned as one payload, so a dashboard needs a single
+call instead of nine.
+
+Its `habits` section and `icb habits today` answer the same question through one
+split, so the two agree on which habits are outstanding. They differ in reach:
+`overview` caps each section and `habits today` returns the whole board.
 
 ```bash
 icb overview                 # the human glance

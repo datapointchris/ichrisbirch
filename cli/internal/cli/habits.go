@@ -1,10 +1,14 @@
 package cli
 
 import (
+	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"slices"
+	"strconv"
 	"text/tabwriter"
 	"time"
 
@@ -31,6 +35,7 @@ func newHabitsCommand() *cobra.Command {
 	}
 	withNotFoundHints(cmd, habitHints...)
 	cmd.AddCommand(
+		newHabitsTodayCommand(),
 		newHabitsListCommand(),
 		newHabitsShowCommand(),
 		// create and edit take a category id as well as a habit id, so a 404
@@ -43,6 +48,157 @@ func newHabitsCommand() *cobra.Command {
 		newHabitsCompletedCommand(),
 	)
 	return cmd
+}
+
+// newHabitsTodayCommand is the board you read each morning. It takes no --limit:
+// the set is every habit you are currently tracking, so a cap can only hide one
+// you still owe. `icb overview` is the capped view.
+func newHabitsTodayCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "today",
+		Short: "Show today's habits — which are done and which are still due",
+		Long: "Every habit you are currently tracking, marked done or still due, ordered by\n" +
+			"category. The whole set, never an excerpt.\n\n" +
+			"A completion is matched to its habit by id. One recorded before that column\n" +
+			"existed falls back to name and category, which is all such a row carries.",
+		Example: "  icb habits today\n  icb habits today --json",
+		Args:    usageArgs(cobra.NoArgs),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			board, err := habitsTodayBoard(cmd.Context(), client, time.Now())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), board)
+			}
+			printHabitsToday(cmd.OutOrStdout(), board)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output today's habits as JSON to stdout")
+	return cmd
+}
+
+// habitsTodayBoard reads the two collections the board is composed from. The
+// completion window is wider than the day for the reason localDayWindow gives,
+// and splitHabitsByCompletion narrows it back to the local one.
+func habitsTodayBoard(ctx context.Context, client *api.Client, now time.Time) (habitSection, error) {
+	current := true
+	habits, err := client.ListHabits(ctx, &current, nil)
+	if err != nil {
+		return habitSection{}, err
+	}
+	start, end := localDayWindow(now)
+	completed, err := client.ListCompletedHabits(ctx, api.CompletedTasksQuery{StartDate: start, EndDate: end})
+	if err != nil {
+		return habitSection{}, err
+	}
+	return buildHabitsTodayBoard(habits, completed, now), nil
+}
+
+// buildHabitsTodayBoard is the pure half — no clock beyond now, no network.
+//
+// It emits habitSection, the same shape `icb overview` reports under `habits`,
+// built by the same split. A caller that learned the keys at one door reads them
+// at the other.
+func buildHabitsTodayBoard(current []api.Habit, completed []api.HabitCompleted, now time.Time) habitSection {
+	due, done := splitHabitsByCompletion(current, completed, now)
+	sortHabitsByID(due, done)
+	return habitSection{DueToday: due, CompletedToday: done, CurrentTotal: len(current)}
+}
+
+// sortHabitsByID orders both halves of a habits view by habit id. Every door that
+// reports habits calls it, so `icb habits today` and the habits section of `icb
+// overview` hand back the same rows in the same order.
+//
+// An id never changes, so a habit holds its place all day. Ticking one off moves
+// it between the halves without shuffling anything around it.
+func sortHabitsByID(due []api.Habit, done []api.HabitCompleted) {
+	slices.SortStableFunc(due, func(a, b api.Habit) int {
+		return cmp.Compare(habitPlacementID(a.ID), habitPlacementID(b.ID))
+	})
+	slices.SortStableFunc(done, func(a, b api.HabitCompleted) int {
+		return cmp.Compare(habitPlacementID(completionHabitID(a)), habitPlacementID(completionHabitID(b)))
+	})
+}
+
+// habitPlacementID is the sort key for a habit on the board. Zero means the row
+// records a completion carrying no habit_id, so there is no id to place it by and
+// it sorts after every row that has one.
+func habitPlacementID(habitID int) int {
+	if habitID == 0 {
+		return math.MaxInt
+	}
+	return habitID
+}
+
+// completionHabitID is the habit a completion records, or zero where the row
+// carries none.
+func completionHabitID(completion api.HabitCompleted) int {
+	if completion.HabitID == nil {
+		return 0
+	}
+	return *completion.HabitID
+}
+
+// habitTodayRow is one line of the board. ID is the habit's, and is zero for a
+// completion that carries no habit_id — a legacy row, or one whose habit has been
+// deleted. That is the only row the board cannot hand a handle back for.
+type habitTodayRow struct {
+	ID       int
+	Category string
+	Name     string
+	Done     bool
+}
+
+// habitsTodayRows interleaves the due and done halves into one board by id, so a
+// finished habit keeps its row rather than moving to a trailing block.
+func habitsTodayRows(section habitSection) []habitTodayRow {
+	rows := make([]habitTodayRow, 0, len(section.DueToday)+len(section.CompletedToday))
+	for _, habit := range section.DueToday {
+		rows = append(rows, habitTodayRow{ID: habit.ID, Category: habit.Category.Name, Name: habit.Name})
+	}
+	for _, completion := range section.CompletedToday {
+		row := habitTodayRow{Category: completion.Category.Name, Name: completion.Name, Done: true}
+		if completion.HabitID != nil {
+			row.ID = *completion.HabitID
+		}
+		rows = append(rows, row)
+	}
+	slices.SortStableFunc(rows, func(a, b habitTodayRow) int {
+		return cmp.Compare(habitPlacementID(a.ID), habitPlacementID(b.ID))
+	})
+	return rows
+}
+
+// printHabitsToday renders the board. The header sentence is the one printHabitSection
+// prints inside `icb overview`, because it reports the same two numbers.
+func printHabitsToday(out io.Writer, section habitSection) {
+	_, _ = fmt.Fprintf(out, "Habits (%d of %d done today)\n", len(section.CompletedToday), section.CurrentTotal)
+	rows := habitsTodayRows(section)
+	if len(rows) == 0 {
+		_, _ = fmt.Fprintln(out, "No current habits. Start one with `icb habits create --name ... --category ...`.")
+		return
+	}
+	_, _ = fmt.Fprintln(out)
+	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tDONE\tCATEGORY")
+	for _, row := range rows {
+		id := ""
+		if row.ID != 0 {
+			id = strconv.Itoa(row.ID)
+		}
+		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", id, row.Name, yesNo(row.Done), row.Category)
+	}
+	_ = tw.Flush()
+	if len(section.DueToday) > 0 {
+		_, _ = fmt.Fprintln(out, "\nComplete one with `icb habits complete <id>`.")
+	}
 }
 
 func newHabitsListCommand() *cobra.Command {
@@ -425,9 +581,9 @@ func printHabitsTable(out io.Writer, habits []api.Habit) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tCURRENT\tCATEGORY\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tCURRENT\tCATEGORY")
 	for _, h := range habits {
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", h.ID, yesNo(h.IsCurrent), h.Category.Name, h.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", h.ID, h.Name, yesNo(h.IsCurrent), h.Category.Name)
 	}
 	_ = tw.Flush()
 }
@@ -445,9 +601,9 @@ func printHabitCategoriesTable(out io.Writer, categories []api.HabitCategory) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tCURRENT\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tCURRENT")
 	for _, c := range categories {
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\n", c.ID, yesNo(c.IsCurrent), c.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\n", c.ID, c.Name, yesNo(c.IsCurrent))
 	}
 	_ = tw.Flush()
 }
@@ -458,9 +614,9 @@ func printHabitCompletedTable(out io.Writer, completed []api.HabitCompleted) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tDATE\tCATEGORY\tNAME")
+	_, _ = fmt.Fprintln(tw, "ID\tNAME\tDATE\tCATEGORY")
 	for _, c := range completed {
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.CompleteDate.Format("2006-01-02"), c.Category.Name, c.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.Name, c.CompleteDate.Format("2006-01-02"), c.Category.Name)
 	}
 	_ = tw.Flush()
 }

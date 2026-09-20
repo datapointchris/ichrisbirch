@@ -323,6 +323,9 @@ func systemicOverviewFailure(failures []sectionFailure, total int) error {
 // filtering, ordering, and capping rules are directly testable.
 func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	dueHabits, doneHabits := splitHabitsByCompletion(data.CurrentHabits, data.CompletedHabits, now)
+	// Ordered before the cap, so --limit takes the lowest ids rather than whatever
+	// order the API happened to answer in.
+	sortHabitsByID(dueHabits, doneHabits)
 	nextItems := overviewProjectItems(data.Items, data.BlockedItems)
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
@@ -396,8 +399,12 @@ func localDayWindow(now time.Time) (string, string) {
 // A completion carrying habit_id is matched by it, so renaming a habit does not
 // make it read as due again. A completion without that column — and one whose
 // habit has been deleted — falls back to name + category, which is all it has.
+//
+// Both halves are allocated rather than declared, so an empty one marshals as []
+// and never as null. Every caller of this puts its result straight into a --json
+// payload, where a null collection is a shape the reader has to branch on.
 func splitHabitsByCompletion(current []api.Habit, completed []api.HabitCompleted, now time.Time) ([]api.Habit, []api.HabitCompleted) {
-	var doneToday []api.HabitCompleted
+	doneToday := make([]api.HabitCompleted, 0, len(completed))
 	doneByID := make(map[int]bool)
 	doneByName := make(map[string]bool)
 	for _, completion := range completed {
@@ -412,7 +419,7 @@ func splitHabitsByCompletion(current []api.Habit, completed []api.HabitCompleted
 		}
 	}
 
-	var due []api.Habit
+	due := make([]api.Habit, 0, len(current))
 	for _, habit := range current {
 		if doneByID[habit.ID] || doneByName[habitKey(habit.Name, habit.CategoryID)] {
 			continue
