@@ -670,3 +670,21 @@ class TestHabitsDay:
 
         ids = [h['id'] for h in day['due']]
         assert ids == sorted(ids)
+
+    def test_completions_carrying_no_habit_id_come_back_newest_first(self, habit_test_data):
+        """Every one of them ties on the sort key, so the query has to break it."""
+        client = habit_test_data
+        category_id = client.get('/habits/categories/').json()[0]['id']
+        for hour, name in ((8, 'earliest'), (12, 'middle'), (20, 'latest')):
+            payload = {
+                'name': name,
+                'category_id': category_id,
+                'complete_date': dt.datetime(2020, 1, 1, hour, tzinfo=dt.UTC).isoformat(),
+            }
+            created = client.post('/habits/completed/', json=payload)
+            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+        day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()
+
+        orphans = [c['name'] for c in day['completed'] if c['habit_id'] is None]
+        assert orphans == ['latest', 'middle', 'earliest']

@@ -133,12 +133,16 @@ async def read_day(session: DbSession, date: dt.date | None = None, timezone: st
     day = date if date is not None else dt.datetime.now(zone).date()
     opens, closes = habit_day.day_bounds(day, zone)
 
-    current = list(session.scalars(select(models.Habit).filter(models.Habit.is_current.is_(True))).all())
+    # `placement` ties every completion carrying no `habit_id`, and `list.sort`
+    # is stable, so an unordered SELECT would leave their order to the planner.
+    # Newest first is what `/habits/completed/` already answers.
+    current = list(session.scalars(select(models.Habit).filter(models.Habit.is_current.is_(True)).order_by(models.Habit.id)).all())
     completed = list(
         session.scalars(
             select(models.HabitCompleted)
             .filter(models.HabitCompleted.complete_date >= opens)
             .filter(models.HabitCompleted.complete_date < closes)
+            .order_by(models.HabitCompleted.complete_date.desc())
         ).all()
     )
 
