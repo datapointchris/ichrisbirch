@@ -1,73 +1,85 @@
 # Testing Configuration
 
-This document explains the updated approach to handling configuration in the testing environment.
+Tests build their settings in code rather than reading a test `.env`. There is
+one `.env` per environment, and the test suite does not use one.
 
-## Key Changes
+## `test_settings` is the whole configuration
 
-1. Eliminated the need for the `ENVIRONMENT` variable
-2. Moved to a single `.env` file approach
-3. Hardcoded test settings for more reliable testing
-4. Removed the environment-specific `.dev.env`, `.test.env`, and `.prod.env` files
-
-## How It Works
-
-### Test Settings
-
-Test settings are now defined in a centralized location:
+`get_test_runner_settings()` in `tests/utils/database.py` deep-copies the
+process settings and overrides everything that points at a service:
 
 ```python
-# In tests/utils/test_settings.py
-TEST_ENV_VARS = {
-    "ENVIRONMENT": "testing",
-    "PROTOCOL": "http",
-    # ... more hardcoded test settings
-}
+def get_test_runner_settings() -> Settings:
+    test_settings = copy.deepcopy(get_settings())
+    test_settings.ENVIRONMENT = 'testing'
+    test_settings.protocol = 'http'
+    test_settings.postgres.host = 'localhost'
+    test_settings.postgres.port = 5434
+    ...
+    return test_settings
+
+
+test_settings = get_test_runner_settings()
 ```
 
-These settings are used consistently throughout the test environment. This eliminates the need to set the `ENVIRONMENT` variable and makes tests more reliable.
+That module-level `test_settings` is what every fixture imports. `conftest.py`
+passes it to `create_api`, to `DockerComposeTestEnvironment`, to
+`truncate_all_tables` and to `create_session`, so one object decides what the
+whole suite talks to.
 
-### Accessing Test Settings
+The deep copy matters. The overrides mutate a `Settings` instance, and without
+it they would reach back into the cached object `get_settings()` hands every
+other caller in the process.
 
-To get test settings, use:
+## Everything points at published ports on localhost
 
-```python
-from tests.utils.settings import get_test_settings
+| Setting             | Value       |
+| ------------------- | ----------- |
+| `postgres.host`     | `localhost` |
+| `postgres.port`     | 5434        |
+| `sqlalchemy.port`   | 5434        |
+| `fastapi.host`      | `localhost` |
+| `fastapi.port`      | 8001        |
+| `redis.port`        | 6380        |
+| `protocol`          | `http`      |
 
-settings = get_test_settings()
-```
+pytest runs on the host, not in a container, so Docker DNS names like
+`postgres` do not resolve for it. It reaches each service through the port that
+`docker-compose.test.yml` publishes.
 
-This function returns a Settings object initialized with the hardcoded test values, not environment variables or `.env` files.
+`protocol` is `http` because the suite talks to the API directly on 8001 rather
+than through Traefik. Playwright's end-to-end tests are the exception: they go
+through Traefik on 8443, over HTTPS, which is what makes a CORS or middleware
+fault visible.
 
-### Production Settings
+Postgres credentials are `postgres`/`postgres`. The test database is disposable
+and its container publishes only to localhost.
 
-In production, settings are now loaded from a single `.env` file in the project root, instead of using environment-specific files. This simplifies deployment and configuration.
-
-### Running Tests
-
-To run tests, you no longer need to set the `ENVIRONMENT` variable:
+## Running tests
 
 ```bash
-# Old approach (no longer needed)
-ENVIRONMENT=testing poetry run pytest
-
-# New approach
-poetry run pytest
+./ops/icbops test run
+./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
 ```
 
-Tests will automatically use the hardcoded test settings.
+`ENVIRONMENT` does not need setting. `test_settings` sets it, and it sets it
+after the copy, so whatever the shell holds is irrelevant.
 
-## Benefits
+`test run` starts the containers if they are down and waits for health checks.
 
-1. **Reliability**: Tests are no longer affected by the environment they run in
-2. **Simplicity**: No need to manage multiple `.env` files
-3. **Consistency**: All tests use the same configuration
-4. **Isolation**: Test environment is isolated from production environment
+## What this buys
 
-## Implementation Details
+A test run does not depend on the shell it was launched from, on a `.env` that
+may or may not be current, or on which environment was last brought up. The
+values are in version control, next to the fixtures that use them.
 
-The key implementation changes are:
+It also means changing a test port is a two-file change:
+`docker-compose.test.yml` publishes it and `get_test_runner_settings` connects
+to it. A mismatch shows up as a connection refused at session setup rather than
+as a failing assertion.
 
-1. `get_settings()` function in `config.py` now accepts a `test_mode` parameter
-2. When `test_mode=True`, it uses hardcoded test settings instead of loading from `.env` files
-3. TestEnvironment class uses these settings for the test infrastructure
-4. All test fixtures and utilities use the same settings consistently
+## Related
+
+- [Test Environment](environment.md)
+- [Fixtures](fixtures.md)
+- [Configuration](../configuration.md)

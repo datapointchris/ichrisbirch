@@ -14,27 +14,33 @@ We now have detailed documentation for the testing infrastructure:
 
 ## Running Tests
 
-In order to run pytest, you have to set `ENVIRONMENT=development` so that the config can pick it up and set the correct variables.
-Note: Config is not actually setting anything in tests, but the config is called in some of the files that are imported and it will error if not set.
+```bash
+./ops/icbops test run
+./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
+```
 
-### Dev Testing on Mac
+`test run` starts the test containers if they are down and waits for their
+health checks, so no manual start is needed first.
 
-- Make sure to change `/etc/hosts` file:
-  `127.0.0.1   localhost` --> `127.0.0.1 localhost api.localhost books.localhost`
+`ENVIRONMENT` does not need setting. `test_settings` in
+`tests/utils/database.py` sets it to `testing` on a copy of the process
+settings, so whatever the shell holds is irrelevant.
+[Testing Configuration](test_configuration.md) covers the rest of what it
+overrides.
 
-Docroot is: /usr/local/var/www
+### Local DNS
 
-The default port has been set in /usr/local/etc/nginx/nginx.conf to 8080 so that
-nginx can run without sudo.
+Traefik routes by host name, so the browser and Playwright need these
+resolving:
 
-nginx will load all files in /usr/local/etc/nginx/servers/.
+```bash
+grep docker.localhost /etc/hosts
+```
 
-To restart nginx after an upgrade:
-  brew services restart nginx
-Or, if you don't want/need a background service you can just run:
-  /usr/local/opt/nginx/bin/nginx -g daemon off;
+[Quick Start](../quick-start.md) has the entries to add. pytest itself does not
+need them — it reaches the API on a published port rather than through Traefik.
 
 ### `pytest-xdist`
 
-This plugin does not work with the current configuration (08/28/2024) using a local Docker Postgres and running the app, api, and postgres in a separate thread.
-`pytest-xdist` bypasses the start of the docker container and all tests fail.
+Do not add it. The session fixture starts the Docker Compose stack once, and
+xdist would run that startup per worker against one set of ports.
