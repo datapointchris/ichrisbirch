@@ -54,7 +54,6 @@ For urgent production issues:
 - [SSL Certificates](ssl-certificates.md) — browser trust warnings, mkcert, and the OpenSSL fallback
 - [CLI Commands](cli-commands.md) — errors from the removed `traefik-*` commands and what replaced them
 - [Deployment Issues](deployment-issues.md) — prod service recovery, failed builds, cert expiry, migration failures
-- [API JWT Wrong Database](api-jwt-wrong-database.md) — empty; nothing has been written here yet
 
 ## How to Use This Guide
 
