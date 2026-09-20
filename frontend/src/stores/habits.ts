@@ -13,6 +13,7 @@ import type {
   HabitCategoryUpdate,
   HabitCompleted,
   HabitCompletedCreate,
+  HabitsDay,
 } from '@/api/client'
 
 const logger = createLogger('HabitsStore')
@@ -33,12 +34,15 @@ function todayKey(): string {
   return toDayKey(new Date())
 }
 
-/** The range covering one local day: this day's midnight to the next day's. */
-function dayRange(dayKey: string): Record<string, string> {
-  const [y, m, d] = dayKey.split('-').map(Number)
-  const start = new Date(y!, m! - 1, d!)
-  const end = new Date(y!, m! - 1, d! + 1)
-  return { start_date: start.toISOString(), end_date: end.toISOString() }
+// The IANA name of the reader's zone, which the server resolves the day
+// against. Every browser this app runs in reports one. A runtime that does not
+// leaves it off, the server reads the day in UTC, and the response says so.
+function browserZoneName(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+  } catch {
+    return undefined
+  }
 }
 
 // A day key is YYYY-MM-DD naming a real calendar day, no later than today. Throws
@@ -121,11 +125,14 @@ function getDateRange(filter: DateFilter): DateRange {
   return { start_date: start.toISOString(), end_date: tomorrow.toISOString() }
 }
 
-// habitKey identifies a habit by what a completion row without habit_id still
-// carries. The NUL separator keeps a category id from running into a name that
-// starts with a digit.
-function habitKey(name: string, categoryId: number): string {
-  return `${categoryId}\u0000${name}`
+// The board arrives ordered by habit id, and a completion carrying no habit_id
+// sorts last. A row ticked off in the browser is placed into that order rather
+// than appended, so it sits where a reload would put it.
+function byHabitPlacement(a: HabitCompleted, b: HabitCompleted): number {
+  if (a.habit_id == null || b.habit_id == null) {
+    return Number(a.habit_id == null) - Number(b.habit_id == null)
+  }
+  return a.habit_id - b.habit_id
 }
 
 function groupByCategory<T extends { category: HabitCategory }>(items: T[]): Record<string, T[]> {
@@ -152,6 +159,13 @@ export const useHabitsStore = defineStore('habits', () => {
   const habits = ref<Habit[]>([])
   const categories = ref<HabitCategory[]>([])
   const completedHabits = ref<HabitCompleted[]>([])
+
+  // The day on screen, as the server split it. Which habits a day's completions
+  // tick off is decided in the API, and the CLI and the dashboard read the same
+  // endpoint, so all three answer the question the same way.
+  const dayDue = ref<Habit[]>([])
+  const dayCompleted = ref<HabitCompleted[]>([])
+
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
   const selectedFilter = ref<DateFilter>('this_week')
@@ -176,23 +190,8 @@ export const useHabitsStore = defineStore('habits', () => {
 
   const habitsByCategory = computed(() => groupByCategory(currentHabits.value))
 
-  // A completion denormalizes the name on purpose, so a habit renamed since is not
-  // findable by it. habit_id is the identity where the row carries one; name and
-  // category are the fallback only for rows that do not, which is every completion
-  // recorded before the web client started sending the id.
-  //
-  // The fallback key carries the category because a name alone is not unique — a
-  // `Read` under Health and a `Read` under Mind are two habits, and one completion
-  // would otherwise tick off both. `splitHabitsByCompletion` in the Go CLI keys it
-  // the same way, and this is the same question asked at another door.
-  const todoHabits = computed(() => {
-    const completedIds = new Set(completedHabits.value.map((c) => c.habit_id).filter((id): id is number => id !== null && id !== undefined))
-    const unlinkedKeys = new Set(completedHabits.value.filter((c) => c.habit_id == null).map((c) => habitKey(c.name, c.category_id)))
-    const todo = currentHabits.value.filter((h) => !completedIds.has(h.id) && !unlinkedKeys.has(habitKey(h.name, h.category_id)))
-    return groupByCategory(todo)
-  })
-
-  const doneHabits = computed(() => groupByCategory(completedHabits.value))
+  const todoHabits = computed(() => groupByCategory(dayDue.value))
+  const doneHabits = computed(() => groupByCategory(dayCompleted.value))
 
   const chartData = computed(() => {
     const completed = completedHabits.value
@@ -406,6 +405,34 @@ export const useHabitsStore = defineStore('habits', () => {
     completedHabits.value = await loadCompleted(params)
   }
 
+  /** One day's board, already split and ordered by the server. */
+  async function loadDay(dayKey: string) {
+    const params: Record<string, string> = { date: dayKey }
+    const zone = browserZoneName()
+    if (zone) params.timezone = zone
+    try {
+      const response = await api.get<HabitsDay>('/habits/day/', { params })
+      logger.info('habit_day_fetched', {
+        date: response.data.date,
+        timezone: response.data.timezone,
+        due: response.data.due.length,
+        completed: response.data.completed.length,
+      })
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('habit_day_fetch_failed', { date: dayKey, detail: apiError.detail, status: apiError.status })
+      throw apiError
+    }
+  }
+
+  /** Tick a habit off the board on screen without reloading the day. */
+  function moveToDone(habitId: number, completion: HabitCompleted) {
+    dayDue.value = dayDue.value.filter((h) => h.id !== habitId)
+    dayCompleted.value = [...dayCompleted.value, completion].sort(byHabitPlacement)
+  }
+
   /** Records a completion. Throws a RangeError for a day the CLI would also refuse. */
   async function completeHabit(habit: Habit, dayKey?: string) {
     error.value = null
@@ -420,7 +447,7 @@ export const useHabitsStore = defineStore('habits', () => {
         complete_date: completionTimestamp(day, today.value),
       }
       const response = await api.post<HabitCompleted>('/habits/completed/', payload)
-      completedHabits.value.push(response.data)
+      if (day === selectedDate.value) moveToDone(habit.id, response.data)
       logger.info('habit_completed', { id: response.data.id, name: habit.name, day })
       return response.data
     } catch (e) {
@@ -435,8 +462,13 @@ export const useHabitsStore = defineStore('habits', () => {
     error.value = null
     try {
       await api.delete(`/habits/completed/${id}/`)
+      const wasOnTheDay = dayCompleted.value.some((c) => c.id === id)
       completedHabits.value = completedHabits.value.filter((c) => c.id !== id)
       logger.info('completed_deleted', { id })
+      // Putting the habit back under Due takes the habit row, and a completion
+      // denormalizes only the name it was recorded under. Reloading the day is
+      // what gets a habit renamed in between back with its current name.
+      if (wasOnTheDay) await fetchDailyData()
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
       error.value = apiError
@@ -465,13 +497,13 @@ export const useHabitsStore = defineStore('habits', () => {
     loading.value = true
     error.value = null
     try {
-      const [habitList, completedList] = await Promise.all([loadHabits({ current: true }), loadCompleted(dayRange(day))])
+      const board = await loadDay(day)
       if (token !== dayRequest) return
       selectedDate.value = day
-      habits.value = habitList
-      completedHabits.value = completedList
+      dayDue.value = board.due
+      dayCompleted.value = board.completed
     } catch {
-      // errors already set by the loaders; the day on screen does not move
+      // error already set by the loader; the day on screen does not move
     } finally {
       if (token === dayRequest) loading.value = false
     }
@@ -542,6 +574,8 @@ export const useHabitsStore = defineStore('habits', () => {
     habits,
     categories,
     completedHabits,
+    dayDue,
+    dayCompleted,
     loading,
     error,
     selectedFilter,

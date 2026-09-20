@@ -62,6 +62,8 @@ function createDailyWrapper(storeState: Record<string, unknown> = {}) {
               habits: [],
               categories: [],
               completedHabits: [],
+              dayDue: [],
+              dayCompleted: [],
               loading: false,
               error: null,
               selectedFilter: 'this_week',
@@ -79,6 +81,8 @@ function createDailyWrapper(storeState: Record<string, unknown> = {}) {
   })
 }
 
+// The daily view renders the two halves of /habits/day/ as the server split
+// them, so the state it reads is dayDue and dayCompleted.
 describe('HabitsView (Daily)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -97,10 +101,10 @@ describe('HabitsView (Daily)', () => {
 
   it('renders "All done" when todo habits are empty and completed exist', () => {
     const wrapper = createDailyWrapper({
-      habits: testHabits,
-      completedHabits: [
-        { id: 10, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-29T12:00:00Z' },
-        { id: 11, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-29T12:00:00Z' },
+      dayDue: [],
+      dayCompleted: [
+        { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-29T12:00:00Z' },
+        { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-29T12:00:00Z' },
       ],
     })
     expect(wrapper.text()).toContain('All done for today!')
@@ -108,10 +112,9 @@ describe('HabitsView (Daily)', () => {
 
   it('renders todo habits grouped by category', () => {
     const wrapper = createDailyWrapper({
-      habits: testHabits,
-      completedHabits: testCompleted,
+      dayDue: [testHabits[1]!],
+      dayCompleted: testCompleted,
     })
-    // Exercise is completed, so only Read should be in todo
     const todoColumn = wrapper.findAll('.habits__column')[0]!
     expect(todoColumn.text()).toContain('Read')
     expect(todoColumn.text()).toContain('Work')
@@ -120,8 +123,8 @@ describe('HabitsView (Daily)', () => {
 
   it('renders done habits with done CSS class', () => {
     const wrapper = createDailyWrapper({
-      habits: testHabits,
-      completedHabits: testCompleted,
+      dayDue: [testHabits[1]!],
+      dayCompleted: testCompleted,
     })
     const doneItems = wrapper.findAll('.habits__item--done')
     expect(doneItems.length).toBeGreaterThan(0)
@@ -130,8 +133,8 @@ describe('HabitsView (Daily)', () => {
 
   it('calls completeHabit when check button clicked', async () => {
     const wrapper = createDailyWrapper({
-      habits: testHabits,
-      completedHabits: [],
+      dayDue: [testHabits[0]!, testHabits[1]!],
+      dayCompleted: [],
     })
     const store = useHabitsStore()
     vi.mocked(store.completeHabit).mockResolvedValue({
@@ -242,8 +245,8 @@ describe('HabitsView (Daily)', () => {
   it('names the day rather than "today" in the empty states when off today', () => {
     const wrapper = createDailyWrapper({
       selectedDate: '2026-03-11',
-      habits: testHabits,
-      completedHabits: [
+      dayDue: [],
+      dayCompleted: [
         { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-11T12:00:00Z' },
         { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-11T12:00:00Z' },
       ],
