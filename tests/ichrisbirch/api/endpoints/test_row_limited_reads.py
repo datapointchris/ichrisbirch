@@ -48,6 +48,41 @@ LIMITED_READS = [
 
 READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 
+# Collection reads that take no limit today. This is the backlog, not a blessing:
+# most of these answer with rows that grow outside the binary and should take
+# `RowLimit`, and a few genuinely should not — `/admin/config/` answers with a
+# config block rather than a paged collection, which is not a set a cap belongs on.
+#
+# It is a ratchet. The walk below fails on a new uncapped read, so the set can
+# only shrink, and removing an entry is what capping that read looks like.
+UNCAPPED_READS = {
+    '/admin/config/',
+    '/admin/scheduler/jobs/',
+    '/admin/system/errors/',
+    '/api-keys/',
+    '/articles/failed-imports/',
+    '/articles/search/',
+    '/autofun/',
+    '/books/search/',
+    '/box-packing/items/orphans/',
+    '/box-packing/search/',
+    '/coffee/beans/',
+    '/coffee/shops/',
+    '/durations/',
+    '/money-wasted/',
+    '/project-items/blocked/',
+    '/project-items/search/',
+    '/project-items/{id}/blockers/',
+    '/project-items/{id}/projects/',
+    '/project-items/{item_id}/tasks/',
+    '/recipes/cooking-techniques/categories/',
+    '/recipes/cooking-techniques/search/',
+    '/recipes/search-by-ingredients/',
+    '/recipes/search/',
+    '/tasks/completed/',
+    '/tasks/search/',
+}
+
 # The two declarations a read may take. Both carry the floor; they differ only in
 # whether absence is a spelling the read offers.
 SHARED_LIMITS = (RowLimit, CappedRowLimit)
@@ -181,9 +216,8 @@ def test_every_read_that_takes_a_limit_declares_the_shared_one(txn_api_logged_in
     invisible in the response, which is why this asserts the declaration rather than
     a status code.
 
-    Scoped to reads that take a limit at all. Whether every collection read should
-    take one is a wider question than what zero means, and the walk above reports
-    the ones that take none.
+    Scoped to reads that take a limit at all. Which reads must take one is the
+    test below.
     """
     reads = collection_reads(txn_api_logged_in[0].app)
     taking_a_limit = {path: route for path, route in reads.items() if limit_annotation(route) is not None}
@@ -191,6 +225,23 @@ def test_every_read_that_takes_a_limit_declares_the_shared_one(txn_api_logged_in
     assert len(taking_a_limit) >= len(LIMITED_READS), 'the walk found fewer limited reads than the list above it'
     wrong = {path: limit_annotation(route) for path, route in taking_a_limit.items() if limit_annotation(route) not in SHARED_LIMITS}
     assert wrong == {}, f'reads declaring their own limit rather than a shared one: {wrong}'
+
+
+def test_every_collection_read_takes_a_limit(txn_api_logged_in):
+    """A new collection read takes a limit, and an uncapped one is named in the set.
+
+    The caller that cannot cap has to fetch the whole collection to discard most of
+    it, and nothing on screen says so. `/habits/completed/` sat like that while its
+    two sibling reads had a limit, which is the drift this catches.
+
+    Both directions are asserted, so capping a read fails here until its entry comes
+    out of UNCAPPED_READS. That is what stops the backlog being edited by accident.
+    """
+    reads = collection_reads(txn_api_logged_in[0].app)
+    missing = {path for path, route in reads.items() if limit_annotation(route) is None}
+
+    assert missing - UNCAPPED_READS == set(), 'collection reads taking no limit'
+    assert UNCAPPED_READS - missing == set(), 'exempted reads that now take a limit'
 
 
 def test_the_written_list_names_no_endpoint_the_app_does_not_serve(txn_api_logged_in):
