@@ -77,7 +77,7 @@ Following the boto3 pattern, the client uses sessions to manage:
 Credential providers allow different authentication strategies:
 
 - **InternalServiceProvider**: Service-to-service authentication
-- **UserTokenProvider**: User-based token authentication  
+- **UserTokenProvider**: User-based token authentication
 - **FlaskSessionProvider**: Flask session-based authentication
 
 ### Generic Resource Pattern
@@ -109,6 +109,7 @@ The client automatically detects context and chooses appropriate authentication:
 - [Resource Clients](resources.md) - CRUD operations and custom actions
 - [Migration Guide](migration.md) - Migrating from QueryAPI to the new client
 - [Usage Examples](examples.md) - Common patterns and use cases
+- [Implementation Summary](summary.md) - Quick reference for the modules, factory functions and usage patterns
 
 ## Design Benefits
 

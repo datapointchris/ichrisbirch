@@ -11,11 +11,14 @@ Welcome to the iChrisBirch application documentation.
 - [Project Layout](project_layout.md) - Overall project structure and organization
 - [Configuration](configuration.md) - Environment and settings management
 - [Logging Configuration](logging-configuration.md) - Structlog setup, request tracing, and log viewing
+- [Dependency Reach](dependency-reach.md) - What each wide-reaching dependency sees and which callers feed it
+- [Admin Dashboard](admin.md) - Live log streaming over WebSocket, JWT cookie auth, admin-only access
 
 ## Development
 
 - [Developer Setup](developer_setup.md) - Getting started with development
 - [Testing](testing/overview.md) - Testing strategy and guidelines
+- [Testing Documentation](testing/index.md) - Every testing page: environment, fixtures, test data, writing tests
 - [Adding New Apps](add_new_app.md) - How to add new features
 
 ## Docker & Deployment
@@ -36,6 +39,9 @@ Welcome to the iChrisBirch application documentation.
 - [CI/CD](cicd.md) - Continuous integration and deployment
 - [Homelab Deployment](homelab-deployment.md) - Production deployment with Cloudflare Tunnel
 - [Terraform](terraform.md) - Infrastructure as code
+- [DevOps](devops/index.md) - Server, database, nginx, supervisor and pg_cron setup notes
+- [Blue/Green Deployment](blue-green-deployment.md) - Zero-downtime deploys across alternating app container colors
+- [Domain Names](domain_names.md) - Route 53 hosted zones and records for the apex, api and docs domains
 
 ## API
 
@@ -57,6 +63,8 @@ The frontend is a Vue 3 SPA (TypeScript) served behind `app.docker.localhost` vi
 - [Alembic](alembic.md) - Database migrations
 - [Scheduler](scheduler.md) - Background job processing
 - [Documentation Tools](documentation_tools.md) - Docs generation and maintenance
+- [Documentation](documentation.md) - How MkDocs builds these pages and publishes them to gh-pages
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Troubleshooting Guide](troubleshooting/index.md) - Symptoms indexed by component, with root causes and fixes
 
 Docs here

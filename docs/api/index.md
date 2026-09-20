@@ -1,16 +1,21 @@
 # API
 
+## Documentation
+
+- [Authentication Strategies](authentication_strategies.md) — internal service keys, developer API keys, user tokens
+- [API Client](client/index.md) — the session-based Python client, its auth providers and resource CRUD
+
 ## FastAPI Crud Endpoints
 
 Order matters with endpoints, dynamic routes `route/endpoint/{id}` are last.
 They even have to be after other endpoints:
 
-`route/`  
-`route/endpoint/`  
-`route/endpoint/extension`  
-The two below don't matter the order, only that they are after all of the endpoints that do not take in a path variable.  
-`route/{id}`  
-`route/endpoint/{id}`  
+`route/`
+`route/endpoint/`
+`route/endpoint/extension`
+The two below don't matter the order, only that they are after all of the endpoints that do not take in a path variable.
+`route/{id}`
+`route/endpoint/{id}`
 
 ## Endpoint Structure
 
