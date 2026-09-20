@@ -23,7 +23,7 @@ Welcome to the iChrisBirch application documentation.
 
 ## Docker & Deployment
 
-- [Docker Development](docker-development.md) - Docker Compose development workflow
+- [Docker](docker/index.md) - the containerized stack, its compose layering and the build
 - [Docker Documentation](docker/index.md) - Comprehensive Docker containerization guide
 - [Docker Architecture](docker/docker.md) - Multi-stage Docker builds and container strategy
 - [Docker Compose](docker/docker-compose.md) - Service orchestration across environments

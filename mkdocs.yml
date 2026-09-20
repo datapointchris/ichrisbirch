@@ -129,7 +129,6 @@ nav:
       - Overview: docker/index.md
       - Docker Guide: docker/docker.md
       - Docker Compose: docker/docker-compose.md
-      - Development: docker-development.md
       - Quick Reference: docker/docker-quick-reference.md
   - Architecture:
       - Configuration: configuration.md

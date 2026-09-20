@@ -248,7 +248,7 @@ grep docker.localhost /etc/hosts
 
 - **[Developer Setup](developer_setup.md)** - Complete development environment setup
 - **[Testing Guide](testing/overview.md)** - Running tests and test environments
-- **[Docker Development](docker-development.md)** - Docker workflows and debugging
+- **[Docker Quick Reference](docker/docker-quick-reference.md)** - the `icbops` verb for each common task
 
 ### Other Environments
 
