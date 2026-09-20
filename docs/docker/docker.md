@@ -255,10 +255,10 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --no-cache
 
 ```bash
 # Development
-./scripts/dev-start.sh
+./ops/icbops dev start
 
 # Testing
-./scripts/test-run.sh
+./ops/icbops test run
 
 # Production (manual)
 docker-compose --env-file .prod.env -f docker-compose.yml -f docker-compose.prod.yml up -d
@@ -334,7 +334,7 @@ docker run --rm ichrisbirch:dev poetry --version
 ```dockerfile
 # Or fix permissions
 
-docker run --rm ichrisbirch:dev python -c "import psycopg2; print('OK')"
+docker run --rm ichrisbirch:dev python -c "import psycopg; print('OK')"
 
 # Verify service communication
 docker-compose exec api ping postgres

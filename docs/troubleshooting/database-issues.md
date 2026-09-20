@@ -10,7 +10,7 @@ This document covers database-related issues encountered during development, tes
 
 **Error Messages:**
 
-- `psycopg2.OperationalError: connection to server at "localhost" (127.0.0.1) port 5432 refused`
+- `psycopg.OperationalError: connection to server at "localhost" (127.0.0.1) port 5432 refused`
 - `FATAL: database "ichrisbirch" does not exist`
 - `FATAL: role "icb_app" does not exist`
 
@@ -61,8 +61,8 @@ GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO icb_app;
 
 **Error Messages:**
 
-- `psycopg2.errors.InvalidSchemaName: schema "ichrisbirch_test" does not exist`
-- `sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "users" does not exist`
+- `psycopg.errors.InvalidSchemaName: schema "ichrisbirch_test" does not exist`
+- `sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedTable) relation "users" does not exist`
 
 **Resolution:**
 
@@ -176,23 +176,25 @@ ORDER BY n_distinct DESC;
 
 ```sql
 -- Create indexes for frequently queried columns
-CREATE INDEX CONCURRENTLY idx_habits_user_id ON habits(user_id);
-CREATE INDEX CONCURRENTLY idx_habits_created_at ON habits(created_at);
+CREATE INDEX CONCURRENTLY idx_habits_category_id ON habits.habits(category_id);
+CREATE INDEX CONCURRENTLY idx_completed_complete_date ON habits.completed(complete_date);
 ```
 
 #### 2. Optimize SQLAlchemy Queries
 
 ```python
+from sqlalchemy import select
+
 # Bad: N+1 query problem
-for habit in session.query(Habit).all():
-    print(habit.user.username)  # Separate query for each habit
+for habit in session.scalars(select(Habit)).all():
+    print(habit.category.name)  # Separate query for each habit
 
 # Good: Use joinedload to eager load relationships
 from sqlalchemy.orm import joinedload
 
-habits = session.query(Habit).options(joinedload(Habit.user)).all()
-for habit in habits:
-    print(habit.user.username)  # No additional queries
+query = select(Habit).options(joinedload(Habit.category))
+for habit in session.scalars(query).all():
+    print(habit.category.name)  # No additional queries
 ```
 
 ### Connection Pool Issues
@@ -226,19 +228,24 @@ engine = create_engine(
 
 ```python
 # Use context managers for database sessions
-from ichrisbirch.database import get_sqlalchemy_session
+from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker
+
+from ichrisbirch.config import get_settings
+from ichrisbirch.database.session import create_session
+from ichrisbirch.database.session import get_db_engine
 
 # Good: Automatic cleanup
-def get_user_habits(user_id: int):
-    with get_sqlalchemy_session() as session:
-        return session.query(Habit).filter(Habit.user_id == user_id).all()
+def habits_in_category(category_id: int):
+    with create_session(get_settings()) as session:
+        return session.scalars(select(Habit).filter(Habit.category_id == category_id)).all()
     # Session automatically closed
 
 # Bad: Manual cleanup required
-def get_user_habits_bad(user_id: int):
-    session = SessionLocal()
+def habits_in_category_bad(category_id: int):
+    session = sessionmaker(bind=get_db_engine(get_settings()))()
     try:
-        return session.query(Habit).filter(Habit.user_id == user_id).all()
+        return session.scalars(select(Habit).filter(Habit.category_id == category_id)).all()
     finally:
         session.close()  # Easy to forget!
 ```
@@ -251,8 +258,8 @@ def get_user_habits_bad(user_id: int):
 
 **Error Messages:**
 
-- `psycopg2.errors.ForeignKeyViolation: insert or update on table "habits" violates foreign key constraint`
-- `psycopg2.errors.IntegrityError: duplicate key value violates unique constraint`
+- `psycopg.errors.ForeignKeyViolation: insert or update on table "habits" violates foreign key constraint`
+- `psycopg.errors.UniqueViolation: duplicate key value violates unique constraint`
 
 **Resolution:**
 

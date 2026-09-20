@@ -8,29 +8,29 @@ Quick commands and troubleshooting for the ichrisbirch Docker setup.
 
 ```bash
 # Start development environment
-./scripts/dev-start.sh
+./ops/icbops dev start
 
 # Stop development environment
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml down
+./ops/icbops dev stop
 
 # Rebuild and start
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml up --build
+./ops/icbops dev rebuild --volumes
 
 # View logs
-docker-compose --env-file .dev.env -f docker-compose.yml -f docker-compose.dev.yml logs -f api
+./ops/icbops dev logs api
 ```
 
 ### Testing
 
 ```bash
-# Run all tests
-./scripts/test-run.sh
+# Run all tests (starts the test containers if they are not up)
+./ops/icbops test run
 
 # Run specific test file
-./scripts/test-run.sh tests/ichrisbirch/api/endpoints/test_habits.py
+./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py
 
 # Run with coverage
-./scripts/test-run.sh --cov=ichrisbirch --cov-report=html
+./ops/icbops test run --cov=ichrisbirch --cov-report=html
 ```
 
 ### Production
@@ -109,7 +109,7 @@ docker-compose down
 
 ### Database Connection
 
-**Error**: `psycopg2.OperationalError: could not connect to server`
+**Error**: `psycopg.OperationalError: could not connect to server`
 
 **Solution**:
 

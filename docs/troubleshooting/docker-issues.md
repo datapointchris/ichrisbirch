@@ -462,7 +462,7 @@ docker run -it <intermediate-id> bash
 
 ### "Connection refused"
 
-**Error:** `psycopg2.OperationalError: connection to server at "localhost" (127.0.0.1) port 5432 refused`
+**Error:** `psycopg.OperationalError: connection to server at "localhost" (127.0.0.1) port 5432 refused`
 
 **Cause:** Using `localhost` instead of Docker service name.
 
