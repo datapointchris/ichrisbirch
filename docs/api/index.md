@@ -10,12 +10,13 @@
 Order matters with endpoints, dynamic routes `route/endpoint/{id}` are last.
 They even have to be after other endpoints:
 
-`route/`
-`route/endpoint/`
-`route/endpoint/extension`
-The two below don't matter the order, only that they are after all of the endpoints that do not take in a path variable.
-`route/{id}`
-`route/endpoint/{id}`
+1. `route/`
+2. `route/endpoint/`
+3. `route/endpoint/extension`
+4. `route/{id}`
+5. `route/endpoint/{id}`
+
+The last two don't matter the order, only that they are after all of the endpoints that do not take in a path variable.
 
 ## Endpoint Structure
 
