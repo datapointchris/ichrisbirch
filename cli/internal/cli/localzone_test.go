@@ -76,9 +76,6 @@ func TestZoneFromLocaltimeLink_ReadsTheSymlinkTarget(t *testing.T) {
 	}
 }
 
-// A copy rather than a symlink carries no name, which is what a container image
-// usually ships. The caller leaves the parameter off and the server reads the day
-// in UTC, which the response then says.
 func TestZoneFromLocaltimeLink_ACopyNamesNothing(t *testing.T) {
 	dir := t.TempDir()
 	copied := filepath.Join(dir, "localtime")
@@ -103,5 +100,34 @@ func TestLocalZoneName_PrefersTZ(t *testing.T) {
 
 	if got := LocalZoneName(); got != "Asia/Tokyo" {
 		t.Errorf("LocalZoneName = %q, want Asia/Tokyo", got)
+	}
+}
+
+// EST5EDT is not in this list: it reads like a POSIX rule and tzdata ships a
+// file under that name, so it is a zone.
+func TestLocalZoneName_APosixRuleInTZNamesNothing(t *testing.T) {
+	for _, tz := range []string{"UTC0", "PST8PDT,M3.2.0/2,M11.1.0/2", "GMT0BST,M3.5.0/1,M10.5.0"} {
+		t.Run(tz, func(t *testing.T) {
+			t.Setenv("TZ", tz)
+
+			if got := LocalZoneName(); got != "" {
+				t.Errorf("LocalZoneName = %q, want \"\" — %q names no zone file", got, tz)
+			}
+		})
+	}
+}
+
+func TestZoneExists(t *testing.T) {
+	cases := map[string]bool{
+		"America/New_York": true,
+		"UTC":              true,
+		"":                 false,
+		"UTC0":             false,
+		"Not/AZone":        false,
+	}
+	for name, want := range cases {
+		if got := zoneExists(name); got != want {
+			t.Errorf("zoneExists(%q) = %v, want %v", name, got, want)
+		}
 	}
 }

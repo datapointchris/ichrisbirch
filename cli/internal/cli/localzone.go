@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // zoneinfoDirs are the paths a tzdata file lives under. The IANA name is
@@ -21,17 +22,37 @@ var zoneinfoDirs = []string{
 //
 // time.Local carries the right offset rules but not the name: Go reports
 // "Local" for a zone loaded from /etc/localtime, and the server needs a name it
-// can look up. So this reads the two places the name is actually written — $TZ,
-// then the symlink target of /etc/localtime.
+// can look up. $TZ and that symlink are the two places the name is written.
 //
 // An empty return is not a failure to report. The caller leaves the parameter
-// off, the server reads the day in UTC, and the response says so — a visibly
+// off, the server reads the day in UTC, and the response says so. A visibly
 // wrong zone beats a silently wrong day.
 func LocalZoneName() string {
-	if name := zoneFromEnv(os.Getenv("TZ")); name != "" {
-		return name
+	name := zoneFromEnv(os.Getenv("TZ"))
+	if name == "" {
+		name = zoneFromLocaltimeLink("/etc/localtime")
 	}
-	return zoneFromLocaltimeLink("/etc/localtime")
+	if !zoneExists(name) {
+		return ""
+	}
+	return name
+}
+
+// zoneExists reports whether the tzdata database carries this name.
+//
+// $TZ takes a POSIX rule string as well as a name — "UTC0",
+// "PST8PDT,M3.2.0/2,M11.1.0/2" — and neither names a zone file. Go reads the
+// rule for its offsets, so every other command works. Sending one to the server
+// is a 422 that turns one section of a report into an error exit.
+//
+// An empty name is not a name either. time.LoadLocation("") answers UTC without
+// error, so the check has to come first.
+func zoneExists(name string) bool {
+	if name == "" {
+		return false
+	}
+	_, err := time.LoadLocation(name)
+	return err == nil
 }
 
 // zoneFromEnv reads $TZ. A leading colon is allowed by POSIX and is part of the
@@ -49,8 +70,8 @@ func zoneFromEnv(tz string) string {
 }
 
 // zoneFromLocaltimeLink resolves /etc/localtime to the tzdata file it names.
-// A copy rather than a symlink — which is what a container image usually ships
-// — carries no name, so this returns "".
+// A container image usually ships a copy rather than a symlink, and a copy
+// carries no name, so this returns "".
 func zoneFromLocaltimeLink(path string) string {
 	target, err := filepath.EvalSymlinks(path)
 	if err != nil {
