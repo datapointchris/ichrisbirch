@@ -276,7 +276,7 @@ def main():
         '--env',
         type=str,
         choices=['development', 'testing', 'production'],
-        help='Environment to initialize (affects which SSM parameters are loaded)',
+        help='Environment to initialize; sets ENVIRONMENT before settings load from .env or the process environment',
     )
     parser.add_argument(
         '--no-alembic', action='store_true', help='Use Base.metadata.create_all() instead of Alembic migrations to create tables'

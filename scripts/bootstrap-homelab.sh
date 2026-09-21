@@ -11,7 +11,7 @@
 #
 # Prerequisites:
 #   - LXC container with Docker-compatible settings (see docs/homelab-deployment.md)
-#   - AWS credentials available (will be configured during setup)
+#   - The age private key that decrypts secrets/secrets.prod.enc.env
 #   - Cloudflare account with tunnel token ready
 
 set -euo pipefail
@@ -40,7 +40,7 @@ check_root() {
 install_prerequisites() {
   log_info "Installing prerequisites..."
   apt update
-  apt install -y curl git unzip
+  apt install -y curl git
   log_success "Prerequisites installed"
 }
 
@@ -56,21 +56,6 @@ install_docker() {
   systemctl enable docker
   systemctl start docker
   log_success "Docker installed"
-}
-
-install_aws_cli() {
-  if command -v aws &>/dev/null; then
-    log_success "AWS CLI already installed: $(aws --version)"
-    return
-  fi
-
-  log_info "Installing AWS CLI (needed for S3 backups)..."
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
-  cd /tmp
-  unzip -q awscliv2.zip
-  ./aws/install
-  rm -rf aws awscliv2.zip
-  log_success "AWS CLI installed"
 }
 
 install_sops_age() {
@@ -123,28 +108,6 @@ install_cli() {
   log_info "Installing ichrisbirch CLI..."
   ln -sf "$INSTALL_DIR/ops/icbops" /usr/local/bin/icbops
   log_success "CLI installed: icbops"
-}
-
-setup_aws_credentials() {
-  if [[ -f ~/.aws/credentials ]]; then
-    log_success "AWS credentials already configured (needed for S3 backups)"
-    return
-  fi
-
-  log_warn "AWS credentials not found"
-  echo ""
-  echo "AWS credentials are needed for S3 database backups."
-  echo "Options:"
-  echo "  1. Run 'aws configure' manually"
-  echo "  2. Copy ~/.aws from another machine"
-  echo ""
-  read -p "Configure AWS now? [y/N] " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    aws configure
-  else
-    log_warn "Skipping AWS configuration - needed for S3 backups"
-  fi
 }
 
 setup_age_key() {
@@ -371,9 +334,8 @@ print_summary() {
   echo ""
   echo "Next steps:"
   echo "  1. Verify age key: sops decrypt secrets/secrets.prod.enc.env > /dev/null"
-  echo "  2. Verify AWS credentials (for S3 backups): aws sts get-caller-identity"
-  echo "  3. Check services: icbops prod status"
-  echo "  4. View logs: icbops prod logs"
+  echo "  2. Check services: icbops prod status"
+  echo "  3. View logs: icbops prod logs"
   echo ""
   if ! systemctl is-active --quiet cloudflared 2>/dev/null; then
     echo -e "${YELLOW}Cloudflare tunnel not configured!${NC}"
@@ -399,12 +361,10 @@ main() {
   check_root
   install_prerequisites
   install_docker
-  install_aws_cli
   install_sops_age
   install_cloudflared
   clone_repository
   install_cli
-  setup_aws_credentials
   setup_age_key
   decrypt_production_secrets
   create_docker_network

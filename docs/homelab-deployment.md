@@ -16,7 +16,7 @@ Internet → Cloudflare (SSL/CDN) → Cloudflare Tunnel → Traefik (port 80) �
 ## Current Status
 
 - **Infrastructure**: A self-hosted Linux container running Docker
-- **Database**: PostgreSQL restored from AWS backup, working
+- **Database**: PostgreSQL, in the always-running `icb-infra` project
 - **Containers**: All services running (postgres, redis, api, app, scheduler, traefik)
 - **External Access**: Via Cloudflare Tunnel
 
@@ -35,7 +35,7 @@ Or if you've already cloned the repo:
 sudo ./scripts/bootstrap-homelab.sh
 ```
 
-The script handles Docker, AWS CLI, cloudflared, repository setup, and database initialization interactively.
+The script handles Docker, sops and age, cloudflared, repository setup, secret decryption, and database initialization interactively.
 
 ## Manual Setup
 
@@ -59,8 +59,8 @@ apt update && apt install -y curl git
 # Install Docker
 curl -fsSL https://get.docker.com | sh
 
-# Install AWS CLI (for SSM parameter access)
-apt install -y awscli
+# Install age; install sops from https://github.com/getsops/sops/releases
+apt install -y age
 
 # Clone repository
 cd /srv
@@ -68,11 +68,11 @@ git clone https://github.com/datapointchris/ichrisbirch.git
 cd ichrisbirch
 
 # Install CLI
-sudo ln -sf /srv/ichrisbirch/ops/icbops /usr/local/bin/icb
+sudo ln -sf /srv/ichrisbirch/ops/icbops /usr/local/bin/icbops
 
-# Set up AWS credentials
-mkdir -p ~/.aws
-# Copy credentials from local machine or configure
+# Copy the age private key that decrypts secrets/secrets.prod.enc.env
+mkdir -p ~/.config/sops/age
+# scp ~/.config/sops/age/keys.txt from your laptop into that directory
 ```
 
 ## Cloudflare Tunnel Setup
@@ -194,20 +194,15 @@ Once tunnel is configured:
 - **App**: <https://ichrisbirch.com> (also <www.ichrisbirch.com>)
 - **API**: <https://api.ichrisbirch.com>
 
-## SSM Parameters
+## Configuration
 
-The following SSM parameters are configured for homelab Docker networking:
+Production settings live in `secrets/secrets.prod.enc.env`, encrypted with SOPS and age.
+The deploy pulls `main`, then decrypts that file to `.env`.
+The app containers read `.env` through `env_file`.
+`icbops prod` commands decrypt it into their own environment instead.
 
-```bash
-# Already configured:
-/ichrisbirch/production/postgres/host = "postgres"
-/ichrisbirch/production/redis/host = "redis"
-
-# Add for cookie domain:
-aws ssm put-parameter --region us-east-2 \
-  --name "/ichrisbirch/production/flask/cookie_domain" \
-  --value "ichrisbirch.com" --type String --overwrite
-```
+To change a setting, run `sops secrets/secrets.prod.enc.env`, then commit and push.
+`POSTGRES_HOST` and `REDIS_HOST` point at the `postgres` and `redis` services in `docker-compose.infra.yml`.
 
 ## CLI Commands
 
@@ -290,19 +285,13 @@ If you see `[SSL: WRONG_VERSION_NUMBER]` errors in logs:
 The internal services are trying to use HTTPS to communicate, but with Cloudflare Tunnel,
 internal communication should be HTTP (Cloudflare handles TLS externally).
 
-Check SSM parameter:
+Check `PROTOCOL` in the production settings:
 
 ```bash
-aws ssm get-parameter --region us-east-2 --name "/ichrisbirch/production/protocol" --query 'Parameter.Value' --output text
+sops decrypt secrets/secrets.prod.enc.env | grep '^PROTOCOL='
 ```
 
-Should be `http`. If it's `https`, fix it:
-
-```bash
-aws ssm put-parameter --region us-east-2 --name "/ichrisbirch/production/protocol" --value "http" --type String --overwrite
-```
-
-Then restart services: `icbops prod restart`
+It should be `http`. If it is `https`, change it with `sops secrets/secrets.prod.enc.env`, then commit and push so the deploy picks it up.
 
 ### Volume Naming Issues
 
@@ -334,21 +323,3 @@ You may need to copy data between volumes or update the project name.
   - `icb-{color}-scheduler` (no port)
 - **System Services**:
   - cloudflared (tunnel daemon, systemd service)
-
-## Checklist
-
-- [x] LXC container configured for Docker
-- [x] Docker and prerequisites installed
-- [x] Repository cloned
-- [x] CLI installed
-- [x] AWS credentials configured
-- [x] SSM parameters updated for Docker networking
-- [x] Flask cookie settings made configurable
-- [x] Traefik configured for Cloudflare Tunnel (HTTP-only)
-- [ ] Domain added to Cloudflare
-- [ ] Namecheap nameservers updated
-- [ ] Cloudflare Tunnel created
-- [ ] cloudflared installed and running
-- [ ] Tunnel routes configured (pointing to localhost:80)
-- [ ] SSM parameter added for cookie domain
-- [ ] Full login flow tested
