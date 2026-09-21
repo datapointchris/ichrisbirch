@@ -7,7 +7,6 @@ This module tests how the API handles various error conditions including:
 - Permission errors
 """
 
-import pytest
 from fastapi import status
 
 
@@ -64,18 +63,13 @@ class TestAPIErrorHandling:
         response = test_api_logged_in.patch('/tasks/')
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    @pytest.mark.skip(reason='no valid admin endpoint for testing')
     def test_unauthorized_admin_endpoint(self, test_api_logged_in):
-        """Test that regular users cannot access admin endpoints."""
-        # Try to access admin endpoint with regular user
-        response = test_api_logged_in.get('/admin/')
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        """A signed-in user who is not an admin is known, so the refusal is a 403 rather than a 401."""
+        response = test_api_logged_in.get('/admin/config/')
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    @pytest.mark.skip(reason='no valid admin endpoint for testing')
     def test_admin_endpoint_with_admin_user(self, test_api_logged_in_admin):
-        """Test that admin users can access admin endpoints."""
-        # Access admin endpoint with admin user
-        response = test_api_logged_in_admin.get('/admin/')
+        response = test_api_logged_in_admin.get('/admin/config/')
         assert response.status_code == status.HTTP_200_OK
 
     def test_invalid_json_format(self, test_api_logged_in):
