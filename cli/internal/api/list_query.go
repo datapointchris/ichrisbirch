@@ -20,21 +20,33 @@ func applyLimit(params url.Values, limit *int) {
 	params.Set("limit", strconv.Itoa(*limit))
 }
 
-// applyDateBounds writes an inclusive date range into params. Both bounds are
-// inclusive, either narrows on its own, and an empty one is not sent.
+// OnOrAfter is the inclusive lower bound of a list read's date range, an ISO
+// 8601 date or datetime. Empty narrows nothing.
 //
-// zone is the IANA zone a bare day is read in, for a column that stores
-// instants. A task finished at 21:00 in New York is on the next day in UTC.
-// Left empty, the server reads the day in the user's preference. It goes only
-// with a bound, since it means nothing on its own.
-func applyDateBounds(params url.Values, start, end, zone string) {
+// The two bounds and the zone are separate types because they sit side by
+// side in every list read. As plain strings, a transposed start and end
+// compiles and answers with nothing.
+type OnOrAfter string
+
+// OnOrBefore is the inclusive upper bound, read the same way as OnOrAfter.
+type OnOrBefore string
+
+// DayZone is the IANA zone a bound with no offset is read in, for a column
+// that stores instants. A task finished at 21:00 in New York is on the next
+// day in UTC. Empty leaves the server to read it in the user's preference.
+type DayZone string
+
+// applyDateBounds writes a date range into params. Either bound narrows on its
+// own, and an empty one is not sent. The zone goes only with a bound, since it
+// means nothing on its own.
+func applyDateBounds(params url.Values, start OnOrAfter, end OnOrBefore, zone DayZone) {
 	if start != "" {
-		params.Set("start_date", start)
+		params.Set("start_date", string(start))
 	}
 	if end != "" {
-		params.Set("end_date", end)
+		params.Set("end_date", string(end))
 	}
 	if zone != "" && (start != "" || end != "") {
-		params.Set("timezone", zone)
+		params.Set("timezone", string(zone))
 	}
 }

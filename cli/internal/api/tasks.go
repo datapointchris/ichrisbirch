@@ -88,7 +88,7 @@ var TaskCategories = []string{
 //
 // Completed tasks come back ordered by when they were finished rather than by
 // priority, which stops meaning anything once a task leaves the queue.
-func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category, start, end, zone string) ([]Task, error) {
+func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category string, start OnOrAfter, end OnOrBefore, zone DayZone) ([]Task, error) {
 	query := url.Values{}
 	if limit != nil {
 		query.Set("limit", strconv.Itoa(*limit))

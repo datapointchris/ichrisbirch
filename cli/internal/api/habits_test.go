@@ -78,3 +78,28 @@ func TestCompleteHabit_PostsCompletion(t *testing.T) {
 		t.Errorf("completed = %+v", completed)
 	}
 }
+
+func TestListCompletedHabits_SendsThePickAndTheDays(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		start OnOrAfter
+		end   OnOrBefore
+		pick  CompletionPick
+		want  string
+	}{
+		{"every completion sends nothing", "", "", AllCompletions, ""},
+		{"a range of days goes with no zone", "2026-09-01", "2026-09-20", AllCompletions, "end_date=2026-09-20&start_date=2026-09-01"},
+		{"first asks for the earliest", "", "", FirstCompletion, "first=true"},
+		{"last asks for the most recent", "", "", LastCompletion, "last=true"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client, query := recordQuery(t, `[]`)
+			if _, err := client.ListCompletedHabits(context.Background(), tc.start, tc.end, tc.pick); err != nil {
+				t.Fatalf("ListCompletedHabits: %v", err)
+			}
+			if *query != tc.want {
+				t.Errorf("query = %q, want %q", *query, tc.want)
+			}
+		})
+	}
+}

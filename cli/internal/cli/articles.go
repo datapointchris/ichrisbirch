@@ -206,7 +206,7 @@ func newArticlesListCommand() *cobra.Command {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
 					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"),
-					start, end, LocalZoneName(), limitFlag(cmd))
+					api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
 			})
 		},
 	}

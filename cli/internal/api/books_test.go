@@ -33,8 +33,8 @@ func TestListBooks_Filters(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		filter BookFilter
-		start  string
-		end    string
+		start  OnOrAfter
+		end    OnOrBefore
 		want   string
 	}{
 		{"progress alone", BookFilter{Progress: "reading"}, "", "", "progress=reading"},

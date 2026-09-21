@@ -159,19 +159,31 @@ func (c *Client) CompleteHabit(ctx context.Context, in HabitCompletedCreateInput
 	return completed, nil
 }
 
+// CompletionPick chooses which habit completions a list returns.
+type CompletionPick int
+
+const (
+	// AllCompletions returns every completion within the bounds.
+	AllCompletions CompletionPick = iota
+	// FirstCompletion returns only the earliest completion, ignoring the bounds.
+	FirstCompletion
+	// LastCompletion returns only the most recent completion, ignoring the bounds.
+	LastCompletion
+)
+
 // ListCompletedHabits returns habit completions (GET /habits/completed/). start
-// and end bound an inclusive range of days. first and last return the single
-// earliest or most recent completion. With none set, every completion returns.
+// and end bound an inclusive range of days, and pick narrows to one end of it.
 //
 // A completion is a calendar day, so no zone goes with the bounds.
-func (c *Client) ListCompletedHabits(ctx context.Context, start, end string, first, last bool) ([]HabitCompleted, error) {
+func (c *Client) ListCompletedHabits(ctx context.Context, start OnOrAfter, end OnOrBefore, pick CompletionPick) ([]HabitCompleted, error) {
 	params := url.Values{}
 	applyDateBounds(params, start, end, "")
-	if first {
+	switch pick {
+	case FirstCompletion:
 		params.Set("first", "true")
-	}
-	if last {
+	case LastCompletion:
 		params.Set("last", "true")
+	case AllCompletions:
 	}
 	path := "/habits/completed/"
 	if encoded := params.Encode(); encoded != "" {

@@ -146,7 +146,7 @@ func (c *Client) ListFailedArticleImports(ctx context.Context) ([]ArticleFailedI
 // (favorites=true returns only favorites due for re-read). start and end narrow
 // to articles last read within an inclusive range, read in zone. A nil limit
 // fetches all; a non-nil limit caps the count.
-func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, start, end, zone string, limit *int) ([]Article, error) {
+func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]Article, error) {
 	var articles []Article
 	if err := c.get(ctx, "/articles/"+articleListQuery(favorites, archived, unread, start, end, zone, limit), &articles); err != nil {
 		return nil, err
@@ -211,7 +211,7 @@ func (c *Client) DeleteArticle(ctx context.Context, id int) error {
 
 // articleListQuery renders the tri-state list filters, omitting any that is nil
 // so an unset filter sends no param at all.
-func articleListQuery(favorites, archived, unread *bool, start, end, zone string, limit *int) string {
+func articleListQuery(favorites, archived, unread *bool, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) string {
 	params := url.Values{}
 	if favorites != nil {
 		params.Set("favorites", strconv.FormatBool(*favorites))

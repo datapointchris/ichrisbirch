@@ -130,7 +130,8 @@ func newItemsListCommand() *cobra.Command {
 			if project == "" {
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context(), filter, itemStatus, start, end, LocalZoneName(), limitFlag(cmd))
+					return c.ListItems(cmd.Context(), filter, itemStatus,
+						api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
 				}); err != nil {
 					return err
 				}
@@ -144,7 +145,8 @@ func newItemsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, start, end, LocalZoneName(), limitFlag(cmd))
+			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus,
+				api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}

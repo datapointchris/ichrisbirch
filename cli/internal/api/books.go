@@ -109,7 +109,7 @@ func (f BookFilter) query() url.Values {
 // finish date is a calendar day, so no zone goes with the bounds. A nil limit
 // fetches all; a non-nil limit caps the count, so it takes the highest-priority
 // books of whatever the filters left.
-func (c *Client) ListBooks(ctx context.Context, filter BookFilter, start, end string, limit *int) ([]Book, error) {
+func (c *Client) ListBooks(ctx context.Context, filter BookFilter, start OnOrAfter, end OnOrBefore, limit *int) ([]Book, error) {
 	params := filter.query()
 	applyDateBounds(params, start, end, "")
 	applyLimit(params, limit)

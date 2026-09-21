@@ -182,7 +182,7 @@ var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
 // same column and semantics the flat list uses — a scope picks the rows, never
 // what a filter means. A nil limit fetches all; a non-nil limit caps the count,
 // so it takes the first items in project order.
-func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus, start, end, zone string, limit *int) ([]ProjectItemInProject, error) {
+func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]ProjectItemInProject, error) {
 	query := url.Values{}
 	if itemStatus != "" {
 		query.Set("status", itemStatus)

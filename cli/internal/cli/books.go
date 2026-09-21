@@ -74,7 +74,7 @@ func newBooksListCommand() *cobra.Command {
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
-				return c.ListBooks(cmd.Context(), filter, start, end, limitFlag(cmd))
+				return c.ListBooks(cmd.Context(), filter, api.OnOrAfter(start), api.OnOrBefore(end), limitFlag(cmd))
 			})
 		},
 	}

@@ -121,7 +121,7 @@ type DependencyInput struct {
 // for another, or ItemStatusAll for every one. start and end narrow to items
 // finished within an inclusive range, read in zone. A nil limit fetches all; a
 // non-nil limit caps the count.
-func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus, start, end, zone string, limit *int) ([]ProjectItem, error) {
+func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]ProjectItem, error) {
 	query := repoQuery(repo)
 	if itemStatus != "" {
 		query.Set("status", itemStatus)

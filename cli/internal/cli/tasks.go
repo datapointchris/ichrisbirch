@@ -87,7 +87,8 @@ func newTasksListCommand() *cobra.Command {
 				category = canonical
 			}
 			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category, start, end, LocalZoneName())
+				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category,
+					api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()))
 			}); err != nil {
 				return err
 			}
