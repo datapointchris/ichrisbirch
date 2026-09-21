@@ -20,12 +20,13 @@ describe('computeDaysLeft', () => {
     expect(result.totalDays).toBe(0)
   })
 
-  it('returns "Past" for today', () => {
+  it('returns "Today" on the due day, which has not passed yet', () => {
     vi.useFakeTimers()
     vi.setSystemTime(localDate(2026, 6, 15))
     const result = computeDaysLeft('2026-06-15')
-    expect(result.text).toBe('Past')
-    expect(result.urgency).toBe('past')
+    expect(result.text).toBe('Today')
+    expect(result.urgency).toBe('two-weeks')
+    expect(result.totalDays).toBe(0)
   })
 
   it('calculates days correctly', () => {

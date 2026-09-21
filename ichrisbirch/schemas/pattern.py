@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pydantic import AwareDatetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
@@ -14,7 +15,7 @@ class PatternCreate(PatternConfig):
     message: str
     # Optional so a capture is one argument, but settable so the dotfiles JSONL
     # entries import at the time they were written rather than the time of import.
-    recorded_at: datetime | None = None
+    recorded_at: AwareDatetime | None = None
 
 
 class Pattern(PatternConfig):
@@ -25,4 +26,4 @@ class Pattern(PatternConfig):
 
 class PatternUpdate(PatternConfig):
     message: NotNull[str] = None
-    recorded_at: NotNull[datetime] = None
+    recorded_at: NotNull[AwareDatetime] = None

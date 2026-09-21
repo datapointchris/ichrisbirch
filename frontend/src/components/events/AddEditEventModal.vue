@@ -133,7 +133,8 @@
 import { computed, reactive, ref, watch } from 'vue'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
-import { browserTimezone } from '@/composables/useWallClock'
+import { displayZone } from '@/composables/displayZone'
+import { zoneOptions } from '@/composables/zoneOptions'
 import NeuSelect from '@/components/NeuSelect.vue'
 import type { NeuSelectOption } from '@/components/NeuSelect.vue'
 
@@ -151,25 +152,13 @@ const emit = defineEmits<{
 const nameInput = ref<HTMLInputElement | null>(null)
 
 // The date input is a wall clock at the venue, so the zone has to be stated rather
-// than inferred. The reader's own zone is the right default — most events are local
-// — and Intl carries every IANA name the backend will accept.
-const readerTimezone = browserTimezone()
-
-// supportedValuesOf is ES2022 and not in the lib target, so it is read off a narrowed
-// view of Intl rather than by widening the global. Where it is missing there is still
-// a usable list — the reader's own zone and UTC cover the cases that are not travel.
-const intlWithZones = Intl as typeof Intl & { supportedValuesOf?: (key: 'timeZone') => string[] }
-
-const timezoneOptions = computed<NeuSelectOption<string>[]>(() => {
-  const names = intlWithZones.supportedValuesOf?.('timeZone') ?? [readerTimezone, 'UTC']
-  const all = names.includes(readerTimezone) ? names : [readerTimezone, ...names]
-  return all.map((tz) => ({ value: tz, label: tz === readerTimezone ? `${tz} (yours)` : tz }))
-})
+// than inferred. The user's own zone is the default, because most events are local.
+const timezoneOptions = computed<NeuSelectOption<string>[]>(() => zoneOptions(displayZone(), form.timezone))
 
 const form = reactive({
   name: '',
   date: '',
-  timezone: readerTimezone,
+  timezone: displayZone(),
   venue: '',
   url: '',
   cost: 0,
@@ -196,7 +185,7 @@ watch(
 function resetForm() {
   form.name = ''
   form.date = ''
-  form.timezone = readerTimezone
+  form.timezone = displayZone()
   form.venue = ''
   form.url = ''
   form.cost = 0

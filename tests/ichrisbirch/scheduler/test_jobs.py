@@ -1,7 +1,14 @@
+from datetime import UTC
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import pytest
 from freezegun import freeze_time
+from sqlalchemy import select
 
+from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.database.session import create_session
 from ichrisbirch.scheduler import jobs
 from tests.util import show_status_and_response
 from tests.utils.database import delete_test_data
@@ -114,3 +121,75 @@ def test_check_and_run_autotasks_completing_frees_a_slot(test_api_logged_in):
         jobs.check_and_run_autotasks(test_settings)
     after = test_api_logged_in.get('/tasks/', params={'status': 'all'}).json()
     assert len(after) == 12, after
+
+
+def _set_admin_zone(zone: str | None) -> None:
+    with create_session(test_settings) as session:
+        for admin in session.scalars(select(models.User).where(models.User.is_admin.is_(True))):
+            admin.preferences = {**(admin.preferences or {}), 'timezone': zone}
+        session.commit()
+
+
+@pytest.fixture
+def admin_in_new_york():
+    _set_admin_zone('America/New_York')
+    yield
+    _set_admin_zone(None)
+
+
+def test_the_scheduler_calendar_is_the_admins_zone(admin_in_new_york):
+    with create_session(test_settings) as session:
+        assert jobs.admin_calendar_zone(session) == ZoneInfo('America/New_York')
+
+
+def test_the_scheduler_calendar_is_utc_before_the_admin_has_a_zone():
+    with create_session(test_settings) as session:
+        assert jobs.admin_calendar_zone(session) == ZoneInfo('UTC')
+
+
+DAILY_NAME = 'Daily template last run at 10:00 in New York'
+
+
+def _insert_daily_template_run_on_the_20th() -> None:
+    with create_session(test_settings) as session:
+        session.add(
+            models.AutoTask(
+                name=DAILY_NAME,
+                category='Chore',
+                priority=1,
+                frequency='Daily',
+                first_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
+                last_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
+            )
+        )
+        session.commit()
+
+
+def _spawned_from_daily_template(client) -> list[dict]:
+    return [task for task in client.get('/tasks/', params={'status': 'all'}).json() if task['name'] == DAILY_NAME]
+
+
+def test_an_autotask_is_due_by_the_admins_calendar(test_api_logged_in, admin_in_new_york):
+    """02:00 UTC on the 21st is 22:00 on the 20th in New York, the day the template last ran."""
+    _insert_daily_template_run_on_the_20th()
+
+    with freeze_time(datetime(2026, 8, 21, 2, tzinfo=UTC)):
+        jobs.check_and_run_autotasks(test_settings)
+
+    assert _spawned_from_daily_template(test_api_logged_in) == []
+
+
+def test_an_autotask_is_due_by_utc_before_the_admin_has_a_zone(test_api_logged_in):
+    _insert_daily_template_run_on_the_20th()
+
+    with freeze_time(datetime(2026, 8, 21, 2, tzinfo=UTC)):
+        jobs.check_and_run_autotasks(test_settings)
+
+    assert len(_spawned_from_daily_template(test_api_logged_in)) == 1
+
+
+def test_the_overnight_jobs_fire_in_the_zone_they_are_given():
+    zone = ZoneInfo('America/New_York')
+
+    for job in jobs.get_jobs_to_add(test_settings, zone):
+        assert job.trigger.timezone == zone, job.id

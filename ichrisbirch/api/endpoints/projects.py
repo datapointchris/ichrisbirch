@@ -19,10 +19,9 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.models.project import TERMINAL_PROJECT_STATUSES
 from ichrisbirch.models.project import ProjectItemMembership
-from ichrisbirch.services.date_bounds import EndDate
-from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.project_item_status import apply_status_filter
 from ichrisbirch.services.project_item_status import validate_item_status
@@ -307,13 +306,14 @@ async def delete(project: ProjectFromPath, session: DbSession):
 async def list_items(
     project: ProjectFromPath,
     session: DbSession,
+    zone: RequestZone,
     item_status: str = Query(
         'open',
         alias='status',
         description="An item status, or 'all'. Completed and archived items are hidden by default.",
     ),
-    start_date: StartDate = None,
-    end_date: EndDate = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List one project's open items, in project order.
@@ -336,7 +336,7 @@ async def list_items(
         .where(ProjectItemMembership.project_id == project.id)
     )
     query = apply_status_filter(query, item_status)
-    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date)
+    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, timezone=zone)
 
     # position has no unique constraint, so a collision would otherwise order by
     # whatever the database returned

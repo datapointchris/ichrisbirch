@@ -55,6 +55,9 @@ dependencies = [
   # navigation, share rows or related-post cards — across site layouts no
   # per-site rule could enumerate.
   "trafilatura>=2.2.0",
+  # The list of zone names the IANA database publishes, which `IanaZone` checks a
+  # name against. The host's zoneinfo directory holds files that name no zone.
+  "tzdata>=2025.3",
   "uvicorn[standard]>=0.29.0",
   "werkzeug>=3.0.0",
   "youtube-transcript-api>=0.6.2",

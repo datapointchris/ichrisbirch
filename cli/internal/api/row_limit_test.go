@@ -46,7 +46,7 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 	ctx := context.Background()
 	calls := map[string]func(*Client) error{
 		"ListArticles": func(c *Client) error {
-			_, err := c.ListArticles(ctx, nil, nil, nil, DateBounds{}, intptr(3))
+			_, err := c.ListArticles(ctx, nil, nil, nil, "", "", "", intptr(3))
 			return err
 		},
 		"ListAutoTasks": func(c *Client) error {
@@ -54,7 +54,7 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 			return err
 		},
 		"ListBooks": func(c *Client) error {
-			_, err := c.ListBooks(ctx, BookFilter{}, DateBounds{}, intptr(3))
+			_, err := c.ListBooks(ctx, BookFilter{}, "", "", intptr(3))
 			return err
 		},
 		"ListCookingTechniques": func(c *Client) error {
@@ -70,11 +70,11 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 			return err
 		},
 		"ListItems": func(c *Client) error {
-			_, err := c.ListItems(ctx, nil, "", DateBounds{}, intptr(3))
+			_, err := c.ListItems(ctx, nil, "", "", "", "", intptr(3))
 			return err
 		},
 		"ListProjectItems": func(c *Client) error {
-			_, err := c.ListProjectItems(ctx, "018f-a", "", DateBounds{}, intptr(3))
+			_, err := c.ListProjectItems(ctx, "018f-a", "", "", "", "", intptr(3))
 			return err
 		},
 		"ListProjects": func(c *Client) error {

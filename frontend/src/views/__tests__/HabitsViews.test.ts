@@ -4,7 +4,8 @@ import { createTestingPinia } from '@pinia/testing'
 import HabitsView from '../HabitsView.vue'
 import HabitsManageView from '../HabitsManageView.vue'
 import HabitsCompletedView from '../HabitsCompletedView.vue'
-import { useHabitsStore, todayKey } from '@/stores/habits'
+import { useHabitsStore } from '@/stores/habits'
+import { todayKey } from '@/composables/calendarDay'
 import DatePicker from '@/components/DatePicker.vue'
 import type { Habit, HabitCategory, HabitCompleted } from '@/api/client'
 
@@ -44,9 +45,7 @@ const testHabits: Habit[] = [
   { id: 3, name: 'Nap', category_id: 3, category: catOld, is_current: false },
 ]
 
-const testCompleted: HabitCompleted[] = [
-  { id: 10, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-29T12:00:00Z' },
-]
+const testCompleted: HabitCompleted[] = [{ id: 10, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-29' }]
 
 const testCategories: HabitCategory[] = [catHealth, catWork, catOld]
 
@@ -103,8 +102,8 @@ describe('HabitsView (Daily)', () => {
     const wrapper = createDailyWrapper({
       dayDue: [],
       dayCompleted: [
-        { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-29T12:00:00Z' },
-        { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-29T12:00:00Z' },
+        { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-29' },
+        { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-29' },
       ],
     })
     expect(wrapper.text()).toContain('All done for today!')
@@ -142,7 +141,7 @@ describe('HabitsView (Daily)', () => {
       name: 'Exercise',
       category_id: 1,
       category: catHealth,
-      complete_date: '2026-03-29T12:00:00Z',
+      complete_date: '2026-03-29',
     })
 
     const checkButton = wrapper.find('.habits__check')
@@ -247,8 +246,8 @@ describe('HabitsView (Daily)', () => {
       selectedDate: '2026-03-11',
       dayDue: [],
       dayCompleted: [
-        { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-11T12:00:00Z' },
-        { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-11T12:00:00Z' },
+        { id: 10, habit_id: 1, name: 'Exercise', category_id: 1, category: catHealth, complete_date: '2026-03-11' },
+        { id: 11, habit_id: 2, name: 'Read', category_id: 2, category: catWork, complete_date: '2026-03-11' },
       ],
     })
     expect(wrapper.text()).toContain('All done for that day.')

@@ -229,7 +229,8 @@ import CompletedChart from '@/components/tasks/CompletedChart.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
 import NeuToggleGroup from '@/components/NeuToggleGroup.vue'
 import type { NeuToggleGroupOption } from '@/components/NeuToggleGroup.vue'
-import { DATE_FILTERS, dateFilterLabel, dateFilterRange, averageCompletionTime, type DateFilterKey } from '@/components/tasks/taskUtils'
+import { averageCompletionTime } from '@/components/tasks/taskUtils'
+import { DATE_FILTERS, dateFilterLabel, dateFilterRange, type DateFilterKey } from '@/composables/dateFilters'
 import type { TaskCategory } from '@/api/client'
 
 const route = useRoute()
@@ -297,11 +298,8 @@ async function loadData() {
   try {
     if (activePage.value === 'priority') {
       await store.fetchTodo()
-      const today = new Date()
-      const todayStr = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
-      const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
-      const tomorrowStr = tomorrow.toISOString()
-      await store.fetchCompleted(todayStr, tomorrowStr)
+      const today = dateFilterRange('today')
+      await store.fetchCompleted(today.start, today.end)
       completedToday.value = [...store.completedTasks]
       store.completedTasks = []
     } else if (activePage.value === 'todo') {

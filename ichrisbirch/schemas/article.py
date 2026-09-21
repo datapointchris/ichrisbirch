@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pydantic import AwareDatetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
@@ -16,7 +17,7 @@ class ArticleCreate(ArticleConfig):
     tags: list[str] = []
     summary: str
     notes: str | None = None
-    save_date: datetime
+    save_date: AwareDatetime
     read_count: int = 0
     is_favorite: bool = False
     is_current: bool = False
@@ -53,7 +54,7 @@ class ArticleUpdate(ArticleConfig):
     is_favorite: NotNull[bool] = None
     is_current: NotNull[bool] = None
     is_archived: NotNull[bool] = None
-    last_read_date: datetime | None = None
+    last_read_date: AwareDatetime | None = None
     read_count: NotNull[int] = None
     review_days: int | None = None
 

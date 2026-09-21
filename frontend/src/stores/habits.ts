@@ -4,6 +4,8 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
 import { formatDate } from '@/composables/formatDate'
+import { addDays, isCalendarDay, todayKey } from '@/composables/calendarDay'
+import { dateFilterRange, type DateFilterKey } from '@/composables/dateFilters'
 import type {
   Habit,
   HabitCreate,
@@ -18,111 +20,19 @@ import type {
 
 const logger = createLogger('HabitsStore')
 
-type DateFilter = 'today' | 'yesterday' | 'this_week' | 'last_7' | 'this_month' | 'last_30' | 'this_year' | 'all'
-
-interface DateRange {
-  start_date?: string
-  end_date?: string
-}
-
-/** The local calendar day of `d`, as the YYYY-MM-DD key the date controls speak. */
-function toDayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function todayKey(): string {
-  return toDayKey(new Date())
-}
-
-// The IANA name of the reader's zone, which the server resolves the day
-// against. Every browser reports one; a runtime that does not leaves the
-// parameter off and the server reads the day in UTC.
-function browserZoneName(): string | undefined {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
-  } catch {
-    return undefined
-  }
-}
-
 // A day key is YYYY-MM-DD naming a real calendar day, no later than today. Throws
 // rather than substituting, so a caller can tell "showed your day" from "showed
-// another one". `new Date` rolls a bad component over instead of refusing — day 0
-// is the previous month's last day, 2026-02-31 is 3 March — so the parsed date is
-// compared back against what was asked for.
+// another one".
 function assertSelectableDay(dayKey: string, today: string): void {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
     throw new RangeError(`habit day must be YYYY-MM-DD, got "${dayKey}"`)
   }
-  const [y, m, d] = dayKey.split('-').map(Number)
-  const parsed = new Date(y!, m! - 1, d!)
-  if (parsed.getFullYear() !== y || parsed.getMonth() !== m! - 1 || parsed.getDate() !== d) {
+  if (!isCalendarDay(dayKey)) {
     throw new RangeError(`habit day "${dayKey}" is not a calendar day`)
   }
   if (dayKey > today) {
     throw new RangeError(`habit day "${dayKey}" is after today — a habit cannot be completed ahead of time`)
   }
-}
-
-// Completing today records the moment of the click. A day being filled in after the
-// fact has no such moment, so it lands at local noon — far enough from either edge
-// that the completion still reads as that day under a nearby UTC offset.
-function completionTimestamp(dayKey: string, today: string): string {
-  if (dayKey === today) return new Date().toISOString()
-  const [y, m, d] = dayKey.split('-').map(Number)
-  return new Date(y!, m! - 1, d!, 12).toISOString()
-}
-
-function getDateRange(filter: DateFilter): DateRange {
-  if (filter === 'all') return {}
-
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  let start: Date
-
-  switch (filter) {
-    case 'today':
-      start = today
-      break
-    case 'yesterday':
-      start = new Date(today)
-      start.setDate(start.getDate() - 1)
-      return { start_date: start.toISOString(), end_date: today.toISOString() }
-    case 'this_week': {
-      const day = today.getDay()
-      const diff = day === 0 ? 6 : day - 1
-      start = new Date(today)
-      start.setDate(start.getDate() - diff)
-      const weekEnd = new Date(start)
-      weekEnd.setDate(weekEnd.getDate() + 7)
-      return { start_date: start.toISOString(), end_date: weekEnd.toISOString() }
-    }
-    case 'last_7':
-      start = new Date(today)
-      start.setDate(start.getDate() - 7)
-      break
-    case 'this_month':
-      start = new Date(today.getFullYear(), today.getMonth(), 1)
-      return {
-        start_date: start.toISOString(),
-        end_date: new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString(),
-      }
-    case 'last_30':
-      start = new Date(today)
-      start.setDate(start.getDate() - 30)
-      break
-    case 'this_year':
-      start = new Date(today.getFullYear(), 0, 1)
-      return {
-        start_date: start.toISOString(),
-        end_date: new Date(today.getFullYear() + 1, 0, 1).toISOString(),
-      }
-  }
-
-  return { start_date: start.toISOString(), end_date: tomorrow.toISOString() }
 }
 
 // The board arrives ordered by habit id, and a completion carrying no habit_id
@@ -149,12 +59,6 @@ function groupByCategory<T extends { category: HabitCategory }>(items: T[]): Rec
   return grouped
 }
 
-export const DATE_FILTERS: DateFilter[] = ['today', 'yesterday', 'this_week', 'last_7', 'this_month', 'last_30', 'this_year', 'all']
-
-export type { DateFilter }
-
-export { todayKey }
-
 export const useHabitsStore = defineStore('habits', () => {
   const habits = ref<Habit[]>([])
   const categories = ref<HabitCategory[]>([])
@@ -168,7 +72,7 @@ export const useHabitsStore = defineStore('habits', () => {
 
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
-  const selectedFilter = ref<DateFilter>('this_week')
+  const selectedFilter = ref<DateFilterKey>('this_week')
   const selectedDate = ref<string>(todayKey())
 
   // The wall clock is not reactive, so today has to be a ref that something
@@ -197,24 +101,16 @@ export const useHabitsStore = defineStore('habits', () => {
     const completed = completedHabits.value
     if (completed.length === 0) return { labels: [], values: [] }
 
-    const sorted = [...completed].sort((a, b) => new Date(a.complete_date).getTime() - new Date(b.complete_date).getTime())
-
-    const first = new Date(sorted[0]!.complete_date)
-    const last = new Date(sorted[sorted.length - 1]!.complete_date)
-    const firstDay = new Date(first.getFullYear(), first.getMonth(), first.getDate())
-    const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate())
+    // `complete_date` is a day, and YYYY-MM-DD sorts as a string in calendar order.
+    const days = completed.map((c) => c.complete_date).sort()
+    const lastDay = days[days.length - 1]!
 
     const counts = new Map<string, number>()
-    const dayMs = 86400000
-    for (let d = firstDay.getTime(); d <= lastDay.getTime(); d += dayMs) {
-      const key = new Date(d).toISOString().split('T')[0]!
-      counts.set(key, 0)
+    for (let day = days[0]!; day <= lastDay; day = addDays(day, 1)) {
+      counts.set(day, 0)
     }
-
-    for (const habit of sorted) {
-      const d = new Date(habit.complete_date)
-      const key = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().split('T')[0]!
-      counts.set(key, (counts.get(key) ?? 0) + 1)
+    for (const day of days) {
+      counts.set(day, (counts.get(day) ?? 0) + 1)
     }
 
     const labels: string[] = []
@@ -407,11 +303,8 @@ export const useHabitsStore = defineStore('habits', () => {
 
   /** One day's board, already split and ordered by the server. */
   async function loadDay(dayKey: string) {
-    const params: Record<string, string> = { date: dayKey }
-    const zone = browserZoneName()
-    if (zone) params.timezone = zone
     try {
-      const response = await api.get<HabitsDay>('/habits/day/', { params })
+      const response = await api.get<HabitsDay>('/habits/day/', { params: { date: dayKey } })
       logger.info('habit_day_fetched', {
         date: response.data.date,
         timezone: response.data.timezone,
@@ -444,7 +337,7 @@ export const useHabitsStore = defineStore('habits', () => {
         habit_id: habit.id,
         name: habit.name,
         category_id: habit.category_id,
-        complete_date: completionTimestamp(day, today.value),
+        complete_date: day,
       }
       const response = await api.post<HabitCompleted>('/habits/completed/', payload)
       if (day === selectedDate.value) moveToDone(habit.id, response.data)
@@ -525,8 +418,7 @@ export const useHabitsStore = defineStore('habits', () => {
   }
 
   async function stepDay(delta: number) {
-    const [y, m, d] = selectedDate.value.split('-').map(Number)
-    await selectDay(toDayKey(new Date(y!, m! - 1, d! + delta)))
+    await selectDay(addDays(selectedDate.value, delta))
   }
 
   async function goToToday() {
@@ -560,13 +452,13 @@ export const useHabitsStore = defineStore('habits', () => {
     }
   }
 
-  async function fetchCompletedFiltered(filter?: DateFilter) {
+  async function fetchCompletedFiltered(filter?: DateFilterKey) {
     const f = filter ?? selectedFilter.value
     selectedFilter.value = f
-    const params = getDateRange(f)
+    const range = dateFilterRange(f)
     const stringParams: Record<string, string> = {}
-    if (params.start_date) stringParams.start_date = params.start_date
-    if (params.end_date) stringParams.end_date = params.end_date
+    if (range.start) stringParams.start_date = range.start
+    if (range.end) stringParams.end_date = range.end
     await fetchCompleted(Object.keys(stringParams).length > 0 ? stringParams : undefined)
   }
 

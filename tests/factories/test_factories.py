@@ -215,7 +215,7 @@ class TestAutoTaskFactory:
         """Test creating an autotask that should run."""
         autotask = AutoTaskFactory(should_run=True)
         # Last run was 30 days ago, so it should run
-        assert autotask.should_run_today is True
+        assert autotask.is_due_on(datetime.now(UTC).date(), ZoneInfo('UTC')) is True
 
 
 class TestBookFactory:

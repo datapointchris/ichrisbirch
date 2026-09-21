@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+// dayLayout is how the API writes a calendar day.
+const dayLayout = "2006-01-02"
+
+// localDay is the day an instant falls on in this machine's zone. The API sends
+// instants in UTC, so formatting one as it arrives prints the UTC day, which is
+// tomorrow's date every evening for anyone west of UTC.
+func localDay(t time.Time) string {
+	return t.Local().Format(dayLayout)
+}
+
 // zoneinfoDirs are the paths a tzdata file lives under. The IANA name is
 // whatever follows one of them, so "/usr/share/zoneinfo/US/Eastern" is
 // "US/Eastern". macOS ships the same tree under /var/db/timezone.
@@ -25,8 +35,7 @@ var zoneinfoDirs = []string{
 // can look up. $TZ and that symlink are the two places the name is written.
 //
 // An empty return is not a failure to report. The caller leaves the parameter
-// off, the server reads the day in UTC, and the response says so. A visibly
-// wrong zone beats a silently wrong day.
+// off and the server reads the day in the user's timezone preference.
 func LocalZoneName() string {
 	name := zoneFromEnv(os.Getenv("TZ"))
 	if name == "" {

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pydantic import AwareDatetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
@@ -32,8 +33,8 @@ class TaskUpdate(TaskConfig):
     notes: str | None = None
     category: NotNull[str] = None
     priority: NotNull[int] = None
-    add_date: NotNull[datetime] = None
-    complete_date: datetime | None = None
+    add_date: NotNull[AwareDatetime] = None
+    complete_date: AwareDatetime | None = None
 
 
 class TaskCompleted(TaskConfig):

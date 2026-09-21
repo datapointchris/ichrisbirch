@@ -36,7 +36,7 @@ NEW_OBJ = schemas.ArticleCreate(
     url='http://aiagents.com',
     tags=['ai agents', 'rag'],
     summary='AI agents are the future of computing.',
-    save_date=dt.datetime.now(),
+    save_date=dt.datetime.now(dt.UTC),
 )
 
 ENDPOINT = '/articles/'
@@ -108,7 +108,7 @@ def test_search(article_crud_tester):
         url='http://search-test.com',
         tags=['test-search', 'findable'],
         summary='This article should be found by search',
-        save_date=dt.datetime.now(),
+        save_date=dt.datetime.now(dt.UTC),
     )
     response = client.post(ENDPOINT, json=searchable_article.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
@@ -257,7 +257,7 @@ def test_read(article_crud_tester):
         json={
             'is_current': False,
             'is_archived': True,
-            'last_read_date': str(dt.datetime.now()),
+            'last_read_date': str(dt.datetime.now(dt.UTC)),
             'read_count': article.get('read_count') + 1,
         },
     )
@@ -307,7 +307,7 @@ class TestArticleQueryParameters:
         client, crud_tester = article_crud_tester
         # First mark one article as read
         first_id = crud_tester.item_id_by_position(client, position=1)
-        client.patch(f'{ENDPOINT}{first_id}/', json={'last_read_date': str(dt.datetime.now())})
+        client.patch(f'{ENDPOINT}{first_id}/', json={'last_read_date': str(dt.datetime.now(dt.UTC))})
 
         response = client.get(ENDPOINT, params={'unread': False})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -345,7 +345,7 @@ class TestArticleQueryParameters:
         # Mark as read with review_days set
         client.patch(
             f'{ENDPOINT}{favorite_article["id"]}/',
-            json={'last_read_date': str(dt.datetime.now()), 'review_days': 30},
+            json={'last_read_date': str(dt.datetime.now(dt.UTC)), 'review_days': 30},
         )
 
         # Now favorites=True should return empty (recently read, not due for review)
@@ -404,7 +404,7 @@ def test_read_many_returns_empty_list_when_no_articles(txn_api_logged_in):
 def test_create_article_without_summary_returns_422(txn_api_logged_in):
     """POST /articles/ without summary returns 422 (summary is required)."""
     client, _ = txn_api_logged_in
-    payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(dt.datetime.now())}
+    payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(dt.datetime.now(dt.UTC))}
     response = client.post(ENDPOINT, json=payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 

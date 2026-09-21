@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pydantic import AwareDatetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
@@ -22,8 +23,8 @@ class SchedulerJob(SchedulerConfig):
 class SchedulerJobRunCreate(SchedulerConfig):
     job_id: str
     job_run_id: str | None = None
-    started_at: datetime
-    finished_at: datetime
+    started_at: AwareDatetime
+    finished_at: AwareDatetime
     duration_seconds: float
     success: bool
     error_type: str | None = None

@@ -120,6 +120,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { todayKey } from '@/composables/calendarDay'
 
 interface Props {
   modelValue: string // YYYY-MM-DD or empty string
@@ -145,8 +146,8 @@ const emit = defineEmits<{
 const containerRef = ref<HTMLDivElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
 const isOpen = ref(false)
-const viewYear = ref(new Date().getFullYear())
-const viewMonth = ref(new Date().getMonth())
+const viewYear = ref(Number(todayKey().slice(0, 4)))
+const viewMonth = ref(Number(todayKey().slice(5, 7)) - 1)
 const dropdownStyle = ref<Record<string, string>>({})
 
 const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
@@ -193,8 +194,7 @@ function outOfRange(dateStr: string): boolean {
 
 const calendarDays = computed((): CalendarDay[] => {
   const days: CalendarDay[] = []
-  const today = new Date()
-  const todayStr = formatDate(today.getFullYear(), today.getMonth() + 1, today.getDate())
+  const todayStr = todayKey()
 
   const firstDay = new Date(viewYear.value, viewMonth.value, 1).getDay()
   const daysInMonth = new Date(viewYear.value, viewMonth.value + 1, 0).getDate()
@@ -315,9 +315,9 @@ function openCalendar() {
     viewYear.value = parseInt(props.modelValue.substring(0, 4), 10)
     viewMonth.value = parseInt(props.modelValue.substring(5, 7), 10) - 1
   } else {
-    const now = new Date()
-    viewYear.value = now.getFullYear()
-    viewMonth.value = now.getMonth()
+    const today = todayKey()
+    viewYear.value = Number(today.slice(0, 4))
+    viewMonth.value = Number(today.slice(5, 7)) - 1
   }
   isOpen.value = true
   nextTick(positionDropdown)
@@ -341,14 +341,10 @@ function selectDay(day: CalendarDay) {
   closeCalendar()
 }
 
-const todayInRange = computed(() => {
-  const now = new Date()
-  return !outOfRange(formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate()))
-})
+const todayInRange = computed(() => !outOfRange(todayKey()))
 
 function selectToday() {
-  const now = new Date()
-  emit('update:modelValue', formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate()))
+  emit('update:modelValue', todayKey())
   closeCalendar()
 }
 

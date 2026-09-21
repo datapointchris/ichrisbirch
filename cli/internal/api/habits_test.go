@@ -56,12 +56,12 @@ func TestCompleteHabit_PostsCompletion(t *testing.T) {
 		_ = json.Unmarshal(raw, &gotBody)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"id":9,"name":"Stretch","category_id":2,"category":{"id":2,"name":"Health","is_current":true},"complete_date":"2026-07-24T10:00:00Z"}`))
+		_, _ = w.Write([]byte(`{"id":9,"name":"Stretch","category_id":2,"category":{"id":2,"name":"Health","is_current":true},"complete_date":"2026-07-24"}`))
 	}))
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	completed, err := client.CompleteHabit(context.Background(), HabitCompletedCreateInput{Name: "Stretch", CategoryID: 2, CompleteDate: "2026-07-24T10:00:00Z"})
+	completed, err := client.CompleteHabit(context.Background(), HabitCompletedCreateInput{Name: "Stretch", CategoryID: 2, CompleteDate: "2026-07-24"})
 	if err != nil {
 		t.Fatalf("CompleteHabit: %v", err)
 	}
@@ -71,7 +71,35 @@ func TestCompleteHabit_PostsCompletion(t *testing.T) {
 	if gotBody["name"] != "Stretch" || gotBody["category_id"] != float64(2) {
 		t.Errorf("body = %v", gotBody)
 	}
-	if completed.ID != 9 || completed.CompleteDate.IsZero() {
+	if gotBody["complete_date"] != "2026-07-24" {
+		t.Errorf("complete_date sent = %v, want the bare day", gotBody["complete_date"])
+	}
+	if completed.ID != 9 || completed.CompleteDate != "2026-07-24" {
 		t.Errorf("completed = %+v", completed)
+	}
+}
+
+func TestListCompletedHabits_SendsThePickAndTheDays(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		start OnOrAfter
+		end   OnOrBefore
+		pick  CompletionPick
+		want  string
+	}{
+		{"every completion sends nothing", "", "", AllCompletions, ""},
+		{"a range of days goes with no zone", "2026-09-01", "2026-09-20", AllCompletions, "end_date=2026-09-20&start_date=2026-09-01"},
+		{"first asks for the earliest", "", "", FirstCompletion, "first=true"},
+		{"last asks for the most recent", "", "", LastCompletion, "last=true"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client, query := recordQuery(t, `[]`)
+			if _, err := client.ListCompletedHabits(context.Background(), tc.start, tc.end, tc.pick); err != nil {
+				t.Fatalf("ListCompletedHabits: %v", err)
+			}
+			if *query != tc.want {
+				t.Errorf("query = %q, want %q", *query, tc.want)
+			}
+		})
 	}
 }

@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any
 
+from pydantic import AwareDatetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_validator
@@ -41,5 +42,5 @@ class UserUpdate(UserConfig):
     email: NotNull[str] = None
     password: NotNull[str] = None
     is_admin: NotNull[bool] = None
-    last_login: NotNull[datetime] = None
+    last_login: NotNull[AwareDatetime] = None
     preferences: NotNull[Any] = None

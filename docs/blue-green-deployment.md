@@ -190,8 +190,15 @@ These require two separate deploys:
 | Make column NOT NULL | Backfill NULLs + update code to always set value | Add NOT NULL constraint |
 | Rename column | Add new column + backfill + update code to use new | Drop old column |
 | Drop column | Remove all code references | Drop column from schema |
-| Change column type | Add new column with new type + backfill | Drop old column |
+| Change column type | Add new column with new type + backfill + a trigger filling whichever column a row arrives without | Drop the trigger and the old column |
 | Drop a table or schema | Remove all code references | Drop the table or schema |
+
+A type changed in place does not fail in the previous release the way a rename
+or a drop does. Postgres casts between the two types on every compare and every
+write, so the color still serving keeps running and returns the wrong rows. A
+`date` compared with a `timestamptz` becomes midnight in the session
+`TimeZone`, which is UTC here, so
+`date '2026-09-20' >= timestamptz '2026-09-20 00:00 America/New_York'` is false.
 
 Phase 2 of a drop waits for a deploy that phase 1 has already completed. The
 migration runs before the smoke gate and `POINT OF NO RETURN` sits below both,

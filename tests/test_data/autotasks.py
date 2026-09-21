@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 
 from ichrisbirch.models import AutoTask
@@ -9,8 +10,8 @@ BASE_DATA: list[AutoTask] = [
         category='Chore',
         priority=5,
         frequency='Daily',
-        first_run_date=datetime(2020, 4, 20, 3, 3, 39, 50648).isoformat(),
-        last_run_date=datetime(2020, 4, 24, 3, 3, 39, 50648).isoformat(),
+        first_run_date=datetime(2020, 4, 20, 3, 3, 39, 50648, tzinfo=UTC),
+        last_run_date=datetime(2020, 4, 24, 3, 3, 39, 50648, tzinfo=UTC),
         run_count=5,
     ),
     AutoTask(
@@ -19,8 +20,8 @@ BASE_DATA: list[AutoTask] = [
         category='Home',
         priority=10,
         frequency='Weekly',
-        first_run_date=datetime(2020, 3, 20, 3, 3, 39, 50648).isoformat(),
-        last_run_date=datetime(2020, 3, 24, 3, 3, 39, 50648).isoformat(),
+        first_run_date=datetime(2020, 3, 20, 3, 3, 39, 50648, tzinfo=UTC),
+        last_run_date=datetime(2020, 3, 24, 3, 3, 39, 50648, tzinfo=UTC),
         run_count=1,
     ),
     AutoTask(
@@ -29,8 +30,8 @@ BASE_DATA: list[AutoTask] = [
         category='Home',
         priority=15,
         frequency='Quarterly',
-        first_run_date=datetime(2020, 1, 20, 3, 3, 39, 50648).isoformat(),
-        last_run_date=datetime(2020, 1, 24, 3, 3, 39, 50648).isoformat(),
+        first_run_date=datetime(2020, 1, 20, 3, 3, 39, 50648, tzinfo=UTC),
+        last_run_date=datetime(2020, 1, 24, 3, 3, 39, 50648, tzinfo=UTC),
         run_count=2,
     ),
 ]

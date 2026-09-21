@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -137,7 +138,7 @@ func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
 	_, _ = fmt.Fprintf(out, "batch %s\n", s.BatchID)
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", s.Status)
 	if s.ResumesAt != nil {
-		_, _ = fmt.Fprintf(out, "  resumes:   %s (Claude usage limit)\n", *s.ResumesAt)
+		_, _ = fmt.Fprintf(out, "  resumes:   %s (Claude usage limit)\n", shortTimestamp(*s.ResumesAt))
 	}
 	_, _ = fmt.Fprintf(out, "  progress:  %d/%d processed\n", s.Processed, s.Total)
 	_, _ = fmt.Fprintf(out, "  succeeded: %d\n", s.Succeeded)
@@ -159,7 +160,7 @@ func printFailedImportsTable(out io.Writer, failed []api.ArticleFailedImport) {
 	_, _ = fmt.Fprintln(tw, "ID\tFAILED\tURL\tERROR")
 	for _, f := range failed {
 		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
-			f.ID, f.FailedAt.Format("2006-01-02"), f.URL, firstLine(f.ErrorMessage))
+			f.ID, localDay(f.FailedAt), f.URL, firstLine(f.ErrorMessage))
 	}
 	_ = tw.Flush()
 }
@@ -178,7 +179,8 @@ func newArticlesListCommand() *cobra.Command {
 		archived  bool
 		unread    bool
 		asJSON    bool
-		bounds    api.DateBounds
+		start     string
+		end       string
 		limit     int
 	)
 	cmd := &cobra.Command{
@@ -189,8 +191,9 @@ func newArticlesListCommand() *cobra.Command {
 			"omit it to ignore the filter. Same for --archived and --unread.\n" +
 			"\n" +
 			"--start/--end bound when an article was last read, inclusive on both ends,\n" +
-			"and either works without the other. A never-read article has no such date,\n" +
-			"so it falls outside every range.\n" +
+			"and either works without the other. A bound with no offset is taken in this\n" +
+			"machine's zone. A never-read article has no such date, so it falls outside\n" +
+			"every range.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the first titles of the\n" +
 			"narrowed set rather than filtering a capped slice.",
@@ -203,15 +206,16 @@ func newArticlesListCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
-					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"), bounds, limitFlag(cmd))
+					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"),
+					api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
 			})
 		},
 	}
 	cmd.Flags().BoolVar(&favorites, "favorites", false, "Filter by favorite status (favorites due for re-read)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Filter by archived status")
 	cmd.Flags().BoolVar(&unread, "unread", false, "Filter by never-read status")
-	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only articles last read on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&bounds.End, "end", "", "Only articles last read on or before this ISO 8601 date")
+	cmd.Flags().StringVar(&start, "start", "", "Only articles last read on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&end, "end", "", "Only articles last read on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output articles as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd
@@ -374,7 +378,13 @@ func newArticlesEditCommand() *cobra.Command {
 			in.IsFavorite = boolFlagPtr(cmd, "favorite")
 			in.IsCurrent = boolFlagPtr(cmd, "current")
 			in.IsArchived = boolFlagPtr(cmd, "archived")
-			in.LastReadDate = strFlag(f, "last-read", &lastRead)
+			if f.Changed("last-read") {
+				instant, err := lastReadInstant(lastRead, time.Local)
+				if err != nil {
+					return err
+				}
+				in.LastReadDate = &instant
+			}
 			in.ReadCount = intFlag(f, "read-count", &readCount)
 			in.ReviewDays = intFlag(f, "review-days", &reviewDays)
 
@@ -404,11 +414,30 @@ func newArticlesEditCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&favorite, "favorite", false, "Mark as favorite (--favorite or --favorite=false)")
 	cmd.Flags().BoolVar(&current, "current", false, "Mark as the current article (--current or --current=false)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Mark as archived (--archived or --archived=false)")
-	cmd.Flags().StringVar(&lastRead, "last-read", "", "Last-read date (ISO, e.g. 2026-07-24T09:00:00)")
+	cmd.Flags().StringVar(&lastRead, "last-read", "",
+		"Last-read day or time on this machine's clock (e.g. 2026-07-24 or 2026-07-24T09:00:00; an RFC3339 offset is kept)")
 	cmd.Flags().IntVar(&readCount, "read-count", 0, "Read count")
 	cmd.Flags().IntVar(&reviewDays, "review-days", 0, "Days between re-reads for a favorite")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated article as JSON to stdout")
 	return cmd
+}
+
+var errLastReadFormat = errors.New("--last-read is not a day or a time")
+
+// lastReadInstant turns --last-read into the RFC3339 instant the API requires.
+// A bare day or a time with no offset is read on loc's clock. A bare day is
+// noon there, so its day stays the same in any zone within twelve hours.
+func lastReadInstant(value string, loc *time.Location) (string, error) {
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t.Format(time.RFC3339), nil
+	}
+	if t, err := time.ParseInLocation("2006-01-02T15:04:05", value, loc); err == nil {
+		return t.Format(time.RFC3339), nil
+	}
+	if day, err := time.ParseInLocation(dayLayout, value, loc); err == nil {
+		return time.Date(day.Year(), day.Month(), day.Day(), 12, 0, 0, 0, loc).Format(time.RFC3339), nil
+	}
+	return "", usageError{fmt.Errorf("%w: %q — expected 2026-07-24, 2026-07-24T09:00:00 or RFC3339", errLastReadFormat, value)}
 }
 
 func newArticlesReadCommand() *cobra.Command {
@@ -543,9 +572,9 @@ func printArticleDetail(out io.Writer, a api.Article) {
 	_, _ = fmt.Fprintf(out, "  current:   %s\n", yesNo(a.IsCurrent))
 	_, _ = fmt.Fprintf(out, "  archived:  %s\n", yesNo(a.IsArchived))
 	_, _ = fmt.Fprintf(out, "  reads:     %d\n", a.ReadCount)
-	_, _ = fmt.Fprintf(out, "  saved:     %s\n", a.SaveDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "  saved:     %s\n", localDay(a.SaveDate))
 	if a.LastReadDate != nil {
-		_, _ = fmt.Fprintf(out, "  last read: %s\n", a.LastReadDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  last read: %s\n", localDay(*a.LastReadDate))
 	}
 	if a.ReviewDays != nil {
 		_, _ = fmt.Fprintf(out, "  review:    every %d days\n", *a.ReviewDays)

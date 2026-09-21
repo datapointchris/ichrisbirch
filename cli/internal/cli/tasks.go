@@ -47,7 +47,8 @@ func newTasksListCommand() *cobra.Command {
 		asJSON     bool
 		taskStatus string
 		category   string
-		bounds     api.DateBounds
+		start      string
+		end        string
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -59,9 +60,10 @@ func newTasksListCommand() *cobra.Command {
 			"moment they left the queue.\n" +
 			"\n" +
 			"--start/--end bound when a task was completed, inclusive on both ends, and\n" +
-			"either works without the other. An open task has no completion date, so it\n" +
-			"falls outside every range — pair them with --status completed to read a\n" +
-			"week's finished work.\n" +
+			"either works without the other. A bound with no offset is taken in this\n" +
+			"machine's zone. An open task has no completion date, so it falls outside\n" +
+			"every range — pair them with --status completed to read a week's finished\n" +
+			"work.\n" +
 			"\n" +
 			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
 			"It is matched by the API, so --limit caps the category rather than the\n" +
@@ -86,7 +88,8 @@ func newTasksListCommand() *cobra.Command {
 				category = canonical
 			}
 			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category, bounds)
+				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category,
+					api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()))
 			}); err != nil {
 				return err
 			}
@@ -99,8 +102,8 @@ func newTasksListCommand() *cobra.Command {
 	addLimitFlag(cmd, &limit)
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&category, "category", "", "Only tasks in this category: "+strings.Join(api.TaskCategories, ", "))
-	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only tasks completed on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&bounds.End, "end", "", "Only tasks completed on or before this ISO 8601 date")
+	cmd.Flags().StringVar(&start, "start", "", "Only tasks completed on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&end, "end", "", "Only tasks completed on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
 	return cmd
 }
@@ -497,9 +500,9 @@ func printTaskDetail(out io.Writer, t api.Task) {
 	_, _ = fmt.Fprintf(out, "  category:  %s\n", t.Category)
 	_, _ = fmt.Fprintf(out, "  priority:  %d\n", t.Priority)
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", taskStatus(t))
-	_, _ = fmt.Fprintf(out, "  added:     %s\n", t.AddDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "  added:     %s\n", localDay(t.AddDate))
 	if t.CompleteDate != nil {
-		_, _ = fmt.Fprintf(out, "  completed: %s\n", t.CompleteDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  completed: %s\n", localDay(*t.CompleteDate))
 	}
 	if n := strValue(t.Notes); n != "" {
 		_, _ = fmt.Fprintf(out, "  notes:     %s\n", n)

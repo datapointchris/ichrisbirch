@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useTasksStore, daysToComplete, timeToComplete } from '../tasks'
+import { useTasksStore } from '../tasks'
 import { ApiError } from '@/api/errors'
 import type { Task } from '@/api/client'
 import type { CompletedTask } from '../tasks'
@@ -385,61 +385,5 @@ describe('useTasksStore', () => {
     await expect(store.fetchTodo()).rejects.toThrow(ApiError)
     expect(store.error!.isNetworkError).toBe(true)
     expect(store.error!.userMessage).toBe('Unable to reach the server. Check your connection.')
-  })
-})
-
-// --- Exported utility functions ---
-
-describe('daysToComplete', () => {
-  it('calculates days between add and complete dates', () => {
-    const task: CompletedTask = {
-      id: 1,
-      name: 'Test',
-      category: 'Chore',
-      priority: 1,
-      add_date: '2026-01-01T00:00:00',
-      complete_date: '2026-01-15T00:00:00',
-    }
-    expect(daysToComplete(task)).toBe(14)
-  })
-
-  it('returns minimum of 1 day for same-day completion', () => {
-    const task: CompletedTask = {
-      id: 1,
-      name: 'Test',
-      category: 'Chore',
-      priority: 1,
-      add_date: '2026-03-19T00:00:00',
-      complete_date: '2026-03-19T00:00:00',
-    }
-    expect(daysToComplete(task)).toBe(1)
-  })
-})
-
-describe('timeToComplete', () => {
-  it('formats days as weeks and remainder', () => {
-    const task: CompletedTask = {
-      id: 1,
-      name: 'Test',
-      category: 'Chore',
-      priority: 1,
-      add_date: '2026-02-01T00:00:00',
-      complete_date: '2026-03-01T00:00:00',
-    }
-    // 28 days = 4 weeks, 0 days
-    expect(timeToComplete(task)).toBe('4 weeks, 0 days')
-  })
-
-  it('handles partial weeks', () => {
-    const task: CompletedTask = {
-      id: 1,
-      name: 'Test',
-      category: 'Chore',
-      priority: 1,
-      add_date: '2026-01-01T00:00:00',
-      complete_date: '2026-01-12T00:00:00',
-    }
-    // 11 days = 1 week, 4 days
-    expect(timeToComplete(task)).toBe('1 weeks, 4 days')
   })
 })

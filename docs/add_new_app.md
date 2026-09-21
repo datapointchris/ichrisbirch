@@ -134,8 +134,8 @@ files; everything else is shared plumbing.
   RFC3339 and rejects a bare day, and the client decodes a whole slice in one
   call, so one dated row would fail the entire command.
 - Client methods go through `c.get` / `c.send`; a resource file never touches
-  `http.NewRequest`. `applyLimit(params, limit)` from `row_limit.go` puts the
-  cap on.
+  `http.NewRequest`. `applyLimit(params, limit)` from `list_query.go` puts the
+  cap on, and `applyDateBounds(params, start, end, zone)` the date range.
 
 ### 2. Commands (`cli/internal/cli/widgets.go`)
 

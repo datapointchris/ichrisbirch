@@ -112,8 +112,8 @@ func printAutotaskDetail(out io.Writer, a api.AutoTask) {
 	_, _ = fmt.Fprintf(out, "  frequency:   %s\n", a.Frequency)
 	_, _ = fmt.Fprintf(out, "  max concur.: %d\n", a.MaxConcurrent)
 	_, _ = fmt.Fprintf(out, "  run count:   %d\n", a.RunCount)
-	_, _ = fmt.Fprintf(out, "  first run:   %s\n", a.FirstRunDate.Format("2006-01-02"))
-	_, _ = fmt.Fprintf(out, "  last run:    %s\n", a.LastRunDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "  first run:   %s\n", localDay(a.FirstRunDate))
+	_, _ = fmt.Fprintf(out, "  last run:    %s\n", localDay(a.LastRunDate))
 	if s := strValue(a.Notes); s != "" {
 		_, _ = fmt.Fprintf(out, "  notes:       %s\n", s)
 	}

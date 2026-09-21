@@ -19,7 +19,7 @@ func TestListBooks_Filters(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	books, err := client.ListBooks(context.Background(), BookFilter{Ownership: "owned"}, DateBounds{}, nil)
+	books, err := client.ListBooks(context.Background(), BookFilter{Ownership: "owned"}, "", "", nil)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}
@@ -33,23 +33,19 @@ func TestListBooks_Filters(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		filter BookFilter
-		bounds DateBounds
+		start  OnOrAfter
+		end    OnOrBefore
 		want   string
 	}{
-		{"progress alone", BookFilter{Progress: "reading"}, DateBounds{}, "progress=reading"},
-		{"both narrow together", BookFilter{Ownership: "owned", Progress: "reading"}, DateBounds{}, "ownership=owned&progress=reading"},
-		{"zero value sends nothing", BookFilter{}, DateBounds{}, ""},
-		{"finish-date bounds alone", BookFilter{}, DateBounds{Start: "2026-01-01", End: "2026-12-31"}, "end_date=2026-12-31&start_date=2026-01-01"},
-		{"one bound narrows on its own", BookFilter{}, DateBounds{Start: "2026-01-01"}, "start_date=2026-01-01"},
-		{
-			"bounds compose with the filters",
-			BookFilter{Progress: "read"},
-			DateBounds{Start: "2026-01-01"},
-			"progress=read&start_date=2026-01-01",
-		},
+		{"progress alone", BookFilter{Progress: "reading"}, "", "", "progress=reading"},
+		{"both narrow together", BookFilter{Ownership: "owned", Progress: "reading"}, "", "", "ownership=owned&progress=reading"},
+		{"zero value sends nothing", BookFilter{}, "", "", ""},
+		{"finish-date bounds alone", BookFilter{}, "2026-01-01", "2026-12-31", "end_date=2026-12-31&start_date=2026-01-01"},
+		{"one bound narrows on its own", BookFilter{}, "2026-01-01", "", "start_date=2026-01-01"},
+		{"bounds compose with the filters", BookFilter{Progress: "read"}, "2026-01-01", "", "progress=read&start_date=2026-01-01"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := client.ListBooks(context.Background(), tc.filter, tc.bounds, nil); err != nil {
+			if _, err := client.ListBooks(context.Background(), tc.filter, tc.start, tc.end, nil); err != nil {
 				t.Fatalf("ListBooks: %v", err)
 			}
 			if gotQuery != tc.want {

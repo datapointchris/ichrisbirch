@@ -32,13 +32,14 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useCountdownsStore } from '@/stores/countdowns'
+import { daysBetween, todayKey } from '@/composables/calendarDay'
 
 const store = useCountdownsStore()
 
 const topCountdowns = computed(() => store.sortedCountdowns.slice(0, 8))
 
 function daysLeft(dateStr: string): string {
-  const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000)
+  const diff = daysBetween(todayKey(), dateStr)
   if (diff < 0) return 'Past'
   if (diff === 0) return 'Today!'
   if (diff === 1) return '1 day'
@@ -46,7 +47,7 @@ function daysLeft(dateStr: string): string {
 }
 
 function daysClass(dateStr: string): string {
-  const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000)
+  const diff = daysBetween(todayKey(), dateStr)
   if (diff < 0) return 'widget-list__days--past'
   if (diff <= 7) return 'widget-list__days--urgent'
   if (diff <= 30) return 'widget-list__days--soon'

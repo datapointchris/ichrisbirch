@@ -65,6 +65,25 @@ class TestValidatePreferences:
         with pytest.raises(ValueError, match="Invalid value for 'view_type'.*"):
             test_user.validate_preferences(key='preferences', updated_preferences=update)
 
+    def test_an_iana_zone_is_a_valid_timezone(self, test_user):
+        update = {'timezone': 'America/New_York'}
+        assert test_user.validate_preferences(key='preferences', updated_preferences=update) == update
+
+    def test_a_null_timezone_is_one_nobody_has_chosen(self, test_user):
+        update = {'timezone': None}
+        assert test_user.validate_preferences(key='preferences', updated_preferences=update) == update
+
+    @pytest.mark.parametrize('zone', ['EST-5', 'America/New_York ', '', 'localtime', '-05:00'])
+    def test_a_name_the_iana_database_does_not_publish_is_refused(self, test_user, zone):
+        """`localtime` loads with `ZoneInfo` on a host whose zoneinfo directory links it to `/etc/localtime`."""
+        with pytest.raises(ValueError, match='is not an IANA timezone name'):
+            test_user.validate_preferences(key='preferences', updated_preferences={'timezone': zone})
+
+    def test_a_timezone_that_is_not_a_string_is_a_value_error(self, test_user):
+        """zoneinfo answers a number with a TypeError, which the endpoint would turn into a 500."""
+        with pytest.raises(ValueError, match="Invalid value for 'timezone'"):
+            test_user.validate_preferences(key='preferences', updated_preferences={'timezone': -5})
+
 
 class TestDotPreferenceToNestedDict:
     def test_single_level_key(self):
@@ -181,3 +200,17 @@ class TestGetPreference:
         }
         result = test_user.get_preference('tasks.pages.todo.view_type')
         assert result == 'block', 'User preference should override default'
+
+
+class TestCalendarZone:
+    def test_the_preference_is_the_calendar(self, test_user):
+        test_user.preferences = {'timezone': 'America/New_York'}
+        assert test_user.calendar_zone == 'America/New_York'
+
+    def test_a_user_with_no_preference_reads_days_in_utc(self, test_user):
+        test_user.preferences = {'timezone': None}
+        assert test_user.calendar_zone == 'UTC'
+
+    def test_preferences_that_predate_the_key_read_days_in_utc(self, test_user):
+        test_user.preferences = {'theme_color': 'blue'}
+        assert test_user.calendar_zone == 'UTC'

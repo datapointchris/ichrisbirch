@@ -23,7 +23,7 @@ func TestListTasks_LimitQueryParam(t *testing.T) {
 	client := New(srv.URL, staticTokenClient("t"))
 
 	limit := 5
-	tasks, err := client.ListTasks(context.Background(), &limit, "", "", DateBounds{})
+	tasks, err := client.ListTasks(context.Background(), &limit, "", "", "", "", "")
 	if err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestListTasks_LimitQueryParam(t *testing.T) {
 	}
 
 	// nil limit omits the query string entirely.
-	_, _ = client.ListTasks(context.Background(), nil, "", "", DateBounds{})
+	_, _ = client.ListTasks(context.Background(), nil, "", "", "", "", "")
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty for nil limit", gotQuery)
 	}
@@ -130,7 +130,7 @@ func TestReorderTasks_ReturnsMessage(t *testing.T) {
 // explicit default in every URL makes the server's default unchangeable.
 func TestListTasks_OmitsTheStatusParamByDefault(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListTasks(context.Background(), nil, "", "", DateBounds{}); err != nil {
+	if _, err := client.ListTasks(context.Background(), nil, "", "", "", "", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "" {
@@ -140,7 +140,7 @@ func TestListTasks_OmitsTheStatusParamByDefault(t *testing.T) {
 
 func TestListTasks_SendsTheStatus(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted, "", DateBounds{}); err != nil {
+	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted, "", "", "", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "status=completed" {
@@ -148,10 +148,9 @@ func TestListTasks_SendsTheStatus(t *testing.T) {
 	}
 }
 
-func TestListTasks_CarriesTheDateBounds(t *testing.T) {
+func TestListTasks_CarriesTheCompletionBounds(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	bounds := DateBounds{Start: "2026-08-17", End: "2026-08-23"}
-	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted, "", bounds); err != nil {
+	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted, "", "2026-08-17", "2026-08-23", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "end_date=2026-08-23&start_date=2026-08-17&status=completed" {
@@ -159,9 +158,29 @@ func TestListTasks_CarriesTheDateBounds(t *testing.T) {
 	}
 }
 
+func TestListTasks_NamesTheZoneABareDayIsReadIn(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted, "", "2026-08-20", "2026-08-20", "America/New_York"); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "end_date=2026-08-20&start_date=2026-08-20&status=completed&timezone=America%2FNew_York" {
+		t.Errorf("query = %q, want the zone beside the bounds", *query)
+	}
+}
+
+func TestListTasks_AZoneWithNoBoundIsNotSent(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListTasks(context.Background(), nil, "", "", "", "", "America/New_York"); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "" {
+		t.Errorf("query = %q, want nothing: a zone narrows nothing on its own", *query)
+	}
+}
+
 func TestListTasks_OneBoundNarrowsOnItsOwn(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListTasks(context.Background(), nil, "", "", DateBounds{End: "2026-08-23"}); err != nil {
+	if _, err := client.ListTasks(context.Background(), nil, "", "", "", "2026-08-23", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "end_date=2026-08-23" {
@@ -172,7 +191,7 @@ func TestListTasks_OneBoundNarrowsOnItsOwn(t *testing.T) {
 func TestListTasks_CarriesBothLimitAndStatus(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
 	limit := 5
-	if _, err := client.ListTasks(context.Background(), &limit, TaskStatusAll, "", DateBounds{}); err != nil {
+	if _, err := client.ListTasks(context.Background(), &limit, TaskStatusAll, "", "", "", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "limit=5&status=all" {
@@ -182,7 +201,7 @@ func TestListTasks_CarriesBothLimitAndStatus(t *testing.T) {
 
 func TestListTasks_SendsTheCategory(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListTasks(context.Background(), nil, "", "Personal", DateBounds{}); err != nil {
+	if _, err := client.ListTasks(context.Background(), nil, "", "Personal", "", "", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "category=Personal" {
@@ -195,7 +214,7 @@ func TestListTasks_SendsTheCategory(t *testing.T) {
 func TestListTasks_CarriesTheCategoryBesideTheLimit(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
 	limit := 3
-	if _, err := client.ListTasks(context.Background(), &limit, "", "Personal", DateBounds{}); err != nil {
+	if _, err := client.ListTasks(context.Background(), &limit, "", "Personal", "", "", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "category=Personal&limit=3" {
@@ -205,7 +224,7 @@ func TestListTasks_CarriesTheCategoryBesideTheLimit(t *testing.T) {
 
 func TestListTasks_OmitsTheCategoryParamWhenEmpty(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListTasks(context.Background(), nil, TaskStatusAll, "", DateBounds{}); err != nil {
+	if _, err := client.ListTasks(context.Background(), nil, TaskStatusAll, "", "", "", ""); err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
 	if *query != "status=all" {

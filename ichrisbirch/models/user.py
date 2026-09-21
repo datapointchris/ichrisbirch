@@ -20,6 +20,7 @@ from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
 
 from ichrisbirch.database.base import Base
+from ichrisbirch.schemas.iana_zone import refuse_unknown_zone
 
 MutableJSONB = mutable_json_type(dbtype=JSONB, nested=True)
 
@@ -56,6 +57,21 @@ class ThemeColor(enum.StrEnum):
 
 
 PREFERENCE_VALUE_CHECKS = {'view_type': AppView, 'theme_color': ThemeColor}
+
+
+def refuse_unknown_zone_preference(value: object) -> None:
+    """Null is a zone nobody has chosen yet, which the web app fills from the browser."""
+    if value is None:
+        return
+    if not isinstance(value, str):
+        raise ValueError(f"Invalid value for 'timezone'. Expected an IANA timezone name, got {value!r}.")
+    refuse_unknown_zone(value)
+
+
+PREFERENCE_VALIDATORS = {'timezone': refuse_unknown_zone_preference}
+
+# Only a user who has never opened the web app has no zone preference.
+CALENDAR_FALLBACK_ZONE = 'UTC'
 
 DEFAULT_USER_PREFERENCES = {
     'theme_color': ThemeColor.TURQUOISE,
@@ -120,6 +136,7 @@ DEFAULT_USER_PREFERENCES = {
     ],
     'dark_mode': True,
     'notifications': False,
+    'timezone': None,
     'dashboard_layout': [
         ['tasks_priority', 'countdowns', 'events'],
         ['habits', 'brainlog', 'devlog'],
@@ -216,6 +233,8 @@ class User(Base):
                 valid_values = [e.value for e in enum_class]
                 if value not in valid_values:
                     raise ValueError(f"Invalid value for '{key}'. Expected one of {valid_values}, got '{value}'.")
+            elif key in PREFERENCE_VALIDATORS:
+                PREFERENCE_VALIDATORS[key](value)
 
         return updated_preferences
 
@@ -301,6 +320,11 @@ class User(Base):
             else:
                 return None
         return default_value
+
+    @property
+    def calendar_zone(self) -> str:
+        """The IANA zone this user's days are read in: the preference, else UTC."""
+        return self.get_preference('timezone') or CALENDAR_FALLBACK_ZONE
 
     @property
     def is_active(self):

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 )
 
 // HabitCategory is a habit's category (a lookup row).
@@ -26,14 +25,16 @@ type Habit struct {
 	IsCurrent  bool          `json:"is_current"`
 }
 
-// HabitCompleted is a recorded completion of a habit on a date.
+// HabitCompleted is a recorded completion of a habit on a day. CompleteDate is
+// a YYYY-MM-DD string because time.Time's JSON decode requires RFC3339 and
+// rejects a bare day.
 type HabitCompleted struct {
 	ID           int           `json:"id"`
 	HabitID      *int          `json:"habit_id"`
 	Name         string        `json:"name"`
 	CategoryID   int           `json:"category_id"`
 	Category     HabitCategory `json:"category"`
-	CompleteDate time.Time     `json:"complete_date"`
+	CompleteDate string        `json:"complete_date"`
 }
 
 // HabitCreateInput is the body for creating a habit. Name and CategoryID are
@@ -52,7 +53,7 @@ type HabitUpdateInput struct {
 }
 
 // HabitCompletedCreateInput records a completion (POST /habits/completed/).
-// CompleteDate is a datetime string parsed server-side. HabitID is optional —
+// CompleteDate is the YYYY-MM-DD day it was done. HabitID is optional —
 // omitted, the completion is still recorded, just unlinkable to a live habit.
 type HabitCompletedCreateInput struct {
 	HabitID      *int   `json:"habit_id,omitempty"`
@@ -77,7 +78,7 @@ type HabitsDay struct {
 // day, so the two cannot disagree about where the day ends.
 //
 // zone is an IANA name. An empty one leaves the parameter off, and the server
-// reads the day in UTC.
+// reads the day in the user's timezone preference.
 func (c *Client) GetHabitsDay(ctx context.Context, day string, zone string) (HabitsDay, error) {
 	params := url.Values{}
 	if day != "" {
@@ -158,21 +159,32 @@ func (c *Client) CompleteHabit(ctx context.Context, in HabitCompletedCreateInput
 	return completed, nil
 }
 
-// ListCompletedHabits returns habit completions (GET /habits/completed/),
-// filtered by the same query as completed tasks.
-func (c *Client) ListCompletedHabits(ctx context.Context, q CompletedTasksQuery) ([]HabitCompleted, error) {
+// CompletionPick chooses which habit completions a list returns.
+type CompletionPick int
+
+const (
+	// AllCompletions returns every completion within the bounds.
+	AllCompletions CompletionPick = iota
+	// FirstCompletion returns only the earliest completion, ignoring the bounds.
+	FirstCompletion
+	// LastCompletion returns only the most recent completion, ignoring the bounds.
+	LastCompletion
+)
+
+// ListCompletedHabits returns habit completions (GET /habits/completed/). start
+// and end bound an inclusive range of days. FirstCompletion and LastCompletion
+// ignore the range and return one completion from the whole history.
+//
+// A completion is a calendar day, so no zone goes with the bounds.
+func (c *Client) ListCompletedHabits(ctx context.Context, start OnOrAfter, end OnOrBefore, pick CompletionPick) ([]HabitCompleted, error) {
 	params := url.Values{}
-	if q.StartDate != "" {
-		params.Set("start_date", q.StartDate)
-	}
-	if q.EndDate != "" {
-		params.Set("end_date", q.EndDate)
-	}
-	if q.First {
+	applyDateBounds(params, start, end, "")
+	switch pick {
+	case FirstCompletion:
 		params.Set("first", "true")
-	}
-	if q.Last {
+	case LastCompletion:
 		params.Set("last", "true")
+	case AllCompletions:
 	}
 	path := "/habits/completed/"
 	if encoded := params.Encode(); encoded != "" {

@@ -45,16 +45,6 @@ type TaskUpdateInput struct {
 	Priority *int    `json:"priority,omitempty"`
 }
 
-// CompletedTasksQuery filters the /tasks/completed/ endpoint. First/Last return
-// the single earliest/most-recent completed task; StartDate/EndDate bound a range
-// (ISO 8601). All are optional; with none set, every completed task is returned.
-type CompletedTasksQuery struct {
-	StartDate string
-	EndDate   string
-	First     bool
-	Last      bool
-}
-
 // A task is open or completed and nothing else. The same two words items use,
 // minus the one a task has no state for.
 const (
@@ -89,8 +79,8 @@ var TaskCategories = []string{
 
 // ListTasks returns tasks in one status (GET /tasks/). A nil limit fetches all;
 // a non-nil limit caps the count. An empty status takes the API's default, open.
-// An empty category lists every category. bounds narrows to tasks completed
-// within a date range; a zero DateBounds narrows nothing.
+// An empty category lists every category. start and end narrow to tasks
+// completed within an inclusive range, read in zone.
 //
 // Every filter is sent rather than applied here, so limit caps the set that was
 // asked for. Both strings are validated by the API, so an argument passed in the
@@ -98,7 +88,7 @@ var TaskCategories = []string{
 //
 // Completed tasks come back ordered by when they were finished rather than by
 // priority, which stops meaning anything once a task leaves the queue.
-func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category string, bounds DateBounds) ([]Task, error) {
+func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category string, start OnOrAfter, end OnOrBefore, zone DayZone) ([]Task, error) {
 	query := url.Values{}
 	if limit != nil {
 		query.Set("limit", strconv.Itoa(*limit))
@@ -109,36 +99,9 @@ func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category
 	if category != "" {
 		query.Set("category", category)
 	}
-	bounds.apply(query)
+	applyDateBounds(query, start, end, zone)
 	var tasks []Task
 	if err := c.get(ctx, withQuery("/tasks/", query), &tasks); err != nil {
-		return nil, err
-	}
-	return tasks, nil
-}
-
-// ListCompletedTasks returns completed tasks (GET /tasks/completed/), filtered by
-// the given query.
-func (c *Client) ListCompletedTasks(ctx context.Context, q CompletedTasksQuery) ([]Task, error) {
-	params := url.Values{}
-	if q.StartDate != "" {
-		params.Set("start_date", q.StartDate)
-	}
-	if q.EndDate != "" {
-		params.Set("end_date", q.EndDate)
-	}
-	if q.First {
-		params.Set("first", "true")
-	}
-	if q.Last {
-		params.Set("last", "true")
-	}
-	path := "/tasks/completed/"
-	if encoded := params.Encode(); encoded != "" {
-		path += "?" + encoded
-	}
-	var tasks []Task
-	if err := c.get(ctx, path, &tasks); err != nil {
 		return nil, err
 	}
 	return tasks, nil

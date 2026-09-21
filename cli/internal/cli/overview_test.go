@@ -37,7 +37,7 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 			Date:         "2026-07-24",
 			Timezone:     "America/New_York",
 			Due:          []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
-			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)}},
+			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: "2026-07-24"}},
 			CurrentTotal: 2,
 		},
 		OwnedBooks: []api.Book{
@@ -416,7 +416,7 @@ func TestPrintOverview(t *testing.T) {
 		Tasks: []api.Task{{ID: 1, Name: "Renew passport", Category: "chore", Priority: 1}},
 		HabitsDay: api.HabitsDay{
 			Due:          []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
-			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: habitAt(8, 0)}},
+			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: "2026-07-24"}},
 			CurrentTotal: 2,
 		},
 		Failures: []sectionFailure{

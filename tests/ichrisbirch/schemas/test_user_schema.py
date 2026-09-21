@@ -40,7 +40,7 @@ class TestUserSchema:
 
     def test_user_model_valid(self):
         """Test creating a valid User model."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         user_data = {
             'id': 1,
             'alternative_id': 12345,
@@ -61,7 +61,7 @@ class TestUserSchema:
 
     def test_user_model_missing_fields(self):
         """Test User model fails with missing required fields."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         incomplete_data = {
             'id': 1,
             'name': 'Test User',
@@ -76,7 +76,7 @@ class TestUserSchema:
 
     def test_user_update_valid(self):
         """Test creating a valid UserUpdate model."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         update_data = {'name': 'Updated Name', 'last_login': now, 'preferences': {'theme': 'light'}}
         user_update = UserUpdate(**update_data)
         assert user_update.name == 'Updated Name'

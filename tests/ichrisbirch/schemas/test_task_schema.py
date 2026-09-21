@@ -49,7 +49,7 @@ class TestTaskSchema:
 
     def test_task_model_valid(self):
         """Test creating a valid Task model."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         task_data = {
             'id': 1,
             'name': 'Test Task',
@@ -70,7 +70,7 @@ class TestTaskSchema:
 
     def test_task_model_with_complete_date(self):
         """Test creating a task with a complete date."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         completed = now + timedelta(days=1)
         task_data = {
             'id': 1,
@@ -87,7 +87,7 @@ class TestTaskSchema:
 
     def test_task_model_missing_fields(self):
         """Test Task model fails with missing required fields."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         incomplete_data = {'name': 'Test Task', 'category': 'Home', 'priority': 1, 'add_date': now}
 
         with pytest.raises(ValidationError):
@@ -115,7 +115,7 @@ class TestTaskSchema:
 
     def test_task_completed_valid(self):
         """Test creating a valid TaskCompleted model and verify properties."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
         completed = now + timedelta(days=10)
 
         task_completed_data = {
@@ -136,7 +136,7 @@ class TestTaskSchema:
 
     def test_task_completed_same_day(self):
         """Test a task completed on the same day."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.UTC)
 
         task_completed_data = {
             'id': 1,

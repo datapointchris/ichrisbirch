@@ -75,9 +75,8 @@ import {
   verticalBarOptions,
   countByMonth,
   average,
-  daysBetween,
-  daysAgo,
 } from '@/composables/useStatsCharts'
+import { daysAgo, daysBetween } from '@/composables/calendarDay'
 import type { Task } from '@/api/client'
 import type { StatsCard } from '@/components/stats/StatsSummaryCards.vue'
 import TasksSubnav from '@/components/tasks/TasksSubnav.vue'

@@ -49,7 +49,7 @@ def clear(session: Session) -> None:
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     rng = random.Random(42)
-    now = datetime.now(UTC)
+    today = datetime.now(UTC).date()
 
     # Create categories
     categories = []
@@ -94,7 +94,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     HabitCompleted(
                         name=habit.name,
                         category_id=habit.category_id,
-                        complete_date=now - timedelta(days=days_ago, hours=rng.randint(6, 22)),
+                        complete_date=today - timedelta(days=days_ago),
                     )
                 )
             continue
@@ -123,7 +123,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     HabitCompleted(
                         name=habit.name,
                         category_id=habit.category_id,
-                        complete_date=now - timedelta(days=days_ago, hours=rng.randint(6, 22)),
+                        complete_date=today - timedelta(days=days_ago),
                     )
                 )
 

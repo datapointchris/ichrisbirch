@@ -18,6 +18,7 @@ Examples:
     TaskFactory(notes='x' * 10000)
 """
 
+from datetime import UTC
 from datetime import datetime
 
 import factory
@@ -40,12 +41,12 @@ class TaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
     category = 'Chore'
     priority = factory.Sequence(lambda n: (n + 1) * 5)  # 5, 10, 15, 20...
-    add_date = factory.LazyFunction(datetime.now)
+    add_date = factory.LazyFunction(lambda: datetime.now(UTC))
     complete_date = None
 
     class Params:
         # Usage: TaskFactory(completed=True)
-        completed = factory.Trait(complete_date=factory.LazyFunction(datetime.now))
+        completed = factory.Trait(complete_date=factory.LazyFunction(lambda: datetime.now(UTC)))
         high_priority = factory.Trait(priority=100)
         low_priority = factory.Trait(priority=1)
         negative_priority = factory.Trait(priority=-5)

@@ -32,7 +32,7 @@ async function fillAndSubmit(wrapper: ReturnType<typeof mountModal>) {
 }
 
 describe('AddEditEventModal timezone', () => {
-  it('defaults the zone to the reader’s own', async () => {
+  it("defaults the zone to the reader's own", async () => {
     const wrapper = mountModal()
     await fillAndSubmit(wrapper)
 
@@ -48,7 +48,7 @@ describe('AddEditEventModal timezone', () => {
     expect(payload.date).toBe('2026-09-28T19:00')
   })
 
-  it('carries the event’s own zone into an edit rather than the reader’s', async () => {
+  it("carries the event's own zone into an edit rather than the reader's", async () => {
     const existing: Event = {
       id: 7,
       name: 'Conference',

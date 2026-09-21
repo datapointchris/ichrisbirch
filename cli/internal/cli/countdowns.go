@@ -262,15 +262,24 @@ func printCountdownDetail(out io.Writer, c api.Countdown) {
 	}
 }
 
-// daysUntil renders a human "in N days" / "N days ago" for a YYYY-MM-DD date, or
-// the raw value if it does not parse.
+// daysUntil renders how far a YYYY-MM-DD date is from today on this machine's
+// calendar.
 func daysUntil(date string) string {
-	due, err := time.Parse("2006-01-02", date)
+	return daysUntilFrom(date, time.Now())
+}
+
+// daysUntilFrom counts from the day now falls on in its own zone. Both days are
+// placed at UTC midnight, where every day is 24 hours, so the division is exact.
+// Truncating now to 24 hours would count from the UTC day, which is already
+// tomorrow every evening west of UTC.
+func daysUntilFrom(date string, now time.Time) string {
+	due, err := time.Parse(dayLayout, date)
 	if err != nil {
 		return "?"
 	}
-	today := time.Now().Truncate(24 * time.Hour)
-	days := int(due.Truncate(24*time.Hour).Sub(today).Hours() / 24)
+	year, month, day := now.Date()
+	today := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+	days := int(due.Sub(today).Hours() / 24)
 	switch {
 	case days == 0:
 		return "today"

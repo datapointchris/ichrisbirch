@@ -133,9 +133,11 @@ Contract notes for consumers (`menu dashboard` in dotfiles is the first):
   endpoint degrades one lane instead of the whole snapshot. A rejected session or
   a total failure is *not* a warning — it fails the command, because a partial
   payload would misrepresent an unauthenticated state as an empty one.
-- Habit completions carry no habit id, so "done today" matches on name and
-  category. A habit renamed after being completed today reads as due again until
-  its next completion.
+- "Done today" matches a completion to its habit by `habit_id`, so a habit
+  renamed after being completed stays done. A completion with no `habit_id`
+  falls back to name and category.
+- "Today" is the day on this machine's calendar: the command sends its zone and
+  the server reads the board in it.
 
 ## Guided create — `internal/prompt`
 

@@ -110,20 +110,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useEventsStore } from '@/stores/events'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Event, EventCreate, EventUpdate } from '@/api/client'
 import AddEditEventModal from '@/components/events/AddEditEventModal.vue'
 import { formatDate, timeUntil } from '@/composables/formatDate'
-import { browserTimezone, wallClockInstant, wallClockIsPast } from '@/composables/useWallClock'
+import { wallClockInstant, wallClockIsPast } from '@/composables/useWallClock'
+import { displayZone } from '@/composables/displayZone'
 
 // The reading is printed verbatim, because that is the clock at the venue. The zone
 // is named whenever it is not the reader's own, or a 9:00 elsewhere reads as 9:00
 // here and says nothing about which 9:00. Everything that compares against now goes
 // through the resolver instead.
-const readerTimezone = browserTimezone()
+const readerTimezone = computed(() => displayZone())
 
 function timeUntilEvent(event: Event): string {
   return timeUntil(new Date(wallClockInstant(event)).toISOString())

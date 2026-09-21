@@ -10,8 +10,9 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
-// The zone is pinned rather than taken from the runner. The noon rule is about a
-// wall clock, and a runner in UTC has no offset shift for the rule to survive.
+// The zone is pinned rather than taken from the runner. At 21:30 in New York it
+// is already the next day in UTC, and a runner in UTC would not see the two
+// calendars disagree.
 func newYork(t *testing.T) *time.Location {
 	t.Helper()
 	loc, err := time.LoadLocation("America/New_York")
@@ -25,57 +26,40 @@ func evening(t *testing.T) time.Time {
 	return time.Date(2026, 8, 23, 21, 30, 0, 0, newYork(t))
 }
 
-func TestHabitCompleteDate_NoFlagIsTheMomentItRan(t *testing.T) {
-	now := evening(t)
-	got, err := habitCompleteDate("", now)
+func TestHabitCompleteDate_NoFlagIsTodayOnTheLocalCalendar(t *testing.T) {
+	got, err := habitCompleteDate("", evening(t))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !got.Equal(now) {
-		t.Errorf("want %v, got %v", now, got)
+	if got != "2026-08-23" {
+		t.Errorf("want 2026-08-23, the New York day rather than the UTC one, got %s", got)
 	}
 }
 
-func TestHabitCompleteDate_TodayKeepsTheMomentRatherThanNoon(t *testing.T) {
-	now := evening(t)
-	got, err := habitCompleteDate("2026-08-23", now)
+func TestHabitCompleteDate_TodayIsAccepted(t *testing.T) {
+	got, err := habitCompleteDate("2026-08-23", evening(t))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !got.Equal(now) {
-		t.Errorf("want the current moment %v, got %v", now, got)
+	if got != "2026-08-23" {
+		t.Errorf("want 2026-08-23, got %s", got)
 	}
 }
 
-func TestHabitCompleteDate_AnEarlierDayLandsAtLocalNoon(t *testing.T) {
+func TestHabitCompleteDate_AnEarlierDayIsThatDay(t *testing.T) {
 	got, err := habitCompleteDate("2026-08-21", evening(t))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := time.Date(2026, 8, 21, 12, 0, 0, 0, newYork(t))
-	if !got.Equal(want) {
-		t.Errorf("want %v, got %v", want, got)
+	if got != "2026-08-21" {
+		t.Errorf("want 2026-08-21, got %s", got)
 	}
 }
 
-// Adding twelve hours to local midnight lands at 13:00 on the spring-forward day
-// and 11:00 on the fall-back day, because a duration is absolute and the offset
-// moves underneath it. Noon has to be constructed, not reached.
-func TestHabitCompleteDate_NoonIsNoonOnDaysTheOffsetShifts(t *testing.T) {
-	loc := newYork(t)
-	now := time.Date(2026, 12, 1, 9, 0, 0, 0, loc)
-
-	for _, day := range []string{"2026-03-08", "2026-11-01"} {
-		got, err := habitCompleteDate(day, now)
-		if err != nil {
-			t.Fatalf("%s: unexpected error: %v", day, err)
-		}
-		if got.Hour() != 12 {
-			t.Errorf("%s: want hour 12, got %d (%v)", day, got.Hour(), got)
-		}
-		if got.Format("2006-01-02") != day {
-			t.Errorf("%s: want the same calendar day, got %v", day, got)
-		}
+func TestHabitCompleteDate_ADayThatDoesNotExistIsAFormatRefusal(t *testing.T) {
+	_, err := habitCompleteDate("2026-02-31", evening(t))
+	if !errors.Is(err, errDateFormat) {
+		t.Fatalf("want errDateFormat, got %v", err)
 	}
 }
 

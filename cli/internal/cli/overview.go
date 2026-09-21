@@ -209,7 +209,7 @@ func newOverviewCommand() *cobra.Command {
 func overviewFetches() []overviewFetch {
 	return []overviewFetch{
 		{sectionTasks, "tasks", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			tasks, err := c.ListTasks(ctx, nil, api.TaskStatusOpen, "", api.DateBounds{})
+			tasks, err := c.ListTasks(ctx, nil, api.TaskStatusOpen, "", "", "", "")
 			d.Tasks = tasks
 			return err
 		}},
@@ -219,7 +219,7 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionBooks, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"}, api.DateBounds{}, nil)
+			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"}, "", "", nil)
 			d.OwnedBooks = books
 			return err
 		}},
@@ -230,7 +230,7 @@ func overviewFetches() []overviewFetch {
 		}},
 		{sectionArticles, "unread articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			unread := true
-			articles, err := c.ListArticles(ctx, nil, nil, &unread, api.DateBounds{}, nil)
+			articles, err := c.ListArticles(ctx, nil, nil, &unread, "", "", "", nil)
 			d.UnreadArticles = articles
 			return err
 		}},
@@ -238,12 +238,12 @@ func overviewFetches() []overviewFetch {
 		// call, so there is no separate read filter to ask for and no third state.
 		{sectionArticles, "read articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			archived := true
-			articles, err := c.ListArticles(ctx, nil, &archived, nil, api.DateBounds{}, nil)
+			articles, err := c.ListArticles(ctx, nil, &archived, nil, "", "", "", nil)
 			d.ReadArticles = articles
 			return err
 		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, api.DateBounds{}, nil)
+			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, "", "", "", nil)
 			d.Items = items
 			return err
 		}},
@@ -668,7 +668,7 @@ func articleReadSummary(section articleSection) string {
 		return ""
 	}
 	return fmt.Sprintf(", %d read in 30d, last %s",
-		section.ReadLast30Days, section.LastReadAt.Format("2006-01-02"))
+		section.ReadLast30Days, localDay(*section.LastReadAt))
 }
 
 func printArticleSection(out io.Writer, section articleSection) {
