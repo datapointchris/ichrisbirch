@@ -190,9 +190,9 @@ func newArticlesListCommand() *cobra.Command {
 			"omit it to ignore the filter. Same for --archived and --unread.\n" +
 			"\n" +
 			"--start/--end bound when an article was last read, inclusive on both ends,\n" +
-			"and either works without the other. A day is read on this machine's\n" +
-			"calendar. A never-read article has no such date, so it falls outside every\n" +
-			"range.\n" +
+			"and either works without the other. A bound with no offset is taken in this\n" +
+			"machine's zone. A never-read article has no such date, so it falls outside\n" +
+			"every range.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the first titles of the\n" +
 			"narrowed set rather than filtering a capped slice.",

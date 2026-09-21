@@ -62,7 +62,7 @@ func newHabitsTodayCommand() *cobra.Command {
 			"The server composes the board and names the day. This sends the machine's IANA\n" +
 			"timezone, so the day ends where you are rather than at UTC midnight, and the\n" +
 			"header names the zone it was read in. A machine whose zone cannot be read falls\n" +
-			"back to UTC, which the header then says.",
+			"back to the timezone on your profile, which the header then names.",
 		Example: "  icb habits today\n  icb habits today --json",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -127,8 +127,8 @@ func habitPlacementID(habitID int) int {
 }
 
 // printHabitsDay renders the board. The header names the zone the day was read
-// in, because the zone decides which completions land on it. A machine that
-// could not name its own zone reads as UTC there rather than going unmentioned.
+// in, because that zone decides which day is today. A machine that could not
+// name its own zone gets the user's preference, and the header names that one.
 func printHabitsDay(out io.Writer, board api.HabitsDay) {
 	_, _ = fmt.Fprintf(out, "Habits (%d of %d done today, %s)\n", len(board.Completed), board.CurrentTotal, board.Timezone)
 	rows := habitsDayRows(board)

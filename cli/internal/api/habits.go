@@ -78,7 +78,7 @@ type HabitsDay struct {
 // day, so the two cannot disagree about where the day ends.
 //
 // zone is an IANA name. An empty one leaves the parameter off, and the server
-// reads the day in UTC.
+// reads the day in the user's timezone preference.
 func (c *Client) GetHabitsDay(ctx context.Context, day string, zone string) (HabitsDay, error) {
 	params := url.Values{}
 	if day != "" {
@@ -172,7 +172,8 @@ const (
 )
 
 // ListCompletedHabits returns habit completions (GET /habits/completed/). start
-// and end bound an inclusive range of days, and pick narrows to one end of it.
+// and end bound an inclusive range of days. FirstCompletion and LastCompletion
+// ignore the range and return one completion from the whole history.
 //
 // A completion is a calendar day, so no zone goes with the bounds.
 func (c *Client) ListCompletedHabits(ctx context.Context, start OnOrAfter, end OnOrBefore, pick CompletionPick) ([]HabitCompleted, error) {

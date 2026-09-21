@@ -262,8 +262,8 @@ func printCountdownDetail(out io.Writer, c api.Countdown) {
 	}
 }
 
-// daysUntil renders a human "in N days" / "N days ago" for a YYYY-MM-DD date, or
-// "?" if it does not parse.
+// daysUntil renders how far a YYYY-MM-DD date is from today on this machine's
+// calendar.
 func daysUntil(date string) string {
 	return daysUntilFrom(date, time.Now())
 }

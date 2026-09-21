@@ -24,8 +24,8 @@ func applyLimit(params url.Values, limit *int) {
 // 8601 date or datetime. Empty narrows nothing.
 //
 // The two bounds and the zone are separate types because they sit side by
-// side in every list read. As plain strings, a transposed start and end
-// compiles and answers with nothing.
+// side in each signature that takes them. As plain strings, a start and end
+// passed in each other's place compile, and the API returns an empty list.
 type OnOrAfter string
 
 // OnOrBefore is the inclusive upper bound, read the same way as OnOrAfter.

@@ -60,9 +60,10 @@ func newTasksListCommand() *cobra.Command {
 			"moment they left the queue.\n" +
 			"\n" +
 			"--start/--end bound when a task was completed, inclusive on both ends, and\n" +
-			"either works without the other. A day is read on this machine's calendar.\n" +
-			"An open task has no completion date, so it falls outside every range — pair\n" +
-			"them with --status completed to read a week's finished work.\n" +
+			"either works without the other. A bound with no offset is taken in this\n" +
+			"machine's zone. An open task has no completion date, so it falls outside\n" +
+			"every range — pair them with --status completed to read a week's finished\n" +
+			"work.\n" +
 			"\n" +
 			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
 			"It is matched by the API, so --limit caps the category rather than the\n" +

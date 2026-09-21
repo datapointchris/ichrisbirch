@@ -9,8 +9,8 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
-// The worker writes the instant in UTC. 03:00 UTC is 23:00 the evening before
-// in New York, which is when the reader can next expect the batch to move.
+// The worker writes the instant in UTC. 03:00 UTC on the 18th is 23:00 on the
+// 17th in New York.
 func TestPrintBulkImportStatus_APausedBatchSaysWhenItResumes(t *testing.T) {
 	original := time.Local
 	time.Local = newYork(t)

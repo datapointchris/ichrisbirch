@@ -106,10 +106,10 @@ func newItemsListCommand() *cobra.Command {
 			"open the same way the unscoped list does and takes the same --status.\n" +
 			"\n" +
 			"--start/--end bound when an item was finished, inclusive on both ends, and\n" +
-			"either works without the other. A day is read on this machine's calendar.\n" +
-			"An item that was never completed has no such date, so it falls outside\n" +
-			"every range — pair them with --status completed to read a week's finished\n" +
-			"work.\n" +
+			"either works without the other. A bound with no offset is taken in this\n" +
+			"machine's zone. An item that was never completed has no such date, so it\n" +
+			"falls outside every range — pair them with --status completed to read a\n" +
+			"week's finished work.\n" +
 			"\n" +
 			"--limit caps what the filters left, and applies to either shape of the\n" +
 			"list: newest-first unscoped, project order under --project.",

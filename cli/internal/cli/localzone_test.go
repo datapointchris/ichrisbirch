@@ -132,8 +132,7 @@ func TestZoneExists(t *testing.T) {
 	}
 }
 
-// The API sends instants in UTC. 01:00 UTC on the 21st is 21:00 on the 20th in
-// New York, and printing it as it arrived would put the evening on tomorrow.
+// 01:00 UTC on the 21st is 21:00 on the 20th in New York.
 func TestLocalDay_IsTheDayOnThisMachinesCalendar(t *testing.T) {
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
