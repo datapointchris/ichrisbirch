@@ -1,22 +1,23 @@
+import { daysBetween, todayKey } from './calendarDay'
+
 export interface DaysLeftResult {
   text: string
   urgency: 'past' | 'two-weeks' | 'month' | 'none'
   totalDays: number
 }
 
+/** Days from today to a due day, both read on the user's calendar. */
 export function computeDaysLeft(dueDateString: string): DaysLeftResult {
-  const date = new Date(dueDateString + 'T00:00:00')
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const totalDays = daysBetween(todayKey(), dueDateString)
 
-  const differenceMs = date.getTime() - today.getTime()
-
-  if (differenceMs <= 0) {
+  if (totalDays < 0) {
     return { text: 'Past', urgency: 'past', totalDays: 0 }
   }
+  if (totalDays === 0) {
+    return { text: 'Today', urgency: 'two-weeks', totalDays: 0 }
+  }
 
-  let differenceDays = Math.floor(differenceMs / 86400000)
-  const totalDays = differenceDays
+  let differenceDays = totalDays
   const parts: string[] = []
 
   if (differenceDays > 365) {

@@ -33,9 +33,9 @@ const testHabits = [
 ]
 
 const testCompleted = [
-  { id: 10, name: 'Meditate', category_id: 1, category: testCategory, complete_date: '2026-03-14T08:00:00Z' },
-  { id: 11, name: 'Read', category_id: 2, category: testCategoryImportant, complete_date: '2026-03-14T09:00:00Z' },
-  { id: 12, name: 'Meditate', category_id: 1, category: testCategory, complete_date: '2026-03-13T08:00:00Z' },
+  { id: 10, name: 'Meditate', category_id: 1, category: testCategory, complete_date: '2026-03-14' },
+  { id: 11, name: 'Read', category_id: 2, category: testCategoryImportant, complete_date: '2026-03-14' },
+  { id: 12, name: 'Meditate', category_id: 1, category: testCategory, complete_date: '2026-03-13' },
 ]
 
 describe('useHabitsStore', () => {
@@ -241,7 +241,7 @@ describe('useHabitsStore', () => {
       name: 'Meditate',
       category_id: 1,
       category: testCategory,
-      complete_date: '2026-03-14T12:00:00Z',
+      complete_date: '2026-03-14',
     }
     mockApi.get.mockResolvedValue({ data: board({ due: [testHabits[0]!, testHabits[1]!], current_total: 2 }) })
     mockApi.post.mockResolvedValue({ data: completed })
@@ -267,11 +267,11 @@ describe('useHabitsStore', () => {
   it('places a ticked-off habit by id rather than appending it', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
-    const already = { id: 30, habit_id: 5, name: 'Stretch', category_id: 1, category: testCategory, complete_date: '2026-03-14T08:00:00Z' }
-    const orphan = { id: 31, habit_id: null, name: 'Gone', category_id: 1, category: testCategory, complete_date: '2026-03-14T08:30:00Z' }
+    const already = { id: 30, habit_id: 5, name: 'Stretch', category_id: 1, category: testCategory, complete_date: '2026-03-14' }
+    const orphan = { id: 31, habit_id: null, name: 'Gone', category_id: 1, category: testCategory, complete_date: '2026-03-14' }
     mockApi.get.mockResolvedValue({ data: board({ due: [testHabits[1]!], completed: [already, orphan], current_total: 3 }) })
     mockApi.post.mockResolvedValue({
-      data: { id: 32, habit_id: 2, name: 'Read', category_id: 2, category: testCategoryImportant, complete_date: '2026-03-14T12:00:00Z' },
+      data: { id: 32, habit_id: 2, name: 'Read', category_id: 2, category: testCategoryImportant, complete_date: '2026-03-14' },
     })
     const store = useHabitsStore()
     await store.fetchDailyData()
@@ -291,20 +291,22 @@ describe('useHabitsStore', () => {
     expect(mockApi.post).toHaveBeenCalledWith('/habits/completed/', expect.objectContaining({ habit_id: 1 }))
   })
 
-  it('stamps a completion on today with the current moment', async () => {
+  // `complete_date` is a day column. A late-evening completion sent as an instant
+  // lands on the next day's UTC date, which is the defect the day type removes.
+  it('records a completion today as the day itself, however late it is', async () => {
     vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 2, 14, 21, 30))
+    vi.setSystemTime(new Date(2026, 2, 14, 23, 30))
     mockApi.post.mockResolvedValue({ data: testCompleted[0] })
     const store = useHabitsStore()
 
     await store.completeHabit(testHabits[0]!, '2026-03-14')
 
     const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
-    expect(new Date(payload.complete_date).getHours()).toBe(21)
+    expect(payload.complete_date).toBe('2026-03-14')
     vi.useRealTimers()
   })
 
-  it('stamps a backfilled day at local noon, not at the current time', async () => {
+  it('records a backfilled day as that day', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 21, 30))
     mockApi.post.mockResolvedValue({ data: testCompleted[2] })
@@ -313,11 +315,7 @@ describe('useHabitsStore', () => {
     await store.completeHabit(testHabits[0]!, '2026-03-11')
 
     const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
-    const stamped = new Date(payload.complete_date)
-    expect(stamped.getFullYear()).toBe(2026)
-    expect(stamped.getMonth()).toBe(2)
-    expect(stamped.getDate()).toBe(11)
-    expect(stamped.getHours()).toBe(12)
+    expect(payload.complete_date).toBe('2026-03-11')
     vi.useRealTimers()
   })
 
@@ -332,7 +330,7 @@ describe('useHabitsStore', () => {
     await store.completeHabit(testHabits[0]!)
 
     const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
-    expect(new Date(payload.complete_date).getDate()).toBe(11)
+    expect(payload.complete_date).toBe('2026-03-11')
     vi.useRealTimers()
   })
 
@@ -362,9 +360,8 @@ describe('useHabitsStore', () => {
     vi.useRealTimers()
   })
 
-  // The server names the day against a zone it is told, so a reader west of UTC
-  // does not get yesterday's board all evening.
-  it('sends the reader zone the day is resolved against', async () => {
+  // The page names the day itself, so no zone reaches the server to reinterpret it.
+  it('asks for the board by day alone', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 9, 0))
     mockApi.get.mockResolvedValue({ data: board() })
@@ -372,8 +369,7 @@ describe('useHabitsStore', () => {
 
     await store.fetchDailyData()
 
-    const params = (mockApi.get.mock.calls[0]![1] as { params: { timezone?: string } }).params
-    expect(params.timezone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    expect((mockApi.get.mock.calls[0]![1] as { params: Record<string, string> }).params).toEqual({ date: '2026-03-14' })
     vi.useRealTimers()
   })
 
@@ -427,7 +423,7 @@ describe('useHabitsStore', () => {
     const store = useHabitsStore()
 
     const boardFor = (day: string) =>
-      board({ date: day, completed: [{ ...testCompleted[0]!, habit_id: 1, id: Number(day.slice(-2)), complete_date: `${day}T12:00:00Z` }] })
+      board({ date: day, completed: [{ ...testCompleted[0]!, habit_id: 1, id: Number(day.slice(-2)), complete_date: `${day}` }] })
     const pending: Array<(b: HabitsDay) => void> = []
     mockApi.get.mockImplementation(() => new Promise((resolve) => pending.push((b) => resolve({ data: b }))))
 
@@ -440,7 +436,7 @@ describe('useHabitsStore', () => {
     await Promise.all([first, second])
 
     expect(store.selectedDate).toBe('2026-03-12')
-    expect(store.dayCompleted.map((c) => c.complete_date)).toEqual(['2026-03-12T12:00:00Z'])
+    expect(store.dayCompleted.map((c) => c.complete_date)).toEqual(['2026-03-12'])
     vi.useRealTimers()
   })
 
@@ -490,9 +486,7 @@ describe('useHabitsStore', () => {
     expect(store.selectedDate).toBe('2026-03-15')
     expect(store.isToday).toBe(true)
     const payload = mockApi.post.mock.calls[0]![1] as { complete_date: string }
-    const stamped = new Date(payload.complete_date)
-    expect(stamped.getDate()).toBe(15)
-    expect(stamped.getHours()).toBe(0)
+    expect(payload.complete_date).toBe('2026-03-15')
     vi.useRealTimers()
   })
 
@@ -653,9 +647,9 @@ describe('useHabitsStore', () => {
   it('generates chart data with zero-fill for missing dates', () => {
     const store = useHabitsStore()
     store.completedHabits = [
-      { id: 1, name: 'A', category_id: 1, category: testCategory, complete_date: '2026-03-10T08:00:00Z' },
-      { id: 2, name: 'B', category_id: 1, category: testCategory, complete_date: '2026-03-10T09:00:00Z' },
-      { id: 3, name: 'C', category_id: 1, category: testCategory, complete_date: '2026-03-12T08:00:00Z' },
+      { id: 1, name: 'A', category_id: 1, category: testCategory, complete_date: '2026-03-10' },
+      { id: 2, name: 'B', category_id: 1, category: testCategory, complete_date: '2026-03-10' },
+      { id: 3, name: 'C', category_id: 1, category: testCategory, complete_date: '2026-03-12' },
     ]
 
     const { labels, values } = store.chartData

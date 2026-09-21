@@ -12,12 +12,14 @@ import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js'
 import type { CompletedTask } from '@/stores/tasks'
+import { addDays, dayKeyOf } from '@/composables/calendarDay'
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend)
 
 const props = defineProps<{ tasks: CompletedTask[] }>()
 
-const DATE_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' }
+// A label names a day key, so it is printed on the UTC clock the key was placed on.
+const DATE_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit', timeZone: 'UTC' }
 
 const dataBarColors = [
   'rgba(255, 99, 132, 0.2)',
@@ -32,29 +34,19 @@ const dataBarColors = [
 const chartData = computed(() => {
   if (props.tasks.length === 0) return { labels: [], datasets: [] }
 
-  const sorted = [...props.tasks].sort((a, b) => new Date(a.complete_date).getTime() - new Date(b.complete_date).getTime())
+  const days = props.tasks.map((task) => dayKeyOf(task.complete_date)).sort()
+  const lastDay = days[days.length - 1]!
 
-  const first = new Date(sorted[0]!.complete_date)
-  const last = new Date(sorted[sorted.length - 1]!.complete_date)
-
-  const dayCount: Record<string, number> = {}
-  const current = new Date(first.getFullYear(), first.getMonth(), first.getDate())
-  const end = new Date(last.getFullYear(), last.getMonth(), last.getDate())
-  end.setDate(end.getDate() + 1)
-
-  while (current <= end) {
-    dayCount[current.toISOString().slice(0, 10)] = 0
-    current.setDate(current.getDate() + 1)
+  const dayCount = new Map<string, number>()
+  for (let day = days[0]!; day <= lastDay; day = addDays(day, 1)) {
+    dayCount.set(day, 0)
+  }
+  for (const day of days) {
+    dayCount.set(day, (dayCount.get(day) ?? 0) + 1)
   }
 
-  for (const task of sorted) {
-    const key = new Date(task.complete_date).toISOString().slice(0, 10)
-    if (key in dayCount) dayCount[key] = (dayCount[key] ?? 0) + 1
-  }
-
-  const entries = Object.entries(dayCount)
-  const labels = entries.map(([dateStr]) => new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', DATE_FORMAT))
-  const values = entries.map(([, count]) => count)
+  const labels = [...dayCount.keys()].map((day) => new Date(`${day}T00:00:00Z`).toLocaleDateString('en-US', DATE_FORMAT))
+  const values = [...dayCount.values()]
 
   return {
     labels,

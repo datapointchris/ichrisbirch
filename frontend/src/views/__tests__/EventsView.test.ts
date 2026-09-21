@@ -17,7 +17,6 @@ vi.mock('@/composables/useNotifications', () => ({
 vi.mock('@/composables/formatDate', () => ({
   formatDate: (date: string) => `formatted:${date}`,
   timeUntil: (date: string) => `until:${date}`,
-  isPast: (date: string) => new Date(date) < new Date(),
 }))
 
 // Dates are relative to "now": the view highlights an event only when it is both

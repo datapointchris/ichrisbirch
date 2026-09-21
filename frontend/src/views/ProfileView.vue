@@ -152,6 +152,20 @@
         </div>
       </div>
 
+      <!-- Timezone -->
+      <div class="grid__item">
+        <h3>Timezone</h3>
+        <p class="setting-description">
+          Every date is shown in this zone, and "today" is today here. It was set from this browser the first time you signed in.
+        </p>
+        <NeuSelect
+          :model-value="selectedTimezone"
+          data-testid="profile-timezone-select"
+          :options="timezoneOptions"
+          @update:model-value="selectTimezone"
+        />
+      </div>
+
       <!-- Sidebar Order -->
       <div class="grid__item">
         <h3>Sidebar Order</h3>
@@ -284,9 +298,16 @@ import { ApiError } from '@/api/errors'
 import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
 import draggable from 'vuedraggable'
 import { formatDate } from '@/composables/formatDate'
+import { displayZone } from '@/composables/displayZone'
+import { zoneOptions } from '@/composables/zoneOptions'
+import { browserTimezone } from '@/composables/useWallClock'
+import NeuSelect from '@/components/NeuSelect.vue'
 
 const auth = useAuthStore()
 const { show: notify } = useNotifications()
+
+const selectedTimezone = computed(() => displayZone())
+const timezoneOptions = zoneOptions(browserTimezone(), 'this browser')
 
 const colorThemes = themes.filter((t) => t.type === 'color')
 const namedThemes = themes.filter((t) => t.type === 'named')
@@ -360,6 +381,16 @@ async function saveAccentHue() {
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
     notify(`Failed to update accent: ${detail}`, 'error')
+  }
+}
+
+async function selectTimezone(zone: string) {
+  try {
+    await auth.updatePreferences({ timezone: zone })
+    notify(`Timezone set to ${zone}`, 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to update timezone: ${detail}`, 'error')
   }
 }
 

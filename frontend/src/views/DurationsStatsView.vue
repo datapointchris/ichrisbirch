@@ -54,7 +54,8 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
 import { useNotifications } from '@/composables/useNotifications'
-import { getThemeColors, horizontalBarOptions, daysBetween, average } from '@/composables/useStatsCharts'
+import { getThemeColors, horizontalBarOptions, average } from '@/composables/useStatsCharts'
+import { daysBetween, todayKey } from '@/composables/calendarDay'
 import type { Duration } from '@/api/client'
 import type { StatsCard } from '@/components/stats/StatsSummaryCards.vue'
 import AppSubnav from '@/components/AppSubnav.vue'
@@ -73,7 +74,7 @@ const loading = ref(false)
 const error = ref<ApiError | null>(null)
 
 const loaded = computed(() => durations.value.length > 0)
-const today = new Date().toISOString().slice(0, 10)
+const today = todayKey()
 
 const durationLengths = computed(() =>
   durations.value

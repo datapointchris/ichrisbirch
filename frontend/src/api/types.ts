@@ -25,6 +25,8 @@ export interface UserPreferences {
   font_family: string
   dark_mode: boolean
   notifications: boolean
+  /** IANA zone every date is shown and every bare day is read in. Null until the web app first records the browser's. */
+  timezone?: string | null
   dashboard_layout: string[][]
   sidebar_order?: string[]
   [key: string]: unknown

@@ -5,18 +5,19 @@
  */
 
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js'
+import { monthKeyOf } from './calendarDay'
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend)
 
 // --- Shared stats computation utilities ---
 
-/** Group items by year-month and count them. Returns sorted by month ascending. */
+/** Group items by the month they fall in on the user's calendar. Returns sorted by month ascending. */
 export function countByMonth<T>(items: T[], getDate: (item: T) => string | undefined): { month: string; count: number }[] {
   const counts = new Map<string, number>()
   for (const item of items) {
     const dateStr = getDate(item)
     if (!dateStr) continue
-    const month = dateStr.slice(0, 7)
+    const month = monthKeyOf(dateStr)
     counts.set(month, (counts.get(month) ?? 0) + 1)
   }
   return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }))
@@ -36,16 +37,6 @@ export function countByLabel<T>(items: T[], getLabel: (item: T) => string): { la
 export function average(values: number[]): number {
   if (values.length === 0) return 0
   return Math.round((values.reduce((sum, v) => sum + v, 0) / values.length) * 10) / 10
-}
-
-/** Days between two date strings. */
-export function daysBetween(start: string, end: string): number {
-  return Math.floor((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24))
-}
-
-/** Days from a date string to today. */
-export function daysAgo(dateStr: string): number {
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
 }
 
 // --- Chart theming ---

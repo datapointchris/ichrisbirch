@@ -31,9 +31,11 @@ import AppSidebar from '@/components/AppSidebar.vue'
 import SubmitIssueModal from '@/components/SubmitIssueModal.vue'
 import NotificationToast from '@/components/NotificationToast.vue'
 import { useTheme } from '@/composables/useTheme'
+import { useDisplayZone } from '@/composables/displayZone'
 import { useAuthStore } from '@/stores/auth'
 
 useTheme()
+useDisplayZone()
 
 const auth = useAuthStore()
 const sidebarOpen = ref(true)
