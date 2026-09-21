@@ -466,6 +466,16 @@ resource "aws_iam_group_policy_attachment" "developer_admin_assume_terraform" {
   policy_arn = aws_iam_policy.assume_terraform_role.arn
 }
 
+resource "aws_iam_group_policy_attachment" "developer_admin_billing_read_only" {
+  group      = aws_iam_group.developer_admin.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess"
+}
+
+resource "aws_iam_group_policy_attachment" "developer_admin_read_only" {
+  group      = aws_iam_group.developer_admin.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
 # --- Security --- #
 
 resource "aws_iam_group_policy_attachment" "security_assume_adming" {
