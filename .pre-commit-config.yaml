@@ -98,15 +98,6 @@ repos:
       - id: markdownlint
         args: [--fix]
 
-# > custom:after:markdown - Jinja templates
-  # HTML/Jinja templates
-  - repo: https://github.com/djlint/djLint
-    rev: v1.36.4
-    hooks:
-      - id: djlint-jinja
-        args: ["--reformat"]
-      - id: djlint
-
 # generated:shell - Shell
   #
   # exclude_types: [zsh] on both tools. Neither supports zsh, and neither says
