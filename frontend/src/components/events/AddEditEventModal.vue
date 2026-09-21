@@ -154,7 +154,7 @@ const nameInput = ref<HTMLInputElement | null>(null)
 // The date input is a wall clock at the venue, so the zone has to be stated rather
 // than inferred. The user's own zone is the right default — most events are local
 // — and Intl carries every IANA name the backend will accept.
-const timezoneOptions = computed<NeuSelectOption<string>[]>(() => zoneOptions(displayZone()))
+const timezoneOptions = computed<NeuSelectOption<string>[]>(() => zoneOptions(displayZone(), form.timezone))
 
 const form = reactive({
   name: '',

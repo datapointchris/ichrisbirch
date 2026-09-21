@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { daysAgo } from '@/composables/calendarDay'
 import { useDurationsStore } from '@/stores/durations'
 
 const store = useDurationsStore()
@@ -34,7 +35,7 @@ const store = useDurationsStore()
 const activeDurations = computed(() => store.sortedDurations.filter((d) => !d.end_date).slice(0, 8))
 
 function elapsed(startDate: string): string {
-  const days = Math.floor((Date.now() - new Date(startDate).getTime()) / 86_400_000)
+  const days = daysAgo(startDate)
   if (days < 1) return 'Today'
   if (days < 30) return `${days}d`
   if (days < 365) return `${Math.floor(days / 30)}mo`

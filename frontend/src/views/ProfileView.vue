@@ -156,7 +156,8 @@
       <div class="grid__item">
         <h3>Timezone</h3>
         <p class="setting-description">
-          Every date is shown in this zone, and "today" is today here. It was set from this browser the first time you signed in.
+          Every date is shown in this zone, and "today" is today here. Until you choose one, it is the zone of the browser you first signed
+          in from.
         </p>
         <NeuSelect
           :model-value="selectedTimezone"
@@ -307,7 +308,7 @@ const auth = useAuthStore()
 const { show: notify } = useNotifications()
 
 const selectedTimezone = computed(() => displayZone())
-const timezoneOptions = zoneOptions(browserTimezone(), 'this browser')
+const timezoneOptions = computed(() => zoneOptions(browserTimezone(), selectedTimezone.value, 'this browser'))
 
 const colorThemes = themes.filter((t) => t.type === 'color')
 const namedThemes = themes.filter((t) => t.type === 'named')
