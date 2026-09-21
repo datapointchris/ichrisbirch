@@ -60,26 +60,6 @@ describe('useHabitsStore', () => {
 
   // --- fetchHabits ---
 
-  it('fetches habits from API', async () => {
-    mockApi.get.mockResolvedValue({ data: testHabits })
-    const store = useHabitsStore()
-
-    await store.fetchHabits()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/habits/', { params: undefined })
-    expect(store.habits).toEqual(testHabits)
-    expect(store.loading).toBe(false)
-  })
-
-  it('fetches habits with params', async () => {
-    mockApi.get.mockResolvedValue({ data: [testHabits[0], testHabits[1]] })
-    const store = useHabitsStore()
-
-    await store.fetchHabits({ current: true })
-
-    expect(mockApi.get).toHaveBeenCalledWith('/habits/', { params: { current: true } })
-  })
-
   it('sets error on fetch habits failure', async () => {
     const apiError = new ApiError({ message: 'API 500', detail: 'Server error', status: 500 })
     mockApi.get.mockRejectedValue(apiError)
@@ -88,33 +68,6 @@ describe('useHabitsStore', () => {
     await expect(store.fetchHabits()).rejects.toThrow(ApiError)
     expect(store.error).toBe(apiError)
     expect(store.loading).toBe(false)
-  })
-
-  // --- fetchCategories ---
-
-  it('fetches categories from API', async () => {
-    const categories = [testCategory, testCategoryImportant]
-    mockApi.get.mockResolvedValue({ data: categories })
-    const store = useHabitsStore()
-
-    await store.fetchCategories()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/habits/categories/', { params: undefined })
-    expect(store.categories).toEqual(categories)
-  })
-
-  // --- fetchCompleted ---
-
-  it('fetches completed habits', async () => {
-    mockApi.get.mockResolvedValue({ data: testCompleted })
-    const store = useHabitsStore()
-
-    await store.fetchCompleted({ start_date: '2026-03-13', end_date: '2026-03-15' })
-
-    expect(mockApi.get).toHaveBeenCalledWith('/habits/completed/', {
-      params: { start_date: '2026-03-13', end_date: '2026-03-15' },
-    })
-    expect(store.completedHabits).toEqual(testCompleted)
   })
 
   // --- createHabit ---

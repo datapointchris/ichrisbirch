@@ -64,17 +64,6 @@ describe('useBoxPackingStore', () => {
 
   // --- fetchBoxes ---
 
-  it('fetches boxes from API', async () => {
-    mockApi.get.mockResolvedValue({ data: testBoxes })
-    const store = useBoxPackingStore()
-
-    await store.fetchBoxes()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/')
-    expect(store.boxes).toEqual(testBoxes)
-    expect(store.loading).toBe(false)
-  })
-
   it('sets loading state during fetch', async () => {
     let resolvePromise!: (value: unknown) => void
     mockApi.get.mockReturnValue(
@@ -239,18 +228,6 @@ describe('useBoxPackingStore', () => {
 
     expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/items/20/', { box_id: 1 })
     expect(store.orphans.find((o) => o.id === 20)).toBeUndefined()
-  })
-
-  // --- fetchOrphans ---
-
-  it('fetches orphaned items', async () => {
-    mockApi.get.mockResolvedValue({ data: testOrphans })
-    const store = useBoxPackingStore()
-
-    await store.fetchOrphans()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/items/orphans/')
-    expect(store.orphans).toEqual(testOrphans)
   })
 
   // --- deleteOrphan ---

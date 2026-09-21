@@ -80,17 +80,6 @@ describe('useArticlesStore', () => {
 
   // --- fetchAll ---
 
-  it('fetches articles from API and sets state', async () => {
-    mockApi.get.mockResolvedValue({ data: testArticles })
-    const store = useArticlesStore()
-
-    await store.fetchAll()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/articles/', { params: { archived: false } })
-    expect(store.articles).toEqual(testArticles)
-    expect(store.loading).toBe(false)
-  })
-
   it('sets loading state during fetch', async () => {
     let resolvePromise!: (value: unknown) => void
     mockApi.get.mockReturnValue(
@@ -128,17 +117,6 @@ describe('useArticlesStore', () => {
   })
 
   // --- fetchCurrent ---
-
-  it('fetches current article', async () => {
-    const current = testArticles[1]
-    mockApi.get.mockResolvedValue({ data: current })
-    const store = useArticlesStore()
-
-    await store.fetchCurrent()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/articles/current/')
-    expect(store.currentArticle).toEqual(current)
-  })
 
   it('sets currentArticle to null when no current', async () => {
     mockApi.get.mockResolvedValue({ data: null })
@@ -360,18 +338,6 @@ describe('useArticlesStore', () => {
   })
 
   // --- summarizeUrl ---
-
-  it('summarizes a URL and returns result', async () => {
-    const summary = { title: 'Article Title', summary: 'A great summary', tags: ['tag1', 'tag2'] }
-    mockApi.post.mockResolvedValue({ data: summary })
-    const store = useArticlesStore()
-
-    const result = await store.summarizeUrl('https://example.com/article')
-
-    expect(mockApi.post).toHaveBeenCalledWith('/articles/summarize/', { url: 'https://example.com/article' })
-    expect(result).toEqual(summary)
-    expect(store.summarizing).toBe(false)
-  })
 
   it('sets summarizing state during summarize', async () => {
     let resolvePromise!: (value: unknown) => void

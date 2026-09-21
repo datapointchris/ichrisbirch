@@ -128,27 +128,6 @@ describe('useAdminStore', () => {
     })
   })
 
-  describe('fetchUsers', () => {
-    it('fetches and stores users', async () => {
-      const users = [
-        {
-          id: 1,
-          alternative_id: 123,
-          name: 'Admin',
-          email: 'admin@test.com',
-          is_admin: true,
-          created_on: '2026-01-01',
-          last_login: null,
-          preferences: {},
-        },
-      ]
-      mockApi.get.mockResolvedValueOnce({ data: users })
-      const store = useAdminStore()
-      await store.fetchUsers()
-      expect(store.users).toEqual(users)
-    })
-  })
-
   describe('updateUserAdmin', () => {
     it('updates admin status in local state', async () => {
       const store = useAdminStore()

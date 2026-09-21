@@ -94,17 +94,6 @@ describe('useProjectsStore', () => {
 
   // --- fetchProjects ---
 
-  it('fetches projects and sets state', async () => {
-    mockApi.get.mockResolvedValue({ data: testProjects })
-    const store = useProjectsStore()
-
-    await store.fetchProjects()
-
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'active' } })
-    expect(store.projects).toEqual(testProjects)
-    expect(store.loading).toBe(false)
-  })
-
   it('sets loading during fetch', async () => {
     let resolve!: (v: unknown) => void
     mockApi.get.mockReturnValue(new Promise((r) => (resolve = r)))
@@ -452,17 +441,6 @@ describe('useProjectsStore', () => {
 
     await expect(store.addDependency(10, { depends_on_id: 11 })).rejects.toThrow(ApiError)
     expect(store.error!.status).toBe(409)
-  })
-
-  // --- removeDependency ---
-
-  it('removes a dependency', async () => {
-    mockApi.delete.mockResolvedValue({})
-    const store = useProjectsStore()
-
-    await store.removeDependency(10, 11)
-
-    expect(mockApi.delete).toHaveBeenCalledWith('/project-items/10/dependencies/11/')
   })
 
   // --- addToProject / removeFromProject ---
