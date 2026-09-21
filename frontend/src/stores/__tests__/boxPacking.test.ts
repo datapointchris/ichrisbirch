@@ -136,7 +136,9 @@ describe('useBoxPackingStore', () => {
     mockApi.post.mockRejectedValue(apiError)
     const store = useBoxPackingStore()
 
-    await expect(store.createBox({ name: 'Bad', size: 'Small', essential: false, warm: false, liquid: false })).rejects.toThrow(ApiError)
+    await expect(store.createBox({ name: 'Bad', number: 1, size: 'Small', essential: false, warm: false, liquid: false })).rejects.toThrow(
+      ApiError
+    )
     expect(store.error).toBe(apiError)
     expect(store.boxes).toEqual([])
   })

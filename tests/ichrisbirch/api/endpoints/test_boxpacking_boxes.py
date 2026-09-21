@@ -102,6 +102,17 @@ def test_create_box_options_combinations(txn_api_logged_in, essential, warm, liq
     assert dict(response.json())['name'] == test_box.name
 
 
+@pytest.mark.parametrize('number', ['missing', None], ids=['missing', 'null'])
+def test_create_box_refuses_a_box_without_a_number(txn_api_logged_in, number):
+    client, _ = txn_api_logged_in
+    body = {'name': 'Box X', 'size': 'Large', 'essential': False, 'warm': False, 'liquid': False}
+    if number != 'missing':
+        body['number'] = number
+    response = client.post(ENDPOINT, json=body)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+    assert response.json()['detail'][0]['loc'] == ['body', 'number']
+
+
 def test_read_many_boxes_with_limit(box_crud_tester):
     """Test limit parameter on GET /boxes/."""
     client, _ = box_crud_tester

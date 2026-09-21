@@ -10,7 +10,7 @@ class BoxConfig(BaseModel):
 
 class BoxCreate(BoxConfig):
     name: str
-    number: int | None
+    number: int
     size: str
     essential: bool
     warm: bool

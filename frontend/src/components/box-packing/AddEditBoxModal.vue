@@ -120,7 +120,7 @@ watch(
 )
 
 function validateBoxNumber(): string | null {
-  if (!form.number) return null
+  if (form.number === '') return 'Box number is required'
   const num = Number(form.number)
   const editingId = props.editData?.id
   const duplicate = store.boxes.find((b) => b.number === num && b.id !== editingId)
@@ -145,13 +145,13 @@ function handleSubmit(handleSuccess: () => void) {
   if (props.editData) {
     emit('update', props.editData.id, {
       name: form.name.trim(),
-      number: form.number ? Number(form.number) : undefined,
+      number: Number(form.number),
       size: form.size,
     })
   } else {
     emit('create', {
       name: form.name.trim(),
-      number: form.number ? Number(form.number) : undefined,
+      number: Number(form.number),
       size: form.size,
       essential: false,
       warm: false,

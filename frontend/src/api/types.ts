@@ -766,7 +766,7 @@ export interface Box {
 
 export interface BoxCreate {
   name: string
-  number?: number
+  number: number
   size: BoxSize
   essential: boolean
   warm: boolean
