@@ -32,7 +32,8 @@ class HabitCompleted(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
     category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='completed_habits')
-    # The table's own complete_date column is the moment the previous release reads.
+    # `complete_date` is the API's field name. Giving the column the same name is a
+    # rename, which takes two deploys (docs/blue-green-deployment.md).
     complete_date: Mapped[date] = mapped_column('completion_date', Date, nullable=False)
 
     def __repr__(self):
