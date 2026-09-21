@@ -180,7 +180,7 @@ export const useArticlesStore = defineStore('articles', () => {
   async function search(query: string) {
     error.value = null
     try {
-      const response = await api.get<Article[]>('/articles/search/', { params: { search: query } })
+      const response = await api.get<Article[]>('/articles/search/', { params: { q: query } })
       searchQuery.value = query
       searchResults.value = response.data
       logger.info('articles_searched', { query, count: response.data.length })

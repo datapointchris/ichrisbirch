@@ -409,7 +409,7 @@ describe('useArticlesStore', () => {
 
     await store.search('typescript')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/articles/search/', { params: { search: 'typescript' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/articles/search/', { params: { q: 'typescript' } })
     expect(store.searchQuery).toBe('typescript')
     expect(store.searchResults).toEqual(results)
     expect(store.isSearchActive).toBe(true)
