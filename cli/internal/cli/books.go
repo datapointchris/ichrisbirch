@@ -47,7 +47,8 @@ func newBooksCommand() *cobra.Command {
 func newBooksListCommand() *cobra.Command {
 	var (
 		filter api.BookFilter
-		bounds api.DateBounds
+		start  string
+		end    string
 		asJSON bool
 		limit  int
 	)
@@ -73,14 +74,14 @@ func newBooksListCommand() *cobra.Command {
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
-				return c.ListBooks(cmd.Context(), filter, bounds, limitFlag(cmd))
+				return c.ListBooks(cmd.Context(), filter, start, end, limitFlag(cmd))
 			})
 		},
 	}
 	cmd.Flags().StringVar(&filter.Ownership, "ownership", "", "Filter by ownership: owned, to_purchase, sold, donated, rejected")
 	cmd.Flags().StringVar(&filter.Progress, "progress", "", "Filter by reading progress: unread, reading, read, abandoned")
-	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only books finished on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&bounds.End, "end", "", "Only books finished on or before this ISO 8601 date")
+	cmd.Flags().StringVar(&start, "start", "", "Only books finished on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&end, "end", "", "Only books finished on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output books as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd

@@ -87,7 +87,8 @@ func newItemsListCommand() *cobra.Command {
 		project    string
 		repo       string
 		itemStatus string
-		bounds     api.DateBounds
+		start      string
+		end        string
 		limit      int
 	)
 	cmd := &cobra.Command{
@@ -126,11 +127,10 @@ func newItemsListCommand() *cobra.Command {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
 				return err
 			}
-			bounds.Zone = LocalZoneName()
 			if project == "" {
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context(), filter, itemStatus, bounds, limitFlag(cmd))
+					return c.ListItems(cmd.Context(), filter, itemStatus, start, end, LocalZoneName(), limitFlag(cmd))
 				}); err != nil {
 					return err
 				}
@@ -144,7 +144,7 @@ func newItemsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, bounds, limitFlag(cmd))
+			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, start, end, LocalZoneName(), limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -160,8 +160,8 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
 	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
-	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only items completed on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&bounds.End, "end", "", "Only items completed on or before this ISO 8601 date")
+	cmd.Flags().StringVar(&start, "start", "", "Only items completed on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&end, "end", "", "Only items completed on or before this ISO 8601 date")
 	addLimitFlag(cmd, &limit)
 	return cmd
 }
@@ -280,7 +280,7 @@ func newItemsNextCommand() *cobra.Command {
 			// Every open item, uncapped: the blocked set is computed from the
 			// whole graph, and --limit here caps what is printed rather than
 			// what is read.
-			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, api.DateBounds{}, nil)
+			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, "", "", "", nil)
 			if err != nil {
 				return handleAPIError(err)
 			}

@@ -488,8 +488,7 @@ func newHabitsCompletedCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			q := api.CompletedTasksQuery{StartDate: start, EndDate: end, First: first, Last: last}
-			completed, err := client.ListCompletedHabits(cmd.Context(), q)
+			completed, err := client.ListCompletedHabits(cmd.Context(), start, end, first, last)
 			if err != nil {
 				return handleAPIError(err)
 			}

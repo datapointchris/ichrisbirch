@@ -19,3 +19,22 @@ func applyLimit(params url.Values, limit *int) {
 	}
 	params.Set("limit", strconv.Itoa(*limit))
 }
+
+// applyDateBounds writes an inclusive date range into params. Both bounds are
+// inclusive, either narrows on its own, and an empty one is not sent.
+//
+// zone is the IANA zone a bare day is read in, for a column that stores
+// instants. A task finished at 21:00 in New York is on the next day in UTC.
+// Left empty, the server reads the day in the user's preference. It goes only
+// with a bound, since it means nothing on its own.
+func applyDateBounds(params url.Values, start, end, zone string) {
+	if start != "" {
+		params.Set("start_date", start)
+	}
+	if end != "" {
+		params.Set("end_date", end)
+	}
+	if zone != "" && (start != "" || end != "") {
+		params.Set("timezone", zone)
+	}
+}

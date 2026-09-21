@@ -177,17 +177,17 @@ var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
 // ListProjectItems returns a project's items in order (GET /projects/{id}/items/),
 // narrowed to one derived status. It takes the same vocabulary as ListItems
 // because scoping to a project picks which rows come back and not which states.
-// An empty itemStatus leaves the server's default. A missing id is a 404. bounds
-// narrows to items finished within a date range, the same column and semantics
-// the flat list uses — a scope picks the rows, never what a filter means. A nil
-// limit fetches all; a non-nil limit caps the count, so it takes the first items
-// in project order.
-func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, bounds DateBounds, limit *int) ([]ProjectItemInProject, error) {
+// An empty itemStatus leaves the server's default. A missing id is a 404. start
+// and end narrow to items finished within an inclusive range read in zone, the
+// same column and semantics the flat list uses — a scope picks the rows, never
+// what a filter means. A nil limit fetches all; a non-nil limit caps the count,
+// so it takes the first items in project order.
+func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus, start, end, zone string, limit *int) ([]ProjectItemInProject, error) {
 	query := url.Values{}
 	if itemStatus != "" {
 		query.Set("status", itemStatus)
 	}
-	bounds.apply(query)
+	applyDateBounds(query, start, end, zone)
 	applyLimit(query, limit)
 	path := withQuery("/projects/"+id+"/items/", query)
 	var items []ProjectItemInProject

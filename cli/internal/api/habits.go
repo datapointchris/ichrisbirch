@@ -159,20 +159,18 @@ func (c *Client) CompleteHabit(ctx context.Context, in HabitCompletedCreateInput
 	return completed, nil
 }
 
-// ListCompletedHabits returns habit completions (GET /habits/completed/),
-// filtered by the same query as completed tasks.
-func (c *Client) ListCompletedHabits(ctx context.Context, q CompletedTasksQuery) ([]HabitCompleted, error) {
+// ListCompletedHabits returns habit completions (GET /habits/completed/). start
+// and end bound an inclusive range of days. first and last return the single
+// earliest or most recent completion. With none set, every completion returns.
+//
+// A completion is a calendar day, so no zone goes with the bounds.
+func (c *Client) ListCompletedHabits(ctx context.Context, start, end string, first, last bool) ([]HabitCompleted, error) {
 	params := url.Values{}
-	if q.StartDate != "" {
-		params.Set("start_date", q.StartDate)
-	}
-	if q.EndDate != "" {
-		params.Set("end_date", q.EndDate)
-	}
-	if q.First {
+	applyDateBounds(params, start, end, "")
+	if first {
 		params.Set("first", "true")
 	}
-	if q.Last {
+	if last {
 		params.Set("last", "true")
 	}
 	path := "/habits/completed/"

@@ -178,7 +178,8 @@ func newArticlesListCommand() *cobra.Command {
 		archived  bool
 		unread    bool
 		asJSON    bool
-		bounds    api.DateBounds
+		start     string
+		end       string
 		limit     int
 	)
 	cmd := &cobra.Command{
@@ -202,18 +203,18 @@ func newArticlesListCommand() *cobra.Command {
 			"  icb articles list --start 2026-08-01 --end 2026-08-31",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			bounds.Zone = LocalZoneName()
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
-					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"), bounds, limitFlag(cmd))
+					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"),
+					start, end, LocalZoneName(), limitFlag(cmd))
 			})
 		},
 	}
 	cmd.Flags().BoolVar(&favorites, "favorites", false, "Filter by favorite status (favorites due for re-read)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Filter by archived status")
 	cmd.Flags().BoolVar(&unread, "unread", false, "Filter by never-read status")
-	cmd.Flags().StringVar(&bounds.Start, "start", "", "Only articles last read on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&bounds.End, "end", "", "Only articles last read on or before this ISO 8601 date")
+	cmd.Flags().StringVar(&start, "start", "", "Only articles last read on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&end, "end", "", "Only articles last read on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output articles as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd

@@ -208,7 +208,7 @@ func newProjectsShowCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus, api.DateBounds{}, nil)
+			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus, "", "", "", nil)
 			if err != nil {
 				return handleAPIError(err)
 			}

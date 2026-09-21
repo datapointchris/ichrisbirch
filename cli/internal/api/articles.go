@@ -82,8 +82,9 @@ type ArticleImportResult struct {
 
 // ArticleBulkImportStatus is the batch progress payload (GET
 // /articles/bulk-import/{batch_id}/). The timestamps are ISO 8601 strings read
-// back out of Redis. They stay strings, so a batch an older worker wrote is
-// printed as stored rather than failing the whole decode. ResumesAt is set only
+// back out of Redis. They stay strings because the CLI only prints them, and
+// shortTimestamp prints one it cannot parse as written rather than failing the
+// whole decode. ResumesAt is set only
 // while the status is "paused", when the Claude usage limit is holding the queue.
 type ArticleBulkImportStatus struct {
 	BatchID     string                `json:"batch_id"`
@@ -142,12 +143,12 @@ func (c *Client) ListFailedArticleImports(ctx context.Context) ([]ArticleFailedI
 
 // ListArticles returns articles ordered by title (GET /articles/). Each of
 // favorites/archived/unread, when non-nil, adds a tri-state filter query param
-// (favorites=true returns only favorites due for re-read). bounds narrows to
-// articles last read within a date range; a zero DateBounds narrows nothing. A
-// nil limit fetches all; a non-nil limit caps the count.
-func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, bounds DateBounds, limit *int) ([]Article, error) {
+// (favorites=true returns only favorites due for re-read). start and end narrow
+// to articles last read within an inclusive range, read in zone. A nil limit
+// fetches all; a non-nil limit caps the count.
+func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, start, end, zone string, limit *int) ([]Article, error) {
 	var articles []Article
-	if err := c.get(ctx, "/articles/"+articleListQuery(favorites, archived, unread, bounds, limit), &articles); err != nil {
+	if err := c.get(ctx, "/articles/"+articleListQuery(favorites, archived, unread, start, end, zone, limit), &articles); err != nil {
 		return nil, err
 	}
 	return articles, nil
@@ -210,7 +211,7 @@ func (c *Client) DeleteArticle(ctx context.Context, id int) error {
 
 // articleListQuery renders the tri-state list filters, omitting any that is nil
 // so an unset filter sends no param at all.
-func articleListQuery(favorites, archived, unread *bool, bounds DateBounds, limit *int) string {
+func articleListQuery(favorites, archived, unread *bool, start, end, zone string, limit *int) string {
 	params := url.Values{}
 	if favorites != nil {
 		params.Set("favorites", strconv.FormatBool(*favorites))
@@ -221,7 +222,7 @@ func articleListQuery(favorites, archived, unread *bool, bounds DateBounds, limi
 	if unread != nil {
 		params.Set("unread", strconv.FormatBool(*unread))
 	}
-	bounds.apply(params)
+	applyDateBounds(params, start, end, zone)
 	applyLimit(params, limit)
 	if encoded := params.Encode(); encoded != "" {
 		return "?" + encoded
