@@ -291,8 +291,8 @@ describe('useHabitsStore', () => {
     expect(mockApi.post).toHaveBeenCalledWith('/habits/completed/', expect.objectContaining({ habit_id: 1 }))
   })
 
-  // `complete_date` is a day column. A late-evening completion sent as an instant
-  // lands on the next day's UTC date, which is the defect the day type removes.
+  // `complete_date` is a day column. Sent as an instant, a late-evening completion
+  // west of UTC would be stored on the next day's UTC date.
   it('records a completion today as the day itself, however late it is', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 2, 14, 23, 30))

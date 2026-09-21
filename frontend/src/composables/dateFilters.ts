@@ -1,9 +1,10 @@
 /**
  * The named windows the completed views filter by, as inclusive bare days.
  *
- * A bare day is read by the API in the user's `timezone` preference, the same
- * zone this page reads today in, so the page never converts a day into an
- * instant. The API widens the end day to the start of the next one itself.
+ * The API reads a bare day in the user's `timezone` preference, which is also
+ * the zone `todayKey` reads today in. So a window goes out as days and is never
+ * converted to instants here. The API widens the end day to the start of the
+ * next one itself.
  */
 import { addDays, endOfMonth, startOfMonth, startOfWeek, todayKey, type DayKey } from './calendarDay'
 

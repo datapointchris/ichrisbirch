@@ -175,12 +175,12 @@ describe('EventsView', () => {
     expect(modal.props('editData')).toEqual(testEvents[0])
   })
 
-  it('names the zone for an event that is not on the reader’s clock', () => {
+  it("names the zone for an event that is not on the reader's clock", () => {
     const wrapper = createWrapper({ events: testEvents })
     expect(wrapper.text()).toContain('Asia/Tokyo')
   })
 
-  it('stays quiet about the zone when it is the reader’s own', () => {
+  it("stays quiet about the zone when it is the reader's own", () => {
     const wrapper = createWrapper({ events: [testEvents[0]] })
     // The event has to be on the page for its absent zone label to mean anything —
     // a render producing nothing at all would satisfy the negative on its own.

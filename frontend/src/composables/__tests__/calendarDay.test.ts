@@ -59,7 +59,7 @@ describe('isReading', () => {
 describe('day arithmetic', () => {
   it('counts whole days across a spring-forward night', () => {
     // 8 March 2026 is 23 hours long in New York. Flooring elapsed milliseconds
-    // over a day counted the 9th as 0 days after the 8th.
+    // over a day counts the 9th as 0 days after the 8th.
     expect(daysBetween('2026-03-08', '2026-03-09')).toBe(1)
     expect(daysBetween('2026-03-01', '2026-04-01')).toBe(31)
   })

@@ -18,7 +18,8 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend)
 
 const props = defineProps<{ tasks: CompletedTask[] }>()
 
-// A label names a day key, so it is printed on the UTC clock the key was placed on.
+// Each day key is placed at UTC midnight, so it is printed in UTC.
+// Printed in any zone west of UTC, the label would name the day before.
 const DATE_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit', timeZone: 'UTC' }
 
 const dataBarColors = [

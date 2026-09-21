@@ -3,7 +3,7 @@
  *
  * It is the user's `timezone` preference. The API reads a bare day in the same
  * preference, so a day the page asks for is the day the server answers with, on
- * whatever machine the page is open. Until the user has loaded it is the
+ * whatever machine the page is open. Before the signed-in user loads, it is the
  * browser's zone.
  */
 import { ref, watch } from 'vue'
