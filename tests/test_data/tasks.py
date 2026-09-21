@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 
 from ichrisbirch.models.task import Task
@@ -20,6 +21,6 @@ BASE_DATA: list[Task] = [
         notes='Notes for task 3',
         category='Home',
         priority=3,
-        complete_date=datetime(2020, 4, 20, 3, 3, 39, 50648).isoformat(),
+        complete_date=datetime(2020, 4, 20, 3, 3, 39, 50648, tzinfo=UTC),
     ),
 ]

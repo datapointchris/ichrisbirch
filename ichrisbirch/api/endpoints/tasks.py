@@ -13,6 +13,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.models.task import TASK_CATEGORIES
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
@@ -34,6 +35,7 @@ ALL_STATUSES = 'all'
 @router.get('/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 async def read_many(
     session: DbSession,
+    zone: RequestZone,
     limit: RowLimit = None,
     task_status: str = Query(
         'open',
@@ -93,7 +95,7 @@ async def read_many(
     else:
         query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
 
-    query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date)
+    query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date, zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
@@ -115,6 +117,7 @@ async def todo(
 @router.get('/completed/', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
 async def completed(
     session: DbSession,
+    zone: RequestZone,
     start_date: StartDate = None,
     end_date: EndDate = None,
     first: bool | None = None,
@@ -129,7 +132,7 @@ async def completed(
         query = query.order_by(models.Task.complete_date.desc()).limit(1)
 
     else:
-        query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date)
+        query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date, zone)
         query = query.order_by(models.Task.complete_date.desc())
 
     return list(session.scalars(query).all())

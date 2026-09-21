@@ -22,6 +22,7 @@ from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.services.date_bounds import EndDate
@@ -77,6 +78,7 @@ def _read_page_for_request(url: str) -> ArticlePage:
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 async def read_many(
     session: DbSession,
+    zone: RequestZone,
     favorites: bool | None = None,
     archived: bool | None = None,
     unread: bool | None = None,
@@ -111,7 +113,7 @@ async def read_many(
         query = query.where(models.Article.last_read_date.is_(None))
     if unread is False:
         query = query.where(models.Article.last_read_date.is_not(None))
-    query = apply_date_bounds(query, models.Article.last_read_date, start_date, end_date)
+    query = apply_date_bounds(query, models.Article.last_read_date, start_date, end_date, zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

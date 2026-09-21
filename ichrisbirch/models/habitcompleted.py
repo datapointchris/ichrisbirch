@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime
+from sqlalchemy import Date
 from sqlalchemy import ForeignKey
 from sqlalchemy import Identity
 from sqlalchemy import Integer
@@ -32,7 +32,7 @@ class HabitCompleted(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('habits.categories.id'), nullable=False)
     category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='completed_habits')
-    complete_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    complete_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     def __repr__(self):
         return f'HabitCompleted(habit_id={self.habit_id!r}, name={self.name!r}, complete_date={self.complete_date!r})'

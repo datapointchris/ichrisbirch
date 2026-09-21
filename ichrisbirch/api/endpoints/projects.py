@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.models.project import TERMINAL_PROJECT_STATUSES
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.services.date_bounds import EndDate
@@ -307,6 +308,7 @@ async def delete(project: ProjectFromPath, session: DbSession):
 async def list_items(
     project: ProjectFromPath,
     session: DbSession,
+    zone: RequestZone,
     item_status: str = Query(
         'open',
         alias='status',
@@ -336,7 +338,7 @@ async def list_items(
         .where(ProjectItemMembership.project_id == project.id)
     )
     query = apply_status_filter(query, item_status)
-    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date)
+    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, zone)
 
     # position has no unique constraint, so a collision would otherwise order by
     # whatever the database returned

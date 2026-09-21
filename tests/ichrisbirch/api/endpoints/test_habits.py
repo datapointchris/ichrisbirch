@@ -69,7 +69,7 @@ def create_completed_habit_crud_tester(category_id: int):
     new_obj = schemas.HabitCompletedCreate(
         name='NEW Completed Habit Dynamic Category',
         category_id=category_id,
-        complete_date=dt.datetime(2024, 3, 15),
+        complete_date=dt.date(2024, 3, 15),
     )
     return ApiCrudTester(endpoint='/habits/completed/', new_obj=new_obj)
 
@@ -263,7 +263,7 @@ class TestCompletedHabitLinksToItsHabit:
                 'habit_id': habit['id'],
                 'name': habit['name'],
                 'category_id': habit['category_id'],
-                'complete_date': '2026-07-24T12:00:00Z',
+                'complete_date': '2026-07-24',
             },
         )
 
@@ -277,7 +277,7 @@ class TestCompletedHabitLinksToItsHabit:
 
         created = client.post(
             self.ENDPOINT,
-            json={'name': 'Some Historical Habit', 'category_id': category_id, 'complete_date': '2026-07-24T12:00:00Z'},
+            json={'name': 'Some Historical Habit', 'category_id': category_id, 'complete_date': '2026-07-24'},
         )
 
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
@@ -293,7 +293,7 @@ class TestCompletedHabitLinksToItsHabit:
                 'habit_id': habit['id'],
                 'name': habit['name'],
                 'category_id': habit['category_id'],
-                'complete_date': '2026-07-24T12:00:00Z',
+                'complete_date': '2026-07-24',
             },
         ).json()
 
@@ -323,7 +323,7 @@ class TestCompletedHabitRefusesAFutureDate:
         client = habit_test_data
         category_id = get_first_category_id(client)
 
-        response = client.post(self.ENDPOINT, json=self._payload(category_id, '2099-01-01T12:00:00Z'))
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, '2099-01-01'))
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
         assert 'future' in response.text
@@ -332,19 +332,29 @@ class TestCompletedHabitRefusesAFutureDate:
         client = habit_test_data
         category_id = get_first_category_id(client)
 
-        response = client.post(self.ENDPOINT, json=self._payload(category_id, '2024-06-01T12:00:00Z'))
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, '2024-06-01'))
 
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
 
-    def test_todays_noon_records_from_a_zone_ahead_of_utc(self, habit_test_data):
-        """Local noon east of UTC can sit ahead of UTC now and still be that client's today."""
+    def test_today_in_the_easternmost_zone_records(self, habit_test_data):
+        """UTC+14 reaches a day before anywhere else, and it is that client's today."""
         client = habit_test_data
         category_id = get_first_category_id(client)
-        soon = dt.datetime.now(dt.UTC) + dt.timedelta(hours=13)
+        kiritimati_today = dt.datetime.now(ZoneInfo('Pacific/Kiritimati')).date()
 
-        response = client.post(self.ENDPOINT, json=self._payload(category_id, soon.isoformat()))
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, kiritimati_today.isoformat()))
 
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+
+    def test_the_day_after_the_easternmost_today_is_refused(self, habit_test_data):
+        """That day has not begun anywhere, so no client can have done it."""
+        client = habit_test_data
+        category_id = get_first_category_id(client)
+        not_yet = dt.datetime.now(ZoneInfo('Pacific/Kiritimati')).date() + dt.timedelta(days=1)
+
+        response = client.post(self.ENDPOINT, json=self._payload(category_id, not_yet.isoformat()))
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
 class TestCompletedHabits:
@@ -558,12 +568,12 @@ class TestHabitsDay:
 
     ENDPOINT = '/habits/day/'
 
-    def _complete(self, client, habit: dict, when: dt.datetime):
+    def _complete(self, client, habit: dict, day: dt.date):
         payload = {
             'habit_id': habit['id'],
             'name': habit['name'],
             'category_id': habit['category_id'],
-            'complete_date': when.isoformat(),
+            'complete_date': day.isoformat(),
         }
         response = client.post('/habits/completed/', json=payload)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
@@ -583,7 +593,7 @@ class TestHabitsDay:
         client = habit_test_data
         current = [h for h in client.get('/habits/', params={'current': True}).json()]
         target = current[0]
-        self._complete(client, target, dt.datetime(2020, 1, 1, 12, 0, tzinfo=dt.UTC))
+        self._complete(client, target, dt.date(2020, 1, 1))
 
         day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()
 
@@ -591,22 +601,19 @@ class TestHabitsDay:
         assert target['id'] not in [h['id'] for h in day['due']]
         assert len(day['due']) + 1 == day['current_total']
 
-    def test_the_day_is_the_callers_zone_not_utc(self, habit_test_data):
-        """21:00 in New York is 01:00 the next day in UTC.
+    def test_a_completion_stays_on_its_day_in_every_zone(self, habit_test_data):
+        """A completion holds the day it was done, not a moment a zone can move.
 
-        Read as a UTC day, that completion lands on the 2nd and the habit reads
-        as still due for the rest of the evening on the 1st.
+        Stored as a moment, 21:00 in New York on the 1st read as the 2nd from any
+        zone east of UTC, so the board depended on where it was read from.
         """
         client = habit_test_data
         target = client.get('/habits/', params={'current': True}).json()[0]
-        evening = dt.datetime(2020, 1, 2, 2, 0, tzinfo=dt.UTC)  # 21:00 Jan 1 in New York
-        self._complete(client, target, evening)
+        self._complete(client, target, dt.date(2020, 1, 1))
 
-        in_new_york = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'America/New_York'}).json()
-        in_utc = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()
-
-        assert [c['habit_id'] for c in in_new_york['completed']] == [target['id']]
-        assert in_utc['completed'] == []
+        for zone in ('America/New_York', 'UTC', 'Pacific/Auckland'):
+            day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': zone}).json()
+            assert [c['habit_id'] for c in day['completed']] == [target['id']], zone
 
     def test_the_response_echoes_the_day_it_resolved(self, habit_test_data):
         client = habit_test_data
@@ -642,7 +649,7 @@ class TestHabitsDay:
         response = client.get(self.ENDPOINT, params={'timezone': 'Not/AZone'})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'Not/AZone' in response.json()['detail']
+        assert 'Not/AZone' in response.text
 
     def test_a_malformed_date_is_a_422(self, habit_test_data):
         client = habit_test_data
@@ -675,12 +682,8 @@ class TestHabitsDay:
         """Every one of them ties on the sort key, so the query has to break it."""
         client = habit_test_data
         category_id = client.get('/habits/categories/').json()[0]['id']
-        for hour, name in ((8, 'earliest'), (12, 'middle'), (20, 'latest')):
-            payload = {
-                'name': name,
-                'category_id': category_id,
-                'complete_date': dt.datetime(2020, 1, 1, hour, tzinfo=dt.UTC).isoformat(),
-            }
+        for name in ('earliest', 'middle', 'latest'):
+            payload = {'name': name, 'category_id': category_id, 'complete_date': '2020-01-01'}
             created = client.post('/habits/completed/', json=payload)
             assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
 

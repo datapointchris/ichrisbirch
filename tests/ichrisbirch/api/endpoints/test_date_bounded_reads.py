@@ -16,6 +16,7 @@ and only one of them ever worked.
 """
 
 from datetime import UTC
+from datetime import date
 from datetime import datetime
 
 import pytest
@@ -252,6 +253,43 @@ class TestTaskCompleteDateBounds:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
+class TestTheRequestZoneDecidesTheDay:
+    """A task finished at 21:00 in New York on the 20th is 01:00 on the 21st in UTC."""
+
+    @pytest.fixture
+    def client_with_an_evening_task(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        session.add(
+            models.Task(
+                name='done in the evening',
+                category='Chore',
+                priority=1,
+                add_date=datetime(2026, 8, 1, tzinfo=UTC),
+                complete_date=datetime(2026, 8, 21, 1, tzinfo=UTC),
+            )
+        )
+        session.flush()
+        return client
+
+    def names_on(self, client, day: str, **params) -> set[str]:
+        response = client.get(TASKS_ENDPOINT, params={'status': 'completed', 'start_date': day, 'end_date': day, **params})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return {row['name'] for row in response.json()}
+
+    def test_a_named_zone_puts_the_task_on_its_local_day(self, client_with_an_evening_task):
+        assert self.names_on(client_with_an_evening_task, '2026-08-20', timezone='America/New_York') == {'done in the evening'}
+        assert self.names_on(client_with_an_evening_task, '2026-08-21', timezone='America/New_York') == set()
+
+    def test_a_user_with_no_preference_reads_utc_days(self, client_with_an_evening_task):
+        assert self.names_on(client_with_an_evening_task, '2026-08-21') == {'done in the evening'}
+
+    def test_an_unknown_zone_is_a_422_naming_it(self, client_with_an_evening_task):
+        response = client_with_an_evening_task.get(TASKS_ENDPOINT, params={'timezone': 'Not/AZone'})
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+        assert 'Not/AZone' in response.text
+
+
 class TestProjectItemCompletedAtBounds:
     """GET /project-items/ and /projects/{id}/items/ bound on `completed_at`.
 
@@ -339,8 +377,8 @@ class TestHabitCompleteDateBounds:
             [
                 models.HabitCompleted(name=name, category_id=category.id, complete_date=done)
                 for name, done in (
-                    ('done in june', datetime(2026, 6, 15, 12)),
-                    ('done in august', datetime(2026, 8, 15, 12)),
+                    ('done in june', date(2026, 6, 15)),
+                    ('done in august', date(2026, 8, 15)),
                 )
             ]
         )
@@ -352,24 +390,25 @@ class TestHabitCompleteDateBounds:
         return {row['name'] for row in response.json()}
 
     def test_a_single_day_window_finds_the_completion_on_that_day(self, client_with_completions):
-        """A habit ticked at noon has to fall inside the day it was ticked on."""
         response = client_with_completions.get(
             HABITS_COMPLETED_ENDPOINT,
             params={'start_date': '2026-08-15', 'end_date': '2026-08-15'},
         )
         assert self.names(response) == {'done in august'}
 
-    def test_an_end_bound_carrying_a_time_keeps_its_own_instant(self, client_with_completions):
-        """The Vue habit views send a full instant and must not be widened.
+    def test_a_completion_answers_as_a_bare_day(self, client_with_completions):
+        """A day carrying a time or an offset is read as a different day west of UTC."""
+        response = client_with_completions.get(HABITS_COMPLETED_ENDPOINT, params={'start_date': '2026-08-01'})
 
-        Midnight on the 15th excludes the noon completion, which is the same
-        answer a caller naming that instant got before the helper was shared.
-        """
+        assert [row['complete_date'] for row in response.json()] == ['2026-08-15']
+
+    def test_a_bound_carrying_a_time_narrows_by_its_day(self, client_with_completions):
+        """The column holds days, so the time on a bound has nothing to compare against."""
         response = client_with_completions.get(
             HABITS_COMPLETED_ENDPOINT,
             params={'start_date': '2026-06-01', 'end_date': '2026-08-15T00:00:00Z'},
         )
-        assert self.names(response) == {'done in june'}
+        assert self.names(response) == {'done in june', 'done in august'}
 
     def test_either_bound_still_narrows_on_its_own(self, client_with_completions):
         response = client_with_completions.get(HABITS_COMPLETED_ENDPOINT, params={'start_date': '2026-07-01'})

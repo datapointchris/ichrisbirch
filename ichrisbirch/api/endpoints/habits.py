@@ -1,10 +1,8 @@
 import datetime as dt
 from zoneinfo import ZoneInfo
-from zoneinfo import ZoneInfoNotFoundError
 
 import structlog
 from fastapi import APIRouter
-from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -14,6 +12,7 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.services import habit_day
 from ichrisbirch.services.date_bounds import EndDate
 from ichrisbirch.services.date_bounds import StartDate
@@ -82,47 +81,40 @@ async def read_many_completed(
     limit: RowLimit = None,
 ):
     query = select(models.HabitCompleted)
+    oldest_first = (models.HabitCompleted.complete_date.asc(), models.HabitCompleted.id.asc())
+    newest_first = (models.HabitCompleted.complete_date.desc(), models.HabitCompleted.id.desc())
 
     # `first` and `last` are a row cap of one written as a question, so they fold
     # into `limit` rather than sitting beside it. An explicit limit can only
     # tighten that, which is what keeps `first=true&limit=0` answering with none.
+    # A day holds many completions, so `id` orders the ones sharing it.
     if first:  # first completed
-        query = query.order_by(models.HabitCompleted.complete_date.asc())
+        query = query.order_by(*oldest_first)
         limit = 1 if limit is None else min(1, limit)
 
     elif last:  # most recent (last) completed
-        query = query.order_by(models.HabitCompleted.complete_date.desc())
+        query = query.order_by(*newest_first)
         limit = 1 if limit is None else min(1, limit)
 
     else:
         query = apply_date_bounds(query, models.HabitCompleted.complete_date, start_date, end_date)
-        query = query.order_by(models.HabitCompleted.complete_date.desc())
+        query = query.order_by(*newest_first)
 
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/day/', response_model=schemas.HabitsDay, status_code=status.HTTP_200_OK)
-async def read_day(session: DbSession, date: dt.date | None = None, timezone: str = 'UTC'):
+async def read_day(session: DbSession, zone: RequestZone, date: dt.date | None = None):
     """One day's habits: which are still due, and which were done.
 
-    `timezone` is the IANA name whose calendar day this is, because a day is not
-    a UTC day for anyone who does not live in UTC. `date` defaults to today in
-    that zone, and both are echoed back so a caller that sent neither can see
-    which day it got.
+    The request's zone decides which day is today, so it only matters when
+    `date` is left off. Both are echoed back so a caller that sent neither can
+    see which day it got.
 
     Declared above `/{id}/`: FastAPI matches in declaration order, so below it
     `day` would be parsed as a habit id.
     """
-    try:
-        zone = ZoneInfo(timezone)
-    except (ZoneInfoNotFoundError, ValueError) as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f'Unknown timezone: {timezone!r} is not an IANA zone name',
-        ) from e
-
-    day = date if date is not None else dt.datetime.now(zone).date()
-    opens, closes = habit_day.day_bounds(day, zone)
+    day = date if date is not None else dt.datetime.now(ZoneInfo(zone)).date()
 
     # `placement` ties every completion carrying no `habit_id`, and `list.sort`
     # is stable, so an unordered SELECT would leave their order to the planner.
@@ -130,10 +122,7 @@ async def read_day(session: DbSession, date: dt.date | None = None, timezone: st
     current = list(session.scalars(select(models.Habit).filter(models.Habit.is_current.is_(True)).order_by(models.Habit.id)).all())
     completed = list(
         session.scalars(
-            select(models.HabitCompleted)
-            .filter(models.HabitCompleted.complete_date >= opens)
-            .filter(models.HabitCompleted.complete_date < closes)
-            .order_by(models.HabitCompleted.complete_date.desc())
+            select(models.HabitCompleted).filter(models.HabitCompleted.complete_date == day).order_by(models.HabitCompleted.id.desc())
         ).all()
     )
 
@@ -141,7 +130,7 @@ async def read_day(session: DbSession, date: dt.date | None = None, timezone: st
     completed.sort(key=lambda c: habit_day.placement(c.habit_id))
     return schemas.HabitsDay(
         date=day,
-        timezone=timezone,
+        timezone=zone,
         due=due,
         completed=completed,
         current_total=len(current),

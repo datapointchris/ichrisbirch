@@ -1,4 +1,5 @@
 from datetime import UTC
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 
@@ -7,6 +8,8 @@ from pydantic import ConfigDict
 from pydantic import field_validator
 
 from ichrisbirch.schemas.habitcategory import HabitCategory
+
+EASTERNMOST_UTC_OFFSET = timedelta(hours=14)
 
 
 class HabitConfig(BaseModel):
@@ -19,7 +22,7 @@ class HabitCompleted(HabitConfig):
     name: str
     category_id: int
     category: HabitCategory
-    complete_date: datetime
+    complete_date: date
 
 
 class HabitCompletedCreate(HabitConfig):
@@ -29,19 +32,17 @@ class HabitCompletedCreate(HabitConfig):
     habit_id: int | None = None
     name: str
     category_id: int
-    complete_date: datetime
+    complete_date: date
 
     @field_validator('complete_date')
     @classmethod
-    def complete_date_is_not_ahead_of_now(cls, v: datetime) -> datetime:
-        """A habit cannot be recorded before it has been done.
+    def complete_date_has_started_somewhere(cls, v: date) -> date:
+        """A habit cannot be recorded for a day that has not begun yet.
 
-        The margin is a day rather than zero. A client stamps the day it is filling
-        in at its own local noon, and a zone far enough east of UTC puts that ahead
-        of UTC now while still being that client's today. A day is wider than any
-        real offset and still refuses a date typed years out.
+        The server does not know the caller's zone, so the bound is the latest
+        today anywhere: UTC+14, in the Line Islands. A later day has not started
+        for anyone, and an earlier one has started for someone.
         """
-        moment = v if v.tzinfo else v.replace(tzinfo=UTC)
-        if moment > datetime.now(UTC) + timedelta(days=1):
+        if v > (datetime.now(UTC) + EASTERNMOST_UTC_OFFSET).date():
             raise ValueError('complete_date is in the future')
         return v

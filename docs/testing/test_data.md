@@ -24,6 +24,7 @@ BASE_DATA: list[Event] = [
     Event(
         name='Event 1',
         date=datetime(2022, 10, 1, 10, 0).isoformat(),
+        timezone='America/New_York',
         venue='Venue 1',
         url='https://example.com/event1',
         cost=10.0,
@@ -33,6 +34,11 @@ BASE_DATA: list[Event] = [
     # More events...
 ]
 ```
+
+A time value takes the kind its column stores. An event's `date` is a wall
+clock, so it is naive and the `timezone` beside it names the clock. A moment
+column carries an offset, as in `complete_date=datetime(2020, 4, 20, 3, 3,
+tzinfo=UTC)` in `tests/test_data/tasks.py`. A `Date` column takes a `date`.
 
 ## Test Data Registry
 

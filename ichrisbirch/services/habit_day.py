@@ -4,31 +4,9 @@ Every client reads the split from here rather than joining two collection reads
 itself. A fallback key written once per client is a key each client can spell
 differently, and one that does disagrees with the others without anything
 failing.
-
-A day is a calendar day in a named zone, never a UTC day. A completion recorded
-at 21:00 in New York is 01:00 the next day in UTC, so a UTC window would report
-it against tomorrow and leave the habit reading as due tonight.
 """
 
-import datetime as dt
-from zoneinfo import ZoneInfo
-
 from ichrisbirch import models
-
-
-def day_bounds(day: dt.date, zone: ZoneInfo) -> tuple[dt.datetime, dt.datetime]:
-    """The instants a calendar day opens and closes in one zone.
-
-    Half-open: the end is the start of the next day, so a completion at 23:59:59
-    belongs to the day it happened on and none is counted twice.
-
-    The end is built from the next calendar day rather than by adding 24 hours.
-    A day the zone shifts its offset is 23 or 25 hours long, and a fixed duration
-    lands an hour inside or past midnight on those two days a year.
-    """
-    start = dt.datetime.combine(day, dt.time.min, tzinfo=zone)
-    end = dt.datetime.combine(day + dt.timedelta(days=1), dt.time.min, tzinfo=zone)
-    return start, end
 
 
 def habit_key(name: str, category_id: int) -> str:

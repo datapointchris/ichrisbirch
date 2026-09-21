@@ -19,6 +19,7 @@ from sqlalchemy.sql import Select
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
 from ichrisbirch.services.date_bounds import EndDate
@@ -152,6 +153,7 @@ def _next_position_in_project(session: Session, project_id: UUID) -> int:
 @router.get('/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
 async def read_many(
     session: DbSession,
+    zone: RequestZone,
     repo: RepoFilter = None,
     item_status: str = Query(
         'open',
@@ -178,7 +180,7 @@ async def read_many(
     query = select(models.ProjectItem).options(*PROJECT_ITEM_LOAD_OPTIONS).order_by(models.ProjectItem.created_at.desc())
     query = apply_status_filter(query, item_status)
     query = apply_repo_filter(query, repo)
-    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date)
+    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

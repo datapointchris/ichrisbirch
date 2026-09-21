@@ -1,18 +1,14 @@
 """The day's habits board, tested without a database or an HTTP client.
 
 The endpoint above this runs two queries and calls the functions in this module.
-Every rule worth pinning — which zone's day, which completion matches which
-habit, where an orphan sits — lives here, so a case costs a function call rather
-than a container.
+Every rule worth pinning — which completion matches which habit, where an orphan
+sits — lives here, so a case costs a function call rather than a container.
 """
 
 import datetime as dt
-from zoneinfo import ZoneInfo
 
 from ichrisbirch import models
 from ichrisbirch.services import habit_day
-
-NEW_YORK = ZoneInfo('America/New_York')
 
 
 def habit(id: int, name: str, category_id: int = 1) -> models.Habit:
@@ -25,49 +21,8 @@ def completion(id: int, name: str, category_id: int = 1, habit_id: int | None = 
         habit_id=habit_id,
         name=name,
         category_id=category_id,
-        complete_date=dt.datetime(2026, 9, 20, 12, 0, tzinfo=NEW_YORK),
+        complete_date=dt.date(2026, 9, 20),
     )
-
-
-class TestDayBounds:
-    def test_the_window_is_half_open(self):
-        """A completion at the stroke of midnight belongs to the day it opens."""
-        opens, closes = habit_day.day_bounds(dt.date(2026, 9, 20), NEW_YORK)
-
-        assert opens == dt.datetime(2026, 9, 20, 0, 0, tzinfo=NEW_YORK)
-        assert closes == dt.datetime(2026, 9, 21, 0, 0, tzinfo=NEW_YORK)
-
-    def test_the_window_is_the_local_day_not_the_utc_one(self):
-        """21:00 in New York is 01:00 tomorrow in UTC.
-
-        A UTC window would report that completion against the wrong day and leave
-        the habit reading as still due for the rest of the evening.
-        """
-        opens, closes = habit_day.day_bounds(dt.date(2026, 9, 20), NEW_YORK)
-
-        evening = dt.datetime(2026, 9, 20, 21, 0, tzinfo=NEW_YORK)
-        assert opens <= evening < closes
-        assert evening.astimezone(dt.UTC).date() == dt.date(2026, 9, 21)
-
-    def test_a_spring_forward_day_is_twenty_three_hours(self):
-        """Built from the next calendar day, not by adding a fixed duration.
-
-        Adding 24 hours to midnight lands at 01:00 on the day the offset moves,
-        so an hour of the next day would be counted against this one.
-
-        Measured in UTC. Subtracting two aware datetimes that share one tzinfo is
-        computed as if both were naive, so `closes - opens` reads 24 hours here
-        however far apart the two instants really are.
-        """
-        opens, closes = habit_day.day_bounds(dt.date(2026, 3, 8), NEW_YORK)
-
-        assert closes.astimezone(dt.UTC) - opens.astimezone(dt.UTC) == dt.timedelta(hours=23)
-        assert closes == dt.datetime(2026, 3, 9, 0, 0, tzinfo=NEW_YORK)
-
-    def test_a_fall_back_day_is_twenty_five_hours(self):
-        opens, closes = habit_day.day_bounds(dt.date(2026, 11, 1), NEW_YORK)
-
-        assert closes.astimezone(dt.UTC) - opens.astimezone(dt.UTC) == dt.timedelta(hours=25)
 
 
 class TestStillDue:
