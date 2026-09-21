@@ -26,19 +26,6 @@ export interface CompletedTask extends Task {
   complete_date: string
 }
 
-export function daysToComplete(task: CompletedTask): number {
-  const add = new Date(task.add_date)
-  const complete = new Date(task.complete_date)
-  return Math.max(Math.round((complete.getTime() - add.getTime()) / (1000 * 60 * 60 * 24)), 1)
-}
-
-export function timeToComplete(task: CompletedTask): string {
-  const days = daysToComplete(task)
-  const weeks = Math.floor(days / 7)
-  const remainder = days % 7
-  return `${weeks} weeks, ${remainder} days`
-}
-
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
   const completedTasks = ref<CompletedTask[]>([])

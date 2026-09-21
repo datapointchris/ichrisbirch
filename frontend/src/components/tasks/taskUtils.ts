@@ -1,9 +1,10 @@
 import type { CompletedTask } from '@/stores/tasks'
+import { daysBetween } from '@/composables/calendarDay'
+import { displayZone } from '@/composables/displayZone'
 
-export function daysToComplete(task: CompletedTask): number {
-  const add = new Date(task.add_date)
-  const complete = new Date(task.complete_date)
-  return Math.max(Math.round((complete.getTime() - add.getTime()) / (1000 * 60 * 60 * 24)), 1)
+// `TasksStatsView` counts with `daysBetween` too, so both pages read a task done the day it was added as 0.
+export function daysToComplete(task: CompletedTask, zone: string = displayZone()): number {
+  return daysBetween(task.add_date, task.complete_date, zone)
 }
 
 export function timeToComplete(task: CompletedTask): string {
