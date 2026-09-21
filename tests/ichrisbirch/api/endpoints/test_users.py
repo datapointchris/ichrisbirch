@@ -1,5 +1,6 @@
 import pytest
 from fastapi import status
+from sqlalchemy import select
 
 from ichrisbirch import models
 from ichrisbirch import schemas
@@ -237,30 +238,33 @@ def test_user_set_password():
 
 
 def test_create_user_password_hashed(users_logged_in_context):
-    client, _, _ = users_logged_in_context
+    client, session, _ = users_logged_in_context
     created_response = client.post('/users/', json=NEW_OBJ.model_dump(mode='json'))
     assert created_response.status_code == status.HTTP_201_CREATED, show_status_and_response(created_response)
-    created_user = models.User(**created_response.json())
-    assert created_user.name == NEW_OBJ.name
-    # password should be hashed since it was inserted in the db and not match original
-    assert created_user.password != NEW_OBJ.password
-    # but hashing original password should match
-    assert created_user.check_password(NEW_OBJ.password)
+    stored = session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).one()
+    assert stored.password != NEW_OBJ.password
+    assert stored.check_password(NEW_OBJ.password)
 
 
 @pytest.mark.parametrize('user_data', TEST_USERS)
-def test_check_user_password_functions(users_test_context, user_data):
-    """When creating new users, the password should be hashed by the model in the post endpoint and stored in the database as the hash.
-
-    Retrieving those passwords and comparing them to the User.check_password output with the original passwords from the testing data should
-    be equivalent. Users need to be retrieved by email since id and alternative_id are both assigned by the db and not available in the
-    testing data
-    """
+def test_a_stored_password_logs_its_user_in(users_test_context, user_data):
     client, _, _ = users_test_context
-    headers = make_internal_service_headers()
-    response = client.get(f'/users/email/{user_data["email"]}/', headers=headers)
-    db_user = models.User(**response.json())
-    assert db_user.check_password(user_data['password'])
+    response = client.post('/auth/token/', data={'username': user_data['email'], 'password': user_data['password']})
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    assert response.json()['access_token']
+
+
+def test_no_user_response_carries_the_password(users_admin_context):
+    client, _, _ = users_admin_context
+    created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    me = client.get('/users/me/')
+    by_email = client.get(f'/users/email/{NEW_OBJ.email}/')
+    listed = client.get(ENDPOINT)
+    for response in (created, me, by_email, listed):
+        assert response.is_success, show_status_and_response(response)
+
+    users = [created.json(), me.json(), by_email.json(), *listed.json()]
+    assert not [user['email'] for user in users if 'password' in user]
 
 
 def test_get_user_me(users_logged_in_context):

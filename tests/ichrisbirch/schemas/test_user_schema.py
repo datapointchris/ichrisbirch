@@ -46,7 +46,6 @@ class TestUserSchema:
             'alternative_id': 12345,
             'name': 'Test User',
             'email': 'test@example.com',
-            'password': 'hashed_password_string',
             'is_admin': False,
             'created_on': now,
             'last_login': now,
