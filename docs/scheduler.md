@@ -37,7 +37,8 @@ so the admin is the one user a job can ask. `admin_calendar_zone` in
 `users` table does not exist yet. The test scheduler starts that way,
 before its database is initialized.
 
-The zone is read in two places, at two different times:
+The triggers read the zone once at startup, and the autotask job reads it on
+every run:
 
 - **The triggers.** APScheduler fixes a trigger's zone when the trigger is
   built, so `create_scheduler` reads the zone once at startup. A preference

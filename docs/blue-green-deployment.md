@@ -195,9 +195,14 @@ These require two separate deploys:
 
 A type changed in place does not fail in the previous release the way a rename
 or a drop does. Postgres casts between the two types on every compare and every
-write, so the color still serving keeps running and answers wrongly.
-`f5a6b7c8d9e0_habit_completion_day_column` is the shape: a new `date` column
-beside the `timestamptz` one, and a trigger keeping the two in step.
+write, so the color still serving keeps running and returns the wrong rows. A
+`date` compared with a `timestamptz` becomes midnight in the session
+`TimeZone`, which is UTC here, so
+`date '2026-09-20' >= timestamptz '2026-09-20 00:00 America/New_York'` is false.
+Retyping `habits.completed.complete_date` in place would have left the previous
+release showing every habit done that day as still due.
+`f5a6b7c8d9e0_habit_completion_day_column` adds a `date` column beside the
+`timestamptz` one instead, with a trigger that keeps the two in step.
 
 Phase 2 of a drop waits for a deploy that phase 1 has already completed. The
 migration runs before the smoke gate and `POINT OF NO RETURN` sits below both,

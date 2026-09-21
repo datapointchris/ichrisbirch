@@ -2,9 +2,9 @@
 
 19:00 at a venue is 19:00 for everyone reading about it, so the reading is
 stored naive and an `IanaZone` beside it names the clock. A caller that sends an
-offset anyway is describing the same reading: the offset is dropped and the
-reading kept, where converting it would move 19:00 to whatever that instant
-reads in some other zone.
+offset anyway is describing the same reading, so the offset is dropped.
+Converting it instead would move 19:00 to whatever that instant reads in another
+zone.
 """
 
 import datetime as dt

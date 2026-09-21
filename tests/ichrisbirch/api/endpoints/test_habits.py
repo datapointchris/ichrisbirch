@@ -602,10 +602,9 @@ class TestHabitsDay:
         assert len(day['due']) + 1 == day['current_total']
 
     def test_a_completion_stays_on_its_day_in_every_zone(self, habit_test_data):
-        """A completion holds the day it was done, not a moment a zone can move.
+        """21:00 in New York on the 1st is the 2nd in UTC and in Auckland.
 
-        Stored as a moment, 21:00 in New York on the 1st read as the 2nd from any
-        zone east of UTC, so the board depended on where it was read from.
+        A stored moment would move between boards with the zone it was read in.
         """
         client = habit_test_data
         target = client.get('/habits/', params={'current': True}).json()[0]
@@ -642,8 +641,7 @@ class TestHabitsDay:
         assert day['date'] == dt.datetime.now(dt.UTC).date().isoformat()
 
     def test_a_zone_that_is_not_an_iana_name_is_a_422(self, habit_test_data):
-        """Refused by name rather than silently falling back to UTC, which would
-        answer the wrong day and look like a working response."""
+        """Falling back to the preference instead would answer another zone's day with a 200."""
         client = habit_test_data
 
         response = client.get(self.ENDPOINT, params={'timezone': 'Not/AZone'})

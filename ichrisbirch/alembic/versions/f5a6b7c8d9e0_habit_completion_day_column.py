@@ -7,17 +7,18 @@ zone the completions were made in. Reading them in UTC would move every
 completion made in the evening west of UTC onto the next day.
 
 The type is not changed in place. The previous release keeps serving while this
-runs, and past it when the smoke gate fails. It compares `complete_date` against
-a window of instants and writes a moment into it, and a `date` column would take
-both through a cast in the session `TimeZone`. Every New York completion would
-read as not done, and an evening click would be stored as the next day.
+runs, and after it when the smoke gate fails. That release compares
+`complete_date` against a window of instants and writes a moment into it. A
+`date` column would take both through a cast in the session `TimeZone`, so every
+New York completion would read as not done, and an evening click would be
+stored as the next day.
 
 A trigger keeps the two columns in step, whichever release writes. A row given
 only `complete_date`, as the previous release writes it, gets that moment's day
 in `COMPLETION_ZONE`. A row given only `completion_date` gets noon of that day
-there, which is how the previous release stamps a day filled in afterwards, so
-that release reads the row on the right day. The trigger and `complete_date`
-last only while a release that reads `complete_date` can still serve.
+there. The previous release stamps a day filled in afterwards the same way, and
+reads the row on the right day. The trigger and `complete_date` last only while
+a release that reads `complete_date` can still serve.
 
 Revision ID: f5a6b7c8d9e0
 Revises: e4f5a6b7c8d9

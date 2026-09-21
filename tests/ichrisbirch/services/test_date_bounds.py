@@ -9,10 +9,9 @@ A bare day closing a timestamp column breaks it the other way. The day resolves 
 the instant it begins, so `<=` keeps only rows stamped exactly midnight and
 `--start X --end X` answers with nothing on a column that stores a time.
 
-A bare day on a timestamp column is also a day somewhere. Read in UTC, a task
-finished at 21:00 in New York falls on the next day, so the request's zone decides
-where the day opens and closes. A time written with no offset is a reading on the
-same clock.
+Read in UTC, a bare day puts a task finished at 21:00 in New York on the next day,
+so the request's zone decides where the day opens and closes. A time written with
+no offset is read on the same clock.
 """
 
 import datetime as dt
@@ -77,7 +76,7 @@ def test_a_time_with_an_offset_needs_no_zone():
 
 @pytest.mark.parametrize('bound', ['2026-08-20', '2026-08-20T20:00:00'])
 def test_a_bound_with_no_offset_on_a_timestamp_column_without_a_zone_is_refused(bound):
-    """Guessing UTC is how every reader west of it got the next day's rows."""
+    """Guessed as UTC, the 20th would run from 20:00 on the 19th to 20:00 on the 20th in New York."""
     with pytest.raises(TypeError, match='needs a zone'):
         _bound_values(models.Task.complete_date, start=bound, zone=None)
 

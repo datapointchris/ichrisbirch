@@ -1,9 +1,8 @@
 """A timezone named the IANA way, such as `America/New_York`, never as an offset.
 
-An offset is how far one clock stood from UTC at one moment. It cannot say what
-that clock will read on a future date, or where a calendar day ends after the
-next daylight-saving change. A zone name answers both, because it carries the
-rules rather than one reading of them.
+An event's zone has to say what its venue's clock reads next March, and a
+request's zone has to say where a day ends after the next daylight-saving
+change. An offset records one moment's distance from UTC and answers neither.
 """
 
 from typing import Annotated

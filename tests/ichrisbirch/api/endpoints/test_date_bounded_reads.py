@@ -410,7 +410,7 @@ class TestHabitCompleteDateBounds:
         assert self.names(response) == {'done in august'}
 
     def test_a_completion_answers_as_a_bare_day(self, client_with_completions):
-        """A day carrying a time or an offset is read as a different day west of UTC."""
+        """Sent as `2026-08-15T00:00:00Z`, the day would render as the 14th anywhere west of UTC."""
         response = client_with_completions.get(HABITS_COMPLETED_ENDPOINT, params={'start_date': '2026-08-01'})
 
         assert [row['complete_date'] for row in response.json()] == ['2026-08-15']

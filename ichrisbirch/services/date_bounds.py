@@ -13,10 +13,9 @@ range, and an unparsable value is a 422 rather than a silently ignored filter.
 A bound written as a bare day means the whole of that day, and one written with a
 time means that moment. `--start X --end X` therefore answers with everything
 dated on X, whatever the column's own type. On a timestamp column the day, and a
-time written with no offset, are read in the request's zone. A day is not a UTC
-day for anyone who does not live in UTC: a task finished at 21:00 in New York is
-01:00 the next day there. `ichrisbirch/api/request_zone.py` decides which zone a
-request is in.
+time written with no offset, are read in the request's zone, which
+`ichrisbirch/api/request_zone.py` decides. A task finished at 21:00 in New York
+is 01:00 the next day in UTC, so a UTC day would put it on the wrong date.
 
 A bound compares against a nullable column, so a row with no date is outside
 every range — an unread article is not "read before today", and an open task was
