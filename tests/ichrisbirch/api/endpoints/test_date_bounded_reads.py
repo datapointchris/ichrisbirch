@@ -20,9 +20,12 @@ from datetime import date
 from datetime import datetime
 
 import pytest
+import sqlalchemy as sa
 from fastapi import status
+from fastapi.routing import APIRoute
 
 from ichrisbirch import models
+from ichrisbirch.api.request_zone import request_zone
 from tests.util import show_status_and_response
 
 ARTICLES_ENDPOINT = '/articles/'
@@ -470,3 +473,47 @@ class TestTheBoundsAreAdditive:
         wide_open = client_with_rows.get(endpoint, params={'start_date': '1900-01-01'})
         assert wide_open.status_code == status.HTTP_200_OK, show_status_and_response(wide_open)
         assert len(wide_open.json()) <= len(bare.json()), 'a bound may only narrow'
+
+
+# The bounded reads over a `Date` column, which holds a calendar day already and
+# takes no zone. Every other bounded read declares `RequestZone`.
+DAY_COLUMN_READS = {
+    BOOKS_ENDPOINT: models.Book.read_finish_date,
+    HABITS_COMPLETED_ENDPOINT: models.HabitCompleted.complete_date,
+}
+
+
+def bounded_reads(api) -> dict[str, APIRoute]:
+    """Every GET route taking `start_date` or `end_date`, read off the app rather than listed."""
+    found: dict[str, APIRoute] = {}
+    for route in api.routes:
+        if not isinstance(route, APIRoute) or 'GET' not in route.methods:
+            continue
+        if {param.name for param in route.dependant.query_params} & {'start_date', 'end_date'}:
+            found[route.path] = route
+    return found
+
+
+def declares_request_zone(dependant) -> bool:
+    return any(dependency.call is request_zone or declares_request_zone(dependency) for dependency in dependant.dependencies)
+
+
+def test_every_bounded_read_over_an_instant_column_takes_the_request_zone(txn_api_logged_in):
+    """`timezone=None` type-checks whatever the column.
+
+    A new read copied from `/books/` onto a timestamp column passes mypy, then
+    answers its first bare day with a 500 from `apply_date_bounds`.
+    """
+    reads = bounded_reads(txn_api_logged_in[0].app)
+    assert {ARTICLES_ENDPOINT, BOOKS_ENDPOINT, TASKS_ENDPOINT, PROJECT_ITEMS_ENDPOINT} <= reads.keys()
+
+    zoneless = {path for path, route in reads.items() if not declares_request_zone(route.dependant)}
+
+    assert zoneless - DAY_COLUMN_READS.keys() == set(), 'bounded reads over an instant column that take no zone'
+
+
+def test_every_read_exempted_from_the_zone_bounds_a_date_column(txn_api_logged_in):
+    assert DAY_COLUMN_READS.keys() <= bounded_reads(txn_api_logged_in[0].app).keys()
+    for path, column in DAY_COLUMN_READS.items():
+        assert isinstance(column.type, sa.Date), path
+        assert not isinstance(column.type, sa.DateTime), path
