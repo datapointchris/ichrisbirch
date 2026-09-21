@@ -2,13 +2,11 @@ import datetime as dt
 from zoneinfo import ZoneInfo
 from zoneinfo import ZoneInfoNotFoundError
 
-import pendulum
 import structlog
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import Response
 from fastapi import status
-from pendulum.parsing.exceptions import ParserError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -17,6 +15,9 @@ from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.services import habit_day
+from ichrisbirch.services.date_bounds import EndDate
+from ichrisbirch.services.date_bounds import StartDate
+from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 
@@ -74,8 +75,8 @@ async def create_completed(habit: schemas.HabitCompletedCreate, session: DbSessi
 @router.get('/completed/', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 async def read_many_completed(
     session: DbSession,
-    start_date: dt.datetime | dt.date | str | None = None,
-    end_date: dt.datetime | dt.date | str | None = None,
+    start_date: StartDate = None,
+    end_date: EndDate = None,
     first: bool | None = None,
     last: bool | None = None,
     limit: RowLimit = None,
@@ -94,17 +95,7 @@ async def read_many_completed(
         limit = 1 if limit is None else min(1, limit)
 
     else:
-        # Each bound narrows on its own, so one without the other is an open-ended range.
-        try:
-            if start_date is not None:
-                query = query.filter(models.HabitCompleted.complete_date >= pendulum.parse(str(start_date)))
-            if end_date is not None:
-                query = query.filter(models.HabitCompleted.complete_date <= pendulum.parse(str(end_date)))
-        except ParserError as e:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail=f'Invalid date format: {e}',
-            ) from e
+        query = apply_date_bounds(query, models.HabitCompleted.complete_date, start_date, end_date)
         query = query.order_by(models.HabitCompleted.complete_date.desc())
 
     return list(session.scalars(apply_row_limit(query, limit)).all())

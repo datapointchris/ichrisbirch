@@ -115,8 +115,8 @@ async def todo(
 @router.get('/completed/', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
 async def completed(
     session: DbSession,
-    start_date: str | None = None,
-    end_date: str | None = None,
+    start_date: StartDate = None,
+    end_date: EndDate = None,
     first: bool | None = None,
     last: bool | None = None,
 ):
@@ -129,17 +129,7 @@ async def completed(
         query = query.order_by(models.Task.complete_date.desc()).limit(1)
 
     else:
-        # Each bound narrows on its own, so one without the other is an open-ended range.
-        try:
-            if start_date is not None:
-                query = query.filter(models.Task.complete_date >= datetime.fromisoformat(start_date))
-            if end_date is not None:
-                query = query.filter(models.Task.complete_date <= datetime.fromisoformat(end_date))
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail=f'Invalid date format: {e}. Expected ISO format (e.g., 2020-04-01T00:00:00)',
-            ) from e
+        query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date)
         query = query.order_by(models.Task.complete_date.desc())
 
     return list(session.scalars(query).all())

@@ -1,16 +1,21 @@
 """`start_date`/`end_date` on the collection reads whose rows carry a date.
 
-One contract across four endpoints, which is why this is one file rather than
-four additions: the semantics have to be identical or the shared `--start`/`--end`
+One contract across five endpoints, which is why this is one file rather than
+five additions: the semantics have to be identical or the shared `--start`/`--end`
 flag names lie. Both bounds are inclusive, either narrows without the other, an
 unparsable value is a 422 rather than a silently dropped filter, and a row whose
 date is null is outside every range.
 
-`/habits/completed/` is where those semantics come from. It is deliberately not
-folded into the shared helper here: it answers its own callers today and moving
-it would change them.
+`/habits/completed/` is where those semantics come from, and it runs through the
+same helper as the rest.
+
+A day is a day on every one of them. `--start X --end X` answers with what is
+dated on X whether the column stores a date or an instant. Each class below
+asserts that for its own column, because the two types take different branches
+and only one of them ever worked.
 """
 
+from datetime import UTC
 from datetime import datetime
 
 import pytest
@@ -24,6 +29,7 @@ BOOKS_ENDPOINT = '/books/'
 TASKS_ENDPOINT = '/tasks/'
 PROJECT_ITEMS_ENDPOINT = '/project-items/'
 PROJECTS_ENDPOINT = '/projects/'
+HABITS_COMPLETED_ENDPOINT = '/habits/completed/'
 
 
 def titles(response) -> set[str]:
@@ -90,6 +96,20 @@ class TestArticleReadDateBounds:
         )
         assert titles(response) == {'read in july'}
 
+    def test_a_single_day_window_finds_the_row_dated_that_day(self, client_with_read_dates):
+        """`last_read_date` is a timestamp, and the row is stamped at noon.
+
+        A bare day resolves to the instant it begins, so an inclusive end bound
+        would keep only rows stamped exactly midnight and answer with nothing.
+        """
+        response = client_with_read_dates.get(ARTICLES_ENDPOINT, params={'start_date': '2026-07-15', 'end_date': '2026-07-15'})
+        assert titles(response) == {'read in july'}
+
+    def test_a_single_day_window_excludes_the_day_after(self, client_with_read_dates):
+        """The widening stops at the next midnight rather than running past it."""
+        response = client_with_read_dates.get(ARTICLES_ENDPOINT, params={'start_date': '2026-07-15', 'end_date': '2026-07-16'})
+        assert titles(response) == {'read in july'}
+
     def test_a_never_read_article_is_outside_every_range(self, client_with_read_dates):
         response = client_with_read_dates.get(ARTICLES_ENDPOINT, params={'start_date': '2000-01-01'})
         assert 'never read' not in titles(response)
@@ -136,6 +156,15 @@ class TestBookFinishDateBounds:
 
     def test_a_window_narrows_to_what_was_finished_in_it(self, client_with_finish_dates):
         response = client_with_finish_dates.get(BOOKS_ENDPOINT, params={'start_date': '2026-08-01', 'end_date': '2026-08-31'})
+        assert titles(response) == {'finished in august'}
+
+    def test_a_single_day_window_finds_the_book_finished_that_day(self, client_with_finish_dates):
+        """`read_finish_date` is a `Date`, so this is the branch that already worked.
+
+        It is asserted anyway, because the point of the fix is that the answer
+        stops depending on which type the column happens to be.
+        """
+        response = client_with_finish_dates.get(BOOKS_ENDPOINT, params={'start_date': '2026-08-15', 'end_date': '2026-08-15'})
         assert titles(response) == {'finished in august'}
 
     def test_an_unfinished_book_is_outside_every_range(self, client_with_finish_dates):
@@ -191,6 +220,25 @@ class TestTaskCompleteDateBounds:
         response = client_with_completed_tasks.get(TASKS_ENDPOINT, params={'status': 'completed', 'start_date': '2026-08-01'})
         assert self.names(response) == {'done in august'}
 
+    def test_a_single_day_window_finds_the_task_completed_that_day(self, client_with_completed_tasks):
+        response = client_with_completed_tasks.get(
+            TASKS_ENDPOINT,
+            params={'status': 'completed', 'start_date': '2026-08-15', 'end_date': '2026-08-15'},
+        )
+        assert self.names(response) == {'done in august'}
+
+    def test_the_completed_read_takes_the_same_single_day_window(self, client_with_completed_tasks):
+        """`/tasks/completed/` carried its own copy of the bounds and its own defect.
+
+        Nothing in this fleet calls it, so it is fixed by folding rather than by
+        being found: another client reaching for it gets what the CLI gets.
+        """
+        response = client_with_completed_tasks.get(
+            f'{TASKS_ENDPOINT}completed/',
+            params={'start_date': '2026-08-15', 'end_date': '2026-08-15'},
+        )
+        assert self.names(response) == {'done in august'}
+
     def test_an_open_task_is_outside_every_range(self, client_with_completed_tasks):
         response = client_with_completed_tasks.get(TASKS_ENDPOINT, params={'status': 'all', 'start_date': '2000-01-01'})
         assert self.names(response) == {'done in june', 'done in august'}
@@ -238,6 +286,20 @@ class TestProjectItemCompletedAtBounds:
         response = client.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'completed', 'end_date': '2000-01-01'})
         assert titles(response) == set()
 
+    def test_todays_single_day_window_finds_what_was_finished_this_minute(self, seeded):
+        """The item is stamped now, so the end bound has to reach the rest of today.
+
+        This is the case that sent the CLI looking: a day asked for as a day
+        answered with nothing whenever the work happened after midnight.
+        """
+        client, _ = seeded
+        today = datetime.now(UTC).date().isoformat()
+        response = client.get(
+            PROJECT_ITEMS_ENDPOINT,
+            params={'status': 'completed', 'start_date': today, 'end_date': today},
+        )
+        assert titles(response) == {'finished today'}
+
     def test_an_item_that_was_never_finished_is_outside_every_range(self, seeded):
         client, _ = seeded
         response = client.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'all', 'start_date': '2000-01-01'})
@@ -256,6 +318,65 @@ class TestProjectItemCompletedAtBounds:
     def test_an_unparsable_bound_is_a_422(self, seeded):
         client, _ = seeded
         response = client.get(PROJECT_ITEMS_ENDPOINT, params={'start_date': 'this week'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+
+class TestHabitCompleteDateBounds:
+    """GET /habits/completed/ bounds on `complete_date`.
+
+    This endpoint wrote the contract and kept its own copy of the comparison,
+    which is how it ended up with the defect the contract was meant to prevent.
+    It reads through the shared helper now.
+    """
+
+    @pytest.fixture
+    def client_with_completions(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        category = models.HabitCategory(name='Bounded reads', is_current=True)
+        session.add(category)
+        session.flush()
+        session.add_all(
+            [
+                models.HabitCompleted(name=name, category_id=category.id, complete_date=done)
+                for name, done in (
+                    ('done in june', datetime(2026, 6, 15, 12)),
+                    ('done in august', datetime(2026, 8, 15, 12)),
+                )
+            ]
+        )
+        session.flush()
+        return client
+
+    def names(self, response) -> set[str]:
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        return {row['name'] for row in response.json()}
+
+    def test_a_single_day_window_finds_the_completion_on_that_day(self, client_with_completions):
+        """A habit ticked at noon has to fall inside the day it was ticked on."""
+        response = client_with_completions.get(
+            HABITS_COMPLETED_ENDPOINT,
+            params={'start_date': '2026-08-15', 'end_date': '2026-08-15'},
+        )
+        assert self.names(response) == {'done in august'}
+
+    def test_an_end_bound_carrying_a_time_keeps_its_own_instant(self, client_with_completions):
+        """The Vue habit views send a full instant and must not be widened.
+
+        Midnight on the 15th excludes the noon completion, which is the same
+        answer a caller naming that instant got before the helper was shared.
+        """
+        response = client_with_completions.get(
+            HABITS_COMPLETED_ENDPOINT,
+            params={'start_date': '2026-06-01', 'end_date': '2026-08-15T00:00:00Z'},
+        )
+        assert self.names(response) == {'done in june'}
+
+    def test_either_bound_still_narrows_on_its_own(self, client_with_completions):
+        response = client_with_completions.get(HABITS_COMPLETED_ENDPOINT, params={'start_date': '2026-07-01'})
+        assert self.names(response) == {'done in august'}
+
+    def test_an_unparsable_bound_is_still_a_422(self, client_with_completions):
+        response = client_with_completions.get(HABITS_COMPLETED_ENDPOINT, params={'start_date': 'not-a-date'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
