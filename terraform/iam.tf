@@ -146,7 +146,9 @@ resource "aws_iam_policy" "terraform_execution" {
           "s3:*",
           "ssm:*",
           "glue:*",
-          "iam:*"
+          "iam:*",
+          "logs:*",
+          "states:*"
         ]
         Resource = "*"
       }
@@ -281,7 +283,8 @@ resource "aws_iam_policy" "cloud_developer" {
           "s3:*",
           "ssm:*",
           "glue:*",
-          "logs:*"
+          "logs:*",
+          "states:*"
         ],
         Resource = "*"
       }
