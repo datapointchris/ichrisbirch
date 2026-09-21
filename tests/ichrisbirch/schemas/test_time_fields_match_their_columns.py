@@ -44,7 +44,8 @@ def time_fields(schema_name: str) -> list[tuple[str, str]]:
     model = model_for(schema_name)
     if model is None:
         return []
-    columns = model.__table__.columns
+    # By attribute, not by table column: an attribute may be stored under another column name.
+    columns = {attr.key: attr.columns[0] for attr in model.__mapper__.column_attrs}
     fields = REQUEST_SCHEMAS[schema_name].model_fields
     return [(field, kind) for field in fields if field in columns and (kind := time_kind(columns[field]))]
 
