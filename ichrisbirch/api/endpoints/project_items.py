@@ -22,8 +22,6 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
-from ichrisbirch.services.date_bounds import EndDate
-from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.project_item_completion import stamp_completion
 from ichrisbirch.services.project_item_positions import move_membership_to_position
@@ -53,9 +51,6 @@ PROJECT_ITEM_LOAD_OPTIONS = (
 # The repo tag is the axis that crosses projects: it outlives the project an item
 # was filed under, so it is the only way to ask what work a repo has accumulated
 # across finished and live efforts alike. Every collection read takes it.
-RepoFilter = Annotated[str | None, Query(description='Only items tagged with this repo registry name')]
-
-
 def apply_repo_filter(query: Select, repo: str | None) -> Select:
     """Narrow a project-item query to one repo, or leave it alone when unset.
 
@@ -154,14 +149,14 @@ def _next_position_in_project(session: Session, project_id: UUID) -> int:
 async def read_many(
     session: DbSession,
     zone: RequestZone,
-    repo: RepoFilter = None,
+    repo: str | None = None,
     item_status: str = Query(
         'open',
         alias='status',
         description="An item status, or 'all'. Completed and archived items are hidden by default.",
     ),
-    start_date: StartDate = None,
-    end_date: EndDate = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List open project items — not completed, not archived.
@@ -180,12 +175,12 @@ async def read_many(
     query = select(models.ProjectItem).options(*PROJECT_ITEM_LOAD_OPTIONS).order_by(models.ProjectItem.created_at.desc())
     query = apply_status_filter(query, item_status)
     query = apply_repo_filter(query, repo)
-    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, zone)
+    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, timezone=zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/blocked/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def list_blocked(session: DbSession, repo: RepoFilter = None):
+async def list_blocked(session: DbSession, repo: str | None = None):
     """List items that have at least one incomplete dependency."""
     query = (
         select(models.ProjectItem)
@@ -205,7 +200,7 @@ async def list_blocked(session: DbSession, repo: RepoFilter = None):
 
 
 @router.get('/search/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession, repo: RepoFilter = None):
+async def search(q: str, session: DbSession, repo: str | None = None):
     logger.debug('project_item_search', query=q)
     query = (
         select(models.ProjectItem)

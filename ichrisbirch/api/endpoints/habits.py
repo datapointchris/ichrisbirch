@@ -14,8 +14,6 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.services import habit_day
-from ichrisbirch.services.date_bounds import EndDate
-from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
@@ -74,8 +72,8 @@ async def create_completed(habit: schemas.HabitCompletedCreate, session: DbSessi
 @router.get('/completed/', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 async def read_many_completed(
     session: DbSession,
-    start_date: StartDate = None,
-    end_date: EndDate = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     first: bool | None = None,
     last: bool | None = None,
     limit: RowLimit = None,
@@ -97,7 +95,7 @@ async def read_many_completed(
         limit = 1 if limit is None else min(1, limit)
 
     else:
-        query = apply_date_bounds(query, models.HabitCompleted.complete_date, start_date, end_date)
+        query = apply_date_bounds(query, models.HabitCompleted.complete_date, start_date, end_date, timezone=None)
         query = query.order_by(*newest_first)
 
     return list(session.scalars(apply_row_limit(query, limit)).all())

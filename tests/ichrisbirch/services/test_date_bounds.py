@@ -11,7 +11,8 @@ the instant it begins, so `<=` keeps only rows stamped exactly midnight and
 
 A bare day on a timestamp column is also a day somewhere. Read in UTC, a task
 finished at 21:00 in New York falls on the next day, so the request's zone decides
-where the day opens and closes, and a timestamp column given no zone refuses.
+where the day opens and closes. A time written with no offset is a reading on the
+same clock.
 """
 
 import datetime as dt
@@ -28,13 +29,17 @@ from ichrisbirch.services.date_bounds import day_bounds
 NEW_YORK = ZoneInfo('America/New_York')
 
 
-def _bound_values(column, start: str | None = None, end: str | None = None, zone: str | None = None):
+def _where(column, start: str | None = None, end: str | None = None, zone: str | None = 'UTC'):
+    return apply_date_bounds(sa.select(models.Book), column, start, end, timezone=zone).whereclause
+
+
+def _bound_values(column, start: str | None = None, end: str | None = None, zone: str | None = 'UTC'):
     """The literal on the right of each comparison the bounds added.
 
     One bound produces a BinaryExpression and two produce a BooleanClauseList, so
     both shapes are flattened rather than assuming the two-bound case.
     """
-    where = apply_date_bounds(sa.select(models.Book), column, start, end, zone).whereclause
+    where = _where(column, start, end, zone)
     if where is None:
         return []
     clauses = getattr(where, 'clauses', [where])
@@ -48,19 +53,33 @@ def test_a_date_column_gets_a_date_bound():
 
 
 def test_a_timestamp_column_keeps_its_datetime_bound():
-    values = _bound_values(models.Task.complete_date, start='2026-08-20', zone='UTC')
+    values = _bound_values(models.Task.complete_date, start='2026-08-20')
     assert isinstance(values[0], dt.datetime)
 
 
-def test_a_bare_day_on_a_timestamp_column_without_a_zone_is_refused():
+def test_a_time_with_no_offset_is_read_on_the_request_zones_clock():
+    """20:00 typed in New York is 00:00 UTC the next day, never 20:00 UTC."""
+    values = _bound_values(models.Task.complete_date, start='2026-09-20T20:00:00', zone='America/New_York')
+
+    assert values == [dt.datetime(2026, 9, 20, 20, tzinfo=NEW_YORK)]
+    assert values[0].astimezone(dt.UTC) == dt.datetime(2026, 9, 21, 0, tzinfo=dt.UTC)
+
+
+def test_a_time_with_an_offset_keeps_it_whatever_the_zone():
+    values = _bound_values(models.Task.complete_date, start='2026-08-20T04:00:00Z', zone='Asia/Tokyo')
+    assert values == [dt.datetime(2026, 8, 20, 4, tzinfo=dt.UTC)]
+
+
+def test_a_time_with_an_offset_needs_no_zone():
+    values = _bound_values(models.Task.complete_date, start='2026-08-20T04:00:00Z', zone=None)
+    assert values == [dt.datetime(2026, 8, 20, 4, tzinfo=dt.UTC)]
+
+
+@pytest.mark.parametrize('bound', ['2026-08-20', '2026-08-20T20:00:00'])
+def test_a_bound_with_no_offset_on_a_timestamp_column_without_a_zone_is_refused(bound):
     """Guessing UTC is how every reader west of it got the next day's rows."""
     with pytest.raises(TypeError, match='needs a zone'):
-        _bound_values(models.Task.complete_date, start='2026-08-20')
-
-
-def test_an_instant_on_a_timestamp_column_needs_no_zone():
-    values = _bound_values(models.Task.complete_date, start='2026-08-20T04:00:00Z')
-    assert values == [dt.datetime(2026, 8, 20, 4, tzinfo=dt.UTC)]
+        _bound_values(models.Task.complete_date, start=bound, zone=None)
 
 
 def test_a_bound_carrying_a_time_still_narrows_a_date_column():
@@ -69,9 +88,9 @@ def test_a_bound_carrying_a_time_still_narrows_a_date_column():
     assert values == [dt.date(2026, 8, 20)]
 
 
-def _end_clause(column, end: str, zone: str | None = None):
+def _end_clause(column, end: str, zone: str | None = 'UTC'):
     """The operator and the literal of the single comparison an end bound added."""
-    where = apply_date_bounds(sa.select(models.Book), column, None, end, zone).whereclause
+    where = _where(column, end=end, zone=zone)
     assert where is not None, 'an end bound must add a comparison'
     return where.operator.__name__, where.right.value
 
@@ -83,7 +102,7 @@ def test_a_bare_day_closing_a_timestamp_column_widens_to_the_next_midnight():
     only rows stamped exactly midnight. The whole day is everything strictly
     before the next one.
     """
-    operator, value = _end_clause(models.Task.complete_date, '2026-08-20', 'UTC')
+    operator, value = _end_clause(models.Task.complete_date, '2026-08-20')
 
     assert operator == 'lt'
     assert value == dt.datetime(2026, 8, 21, tzinfo=dt.UTC)
@@ -95,7 +114,7 @@ def test_a_bare_day_on_a_timestamp_column_is_that_day_in_the_callers_zone():
     Read as a UTC day, the 20th would leave that task out and the 21st would
     claim it.
     """
-    where = apply_date_bounds(sa.select(models.Task), models.Task.complete_date, '2026-08-20', '2026-08-20', 'America/New_York').whereclause
+    where = _where(models.Task.complete_date, '2026-08-20', '2026-08-20', 'America/New_York')
     opens, closes = (clause.right.value for clause in where.clauses)
 
     evening = dt.datetime(2026, 8, 20, 21, 0, tzinfo=NEW_YORK)
@@ -105,7 +124,7 @@ def test_a_bare_day_on_a_timestamp_column_is_that_day_in_the_callers_zone():
 
 def test_a_zone_leaves_a_date_column_alone():
     """A `Date` column already holds a calendar day, so no zone can move it."""
-    where = apply_date_bounds(sa.select(models.Book), models.Book.read_finish_date, '2026-08-20', None, 'Pacific/Auckland').whereclause
+    where = _where(models.Book.read_finish_date, start='2026-08-20', zone='Pacific/Auckland')
 
     assert where.right.value == dt.date(2026, 8, 20)
 
@@ -139,7 +158,7 @@ def test_a_bound_that_is_not_a_date_is_a_422_rather_than_a_500(value):
     there as a 500 on what is the caller's mistake.
     """
     with pytest.raises(HTTPException) as caught:
-        apply_date_bounds(sa.select(models.Book), models.Task.complete_date, value, None)
+        _where(models.Task.complete_date, start=value)
 
     assert caught.value.status_code == 422
 

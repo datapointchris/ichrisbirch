@@ -25,8 +25,6 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.services.date_bounds import EndDate
-from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.outbound_http import PageFetchError
 from ichrisbirch.services.outbound_http import PageStatusError
@@ -82,8 +80,8 @@ async def read_many(
     favorites: bool | None = None,
     archived: bool | None = None,
     unread: bool | None = None,
-    start_date: StartDate = None,
-    end_date: EndDate = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List articles by title, narrowed by the tri-state filters and a read-date range.
@@ -113,7 +111,7 @@ async def read_many(
         query = query.where(models.Article.last_read_date.is_(None))
     if unread is False:
         query = query.where(models.Article.last_read_date.is_not(None))
-    query = apply_date_bounds(query, models.Article.last_read_date, start_date, end_date, zone)
+    query = apply_date_bounds(query, models.Article.last_read_date, start_date, end_date, timezone=zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

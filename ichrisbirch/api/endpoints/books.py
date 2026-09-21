@@ -14,8 +14,6 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.services.date_bounds import EndDate
-from ichrisbirch.services.date_bounds import StartDate
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.outbound_http import get_page
 from ichrisbirch.services.row_limit import RowLimit
@@ -30,8 +28,8 @@ async def read_many(
     session: DbSession,
     ownership: str | None = Query(None),
     progress: str | None = Query(None),
-    start_date: StartDate = None,
-    end_date: EndDate = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List the catalog in reading-priority order, narrowed by the filters and a finish-date range.
@@ -48,7 +46,7 @@ async def read_many(
         query = query.filter(models.Book.ownership == ownership)
     if progress:
         query = query.filter(models.Book.progress == progress)
-    query = apply_date_bounds(query, models.Book.read_finish_date, start_date, end_date)
+    query = apply_date_bounds(query, models.Book.read_finish_date, start_date, end_date, timezone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

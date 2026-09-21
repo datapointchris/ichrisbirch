@@ -11,11 +11,12 @@ inclusive, each narrows on its own so one without the other is an open-ended
 range, and an unparsable value is a 422 rather than a silently ignored filter.
 
 A bound written as a bare day means the whole of that day, and one written with a
-time means that instant. `--start X --end X` therefore answers with everything
-dated on X, whatever the column's own type. On a timestamp column the day is the
-one in the request's zone, because a day is not a UTC day for anyone who does
-not live in UTC: a task finished at 21:00 in New York is 01:00 the next day
-there. `ichrisbirch/api/request_zone.py` decides which zone a request is in.
+time means that moment. `--start X --end X` therefore answers with everything
+dated on X, whatever the column's own type. On a timestamp column the day, and a
+time written with no offset, are read in the request's zone. A day is not a UTC
+day for anyone who does not live in UTC: a task finished at 21:00 in New York is
+01:00 the next day there. `ichrisbirch/api/request_zone.py` decides which zone a
+request is in.
 
 A bound compares against a nullable column, so a row with no date is outside
 every range — an unread article is not "read before today", and an open task was
@@ -23,20 +24,15 @@ not "completed this week".
 """
 
 import datetime as dt
-from typing import Annotated
 from zoneinfo import ZoneInfo
 
 import pendulum
 import sqlalchemy as sa
 from fastapi import HTTPException
-from fastapi import Query
 from fastapi import status
 from sqlalchemy import ColumnElement
 from sqlalchemy import Select
 from sqlalchemy.orm import InstrumentedAttribute
-
-StartDate = Annotated[str | None, Query(description='Only rows dated on or after this ISO 8601 date')]
-EndDate = Annotated[str | None, Query(description='Only rows dated on or before this ISO 8601 date')]
 
 
 def day_bounds(day: dt.date, zone: ZoneInfo) -> tuple[dt.datetime, dt.datetime]:
@@ -57,16 +53,17 @@ def day_bounds(day: dt.date, zone: ZoneInfo) -> tuple[dt.datetime, dt.datetime]:
 def _parse_bound(value: str) -> dt.datetime | dt.date:
     """The bound as the caller wrote it, keeping whether they named a time.
 
-    `exact=True` answers a bare day with a `date` and an instant with a
-    `datetime`. That distinction is the whole input to the end bound below, and
-    the default parse discards it by resolving every bare day to midnight.
+    `exact=True` answers a bare day with a `date` and a time with a `datetime`.
+    That distinction is the whole input to the end bound below, and the default
+    parse discards it by resolving every bare day to midnight. `tz=None` leaves a
+    time written with no offset naive, where the default would call it UTC.
 
     `ParserError` is a `ValueError`, and an empty string raises the bare parent
     rather than the subclass, so catching the parent is what keeps `end_date=`
     a 422 instead of a 500.
     """
     try:
-        parsed = pendulum.parse(value, exact=True)
+        parsed = pendulum.parse(value, exact=True, tz=None)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f'Invalid date format: {e}') from e
     # pendulum also answers durations and bare times, which would reach the
@@ -102,18 +99,22 @@ def _criterion(column: InstrumentedAttribute, value: str, *, end: bool, zone: Zo
     strictly before the next day begins, since an inclusive compare against
     midnight would keep only rows stamped exactly then.
 
-    A bound that carries a time is an edge the caller placed, so it is left
-    exactly as written at both ends. Widening a midnight end by a day would
-    take in the whole day after it.
+    A bound that carries a time is an edge the caller placed, so it is not
+    widened at either end. Widening a midnight end by a day would take in the
+    whole day after it. A time written with no offset is a reading on the
+    request's clock, so it is placed in `zone` before it is compared.
     """
     parsed = _parse_bound(value)
     if _is_date_column(column):
         as_written = _as_date(parsed)
         return column <= as_written if end else column >= as_written
-    if isinstance(parsed, dt.datetime):
+    if isinstance(parsed, dt.datetime) and parsed.tzinfo is not None:
         return column <= parsed if end else column >= parsed
     if zone is None:
-        raise TypeError(f'{column} stores instants, so a bare-day bound on it needs a zone')
+        raise TypeError(f'{column} stores instants, so a bound with no offset on it needs a zone')
+    if isinstance(parsed, dt.datetime):
+        edge = dt.datetime.combine(parsed.date(), parsed.time(), tzinfo=zone)
+        return column <= edge if end else column >= edge
     opens, closes = day_bounds(parsed, zone)
     return column < closes if end else column >= opens
 
@@ -123,11 +124,13 @@ def apply_date_bounds(
     column: InstrumentedAttribute,
     start_date: str | None,
     end_date: str | None,
-    timezone: str | None = None,
+    *,
+    timezone: str | None,
 ) -> Select:
     """Narrow to rows whose `column` falls within the bounds, or leave it alone.
 
-    `timezone` is required for a timestamp column and ignored for a `Date` one.
+    `timezone` has no default, so every call site says which zone its days are
+    read in. A timestamp column needs one. A `Date` column passes `None`.
     """
     zone = ZoneInfo(timezone) if timezone is not None else None
     if start_date is not None:

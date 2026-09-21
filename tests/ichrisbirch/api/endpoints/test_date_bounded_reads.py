@@ -90,7 +90,10 @@ class TestArticleReadDateBounds:
         assert titles(response) == {'read in july'}
 
     def test_the_bounds_are_inclusive(self, client_with_read_dates):
-        """An exact-instant bound keeps the row it names, matching /habits/completed/."""
+        """A bound carrying a time keeps the row stamped at it, matching /habits/completed/.
+
+        The test user has no zone, so the time is read in UTC.
+        """
         response = client_with_read_dates.get(
             ARTICLES_ENDPOINT,
             params={'start_date': '2026-07-15T12:00:00', 'end_date': '2026-07-15T12:00:00'},
@@ -282,6 +285,16 @@ class TestTheRequestZoneDecidesTheDay:
 
     def test_a_user_with_no_preference_reads_utc_days(self, client_with_an_evening_task):
         assert self.names_on(client_with_an_evening_task, '2026-08-21') == {'done in the evening'}
+
+    def test_a_time_with_no_offset_is_read_on_the_named_zones_clock(self, client_with_an_evening_task):
+        """20:00 to 23:59 in New York holds the 21:00 task; the same hours in UTC do not."""
+        window = {'status': 'completed', 'start_date': '2026-08-20T20:00:00', 'end_date': '2026-08-20T23:59:00'}
+
+        in_new_york = client_with_an_evening_task.get(TASKS_ENDPOINT, params={**window, 'timezone': 'America/New_York'})
+        in_utc = client_with_an_evening_task.get(TASKS_ENDPOINT, params=window)
+
+        assert {row['name'] for row in in_new_york.json()} == {'done in the evening'}
+        assert {row['name'] for row in in_utc.json()} == set()
 
     def test_an_unknown_zone_is_a_422_naming_it(self, client_with_an_evening_task):
         response = client_with_an_evening_task.get(TASKS_ENDPOINT, params={'timezone': 'Not/AZone'})
