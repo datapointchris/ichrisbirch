@@ -57,7 +57,6 @@ The mapping passes `StateDir` explicitly rather than taking goclilogin's default
 
 - Every environment loads a `.env` file via `python-dotenv` and sets `ENVIRONMENT=development|testing|production`
 - Secrets are SOPS + age, encrypted at `secrets/secrets.prod.enc.env`; edit with `sops secrets/secrets.prod.enc.env`
-- AWS (boto3) is used for S3 backups only, NOT for config or secrets
 
 ### Outbound HTTP Goes Through One Function
 
