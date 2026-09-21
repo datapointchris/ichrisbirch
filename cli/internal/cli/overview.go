@@ -668,7 +668,7 @@ func articleReadSummary(section articleSection) string {
 		return ""
 	}
 	return fmt.Sprintf(", %d read in 30d, last %s",
-		section.ReadLast30Days, section.LastReadAt.Format("2006-01-02"))
+		section.ReadLast30Days, localDay(*section.LastReadAt))
 }
 
 func printArticleSection(out io.Writer, section articleSection) {

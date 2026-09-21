@@ -105,9 +105,10 @@ func newItemsListCommand() *cobra.Command {
 			"open the same way the unscoped list does and takes the same --status.\n" +
 			"\n" +
 			"--start/--end bound when an item was finished, inclusive on both ends, and\n" +
-			"either works without the other. An item that was never completed has no\n" +
-			"such date, so it falls outside every range — pair them with\n" +
-			"--status completed to read a week's finished work.\n" +
+			"either works without the other. A day is read on this machine's calendar.\n" +
+			"An item that was never completed has no such date, so it falls outside\n" +
+			"every range — pair them with --status completed to read a week's finished\n" +
+			"work.\n" +
 			"\n" +
 			"--limit caps what the filters left, and applies to either shape of the\n" +
 			"list: newest-first unscoped, project order under --project.",
@@ -125,6 +126,7 @@ func newItemsListCommand() *cobra.Command {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
 				return err
 			}
+			bounds.Zone = LocalZoneName()
 			if project == "" {
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {

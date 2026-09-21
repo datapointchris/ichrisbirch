@@ -159,6 +159,27 @@ func TestListTasks_CarriesTheDateBounds(t *testing.T) {
 	}
 }
 
+func TestListTasks_NamesTheZoneABareDayIsReadIn(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	bounds := DateBounds{Start: "2026-08-20", End: "2026-08-20", Zone: "America/New_York"}
+	if _, err := client.ListTasks(context.Background(), nil, TaskStatusCompleted, "", bounds); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "end_date=2026-08-20&start_date=2026-08-20&status=completed&timezone=America%2FNew_York" {
+		t.Errorf("query = %q, want the zone beside the bounds", *query)
+	}
+}
+
+func TestListTasks_AZoneWithNoBoundIsNotSent(t *testing.T) {
+	client, query := recordQuery(t, `[]`)
+	if _, err := client.ListTasks(context.Background(), nil, "", "", DateBounds{Zone: "America/New_York"}); err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if *query != "" {
+		t.Errorf("query = %q, want nothing: a zone narrows nothing on its own", *query)
+	}
+}
+
 func TestListTasks_OneBoundNarrowsOnItsOwn(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
 	if _, err := client.ListTasks(context.Background(), nil, "", "", DateBounds{End: "2026-08-23"}); err != nil {

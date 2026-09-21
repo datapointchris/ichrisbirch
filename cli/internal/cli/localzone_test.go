@@ -131,3 +131,42 @@ func TestZoneExists(t *testing.T) {
 		}
 	}
 }
+
+// The API sends instants in UTC. 01:00 UTC on the 21st is 21:00 on the 20th in
+// New York, and printing it as it arrived would put the evening on tomorrow.
+func TestLocalDay_IsTheDayOnThisMachinesCalendar(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("loading zone: %v", err)
+	}
+	original := time.Local
+	time.Local = loc
+	t.Cleanup(func() { time.Local = original })
+
+	instant := time.Date(2026, 8, 21, 1, 0, 0, 0, time.UTC)
+	if got := localDay(instant); got != "2026-08-20" {
+		t.Errorf("localDay = %s, want 2026-08-20", got)
+	}
+}
+
+func TestDaysUntilFrom_CountsFromTheLocalDay(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("loading zone: %v", err)
+	}
+	// 21:30 on the 23rd in New York is already the 24th in UTC.
+	evening := time.Date(2026, 8, 23, 21, 30, 0, 0, loc)
+	cases := map[string]string{
+		"2026-08-23": "today",
+		"2026-08-24": "in 1d",
+		"2026-08-20": "3d ago",
+		// Across the fall-back night, which is 25 hours long in New York.
+		"2026-11-02": "in 71d",
+		"not-a-day":  "?",
+	}
+	for due, want := range cases {
+		if got := daysUntilFrom(due, evening); got != want {
+			t.Errorf("daysUntilFrom(%s) = %s, want %s", due, got, want)
+		}
+	}
+}

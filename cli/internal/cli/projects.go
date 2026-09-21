@@ -461,7 +461,7 @@ func closedSuffix(p api.Project) string {
 	if p.ClosedAt == nil {
 		return ""
 	}
-	return " (" + p.ClosedAt.Format("2006-01-02") + ")"
+	return " (" + localDay(*p.ClosedAt) + ")"
 }
 
 // repoList renders a project's derived repos. An em dash rather than a blank

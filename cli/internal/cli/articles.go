@@ -137,7 +137,7 @@ func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
 	_, _ = fmt.Fprintf(out, "batch %s\n", s.BatchID)
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", s.Status)
 	if s.ResumesAt != nil {
-		_, _ = fmt.Fprintf(out, "  resumes:   %s (Claude usage limit)\n", *s.ResumesAt)
+		_, _ = fmt.Fprintf(out, "  resumes:   %s (Claude usage limit)\n", shortTimestamp(*s.ResumesAt))
 	}
 	_, _ = fmt.Fprintf(out, "  progress:  %d/%d processed\n", s.Processed, s.Total)
 	_, _ = fmt.Fprintf(out, "  succeeded: %d\n", s.Succeeded)
@@ -159,7 +159,7 @@ func printFailedImportsTable(out io.Writer, failed []api.ArticleFailedImport) {
 	_, _ = fmt.Fprintln(tw, "ID\tFAILED\tURL\tERROR")
 	for _, f := range failed {
 		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
-			f.ID, f.FailedAt.Format("2006-01-02"), f.URL, firstLine(f.ErrorMessage))
+			f.ID, localDay(f.FailedAt), f.URL, firstLine(f.ErrorMessage))
 	}
 	_ = tw.Flush()
 }
@@ -189,8 +189,9 @@ func newArticlesListCommand() *cobra.Command {
 			"omit it to ignore the filter. Same for --archived and --unread.\n" +
 			"\n" +
 			"--start/--end bound when an article was last read, inclusive on both ends,\n" +
-			"and either works without the other. A never-read article has no such date,\n" +
-			"so it falls outside every range.\n" +
+			"and either works without the other. A day is read on this machine's\n" +
+			"calendar. A never-read article has no such date, so it falls outside every\n" +
+			"range.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the first titles of the\n" +
 			"narrowed set rather than filtering a capped slice.",
@@ -201,6 +202,7 @@ func newArticlesListCommand() *cobra.Command {
 			"  icb articles list --start 2026-08-01 --end 2026-08-31",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			bounds.Zone = LocalZoneName()
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
 					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"), bounds, limitFlag(cmd))
@@ -543,9 +545,9 @@ func printArticleDetail(out io.Writer, a api.Article) {
 	_, _ = fmt.Fprintf(out, "  current:   %s\n", yesNo(a.IsCurrent))
 	_, _ = fmt.Fprintf(out, "  archived:  %s\n", yesNo(a.IsArchived))
 	_, _ = fmt.Fprintf(out, "  reads:     %d\n", a.ReadCount)
-	_, _ = fmt.Fprintf(out, "  saved:     %s\n", a.SaveDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "  saved:     %s\n", localDay(a.SaveDate))
 	if a.LastReadDate != nil {
-		_, _ = fmt.Fprintf(out, "  last read: %s\n", a.LastReadDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  last read: %s\n", localDay(*a.LastReadDate))
 	}
 	if a.ReviewDays != nil {
 		_, _ = fmt.Fprintf(out, "  review:    every %d days\n", *a.ReviewDays)

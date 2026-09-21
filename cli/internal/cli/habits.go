@@ -365,11 +365,10 @@ func newHabitsCompleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "complete <habit-id> [--date YYYY-MM-DD]",
 		Short: "Record a completion of a habit",
-		Long: "Mark a habit done, by default as of now. Fetches the habit, then records a\n" +
-			"completion carrying its id alongside the name and category it had at the time.\n\n" +
-			"--date fills in a day you forgot. An earlier day lands at local noon, since a\n" +
-			"day recorded after the fact has no time of its own; today keeps the current\n" +
-			"time. A future day is rejected.",
+		Long: "Mark a habit done, by default today on this machine's calendar. Fetches the\n" +
+			"habit, then records a completion carrying its id alongside the name and\n" +
+			"category it had at the time.\n\n" +
+			"--date fills in a day you forgot. A future day is rejected.",
 		Example: "  # done just now\n  icb habits complete 5\n\n" +
 			"  # a day you forgot to record\n  icb habits complete 5 --date 2026-08-21",
 		Args: usageArgs(cobra.ExactArgs(1)),
@@ -394,7 +393,7 @@ func newHabitsCompleteCommand() *cobra.Command {
 				HabitID:      &habit.ID,
 				Name:         habit.Name,
 				CategoryID:   habit.CategoryID,
-				CompleteDate: completeDate.Format(time.RFC3339),
+				CompleteDate: completeDate,
 			})
 			if err != nil {
 				return handleAPIError(err)
@@ -403,11 +402,11 @@ func newHabitsCompleteCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), completed)
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Completed habit %q on %s (completion id %d)\n",
-				completed.Name, completed.CompleteDate.Format("2006-01-02"), completed.ID)
+				completed.Name, completed.CompleteDate, completed.ID)
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&date, "date", "", "Day the habit was done (YYYY-MM-DD); defaults to now")
+	cmd.Flags().StringVar(&date, "date", "", "Day the habit was done (YYYY-MM-DD); defaults to today")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the completion as JSON to stdout")
 	return cmd
 }
@@ -419,31 +418,24 @@ var (
 	errDateInFuture = errors.New("--date is in the future")
 )
 
-// habitCompleteDate resolves --date against now. Empty, or today, means now — the
-// moment is real and worth keeping. An earlier day has no moment of its own, so it
-// is stamped at local noon, inside the day under any nearby UTC offset. A day after
-// today is refused, because a habit cannot have been done yet.
-//
-// Noon is constructed with time.Date rather than reached by adding twelve hours to
-// midnight. A duration is absolute, so on a day the zone shifts its offset the sum
-// lands an hour off the wall clock the help promises.
-func habitCompleteDate(date string, now time.Time) (time.Time, error) {
+// habitCompleteDate resolves --date against now into the YYYY-MM-DD day sent to
+// the API. Empty means today in now's zone. A day after today is refused,
+// because a habit cannot have been done yet.
+func habitCompleteDate(date string, now time.Time) (string, error) {
+	today := now.Format(dayLayout)
 	if date == "" {
-		return now, nil
+		return today, nil
 	}
-	day, err := time.ParseInLocation("2006-01-02", date, now.Location())
+	day, err := time.Parse(dayLayout, date)
 	if err != nil {
-		return time.Time{}, usageError{fmt.Errorf("%w: %q — expected YYYY-MM-DD", errDateFormat, date)}
+		return "", usageError{fmt.Errorf("%w: %q — expected YYYY-MM-DD", errDateFormat, date)}
 	}
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	switch {
-	case day.After(today):
-		return time.Time{}, usageError{fmt.Errorf("%w: %s — a habit cannot be completed ahead of time", errDateInFuture, date)}
-	case day.Equal(today):
-		return now, nil
-	default:
-		return time.Date(day.Year(), day.Month(), day.Day(), 12, 0, 0, 0, now.Location()), nil
+	// YYYY-MM-DD compares as a string in calendar order.
+	normalized := day.Format(dayLayout)
+	if normalized > today {
+		return "", usageError{fmt.Errorf("%w: %s — a habit cannot be completed ahead of time", errDateInFuture, date)}
 	}
+	return normalized, nil
 }
 
 func newHabitsCategoriesCommand() *cobra.Command {
@@ -567,7 +559,7 @@ func printHabitCompletedTable(out io.Writer, completed []api.HabitCompleted) {
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "ID\tNAME\tDATE\tCATEGORY")
 	for _, c := range completed {
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.Name, c.CompleteDate.Format("2006-01-02"), c.Category.Name)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", c.ID, c.Name, c.CompleteDate, c.Category.Name)
 	}
 	_ = tw.Flush()
 }

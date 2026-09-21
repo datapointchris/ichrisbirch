@@ -59,9 +59,9 @@ func newTasksListCommand() *cobra.Command {
 			"moment they left the queue.\n" +
 			"\n" +
 			"--start/--end bound when a task was completed, inclusive on both ends, and\n" +
-			"either works without the other. An open task has no completion date, so it\n" +
-			"falls outside every range — pair them with --status completed to read a\n" +
-			"week's finished work.\n" +
+			"either works without the other. A day is read on this machine's calendar.\n" +
+			"An open task has no completion date, so it falls outside every range — pair\n" +
+			"them with --status completed to read a week's finished work.\n" +
 			"\n" +
 			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
 			"It is matched by the API, so --limit caps the category rather than the\n" +
@@ -85,6 +85,7 @@ func newTasksListCommand() *cobra.Command {
 				}
 				category = canonical
 			}
+			bounds.Zone = LocalZoneName()
 			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
 				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category, bounds)
 			}); err != nil {
@@ -497,9 +498,9 @@ func printTaskDetail(out io.Writer, t api.Task) {
 	_, _ = fmt.Fprintf(out, "  category:  %s\n", t.Category)
 	_, _ = fmt.Fprintf(out, "  priority:  %d\n", t.Priority)
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", taskStatus(t))
-	_, _ = fmt.Fprintf(out, "  added:     %s\n", t.AddDate.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(out, "  added:     %s\n", localDay(t.AddDate))
 	if t.CompleteDate != nil {
-		_, _ = fmt.Fprintf(out, "  completed: %s\n", t.CompleteDate.Format("2006-01-02"))
+		_, _ = fmt.Fprintf(out, "  completed: %s\n", localDay(*t.CompleteDate))
 	}
 	if n := strValue(t.Notes); n != "" {
 		_, _ = fmt.Fprintf(out, "  notes:     %s\n", n)

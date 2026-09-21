@@ -4,19 +4,25 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
+// The worker writes the instant in UTC. 03:00 UTC is 23:00 the evening before
+// in New York, which is when the reader can next expect the batch to move.
 func TestPrintBulkImportStatus_APausedBatchSaysWhenItResumes(t *testing.T) {
+	original := time.Local
+	time.Local = newYork(t)
+	t.Cleanup(func() { time.Local = original })
 	resumesAt := "2026-09-18T03:00:00+00:00"
 	status := api.ArticleBulkImportStatus{BatchID: "batch", Status: "paused", ResumesAt: &resumesAt, Total: 3, Processed: 1}
 
 	var out bytes.Buffer
 	printBulkImportStatus(&out, status)
 
-	if !strings.Contains(out.String(), resumesAt) {
-		t.Errorf("a paused batch does not print when it resumes:\n%s", out.String())
+	if !strings.Contains(out.String(), "resumes:   2026-09-17 23:00") {
+		t.Errorf("a paused batch does not print when it resumes on this machine's clock:\n%s", out.String())
 	}
 }
 
