@@ -158,7 +158,7 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 ## Deployment
 
 The Dockerfile is multi-stage (`base` → `development` | `testing` | `production`), so always pass `--target`; the production image runs non-root.
-Production is blue/green: `docker-compose.infra.yml` always runs, `docker-compose.app.yml` deploys as alternating colors, and Traefik reads the git-tracked `routing.yml` plus a generated `services.yml` pointing at the active color. Migrations must be backward-compatible.
+Production is blue/green: `docker-compose.infra.yml` always runs, `docker-compose.app.yml` deploys as alternating colors, and Traefik reads the git-tracked `routing.yml` plus a generated `services.yml` pointing at the active color. Migrations must be backward-compatible. `docs/blue-green-deployment.md` § "Unsafe Operations" lists the changes that take two deploys, and a column's type is one of them: it changes through a new column, never in place.
 Traefik dynamic config is `deploy-containers/traefik/dynamic/`, generated from `vue-paths.txt` by `icbops routing generate`, with CORS and security headers as separate middlewares per environment. `icbops {dev,testing,prod} docker config [service]` prints the merged compose; `./ops/icbops ssl-manager` manages certificates.
 
 ## Conventions
