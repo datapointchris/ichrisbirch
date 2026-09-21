@@ -138,97 +138,30 @@ output "security_group_ichrisbirch_webserver_id" {
 # IAM
 # ------------------------------------------------------------------ #
 
-# ---------- IDENTITY PROVIDERS ---------- #
-
-output "iam_oidc_provider_github_arn" {
-  value = aws_iam_openid_connect_provider.github.arn
-}
-
 # ---------- ROLES ---------- #
 
 output "iam_role_github_actions_arn" {
   value = aws_iam_role.github_actions.arn
 }
 
-output "iam_role_terraform_arn" {
-  value = aws_iam_role.terraform.arn
-}
-
 output "iam_role_ichrisbirch_webserver_arn" {
   value = aws_iam_role.ichrisbirch_webserver.arn
 }
 
-output "iam_role_admin_arn" {
-  value = aws_iam_role.admin.arn
-}
-
-
-# ---------- ASSUME ROLE POLICIES ---------- #
-
-output "iam_policy_assume_admin_role_arn" {
-  value = aws_iam_policy.assume_admin_role.arn
-}
-
-output "iam_policy_assume_terraform_role_arn" {
-  value = aws_iam_policy.assume_terraform_role.arn
-}
-
 # ---------- POLICIES ---------- #
-
-output "iam_policy_terraform_execution_arn" {
-  value = aws_iam_policy.terraform_execution.arn
-}
 
 output "iam_policy_access_webserver_keys_arn" {
   value = aws_iam_policy.access_webserver_keys.arn
-}
-
-output "iam_policy_ec2_instance_connect_arn" {
-  value = aws_iam_policy.ec2_instance_connect.arn
 }
 
 output "iam_policy_allow_pass_webserver_role_arn" {
   value = aws_iam_policy.allow_pass_webserver_role.arn
 }
 
-output "iam_policy_cloud_developer_arn" {
-  value = aws_iam_policy.cloud_developer.arn
-}
-
-
 # ---------- IAM INSTANCE PROFILES ---------- #
 
 output "iam_instance_profile_ichrisbirch_webserver_arn" {
   value = aws_iam_instance_profile.ichrisbirch_webserver.arn
-}
-
-# ---------- IAM GROUPS ---------- #
-
-output "iam_group_developer_arn" {
-  value = aws_iam_group.developer.arn
-}
-
-output "iam_group_developer_admin_arn" {
-  value = aws_iam_group.developer_admin.arn
-}
-
-output "iam_group_security_arn" {
-  value = aws_iam_group.security.arn
-}
-
-# ---------- IAM USERS ---------- #
-
-output "iam_user_chris_birch_arn" {
-  value = aws_iam_user.chris_birch.arn
-}
-
-output "iam_user_john_kundycki_arn" {
-  value = aws_iam_user.john_kundycki.arn
-}
-
-output "user_chris_birch_generated_password" {
-  value     = aws_iam_user_login_profile.chris_birch.password
-  sensitive = true
 }
 
 

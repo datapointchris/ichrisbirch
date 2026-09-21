@@ -1,5 +1,24 @@
 # Terraform
 
+`terraform/` holds the AWS infrastructure the app ran on before it moved to the homelab: a VPC, the
+webserver's IAM role, the S3 buckets and a GitHub Actions role. None of it is deployed. The code
+stays so the app could be rebuilt on AWS.
+
+The account's own users, groups, admin and Terraform roles, and GitHub OIDC provider are
+administered in `chrisbirch-aws-accounts`. This root reads the ones it needs by name, as data
+sources.
+
+## Initializing
+
+The state lives in the account's state bucket under `ichrisbirch/terraform.tfstate`. The bucket
+name carries the account id, so it is passed at init:
+
+```bash
+terraform init -backend-config="bucket=chrisbirch-tfstate-$(aws sts get-caller-identity --query Account --output text)"
+```
+
+Locking uses S3 lock files, which needs Terraform 1.10 or later.
+
 ## Troubleshooting
 
 ### Terraform State is Locked

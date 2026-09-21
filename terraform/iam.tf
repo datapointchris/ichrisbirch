@@ -1,38 +1,30 @@
-# --- DATA SOURCES ---------------------------------------- #
+# --- ACCOUNT ESTATE, READ BY NAME ---------------------------------------- #
+# The account's users, groups, roles and OIDC provider are administered outside this repo.
 
 data "aws_caller_identity" "current" {}
 
-data "tls_certificate" "github_actions" {
+data "aws_iam_openid_connect_provider" "github" {
   url = var.gh_actions_token_url
 }
 
-data "aws_iam_policy" "admin" {
-  arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+data "aws_iam_role" "admin" {
+  name = "AdminRole"
 }
 
-data "aws_iam_policy" "billing" {
-  arn = "arn:aws:iam::aws:policy/job-function/Billing"
+data "aws_iam_group" "developer" {
+  group_name = "developer"
 }
 
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
+data "aws_iam_policy" "terraform_execution" {
+  name = "terraform-execution"
 }
 
+data "aws_iam_policy" "assume_terraform_role" {
+  name = "assume-terraform"
+}
 
-# --- IDENTITY PROVIDERS ---------------------------------------- #
-
-resource "aws_iam_openid_connect_provider" "github" {
-  url            = data.tls_certificate.github_actions.url
-  client_id_list = ["sts.amazonaws.com"]
-  # thumbprint_list = ["a031c46782e6e6c662c2c87c76da9aa62ccabd8e"]
-  thumbprint_list = data.tls_certificate.github_actions.certificates[*].sha1_fingerprint
+data "aws_iam_policy" "deny_dynamodb_autoscaling" {
+  name = "deny-dynamodb-autoscaling"
 }
 
 
@@ -47,7 +39,7 @@ resource "aws_iam_role" "github_actions" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
+          Federated = data.aws_iam_openid_connect_provider.github.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -77,87 +69,8 @@ resource "aws_iam_role" "ichrisbirch_webserver" {
   })
 }
 
-resource "aws_iam_role" "terraform" {
-  name               = "terraform-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
-resource "aws_iam_role" "admin" {
-  name               = "AdminRole"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
-
-# --- ASSUME ROLE POLICIES ---------------------------------------- #
-
-resource "aws_iam_policy" "assume_admin_role" {
-  name        = "assume-admin"
-  description = "Allow assuming the admin role"
-  depends_on  = [aws_iam_role.admin]
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = "sts:AssumeRole"
-        Resource = aws_iam_role.admin.arn
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "assume_terraform_role" {
-  name        = "assume-terraform"
-  description = "Allow assuming the terraform role"
-  depends_on  = [aws_iam_role.terraform]
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = "sts:AssumeRole"
-        Resource = aws_iam_role.terraform.arn
-      }
-    ]
-  })
-}
-
 
 # --- POLICIES ---------------------------------------- #
-
-resource "aws_iam_policy" "terraform_execution" {
-  name        = "terraform-execution"
-  description = "Allow Terraform to execute changes in the AWS account"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "lambda:*",
-          "dynamodb:*",
-          "ec2:*",
-          "ecs:*",
-          "rds:*",
-          "route53:*",
-          "s3:*",
-          "ssm:*",
-          "glue:*",
-          "iam:*",
-          "logs:*",
-          "states:*",
-          "kms:*",
-          "events:*",
-          "scheduler:*"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
 
 resource "aws_iam_policy" "access_webserver_keys" {
   name        = "access-webserver-keys"
@@ -207,22 +120,6 @@ resource "aws_iam_policy" "access_backups_bucket" {
   })
 }
 
-resource "aws_iam_policy" "ec2_instance_connect" {
-  name        = "ec2-instance-connect"
-  description = "Allow EC2 Instance Connect"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = "ec2-instance-connect:SendSSHPublicKey"
-        Resource = "arn:aws:ec2:*:*:instance/*"
-      }
-    ]
-  })
-}
-
 resource "aws_iam_policy" "allow_pass_webserver_role" {
   name        = "allow-pass-webserver-role"
   description = "Allow passing the WebserverRole"
@@ -239,104 +136,22 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
   })
 }
 
-resource "aws_iam_policy" "allow_pass_glue_testbed_role" {
-  name        = "allow-pass-glue-testbed-role"
-  description = "Allow passing a Glue testbed role to Glue, so live integration tests need no role assumption"
-
-  # `cloud-developer` already grants glue:*, but creating a Glue job means handing it a role, and
-  # that is an iam:PassRole the developer group does not otherwise have. This is the whole gap
-  # between a developer credential and running a suite that creates and deletes its own jobs.
-  #
-  # Deliberately not iam:CreateRole. A principal that can create a role and attach a policy to it
-  # can grant itself anything, so delegating that safely needs a permissions boundary and a name
-  # condition. Passing one inert role to one service needs neither.
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = "iam:PassRole"
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/dectl-testbed-*"
-        Condition = {
-          StringEquals = {
-            "iam:PassedToService" = "glue.amazonaws.com"
-          }
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "cloud_developer" {
-  name        = "cloud-developer"
-  description = "Combined policy for general cloud development"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "lambda:*",
-          "dynamodb:*",
-          "ec2:*",
-          "ecs:*",
-          "rds:*",
-          "route53:*",
-          "s3:*",
-          "ssm:*",
-          "glue:*",
-          "logs:*",
-          "states:*",
-          "events:*",
-          "scheduler:*"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "deny_dynamodb_autoscaling" {
-  name        = "deny-dynamodb-autoscaling"
-  description = "Deny DynamoDB auto scaling: it registers eight CloudWatch alarms per table, and the tables in this account stay inside the always-free 25 read/write units without it"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Deny"
-        Action = [
-          "application-autoscaling:RegisterScalableTarget",
-          "application-autoscaling:PutScalingPolicy"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "application-autoscaling:service-namespace" = "dynamodb"
-          }
-        }
-      }
-    ]
-  })
-}
-
 
 # --- ROLE POLICY ATTACHMENTS ---------------------------------------- #
 
 resource "aws_iam_role_policy_attachment" "github_actions_terraform_execution" {
   role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.terraform_execution.arn
+  policy_arn = data.aws_iam_policy.terraform_execution.arn
 }
 
 resource "aws_iam_role_policy_attachment" "github_actions_assume_terraform_role" {
   role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.assume_terraform_role.arn
+  policy_arn = data.aws_iam_policy.assume_terraform_role.arn
 }
 
-resource "aws_iam_role_policy_attachment" "terraform_role_terraform_execution" {
-  role       = aws_iam_role.terraform.name
-  policy_arn = aws_iam_policy.terraform_execution.arn
+resource "aws_iam_role_policy_attachment" "github_actions_deny_dynamodb_autoscaling" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = data.aws_iam_policy.deny_dynamodb_autoscaling.arn
 }
 
 resource "aws_iam_role_policy_attachment" "webserver_access_webserver_keys" {
@@ -349,39 +164,6 @@ resource "aws_iam_role_policy_attachment" "webserver_access_backups_bucket" {
   policy_arn = aws_iam_policy.access_backups_bucket.arn
 }
 
-# --- Admin --- #
-resource "aws_iam_role_policy_attachment" "admin_access_webserver_keys" {
-  role       = aws_iam_role.admin.name
-  policy_arn = aws_iam_policy.access_webserver_keys.arn
-}
-
-resource "aws_iam_role_policy_attachment" "admin_administrator_access" {
-  role       = aws_iam_role.admin.name
-  policy_arn = data.aws_iam_policy.admin.arn
-}
-
-resource "aws_iam_role_policy_attachment" "admin_view_cost_and_usage" {
-  role       = aws_iam_role.admin.name
-  policy_arn = data.aws_iam_policy.billing.arn
-}
-
-# --- Deny DynamoDB auto scaling --- #
-# An explicit Deny overrides the AdministratorAccess that makes this reachable.
-resource "aws_iam_role_policy_attachment" "admin_deny_dynamodb_autoscaling" {
-  role       = aws_iam_role.admin.name
-  policy_arn = aws_iam_policy.deny_dynamodb_autoscaling.arn
-}
-
-resource "aws_iam_role_policy_attachment" "terraform_role_deny_dynamodb_autoscaling" {
-  role       = aws_iam_role.terraform.name
-  policy_arn = aws_iam_policy.deny_dynamodb_autoscaling.arn
-}
-
-resource "aws_iam_role_policy_attachment" "github_actions_deny_dynamodb_autoscaling" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.deny_dynamodb_autoscaling.arn
-}
-
 
 # --- INSTANCE PROFILES ---------------------------------------- #
 
@@ -391,113 +173,9 @@ resource "aws_iam_instance_profile" "ichrisbirch_webserver" {
 }
 
 
-# --- USERS ---------------------------------------- #
-
-resource "aws_iam_user" "chris_birch" {
-  name = "chris.birch"
-}
-
-resource "aws_iam_user_login_profile" "chris_birch" {
-  user                    = aws_iam_user.chris_birch.name
-  password_reset_required = true
-}
-
-resource "aws_iam_user" "john_kundycki" {
-  name = "john.kundycki"
-}
-
-
-# --- USER POLICIES ---------------------------------------- #
-
-resource "aws_iam_user_policy_attachment" "chris_birch_iam_user_change_password" {
-  policy_arn = "arn:aws:iam::aws:policy/IAMUserChangePassword"
-  user       = "chris.birch"
-}
-
-resource "aws_iam_user_policy_attachment" "john_kundycki_iam_user_change_password" {
-  policy_arn = "arn:aws:iam::aws:policy/IAMUserChangePassword"
-  user       = "john.kundycki"
-}
-
-
-# --- USER GROUPS ---------------------------------------- #
-
-resource "aws_iam_group" "developer" {
-  name = "developer"
-}
-
-resource "aws_iam_group" "developer_admin" {
-  name = "developer-admin"
-}
-
-resource "aws_iam_group" "security" {
-  name = "security"
-}
-
-
-# --- USER GROUP POLICY ATTACHMENTS ---------------------------------------- #
-
-# --- Developer --- #
-
-resource "aws_iam_group_policy_attachment" "developer_ec2_instance_connect" {
-  group      = aws_iam_group.developer.name
-  policy_arn = aws_iam_policy.ec2_instance_connect.arn
-}
+# --- GROUP POLICY ATTACHMENTS ---------------------------------------- #
 
 resource "aws_iam_group_policy_attachment" "developer_pass_webserver_role" {
-  group      = aws_iam_group.developer.name
+  group      = data.aws_iam_group.developer.group_name
   policy_arn = aws_iam_policy.allow_pass_webserver_role.arn
-}
-
-resource "aws_iam_group_policy_attachment" "developer_cloud_developer" {
-  group      = aws_iam_group.developer.name
-  policy_arn = aws_iam_policy.cloud_developer.arn
-}
-
-resource "aws_iam_group_policy_attachment" "developer_pass_glue_testbed_role" {
-  group      = aws_iam_group.developer.name
-  policy_arn = aws_iam_policy.allow_pass_glue_testbed_role.arn
-}
-
-# --- Developer Admin --- #
-
-resource "aws_iam_group_policy_attachment" "developer_admin_assume_admin" {
-  group      = aws_iam_group.developer_admin.name
-  policy_arn = aws_iam_policy.assume_admin_role.arn
-}
-
-resource "aws_iam_group_policy_attachment" "developer_admin_assume_terraform" {
-  group      = aws_iam_group.developer_admin.name
-  policy_arn = aws_iam_policy.assume_terraform_role.arn
-}
-
-resource "aws_iam_group_policy_attachment" "developer_admin_billing_read_only" {
-  group      = aws_iam_group.developer_admin.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess"
-}
-
-resource "aws_iam_group_policy_attachment" "developer_admin_read_only" {
-  group      = aws_iam_group.developer_admin.name
-  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-}
-
-# --- Security --- #
-
-resource "aws_iam_group_policy_attachment" "security_assume_adming" {
-  group      = aws_iam_group.security.name
-  policy_arn = aws_iam_policy.assume_admin_role.arn
-}
-
-# --- GROUP MEMBERSHIPS ---------------------------------------- #
-
-resource "aws_iam_group_membership" "developer" {
-  name  = "developer"
-  group = aws_iam_group.developer.name
-  users = [aws_iam_user.chris_birch.name, aws_iam_user.john_kundycki.name]
-}
-
-resource "aws_iam_group_membership" "developer_admin" {
-  name  = "developer-admin"
-  group = aws_iam_group.developer_admin.name
-  users = [aws_iam_user.chris_birch.name]
 }

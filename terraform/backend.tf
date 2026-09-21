@@ -1,8 +1,8 @@
 terraform {
+  # The bucket name carries the account id, so it is passed at init. See docs/terraform.md.
   backend "s3" {
-    bucket         = "ichrisbirch-terraform"
-    key            = "terraform.tfstate"
-    region         = "us-east-2"
-    dynamodb_table = "ichrisbirch-terraform-state-locking"
+    key          = "ichrisbirch/terraform.tfstate"
+    region       = "us-east-2"
+    use_lockfile = true
   }
 }

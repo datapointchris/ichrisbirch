@@ -11,5 +11,3 @@ provider "aws" {
     }
   }
 }
-
-provider "tls" {}
