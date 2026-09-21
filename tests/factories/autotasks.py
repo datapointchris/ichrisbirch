@@ -1,5 +1,6 @@
 """AutoTask factory for generating test AutoTask objects."""
 
+from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 
@@ -24,8 +25,8 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     priority = factory.Sequence(lambda n: (n + 1) * 5)
     max_concurrent = 2
     frequency = 'Weekly'
-    first_run_date = factory.LazyFunction(datetime.now)
-    last_run_date = factory.LazyFunction(datetime.now)
+    first_run_date = factory.LazyFunction(lambda: datetime.now(UTC))
+    last_run_date = factory.LazyFunction(lambda: datetime.now(UTC))
     run_count = 0
 
     class Params:
@@ -34,6 +35,6 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
         # Usage: AutoTaskFactory(monthly=True)
         monthly = factory.Trait(frequency='Monthly')
         # Usage: AutoTaskFactory(should_run=True) - last run was long ago
-        should_run = factory.Trait(last_run_date=factory.LazyFunction(lambda: datetime.now() - timedelta(days=30)))
+        should_run = factory.Trait(last_run_date=factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(days=30)))
         # Usage: AutoTaskFactory(ran_today=True)
-        ran_today = factory.Trait(last_run_date=factory.LazyFunction(datetime.now), run_count=1)
+        ran_today = factory.Trait(last_run_date=factory.LazyFunction(lambda: datetime.now(UTC)), run_count=1)

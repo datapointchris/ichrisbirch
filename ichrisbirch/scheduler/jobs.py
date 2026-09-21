@@ -18,25 +18,40 @@ from datetime import UTC
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pendulum
 import structlog
 from apscheduler.triggers.cron import CronTrigger
+from sqlalchemy import inspect
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.models.user import CALENDAR_FALLBACK_ZONE
 from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
 
 
-daily_1am_trigger = CronTrigger(day='*', hour=1)
-daily_115am_trigger = CronTrigger(day='*', hour=1, minute=15)
-daily_3pm_trigger = CronTrigger(day='*', hour=15)
-weekly_sunday_3am_trigger = CronTrigger(day_of_week='sun', hour=3, minute=0)
+def _admin_user(session: Session) -> models.User | None:
+    return session.scalars(select(models.User).where(models.User.is_admin.is_(True))).first()
+
+
+def admin_calendar_zone(session: Session) -> ZoneInfo:
+    """The scheduler's calendar is the admin's.
+
+    No task, autotask or habit row records a user, so the admin is the one user a
+    job can ask. A database with no users table yet has no admin either, which is
+    how the test scheduler starts: before its database is initialized.
+    """
+    if not inspect(session.connection()).has_table(models.User.__tablename__):
+        return ZoneInfo(CALENDAR_FALLBACK_ZONE)
+    admin = _admin_user(session)
+    return ZoneInfo(admin.calendar_zone if admin else CALENDAR_FALLBACK_ZONE)
 
 
 @dataclass
@@ -164,13 +179,16 @@ def compact_task_priorities(settings: Settings) -> None:
 def check_and_run_autotasks(settings: Settings) -> None:
     """Check if any autotasks should run today and create tasks if not at max concurrent."""
     with create_session(settings) as session:
+        # Read on every run, so a zone changed in settings applies from the next one.
+        zone = admin_calendar_zone(session)
+        today = datetime.now(zone).date()
         # Open tasks only. Counting completed rows too made max_concurrent a
         # lifetime cap, and every template stalled once its history reached it.
         open_tasks_by_name: dict[str, int] = defaultdict(int)
         for task in session.scalars(select(models.Task).where(models.Task.complete_date.is_(None))).all():
             open_tasks_by_name[task.name] += 1
         for autotask in session.scalars(select(models.AutoTask)).all():
-            if not autotask.should_run_today:
+            if not autotask.is_due_on(today, zone):
                 continue
             concurrent = open_tasks_by_name.get(autotask.name, 0)
             logger.info('autotask_concurrent_count', autotask_name=autotask.name, concurrent=concurrent)
@@ -207,7 +225,7 @@ def check_and_run_autofun(settings: Settings) -> None:
     """
     with create_session(settings) as session:
         # Load scheduler settings from the single admin user's preferences
-        admin_user = session.scalars(select(models.User).where(models.User.is_admin.is_(True))).first()
+        admin_user = _admin_user(session)
         if not admin_user:
             logger.warning('autofun_no_admin_user')
             return
@@ -297,37 +315,41 @@ def docker_prune(settings: Settings) -> None:
         )
 
 
-def get_jobs_to_add(settings: Settings) -> list[JobToAdd]:
-    """Get the list of jobs to add to the scheduler."""
+def get_jobs_to_add(settings: Settings, zone: ZoneInfo) -> list[JobToAdd]:
+    """Get the list of jobs to add to the scheduler.
+
+    A trigger's zone is fixed when it is built, so 01:00 is 01:00 in `zone` until
+    the scheduler restarts.
+    """
     return [
         JobToAdd(
             func=make_logs,
             args=(settings,),
-            trigger=CronTrigger(second=15),
+            trigger=CronTrigger(second=15, timezone=zone),
             id='make_logs',
         ),
         JobToAdd(
             func=check_and_run_autotasks,
             args=(settings,),
-            trigger=daily_1am_trigger,
+            trigger=CronTrigger(hour=1, timezone=zone),
             id='check_and_run_autotasks_daily',
         ),
         JobToAdd(
             func=check_and_run_autofun,
             args=(settings,),
-            trigger=daily_1am_trigger,
+            trigger=CronTrigger(hour=1, timezone=zone),
             id='check_and_run_autofun_daily',
         ),
         JobToAdd(
             func=compact_task_priorities,
             args=(settings,),
-            trigger=daily_115am_trigger,
+            trigger=CronTrigger(hour=1, minute=15, timezone=zone),
             id='compact_task_priorities_daily',
         ),
         JobToAdd(
             func=docker_prune,
             args=(settings,),
-            trigger=weekly_sunday_3am_trigger,
+            trigger=CronTrigger(day_of_week='sun', hour=3, minute=0, timezone=zone),
             id='docker_prune_weekly',
         ),
     ]

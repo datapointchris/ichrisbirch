@@ -1,6 +1,6 @@
-from datetime import UTC
 from datetime import date
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pendulum
 from sqlalchemy import DateTime
@@ -69,13 +69,15 @@ class AutoTask(Base):
                     first_run_date = {self.first_run_date}, last_run_date = {self.last_run_date},
                     run_count = {self.run_count})"""
 
-    @property
-    def next_run_date(self) -> date:
-        """Returns the next date the task should be run."""
-        return self.last_run_date.date() + frequency_to_duration(self.frequency)
+    def next_run_day(self, zone: ZoneInfo) -> date:
+        """The day this template is next due, counted on the calendar of `zone`.
 
-    @property
-    def should_run_today(self):
-        """Returns true if the task should be run today."""
-        today = datetime.now(UTC).date()
-        return self.next_run_date <= today and self.last_run_date.date() != today
+        The last run is an instant, so it needs the zone to become a day. The day
+        is a pendulum Date because a month added to a stdlib date is 30 days, and
+        a monthly template would then fall five days earlier every year.
+        """
+        last_day = self.last_run_date.astimezone(zone).date()
+        return pendulum.Date(last_day.year, last_day.month, last_day.day) + frequency_to_duration(self.frequency)
+
+    def is_due_on(self, day: date, zone: ZoneInfo) -> bool:
+        return self.next_run_day(zone) <= day
