@@ -39,11 +39,11 @@ export function dateFilterRange(key: DateFilterKey, today: DayKey = todayKey()):
       return { start: monday, end: addDays(monday, 6) }
     }
     case 'last_7':
-      return { start: addDays(today, -7), end: today }
+      return { start: addDays(today, -6), end: today }
     case 'this_month':
       return { start: startOfMonth(today), end: endOfMonth(today) }
     case 'last_30':
-      return { start: addDays(today, -30), end: today }
+      return { start: addDays(today, -29), end: today }
     case 'this_year':
       return { start: `${today.slice(0, 4)}-01-01`, end: `${today.slice(0, 4)}-12-31` }
   }

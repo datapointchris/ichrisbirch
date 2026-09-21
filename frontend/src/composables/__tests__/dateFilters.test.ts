@@ -9,9 +9,9 @@ describe('dateFilterRange', () => {
     expect(dateFilterRange('today', TODAY)).toEqual({ start: '2026-09-23', end: '2026-09-23' })
     expect(dateFilterRange('yesterday', TODAY)).toEqual({ start: '2026-09-22', end: '2026-09-22' })
     expect(dateFilterRange('this_week', TODAY)).toEqual({ start: '2026-09-21', end: '2026-09-27' })
-    expect(dateFilterRange('last_7', TODAY)).toEqual({ start: '2026-09-16', end: '2026-09-23' })
+    expect(dateFilterRange('last_7', TODAY)).toEqual({ start: '2026-09-17', end: '2026-09-23' })
     expect(dateFilterRange('this_month', TODAY)).toEqual({ start: '2026-09-01', end: '2026-09-30' })
-    expect(dateFilterRange('last_30', TODAY)).toEqual({ start: '2026-08-24', end: '2026-09-23' })
+    expect(dateFilterRange('last_30', TODAY)).toEqual({ start: '2026-08-25', end: '2026-09-23' })
     expect(dateFilterRange('this_year', TODAY)).toEqual({ start: '2026-01-01', end: '2026-12-31' })
   })
 
