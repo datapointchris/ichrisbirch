@@ -74,7 +74,8 @@ class TestValidatePreferences:
         assert test_user.validate_preferences(key='preferences', updated_preferences=update) == update
 
     @pytest.mark.parametrize('zone', ['EST-5', 'America/New_York ', '', 'localtime', '-05:00'])
-    def test_a_name_zoneinfo_cannot_load_is_refused(self, test_user, zone):
+    def test_a_name_the_iana_database_does_not_publish_is_refused(self, test_user, zone):
+        """`localtime` loads with `ZoneInfo` on a host whose zoneinfo directory links it to `/etc/localtime`."""
         with pytest.raises(ValueError, match='is not an IANA timezone name'):
             test_user.validate_preferences(key='preferences', updated_preferences={'timezone': zone})
 
