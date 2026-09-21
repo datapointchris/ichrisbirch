@@ -201,15 +201,11 @@ func newOverviewCommand() *cobra.Command {
 	return cmd
 }
 
-// overviewFetches is the fan-out table. Habit completions are queried over a
-// window that starts a day early and ends two days late, then narrowed to the
-// local day in Go: the API parses bare dates to midnight UTC instants, so
-// start=end=today would be a zero-width window that matches nothing.
-//
-// Every fetch passes a nil limit, and --limit is applied by capItems after the
-// sections are built. Several of them derive their rows — the next books, the
-// queued articles, the unblocked items — so a server-side cap would cap the set
-// before the derivation and take the wrong rows.
+// overviewFetches is the fan-out table. Every fetch passes a nil limit, and
+// --limit is applied by capItems after the sections are built. Several of them
+// derive their rows — the next books, the queued articles, the unblocked
+// items — so a server-side cap would cap the set before the derivation and
+// take the wrong rows.
 func overviewFetches() []overviewFetch {
 	return []overviewFetch{
 		{sectionTasks, "tasks", func(ctx context.Context, c *api.Client, d *overviewData) error {
