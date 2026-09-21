@@ -512,8 +512,12 @@ def test_every_bounded_read_over_an_instant_column_takes_the_request_zone(txn_ap
     assert zoneless - DAY_COLUMN_READS.keys() == set(), 'bounded reads over an instant column that take no zone'
 
 
-def test_every_read_exempted_from_the_zone_bounds_a_date_column(txn_api_logged_in):
-    assert DAY_COLUMN_READS.keys() <= bounded_reads(txn_api_logged_in[0].app).keys()
+def test_every_exempt_read_takes_no_zone_and_bounds_a_date_column(txn_api_logged_in):
+    """A walk that saw the zone on every route would pass the test above, and fails this one."""
+    reads = bounded_reads(txn_api_logged_in[0].app)
+    zoneless = {path for path, route in reads.items() if not declares_request_zone(route.dependant)}
+
+    assert DAY_COLUMN_READS.keys() - zoneless == set(), 'exempt reads that declare the zone, or that the app does not serve'
     for path, column in DAY_COLUMN_READS.items():
         assert isinstance(column.type, sa.Date), path
         assert not isinstance(column.type, sa.DateTime), path
