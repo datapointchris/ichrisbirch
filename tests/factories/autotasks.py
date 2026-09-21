@@ -25,7 +25,9 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     priority = factory.Sequence(lambda n: (n + 1) * 5)
     max_concurrent = 2
     frequency = 'Weekly'
-    first_run_date = factory.LazyFunction(lambda: datetime.now(UTC))
+    # Due days count from the first run, which a trait moving the last run has
+    # to move too, or the first run lands after the last.
+    first_run_date = factory.SelfAttribute('last_run_date')
     last_run_date = factory.LazyFunction(lambda: datetime.now(UTC))
     run_count = 0
 

@@ -63,6 +63,9 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     notes='Set reminder' if i % 3 == 0 else None,
                     max_concurrent=random.choice([1, 2, 2, 3]),
                     run_count=run_count,
+                    # `next_run_day` counts from the first run. Left at the
+                    # seeding time, `first_run_date` makes every template due today.
+                    first_run_date=last_run,
                     last_run_date=last_run,
                 )
             )

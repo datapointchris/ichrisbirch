@@ -70,14 +70,25 @@ class AutoTask(Base):
                     run_count = {self.run_count})"""
 
     def next_run_day(self, zone: ZoneInfo) -> date:
-        """The day this template is next due, counted on the calendar of `zone`.
+        """The first due day after the last run, counted from the first run's day in `zone`.
 
-        The last run is an instant, so it needs the zone to become a day. The day
-        is a pendulum Date because a month added to a stdlib date is 30 days, and
-        a monthly template would then fall five days earlier every year.
+        Each due day is the first run's day plus a whole number of steps, and
+        pendulum clamps each sum from that day. So a template first run on the
+        31st is due on February 28 and then March 31. Stepping from the last run
+        would keep the 28th for good, and a run held back at `max_concurrent`
+        would move every later one.
+
+        The days are pendulum Dates because a month added to a stdlib date is 30
+        days, and a monthly template would then fall five days earlier every year.
         """
+        first_day = self.first_run_date.astimezone(zone).date()
         last_day = self.last_run_date.astimezone(zone).date()
-        return pendulum.Date(last_day.year, last_day.month, last_day.day) + frequency_to_duration(self.frequency)
+        anchor = pendulum.Date(first_day.year, first_day.month, first_day.day)
+        step = frequency_to_duration(self.frequency)
+        steps = 0
+        while (due := anchor + step * steps) <= last_day:
+            steps += 1
+        return due
 
     def is_due_on(self, day: date, zone: ZoneInfo) -> bool:
         return self.next_run_day(zone) <= day

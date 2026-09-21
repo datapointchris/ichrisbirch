@@ -12,8 +12,15 @@ from ichrisbirch.models.autotask import frequency_to_duration
 NEW_YORK = ZoneInfo('America/New_York')
 
 
-def last_ran(at: datetime, frequency: str = 'Daily') -> AutoTask:
-    return AutoTask(name='Water plants', category='Chore', priority=1, frequency=frequency, last_run_date=at)
+def last_ran(at: datetime, frequency: str = 'Daily', first_ran: datetime | None = None) -> AutoTask:
+    return AutoTask(
+        name='Water plants',
+        category='Chore',
+        priority=1,
+        frequency=frequency,
+        first_run_date=first_ran or at,
+        last_run_date=at,
+    )
 
 
 def test_every_frequency_has_a_duration():
@@ -43,6 +50,32 @@ def test_the_next_run_is_counted_in_calendar_units(frequency, next_day):
     autotask = last_ran(datetime(2026, 1, 31, 12, tzinfo=UTC), frequency)
 
     assert autotask.next_run_day(ZoneInfo('UTC')) == next_day
+
+
+@pytest.mark.parametrize(
+    ('frequency', 'first_ran', 'last_ran_on', 'next_day'),
+    [
+        ('Monthly', datetime(2026, 1, 31, 12, tzinfo=UTC), datetime(2026, 2, 28, 12, tzinfo=UTC), date(2026, 3, 31)),
+        ('Quarterly', datetime(2025, 11, 30, 12, tzinfo=UTC), datetime(2026, 2, 28, 12, tzinfo=UTC), date(2026, 5, 30)),
+        ('Yearly', datetime(2024, 2, 29, 12, tzinfo=UTC), datetime(2027, 2, 28, 12, tzinfo=UTC), date(2028, 2, 29)),
+    ],
+)
+def test_a_day_clamped_short_comes_back_the_next_step(frequency, first_ran, last_ran_on, next_day):
+    """Stepping from the clamped run would keep the shorter day for good."""
+    autotask = last_ran(last_ran_on, frequency, first_ran=first_ran)
+
+    assert autotask.next_run_day(ZoneInfo('UTC')) == next_day
+
+
+def test_a_run_held_back_does_not_move_the_runs_after_it():
+    """A weekly template first run on Thursday stays on Thursdays after a Saturday run.
+
+    `max_concurrent` holds a due run back until a slot opens, and the run is
+    stamped on the day it finally happens.
+    """
+    autotask = last_ran(datetime(2026, 8, 29, 14, tzinfo=UTC), 'Weekly', first_ran=datetime(2026, 8, 20, 14, tzinfo=UTC))
+
+    assert autotask.next_run_day(ZoneInfo('UTC')) == date(2026, 9, 3)
 
 
 def test_a_monthly_template_keeps_its_day_of_the_month():

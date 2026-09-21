@@ -45,13 +45,14 @@ every run:
   changed in settings moves 1:00 AM at the next restart, which every deploy
   does.
 - **The autotask day.** `check_and_run_autotasks` reads the zone on every
-  run. An autotask's last run is an instant, and the zone turns it into a day
-  on the admin's calendar.
+  run. An autotask's first and last runs are instants, and the zone turns
+  each into a day on the admin's calendar.
 
-An autotask's frequency counts calendar units. A monthly template last run on
-January 31 is next due on February 28, and one run on the 15th stays on the
-15th. That needs a pendulum `Date`: a pendulum month added to a stdlib `date`
-is 30 days.
+An autotask's frequency counts calendar units from the day of its first run.
+A monthly template first run on January 31 is due on February 28 and then on
+March 31, and one first run on the 15th stays on the 15th. A run held back at
+`max_concurrent` does not move the ones after it. That needs a pendulum
+`Date`: a pendulum month added to a stdlib `date` is 30 days.
 
 Task priority is a positional rank, not a time budget — `compact_task_priorities` is
 cosmetic housekeeping, not correctness-critical. The `/tasks/reorder/` API

@@ -158,6 +158,7 @@ def _insert_daily_template_run_on_the_20th() -> None:
                 category='Chore',
                 priority=1,
                 frequency='Daily',
+                first_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
                 last_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
             )
         )
