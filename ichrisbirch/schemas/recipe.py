@@ -6,6 +6,8 @@ from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import model_validator
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class RecipeConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -70,19 +72,19 @@ class Recipe(RecipeBase):
 
 
 class RecipeUpdate(RecipeConfig):
-    name: str | None = None
+    name: NotNull[str] = None
     description: str | None = None
     source_url: str | None = None
     source_name: str | None = None
     prep_time_minutes: int | None = None
     cook_time_minutes: int | None = None
     total_time_minutes: int | None = None
-    servings: int | None = None
+    servings: NotNull[int] = None
     difficulty: str | None = None
     cuisine: str | None = None
     meal_type: str | None = None
     tags: list[str] | None = None
-    instructions: str | None = None
+    instructions: NotNull[str] = None
     notes: str | None = None
     rating: int | None = None
     ingredients: list[RecipeIngredientCreate] | None = None
@@ -188,10 +190,10 @@ class CookingTechnique(CookingTechniqueBase):
 
 
 class CookingTechniqueUpdate(RecipeConfig):
-    name: str | None = None
-    category: str | None = None
-    summary: str | None = None
-    body: str | None = None
+    name: NotNull[str] = None
+    category: NotNull[str] = None
+    summary: NotNull[str] = None
+    body: NotNull[str] = None
     why_it_works: str | None = None
     common_pitfalls: str | None = None
     source_url: str | None = None

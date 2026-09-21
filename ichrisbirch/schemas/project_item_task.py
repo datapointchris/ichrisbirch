@@ -4,6 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class ProjectItemTaskConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -26,6 +28,6 @@ class ProjectItemTask(ProjectItemTaskConfig):
 
 
 class ProjectItemTaskUpdate(ProjectItemTaskConfig):
-    title: str | None = None
-    completed: bool | None = None
-    position: int | None = None
+    title: NotNull[str] = None
+    completed: NotNull[bool] = None
+    position: NotNull[int] = None

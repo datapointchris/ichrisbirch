@@ -3,6 +3,8 @@ import datetime as dt
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class DurationConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -21,8 +23,8 @@ class DurationNote(DurationConfig):
 
 
 class DurationNoteUpdate(DurationConfig):
-    date: dt.date | None = None
-    content: str | None = None
+    date: NotNull[dt.date] = None
+    content: NotNull[str] = None
 
 
 class DurationCreate(DurationConfig):
@@ -44,8 +46,8 @@ class Duration(DurationConfig):
 
 
 class DurationUpdate(DurationConfig):
-    name: str | None = None
-    start_date: dt.date | None = None
+    name: NotNull[str] = None
+    start_date: NotNull[dt.date] = None
     end_date: dt.date | None = None
     notes: str | None = None
     color: str | None = None

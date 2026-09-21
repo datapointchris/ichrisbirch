@@ -4,6 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class ProjectConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -40,12 +42,12 @@ class ProjectUpdate(ProjectConfig):
     into a terminal status and clears it on reopen, so it cannot drift from the
     status it describes."""
 
-    name: str | None = None
+    name: NotNull[str] = None
     description: str | None = None
-    kind: str | None = None
-    status: str | None = None
+    kind: NotNull[str] = None
+    status: NotNull[str] = None
     status_reason: str | None = None
-    position: int | None = None
+    position: NotNull[int] = None
 
 
 class ProjectWithItemCount(ProjectConfig):

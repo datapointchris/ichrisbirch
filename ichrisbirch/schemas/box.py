@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 
 from ichrisbirch.schemas.boxitem import BoxItem
+from ichrisbirch.schemas.not_null import NotNull
 
 
 class BoxConfig(BaseModel):
@@ -33,9 +34,9 @@ class Box(BoxConfig):
 
 
 class BoxUpdate(BoxConfig):
-    name: str | None = None
-    number: int | None = None
-    size: str | None = None
-    essential: bool | None = None
-    warm: bool | None = None
-    liquid: bool | None = None
+    name: NotNull[str] = None
+    number: NotNull[int] = None
+    size: NotNull[str] = None
+    essential: NotNull[bool] = None
+    warm: NotNull[bool] = None
+    liquid: NotNull[bool] = None

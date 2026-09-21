@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class PatternConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -22,5 +24,5 @@ class Pattern(PatternConfig):
 
 
 class PatternUpdate(PatternConfig):
-    message: str | None = None
-    recorded_at: datetime | None = None
+    message: NotNull[str] = None
+    recorded_at: NotNull[datetime] = None

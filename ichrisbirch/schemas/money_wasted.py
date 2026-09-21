@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_validator
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class MoneyWastedConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -34,10 +36,10 @@ class MoneyWasted(MoneyWastedConfig):
 
 
 class MoneyWastedUpdate(MoneyWastedConfig):
-    item: str | None = None
-    amount: float | None = None
+    item: NotNull[str] = None
+    amount: NotNull[float] = None
     date_purchased: date | None = None
-    date_wasted: date | None = None
+    date_wasted: NotNull[date] = None
     notes: str | None = None
 
     @field_validator('date_purchased')

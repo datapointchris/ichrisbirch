@@ -141,6 +141,15 @@ def test_partial_update_box(box_crud_tester):
     assert updated['number'] == original['number']
 
 
+def test_partial_update_refuses_a_null_number(box_crud_tester):
+    client, crud_tester = box_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'number': None})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+    assert response.json()['detail'][0]['loc'] == ['body', 'number']
+
+
 class TestBoxesNotFound:
     """Test 404 responses for non-existent boxes."""
 

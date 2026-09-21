@@ -5,6 +5,8 @@ from pydantic import ConfigDict
 from pydantic import field_validator
 from pydantic import model_validator
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class BookConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -72,8 +74,8 @@ class Book(BookConfig):
 
 class BookUpdate(BookConfig):
     isbn: str | None = None
-    title: str | None = None
-    author: str | None = None
+    title: NotNull[str] = None
+    author: NotNull[str] = None
     tags: list[str] = []
     goodreads_url: str | None = None
     priority: int | None = None
@@ -86,8 +88,8 @@ class BookUpdate(BookConfig):
     rating: int | None = None
     location: str | None = None
     notes: str | None = None
-    ownership: str | None = None
-    progress: str | None = None
+    ownership: NotNull[str] = None
+    progress: NotNull[str] = None
     reject_reason: str | None = None
     review: str | None = None
 

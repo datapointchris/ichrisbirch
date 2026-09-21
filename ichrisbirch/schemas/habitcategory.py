@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class HabitConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True, use_enum_values=True)
@@ -18,5 +20,5 @@ class HabitCategoryCreate(HabitConfig):
 
 
 class HabitCategoryUpdate(HabitConfig):
-    name: str | None = None
-    is_current: bool | None = None
+    name: NotNull[str] = None
+    is_current: NotNull[bool] = None

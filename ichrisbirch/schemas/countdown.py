@@ -3,6 +3,8 @@ from datetime import date
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class CountdownConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -22,6 +24,6 @@ class Countdown(CountdownConfig):
 
 
 class CountdownUpdate(CountdownConfig):
-    name: str | None = None
+    name: NotNull[str] = None
     notes: str | None = None
-    due_date: date | None = None
+    due_date: NotNull[date] = None

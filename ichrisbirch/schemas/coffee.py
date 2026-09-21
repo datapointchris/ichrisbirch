@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import model_validator
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class CoffeeShopConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -48,7 +50,7 @@ class CoffeeShop(CoffeeShopConfig):
 
 
 class CoffeeShopUpdate(CoffeeShopConfig):
-    name: str | None = None
+    name: NotNull[str] = None
     address: str | None = None
     city: str | None = None
     state: str | None = None
@@ -118,7 +120,7 @@ class CoffeeBean(CoffeeBeanConfig):
 
 
 class CoffeeBeanUpdate(CoffeeBeanConfig):
-    name: str | None = None
+    name: NotNull[str] = None
     roaster: str | None = None
     origin: str | None = None
     process: str | None = None

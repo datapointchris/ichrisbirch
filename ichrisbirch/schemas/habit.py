@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 
 from ichrisbirch.schemas.habitcategory import HabitCategory
+from ichrisbirch.schemas.not_null import NotNull
 
 
 class HabitConfig(BaseModel):
@@ -23,6 +24,6 @@ class Habit(HabitConfig):
 
 
 class HabitUpdate(HabitConfig):
-    name: str | None = None
-    category_id: int | None = None
-    is_current: bool | None = None
+    name: NotNull[str] = None
+    category_id: NotNull[int] = None
+    is_current: NotNull[bool] = None

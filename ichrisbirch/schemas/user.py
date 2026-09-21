@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_validator
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class UserConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -36,9 +38,9 @@ class User(UserConfig):
 
 
 class UserUpdate(UserConfig):
-    name: str | None = None
-    email: str | None = None
-    password: str | None = None
-    is_admin: bool | None = None
-    last_login: datetime | None = None
-    preferences: Any | None = None
+    name: NotNull[str] = None
+    email: NotNull[str] = None
+    password: NotNull[str] = None
+    is_admin: NotNull[bool] = None
+    last_login: NotNull[datetime] = None
+    preferences: NotNull[Any] = None

@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class ArticleConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -44,15 +46,15 @@ class Article(ArticleConfig):
 
 
 class ArticleUpdate(ArticleConfig):
-    title: str | None = None
+    title: NotNull[str] = None
     tags: list[str] = []
-    summary: str | None = None
+    summary: NotNull[str] = None
     notes: str | None = None
-    is_favorite: bool | None = None
-    is_current: bool | None = None
-    is_archived: bool | None = None
+    is_favorite: NotNull[bool] = None
+    is_current: NotNull[bool] = None
+    is_archived: NotNull[bool] = None
     last_read_date: datetime | None = None
-    read_count: int | None = None
+    read_count: NotNull[int] = None
     review_days: int | None = None
 
 

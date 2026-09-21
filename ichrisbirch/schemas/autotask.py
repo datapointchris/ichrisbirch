@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class AutoTaskConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -31,9 +33,9 @@ class AutoTask(AutoTaskConfig):
 
 
 class AutoTaskUpdate(AutoTaskConfig):
-    name: str | None = None
-    category: str | None = None
-    priority: int | None = None
+    name: NotNull[str] = None
+    category: NotNull[str] = None
+    priority: NotNull[int] = None
     notes: str | None = None
-    frequency: str | None = None
-    max_concurrent: int | None = None
+    frequency: NotNull[str] = None
+    max_concurrent: NotNull[int] = None

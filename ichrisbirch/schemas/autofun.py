@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class AutoFunConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -23,5 +25,5 @@ class AutoFun(AutoFunConfig):
 
 
 class AutoFunUpdate(AutoFunConfig):
-    name: str | None = None
+    name: NotNull[str] = None
     notes: str | None = None

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import computed_field
 
+from ichrisbirch.schemas.not_null import NotNull
 from ichrisbirch.schemas.project import Project
 from ichrisbirch.schemas.project_item_task import ProjectItemTask
 from ichrisbirch.services.project_item_status import derive_item_status
@@ -99,11 +100,11 @@ class ProjectItem(ProjectItemStatusFields):
 
 
 class ProjectItemUpdate(ProjectItemConfig):
-    title: str | None = None
+    title: NotNull[str] = None
     notes: str | None = None
     repo: str | None = None
-    completed: bool | None = None
-    archived: bool | None = None
+    completed: NotNull[bool] = None
+    archived: NotNull[bool] = None
 
 
 class ProjectItemDetail(ProjectItemStatusFields):

@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_validator
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 def validate_iana_timezone(v: str | None) -> str | None:
     """An IANA name, not an offset — the offset for a future date is not knowable yet.
@@ -67,13 +69,13 @@ class Event(EventConfig):
 
 
 class EventUpdate(EventConfig):
-    name: str | None = None
-    date: datetime | None = None
+    name: NotNull[str] = None
+    date: NotNull[datetime] = None
     timezone: str | None = None
-    venue: str | None = None
+    venue: NotNull[str] = None
     url: str | None = None
-    cost: float | None = None
-    attending: bool | None = None
+    cost: NotNull[float] = None
+    attending: NotNull[bool] = None
     notes: str | None = None
 
     _strip_offset = field_validator('date', mode='after')(strip_offset)

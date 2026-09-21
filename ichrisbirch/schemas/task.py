@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+from ichrisbirch.schemas.not_null import NotNull
+
 
 class TaskConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -26,11 +28,11 @@ class Task(TaskConfig):
 
 
 class TaskUpdate(TaskConfig):
-    name: str | None = None
+    name: NotNull[str] = None
     notes: str | None = None
-    category: str | None = None
-    priority: int | None = None
-    add_date: datetime | None = None
+    category: NotNull[str] = None
+    priority: NotNull[int] = None
+    add_date: NotNull[datetime] = None
     complete_date: datetime | None = None
 
 
