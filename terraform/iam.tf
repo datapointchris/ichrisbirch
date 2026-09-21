@@ -148,7 +148,10 @@ resource "aws_iam_policy" "terraform_execution" {
           "glue:*",
           "iam:*",
           "logs:*",
-          "states:*"
+          "states:*",
+          "kms:*",
+          "events:*",
+          "scheduler:*"
         ]
         Resource = "*"
       }
@@ -284,7 +287,9 @@ resource "aws_iam_policy" "cloud_developer" {
           "ssm:*",
           "glue:*",
           "logs:*",
-          "states:*"
+          "states:*",
+          "events:*",
+          "scheduler:*"
         ],
         Resource = "*"
       }
