@@ -30,10 +30,11 @@ ichrisbirch/
 │   ├── e2e/                  # Playwright E2E tests
 │   ├── package.json          # npm dependencies and scripts
 │   └── vite.config.ts        # Vite build configuration
-├── tests/                    # Python test suite (77+ files)
+├── tests/                    # Python test suite
 │   ├── conftest.py           # Pytest fixtures (session/module/function scoped)
+│   ├── factories/            # factory_boy factories for per-test objects
 │   ├── ichrisbirch/          # Tests mirror source structure
-│   └── test_data/            # Faker-based test data generation
+│   └── test_data/            # Fixed BASE_DATA model instances per dataset
 ├── deploy-containers/        # Docker deployment configs
 │   └── traefik/              # Traefik reverse proxy
 │       ├── certs/            # SSL certificates (mkcert for dev)
@@ -42,7 +43,7 @@ ichrisbirch/
 ├── docs/                     # MkDocs documentation
 ├── scripts/                  # Utility scripts (backup, restore)
 ├── ops/                      # `icbops` bash ops/deploy tool (dev/test/docker/routing/ssl)
-├── cli/                      # `icb` Go resource CLI — REST client, replaced the retired MCP
+├── cli/                      # `icb` Go resource CLI — REST client over the API
 ├── docker-compose.yml        # Production config
 ├── docker-compose.dev.yml    # Development overrides (incl. Vue + path routing)
 ├── docker-compose.test.yml   # Testing overrides
