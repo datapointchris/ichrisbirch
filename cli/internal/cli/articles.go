@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -377,7 +378,13 @@ func newArticlesEditCommand() *cobra.Command {
 			in.IsFavorite = boolFlagPtr(cmd, "favorite")
 			in.IsCurrent = boolFlagPtr(cmd, "current")
 			in.IsArchived = boolFlagPtr(cmd, "archived")
-			in.LastReadDate = strFlag(f, "last-read", &lastRead)
+			if f.Changed("last-read") {
+				instant, err := lastReadInstant(lastRead, time.Local)
+				if err != nil {
+					return err
+				}
+				in.LastReadDate = &instant
+			}
 			in.ReadCount = intFlag(f, "read-count", &readCount)
 			in.ReviewDays = intFlag(f, "review-days", &reviewDays)
 
@@ -407,11 +414,30 @@ func newArticlesEditCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&favorite, "favorite", false, "Mark as favorite (--favorite or --favorite=false)")
 	cmd.Flags().BoolVar(&current, "current", false, "Mark as the current article (--current or --current=false)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Mark as archived (--archived or --archived=false)")
-	cmd.Flags().StringVar(&lastRead, "last-read", "", "Last-read date (ISO, e.g. 2026-07-24T09:00:00)")
+	cmd.Flags().StringVar(&lastRead, "last-read", "",
+		"Last-read day or time on this machine's clock (e.g. 2026-07-24 or 2026-07-24T09:00:00; an RFC3339 offset is kept)")
 	cmd.Flags().IntVar(&readCount, "read-count", 0, "Read count")
 	cmd.Flags().IntVar(&reviewDays, "review-days", 0, "Days between re-reads for a favorite")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated article as JSON to stdout")
 	return cmd
+}
+
+var errLastReadFormat = errors.New("--last-read is not a day or a time")
+
+// lastReadInstant turns --last-read into the RFC3339 instant the API requires.
+// A bare day or a time with no offset is read on loc's clock. A bare day is
+// noon there, so its day stays the same in any zone within twelve hours.
+func lastReadInstant(value string, loc *time.Location) (string, error) {
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t.Format(time.RFC3339), nil
+	}
+	if t, err := time.ParseInLocation("2006-01-02T15:04:05", value, loc); err == nil {
+		return t.Format(time.RFC3339), nil
+	}
+	if day, err := time.ParseInLocation(dayLayout, value, loc); err == nil {
+		return time.Date(day.Year(), day.Month(), day.Day(), 12, 0, 0, 0, loc).Format(time.RFC3339), nil
+	}
+	return "", usageError{fmt.Errorf("%w: %q — expected 2026-07-24, 2026-07-24T09:00:00 or RFC3339", errLastReadFormat, value)}
 }
 
 func newArticlesReadCommand() *cobra.Command {
