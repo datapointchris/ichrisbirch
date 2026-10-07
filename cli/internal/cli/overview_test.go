@@ -29,9 +29,9 @@ func habitAt(hour int, minute int) time.Time {
 func TestBuildOverview_ComposesSections(t *testing.T) {
 	data := overviewData{
 		Tasks: []api.Task{
-			{ID: 1, Name: "Renew passport", Category: "chore", Priority: 1},
-			{ID: 2, Name: "Call dentist", Category: "chore", Priority: 2},
-			{ID: 3, Name: "Fix garage door", Category: "home", Priority: 3},
+			{ID: 1, Name: "Renew passport", Category: "chore"},
+			{ID: 2, Name: "Call dentist", Category: "chore"},
+			{ID: 3, Name: "Fix garage door", Category: "home"},
 		},
 		HabitsDay: api.HabitsDay{
 			Date:         "2026-07-24",
@@ -413,7 +413,7 @@ func TestSystemicOverviewFailure(t *testing.T) {
 
 func TestPrintOverview(t *testing.T) {
 	report := buildOverview(overviewData{
-		Tasks: []api.Task{{ID: 1, Name: "Renew passport", Category: "chore", Priority: 1}},
+		Tasks: []api.Task{{ID: 1, Name: "Renew passport", Category: "chore"}},
 		HabitsDay: api.HabitsDay{
 			Due:          []api.Habit{{ID: 1, Name: "Stretch", CategoryID: 2}},
 			Completed:    []api.HabitCompleted{{ID: 9, HabitID: habitID(2), Name: "Read", CategoryID: 2, CompleteDate: "2026-07-24"}},

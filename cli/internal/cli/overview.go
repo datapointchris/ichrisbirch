@@ -623,7 +623,7 @@ func printTaskSection(out io.Writer, section taskSection) {
 		if i >= printListCap {
 			break
 		}
-		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\n", task.Priority, truncateTitle(task.Name), task.Category)
+		_, _ = fmt.Fprintf(tw, "  %d\t%s\t%s\n", i+1, truncateTitle(task.Name), task.Category)
 	}
 	_ = tw.Flush()
 }

@@ -41,7 +41,7 @@ func taskForm() Form {
 		Fields: []Field{
 			{Key: "name", Label: "Name"},
 			{Key: "category", Label: "Category", Choices: categories, Validate: OneOf(categories)},
-			{Key: "priority", Label: "Priority", Default: "1", Validate: Int},
+			{Key: "window-days", Label: "Window in days", Default: "30", Validate: Int},
 			{Key: "notes", Label: "Notes", Optional: true},
 		},
 	}
@@ -50,7 +50,7 @@ func taskForm() Form {
 func TestForm_AsksEveryFieldInOrder(t *testing.T) {
 	answers, out := run(t, taskForm(), "Renew registration\nChore\n3\nby friday\n")
 
-	want := map[string]string{"name": "Renew registration", "category": "Chore", "priority": "3", "notes": "by friday"}
+	want := map[string]string{"name": "Renew registration", "category": "Chore", "window-days": "3", "notes": "by friday"}
 	for key, value := range want {
 		if answers.Get(key) != value {
 			t.Errorf("answers[%q] = %q, want %q", key, answers.Get(key), value)
@@ -84,10 +84,10 @@ func TestForm_RejectedAnswerComesBackAndNothingElseIsLost(t *testing.T) {
 func TestForm_EmptyAnswerTakesTheDefault(t *testing.T) {
 	answers, out := run(t, taskForm(), "Renew\nChore\n\n\n")
 
-	if answers.Get("priority") != "1" {
-		t.Errorf("priority = %q, want the default 1", answers.Get("priority"))
+	if answers.Get("window-days") != "30" {
+		t.Errorf("window-days = %q, want the default 30", answers.Get("window-days"))
 	}
-	if !strings.Contains(out, "Priority [1]:") {
+	if !strings.Contains(out, "Window in days [30]:") {
 		t.Errorf("the prompt did not show the default:\n%s", out)
 	}
 }
@@ -145,8 +145,8 @@ func TestForm_CanceledInputReturnsEOF(t *testing.T) {
 func TestForm_IntRejectsAWordAndKeepsIt(t *testing.T) {
 	answers, out := run(t, taskForm(), "Renew\nChore\nhigh\n2\n\n")
 
-	if answers.Get("priority") != "2" {
-		t.Errorf("priority = %q, want the corrected value", answers.Get("priority"))
+	if answers.Get("window-days") != "2" {
+		t.Errorf("window-days = %q, want the corrected value", answers.Get("window-days"))
 	}
 	if !strings.Contains(out, `"high" is not a whole number`) {
 		t.Errorf("output did not explain the rejection:\n%s", out)
@@ -229,6 +229,19 @@ func TestInt_TrimsToTheParsedNumber(t *testing.T) {
 	}
 	if value != "7" {
 		t.Errorf("value = %q, want the parsed form", value)
+	}
+}
+
+func TestIntAtLeast_RefusesBelowTheFloorAndKeepsTheFloor(t *testing.T) {
+	atLeastOne := IntAtLeast(1)
+	if _, err := atLeastOne("0"); err == nil || !strings.Contains(err.Error(), "minimum of 1") {
+		t.Errorf("err = %v, want the floor named", err)
+	}
+	if value, err := atLeastOne("1"); err != nil || value != "1" {
+		t.Errorf("value = %q err = %v, want the floor itself accepted", value, err)
+	}
+	if _, err := atLeastOne("soon"); err == nil {
+		t.Error("a word was accepted")
 	}
 }
 

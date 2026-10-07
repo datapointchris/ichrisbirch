@@ -71,7 +71,7 @@ type Field struct {
 	Label string
 
 	// Hint is one line printed above the first ask, for a constraint the label
-	// cannot carry: "Lower is higher priority."
+	// cannot carry: "Blank takes the category's window."
 	Hint string
 
 	// Default is taken when the answer is empty, and is shown in the prompt.

@@ -25,7 +25,13 @@ The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 `articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
 takes `{list,show,search,create,edit,delete}` plus the verbs its own domain needs
 — `articles current` and `articles read`, `habits complete` and `habits today`,
-the recipe suggest/import flows, `strains vocabulary`.
+`tasks snooze`, `pin`, `unpin` and `drop` with `tasks categories` for each
+category's window, the recipe suggest/import flows, `strains vocabulary`.
+
+The open task list is ordered by a sort date the CLI never prints: a task's
+window in days, counted from when it was added or last snoozed. `tasks list`
+shows the position and a pin marker, and `--json` carries the date for a
+program that wants it.
 
 `habits today` is the day's board: every habit you currently track, marked done
 or still due, ordered by category. It takes no `--limit`, because the set is
@@ -155,8 +161,8 @@ Category is one of:
 Category: chorre
   unknown value "chorre" — one of: Automotive, Chore, Computer, ...
 Category: chore
-Priority is a rank — lower comes first.
-Priority [1]: 3
+How soon it should come up. Blank takes the category's window.
+Window in days (optional): 14
 Notes (optional):
 ```
 
@@ -172,7 +178,7 @@ terminal. Under any fixed count, a dozen one-word categories waste most of a
 screen and a project whose name is a sentence wraps.
 
 A flag already passed is never asked about, so `create --category Chore` asks for
-name, priority, and notes only. Without a terminal — a pipe, a script, or
+name, window, and notes only. Without a terminal — a pipe, a script, or
 `--no-input` — nothing is asked and the command names the flags that would have
 answered.
 

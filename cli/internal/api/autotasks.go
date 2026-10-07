@@ -10,13 +10,18 @@ import (
 // AutoTask mirrors the autotasks JSON — a recurring task template the scheduler
 // uses to spawn tasks. It is read-only from the CLI: the scheduler owns the
 // run bookkeeping (first_run_date/last_run_date/run_count). notes is nullable.
+//
+// WindowDays is the window each copy gets, nil meaning the category's. Anchor is
+// "completion" (the next copy counts from when the last closed) or "calendar"
+// (fixed steps from the first run).
 type AutoTask struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
 	Category      string    `json:"category"`
-	Priority      int       `json:"priority"`
 	Notes         *string   `json:"notes"`
 	Frequency     string    `json:"frequency"`
+	WindowDays    *int      `json:"window_days"`
+	Anchor        string    `json:"anchor"`
 	MaxConcurrent int       `json:"max_concurrent"`
 	FirstRunDate  time.Time `json:"first_run_date"`
 	LastRunDate   time.Time `json:"last_run_date"`
