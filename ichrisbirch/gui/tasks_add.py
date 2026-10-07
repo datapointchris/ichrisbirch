@@ -15,10 +15,10 @@ logger = structlog.get_logger()
 def submit_form():
     name = name_entry.get()
     category = category_combobox.get()
-    priority = priority_entry.get()
+    window_days = window_entry.get().strip()
     notes = notes_textbox.get('1.0', tk.END).strip()
 
-    if not name or not category or not priority.isdigit():
+    if not name or not category or (window_days and not window_days.isdigit()):
         messagebox.showwarning('Validation Error', 'Please fill all fields correctly.')
         return
 
@@ -28,7 +28,7 @@ def submit_form():
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_ACCESS_TOKEN',  # Placeholder for authorization header
     }
-    data = {'name': name, 'category': category, 'priority': int(priority), 'notes': notes}
+    data = {'name': name, 'category': category, 'window_days': int(window_days) if window_days else None, 'notes': notes}
 
     try:
         response = httpx2.post(url, headers=headers, json=data, timeout=5.0, follow_redirects=False)
@@ -65,14 +65,14 @@ ctk.set_appearance_mode(ui.mode)
 ctk.set_default_color_theme(ui.theme)
 
 app = ctk.CTk()
-app.title('Add New Priority Task')
+app.title('Add New Task')
 
 set_app_geometry(app, width_percent=40, height_percent=70)
 
 center_frame = ctk.CTkFrame(app)
 center_frame.pack(padx=ui.bigpad, pady=ui.bigpad, expand=True)
 
-header = ctk.CTkLabel(center_frame, text='Add New Priority Task', font=(ui.font[0], 36))
+header = ctk.CTkLabel(center_frame, text='Add New Task', font=(ui.font[0], 36))
 header.grid(row=0, column=0, padx=ui.bigpad, pady=ui.bigpad)
 
 name_label = ctk.CTkLabel(center_frame, text='Name:', font=ui.font)
@@ -85,10 +85,10 @@ category_combobox = ctk.CTkComboBox(center_frame, font=ui.font, dropdown_font=ui
 category_label.grid(row=3, column=0, padx=ui.bigpad, pady=(ui.bigpad, ui.smallpad))
 category_combobox.grid(row=4, column=0, padx=ui.bigpad, pady=(0, ui.bigpad))
 
-priority_label = ctk.CTkLabel(center_frame, text='Priority:', font=ui.font)
-priority_entry = ctk.CTkEntry(center_frame, font=ui.font, height=45, width=80)
-priority_label.grid(row=5, column=0, padx=ui.bigpad, pady=(ui.bigpad, ui.smallpad))
-priority_entry.grid(row=6, column=0, padx=ui.bigpad, pady=(0, ui.bigpad))
+window_label = ctk.CTkLabel(center_frame, text='Window in days (blank for the category default):', font=ui.font)
+window_entry = ctk.CTkEntry(center_frame, font=ui.font, height=45, width=80)
+window_label.grid(row=5, column=0, padx=ui.bigpad, pady=(ui.bigpad, ui.smallpad))
+window_entry.grid(row=6, column=0, padx=ui.bigpad, pady=(0, ui.bigpad))
 
 notes_label = ctk.CTkLabel(center_frame, text='Notes:', font=ui.font)
 notes_textbox = ctk.CTkTextbox(center_frame, font=ui.font, width=600, height=180)

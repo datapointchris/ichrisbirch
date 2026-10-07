@@ -39,11 +39,11 @@ class TestTaskFactory:
         task = TaskFactory(
             name='Custom Task Name',
             category='Home',
-            priority=42,
+            window_days=42,
         )
         assert task.name == 'Custom Task Name'
         assert task.category == 'Home'
-        assert task.priority == 42
+        assert task.window_days == 42
 
     def test_create_completed_task_with_trait(self, factory_session):
         """Test using the completed trait."""
@@ -215,7 +215,7 @@ class TestAutoTaskFactory:
         """Test creating an autotask that should run."""
         autotask = AutoTaskFactory(should_run=True)
         # Last run was 30 days ago, so it should run
-        assert autotask.is_due_on(datetime.now(UTC).date(), ZoneInfo('UTC')) is True
+        assert autotask.is_due_on(datetime.now(UTC).date(), ZoneInfo('UTC'), last_closed_at=None) is True
 
 
 class TestBookFactory:
@@ -383,8 +383,5 @@ class TestFactoryIntegration:
         task_long = TaskFactory(notes='x' * 5000)
         assert len(task_long.notes) == 5000
 
-        task_negative = TaskFactory(priority=-10)
-        assert task_negative.priority == -10
-
-        task_zero = TaskFactory(priority=0)
-        assert task_zero.priority == 0
+        task_pinned = TaskFactory(pinned=True)
+        assert task_pinned.pinned is True

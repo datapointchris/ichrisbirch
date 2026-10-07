@@ -11,8 +11,10 @@ from sqlalchemy import select
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.models.autotask import AUTOTASK_ANCHORS
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.task_queue import new_task
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -24,9 +26,18 @@ async def read_many(session: DbSession, limit: RowLimit = None):
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
+def refuse_unknown_anchor(anchor: str | None) -> None:
+    if anchor is not None and anchor not in AUTOTASK_ANCHORS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'Unknown autotask anchor {anchor!r}. Known anchors: {", ".join(AUTOTASK_ANCHORS)}',
+        )
+
+
 @router.post('/', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)
 async def create(autotask: schemas.AutoTaskCreate, session: DbSession):
-    db_obj = models.AutoTask(**autotask.model_dump())
+    refuse_unknown_anchor(autotask.anchor)
+    db_obj = models.AutoTask(**autotask.model_dump(exclude_none=True))
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
@@ -44,6 +55,7 @@ async def read_one(id: int, session: DbSession):
 
 @router.patch('/{id}/', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
 async def update(id: int, autotask_update: schemas.AutoTaskUpdate, session: DbSession):
+    refuse_unknown_anchor(autotask_update.anchor)
     if db_obj := session.get(models.AutoTask, id):
         for field, value in autotask_update.model_dump(exclude_unset=True).items():
             setattr(db_obj, field, value)
@@ -69,7 +81,14 @@ async def delete(id: int, session: DbSession):
 @router.patch('/{id}/run/', status_code=status.HTTP_200_OK)
 async def run(id: int, session: DbSession):
     if autotask := session.get(models.AutoTask, id):
-        task = models.Task(name=autotask.name, notes=autotask.notes, priority=autotask.priority, category=autotask.category)
+        task = new_task(
+            session,
+            name=autotask.name,
+            category=autotask.category,
+            notes=autotask.notes,
+            window_days=autotask.window_days,
+            autotask_id=autotask.id,
+        )
         session.add(task)
         autotask.last_run_date = datetime.now(UTC)
         autotask.run_count += 1

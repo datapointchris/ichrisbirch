@@ -7,7 +7,6 @@ from freezegun import freeze_time
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch import schemas
 from ichrisbirch.database.session import create_session
 from ichrisbirch.scheduler import jobs
 from tests.util import show_status_and_response
@@ -25,58 +24,86 @@ def insert_testing_data():
     delete_test_data('autotasks')
 
 
-def test_compact_task_priorities(test_api_logged_in):
-    """Dense-rank incomplete tasks to 1..K; completed tasks are untouched."""
-    # Bump incomplete task priorities to non-dense values so the compaction
-    # has something to do. The two incomplete tasks start at 1 and 2 per the
-    # baseline fixture — push them to 7 and 12 to simulate a post-add_date
-    # pile-up that would be tidied up overnight.
-    todo = test_api_logged_in.get('/tasks/todo/').json()
-    assert len(todo) == 2, todo
-    ids_in_order = [t['id'] for t in todo]
-    test_api_logged_in.patch(f'/tasks/{ids_in_order[0]}/', json={'priority': 7})
-    test_api_logged_in.patch(f'/tasks/{ids_in_order[1]}/', json={'priority': 12})
-
-    jobs.compact_task_priorities(test_settings)
-
-    after = test_api_logged_in.get('/tasks/todo/').json()
-    assert [t['priority'] for t in after] == [1, 2], after
-    # Same task that was rank-1 by add_date should still be rank-1 afterward.
-    assert [t['id'] for t in after] == ids_in_order
-
-    # Completed task's priority is untouched (baseline priority = 3).
-    completed = test_api_logged_in.get('/tasks/completed/').json()
-    assert len(completed) == 1
-    assert completed[0]['priority'] == 3
+def _anchor_every_autotask(anchor: str) -> None:
+    with create_session(test_settings) as session:
+        for autotask in session.scalars(select(models.AutoTask)):
+            autotask.anchor = anchor
+        session.commit()
 
 
-NEW_AUTOTASK = schemas.AutoTaskCreate(
-    name='Autotask with too many concurrent tasks',
-    notes='Notes for concurrent task',
-    category='Computer',
-    priority=3,
-    frequency='Biweekly',
-    max_concurrent=2,
-)
+def _all_tasks(client) -> list[dict]:
+    response = client.get('/tasks/', params={'status': 'all'})
+    assert response.status_code == 200, show_status_and_response(response)
+    return response.json()
 
 
 def test_check_and_run_autotasks(test_api_logged_in):
-    """Test if able to check for autotasks to run."""
-    before = test_api_logged_in.get('/tasks/', params={'status': 'all'})
-    assert before.status_code == 200, show_status_and_response(before)
-    assert len(before.json()) == 3
+    """Every base template last ran in 2020, so each adds one copy."""
+    assert len(_all_tasks(test_api_logged_in)) == 3
     jobs.check_and_run_autotasks(test_settings)
-    after = test_api_logged_in.get('/tasks/', params={'status': 'all'})
-    assert after.status_code == 200, show_status_and_response(after)
-    assert len(after.json()) == 6, after.json()
+    assert len(_all_tasks(test_api_logged_in)) == 6
+
+
+def test_a_copy_records_its_template_and_window(test_api_logged_in):
+    jobs.check_and_run_autotasks(test_settings)
+
+    with create_session(test_settings) as session:
+        templates = {a.id: a for a in session.scalars(select(models.AutoTask))}
+    copies = [task for task in _all_tasks(test_api_logged_in) if task['autotask_id'] is not None]
+    assert len(copies) == len(templates)
+    for copy in copies:
+        template = templates[copy['autotask_id']]
+        assert copy['name'] == template.name
+        assert copy['window_days'] == template.window_days
+
+
+class TestCompletionAnchor:
+    """A completion template has one open copy, and the next counts from when it closed."""
+
+    WEEKLY = 'AutoTask 2 Home without notes window 10 not completed'
+
+    def weekly_copies(self, client) -> list[dict]:
+        return [task for task in _all_tasks(client) if task['name'] == self.WEEKLY]
+
+    def test_an_open_copy_holds_the_next_one_back(self, test_api_logged_in):
+        with freeze_time('2021-03-20'):
+            jobs.check_and_run_autotasks(test_settings)
+        with freeze_time('2022-03-20'):
+            jobs.check_and_run_autotasks(test_settings)
+
+        assert len(self.weekly_copies(test_api_logged_in)) == 1
+
+    def test_the_next_copy_counts_from_the_completion(self, test_api_logged_in):
+        with freeze_time('2021-03-20 12:00'):
+            jobs.check_and_run_autotasks(test_settings)
+        [copy] = self.weekly_copies(test_api_logged_in)
+        with freeze_time('2021-04-10 12:00'):
+            test_api_logged_in.patch(f'/tasks/{copy["id"]}/complete/')
+
+        with freeze_time('2021-04-16 12:00'):
+            jobs.check_and_run_autotasks(test_settings)
+        assert len(self.weekly_copies(test_api_logged_in)) == 1, 'six days after completion is too soon'
+
+        with freeze_time('2021-04-17 12:00'):
+            jobs.check_and_run_autotasks(test_settings)
+        assert len(self.weekly_copies(test_api_logged_in)) == 2, 'a week after completion is due'
+
+    def test_a_dropped_copy_closes_it_like_a_completion(self, test_api_logged_in):
+        with freeze_time('2021-03-20 12:00'):
+            jobs.check_and_run_autotasks(test_settings)
+        [copy] = self.weekly_copies(test_api_logged_in)
+        with freeze_time('2021-04-10 12:00'):
+            test_api_logged_in.patch(f'/tasks/{copy["id"]}/drop/')
+
+        with freeze_time('2021-04-17 12:00'):
+            jobs.check_and_run_autotasks(test_settings)
+        assert len(self.weekly_copies(test_api_logged_in)) == 2
 
 
 def test_check_and_run_autotasks_max_concurrent(test_api_logged_in):
-    """Test if auto task with max_concurrent is respected."""
-    before = test_api_logged_in.get('/tasks/', params={'status': 'all'})
-    assert before.status_code == 200, show_status_and_response(before)
-    assert len(before.json()) == 3
-    # insert all base autotasks again, giving all conccurent of 1
+    """A calendar template adds copies on schedule until max_concurrent are open."""
+    _anchor_every_autotask('calendar')
+    assert len(_all_tasks(test_api_logged_in)) == 3
     # base data has run dates of 2020
     with freeze_time('2021-03-20'):
         jobs.check_and_run_autotasks(test_settings)
@@ -103,6 +130,7 @@ def test_check_and_run_autotasks_completing_frees_a_slot(test_api_logged_in):
     Counting completed rows too turned it into a cap on how many times a template
     could ever fire, and every autotask stalled once its history reached the cap.
     """
+    _anchor_every_autotask('calendar')
     baseline_ids = {task['id'] for task in test_api_logged_in.get('/tasks/', params={'status': 'all'}).json()}
     with freeze_time('2021-03-20'):
         jobs.check_and_run_autotasks(test_settings)
@@ -156,7 +184,6 @@ def _insert_daily_template_run_on_the_20th() -> None:
             models.AutoTask(
                 name=DAILY_NAME,
                 category='Chore',
-                priority=1,
                 frequency='Daily',
                 first_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
                 last_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),

@@ -3,6 +3,7 @@ from ichrisbirch.models.article import ArticleFailedImport
 from ichrisbirch.models.autofun import AutoFun
 from ichrisbirch.models.autofun import AutoFunActiveTask
 from ichrisbirch.models.autotask import AutoTask
+from ichrisbirch.models.autotask import AutoTaskAnchor
 from ichrisbirch.models.autotask import AutoTaskFrequency
 from ichrisbirch.models.book import Book
 from ichrisbirch.models.book import BookOwnership
@@ -57,6 +58,7 @@ __all__ = [
     'AutoFun',
     'AutoFunActiveTask',
     'AutoTask',
+    'AutoTaskAnchor',
     'AutoTaskFrequency',
     'Book',
     'BookOwnership',

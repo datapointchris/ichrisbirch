@@ -61,6 +61,7 @@ The frontend is a Vue 3 SPA (TypeScript) served behind `app.docker.localhost` vi
 
 - [Alembic](alembic.md) - Database migrations
 - [Scheduler](scheduler.md) - Background job processing
+- [Tasks](tasks.md) - Why the task list sorts by a silent sort date and per-category windows
 - [Documentation Tools](documentation_tools.md) - Docs generation and maintenance
 - [Documentation](documentation.md) - How MkDocs builds these pages and publishes them to gh-pages
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions

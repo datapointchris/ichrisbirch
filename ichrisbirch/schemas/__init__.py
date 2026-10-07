@@ -107,8 +107,11 @@ from ichrisbirch.schemas.strain import StrainUpdate
 from ichrisbirch.schemas.strain import StrainVocabulary
 from ichrisbirch.schemas.strain import StrainVocabularyEntry
 from ichrisbirch.schemas.task import Task
+from ichrisbirch.schemas.task import TaskCategory
+from ichrisbirch.schemas.task import TaskCategoryUpdate
 from ichrisbirch.schemas.task import TaskCompleted
 from ichrisbirch.schemas.task import TaskCreate
+from ichrisbirch.schemas.task import TaskDrop
 from ichrisbirch.schemas.task import TaskUpdate
 from ichrisbirch.schemas.user import User
 from ichrisbirch.schemas.user import UserCreate
@@ -224,8 +227,11 @@ __all__ = [
     'StrainVocabulary',
     'StrainVocabularyEntry',
     'Task',
+    'TaskCategory',
+    'TaskCategoryUpdate',
     'TaskCompleted',
     'TaskCreate',
+    'TaskDrop',
     'TaskUpdate',
     'User',
     'UserCreate',

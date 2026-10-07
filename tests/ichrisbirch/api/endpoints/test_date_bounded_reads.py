@@ -461,7 +461,7 @@ class TestTheBoundsAreAdditive:
             )
         )
         session.add(models.Book(title='a book', author='A. Writer', tags=[], priority=1))
-        session.add(models.Task(name='a task', category='Chore', priority=1, add_date=datetime(2026, 1, 1)))
+        session.add(models.Task(name='a task', category='Chore', add_date=datetime(2026, 1, 1)))
         session.flush()
         return client
 

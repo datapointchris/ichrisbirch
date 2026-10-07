@@ -14,10 +14,10 @@ from .crud_test import ApiCrudTester
 logger = logging.getLogger(__name__)
 
 NEW_OBJ = schemas.AutoTaskCreate(
-    name='AutoTask 4 Computer with notes priority 3',
+    name='AutoTask 4 Computer with notes window 3',
     notes='Notes task 4',
     category='Computer',
-    priority=3,
+    window_days=3,
     frequency='Biweekly',
 )
 
@@ -63,10 +63,10 @@ def test_task_categories(txn_api_logged_in, category):
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'autotasks')
     test_obj = schemas.AutoTaskCreate(
-        name='AutoTask 4 Computer with notes priority 3',
+        name='AutoTask 4 Computer with notes window 3',
         notes='Notes task 4',
         category=category,
-        priority=3,
+        window_days=3,
         frequency='Biweekly',
     )
     created = client.post(ENDPOINT, json=test_obj.model_dump(mode='json'))
@@ -79,10 +79,10 @@ def test_task_frequencies(txn_api_logged_in, frequency):
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'autotasks')
     test_obj = schemas.AutoTaskCreate(
-        name='AutoTask 4 Computer with notes priority 3',
+        name='AutoTask 4 Computer with notes window 3',
         notes='Notes task 4',
         category='Personal',
-        priority=3,
+        window_days=3,
         frequency=frequency,
     )
     created = client.post(ENDPOINT, json=test_obj.model_dump(mode='json'))
@@ -95,12 +95,43 @@ def test_update_autotask(autotask_crud_tester):
     client, crud_tester = autotask_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated Name', 'priority': 99})
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated Name', 'window_days': 9, 'anchor': 'calendar'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     updated = response.json()
     assert updated['name'] == 'Updated Name'
-    assert updated['priority'] == 99
+    assert updated['window_days'] == 9
+    assert updated['anchor'] == 'calendar'
+
+
+def test_clearing_the_window_falls_back_to_the_category(autotask_crud_tester):
+    client, crud_tester = autotask_crud_tester
+    first_id = crud_tester.item_id_by_position(client, position=1)
+
+    response = client.patch(f'{ENDPOINT}{first_id}/', json={'window_days': None})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json()['window_days'] is None
+
+
+def test_a_new_autotask_is_completion_anchored(txn_api_logged_in):
+    client, _ = txn_api_logged_in
+    created = client.post(ENDPOINT, json={'name': 'Trim nails', 'category': 'Dingo', 'frequency': 'Biweekly'})
+    assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+    assert created.json()['anchor'] == 'completion'
+    assert created.json()['window_days'] is None
+
+
+@pytest.mark.parametrize('method', ['post', 'patch'])
+def test_an_unknown_anchor_names_the_known_ones(autotask_crud_tester, method):
+    client, crud_tester = autotask_crud_tester
+    if method == 'post':
+        response = client.post(ENDPOINT, json={**NEW_OBJ.model_dump(mode='json'), 'anchor': 'weekly'})
+    else:
+        first_id = crud_tester.item_id_by_position(client, position=1)
+        response = client.patch(f'{ENDPOINT}{first_id}/', json={'anchor': 'weekly'})
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+    assert 'completion' in response.json()['detail']
 
 
 def test_run_autotask(autotask_crud_tester):
@@ -121,11 +152,11 @@ def test_run_autotask(autotask_crud_tester):
     assert autotask_after['run_count'] == initial_run_count + 1
     assert autotask_after['last_run_date'] is not None
 
-    # Verify a task was created with matching name
     tasks_response = client.get('/tasks/')
     assert tasks_response.status_code == status.HTTP_200_OK
-    tasks = tasks_response.json()
-    assert any(task['name'] == autotask_before['name'] for task in tasks)
+    [copy] = [task for task in tasks_response.json() if task['name'] == autotask_before['name']]
+    assert copy['autotask_id'] == first_id
+    assert copy['window_days'] == autotask_before['window_days']
 
 
 class TestAutoTasksNotFound:

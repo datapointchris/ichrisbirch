@@ -18,15 +18,18 @@ from ichrisbirch.models.task import TASK_CATEGORIES
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
-from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
+from ichrisbirch.services.task_queue import in_queue_order
+from ichrisbirch.services.task_queue import is_open
+from ichrisbirch.services.task_queue import new_task
+from ichrisbirch.services.task_queue import restart_window
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
-# A task is open or completed and nothing else — `complete_date` carries the
-# whole state. `all` is the absence of the filter rather than a third state.
-TASK_STATUSES = ['open', 'completed']
+# A task is open, completed or dropped — `complete_date` and `drop_date` carry
+# the whole state. `all` is the absence of the filter rather than a fourth state.
+TASK_STATUSES = ['open', 'completed', 'dropped']
 ALL_STATUSES = 'all'
 
 
@@ -47,20 +50,21 @@ async def read_many(
     start_date: str | None = None,
     end_date: str | None = None,
 ):
-    """List open tasks by priority.
+    """List open tasks in queue order: pinned first, then by `rank_at`.
 
-    The default narrows because completed tasks accumulate without bound, per
+    The default narrows because closed tasks accumulate without bound, per
     `cli-design.md` § "A default narrows only where the hidden class grows
-    without bound". Completed tasks are ordered by when they were finished, most
-    recent first — priority stopped meaning anything the moment they left the
-    queue, which is the same reason a closed project orders by `closed_at`.
+    without bound". Completed and dropped tasks are ordered by when they closed,
+    most recent first — their place in the queue stopped meaning anything the
+    moment they left it, which is the same reason a closed project orders by
+    `closed_at`.
 
     `/todo/` and `/completed/` answer narrower versions of this and remain for
     the web app. This is the one the CLI asks, so it has to be able to express
     every status rather than one per path.
 
-    The date bounds narrow on `complete_date`, so an open task is outside every
-    range. They live here rather than only on `/completed/` for the same reason
+    The date bounds narrow on `drop_date` for dropped tasks and on
+    `complete_date` otherwise, so an open task is outside every range. They live here rather than only on `/completed/` for the same reason
     `status` does: this is the read the CLI makes, and it has to be able to
     express the whole question rather than sending the caller to another path
     that answers a different response model and ignores `limit`.
@@ -83,33 +87,45 @@ async def read_many(
     query = select(models.Task)
     if category is not None:
         query = query.filter(models.Task.category == category)
-    if task_status == 'open':
-        query = query.filter(models.Task.complete_date.is_(None))
-    elif task_status == 'completed':
-        query = query.filter(models.Task.complete_date.is_not(None))
+    bound_column = models.Task.complete_date
+    match task_status:
+        case 'open':
+            query = in_queue_order(is_open(query))
+        case 'completed':
+            query = query.filter(models.Task.complete_date.is_not(None)).order_by(models.Task.complete_date.desc())
+        case 'dropped':
+            bound_column = models.Task.drop_date
+            query = query.filter(models.Task.drop_date.is_not(None)).order_by(models.Task.drop_date.desc())
+        case 'all':
+            query = in_queue_order(query)
 
-    if task_status == 'completed':
-        query = query.order_by(models.Task.complete_date.desc())
-    else:
-        query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
-
-    query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date, timezone=zone)
+    query = apply_date_bounds(query, bound_column, start_date, end_date, timezone=zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/todo/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def todo(
-    session: DbSession,
-    limit: RowLimit = None,
-    priority: tuple[int, int] | None = None,
-):
-    """Priority is a tuple of INCLUSIVE priority values."""
-    query = select(models.Task).filter(models.Task.complete_date.is_(None))
-    if priority:
-        query = query.filter(models.Task.priority >= priority[0], models.Task.priority <= priority[1])
-
-    query = query.order_by(models.Task.priority.asc(), models.Task.add_date.asc())
+async def todo(session: DbSession, limit: RowLimit = None):
+    query = in_queue_order(is_open(select(models.Task)))
     return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.get('/categories/', response_model=list[schemas.TaskCategory], status_code=status.HTTP_200_OK)
+async def read_categories(session: DbSession):
+    """Every task category with the window a new task in it gets."""
+    return list(session.scalars(select(models.TaskCategory).order_by(models.TaskCategory.name)).all())
+
+
+@router.patch('/categories/{name}/', response_model=schemas.TaskCategory, status_code=status.HTTP_200_OK)
+async def update_category(name: str, update: schemas.TaskCategoryUpdate, session: DbSession):
+    """Change a category's window. Tasks already open keep the window they were made with."""
+    if category := session.get(models.TaskCategory, name):
+        for attr, value in update.model_dump(exclude_unset=True).items():
+            setattr(category, attr, value)
+        session.commit()
+        session.refresh(category)
+        logger.info('task_category_updated', name=name, window_days=category.window_days)
+        return category
+    raise NotFoundException('task category', name, logger)
 
 
 @router.get('/completed/', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
@@ -151,26 +167,14 @@ async def search(q: str, session: DbSession):
 
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
 async def create(task: schemas.TaskCreate, session: DbSession):
-    db_obj = models.Task(**task.model_dump())
+    try:
+        db_obj = new_task(session, **task.model_dump())
+    except LookupError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
     return db_obj
-
-
-@router.post('/reorder/', status_code=status.HTTP_200_OK)
-async def reorder(session: DbSession):
-    """Dense-rank incomplete tasks to priorities 1..K, tiebreak by add_date.
-
-    Same operation the nightly scheduler runs, exposed for on-demand use
-    when the user wants priorities tidied up immediately.
-    """
-    count = compact_incomplete_task_priorities(session)
-    session.commit()
-    logger.info('task_priorities_reordered', count=count)
-    if count == 0:
-        return {'message': 'No tasks to reorder'}
-    return {'message': f'Reordered {count} tasks'}
 
 
 @router.get('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
@@ -198,6 +202,11 @@ async def update(id: int, update: schemas.TaskUpdate, session: DbSession):
     if task := session.get(models.Task, id):
         for attr, value in update_data.items():
             setattr(task, attr, value)
+        if task.complete_date is not None and task.drop_date is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f'Task {id} cannot be both completed and dropped. Clear one date to set the other.',
+            )
         session.commit()
         session.refresh(task)
         return task
@@ -205,31 +214,47 @@ async def update(id: int, update: schemas.TaskUpdate, session: DbSession):
     raise NotFoundException('task', id, logger)
 
 
+def open_task(session: DbSession, task_id: int, verb: str) -> models.Task:
+    """The task, or a 404 when it does not exist and a 409 when it is already closed."""
+    task = session.get(models.Task, task_id)
+    if task is None:
+        raise NotFoundException('task', task_id, logger)
+    if task.complete_date is not None or task.drop_date is not None:
+        state = 'completed' if task.complete_date is not None else 'dropped'
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'Task {task_id} is already {state}, so it cannot be {verb}.',
+        )
+    return task
+
+
 @router.patch('/{task_id}/complete/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: DbSession):
-    if task := session.get(models.Task, task_id):
-        task.complete_date = datetime.now(UTC)
-        session.add(task)
-        session.commit()
-        session.refresh(task)
-        return task
-
-    raise NotFoundException('task', task_id, logger)
+    task = open_task(session, task_id, 'completed')
+    task.complete_date = datetime.now(UTC)
+    session.commit()
+    session.refresh(task)
+    return task
 
 
-@router.patch('/{task_id}/shift/{positions}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def shift(task_id: int, positions: int, session: DbSession):
-    """Shift the task's priority rank by `positions` (positive = down, negative = up).
+@router.patch('/{task_id}/drop/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def drop(task_id: int, session: DbSession, body: schemas.TaskDrop | None = None):
+    """Close a task you are letting go of. It stays on record and does not count as completed."""
+    task = open_task(session, task_id, 'dropped')
+    task.drop_date = datetime.now(UTC)
+    task.drop_reason = body.reason if body else None
+    session.commit()
+    session.refresh(task)
+    logger.info('task_dropped', task_id=task_id)
+    return task
 
-    Priority is a positional rank — lower numbers are higher priority.
-    Positive values push the task down the list; negative values push it
-    up. Nightly compaction absorbs any gaps the shift creates.
-    """
-    if task := session.get(models.Task, task_id):
-        task.priority += positions
-        session.add(task)
-        session.commit()
-        session.refresh(task)
-        return task
 
-    raise NotFoundException('task', task_id, logger)
+@router.patch('/{task_id}/snooze/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def snooze(task_id: int, session: DbSession):
+    """Restart the task's window from now, which moves it back down the list, and unpin it."""
+    task = open_task(session, task_id, 'snoozed')
+    restart_window(task)
+    session.commit()
+    session.refresh(task)
+    logger.info('task_snoozed', task_id=task_id, rank_at=task.rank_at.isoformat())
+    return task

@@ -51,13 +51,14 @@ READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 
 # Collection reads that take no limit today. This is the backlog, not a blessing:
 # most of these answer with rows that grow outside the binary and should take
-# `RowLimit`. Four are decided rather than pending, and each answers something a
+# `RowLimit`. Five are decided rather than pending, and each answers something a
 # cap would make wrong rather than shorter:
 #
 #   /admin/config/         a config block, not a paged collection
 #   /admin/system/health/  one status report
 #   /strains/vocabulary/   the whole declared vocabulary, which a client reads to
 #                          build its dropdowns — a short one offers fewer values
+#   /tasks/categories/     every task category with its window, for the same reason
 #   /habits/day/           one day's board, bounded by the habits you track. A cap
 #                          hides a habit you still owe, and `current_total` would
 #                          then disagree with the list beside it
@@ -92,6 +93,7 @@ UNCAPPED_READS = {
     '/recipes/search/',
     '/recipes/stats/',
     '/strains/vocabulary/',
+    '/tasks/categories/',
     '/tasks/completed/',
     '/tasks/search/',
 }

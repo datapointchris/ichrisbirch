@@ -14,12 +14,13 @@ Examples:
     TaskFactory.create_batch(5)
 
     # Test edge cases
-    TaskFactory(priority=-5)
+    TaskFactory(pinned=True)
     TaskFactory(notes='x' * 10000)
 """
 
 from datetime import UTC
 from datetime import datetime
+from datetime import timedelta
 
 import factory
 
@@ -40,16 +41,17 @@ class TaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     name = factory.Sequence(lambda n: f'Test Task {n + 1}')
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
     category = 'Chore'
-    priority = factory.Sequence(lambda n: (n + 1) * 5)  # 5, 10, 15, 20...
+    window_days = 30
     add_date = factory.LazyFunction(lambda: datetime.now(UTC))
+    # Each task ranks a day after the one before, so creation order is queue order.
+    rank_at = factory.Sequence(lambda n: datetime.now(UTC) + timedelta(days=n + 1))
+    pinned = False
     complete_date = None
 
     class Params:
         # Usage: TaskFactory(completed=True)
         completed = factory.Trait(complete_date=factory.LazyFunction(lambda: datetime.now(UTC)))
-        high_priority = factory.Trait(priority=100)
-        low_priority = factory.Trait(priority=1)
-        negative_priority = factory.Trait(priority=-5)
+        dropped = factory.Trait(drop_date=factory.LazyFunction(lambda: datetime.now(UTC)))
 
     @classmethod
     def completed_task(cls, **kwargs):

@@ -10,6 +10,7 @@ from datetime import timedelta
 import sqlalchemy
 from sqlalchemy.orm import Session
 
+from ichrisbirch.models.task import TASK_CATEGORY_WINDOW_DAYS
 from ichrisbirch.models.task import Task
 from scripts.seed.base import SeedResult
 
@@ -140,6 +141,13 @@ NOTES = [
     'Quick 15-minute job',
 ]
 
+DROP_REASONS = [
+    'No longer relevant',
+    'Someone else handled it',
+    'Lost interest',
+    None,
+]
+
 
 def clear(session: Session) -> None:
     session.execute(sqlalchemy.text('DELETE FROM autofun_active_tasks'))
@@ -149,6 +157,7 @@ def clear(session: Session) -> None:
 def seed(session: Session, scale: int = 1) -> SeedResult:
     tasks = []
     completed_count = 0
+    dropped_count = 0
     now = datetime.now(UTC)
 
     for category, names in TASKS_BY_CATEGORY.items():
@@ -156,19 +165,20 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             for i, name in enumerate(names):
                 title = name if scale == 1 else f'{name} #{rep + 1}'
                 notes = NOTES[i % len(NOTES)] if random.random() < 0.4 else None
-                # Temporary priority — incomplete tasks get dense-ranked 1..K below.
-                priority = random.randint(1, 50)
 
                 # Spread add_date across the last 18 months for realistic history
                 days_ago = random.randint(1, 540)
                 add_date = now - timedelta(days=days_ago)
+                window_days = TASK_CATEGORY_WINDOW_DAYS[category]
 
                 task = Task(
                     name=title,
                     category=category,
-                    priority=priority,
                     notes=notes,
                     add_date=add_date,
+                    window_days=window_days,
+                    rank_at=add_date + timedelta(days=window_days),
+                    pinned=random.random() < 0.03,
                 )
 
                 # ~60% completed — with varied completion times per category
@@ -189,26 +199,25 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     # Don't complete tasks in the future
                     if complete_date <= now:
                         task.complete_date = complete_date
+                        task.pinned = False
                         completed_count += 1
+                elif random.random() < 0.1:
+                    task.drop_date = add_date + timedelta(days=random.randint(30, 200))
+                    if task.drop_date <= now:
+                        task.drop_reason = random.choice(DROP_REASONS)
+                        task.pinned = False
+                        dropped_count += 1
+                    else:
+                        task.drop_date = None
 
                 tasks.append(task)
-
-    # Dense-rank incomplete tasks to 1..K by (priority, add_date) so seeded
-    # data matches the post-compaction invariant the nightly scheduler
-    # maintains. Completed tasks keep whatever priority they had.
-    outstanding = sorted(
-        (t for t in tasks if t.complete_date is None),
-        key=lambda t: (t.priority, t.add_date),
-    )
-    for new_rank, task in enumerate(outstanding, start=1):
-        task.priority = new_rank
 
     session.add_all(tasks)
     session.flush()
 
-    active = len(tasks) - completed_count
+    active = len(tasks) - completed_count - dropped_count
     return SeedResult(
         model='Task',
         count=len(tasks),
-        details=f'{active} active, {completed_count} completed, {len(TASKS_BY_CATEGORY)} categories',
+        details=f'{active} active, {completed_count} completed, {dropped_count} dropped, {len(TASKS_BY_CATEGORY)} categories',
     )

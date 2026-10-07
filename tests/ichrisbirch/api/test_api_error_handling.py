@@ -44,7 +44,7 @@ class TestAPIErrorHandling:
         invalid_task = {
             # Missing 'name' field
             'category': 'Home',
-            'priority': 1,
+            'window_days': 1,
         }
         response = test_api_logged_in.post('/tasks/', json=invalid_task)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
