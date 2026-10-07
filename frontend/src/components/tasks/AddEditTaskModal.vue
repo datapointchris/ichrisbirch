@@ -51,12 +51,14 @@
 
         <div class="add-edit-modal__form-row">
           <div class="add-edit-modal__form-item">
-            <label for="add-task-priority">Priority</label>
+            <label for="add-task-window">Window (days)</label>
             <input
-              id="add-task-priority"
-              v-model.number="form.priority"
-              data-testid="task-priority-input"
+              id="add-task-window"
+              v-model="form.windowDays"
+              data-testid="task-window-input"
               type="number"
+              min="1"
+              placeholder="Category default"
               class="textbox add-edit-modal__number-input"
             />
           </div>
@@ -65,9 +67,10 @@
               type="button"
               data-testid="task-pin-to-top-button"
               class="button"
-              @click="form.priority = 0"
+              :aria-pressed="form.pinned"
+              @click="form.pinned = !form.pinned"
             >
-              <span class="button__text">Pin to Top</span>
+              <span class="button__text">{{ form.pinned ? 'Pinned to Top' : 'Pin to Top' }}</span>
             </button>
           </div>
         </div>
@@ -107,7 +110,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import type { TaskCategory } from '@/api/client'
+import type { TaskCategory, TaskCreate } from '@/api/client'
 import { TASK_CATEGORIES } from '@/stores/tasks'
 import AddEditModal from '@/components/AddEditModal.vue'
 
@@ -117,7 +120,7 @@ defineProps<{
 
 const emit = defineEmits<{
   close: []
-  create: [data: { name: string; category: TaskCategory; priority: number; notes?: string }]
+  create: [data: TaskCreate]
 }>()
 
 const categories = TASK_CATEGORIES
@@ -126,7 +129,8 @@ const nameInput = ref<HTMLInputElement | null>(null)
 const form = reactive({
   name: '',
   category: '' as TaskCategory | '',
-  priority: 1,
+  windowDays: '' as number | '',
+  pinned: false,
   notes: '',
 })
 
@@ -134,16 +138,19 @@ function handleModalClose() {
   form.name = ''
   form.notes = ''
   form.category = ''
-  form.priority = 1
+  form.windowDays = ''
+  form.pinned = false
   emit('close')
 }
 
 function handleSubmit(handleSuccess: () => void) {
   if (!form.name.trim() || !form.category) return
+  const windowDays = Number(form.windowDays)
   emit('create', {
     name: form.name.trim(),
     category: form.category as TaskCategory,
-    priority: form.priority,
+    window_days: form.windowDays !== '' && windowDays >= 1 ? windowDays : undefined,
+    pinned: form.pinned,
     notes: form.notes.trim() || undefined,
   })
   handleSuccess()

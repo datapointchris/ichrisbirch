@@ -84,14 +84,18 @@
               v-if="viewType === 'block'"
               :task="task"
               @complete="onComplete"
-              @shift="onShift"
+              @snooze="onSnooze"
+              @drop="onDrop"
+              @pin="onPin"
               @delete="onDelete"
             />
             <TaskCompactTodo
               v-else
               :task="task"
               @complete="onComplete"
-              @shift="onShift"
+              @snooze="onSnooze"
+              @drop="onDrop"
+              @pin="onPin"
               @delete="onDelete"
             />
           </template>
@@ -171,7 +175,9 @@
             :key="task.id"
             :task="task"
             @complete="onComplete"
-            @shift="onShift"
+            @snooze="onSnooze"
+            @drop="onDrop"
+            @pin="onPin"
             @delete="onDelete"
           />
           <TaskBlockCompleted
@@ -187,7 +193,9 @@
             :key="task.id"
             :task="task"
             @complete="onComplete"
-            @shift="onShift"
+            @snooze="onSnooze"
+            @drop="onDrop"
+            @pin="onPin"
             @delete="onDelete"
           />
           <TaskCompactCompleted
@@ -229,9 +237,9 @@ import CompletedChart from '@/components/tasks/CompletedChart.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
 import NeuToggleGroup from '@/components/NeuToggleGroup.vue'
 import type { NeuToggleGroupOption } from '@/components/NeuToggleGroup.vue'
-import { averageCompletionTime } from '@/components/tasks/taskUtils'
+import { averageCompletionTime, placementBetween } from '@/components/tasks/taskUtils'
 import { DATE_FILTERS, dateFilterLabel, dateFilterRange, type DateFilterKey } from '@/composables/dateFilters'
-import type { TaskCategory } from '@/api/client'
+import type { TaskCreate } from '@/api/client'
 
 const route = useRoute()
 const store = useTasksStore()
@@ -329,14 +337,37 @@ async function onComplete(id: number) {
   }
 }
 
-async function onShift(id: number, positions: number) {
-  const name = store.tasks.find((t) => t.id === id)?.name ?? 'Task'
+function taskName(id: number): string {
+  return store.tasks.find((t) => t.id === id)?.name ?? 'Task'
+}
+
+async function onSnooze(id: number) {
+  const name = taskName(id)
   try {
-    await store.shift(id, positions)
-    const direction = positions >= 0 ? 'down' : 'up'
-    show(`${name} shifted ${direction} ${Math.abs(positions)} positions`, 'success')
+    await store.snooze(id)
+    show(`${name} snoozed`, 'success')
   } catch {
-    show('Failed to shift task', 'error')
+    show('Failed to snooze task', 'error')
+  }
+}
+
+async function onDrop(id: number) {
+  const name = taskName(id)
+  try {
+    await store.drop(id)
+    show(`${name} dropped`, 'success')
+  } catch {
+    show('Failed to drop task', 'error')
+  }
+}
+
+async function onPin(id: number, pinned: boolean) {
+  const name = taskName(id)
+  try {
+    await store.setPinned(id, pinned)
+    show(`${name} ${pinned ? 'pinned' : 'unpinned'}`, 'success')
+  } catch {
+    show('Failed to pin task', 'error')
   }
 }
 
@@ -350,7 +381,7 @@ async function onDelete(id: number) {
   }
 }
 
-async function onCreate(data: { name: string; category: TaskCategory; priority: number; notes?: string }) {
+async function onCreate(data: TaskCreate) {
   try {
     await store.create(data)
     show(`${data.name} created`, 'success')
@@ -363,30 +394,13 @@ async function onDragEnd(evt: { oldIndex: number; newIndex: number }) {
   const { oldIndex, newIndex } = evt
   if (oldIndex === newIndex) return
 
-  // After vuedraggable mutates filteredTodoTasks, the dragged task is at newIndex.
-  // We pick a target priority based on the direction of travel:
-  //   - Dragged UP: tie with the task immediately above (or priority 0 if at top).
-  //   - Dragged DOWN: tie with the task immediately below (or prev-bottom's priority + 1 if at bottom).
-  // This gives "approximate drag" — the tie is broken by add_date ASC at read time.
+  // vuedraggable has already moved the task to newIndex in filteredTodoTasks.
   const dragged = filteredTodoTasks.value[newIndex]
   if (!dragged) return
-
-  let targetPriority: number
-  if (oldIndex > newIndex) {
-    const above = filteredTodoTasks.value[newIndex - 1]
-    targetPriority = above ? above.priority : 0
-  } else {
-    const below = filteredTodoTasks.value[newIndex + 1]
-    if (below) {
-      targetPriority = below.priority
-    } else {
-      const prevBottom = filteredTodoTasks.value[newIndex - 1]
-      targetPriority = prevBottom ? prevBottom.priority + 1 : 1
-    }
-  }
+  const placement = placementBetween(filteredTodoTasks.value[newIndex - 1], filteredTodoTasks.value[newIndex + 1])
 
   try {
-    await store.setPriority(dragged.id, targetPriority)
+    await store.move(dragged.id, placement.rankAt, placement.pinned === dragged.pinned ? undefined : placement.pinned)
     syncFilteredTodoTasks()
   } catch {
     show('Failed to reorder task', 'error')

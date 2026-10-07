@@ -149,11 +149,11 @@
               />
             </div>
             <div class="add-edit-modal__form-item">
-              <label for="autofun-priority">Task priority</label>
+              <label for="autofun-window">Task window (days)</label>
               <input
-                id="autofun-priority"
-                v-model.number="schedulerPrefs.task_priority"
-                data-testid="autofun-priority-input"
+                id="autofun-window"
+                v-model.number="schedulerPrefs.task_window_days"
+                data-testid="autofun-window-input"
                 type="number"
                 min="1"
                 class="textbox add-edit-modal__number-input"
@@ -220,7 +220,7 @@ const schedulerPrefs = reactive<AutoFunPreferences>({
   interval_days: 7,
   max_concurrent: 1,
   is_paused: false,
-  task_priority: 7,
+  task_window_days: 30,
 })
 
 const displayedItems = computed(() => (showCompleted.value ? [...store.activeItems, ...store.completedItems] : store.activeItems))
@@ -232,7 +232,7 @@ onMounted(async () => {
     schedulerPrefs.interval_days = saved.interval_days ?? 7
     schedulerPrefs.max_concurrent = saved.max_concurrent ?? 1
     schedulerPrefs.is_paused = saved.is_paused ?? false
-    schedulerPrefs.task_priority = saved.task_priority ?? 7
+    schedulerPrefs.task_window_days = saved.task_window_days ?? 30
   }
 })
 

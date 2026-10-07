@@ -172,27 +172,42 @@ export interface EventUpdate {
 export interface Task {
   id: number
   name: string
-  notes?: string
+  notes?: string | null
   category: TaskCategory
-  priority: number
+  rank_at: string
+  window_days: number
+  pinned: boolean
+  autotask_id?: number | null
   add_date: string
-  complete_date?: string
+  complete_date?: string | null
+  drop_date?: string | null
+  drop_reason?: string | null
 }
 
 export interface TaskCreate {
   name: string
   notes?: string
   category: TaskCategory
-  priority: number
+  window_days?: number
+  pinned?: boolean
 }
 
 export interface TaskUpdate {
   name?: string
-  notes?: string
+  notes?: string | null
   category?: TaskCategory
-  priority?: number
+  rank_at?: string
+  window_days?: number
+  pinned?: boolean
   add_date?: string
-  complete_date?: string
+  complete_date?: string | null
+  drop_date?: string | null
+  drop_reason?: string | null
+}
+
+export interface TaskCategoryWindow {
+  name: TaskCategory
+  window_days: number
 }
 
 // --- Coffee ---
@@ -537,18 +552,21 @@ export interface AutoFunPreferences {
   interval_days: number
   max_concurrent: number
   is_paused: boolean
-  task_priority: number
+  task_window_days: number
 }
 
 // --- AutoTask ---
+
+export type AutoTaskAnchor = 'completion' | 'calendar'
 
 export interface AutoTask {
   id: number
   name: string
   category: TaskCategory
-  priority: number
   notes?: string
   frequency: AutoTaskFrequency
+  window_days: number | null
+  anchor: AutoTaskAnchor
   max_concurrent: number
   first_run_date: string
   last_run_date: string
@@ -559,17 +577,19 @@ export interface AutoTaskCreate {
   name: string
   notes?: string
   category: TaskCategory
-  priority: number
   frequency: AutoTaskFrequency
+  window_days?: number | null
+  anchor?: AutoTaskAnchor
   max_concurrent?: number
 }
 
 export interface AutoTaskUpdate {
   name?: string
   category?: TaskCategory
-  priority?: number
   notes?: string
   frequency?: AutoTaskFrequency
+  window_days?: number | null
+  anchor?: AutoTaskAnchor
   max_concurrent?: number
 }
 

@@ -62,7 +62,7 @@
     &.priority {
       grid-template-areas:
         'title title buttons'
-        'priority notes buttons'
+        'pin notes buttons'
         'category notes buttons'
         'add-date notes buttons';
       grid-template-columns: 1.5fr 1fr 1fr;
@@ -72,7 +72,7 @@
     &.completed {
       grid-template-areas:
         'title title buttons'
-        'priority notes buttons'
+        'pin notes buttons'
         'category notes buttons'
         'add-date notes buttons'
         'complete-date notes buttons'
@@ -84,7 +84,7 @@
     &.todo {
       grid-template-areas:
         'title title title'
-        'priority notes notes'
+        'pin notes notes'
         'category notes notes'
         'add-date notes notes'
         'buttons buttons buttons';
@@ -106,8 +106,8 @@
       text-align: justify;
     }
 
-    &__priority {
-      grid-area: priority;
+    &__pin {
+      grid-area: pin;
       margin-left: var(--space-m);
     }
 
@@ -151,12 +151,13 @@
 
     $drag-handle: 1fr;
     $name: 6fr;
-    $priority: 2fr;
+    $pin: 2fr;
     $category: 4fr;
     $add-date: 4fr;
     $complete-date: 4fr;
     $time-to-complete: 4fr;
-    $shift: 3fr;
+    $snooze: 3fr;
+    $drop: 3fr;
     $complete-button: 3fr;
     $complete-icon: 1fr;
     $edit-icon: 1fr;
@@ -164,7 +165,7 @@
     $delete-icon: 1fr;
 
     &.priority {
-      grid-template-columns: $name $priority $category $complete-icon $edit-icon $delete-icon;
+      grid-template-columns: $name $pin $category $complete-icon $edit-icon $delete-icon;
     }
 
     &.completed {
@@ -176,7 +177,7 @@
     }
 
     &.todo {
-      grid-template-columns: $drag-handle $name $priority $category $add-date $complete-button $shift $edit-icon $delete-icon;
+      grid-template-columns: $drag-handle $name $pin $category $add-date $complete-button $snooze $drop $edit-icon $delete-icon;
     }
 
     &__title {

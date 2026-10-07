@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import type { AutoTask, AutoTaskCreate, AutoTaskUpdate, TaskCategory, AutoTaskFrequency } from '@/api/client'
+import type { AutoTask, AutoTaskAnchor, AutoTaskCreate, AutoTaskUpdate, TaskCategory, AutoTaskFrequency } from '@/api/client'
 
 const logger = createLogger('AutoTasksStore')
 
@@ -23,6 +23,12 @@ export const TASK_CATEGORIES: TaskCategory[] = [
 ]
 
 export const AUTOTASK_FREQUENCIES: AutoTaskFrequency[] = ['Daily', 'Weekly', 'Biweekly', 'Monthly', 'Quarterly', 'Semiannually', 'Yearly']
+
+// `completion` counts the next copy from when the last one closed; `calendar` keeps fixed dates.
+export const AUTOTASK_ANCHORS: { value: AutoTaskAnchor; label: string }[] = [
+  { value: 'completion', label: 'Completion' },
+  { value: 'calendar', label: 'Calendar' },
+]
 
 export const useAutoTasksStore = defineStore('autotasks', () => {
   const autotasks = ref<AutoTask[]>([])

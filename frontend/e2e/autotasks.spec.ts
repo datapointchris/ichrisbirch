@@ -4,16 +4,16 @@ const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
 /** Helper: open the add autotask modal, fill in fields, and submit */
-async function createAutoTask(page: import('@playwright/test').Page, name: string, priority = '5') {
+async function createAutoTask(page: import('@playwright/test').Page, name: string, windowDays = '5') {
   await page.getByTestId('autotask-add-button').click()
   await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('autotask-name-input').fill(name)
-  await page.getByTestId('autotask-priority-input').fill(priority)
+  await page.getByTestId('autotask-window-input').fill(windowDays)
   await page.getByTestId('autotask-category-input').click()
   await page.getByTestId('autotask-category-input-option-Chore').click()
   await page.getByTestId('autotask-frequency-input').click()
   await page.getByTestId('autotask-frequency-input-option-Weekly').click()
-  await page.getByTestId('autotask-priority-input').press('Enter')
+  await page.getByTestId('autotask-window-input').press('Enter')
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 

@@ -39,14 +39,14 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/client'
 import type { Task } from '@/api/client'
 import { createLogger } from '@/utils/logger'
+import { compareQueueOrder } from '@/stores/tasks'
 
 const logger = createLogger('WidgetTasks')
 
-// Tasks doesn't have a Pinia store yet — call API directly
 const tasks = ref<Task[]>([])
 const loading = ref(false)
 
-const topTasks = computed(() => [...tasks.value].sort((a, b) => a.priority - b.priority).slice(0, 10))
+const topTasks = computed(() => [...tasks.value].sort(compareQueueOrder).slice(0, 10))
 
 async function fetchTasks() {
   loading.value = true

@@ -103,7 +103,7 @@ const summaryCards = computed<StatsCard[]>(() => {
     { label: 'Completed (All Time)', value: completed.length },
     { label: 'Outstanding', value: todo.length },
     { label: 'Avg Days to Complete', value: avgDays },
-    { label: 'Overdue', value: todo.filter((t) => t.priority < 1).length },
+    { label: 'Pinned', value: todo.filter((t) => t.pinned).length },
   ]
 })
 
@@ -149,7 +149,7 @@ const byCategoryOptions = computed(() =>
   horizontalBarOptions('Tasks by Category — Completed vs Outstanding', { stacked: true, legend: true })
 )
 
-const completedByMonthData = computed(() => countByMonth(completedTasks.value, (t) => t.complete_date))
+const completedByMonthData = computed(() => countByMonth(completedTasks.value, (t) => t.complete_date ?? undefined))
 
 const completedByMonthChartData = computed(() => {
   if (completedByMonthData.value.length === 0) return { labels: [], datasets: [] }

@@ -34,10 +34,19 @@ vi.mock('vuedraggable', () => ({
   },
 }))
 
+const queued = { window_days: 30, pinned: false }
 const testTasks: Task[] = [
-  { id: 1, name: 'Fix broken test', notes: 'Urgent', category: 'Chore', priority: 1, add_date: '2026-03-01T00:00:00Z' },
-  { id: 2, name: 'Write docs', category: 'Project', priority: 5, add_date: '2026-03-10T00:00:00Z' },
-  { id: 3, name: 'Clean garage', category: 'Chore', priority: 10, add_date: '2026-03-15T00:00:00Z' },
+  {
+    ...queued,
+    id: 1,
+    name: 'Fix broken test',
+    notes: 'Urgent',
+    category: 'Chore',
+    rank_at: '2026-03-31T00:00:00Z',
+    add_date: '2026-03-01T00:00:00Z',
+  },
+  { ...queued, id: 2, name: 'Write docs', category: 'Computer', rank_at: '2026-04-09T00:00:00Z', add_date: '2026-03-10T00:00:00Z' },
+  { ...queued, id: 3, name: 'Clean garage', category: 'Chore', rank_at: '2026-04-14T00:00:00Z', add_date: '2026-03-15T00:00:00Z' },
 ]
 
 function createWrapper(storeState: Record<string, unknown> = {}) {
@@ -72,9 +81,9 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         TaskCompactPriority: true,
         TaskBlockTodo: {
           template:
-            '<div data-testid="task-item"><slot /><button data-testid="task-complete-button" @click="$emit(\'complete\', task.id)">Complete</button><button data-testid="task-shift-button" @click="$emit(\'shift\', task.id, 10)">Shift</button><button data-testid="task-delete-button" @click="$emit(\'delete\', task.id)">Delete</button></div>',
+            '<div data-testid="task-item"><slot /><button data-testid="task-complete-button" @click="$emit(\'complete\', task.id)">Complete</button><button data-testid="task-snooze-button" @click="$emit(\'snooze\', task.id)">Snooze</button><button data-testid="task-drop-button" @click="$emit(\'drop\', task.id)">Drop</button><button data-testid="task-pin-button" @click="$emit(\'pin\', task.id, !task.pinned)">Pin</button><button data-testid="task-delete-button" @click="$emit(\'delete\', task.id)">Delete</button></div>',
           props: ['task'],
-          emits: ['complete', 'shift', 'delete'],
+          emits: ['complete', 'snooze', 'drop', 'pin', 'delete'],
         },
         TaskCompactTodo: true,
         TaskBlockCompleted: true,
@@ -120,8 +129,11 @@ describe('TasksView', () => {
     expect(store.complete).toHaveBeenCalledWith(1)
   })
 
-  it('calls shift when child emits shift event', async () => {
-    // Need todo page for the shift button — mock route
+  it.each([
+    ['task-snooze-button', 'snooze', [1]],
+    ['task-drop-button', 'drop', [1]],
+    ['task-pin-button', 'setPinned', [1, true]],
+  ] as const)('%s calls store.%s', async (testId, action, args) => {
     vi.mocked(await import('vue-router')).useRoute = vi.fn().mockReturnValue({
       name: 'tasks-todo',
       fullPath: '/tasks/todo',
@@ -131,9 +143,29 @@ describe('TasksView', () => {
     const wrapper = createWrapper({ tasks: testTasks })
     const store = useTasksStore()
 
-    await wrapper.find('[data-testid="task-shift-button"]').trigger('click')
+    await wrapper.find(`[data-testid="${testId}"]`).trigger('click')
 
-    expect(store.shift).toHaveBeenCalledWith(1, 10)
+    expect(store[action]).toHaveBeenCalledWith(...args)
+  })
+
+  it('a drag sends the dropped task a rank_at between its new neighbors', async () => {
+    vi.mocked(await import('vue-router')).useRoute = vi.fn().mockReturnValue({
+      name: 'tasks-todo',
+      fullPath: '/tasks/todo',
+      query: {},
+    }) as ReturnType<typeof vi.fn>
+
+    const wrapper = createWrapper({ tasks: testTasks })
+    const store = useTasksStore()
+    const draggable = wrapper.findComponent({ name: 'draggable' })
+    // vuedraggable mutates the list before emitting end: task 3 now sits first.
+    const list = draggable.props('list') as Task[]
+    list.unshift(list.pop()!)
+
+    draggable.vm.$emit('end', { oldIndex: 2, newIndex: 0 })
+    await wrapper.vm.$nextTick()
+
+    expect(store.move).toHaveBeenCalledWith(3, '2026-03-30T00:00:00.000Z', undefined)
   })
 
   it('calls remove when child emits delete event', async () => {

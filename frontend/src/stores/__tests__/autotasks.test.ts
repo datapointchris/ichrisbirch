@@ -20,10 +20,11 @@ const testAutoTasks = [
     id: 1,
     name: 'Clean Kitchen',
     category: 'Chore',
-    priority: 5,
+    window_days: 5,
     notes: 'Deep clean everything',
     frequency: 'Weekly',
     max_concurrent: 2,
+    anchor: 'completion',
     first_run_date: '2026-01-01T01:15:00',
     last_run_date: '2026-03-10T01:15:00',
     run_count: 10,
@@ -32,9 +33,10 @@ const testAutoTasks = [
     id: 2,
     name: 'Backup Photos',
     category: 'Computer',
-    priority: 10,
+    window_days: 10,
     frequency: 'Monthly',
     max_concurrent: 1,
+    anchor: 'completion',
     first_run_date: '2026-01-15T01:15:00',
     last_run_date: '2026-02-15T01:15:00',
     run_count: 2,
@@ -43,10 +45,11 @@ const testAutoTasks = [
     id: 3,
     name: 'Oil Change',
     category: 'Automotive',
-    priority: 8,
+    window_days: 8,
     notes: 'Use synthetic oil',
     frequency: 'Quarterly',
     max_concurrent: 2,
+    anchor: 'completion',
     first_run_date: '2025-06-01T01:15:00',
     last_run_date: '2026-03-13T01:15:00',
     run_count: 4,
@@ -126,9 +129,10 @@ describe('useAutoTasksStore', () => {
       id: 4,
       name: 'Water Plants',
       category: 'Home',
-      priority: 3,
+      window_days: 3,
       frequency: 'Daily',
       max_concurrent: 2,
+      anchor: 'completion',
       first_run_date: '2026-03-13T12:00:00',
       last_run_date: '2026-03-13T12:00:00',
       run_count: 0,
@@ -141,14 +145,14 @@ describe('useAutoTasksStore', () => {
     const result = await store.create({
       name: 'Water Plants',
       category: 'Home',
-      priority: 3,
+      window_days: 3,
       frequency: 'Daily',
     })
 
     expect(mockApi.post).toHaveBeenCalledWith('/autotasks/', {
       name: 'Water Plants',
       category: 'Home',
-      priority: 3,
+      window_days: 3,
       frequency: 'Daily',
     })
     expect(mockApi.patch).toHaveBeenCalledWith('/autotasks/4/run/')
@@ -167,7 +171,7 @@ describe('useAutoTasksStore', () => {
     mockApi.post.mockRejectedValue(apiError)
     const store = useAutoTasksStore()
 
-    await expect(store.create({ name: '', category: 'Chore', priority: 1, frequency: 'Daily' })).rejects.toThrow(ApiError)
+    await expect(store.create({ name: '', category: 'Chore', window_days: 1, frequency: 'Daily' })).rejects.toThrow(ApiError)
     expect(store.error).toBe(apiError)
     expect(store.autotasks).toEqual([])
     expect(mockApi.patch).not.toHaveBeenCalled()
@@ -178,9 +182,10 @@ describe('useAutoTasksStore', () => {
       id: 5,
       name: 'Failing Task',
       category: 'Chore',
-      priority: 1,
+      window_days: 1,
       frequency: 'Daily',
       max_concurrent: 2,
+      anchor: 'completion',
       first_run_date: '2026-03-13T12:00:00',
       last_run_date: '2026-03-13T12:00:00',
       run_count: 0,
@@ -190,7 +195,7 @@ describe('useAutoTasksStore', () => {
     mockApi.patch.mockRejectedValue(runError)
     const store = useAutoTasksStore()
 
-    await expect(store.create({ name: 'Failing Task', category: 'Chore', priority: 1, frequency: 'Daily' })).rejects.toThrow(ApiError)
+    await expect(store.create({ name: 'Failing Task', category: 'Chore', window_days: 1, frequency: 'Daily' })).rejects.toThrow(ApiError)
     // Item was added by POST but run failed
     expect(store.autotasks).toHaveLength(1)
     expect(store.autotasks[0]!.run_count).toBe(0)
