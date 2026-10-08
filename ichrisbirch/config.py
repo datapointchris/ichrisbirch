@@ -72,6 +72,10 @@ class OIDCSettings:
     Authelia does not populate the audience claim through the device authorization grant, so
     `aud` comes back empty and cannot carry that isolation.
 
+    `service_client_id_prefix` names the clients a service authenticates as through the
+    client-credentials grant (`icb-svc-worker`). Their tokens reach only the routes their
+    scopes list in `api/service_scopes.py`, and never resolve to a user.
+
     `cli_user_email` is the local user a verified CLI token resolves to. The access token
     carries only `sub`, `client_id` and the standard registered claims — no claims policy is
     bound to the CLI clients — so there is no email or username on the wire to look up.
@@ -82,6 +86,7 @@ class OIDCSettings:
         # deployment says "use the default", and it must not blank the setting.
         self.issuer: str = os.environ.get('OIDC_ISSUER') or 'https://auth.ichrisbirch.com'
         self.cli_client_id_prefix: str = os.environ.get('OIDC_CLI_CLIENT_ID_PREFIX') or 'icb-cli-'
+        self.service_client_id_prefix: str = os.environ.get('OIDC_SERVICE_CLIENT_ID_PREFIX') or 'icb-svc-'
         self.cli_user_email: str = os.environ.get('OIDC_CLI_USER_EMAIL') or os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
 
 

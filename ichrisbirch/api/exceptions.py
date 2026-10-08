@@ -28,6 +28,7 @@ class Refusal(enum.StrEnum):
     INVALID_REFRESH_TOKEN = 'Invalid refresh token'
     INVALID_TOKEN = 'Invalid token'
     MISSING_TOKEN = 'Missing token'
+    OUTSIDE_SERVICE_SCOPE = "Route is outside this service client's scopes"
 
 
 class NotFoundException(HTTPException):

@@ -23,7 +23,9 @@ from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.api.oidc_auth import UNAUTHORIZED_DETAIL
 from ichrisbirch.api.oidc_auth import OIDCIdentity
+from ichrisbirch.api.oidc_auth import ServicePrincipal
 from ichrisbirch.api.oidc_auth import get_oidc_identity
+from ichrisbirch.api.service_scopes import permits
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
@@ -110,8 +112,15 @@ def get_token_handler(settings: Settings = Depends(get_settings), session: Sessi
 # =============================================================================
 
 
+def get_service_principal(
+    identity: Annotated[OIDCIdentity | ServicePrincipal | None, Depends(get_oidc_identity)],
+) -> ServicePrincipal | None:
+    """The verified `icb-svc-` caller, or None for any other request."""
+    return identity if isinstance(identity, ServicePrincipal) else None
+
+
 def authenticate_with_oidc_bearer(
-    identity: Annotated[OIDCIdentity | None, Depends(get_oidc_identity)],
+    identity: Annotated[OIDCIdentity | ServicePrincipal | None, Depends(get_oidc_identity)],
     session: Session = Depends(get_sqlalchemy_session),
     settings: Settings = Depends(get_settings),
 ) -> str | None:
@@ -121,9 +130,11 @@ def authenticate_with_oidc_bearer(
     Authelia's JWKS, or raised 401 — a token that reaches here is trusted. The access token carries
     no email, so the local user comes from settings rather than from the wire.
 
+    A `ServicePrincipal` returns None here and is refused by each user dependency below.
+
     Returns the user's alternative_id (as string) if valid, None otherwise.
     """
-    if identity is None:
+    if not isinstance(identity, OIDCIdentity):
         return None
 
     user = validate_user_email(settings.oidc.cli_user_email, session)
@@ -271,7 +282,7 @@ def authenticate_with_personal_api_key(
 # =============================================================================
 
 
-def get_current_user(
+def authenticated_user(
     oidc_user_id=Depends(authenticate_with_oidc_bearer),
     authelia_user_id=Depends(authenticate_with_authelia_headers),
     app_headers=Depends(authenticate_with_application_headers),
@@ -279,8 +290,11 @@ def get_current_user(
     auth_jwt=Depends(authenticate_with_jwt),
     auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
-) -> models.User:
-    """Main authentication dependency that tries multiple auth methods.
+) -> models.User | None:
+    """The user the first matching strategy established, or None.
+
+    FastAPI caches this per request, so a route whose router and `RequestZone` both ask for the
+    caller looks the user up once.
 
     Priority order:
     0. Authelia OIDC access token (the `icb` CLI, verified in-process against Authelia's JWKS)
@@ -289,8 +303,6 @@ def get_current_user(
     3. Personal API key (external tools / programmatic clients)
     4. JWT token (API clients)
     5. OAuth2 form data (web forms)
-
-    Returns the authenticated user or raises UnauthorizedException.
     """
     if oidc_user_id:
         logger.debug('auth_method_oidc_bearer')
@@ -304,15 +316,54 @@ def get_current_user(
         logger.debug('auth_method_jwt')
     if auth_oauth2:
         logger.debug('auth_method_oauth2')
-
     if not (user_id := oidc_user_id or authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
-        raise UnauthorizedException(Refusal.INVALID_CREDENTIALS, logger)
+        return None
+    return validate_user_id(user_id, session)
 
-    if not (user := validate_user_id(user_id, session)):
+
+def refuse_service(service: ServicePrincipal | None) -> None:
+    """Raise 403 for a service token on a route that resolves a user.
+
+    A service token presented beside a forged Remote-User header would otherwise reach the header
+    strategy, and the request would run as that user.
+    """
+    if service is not None:
+        logger.warning('service_outside_scope', client_id=service.client_id)
+        raise ForbiddenException(Refusal.OUTSIDE_SERVICE_SCOPE, logger)
+
+
+def get_current_user(
+    service: Annotated[ServicePrincipal | None, Depends(get_service_principal)],
+    user: Annotated[models.User | None, Depends(authenticated_user)],
+) -> models.User:
+    """Main authentication dependency: the user any strategy established, or 401.
+
+    A service token answers 403, because no route that resolves a user is in any service scope.
+    """
+    refuse_service(service)
+
+    if user is None:
         raise UnauthorizedException(Refusal.INVALID_CREDENTIALS, logger)
 
     logger.debug('credentials_validated', email=user.email)
     return user
+
+
+def get_current_user_or_service(
+    request: Request,
+    service: Annotated[ServicePrincipal | None, Depends(get_service_principal)],
+    user: Annotated[models.User | None, Depends(authenticated_user)],
+) -> models.User | ServicePrincipal:
+    """`get_current_user` for a router some service scope reaches.
+
+    A service token gets through only on a route `service_scopes.SCOPE_ROUTES` lists for one of its
+    scopes, and answers 403 everywhere else. Every other caller resolves exactly as through
+    `get_current_user`.
+    """
+    if service is not None and permits(service.scopes, request.method, request.scope.get('route')):
+        logger.debug('auth_method_service', client_id=service.client_id, path=request.url.path)
+        return service
+    return get_current_user(service, user)
 
 
 def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> models.User:
@@ -326,28 +377,18 @@ def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> m
 
 
 def get_current_user_or_none(
-    oidc_user_id=Depends(authenticate_with_oidc_bearer),
-    authelia_user_id=Depends(authenticate_with_authelia_headers),
-    app_headers=Depends(authenticate_with_application_headers),
-    api_key_user_id=Depends(authenticate_with_personal_api_key),
-    auth_jwt=Depends(authenticate_with_jwt),
-    auth_oauth2=Depends(authenticate_with_oauth2),
-    session=Depends(get_sqlalchemy_session),
+    service: Annotated[ServicePrincipal | None, Depends(get_service_principal)],
+    user: Annotated[models.User | None, Depends(authenticated_user)],
 ) -> models.User | None:
     """Same as get_current_user but returns None instead of raising exception.
 
-    A presented-but-invalid access token is the one case that still raises: `get_oidc_identity`
-    rejects it before this runs, because a caller must not be able to pair a junk token with
-    another strategy's credentials and have the token quietly ignored.
+    Two cases still raise. `get_oidc_identity` rejects a presented-but-invalid access token before
+    this runs, and a service token answers 403 here. In both, a caller would otherwise pair the
+    token with another strategy's credentials and have the token quietly ignored.
 
     Used for dependencies that support multiple auth methods.
     """
-    if not (user_id := oidc_user_id or authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
-        return None
-
-    if not (user := validate_user_id(user_id, session)):
-        return None
-
+    refuse_service(service)
     return user
 
 
