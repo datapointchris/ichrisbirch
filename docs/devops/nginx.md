@@ -32,7 +32,7 @@ anything.
     `icbops routing generate`. Running `deploy-nginx.sh` against a production
     host would write config for a server that is not installed.
 
-The files are kept because they record the port layout and the WebSocket
-timeout that the container deploy had to reproduce. They sit in
+The files are kept because they record the port layout the container deploy
+had to reproduce. They sit in
 `deploy-metal/{dev,prod}/nginx/`, with an identical copy under
 `deploy-containers/`.
