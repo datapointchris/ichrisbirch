@@ -26,6 +26,9 @@ from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
 from ichrisbirch.models.autotask import AUTOTASK_ANCHORS
+from ichrisbirch.models.issue import INITIATIVE_STATUSES
+from ichrisbirch.models.issue import ISSUE_STATUSES
+from ichrisbirch.models.issue import ISSUE_TYPES
 from ichrisbirch.models.project import PROJECT_KINDS
 from ichrisbirch.models.project import PROJECT_STATUSES
 from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
@@ -45,7 +48,7 @@ from ichrisbirch.util import find_project_root
 logger = structlog.get_logger()
 
 
-def _get_alembic_config(settings) -> Config:
+def alembic_config(settings) -> Config:
     """Create an Alembic Config with correct paths resolved.
 
     Every caller runs migrations inside a process that has already configured
@@ -62,7 +65,7 @@ def _get_alembic_config(settings) -> Config:
 def run_alembic_migrations(settings) -> None:
     """Run alembic upgrade head to apply all migrations."""
     logger.info('alembic_upgrade_starting')
-    cfg = _get_alembic_config(settings)
+    cfg = alembic_config(settings)
     command.upgrade(cfg, 'head')
     logger.info('alembic_upgrade_completed')
 
@@ -70,7 +73,7 @@ def run_alembic_migrations(settings) -> None:
 def stamp_alembic_head(settings) -> None:
     """Stamp the database with the current head revision without running migrations."""
     logger.info('alembic_stamp_starting')
-    cfg = _get_alembic_config(settings)
+    cfg = alembic_config(settings)
     command.stamp(cfg, 'head')
     logger.info('alembic_stamp_completed')
 
@@ -129,6 +132,9 @@ LOOKUP_DATA = {
     'task_categories': TASK_CATEGORIES,
     'project_kinds': PROJECT_KINDS,
     'project_statuses': PROJECT_STATUSES,
+    'issue_statuses': ISSUE_STATUSES,
+    'issue_types': ISSUE_TYPES,
+    'initiative_statuses': INITIATIVE_STATUSES,
     'book_ownership': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
     'book_progress': ['abandoned', 'read', 'reading', 'unread'],
     'coffee.roast_levels': ['light', 'medium-light', 'medium', 'medium-dark', 'dark'],

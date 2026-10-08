@@ -1,0 +1,45 @@
+// A multi-select drawn as chips, for a form choosing from a closed vocabulary.
+// A pressed chip is on and a raised one is off, so the state reads without a
+// checkbox beside it.
+
+/// The chip row and its three states: off, on, and a value the vocabulary does
+/// not define, marked so it reads as the one chip to click off.
+@mixin toggle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+
+  &__chip {
+    padding-block: var(--space-3xs);
+    padding-inline: var(--space-xs);
+    border: none;
+    border-radius: var(--button-border-radius);
+    background-color: var(--clr-primary);
+    color: var(--clr-gray-400);
+    font-family: inherit;
+    font-size: var(--fs-300);
+    cursor: pointer;
+    box-shadow: var(--floating-box);
+    transition:
+      box-shadow 0.15s ease,
+      color 0.15s ease;
+
+    &:hover {
+      box-shadow: var(--bubble-box);
+    }
+
+    &--on {
+      color: var(--clr-accent-light);
+      box-shadow: var(--floating-box-pressed);
+
+      &:hover {
+        box-shadow: var(--bubble-box-pressed);
+      }
+    }
+
+    &--undefined {
+      color: var(--clr-error);
+      font-style: italic;
+    }
+  }
+}

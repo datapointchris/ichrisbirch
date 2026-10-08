@@ -57,13 +57,14 @@ const (
 	sectionBooks        = "books"
 	sectionArticles     = "articles"
 	sectionProjectItems = "project_items"
+	sectionIssues       = "issues"
 	sectionCountdowns   = "countdowns"
 	sectionEvents       = "events"
 )
 
 // overviewReport is the stable JSON schema for `overview --json`: the "what is
 // outstanding right now" snapshot composed from the task, habit, book, article,
-// project-item, countdown, and event endpoints.
+// project-item, issue, countdown, and event endpoints.
 type overviewReport struct {
 	SchemaVersion int                `json:"schema_version"`
 	GeneratedAt   time.Time          `json:"generated_at"`
@@ -72,6 +73,7 @@ type overviewReport struct {
 	Books         bookSection        `json:"books"`
 	Articles      articleSection     `json:"articles"`
 	ProjectItems  projectItemSection `json:"project_items"`
+	Issues        issueSection       `json:"issues"`
 	Countdowns    countdownSection   `json:"countdowns"`
 	Events        eventSection       `json:"events"`
 	Warnings      []overviewWarning  `json:"warnings"`
@@ -116,6 +118,18 @@ type projectItemSection struct {
 	BlockedTotal int               `json:"blocked_total"`
 }
 
+// issueSection is the development queue at a glance. Ready is the head of what
+// an agent takes next. Decisions are listed apart, because they wait on a person.
+type issueSection struct {
+	Ready           []api.Issue `json:"ready"`
+	ReadyTotal      int         `json:"ready_total"`
+	InProgress      []api.Issue `json:"in_progress"`
+	InProgressTotal int         `json:"in_progress_total"`
+	Decisions       []api.Issue `json:"decisions"`
+	DecisionsTotal  int         `json:"decisions_total"`
+	TriageTotal     int         `json:"triage_total"`
+}
+
 type countdownSection struct {
 	Items []api.Countdown `json:"items"`
 	Total int             `json:"total"`
@@ -144,6 +158,7 @@ type overviewData struct {
 	ReadArticles   []api.Article
 	Items          []api.ProjectItem
 	BlockedItems   []api.ProjectItem
+	Issues         []api.Issue
 	Countdowns     []api.Countdown
 	Events         []api.Event
 	Failures       []sectionFailure
@@ -173,9 +188,9 @@ func newOverviewCommand() *cobra.Command {
 		Short: "Show everything outstanding right now across the apps",
 		Long: "A cross-cutting snapshot: open tasks, habits still due today, the books and\n" +
 			"articles you are reading and what is next in each, the next and blocked\n" +
-			"project items with the projects they belong to, and approaching countdowns\n" +
-			"and events. Composed from those endpoints in one command so a dashboard\n" +
-			"needs a single call.",
+			"project items with the projects they belong to, the issues ready, claimed\n" +
+			"and awaiting a decision, and approaching countdowns and events. Composed\n" +
+			"from those endpoints in one command so a dashboard needs a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -255,6 +270,13 @@ func overviewFetches() []overviewFetch {
 			d.BlockedItems = blocked
 			return err
 		}},
+		// One read of every unclosed issue fills the whole section, already in
+		// the ready queue's order.
+		{sectionIssues, "issues", func(ctx context.Context, c *api.Client, d *overviewData) error {
+			issues, err := c.ListIssues(ctx, api.IssueFilter{}, "", "", api.DayZone(LocalZoneName()), nil)
+			d.Issues = issues
+			return err
+		}},
 		{sectionCountdowns, "countdowns", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			countdowns, err := c.ListCountdowns(ctx, nil)
 			d.Countdowns = countdowns
@@ -319,6 +341,7 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
 	countdowns := upcomingCountdowns(data.Countdowns, now)
 	events := upcomingEvents(data.Events, now)
+	queue := sortIssueQueue(data.Issues)
 
 	report := overviewReport{
 		SchemaVersion: overviewSchemaVersion,
@@ -350,6 +373,15 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			Blocked:      capItems(data.BlockedItems, limit),
 			BlockedTotal: len(data.BlockedItems),
 		},
+		Issues: issueSection{
+			Ready:           capItems(queue.ready, limit),
+			ReadyTotal:      len(queue.ready),
+			InProgress:      capItems(queue.inProgress, limit),
+			InProgressTotal: len(queue.inProgress),
+			Decisions:       capItems(queue.decisions, limit),
+			DecisionsTotal:  len(queue.decisions),
+			TriageTotal:     queue.triage,
+		},
 		Countdowns: countdownSection{
 			Items: capItems(countdowns, limit),
 			Total: len(countdowns),
@@ -371,14 +403,42 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	return report
 }
 
+// issueQueue is the unclosed issues sorted into what the overview reports.
+type issueQueue struct {
+	ready, inProgress, decisions []api.Issue
+	triage                       int
+}
+
+// sortIssueQueue keeps the API's order, which for unclosed issues is the ready
+// queue's. In progress counts only a live claim, because an expired one is
+// ready again.
+func sortIssueQueue(issues []api.Issue) issueQueue {
+	queue := issueQueue{ready: []api.Issue{}, inProgress: []api.Issue{}, decisions: []api.Issue{}}
+	for _, issue := range issues {
+		switch {
+		case issue.Status == api.IssueStatusTriage:
+			queue.triage++
+		case issue.Type == api.IssueTypeDecision:
+			queue.decisions = append(queue.decisions, issue)
+		case issue.IsReady:
+			queue.ready = append(queue.ready, issue)
+		case issue.Status == api.IssueStatusInProgress:
+			queue.inProgress = append(queue.inProgress, issue)
+		}
+	}
+	return queue
+}
+
 // actionableItems returns the items that can be taken now — not completed, not
-// archived, not blocked — in the order they are taken: the whole queue of the
-// highest-ranked project, then the next project's, each queue in its own
-// position order. This is the order `projects items next` prints.
+// archived, not blocked, and in at least one active project — in the order they
+// are taken: the whole queue of the highest-ranked project, then the next
+// project's, each queue in its own position order. This is the order `projects
+// items next` prints.
 //
-// A kind narrows the queue as well as the items. Only projects of that kind
-// rank, so an item that is also in a higher-ranked project of another kind is
-// queued where it sits in its own kind's project. An empty kind is every project.
+// A kind narrows the queue as well as the items. Only active projects of that
+// kind rank, so an item that is also in a higher-ranked project of another kind
+// is queued where it sits in its own kind's project. An empty kind is every
+// project.
 func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind string) []api.ProjectItem {
 	isBlocked := make(map[string]bool, len(blocked))
 	for _, item := range blocked {
@@ -388,6 +448,9 @@ func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind stri
 	var next []api.ProjectItem
 	for _, item := range itemsOfKind(all, kind) {
 		if item.Completed || item.Archived || isBlocked[item.ID] {
+			continue
+		}
+		if _, active := primaryProject(item, kind); !active {
 			continue
 		}
 		next = append(next, item)
@@ -411,7 +474,8 @@ func overviewProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []ap
 // then by where each is queued in that project. Creation time and id settle
 // what remains, which is also the whole order when the API sends no positions.
 func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
-	projectA, projectB := primaryProject(a, kind), primaryProject(b, kind)
+	projectA, _ := primaryProject(a, kind)
+	projectB, _ := primaryProject(b, kind)
 	if projectA.ID != projectB.ID {
 		return outranks(projectA, projectB)
 	}
@@ -445,7 +509,7 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 	longest := 0
 
 	for _, item := range items {
-		project := primaryProject(item, "")
+		project, _ := primaryProject(item, "")
 		if _, seen := queues[project.ID]; !seen {
 			order = append(order, project)
 		}
@@ -467,17 +531,18 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 	return interleaved
 }
 
-// primaryProject is the project an item is drawn under. An item can belong to
-// several, so it competes in the round of the highest-priority one rather than
-// once per membership — otherwise multi-project items get a slot per project.
-// Items belonging to no project share the zero value, which keeps them in one
-// queue instead of making each its own round. A kind limits the candidates to
-// projects of that kind; an empty kind considers every project.
-func primaryProject(item api.ProjectItem, kind string) api.Project {
+// primaryProject is the project an item is drawn under, and whether it has one.
+// An item can belong to several, so it competes in the round of the
+// highest-priority one rather than once per membership — otherwise
+// multi-project items get a slot per project. Only an active project draws
+// work, so an item with no active project is out of the queue. A kind limits
+// the candidates to projects of that kind. An empty kind considers every
+// project.
+func primaryProject(item api.ProjectItem, kind string) (api.Project, bool) {
 	var primary api.Project
 	found := false
 	for _, project := range item.Projects {
-		if kind != "" && project.Kind != kind {
+		if project.Status != api.ProjectStatusActive || (kind != "" && project.Kind != kind) {
 			continue
 		}
 		if !found || outranks(project, primary) {
@@ -485,7 +550,7 @@ func primaryProject(item api.ProjectItem, kind string) api.Project {
 			found = true
 		}
 	}
-	return primary
+	return primary, found
 }
 
 // outranks orders projects by the position the API already exposes. Positions
@@ -608,6 +673,7 @@ func printOverview(out, errOut io.Writer, r overviewReport) {
 	printBookSection(out, r.Books)
 	printArticleSection(out, r.Articles)
 	printProjectItemSection(out, r.ProjectItems)
+	printIssueSection(out, r.Issues)
 	printUpcomingSection(out, r.Countdowns, r.Events, r.GeneratedAt)
 
 	for _, warning := range r.Warnings {
@@ -712,6 +778,29 @@ func printProjectItemSection(out io.Writer, section projectItemSection) {
 		}
 		_, _ = fmt.Fprintf(tw, "  blocked:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
 	}
+	_ = tw.Flush()
+}
+
+func printIssueSection(out io.Writer, section issueSection) {
+	_, _ = fmt.Fprintf(out, "\nIssues (%d ready, %d in progress, %d %s, %d in triage)\n",
+		section.ReadyTotal, section.InProgressTotal, section.DecisionsTotal,
+		plural(section.DecisionsTotal, "decision", "decisions"), section.TriageTotal)
+	if section.ReadyTotal+section.InProgressTotal+section.DecisionsTotal == 0 {
+		_, _ = fmt.Fprintln(out, "  (none)")
+		return
+	}
+	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
+	rows := func(label string, issues []api.Issue) {
+		for i, issue := range issues {
+			if i >= printListCap {
+				break
+			}
+			_, _ = fmt.Fprintf(tw, "  %s\t%d\t%s\t%s\n", label, issue.Number, truncateTitle(issue.Title), orDash(strValue(issue.Repo)))
+		}
+	}
+	rows("decide:", section.Decisions)
+	rows("next:", section.Ready)
+	rows("claimed:", section.InProgress)
 	_ = tw.Flush()
 }
 

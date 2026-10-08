@@ -28,6 +28,7 @@
 @use 'components/submit_issue';
 @use 'components/add_edit_modal';
 @use 'components/listing_modal';
+@use 'components/markdown';
 @use 'components/datepicker';
 @use 'components/subnav';
 @use 'components/tooltips';
@@ -43,6 +44,7 @@
 @use 'pages/events';
 @use 'pages/habits';
 @use 'pages/home';
+@use 'pages/issues';
 @use 'pages/money_wasted';
 @use 'pages/logs';
 @use 'pages/recipes';

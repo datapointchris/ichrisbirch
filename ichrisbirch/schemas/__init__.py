@@ -51,6 +51,27 @@ from ichrisbirch.schemas.habitcategory import HabitCategoryUpdate
 from ichrisbirch.schemas.habitcompleted import HabitCompleted
 from ichrisbirch.schemas.habitcompleted import HabitCompletedCreate
 from ichrisbirch.schemas.habitday import HabitsDay
+from ichrisbirch.schemas.issue import Initiative
+from ichrisbirch.schemas.issue import InitiativeCreate
+from ichrisbirch.schemas.issue import InitiativeSummary
+from ichrisbirch.schemas.issue import InitiativeUpdate
+from ichrisbirch.schemas.issue import Issue
+from ichrisbirch.schemas.issue import IssueClaimRequest
+from ichrisbirch.schemas.issue import IssueClaimResult
+from ichrisbirch.schemas.issue import IssueComment
+from ichrisbirch.schemas.issue import IssueCommentCreate
+from ichrisbirch.schemas.issue import IssueCreate
+from ichrisbirch.schemas.issue import IssueDependencyCreate
+from ichrisbirch.schemas.issue import IssueDetail
+from ichrisbirch.schemas.issue import IssueLabel
+from ichrisbirch.schemas.issue import IssueLabelCreate
+from ichrisbirch.schemas.issue import IssueLabelUpdate
+from ichrisbirch.schemas.issue import IssuePriorityName
+from ichrisbirch.schemas.issue import IssueRankMove
+from ichrisbirch.schemas.issue import IssueReadyClaimRequest
+from ichrisbirch.schemas.issue import IssueSummary
+from ichrisbirch.schemas.issue import IssueUpdate
+from ichrisbirch.schemas.issue import IssueVocabulary
 from ichrisbirch.schemas.money_wasted import MoneyWasted
 from ichrisbirch.schemas.money_wasted import MoneyWastedCreate
 from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
@@ -171,6 +192,27 @@ __all__ = [
     'HabitCategoryCreate',
     'HabitCategoryUpdate',
     'HabitsDay',
+    'Initiative',
+    'InitiativeCreate',
+    'InitiativeSummary',
+    'InitiativeUpdate',
+    'Issue',
+    'IssueClaimRequest',
+    'IssueClaimResult',
+    'IssueComment',
+    'IssueCommentCreate',
+    'IssueCreate',
+    'IssueDependencyCreate',
+    'IssueDetail',
+    'IssueLabel',
+    'IssueLabelCreate',
+    'IssueLabelUpdate',
+    'IssuePriorityName',
+    'IssueRankMove',
+    'IssueReadyClaimRequest',
+    'IssueSummary',
+    'IssueUpdate',
+    'IssueVocabulary',
     'MoneyWasted',
     'MoneyWastedCreate',
     'MoneyWastedUpdate',

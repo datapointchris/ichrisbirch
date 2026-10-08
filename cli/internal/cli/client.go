@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/datapointchris/goclilogin"
 	"golang.org/x/oauth2"
@@ -54,5 +55,30 @@ func handleAPIError(err error) error {
 	if errors.As(err, &apiErr) && apiErr.Unauthorized() {
 		return fmt.Errorf("session rejected by the API — run `icb auth login` to re-authenticate")
 	}
+	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict && apiErr.Message != "" {
+		return refusal{apiErr}
+	}
 	return err
+}
+
+// refusal is a 409 the API explained. Its sentence is the whole error, printed
+// without the "API request failed (409 Conflict):" prefix APIError adds.
+type refusal struct{ *api.APIError }
+
+func (r refusal) Error() string { return r.Message }
+
+func (r refusal) Unwrap() error { return r.APIError }
+
+// handleArgumentAPIError is handleAPIError for a resource whose arguments the
+// API validates, so its 422 is a usage error.
+//
+// The API refuses an unknown vocabulary value with a 422 naming the values that
+// would have worked. Left as a generic failure it exits 1, and a caller that
+// retries on 1 and fixes its arguments on 2 retries a typo forever.
+func handleArgumentAPIError(err error) error {
+	var apiErr *api.APIError
+	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusUnprocessableEntity && apiErr.Message != "" {
+		return usageError{errors.New(apiErr.Message)}
+	}
+	return handleAPIError(err)
 }

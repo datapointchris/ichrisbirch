@@ -281,7 +281,7 @@ async function handleClearSearch() {
   display: grid;
   grid-template-columns: 3fr 2fr 1fr auto;
   gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
+  padding: var(--space-xs) var(--space-s);
   align-items: center;
 }
 
@@ -322,7 +322,7 @@ async function handleClearSearch() {
 .cooking-techniques__empty {
   color: var(--clr-gray-500);
   font-style: italic;
-  padding: var(--space-md);
+  padding: var(--space-m);
   text-align: center;
 }
 </style>

@@ -227,8 +227,8 @@ func printTrees(out io.Writer, g *graph.Graph, byID map[string]api.ProjectItem, 
 	}
 }
 
-func treeLine(row graph.Row, byID map[string]api.ProjectItem) string {
-	item := byID[row.ID]
+// treePrefix draws a row's indent: a rail per ancestor with siblings to come, then its branch.
+func treePrefix(row graph.Row) string {
 	var b strings.Builder
 	for i, last := range row.Last {
 		switch {
@@ -242,6 +242,13 @@ func treeLine(row graph.Row, byID map[string]api.ProjectItem) string {
 			b.WriteString("├── ")
 		}
 	}
+	return b.String()
+}
+
+func treeLine(row graph.Row, byID map[string]api.ProjectItem) string {
+	item := byID[row.ID]
+	var b strings.Builder
+	b.WriteString(treePrefix(row))
 	b.WriteString(itemMark(item))
 	b.WriteString(" ")
 	b.WriteString(strconv.Itoa(item.Number))

@@ -27,6 +27,13 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 - **`ops/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./ops/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
 - **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`). `cli/README.md` covers build, install and auth, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
+### Issues and Projects Are Separate Stores
+
+Issues (`/issues/`, `icb issues`) hold software work, written for the agent that will do it. Projects (`/projects/`, `icb projects`) hold personal projects, and are not an SDLC tracker — never file development work into one.
+The two share the item number sequence, so a bare number is never ambiguous between them.
+Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every read in `services/issue_readiness.py`; a client filters on those flags and never re-derives them.
+`docs/issues.md` explains the ready queue, the order and the claim.
+
 ### Vue Frontend
 
 - Pinia stores with `ApiError`, structured logging via `createLogger()`, `error: ref<ApiError | null>`
@@ -141,6 +148,7 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 **Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
 
 **Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`).
+`stubActions: true` stubs every function a setup store returns, pure helpers included, so a helper a view calls while rendering lives at module level and is imported (`priorityLabel` in `stores/issues.ts`).
 
 **E2E smoke-only pattern**: E2E tests are trimmed to smoke-level — each page keeps: CORS/API check, page load, sidebar nav, one CRUD roundtrip. Interaction-heavy tests (edit modals, toggles, filters, search) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 

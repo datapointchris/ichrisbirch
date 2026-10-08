@@ -2,6 +2,9 @@
 
 :root {
   --button-border-radius: 12px;
+  // The corner a panel, card or code block takes, so a design style can swap
+  // every one of them in one place.
+  --border-radius: var(--button-border-radius);
 
   // ─── Neumorphic shadow system ───────────────────────────────────────
   //

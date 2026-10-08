@@ -120,7 +120,7 @@ func TestAnItemDoesNotNameTheProjectRecovery(t *testing.T) {
 	err := runWith(t, apiNotFound("project item 999999 not found"),
 		"projects", "items", "show", "999999")
 
-	if strings.Contains(err.Error(), "Completed and dropped projects are hidden") {
+	if strings.Contains(err.Error(), projectHints[0]) {
 		t.Errorf("an item 404 named the project recovery: %q", err)
 	}
 }

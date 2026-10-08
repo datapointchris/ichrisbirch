@@ -139,6 +139,7 @@ nav:
       - Database: alembic.md
       - Scheduler: scheduler.md
       - Tasks: tasks.md
+      - Issues: issues.md
   - DevOps:
       - Overview: devops/index.md
       - Domain Names: domain_names.md

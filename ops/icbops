@@ -422,6 +422,15 @@ function dev-smoke() {
 
 # Test environment
 function test-run() {
+  # A help flag answers here. Passed to pytest like every other argument, it
+  # would wait behind the health check below, which takes unhealthy containers
+  # down with their volumes and starts them again.
+  case "${1:-}" in
+    -h | --help | help)
+      test-usage
+      return 0
+      ;;
+  esac
   cd "$ICHRISBIRCH_HOME" || exit
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
@@ -470,6 +479,8 @@ function test-run() {
 function test-usage() {
   echo "${green}Test commands:${reset}"
   echo "  ${blue}test run [path] [args]${reset}  Run pytest (reuses containers for fast iteration)"
+  echo ""
+  echo "Arguments after the path go to pytest. For pytest's own help: ${blue}uv run pytest --help${reset}"
   echo ""
   echo "Containers are left running after tests for fast re-runs."
   echo "Stop them with: ${blue}icbops testing stop${reset}"

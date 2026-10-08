@@ -54,8 +54,8 @@ func TestItemsOfKind_MultiProjectItemKeptOnceWhenAnyProjectMatches(t *testing.T)
 // was the oldest open item anywhere, so it was the answer to "what next" for a
 // pursuit that meant making something.
 func TestActionableItems_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
-	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", Kind: "chore", CreatedAt: fixedNow.AddDate(0, 0, -120)}
-	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", Kind: "build", CreatedAt: fixedNow.AddDate(0, 0, -30)}
+	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", Kind: "chore", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -120)}
+	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", Kind: "build", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -30)}
 
 	all := []api.ProjectItem{
 		{ID: "glove-80", CreatedAt: fixedNow.AddDate(0, 0, -119), Projects: []api.Project{selling}},
@@ -77,8 +77,8 @@ func TestActionableItems_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
 // work, and it waits its turn in the build queue. Ranking it by the life project
 // put it at the head of `next --kind build` ahead of the build queue's front.
 func TestActionableItems_AKindRanksAnItemOnlyAmongProjectsOfThatKind(t *testing.T) {
-	build := api.Project{ID: "build", Kind: "build", Position: 1}
-	life := api.Project{ID: "life", Kind: "life", Position: 0}
+	build := api.Project{ID: "build", Kind: "build", Status: api.ProjectStatusActive, Position: 1}
+	life := api.Project{ID: "life", Kind: "life", Status: api.ProjectStatusActive, Position: 0}
 
 	all := []api.ProjectItem{
 		{

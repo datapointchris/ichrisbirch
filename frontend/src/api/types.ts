@@ -628,11 +628,13 @@ export type ProjectKind = 'build' | 'chore' | 'life'
 /**
  * Where a project is in its lifecycle, from the project_statuses lookup table.
  * A project is a finite effort, so completing it is what hides it — there is no
- * separate archive flag the way items have one. `dropped` exists beside `done`
- * because `done` alone would force you to lie about anything you merely stopped
- * caring about, and it always carries a reason.
+ * separate archive flag the way items have one. `dropped` exists beside
+ * `completed` because `completed` alone would force you to lie about anything
+ * you merely stopped caring about, and it always carries a reason. `someday`
+ * hides like a closed project, but it is open work set aside, so the server
+ * leaves `closed_at` empty.
  */
-export type ProjectStatus = 'active' | 'completed' | 'dropped'
+export type ProjectStatus = 'active' | 'someday' | 'completed' | 'dropped'
 
 /** `all` is the absence of the filter, not a status a project can be in. */
 export type ProjectStatusFilter = ProjectStatus | 'all'
@@ -1261,4 +1263,209 @@ export interface StrainFilters {
   terpene?: string
   rating_min?: number
   q?: string
+}
+
+// ---------------------------------------------------------------------------
+// Issues
+// ---------------------------------------------------------------------------
+
+/**
+ * Where an issue is in its lifecycle. Compiled in rather than read from the
+ * vocabulary, because each value decides which actions a row offers.
+ */
+export type IssueStatus = 'triage' | 'open' | 'in_progress' | 'completed' | 'canceled'
+
+/** Enough of another issue to print it beside this one. */
+export interface IssueSummary {
+  id: string
+  number: number
+  title: string
+  status: IssueStatus
+}
+
+export interface InitiativeSummary {
+  id: string
+  name: string
+  status: InitiativeStatus
+  priority: number
+}
+
+/**
+ * An issue with everything a row needs.
+ *
+ * `priority` runs 0 to 4, where 0 is none and sorts last. `effective_priority`
+ * is what the queue sorts by: the issue's own, else its parent's or its
+ * initiative's, raised to the most urgent of anything it blocks.
+ * `deferred_until_date` is a calendar day; the claim and the stamps are instants.
+ */
+export interface Issue {
+  id: string
+  number: number
+  title: string
+  description: string | null
+  acceptance: string | null
+  repo: string | null
+  type: string
+  status: IssueStatus
+  status_reason: string | null
+  priority: number
+  effective_priority: number
+  rank: number
+  deferred_until_date: string | null
+  claimed_by: string | null
+  claim_expires_ts: string | null
+  initiative: InitiativeSummary | null
+  parent: IssueSummary | null
+  discovered_from: IssueSummary | null
+  duplicate_of: IssueSummary | null
+  labels: string[]
+  depends_on: IssueSummary[]
+  blocks: IssueSummary[]
+  child_count: number
+  open_child_count: number
+  comment_count: number
+  is_blocked: boolean
+  is_ready: boolean
+  created_ts: string
+  updated_ts: string
+  closed_ts: string | null
+}
+
+export interface IssueComment {
+  id: string
+  issue_id: string
+  body: string
+  author: string | null
+  created_ts: string
+}
+
+export interface IssueDetail extends Issue {
+  children: IssueSummary[]
+  comments: IssueComment[]
+}
+
+/** An issue is named by its number wherever the API takes a reference. */
+export interface IssueCreate {
+  title: string
+  description?: string
+  acceptance?: string
+  repo?: string
+  type?: string
+  status?: 'open' | 'triage'
+  priority?: number
+  deferred_until_date?: string
+  initiative?: string
+  parent?: number
+  discovered_from?: number
+  labels?: string[]
+  depends_on?: number[]
+}
+
+/** A null clears a field. `labels` replaces the whole set. */
+export interface IssueUpdate {
+  title?: string
+  description?: string | null
+  acceptance?: string | null
+  repo?: string | null
+  type?: string
+  status?: IssueStatus
+  status_reason?: string | null
+  priority?: number
+  deferred_until_date?: string | null
+  initiative?: string | null
+  parent?: number | null
+  discovered_from?: number | null
+  duplicate_of?: number | null
+  labels?: string[]
+}
+
+/** Exactly one neighbor: the issue lands directly before or after it. */
+export interface IssueRankMove {
+  before?: number
+  after?: number
+}
+
+/** The filters `GET /issues/` takes. Omitting `status` reads every unclosed issue. */
+export interface IssueFilters {
+  status?: IssueStatus | 'all'
+  repo?: string
+  type?: string
+  label?: string
+  initiative?: string
+  priority?: number
+  search?: string
+}
+
+export interface IssuePriorityName {
+  value: number
+  name: string
+}
+
+export interface IssueLabel {
+  slug: string
+  group_slug: string | null
+  description: string | null
+  open_issue_count: number
+}
+
+export interface IssueLabelCreate {
+  slug: string
+  group_slug?: string
+  description?: string
+}
+
+/** The slug is the key, so renaming a label is a delete and a create. */
+export interface IssueLabelUpdate {
+  group_slug?: string | null
+  description?: string | null
+}
+
+export interface IssueVocabulary {
+  statuses: IssueStatus[]
+  types: string[]
+  priorities: IssuePriorityName[]
+  initiative_statuses: InitiativeStatus[]
+  labels: IssueLabel[]
+}
+
+export type InitiativeStatus = 'active' | 'completed' | 'dropped'
+
+/**
+ * `open_count`, `completed_count` and `canceled_count` partition `issue_count`.
+ * `repos` lists the repos its issues are on, leaving out canceled ones.
+ */
+export interface Initiative {
+  id: string
+  name: string
+  description: string | null
+  status: InitiativeStatus
+  status_reason: string | null
+  priority: number
+  position: number
+  created_ts: string
+  closed_ts: string | null
+  issue_count: number
+  open_count: number
+  completed_count: number
+  canceled_count: number
+  repos: string[]
+}
+
+export interface InitiativeCreate {
+  name: string
+  description?: string
+  priority?: number
+}
+
+/**
+ * Dropping takes a `status_reason`. The server stamps `closed_ts` on a close,
+ * and clears it and the reason when the initiative returns to `active`.
+ */
+export interface InitiativeUpdate {
+  name?: string
+  description?: string | null
+  status?: InitiativeStatus
+  status_reason?: string | null
+  priority?: number
+  position?: number
 }

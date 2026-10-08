@@ -20,8 +20,8 @@ import (
 // project — one source of truth, and a project spanning an API, a CLI, and a TUI
 // lists all three.
 //
-// Status is active/done/dropped. ClosedAt and StatusReason are set by the
-// server as consequences of the transition, never sent by the client.
+// Status is one of the ProjectStatus values. ClosedAt and StatusReason are set
+// by the server as consequences of the transition, never sent by the client.
 type Project struct {
 	ID             string     `json:"id"`
 	Name           string     `json:"name"`
@@ -147,8 +147,12 @@ func (c *Client) DeleteProject(ctx context.Context, id string) error {
 // `completed` and not `done`: an item stores a `completed` boolean and every
 // reader renders that word, so one concept spelled two ways on a resource and
 // its own children was the mismatch this removed.
+//
+// `someday` is open work set aside. It is hidden like a closed project, records
+// no close, and lets a new active project take its name.
 const (
 	ProjectStatusActive    = "active"
+	ProjectStatusSomeday   = "someday"
 	ProjectStatusCompleted = "completed"
 	ProjectStatusDropped   = "dropped"
 	ProjectStatusAll       = "all"
@@ -156,7 +160,9 @@ const (
 
 // ProjectStatuses is what --status accepts: the lifecycle in order, then the
 // escape hatch.
-var ProjectStatuses = []string{ProjectStatusActive, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll}
+var ProjectStatuses = []string{
+	ProjectStatusActive, ProjectStatusSomeday, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll,
+}
 
 // What sort of work a project is. `kind` separates making something new from
 // the work that merely has to happen, which is what lets `items next` weight a

@@ -42,7 +42,7 @@ It calls `DockerComposeTestEnvironment.setup()`:
 
 Step 3 runs on every session. The test Postgres keeps its data on tmpfs, so a container that was stopped or recreated holds an empty database while every health check passes. Initialization is idempotent, so a database already at head passes through unchanged, and a new migration reaches pytest without restarting anything.
 
-The migrations run inside the pytest process. `_get_alembic_config()` passes `configure_logger=False`, so `alembic/env.py` skips `fileConfig`, which would otherwise disable every logger the process already created. alembic's own records reach stderr through the root handler `ichrisbirch/logger.py` installs.
+The migrations run inside the pytest process. `alembic_config()` passes `configure_logger=False`, so `alembic/env.py` skips `fileConfig`, which would otherwise disable every logger the process already created. alembic's own records reach stderr through the root handler `ichrisbirch/logger.py` installs.
 
 Any exception during setup ends the session through `pytest.exit`.
 

@@ -1,5 +1,6 @@
 @use '../components/card_row';
 @use '../components/sortable_table';
+@use '../components/toggle_chips';
 
 :root {
   --strain-tried-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-success) calc(l * 0.6) c h / 0.8);
@@ -84,47 +85,7 @@
   @include sortable_table.count-filter;
 }
 
-// The multi-select in the add/edit modal. A chip is pressed or raised, which is
-// the neumorphic vocabulary for on and off, so the state is readable without a
-// checkbox beside it.
+// The descriptor multi-select in the add/edit modal.
 .strain-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3xs);
-
-  &__chip {
-    padding-block: var(--space-3xs);
-    padding-inline: var(--space-xs);
-    border: none;
-    border-radius: var(--button-border-radius);
-    background-color: var(--clr-primary);
-    color: var(--clr-gray-400);
-    font-family: inherit;
-    font-size: var(--fs-300);
-    cursor: pointer;
-    box-shadow: var(--floating-box);
-    transition:
-      box-shadow 0.15s ease,
-      color 0.15s ease;
-
-    &:hover {
-      box-shadow: var(--bubble-box);
-    }
-
-    &--on {
-      color: var(--clr-accent-light);
-      box-shadow: var(--floating-box-pressed);
-
-      &:hover {
-        box-shadow: var(--bubble-box-pressed);
-      }
-    }
-
-    // A value the strain carries that the vocabulary does not define. Marked so
-    // it reads as the one chip to click off rather than as a choice.
-    &--undefined {
-      color: var(--clr-error);
-      font-style: italic;
-    }
-  }
+  @include toggle_chips.toggle-chips;
 }

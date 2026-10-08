@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -46,9 +47,9 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 			{ID: 3, Title: "Finished One", Author: "X", Progress: "read"},
 		},
 		Items: []api.ProjectItem{
-			{ID: "a", Title: "Older item", CreatedAt: fixedNow.AddDate(0, 0, -5)},
-			{ID: "b", Title: "Newer item", CreatedAt: fixedNow.AddDate(0, 0, -1)},
-			{ID: "c", Title: "Done item", Completed: true, CreatedAt: fixedNow},
+			{ID: "a", Title: "Older item", CreatedAt: fixedNow.AddDate(0, 0, -5), Projects: []api.Project{activeProject}},
+			{ID: "b", Title: "Newer item", CreatedAt: fixedNow.AddDate(0, 0, -1), Projects: []api.Project{activeProject}},
+			{ID: "c", Title: "Done item", Completed: true, CreatedAt: fixedNow, Projects: []api.Project{activeProject}},
 		},
 		BlockedItems: []api.ProjectItem{{ID: "b", Title: "Newer item"}},
 		Countdowns:   []api.Countdown{{ID: 1, Name: "Lease renewal", DueDate: "2026-08-05"}},
@@ -120,20 +121,28 @@ func TestBuildOverview_EmptyDataIsNotAFailure(t *testing.T) {
 	}
 }
 
+var activeProject = api.Project{ID: "live", Name: "Live", Status: api.ProjectStatusActive}
+
 func TestActionableItems_ExcludesWhatCannotBeTakenNow(t *testing.T) {
+	shelved := api.Project{ID: "shelf", Name: "Shelf", Status: api.ProjectStatusSomeday}
+	finished := api.Project{ID: "finished", Name: "Finished", Status: api.ProjectStatusCompleted}
+	in := []api.Project{activeProject}
+
 	all := []api.ProjectItem{
-		{ID: "new", Title: "Newest", CreatedAt: fixedNow},
-		{ID: "old", Title: "Oldest", CreatedAt: fixedNow.AddDate(0, 0, -10)},
-		{ID: "done", Title: "Completed", Completed: true, CreatedAt: fixedNow.AddDate(0, 0, -20)},
-		{ID: "archived", Title: "Archived", Archived: true, CreatedAt: fixedNow.AddDate(0, 0, -30)},
-		{ID: "blocked", Title: "Blocked", CreatedAt: fixedNow.AddDate(0, 0, -40)},
+		{ID: "new", Title: "Newest", CreatedAt: fixedNow, Projects: in},
+		{ID: "old", Title: "Oldest", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: in},
+		{ID: "done", Title: "Completed", Completed: true, CreatedAt: fixedNow.AddDate(0, 0, -20), Projects: in},
+		{ID: "archived", Title: "Archived", Archived: true, CreatedAt: fixedNow.AddDate(0, 0, -30), Projects: in},
+		{ID: "blocked", Title: "Blocked", CreatedAt: fixedNow.AddDate(0, 0, -40), Projects: in},
+		{ID: "shelved", Title: "Shelved", CreatedAt: fixedNow.AddDate(0, 0, -50), Projects: []api.Project{shelved}},
+		{ID: "finished", Title: "Finished", CreatedAt: fixedNow.AddDate(0, 0, -60), Projects: []api.Project{finished}},
 	}
 	blocked := []api.ProjectItem{{ID: "blocked"}}
 
 	next := actionableItems(all, blocked, "")
 
 	if len(next) != 2 {
-		t.Fatalf("next = %+v, want the two actionable items", next)
+		t.Fatalf("next = %s, want the two actionable items", itemIDs(next))
 	}
 	// Neither carries a position, so age is the whole order.
 	if next[0].ID != "old" || next[1].ID != "new" {
@@ -142,8 +151,8 @@ func TestActionableItems_ExcludesWhatCannotBeTakenNow(t *testing.T) {
 }
 
 func TestActionableItems_TakesProjectsByPositionThenItemsByPosition(t *testing.T) {
-	first := api.Project{ID: "first", Position: 1, CreatedAt: fixedNow}
-	second := api.Project{ID: "second", Position: 2, CreatedAt: fixedNow.AddDate(0, 0, -100)}
+	first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1, CreatedAt: fixedNow}
+	second := api.Project{ID: "second", Status: api.ProjectStatusActive, Position: 2, CreatedAt: fixedNow.AddDate(0, 0, -100)}
 
 	all := []api.ProjectItem{
 		{
@@ -171,8 +180,8 @@ func TestActionableItems_TakesProjectsByPositionThenItemsByPosition(t *testing.T
 }
 
 func TestActionableItems_AnItemIsQueuedByItsPlaceInItsHighestRankedProject(t *testing.T) {
-	first := api.Project{ID: "first", Position: 1}
-	second := api.Project{ID: "second", Position: 2}
+	first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1}
+	second := api.Project{ID: "second", Status: api.ProjectStatusActive, Position: 2}
 
 	all := []api.ProjectItem{
 		{
@@ -197,9 +206,26 @@ func TestActionableItems_AnItemIsQueuedByItsPlaceInItsHighestRankedProject(t *te
 	}
 }
 
+func TestActionableItems_AShelvedProjectDoesNotRankAnItem(t *testing.T) {
+	shelved := api.Project{ID: "shelved", Status: api.ProjectStatusSomeday, Position: 0}
+	first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1}
+	later := api.Project{ID: "later", Status: api.ProjectStatusActive, Position: 2}
+
+	all := []api.ProjectItem{
+		{ID: "also-shelved", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: []api.Project{shelved, later}},
+		{ID: "first-only", CreatedAt: fixedNow, Projects: []api.Project{first}},
+	}
+
+	next := actionableItems(all, nil, "")
+
+	if got := itemIDs(next); strings.Join(got, ",") != "first-only,also-shelved" {
+		t.Errorf("next = %s, want first-only then also-shelved, drawn under later", got)
+	}
+}
+
 func TestOverviewProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
-	hoard := api.Project{ID: "hoard", Name: "Sell Unused Shite", CreatedAt: fixedNow.AddDate(0, 0, -100)}
-	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", CreatedAt: fixedNow.AddDate(0, 0, -1)}
+	hoard := api.Project{ID: "hoard", Name: "Sell Unused Shite", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -100)}
+	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -1)}
 
 	all := []api.ProjectItem{
 		{ID: "sell-1", CreatedAt: fixedNow.AddDate(0, 0, -90), Projects: []api.Project{hoard}},
@@ -221,8 +247,8 @@ func TestOverviewProjectItems_OneProjectCannotFillTheBoard(t *testing.T) {
 }
 
 func TestOverviewProjectItems_MultiProjectItemTakesOneSlot(t *testing.T) {
-	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", CreatedAt: fixedNow.AddDate(0, 0, -100)}
-	linux := api.Project{ID: "linux", Name: "Linux-first", CreatedAt: fixedNow.AddDate(0, 0, -50)}
+	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -100)}
+	linux := api.Project{ID: "linux", Name: "Linux-first", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -50)}
 
 	all := []api.ProjectItem{
 		{ID: "mac-mini", CreatedAt: fixedNow, Projects: []api.Project{linux, selling}},
@@ -261,6 +287,38 @@ func TestBooksByProgress_PreservesServerOrder(t *testing.T) {
 
 	if len(unread) != 2 || unread[0].ID != 1 || unread[1].ID != 3 {
 		t.Errorf("unread = %+v, want ids 1 then 3 in server (priority) order", unread)
+	}
+}
+
+// An expired claim sorts as ready, not in progress. A decision in triage
+// counts as triage.
+func TestSortIssueQueue_KeepsDecisionsOutOfTheAgentQueue(t *testing.T) {
+	queue := sortIssueQueue([]api.Issue{
+		{Number: 1, Type: "bug", Status: api.IssueStatusOpen, IsReady: true},
+		{Number: 2, Type: api.IssueTypeDecision, Status: api.IssueStatusOpen, IsReady: true},
+		{Number: 3, Type: "task", Status: api.IssueStatusInProgress, IsReady: true},
+		{Number: 4, Type: "task", Status: api.IssueStatusInProgress},
+		{Number: 5, Type: api.IssueTypeDecision, Status: api.IssueStatusTriage},
+		{Number: 6, Type: "chore", Status: api.IssueStatusOpen, IsBlocked: true},
+	})
+	numbers := func(issues []api.Issue) []int {
+		out := []int{}
+		for _, issue := range issues {
+			out = append(out, issue.Number)
+		}
+		return out
+	}
+	if got := numbers(queue.ready); !slices.Equal(got, []int{1, 3}) {
+		t.Errorf("ready = %v, want 1 then the expired claim 3", got)
+	}
+	if got := numbers(queue.inProgress); !slices.Equal(got, []int{4}) {
+		t.Errorf("in progress = %v, want the live claim 4", got)
+	}
+	if got := numbers(queue.decisions); !slices.Equal(got, []int{2}) {
+		t.Errorf("decisions = %v, want 2 alone", got)
+	}
+	if queue.triage != 1 {
+		t.Errorf("triage = %d, want the triaged decision counted there", queue.triage)
 	}
 }
 
@@ -561,7 +619,7 @@ func TestPrintOverview_SeparatesBooksFromArticles(t *testing.T) {
 		CurrentArticle: &api.Article{ID: 5, Title: "An Article"},
 		UnreadArticles: []api.Article{{ID: 5, Title: "An Article"}, {ID: 6, Title: "A Queued Article"}},
 		Items: []api.ProjectItem{
-			{ID: "a", Title: "Glove 80", Projects: []api.Project{{Name: "Sell Unused Shite"}}, CreatedAt: fixedNow},
+			{ID: "a", Title: "Glove 80", Projects: []api.Project{{Name: "Sell Unused Shite", Status: api.ProjectStatusActive}}, CreatedAt: fixedNow},
 		},
 	}, fixedNow, defaultOverviewLimit)
 

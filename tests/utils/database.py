@@ -295,6 +295,9 @@ def get_test_data() -> dict[str, dict[str, Any]]:
         'habitcategories': {'model': models.HabitCategory, 'data': tests.test_data.habitcategories.BASE_DATA},
         'habits': {'model': models.Habit, 'data': []},  # Inserted via HabitCategory.habits relationship
         'habitscompleted': {'model': models.HabitCompleted, 'data': []},  # Inserted via HabitCategory.completed_habits relationship
+        'issues': {'model': models.Issue, 'data': tests.test_data.issues.BASE_DATA},
+        'issue_initiatives': {'model': models.Initiative, 'data': tests.test_data.issues.INITIATIVES},
+        'issue_labels': {'model': models.IssueLabel, 'data': tests.test_data.issues.LABELS},
         'money_wasted': {'model': models.MoneyWasted, 'data': tests.test_data.money_wasted.BASE_DATA},
         'patterns': {'model': models.Pattern, 'data': tests.test_data.patterns.BASE_DATA},
         'projects': {'model': models.Project, 'data': tests.test_data.projects.BASE_DATA},
