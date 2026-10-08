@@ -154,7 +154,7 @@ func TestService_LoginAndLogoutAreRefused(t *testing.T) {
 func TestService_ASecretWithoutItsClientIsRefused(t *testing.T) {
 	asService(t, serviceIDP(t).URL, "http://127.0.0.1:9", serviceSecret)
 	t.Setenv("ICB_CLIENT_ID", "")
-	for _, args := range [][]string{{"projects", "items", "search", "sync"}, {"auth", "status"}, {"auth", "token"}} {
+	for _, args := range [][]string{{"projects", "items", "search", "sync"}, {"auth", "status"}, {"auth", "token"}, {"auth", "login"}, {"auth", "logout"}} {
 		_, err := runService(t, args...)
 		if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_ID") {
 			t.Errorf("%v: got %v, want it refused naming ICB_CLIENT_ID", args, err)

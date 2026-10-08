@@ -46,6 +46,9 @@ func newAuthLoginCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
+			if err := cfg.CheckService(); err != nil {
+				return err
+			}
 			if cfg.IsService() {
 				return fmt.Errorf("ICB_CLIENT_SECRET is set, so icb authenticates as service client %s with no login; unset it to log in as a person", cfg.ClientID)
 			}
@@ -101,6 +104,9 @@ func newAuthLogoutCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
+			if err := cfg.CheckService(); err != nil {
+				return err
+			}
 			if cfg.IsService() {
 				return fmt.Errorf("ICB_CLIENT_SECRET is set, so icb authenticates as service client %s and stores no token to remove; unset it to log out as a person", cfg.ClientID)
 			}
