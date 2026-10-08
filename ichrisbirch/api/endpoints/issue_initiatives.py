@@ -33,7 +33,11 @@ ALL_STATUSES = 'all'
 
 
 def path_initiative(id: str, session: DbSession) -> models.Initiative:
-    """Resolve the `{id}` segment, which is a UUID or the initiative's name."""
+    """Resolve the `{id}` segment, which is a UUID or the initiative's name.
+
+    The segment is a path, not a single segment, because a name may hold a
+    slash: the client escapes it, and the path is decoded before routing.
+    """
     return resolve_initiative(session, id)
 
 
@@ -167,7 +171,7 @@ async def create(initiative: schemas.InitiativeCreate, session: DbSession):
     return counted(session, db_obj)
 
 
-@router.get('/{id}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
+@router.get('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
 async def read_one(initiative: InitiativeFromPath, session: DbSession):
     return counted(session, initiative)
 
@@ -188,7 +192,7 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
         update_data['closed_ts'] = datetime.now(UTC)
 
 
-@router.patch('/{id}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
+@router.patch('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
 async def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     resulting_status = update_data.get('status', initiative.status)
@@ -203,7 +207,7 @@ async def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdat
     return counted(session, initiative)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete(initiative: InitiativeFromPath, session: DbSession):
     """Delete the initiative. Its issues stay, and stop inheriting its priority."""
     session.delete(initiative)

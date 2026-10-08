@@ -45,6 +45,17 @@ def test_an_initiative_answers_to_its_name(client):
     assert ok(client.get(f'{INITIATIVES}Ship the issue tracker/'))['priority'] == 2
 
 
+# A client escapes the slash, and the path is decoded before routing, so the
+# name arrives split across segments.
+def test_a_name_holding_a_slash_addresses_its_initiative(client):
+    ok(client.post(INITIATIVES, json={'name': 'library/consumer pair'}), status.HTTP_201_CREATED)
+    path = f'{INITIATIVES}library%2Fconsumer%20pair/'
+    assert ok(client.get(path))['name'] == 'library/consumer pair'
+    assert ok(client.patch(path, json={'priority': 3}))['priority'] == 3
+    assert client.delete(path).status_code == status.HTTP_204_NO_CONTENT
+    assert client.get(path).status_code == status.HTTP_404_NOT_FOUND
+
+
 def test_counts_partition_the_issues_and_repos_name_the_work_done_or_left(client):
     created = {
         repo: ok(
