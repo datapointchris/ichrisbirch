@@ -237,13 +237,27 @@ describe('AdminSystemView', () => {
     expect(wrapper.text()).toContain('No recent errors')
   })
 
-  it('shows docker empty state when no containers', () => {
-    const noDocker = {
-      ...testSystemHealth,
-      docker: [],
-    }
-    const wrapper = createSystemWrapper({ systemHealth: noDocker })
+  it('shows docker as unavailable when the probe got no answer', () => {
+    const wrapper = createSystemWrapper({ systemHealth: { ...testSystemHealth, docker: null } })
     expect(wrapper.text()).toContain('Docker status unavailable')
+  })
+
+  it('tells an empty container list apart from an unavailable daemon', () => {
+    const wrapper = createSystemWrapper({ systemHealth: { ...testSystemHealth, docker: [] } })
+    expect(wrapper.text()).toContain('No containers found')
+    expect(wrapper.text()).not.toContain('Docker status unavailable')
+  })
+
+  it('shows the database as unavailable rather than as zeros', () => {
+    const wrapper = createSystemWrapper({ systemHealth: { ...testSystemHealth, database: null } })
+    expect(wrapper.text()).toContain('Database stats unavailable')
+    expect(wrapper.text()).not.toContain('Table Row Counts')
+  })
+
+  it('shows redis as unavailable rather than as zeros', () => {
+    const wrapper = createSystemWrapper({ systemHealth: { ...testSystemHealth, redis: null } })
+    expect(wrapper.text()).toContain('Redis stats unavailable')
+    expect(wrapper.text()).not.toContain('Uptime')
   })
 })
 

@@ -1,180 +1,68 @@
 # Admin Dashboard
 
-The admin dashboard provides administrative features for monitoring and managing the ichrisbirch application.
+The admin area is the Vue app's `/admin` pages, and only an admin user reaches them.
+The Vue router checks the `requiresAdmin` route meta, which spares a non-admin a page of errors.
+The API enforces it with a router-level `get_admin_user` dependency on the admin router, in `ichrisbirch/api/main.py`.
 
-## Access
+## System
 
-**URL:** `https://app.docker.localhost/admin/` (development)
+`/admin` shows the server, the `icb-` containers, Postgres, Redis and the disk.
+Beside them it lists the API's recent 4xx and 5xx responses.
+With auto-refresh on, the page rereads both on a timer.
 
-**Requirements:**
+The recent errors come from the `recent_errors` ring buffer in `ichrisbirch/api/middleware.py`.
+Each API process keeps its own, up to the buffer's `maxlen`, and it empties when the process restarts.
 
-- Must be logged in as an admin user
-- Admin users have `is_admin=True` in the database
+The deploy color is read from `/var/lib/ichrisbirch/bluegreen-state`.
+Outside production that file is absent, so no color is shown.
 
-## Features
+### A slow dependency reads as unavailable, and holds no other request
 
-### Live Logs
+The health read is a `def` handler, so FastAPI runs it in its threadpool.
+Every probe in it is blocking I/O.
+On the event loop, one slow probe would hold every other request the worker is serving.
 
-**URL:** `/admin/logs/`
+A probe that gets no answer puts `null` in its section of the response, and the page shows that section as unavailable.
+Zeros would read as a measured, idle dependency.
+`PROBE_TIMEOUT_SECONDS` in `ichrisbirch/api/endpoints/admin.py` sets every bound:
 
-Real-time log streaming from all services via WebSocket.
+- **Docker** makes several API calls per container. Each call has the client's API timeout, and the whole probe runs on one worker thread under the same deadline.
+- **Postgres** sets a `statement_timeout` local to the probe's transaction, so each of its queries is cancelled at the bound.
+- **Redis** gets its own client with a connect and read timeout. It retries a dropped connection once and never a command that timed out, because that command may already have run. redis-py's own default sets no timeout and retries connection errors and timeouts alike with exponential backoff. Under that default a refused AUTH takes around 11 s to fail.
 
-#### How It Works
+The API mounts the Docker socket to read container status.
+CI's compose file drops that mount, so the Docker section always reads as unavailable there.
 
-1. **Flask login sets JWT cookie:** When you log in via the Flask app, a JWT token is requested from the API and stored as a cookie on the parent domain (e.g., `docker.localhost`)
+## Scheduler
 
-2. **WebSocket connects with cookie auth:** The JavaScript WebSocket client connects to `wss://api.docker.localhost/admin/log-stream/`. The browser automatically sends the `access_token` cookie.
+`/admin/scheduler` lists the APScheduler jobs in the jobstore with their next run.
+Each can be paused, resumed or deleted.
+The page also shows the run history the scheduler records in the database.
 
-3. **API validates JWT and streams logs:** The WebSocket endpoint validates the JWT token, checks for admin privileges, then streams log lines from all services.
+## Users
 
-#### Technical Details
+`/admin/users` lists every user account.
 
-- **WebSocket endpoint:** `/admin/log-stream/`
-- **Authentication:** JWT cookie (`access_token`)
-- **Admin check:** User must have `is_admin=True`
-- **Log source:** Reads from `LOG_DIR` (default: `/var/log/ichrisbirch`)
-- **ANSI stripping:** Color codes removed server-side for clean transmission
-- **Client colorization:** JavaScript re-applies colors based on log level
+## Config
 
-#### Log Format
+`/admin/config` shows every settings section.
+A value is masked when its field name contains `key`, `secret`, `password` or `token`.
+Masking goes by the name alone, so a secret stored under any other name is shown.
 
-Logs use structlog's ConsoleRenderer format:
+## Smoke Tests
 
-```text
-2026-01-14T08:14:21Z [info     ] user_login_success    filename=auth.py func_name=login lineno=45 user_id=123
-```
+`/admin/smoke` calls every GET route in the API's own route table and reports each status.
+It runs in-process through `httpx2.ASGITransport`, as the requesting admin.
+A route with a path parameter or a required query parameter is skipped, because there is no value to call it with.
 
-The client-side JavaScript colorizes log levels:
+## Design
 
-- `[debug   ]` - Green
-- `[info    ]` - Light blue
-- `[warning ]` - Yellow
-- `[error   ]` - Red
-- `[critical]` - Magenta
+`/admin/design` previews the color themes against the shadow styles and the segmented toggle experiments.
+It is a workbench for the design-style switcher rather than an admin function.
 
-### Log Graphs
+## Log Stream
 
-**URL:** `/admin/log-graphs/`
-
-Analytics and visualization of log data.
-
-#### Capabilities
-
-- Reads all `*.log` files from `LOG_DIR`
-- Parses structlog format into structured data with Polars
-- Generates charts showing:
-  - Log count by level
-  - Log timeline
-  - Logs by source file
-  - Error patterns
-
-#### Data Schema
-
-Each log line is parsed into:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `log_level` | Categorical | DEBUG, INFO, WARNING, ERROR, CRITICAL |
-| `timestamp` | Datetime | When the log was created |
-| `filename` | String | Source file name |
-| `func_name` | String | Function that logged |
-| `lineno` | Int16 | Line number |
-| `message` | String | Log message/event |
-| `source` | String | Log file source (api, app, scheduler, etc.) |
-
-### Traefik Dashboard
-
-**Development URL:** `https://dashboard.docker.localhost/`
-**Credentials:** `dev` / `devpass`
-
-**Test URL:** `https://dashboard.test.localhost:8443/`
-**Credentials:** `test` / `testpass`
-
-The Traefik dashboard provides:
-
-- Real-time router and service status
-- Request/response metrics
-- Health check status
-- Configuration details
-
-## Configuration
-
-### Enabling File Logging
-
-For the live logs feature to work, services must write to log files:
-
-```yaml
-# docker-compose.dev.yml
-api:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/api.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
-
-app:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/app.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
-```
-
-### JWT Cookie for WebSocket Auth
-
-The JWT cookie is automatically set when logging into the Flask app:
-
-```python
-# ichrisbirch/app/routes/auth.py
-response.set_cookie(
-    'access_token',
-    f'Bearer {access_token}',
-    httponly=True,
-    secure=request.is_secure,
-    samesite='Lax',
-    domain=parent_domain,  # e.g., 'docker.localhost'
-)
-```
-
-The cookie is set on the parent domain to allow cross-subdomain access (app.docker.localhost → api.docker.localhost).
-
-## Troubleshooting
-
-### Live Logs Not Showing
-
-1. **Check LOG_FILE is set:** Verify the environment variable is configured in docker-compose
-2. **Check volume mount:** Ensure `ichrisbirch_logs` volume is mounted to `/var/log/ichrisbirch`
-3. **Check admin access:** Verify you're logged in as an admin user
-4. **Check browser console:** Look for WebSocket connection errors
-
-### WebSocket Connection Failed
-
-1. **Check JWT cookie:** Open browser DevTools → Application → Cookies → Look for `access_token`
-2. **Check cookie domain:** Cookie should be on parent domain (e.g., `docker.localhost`)
-3. **Re-login:** Log out and log back in to refresh the JWT cookie
-4. **Check Traefik:** Ensure Traefik is routing WebSocket connections correctly
-
-### Log Graphs Empty
-
-1. **Check LOG_DIR exists:** The directory `/var/log/ichrisbirch` must exist and contain `.log` files
-2. **Check log format:** Logs must be in structlog ConsoleRenderer format
-3. **Check file permissions:** The app user must be able to read the log files
-
-## API Endpoints
-
-### WebSocket Log Stream
-
-```yaml
-GET wss://api.docker.localhost/admin/log-stream/
-```
-
-**Authentication:** `access_token` cookie with valid JWT
-
-**Response:** Stream of log lines (one per WebSocket message)
-
-**Close codes:**
-
-- `1008` (Policy Violation): No token, invalid token, or non-admin user
-- `1000` (Normal): Client disconnected
-
-### Log Graphs Data
-
-The log graphs page uses server-side rendering with Polars DataFrames, so there's no separate API endpoint for the data.
+The API also serves a `/admin/log-stream/` WebSocket that tails every `*.log` file in `LOG_DIR`.
+It authenticates with a `ws_auth` cookie holding an HMAC token signed with `internal_service_key`.
+No current client issues that cookie or opens the socket.
+Service logs are read in Loki, as [Logging Configuration](logging-configuration.md) describes.

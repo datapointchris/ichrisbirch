@@ -5,6 +5,8 @@ import re
 import shutil
 import time
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,7 @@ from fastapi import status
 from pygtail import Pygtail
 from sqlalchemy import select
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
@@ -279,44 +282,73 @@ async def run_smoke_tests_endpoint(
 
 SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
 
+# Each probe call, and the Docker probe as a whole, gets this long before it reads as unavailable.
+PROBE_TIMEOUT_SECONDS = 2
 
-def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
-    """Get status of Docker containers, gracefully handling unavailability."""
-    try:
-        client = docker.from_env()
-        containers = client.containers.list(all=True, filters={'name': 'icb-'})
-        return [
-            schemas.admin.DockerContainerStatus(
-                name=c.name,
-                status=c.status,
-                started_at=c.attrs.get('State', {}).get('StartedAt'),
-                image=','.join(c.image.tags) if c.image.tags else c.image.short_id,
+TABLE_ROW_COUNTS_SQL = text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')
+DATABASE_SIZE_SQL = text('SELECT pg_database_size(current_database())')
+CONNECTION_COUNT_SQL = text('SELECT count(*) FROM pg_stat_activity')
+
+# A slow daemon holds one thread at most, however often the page refreshes. A health read arriving
+# meanwhile queues behind that thread until its own deadline.
+_docker_probe_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='docker-probe')
+
+
+def _list_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
+    with closing(docker.from_env(timeout=PROBE_TIMEOUT_SECONDS)) as client:
+        statuses = []
+        for container in sorted(client.containers.list(all=True, filters={'name': 'icb-'}), key=lambda c: c.name):
+            image = container.image
+            statuses.append(
+                schemas.admin.DockerContainerStatus(
+                    name=container.name,
+                    status=container.status,
+                    started_at=container.attrs.get('State', {}).get('StartedAt'),
+                    image=','.join(image.tags) if image.tags else image.short_id,
+                )
             )
-            for c in sorted(containers, key=lambda c: c.name)
-        ]
+        return statuses
+
+
+def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus] | None:
+    """None when the daemon errors or misses the deadline. An empty list means it answered and no container matched."""
+    probe = _docker_probe_executor.submit(_list_docker_containers)
+    try:
+        return probe.result(timeout=PROBE_TIMEOUT_SECONDS)
+    except TimeoutError:
+        probe.cancel()
+        logger.warning('docker_status_unavailable', error=f'no answer within {PROBE_TIMEOUT_SECONDS}s')
+        return None
     except Exception as e:
         logger.warning('docker_status_unavailable', error=str(e))
-        return []
+        return None
 
 
-def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats:
+def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats | None:
     """Get database statistics via raw SQL."""
-    rows = session.execute(text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')).fetchall()
+    try:
+        session.execute(
+            text("SELECT set_config('statement_timeout', :timeout_ms, true)"),
+            {'timeout_ms': str(round(PROBE_TIMEOUT_SECONDS * 1000))},
+        )
+        rows = session.execute(TABLE_ROW_COUNTS_SQL).fetchall()
+        size_result = session.execute(DATABASE_SIZE_SQL).scalar()
+        conn_result = session.execute(CONNECTION_COUNT_SQL).scalar()
+    except OperationalError as e:
+        session.rollback()
+        logger.warning('database_stats_unavailable', error=str(e))
+        return None
+
     tables = [schemas.admin.TableRowCount(schema_name=r[0], table_name=r[1], row_count=r[2]) for r in rows]
-
-    size_result = session.execute(text('SELECT pg_database_size(current_database())')).scalar()
     total_size_mb = round((size_result or 0) / (1024 * 1024), 2)
-
-    conn_result = session.execute(text('SELECT count(*) FROM pg_stat_activity')).scalar()
-
     return schemas.admin.DatabaseStats(tables=tables, total_size_mb=total_size_mb, active_connections=conn_result or 0)
 
 
-def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats:
+def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats | None:
     """Get Redis server statistics."""
     try:
-        client = get_redis_client(settings)
-        info = client.info()
+        with get_redis_client(settings, read_timeout=PROBE_TIMEOUT_SECONDS) as client:
+            info = client.info()
         db_info = info.get(f'db{settings.redis.db}', {})
         key_count = db_info.get('keys', 0) if isinstance(db_info, dict) else 0
         return schemas.admin.RedisStats(
@@ -327,7 +359,7 @@ def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats:
         )
     except Exception as e:
         logger.warning('redis_stats_unavailable', error=str(e))
-        return schemas.admin.RedisStats(key_count=0, memory_used_human='N/A', connected_clients=0, uptime_seconds=0)
+        return None
 
 
 def _get_disk_usage() -> schemas.admin.DiskUsage:
@@ -366,7 +398,7 @@ def _serialize_settings_section(section: object) -> dict:
 
 
 @router.get('/system/health/', response_model=schemas.admin.SystemHealth)
-async def get_system_health(
+def get_system_health(
     session: DbSession,
     settings: Settings = Depends(get_settings),
 ):

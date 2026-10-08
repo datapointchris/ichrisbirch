@@ -46,10 +46,16 @@
       <div class="admin-section">
         <h2>Docker Containers</h2>
         <div
-          v-if="store.systemHealth.docker.length === 0"
+          v-if="store.systemHealth.docker === null"
           class="admin__empty"
         >
           Docker status unavailable
+        </div>
+        <div
+          v-else-if="store.systemHealth.docker.length === 0"
+          class="admin__empty"
+        >
+          No containers found
         </div>
         <table
           v-else
@@ -84,48 +90,65 @@
       <!-- Database Stats -->
       <div class="admin-section">
         <h2>Database</h2>
-        <div class="admin-kv-list admin-kv-list--inline">
-          <div class="admin-kv">
-            <strong>Size</strong>
-            <span>{{ store.systemHealth.database.total_size_mb }} MB</span>
-          </div>
-          <div class="admin-kv">
-            <strong>Active Connections</strong>
-            <span>{{ store.systemHealth.database.active_connections }}</span>
-          </div>
-          <div class="admin-kv">
-            <strong>Tables</strong>
-            <span>{{ store.systemHealth.database.tables.length }}</span>
-          </div>
+        <div
+          v-if="store.systemHealth.database === null"
+          class="admin__empty"
+        >
+          Database stats unavailable
         </div>
-        <details class="admin-details">
-          <summary>Table Row Counts</summary>
-          <table class="admin-table admin-table--compact">
-            <thead>
-              <tr>
-                <th>Schema</th>
-                <th>Table</th>
-                <th>Rows</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="table in store.systemHealth.database.tables"
-                :key="`${table.schema_name}.${table.table_name}`"
-              >
-                <td class="admin-table__mono">{{ table.schema_name }}</td>
-                <td class="admin-table__mono">{{ table.table_name }}</td>
-                <td>{{ table.row_count.toLocaleString() }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </details>
+        <template v-else>
+          <div class="admin-kv-list admin-kv-list--inline">
+            <div class="admin-kv">
+              <strong>Size</strong>
+              <span>{{ store.systemHealth.database.total_size_mb }} MB</span>
+            </div>
+            <div class="admin-kv">
+              <strong>Active Connections</strong>
+              <span>{{ store.systemHealth.database.active_connections }}</span>
+            </div>
+            <div class="admin-kv">
+              <strong>Tables</strong>
+              <span>{{ store.systemHealth.database.tables.length }}</span>
+            </div>
+          </div>
+          <details class="admin-details">
+            <summary>Table Row Counts</summary>
+            <table class="admin-table admin-table--compact">
+              <thead>
+                <tr>
+                  <th>Schema</th>
+                  <th>Table</th>
+                  <th>Rows</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="table in store.systemHealth.database.tables"
+                  :key="`${table.schema_name}.${table.table_name}`"
+                >
+                  <td class="admin-table__mono">{{ table.schema_name }}</td>
+                  <td class="admin-table__mono">{{ table.table_name }}</td>
+                  <td>{{ table.row_count.toLocaleString() }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </details>
+        </template>
       </div>
 
       <!-- Redis Stats -->
       <div class="admin-section">
         <h2>Redis</h2>
-        <div class="admin-kv-list admin-kv-list--inline">
+        <div
+          v-if="store.systemHealth.redis === null"
+          class="admin__empty"
+        >
+          Redis stats unavailable
+        </div>
+        <div
+          v-else
+          class="admin-kv-list admin-kv-list--inline"
+        >
           <div class="admin-kv">
             <strong>Memory</strong>
             <span>{{ store.systemHealth.redis.memory_used_human }}</span>

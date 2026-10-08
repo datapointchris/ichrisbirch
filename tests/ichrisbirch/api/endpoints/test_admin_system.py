@@ -1,14 +1,41 @@
 """Tests for admin system health, error buffer, and config API endpoints."""
 
+import asyncio
+import socket
+import threading
+import time
+from collections.abc import Callable
 from unittest.mock import patch
 
+import httpx2
+import pytest
 from fastapi import status
+from sqlalchemy import text
 
+from ichrisbirch.api.endpoints import admin
+from ichrisbirch.database.session import create_session
 from tests.util import show_status_and_response
+from tests.utils.database import get_test_runner_settings
 
 HEALTH_ENDPOINT = '/admin/system/health/'
 ERRORS_ENDPOINT = '/admin/system/errors/'
 CONFIG_ENDPOINT = '/admin/config/'
+
+SLOW_PROBE_SECONDS = 2
+SLOW_LISTING_SECONDS = 1
+SHORT_PROBE_TIMEOUT_SECONDS = 0.2
+PROBE_DEADLINE_SECONDS = 2
+
+
+def finish_within[T](seconds: float, probe: Callable[[], T]) -> T:
+    """A probe that never returns fails the test at the deadline instead of hanging the suite."""
+    result: list[T] = []
+    thread = threading.Thread(target=lambda: result.append(probe()), daemon=True)
+    thread.start()
+    thread.join(seconds)
+    if thread.is_alive():
+        pytest.fail(f'probe still running after {seconds}s')
+    return result[0]
 
 
 class TestSystemHealthAuth:
@@ -67,6 +94,89 @@ class TestSystemHealth:
         data = response.json()
         assert data['disk']['total_gb'] > 0
         assert data['disk']['percent_used'] > 0
+
+
+class TestSystemHealthProbes:
+    @pytest.mark.asyncio
+    async def test_a_slow_probe_does_not_delay_a_concurrent_request(self, test_api_logged_in_admin):
+        probe_started = threading.Event()
+        started_at: list[float] = []
+
+        def slow_redis_probe(settings):
+            started_at.append(time.monotonic())
+            probe_started.set()
+            time.sleep(SLOW_PROBE_SECONDS)
+
+        # TestClient runs each request on its own event loop, which would hide the stall, so one loop is driven here as uvicorn drives it.
+        transport = httpx2.ASGITransport(app=test_api_logged_in_admin.app)
+        with (
+            patch('ichrisbirch.api.endpoints.admin._get_docker_containers', return_value=[]),
+            patch('ichrisbirch.api.endpoints.admin._get_redis_stats', slow_redis_probe),
+        ):
+            async with httpx2.AsyncClient(transport=transport, base_url='http://test') as client:
+                health = asyncio.create_task(client.get(HEALTH_ENDPOINT))
+                assert await asyncio.to_thread(probe_started.wait, SLOW_PROBE_SECONDS * 2)
+                errors = await client.get(ERRORS_ENDPOINT)
+                answered_after = time.monotonic() - started_at[0]
+                health_response = await health
+
+        assert errors.status_code == status.HTTP_200_OK, show_status_and_response(errors)
+        assert health_response.status_code == status.HTTP_200_OK, show_status_and_response(health_response)
+        assert health_response.json()['redis'] is None
+        assert answered_after < SLOW_PROBE_SECONDS / 2
+
+    def test_a_redis_that_refuses_auth_reads_as_unavailable_before_the_probe_timeout(self):
+        settings = get_test_runner_settings()
+        settings.redis.password = 'not-the-test-redis-password'
+
+        started = time.monotonic()
+        stats = admin._get_redis_stats(settings)
+
+        assert stats is None
+        assert time.monotonic() - started < admin.PROBE_TIMEOUT_SECONDS
+
+    def test_a_redis_that_never_answers_reads_as_unavailable(self):
+        with socket.create_server(('127.0.0.1', 0)) as silent:
+            settings = get_test_runner_settings()
+            settings.redis.host, settings.redis.port = silent.getsockname()
+            settings.redis.password = ''
+            with patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS):
+                stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin._get_redis_stats(settings))
+
+        assert stats is None
+
+    def test_a_docker_daemon_that_never_answers_reads_as_unavailable(self, monkeypatch):
+        with socket.create_server(('127.0.0.1', 0)) as silent:
+            host, port = silent.getsockname()
+            monkeypatch.setenv('DOCKER_HOST', f'tcp://{host}:{port}')
+            monkeypatch.delenv('DOCKER_TLS_VERIFY', raising=False)
+            with patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS):
+                containers = finish_within(PROBE_DEADLINE_SECONDS, admin._get_docker_containers)
+
+        assert containers is None
+
+    def test_a_docker_probe_past_its_deadline_reads_as_unavailable(self):
+        def slow_listing():
+            time.sleep(SLOW_LISTING_SECONDS)
+            return []
+
+        with (
+            patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS),
+            patch.object(admin, '_list_docker_containers', slow_listing),
+        ):
+            containers = finish_within(SLOW_LISTING_SECONDS / 2, admin._get_docker_containers)
+
+        assert containers is None
+
+    def test_a_database_query_past_the_probe_timeout_reads_as_unavailable(self):
+        with (
+            create_session(get_test_runner_settings()) as session,
+            patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS),
+            patch.object(admin, 'TABLE_ROW_COUNTS_SQL', text('SELECT pg_sleep(5)')),
+        ):
+            stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin._get_database_stats(session))
+
+        assert stats is None
 
 
 class TestRecentErrors:
